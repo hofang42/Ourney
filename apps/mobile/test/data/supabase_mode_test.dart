@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
+import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -43,7 +44,12 @@ void main() {
     );
   });
 
-  Future<CheckIn> checkIn(String journeyId, String name, {DateTime? at}) {
+  Future<CheckIn> checkIn(
+    String journeyId,
+    String name, {
+    DateTime? at,
+    double? metric,
+  }) {
     final shot = fakeCapture(camera, name);
     return layer.checkIns.submit(
       CheckInDraft(
@@ -51,9 +57,15 @@ void main() {
         capturedAt: at ?? clock.value,
         photoFile: shot.photo,
         thumbFile: shot.thumb,
+        metricValue: metric,
       ),
     );
   }
+
+  List<RemoteCall> upsertsOf(String table) => [
+    for (final c in remote.callsOf('upsert'))
+      if (c.target == table) c,
+  ];
 
   Future<void> settle() => layer.ctx.outbox!.flush(force: true);
 
@@ -102,6 +114,7 @@ void main() {
         'upload:${c.photoPath}',
         'upload:${c.thumbPath}',
         'upsert:check_ins',
+        'upsert:check_in_metrics',
       ]);
       expect(await layer.checkIns.watchPendingUploads().first, 0);
     },
@@ -135,7 +148,7 @@ void main() {
     'check-in: media then upsert on (journey_id,user_id,local_date)',
     () async {
       final j = await layer.journeys.create(soloDraft());
-      final c = await checkIn(j.id, 'a');
+      final c = await checkIn(j.id, 'a', metric: 70.5);
       expect(c.uploaded, isFalse);
       expect(c.localPhotoFile, isNotNull, reason: 'visible at once');
       await settle();
@@ -145,12 +158,22 @@ void main() {
         checkInThumbPath(j.id, me, c.id),
       ]);
       final upsert =
-          remote.callsOf('upsert').single.args! as Map<String, dynamic>;
+          upsertsOf('check_ins').single.args! as Map<String, dynamic>;
       expect(upsert['onConflict'], 'journey_id,user_id,local_date');
       final row = upsert['row'] as Map<String, dynamic>;
       expect(row['id'], c.id);
       expect(row['user_id'], me);
       expect(row['local_date'], '2026-10-16');
+      expect(row.containsKey('metric_value'), isFalse, reason: '0005 (H1)');
+      final metric =
+          upsertsOf('check_in_metrics').single.args! as Map<String, dynamic>;
+      expect(metric['onConflict'], 'checkin_id');
+      expect(metric['row'], {
+        'checkin_id': c.id,
+        'journey_id': j.id,
+        'user_id': me,
+        'metric_value': 70.5,
+      });
       final saved = (await layer.checkIns.watchForJourney(j.id).first).single;
       expect(saved.uploaded, isTrue);
       expect(saved.localPhotoFile, isNull);
@@ -174,11 +197,11 @@ void main() {
       remote.failure = null;
       await settle();
       expect(remote.uploaded.keys, isNot(contains(a.photoPath)));
-      expect(remote.callsOf('upsert'), hasLength(1));
+      expect(upsertsOf('check_ins'), hasLength(1));
 
       final c = await checkIn(j.id, 'c');
       await settle();
-      expect(remote.callsOf('upsert'), hasLength(2));
+      expect(upsertsOf('check_ins'), hasLength(2));
       expect(remote.removed, containsAll([b.photoPath, b.thumbPath]));
       final list = await layer.checkIns.watchForJourney(j.id).first;
       expect(list.single.id, c.id);
@@ -280,6 +303,187 @@ void main() {
     expect(path1, path2);
     expect(File(path1).readAsBytesSync(), [7, 7]);
     expect(remote.callsOf('download'), hasLength(1));
+  });
+
+  group('0005 security hardening', () {
+    const jid = 'dddddddd-0000-4000-8000-000000000001';
+    const cid = 'eeeeeeee-0000-4000-8000-000000000001';
+
+    RemoteRow otherCheckIn({String updatedAt = '2026-10-16T01:30:00+00:00'}) =>
+        {
+          'id': cid,
+          'journey_id': jid,
+          'user_id': other,
+          'local_date': '2026-10-16',
+          'captured_at': '2026-10-16T01:00:00+00:00',
+          'photo_path': checkInPhotoPath(jid, other, cid),
+          'thumb_path': checkInThumbPath(jid, other, cid),
+          'from_library': false,
+          'caption': 'hi',
+          'metric_value': null,
+          'updated_at': updatedAt,
+          'deleted_at': null,
+        };
+
+    RemoteRow metricRow(double? v, {String at = '2026-10-16T01:31:00+00:00'}) =>
+        {
+          'checkin_id': cid,
+          'journey_id': jid,
+          'user_id': other,
+          'metric_value': v,
+          'created_at': at,
+          'updated_at': at,
+        };
+
+    void seedGroup({bool otherHides = false}) {
+      remote.tables['journeys'] = [
+        journeyRow(jid, ownerId: other, kind: 'group', visibility: 'group'),
+      ];
+      remote.tables['memberships'] = [
+        membershipRow(jid, other)..['hide_metric'] = otherHides,
+        membershipRow(jid, me, role: 'member'),
+      ];
+    }
+
+    Future<CheckIn?> cached() async {
+      final list = await layer.checkIns.watchForJourney(jid).first;
+      return list.isEmpty ? null : list.single;
+    }
+
+    test('metrics are pulled from check_in_metrics', () async {
+      seedGroup();
+      remote.tables['check_ins'] = [otherCheckIn()];
+      remote.tables['check_in_metrics'] = [metricRow(81.2)];
+      expect(await layer.syncNow(), isA<SyncOk>());
+      expect((await cached())!.metricValue, 81.2);
+      expect(await db.readCursor('check_in_metrics'), isNotNull);
+
+      // A later check-ins pull (metric_value always null) keeps the value.
+      remote.tables['check_ins'] = [
+        otherCheckIn(updatedAt: '2026-10-16T02:00:00+00:00'),
+      ];
+      await layer.syncNow();
+      expect((await cached())!.metricValue, 81.2);
+    });
+
+    test('a metric whose check-in is not cached yet fetches it', () async {
+      seedGroup();
+      await layer.syncNow(); // check_ins cursor exists, row not seen
+      remote.tables['check_ins'] = [
+        otherCheckIn(updatedAt: '2026-10-15T00:00:00+00:00'),
+      ];
+      remote.tables['check_in_metrics'] = [metricRow(64)];
+      await db.writeCursor('check_ins', '2026-10-16T05:00:00+00:00');
+      await layer.syncNow();
+      expect((await cached())!.metricValue, 64);
+    });
+
+    test('hide_metric on a co-member drops cached values', () async {
+      seedGroup();
+      remote.tables['check_ins'] = [otherCheckIn()];
+      remote.tables['check_in_metrics'] = [metricRow(81.2)];
+      await layer.syncNow();
+      remote.tables['memberships'] = [
+        membershipRow(jid, other, updatedAt: '2026-10-16T03:00:00+00:00')
+          ..['hide_metric'] = true,
+        membershipRow(jid, me, role: 'member'),
+      ];
+      remote.tables['check_in_metrics'] = []; // RLS hides it now
+      await layer.syncNow();
+      expect((await cached())!.metricValue, isNull);
+    });
+
+    test('checkin_tombstones removes deleted check-ins of others', () async {
+      seedGroup();
+      remote.tables['check_ins'] = [otherCheckIn()];
+      remote.storageObjects[checkInThumbPath(jid, other, cid)] = [1];
+      await layer.syncNow();
+      await layer.media.localFileFor(checkInThumbPath(jid, other, cid));
+      expect(await cached(), isNotNull);
+
+      final sinceArgs = <Object?>[];
+      remote.rpcHandlers['checkin_tombstones'] = (p) {
+        sinceArgs.add(p['since']);
+        return p['since'] == null
+            ? null
+            : [
+                {
+                  'id': cid,
+                  'journey_id': jid,
+                  'updated_at': '2026-10-16T04:00:00+00:00',
+                },
+              ];
+      };
+      await layer.syncNow(); // first call: since null, nothing yet
+      await db.writeCursor(tombstoneCursorKey, '2026-10-16T03:00:00+00:00');
+      await layer.syncNow();
+      expect(await cached(), isNull);
+      expect(
+        File(layer.ctx.files.fileFor(checkInThumbPath(jid, other, cid)).path)
+            .existsSync(),
+        isFalse,
+        reason: 'cached media evicted',
+      );
+      expect(sinceArgs.last, '2026-10-16T02:59:00.000Z');
+      expect(
+        await db.readCursor(tombstoneCursorKey),
+        '2026-10-16T04:00:00+00:00',
+      );
+      final args = remote.callsOf('rpc').last.args! as Map;
+      expect(args['lim'], pullPageSize);
+    });
+
+    test('pullJourney refreshes metrics of the journey', () async {
+      seedGroup();
+      remote.tables['check_ins'] = [otherCheckIn()];
+      remote.tables['check_in_metrics'] = [metricRow(70)];
+      await layer.ctx.sync!.pullJourney(jid);
+      expect((await cached())!.metricValue, 70);
+    });
+
+    test('joinByCode: empty row from the server is not_found', () async {
+      remote.rpcHandlers['join_by_code'] = (_) => {'id': null, 'kind': null};
+      await expectLater(
+        layer.groups.joinByCode('ZZZZ9999'),
+        throwsA(
+          isA<GroupException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.notFound,
+          ),
+        ),
+      );
+      remote.failOnce.add(
+        OurneyException(
+          OurneyErrorCode.fromServer(
+            message: 'rate_limited',
+            sqlstate: 'P0001',
+          ),
+        ),
+      );
+      await expectLater(
+        layer.groups.joinByCode('ZZZZ9999'),
+        throwsA(
+          isA<GroupException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.rateLimited,
+          ),
+        ),
+      );
+    });
+
+    test('signOut is global and wipes local data', () async {
+      final j = await layer.journeys.create(soloDraft());
+      await checkIn(j.id, 'a');
+      await layer.auth.signOut();
+      expect(remote.callsOf('signOut').single.target, 'global');
+      expect(await db.select(db.journeys).get(), isEmpty);
+      expect(await db.select(db.checkIns).get(), isEmpty);
+      expect(await db.select(db.uploadQueue).get(), isEmpty);
+      expect(media.existsSync(), isFalse);
+      expect(remote.userId, isNull);
+    });
   });
 
   test('a different user signing in wipes the previous cache', () async {

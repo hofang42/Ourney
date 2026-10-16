@@ -44,7 +44,15 @@ class SupabaseRemoteApi implements RemoteApi {
   });
 
   @override
-  Future<void> signOut() async {
+  Future<void> signOut({bool global = false}) async {
+    if (global) {
+      try {
+        await _client.auth.signOut(scope: SignOutScope.global);
+        return;
+      } on Object {
+        // Offline or server error: still end the session on this device.
+      }
+    }
     try {
       await _client.auth.signOut(scope: SignOutScope.local);
     } on Object {

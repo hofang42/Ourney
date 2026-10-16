@@ -5,7 +5,7 @@ select plan(15);
 
 select tables_are(
   'public',
-  array['profiles', 'journeys', 'memberships', 'check_ins', 'reactions', 'blocks', 'reports', 'moderation_queue'],
+  array['profiles', 'journeys', 'memberships', 'check_ins', 'reactions', 'blocks', 'reports', 'moderation_queue', 'check_in_metrics'],
   'public schema contains exactly the contract tables'
 );
 

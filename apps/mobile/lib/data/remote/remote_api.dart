@@ -14,8 +14,10 @@ abstract interface class RemoteApi {
   Future<void> sendOtp(String email);
   Future<void> verifyOtp(String email, String code);
 
-  /// Local sign-out (never fails because the server is unreachable).
-  Future<void> signOut();
+  /// Signs out. [global] also revokes the refresh tokens of every device
+  /// (falls back to a local sign-out when the server is unreachable). Never
+  /// throws.
+  Future<void> signOut({bool global = false});
 
   // --- Database ---------------------------------------------------------------
   /// `select * from [table]` with equality / `in` filters, optionally only

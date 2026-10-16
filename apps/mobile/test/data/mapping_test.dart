@@ -98,7 +98,15 @@ void main() {
       'deleted_at': null,
     };
     final c = checkInFromRemote(remote);
-    expect(c.metricValue, const Value<double?>(70.5));
+    expect(
+      c.metricValue,
+      const Value<double?>.absent(),
+      reason: 'metrics come from check_in_metrics (0005)',
+    );
+    expect(metricFromRemote({'checkin_id': 'c1', 'metric_value': '70.5'}), (
+      checkInId: 'c1',
+      value: 70.5,
+    ), reason: 'numeric may arrive as a string');
     expect(c.uploaded, const Value(true));
     expect(c.capturedAt.value.isUtc, isTrue);
 
@@ -123,6 +131,13 @@ void main() {
       reason: 'server-managed',
     );
     expect(body.containsKey('uploaded'), isFalse);
+    expect(body.containsKey('metric_value'), isFalse, reason: 'H1 (0005)');
+    expect(checkInMetricToRemote(row), {
+      'checkin_id': 'c1',
+      'journey_id': 'j1',
+      'user_id': 'u1',
+      'metric_value': 1.0,
+    });
   });
 
   test('group_today row -> MemberToday', () {

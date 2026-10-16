@@ -92,6 +92,40 @@ class LocalStore {
       return;
     }
     await db.into(db.memberships).insertOnConflictUpdate(m);
+    if (m.userId.value != me && m.hideMetric.value) {
+      // The member now hides their metric: drop values cached earlier.
+      await (db.update(db.checkIns)..where(
+            (t) =>
+                t.journeyId.equals(m.journeyId.value) &
+                t.userId.equals(m.userId.value),
+          ))
+          .write(const CheckInsCompanion(metricValue: Value(null)));
+    }
+  }
+
+  /// Applies a `check_in_metrics` row. Returns false when the check-in is
+  /// not cached yet (the caller fetches it, then applies again). A local,
+  /// not yet uploaded take is never overwritten.
+  Future<bool> applyMetric(RemoteRow r) async {
+    final m = metricFromRemote(r);
+    final row = await (db.select(
+      db.checkIns,
+    )..where((t) => t.id.equals(m.checkInId))).getSingleOrNull();
+    if (row == null) return false;
+    if (row.uploaded) {
+      await (db.update(db.checkIns)..where((t) => t.id.equals(m.checkInId)))
+          .write(CheckInsCompanion(metricValue: Value(m.value)));
+    }
+    return true;
+  }
+
+  /// A `checkin_tombstones` entry: another member's check-in was deleted,
+  /// hidden (author left / removed) or moderated.
+  Future<void> applyCheckInTombstone(String checkInId) async {
+    final rows = await (db.select(
+      db.checkIns,
+    )..where((t) => t.id.equals(checkInId) & t.uploaded.equals(true))).get();
+    await deleteCheckIns(rows);
   }
 
   Future<void> applyCheckIn(RemoteRow r, Set<String> pending) async {

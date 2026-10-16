@@ -23,7 +23,6 @@ type CheckInRow = {
   id: string;
   local_date: string;
   caption: string | null;
-  metric_value: number | null;
   from_library: boolean;
   photo_path: string;
   thumb_path: string;
@@ -55,17 +54,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   if (!journey) return notFound();
 
-  const [membership, profile, checkIns, streak] = await Promise.all([
+  const [membership, profile, checkIns, streak, metrics] = await Promise.all([
     admin.from("memberships").select("hide_metric, blur_media")
       .eq("journey_id", journey.id).eq("user_id", journey.owner_id).maybeSingle(),
     admin.from("profiles").select("display_name").eq("id", journey.owner_id).maybeSingle(),
     admin.from("check_ins")
-      .select("id, local_date, caption, metric_value, from_library, photo_path, thumb_path")
+      .select("id, local_date, caption, from_library, photo_path, thumb_path")
       .eq("journey_id", journey.id).eq("user_id", journey.owner_id).is("deleted_at", null)
       .order("local_date", { ascending: true }).limit(MAX_CHECKINS),
     admin.rpc("journey_streak", { journey: journey.id, member: journey.owner_id }),
+    // Metric values live in check_in_metrics since 0005 (check_ins.metric_value is always null).
+    admin.from("check_in_metrics").select("checkin_id, metric_value")
+      .eq("journey_id", journey.id).eq("user_id", journey.owner_id).limit(MAX_CHECKINS),
   ]);
-  for (const r of [membership, profile, checkIns, streak]) {
+  for (const r of [membership, profile, checkIns, streak, metrics]) {
     if (r.error) {
       console.error("public-journey query failed", r.error.message);
       return json({ error: "internal" }, 500, cors);
@@ -75,6 +77,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const hideMetric = membership.data?.hide_metric ?? true;
   const blurMedia = membership.data?.blur_media ?? true;
   const rows = (checkIns.data ?? []) as CheckInRow[];
+  const metricById = new Map<string, number | null>();
+  if (!hideMetric) {
+    for (const m of (metrics.data ?? []) as { checkin_id: string; metric_value: number | null }[]) {
+      metricById.set(m.checkin_id, m.metric_value);
+    }
+  }
 
   const paths = rows.flatMap((c) => (blurMedia ? [] : [c.thumb_path, c.photo_path]));
   const signed = new Map<string, string>();
@@ -115,7 +123,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       local_date: c.local_date,
       caption: c.caption,
       from_library: c.from_library,
-      metric_value: hideMetric ? null : c.metric_value,
+      metric_value: metricById.get(c.id) ?? null,
       thumb_url: signed.get(c.thumb_path) ?? null,
       photo_url: signed.get(c.photo_path) ?? null,
     })),

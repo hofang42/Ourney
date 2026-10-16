@@ -92,8 +92,8 @@ select is((select status::text from public.memberships where journey_id = tests.
   'removed member is marked left');
 do $$ begin perform tests.as_user(tests.uid(1)); end $$;
 select lives_ok($$ select public.join_by_code(tests.code(1)) $$, 'join_by_code is idempotent for active members');
-select throws_ok($$ select public.join_by_code('ZZZZZZZZ') $$, 'P0001', 'not_found', 'unknown code -> not_found');
-select throws_ok($$ select public.join_by_code('bad') $$, 'P0001', 'not_found', 'malformed code -> not_found');
+select is((select id from public.join_by_code('ZZZZZZZZ')), null, 'unknown code -> empty row (not_found)');
+select is((select id from public.join_by_code('bad')), null, 'malformed code -> empty row (not_found)');
 
 -- ===== invite rotation ======================================================
 do $$ begin perform tests.as_postgres(); end $$;
@@ -103,7 +103,7 @@ select throws_ok($$ select public.rotate_invite(tests.jid(1)) $$, '42501', 'forb
 do $$ begin perform tests.as_user(tests.uid(2)); end $$;
 select matches(public.rotate_invite(tests.jid(1)), '^[A-Z0-9]{8}$', 'owner rotates the invite code');
 do $$ begin perform tests.as_user(tests.uid(4)); end $$;
-select throws_ok(format('select public.join_by_code(%L)', :'old_code'), 'P0001', 'not_found', 'old code stops working');
+select is((select id from public.join_by_code(:'old_code')), null, 'old code stops working (not_found)');
 select lives_ok($$ select public.join_by_code(tests.code(1)) $$, 'new code works');
 
 -- ===== block prevents join (either direction) ================================
