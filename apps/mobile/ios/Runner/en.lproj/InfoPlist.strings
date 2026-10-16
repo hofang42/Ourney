@@ -1,0 +1,5 @@
+/* Permission strings (English). */
+"CFBundleDisplayName" = "Ourney";
+"NSCameraUsageDescription" = "Ourney uses the camera so you can take your daily check-in photo.";
+"NSPhotoLibraryUsageDescription" = "Ourney needs access to your photo library so you can pick a photo from your library for a check-in.";
+"NSPhotoLibraryAddUsageDescription" = "Ourney needs permission to save photos so it can save share cards to your Photos.";

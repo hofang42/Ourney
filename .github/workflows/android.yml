@@ -1,0 +1,108 @@
+name: Android (APK)
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.7
+
+jobs:
+  build:
+    name: Build release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write # needed only to attach the APK to a GitHub Release on tags
+    steps:
+      - uses: actions/checkout@v7
+
+      # AGP 9.x (android/settings.gradle.kts) requires JDK 17 minimum.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Generate localizations
+        working-directory: apps/mobile
+        run: |
+          if [ -f l10n.yaml ]; then flutter gen-l10n; fi
+
+      # Optional release signing. Without ANDROID_KEYSTORE_BASE64 the APK is signed with the debug key
+      # (fine for v1 sideloading). With it, we write android/key.properties (storeFile, storePassword,
+      # keyAlias, keyPassword); android/app/build.gradle.kts must read that file to use it
+      # (follow-up for the Android platform owner).
+      - name: Prepare release keystore (optional)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            {
+              echo "storeFile=$RUNNER_TEMP/release.jks"
+              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
+              echo "keyAlias=$ANDROID_KEY_ALIAS"
+              echo "keyPassword=$ANDROID_KEY_PASSWORD"
+            } > apps/mobile/android/key.properties
+          else
+            echo "ANDROID_KEYSTORE_BASE64 not set; APK will be debug-signed."
+          fi
+
+      - name: Write dart-define file (optional)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ]; then
+            jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" \
+              '{SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k}' > "$RUNNER_TEMP/dart-defines.json"
+            echo "DART_DEFINES_FILE=$RUNNER_TEMP/dart-defines.json" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build APK (release)
+        working-directory: apps/mobile
+        run: |
+          args=(--release)
+          if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then
+            args+=("--dart-define-from-file=$DART_DEFINES_FILE")
+          fi
+          flutter build apk "${args[@]}"
+
+      - name: Rename APK
+        run: cp apps/mobile/build/app/outputs/flutter-apk/app-release.apk Ourney.apk
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Ourney-apk
+          path: Ourney.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach to GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: Ourney.apk
+          generate_release_notes: true

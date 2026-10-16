@@ -1,0 +1,5 @@
+/* Chuỗi xin quyền (tiếng Việt). Ngôn ngữ mặc định của app. */
+"CFBundleDisplayName" = "Ourney";
+"NSCameraUsageDescription" = "Ourney dùng camera để bạn chụp ảnh check-in hằng ngày.";
+"NSPhotoLibraryUsageDescription" = "Ourney cần truy cập thư viện ảnh để bạn chọn ảnh từ thư viện cho check-in.";
+"NSPhotoLibraryAddUsageDescription" = "Ourney cần quyền lưu ảnh để lưu thẻ chia sẻ vào mục Ảnh của bạn.";
