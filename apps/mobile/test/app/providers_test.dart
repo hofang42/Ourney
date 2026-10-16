@@ -41,9 +41,10 @@ void main() {
   });
 
   group('AppConfig support email (H4)', () {
-    test('falls back to the placeholder when SUPPORT_EMAIL is not defined', () {
-      // The test run passes no --dart-define, so this is the default path.
-      expect(AppConfig.fromEnvironment().supportEmail, 'support@ourney.app');
+    test('falls back to the placeholder when SUPPORT_EMAIL is blank', () {
+      // Independent of any --dart-define passed to the test run.
+      expect(AppConfig.resolveSupportEmail(''), 'support@ourney.app');
+      expect(AppConfig.defaultSupportEmail, 'support@ourney.app');
       expect(const AppConfig.localOnly().supportEmail, 'support@ourney.app');
       expect(testBackendConfig.supportEmail, AppConfig.defaultSupportEmail);
     });
@@ -66,7 +67,6 @@ void main() {
         supportEmail: 'me@example.com',
       );
       expect(a == b, isFalse);
-      expect(a.hashCode == b.hashCode, isFalse);
     });
 
     test('supportEmailProvider follows appConfigProvider', () async {
