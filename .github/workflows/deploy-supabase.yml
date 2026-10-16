@@ -1,0 +1,50 @@
+name: Deploy Supabase (hosted)
+
+# Manual only. Runs scripts/supabase/deploy-hosted.sh against the hosted project.
+# Secrets live in the GitHub Environment "production" (see docs/runbooks/hosted-supabase.md).
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: only show the migrations that would be applied'
+        type: boolean
+        default: true
+
+# Never cancel a deploy that is already running; queue instead.
+concurrency:
+  group: deploy-supabase
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to hosted Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      # https://github.com/supabase/setup-cli
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # Secrets are passed through env, never interpolated into the script.
+      # SMTP_* are optional: leave them unset to keep the current Auth SMTP settings.
+      - name: Deploy
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_SENDER_EMAIL: ${{ secrets.SMTP_SENDER_EMAIL }}
+          SMTP_SENDER_NAME: ${{ secrets.SMTP_SENDER_NAME }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          args=()
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          bash scripts/supabase/deploy-hosted.sh "${args[@]}"
