@@ -1,0 +1,22 @@
+{
+  "@@locale": "vi",
+  "app_name": "Ourney",
+  "nav_journeys": "Journeys",
+  "nav_capture": "Chụp",
+  "nav_groups": "Nhóm",
+  "common_retry": "Thử lại",
+  "common_cancel": "Hủy",
+  "common_ok": "OK",
+  "common_loading": "Đang tải…",
+  "empty_default_title": "Chưa có gì ở đây",
+  "streak_days": "{count, plural, other{{count} ngày}}",
+  "@streak_days": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "streak_semantics": "Chuỗi {count, plural, other{{count} ngày}}",
+  "@streak_semantics": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "streak_atRisk": "Sắp mất chuỗi",
+  "placeholder_comingSoon": "Sắp ra mắt"
+}

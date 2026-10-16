@@ -1,0 +1,16 @@
+{
+  "@@locale": "en",
+  "app_name": "Ourney",
+  "nav_journeys": "Journeys",
+  "nav_capture": "Capture",
+  "nav_groups": "Groups",
+  "common_retry": "Retry",
+  "common_cancel": "Cancel",
+  "common_ok": "OK",
+  "common_loading": "Loading…",
+  "empty_default_title": "Nothing here yet",
+  "streak_days": "{count, plural, =1{{count} day} other{{count} days}}",
+  "streak_semantics": "Streak of {count, plural, =1{{count} day} other{{count} days}}",
+  "streak_atRisk": "Streak at risk",
+  "placeholder_comingSoon": "Coming soon"
+}
