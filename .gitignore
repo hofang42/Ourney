@@ -1,0 +1,11 @@
+.build/
+xtool/
+.bsp/
+*.ipa
+.swiftpm/
+.DS_Store
+supabase/.temp/
+supabase/.branches/
+.env
+.env.*
+!.env.example
