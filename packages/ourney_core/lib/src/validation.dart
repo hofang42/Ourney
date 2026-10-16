@@ -1,6 +1,8 @@
 // Input validation returning typed errors (null = valid) so the UI can map
 // them to localized messages. Lengths count Unicode code points.
 
+import 'models.dart';
+
 enum UsernameError { tooShort, tooLong, invalidChars }
 
 enum DisplayNameError { empty, tooLong }
@@ -14,6 +16,14 @@ enum InviteCodeError { wrongLength, invalidChars }
 enum MetricValueError { notFinite, outOfRange }
 
 enum DurationError { outOfRange }
+
+enum VisibilityError {
+  /// `link` is solo-only (FR-E3: group journeys never get a public link).
+  linkNotAllowedForGroup,
+
+  /// `group` visibility requires a group journey.
+  groupVisibilityForSolo,
+}
 
 const int usernameMin = 3;
 const int usernameMax = 20;
@@ -80,3 +90,21 @@ DurationError? validateDurationDays(int? days) {
   if (days < durationMin || days > durationMax) return DurationError.outOfRange;
   return null;
 }
+
+/// Mirrors `create_journey`, which raises `invalid` for group+link and
+/// solo+group. Group+private is accepted (the server normalises it to
+/// `group`), but `JourneyDraft` now defaults groups to `group` anyway.
+VisibilityError? validateJourneyVisibility(JourneyKind kind, JourneyVisibility visibility) {
+  if (kind == JourneyKind.group && visibility == JourneyVisibility.link) {
+    return VisibilityError.linkNotAllowedForGroup;
+  }
+  if (kind == JourneyKind.solo && visibility == JourneyVisibility.group) {
+    return VisibilityError.groupVisibilityForSolo;
+  }
+  return null;
+}
+
+/// The visibility the server will store for [kind]/[requested]
+/// (group → `group`; solo keeps `private`/`link`). Assumes it is valid.
+JourneyVisibility normalizedVisibility(JourneyKind kind, JourneyVisibility requested) =>
+    kind == JourneyKind.group ? JourneyVisibility.group : requested;

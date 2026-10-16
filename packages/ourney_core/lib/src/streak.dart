@@ -97,3 +97,42 @@ StreakSummary computeStreak({
     dayIndex: dayIndex,
   );
 }
+
+/// First day that counts for a member's personal streak/progress: the later
+/// of the journey start and the journey-local date of `memberships.joined_at`
+/// (server: `journey_streak`, docs/02 §9.1). Late joiners are never penalised
+/// for days before they joined.
+LocalDate effectiveStreakStart(LocalDate journeyStart, LocalDate joinedLocalDate) =>
+    joinedLocalDate.isAfter(journeyStart) ? joinedLocalDate : journeyStart;
+
+/// Per-member streak matching SQL `journey_streak(journey, member)`. Use this
+/// (not [computeStreak] with the journey start) for any member of a journey,
+/// solo owners included (for them joined == start so results are identical).
+///
+/// * dates before [joinedLocalDate] are ignored (also for `best`);
+/// * the window is `[effectiveStreakStart, journey end]`; the journey end
+///   stays `journeyStart + durationDays - 1` (null = open-ended);
+/// * `progress` and `dayIndex` are relative to the member's window.
+///
+/// [joinedLocalDate] is `localDateOf(membership.joinedAt, journeyUtcOffset)`.
+StreakSummary computeMemberStreak({
+  required LocalDate journeyStart,
+  int? durationDays,
+  required LocalDate joinedLocalDate,
+  required LocalDate today,
+  required Iterable<LocalDate> dates,
+}) {
+  final start = effectiveStreakStart(journeyStart, joinedLocalDate);
+  int? memberDuration;
+  if (durationDays != null) {
+    final end = journeyStart.addDays(durationDays - 1);
+    final n = start.daysUntil(end) + 1;
+    memberDuration = n < 0 ? 0 : n;
+  }
+  return computeStreak(
+    start: start,
+    durationDays: memberDuration,
+    today: today,
+    dates: dates.where((d) => !d.isBefore(joinedLocalDate)),
+  );
+}
