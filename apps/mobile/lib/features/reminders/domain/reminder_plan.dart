@@ -7,6 +7,8 @@
 import 'package:ourney_core/ourney_core.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../shared/time_zones.dart';
+
 /// iOS keeps at most 64 pending local notifications per app; anything beyond
 /// is silently dropped, so the plan never exceeds it (FR-G1).
 const int kMaxPendingNotifications = 64;
@@ -254,15 +256,11 @@ int _streakAt(JourneyReminderInput j, LocalDate day) {
   ).current;
 }
 
-tz.Location _location(String name) {
-  try {
-    return tz.getLocation(name);
-  } on Object {
-    return tz.UTC;
-  }
-}
+/// Legacy names map to canonical zones; an unknown name uses the logged
+/// best guess of [resolveTimeZone] (never a silent UTC).
+tz.Location _location(String name) => resolveTimeZone(name);
 
-/// Calendar date of [instant] in the IANA zone [timezone] (UTC if unknown).
+/// Calendar date of [instant] in the IANA zone [timezone].
 LocalDate localDateIn(String timezone, DateTime instant) =>
     _localDate(instant.toUtc(), _location(timezone));
 

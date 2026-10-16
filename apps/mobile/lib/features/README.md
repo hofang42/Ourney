@@ -63,7 +63,10 @@ own top-level redirects:
    `/safety` are reachable).
 3. Backend configured and signed out → `/auth?from=<target>` (`/auth`,
    `/onboarding`, `/safety` reachable). **Local-only mode has no auth gate.**
-4. Once a gate is satisfied the router leaves `/onboarding` / `/auth` for
+4. Backend configured, signed in and the EULA not accepted →
+   `/safety/eula/accept?from=<target>` (only `/safety` reachable).
+   Local-only mode has no EULA gate.
+5. Once a gate is satisfied the router leaves `/onboarding` / `/auth` for
    the `?from=` target (or `/capture`) **by itself**: onboarding calls
    `ref.read(onboardingCompleteProvider.notifier).complete()`, auth just
    makes `AuthRepository.watchUserId()` emit the user id. Do not navigate

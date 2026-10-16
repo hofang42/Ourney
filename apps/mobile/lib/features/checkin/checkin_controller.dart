@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -61,11 +63,21 @@ class CheckInPoster {
     required this.repository,
     required this.compressor,
     required this.clock,
+    this.drafts,
   });
 
   final CheckInRepository repository;
   final PhotoCompressor compressor;
   final JourneyClock clock;
+
+  /// Cleans up draft files after a submit; null keeps them (tests).
+  final DraftFiles? drafts;
+
+  /// Cleanup never delays the success screen.
+  void _discard(List<String> paths) {
+    final d = drafts;
+    if (d != null) unawaited(d.discard(paths));
+  }
 
   /// Journey-local date the check-in will count for (the server derives
   /// `local_date` from `captured_at` in the journey timezone).
@@ -124,6 +136,7 @@ class CheckInPoster {
         ),
       );
     } on OurneyException catch (e) {
+      _discard([files.photoFile, files.thumbFile]);
       throw CheckInPostException(
         e.error == OurneyErrorCode.ended
             ? CheckInFailure.ended
@@ -131,8 +144,11 @@ class CheckInPoster {
         e,
       );
     } on Object catch (e) {
+      _discard([files.photoFile, files.thumbFile]);
       throw CheckInPostException(CheckInFailure.generic, e);
     }
+    // The repository copied the files into the media store.
+    _discard([files.photoFile, files.thumbFile, photo.path]);
 
     final after = memberStreak(
       journey: journey,
@@ -161,5 +177,6 @@ final checkInPosterProvider = Provider.autoDispose<CheckInPoster>(
     repository: ref.watch(checkInRepositoryProvider),
     compressor: ref.watch(photoCompressorProvider),
     clock: ref.watch(journeyClockProvider),
+    drafts: ref.watch(draftFilesProvider),
   ),
 );

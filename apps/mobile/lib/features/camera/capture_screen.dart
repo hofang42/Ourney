@@ -15,6 +15,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/ourney_chip.dart';
+import '../../shared/profile_button.dart';
 import '../checkin/captured_photo.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
@@ -193,7 +194,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         }
       }
       if (!mounted || gen != _generation) {
-        if (gen == _generation) await session.stop();
+        // Superseded while starting. Unless a newer start owns the camera,
+        // release it (the session also drops a start stopped mid-way).
+        if (!mounted || !_wantCamera || _phase == _Phase.idle) {
+          await session.stop();
+        }
         return;
       }
       setState(() => _phase = _Phase.ready);
@@ -287,61 +292,60 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       });
     }
     final capturedAt = clock.now().toUtc();
+    final String path;
     try {
-      final path = await s.takePicture();
-      if (!mounted) return;
-      await _openCheckin(
-        CapturedPhoto(
-          journeyId: journey.id,
-          path: path,
-          capturedAt: capturedAt,
-        ),
-      );
+      path = await s.takePicture();
     } on CameraStartException {
       if (mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(content: Text(CameraL10n.of(context).camera_captureFailed)),
         );
       }
+      return;
     } finally {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _flashOverlay = false;
-        });
-      }
+      // Never held across the navigation below: /checkin may leave through
+      // pop-then-push or `go`, and the shutter must work when we are back.
+      // The flash overlay fades out on its own timer.
+      if (mounted) setState(() => _busy = false);
     }
+    if (!mounted) return;
+    _openCheckin(
+      CapturedPhoto(journeyId: journey.id, path: path, capturedAt: capturedAt),
+    );
   }
 
   Future<void> _pickFromLibrary(Journey journey) async {
     if (_busy) return;
     setState(() => _busy = true);
+    String? path;
     try {
-      final path = await ref.read(galleryPickerProvider).pickPhoto();
-      if (path == null || !mounted) return;
-      await _openCheckin(
-        CapturedPhoto(
-          journeyId: journey.id,
-          path: path,
-          capturedAt: clock.now().toUtc(),
-          fromLibrary: true,
-        ),
-      );
+      path = await ref.read(galleryPickerProvider).pickPhoto();
     } on Object {
       // Picker unavailable or cancelled by the OS: nothing to do.
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+    if (path == null || !mounted) return;
+    _openCheckin(
+      CapturedPhoto(
+        journeyId: journey.id,
+        path: path,
+        capturedAt: clock.now().toUtc(),
+        fromLibrary: true,
+      ),
+    );
   }
 
-  Future<void> _openCheckin(CapturedPhoto photo) async {
+  /// Fire and forget: the push future is not awaited (it may never
+  /// complete if /checkin is replaced), and no state depends on it.
+  void _openCheckin(CapturedPhoto photo) {
     unawaited(
       CameraPrefs.writeLastJourneyId(
         ref.read(sharedPreferencesProvider),
         photo.journeyId,
       ),
     );
-    await context.push<void>(AppRoutes.checkin, extra: photo);
+    unawaited(context.push<void>(AppRoutes.checkin, extra: photo));
   }
 
   @override
@@ -353,22 +357,45 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
     final Widget body;
     if (journeys.hasValue && list.isEmpty) {
-      body = EmptyState(
-        key: const ValueKey('capture-no-journeys'),
-        icon: Icons.flag_rounded,
-        title: CameraL10n.of(context).camera_noJourneyTitle,
-        message: CameraL10n.of(context).camera_noJourneyMessage,
-        actionLabel: CameraL10n.of(context).camera_noJourneyAction,
-        onAction: () => context.go(AppRoutes.journeyNew),
+      body = Column(
+        children: [
+          const Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Padding(
+              padding: EdgeInsets.all(OurneySpacing.xs),
+              child: ProfileButton(compact: true),
+            ),
+          ),
+          Expanded(
+            child: EmptyState(
+              key: const ValueKey('capture-no-journeys'),
+              icon: Icons.flag_rounded,
+              title: CameraL10n.of(context).camera_noJourneyTitle,
+              message: CameraL10n.of(context).camera_noJourneyMessage,
+              actionLabel: CameraL10n.of(context).camera_noJourneyAction,
+              onAction: () => context.go(AppRoutes.journeyNew),
+            ),
+          ),
+        ],
       );
     } else {
       body = Column(
         children: [
-          _JourneyBar(
-            journeys: journeys,
-            selected: selected,
-            onSelect: _selectJourney,
-            onRetry: () => ref.invalidate(captureJourneysProvider),
+          Row(
+            children: [
+              Expanded(
+                child: _JourneyBar(
+                  journeys: journeys,
+                  selected: selected,
+                  onSelect: _selectJourney,
+                  onRetry: () => ref.invalidate(captureJourneysProvider),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsetsDirectional.only(end: OurneySpacing.xs),
+                child: ProfileButton(compact: true),
+              ),
+            ],
           ),
           Expanded(child: _buildViewfinder(context)),
           _buildControls(context, selected),
@@ -519,9 +546,15 @@ class _JourneyBar extends StatelessWidget {
                   ?.copyWith(color: c.ink),
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            child: Text(AppLocalizations.of(context).common_retry),
+          Flexible(
+            child: TextButton(
+              onPressed: onRetry,
+              child: Text(
+                AppLocalizations.of(context).common_retry,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ],
       );

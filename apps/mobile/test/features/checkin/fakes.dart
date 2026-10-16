@@ -305,6 +305,15 @@ List<Override> baseOverrides({
   appConfigProvider.overrideWithValue(const AppConfig.localOnly()),
   sharedPreferencesProvider.overrideWithValue(prefs),
   supabaseClientProvider.overrideWithValue(null),
+  draftFilesProvider.overrideWithValue(FakeDraftFiles()),
   if (journeys != null) journeyRepositoryProvider.overrideWithValue(journeys),
   if (checkIns != null) checkInRepositoryProvider.overrideWithValue(checkIns),
 ];
+
+/// Records which draft files the check-in flow discards.
+class FakeDraftFiles implements DraftFiles {
+  final List<String> discarded = [];
+
+  @override
+  Future<void> discard(Iterable<String> paths) async => discarded.addAll(paths);
+}

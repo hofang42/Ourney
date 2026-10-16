@@ -131,7 +131,7 @@ void main() {
     testWidgets('accept needs the checkbox, stores the flag, continues', (
       tester,
     ) async {
-      final c = await pumpSignedInApp(tester);
+      final c = await pumpSignedInApp(tester, eulaAccepted: false);
       expect(c.read(eulaAcceptedProvider), isFalse);
       await goTo(
         tester,

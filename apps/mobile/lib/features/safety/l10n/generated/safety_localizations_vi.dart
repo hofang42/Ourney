@@ -33,7 +33,7 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_hubHowToReportBody =>
-      'Trong nhóm, mở menu của một check-in hoặc của một thành viên rồi chọn \"Báo cáo\" hoặc \"Chặn\". Nội dung bạn báo cáo sẽ bị ẩn khỏi máy bạn ngay.';
+      'Mở một hành trình nhóm, bấm nút menu (ba chấm) trên thẻ của một thành viên rồi chọn \"Báo cáo\" (báo cáo ảnh đang hiện trên thẻ, hoặc người đó nếu chưa có ảnh) hoặc \"Chặn\". Nội dung bạn báo cáo sẽ bị ẩn khỏi máy bạn ngay.';
 
   @override
   String get safety_reportCheckInTitle => 'Báo cáo check-in';

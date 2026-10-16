@@ -9,6 +9,7 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -46,11 +47,12 @@ const testBackendConfig = AppConfig(
 );
 
 /// Pumps the real [OurneyApp] (router, shell, theme) with test overrides.
-/// Defaults: local-only, onboarding done, Vietnamese.
+/// Defaults: local-only, onboarding done, EULA accepted, Vietnamese.
 Future<ProviderContainer> pumpOurneyApp(
   WidgetTester tester, {
   AppConfig config = const AppConfig.localOnly(),
   bool onboarded = true,
+  bool eulaAccepted = true,
   AuthRepository? auth,
   List<Override> overrides = const [],
   Locale locale = const Locale('vi'),
@@ -59,6 +61,7 @@ Future<ProviderContainer> pumpOurneyApp(
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   final prefs = await testPrefs({
     if (onboarded) OnboardingComplete.prefsKey: true,
+    if (eulaAccepted) SafetyPrefs.eulaAccepted: true,
   });
   final container = ProviderContainer(
     overrides: [

@@ -68,10 +68,17 @@ class DataJourneyRepository implements JourneyRepository {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
     final me = ctx.requireUserId();
+    // Retry of a create that already landed locally: same journey back.
+    if (draft.id case final clientId?) {
+      final existing = await (_db.select(
+        _db.journeys,
+      )..where((t) => t.id.equals(clientId))).getSingleOrNull();
+      if (existing != null) return journeyFromRow(existing);
+    }
     if (!canCreateJourney(await _activeCount(me))) {
       throw const JourneyLimitException();
     }
-    final id = ctx.newId();
+    final id = draft.id ?? ctx.newId();
     final visibility = normalizedVisibility(draft.kind, draft.visibility);
     final needsServer =
         draft.kind == JourneyKind.group || visibility == JourneyVisibility.link;

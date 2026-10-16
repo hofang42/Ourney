@@ -28,7 +28,11 @@ from the repositories, plans, cancels this feature's pending ids
 alarms, UTC `TZDateTime`). Serialised; failures (data layer not wired,
 offline, plugin missing) keep the previous schedule.
 
-## Integration hooks (orchestrator / other features)
+## Integration hooks (wired in Wave D)
+
+`OurneyApp` wraps the router with `ReminderLifecycleHook`; reschedules run
+after a check-in, journey create / end / archive / delete, and group
+join / leave / end / delete.
 
 1. **After each check-in** (checkin feature, once `submit` returns):
    `await rescheduleReminders(ref);` (`WidgetRef`), or

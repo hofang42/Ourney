@@ -69,9 +69,9 @@ jobs:
         run: supabase stop --no-backup
 
   mobile:
-    name: apps/mobile (analyze + test)
+    name: apps/mobile (codegen + analyze + test)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: apps/mobile
@@ -84,14 +84,33 @@ jobs:
           cache: true
       - name: Install dependencies
         run: flutter pub get
-      - name: Generate localizations
+      # Generated code is committed: regenerating must not change anything.
+      - name: Codegen is up to date (build_runner)
         run: |
-          if [ -f l10n.yaml ]; then
-            flutter gen-l10n
-          else
-            echo "No l10n.yaml yet; skipping flutter gen-l10n."
+          dart run build_runner build -d
+          git diff --exit-code --stat -- . || {
+            echo "::error::Generated files are stale: run 'dart run build_runner build -d' in apps/mobile and commit."
+            exit 1
+          }
+      - name: Localizations are up to date (all ARB sets)
+        run: |
+          dart run tool/gen_l10n.dart
+          git diff --exit-code --stat -- . || {
+            echo "::error::Generated l10n is stale: run 'dart run tool/gen_l10n.dart' in apps/mobile and commit."
+            exit 1
+          }
+      - name: No uncommitted generated files
+        run: |
+          untracked="$(git ls-files --others --exclude-standard -- .)"
+          if [ -n "$untracked" ]; then
+            echo "::error::Generated files are not committed:"
+            echo "$untracked"
+            exit 1
           fi
-      - name: Analyze
+      - name: Analyze (flutter)
         run: flutter analyze
+      # Only `dart analyze` runs the analyzer plugins (riverpod_lint).
+      - name: Analyze (dart, riverpod_lint)
+        run: dart analyze
       - name: Test
         run: flutter test

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'localization.dart';
 import 'providers.dart';
@@ -24,8 +25,12 @@ class OurneyApp extends ConsumerWidget {
       themeMode: ThemeMode.system,
       supportedLocales: ourneySupportedLocales,
       localizationsDelegates: ourneyLocalizationsDelegates,
-      builder: (context, child) =>
-          OurneyTextScaleClamp(child: child ?? const SizedBox.shrink()),
+      // Reminders: reschedule on start/resume, open the journey on a
+      // notification tap (FR-G1, FR-G2).
+      builder: (context, child) => ReminderLifecycleHook(
+        onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
+        child: OurneyTextScaleClamp(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

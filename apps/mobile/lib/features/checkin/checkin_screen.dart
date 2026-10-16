@@ -13,11 +13,13 @@ import '../../app/theme/tokens.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
+import '../reminders/data/reminder_scheduler.dart';
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
 import 'checkin_progress.dart';
 import 'checkin_success.dart';
 import 'l10n/generated/checkin_localizations.dart';
+import 'photo_compressor.dart';
 
 /// `/checkin`: photo preview, caption (<= 140 code points), metric when the
 /// journey has one, then Post (FR-C4). Shutter + Post = 2 taps; a retake on
@@ -37,12 +39,14 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   final _caption = TextEditingController();
   final _metric = TextEditingController();
   bool _posting = false;
+  late final DraftFiles _drafts;
   bool _metricError = false;
   CheckInOutcome? _outcome;
 
   @override
   void initState() {
     super.initState();
+    _drafts = ref.read(draftFilesProvider);
     _caption.addListener(_onCaptionChanged);
   }
 
@@ -52,10 +56,31 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       ..removeListener(_onCaptionChanged)
       ..dispose();
     _metric.dispose();
+    // Left without posting (close, back gesture): the raw camera/picker
+    // file is not needed. After a post the poster already cleaned up.
+    final photo = widget.photo;
+    if (photo != null && !_posting && _outcome == null) {
+      unawaited(_drafts.discard([photo.path]));
+    }
     super.dispose();
   }
 
   void _onCaptionChanged() => setState(() {});
+
+  /// Pops this screen and opens the share card on top of the camera:
+  /// a `pushReplacement` would leave the capture screen's push future
+  /// pending forever (go_router 18), so the screen below is told first.
+  void _openShare(String journeyId) {
+    final router = GoRouter.of(context);
+    final target = AppRoutes.share(journeyId);
+    if (router.canPop()) {
+      router
+        ..pop()
+        ..push(target);
+    } else {
+      router.go(target);
+    }
+  }
 
   void _close() {
     if (context.canPop()) {
@@ -144,6 +169,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       );
       if (!mounted) return;
       setState(() => _outcome = outcome);
+      // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
+      unawaited(rescheduleReminders(ref));
     } on CheckInPostException catch (e) {
       if (!mounted) return;
       setState(() => _posting = false);
@@ -188,8 +215,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             outcome: outcome,
             haptics: haptics,
             onDone: _close,
-            onShare: () =>
-                context.pushReplacement(AppRoutes.share(photo.journeyId)),
+            onShare: () => _openShare(photo.journeyId),
           ),
         ),
       );

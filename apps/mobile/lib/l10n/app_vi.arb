@@ -8,6 +8,8 @@
   "@nav_capture": {"description": "Bottom bar center button: open the camera."},
   "nav_groups": "Nhóm",
   "@nav_groups": {"description": "Bottom bar tab: groups."},
+  "nav_profile": "Hồ sơ và cài đặt",
+  "@nav_profile": {"description": "Tooltip of the app-bar button that opens the profile (settings, reminders, safety)."},
   "common_retry": "Thử lại",
   "common_cancel": "Hủy",
   "common_ok": "OK",

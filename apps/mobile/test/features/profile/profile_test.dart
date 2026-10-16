@@ -7,6 +7,7 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/routes.dart';
+import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -258,6 +259,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(auth.calls, ['deleteAccount', 'deleteAccount']);
       expect(c.read(onboardingCompleteProvider), isFalse);
+      expect(c.read(eulaAcceptedProvider), isFalse);
       expect(byKey('profile-delete-dialog'), findsNothing);
       expect(location(c), startsWith(AppRoutes.onboarding));
     });

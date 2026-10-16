@@ -41,7 +41,7 @@
   "profile_sectionAccount": "Account",
   "profile_signOut": "Sign out",
   "profile_signOutTitle": "Sign out of Ourney?",
-  "profile_signOutMessage": "You can sign back in any time with your email.",
+  "profile_signOutMessage": "Photos and data saved on this phone are removed when you sign out, including check-ins that have not been sent yet. Everything already synced comes back when you sign in again with your email.",
   "profile_deleteAccount": "Delete account",
   "profile_deleteTitle": "Delete your account forever?",
   "profile_deleteMessage": "Your profile, journeys, check-ins and every photo are deleted from the server and this device. Groups you are in pass to the earliest member. This can't be undone.",

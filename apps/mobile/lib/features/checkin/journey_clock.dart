@@ -1,8 +1,8 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
+
+import '../../shared/time_zones.dart';
 
 /// Journey-local calendar dates ("today" in the journey's IANA timezone),
 /// used for the once-a-day rule (FR-C7) and streaks. Injectable so tests do
@@ -23,26 +23,13 @@ extension JourneyClockToday on JourneyClock {
 class TzJourneyClock implements JourneyClock {
   TzJourneyClock();
 
-  static bool _loaded = false;
-
   @override
   DateTime nowUtc() => clock.now().toUtc();
 
   @override
   LocalDate localDate(DateTime instant, String timezone) {
-    if (!_loaded) {
-      tzdata.initializeTimeZones();
-      _loaded = true;
-    }
-    Duration offset;
-    try {
-      final loc = tz.getLocation(timezone);
-      offset = loc.timeZone(instant.millisecondsSinceEpoch).offset;
-    } on Object {
-      // Unknown zone name: fall back to the device offset.
-      offset = instant.toLocal().timeZoneOffset;
-    }
-    return localDateOf(instant, offset);
+    // Shared loader (latest_all + legacy aliases, no silent UTC).
+    return localDateOf(instant, timeZoneOffsetAt(timezone, instant));
   }
 }
 

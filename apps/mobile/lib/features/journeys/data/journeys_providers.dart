@@ -5,7 +5,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../domain/journey_time.dart';
+import '../../../shared/time_zones.dart';
 
 /// Shared-preferences key the camera reads to preselect a journey (FR-C1).
 /// "Check in now" on the journey screen writes it before opening `/capture`.
@@ -27,11 +27,15 @@ final journeysClockProvider = Provider<Clock>((ref) => const Clock());
 final deviceTimezoneProvider = FutureProvider<String>((ref) async {
   try {
     final info = await FlutterTimezone.getLocalTimezone();
-    if (isKnownTimezone(info.identifier)) return info.identifier;
+    // Stored on the journey: always canonical (Asia/Saigon ->
+    // Asia/Ho_Chi_Minh); an unknown name uses the logged best guess.
+    if (info.identifier.isNotEmpty) {
+      return resolveTimeZone(info.identifier).name;
+    }
   } on Object {
     // Fall through: unsupported platform or channel missing.
   }
-  return 'UTC';
+  return guessTimeZoneForOffset(DateTime.now().timeZoneOffset).name;
 }, retry: _noRetry);
 
 /// Journeys shown on the Journeys tab (active, ended and archived ones the

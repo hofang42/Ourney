@@ -118,6 +118,9 @@ class FakeJourneyRepository implements JourneyRepository {
   final Map<String, _Live<Membership?>> _memberships;
 
   final List<JourneyDraft> created = [];
+
+  /// Every draft passed to [create], failed attempts included.
+  final List<JourneyDraft> attempts = [];
   final List<String> calls = [];
   final List<({String id, bool? hideMetric, bool? blurMedia})> prefUpdates = [];
 
@@ -146,6 +149,7 @@ class FakeJourneyRepository implements JourneyRepository {
   @override
   Future<Journey> create(JourneyDraft draft) async {
     calls.add('create');
+    attempts.add(draft);
     if (createError case final e?) throw e;
     created.add(draft);
     final j = Journey(

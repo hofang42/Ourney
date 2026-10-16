@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,7 @@ import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../journeys_paths.dart';
@@ -235,6 +238,8 @@ class JourneyDetailScreen extends ConsumerWidget {
     final l10n = JourneysL10n.of(context);
     final repo = ref.read(journeyRepositoryProvider);
     final router = GoRouter.of(context);
+    // Ended, archived and deleted journeys lose their reminders (FR-G1).
+    final reminders = ref.read(reminderSchedulerProvider);
     switch (action) {
       case _Action.end:
         final ok = await confirmJourneyAction(
@@ -244,9 +249,12 @@ class JourneyDetailScreen extends ConsumerWidget {
           confirmLabel: l10n.journeys_endJourney,
         );
         if (!ok || !context.mounted) return;
-        await _guard(context, () => repo.end(journey.id));
+        if (await _guard(context, () => repo.end(journey.id))) {
+          unawaited(reminders.reschedule());
+        }
       case _Action.archive:
         if (await _guard(context, () => repo.archive(journey.id))) {
+          unawaited(reminders.reschedule());
           router.go(AppRoutes.journeys);
         }
       case _Action.delete:
@@ -259,6 +267,7 @@ class JourneyDetailScreen extends ConsumerWidget {
         );
         if (!ok || !context.mounted) return;
         if (await _guard(context, () => repo.delete(journey.id))) {
+          unawaited(reminders.reschedule());
           router.go(AppRoutes.journeys);
         }
     }

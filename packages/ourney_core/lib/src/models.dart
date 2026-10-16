@@ -219,6 +219,7 @@ class JourneyDraft {
     this.metricUnit,
     this.hideMetricDefault = false,
     JourneyVisibility? visibility,
+    this.id,
   }) : visibility = visibility ?? (kind == JourneyKind.group ? JourneyVisibility.group : JourneyVisibility.private);
 
   final JourneyKind kind;
@@ -235,6 +236,11 @@ class JourneyDraft {
   /// Defaults to [defaultVisibilityFor] `kind`. Check with
   /// `validateJourneyVisibility` before calling `create_journey`.
   final JourneyVisibility visibility;
+
+  /// Client-generated UUID (`create_journey` is idempotent on `p_id`).
+  /// Generate it once per create form so a retry after a lost response
+  /// cannot create a second journey. Null: the repository generates one.
+  final String? id;
 }
 
 /// A `memberships` row. Every journey (solo too) has one for its owner.

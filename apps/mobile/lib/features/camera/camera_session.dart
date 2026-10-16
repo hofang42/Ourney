@@ -78,9 +78,44 @@ final cameraSessionFactoryProvider = Provider<CameraSessionFactory>(
 );
 
 /// [CameraSession] backed by the `camera` plugin (0.12.x).
+///
+/// [start] and [stop] are serialised: each call takes a token, runs after
+/// the previous one, and a start whose token was superseded by a later
+/// [stop] (e.g. the user left the tab while the camera was initialising)
+/// disposes its controller instead of keeping the camera open.
 class PluginCameraSession implements CameraSession {
+  PluginCameraSession({
+    Future<List<CameraDescription>> Function()? cameras,
+    CameraController Function(CameraDescription description)? createController,
+  }) : _loadCameras = cameras ?? availableCameras,
+       _createController = createController ?? _defaultController;
+
+  final Future<List<CameraDescription>> Function() _loadCameras;
+  final CameraController Function(CameraDescription) _createController;
+
+  static CameraController _defaultController(CameraDescription desc) =>
+      CameraController(
+        desc,
+        // ~1080p: enough for the 1080px upload, faster to open than `max`.
+        ResolutionPreset.veryHigh,
+        // Photos only: never trigger the microphone permission prompt.
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
+      );
+
   CameraController? _controller;
   List<CameraDescription>? _cameras;
+
+  /// Bumped by every [start] and [stop]; a start only keeps its controller
+  /// while its token is still the latest.
+  int _token = 0;
+  Future<void> _queue = Future.value();
+
+  Future<void> _serial(Future<void> Function() op) {
+    final result = _queue.then((_) => op());
+    _queue = result.then((_) {}, onError: (Object _) {});
+    return result;
+  }
 
   @override
   bool get isReady => _controller?.value.isInitialized ?? false;
@@ -102,9 +137,15 @@ class PluginCameraSession implements CameraSession {
   bool get hasFlash => isReady && !isFront;
 
   @override
-  Future<void> start({bool front = false}) async {
+  Future<void> start({bool front = false}) {
+    final token = ++_token;
+    return _serial(() => _start(front, token));
+  }
+
+  Future<void> _start(bool front, int token) async {
+    if (token != _token) return; // A stop (or newer start) came first.
     try {
-      _cameras ??= await availableCameras();
+      _cameras ??= await _loadCameras();
     } on MissingPluginException catch (e) {
       throw CameraStartException(CameraFailure.unavailable, e.message);
     } on CameraException catch (e) {
@@ -119,23 +160,21 @@ class PluginCameraSession implements CameraSession {
       (c) => c.lensDirection == wanted,
       orElse: () => cams.first,
     );
-    await stop();
-    final controller = CameraController(
-      desc,
-      // ~1080p: enough for the 1080px upload, faster to open than `max`.
-      ResolutionPreset.veryHigh,
-      // Photos only: never trigger the microphone permission prompt.
-      enableAudio: false,
-      imageFormatGroup: ImageFormatGroup.jpeg,
-    );
-    _controller = controller;
+    await _release();
+    if (token != _token) return;
+    final controller = _createController(desc);
     try {
       await controller.initialize();
     } on CameraException catch (e) {
-      _controller = null;
       await controller.dispose();
       throw _map(e);
     }
+    if (token != _token) {
+      // Stopped while initialising: never leave the camera running.
+      await controller.dispose();
+      return;
+    }
+    _controller = controller;
   }
 
   @override
@@ -186,7 +225,12 @@ class PluginCameraSession implements CameraSession {
   }
 
   @override
-  Future<void> stop() async {
+  Future<void> stop() {
+    ++_token;
+    return _serial(_release);
+  }
+
+  Future<void> _release() async {
     final c = _controller;
     _controller = null;
     await c?.dispose();

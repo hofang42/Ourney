@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:ourney_core/ourney_core.dart';
+import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import 'db/app_database.dart';
@@ -8,6 +11,11 @@ import 'media_store.dart';
 import 'remote/remote_api.dart';
 import 'sync/outbox.dart';
 import 'sync/sync_engine.dart';
+
+/// Folder (next to the media root, in Application Support) holding the
+/// compressed check-in drafts written by the checkin feature before
+/// `CheckInRepository.submit` copies them into the media store.
+const String checkinDraftDirName = 'checkin_media';
 
 /// Everything a repository needs. In local-only mode [remote], [outbox] and
 /// [sync] are null and [userIdOf] returns the persisted guest id.
@@ -56,10 +64,15 @@ class DataContext {
 
   DateTime now() => clock.now();
 
-  /// Removes every cached row and file (account deletion).
+  /// Removes every cached row and file (account deletion, sign-out),
+  /// including leftover check-in drafts.
   Future<void> wipeLocal() async {
     await db.wipe();
     await files.wipe();
+    final drafts = Directory(
+      p.join(files.root.parent.path, checkinDraftDirName),
+    );
+    if (drafts.existsSync()) await drafts.delete(recursive: true);
     sync?.notifyChanged();
   }
 }

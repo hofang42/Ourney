@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +15,8 @@ import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
+import '../../reminders/data/reminder_scheduler.dart';
+import '../../safety/data/safety_providers.dart';
 import '../data/groups_providers.dart';
 import '../domain/group_today.dart';
 import '../groups_paths.dart';
@@ -137,6 +141,7 @@ class GroupTodayScreen extends ConsumerWidget {
       now: ref.watch(groupsClockProvider).now(),
       myUserId: myId,
       blockedIds: ref.watch(groupBlockedIdsProvider).value ?? const {},
+      hiddenCheckInIds: ref.watch(hiddenCheckInIdsProvider),
       checkIns:
           ref.watch(groupCheckInsProvider(journeyId)).value ??
           const <CheckIn>[],
@@ -255,6 +260,8 @@ Future<void> runGroupAction(
   final id = perms.journey.id;
   final groups = ref.read(groupRepositoryProvider);
   final journeys = ref.read(journeyRepositoryProvider);
+  // Ending, deleting or leaving a group changes its reminders (FR-G1).
+  final reminders = ref.read(reminderSchedulerProvider);
   switch (action) {
     case GroupAction.invite:
       await context.push(GroupsPaths.invite(id));
@@ -284,7 +291,10 @@ Future<void> runGroupAction(
         destructive: true,
       );
       if (!ok || !context.mounted) return;
-      await _guard(context, () => journeys.end(id));
+      await _guard(context, () async {
+        await journeys.end(id);
+        unawaited(reminders.reschedule());
+      });
     case GroupAction.delete:
       final ok = await confirmGroupAction(
         context,
@@ -296,6 +306,7 @@ Future<void> runGroupAction(
       if (!ok || !context.mounted) return;
       await _guard(context, () async {
         await journeys.delete(id);
+        unawaited(reminders.reschedule());
         if (context.mounted) context.go(AppRoutes.groups);
       });
     case GroupAction.leave:
@@ -316,6 +327,7 @@ Future<void> runGroupAction(
       if (!ok || !context.mounted) return;
       await _guard(context, () async {
         await groups.leave(id);
+        unawaited(reminders.reschedule());
         if (!context.mounted) return;
         showGroupSnack(context, l10n.groups_leftDone);
         context.go(AppRoutes.groups);
