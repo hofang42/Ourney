@@ -3,5 +3,143 @@
   "reminders_title": "Nhắc nhở",
   "@reminders_title": {
     "description": "Title of the reminders feature's main screen."
+  },
+  "reminders_intro": "Chọn giờ nhắc cho từng hành trình. Ourney chỉ nhắc vào những ngày bạn chưa check-in.",
+  "@reminders_intro": {
+    "description": "Short explanation at the top of the reminders screen."
+  },
+  "reminders_journeysHeader": "Hành trình",
+  "@reminders_journeysHeader": {
+    "description": "Section header above the per-journey reminder list."
+  },
+  "reminders_toggleLabel": "Nhắc cho {journey}",
+  "@reminders_toggleLabel": {
+    "description": "Accessibility label of the on/off switch of one journey's reminder.",
+    "placeholders": {
+      "journey": {
+        "type": "String",
+        "example": "30 ngày nói tiếng Anh"
+      }
+    }
+  },
+  "reminders_timeOn": "Nhắc lúc {time} mỗi ngày",
+  "@reminders_timeOn": {
+    "description": "Subtitle of a journey whose reminder is on.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "20:00"
+      }
+    }
+  },
+  "reminders_timeOff": "Đang tắt",
+  "@reminders_timeOff": {
+    "description": "Subtitle of a journey whose reminder is off."
+  },
+  "reminders_changeTime": "Đổi giờ nhắc ({time})",
+  "@reminders_changeTime": {
+    "description": "Button that opens the time picker; shows the current time.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "20:00"
+      }
+    }
+  },
+  "reminders_pickTimeHelp": "Giờ nhắc check-in",
+  "@reminders_pickTimeHelp": {
+    "description": "Help text at the top of the time picker dialog."
+  },
+  "reminders_streakAlertTitle": "Cảnh báo streak lúc 21:00",
+  "@reminders_streakAlertTitle": {
+    "description": "Title of the switch for the 21:00 streak-about-to-break alert."
+  },
+  "reminders_streakAlertSubtitle": "Nếu đến 21:00 bạn vẫn chưa check-in mà đang có streak.",
+  "@reminders_streakAlertSubtitle": {
+    "description": "Subtitle of the streak alert switch."
+  },
+  "reminders_emptyTitle": "Chưa có hành trình nào",
+  "@reminders_emptyTitle": {
+    "description": "Empty state title when there is no active journey."
+  },
+  "reminders_emptyMessage": "Tạo một hành trình rồi quay lại đây để đặt giờ nhắc.",
+  "@reminders_emptyMessage": {
+    "description": "Empty state message when there is no active journey."
+  },
+  "reminders_loadError": "Không tải được danh sách hành trình. Thử lại sau nhé.",
+  "@reminders_loadError": {
+    "description": "Shown when the journeys could not be loaded."
+  },
+  "reminders_retry": "Thử lại",
+  "@reminders_retry": {
+    "description": "Retry button after a loading error."
+  },
+  "reminders_deniedTitle": "Thông báo đang tắt",
+  "@reminders_deniedTitle": {
+    "description": "Banner title when the OS notification permission is denied."
+  },
+  "reminders_deniedMessage": "Giờ nhắc vẫn được lưu, nhưng cần bật thông báo cho Ourney trong Cài đặt thì nhắc nhở mới hiện.",
+  "@reminders_deniedMessage": {
+    "description": "Banner message when the OS notification permission is denied."
+  },
+  "reminders_openSettings": "Mở Cài đặt",
+  "@reminders_openSettings": {
+    "description": "Button that opens the system notification settings."
+  },
+  "reminders_permissionTitle": "Bật thông báo nhé?",
+  "@reminders_permissionTitle": {
+    "description": "Title of the in-context dialog shown before the OS notification prompt."
+  },
+  "reminders_permissionMessage": "Ourney chỉ gửi những lời nhắc bạn đặt, và báo lúc 21:00 khi streak sắp mất. Không quảng cáo.",
+  "@reminders_permissionMessage": {
+    "description": "Body of the in-context dialog shown before the OS notification prompt."
+  },
+  "reminders_permissionContinue": "Tiếp tục",
+  "@reminders_permissionContinue": {
+    "description": "Button that continues to the OS notification prompt."
+  },
+  "reminders_permissionNotNow": "Để sau",
+  "@reminders_permissionNotNow": {
+    "description": "Button that dismisses the notification rationale dialog."
+  },
+  "reminders_notifTitle": "Đến giờ check-in rồi",
+  "@reminders_notifTitle": {
+    "description": "Title of the daily reminder notification."
+  },
+  "reminders_notifBody": "{journey}: chụp một tấm cho hôm nay nào.",
+  "@reminders_notifBody": {
+    "description": "Body of the daily reminder notification.",
+    "placeholders": {
+      "journey": {
+        "type": "String",
+        "example": "30 ngày nói tiếng Anh"
+      }
+    }
+  },
+  "reminders_alertTitle": "Streak sắp mất",
+  "@reminders_alertTitle": {
+    "description": "Title of the 21:00 streak alert notification."
+  },
+  "reminders_alertBody": "{journey}: chuỗi {count} ngày sẽ mất lúc nửa đêm. Một tấm ảnh là giữ được.",
+  "@reminders_alertBody": {
+    "description": "Body of the 21:00 streak alert notification.",
+    "placeholders": {
+      "journey": {
+        "type": "String",
+        "example": "30 ngày nói tiếng Anh"
+      },
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "reminders_channelName": "Nhắc check-in",
+  "@reminders_channelName": {
+    "description": "Android notification channel name (shown in system settings)."
+  },
+  "reminders_channelDescription": "Lời nhắc check-in hằng ngày và cảnh báo streak sắp mất.",
+  "@reminders_channelDescription": {
+    "description": "Android notification channel description."
   }
 }

@@ -183,10 +183,7 @@ void main() {
         now: DateTime.utc(2026, 10, 16, 12), // 08:00 NY, 19:00 HCM
         deviceTimezone: ny,
         journeys: [
-          journey(
-            time: const ReminderTime(23, 0),
-            checked: {d('2026-10-17')},
-          ),
+          journey(time: const ReminderTime(23, 0), checked: {d('2026-10-17')}),
         ],
         streakAlerts: false,
       );
@@ -243,22 +240,22 @@ void main() {
       expect(plan[1].fireAt.hour, 0); // 2027-03-14 20:00 EDT
     });
 
-    test('fall back: an ambiguous time fires once, at the first occurrence',
-        () {
-      // 2026-11-01: New York clocks go 02:00 -> 01:00.
-      final plan = planReminders(
-        now: DateTime.utc(2026, 10, 31, 12),
-        deviceTimezone: ny,
-        journeys: [
-          journey(timezone: ny, time: const ReminderTime(1, 30)),
-        ],
-        streakAlerts: false,
-      );
-      final nov1 = plan.where((p) => p.journeyDate == d('2026-11-01'));
-      expect(nov1, hasLength(1));
-      // First 01:30 is EDT (UTC-4) = 05:30Z.
-      expect(nov1.single.fireAt, DateTime.utc(2026, 11, 1, 5, 30));
-    });
+    test(
+      'fall back: an ambiguous time fires once, at the first occurrence',
+      () {
+        // 2026-11-01: New York clocks go 02:00 -> 01:00.
+        final plan = planReminders(
+          now: DateTime.utc(2026, 10, 31, 12),
+          deviceTimezone: ny,
+          journeys: [journey(timezone: ny, time: const ReminderTime(1, 30))],
+          streakAlerts: false,
+        );
+        final nov1 = plan.where((p) => p.journeyDate == d('2026-11-01'));
+        expect(nov1, hasLength(1));
+        // First 01:30 is EDT (UTC-4) = 05:30Z.
+        expect(nov1.single.fireAt, DateTime.utc(2026, 11, 1, 5, 30));
+      },
+    );
 
     test('wallClockToUtc handles both transitions', () {
       final loc = tz.getLocation(ny);
@@ -409,10 +406,7 @@ void main() {
         now: now,
         deviceTimezone: hcm,
         journeys: [
-          journey(
-            time: const ReminderTime(21, 0),
-            checked: {d('2026-10-15')},
-          ),
+          journey(time: const ReminderTime(21, 0), checked: {d('2026-10-15')}),
         ],
       );
       expect(plan[0].kind, PlannedKind.streakAlert);
@@ -460,10 +454,7 @@ void main() {
         expect(capped[i].fireAt.isBefore(capped[i - 1].fireAt), isFalse);
       }
       final lastKept = capped.last.fireAt;
-      expect(
-        all.skip(64).every((p) => !p.fireAt.isBefore(lastKept)),
-        isTrue,
-      );
+      expect(all.skip(64).every((p) => !p.fireAt.isBefore(lastKept)), isTrue);
     });
 
     test('custom window and limit are honoured', () {

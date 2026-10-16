@@ -186,7 +186,8 @@ List<PlannedNotification> planReminders({
     if (j.status != JourneyStatus.active) continue;
     final zone = _location(j.timezone);
     bool inJourney(LocalDate d) =>
-        !d.isBefore(j.streakStart) && (j.endDate == null || !d.isAfter(j.endDate!));
+        !d.isBefore(j.streakStart) &&
+        (j.endDate == null || !d.isAfter(j.endDate!));
 
     final time = j.reminderTime;
     if (time != null) {
@@ -260,6 +261,10 @@ tz.Location _location(String name) {
     return tz.UTC;
   }
 }
+
+/// Calendar date of [instant] in the IANA zone [timezone] (UTC if unknown).
+LocalDate localDateIn(String timezone, DateTime instant) =>
+    _localDate(instant.toUtc(), _location(timezone));
 
 LocalDate _localDate(DateTime instant, tz.Location zone) {
   return localDateOf(
