@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';

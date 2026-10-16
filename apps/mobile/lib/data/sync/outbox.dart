@@ -60,12 +60,11 @@ bool isTransient(OurneyErrorCode code) => switch (code) {
 class Outbox {
   Outbox(
     this._db, {
-    required OutboxExecutor executor,
+    required this._executor,
     DateTime Function()? now,
     Timer Function(Duration, void Function())? timer,
     this.maxAttempts = 50,
-  }) : _executor = executor,
-       _now = now ?? DateTime.now,
+  }) : _now = now ?? DateTime.now,
        _timer = timer ?? Timer.new;
 
   final AppDatabase _db;

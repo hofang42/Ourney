@@ -17,13 +17,12 @@ class DataContext {
     required this.files,
     required this.media,
     required this.clock,
-    required String? Function() userIdOf,
+    required this._userIdOf,
     this.remote,
     this.outbox,
     this.sync,
     String Function()? newId,
-  }) : _userIdOf = userIdOf,
-       store = LocalStore(db, files),
+  }) : store = LocalStore(db, files),
        newId = newId ?? const Uuid().v4;
 
   final AppDatabase db;
