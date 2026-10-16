@@ -150,7 +150,6 @@ class CheckInPoster {
         journey: journey,
         before: before,
         after: after,
-        day: saved.localDate,
         replaced: replaced,
       ),
     );

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/app_theme.dart';
 import '../../app/theme/motion.dart';
@@ -65,9 +66,9 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
 
   String? _milestoneTitle(CheckinL10n l10n) =>
       switch (widget.outcome.milestone) {
-        Milestone.streak7 => l10n.checkin_milestone7,
-        Milestone.streak30 => l10n.checkin_milestone30,
-        Milestone.finish => l10n.checkin_milestoneFinish,
+        Milestone.sevenDays => l10n.checkin_milestone7,
+        Milestone.thirtyDays => l10n.checkin_milestone30,
+        Milestone.completed => l10n.checkin_milestoneFinish,
         null => null,
       };
 
