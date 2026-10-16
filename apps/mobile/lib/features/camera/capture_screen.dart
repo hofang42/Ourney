@@ -194,7 +194,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         }
       }
       if (!mounted || gen != _generation) {
-        if (gen == _generation) await session.stop();
+        // Superseded while starting. Unless a newer start owns the camera,
+        // release it (the session also drops a start stopped mid-way).
+        if (!mounted || !_wantCamera || _phase == _Phase.idle) {
+          await session.stop();
+        }
         return;
       }
       setState(() => _phase = _Phase.ready);
