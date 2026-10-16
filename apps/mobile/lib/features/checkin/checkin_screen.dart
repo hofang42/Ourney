@@ -13,6 +13,7 @@ import '../../app/theme/tokens.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
+import '../reminders/data/reminder_scheduler.dart';
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
 import 'checkin_progress.dart';
@@ -144,6 +145,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       );
       if (!mounted) return;
       setState(() => _outcome = outcome);
+      // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
+      unawaited(rescheduleReminders(ref));
     } on CheckInPostException catch (e) {
       if (!mounted) return;
       setState(() => _posting = false);

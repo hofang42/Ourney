@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +12,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/ourney_chip.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_form.dart';
 import '../domain/journey_time.dart';
@@ -79,11 +82,14 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     if (!form.validate().isValid || _busy) return;
     final repo = ref.read(journeyRepositoryProvider);
     final now = ref.read(journeysClockProvider).now();
+    final reminders = ref.read(reminderSchedulerProvider);
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
         form.toDraft(startDate: journeyLocalDate(form.timezone, now)),
       );
+      // The new journey may get the 21:00 streak alert (FR-G2).
+      unawaited(reminders.reschedule());
       final hide = form.trackMetric && form.hideMetric;
       if (hide || form.blurOnShare) {
         try {

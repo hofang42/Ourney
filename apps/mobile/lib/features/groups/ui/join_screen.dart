@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../domain/invite_code.dart';
 import '../groups_paths.dart';
 import '../l10n/generated/groups_localizations.dart';
@@ -53,10 +56,12 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       _busy = true;
       _error = null;
     });
+    final reminders = ref.read(reminderSchedulerProvider);
     try {
       final journeyId = await ref
           .read(groupRepositoryProvider)
           .joinByCode(code);
+      unawaited(reminders.reschedule());
       if (!mounted) return;
       context.go(GroupsPaths.today(journeyId));
     } on Object catch (e) {
