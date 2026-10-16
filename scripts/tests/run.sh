@@ -1,0 +1,309 @@
+#!/usr/bin/env bash
+# Offline tests for scripts/supabase, scripts/github and scripts/release (no bats needed).
+# External commands (supabase, curl, gh) are replaced by stubs placed first on PATH, so nothing
+# here talks to the network. Needs: bash, git, jq.   Run: bash scripts/tests/run.sh
+#
+# `check "name" $? ...` deliberately reads the status of the assertion on the line above.
+# shellcheck disable=SC2319
+set -u
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+
+PASS=0
+FAILED=0
+
+pass() {
+  PASS=$((PASS + 1))
+  echo "  ok   $1"
+}
+fail() {
+  FAILED=$((FAILED + 1))
+  echo "  FAIL $1" >&2
+  if [ -n "${2:-}" ]; then printf '%s\n' "$2" | sed 's/^/       | /' >&2; fi
+}
+# check <name> <condition-exit-code> [detail]
+check() {
+  if [ "$2" -eq 0 ]; then pass "$1"; else fail "$1" "${3:-}"; fi
+}
+contains() { grep -qF -- "$2" <<< "$1"; }
+
+# Stubs ------------------------------------------------------------------------------------------
+BIN="$TMP/bin"
+mkdir -p "$BIN"
+LOG="$TMP/calls.log"
+BODY="$TMP/curl-body.json"
+
+cat > "$BIN/supabase" << 'EOF'
+#!/usr/bin/env bash
+echo "supabase $*" >> "$STUB_LOG"
+EOF
+
+cat > "$BIN/curl" << 'EOF'
+#!/usr/bin/env bash
+echo "curl $*" >> "$STUB_LOG"
+cat > "$STUB_BODY"
+echo '{}'
+EOF
+
+# gh stub: permissions come from STUB_PERMS ("user=perm ..."), a missing user is "not a collaborator".
+cat > "$BIN/gh" << 'EOF'
+#!/usr/bin/env bash
+echo "gh $*" >> "$STUB_LOG"
+args="$*"
+case "$args" in
+  *"-X PUT"*) exit 0 ;;
+  *"/permission"*)
+    user="${args#*collaborators/}"
+    user="${user%%/*}"
+    for kv in ${STUB_PERMS:-}; do
+      if [ "${kv%%=*}" = "$user" ]; then echo "${kv#*=}"; exit 0; fi
+    done
+    exit 1
+    ;;
+  *"repos/"*"/invitations"*)
+    if [[ "$args" == *'.permissions'* ]]; then
+      [ -n "${STUB_PENDING:-}" ] && echo "  @${STUB_PENDING} (write)"
+    else
+      [ -n "${STUB_PENDING:-}" ] && echo "${STUB_PENDING}"
+    fi
+    exit 0
+    ;;
+  "run list"*) printf '%s\n' "${STUB_CI_JSON:-[]}"; exit 0 ;;
+esac
+exit 0
+EOF
+chmod +x "$BIN"/*
+
+export STUB_LOG="$LOG" STUB_BODY="$BODY"
+export PATH="$BIN:$PATH"
+
+# run <cmd...>: sets OUT (stdout+stderr) and RC. Environment is whatever the caller exported.
+run() {
+  : > "$LOG"
+  OUT="$("$@" 2>&1)"
+  RC=$?
+}
+
+DEPLOY="$ROOT/scripts/supabase/deploy-hosted.sh"
+INVITE="$ROOT/scripts/github/invite-members.sh"
+PREFLIGHT="$ROOT/scripts/release/preflight.sh"
+
+clean_env() {
+  unset SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD \
+    SMTP_HOST SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL SMTP_PORT SMTP_SENDER_NAME SMTP_RATE_LIMIT \
+    STUB_PERMS STUB_PENDING STUB_CI_JSON
+}
+set_base_env() {
+  export SUPABASE_ACCESS_TOKEN="sbp_test_token_0000" SUPABASE_PROJECT_REF="abcdefghijklmnopqrst"
+  export SUPABASE_DB_PASSWORD="db-pass-for-tests"
+}
+
+# deploy-hosted.sh ------------------------------------------------------------------------------
+echo "deploy-hosted.sh"
+
+clean_env
+run bash "$DEPLOY"
+[ "$RC" -ne 0 ]
+check "missing env fails" $? "rc=$RC"
+contains "$OUT" "SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD"
+check "missing env lists all three names" $? "$OUT"
+[ ! -s "$LOG" ]
+check "missing env runs no external command" $? "$(cat "$LOG")"
+
+clean_env
+export SUPABASE_ACCESS_TOKEN="x"
+run bash "$DEPLOY"
+contains "$OUT" "SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD" && ! contains "$OUT" "missing required environment variable(s): SUPABASE_ACCESS_TOKEN"
+check "only the missing names are listed" $? "$OUT"
+
+clean_env
+run bash "$DEPLOY" --bogus
+[ "$RC" -eq 2 ]
+check "unknown argument exits 2" $? "rc=$RC $OUT"
+
+clean_env
+set_base_env
+export SMTP_HOST="smtp.example.com" SMTP_USER="resend"
+run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "partial SMTP" && contains "$OUT" "SMTP_PASS SMTP_SENDER_EMAIL"
+check "partial SMTP vars fail and name the missing ones" $? "rc=$RC $OUT"
+[ ! -s "$LOG" ]
+check "partial SMTP fails before any external command" $? "$(cat "$LOG")"
+run bash "$DEPLOY" --dry-run
+[ "$RC" -ne 0 ] && contains "$OUT" "partial SMTP"
+check "partial SMTP fails in --dry-run too" $? "rc=$RC $OUT"
+
+clean_env
+set_base_env
+run bash "$DEPLOY" --dry-run
+calls="$(cat "$LOG")"
+[ "$RC" -eq 0 ] && contains "$calls" "supabase link --project-ref abcdefghijklmnopqrst" &&
+  contains "$calls" "supabase db push --dry-run" &&
+  ! contains "$calls" "functions deploy" && ! contains "$calls" "curl"
+check "--dry-run only links and runs db push --dry-run" $? "rc=$RC calls=$calls out=$OUT"
+! contains "$OUT" "db-pass-for-tests" && ! contains "$OUT" "sbp_test_token_0000"
+check "--dry-run output has no secrets" $? "$OUT"
+
+clean_env
+set_base_env
+run bash "$DEPLOY"
+calls="$(cat "$LOG")"
+[ "$RC" -eq 0 ] && contains "$calls" "supabase db push --yes" &&
+  contains "$calls" "supabase functions deploy delete-account --project-ref abcdefghijklmnopqrst" &&
+  contains "$calls" "supabase functions deploy public-journey --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
+  ! contains "$calls" "curl"
+check "deploy without SMTP: db push + both functions, no API call" $? "rc=$RC calls=$calls out=$OUT"
+grep -F "delete-account" "$LOG" | grep -qv -- "--no-verify-jwt"
+check "delete-account keeps JWT verification" $?
+
+clean_env
+set_base_env
+# shellcheck disable=SC2016  # the literal $ in the password is intentional
+export SMTP_HOST="smtp.example.com" SMTP_USER="resend" SMTP_PASS='p@ss"word\with$pecial' SMTP_SENDER_EMAIL="no-reply@example.com"
+rm -f "$BODY"
+run bash "$DEPLOY"
+calls="$(cat "$LOG")"
+[ "$RC" -eq 0 ] && contains "$calls" "-X PATCH" && contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/auth"
+check "SMTP: PATCHes the project auth config" $? "rc=$RC calls=$calls out=$OUT"
+jq -e '.smtp_host == "smtp.example.com" and .smtp_port == "465" and .smtp_user == "resend"
+  and .smtp_pass == "p@ss\"word\\with$pecial" and .smtp_admin_email == "no-reply@example.com"
+  and .smtp_sender_name == "Ourney" and .rate_limit_email_sent == 30' "$BODY" > /dev/null
+check "SMTP: JSON body has fields and defaults (465, Ourney, 30)" $? "$(cat "$BODY" 2> /dev/null)"
+! contains "$OUT$calls" 'word\with' && ! contains "$OUT$calls" "sbp_test_token_0000"
+check "SMTP: password and token never printed or passed as arguments" $? "$OUT $calls"
+
+export SMTP_PORT=587 SMTP_SENDER_NAME="Ourney Team" SMTP_RATE_LIMIT=60
+run bash "$DEPLOY"
+jq -e '.smtp_port == "587" and .smtp_sender_name == "Ourney Team" and .rate_limit_email_sent == 60' "$BODY" > /dev/null
+check "SMTP: overrides for port, sender name and rate limit" $? "$(cat "$BODY" 2> /dev/null)"
+
+export SMTP_PORT="46x5"
+run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "SMTP_PORT must be a number"
+check "SMTP: non-numeric port is rejected" $? "rc=$RC $OUT"
+
+# invite-members.sh -------------------------------------------------------------------------------
+echo "invite-members.sh"
+
+clean_env
+export STUB_PERMS="lken1514=write"
+run bash "$INVITE"
+calls="$(cat "$LOG")"
+[ "$RC" -eq 0 ] && contains "$OUT" "DRY RUN" &&
+  contains "$OUT" "would  invite @thydynh03 with permission=push" &&
+  contains "$OUT" "would  invite @nguyenductien-qnm with permission=push" &&
+  contains "$OUT" "skip   @lken1514: already a collaborator with 'write'"
+check "dry run prints the plan and skips existing collaborators" $? "rc=$RC out=$OUT"
+! contains "$calls" "PUT"
+check "dry run makes no PUT call" $? "$calls"
+contains "$OUT" "Pending invitations"
+check "dry run lists pending invitations" $? "$OUT"
+
+run bash "$INVITE" --apply
+calls="$(cat "$LOG")"
+[ "$RC" -eq 0 ] && contains "$calls" "-X PUT repos/hofang42/Ourney/collaborators/thydynh03 -f permission=push" &&
+  contains "$calls" "-X PUT repos/hofang42/Ourney/collaborators/nguyenductien-qnm -f permission=push" &&
+  ! contains "$calls" "-X PUT repos/hofang42/Ourney/collaborators/lken1514"
+check "--apply PUTs push for the missing users only" $? "rc=$RC calls=$calls"
+
+export STUB_PERMS="thydynh03=admin" STUB_PENDING="nguyenductien-qnm"
+REPO="someone/else" run bash "$INVITE" --apply
+calls="$(cat "$LOG")"
+contains "$OUT" "skip   @nguyenductien-qnm: invitation already pending" &&
+  contains "$calls" "-X PUT repos/someone/else/collaborators/lken1514" &&
+  ! contains "$calls" "-X PUT repos/someone/else/collaborators/nguyenductien-qnm" &&
+  ! contains "$calls" "-X PUT repos/someone/else/collaborators/thydynh03"
+check "REPO override; admins and pending invitees are skipped" $? "rc=$RC calls=$calls out=$OUT"
+
+run bash "$INVITE" --nope
+[ "$RC" -eq 2 ]
+check "unknown argument exits 2" $? "rc=$RC"
+
+# preflight.sh ------------------------------------------------------------------------------------
+echo "preflight.sh"
+
+clean_env
+run bash "$PREFLIGHT" 1.2.3
+[ "$RC" -eq 2 ] && contains "$OUT" "must look like vX.Y.Z"
+check "rejects tag without the v prefix" $? "rc=$RC $OUT"
+run bash "$PREFLIGHT" v1.2
+[ "$RC" -eq 2 ] && contains "$OUT" "must look like vX.Y.Z"
+check "rejects tag with two components" $? "rc=$RC $OUT"
+run bash "$PREFLIGHT" v1.2.3-rc1
+[ "$RC" -eq 2 ]
+check "rejects pre-release suffix" $? "rc=$RC $OUT"
+run bash "$PREFLIGHT"
+[ "$RC" -eq 2 ]
+check "requires exactly one argument" $? "rc=$RC $OUT"
+
+# A throwaway repo with a local bare "origin" so git checks run offline.
+ORIGIN="$TMP/origin.git"
+WORK="$TMP/work"
+git init -q --bare -b main "$ORIGIN"
+git init -q -b main "$WORK"
+git -C "$WORK" config user.email "test@example.com"
+git -C "$WORK" config user.name "Test"
+git -C "$WORK" config commit.gpgsign false
+mkdir -p "$WORK/apps/mobile"
+printf 'name: ourney\nversion: 0.1.0+3\n' > "$WORK/apps/mobile/pubspec.yaml"
+git -C "$WORK" add -A
+git -C "$WORK" commit -q -m "init"
+git -C "$WORK" remote add origin "$ORIGIN"
+git -C "$WORK" push -q origin main
+HEAD_SHA="$(git -C "$WORK" rev-parse HEAD)"
+
+in_work() { (cd "$WORK" && "$@"); }
+export STUB_CI_JSON="[{\"conclusion\":\"success\",\"headSha\":\"$HEAD_SHA\"}]"
+
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 0 ] && contains "$OUT" "Preflight passed" && contains "$OUT" "git tag -a v0.1.0" && contains "$OUT" "git push origin v0.1.0"
+check "all checks pass and the commands are printed" $? "rc=$RC out=$OUT"
+[ -z "$(git -C "$WORK" tag)" ] && [ -z "$(git -C "$ORIGIN" tag)" ]
+check "preflight never creates a tag" $?
+contains "$(cat "$LOG")" "gh run list --branch main --workflow CI --limit 1 --json"
+check "CI status is read with gh run list" $?
+
+run in_work bash "$PREFLIGHT" v0.2.0
+[ "$RC" -eq 1 ] && contains "$OUT" "pubspec version name is '0.1.0', expected '0.2.0'"
+check "fails when pubspec version differs from the tag" $? "rc=$RC out=$OUT"
+
+touch "$WORK/untracked.txt"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "working tree is not clean"
+check "fails on a dirty working tree" $? "rc=$RC out=$OUT"
+rm -f "$WORK/untracked.txt"
+
+STUB_CI_JSON='[{"conclusion":"failure","headSha":"'"$HEAD_SHA"'"}]' run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "concluded 'failure'"
+check "fails when the latest CI run failed" $? "rc=$RC out=$OUT"
+
+STUB_CI_JSON='[{"conclusion":"success","headSha":"0000000000000000000000000000000000000000"}]' run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "not for HEAD"
+check "fails when the green CI run is for another commit" $? "rc=$RC out=$OUT"
+
+STUB_CI_JSON='[]' run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "no finished CI run"
+check "fails when there is no CI run" $? "rc=$RC out=$OUT"
+
+git -C "$WORK" tag v0.1.0
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "tag v0.1.0 already exists locally"
+check "fails when the tag already exists" $? "rc=$RC out=$OUT"
+git -C "$WORK" tag -d v0.1.0 > /dev/null
+
+git -C "$WORK" checkout -q -b feature
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "on branch 'feature'"
+check "fails when not on main" $? "rc=$RC out=$OUT"
+git -C "$WORK" checkout -q main
+
+git -C "$WORK" commit -q --allow-empty -m "local only"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "differs from origin/main"
+check "fails when main is ahead of origin" $? "rc=$RC out=$OUT"
+
+echo
+echo "passed: $PASS, failed: $FAILED"
+[ "$FAILED" -eq 0 ]

@@ -126,6 +126,7 @@ supabase functions deploy public-journey --project-ref "$SUPABASE_PROJECT_REF" -
 
 # --- 6. Optional SMTP (H2) --------------------------------------------------------------------
 if [ "$APPLY_SMTP" -eq 1 ]; then
+  # shellcheck disable=SC2153  # SMTP_HOST is set: APPLY_SMTP=1 only when all four SMTP_* are non-empty
   echo "==> Applying custom SMTP to Auth (host: $SMTP_HOST, port: $SMTP_PORT, sender: $SMTP_SENDER_EMAIL)"
   api="${SUPABASE_API_URL:-https://api.supabase.com}"
   # The body is built by jq (proper JSON escaping) and sent through stdin; the token goes through a
