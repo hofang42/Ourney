@@ -32,11 +32,25 @@ Future<List<Override>> createDataOverrides(AppConfig config) async {
   // The database opens lazily in a background isolate (drift_flutter); the
   // repositories and sync triggers are built on first use (dataLayerProvider).
   // The mode follows supabaseClientProvider (null in local-only).
-  final docs = await getApplicationDocumentsDirectory();
+  //
+  // Private app data lives in Application Support, not Documents (Documents
+  // is user-visible on iOS via Files/iTunes file sharing). Android backups
+  // are disabled in AndroidManifest.xml (allowBackup=false). iOS still
+  // includes Application Support in iCloud/device backups: excluding it
+  // needs NSURLIsExcludedFromBackupKey, which path_provider cannot set
+  // (documented in docs/contracts/schema.md, "Client storage").
+  final support = await getApplicationSupportDirectory();
   return dataOverrides(
     DataEnvironment(
-      db: AppDatabase(driftDatabase(name: 'ourney')),
-      mediaRoot: Directory(p.join(docs.path, 'media')),
+      db: AppDatabase(
+        driftDatabase(
+          name: 'ourney',
+          native: const DriftNativeOptions(
+            databaseDirectory: getApplicationSupportDirectory,
+          ),
+        ),
+      ),
+      mediaRoot: Directory(p.join(support.path, 'media')),
       connectivity: config.hasBackend
           ? () => Connectivity().onConnectivityChanged
           : null,

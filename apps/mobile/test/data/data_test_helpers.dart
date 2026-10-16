@@ -152,8 +152,8 @@ class FakeRemoteApi implements RemoteApi {
   }
 
   @override
-  Future<void> signOut() async {
-    calls.add(RemoteCall('signOut', ''));
+  Future<void> signOut({bool global = false}) async {
+    calls.add(RemoteCall('signOut', global ? 'global' : 'local'));
     emitUser(null);
   }
 

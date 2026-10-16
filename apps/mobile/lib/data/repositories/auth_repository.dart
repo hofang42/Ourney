@@ -72,8 +72,15 @@ class SupabaseAuthRepository implements AuthRepository {
     if (sync != null) unawaited(sync.syncNow());
   }
 
+  /// Global sign-out (every device's refresh token is revoked, local-only
+  /// fallback when offline), then wipes the local cache: rows, outbox
+  /// (unsent check-ins are lost) and media, so nothing of the account stays
+  /// on the device.
   @override
-  Future<void> signOut() => remote.signOut();
+  Future<void> signOut() async {
+    await remote.signOut(global: true);
+    await ctx.wipeLocal();
+  }
 
   /// Edge Function `delete-account` (POST with the user's JWT), then wipes
   /// the local cache and the session. Errors are mapped [OurneyException]s
