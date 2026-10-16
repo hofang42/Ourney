@@ -12,14 +12,16 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // Required by flutter_local_notifications (desugaring must be enabled even without scheduled notifications).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.hofang42.ourney"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // minSdk 26 (Android 8.0): proposed in docs/05 §5.1; no listed plugin requires higher.
+        // Sources: see docs/platform/android.md.
+        minSdk = 26
+        multiDexEnabled = true
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
@@ -46,4 +48,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // flutter_local_notifications 22.x: https://pub.dev/packages/flutter_local_notifications
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

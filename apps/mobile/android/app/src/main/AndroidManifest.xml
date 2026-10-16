@@ -1,6 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Camera for journey photos. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Network access for Supabase. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ runtime permission for notifications (check-in reminders). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- flutter_local_notifications: re-schedule reminders after reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
-        android:label="ourney"
+        android:label="Ourney"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -11,7 +20,16 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
+            <!-- Custom scheme deep links: ourney://join/... and ourney://journey/... -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ourney" android:host="join" />
+                <data android:scheme="ourney" android:host="journey" />
+            </intent-filter>
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
@@ -25,6 +43,20 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- flutter_local_notifications: required for scheduled notifications. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
