@@ -270,12 +270,8 @@ class JourneysHarness {
   final FakeJourneyRepository journeys;
   final FakeCheckInRepository checkIns;
 
-  String get location => container
-      .read(routerProvider)
-      .routerDelegate
-      .currentConfiguration
-      .uri
-      .toString();
+  /// Top-most location, including pushed routes.
+  String get location => container.read(routerProvider).state.uri.toString();
 
   Future<void> go(WidgetTester tester, String path) async {
     container.read(routerProvider).go(path);
@@ -297,6 +293,10 @@ Future<JourneysHarness> pumpJourneys(
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
   addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+  // Phone-shaped and tall enough that the whole detail screen is built.
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = const Size(420, 1800);
+  addTearDown(tester.view.reset);
   final repo = journeys ?? FakeJourneyRepository();
   final ci = checkIns ?? FakeCheckInRepository();
   final container = await pumpOurneyApp(
