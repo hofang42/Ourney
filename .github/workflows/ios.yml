@@ -43,18 +43,21 @@ jobs:
           if [ -f l10n.yaml ]; then flutter gen-l10n; fi
 
       # Optional build-time config. Secrets are passed via env (never interpolated into the script).
-      # If neither secret is set, no file is written and no --dart-define-from-file flag is used.
+      # If none of the secrets is set, no file is written and no --dart-define-from-file flag is used.
+      # SUPPORT_EMAIL is only added when set (an empty key would be useless; the app falls back to its default).
       - name: Write dart-define file (optional)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPPORT_EMAIL: ${{ secrets.SUPPORT_EMAIL }}
         run: |
-          if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ]; then
-            jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" \
-              '{SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k}' > "$RUNNER_TEMP/dart-defines.json"
+          if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ] || [ -n "$SUPPORT_EMAIL" ]; then
+            jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" --arg e "$SUPPORT_EMAIL" \
+              '(if $u != "" or $k != "" then {SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k} else {} end)
+               + (if $e != "" then {SUPPORT_EMAIL: $e} else {} end)' > "$RUNNER_TEMP/dart-defines.json"
             echo "DART_DEFINES_FILE=$RUNNER_TEMP/dart-defines.json" >> "$GITHUB_ENV"
           else
-            echo "SUPABASE_* secrets not set; building without --dart-define-from-file."
+            echo "SUPABASE_*/SUPPORT_EMAIL secrets not set; building without --dart-define-from-file."
           fi
 
       - name: Build iOS (release, no codesign)

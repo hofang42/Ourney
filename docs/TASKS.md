@@ -28,11 +28,11 @@
 ### @hofang42 — owner, server hosted, release
 | ID | Việc | Xong khi | Phụ thuộc |
 |---|---|---|---|
-| H1 | Tạo Supabase hosted, `supabase db push` (0001–0005), deploy `delete-account` + `public-journey`, đặt secret `SUPABASE_URL` / `SUPABASE_ANON_KEY` trên repo | Build IPA/APK mới vào được tab Nhóm | Không |
-| H2 | SMTP riêng (Resend/SES) cho email OTP (spike S8) | 10/10 mail tới Gmail < 30s, không vào spam | H1 (cùng người) |
-| H3 | Ruleset/branch protection, CODEOWNERS, PR template (**đã làm trong PR này**), mời thành viên đúng quyền | `main` chỉ nhận PR qua CI xanh + review | Không |
-| H4 | Duyệt văn bản EULA/privacy (`lib/features/safety/l10n/`), email hỗ trợ thật thay `support@ourney.app` | Văn bản đã duyệt, ghi ADR | Không (đã có mặc định) |
-| H5 | Release `v0.1.0` theo ngày cố định: tag → workflow tự gắn IPA + APK vào Release, release notes, hướng dẫn tự ký | Có GitHub Release | Chỉ chờ bug Blocker/Critical |
+| H1 | Tạo Supabase hosted, `supabase db push` (0001–0005), deploy `delete-account` + `public-journey`, đặt secret `SUPABASE_URL` / `SUPABASE_ANON_KEY` trên repo | Build IPA/APK mới vào được tab Nhóm. Hướng dẫn: [runbooks/hosted-supabase.md](runbooks/hosted-supabase.md) | Không |
+| H2 | SMTP riêng (Resend/SES) cho email OTP (spike S8) | 10/10 mail tới Gmail < 30s, không vào spam. Hướng dẫn + bảng nghiệm thu: [runbooks/hosted-supabase.md](runbooks/hosted-supabase.md) §3, §6 | H1 (cùng người) |
+| H3 | Ruleset/branch protection, CODEOWNERS, PR template (**đã làm trong PR này**), mời thành viên đúng quyền | `main` chỉ nhận PR qua CI xanh + review. Mời thành viên: `scripts/github/invite-members.sh` (mặc định dry-run, cần `--apply`) | Không |
+| H4 | Duyệt văn bản EULA/privacy (`lib/features/safety/l10n/`), email hỗ trợ thật thay `support@ourney.app` | Văn bản đã duyệt, ghi ADR ([adr/0002](adr/0002-support-email-and-legal-text.md), đang Proposed) | Không (đã có mặc định) |
+| H5 | Release `v0.1.0` theo ngày cố định: tag → workflow tự gắn IPA + APK vào Release, release notes, hướng dẫn tự ký | Có GitHub Release. Checklist: [runbooks/release.md](runbooks/release.md) | Chỉ chờ bug Blocker/Critical |
 
 ### @thydynh03 — QA iPhone, UI, truy vết yêu cầu
 | ID | Việc | Xong khi | Phụ thuộc |

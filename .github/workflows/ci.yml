@@ -69,6 +69,21 @@ jobs:
         if: always()
         run: supabase stop --no-backup
 
+  tooling:
+    name: repo tooling (shellcheck + actionlint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      # shellcheck and jq come preinstalled on ubuntu-latest.
+      - name: shellcheck (scripts/**/*.sh)
+        run: find scripts -name '*.sh' -print0 | xargs -0 shellcheck
+      # Also runs shellcheck on the `run:` blocks of every workflow.
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.7 -color
+      - name: Script tests (offline, stubbed gh/supabase/curl)
+        run: bash scripts/tests/run.sh
+
   mobile:
     name: apps/mobile (codegen + analyze + test)
     runs-on: ubuntu-latest

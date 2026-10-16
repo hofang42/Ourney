@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/safety/safety_paths.dart';
@@ -39,7 +40,7 @@ void main() {
       await tester.tap(byKey('safety-hub-contact'));
       await tester.pumpAndSettle();
       expect(byKey('safety-contact'), findsOneWidget);
-      expect(find.text(kSupportEmail), findsOneWidget);
+      expect(find.text(AppConfig.defaultSupportEmail), findsOneWidget);
     });
 
     testWidgets('signed in: blocked people entry', (tester) async {
@@ -89,7 +90,7 @@ void main() {
       await tester.tap(byKey('safety-contact-send'));
       await tester.pumpAndSettle();
       expect(launched.single.scheme, 'mailto');
-      expect(launched.single.path, kSupportEmail);
+      expect(launched.single.path, AppConfig.defaultSupportEmail);
 
       ok = false;
       await tester.tap(byKey('safety-contact-send'));
@@ -98,6 +99,31 @@ void main() {
         find.textContaining('Không mở được ứng dụng email'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('uses the configured SUPPORT_EMAIL (H4)', (tester) async {
+      const custom = 'help@example.com';
+      final launched = <Uri>[];
+      final c = await pumpOurneyApp(
+        tester,
+        config: const AppConfig(
+          supabaseUrl: '',
+          supabaseAnonKey: '',
+          supportEmail: custom,
+        ),
+        overrides: [
+          safetyUrlLauncherProvider.overrideWithValue((uri) async {
+            launched.add(uri);
+            return true;
+          }),
+        ],
+      );
+      await goTo(tester, c, SafetyPaths.contact);
+      expect(find.text(custom), findsOneWidget);
+      expect(find.text(AppConfig.defaultSupportEmail), findsNothing);
+      await tester.tap(byKey('safety-contact-send'));
+      await tester.pumpAndSettle();
+      expect(launched.single.path, custom);
     });
 
     testWidgets('copy puts the address on the clipboard', (tester) async {
@@ -122,7 +148,7 @@ void main() {
       await goTo(tester, c, SafetyPaths.contact);
       await tester.tap(byKey('safety-contact-copy'));
       await tester.pumpAndSettle();
-      expect(copied, kSupportEmail);
+      expect(copied, AppConfig.defaultSupportEmail);
       expect(find.text('Đã sao chép địa chỉ email.'), findsOneWidget);
     });
   });

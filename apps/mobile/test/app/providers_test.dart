@@ -5,6 +5,7 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/redirect.dart';
 import 'package:ourney/app/theme/motion.dart';
+import 'package:ourney/features/safety/data/safety_providers.dart';
 
 import 'test_helpers.dart';
 
@@ -36,6 +37,49 @@ void main() {
         ).localOnly,
         isTrue,
       );
+    });
+  });
+
+  group('AppConfig support email (H4)', () {
+    test('falls back to the placeholder when SUPPORT_EMAIL is blank', () {
+      // Independent of any --dart-define passed to the test run.
+      expect(AppConfig.resolveSupportEmail(''), 'support@ourney.app');
+      expect(AppConfig.defaultSupportEmail, 'support@ourney.app');
+      expect(const AppConfig.localOnly().supportEmail, 'support@ourney.app');
+      expect(testBackendConfig.supportEmail, AppConfig.defaultSupportEmail);
+    });
+
+    test('resolveSupportEmail trims and falls back when blank', () {
+      const fallback = AppConfig.defaultSupportEmail;
+      expect(
+        AppConfig.resolveSupportEmail(' me@example.com '),
+        'me@example.com',
+      );
+      expect(AppConfig.resolveSupportEmail(''), fallback);
+      expect(AppConfig.resolveSupportEmail('  '), fallback);
+    });
+
+    test('is part of equality', () {
+      const a = AppConfig(supabaseUrl: 'u', supabaseAnonKey: 'k');
+      const b = AppConfig(
+        supabaseUrl: 'u',
+        supabaseAnonKey: 'k',
+        supportEmail: 'me@example.com',
+      );
+      expect(a == b, isFalse);
+    });
+
+    test('supportEmailProvider follows appConfigProvider', () async {
+      final c = await container(
+        config: const AppConfig(
+          supabaseUrl: '',
+          supabaseAnonKey: '',
+          supportEmail: 'help@example.com',
+        ),
+      );
+      expect(c.read(supportEmailProvider), 'help@example.com');
+      final d = await container();
+      expect(d.read(supportEmailProvider), 'support@ourney.app');
     });
   });
 
