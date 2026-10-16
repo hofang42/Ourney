@@ -103,6 +103,156 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Chụp check-in'**
   String get camera_title;
+
+  /// VoiceOver/TalkBack label of the big shutter button (NFR-5).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp ảnh check-in'**
+  String get camera_shutter;
+
+  /// Shutter button label naming the selected journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp ảnh check-in cho {journey}'**
+  String camera_shutterFor(String journey);
+
+  /// Flash toggle, current state off. Tap cycles off, auto, on.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đèn flash: tắt'**
+  String get camera_flashOff;
+
+  /// No description provided for @camera_flashAuto.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đèn flash: tự động'**
+  String get camera_flashAuto;
+
+  /// No description provided for @camera_flashOn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đèn flash: bật'**
+  String get camera_flashOn;
+
+  /// Button that switches between the front and back camera.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi camera trước/sau'**
+  String get camera_switchLens;
+
+  /// Button that picks a photo from the library. The check-in is then labelled 'from library' (FR-C3).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn ảnh từ thư viện'**
+  String get camera_gallery;
+
+  /// Semantics label of the journey chip row.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn hành trình'**
+  String get camera_journeyPicker;
+
+  /// No description provided for @camera_journeysError.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tải được hành trình'**
+  String get camera_journeysError;
+
+  /// Empty state on the camera when the user has no active journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu hành trình đầu tiên'**
+  String get camera_noJourneyTitle;
+
+  /// No description provided for @camera_noJourneyMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo một hành trình, rồi mỗi ngày chụp một tấm để giữ chuỗi.'**
+  String get camera_noJourneyMessage;
+
+  /// No description provided for @camera_noJourneyAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo hành trình'**
+  String get camera_noJourneyAction;
+
+  /// Friendly pre-prompt shown before the OS camera permission dialog.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mỗi ngày một tấm ảnh'**
+  String get camera_prePromptTitle;
+
+  /// No description provided for @camera_prePromptMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney cần camera để bạn chụp ảnh check-in. Ảnh chỉ được đăng khi bạn bấm Đăng.'**
+  String get camera_prePromptMessage;
+
+  /// No description provided for @camera_prePromptAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cho phép camera'**
+  String get camera_prePromptAction;
+
+  /// No description provided for @camera_deniedTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có quyền camera'**
+  String get camera_deniedTitle;
+
+  /// No description provided for @camera_deniedMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật quyền camera để chụp check-in. Bạn vẫn có thể chọn ảnh từ thư viện.'**
+  String get camera_deniedMessage;
+
+  /// Shown on Android, where the app cannot open its Settings page directly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vào Cài đặt › Ứng dụng › Ourney › Quyền › Camera, bật lên rồi quay lại.'**
+  String get camera_deniedSettingsPath;
+
+  /// No description provided for @camera_openSettings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở Cài đặt'**
+  String get camera_openSettings;
+
+  /// No description provided for @camera_restrictedMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Camera đang bị giới hạn trên máy này. Bạn vẫn có thể chọn ảnh từ thư viện.'**
+  String get camera_restrictedMessage;
+
+  /// No description provided for @camera_unavailableTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy camera'**
+  String get camera_unavailableTitle;
+
+  /// No description provided for @camera_unavailableMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Máy này không có camera dùng được. Hãy chọn ảnh từ thư viện.'**
+  String get camera_unavailableMessage;
+
+  /// No description provided for @camera_failedTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Camera chưa mở được'**
+  String get camera_failedTitle;
+
+  /// No description provided for @camera_starting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang mở camera…'**
+  String get camera_starting;
+
+  /// No description provided for @camera_captureFailed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp chưa được. Thử lại nhé.'**
+  String get camera_captureFailed;
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

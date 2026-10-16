@@ -103,6 +103,162 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Check-in'**
   String get checkin_title;
+
+  /// Screen reader label of the photo preview.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh check-in vừa chụp'**
+  String get checkin_photoSemantics;
+
+  /// Badge on a check-in whose photo was picked from the library instead of taken live (FR-C3).
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ thư viện'**
+  String get checkin_fromLibrary;
+
+  /// No description provided for @checkin_captionLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chú thích'**
+  String get checkin_captionLabel;
+
+  /// No description provided for @checkin_captionHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Viết vài dòng (không bắt buộc)'**
+  String get checkin_captionHint;
+
+  /// Caption length counter (FR-C4, max 140).
+  ///
+  /// In vi, this message translates to:
+  /// **'{count}/{max}'**
+  String checkin_captionCounter(int count, int max);
+
+  /// No description provided for @checkin_captionCounterSemantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã nhập {count} trên {max} ký tự'**
+  String checkin_captionCounterSemantics(int count, int max);
+
+  /// No description provided for @checkin_metricInvalid.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập một số hợp lệ'**
+  String get checkin_metricInvalid;
+
+  /// Shown under the metric field when the member hides metric values from others (weight-loss default, FR-B7).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ mình bạn thấy số này'**
+  String get checkin_metricPrivate;
+
+  /// Primary button that posts the check-in (FR-C4).
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng'**
+  String get checkin_post;
+
+  /// No description provided for @checkin_posting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang đăng…'**
+  String get checkin_posting;
+
+  /// Confirmation when a check-in already exists today for this journey (FR-C7).
+  ///
+  /// In vi, this message translates to:
+  /// **'Thay ảnh hôm nay?'**
+  String get checkin_replaceTitle;
+
+  /// No description provided for @checkin_replaceMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay bạn đã check-in cho hành trình này. Ảnh mới sẽ thay ảnh cũ.'**
+  String get checkin_replaceMessage;
+
+  /// No description provided for @checkin_replaceConfirm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thay ảnh'**
+  String get checkin_replaceConfirm;
+
+  /// No description provided for @checkin_errorPhoto.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không xử lý được ảnh này. Thử ảnh khác nhé.'**
+  String get checkin_errorPhoto;
+
+  /// No description provided for @checkin_errorEnded.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình đã kết thúc nên không check-in thêm được.'**
+  String get checkin_errorEnded;
+
+  /// No description provided for @checkin_missingPhoto.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy ảnh. Quay lại và chụp lại nhé.'**
+  String get checkin_missingPhoto;
+
+  /// No description provided for @checkin_missingJourney.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy hành trình này.'**
+  String get checkin_missingJourney;
+
+  /// Text of the stamp shown after posting (FR-C8).
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã check-in!'**
+  String get checkin_stamp;
+
+  /// No description provided for @checkin_streakPlusOne.
+  ///
+  /// In vi, this message translates to:
+  /// **'+1 ngày'**
+  String get checkin_streakPlusOne;
+
+  /// No description provided for @checkin_replaced.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã thay ảnh hôm nay'**
+  String get checkin_replaced;
+
+  /// No description provided for @checkin_milestone7.
+  ///
+  /// In vi, this message translates to:
+  /// **'7 ngày liên tục!'**
+  String get checkin_milestone7;
+
+  /// No description provided for @checkin_milestone30.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày liên tục!'**
+  String get checkin_milestone30;
+
+  /// No description provided for @checkin_milestoneFinish.
+  ///
+  /// In vi, this message translates to:
+  /// **'Về đích rồi!'**
+  String get checkin_milestoneFinish;
+
+  /// No description provided for @checkin_milestoneMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khoe thành tích với bạn bè nhé.'**
+  String get checkin_milestoneMessage;
+
+  /// No description provided for @checkin_share.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ'**
+  String get checkin_share;
+
+  /// No description provided for @checkin_done.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xong'**
+  String get checkin_done;
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {

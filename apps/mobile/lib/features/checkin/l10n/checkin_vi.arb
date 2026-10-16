@@ -3,5 +3,44 @@
   "checkin_title": "Check-in",
   "@checkin_title": {
     "description": "Title of the checkin feature's main screen."
-  }
+  },
+  "checkin_photoSemantics": "Ảnh check-in vừa chụp",
+  "@checkin_photoSemantics": {"description": "Screen reader label of the photo preview."},
+  "checkin_fromLibrary": "Từ thư viện",
+  "@checkin_fromLibrary": {"description": "Badge on a check-in whose photo was picked from the library instead of taken live (FR-C3)."},
+  "checkin_captionLabel": "Chú thích",
+  "checkin_captionHint": "Viết vài dòng (không bắt buộc)",
+  "checkin_captionCounter": "{count}/{max}",
+  "@checkin_captionCounter": {
+    "description": "Caption length counter (FR-C4, max 140).",
+    "placeholders": {"count": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "checkin_captionCounterSemantics": "Đã nhập {count} trên {max} ký tự",
+  "@checkin_captionCounterSemantics": {
+    "placeholders": {"count": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "checkin_metricInvalid": "Nhập một số hợp lệ",
+  "checkin_metricPrivate": "Chỉ mình bạn thấy số này",
+  "@checkin_metricPrivate": {"description": "Shown under the metric field when the member hides metric values from others (weight-loss default, FR-B7)."},
+  "checkin_post": "Đăng",
+  "@checkin_post": {"description": "Primary button that posts the check-in (FR-C4)."},
+  "checkin_posting": "Đang đăng…",
+  "checkin_replaceTitle": "Thay ảnh hôm nay?",
+  "@checkin_replaceTitle": {"description": "Confirmation when a check-in already exists today for this journey (FR-C7)."},
+  "checkin_replaceMessage": "Hôm nay bạn đã check-in cho hành trình này. Ảnh mới sẽ thay ảnh cũ.",
+  "checkin_replaceConfirm": "Thay ảnh",
+  "checkin_errorPhoto": "Không xử lý được ảnh này. Thử ảnh khác nhé.",
+  "checkin_errorEnded": "Hành trình đã kết thúc nên không check-in thêm được.",
+  "checkin_missingPhoto": "Không tìm thấy ảnh. Quay lại và chụp lại nhé.",
+  "checkin_missingJourney": "Không tìm thấy hành trình này.",
+  "checkin_stamp": "Đã check-in!",
+  "@checkin_stamp": {"description": "Text of the stamp shown after posting (FR-C8)."},
+  "checkin_streakPlusOne": "+1 ngày",
+  "checkin_replaced": "Đã thay ảnh hôm nay",
+  "checkin_milestone7": "7 ngày liên tục!",
+  "checkin_milestone30": "30 ngày liên tục!",
+  "checkin_milestoneFinish": "Về đích rồi!",
+  "checkin_milestoneMessage": "Khoe thành tích với bạn bè nhé.",
+  "checkin_share": "Chia sẻ",
+  "checkin_done": "Xong"
 }
