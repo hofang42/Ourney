@@ -80,12 +80,9 @@ void main() {
     ) async {
       final c = await pumpOurneyApp(tester, onboarded: false);
       expect(location(c), AppRoutes.onboarding);
-      expect(
-        find.byKey(const ValueKey('placeholder-onboarding')),
-        findsOneWidget,
-      );
+      expect(find.byKey(const ValueKey('onboarding-screen')), findsOneWidget);
 
-      await tester.tap(find.text('Bắt đầu'));
+      await tester.tap(find.text('Bỏ qua'));
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.capture);
       expect(c.read(onboardingCompleteProvider), isTrue);
@@ -101,7 +98,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(location(c), startsWith(AppRoutes.onboarding));
 
-      await tester.tap(find.text('Bắt đầu'));
+      await tester.tap(find.text('Bỏ qua'));
       await tester.pumpAndSettle();
       expect(location(c), '/journey/j-7');
     });
@@ -123,7 +120,7 @@ void main() {
         auth: auth,
       );
       expect(location(c), AppRoutes.auth);
-      expect(find.byKey(const ValueKey('placeholder-auth')), findsOneWidget);
+      expect(find.byKey(const ValueKey('auth-screen')), findsOneWidget);
 
       auth.emit('u1');
       await tester.pumpAndSettle();
