@@ -1,0 +1,363 @@
+{
+  "@@locale": "vi",
+  "safety_title": "An toàn & hỗ trợ",
+  "@safety_title": {
+    "description": "Title of the safety feature's main screen."
+  },
+  "safety_hubIntro": "Ourney là nơi để cùng nhau giữ thói quen. Bạn có thể báo cáo nội dung xấu, chặn người khác và đọc các điều khoản ở đây.",
+  "@safety_hubIntro": {
+    "description": "Intro text on the safety hub."
+  },
+  "safety_hubEula": "Điều khoản sử dụng",
+  "@safety_hubEula": {
+    "description": "Hub entry and page title: terms of use (EULA)."
+  },
+  "safety_hubPrivacy": "Chính sách quyền riêng tư",
+  "@safety_hubPrivacy": {
+    "description": "Hub entry and page title: privacy policy."
+  },
+  "safety_hubContact": "Liên hệ",
+  "@safety_hubContact": {
+    "description": "Hub entry and page title: contact."
+  },
+  "safety_hubBlocked": "Người đã chặn",
+  "@safety_hubBlocked": {
+    "description": "Hub entry and page title: list of blocked users."
+  },
+  "safety_hubHowToReport": "Cách báo cáo",
+  "@safety_hubHowToReport": {
+    "description": "Heading of the how-to-report card on the hub."
+  },
+  "safety_hubHowToReportBody": "Mở một hành trình nhóm, bấm nút menu (ba chấm) trên thẻ của một thành viên rồi chọn \"Báo cáo\" (báo cáo ảnh đang hiện trên thẻ, hoặc người đó nếu chưa có ảnh) hoặc \"Chặn\". Nội dung bạn báo cáo sẽ bị ẩn khỏi máy bạn ngay.",
+  "@safety_hubHowToReportBody": {
+    "description": "Body of the how-to-report card on the hub."
+  },
+
+  "safety_reportCheckInTitle": "Báo cáo check-in",
+  "@safety_reportCheckInTitle": {
+    "description": "Title of the report sheet for a check-in."
+  },
+  "safety_reportUserTitle": "Báo cáo người dùng",
+  "@safety_reportUserTitle": {
+    "description": "Title of the report sheet for a user."
+  },
+  "safety_reportPrompt": "Có chuyện gì vậy? Báo cáo được giữ kín, người bị báo cáo sẽ không biết là bạn.",
+  "@safety_reportPrompt": {
+    "description": "Prompt above the report reasons."
+  },
+  "safety_reasonSpam": "Spam hoặc lừa đảo",
+  "@safety_reasonSpam": {
+    "description": "Report reason: spam."
+  },
+  "safety_reasonNudity": "Ảnh khoả thân hoặc khiêu dâm",
+  "@safety_reasonNudity": {
+    "description": "Report reason: nudity."
+  },
+  "safety_reasonHarassment": "Quấy rối hoặc bắt nạt",
+  "@safety_reasonHarassment": {
+    "description": "Report reason: harassment."
+  },
+  "safety_reasonSelfHarm": "Tự làm hại bản thân",
+  "@safety_reasonSelfHarm": {
+    "description": "Report reason: self-harm."
+  },
+  "safety_reasonOther": "Lý do khác",
+  "@safety_reasonOther": {
+    "description": "Report reason: other."
+  },
+  "safety_noteLabel": "Ghi chú (không bắt buộc)",
+  "@safety_noteLabel": {
+    "description": "Label of the optional note field in the report form."
+  },
+  "safety_noteHint": "Thêm chi tiết giúp chúng mình xử lý nhanh hơn",
+  "@safety_noteHint": {
+    "description": "Hint of the optional note field."
+  },
+  "safety_reportSubmit": "Gửi báo cáo",
+  "@safety_reportSubmit": {
+    "description": "Submit button of the report form."
+  },
+  "safety_reportCancel": "Huỷ",
+  "@safety_reportCancel": {
+    "description": "Cancel button of the report form."
+  },
+  "safety_reportSent": "Đã gửi báo cáo. Cảm ơn bạn! Nội dung này đã được ẩn khỏi máy bạn.",
+  "@safety_reportSent": {
+    "description": "Confirmation after a report was sent."
+  },
+  "safety_reportDone": "Xong",
+  "@safety_reportDone": {
+    "description": "Button that closes the report confirmation."
+  },
+  "safety_reportAlsoBlock": "Chặn luôn người này",
+  "@safety_reportAlsoBlock": {
+    "description": "Button on the report confirmation to also block the user."
+  },
+  "safety_selfHarmTitle": "Bạn không một mình",
+  "@safety_selfHarmTitle": {
+    "description": "Title of the supportive message shown with the self-harm reason."
+  },
+  "safety_selfHarmBody": "Nếu bạn hoặc ai đó đang gặp nguy hiểm ngay lúc này, hãy gọi dịch vụ cấp cứu tại nơi bạn ở. Chia sẻ với một người bạn tin tưởng, người thân hoặc chuyên gia tâm lý cũng có thể giúp ích rất nhiều.",
+  "@safety_selfHarmBody": {
+    "description": "Supportive message shown with the self-harm reason. No phone numbers."
+  },
+  "safety_errorRateLimited": "Bạn đã gửi nhiều báo cáo trong 24 giờ qua. Vui lòng thử lại sau.",
+  "@safety_errorRateLimited": {
+    "description": "Error: too many reports (20 per 24 hours)."
+  },
+  "safety_errorNotFound": "Nội dung này không còn tồn tại hoặc bạn không xem được nữa.",
+  "@safety_errorNotFound": {
+    "description": "Error: reported content or user not found."
+  },
+  "safety_errorInvalid": "Không thể thực hiện với chính bạn.",
+  "@safety_errorInvalid": {
+    "description": "Error: reporting or blocking yourself."
+  },
+  "safety_errorOffline": "Không có kết nối mạng. Thử lại khi có mạng nhé.",
+  "@safety_errorOffline": {
+    "description": "Error: offline."
+  },
+  "safety_errorGeneric": "Có lỗi xảy ra. Thử lại sau nhé.",
+  "@safety_errorGeneric": {
+    "description": "Generic error."
+  },
+  "safety_needsAccount": "Báo cáo và chặn cần máy chủ Ourney. Ở chế độ chỉ trên máy, không ai khác thấy nội dung của bạn.",
+  "@safety_needsAccount": {
+    "description": "Shown in local-only mode instead of the report/block UI."
+  },
+
+  "safety_blockTitle": "Chặn {name}?",
+  "@safety_blockTitle": {
+    "description": "Block confirmation title.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Lan"
+      }
+    }
+  },
+  "safety_blockBody": "Hai bạn sẽ không thấy check-in và reaction của nhau nữa, và người này không thể vào nhóm có bạn. Họ sẽ không được báo là bị chặn. Bạn có thể bỏ chặn bất cứ lúc nào.",
+  "@safety_blockBody": {
+    "description": "Block confirmation explanation."
+  },
+  "safety_blockConfirm": "Chặn",
+  "@safety_blockConfirm": {
+    "description": "Confirm button of the block dialog."
+  },
+  "safety_blockCancel": "Huỷ",
+  "@safety_blockCancel": {
+    "description": "Cancel button of the block dialog."
+  },
+  "safety_blocked": "Đã chặn {name}.",
+  "@safety_blocked": {
+    "description": "Snack bar after blocking.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Lan"
+      }
+    }
+  },
+  "safety_unblockTitle": "Bỏ chặn {name}?",
+  "@safety_unblockTitle": {
+    "description": "Unblock confirmation title.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Lan"
+      }
+    }
+  },
+  "safety_unblockBody": "Hai bạn sẽ lại thấy nội dung của nhau trong những nhóm chung.",
+  "@safety_unblockBody": {
+    "description": "Unblock confirmation explanation."
+  },
+  "safety_unblockConfirm": "Bỏ chặn",
+  "@safety_unblockConfirm": {
+    "description": "Confirm/unblock button."
+  },
+  "safety_unblocked": "Đã bỏ chặn {name}.",
+  "@safety_unblocked": {
+    "description": "Snack bar after unblocking.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Lan"
+      }
+    }
+  },
+  "safety_unknownUser": "Người dùng",
+  "@safety_unknownUser": {
+    "description": "Fallback name for a user whose name is not known on this device."
+  },
+  "safety_blockedEmptyTitle": "Bạn chưa chặn ai",
+  "@safety_blockedEmptyTitle": {
+    "description": "Empty state title of the blocked users list."
+  },
+  "safety_blockedEmptyMessage": "Người bạn chặn sẽ hiện ở đây để bạn bỏ chặn khi muốn.",
+  "@safety_blockedEmptyMessage": {
+    "description": "Empty state message of the blocked users list."
+  },
+  "safety_loadError": "Không tải được danh sách. Thử lại sau nhé.",
+  "@safety_loadError": {
+    "description": "Error loading the blocked list."
+  },
+  "safety_retry": "Thử lại",
+  "@safety_retry": {
+    "description": "Retry button."
+  },
+
+  "safety_contactIntro": "Cần giúp đỡ, muốn góp ý hay báo cáo một vấn đề an toàn khẩn cấp? Viết cho chúng mình. Báo cáo nội dung được xem xét trong vòng 24 giờ.",
+  "@safety_contactIntro": {
+    "description": "Intro of the contact page."
+  },
+  "safety_contactEmailLabel": "Email hỗ trợ",
+  "@safety_contactEmailLabel": {
+    "description": "Label above the support email address."
+  },
+  "safety_contactSend": "Gửi email",
+  "@safety_contactSend": {
+    "description": "Button that opens the mail app."
+  },
+  "safety_contactCopy": "Sao chép địa chỉ",
+  "@safety_contactCopy": {
+    "description": "Button that copies the email address."
+  },
+  "safety_contactCopied": "Đã sao chép địa chỉ email.",
+  "@safety_contactCopied": {
+    "description": "Snack bar after copying the email."
+  },
+  "safety_contactSubject": "Ourney - hỗ trợ",
+  "@safety_contactSubject": {
+    "description": "Subject line of the support email."
+  },
+  "safety_contactNoMailApp": "Không mở được ứng dụng email. Hãy sao chép địa chỉ và gửi từ ứng dụng bạn dùng.",
+  "@safety_contactNoMailApp": {
+    "description": "Error when no mail app can be opened."
+  },
+
+  "safety_eulaAcceptTitle": "Trước khi bắt đầu",
+  "@safety_eulaAcceptTitle": {
+    "description": "Title of the EULA acceptance screen."
+  },
+  "safety_eulaAcceptIntro": "Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Hãy đọc và đồng ý với điều khoản sử dụng để tiếp tục.",
+  "@safety_eulaAcceptIntro": {
+    "description": "Intro of the EULA acceptance screen."
+  },
+  "safety_eulaAcceptCheckbox": "Tôi đã đọc và đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.",
+  "@safety_eulaAcceptCheckbox": {
+    "description": "Checkbox label on the EULA acceptance screen."
+  },
+  "safety_eulaAcceptButton": "Đồng ý và tiếp tục",
+  "@safety_eulaAcceptButton": {
+    "description": "Accept button on the EULA acceptance screen."
+  },
+  "safety_lastUpdated": "Cập nhật lần cuối: {date}",
+  "@safety_lastUpdated": {
+    "description": "Last updated line on legal pages.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "16/10/2026"
+      }
+    }
+  },
+
+  "safety_eula1Title": "1. Đồng ý điều khoản",
+  "@safety_eula1Title": {
+    "description": "EULA section heading."
+  },
+  "safety_eula1Body": "Khi tạo tài khoản hoặc dùng Ourney, bạn đồng ý với các điều khoản này. Nếu không đồng ý, vui lòng không sử dụng ứng dụng.",
+  "@safety_eula1Body": {
+    "description": "EULA section body."
+  },
+  "safety_eula2Title": "2. Không dung thứ nội dung phản cảm",
+  "@safety_eula2Title": {
+    "description": "EULA section heading."
+  },
+  "safety_eula2Body": "Ourney không chấp nhận bất kỳ nội dung phản cảm hay người dùng lạm dụng nào. Bạn không được đăng hoặc gửi: ảnh khoả thân, khiêu dâm; nội dung quấy rối, bắt nạt, đe doạ; phát ngôn thù ghét hoặc phân biệt đối xử; bạo lực; nội dung cổ vũ tự làm hại bản thân; spam, lừa đảo; nội dung vi phạm pháp luật hoặc quyền của người khác.",
+  "@safety_eula2Body": {
+    "description": "EULA section body: zero tolerance."
+  },
+  "safety_eula3Title": "3. Nội dung của bạn",
+  "@safety_eula3Title": {
+    "description": "EULA section heading."
+  },
+  "safety_eula3Body": "Ảnh, chú thích và số liệu bạn đăng vẫn thuộc về bạn. Bạn cho phép Ourney lưu trữ và hiển thị chúng cho những người bạn chọn chia sẻ (thành viên nhóm, người có link công khai). Bạn chịu trách nhiệm về nội dung mình đăng.",
+  "@safety_eula3Body": {
+    "description": "EULA section body."
+  },
+  "safety_eula4Title": "4. Báo cáo, chặn và kiểm duyệt",
+  "@safety_eula4Title": {
+    "description": "EULA section heading."
+  },
+  "safety_eula4Body": "Bạn có thể báo cáo check-in hoặc người dùng và chặn bất kỳ ai. Chúng mình xem xét báo cáo trong vòng 24 giờ, gỡ nội dung vi phạm và khoá tài khoản của người vi phạm.",
+  "@safety_eula4Body": {
+    "description": "EULA section body."
+  },
+  "safety_eula5Title": "5. Chấm dứt",
+  "@safety_eula5Title": {
+    "description": "EULA section heading."
+  },
+  "safety_eula5Body": "Chúng mình có thể tạm khoá hoặc xoá tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xoá tài khoản bất cứ lúc nào trong Hồ sơ.",
+  "@safety_eula5Body": {
+    "description": "EULA section body."
+  },
+  "safety_eula6Title": "6. Miễn trừ và thay đổi",
+  "@safety_eula6Title": {
+    "description": "EULA section heading."
+  },
+  "safety_eula6Body": "Ourney được cung cấp \"như hiện có\" và không thay thế lời khuyên y tế, dinh dưỡng hay tập luyện chuyên môn. Khi điều khoản thay đổi, chúng mình sẽ thông báo trong ứng dụng.",
+  "@safety_eula6Body": {
+    "description": "EULA section body."
+  },
+
+  "safety_privacy1Title": "Chúng mình lưu gì",
+  "@safety_privacy1Title": {
+    "description": "Privacy section heading."
+  },
+  "safety_privacy1Body": "Email (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.",
+  "@safety_privacy1Body": {
+    "description": "Privacy section body: data stored."
+  },
+  "safety_privacy2Title": "Ai thấy được",
+  "@safety_privacy2Title": {
+    "description": "Privacy section heading."
+  },
+  "safety_privacy2Body": "Hành trình riêng tư chỉ mình bạn thấy. Hành trình nhóm chỉ thành viên nhóm thấy. Link công khai chỉ hiện những gì bạn bật, và bạn có thể ẩn số liệu hoặc làm mờ ảnh. Ở chế độ chỉ trên máy, dữ liệu không rời khỏi điện thoại.",
+  "@safety_privacy2Body": {
+    "description": "Privacy section body: who can see."
+  },
+  "safety_privacy3Title": "Chúng mình không làm gì",
+  "@safety_privacy3Title": {
+    "description": "Privacy section heading."
+  },
+  "safety_privacy3Body": "Không bán dữ liệu của bạn. Không quảng cáo. Không dùng ảnh của bạn cho mục đích nào khác ngoài hiển thị trong Ourney.",
+  "@safety_privacy3Body": {
+    "description": "Privacy section body: no selling."
+  },
+  "safety_privacy4Title": "Thông báo",
+  "@safety_privacy4Title": {
+    "description": "Privacy section heading."
+  },
+  "safety_privacy4Body": "Lời nhắc check-in là thông báo cục bộ, được lên lịch ngay trên máy bạn.",
+  "@safety_privacy4Body": {
+    "description": "Privacy section body: notifications."
+  },
+  "safety_privacy5Title": "Xoá dữ liệu",
+  "@safety_privacy5Title": {
+    "description": "Privacy section heading."
+  },
+  "safety_privacy5Body": "Vào Hồ sơ > Xoá tài khoản để xoá vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.",
+  "@safety_privacy5Body": {
+    "description": "Privacy section body: deletion."
+  },
+  "safety_privacy6Title": "Liên hệ",
+  "@safety_privacy6Title": {
+    "description": "Privacy section heading."
+  },
+  "safety_privacy6Body": "Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.",
+  "@safety_privacy6Body": {
+    "description": "Privacy section body: contact."
+  }
+}

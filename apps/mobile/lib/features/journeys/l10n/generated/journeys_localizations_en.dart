@@ -1,0 +1,292 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+
+import 'journeys_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class JourneysL10nEn extends JourneysL10n {
+  JourneysL10nEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get journeys_title => 'Journeys';
+
+  @override
+  String get journeys_activeSection => 'Running';
+
+  @override
+  String get journeys_finishedSection => 'Finished';
+
+  @override
+  String get journeys_emptyTitle => 'No journeys yet';
+
+  @override
+  String get journeys_emptyMessage =>
+      'Start your first journey: one photo a day.';
+
+  @override
+  String get journeys_newJourney => 'New journey';
+
+  @override
+  String get journeys_limitTitle => 'You have 3 journeys running';
+
+  @override
+  String get journeys_limitMessage =>
+      'You can run up to 3 journeys at once so posting stays light. End one to start a new one.';
+
+  @override
+  String journeys_dayOf(int day, int total) {
+    return 'Day $day of $total';
+  }
+
+  @override
+  String journeys_dayOpen(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get journeys_checkedToday => 'Checked in today';
+
+  @override
+  String get journeys_notCheckedToday => 'Not checked in today';
+
+  @override
+  String get journeys_statusEnded => 'Ended';
+
+  @override
+  String get journeys_statusArchived => 'Archived';
+
+  @override
+  String get journeys_kindSolo => 'Solo';
+
+  @override
+  String get journeys_kindGroup => 'Group';
+
+  @override
+  String get journeys_loadError => 'Couldn\'t load journeys.';
+
+  @override
+  String get journeys_pickTemplateTitle => 'Pick a journey type';
+
+  @override
+  String journeys_templateDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '$count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_templateCustomHint => 'Set everything yourself';
+
+  @override
+  String get journeys_createTitle => 'Create journey';
+
+  @override
+  String get journeys_fieldTitle => 'Journey name';
+
+  @override
+  String get journeys_fieldEmoji => 'Icon';
+
+  @override
+  String journeys_emojiSemantics(String emoji) {
+    return 'Icon $emoji';
+  }
+
+  @override
+  String get journeys_fieldKind => 'Solo or with a group?';
+
+  @override
+  String get journeys_groupNeedsServer =>
+      'Group journeys need a server. This build runs on this device only.';
+
+  @override
+  String get journeys_fieldDuration => 'Duration';
+
+  @override
+  String get journeys_durationCustom => 'Number of days';
+
+  @override
+  String get journeys_openEnded => 'No end date';
+
+  @override
+  String get journeys_fieldMetric => 'Track a number';
+
+  @override
+  String get journeys_fieldMetricHint =>
+      'For example weight or minutes studied';
+
+  @override
+  String get journeys_metricName => 'Metric name';
+
+  @override
+  String get journeys_metricUnit => 'Unit';
+
+  @override
+  String get journeys_hideMetric => 'Hide the number from others';
+
+  @override
+  String get journeys_blurOnShare => 'Blur photos when sharing outside';
+
+  @override
+  String get journeys_fieldVisibility => 'Who can see it?';
+
+  @override
+  String get journeys_visibilityPrivate => 'Only me';
+
+  @override
+  String get journeys_visibilityLink => 'Anyone with the link';
+
+  @override
+  String get journeys_visibilityGroup => 'Group members';
+
+  @override
+  String get journeys_linkNeedsServer => 'Share links need a server.';
+
+  @override
+  String get journeys_fieldTimezone => 'Time zone';
+
+  @override
+  String get journeys_createButton => 'Start journey';
+
+  @override
+  String get journeys_errorTitleEmpty => 'Give your journey a name.';
+
+  @override
+  String journeys_errorTitleTooLong(int max) {
+    return 'Names can be up to $max characters.';
+  }
+
+  @override
+  String journeys_errorDuration(int min, int max) {
+    return 'Duration must be $min to $max days.';
+  }
+
+  @override
+  String get journeys_errorMetricName => 'Enter a metric name.';
+
+  @override
+  String get journeys_errorVisibility =>
+      'This visibility isn\'t available for this journey.';
+
+  @override
+  String get journeys_errorNotAlone =>
+      'Other members are still in the group, so it can\'t be deleted. You can end the journey instead.';
+
+  @override
+  String get journeys_errorForbidden => 'Only the journey owner can do this.';
+
+  @override
+  String get journeys_errorEnded => 'This journey has ended.';
+
+  @override
+  String get journeys_errorNotFound => 'Journey not found.';
+
+  @override
+  String get journeys_statCurrent => 'Current streak';
+
+  @override
+  String get journeys_statBest => 'Longest';
+
+  @override
+  String get journeys_statComplete => 'Complete';
+
+  @override
+  String get journeys_statDay => 'Progress';
+
+  @override
+  String journeys_percent(int value) {
+    return '$value%';
+  }
+
+  @override
+  String get journeys_checkInNow => 'Check in now';
+
+  @override
+  String get journeys_share => 'Share';
+
+  @override
+  String get journeys_openGroup => 'Open group';
+
+  @override
+  String get journeys_endJourney => 'End journey';
+
+  @override
+  String get journeys_endConfirmTitle => 'End this journey?';
+
+  @override
+  String get journeys_endConfirmMessage =>
+      'Once ended, the journey is read-only and no more check-ins can be added.';
+
+  @override
+  String get journeys_archive => 'Archive';
+
+  @override
+  String get journeys_delete => 'Delete journey';
+
+  @override
+  String get journeys_deleteConfirmTitle => 'Delete this journey?';
+
+  @override
+  String get journeys_deleteConfirmMessage =>
+      'All your photos in this journey will be deleted. This can\'t be undone.';
+
+  @override
+  String get journeys_readOnlyBanner => 'This journey has ended. Read-only.';
+
+  @override
+  String get journeys_moreActions => 'More actions';
+
+  @override
+  String get journeys_timelineTitle => 'Timeline';
+
+  @override
+  String get journeys_privacyTitle => 'Privacy';
+
+  @override
+  String journeys_cellChecked(int day, String date) {
+    return 'Day $day, $date: checked in';
+  }
+
+  @override
+  String journeys_cellMissed(int day, String date) {
+    return 'Day $day, $date: missed';
+  }
+
+  @override
+  String journeys_cellToday(int day, String date) {
+    return 'Day $day, $date: today, not checked in yet';
+  }
+
+  @override
+  String journeys_cellFuture(int day, String date) {
+    return 'Day $day, $date: upcoming';
+  }
+
+  @override
+  String journeys_cellNotCounted(int day, String date) {
+    return 'Day $day, $date: before you joined';
+  }
+
+  @override
+  String get journeys_today => 'Today';
+
+  @override
+  String get journeys_fromLibrary => 'From library';
+
+  @override
+  String get journeys_metricHidden => 'Hidden';
+
+  @override
+  String get journeys_showMetric => 'Show number';
+
+  @override
+  String get journeys_photoUnavailable => 'Photo not available yet';
+
+  @override
+  String get journeys_noCheckIn => 'No photo for this day';
+}

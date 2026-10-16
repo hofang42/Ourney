@@ -79,6 +79,29 @@ void main() {
     test('null ok', () => expect(validateMetricValue(null), isNull));
   });
 
+  group('journey visibility (mirrors create_journey)', () {
+    test('allowed combinations', () {
+      expect(validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.private), isNull);
+      expect(validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.link), isNull);
+      expect(validateJourneyVisibility(JourneyKind.group, JourneyVisibility.group), isNull);
+      expect(validateJourneyVisibility(JourneyKind.group, JourneyVisibility.private), isNull,
+          reason: 'server accepts and normalises to group');
+    });
+    test('group + link rejected', () {
+      expect(
+          validateJourneyVisibility(JourneyKind.group, JourneyVisibility.link), VisibilityError.linkNotAllowedForGroup);
+    });
+    test('solo + group rejected', () {
+      expect(
+          validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.group), VisibilityError.groupVisibilityForSolo);
+    });
+    test('normalizedVisibility', () {
+      expect(normalizedVisibility(JourneyKind.group, JourneyVisibility.private), JourneyVisibility.group);
+      expect(normalizedVisibility(JourneyKind.solo, JourneyVisibility.link), JourneyVisibility.link);
+      expect(normalizedVisibility(JourneyKind.solo, JourneyVisibility.private), JourneyVisibility.private);
+    });
+  });
+
   group('duration', () {
     test('null (open) ok', () => expect(validateDurationDays(null), isNull));
     test('7..365 ok', () {

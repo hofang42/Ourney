@@ -1,0 +1,206 @@
+{
+  "@@locale": "vi",
+  "groups_title": "Nhóm",
+  "@groups_title": {
+    "description": "Title of the groups feature's main screen."
+  },
+  "groups_emptyTitle": "Chưa có nhóm nào",
+  "groups_emptyMessage": "Nhập mã mời của bạn bè, hoặc tạo hành trình nhóm ở tab Journeys.",
+  "groups_joinWithCode": "Nhập mã mời",
+  "@groups_joinWithCode": {
+    "description": "Button opening the manual invite-code entry (FR-D1)."
+  },
+  "groups_createGroup": "Tạo hành trình nhóm",
+  "@groups_createGroup": {
+    "description": "Opens the journey create flow."
+  },
+  "groups_activeSection": "Đang chạy",
+  "@groups_activeSection": {
+    "description": "List section header: running group journeys."
+  },
+  "groups_finishedSection": "Đã kết thúc",
+  "@groups_finishedSection": {
+    "description": "List section header: ended or archived group journeys."
+  },
+  "groups_loadError": "Không tải được danh sách nhóm.",
+  "groups_statusEnded": "Đã kết thúc",
+  "groups_statusArchived": "Đã lưu trữ",
+  "groups_dayOf": "Ngày {day}/{total}",
+  "@groups_dayOf": {
+    "description": "Day N of M of the journey.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_dayOpen": "Ngày {day}",
+  "@groups_dayOpen": {
+    "description": "Day N of an open-ended journey.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_joinTitle": "Tham gia nhóm",
+  "groups_joinCodeLabel": "Mã mời",
+  "groups_joinCodeHint": "8 chữ cái hoặc chữ số",
+  "groups_joinInvalidCode": "Mã mời gồm đúng 8 chữ cái hoặc chữ số.",
+  "groups_joinPreviewTitle": "Bạn được mời vào một hành trình nhóm",
+  "@groups_joinPreviewTitle": {
+    "description": "Shown on /join/<code> before confirming."
+  },
+  "groups_joinRules": "Nhóm tối đa 10 người. Tiến độ của bạn tính từ ngày tham gia, và bạn vẫn xem được lịch sử của nhóm.",
+  "@groups_joinRules": {
+    "description": "FR-D2 + late-join rule (SRS 3.1)."
+  },
+  "groups_joinButton": "Tham gia",
+  "groups_errorNotFound": "Không có nhóm nào dùng mã này. Có thể chủ nhóm đã đổi mã, hãy xin mã mới nhé.",
+  "groups_errorFull": "Nhóm này đã đủ 10 thành viên.",
+  "groups_errorBlocked": "Bạn không thể tham gia nhóm này.",
+  "groups_errorLimit": "Bạn đang chạy 3 hành trình. Kết thúc một hành trình rồi tham gia nhóm này nhé.",
+  "groups_errorEnded": "Hành trình này đã kết thúc.",
+  "groups_errorForbidden": "Bạn không có quyền làm việc này.",
+  "groups_errorNotAlone": "Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xoá.",
+  "groups_errorInvalid": "Không thể thực hiện thao tác này.",
+  "groups_todayHeader": "Hôm nay {done}/{total} người đã check-in",
+  "@groups_todayHeader": {
+    "description": "Consistency summary (FR-D3/D5).",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_doneSection": "Đã check-in hôm nay",
+  "groups_pendingSection": "Chưa check-in hôm nay",
+  "groups_statusDone": "Xong hôm nay",
+  "@groups_statusDone": {
+    "description": "Member row status (icon + text, not color only)."
+  },
+  "groups_statusPending": "Chưa check-in",
+  "groups_you": "Bạn",
+  "@groups_you": {
+    "description": "Marks the caller's own row."
+  },
+  "groups_ownerBadge": "Chủ nhóm",
+  "groups_latestPhoto": "Ảnh gần nhất: {date}",
+  "@groups_latestPhoto": {
+    "description": "Caption under a member's latest (older) photo.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_noPhotoYet": "Chưa có check-in nào",
+  "groups_endedBanner": "Hành trình đã kết thúc. Ảnh và streak chỉ còn để xem.",
+  "groups_notFoundTitle": "Không tìm thấy nhóm",
+  "groups_notMember": "Bạn không còn là thành viên của nhóm này.",
+  "groups_todayLoadError": "Không tải được hoạt động hôm nay.",
+  "groups_openTimeline": "Dòng thời gian của tôi",
+  "groups_invite": "Mời bạn",
+  "@groups_invite": {
+    "description": "Tooltip of the invite button."
+  },
+  "groups_moreActions": "Thêm thao tác",
+  "@groups_moreActions": {
+    "description": "Tooltip of an overflow menu."
+  },
+  "groups_memberActions": "Thao tác với {name}",
+  "@groups_memberActions": {
+    "description": "Tooltip of a member's overflow menu.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_reactSemantics": "Thả {emoji}, {count} lượt",
+  "@groups_reactSemantics": {
+    "description": "Screen-reader label of a reaction button (FR-D4).",
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_actionRotate": "Đổi mã mời",
+  "groups_rotateTitle": "Đổi mã mời?",
+  "groups_rotateMessage": "Mã và link hiện tại sẽ hết hiệu lực. Thành viên đang ở trong nhóm vẫn giữ nguyên.",
+  "groups_rotateDone": "Đã tạo mã mời mới.",
+  "groups_actionEnd": "Kết thúc hành trình",
+  "groups_endTitle": "Kết thúc hành trình cho cả nhóm?",
+  "groups_endMessage": "Sau đó không ai check-in được nữa. Ảnh và streak vẫn còn để mọi người xem lại.",
+  "groups_actionDelete": "Xoá hành trình",
+  "groups_deleteTitle": "Xoá hành trình nhóm này?",
+  "groups_deleteMessage": "Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xoá vĩnh viễn.",
+  "groups_actionLeave": "Rời nhóm",
+  "groups_leaveTitle": "Rời nhóm này?",
+  "groups_leaveMessage": "Các check-in của bạn sẽ bị ẩn khỏi nhóm. Nếu tham gia lại bằng mã mời, chúng sẽ hiện lại.",
+  "@groups_leaveMessage": {
+    "description": "SRS 3.1: leaving hides the member's check-ins."
+  },
+  "groups_leaveOwnerNote": "Bạn là chủ nhóm: quyền chủ nhóm sẽ chuyển cho người tham gia sớm nhất.",
+  "groups_leaveAloneNote": "Bạn là thành viên duy nhất: hành trình sẽ được lưu trữ.",
+  "groups_leftDone": "Bạn đã rời nhóm.",
+  "groups_actionRemove": "Xoá khỏi nhóm",
+  "groups_removeTitle": "Xoá {name} khỏi nhóm?",
+  "@groups_removeTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_removeMessage": "Check-in của người này sẽ bị ẩn khỏi nhóm. Họ vẫn có thể tham gia lại bằng mã mời nếu bạn không đổi mã.",
+  "groups_removedDone": "Đã xoá {name} khỏi nhóm.",
+  "@groups_removedDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_actionReport": "Báo cáo",
+  "@groups_actionReport": {
+    "description": "Member menu entry; the flow belongs to the safety feature."
+  },
+  "groups_actionBlock": "Chặn",
+  "@groups_actionBlock": {
+    "description": "Member menu entry; the flow belongs to the safety feature."
+  },
+  "groups_inviteTitle": "Mời bạn bè",
+  "groups_inviteMessage": "Gửi mã hoặc link cho bạn bè. Nhóm tối đa 10 người.",
+  "groups_copyCode": "Sao chép mã",
+  "groups_copied": "Đã sao chép mã mời.",
+  "groups_shareLink": "Chia sẻ link",
+  "groups_shareText": "Cùng mình theo hành trình \"{title}\" trên Ourney: {link} (mã mời {code})",
+  "@groups_shareText": {
+    "description": "Text sent through the share sheet.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      },
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_qrSemantics": "Mã QR của link mời",
+  "groups_noInviteCode": "Nhóm chưa có mã mời.",
+  "groups_inviteClosed": "Hành trình đã kết thúc nên không mời thêm được."
+}

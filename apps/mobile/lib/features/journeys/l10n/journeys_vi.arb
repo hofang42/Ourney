@@ -1,0 +1,131 @@
+{
+  "@@locale": "vi",
+  "journeys_title": "Hành trình",
+  "@journeys_title": {
+    "description": "Title of the journeys feature's main screen."
+  },
+  "journeys_activeSection": "Đang chạy",
+  "@journeys_activeSection": {"description": "List section header: running journeys."},
+  "journeys_finishedSection": "Đã kết thúc",
+  "@journeys_finishedSection": {"description": "List section header: ended or archived journeys."},
+  "journeys_emptyTitle": "Chưa có hành trình nào",
+  "journeys_emptyMessage": "Bắt đầu hành trình đầu tiên: mỗi ngày một tấm ảnh.",
+  "journeys_newJourney": "Hành trình mới",
+  "@journeys_newJourney": {"description": "FAB / button that starts the create flow."},
+  "journeys_limitTitle": "Bạn đang chạy 3 hành trình",
+  "@journeys_limitTitle": {"description": "FR-B3: shown when the user already has 3 active journeys."},
+  "journeys_limitMessage": "Mỗi người chạy tối đa 3 hành trình cùng lúc để việc đăng ảnh luôn nhẹ nhàng. Kết thúc một hành trình rồi bắt đầu cái mới nhé.",
+  "journeys_dayOf": "Ngày {day}/{total}",
+  "@journeys_dayOf": {
+    "description": "Day N of M (FR-B5).",
+    "placeholders": {"day": {"type": "int"}, "total": {"type": "int"}}
+  },
+  "journeys_dayOpen": "Ngày {day}",
+  "@journeys_dayOpen": {
+    "description": "Day N of an open-ended journey.",
+    "placeholders": {"day": {"type": "int"}}
+  },
+  "journeys_checkedToday": "Hôm nay đã check-in",
+  "journeys_notCheckedToday": "Hôm nay chưa check-in",
+  "journeys_statusEnded": "Đã kết thúc",
+  "journeys_statusArchived": "Đã lưu trữ",
+  "journeys_kindSolo": "Một mình",
+  "journeys_kindGroup": "Nhóm",
+  "journeys_loadError": "Không tải được hành trình.",
+  "journeys_pickTemplateTitle": "Chọn kiểu hành trình",
+  "journeys_templateDays": "{count, plural, other{{count} ngày}}",
+  "@journeys_templateDays": {
+    "description": "Suggested duration on a template card.",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "journeys_templateCustomHint": "Tự đặt mọi thứ",
+  "journeys_createTitle": "Tạo hành trình",
+  "journeys_fieldTitle": "Tên hành trình",
+  "journeys_fieldEmoji": "Biểu tượng",
+  "journeys_emojiSemantics": "Biểu tượng {emoji}",
+  "@journeys_emojiSemantics": {
+    "placeholders": {"emoji": {"type": "String"}}
+  },
+  "journeys_fieldKind": "Một mình hay cùng nhóm?",
+  "journeys_groupNeedsServer": "Hành trình nhóm cần máy chủ. Bản này đang chạy chỉ trên máy.",
+  "journeys_fieldDuration": "Thời lượng",
+  "journeys_durationCustom": "Số ngày",
+  "journeys_openEnded": "Không giới hạn",
+  "journeys_fieldMetric": "Theo dõi một con số",
+  "journeys_fieldMetricHint": "Ví dụ: cân nặng, số phút học",
+  "journeys_metricName": "Tên chỉ số",
+  "journeys_metricUnit": "Đơn vị",
+  "journeys_hideMetric": "Ẩn con số với người khác",
+  "journeys_blurOnShare": "Làm mờ ảnh khi chia sẻ ra ngoài",
+  "journeys_fieldVisibility": "Ai xem được?",
+  "journeys_visibilityPrivate": "Chỉ mình tôi",
+  "journeys_visibilityLink": "Ai có link",
+  "journeys_visibilityGroup": "Thành viên trong nhóm",
+  "journeys_linkNeedsServer": "Link chia sẻ cần máy chủ.",
+  "journeys_fieldTimezone": "Múi giờ",
+  "journeys_createButton": "Bắt đầu hành trình",
+  "journeys_errorTitleEmpty": "Đặt tên cho hành trình nhé.",
+  "journeys_errorTitleTooLong": "Tên dài tối đa {max} ký tự.",
+  "@journeys_errorTitleTooLong": {
+    "placeholders": {"max": {"type": "int"}}
+  },
+  "journeys_errorDuration": "Thời lượng từ {min} đến {max} ngày.",
+  "@journeys_errorDuration": {
+    "placeholders": {"min": {"type": "int"}, "max": {"type": "int"}}
+  },
+  "journeys_errorMetricName": "Nhập tên chỉ số.",
+  "journeys_errorVisibility": "Kiểu hiển thị này không dùng được cho hành trình này.",
+  "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.",
+  "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
+  "journeys_errorEnded": "Hành trình này đã kết thúc.",
+  "journeys_errorNotFound": "Không tìm thấy hành trình.",
+  "journeys_statCurrent": "Chuỗi hiện tại",
+  "journeys_statBest": "Dài nhất",
+  "journeys_statComplete": "Hoàn thành",
+  "journeys_statDay": "Tiến độ",
+  "journeys_percent": "{value}%",
+  "@journeys_percent": {
+    "placeholders": {"value": {"type": "int"}}
+  },
+  "journeys_checkInNow": "Check-in ngay",
+  "journeys_share": "Chia sẻ",
+  "journeys_openGroup": "Xem nhóm",
+  "journeys_endJourney": "Kết thúc hành trình",
+  "journeys_endConfirmTitle": "Kết thúc hành trình?",
+  "journeys_endConfirmMessage": "Sau khi kết thúc, hành trình chỉ xem được và không check-in thêm được nữa.",
+  "journeys_archive": "Lưu trữ",
+  "journeys_delete": "Xoá hành trình",
+  "journeys_deleteConfirmTitle": "Xoá hành trình?",
+  "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.",
+  "journeys_readOnlyBanner": "Hành trình đã kết thúc. Chỉ xem.",
+  "journeys_moreActions": "Thêm thao tác",
+  "journeys_timelineTitle": "Dòng thời gian",
+  "journeys_privacyTitle": "Riêng tư",
+  "journeys_cellChecked": "Ngày {day}, {date}: đã check-in",
+  "@journeys_cellChecked": {
+    "description": "Screen reader label of a timeline cell (FR-B4).",
+    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+  },
+  "journeys_cellMissed": "Ngày {day}, {date}: bỏ lỡ",
+  "@journeys_cellMissed": {
+    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+  },
+  "journeys_cellToday": "Ngày {day}, {date}: hôm nay, chưa check-in",
+  "@journeys_cellToday": {
+    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+  },
+  "journeys_cellFuture": "Ngày {day}, {date}: sắp tới",
+  "@journeys_cellFuture": {
+    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+  },
+  "journeys_cellNotCounted": "Ngày {day}, {date}: trước khi bạn tham gia",
+  "@journeys_cellNotCounted": {
+    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+  },
+  "journeys_today": "Hôm nay",
+  "journeys_fromLibrary": "Từ thư viện",
+  "journeys_metricHidden": "Đang ẩn",
+  "journeys_showMetric": "Hiện con số",
+  "journeys_photoUnavailable": "Ảnh chưa tải được",
+  "journeys_noCheckIn": "Chưa có ảnh cho ngày này"
+}

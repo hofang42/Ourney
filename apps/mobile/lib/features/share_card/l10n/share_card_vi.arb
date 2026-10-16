@@ -1,0 +1,210 @@
+{
+  "@@locale": "vi",
+  "share_card_title": "Chia sẻ",
+  "@share_card_title": {
+    "description": "Title of the share_card feature's main screen."
+  },
+  "share_card_sizeLabel": "Cỡ thẻ",
+  "@share_card_sizeLabel": {
+    "description": "Label of the story/feed size toggle."
+  },
+  "share_card_sizeStory": "Story",
+  "@share_card_sizeStory": {
+    "description": "Story size, 1080x1920 (Instagram/Facebook stories)."
+  },
+  "share_card_sizeFeed": "Bài đăng",
+  "@share_card_sizeFeed": {
+    "description": "Feed post size, 1080x1350."
+  },
+  "share_card_numberLabel": "Con số lớn",
+  "@share_card_numberLabel": {
+    "description": "Label of the chips choosing what the big number shows."
+  },
+  "share_card_numberStreak": "Chuỗi ngày",
+  "@share_card_numberStreak": {
+    "description": "Chip: big number shows the streak (or finished/checked-in days)."
+  },
+  "share_card_numberDay": "Ngày thứ N",
+  "@share_card_numberDay": {
+    "description": "Chip: big number shows today's day N of the journey."
+  },
+  "share_card_captionStreak": "{count, plural, other{ngày liên tiếp}}",
+  "@share_card_captionStreak": {
+    "description": "Under the big streak number on the card.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_captionCheckedIn": "{count, plural, other{ngày đã check-in}}",
+  "@share_card_captionCheckedIn": {
+    "description": "Under the big number when there is no live streak: distinct days checked in.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_kickerFinished": "Hoàn thành",
+  "@share_card_kickerFinished": {
+    "description": "Above the big number on a finished journey's card."
+  },
+  "share_card_captionFinished": "{done}/{total} ngày",
+  "@share_card_captionFinished": {
+    "description": "Under the big number on a finished journey's card.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_kickerDay": "Ngày thứ",
+  "@share_card_kickerDay": {
+    "description": "Above the big number when it shows day N of the journey."
+  },
+  "share_card_captionDayOf": "trên {total} ngày",
+  "@share_card_captionDayOf": {
+    "description": "Under the big day number of a journey with a fixed duration.",
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_milestone7": "Mốc 7 ngày!",
+  "@share_card_milestone7": {
+    "description": "Badge on the card on the exact day of a 7-day streak."
+  },
+  "share_card_milestone30": "Mốc 30 ngày!",
+  "@share_card_milestone30": {
+    "description": "Badge on the card on the exact day of a 30-day streak."
+  },
+  "share_card_milestoneCompleted": "Về đích!",
+  "@share_card_milestoneCompleted": {
+    "description": "Badge on the card when the journey is completed."
+  },
+  "share_card_photoLabel": "Ảnh",
+  "@share_card_photoLabel": {
+    "description": "Label of the photo picker strip."
+  },
+  "share_card_photoNone": "Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.",
+  "@share_card_photoNone": {
+    "description": "Shown when the journey has no check-in photo yet."
+  },
+  "share_card_photoOfDay": "Ảnh ngày {date}",
+  "@share_card_photoOfDay": {
+    "description": "Accessibility label of a photo thumbnail in the picker.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "share_card_blurPhoto": "Làm mờ ảnh",
+  "@share_card_blurPhoto": {
+    "description": "Switch: blur the photo on the shared card (FR-B7)."
+  },
+  "share_card_blurPhotoHint": "Bật sẵn theo cài đặt riêng tư của hành trình",
+  "@share_card_blurPhotoHint": {
+    "description": "Subtitle of the blur switch when privacy settings turned it on."
+  },
+  "share_card_metricHidden": "Số đo của bạn không hiện trên thẻ.",
+  "@share_card_metricHidden": {
+    "description": "Note shown when the metric (e.g. kg) is hidden on the card (FR-B7)."
+  },
+  "share_card_shareButton": "Chia sẻ thẻ",
+  "@share_card_shareButton": {
+    "description": "Main button: render the card and open the system share sheet."
+  },
+  "share_card_preparing": "Đang tạo ảnh…",
+  "@share_card_preparing": {
+    "description": "Share button label while the image is being rendered."
+  },
+  "share_card_shareError": "Không tạo được ảnh. Thử lại nhé.",
+  "@share_card_shareError": {
+    "description": "Rendering, saving or sharing the card image failed."
+  },
+  "share_card_shareText": "{emoji} {title} trên Ourney",
+  "@share_card_shareText": {
+    "description": "Text sent along with the card image in the share sheet.",
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "share_card_previewLabel": "Xem trước thẻ: {headline} {caption}, {title}",
+  "@share_card_previewLabel": {
+    "description": "Accessibility label of the card preview.",
+    "placeholders": {
+      "headline": {
+        "type": "String"
+      },
+      "caption": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "share_card_notFound": "Không tìm thấy hành trình này.",
+  "@share_card_notFound": {
+    "description": "The journey id in /share/:journeyId does not exist."
+  },
+  "share_card_linkTitle": "Link xem công khai",
+  "@share_card_linkTitle": {
+    "description": "Section title: read-only public link of a solo journey (FR-E3)."
+  },
+  "share_card_linkDescription": "Ai có link đều xem được hành trình này (chỉ xem). Bạn thu hồi được bất cứ lúc nào.",
+  "@share_card_linkDescription": {
+    "description": "Explains the public link before it is created."
+  },
+  "share_card_linkActive": "Link đang bật. Ai có link đều xem được hành trình này.",
+  "@share_card_linkActive": {
+    "description": "Shown while the public link is enabled."
+  },
+  "share_card_linkCreate": "Tạo và sao chép link",
+  "@share_card_linkCreate": {
+    "description": "Button: enable the public link and copy it."
+  },
+  "share_card_linkCopy": "Sao chép link",
+  "@share_card_linkCopy": {
+    "description": "Button: copy the existing public link."
+  },
+  "share_card_linkCopied": "Đã sao chép link",
+  "@share_card_linkCopied": {
+    "description": "Snack bar after the link was copied."
+  },
+  "share_card_linkRevoke": "Thu hồi link",
+  "@share_card_linkRevoke": {
+    "description": "Button: revoke the public link."
+  },
+  "share_card_linkRevokeTitle": "Thu hồi link?",
+  "@share_card_linkRevokeTitle": {
+    "description": "Revoke confirmation dialog title."
+  },
+  "share_card_linkRevokeMessage": "Link hiện tại sẽ ngừng hoạt động ngay. Bạn có thể tạo link mới sau.",
+  "@share_card_linkRevokeMessage": {
+    "description": "Revoke confirmation dialog message."
+  },
+  "share_card_linkRevoked": "Đã thu hồi link",
+  "@share_card_linkRevoked": {
+    "description": "Snack bar after the link was revoked."
+  },
+  "share_card_linkErrorEnded": "Hành trình đã lưu trữ nên không tạo link được.",
+  "@share_card_linkErrorEnded": {
+    "description": "set_public_link answered `ended` (archived journey)."
+  },
+  "share_card_linkErrorForbidden": "Chỉ chủ hành trình mới quản lý được link.",
+  "@share_card_linkErrorForbidden": {
+    "description": "set_public_link answered `forbidden`."
+  }
+}

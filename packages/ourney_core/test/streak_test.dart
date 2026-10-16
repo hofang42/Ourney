@@ -93,4 +93,67 @@ void main() {
       expect(s.current, 3);
     });
   });
+
+  // Mirrors SQL journey_streak: dates >= joined, window [max(start, joined), journey end].
+  group('late joiners', () {
+    test('effectiveStreakStart is the later date', () {
+      expect(effectiveStreakStart(d('2026-10-01'), d('2026-10-10')), d('2026-10-10'));
+      expect(effectiveStreakStart(d('2026-10-01'), d('2026-09-28')), d('2026-10-01'));
+      expect(effectiveStreakStart(d('2026-10-01'), d('2026-10-01')), d('2026-10-01'));
+    });
+
+    test('joined mid-journey: counts from join date, journey end unchanged', () {
+      final s = computeMemberStreak(
+        journeyStart: d('2026-10-01'),
+        durationDays: 30,
+        joinedLocalDate: d('2026-10-10'),
+        today: d('2026-10-12'),
+        dates: [d('2026-10-05'), d('2026-10-10'), d('2026-10-11'), d('2026-10-12')],
+      );
+      expect(s.current, 3);
+      expect(s.best, 3, reason: 'pre-join dates ignored for best too');
+      expect(s.completed, 3);
+      expect(s.dayIndex, 3);
+      expect(s.progress, closeTo(3 / 21, 1e-9), reason: 'window 10-10..10-30 = 21 days');
+    });
+
+    test('window still closes at the journey end', () {
+      final s = computeMemberStreak(
+        journeyStart: d('2026-10-01'),
+        durationDays: 30,
+        joinedLocalDate: d('2026-10-29'),
+        today: d('2026-11-02'),
+        dates: [d('2026-10-29'), d('2026-10-30'), d('2026-10-31')],
+      );
+      expect(s.completed, 2);
+      expect(s.best, 3);
+      expect(s.current, 0);
+    });
+
+    test('joined before start behaves like computeStreak', () {
+      final dates = [d('2026-09-29'), d('2026-10-01'), d('2026-10-02')];
+      final m = computeMemberStreak(
+        journeyStart: d('2026-10-01'),
+        joinedLocalDate: d('2026-09-28'),
+        today: d('2026-10-02'),
+        dates: dates,
+      );
+      final j = computeStreak(start: d('2026-10-01'), today: d('2026-10-02'), dates: dates);
+      expect([m.current, m.best, m.completed], [j.current, j.best, j.completed]);
+      expect([m.current, m.best, m.completed], [2, 2, 2]);
+    });
+
+    test('solo owner (joined == start) is identical to computeStreak', () {
+      final dates = [d('2026-10-01'), d('2026-10-02'), d('2026-10-04'), d('2026-10-05')];
+      final m = computeMemberStreak(
+        journeyStart: d('2026-10-01'),
+        durationDays: 30,
+        joinedLocalDate: d('2026-10-01'),
+        today: d('2026-10-05'),
+        dates: dates,
+      );
+      final j = computeStreak(start: d('2026-10-01'), durationDays: 30, today: d('2026-10-05'), dates: dates);
+      expect([m.current, m.best, m.completed, m.dayIndex], [j.current, j.best, j.completed, j.dayIndex]);
+    });
+  });
 }

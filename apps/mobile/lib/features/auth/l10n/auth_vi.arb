@@ -1,0 +1,101 @@
+{
+  "@@locale": "vi",
+  "auth_title": "Đăng nhập",
+  "@auth_title": {
+    "description": "Title of the sign-in screen (email step)."
+  },
+  "auth_subtitle": "Nhập email, Ourney gửi bạn mã 6 số. Không cần mật khẩu.",
+  "@auth_subtitle": {
+    "description": "Explains email OTP sign-in (FR-A1)."
+  },
+  "auth_emailLabel": "Email",
+  "@auth_emailLabel": {
+    "description": "Email field label."
+  },
+  "auth_emailHint": "ban@vidu.com",
+  "@auth_emailHint": {
+    "description": "Email field placeholder."
+  },
+  "auth_emailInvalid": "Email này chưa đúng định dạng.",
+  "@auth_emailInvalid": {
+    "description": "Validation error for the email field."
+  },
+  "auth_sendCode": "Gửi mã",
+  "@auth_sendCode": {
+    "description": "Button that sends the OTP email."
+  },
+  "auth_sending": "Đang gửi…",
+  "@auth_sending": {
+    "description": "Button label while the OTP is being sent."
+  },
+  "auth_codeTitle": "Nhập mã",
+  "@auth_codeTitle": {
+    "description": "Title of the OTP step."
+  },
+  "auth_codeSentTo": "Mã 6 số đã được gửi tới {email}.",
+  "@auth_codeSentTo": {
+    "description": "Below the OTP title.",
+    "placeholders": {
+      "email": {"type": "String"}
+    }
+  },
+  "auth_codeLabel": "Mã 6 số",
+  "@auth_codeLabel": {
+    "description": "OTP field label."
+  },
+  "auth_codeInvalidFormat": "Mã gồm đúng 6 chữ số.",
+  "@auth_codeInvalidFormat": {
+    "description": "Validation error for the OTP field."
+  },
+  "auth_verify": "Xác nhận",
+  "@auth_verify": {
+    "description": "Button that verifies the OTP."
+  },
+  "auth_verifying": "Đang kiểm tra…",
+  "@auth_verifying": {
+    "description": "Button label while the OTP is being verified."
+  },
+  "auth_resend": "Gửi lại mã",
+  "@auth_resend": {
+    "description": "Resend OTP button."
+  },
+  "auth_resendIn": "Gửi lại sau {seconds} giây",
+  "@auth_resendIn": {
+    "description": "Resend OTP button during the cooldown.",
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "auth_codeResent": "Đã gửi mã mới. Kiểm tra hộp thư nhé.",
+  "@auth_codeResent": {
+    "description": "Confirmation after resending the OTP."
+  },
+  "auth_changeEmail": "Đổi email",
+  "@auth_changeEmail": {
+    "description": "Go back to the email step."
+  },
+  "auth_termsNote": "Khi tiếp tục, bạn đồng ý với điều khoản sử dụng và chính sách quyền riêng tư của Ourney.",
+  "@auth_termsNote": {
+    "description": "Legal note under the sign-in form."
+  },
+  "auth_termsLink": "Xem điều khoản",
+  "@auth_termsLink": {
+    "description": "Opens the EULA/privacy pages."
+  },
+  "auth_errorWrongCode": "Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.",
+  "@auth_errorWrongCode": {
+    "description": "OTP rejected (invalid / expired)."
+  },
+  "auth_errorRateLimited": "Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.",
+  "@auth_errorRateLimited": {
+    "description": "Too many OTP requests or attempts."
+  },
+  "auth_errorOffline": "Không có mạng. Kết nối lại rồi thử nhé.",
+  "@auth_errorOffline": {
+    "description": "No connection."
+  },
+  "auth_errorGeneric": "Có lỗi xảy ra. Thử lại nhé.",
+  "@auth_errorGeneric": {
+    "description": "Any other sign-in error."
+  }
+}

@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -42,10 +43,36 @@ jobs:
             echo "No test/ directory yet in ourney_core; skipping dart test."
           fi
 
-  mobile:
-    name: apps/mobile (analyze + test)
+  supabase:
+    name: supabase (pgTAP + edge functions)
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      # https://github.com/supabase/setup-cli
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # https://github.com/denoland/setup-deno
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Streak vectors in sync with contract
+        run: deno run --allow-read supabase/scripts/check-streak-vectors.ts
+      - name: Type-check edge functions
+        run: deno check supabase/functions/*/index.ts
+      - name: Start Supabase (db, auth, storage, rest)
+        run: supabase start -x studio,realtime,imgproxy,logflare,vector,mailpit,supavisor,postgres-meta,edge-runtime
+      - name: pgTAP
+        run: supabase test db
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+  mobile:
+    name: apps/mobile (codegen + analyze + test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: apps/mobile
@@ -58,14 +85,33 @@ jobs:
           cache: true
       - name: Install dependencies
         run: flutter pub get
-      - name: Generate localizations
+      # Generated code is committed: regenerating must not change anything.
+      - name: Codegen is up to date (build_runner)
         run: |
-          if [ -f l10n.yaml ]; then
-            flutter gen-l10n
-          else
-            echo "No l10n.yaml yet; skipping flutter gen-l10n."
+          dart run build_runner build -d
+          git diff --exit-code --stat -- . || {
+            echo "::error::Generated files are stale: run 'dart run build_runner build -d' in apps/mobile and commit."
+            exit 1
+          }
+      - name: Localizations are up to date (all ARB sets)
+        run: |
+          dart run tool/gen_l10n.dart
+          git diff --exit-code --stat -- . || {
+            echo "::error::Generated l10n is stale: run 'dart run tool/gen_l10n.dart' in apps/mobile and commit."
+            exit 1
+          }
+      - name: No uncommitted generated files
+        run: |
+          untracked="$(git ls-files --others --exclude-standard -- .)"
+          if [ -n "$untracked" ]; then
+            echo "::error::Generated files are not committed:"
+            echo "$untracked"
+            exit 1
           fi
-      - name: Analyze
+      - name: Analyze (flutter)
         run: flutter analyze
+      # Only `dart analyze` runs the analyzer plugins (riverpod_lint).
+      - name: Analyze (dart, riverpod_lint)
+        run: dart analyze
       - name: Test
         run: flutter test
