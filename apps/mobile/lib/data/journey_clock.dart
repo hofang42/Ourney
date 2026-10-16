@@ -1,6 +1,6 @@
 import 'package:ourney_core/ourney_core.dart';
-import 'package:timezone/data/latest_all.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
+
+import '../shared/time_zones.dart';
 
 /// UTC offset of IANA zone [timezone] at [instant].
 typedef UtcOffsetResolver = Duration Function(
@@ -23,19 +23,8 @@ class JourneyClock {
   LocalDate today(String timezone) => localDate(now(), timezone);
 }
 
-bool _tzReady = false;
-
-/// Offset from the bundled tz database (loaded lazily on first use so app
-/// start stays fast). Unknown zones fall back to the device offset.
-Duration ianaOffset(String timezone, DateTime instant) {
-  if (!_tzReady) {
-    tzdata.initializeTimeZones();
-    _tzReady = true;
-  }
-  try {
-    final location = tz.getLocation(timezone);
-    return location.timeZone(instant.toUtc().millisecondsSinceEpoch).offset;
-  } on Object {
-    return instant.toLocal().timeZoneOffset;
-  }
-}
+/// Offset from the bundled tz database (shared loader in
+/// lib/shared/time_zones.dart: lazy, legacy aliases, logged guess for
+/// unknown zones instead of a silent fallback).
+Duration ianaOffset(String timezone, DateTime instant) =>
+    timeZoneOffsetAt(timezone, instant);

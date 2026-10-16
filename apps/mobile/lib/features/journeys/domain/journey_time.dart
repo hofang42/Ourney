@@ -1,35 +1,19 @@
 import 'package:ourney_core/ourney_core.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
 
-/// Loads the IANA database once (pure Dart, no platform channel).
-void ensureTimeZonesLoaded() {
-  if (!tz.timeZoneDatabase.isInitialized) tzdata.initializeTimeZones();
-}
+import '../../../shared/time_zones.dart';
 
-/// True when [timezone] is a known IANA zone name.
-bool isKnownTimezone(String timezone) {
-  ensureTimeZonesLoaded();
-  try {
-    tz.getLocation(timezone);
-    return true;
-  } on tz.LocationNotFoundException {
-    return false;
-  }
-}
+export '../../../shared/time_zones.dart'
+    show canonicalTimeZoneName, ensureTimeZonesLoaded;
 
-/// UTC offset of the IANA zone [timezone] at [instant]. Falls back to the
-/// device's offset when the zone is unknown, so the UI never crashes on a
-/// bad value coming from the server.
-Duration utcOffsetIn(String timezone, DateTime instant) {
-  ensureTimeZonesLoaded();
-  try {
-    final location = tz.getLocation(timezone);
-    return tz.TZDateTime.from(instant, location).timeZoneOffset;
-  } on tz.LocationNotFoundException {
-    return instant.toLocal().timeZoneOffset;
-  }
-}
+/// True when [timezone] is a known IANA zone name (legacy aliases such as
+/// `Asia/Saigon` included).
+bool isKnownTimezone(String timezone) => isKnownTimeZone(timezone);
+
+/// UTC offset of the IANA zone [timezone] at [instant]. Legacy names map to
+/// their canonical zone; an unknown name (bad server value) uses the logged
+/// best guess of [resolveTimeZone], so the UI never crashes.
+Duration utcOffsetIn(String timezone, DateTime instant) =>
+    timeZoneOffsetAt(timezone, instant);
 
 /// Journey-local calendar date of [instant] (same rule as the server's
 /// `local_date`).

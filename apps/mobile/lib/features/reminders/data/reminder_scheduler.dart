@@ -5,10 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:ourney_core/ourney_core.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
 
 import '../../../app/providers.dart';
+import '../../../shared/time_zones.dart';
 import '../domain/reminder_plan.dart';
 import '../l10n/generated/reminders_localizations.dart';
 import 'notification_gateway.dart';
@@ -24,10 +23,6 @@ bool _isReminderId(int id) =>
 
 const Duration _readTimeout = Duration(seconds: 5);
 
-void _ensureTimeZones() {
-  if (!tz.timeZoneDatabase.isInitialized) tzdata.initializeTimeZones();
-}
-
 /// Wall clock used for planning. Override in tests.
 final remindersClockProvider = Provider<Clock>((ref) => const Clock());
 
@@ -36,11 +31,14 @@ final remindersClockProvider = Provider<Clock>((ref) => const Clock());
 final reminderDeviceTimezoneProvider = FutureProvider<String>((ref) async {
   try {
     final info = await FlutterTimezone.getLocalTimezone();
-    if (info.identifier.isNotEmpty) return info.identifier;
+    // e.g. Asia/Saigon -> Asia/Ho_Chi_Minh; unknown -> logged guess.
+    if (info.identifier.isNotEmpty) {
+      return resolveTimeZone(info.identifier).name;
+    }
   } on Object {
     // Unsupported platform or channel missing: fall through.
   }
-  return 'Etc/UTC';
+  return guessTimeZoneForOffset(DateTime.now().timeZoneOffset).name;
 }, retry: (_, _) => null);
 
 /// Builds the plan from the repositories and settings, then replaces the
@@ -80,7 +78,7 @@ class ReminderScheduler {
 
   /// The notifications that should be pending right now.
   Future<List<PlannedNotification>> buildPlan() async {
-    _ensureTimeZones();
+    ensureTimeZonesLoaded();
     final settings = _ref.read(reminderSettingsProvider);
     final streakAlerts = _ref.read(streakAlertsEnabledProvider);
     final journeys = await _ref

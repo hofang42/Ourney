@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/reminders/domain/reminder_plan.dart';
+import 'package:ourney/shared/time_zones.dart';
 import 'package:ourney_core/ourney_core.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 const hcm = 'Asia/Ho_Chi_Minh'; // UTC+7, no DST
@@ -36,7 +36,7 @@ String wall(DateTime utc, String zone) {
 }
 
 void main() {
-  setUpAll(tzdata.initializeTimeZones);
+  setUpAll(ensureTimeZonesLoaded);
 
   // 2026-10-16 10:00 in Ho Chi Minh.
   final now = DateTime.utc(2026, 10, 16, 3);

@@ -1,23 +1,12 @@
 import 'package:ourney_core/ourney_core.dart';
-import 'package:timezone/data/latest.dart' as tzdata;
-import 'package:timezone/timezone.dart' as tz;
+
+import '../../../shared/time_zones.dart';
 
 /// Journey-local calendar date of [instant] in the IANA zone [timezone]
-/// (same rule as the server's `local_date`). Unknown zones fall back to the
-/// device offset so a bad server value never crashes the UI.
-LocalDate groupLocalDate(String timezone, DateTime instant) {
-  if (!tz.timeZoneDatabase.isInitialized) tzdata.initializeTimeZones();
-  Duration offset;
-  try {
-    offset = tz.TZDateTime.from(
-      instant,
-      tz.getLocation(timezone),
-    ).timeZoneOffset;
-  } on tz.LocationNotFoundException {
-    offset = instant.toLocal().timeZoneOffset;
-  }
-  return localDateOf(instant, offset);
-}
+/// (same rule as the server's `local_date`). Legacy and unknown zones are
+/// handled by [timeZoneOffsetAt], so a bad server value never crashes the UI.
+LocalDate groupLocalDate(String timezone, DateTime instant) =>
+    localDateOf(instant, timeZoneOffsetAt(timezone, instant));
 
 /// One member row of the group "Today" screen (FR-D3).
 class GroupMemberEntry {
