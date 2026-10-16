@@ -59,6 +59,7 @@ as $$
   select exists (
     select 1 from public.check_ins c
      where c.id = checkin
+       and c.deleted_at is null
        and public.is_member(c.journey_id)
        and not public.is_blocked_pair(c.user_id)
   );

@@ -47,6 +47,8 @@ with check (
       (storage.foldername(name))[1] = 'avatars'
       and array_length(storage.foldername(name), 1) = 2
       and (storage.foldername(name))[2] = (select auth.uid())::text
+      -- a still-valid JWT of a deleted account must not re-create media
+      and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.deleted_at is null)
       and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$'
     )
   )

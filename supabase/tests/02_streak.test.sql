@@ -3,7 +3,7 @@
 -- Result columns: (current_streak, best_streak, completed_days)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(18);
 
 -- ---- golden vectors -------------------------------------------------------
 select results_eq(
@@ -52,6 +52,16 @@ select is(
   public.local_date('2026-10-05 03:30:00+00', 'America/Los_Angeles'),
   '2026-10-04'::date,
   'local_date stays on previous day west of UTC');
+
+select is(
+  public.local_date('2026-03-08 04:30:00+00', 'America/New_York'),
+  '2026-03-07'::date,
+  'local_date before DST switch (23:30 EST)');
+
+select is(
+  public.local_date('2026-03-09 03:30:00+00', 'America/New_York'),
+  '2026-03-08'::date,
+  'local_date after DST switch uses the new offset (23:30 EDT)');
 
 -- ---- trigger + journey_streak integration ---------------------------------
 insert into auth.users (id, email) values ('11111111-1111-4111-8111-111111111111', 'streak-a@example.test');
