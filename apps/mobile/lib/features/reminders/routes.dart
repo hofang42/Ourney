@@ -1,21 +1,19 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-import '../../shared/placeholder_screen.dart';
-import 'l10n/generated/reminders_localizations.dart';
+import 'ui/reminders_screen.dart';
 
-/// PLACEHOLDER (A3): the reminders feature agent (C3) replaces the screens.
+/// Reminders (C3). Full-screen settings page at `/reminders` (FR-G1, FR-G2).
 ///
 /// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> remindersRoutes`; top-level paths must start with a prefix listed
-/// for 'reminders' in `featureRoutePrefixes` (lib/app/app_routes.dart).
-/// Full-screen (reminder settings).
+/// `List<RouteBase> remindersRoutes`; top-level paths start with a prefix
+/// listed for 'reminders' in `featureRoutePrefixes`.
+///
+/// Integration hooks for other features: see `data/reminder_scheduler.dart`
+/// (`rescheduleReminders(ref)`, `ReminderLifecycleHook`).
 final List<RouteBase> remindersRoutes = [
   GoRoute(
     path: AppRoutes.reminders,
-    builder: (context, state) => PlaceholderScreen(
-      id: 'reminders',
-      title: RemindersL10n.of(context).reminders_title,
-    ),
+    builder: (context, state) => const RemindersScreen(),
   ),
 ];

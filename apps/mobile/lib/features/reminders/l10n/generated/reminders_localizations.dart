@@ -103,6 +103,162 @@ abstract class RemindersL10n {
   /// In vi, this message translates to:
   /// **'Nhắc nhở'**
   String get reminders_title;
+
+  /// Short explanation at the top of the reminders screen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn giờ nhắc cho từng hành trình. Ourney chỉ nhắc vào những ngày bạn chưa check-in.'**
+  String get reminders_intro;
+
+  /// Section header above the per-journey reminder list.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình'**
+  String get reminders_journeysHeader;
+
+  /// Accessibility label of the on/off switch of one journey's reminder.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc cho {journey}'**
+  String reminders_toggleLabel(String journey);
+
+  /// Subtitle of a journey whose reminder is on.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc lúc {time} mỗi ngày'**
+  String reminders_timeOn(String time);
+
+  /// Subtitle of a journey whose reminder is off.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tắt'**
+  String get reminders_timeOff;
+
+  /// Button that opens the time picker; shows the current time.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi giờ nhắc ({time})'**
+  String reminders_changeTime(String time);
+
+  /// Help text at the top of the time picker dialog.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giờ nhắc check-in'**
+  String get reminders_pickTimeHelp;
+
+  /// Title of the switch for the 21:00 streak-about-to-break alert.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cảnh báo streak lúc 21:00'**
+  String get reminders_streakAlertTitle;
+
+  /// Subtitle of the streak alert switch.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nếu đến 21:00 bạn vẫn chưa check-in mà đang có streak.'**
+  String get reminders_streakAlertSubtitle;
+
+  /// Empty state title when there is no active journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có hành trình nào'**
+  String get reminders_emptyTitle;
+
+  /// Empty state message when there is no active journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo một hành trình rồi quay lại đây để đặt giờ nhắc.'**
+  String get reminders_emptyMessage;
+
+  /// Shown when the journeys could not be loaded.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tải được danh sách hành trình. Thử lại sau nhé.'**
+  String get reminders_loadError;
+
+  /// Retry button after a loading error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thử lại'**
+  String get reminders_retry;
+
+  /// Banner title when the OS notification permission is denied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thông báo đang tắt'**
+  String get reminders_deniedTitle;
+
+  /// Banner message when the OS notification permission is denied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giờ nhắc vẫn được lưu, nhưng cần bật thông báo cho Ourney trong Cài đặt thì nhắc nhở mới hiện.'**
+  String get reminders_deniedMessage;
+
+  /// Button that opens the system notification settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở Cài đặt'**
+  String get reminders_openSettings;
+
+  /// Title of the in-context dialog shown before the OS notification prompt.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật thông báo nhé?'**
+  String get reminders_permissionTitle;
+
+  /// Body of the in-context dialog shown before the OS notification prompt.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney chỉ gửi những lời nhắc bạn đặt, và báo lúc 21:00 khi streak sắp mất. Không quảng cáo.'**
+  String get reminders_permissionMessage;
+
+  /// Button that continues to the OS notification prompt.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get reminders_permissionContinue;
+
+  /// Button that dismisses the notification rationale dialog.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau'**
+  String get reminders_permissionNotNow;
+
+  /// Title of the daily reminder notification.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đến giờ check-in rồi'**
+  String get reminders_notifTitle;
+
+  /// Body of the daily reminder notification.
+  ///
+  /// In vi, this message translates to:
+  /// **'{journey}: chụp một tấm cho hôm nay nào.'**
+  String reminders_notifBody(String journey);
+
+  /// Title of the 21:00 streak alert notification.
+  ///
+  /// In vi, this message translates to:
+  /// **'Streak sắp mất'**
+  String get reminders_alertTitle;
+
+  /// Body of the 21:00 streak alert notification.
+  ///
+  /// In vi, this message translates to:
+  /// **'{journey}: chuỗi {count} ngày sẽ mất lúc nửa đêm. Một tấm ảnh là giữ được.'**
+  String reminders_alertBody(String journey, int count);
+
+  /// Android notification channel name (shown in system settings).
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc check-in'**
+  String get reminders_channelName;
+
+  /// Android notification channel description.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lời nhắc check-in hằng ngày và cảnh báo streak sắp mất.'**
+  String get reminders_channelDescription;
 }
 
 class _RemindersL10nDelegate extends LocalizationsDelegate<RemindersL10n> {
