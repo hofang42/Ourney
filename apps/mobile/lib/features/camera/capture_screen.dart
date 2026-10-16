@@ -288,61 +288,60 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       });
     }
     final capturedAt = clock.now().toUtc();
+    final String path;
     try {
-      final path = await s.takePicture();
-      if (!mounted) return;
-      await _openCheckin(
-        CapturedPhoto(
-          journeyId: journey.id,
-          path: path,
-          capturedAt: capturedAt,
-        ),
-      );
+      path = await s.takePicture();
     } on CameraStartException {
       if (mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(
           SnackBar(content: Text(CameraL10n.of(context).camera_captureFailed)),
         );
       }
+      return;
     } finally {
-      if (mounted) {
-        setState(() {
-          _busy = false;
-          _flashOverlay = false;
-        });
-      }
+      // Never held across the navigation below: /checkin may leave through
+      // pop-then-push or `go`, and the shutter must work when we are back.
+      // The flash overlay fades out on its own timer.
+      if (mounted) setState(() => _busy = false);
     }
+    if (!mounted) return;
+    _openCheckin(
+      CapturedPhoto(journeyId: journey.id, path: path, capturedAt: capturedAt),
+    );
   }
 
   Future<void> _pickFromLibrary(Journey journey) async {
     if (_busy) return;
     setState(() => _busy = true);
+    String? path;
     try {
-      final path = await ref.read(galleryPickerProvider).pickPhoto();
-      if (path == null || !mounted) return;
-      await _openCheckin(
-        CapturedPhoto(
-          journeyId: journey.id,
-          path: path,
-          capturedAt: clock.now().toUtc(),
-          fromLibrary: true,
-        ),
-      );
+      path = await ref.read(galleryPickerProvider).pickPhoto();
     } on Object {
       // Picker unavailable or cancelled by the OS: nothing to do.
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+    if (path == null || !mounted) return;
+    _openCheckin(
+      CapturedPhoto(
+        journeyId: journey.id,
+        path: path,
+        capturedAt: clock.now().toUtc(),
+        fromLibrary: true,
+      ),
+    );
   }
 
-  Future<void> _openCheckin(CapturedPhoto photo) async {
+  /// Fire and forget: the push future is not awaited (it may never
+  /// complete if /checkin is replaced), and no state depends on it.
+  void _openCheckin(CapturedPhoto photo) {
     unawaited(
       CameraPrefs.writeLastJourneyId(
         ref.read(sharedPreferencesProvider),
         photo.journeyId,
       ),
     );
-    await context.push<void>(AppRoutes.checkin, extra: photo);
+    unawaited(context.push<void>(AppRoutes.checkin, extra: photo));
   }
 
   @override

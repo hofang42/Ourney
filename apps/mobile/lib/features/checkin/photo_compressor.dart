@@ -6,6 +6,8 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../data/data_context.dart' show checkinDraftDirName;
+
 /// Output of [PhotoCompressor.compress]: JPEG files on local disk, ready for
 /// `CheckInDraft.photoFile` / `thumbFile`.
 class CompressedPhoto {
@@ -48,7 +50,8 @@ class FlutterImagePhotoCompressor implements PhotoCompressor {
   /// the upload queue in lib/data has sent them.
   static Future<Directory> _dir() async {
     final base = await getApplicationSupportDirectory();
-    final dir = Directory(p.join(base.path, 'checkin_media'));
+    // Wiped with the rest of the local data (DataContext.wipeLocal).
+    final dir = Directory(p.join(base.path, checkinDraftDirName));
     if (!dir.existsSync()) await dir.create(recursive: true);
     return dir;
   }
@@ -81,4 +84,44 @@ class FlutterImagePhotoCompressor implements PhotoCompressor {
 
 final photoCompressorProvider = Provider<PhotoCompressor>(
   (ref) => const FlutterImagePhotoCompressor(),
+);
+
+/// Deletes check-in draft files once they are no longer needed: the
+/// compressed photo/thumbnail after a successful submit (the repository has
+/// copied them into the media store) or a failed one (a retry compresses
+/// again), and the raw camera/picker file after posting or discarding.
+abstract interface class DraftFiles {
+  /// Never throws; missing files are ignored.
+  Future<void> discard(Iterable<String> paths);
+}
+
+/// Deletes only files inside the app's temporary directory (camera and
+/// picker output) or the check-in draft folder, never anything else (a
+/// picker could in theory hand back an original from the user's library).
+class LocalDraftFiles implements DraftFiles {
+  const LocalDraftFiles();
+
+  @override
+  Future<void> discard(Iterable<String> paths) async {
+    try {
+      final roots = [
+        (await getTemporaryDirectory()).path,
+        p.join(
+          (await getApplicationSupportDirectory()).path,
+          checkinDraftDirName,
+        ),
+      ];
+      for (final path in paths) {
+        if (!roots.any((r) => p.isWithin(r, path))) continue;
+        final f = File(path);
+        if (f.existsSync()) await f.delete();
+      }
+    } on Object {
+      // Best effort: leftovers are removed with the local data anyway.
+    }
+  }
+}
+
+final draftFilesProvider = Provider<DraftFiles>(
+  (ref) => const LocalDraftFiles(),
 );
