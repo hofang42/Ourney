@@ -13,7 +13,10 @@ import '../sync/outbox.dart';
 /// Group features. Every call needs the server: in local-only mode they throw
 /// [GroupException] `offline` (UI shows `NeedsServerView` instead).
 class DataGroupRepository implements GroupRepository {
-  DataGroupRepository(this.ctx, {this.todayRefresh = const Duration(minutes: 1)});
+  DataGroupRepository(
+    this.ctx, {
+    this.todayRefresh = const Duration(minutes: 1),
+  });
 
   final DataContext ctx;
 
@@ -130,54 +133,58 @@ class DataGroupRepository implements GroupRepository {
     return controller.stream;
   }
 
-  Future<List<MemberToday>> _fetchToday(String journeyId) =>
-      _group((remote) async {
-        final journey = await (_db.select(
-          _db.journeys,
-        )..where((t) => t.id.equals(journeyId))).getSingleOrNull();
-        final rows = await remote.rpc('group_today', {'journey': journeyId});
-        final list = (rows as List? ?? const []).cast<Map<dynamic, dynamic>>();
-        final today = journey == null
-            ? null
-            : ctx.clock.today(journey.timezone);
-        final me = ctx.userId;
-        final result = <MemberToday>[];
-        for (final raw in list) {
-          final r = raw.cast<String, dynamic>();
-          final captured = r['captured_at'];
-          final day =
-              today ??
-              (captured == null
-                  ? ctx.clock.localDate(ctx.now(), 'UTC')
-                  : LocalDate.parse((captured as String).substring(0, 10)));
-          var member = memberTodayFromRemote(r, journeyId: journeyId, today: day);
-          if (member.userId == me && member.todayCheckIn == null && today != null) {
-            final local = await _localCheckIn(journeyId, me!, today);
-            if (local != null) {
-              member = MemberToday(
-                userId: member.userId,
-                username: member.username,
-                displayName: member.displayName,
-                avatarPath: member.avatarPath,
-                role: member.role,
-                currentStreak: member.currentStreak,
-                todayCheckIn: local,
-              );
-            }
-          }
-          result.add(member);
+  Future<List<MemberToday>> _fetchToday(String journeyId) => _group((
+    remote,
+  ) async {
+    final journey = await (_db.select(
+      _db.journeys,
+    )..where((t) => t.id.equals(journeyId))).getSingleOrNull();
+    final rows = await remote.rpc('group_today', {'journey': journeyId});
+    final list = (rows as List? ?? const []).cast<Map<dynamic, dynamic>>();
+    final today = journey == null ? null : ctx.clock.today(journey.timezone);
+    final me = ctx.userId;
+    final result = <MemberToday>[];
+    for (final raw in list) {
+      final r = raw.cast<String, dynamic>();
+      final captured = r['captured_at'];
+      final day =
+          today ??
+          (captured == null
+              ? ctx.clock.localDate(ctx.now(), 'UTC')
+              : LocalDate.parse((captured as String).substring(0, 10)));
+      var member = memberTodayFromRemote(r, journeyId: journeyId, today: day);
+      if (member.userId == me && member.todayCheckIn == null && today != null) {
+        final local = await _localCheckIn(journeyId, me!, today);
+        if (local != null) {
+          member = MemberToday(
+            userId: member.userId,
+            username: member.username,
+            displayName: member.displayName,
+            avatarPath: member.avatarPath,
+            role: member.role,
+            currentStreak: member.currentStreak,
+            todayCheckIn: local,
+          );
         }
-        return result;
-      });
+      }
+      result.add(member);
+    }
+    return result;
+  });
 
-  Future<CheckIn?> _localCheckIn(String journeyId, String me, LocalDate day) async {
-    final row = await (_db.select(_db.checkIns)..where(
-          (t) =>
-              t.journeyId.equals(journeyId) &
-              t.userId.equals(me) &
-              t.localDate.equalsValue(day),
-        ))
-        .getSingleOrNull();
+  Future<CheckIn?> _localCheckIn(
+    String journeyId,
+    String me,
+    LocalDate day,
+  ) async {
+    final row =
+        await (_db.select(_db.checkIns)..where(
+              (t) =>
+                  t.journeyId.equals(journeyId) &
+                  t.userId.equals(me) &
+                  t.localDate.equalsValue(day),
+            ))
+            .getSingleOrNull();
     if (row == null) return null;
     return checkInFromRow(
       row,
@@ -211,14 +218,17 @@ class DataGroupRepository implements GroupRepository {
     _remote();
     await _assertActive(checkInId);
     final me = ctx.requireUserId();
-    await (_db.delete(_db.reactions)..where(
-          (t) => t.checkInId.equals(checkInId) & t.userId.equals(me),
-        ))
-        .go();
+    await (_db.delete(
+      _db.reactions,
+    )..where((t) => t.checkInId.equals(checkInId) & t.userId.equals(me))).go();
     await _queueReaction(checkInId, me, null);
   }
 
-  Future<void> _queueReaction(String checkInId, String me, String? emoji) async {
+  Future<void> _queueReaction(
+    String checkInId,
+    String me,
+    String? emoji,
+  ) async {
     final outbox = ctx.outbox!;
     final key = reactionKey(checkInId);
     await outbox.cancel(key);
@@ -268,22 +278,20 @@ class DataGroupRepository implements GroupRepository {
   });
 
   @override
-  Future<void> removeMember(String journeyId, String userId) =>
-      _group((remote) async {
-        await remote.rpc('remove_member', {
-          'journey': journeyId,
-          'member': userId,
-        });
-        await (_db.update(_db.memberships)..where(
-              (t) => t.journeyId.equals(journeyId) & t.userId.equals(userId),
-            ))
-            .write(
-              MembershipsCompanion(
-                status: Value(MemberStatus.left.wireName),
-                role: Value(MemberRole.member.wireName),
-              ),
-            );
-        await ctx.store.forgetUserContent(userId, journeyId: journeyId);
-        ctx.sync?.notifyChanged();
-      });
+  Future<void> removeMember(String journeyId, String userId) => _group((
+    remote,
+  ) async {
+    await remote.rpc('remove_member', {'journey': journeyId, 'member': userId});
+    await (_db.update(_db.memberships)..where(
+          (t) => t.journeyId.equals(journeyId) & t.userId.equals(userId),
+        ))
+        .write(
+          MembershipsCompanion(
+            status: Value(MemberStatus.left.wireName),
+            role: Value(MemberRole.member.wireName),
+          ),
+        );
+    await ctx.store.forgetUserContent(userId, journeyId: journeyId);
+    ctx.sync?.notifyChanged();
+  });
 }

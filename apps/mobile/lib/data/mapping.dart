@@ -6,7 +6,8 @@ import 'package:ourney_core/ourney_core.dart';
 import 'db/app_database.dart';
 import 'remote/remote_api.dart';
 
-DateTime parseInstant(Object? value) => DateTime.parse(value! as String).toUtc();
+DateTime parseInstant(Object? value) =>
+    DateTime.parse(value! as String).toUtc();
 
 double? _toDouble(Object? v) => switch (v) {
   null => null,

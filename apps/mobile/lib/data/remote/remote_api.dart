@@ -30,7 +30,11 @@ abstract interface class RemoteApi {
   });
 
   /// `insert ... on conflict ([onConflict]) do update`.
-  Future<void> upsert(String table, RemoteRow row, {required String onConflict});
+  Future<void> upsert(
+    String table,
+    RemoteRow row, {
+    required String onConflict,
+  });
 
   Future<void> insert(String table, RemoteRow row);
 

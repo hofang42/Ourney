@@ -30,7 +30,8 @@ class SupabaseRemoteApi implements RemoteApi {
 
   @override
   Future<void> sendOtp(String email) => guardRemote(
-    () => _client.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true),
+    () =>
+        _client.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true),
   );
 
   @override

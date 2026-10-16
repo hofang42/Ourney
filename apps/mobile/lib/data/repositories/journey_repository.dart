@@ -41,7 +41,9 @@ class DataJourneyRepository implements JourneyRepository {
         OrderingTerm.asc(_db.journeys.id),
       ]);
     return q.watch().map(
-      (rows) => [for (final r in rows) journeyFromRow(r.readTable(_db.journeys))],
+      (rows) => [
+        for (final r in rows) journeyFromRow(r.readTable(_db.journeys)),
+      ],
     );
   }
 
@@ -52,11 +54,9 @@ class DataJourneyRepository implements JourneyRepository {
           .map((r) => r == null ? null : journeyFromRow(r));
 
   Future<int> _activeCount(String me) async {
-    final rows =
-        await (_mine(me)..where(
-              _db.journeys.status.equals(JourneyStatus.active.wireName),
-            ))
-            .get();
+    final rows = await (_mine(
+      me,
+    )..where(_db.journeys.status.equals(JourneyStatus.active.wireName))).get();
     return rows.length;
   }
 
@@ -95,7 +95,9 @@ class DataJourneyRepository implements JourneyRepository {
       )..where((t) => t.id.equals(id))).getSingle();
       return journeyFromRow(saved);
     } on OurneyException catch (e) {
-      if (e.error == OurneyErrorCode.limit) throw JourneyLimitException(e.detail);
+      if (e.error == OurneyErrorCode.limit) {
+        throw JourneyLimitException(e.detail);
+      }
       if (e.error != OurneyErrorCode.offline || needsServer) rethrow;
     }
     // Solo + offline: create locally, the outbox replays `create_journey`
@@ -130,7 +132,9 @@ class DataJourneyRepository implements JourneyRepository {
               timezone: d.timezone,
               visibility: visibility.wireName,
               status: JourneyStatus.active.wireName,
-              maxMembers: Value(d.kind == JourneyKind.solo ? 1 : maxGroupMembers),
+              maxMembers: Value(
+                d.kind == JourneyKind.solo ? 1 : maxGroupMembers,
+              ),
             ),
           );
       await _insertMembership(id, me, d.hideMetricDefault);
@@ -221,13 +225,18 @@ class DataJourneyRepository implements JourneyRepository {
     final outbox = ctx.outbox!;
     await outbox.enqueue(OutboxKind.deleteMedia, journeyKey(journeyId), {
       'prefixes': ['checkins/$journeyId/$me'],
-      'paths': [for (final c in own) ...[c.photoPath, c.thumbPath]],
+      'paths': [
+        for (final c in own) ...[c.photoPath, c.thumbPath],
+      ],
     });
     unawaited(outbox.flush());
   }
 
   @override
-  Future<String?> setPublicLink(String journeyId, {required bool enabled}) async {
+  Future<String?> setPublicLink(
+    String journeyId, {
+    required bool enabled,
+  }) async {
     final remote = ctx.requireRemote();
     await _flushFirst();
     final token = await remote.rpc('set_public_link', {
@@ -235,7 +244,9 @@ class DataJourneyRepository implements JourneyRepository {
       'enabled': enabled,
     });
     final value = token is String ? token : null;
-    await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId))).write(
+    await (_db.update(
+      _db.journeys,
+    )..where((t) => t.id.equals(journeyId))).write(
       JourneysCompanion(
         publicToken: Value(value),
         visibility: Value(
@@ -251,9 +262,8 @@ class DataJourneyRepository implements JourneyRepository {
   Stream<Membership?> watchMyMembership(String journeyId) {
     final me = ctx.userId;
     if (me == null) return Stream.value(null);
-    return (_db.select(_db.memberships)..where(
-          (t) => t.journeyId.equals(journeyId) & t.userId.equals(me),
-        ))
+    return (_db.select(_db.memberships)
+          ..where((t) => t.journeyId.equals(journeyId) & t.userId.equals(me)))
         .watchSingleOrNull()
         .map((r) => r == null ? null : membershipFromRow(r));
   }
@@ -283,12 +293,16 @@ class DataJourneyRepository implements JourneyRepository {
     if (updated == 0) throw const OurneyException(OurneyErrorCode.notFound);
     final outbox = ctx.outbox;
     if (outbox == null) return;
-    await outbox.enqueue(OutboxKind.updateMembership, membershipKey(journeyId), {
-      'journey_id': journeyId,
-      'user_id': me,
-      'hide_metric': ?hideMetric,
-      'blur_media': ?blurMedia,
-    });
+    await outbox.enqueue(
+      OutboxKind.updateMembership,
+      membershipKey(journeyId),
+      {
+        'journey_id': journeyId,
+        'user_id': me,
+        'hide_metric': ?hideMetric,
+        'blur_media': ?blurMedia,
+      },
+    );
     unawaited(outbox.flush());
   }
 }

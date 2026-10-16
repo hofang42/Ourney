@@ -44,7 +44,9 @@ class DataSafetyRepository implements SafetyRepository {
   @override
   Future<void> block(String userId) async {
     final remote = ctx.requireRemote();
-    if (userId == ctx.userId) throw const OurneyException(OurneyErrorCode.invalid);
+    if (userId == ctx.userId) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
     await remote.rpc('block_user', {'p_user': userId});
     await _db
         .into(_db.blocks)
@@ -57,7 +59,9 @@ class DataSafetyRepository implements SafetyRepository {
   Future<void> unblock(String userId) async {
     final remote = ctx.requireRemote();
     await remote.rpc('unblock_user', {'p_user': userId});
-    await (_db.delete(_db.blocks)..where((t) => t.blockedId.equals(userId))).go();
+    await (_db.delete(
+      _db.blocks,
+    )..where((t) => t.blockedId.equals(userId))).go();
     // Their check-ins are visible again: refetch the group journeys.
     final sync = ctx.sync;
     if (sync == null) return;

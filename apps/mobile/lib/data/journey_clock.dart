@@ -3,7 +3,10 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
 /// UTC offset of IANA zone [timezone] at [instant].
-typedef UtcOffsetResolver = Duration Function(String timezone, DateTime instant);
+typedef UtcOffsetResolver = Duration Function(
+  String timezone,
+  DateTime instant,
+);
 
 /// Journey-local dates (server: `local_date(captured_at, journeys.timezone)`).
 class JourneyClock {

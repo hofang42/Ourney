@@ -25,11 +25,12 @@ class LocalStore {
   /// Removes a journey and everything cached under it (rows and media).
   Future<void> purgeJourney(String journeyId) async {
     await db.transaction(() async {
-      final ids = await (db.selectOnly(db.checkIns)
-            ..addColumns([db.checkIns.id])
-            ..where(db.checkIns.journeyId.equals(journeyId)))
-          .map((r) => r.read(db.checkIns.id)!)
-          .get();
+      final ids =
+          await (db.selectOnly(db.checkIns)
+                ..addColumns([db.checkIns.id])
+                ..where(db.checkIns.journeyId.equals(journeyId)))
+              .map((r) => r.read(db.checkIns.id)!)
+              .get();
       await (db.delete(db.reactions)..where((t) => t.checkInId.isIn(ids))).go();
       await (db.delete(
         db.checkIns,
@@ -49,22 +50,27 @@ class LocalStore {
       await (db.delete(db.reactions)..where((t) => t.checkInId.isIn(ids))).go();
       await (db.delete(db.checkIns)..where((t) => t.id.isIn(ids))).go();
     });
-    await files.delete([for (final r in rows) ...[r.photoPath, r.thumbPath]]);
+    await files.delete([
+      for (final r in rows) ...[r.photoPath, r.thumbPath],
+    ]);
   }
 
   /// Drops everything cached from [userId] (after a block / removal).
   Future<void> forgetUserContent(String userId, {String? journeyId}) async {
-    final rows = await (db.select(db.checkIns)..where(
-          (t) =>
-              t.userId.equals(userId) &
-              (journeyId == null
-                  ? const Constant(true)
-                  : t.journeyId.equals(journeyId)),
-        ))
-        .get();
+    final rows =
+        await (db.select(db.checkIns)..where(
+              (t) =>
+                  t.userId.equals(userId) &
+                  (journeyId == null
+                      ? const Constant(true)
+                      : t.journeyId.equals(journeyId)),
+            ))
+            .get();
     await deleteCheckIns(rows);
     if (journeyId == null) {
-      await (db.delete(db.reactions)..where((t) => t.userId.equals(userId))).go();
+      await (db.delete(
+        db.reactions,
+      )..where((t) => t.userId.equals(userId))).go();
     }
   }
 
@@ -103,14 +109,15 @@ class LocalStore {
     final date = c.localDate.value;
     if (pending.contains(checkInKey(journeyId, userId, date))) return;
     // A retake elsewhere replaced the day's row under a new id.
-    final replaced = await (db.select(db.checkIns)..where(
-          (t) =>
-              t.journeyId.equals(journeyId) &
-              t.userId.equals(userId) &
-              t.localDate.equalsValue(date) &
-              t.id.equals(id).not(),
-        ))
-        .get();
+    final replaced =
+        await (db.select(db.checkIns)..where(
+              (t) =>
+                  t.journeyId.equals(journeyId) &
+                  t.userId.equals(userId) &
+                  t.localDate.equalsValue(date) &
+                  t.id.equals(id).not(),
+            ))
+            .get();
     await deleteCheckIns(replaced);
     await db.into(db.checkIns).insertOnConflictUpdate(c);
   }
@@ -137,7 +144,9 @@ class LocalStore {
     if (r['blocker_id'] != me) return;
     final blocked = r['blocked_id'] as String;
     if (isTombstone(r)) {
-      await (db.delete(db.blocks)..where((t) => t.blockedId.equals(blocked))).go();
+      await (db.delete(
+        db.blocks,
+      )..where((t) => t.blockedId.equals(blocked))).go();
       return;
     }
     await db
@@ -152,7 +161,9 @@ class LocalStore {
 
   Future<void> applyProfile(RemoteRow r) async {
     if (isTombstone(r)) {
-      await (db.delete(db.profiles)..where((t) => t.id.equals(r['id']! as String))).go();
+      await (db.delete(
+        db.profiles,
+      )..where((t) => t.id.equals(r['id']! as String))).go();
       return;
     }
     await db.into(db.profiles).insertOnConflictUpdate(profileFromRemote(r));

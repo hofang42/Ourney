@@ -213,5 +213,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> writeCursor(String key, String value) => into(syncCursor)
-      .insertOnConflictUpdate(SyncCursorCompanion.insert(tableKey: key, cursor: value));
+      .insertOnConflictUpdate(
+        SyncCursorCompanion.insert(tableKey: key, cursor: value),
+      );
 }

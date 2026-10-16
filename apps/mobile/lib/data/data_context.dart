@@ -55,4 +55,11 @@ class DataContext {
       ));
 
   DateTime now() => clock.now();
+
+  /// Removes every cached row and file (account deletion).
+  Future<void> wipeLocal() async {
+    await db.wipe();
+    await files.wipe();
+    sync?.notifyChanged();
+  }
 }

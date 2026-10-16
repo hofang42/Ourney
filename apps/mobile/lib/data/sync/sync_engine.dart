@@ -63,7 +63,10 @@ class SyncEngine {
   Future<void> execute(OutboxKind kind, Map<String, dynamic> p) async {
     switch (kind) {
       case OutboxKind.createJourney:
-        final row = await remote.rpc('create_journey', p.cast<String, dynamic>());
+        final row = await remote.rpc(
+          'create_journey',
+          p.cast<String, dynamic>(),
+        );
         if (row is Map) await store.applyJourney(row.cast<String, dynamic>());
       case OutboxKind.upsertCheckIn:
         await _pushCheckIn(p['id'] as String);
@@ -71,7 +74,8 @@ class SyncEngine {
         final paths = <String>{
           ...(p['paths'] as List? ?? const []).cast<String>(),
         };
-        for (final prefix in (p['prefixes'] as List? ?? const []).cast<String>()) {
+        for (final prefix
+            in (p['prefixes'] as List? ?? const []).cast<String>()) {
           paths.addAll(await remote.listFiles(prefix));
         }
         if (paths.isNotEmpty) await remote.removeFiles(paths.toList());
@@ -191,9 +195,10 @@ class SyncEngine {
     var cursor = await db.readCursor(key);
     var since = cursor == null
         ? null
-        : DateTime.parse(
-            cursor,
-          ).toUtc().subtract(pullOverlap).toIso8601String();
+        : DateTime.parse(cursor)
+              .toUtc()
+              .subtract(pullOverlap)
+              .toIso8601String();
     while (true) {
       final rows = await remote.select(
         table,
@@ -260,13 +265,14 @@ class SyncEngine {
         await store.applyMembership(m, me: me);
       }
       final live = ids.toSet();
-      final stale = await (db.select(db.checkIns)..where(
-            (t) =>
-                t.journeyId.equals(journeyId) &
-                t.uploaded.equals(true) &
-                t.id.isNotIn(live),
-          ))
-          .get();
+      final stale =
+          await (db.select(db.checkIns)..where(
+                (t) =>
+                    t.journeyId.equals(journeyId) &
+                    t.uploaded.equals(true) &
+                    t.id.isNotIn(live),
+              ))
+              .get();
       await store.deleteCheckIns(stale);
       for (final c in checkIns) {
         await store.applyCheckIn(c, pending);
@@ -278,7 +284,8 @@ class SyncEngine {
         db.reactions,
       )..where((t) => t.checkInId.isIn(ids))).get();
       for (final r in local) {
-        final mine = r.userId == me && pending.contains(reactionKey(r.checkInId));
+        final mine =
+            r.userId == me && pending.contains(reactionKey(r.checkInId));
         if (!mine && !liveReactions.contains('${r.checkInId}|${r.userId}')) {
           await (db.delete(db.reactions)..where(
                 (t) =>

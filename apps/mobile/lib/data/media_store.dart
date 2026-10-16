@@ -97,5 +97,6 @@ class CachedMediaStore implements MediaStore {
   }
 
   /// Drops a cached copy (e.g. after a block or a tombstone).
-  Future<void> evict(Iterable<String> storagePaths) => files.delete(storagePaths);
+  Future<void> evict(Iterable<String> storagePaths) =>
+      files.delete(storagePaths);
 }

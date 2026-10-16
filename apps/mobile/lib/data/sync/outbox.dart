@@ -26,8 +26,10 @@ enum OutboxKind {
 }
 
 /// Executes one queued item against the server. Throws [OurneyException].
-typedef OutboxExecutor =
-    Future<void> Function(OutboxKind kind, Map<String, dynamic> payload);
+typedef OutboxExecutor = Future<void> Function(
+  OutboxKind kind,
+  Map<String, dynamic> payload,
+);
 
 /// Delay before attempt `attempts + 1`: 2 s, 4 s, 8 s ... capped at 15 min.
 Duration outboxBackoff(int attempts) {
@@ -105,7 +107,9 @@ class Outbox {
             (t) =>
                 t.entityKey.equals(entityKey) &
                 t.dead.equals(false) &
-                (kind == null ? const Constant(true) : t.kind.equals(kind.wire)),
+                (kind == null
+                    ? const Constant(true)
+                    : t.kind.equals(kind.wire)),
           ))
           .go();
 
