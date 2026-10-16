@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/data/data_context.dart' show checkinDraftDirName;
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -317,6 +318,24 @@ void main() {
       await layer.journeys.create(soloDraft());
       await layer.auth.deleteAccount();
       expect(await layer.journeys.watchActive().first, isEmpty);
+    },
+  );
+
+  test(
+    'delete account also removes check-in drafts next to the media root',
+    () async {
+      final support = tempDir(); // stands in for Application Support
+      final mediaRoot = Directory('${support.path}/media');
+      final drafts = Directory('${support.path}/$checkinDraftDirName')
+        ..createSync();
+      final leftover = File('${drafts.path}/draft.jpg')..writeAsBytesSync([1]);
+      final other = File('${support.path}/keep.txt')..writeAsStringSync('x');
+      final layer = localLayer(db: db, media: mediaRoot, clock: clock);
+      await layer.journeys.create(soloDraft());
+      await layer.auth.deleteAccount();
+      expect(leftover.existsSync(), isFalse);
+      expect(drafts.existsSync(), isFalse);
+      expect(other.existsSync(), isTrue, reason: 'only our folders are wiped');
     },
   );
 
