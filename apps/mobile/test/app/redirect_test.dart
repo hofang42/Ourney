@@ -2,12 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/redirect.dart';
 
-String? r(String location, {bool onboarded = true, AuthStatus? auth}) =>
-    resolveRedirect(
-      uri: Uri.parse(location),
-      onboarded: onboarded,
-      auth: auth ?? AuthStatus.localOnly,
-    );
+String? r(
+  String location, {
+  bool onboarded = true,
+  AuthStatus? auth,
+  bool eula = true,
+}) => resolveRedirect(
+  uri: Uri.parse(location),
+  onboarded: onboarded,
+  auth: auth ?? AuthStatus.localOnly,
+  eulaAccepted: eula,
+);
 
 void main() {
   group('normalizeDeepLink', () {
@@ -72,6 +77,42 @@ void main() {
       expect(r('/auth?from=%2Fjoin%2FX', auth: inn), '/join/X');
       expect(r('/auth', auth: inn), AppRoutes.capture);
       expect(r('/groups', auth: inn), isNull);
+    });
+
+    test('EULA gate: signed in without acceptance (FR-F3)', () {
+      const inn = AuthStatus.signedIn;
+      expect(r('/capture', auth: inn, eula: false), kEulaAcceptPath);
+      expect(
+        r('/groups', auth: inn, eula: false),
+        '$kEulaAcceptPath?from=%2Fgroups',
+      );
+      // Leaving /auth keeps the saved target.
+      expect(
+        r('/auth?from=%2Fjoin%2FX', auth: inn, eula: false),
+        '$kEulaAcceptPath?from=%2Fjoin%2FX',
+      );
+      expect(r('/auth', auth: inn, eula: false), kEulaAcceptPath);
+      // Safety pages (the gate itself, terms, privacy) stay reachable.
+      expect(
+        r('$kEulaAcceptPath?from=%2Fgroups', auth: inn, eula: false),
+        isNull,
+      );
+      expect(r('/safety/privacy', auth: inn, eula: false), isNull);
+      // Accepted: no gate.
+      expect(r('/groups', auth: inn), isNull);
+    });
+
+    test('EULA gate never applies to local-only or signed-out users', () {
+      expect(r('/capture', eula: false), isNull);
+      expect(r('/journey/1', eula: false), isNull);
+      expect(
+        r('/groups', auth: AuthStatus.signedOut, eula: false),
+        '/auth?from=%2Fgroups',
+      );
+      expect(
+        r('/capture', onboarded: false, eula: false),
+        AppRoutes.onboarding,
+      );
     });
 
     test('deep links are normalised before any gate', () {

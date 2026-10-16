@@ -5,6 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../safety/data/safety_providers.dart';
 import '../l10n/generated/profile_localizations.dart';
 import 'inline_error.dart';
 
@@ -12,7 +13,7 @@ import 'inline_error.dart';
 /// username, or a fixed word when it is unknown) before the destructive
 /// button enables. Calls `AuthRepository.deleteAccount()` itself so errors
 /// (safe to retry) are shown in place; on success it resets onboarding and
-/// pops `true`. The router then leaves the signed-in area by itself.
+/// the EULA acceptance and pops `true`. The router then leaves the signed-in area by itself.
 class DeleteAccountDialog extends ConsumerStatefulWidget {
   const DeleteAccountDialog({
     required this.phrase,
@@ -62,6 +63,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
     final navigator = Navigator.of(context);
     final auth = ref.read(authRepositoryProvider);
     final onboarding = ref.read(onboardingCompleteProvider.notifier);
+    final eula = ref.read(eulaAcceptedProvider.notifier);
     setState(() {
       _deleting = true;
       _error = null;
@@ -82,6 +84,8 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
       return;
     }
     await onboarding.reset();
+    // A new account on this device must accept the terms again (FR-F3).
+    await eula.reset();
     // The router may already have replaced the stack (signed out), which
     // removes this dialog too.
     if (mounted) navigator.pop(true);

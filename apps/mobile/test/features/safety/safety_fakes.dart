@@ -111,11 +111,13 @@ Future<ProviderContainer> pumpSignedInApp(
   FakeSafetyRepository? repo,
   List<Override> overrides = const [],
   Locale locale = const Locale('vi'),
+  bool eulaAccepted = true,
 }) => pumpOurneyApp(
   tester,
   config: testBackendConfig,
   auth: FakeAuthRepository(userId: 'u1'),
   locale: locale,
+  eulaAccepted: eulaAccepted,
   overrides: [
     safetyRepositoryProvider.overrideWithValue(repo ?? FakeSafetyRepository()),
     safetyUrlLauncherProvider.overrideWithValue((_) async => true),
