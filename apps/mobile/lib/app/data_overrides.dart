@@ -1,5 +1,13 @@
-import 'package:flutter_riverpod/misc.dart' show Override;
+import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+import '../data/data_providers.dart';
+import '../data/db/app_database.dart';
 import 'config.dart';
 
 /// Hand-off point for the Data/Sync agent (B1).
@@ -20,5 +28,18 @@ import 'config.dart';
 /// Called once from main.dart after Supabase is initialised (when
 /// [AppConfig.hasBackend]) and before `runApp`. Keep it fast: the camera must
 /// be ready < 1s warm / < 2s cold (NFR-1), so defer heavy work.
-Future<List<Override>> createDataOverrides(AppConfig config) async =>
-    const <Override>[];
+Future<List<Override>> createDataOverrides(AppConfig config) async {
+  // The database opens lazily in a background isolate (drift_flutter); the
+  // repositories and sync triggers are built on first use (dataLayerProvider).
+  // The mode follows supabaseClientProvider (null in local-only).
+  final docs = await getApplicationDocumentsDirectory();
+  return dataOverrides(
+    DataEnvironment(
+      db: AppDatabase(driftDatabase(name: 'ourney')),
+      mediaRoot: Directory(p.join(docs.path, 'media')),
+      connectivity: config.hasBackend
+          ? () => Connectivity().onConnectivityChanged
+          : null,
+    ),
+  );
+}
