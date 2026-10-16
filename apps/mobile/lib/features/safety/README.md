@@ -49,15 +49,19 @@ Repository calls: `SafetyRepository.report(checkInId | userId, reason, note)`
 (note trimmed, empty -> null, max 500), `block`, `unblock`, `watchBlockedIds`.
 Errors map `rate_limited`, `not_found`, `invalid`, `offline` to messages.
 
-## EULA gate (orchestrator wiring, not done here)
+## EULA gate (wired in lib/app, Wave D)
 
-Apple 1.2 requires accepting terms before seeing user content. Suggested
-rule in `lib/app/redirect.dart` (after the auth gate): when
+Apple 1.2 requires accepting terms before seeing user content.
+`resolveRedirect` (`lib/app/redirect.dart`, after the auth gate): when
 `auth == AuthStatus.signedIn && !eulaAccepted` and the path is not under
-`/safety`, redirect to `/safety/eula/accept?from=<target>`; listen to
-`eulaAcceptedProvider` in `routerProvider` to refresh. Local-only mode has
-no other users, so it needs no gate. Call `eulaAcceptedProvider.notifier
-.reset()` on account deletion.
+`/safety`, it redirects to `/safety/eula/accept?from=<target>`;
+`routerProvider` listens to `eulaAcceptedProvider`. Local-only mode has no
+other users, so it has no gate. Account deletion
+(`DeleteAccountDialog`) calls `eulaAcceptedProvider.notifier.reset()`.
+
+Groups: `groupSafetyHooksProvider` defaults to `safetyGroupHooks`
+(`showReportSheet` / `confirmBlock`), and the group "Today" screen filters
+`hiddenCheckInIdsProvider`.
 
 ## Owner TODOs
 
