@@ -40,16 +40,33 @@ else
   echo "APPLY mode for $REPO."
 fi
 
-# Logins with a pending invitation (read-only). Empty on failure, e.g. no admin rights.
-pending_logins() {
-  gh api "repos/$REPO/invitations" --jq '.[].invitee.login' 2> /dev/null || true
-}
+# Fail clearly when gh is not logged in instead of treating every call as "not a collaborator".
+if ! gh api user --jq '.login' > /dev/null 2>&1; then
+  echo "error: gh is not authenticated (or GitHub is unreachable). Run: gh auth login" >&2
+  exit 1
+fi
 
-pending="$(pending_logins)"
+# Logins with a pending invitation (read-only). Needs admin rights on the repo.
+if ! pending="$(gh api "repos/$REPO/invitations" --jq '.[].invitee.login' 2> /dev/null)"; then
+  if [ "$DRY_RUN" -eq 0 ]; then
+    echo "error: cannot list invitations for $REPO (admin rights needed)" >&2
+    exit 1
+  fi
+  echo "warn: cannot list invitations for $REPO (admin rights needed); pending ones are not detected" >&2
+  pending=""
+fi
 
 for u in "${USERS[@]}"; do
-  # Effective permission: admin | maintain | write | triage | read | none. Not a collaborator -> error.
-  perm="$(gh api "repos/$REPO/collaborators/$u/permission" --jq '.permission' 2> /dev/null || true)"
+  # Effective permission: admin | maintain | write | triage | read | none.
+  # A 404 means "not a collaborator"; any other error is fatal (never guess).
+  if ! perm="$(gh api "repos/$REPO/collaborators/$u/permission" --jq '.permission' 2>&1)"; then
+    if [[ "$perm" == *"404"* ]]; then
+      perm=""
+    else
+      echo "error: could not read the permission of @$u on $REPO: $perm" >&2
+      exit 1
+    fi
+  fi
   case "$perm" in
     admin | maintain | write)
       echo "skip   @$u: already a collaborator with '$perm' (>= $PERMISSION)"
@@ -70,9 +87,8 @@ done
 
 echo
 echo "Pending invitations for $REPO:"
-list="$(gh api "repos/$REPO/invitations" --jq '.[] | "  @\(.invitee.login) (\(.permissions))"' 2> /dev/null || true)"
-if [ -n "$list" ]; then
-  echo "$list"
+if list="$(gh api "repos/$REPO/invitations" --jq '.[] | "  @\(.invitee.login) (\(.permissions))"' 2> /dev/null)"; then
+  echo "${list:-  (none)}"
 else
-  echo "  (none, or not visible with the current gh login)"
+  echo "  (cannot list: admin rights needed)"
 fi

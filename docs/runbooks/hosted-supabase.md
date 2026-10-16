@@ -14,9 +14,13 @@
 
 ## 2. Secret của GitHub
 
-Dùng **Environment** thay vì repo secret cho phần deploy, để có thể bắt duyệt thủ công.
+Dùng **Environment** thay vì repo secret cho phần deploy, để bắt buộc duyệt thủ công.
 
-*Settings → Environments → New environment* tên **`production`**. Nên bật *Required reviewers* (chính @hofang42) và giới hạn *Deployment branches* là `main`. Thêm **Environment secrets**:
+*Settings → Environments → New environment* tên **`production`**. **Bắt buộc** cấu hình bảo vệ **trước khi** thêm secret (không có thì bất kỳ ai có quyền ghi và chạy được workflow trên branch của mình đều đọc được secret):
+- *Required reviewers* = **@hofang42** (bỏ chọn "Prevent self-review" chỉ khi @hofang42 là người duy nhất chạy deploy).
+- *Deployment branches and tags* = **Selected branches** → chỉ `main`.
+
+Workflow cũng tự từ chối chạy ngoài `main` (`if: github.ref == 'refs/heads/main'`). Thêm **Environment secrets**:
 
 | Secret | Bắt buộc | Ý nghĩa |
 |---|---|---|

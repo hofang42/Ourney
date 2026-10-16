@@ -13,7 +13,8 @@
 #   SMTP_HOST SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL
 #   SMTP_PORT (default 465)  SMTP_SENDER_NAME (default Ourney)  SMTP_RATE_LIMIT (default 30, mails/hour)
 #
-# Secrets are only read from the environment and never printed.
+# Secrets are only read from the environment: never printed and never passed as command-line
+# arguments (supabase CLI and jq read them from env; curl gets them via stdin / a config fd).
 set -euo pipefail
 
 usage() {
@@ -64,6 +65,15 @@ fi
 SMTP_PORT="${SMTP_PORT:-465}"
 SMTP_SENDER_NAME="${SMTP_SENDER_NAME:-Ourney}"
 SMTP_RATE_LIMIT="${SMTP_RATE_LIMIT:-30}"
+
+# The token must be a single clean word (it is also written into a curl config file below).
+# Checked before ANY supabase call so a bad secret fails early.
+bad_token_re='[[:space:]"\\]'
+if [[ "$SUPABASE_ACCESS_TOKEN" =~ $bad_token_re ]]; then
+  echo "error: SUPABASE_ACCESS_TOKEN contains whitespace, a quote or a backslash (bad secret value?)" >&2
+  exit 1
+fi
+
 if [ "$APPLY_SMTP" -eq 1 ]; then
   case "$SMTP_PORT" in '' | *[!0-9]*)
     echo "error: SMTP_PORT must be a number" >&2
@@ -75,11 +85,16 @@ if [ "$APPLY_SMTP" -eq 1 ]; then
     exit 1
     ;;
   esac
-  case "$SUPABASE_ACCESS_TOKEN" in *[\"\\[:space:]]*)
-    echo "error: SUPABASE_ACCESS_TOKEN contains characters that are not allowed in a token" >&2
+  # Normalise (e.g. 030 -> 30) so jq's tonumber never sees leading zeros.
+  SMTP_RATE_LIMIT=$((10#$SMTP_RATE_LIMIT))
+  # The API base URL can be overridden for tests, but only to https or a loopback http server,
+  # so the access token can never be sent in clear text to a remote host.
+  SUPABASE_API_URL="${SUPABASE_API_URL:-https://api.supabase.com}"
+  api_re='^(https://[^/]|http://(127\.0\.0\.1|localhost)(:[0-9]+)?(/|$))'
+  if ! [[ "$SUPABASE_API_URL" =~ $api_re ]]; then
+    echo "error: SUPABASE_API_URL must start with https:// (or http://127.0.0.1 / http://localhost)" >&2
     exit 1
-    ;;
-  esac
+  fi
 fi
 
 # --- 3. Tools ---------------------------------------------------------------------------------
@@ -92,7 +107,8 @@ for t in "${tools[@]}"; do
   fi
 done
 
-# The CLI reads these from the environment (it also picks SUPABASE_DB_PASSWORD up for `db push`).
+# The CLI reads both from the environment (link and db push use SUPABASE_DB_PASSWORD as the
+# database password), so no secret is ever passed on a command line.
 export SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
 
 # Run from the repo root so `supabase/` (config.toml, migrations, functions) is found.
@@ -100,7 +116,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
 # --- 4. Link + migrations ---------------------------------------------------------------------
 echo "==> Linking project $SUPABASE_PROJECT_REF"
-supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "==> Dry run: migrations that would be applied"
@@ -128,21 +144,18 @@ supabase functions deploy public-journey --project-ref "$SUPABASE_PROJECT_REF" -
 if [ "$APPLY_SMTP" -eq 1 ]; then
   # shellcheck disable=SC2153  # SMTP_HOST is set: APPLY_SMTP=1 only when all four SMTP_* are non-empty
   echo "==> Applying custom SMTP to Auth (host: $SMTP_HOST, port: $SMTP_PORT, sender: $SMTP_SENDER_EMAIL)"
-  api="${SUPABASE_API_URL:-https://api.supabase.com}"
-  # The body is built by jq (proper JSON escaping) and sent through stdin; the token goes through a
-  # curl config read from a process substitution. Neither shows up in the process list or logs.
+  api="$SUPABASE_API_URL"
+  # Values reach jq through the environment ($ENV), never as arguments, so no secret appears in a
+  # command line. The JSON body goes to curl through stdin and the Authorization header through a
+  # curl config read from a process substitution, so they are not in curl's argv either.
   # smtp_port is a string in the Management API; rate_limit_email_sent is an integer.
+  export SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL SMTP_SENDER_NAME SMTP_RATE_LIMIT
   if ! response="$(
     jq -n \
-      --arg host "$SMTP_HOST" \
-      --arg port "$SMTP_PORT" \
-      --arg user "$SMTP_USER" \
-      --arg pass "$SMTP_PASS" \
-      --arg admin "$SMTP_SENDER_EMAIL" \
-      --arg name "$SMTP_SENDER_NAME" \
-      --argjson rate "$SMTP_RATE_LIMIT" \
-      '{smtp_host: $host, smtp_port: $port, smtp_user: $user, smtp_pass: $pass,
-        smtp_admin_email: $admin, smtp_sender_name: $name, rate_limit_email_sent: $rate}' |
+      '{smtp_host: $ENV.SMTP_HOST, smtp_port: $ENV.SMTP_PORT, smtp_user: $ENV.SMTP_USER,
+        smtp_pass: $ENV.SMTP_PASS, smtp_admin_email: $ENV.SMTP_SENDER_EMAIL,
+        smtp_sender_name: $ENV.SMTP_SENDER_NAME,
+        rate_limit_email_sent: ($ENV.SMTP_RATE_LIMIT | tonumber)}' |
       curl --silent --show-error --fail-with-body -X PATCH \
         --config <(printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_ACCESS_TOKEN") \
         -H 'Content-Type: application/json' \

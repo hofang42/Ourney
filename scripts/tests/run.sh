@@ -34,16 +34,40 @@ BIN="$TMP/bin"
 mkdir -p "$BIN"
 LOG="$TMP/calls.log"
 BODY="$TMP/curl-body.json"
+CONFIG="$TMP/curl-config.txt"
+REAL_JQ="$(command -v jq)"
 
+# supabase stub: fails when its arguments contain STUB_SUPABASE_FAIL (e.g. "link", "db push").
 cat > "$BIN/supabase" << 'EOF'
 #!/usr/bin/env bash
 echo "supabase $*" >> "$STUB_LOG"
+if [ -n "${STUB_SUPABASE_FAIL:-}" ] && [[ "$*" == *"$STUB_SUPABASE_FAIL"* ]]; then
+  echo "supabase stub: simulated failure" >&2
+  exit 1
+fi
 EOF
 
+# jq wrapper: logs argv (to prove no secret is passed as an argument), then runs the real jq.
+cat > "$BIN/jq" << EOF
+#!/usr/bin/env bash
+echo "jq \$*" >> "\$STUB_LOG"
+exec "$REAL_JQ" "\$@"
+EOF
+
+# curl stub: logs argv, saves the body (stdin) and the --config file (the Authorization header).
+# STUB_CURL_FAIL=1 simulates an API error whose body echoes a secret (curl exit 22).
 cat > "$BIN/curl" << 'EOF'
 #!/usr/bin/env bash
 echo "curl $*" >> "$STUB_LOG"
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "--config" ]; then cat "$2" > "$STUB_CONFIG"; fi
+  shift
+done
 cat > "$STUB_BODY"
+if [ -n "${STUB_CURL_FAIL:-}" ]; then
+  echo '{"message":"x","smtp_pass":"leak"}'
+  exit 22
+fi
 echo '{}'
 EOF
 
@@ -53,13 +77,22 @@ cat > "$BIN/gh" << 'EOF'
 echo "gh $*" >> "$STUB_LOG"
 args="$*"
 case "$args" in
+  "api user"*)
+    if [ -n "${STUB_GH_UNAUTH:-}" ]; then echo "gh: not logged in" >&2; exit 1; fi
+    echo "tester"
+    exit 0
+    ;;
   *"-X PUT"*) exit 0 ;;
   *"/permission"*)
     user="${args#*collaborators/}"
     user="${user%%/*}"
     for kv in ${STUB_PERMS:-}; do
-      if [ "${kv%%=*}" = "$user" ]; then echo "${kv#*=}"; exit 0; fi
+      if [ "${kv%%=*}" != "$user" ]; then continue; fi
+      if [ "${kv#*=}" = "ERROR" ]; then echo "gh: Server Error (HTTP 500)" >&2; exit 1; fi
+      echo "${kv#*=}"
+      exit 0
     done
+    echo "gh: Not Found (HTTP 404)" >&2
     exit 1
     ;;
   *"repos/"*"/invitations"*)
@@ -76,7 +109,7 @@ exit 0
 EOF
 chmod +x "$BIN"/*
 
-export STUB_LOG="$LOG" STUB_BODY="$BODY"
+export STUB_LOG="$LOG" STUB_BODY="$BODY" STUB_CONFIG="$CONFIG"
 export PATH="$BIN:$PATH"
 
 # run <cmd...>: sets OUT (stdout+stderr) and RC. Environment is whatever the caller exported.
@@ -93,7 +126,8 @@ PREFLIGHT="$ROOT/scripts/release/preflight.sh"
 clean_env() {
   unset SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD \
     SMTP_HOST SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL SMTP_PORT SMTP_SENDER_NAME SMTP_RATE_LIMIT \
-    STUB_PERMS STUB_PENDING STUB_CI_JSON
+    SUPABASE_API_URL STUB_PERMS STUB_PENDING STUB_CI_JSON STUB_SUPABASE_FAIL STUB_CURL_FAIL \
+    STUB_GH_UNAUTH
 }
 set_base_env() {
   export SUPABASE_ACCESS_TOKEN="sbp_test_token_0000" SUPABASE_PROJECT_REF="abcdefghijklmnopqrst"
@@ -111,6 +145,31 @@ contains "$OUT" "SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD
 check "missing env lists all three names" $? "$OUT"
 [ ! -s "$LOG" ]
 check "missing env runs no external command" $? "$(cat "$LOG")"
+
+for bad in $'sbp_tok\n' 'sbp_"tok' 'sbp tok' 'sbp_\tok' $'sbp_\ttok'; do
+  clean_env
+  set_base_env
+  export SUPABASE_ACCESS_TOKEN="$bad"
+  run bash "$DEPLOY"
+  [ "$RC" -ne 0 ] && contains "$OUT" "SUPABASE_ACCESS_TOKEN contains whitespace, a quote or a backslash" && [ ! -s "$LOG" ]
+  check "bad token is rejected before any supabase call: $(printf '%q' "$bad")" $? "rc=$RC out=$OUT log=$(cat "$LOG")"
+done
+# Also rejected in --dry-run (no SMTP configured): the check is not tied to SMTP.
+run bash "$DEPLOY" --dry-run
+[ "$RC" -ne 0 ] && [ ! -s "$LOG" ]
+check "bad token is rejected in --dry-run too" $? "rc=$RC out=$OUT"
+
+clean_env
+set_base_env
+STUB_SUPABASE_FAIL="link" run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && ! contains "$(cat "$LOG")" "db push" && ! contains "$(cat "$LOG")" "functions deploy"
+check "failing 'supabase link' stops before db push and functions" $? "rc=$RC log=$(cat "$LOG")"
+STUB_SUPABASE_FAIL="db push" run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$(cat "$LOG")" "db push" && ! contains "$(cat "$LOG")" "functions deploy"
+check "failing 'db push' stops before functions deploy" $? "rc=$RC log=$(cat "$LOG")"
+STUB_SUPABASE_FAIL="functions deploy delete-account" run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && ! contains "$(cat "$LOG")" "public-journey"
+check "failing function deploy stops the script" $? "rc=$RC log=$(cat "$LOG")"
 
 clean_env
 export SUPABASE_ACCESS_TOKEN="x"
@@ -155,8 +214,14 @@ calls="$(cat "$LOG")"
   contains "$calls" "supabase functions deploy public-journey --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
   ! contains "$calls" "curl"
 check "deploy without SMTP: db push + both functions, no API call" $? "rc=$RC calls=$calls out=$OUT"
-grep -F "delete-account" "$LOG" | grep -qv -- "--no-verify-jwt"
-check "delete-account keeps JWT verification" $?
+line="$(grep -F "supabase functions deploy delete-account" "$LOG")"
+[ -n "$line" ] && ! contains "$line" "--no-verify-jwt"
+check "delete-account keeps JWT verification" $? "$line"
+line="$(grep -F "supabase functions deploy public-journey" "$LOG")"
+contains "$line" "--no-verify-jwt"
+check "public-journey is deployed without JWT verification" $? "$line"
+! contains "$calls" "db-pass-for-tests" && ! contains "$calls" "sbp_test_token_0000"
+check "no secret appears in any supabase argv (link/db push/functions)" $? "$calls"
 
 clean_env
 set_base_env
@@ -171,8 +236,33 @@ jq -e '.smtp_host == "smtp.example.com" and .smtp_port == "465" and .smtp_user =
   and .smtp_pass == "p@ss\"word\\with$pecial" and .smtp_admin_email == "no-reply@example.com"
   and .smtp_sender_name == "Ourney" and .rate_limit_email_sent == 30' "$BODY" > /dev/null
 check "SMTP: JSON body has fields and defaults (465, Ourney, 30)" $? "$(cat "$BODY" 2> /dev/null)"
-! contains "$OUT$calls" 'word\with' && ! contains "$OUT$calls" "sbp_test_token_0000"
-check "SMTP: password and token never printed or passed as arguments" $? "$OUT $calls"
+! contains "$OUT$calls" 'word\with' && ! contains "$OUT$calls" "p@ss" &&
+  ! contains "$OUT$calls" "sbp_test_token_0000" && ! contains "$OUT$calls" "db-pass-for-tests"
+check "SMTP: no secret in output or in the argv of supabase, jq and curl" $? "$OUT $calls"
+contains "$calls" "jq -n" && contains "$calls" "curl --silent"
+check "SMTP: the jq and curl calls were really logged (the check above is meaningful)" $? "$calls"
+grep -qxF 'header = "Authorization: Bearer sbp_test_token_0000"' "$CONFIG"
+check "SMTP: Authorization Bearer header is sent via the curl config" $? "$(cat "$CONFIG" 2> /dev/null | sed 's/Bearer .*/Bearer <redacted>/')"
+
+export SMTP_RATE_LIMIT=030 SMTP_PORT=465 SMTP_SENDER_NAME=Ourney
+run bash "$DEPLOY"
+jq -e '.rate_limit_email_sent == 30' "$BODY" > /dev/null
+check "SMTP: leading zeros in SMTP_RATE_LIMIT are normalised" $? "rc=$RC $(cat "$BODY" 2> /dev/null)"
+unset SMTP_RATE_LIMIT SMTP_PORT SMTP_SENDER_NAME
+
+STUB_CURL_FAIL=1 run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "SMTP update failed: x" && ! contains "$OUT" "leak"
+check "SMTP: API failure shows the message only, never the body" $? "rc=$RC $OUT"
+
+SUPABASE_API_URL="http://evil.example.com" run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "SUPABASE_API_URL must start with https://" && [ ! -s "$LOG" ]
+check "SMTP: plain-http remote API URL is rejected before any call" $? "rc=$RC $OUT"
+SUPABASE_API_URL="http://localhost.evil.com" run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "SUPABASE_API_URL must start with https://"
+check "SMTP: http://localhost.evil.com is rejected" $? "rc=$RC $OUT"
+SUPABASE_API_URL="http://127.0.0.1:54321" run bash "$DEPLOY"
+[ "$RC" -eq 0 ] && contains "$(cat "$LOG")" "http://127.0.0.1:54321/v1/projects/"
+check "SMTP: loopback http API URL is allowed" $? "rc=$RC $OUT"
 
 export SMTP_PORT=587 SMTP_SENDER_NAME="Ourney Team" SMTP_RATE_LIMIT=60
 run bash "$DEPLOY"
@@ -216,6 +306,15 @@ contains "$OUT" "skip   @nguyenductien-qnm: invitation already pending" &&
   ! contains "$calls" "-X PUT repos/someone/else/collaborators/nguyenductien-qnm" &&
   ! contains "$calls" "-X PUT repos/someone/else/collaborators/thydynh03"
 check "REPO override; admins and pending invitees are skipped" $? "rc=$RC calls=$calls out=$OUT"
+
+clean_env
+STUB_GH_UNAUTH=1 run bash "$INVITE" --apply
+[ "$RC" -ne 0 ] && contains "$OUT" "gh is not authenticated" && ! contains "$(cat "$LOG")" "PUT"
+check "unauthenticated gh fails clearly and changes nothing" $? "rc=$RC out=$OUT"
+
+STUB_PERMS="thydynh03=ERROR" run bash "$INVITE" --apply
+[ "$RC" -ne 0 ] && contains "$OUT" "could not read the permission of @thydynh03" && ! contains "$(cat "$LOG")" "PUT"
+check "a non-404 API error is fatal (not treated as 'not a collaborator')" $? "rc=$RC out=$OUT"
 
 run bash "$INVITE" --nope
 [ "$RC" -eq 2 ]
