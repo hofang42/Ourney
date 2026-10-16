@@ -208,15 +208,18 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               ),
             ),
             const SizedBox(height: OurneySpacing.xl),
-            ChunkyButton(
+            KeyedSubtree(
               key: _shareButtonKey,
-              label: _busy
-                  ? l10n.share_card_preparing
-                  : l10n.share_card_shareButton,
-              icon: Icons.ios_share_rounded,
-              onPressed: _busy
-                  ? null
-                  : () => _share(journey: journey, photo: photo),
+              child: ChunkyButton(
+                key: const ValueKey('share-card-share'),
+                label: _busy
+                    ? l10n.share_card_preparing
+                    : l10n.share_card_shareButton,
+                icon: Icons.ios_share_rounded,
+                onPressed: _busy
+                    ? null
+                    : () => _share(journey: journey, photo: photo),
+              ),
             ),
             const SizedBox(height: OurneySpacing.xl),
             _SectionLabel(l10n.share_card_numberLabel),

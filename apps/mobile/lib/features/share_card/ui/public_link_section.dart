@@ -63,9 +63,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
 
     return OurneyCard(
       key: const ValueKey('share-card-link'),
-      child: AnimatedSize(
-        duration: OurneyMotion.movement(context, OurneyDurations.tap),
-        alignment: Alignment.topCenter,
+      child: KeyedSubtree(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
