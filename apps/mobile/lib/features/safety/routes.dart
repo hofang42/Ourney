@@ -1,21 +1,70 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-import '../../shared/placeholder_screen.dart';
-import 'l10n/generated/safety_localizations.dart';
+import 'safety_paths.dart';
+import 'ui/blocked_users_screen.dart';
+import 'ui/contact_screen.dart';
+import 'ui/legal_screens.dart';
+import 'ui/report_screens.dart';
+import 'ui/safety_hub_screen.dart';
 
-/// PLACEHOLDER (A3): the safety feature agent (C3) replaces the screens.
+/// Safety (C3): hub, EULA, privacy, contact, EULA gate, report, block,
+/// blocked list. All under `/safety` (reachable before sign-in); paths are
+/// built with [SafetyPaths]. See lib/features/safety/README.md.
 ///
 /// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> safetyRoutes`; top-level paths must start with a prefix listed
-/// for 'safety' in `featureRoutePrefixes` (lib/app/app_routes.dart).
-/// Full-screen. Reachable before sign-in (EULA/privacy/contact).
+/// `List<RouteBase> safetyRoutes`.
 final List<RouteBase> safetyRoutes = [
   GoRoute(
     path: AppRoutes.safety,
-    builder: (context, state) => PlaceholderScreen(
-      id: 'safety',
-      title: SafetyL10n.of(context).safety_title,
-    ),
+    builder: (context, state) => const SafetyHubScreen(),
+    routes: [
+      GoRoute(
+        path: 'eula',
+        builder: (context, state) =>
+            const LegalScreen(document: LegalDocument.eula),
+        routes: [
+          GoRoute(
+            path: 'accept',
+            builder: (context, state) => EulaAcceptScreen(from: state.uri),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: 'privacy',
+        builder: (context, state) =>
+            const LegalScreen(document: LegalDocument.privacy),
+      ),
+      GoRoute(
+        path: 'contact',
+        builder: (context, state) => const ContactScreen(),
+      ),
+      GoRoute(
+        path: 'blocked',
+        builder: (context, state) => const BlockedUsersScreen(),
+      ),
+      GoRoute(
+        path: 'report/checkin/:checkInId',
+        builder: (context, state) => ReportScreen(
+          checkInId: state.pathParameters['checkInId'],
+          userId: state.uri.queryParameters[SafetyPaths.userIdParam],
+          name: state.uri.queryParameters[SafetyPaths.nameParam],
+        ),
+      ),
+      GoRoute(
+        path: 'report/user/:userId',
+        builder: (context, state) => ReportScreen(
+          userId: state.pathParameters['userId'],
+          name: state.uri.queryParameters[SafetyPaths.nameParam],
+        ),
+      ),
+      GoRoute(
+        path: 'block/:userId',
+        builder: (context, state) => BlockUserScreen(
+          userId: state.pathParameters['userId']!,
+          name: state.uri.queryParameters[SafetyPaths.nameParam],
+        ),
+      ),
+    ],
   ),
 ];
