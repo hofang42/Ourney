@@ -1,0 +1,84 @@
+name: iOS (unsigned IPA)
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.47.7
+
+jobs:
+  build:
+    name: Build unsigned .ipa
+    # Standard free runner for public repos (macOS 26, arm64). See docs/adr/0001.
+    runs-on: macos-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write # needed only to attach the IPA to a GitHub Release on tags
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Generate localizations
+        working-directory: apps/mobile
+        run: |
+          if [ -f l10n.yaml ]; then flutter gen-l10n; fi
+
+      # Optional build-time config. Secrets are passed via env (never interpolated into the script).
+      # If neither secret is set, no file is written and no --dart-define-from-file flag is used.
+      - name: Write dart-define file (optional)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ]; then
+            jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" \
+              '{SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k}' > "$RUNNER_TEMP/dart-defines.json"
+            echo "DART_DEFINES_FILE=$RUNNER_TEMP/dart-defines.json" >> "$GITHUB_ENV"
+          else
+            echo "SUPABASE_* secrets not set; building without --dart-define-from-file."
+          fi
+
+      - name: Build iOS (release, no codesign)
+        working-directory: apps/mobile
+        run: |
+          args=(--release --no-codesign)
+          if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then
+            args+=("--dart-define-from-file=$DART_DEFINES_FILE")
+          fi
+          flutter build ios "${args[@]}"
+
+      - name: Package unsigned IPA
+        run: scripts/ios/package_ipa.sh apps/mobile/build/ios/iphoneos/Runner.app Ourney-unsigned.ipa
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: Ourney-unsigned-ipa
+          path: Ourney-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach to GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: Ourney-unsigned.ipa
+          generate_release_notes: true
