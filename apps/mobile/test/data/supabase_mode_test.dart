@@ -450,4 +450,63 @@ void main() {
     expect(await db.select(db.journeys).get(), hasLength(1));
     expect(remote.userId, me);
   });
+
+  test('watchMe fetches the server profile before its first event', () async {
+    remote.tables['profiles'] = [
+      {
+        'id': me,
+        'username': 'linh',
+        'display_name': 'Linh',
+        'avatar_path': null,
+        'updated_at': '2026-10-16T01:00:00+00:00',
+        'deleted_at': null,
+      },
+    ];
+    final first = await layer.profiles.watchMe().first;
+    expect(first?.username, 'linh');
+
+    remote.tables['profiles'] = [];
+    await db.delete(db.profiles).go();
+    expect(
+      await layer.profiles.watchMe().first,
+      isNull,
+      reason: 'no profile yet',
+    );
+
+    remote.failure = offline;
+    await expectLater(
+      layer.profiles.watchMe().first,
+      throwsA(
+        isA<OurneyException>().having(
+          (e) => e.error,
+          'error',
+          OurneyErrorCode.offline,
+        ),
+      ),
+    );
+  });
+
+  test('taken username (23505) surfaces as invalid', () async {
+    remote.updateResult = [];
+    remote.failOnce.addAll([
+      OurneyException(
+        OurneyErrorCode.fromServer(
+          message: 'duplicate key value violates unique constraint "profiles_username_key"',
+          sqlstate: '23505',
+        ),
+      ),
+    ]);
+    // First failure hits the update call.
+    await expectLater(
+      layer.profiles.upsertMe(username: 'taken', displayName: 'X'),
+      throwsA(
+        isA<OurneyException>().having(
+          (e) => e.error,
+          'error',
+          OurneyErrorCode.invalid,
+        ),
+      ),
+    );
+    expect(await db.select(db.profiles).get(), isEmpty);
+  });
 }
