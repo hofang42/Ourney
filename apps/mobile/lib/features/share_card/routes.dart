@@ -1,20 +1,16 @@
 import 'package:go_router/go_router.dart';
 
-import '../../shared/placeholder_screen.dart';
-import 'l10n/generated/share_card_localizations.dart';
+import 'ui/share_card_screen.dart';
 
-/// PLACEHOLDER (A3): the share_card feature agent (C2 (Mobile UI B)) replaces the screens.
+/// Share card feature (C2). Contract (lib/features/README.md): exports
+/// `List<RouteBase> shareCardRoutes`; top-level paths start with `/share`.
+/// Full screen. Build links with `AppRoutes.share(journeyId)`.
 ///
-/// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> shareCardRoutes`; top-level paths must start with a prefix listed
-/// for 'share_card' in `featureRoutePrefixes` (lib/app/app_routes.dart).
-/// Full-screen. Build links with `AppRoutes.share(journeyId)`.
+/// * `/share/:journeyId`  card preview, share sheet, solo public link
 final List<RouteBase> shareCardRoutes = [
   GoRoute(
     path: '/share/:journeyId',
-    builder: (context, state) => PlaceholderScreen(
-      id: 'share_card',
-      title: ShareCardL10n.of(context).share_card_title,
-    ),
+    builder: (context, state) =>
+        ShareCardScreen(journeyId: state.pathParameters['journeyId']!),
   ),
 ];
