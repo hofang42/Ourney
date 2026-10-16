@@ -27,6 +27,7 @@ class GroupMemberEntry {
     required this.checkedInToday,
     required this.streak,
     this.photo,
+    this.photoIsToday = false,
   });
 
   final MemberToday member;
@@ -39,7 +40,9 @@ class GroupMemberEntry {
   /// Today's check-in, or the member's latest one when not checked in yet.
   final CheckIn? photo;
 
-  bool get photoIsToday => checkedInToday && photo != null;
+  /// True when [photo] is today's check-in (false for an older photo shown
+  /// because today's was hidden or not taken yet).
+  final bool photoIsToday;
 }
 
 /// Everything the "Today" screen shows. Consistency only (FR-D5): members
@@ -59,6 +62,8 @@ class GroupTodayView {
   /// * [blockedIds]: members (and their content) hidden on this device
   ///   (FR-F2; the server already filters, this covers the moment after a
   ///   block and an offline cache).
+  /// * [hiddenCheckInIds]: check-ins reported from this device (FR-F2); the
+  ///   member still counts as done today but the photo is not shown.
   /// * [checkIns]: check-ins of the journey the caller can see, used for
   ///   "latest photo" and, for the caller only, a local streak via
   ///   [computeMemberStreak] (includes a check-in not uploaded yet).
@@ -69,6 +74,7 @@ class GroupTodayView {
     required DateTime now,
     String? myUserId,
     Set<String> blockedIds = const {},
+    Set<String> hiddenCheckInIds = const {},
     Iterable<CheckIn> checkIns = const [],
     Membership? myMembership,
   }) {
@@ -79,6 +85,8 @@ class GroupTodayView {
       if (blockedIds.contains(c.userId) || c.localDate.isAfter(today)) {
         continue;
       }
+      if (c.userId == myUserId) myDates.add(c.localDate);
+      if (hiddenCheckInIds.contains(c.id)) continue;
       final prev = latest[c.userId];
       if (prev == null ||
           c.localDate.isAfter(prev.localDate) ||
@@ -86,7 +94,6 @@ class GroupTodayView {
               c.capturedAt.isAfter(prev.capturedAt))) {
         latest[c.userId] = c;
       }
-      if (c.userId == myUserId) myDates.add(c.localDate);
     }
 
     final done = <GroupMemberEntry>[];
@@ -98,7 +105,13 @@ class GroupTodayView {
       final localToday = latestOwn != null && latestOwn.localDate == today
           ? latestOwn
           : null;
-      final todayCheckIn = m.todayCheckIn ?? localToday;
+      final serverToday = m.todayCheckIn;
+      final checkedInToday = serverToday != null || localToday != null;
+      final todayCheckIn =
+          (serverToday != null && !hiddenCheckInIds.contains(serverToday.id)
+              ? serverToday
+              : null) ??
+          localToday;
       var streak = m.currentStreak;
       if (isMe && myMembership != null && myDates.isNotEmpty) {
         streak = computeMemberStreak(
@@ -115,9 +128,10 @@ class GroupTodayView {
       final entry = GroupMemberEntry(
         member: m,
         isMe: isMe,
-        checkedInToday: todayCheckIn != null,
+        checkedInToday: checkedInToday,
         streak: streak,
         photo: todayCheckIn ?? latestOwn,
+        photoIsToday: todayCheckIn != null,
       );
       (entry.checkedInToday ? done : pending).add(entry);
     }

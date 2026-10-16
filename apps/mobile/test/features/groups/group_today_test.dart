@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/features/groups/ui/group_safety_hooks.dart';
+import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/shared/streak_flame.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -13,6 +15,7 @@ Future<GroupsHarness> _pump(
   JourneyStatus status = JourneyStatus.active,
   Set<String> blocked = const {},
   List<Reaction> reactions = const [],
+  GroupSafetyHooks hooks = const GroupSafetyHooks(),
 }) {
   final g = groupJourney(status: status);
   final annToday = testCheckIn('g1', testToday, userId: 'u2');
@@ -31,6 +34,7 @@ Future<GroupsHarness> _pump(
       testCheckIn('g1', _yesterday, userId: 'u4'),
     ]),
     safety: FakeSafetyRepository(blocked),
+    hooks: hooks,
     groups: FakeGroupRepository(
       today: {
         'g1': [
@@ -93,6 +97,43 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('group-member-u2')), findsNothing);
       expect(find.text('0 of 2 checked in today'), findsOneWidget);
+    });
+
+    testWidgets('a reported photo disappears at once (FR-F2)', (tester) async {
+      final h = await _pump(tester);
+      expect(find.byKey(const ValueKey('group-member-photo-u2')), findsOne);
+      h.container
+          .read(hiddenCheckInIdsProvider.notifier)
+          .hide(testCheckIn('g1', testToday, userId: 'u2').id);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('group-member-photo-u2')), findsNothing);
+      // Still counted as done today: only the content is hidden.
+      expect(find.text('1 of 4 checked in today'), findsOneWidget);
+    });
+
+    testWidgets('default hooks open the safety report sheet and hide', (
+      tester,
+    ) async {
+      final h = await _pump(tester, hooks: safetyGroupHooks);
+      await tester.tap(find.byKey(const ValueKey('group-member-menu-u2')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('group-member-action-block')), findsOne);
+      await tester.tap(
+        find.byKey(const ValueKey('group-member-action-report')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('safety-report-form')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('safety-reason-spam')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('safety-report-submit')),
+      );
+      await tester.tap(find.byKey(const ValueKey('safety-report-submit')));
+      await tester.pumpAndSettle();
+      expect(h.container.read(hiddenCheckInIdsProvider), hasLength(1));
+      await tester.tap(find.byKey(const ValueKey('safety-report-done')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('group-member-photo-u2')), findsNothing);
     });
 
     testWidgets('ended journey: banner, reactions read-only', (tester) async {

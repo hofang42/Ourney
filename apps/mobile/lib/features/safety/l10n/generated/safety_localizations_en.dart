@@ -33,7 +33,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_hubHowToReportBody =>
-      'In a group, open the menu of a check-in or a member and choose \"Report\" or \"Block\". Content you report is hidden on your device right away.';
+      'Open a group journey, tap the menu button (three dots) on a member\'s card and choose \"Report\" (reports the photo shown on the card, or the person if there is none) or \"Block\". Content you report is hidden on your device right away.';
 
   @override
   String get safety_reportCheckInTitle => 'Report check-in';

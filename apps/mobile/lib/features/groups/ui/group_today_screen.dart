@@ -13,6 +13,7 @@ import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
+import '../../safety/data/safety_providers.dart';
 import '../data/groups_providers.dart';
 import '../domain/group_today.dart';
 import '../groups_paths.dart';
@@ -137,6 +138,7 @@ class GroupTodayScreen extends ConsumerWidget {
       now: ref.watch(groupsClockProvider).now(),
       myUserId: myId,
       blockedIds: ref.watch(groupBlockedIdsProvider).value ?? const {},
+      hiddenCheckInIds: ref.watch(hiddenCheckInIdsProvider),
       checkIns:
           ref.watch(groupCheckInsProvider(journeyId)).value ??
           const <CheckIn>[],
