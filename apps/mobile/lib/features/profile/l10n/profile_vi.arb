@@ -2,6 +2,225 @@
   "@@locale": "vi",
   "profile_title": "Hồ sơ",
   "@profile_title": {
-    "description": "Title of the profile feature's main screen."
+    "description": "Title of the profile screen."
+  },
+  "profile_setupTitle": "Tạo hồ sơ",
+  "@profile_setupTitle": {
+    "description": "Title of the profile setup screen shown after the first sign-in."
+  },
+  "profile_setupSubtitle": "Bạn bè sẽ thấy tên và ảnh này khi cùng đi hành trình.",
+  "@profile_setupSubtitle": {
+    "description": "Subtitle of the profile setup screen."
+  },
+  "profile_editTitle": "Sửa hồ sơ",
+  "@profile_editTitle": {
+    "description": "Title of the edit profile screen and the button that opens it."
+  },
+  "profile_usernameLabel": "Tên người dùng",
+  "@profile_usernameLabel": {
+    "description": "Username field label."
+  },
+  "profile_usernameHelper": "3–20 ký tự: chữ thường, số, dấu _ và dấu chấm",
+  "@profile_usernameHelper": {
+    "description": "Helper text under the username field."
+  },
+  "profile_usernameTooShort": "Tối thiểu {min} ký tự.",
+  "@profile_usernameTooShort": {
+    "description": "Username validation error.",
+    "placeholders": {
+      "min": {"type": "int"}
+    }
+  },
+  "profile_usernameTooLong": "Tối đa {max} ký tự.",
+  "@profile_usernameTooLong": {
+    "description": "Username validation error.",
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "profile_usernameInvalidChars": "Chỉ dùng chữ thường a–z, số, dấu _ và dấu chấm.",
+  "@profile_usernameInvalidChars": {
+    "description": "Username validation error."
+  },
+  "profile_usernameTaken": "Tên này đã có người dùng. Chọn tên khác nhé.",
+  "@profile_usernameTaken": {
+    "description": "Server rejected the username because it is not unique."
+  },
+  "profile_displayNameLabel": "Tên hiển thị",
+  "@profile_displayNameLabel": {
+    "description": "Display name field label."
+  },
+  "profile_displayNameEmpty": "Nhập tên hiển thị.",
+  "@profile_displayNameEmpty": {
+    "description": "Display name validation error."
+  },
+  "profile_displayNameTooLong": "Tối đa {max} ký tự.",
+  "@profile_displayNameTooLong": {
+    "description": "Display name validation error.",
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "profile_avatarAdd": "Thêm ảnh đại diện",
+  "@profile_avatarAdd": {
+    "description": "Button to pick an avatar when none is set."
+  },
+  "profile_avatarOptional": "Không bắt buộc",
+  "@profile_avatarOptional": {
+    "description": "Hint that the avatar is optional."
+  },
+  "profile_avatarChange": "Đổi ảnh đại diện",
+  "@profile_avatarChange": {
+    "description": "Button to change the avatar."
+  },
+  "profile_avatarFromGallery": "Chọn từ thư viện",
+  "@profile_avatarFromGallery": {
+    "description": "Avatar source option."
+  },
+  "profile_avatarFromCamera": "Chụp ảnh mới",
+  "@profile_avatarFromCamera": {
+    "description": "Avatar source option."
+  },
+  "profile_avatarError": "Không tải được ảnh đại diện lên. Thử lại nhé.",
+  "@profile_avatarError": {
+    "description": "Avatar upload failed (the rest of the profile was saved)."
+  },
+  "profile_avatarSemantics": "Ảnh đại diện của {name}",
+  "@profile_avatarSemantics": {
+    "description": "Screen reader label of the avatar.",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "profile_save": "Lưu",
+  "@profile_save": {
+    "description": "Save button on the edit screen."
+  },
+  "profile_continue": "Tiếp tục",
+  "@profile_continue": {
+    "description": "Save button on the setup screen."
+  },
+  "profile_saving": "Đang lưu…",
+  "@profile_saving": {
+    "description": "Save button label while saving."
+  },
+  "profile_saveError": "Không lưu được hồ sơ. Thử lại nhé.",
+  "@profile_saveError": {
+    "description": "Generic save error."
+  },
+  "profile_offlineError": "Không có mạng. Kết nối lại rồi thử nhé.",
+  "@profile_offlineError": {
+    "description": "Offline error."
+  },
+  "profile_loadError": "Không tải được hồ sơ.",
+  "@profile_loadError": {
+    "description": "The profile stream failed."
+  },
+  "profile_completeTitle": "Hoàn tất hồ sơ",
+  "@profile_completeTitle": {
+    "description": "Shown when signed in but no profile exists yet."
+  },
+  "profile_completeMessage": "Chọn tên người dùng để bạn bè nhận ra bạn.",
+  "@profile_completeMessage": {
+    "description": "Shown when signed in but no profile exists yet."
+  },
+  "profile_guestName": "Khách",
+  "@profile_guestName": {
+    "description": "Name shown in local-only mode."
+  },
+  "profile_guestTitle": "Chế độ chỉ trên máy",
+  "@profile_guestTitle": {
+    "description": "Local-only mode badge (FR-A5)."
+  },
+  "profile_guestMessage": "Dữ liệu của bạn chỉ nằm trên máy này. Hành trình một mình dùng đầy đủ; đăng nhập và nhóm cần máy chủ.",
+  "@profile_guestMessage": {
+    "description": "Local-only mode explanation."
+  },
+  "profile_sectionSettings": "Cài đặt",
+  "@profile_sectionSettings": {
+    "description": "Settings section header."
+  },
+  "profile_reminders": "Nhắc nhở",
+  "@profile_reminders": {
+    "description": "Link to the reminders screen."
+  },
+  "profile_remindersSubtitle": "Giờ nhắc check-in mỗi ngày",
+  "@profile_remindersSubtitle": {
+    "description": "Subtitle of the reminders link."
+  },
+  "profile_haptics": "Rung phản hồi",
+  "@profile_haptics": {
+    "description": "Haptics toggle."
+  },
+  "profile_language": "Ngôn ngữ",
+  "@profile_language": {
+    "description": "Language row title."
+  },
+  "profile_languageNote": "Theo ngôn ngữ của máy. Mặc định là tiếng Việt.",
+  "@profile_languageNote": {
+    "description": "The app follows the device language (vi default, en)."
+  },
+  "profile_safety": "Điều khoản, quyền riêng tư & liên hệ",
+  "@profile_safety": {
+    "description": "Link to the safety pages (EULA, privacy, contact)."
+  },
+  "profile_sectionAccount": "Tài khoản",
+  "@profile_sectionAccount": {
+    "description": "Account section header."
+  },
+  "profile_signOut": "Đăng xuất",
+  "@profile_signOut": {
+    "description": "Sign-out button and dialog action."
+  },
+  "profile_signOutTitle": "Đăng xuất khỏi Ourney?",
+  "@profile_signOutTitle": {
+    "description": "Sign-out confirmation title."
+  },
+  "profile_signOutMessage": "Bạn có thể đăng nhập lại bất cứ lúc nào bằng email.",
+  "@profile_signOutMessage": {
+    "description": "Sign-out confirmation message."
+  },
+  "profile_deleteAccount": "Xoá tài khoản",
+  "@profile_deleteAccount": {
+    "description": "Delete account button (FR-A4)."
+  },
+  "profile_deleteTitle": "Xoá tài khoản vĩnh viễn?",
+  "@profile_deleteTitle": {
+    "description": "Delete account confirmation title."
+  },
+  "profile_deleteMessage": "Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xoá khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.",
+  "@profile_deleteMessage": {
+    "description": "Delete account consequences."
+  },
+  "profile_deleteTypeToConfirm": "Gõ {phrase} để xác nhận",
+  "@profile_deleteTypeToConfirm": {
+    "description": "Instruction for the confirmation field.",
+    "placeholders": {
+      "phrase": {"type": "String"}
+    }
+  },
+  "profile_deleteConfirmWord": "XOA",
+  "@profile_deleteConfirmWord": {
+    "description": "Word to type when the username is unknown. ASCII only so it is easy to type."
+  },
+  "profile_deleteConfirmButton": "Xoá vĩnh viễn",
+  "@profile_deleteConfirmButton": {
+    "description": "Final delete button."
+  },
+  "profile_deleting": "Đang xoá…",
+  "@profile_deleting": {
+    "description": "Shown while the account is being deleted."
+  },
+  "profile_deleteErrorRetry": "Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.",
+  "@profile_deleteErrorRetry": {
+    "description": "delete-account failed (storage_* / delete_failed / internal); safe to retry."
+  },
+  "profile_deleteErrorReauth": "Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.",
+  "@profile_deleteErrorReauth": {
+    "description": "delete-account returned unauthenticated."
+  },
+  "profile_back": "Quay lại",
+  "@profile_back": {
+    "description": "Back button tooltip."
   }
 }

@@ -2,10 +2,58 @@
   "@@locale": "vi",
   "onboarding_title": "Chào mừng đến Ourney",
   "@onboarding_title": {
-    "description": "Title of the onboarding feature's main screen."
+    "description": "Eyebrow on the first onboarding page (also the feature title)."
   },
   "onboarding_start": "Bắt đầu",
   "@onboarding_start": {
-    "description": "Button that finishes onboarding."
+    "description": "Button on the last onboarding page that finishes onboarding."
+  },
+  "onboarding_next": "Tiếp tục",
+  "@onboarding_next": {
+    "description": "Button that moves to the next onboarding page."
+  },
+  "onboarding_skip": "Bỏ qua",
+  "@onboarding_skip": {
+    "description": "Top-right button that finishes onboarding immediately."
+  },
+  "onboarding_valueTitle": "Mỗi ngày một tấm. Thấy rõ mình tiến bộ.",
+  "@onboarding_valueTitle": {
+    "description": "Page 1 (value proposition) headline."
+  },
+  "onboarding_valueBody": "Ourney biến thói quen nhỏ thành một hành trình: giảm cân, học tiếng Anh, tập luyện hay một chuyến đi.",
+  "@onboarding_valueBody": {
+    "description": "Page 1 body."
+  },
+  "onboarding_howTitle": "Check-in chỉ mất 5 giây",
+  "@onboarding_howTitle": {
+    "description": "Page 2 (how check-in works) headline."
+  },
+  "onboarding_howStep1": "Mở app là chụp ngay",
+  "@onboarding_howStep1": {
+    "description": "Page 2, step 1."
+  },
+  "onboarding_howStep2": "Gắn ảnh vào hành trình, thêm ghi chú hoặc số đo",
+  "@onboarding_howStep2": {
+    "description": "Page 2, step 2."
+  },
+  "onboarding_howStep3": "Giữ chuỗi ngày và rủ bạn bè cùng làm",
+  "@onboarding_howStep3": {
+    "description": "Page 2, step 3."
+  },
+  "onboarding_readyTitle": "Sẵn sàng chưa?",
+  "@onboarding_readyTitle": {
+    "description": "Page 3 headline."
+  },
+  "onboarding_readyBody": "Ourney chỉ xin quyền camera và thông báo đúng lúc cần, không làm phiền bạn ngay bây giờ.",
+  "@onboarding_readyBody": {
+    "description": "Page 3 body: permissions are asked in context (FR-A3)."
+  },
+  "onboarding_pageSemantics": "Trang {current} trên {total}",
+  "@onboarding_pageSemantics": {
+    "description": "Screen reader label of the page indicator.",
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
   }
 }
