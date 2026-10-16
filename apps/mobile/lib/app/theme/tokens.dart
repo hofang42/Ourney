@@ -115,23 +115,22 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     Color? sun,
     Color? border,
     Color? danger,
-  }) =>
-      OurneyColors(
-        bg: bg ?? this.bg,
-        surface: surface ?? this.surface,
-        ink: ink ?? this.ink,
-        inkMuted: inkMuted ?? this.inkMuted,
-        primary: primary ?? this.primary,
-        onPrimary: onPrimary ?? this.onPrimary,
-        primaryDeep: primaryDeep ?? this.primaryDeep,
-        onPrimaryDeep: onPrimaryDeep ?? this.onPrimaryDeep,
-        accent: accent ?? this.accent,
-        streak: streak ?? this.streak,
-        success: success ?? this.success,
-        sun: sun ?? this.sun,
-        border: border ?? this.border,
-        danger: danger ?? this.danger,
-      );
+  }) => OurneyColors(
+    bg: bg ?? this.bg,
+    surface: surface ?? this.surface,
+    ink: ink ?? this.ink,
+    inkMuted: inkMuted ?? this.inkMuted,
+    primary: primary ?? this.primary,
+    onPrimary: onPrimary ?? this.onPrimary,
+    primaryDeep: primaryDeep ?? this.primaryDeep,
+    onPrimaryDeep: onPrimaryDeep ?? this.onPrimaryDeep,
+    accent: accent ?? this.accent,
+    streak: streak ?? this.streak,
+    success: success ?? this.success,
+    sun: sun ?? this.sun,
+    border: border ?? this.border,
+    danger: danger ?? this.danger,
+  );
 
   @override
   OurneyColors lerp(ThemeExtension<OurneyColors>? other, double t) {

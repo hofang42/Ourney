@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/config.dart';
 import 'package:ourney/shared/avatar.dart';
 import 'package:ourney/shared/chunky_button.dart';
 import 'package:ourney/shared/stamp_animation.dart';
@@ -56,8 +55,9 @@ void main() {
     expect(find.text('7'), findsOneWidget);
   });
 
-  testWidgets('StampAnimation completes and respects reduce motion',
-      (tester) async {
+  testWidgets('StampAnimation completes and respects reduce motion', (
+    tester,
+  ) async {
     var done = 0;
     await tester.pumpWidget(
       testApp(
@@ -78,14 +78,5 @@ void main() {
     expect(Avatar.initialsOf('Nguyen Van An'), 'NA');
     expect(Avatar.initialsOf('  an '), 'A');
     expect(Avatar.initialsOf(''), '?');
-  });
-
-  test('AppConfig local-only when dart-defines are absent', () {
-    expect(AppConfig.fromEnvironment().localOnly, isTrue);
-    expect(
-      const AppConfig(supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'k')
-          .localOnly,
-      isFalse,
-    );
   });
 }

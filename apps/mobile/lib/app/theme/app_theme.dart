@@ -12,16 +12,15 @@ TextStyle displayStyle({
   int weight = 800,
   Color? color,
   double height = 1.1,
-}) =>
-    TextStyle(
-      fontFamily: kDisplayFont,
-      fontSize: size,
-      fontWeight: FontWeight.values[(weight ~/ 100) - 1],
-      fontVariations: [FontVariation('wght', weight.toDouble())],
-      height: height,
-      color: color,
-      fontFamilyFallback: const [kBodyFont],
-    );
+}) => TextStyle(
+  fontFamily: kDisplayFont,
+  fontSize: size,
+  fontWeight: FontWeight.values[(weight ~/ 100) - 1],
+  fontVariations: [FontVariation('wght', weight.toDouble())],
+  height: height,
+  color: color,
+  fontFamilyFallback: const [kBodyFont],
+);
 
 /// Large figures (streak, share card): Display 800, 72-120pt.
 TextStyle bigNumberStyle({double size = 96, Color? color}) =>
@@ -29,12 +28,12 @@ TextStyle bigNumberStyle({double size = 96, Color? color}) =>
 
 TextTheme _textTheme(OurneyColors c) {
   TextStyle body(double size, FontWeight w, {Color? color}) => TextStyle(
-        fontFamily: kBodyFont,
-        fontSize: size,
-        fontWeight: w,
-        color: color ?? c.ink,
-        height: 1.4,
-      );
+    fontFamily: kBodyFont,
+    fontSize: size,
+    fontWeight: w,
+    color: color ?? c.ink,
+    height: 1.4,
+  );
   return TextTheme(
     displayLarge: displayStyle(size: 34, color: c.ink),
     displayMedium: displayStyle(size: 28, color: c.ink),
@@ -69,7 +68,9 @@ ThemeData buildAppTheme(Brightness brightness) {
     tertiary: c.streak,
     onTertiary: OurneyColors.light.ink,
     error: c.danger,
-    onError: brightness == Brightness.dark ? OurneyColors.dark.bg : Colors.white,
+    onError: brightness == Brightness.dark
+        ? OurneyColors.dark.bg
+        : Colors.white,
     surface: c.surface,
     onSurface: c.ink,
     onSurfaceVariant: c.inkMuted,
@@ -109,8 +110,9 @@ ThemeData buildAppTheme(Brightness brightness) {
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: c.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(OurneyRadii.sheet)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(OurneyRadii.sheet),
+        ),
       ),
     ),
     dialogTheme: DialogThemeData(
@@ -167,9 +169,86 @@ ThemeData buildAppTheme(Brightness brightness) {
     dividerTheme: DividerThemeData(color: c.border, space: 1, thickness: 1),
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.iOS: ReducedMotionAwareTransitionsBuilder(
+          CupertinoPageTransitionsBuilder(),
+        ),
+        TargetPlatform.android: ReducedMotionAwareTransitionsBuilder(
+          FadeForwardsPageTransitionsBuilder(),
+        ),
       },
     ),
   );
+}
+
+/// Uses [platform] transitions normally and a plain fade when the OS asks
+/// for reduced motion (`MediaQuery.disableAnimations`, docs/03).
+class ReducedMotionAwareTransitionsBuilder extends PageTransitionsBuilder {
+  const ReducedMotionAwareTransitionsBuilder(this.platform);
+
+  final PageTransitionsBuilder platform;
+
+  @override
+  Duration get transitionDuration => platform.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration => platform.reverseTransitionDuration;
+
+  @override
+  DelegatedTransitionBuilder? get delegatedTransition {
+    final delegate = platform.delegatedTransition;
+    if (delegate == null) return null;
+    return (context, animation, secondaryAnimation, allowSnapshotting, child) {
+      if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) return child;
+      return delegate(
+        context,
+        animation,
+        secondaryAnimation,
+        allowSnapshotting,
+        child,
+      );
+    };
+  }
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+      return FadeTransition(opacity: animation, child: child);
+    }
+    return platform.buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
+    );
+  }
+}
+
+/// Text scaling policy (NFR-5): honour the system text size up to
+/// [maxScale] (200%, roughly iOS AX2–AX3 for body text) so layouts stay
+/// usable. Applied once around the whole app in `MaterialApp.builder`.
+/// Compact chrome (tab labels) may clamp further locally.
+class OurneyTextScaleClamp extends StatelessWidget {
+  const OurneyTextScaleClamp({required this.child, super.key});
+
+  static const double maxScale = 2;
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final mq = MediaQuery.of(context);
+    return MediaQuery(
+      data: mq.copyWith(
+        textScaler: mq.textScaler.clamp(maxScaleFactor: maxScale),
+      ),
+      child: child,
+    );
+  }
 }

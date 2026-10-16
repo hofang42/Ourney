@@ -1,13 +1,21 @@
 {
   "@@locale": "vi",
   "app_name": "Ourney",
+  "@app_name": {"description": "App name. Not translated."},
   "nav_journeys": "Journeys",
+  "@nav_journeys": {"description": "Bottom bar tab: list of journeys (docs/03: Journeys · Chụp · Nhóm)."},
   "nav_capture": "Chụp",
+  "@nav_capture": {"description": "Bottom bar center button: open the camera."},
   "nav_groups": "Nhóm",
+  "@nav_groups": {"description": "Bottom bar tab: groups."},
   "common_retry": "Thử lại",
   "common_cancel": "Hủy",
   "common_ok": "OK",
+  "common_close": "Đóng",
+  "common_save": "Lưu",
   "common_loading": "Đang tải…",
+  "common_errorGeneric": "Có lỗi xảy ra. Thử lại nhé.",
+  "common_offline": "Bạn đang offline. Ourney sẽ tự đồng bộ khi có mạng.",
   "empty_default_title": "Chưa có gì ở đây",
   "streak_days": "{count, plural, other{{count} ngày}}",
   "@streak_days": {
@@ -18,5 +26,8 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "streak_atRisk": "Sắp mất chuỗi",
+  "needsServer_title": "Cần kết nối máy chủ",
+  "@needsServer_title": {"description": "Local-only mode (FR-A5): shown where a feature needs the backend, e.g. groups."},
+  "needsServer_message": "Bản này đang chạy chế độ chỉ trên máy. Hành trình một mình vẫn dùng bình thường, còn nhóm thì cần máy chủ.",
   "placeholder_comingSoon": "Sắp ra mắt"
 }

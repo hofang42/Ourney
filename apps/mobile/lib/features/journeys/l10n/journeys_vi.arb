@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "journeys_title": "Hành trình",
+  "@journeys_title": {
+    "description": "Title of the journeys feature's main screen."
+  }
+}

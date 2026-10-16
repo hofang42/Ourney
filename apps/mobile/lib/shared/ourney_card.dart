@@ -41,11 +41,7 @@ class OurneyCard extends StatelessWidget {
         borderRadius: radius,
         child: onTap == null
             ? card
-            : InkWell(
-                borderRadius: radius,
-                onTap: onTap,
-                child: card,
-              ),
+            : InkWell(borderRadius: radius, onTap: onTap, child: card),
       ),
     );
   }

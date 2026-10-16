@@ -30,7 +30,10 @@ void main() {
   }.entries) {
     final c = entry.value;
     test('${entry.key}: text pairs meet 4.5:1', () {
-      expect(contrast(c.onPrimaryDeep, c.primaryDeep), greaterThanOrEqualTo(4.5));
+      expect(
+        contrast(c.onPrimaryDeep, c.primaryDeep),
+        greaterThanOrEqualTo(4.5),
+      );
       expect(contrast(c.ink, c.bg), greaterThanOrEqualTo(4.5));
       expect(contrast(c.ink, c.surface), greaterThanOrEqualTo(4.5));
       expect(contrast(c.inkMuted, c.bg), greaterThanOrEqualTo(4.5));

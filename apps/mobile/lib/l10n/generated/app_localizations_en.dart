@@ -31,7 +31,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_close => 'Close';
+
+  @override
+  String get common_save => 'Save';
+
+  @override
   String get common_loading => 'Loading…';
+
+  @override
+  String get common_errorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get common_offline =>
+      'You\'re offline. Ourney will sync when you\'re back online.';
 
   @override
   String get empty_default_title => 'Nothing here yet';
@@ -60,6 +73,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get streak_atRisk => 'Streak at risk';
+
+  @override
+  String get needsServer_title => 'Server needed';
+
+  @override
+  String get needsServer_message =>
+      'This build runs in on-device mode. Solo journeys work as usual; groups need a server.';
 
   @override
   String get placeholder_comingSoon => 'Coming soon';

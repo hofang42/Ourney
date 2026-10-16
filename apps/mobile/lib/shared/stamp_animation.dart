@@ -28,23 +28,26 @@ class StampAnimation extends StatefulWidget {
 
 class _StampAnimationState extends State<StampAnimation>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: OurneyDurations.stamp,
-  )..addStatusListener((s) {
-      if (s == AnimationStatus.completed) widget.onCompleted?.call();
-    });
+  late final AnimationController _ctrl =
+      AnimationController(vsync: this, duration: OurneyDurations.stamp)
+        ..addStatusListener((s) {
+          if (s == AnimationStatus.completed) widget.onCompleted?.call();
+        });
 
   // Scale keyframes: 1.6 -> 1.15 (overshoot, impact) -> 1.0.
   static final _scale = TweenSequence<double>([
     TweenSequenceItem(
-      tween: Tween(begin: 1.6, end: OurneyCurves.stampOvershoot)
-          .chain(CurveTween(curve: Curves.easeIn)),
+      tween: Tween(
+        begin: 1.6,
+        end: OurneyCurves.stampOvershoot,
+      ).chain(CurveTween(curve: Curves.easeIn)),
       weight: 50,
     ),
     TweenSequenceItem(
-      tween: Tween(begin: OurneyCurves.stampOvershoot, end: 1.0)
-          .chain(CurveTween(curve: Curves.easeOutBack)),
+      tween: Tween(
+        begin: OurneyCurves.stampOvershoot,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeOutBack)),
       weight: 50,
     ),
   ]);
@@ -79,12 +82,9 @@ class _StampAnimationState extends State<StampAnimation>
       if (reduced) {
         OurneyHaptics.success();
       } else {
-        Future<void>.delayed(
-          OurneyDurations.stamp * 0.5,
-          () {
-            if (mounted) OurneyHaptics.success();
-          },
-        );
+        Future<void>.delayed(OurneyDurations.stamp * 0.5, () {
+          if (mounted) OurneyHaptics.success();
+        });
       }
     }
   }

@@ -98,25 +98,25 @@ abstract class AppLocalizations {
     Locale('vi'),
   ];
 
-  /// No description provided for @app_name.
+  /// App name. Not translated.
   ///
   /// In vi, this message translates to:
   /// **'Ourney'**
   String get app_name;
 
-  /// No description provided for @nav_journeys.
+  /// Bottom bar tab: list of journeys (docs/03: Journeys · Chụp · Nhóm).
   ///
   /// In vi, this message translates to:
   /// **'Journeys'**
   String get nav_journeys;
 
-  /// No description provided for @nav_capture.
+  /// Bottom bar center button: open the camera.
   ///
   /// In vi, this message translates to:
   /// **'Chụp'**
   String get nav_capture;
 
-  /// No description provided for @nav_groups.
+  /// Bottom bar tab: groups.
   ///
   /// In vi, this message translates to:
   /// **'Nhóm'**
@@ -140,11 +140,35 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get common_ok;
 
+  /// No description provided for @common_close.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng'**
+  String get common_close;
+
+  /// No description provided for @common_save.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu'**
+  String get common_save;
+
   /// No description provided for @common_loading.
   ///
   /// In vi, this message translates to:
   /// **'Đang tải…'**
   String get common_loading;
+
+  /// No description provided for @common_errorGeneric.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có lỗi xảy ra. Thử lại nhé.'**
+  String get common_errorGeneric;
+
+  /// No description provided for @common_offline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đang offline. Ourney sẽ tự đồng bộ khi có mạng.'**
+  String get common_offline;
 
   /// No description provided for @empty_default_title.
   ///
@@ -169,6 +193,18 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Sắp mất chuỗi'**
   String get streak_atRisk;
+
+  /// Local-only mode (FR-A5): shown where a feature needs the backend, e.g. groups.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cần kết nối máy chủ'**
+  String get needsServer_title;
+
+  /// No description provided for @needsServer_message.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bản này đang chạy chế độ chỉ trên máy. Hành trình một mình vẫn dùng bình thường, còn nhóm thì cần máy chủ.'**
+  String get needsServer_message;
 
   /// No description provided for @placeholder_comingSoon.
   ///

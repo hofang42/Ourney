@@ -2,64 +2,48 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'app_routes.dart';
 import 'app_shell.dart';
 import 'feature_routes.dart';
 import 'navigator_keys.dart';
+import 'providers.dart';
+import 'redirect.dart';
 
-/// Well-known paths. Features should build links with these helpers.
-abstract final class AppRoutes {
-  static const capture = '/capture';
-  static const journeys = '/journeys';
-  static const groups = '/groups';
-  static const auth = '/auth';
-  static const onboarding = '/onboarding';
-  static const profile = '/profile';
-  static const safety = '/safety';
+export 'app_routes.dart';
+export 'redirect.dart' show AuthStatus, kDeepLinkScheme, normalizeDeepLink;
 
-  /// `ourney://join/<code>` lands here (declared in groups routes).
-  static String join(String code) => '/join/${Uri.encodeComponent(code)}';
-
-  /// `ourney://journey/<id>` lands here (declared in journeys routes).
-  static String journey(String id) => '/journey/${Uri.encodeComponent(id)}';
-
-  static String share(String journeyId) =>
-      '/share/${Uri.encodeComponent(journeyId)}';
-}
-
-/// Custom URL scheme registered by the platform projects.
-const String kDeepLinkScheme = 'ourney';
-
-/// Maps `ourney://join/<code>` and `ourney://journey/<id>` (host = first
-/// segment) to an in-app path. Returns null for non-deep-link URIs.
-String? normalizeDeepLink(Uri uri) {
-  if (uri.scheme != kDeepLinkScheme) return null;
-  final host = uri.host;
-  final rest = uri.path; // "/<code>" or ""
-  final path = host.isEmpty ? rest : '/$host$rest';
-  final query = uri.hasQuery ? '?${uri.query}' : '';
-  return '$path$query';
-}
-
+/// Builds the app router from the per-feature route registry
+/// ([FeatureRoutes]). [redirect] defaults to deep-link normalisation only;
+/// the app passes the onboarding/auth policy via [routerProvider].
 GoRouter createRouter({
   String initialLocation = AppRoutes.capture,
   GlobalKey<NavigatorState>? navigatorKey,
   List<NavigatorObserver>? observers,
+  GoRouterRedirect? redirect,
+  Listenable? refreshListenable,
 }) {
   return GoRouter(
     navigatorKey: navigatorKey ?? rootNavigatorKey,
     initialLocation: initialLocation,
     observers: observers,
-    redirect: (context, state) => normalizeDeepLink(state.uri),
+    refreshListenable: refreshListenable,
+    redirect: redirect ?? (context, state) => normalizeDeepLink(state.uri),
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(navigationShell: shell),
         branches: [
-          StatefulShellBranch(routes: FeatureRoutes.journeysTab),
+          StatefulShellBranch(
+            initialLocation: AppRoutes.journeys,
+            routes: FeatureRoutes.journeysTab,
+          ),
           StatefulShellBranch(
             initialLocation: AppRoutes.capture,
             routes: FeatureRoutes.captureTab,
           ),
-          StatefulShellBranch(routes: FeatureRoutes.groupsTab),
+          StatefulShellBranch(
+            initialLocation: AppRoutes.groups,
+            routes: FeatureRoutes.groupsTab,
+          ),
         ],
       ),
       ...FeatureRoutes.standalone,
@@ -67,8 +51,27 @@ GoRouter createRouter({
   );
 }
 
+/// The app's router. Camera-first (FR-C1): starts at `/capture`; redirects to
+/// `/onboarding` until onboarding is complete and to `/auth` when a backend
+/// is configured and nobody is signed in (see [resolveRedirect]).
 final routerProvider = Provider<GoRouter>((ref) {
-  final router = createRouter();
-  ref.onDispose(router.dispose);
+  final refresh = ValueNotifier<int>(0);
+  void bump(Object? _, Object? _) => refresh.value++;
+  ref
+    ..listen(onboardingCompleteProvider, bump)
+    ..listen(authStatusProvider, bump);
+
+  final router = createRouter(
+    refreshListenable: refresh,
+    redirect: (context, state) => resolveRedirect(
+      uri: state.uri,
+      onboarded: ref.read(onboardingCompleteProvider),
+      auth: ref.read(authStatusProvider),
+    ),
+  );
+  ref.onDispose(() {
+    router.dispose();
+    refresh.dispose();
+  });
   return router;
 });

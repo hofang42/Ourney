@@ -64,39 +64,44 @@ class _OurneyBottomBar extends StatelessWidget {
         ),
         child: SafeArea(
           top: false,
-          child: SizedBox(
-            height: 72,
-            child: Row(
-              children: [
-                Expanded(
-                  child: _TabItem(
-                    icon: Icons.route_rounded,
-                    label: l10n.nav_journeys,
-                    selected: currentIndex == AppShell.journeysIndex,
-                    colors: c,
-                    onTap: () => onSelect(AppShell.journeysIndex),
-                  ),
-                ),
-                Expanded(
-                  child: Center(
-                    child: _CaptureTabButton(
-                      label: l10n.nav_capture,
-                      selected: currentIndex == AppShell.captureIndex,
+          // Compact chrome: labels follow the system text size only up to
+          // 1.3x (like native tab bars); content screens scale to 2x.
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.3,
+            child: SizedBox(
+              height: 72,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _TabItem(
+                      icon: Icons.route_rounded,
+                      label: l10n.nav_journeys,
+                      selected: currentIndex == AppShell.journeysIndex,
                       colors: c,
-                      onTap: () => onSelect(AppShell.captureIndex),
+                      onTap: () => onSelect(AppShell.journeysIndex),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: _TabItem(
-                    icon: Icons.groups_rounded,
-                    label: l10n.nav_groups,
-                    selected: currentIndex == AppShell.groupsIndex,
-                    colors: c,
-                    onTap: () => onSelect(AppShell.groupsIndex),
+                  Expanded(
+                    child: Center(
+                      child: _CaptureTabButton(
+                        label: l10n.nav_capture,
+                        selected: currentIndex == AppShell.captureIndex,
+                        colors: c,
+                        onTap: () => onSelect(AppShell.captureIndex),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: _TabItem(
+                      icon: Icons.groups_rounded,
+                      label: l10n.nav_groups,
+                      selected: currentIndex == AppShell.groupsIndex,
+                      colors: c,
+                      onTap: () => onSelect(AppShell.groupsIndex),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,12 +1,19 @@
 import 'package:go_router/go_router.dart';
 
+import '../../app/app_routes.dart';
 import '../../shared/placeholder_screen.dart';
+import 'l10n/generated/auth_localizations.dart';
 
-/// PLACEHOLDER: the auth feature agent replaces this file.
-/// Keep exporting `List<RouteBase> authRoutes` (full-screen, outside the tab shell).
+/// PLACEHOLDER (A3): the auth feature agent (B2 (Mobile UI A)) replaces the screens.
+///
+/// Contract (lib/features/README.md): keep exporting
+/// `List<RouteBase> authRoutes`; top-level paths must start with a prefix listed
+/// for 'auth' in `featureRoutePrefixes` (lib/app/app_routes.dart).
+/// Full-screen (outside the tab shell).
 final List<RouteBase> authRoutes = [
   GoRoute(
-    path: '/auth',
-    builder: (context, state) => const PlaceholderScreen(name: 'auth'),
+    path: AppRoutes.auth,
+    builder: (context, state) =>
+        PlaceholderScreen(id: 'auth', title: AuthL10n.of(context).auth_title),
   ),
 ];

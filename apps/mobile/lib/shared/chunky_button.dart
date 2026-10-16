@@ -52,9 +52,9 @@ class _ChunkyButtonState extends State<ChunkyButton> {
     final (face, fg) = switch (widget.variant) {
       ChunkyVariant.primary => (c.primary, c.onPrimary),
       ChunkyVariant.accent => (
-          c.accent,
-          Theme.of(context).colorScheme.onSecondary,
-        ),
+        c.accent,
+        Theme.of(context).colorScheme.onSecondary,
+      ),
       ChunkyVariant.neutral => (c.surface, c.ink),
     };
     final edge = widget.variant == ChunkyVariant.neutral

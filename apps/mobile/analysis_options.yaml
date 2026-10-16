@@ -5,6 +5,18 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    # Generated code (committed; regenerate instead of editing).
+    - '**/*.g.dart'
+    - lib/l10n/generated/**
+    - lib/features/*/l10n/generated/**
+  language:
+    strict-casts: true
+    strict-raw-types: true
+
+# Riverpod lints run as an analysis_server_plugin (Dart >= 3.10), so they show
+# up in `flutter analyze` / `dart analyze` and in the IDE.
+plugins:
+  riverpod_lint: ^3.1.9
 
 linter:
   rules:
@@ -13,3 +25,6 @@ linter:
     unawaited_futures: true
     prefer_final_locals: true
     directives_ordering: true
+    avoid_dynamic_calls: true
+    cancel_subscriptions: true
+    use_build_context_synchronously: true

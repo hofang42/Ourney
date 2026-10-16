@@ -31,7 +31,20 @@ class AppLocalizationsVi extends AppLocalizations {
   String get common_ok => 'OK';
 
   @override
+  String get common_close => 'Đóng';
+
+  @override
+  String get common_save => 'Lưu';
+
+  @override
   String get common_loading => 'Đang tải…';
+
+  @override
+  String get common_errorGeneric => 'Có lỗi xảy ra. Thử lại nhé.';
+
+  @override
+  String get common_offline =>
+      'Bạn đang offline. Ourney sẽ tự đồng bộ khi có mạng.';
 
   @override
   String get empty_default_title => 'Chưa có gì ở đây';
@@ -58,6 +71,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get streak_atRisk => 'Sắp mất chuỗi';
+
+  @override
+  String get needsServer_title => 'Cần kết nối máy chủ';
+
+  @override
+  String get needsServer_message =>
+      'Bản này đang chạy chế độ chỉ trên máy. Hành trình một mình vẫn dùng bình thường, còn nhóm thì cần máy chủ.';
 
   @override
   String get placeholder_comingSoon => 'Sắp ra mắt';

@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "reminders_title": "Nhắc nhở",
+  "@reminders_title": {
+    "description": "Title of the reminders feature's main screen."
+  }
+}

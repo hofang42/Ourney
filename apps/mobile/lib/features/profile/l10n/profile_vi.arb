@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "profile_title": "Hồ sơ",
+  "@profile_title": {
+    "description": "Title of the profile feature's main screen."
+  }
+}

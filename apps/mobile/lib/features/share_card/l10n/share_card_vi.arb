@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "share_card_title": "Chia sẻ",
+  "@share_card_title": {
+    "description": "Title of the share_card feature's main screen."
+  }
+}
