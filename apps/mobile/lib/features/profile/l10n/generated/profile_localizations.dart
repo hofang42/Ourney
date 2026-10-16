@@ -347,7 +347,7 @@ abstract class ProfileL10n {
   /// Sign-out confirmation message.
   ///
   /// In vi, this message translates to:
-  /// **'Bạn có thể đăng nhập lại bất cứ lúc nào bằng email.'**
+  /// **'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xoá, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.'**
   String get profile_signOutMessage;
 
   /// Delete account button (FR-A4).

@@ -150,7 +150,7 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_signOutMessage =>
-      'Bạn có thể đăng nhập lại bất cứ lúc nào bằng email.';
+      'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xoá, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.';
 
   @override
   String get profile_deleteAccount => 'Xoá tài khoản';

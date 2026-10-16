@@ -152,7 +152,7 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_signOutMessage =>
-      'You can sign back in any time with your email.';
+      'Photos and data saved on this phone are removed when you sign out, including check-ins that have not been sent yet. Everything already synced comes back when you sign in again with your email.';
 
   @override
   String get profile_deleteAccount => 'Delete account';
