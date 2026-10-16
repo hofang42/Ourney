@@ -1,32 +1,60 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-import '../../shared/placeholder_screen.dart';
-import 'l10n/generated/journeys_localizations.dart';
+import '../../app/navigator_keys.dart';
+import 'ui/create_journey_screen.dart';
+import 'ui/day_viewer_screen.dart';
+import 'ui/journey_detail_screen.dart';
+import 'ui/journeys_list_screen.dart';
+import 'ui/template_picker_screen.dart';
 
-/// PLACEHOLDER (A3): the journeys feature agent (B4, Mobile UI A) replaces
-/// the screens.
+/// Journeys feature (B4). Contract (lib/features/README.md): exports
+/// `List<RouteBase> journeysRoutes`; top-level paths start with `/journeys`
+/// or `/journey`. They live in the Journeys tab of the shell.
 ///
-/// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> journeysRoutes`; top-level paths must start with
-/// `/journeys` or `/journey`. These routes live in the Journeys tab of the
-/// shell. `/journey/:id` is the target of the `ourney://journey/<id>` deep
-/// link; create flow goes under `/journeys/new` (`AppRoutes.journeyNew`).
+/// * `/journeys`                   list (tab root)
+/// * `/journeys/new`               template picker (full screen)
+/// * `/journeys/new/:template`     create form, `:template` = wire name
+/// * `/journey/:id`                detail + timeline (`ourney://journey/<id>`)
+/// * `/journey/:id/day/:date`      photo viewer, `:date` = YYYY-MM-DD
+///
+/// Build links with `AppRoutes` / `JourneysPaths` (journeys_paths.dart).
 final List<RouteBase> journeysRoutes = [
   GoRoute(
     path: AppRoutes.journeys,
-    builder: (context, state) => PlaceholderScreen(
-      id: 'journeys',
-      title: JourneysL10n.of(context).journeys_title,
-    ),
+    builder: (context, state) => const JourneysListScreen(),
+    routes: [
+      GoRoute(
+        path: 'new',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const TemplatePickerScreen(),
+        routes: [
+          GoRoute(
+            path: ':template',
+            parentNavigatorKey: rootNavigatorKey,
+            builder: (context, state) => CreateJourneyScreen(
+              templateId: CreateJourneyScreen.parseTemplate(
+                state.pathParameters['template'],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ],
   ),
   GoRoute(
     path: '/journey/:id',
-    builder: (context, state) => PlaceholderScreen(
-      id: 'journey',
-      title:
-          '${JourneysL10n.of(context).journeys_title} · '
-          '${state.pathParameters['id']}',
-    ),
+    builder: (context, state) =>
+        JourneyDetailScreen(journeyId: state.pathParameters['id']!),
+    routes: [
+      GoRoute(
+        path: 'day/:date',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => DayViewerScreen(
+          journeyId: state.pathParameters['id']!,
+          date: DayViewerScreen.parseDate(state.pathParameters['date']),
+        ),
+      ),
+    ],
   ),
 ];
