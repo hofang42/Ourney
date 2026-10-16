@@ -33,7 +33,14 @@ enum _Phase { idle, prePrompt, starting, ready, failure }
 /// on the first frame. It is released whenever the screen is not visible
 /// (other tab, `/checkin` on top: `TickerMode` off) or the app is hidden.
 class CaptureScreen extends ConsumerStatefulWidget {
-  const CaptureScreen({super.key});
+  const CaptureScreen({this.initialJourneyId, super.key});
+
+  /// Query parameter of `/capture` that preselects a journey.
+  static const journeyIdParam = 'journeyId';
+
+  /// Journey to preselect (from [journeyIdParam]); wins over the remembered
+  /// `camera.lastJourneyId` when it is still active.
+  final String? initialJourneyId;
 
   /// Kept for test/app/{router,accessibility}_test.dart, which locate the
   /// capture tab by the A3 placeholder key.
@@ -73,9 +80,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
             .getBool(CameraPrefs.permissionAsked) ??
         false;
     if (!asked) _phase = _Phase.prePrompt;
-    _selectedJourneyId = CameraPrefs.readLastJourneyId(
-      ref.read(sharedPreferencesProvider),
-    );
+    _selectedJourneyId =
+        widget.initialJourneyId ??
+        CameraPrefs.readLastJourneyId(ref.read(sharedPreferencesProvider));
     ref.listenManual<AsyncValue<List<Journey>>>(captureJourneysProvider, (
       _,
       next,
@@ -86,6 +93,15 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         _sync();
       }
     }, fireImmediately: true);
+  }
+
+  @override
+  void didUpdateWidget(CaptureScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final id = widget.initialJourneyId;
+    if (id != null && id != oldWidget.initialJourneyId) {
+      _selectedJourneyId = id;
+    }
   }
 
   @override
