@@ -89,6 +89,34 @@ void main() {
     },
   );
 
+  test('a retried create reuses the client id (no duplicate)', () async {
+    const clientId = 'cccccccc-0000-4000-8000-000000000001';
+    final draft = JourneyDraft(
+      kind: JourneyKind.solo,
+      templateId: TemplateId.custom,
+      title: 'Retry',
+      emoji: '🔥',
+      startDate: const LocalDate(2026, 10, 16),
+      timezone: vnZone,
+      id: clientId,
+    );
+    // The response of the first attempt is lost.
+    remote.failOnce.add(const OurneyException(OurneyErrorCode.unknown));
+    await expectLater(layer.journeys.create(draft), throwsA(anything));
+    final j = await layer.journeys.create(draft);
+    expect(j.id, clientId);
+    expect(
+      [
+        for (final c in remote.callsOf('rpc'))
+          (c.args! as Map<String, dynamic>)['p_id'],
+      ],
+      [clientId, clientId],
+    );
+    // Tapping again after success returns the same journey.
+    expect((await layer.journeys.create(draft)).id, clientId);
+    expect(await layer.journeys.watchActive().first, hasLength(1));
+  });
+
   test('server limit becomes JourneyLimitException', () async {
     remote.failOnce.add(const OurneyException(OurneyErrorCode.limit, 'limit'));
     await expectLater(

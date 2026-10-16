@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
@@ -51,6 +52,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
   bool _submitted = false;
   bool _busy = false;
 
+  /// One id per form: retrying after a lost response (offline, timeout)
+  /// returns the same journey instead of creating a duplicate.
+  final String _clientId = const Uuid().v4();
+
   @override
   void dispose() {
     _title.dispose();
@@ -86,7 +91,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
-        form.toDraft(startDate: journeyLocalDate(form.timezone, now)),
+        form.toDraft(
+          startDate: journeyLocalDate(form.timezone, now),
+          id: _clientId,
+        ),
       );
       // The new journey may get the 21:00 streak alert (FR-G2).
       unawaited(reminders.reschedule());

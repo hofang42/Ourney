@@ -339,6 +339,26 @@ void main() {
     },
   );
 
+  test('create with a client id is idempotent', () async {
+    final layer = localLayer(db: db, media: media, clock: clock);
+    const draftId = 'cccccccc-0000-4000-8000-000000000002';
+    final base = soloDraft();
+    final draft = JourneyDraft(
+      kind: base.kind,
+      templateId: base.templateId,
+      title: base.title,
+      emoji: base.emoji,
+      startDate: base.startDate,
+      timezone: base.timezone,
+      id: draftId,
+    );
+    final a = await layer.journeys.create(draft);
+    final b = await layer.journeys.create(draft);
+    expect(a.id, draftId);
+    expect(b.id, draftId);
+    expect(await layer.journeys.watchActive().first, hasLength(1));
+  });
+
   test('profile is kept locally', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
     expect(await layer.profiles.watchMe().first, isNull);

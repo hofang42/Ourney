@@ -92,7 +92,8 @@ class JourneyForm {
     );
   }
 
-  JourneyDraft toDraft({required LocalDate startDate}) {
+  /// [id]: client id generated once per form (idempotent create retries).
+  JourneyDraft toDraft({required LocalDate startDate, String? id}) {
     final unit = metricUnit.trim();
     return JourneyDraft(
       kind: kind,
@@ -106,6 +107,7 @@ class JourneyForm {
       metricUnit: trackMetric && unit.isNotEmpty ? unit : null,
       hideMetricDefault: trackMetric && hideMetric,
       visibility: visibility,
+      id: id,
     );
   }
 }

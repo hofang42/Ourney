@@ -222,6 +222,26 @@ void main() {
       expect(h.location, JourneysPaths.newFromTemplate(TemplateId.workout30));
     });
 
+    testWidgets('a retry after a failure reuses the same client id', (
+      tester,
+    ) async {
+      final repo = FakeJourneyRepository()
+        ..createError = const OurneyException(OurneyErrorCode.offline);
+      final h = await pumpJourneys(
+        tester,
+        journeys: repo,
+        location: JourneysPaths.newFromTemplate(TemplateId.workout30),
+        locale: const Locale('en'),
+      );
+      await _tap(tester, _key('journey-create'));
+      repo.createError = null;
+      await _tap(tester, _key('journey-create'));
+      expect(repo.attempts, hasLength(2));
+      expect(repo.attempts.first.id, isNotNull);
+      expect(repo.attempts.last.id, repo.attempts.first.id);
+      expect(h.journeys.created, hasLength(1));
+    });
+
     testWidgets('unknown template in the URL falls back to Custom', (
       tester,
     ) async {
