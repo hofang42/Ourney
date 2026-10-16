@@ -92,7 +92,7 @@ create function public.create_journey(
   p_duration_days int,
   p_timezone text,
   p_max_members int default 10,
-  p_public_link boolean default false
+  p_visibility public.journey_visibility default 'private'
 ) returns public.journeys
 language plpgsql
 security definer
@@ -108,7 +108,10 @@ begin
   if p_id is null or p_kind is null or p_start_date is null or p_timezone is null then
     raise exception 'invalid';
   end if;
-  if p_kind = 'group' and p_public_link then
+  -- Group journeys are always stored as 'group' (JourneyDraft defaults to 'private', which is
+  -- accepted and normalised); 'link' is only for solo journeys (FR-E3).
+  if (p_kind = 'group' and p_visibility = 'link')
+     or (p_kind = 'solo' and p_visibility = 'group') then
     raise exception 'invalid';
   end if;
 
@@ -137,7 +140,7 @@ begin
       v_code := public.random_token(8, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
       exit when not exists (select 1 from public.journeys where invite_code = v_code);
     end loop;
-  elsif p_public_link then
+  elsif p_visibility = 'link' then
     v_visibility := 'link';
     v_token := public.random_token(40, 'abcdefghijklmnopqrstuvwxyz0123456789');
   else
@@ -359,6 +362,10 @@ begin
     raise exception 'not_alone';
   end if;
   update public.journeys set deleted_at = now(), status = 'archived' where id = journey;
+  -- tombstone the check-ins so clients drop them on sync (media is removed by the owner's
+  -- client via the storage delete policy, or by delete-account).
+  update public.check_ins set deleted_at = now()
+   where journey_id = journey and deleted_at is null;
 end;
 $$;
 
@@ -491,8 +498,10 @@ begin
   end if;
 
   insert into public.reports (reporter_id, target_checkin_id, target_user_id, reason, note)
-  values (uid, p_checkin, v_target_user, p_reason, nullif(btrim(p_note), ''))
+  values (uid, p_checkin, v_target_user, p_reason, left(nullif(btrim(p_note), ''), 500))
   returning id into v_id;
+  insert into public.moderation_queue (kind, report_id, actor_id, target_user_id, target_checkin_id, reason, note)
+  values ('report', v_id, uid, v_target_user, p_checkin, p_reason, left(nullif(btrim(p_note), ''), 500));
   return v_id;
 end;
 $$;
@@ -511,8 +520,15 @@ begin
   if not exists (select 1 from public.profiles where id = p_user and deleted_at is null) then
     raise exception 'not_found';
   end if;
+  if exists (select 1 from public.blocks
+              where blocker_id = uid and blocked_id = p_user and deleted_at is null) then
+    return; -- idempotent, no duplicate queue entry
+  end if;
   insert into public.blocks (blocker_id, blocked_id) values (uid, p_user)
   on conflict (blocker_id, blocked_id) do update set deleted_at = null;
+  -- Blocks are a moderation signal too (repeatedly blocked users get reviewed).
+  insert into public.moderation_queue (kind, actor_id, target_user_id)
+  values ('block', uid, p_user);
 end;
 $$;
 
@@ -530,33 +546,50 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
--- Account deletion support (service_role only; called by the delete-account Edge Function)
--- Two steps so the function is retry-safe: list media, remove storage, purge, delete auth user.
+-- Account deletion support (FR-A4). Used by the delete-account Edge Function (service_role):
+--   1. account_media_paths(uid)  -> every storage object to remove
+--   2. Storage API remove(paths) (storage objects must go through the Storage API)
+--   3. auth.admin.deleteUser(uid) -> cascades auth.users -> profiles; the BEFORE DELETE
+--      trigger on profiles hands over / archives group journeys first (02 §9.1).
 -- ---------------------------------------------------------------------------
+
+-- Journeys that disappear with the account: owned by the user and nobody else is active.
+create function public._journeys_dying_with(p_user uuid) returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select j.id from public.journeys j
+   where j.owner_id = p_user
+     and not exists (select 1 from public.memberships m
+                      where m.journey_id = j.id and m.user_id <> p_user
+                        and m.status = 'active' and m.deleted_at is null);
+$$;
+
+-- Lists the actual objects in bucket `media` (not only the paths referenced by rows), so
+-- orphans such as replaced avatars or uploads whose row never synced are removed too.
 create function public.account_media_paths(p_user uuid) returns setof text
 language sql
 stable
 security definer
 set search_path = ''
 as $$
-  select c.photo_path from public.check_ins c where c.user_id = p_user
-  union
-  select c.thumb_path from public.check_ins c where c.user_id = p_user
-  union
-  -- media of journeys that will be deleted with the account (owner alone, nobody else active)
-  select x.p
-    from public.journeys j
-    join public.check_ins c on c.journey_id = j.id
-    cross join lateral (values (c.photo_path), (c.thumb_path)) as x(p)
-   where j.owner_id = p_user
-     and not exists (select 1 from public.memberships m
-                      where m.journey_id = j.id and m.user_id <> p_user and m.status = 'active')
-  union
-  select pr.avatar_path from public.profiles pr where pr.id = p_user and pr.avatar_path is not null;
+  select o.name
+    from storage.objects o
+   where o.bucket_id = 'media'
+     and (
+       ((storage.foldername(o.name))[1] = 'avatars' and (storage.foldername(o.name))[2] = p_user::text)
+       or ((storage.foldername(o.name))[1] = 'checkins' and (storage.foldername(o.name))[3] = p_user::text)
+       or ((storage.foldername(o.name))[1] = 'checkins'
+           and public.try_uuid((storage.foldername(o.name))[2]) in (select public._journeys_dying_with(p_user)))
+     )
+   order by o.name;
 $$;
 
--- Hands over owned groups to the earliest active member, hard-deletes journeys where the
--- user is the only active member. Everything else cascades when the auth user is deleted.
+-- Leaves every group the user is still active in (ownership moves to the earliest joined
+-- active member; journeys left empty are archived). Journeys owned by the user with no other
+-- active member are hard-deleted. Idempotent; also runs from the profiles delete trigger.
 create function public.purge_account_data(p_user uuid) returns void
 language plpgsql
 security definer
@@ -566,22 +599,28 @@ declare
   r record;
 begin
   for r in
-    select j.id from public.journeys j where j.owner_id = p_user
+    select m.journey_id from public.memberships m
+     where m.user_id = p_user and m.status = 'active' and m.deleted_at is null
+       and m.journey_id not in (select public._journeys_dying_with(p_user))
   loop
-    if exists (select 1 from public.memberships m
-                where m.journey_id = r.id and m.user_id <> p_user
-                  and m.status = 'active' and m.deleted_at is null) then
-      -- other members remain: transfer ownership and hide the leaver's content
-      if exists (select 1 from public.memberships m
-                  where m.journey_id = r.id and m.user_id = p_user and m.status = 'active') then
-        perform public._leave_journey(r.id, p_user);
-      end if;
-    else
-      delete from public.journeys where id = r.id;
-    end if;
+    perform public._leave_journey(r.journey_id, p_user);
   end loop;
+  delete from public.journeys where id in (select public._journeys_dying_with(p_user));
 end;
 $$;
+
+create function public.profiles_before_delete() returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.purge_account_data(old.id);
+  return old;
+end;
+$$;
+create trigger profiles_before_delete before delete on public.profiles
+  for each row execute function public.profiles_before_delete();
 
 -- ---------------------------------------------------------------------------
 -- Privileges
@@ -590,7 +629,7 @@ revoke all on function public._uid(), public._active_journey_count(uuid),
   public._leave_journey(uuid, uuid) from public, anon, authenticated;
 
 revoke all on function
-  public.create_journey(uuid, public.journey_kind, public.template_id, text, text, text, text, boolean, date, int, text, int, boolean),
+  public.create_journey(uuid, public.journey_kind, public.template_id, text, text, text, text, boolean, date, int, text, int, public.journey_visibility),
   public.join_by_code(text), public.rotate_invite(uuid), public.leave_journey(uuid),
   public.remove_member(uuid, uuid), public.end_journey(uuid), public.delete_journey(uuid),
   public.set_public_link(uuid, boolean), public.group_today(uuid),
@@ -598,7 +637,7 @@ revoke all on function
   public.block_user(uuid), public.unblock_user(uuid)
   from public, anon;
 grant execute on function
-  public.create_journey(uuid, public.journey_kind, public.template_id, text, text, text, text, boolean, date, int, text, int, boolean),
+  public.create_journey(uuid, public.journey_kind, public.template_id, text, text, text, text, boolean, date, int, text, int, public.journey_visibility),
   public.join_by_code(text), public.rotate_invite(uuid), public.leave_journey(uuid),
   public.remove_member(uuid, uuid), public.end_journey(uuid), public.delete_journey(uuid),
   public.set_public_link(uuid, boolean), public.group_today(uuid),
@@ -606,7 +645,8 @@ grant execute on function
   public.block_user(uuid), public.unblock_user(uuid)
   to authenticated;
 
-revoke all on function public.account_media_paths(uuid), public.purge_account_data(uuid)
+revoke all on function public.account_media_paths(uuid), public.purge_account_data(uuid),
+  public._journeys_dying_with(uuid), public.profiles_before_delete()
   from public, anon, authenticated;
 grant execute on function public.account_media_paths(uuid), public.purge_account_data(uuid)
   to service_role;

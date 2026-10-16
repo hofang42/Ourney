@@ -113,6 +113,7 @@ create table public.journeys (
   deleted_at timestamptz,
   constraint journeys_link_only_solo check (visibility <> 'link' or kind = 'solo'),
   constraint journeys_group_visibility check (kind <> 'group' or visibility = 'group'),
+  constraint journeys_solo_visibility check (kind <> 'solo' or visibility in ('private', 'link')),
   constraint journeys_invite_group_only check (invite_code is null or kind = 'group'),
   constraint journeys_token_iff_link check ((public_token is not null) = (visibility = 'link'))
 );
@@ -184,7 +185,9 @@ create table public.blocks (
 );
 create index blocks_blocked_idx on public.blocks (blocked_id);
 
--- reports doubles as the moderation queue (status = 'open' | 'actioned' | 'dismissed').
+-- reports: user-facing record (status = 'open' | 'actioned' | 'dismissed').
+-- At least one target is required; enforced by report_content() rather than a CHECK, because
+-- both FKs are ON DELETE SET NULL and an account deletion must not fail on old reports.
 create table public.reports (
   id uuid primary key default gen_random_uuid(),
   reporter_id uuid not null references public.profiles (id) on delete cascade,
@@ -195,10 +198,28 @@ create table public.reports (
   status text not null default 'open' check (status in ('open', 'actioned', 'dismissed')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  deleted_at timestamptz,
-  constraint reports_has_target check (target_checkin_id is not null or target_user_id is not null)
+  deleted_at timestamptz
 );
 create index reports_open_idx on public.reports (created_at) where status = 'open';
+
+-- moderation_queue: server-only work queue for moderators (service_role / dashboard).
+-- Filled by report_content() and block_user(); never readable through the API.
+-- Snapshot ids are kept without FKs so evidence survives the target's account deletion.
+create table public.moderation_queue (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('report', 'block')),
+  report_id uuid references public.reports (id) on delete cascade,
+  actor_id uuid,
+  target_user_id uuid,
+  target_checkin_id uuid,
+  reason public.report_reason,
+  note text,
+  status text not null default 'open' check (status in ('open', 'actioned', 'dismissed')),
+  handled_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index moderation_queue_open_idx on public.moderation_queue (created_at) where status = 'open';
 
 -- updated_at triggers (sync cursor is server authoritative)
 create trigger profiles_updated before update on public.profiles for each row execute function public.set_updated_at();
@@ -208,6 +229,7 @@ create trigger check_ins_updated before update on public.check_ins for each row 
 create trigger reactions_updated before update on public.reactions for each row execute function public.set_updated_at();
 create trigger blocks_updated before update on public.blocks for each row execute function public.set_updated_at();
 create trigger reports_updated before update on public.reports for each row execute function public.set_updated_at();
+create trigger moderation_queue_updated before update on public.moderation_queue for each row execute function public.set_updated_at();
 
 -- ---------------------------------------------------------------------------
 -- Journey validation
@@ -291,7 +313,8 @@ begin
     select j.status into s
       from public.check_ins c join public.journeys j on j.id = c.journey_id
      where c.id = new.checkin_id;
-    if s is distinct from 'active' then
+    -- s is null when the caller cannot see the check-in: let RLS reject it (42501).
+    if s is not null and s <> 'active' then
       raise exception 'ended' using errcode = 'P0001';
     end if;
   end if;

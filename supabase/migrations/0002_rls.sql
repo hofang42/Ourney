@@ -64,10 +64,44 @@ as $$
   );
 $$;
 
+-- FR-F2: content the caller reported is hidden from the caller at once.
+create function public.has_reported(checkin uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.reports r
+     where r.target_checkin_id = checkin
+       and r.reporter_id = (select auth.uid())
+       and r.deleted_at is null
+  );
+$$;
+
+-- Storage read check for checkins/{journey}/{author}/...: own media always; otherwise the
+-- caller must be an active member, the author must still be an active member (media of
+-- members who left is hidden, 02 §9.1) and neither may have blocked the other.
+create function public.can_read_checkin_media(journey uuid, author uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select author = (select auth.uid())
+      or (public.is_member(journey)
+          and exists (select 1 from public.memberships m
+                       where m.journey_id = journey and m.user_id = author
+                         and m.status = 'active' and m.deleted_at is null)
+          and not public.is_blocked_pair(author));
+$$;
+
 revoke all on function public.is_member(uuid), public.is_owner(uuid),
-  public.is_blocked_pair(uuid), public.can_see_checkin(uuid) from public, anon;
+  public.is_blocked_pair(uuid), public.can_see_checkin(uuid), public.has_reported(uuid),
+  public.can_read_checkin_media(uuid, uuid) from public, anon;
 grant execute on function public.is_member(uuid), public.is_owner(uuid),
-  public.is_blocked_pair(uuid), public.can_see_checkin(uuid) to authenticated, service_role;
+  public.is_blocked_pair(uuid), public.can_see_checkin(uuid), public.has_reported(uuid),
+  public.can_read_checkin_media(uuid, uuid) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- Privileges: least privilege. anon gets nothing.
@@ -87,7 +121,7 @@ grant update (title, emoji, metric_name, metric_unit, hide_metric_default, durat
 grant update (hide_metric, blur_media) on public.memberships to authenticated;
 grant insert, update on public.check_ins to authenticated;
 grant insert, update on public.reactions to authenticated;
-grant insert, update on public.blocks to authenticated;
+-- blocks: written only via block_user()/unblock_user() (they also feed moderation_queue).
 -- reports: created only via report_content().
 
 -- service_role (Edge Functions) keeps full access through Supabase default grants.
@@ -102,6 +136,7 @@ alter table public.check_ins enable row level security;
 alter table public.reactions enable row level security;
 alter table public.blocks enable row level security;
 alter table public.reports enable row level security;
+alter table public.moderation_queue enable row level security;
 
 -- profiles: readable by any authenticated user, writable by self
 create policy profiles_select on public.profiles for select to authenticated using (true);
@@ -125,9 +160,17 @@ create policy memberships_update on public.memberships for update to authenticat
   using (user_id = (select auth.uid()) and status = 'active')
   with check (user_id = (select auth.uid()));
 
--- check_ins: active members, minus blocked users (either direction)
+-- check_ins: own rows always (also after leaving); otherwise active members, minus blocked
+-- users (either direction) and minus check-ins the caller reported.
+-- Soft-deleted rows (deleted_at, incl. hidden_by_leave) stay visible as sync tombstones;
+-- their media is no longer readable (can_read_checkin_media).
 create policy check_ins_select on public.check_ins for select to authenticated
-  using (public.is_member(journey_id) and not public.is_blocked_pair(user_id));
+  using (
+    user_id = (select auth.uid())
+    or (public.is_member(journey_id)
+        and not public.is_blocked_pair(user_id)
+        and not public.has_reported(id))
+  );
 create policy check_ins_insert on public.check_ins for insert to authenticated
   with check (user_id = (select auth.uid()) and public.is_member(journey_id));
 create policy check_ins_update on public.check_ins for update to authenticated
@@ -143,17 +186,18 @@ create policy reactions_update on public.reactions for update to authenticated
   using (user_id = (select auth.uid()) and public.can_see_checkin(checkin_id))
   with check (user_id = (select auth.uid()) and public.can_see_checkin(checkin_id));
 
--- blocks: own
+-- blocks: own, read-only (writes via RPC)
 create policy blocks_select on public.blocks for select to authenticated
   using (blocker_id = (select auth.uid()));
-create policy blocks_insert on public.blocks for insert to authenticated
-  with check (blocker_id = (select auth.uid()));
-create policy blocks_update on public.blocks for update to authenticated
-  using (blocker_id = (select auth.uid())) with check (blocker_id = (select auth.uid()));
 
 -- reports: own, read-only (insert via RPC); moderators use service_role
 create policy reports_select on public.reports for select to authenticated
   using (reporter_id = (select auth.uid()));
+
+-- moderation_queue: no API access at all (no grants either). Explicit deny policy so the
+-- "every table has a policy" check stays meaningful; service_role bypasses RLS.
+create policy moderation_queue_deny on public.moderation_queue for all to authenticated
+  using (false) with check (false);
 
 -- ---------------------------------------------------------------------------
 -- Function privileges: internal/trigger helpers are not callable by API roles.

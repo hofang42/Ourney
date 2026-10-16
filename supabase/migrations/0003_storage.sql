@@ -10,8 +10,9 @@ on conflict (id) do update
       file_size_limit = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;
 
--- Read: check-in media for active members of the journey (minus blocked authors);
--- avatars are readable by any authenticated user (profiles are).
+-- Read: own check-in media; otherwise active members of the journey, for authors who are
+-- still active members and not blocked either way (see public.can_read_checkin_media).
+-- Avatars are readable by any authenticated user (profiles are).
 create policy media_select on storage.objects for select to authenticated
 using (
   bucket_id = 'media'
@@ -19,8 +20,9 @@ using (
     (
       (storage.foldername(name))[1] = 'checkins'
       and array_length(storage.foldername(name), 1) = 3
-      and public.is_member(public.try_uuid((storage.foldername(name))[2]))
-      and not public.is_blocked_pair(public.try_uuid((storage.foldername(name))[3]))
+      and public.can_read_checkin_media(
+            public.try_uuid((storage.foldername(name))[2]),
+            public.try_uuid((storage.foldername(name))[3]))
     )
     or (
       (storage.foldername(name))[1] = 'avatars'

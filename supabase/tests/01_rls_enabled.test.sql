@@ -1,11 +1,11 @@
 -- Security baseline: RLS everywhere, fixed search_path, no anon access, private bucket.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(11);
+select plan(15);
 
 select tables_are(
   'public',
-  array['profiles', 'journeys', 'memberships', 'check_ins', 'reactions', 'blocks', 'reports'],
+  array['profiles', 'journeys', 'memberships', 'check_ins', 'reactions', 'blocks', 'reports', 'moderation_queue'],
   'public schema contains exactly the contract tables'
 );
 
@@ -61,6 +61,38 @@ select ok(
   not has_function_privilege('authenticated', 'public.purge_account_data(uuid)', 'execute')
   and not has_function_privilege('authenticated', 'public.account_media_paths(uuid)', 'execute'),
   'account purge helpers are service_role only'
+);
+
+select is(
+  (select count(*)::int
+     from information_schema.role_table_grants
+    where table_schema = 'public' and table_name = 'moderation_queue'
+      and grantee in ('anon', 'authenticated')),
+  0,
+  'moderation_queue is not exposed to API roles'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.blocks', 'insert')
+  and not has_table_privilege('authenticated', 'public.reports', 'insert')
+  and not has_table_privilege('authenticated', 'public.journeys', 'insert')
+  and not has_table_privilege('authenticated', 'public.memberships', 'insert'),
+  'blocks/reports/journeys/memberships are written only through RPCs'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'public.check_ins', 'delete')
+  and not has_table_privilege('authenticated', 'public.journeys', 'delete'),
+  'no hard deletes from the API (soft delete via deleted_at)'
+);
+
+select is(
+  (select count(*)::int
+     from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname like '\_%'
+      and has_function_privilege('authenticated', p.oid, 'execute')),
+  0,
+  'internal _helpers are not callable by authenticated'
 );
 
 select ok(
