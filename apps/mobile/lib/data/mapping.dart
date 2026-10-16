@@ -119,7 +119,9 @@ CheckInsCompanion checkInFromRemote(RemoteRow r) => CheckInsCompanion(
   thumbPath: Value(r['thumb_path'] as String),
   fromLibrary: Value(r['from_library'] as bool? ?? false),
   caption: Value(r['caption'] as String?),
-  metricValue: Value(_toDouble(r['metric_value'])),
+  // Since 0005 the server never returns a metric in `check_ins` (always
+  // null): metrics arrive from `check_in_metrics` (see [metricFromRemote]).
+  // Left absent so applying a pulled row keeps the cached value.
   uploaded: const Value(true),
   updatedAt: Value(r['updated_at'] as String?),
 );
@@ -135,8 +137,22 @@ RemoteRow checkInToRemote(CheckInRow r) => {
   'thumb_path': r.thumbPath,
   'from_library': r.fromLibrary,
   'caption': r.caption,
+};
+
+/// Upsert body for `check_in_metrics` (on `checkin_id`; the server copies
+/// journey_id/user_id from the check-in). Sent for every check-in, also with
+/// a null value, so a retake without a number clears the old one.
+RemoteRow checkInMetricToRemote(CheckInRow r) => {
+  'checkin_id': r.id,
+  'journey_id': r.journeyId,
+  'user_id': r.userId,
   'metric_value': r.metricValue,
 };
+
+/// `check_in_metrics` row → (check-in id, value). RLS only returns rows the
+/// caller may see (own, or the author does not hide metrics).
+({String checkInId, double? value}) metricFromRemote(RemoteRow r) =>
+    (checkInId: r['checkin_id'] as String, value: _toDouble(r['metric_value']));
 
 CheckIn checkInFromRow(CheckInRow r, {String? localPhotoFile}) => CheckIn(
   id: r.id,

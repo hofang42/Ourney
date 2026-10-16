@@ -59,7 +59,10 @@ class DataGroupRepository implements GroupRepository {
     final row = await remote.rpc('join_by_code', {'code': normalized});
     if (row is! Map) throw const GroupException.of(OurneyErrorCode.unknown);
     final journey = row.cast<String, dynamic>();
-    final id = journey['id'] as String;
+    // Since 0005 an unknown code is an empty row (every column null), so the
+    // server can count the failed attempt (rate_limited after 10 per hour).
+    final id = journey['id'] as String?;
+    if (id == null) throw const GroupException.of(OurneyErrorCode.notFound);
     await ctx.store.applyJourney(journey);
     // Rejoin restores earlier check-ins: refetch the whole journey.
     await ctx.sync?.pullJourney(id);

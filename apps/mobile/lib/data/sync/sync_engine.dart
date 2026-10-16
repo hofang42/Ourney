@@ -18,6 +18,9 @@ const int pullPageSize = 1000;
 /// Cursor key holding the user id the cache belongs to.
 const String ownerCursorKey = '_owner';
 
+/// Cursor key of the `checkin_tombstones` RPC (other members' deletions).
+const String tombstoneCursorKey = 'checkin_tombstones';
+
 /// Supabase-mode sync: executes outbox items ([execute]) and pulls server
 /// changes by `updated_at` cursor ([syncNow]).
 class SyncEngine {
@@ -132,6 +135,12 @@ class SyncEngine {
       checkInToRemote(row),
       onConflict: 'journey_id,user_id,local_date',
     );
+    // Metrics live in their own table (RLS honours hide_metric, 0005).
+    await remote.upsert(
+      'check_in_metrics',
+      checkInMetricToRemote(row),
+      onConflict: 'checkin_id',
+    );
     await (db.update(db.checkIns)..where((t) => t.id.equals(id))).write(
       const CheckInsCompanion(uploaded: Value(true)),
     );
@@ -168,6 +177,8 @@ class SyncEngine {
       await _pullTable('journeys', store.applyJourney);
       await _pullTable('memberships', (r) => store.applyMembership(r, me: me));
       await _pullTable('check_ins', (r) => store.applyCheckIn(r, pending));
+      await _pullTombstones();
+      await _pullMetrics(pending);
       await _pullTable(
         'reactions',
         (r) => store.applyReaction(r, pending, me: me),
@@ -190,8 +201,92 @@ class SyncEngine {
     String table,
     Future<void> Function(RemoteRow) apply, {
     Map<String, Object> eq = const {},
-  }) async {
-    final key = eq.isEmpty ? table : '$table?${eq.keys.join(',')}';
+  }) => _pullPaged(
+    eq.isEmpty ? table : '$table?${eq.keys.join(',')}',
+    (since) =>
+        remote.select(table, eq: eq, updatedSince: since, limit: pullPageSize),
+    (rows) => db.transaction(() async {
+      for (final r in rows) {
+        await apply(r);
+      }
+    }),
+  );
+
+  /// Other members' check-ins that were deleted, hidden (author left or was
+  /// removed) or moderated. Since 0005 `check_ins` returns soft-deleted rows
+  /// to their author only; everybody else gets ids from this RPC.
+  Future<void> _pullTombstones() => _pullPaged(
+    tombstoneCursorKey,
+    (since) async {
+      final res = await remote.rpc('checkin_tombstones', {
+        'since': since,
+        'lim': pullPageSize,
+      });
+      return [
+        if (res is List)
+          for (final r in res)
+            if (r is Map) r.cast<String, dynamic>(),
+      ];
+    },
+    (rows) => db.transaction(() async {
+      for (final r in rows) {
+        await store.applyCheckInTombstone(r['id'] as String);
+      }
+    }),
+  );
+
+  /// `check_in_metrics` (own metrics, and others' unless they hide them).
+  /// A metric whose check-in is not cached yet (it committed after the
+  /// check-ins page was read) fetches that check-in first, so the value is
+  /// not lost behind the cursor.
+  Future<void> _pullMetrics(Set<String> pending) => _pullPaged(
+    'check_in_metrics',
+    (since) => remote.select(
+      'check_in_metrics',
+      updatedSince: since,
+      limit: pullPageSize,
+    ),
+    (rows) => _applyMetrics(rows, pending),
+  );
+
+  Future<void> _applyMetrics(List<RemoteRow> rows, Set<String> pending) async {
+    final missing = <String>{};
+    await db.transaction(() async {
+      for (final r in rows) {
+        if (!await store.applyMetric(r)) missing.add(r['checkin_id'] as String);
+      }
+    });
+    if (missing.isEmpty) return;
+    final ids = missing.toList();
+    final fetched = <RemoteRow>[];
+    for (var i = 0; i < ids.length; i += 100) {
+      final end = i + 100 > ids.length ? ids.length : i + 100;
+      fetched.addAll(
+        await remote.select(
+          'check_ins',
+          inList: {'id': ids.sublist(i, end)},
+          onlyLive: true,
+        ),
+      );
+    }
+    if (fetched.isEmpty) return;
+    await db.transaction(() async {
+      for (final c in fetched) {
+        await store.applyCheckIn(c, pending);
+      }
+      for (final r in rows) {
+        if (missing.contains(r['checkin_id'])) await store.applyMetric(r);
+      }
+    });
+  }
+
+  /// Cursor-paged pull: [fetch] gets rows with `updated_at >= since`
+  /// (ascending), [applyPage] stores one page.
+  Future<void> _pullPaged(
+    String key,
+    Future<List<RemoteRow>> Function(String? since) fetch,
+    Future<void> Function(List<RemoteRow> rows) applyPage,
+  ) async {
     var cursor = await db.readCursor(key);
     var since = cursor == null
         ? null
@@ -200,18 +295,9 @@ class SyncEngine {
               .subtract(pullOverlap)
               .toIso8601String();
     while (true) {
-      final rows = await remote.select(
-        table,
-        eq: eq,
-        updatedSince: since,
-        limit: pullPageSize,
-      );
+      final rows = await fetch(since);
       if (rows.isEmpty) return;
-      await db.transaction(() async {
-        for (final r in rows) {
-          await apply(r);
-        }
-      });
+      await applyPage(rows);
       final last = rows.last['updated_at'] as String?;
       if (last == null) return;
       final advanced = last != cursor;
@@ -247,6 +333,10 @@ class SyncEngine {
       onlyLive: true,
     );
     final ids = [for (final c in checkIns) c['id'] as String];
+    final metrics = await remote.select(
+      'check_in_metrics',
+      eq: {'journey_id': journeyId},
+    );
     final reactions = <RemoteRow>[];
     for (var i = 0; i < ids.length; i += 100) {
       final chunk = ids.sublist(i, i + 100 > ids.length ? ids.length : i + 100);
@@ -276,6 +366,9 @@ class SyncEngine {
       await store.deleteCheckIns(stale);
       for (final c in checkIns) {
         await store.applyCheckIn(c, pending);
+      }
+      for (final m in metrics) {
+        await store.applyMetric(m);
       }
       final liveReactions = {
         for (final r in reactions) '${r['checkin_id']}|${r['user_id']}',
