@@ -1,13 +1,10 @@
 import 'dart:async';
-import 'dart:typed_data';
-import 'dart:ui' show Rect;
 
 import 'package:clock/clock.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';

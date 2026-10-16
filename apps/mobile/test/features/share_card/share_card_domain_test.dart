@@ -7,19 +7,16 @@ import 'package:ourney_core/ourney_core.dart';
 
 import 'share_card_fakes.dart';
 
-StreakSummary _streak({
-  int current = 0,
-  int completed = 0,
-  int dayIndex = 1,
-}) => StreakSummary(
-  current: current,
-  best: current,
-  completed: completed,
-  checkedInToday: false,
-  atRisk: current > 0,
-  progress: 0,
-  dayIndex: dayIndex,
-);
+StreakSummary _streak({int current = 0, int completed = 0, int dayIndex = 1}) =>
+    StreakSummary(
+      current: current,
+      best: current,
+      completed: completed,
+      checkedInToday: false,
+      atRisk: current > 0,
+      progress: 0,
+      dayIndex: dayIndex,
+    );
 
 ShareCardContent _content(
   Journey j, {
@@ -60,7 +57,10 @@ void main() {
         shareCardBaseName('a/../b c', ShareCardFormat.feed),
         'ourney-abc-feed',
       );
-      expect(shareCardBaseName('', ShareCardFormat.story), 'ourney-journey-story');
+      expect(
+        shareCardBaseName('', ShareCardFormat.story),
+        'ourney-journey-story',
+      );
     });
   });
 
@@ -74,10 +74,7 @@ void main() {
     });
 
     test('no live streak -> checked-in days', () {
-      final c = _content(
-        testJourney(),
-        streak: _streak(completed: 4),
-      );
+      final c = _content(testJourney(), streak: _streak(completed: 4));
       expect(c.headline, ShareCardHeadline.checkedIn);
       expect(c.number, 4);
     });
@@ -111,7 +108,9 @@ void main() {
       final c = _content(
         j,
         membership: testMembership(j),
-        checkIns: [testCheckIn(j.id, const LocalDate(2026, 10, 15), metricValue: 71.5)],
+        checkIns: [
+          testCheckIn(j.id, const LocalDate(2026, 10, 15), metricValue: 71.5),
+        ],
       );
       expect(c.metricHidden, isTrue);
       expect(c.metricValue, isNull);
@@ -134,7 +133,11 @@ void main() {
         testCheckIn(j.id, const LocalDate(2026, 10, 14), metricValue: 20),
         testCheckIn(j.id, const LocalDate(2026, 10, 15), metricValue: 25),
       ];
-      final shown = _content(j, membership: testMembership(j), checkIns: checkIns);
+      final shown = _content(
+        j,
+        membership: testMembership(j),
+        checkIns: checkIns,
+      );
       expect(shown.metricValue, 25);
       expect(shown.metricUnit, 'phút');
       expect(shown.metricHidden, isFalse);
@@ -217,7 +220,10 @@ void main() {
     test('active token only for a valid solo link token', () {
       expect(
         activePublicToken(
-          testJourney(visibility: JourneyVisibility.link, publicToken: testToken),
+          testJourney(
+            visibility: JourneyVisibility.link,
+            publicToken: testToken,
+          ),
         ),
         testToken,
       );
@@ -235,6 +241,10 @@ void main() {
     final a = testCheckIn('j1', const LocalDate(2026, 10, 12));
     final b = testCheckIn('j1', const LocalDate(2026, 10, 15));
     final c = testCheckIn('j1', const LocalDate(2026, 10, 13));
-    expect(photoCandidates([a, b, c]).map((x) => x.localDate.day), [15, 13, 12]);
+    expect(photoCandidates([a, b, c]).map((x) => x.localDate.day), [
+      15,
+      13,
+      12,
+    ]);
   });
 }

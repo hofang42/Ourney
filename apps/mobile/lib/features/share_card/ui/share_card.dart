@@ -23,6 +23,11 @@ const _white = Color(0xFFFFFFFF);
 const _ink = Color(0xFF1A1A22);
 const _primaryDeep = Color(0xFFE11D48);
 
+/// Keeps white text legible over bright photos (on top of the scrim).
+const _textShadows = [
+  Shadow(color: Color(0x66000000), blurRadius: 8, offset: Offset(0, 1)),
+];
+
 /// Big number caption and kicker for [content], localized.
 ({String? kicker, String caption}) shareCardCaption(
   ShareCardL10n l10n,
@@ -224,8 +229,12 @@ class _PhotoPanel extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                stops: [0.35, 1],
-                colors: [Color(0x00000000), Color(0xB3000000)],
+                stops: [0.1, 0.55, 1],
+                colors: [
+                  Color(0x00000000),
+                  Color(0x66000000),
+                  Color(0xCC000000),
+                ],
               ),
             ),
           ),
@@ -275,7 +284,7 @@ class _Stats extends StatelessWidget {
       size: 24,
       color: _white,
       height: shareCardDiacriticHeight,
-    );
+    ).copyWith(shadows: _textShadows);
     Widget line(String text, Key key) => FittedBox(
       fit: BoxFit.scaleDown,
       alignment: Alignment.centerLeft,
@@ -294,7 +303,11 @@ class _Stats extends StatelessWidget {
             key: const ValueKey('share-card-number'),
             maxLines: 1,
             // Digits only: no diacritics, so a tight line height is safe.
-            style: displayStyle(size: numberSize, color: _white, height: 1.08),
+            style: displayStyle(
+              size: numberSize,
+              color: _white,
+              height: 1.08,
+            ).copyWith(shadows: _textShadows),
           ),
         ),
         if (caption.isNotEmpty)

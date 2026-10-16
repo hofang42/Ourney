@@ -77,7 +77,9 @@ void main() {
       final bytes = await tester.runAsync(() => File(file.path).readAsBytes());
       expect(bytes!.length, lessThan(1000000));
       // Decode the PNG header back: exact pixel size.
-      final codec = await tester.runAsync(() => ui.instantiateImageCodec(bytes));
+      final codec = await tester.runAsync(
+        () => ui.instantiateImageCodec(bytes),
+      );
       final frame = await tester.runAsync(() => codec!.getNextFrame());
       expect(frame!.image.width, format.pixelWidth);
       expect(frame.image.height, format.pixelHeight);
@@ -92,12 +94,13 @@ void main() {
     final qualities = <int>[];
     final exporter = ShareCardExporter(
       maxBytes: 10,
-      jpegEncoder: (png, {required width, required height, required quality}) async {
-        expect((width, height), (1080, 1350));
-        qualities.add(quality);
-        // Pretend the second quality fits.
-        return Uint8List(quality == 85 ? 8 : 20);
-      },
+      jpegEncoder:
+          (png, {required width, required height, required quality}) async {
+            expect((width, height), (1080, 1350));
+            qualities.add(quality);
+            // Pretend the second quality fits.
+            return Uint8List(quality == 85 ? 8 : 20);
+          },
     );
     final image = await tester.runAsync(
       () => exporter.capture(boundary, ShareCardFormat.feed),

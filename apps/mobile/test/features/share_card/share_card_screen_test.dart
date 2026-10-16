@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/app/theme/tokens.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
@@ -262,7 +261,11 @@ void main() {
       tester,
     ) async {
       final j = testJourney();
-      final h = await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
+      final h = await pumpShare(
+        tester,
+        journey: j,
+        checkIns: streakCheckIns(j.id),
+      );
       await _tap(tester, _key('share-card-share'));
       expect(h.exporter.exports, hasLength(1));
       final e = h.exporter.exports.single;
