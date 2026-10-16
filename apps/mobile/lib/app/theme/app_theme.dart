@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
+import 'package:ourney_core/ourney_core.dart';
 
+import 'persona_theme.dart';
 import 'tokens.dart';
 
 const String kBodyFont = 'BeVietnamPro';
@@ -53,10 +55,13 @@ TextTheme _textTheme(OurneyColors c) {
   );
 }
 
-ThemeData buildAppTheme(Brightness brightness) {
+ThemeData buildAppTheme(Brightness brightness, [PersonaSkinId? skin]) {
   final c = brightness == Brightness.dark
       ? OurneyColors.dark
       : OurneyColors.light;
+  final persona = skin != null
+      ? OurneyPersonaTheme.forSkin(skin, brightness)
+      : OurneyPersonaTheme.editorialNeutralBase(brightness);
   final scheme = ColorScheme(
     brightness: brightness,
     primary: c.primary,
@@ -89,7 +94,7 @@ ThemeData buildAppTheme(Brightness brightness) {
     canvasColor: c.bg,
     fontFamily: kBodyFont,
     textTheme: text,
-    extensions: [c],
+    extensions: [c, persona],
     splashFactory: NoSplash.splashFactory,
     appBarTheme: AppBarTheme(
       backgroundColor: c.bg,

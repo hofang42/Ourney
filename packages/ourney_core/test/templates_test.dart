@@ -55,4 +55,22 @@ void main() {
       expect(validateDurationDays(t.defaultDurationDays), isNull, reason: t.id.name);
     }
   });
+
+  test('every template maps to a PersonaSkinId and design asset', () {
+    for (final t in allTemplates) {
+      expect(t.designAssetPath, startsWith('assets/design_personas/persona_'));
+      expect(personaSkinForTemplate(t.id), t.personaSkinId);
+    }
+    expect(
+      personaSkinForTemplate(
+        TemplateId.custom,
+        kind: JourneyKind.group,
+        maxMembers: 2,
+      ),
+      PersonaSkinId.coupleRituals,
+    );
+    for (final skin in PersonaSkinId.values) {
+      expect(designAssetForPersona(skin), startsWith('assets/design_personas/persona_'));
+    }
+  });
 }

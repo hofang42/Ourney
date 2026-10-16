@@ -92,6 +92,9 @@ flutter:
   # per feature, see lib/features/README.md) and the output is committed.
   generate: true
 
+  assets:
+    - assets/design_personas/
+
   fonts:
     # Body: Be Vietnam Pro (OFL), Vietnamese-complete.
     - family: BeVietnamPro
