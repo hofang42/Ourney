@@ -1,5 +1,7 @@
 # Ourney — Requirement v2
 
+> ⚠️ Stack đã đổi sang **Flutter (iOS + Android)**, xem [04-implementation-plan-v1.md](04-implementation-plan-v1.md) §0–1. Mục 7–8 (Swift/xtool) không còn hiệu lực. Phần sản phẩm, data model, vòng đời nhóm và §9–10 vẫn giữ (riêng clip đã bị cắt khỏi v1).
+>
 > 2026-10-16 · Thay thế mục 4 (Phạm vi sản phẩm) của [01-analysis.md](01-analysis.md). Techstack và toolchain xtool giữ nguyên, trừ phần bổ sung ở mục 7.
 > Nguồn: 3 agent research (check-in kiểu Locket, journey nhóm/social, UI cho người dùng trẻ) + skill `ui-ux-pro-max`. Những điểm chưa kiểm chứng được đánh dấu ⚠️.
 

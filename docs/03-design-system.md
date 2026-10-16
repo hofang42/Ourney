@@ -1,5 +1,7 @@
 # Ourney — Design System v0
 
+> ⚠️ Stack đã đổi sang Flutter: màu, font, motion, share card vẫn giữ. Code SwiftUI và các skill SwiftUI không còn áp dụng; dùng `ui-ux-pro-max` (stack `flutter`).
+>
 > Phong cách: **Vibrant & Block-based + Motion-Driven** (profile "Social Media App" và "Habit Tracker" của skill `ui-ux-pro-max`), lấy cảm hứng từ Locket (camera-first), Duolingo (nút chunky, ăn mừng streak), Strava/Wrapped (share card một con số lớn).
 > Ràng buộc xtool: không asset catalog, màu định nghĩa bằng code, font/PNG nằm trong SwiftPM resources, không có `#Preview`.
 
