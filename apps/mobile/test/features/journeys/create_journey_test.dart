@@ -48,10 +48,7 @@ void main() {
       expect(title.controller!.text, 'Weight loss');
       expect(_switchValue(tester, 'journey-metric'), isTrue);
       expect(
-        tester
-            .widget<TextField>(_key('journey-metric-unit'))
-            .controller!
-            .text,
+        tester.widget<TextField>(_key('journey-metric-unit')).controller!.text,
         'kg',
       );
       expect(_switchValue(tester, 'journey-hide-metric'), isTrue);
@@ -121,7 +118,10 @@ void main() {
       expect(find.text('Give your journey a name.'), findsOneWidget);
       expect(h.journeys.created, isEmpty);
 
-      await tester.enterText(_key('journey-title'), 'x' * (journeyTitleMax + 1));
+      await tester.enterText(
+        _key('journey-title'),
+        'x' * (journeyTitleMax + 1),
+      );
       await tester.pumpAndSettle();
       expect(
         find.text('Names can be up to $journeyTitleMax characters.'),
@@ -219,10 +219,7 @@ void main() {
       );
       await _tap(tester, _key('journey-create'));
       expect(_key('journeys-limit-dialog'), findsOneWidget);
-      expect(
-        h.location,
-        JourneysPaths.newFromTemplate(TemplateId.workout30),
-      );
+      expect(h.location, JourneysPaths.newFromTemplate(TemplateId.workout30));
     });
 
     testWidgets('unknown template in the URL falls back to Custom', (

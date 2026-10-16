@@ -123,9 +123,7 @@ void main() {
       expect(find.byKey(const ValueKey('journeys-limit-dialog')), findsNothing);
     });
 
-    testWidgets('ended journeys do not count toward the limit', (
-      tester,
-    ) async {
+    testWidgets('ended journeys do not count toward the limit', (tester) async {
       final journeys = [
         for (var i = 1; i <= 2; i++) testJourney(id: 'j$i'),
         testJourney(id: 'e', status: JourneyStatus.ended),
@@ -143,7 +141,10 @@ void main() {
       tester,
     ) async {
       await pumpJourneys(tester, journeys: _NotWiredJourneyRepository());
-      expect(find.byKey(const ValueKey('placeholder-journeys')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('placeholder-journeys')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('load error shows a mapped message and retry', (tester) async {

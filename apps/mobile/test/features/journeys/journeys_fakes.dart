@@ -119,8 +119,7 @@ class FakeJourneyRepository implements JourneyRepository {
 
   final List<JourneyDraft> created = [];
   final List<String> calls = [];
-  final List<({String id, bool? hideMetric, bool? blurMedia})> prefUpdates =
-      [];
+  final List<({String id, bool? hideMetric, bool? blurMedia})> prefUpdates = [];
 
   /// When set, the next matching call throws it.
   Object? createError;
@@ -129,9 +128,8 @@ class FakeJourneyRepository implements JourneyRepository {
 
   List<Journey> get journeys => _journeys.value;
 
-  void _replace(String id, Journey Function(Journey) f) => _journeys.set([
-    for (final j in _journeys.value) j.id == id ? f(j) : j,
-  ]);
+  void _replace(String id, Journey Function(Journey) f) =>
+      _journeys.set([for (final j in _journeys.value) j.id == id ? f(j) : j]);
 
   @override
   Stream<List<Journey>> watchActive() => _journeys.watch();
@@ -242,7 +240,8 @@ class FakeCheckInRepository implements CheckInRepository {
     return _all.watch().map(
       (list) => [
         for (final c in list)
-          if (c.journeyId == journeyId && (userId == null || c.userId == userId))
+          if (c.journeyId == journeyId &&
+              (userId == null || c.userId == userId))
             c,
       ],
     );
