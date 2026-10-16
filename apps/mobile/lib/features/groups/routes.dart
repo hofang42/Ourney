@@ -1,50 +1,54 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-import '../../app/providers.dart';
-import '../../shared/needs_server_view.dart';
-import '../../shared/placeholder_screen.dart';
-import 'l10n/generated/groups_localizations.dart';
+import '../../app/navigator_keys.dart';
+import 'groups_paths.dart';
+import 'ui/group_today_screen.dart';
+import 'ui/groups_list_screen.dart';
+import 'ui/invite_screen.dart';
+import 'ui/join_screen.dart';
 
-/// PLACEHOLDER (A3): the groups feature agent (C1, Social) replaces the
-/// screens.
+/// Groups feature (C1). Contract (lib/features/README.md): exports
+/// `List<RouteBase> groupsRoutes`; top-level paths start with `/groups` or
+/// `/join`. They live in the Groups tab of the shell.
 ///
-/// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> groupsRoutes`; top-level paths must start with `/groups`
-/// or `/join`. These routes live in the Groups tab of the shell.
-/// `/join/:code` is the target of the `ourney://join/<code>` deep link.
+/// * `/groups`                      list of group journeys (tab root)
+/// * `/groups/:journeyId`           group "Today" screen (FR-D3)
+/// * `/groups/:journeyId/invite`    code, link, QR (full screen)
+/// * `/join`                        manual code entry (FR-D1)
+/// * `/join/:code`                  `ourney://join/<code>` preview + join
 ///
-/// Local-only mode (FR-A5): every group screen must show [NeedsServerView]
-/// when `ref.watch(appConfigProvider).localOnly` is true.
+/// Every screen shows `NeedsServerView` in local-only mode (FR-A5). Build
+/// links with `AppRoutes` / `GroupsPaths` (groups_paths.dart).
 final List<RouteBase> groupsRoutes = [
   GoRoute(
     path: AppRoutes.groups,
-    builder: (context, state) => const _GroupsPlaceholder(id: 'groups'),
+    builder: (context, state) => const GroupsListScreen(),
+    routes: [
+      GoRoute(
+        path: ':journeyId',
+        builder: (context, state) =>
+            GroupTodayScreen(journeyId: state.pathParameters['journeyId']!),
+        routes: [
+          GoRoute(
+            path: 'invite',
+            parentNavigatorKey: rootNavigatorKey,
+            builder: (context, state) =>
+                InviteScreen(journeyId: state.pathParameters['journeyId']!),
+          ),
+        ],
+      ),
+    ],
   ),
   GoRoute(
-    path: '/join/:code',
-    builder: (context, state) =>
-        _GroupsPlaceholder(id: 'join', detail: state.pathParameters['code']),
+    path: GroupsPaths.joinEntry,
+    builder: (context, state) => const JoinScreen(),
+    routes: [
+      GoRoute(
+        path: ':code',
+        builder: (context, state) =>
+            JoinScreen(initialCode: state.pathParameters['code']),
+      ),
+    ],
   ),
 ];
-
-class _GroupsPlaceholder extends ConsumerWidget {
-  const _GroupsPlaceholder({required this.id, this.detail});
-
-  final String id;
-  final String? detail;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    if (ref.watch(appConfigProvider).localOnly) {
-      return const Scaffold(body: SafeArea(child: NeedsServerView()));
-    }
-    final title = GroupsL10n.of(context).groups_title;
-    return PlaceholderScreen(
-      id: id,
-      title: detail == null ? title : '$title · $detail',
-    );
-  }
-}
