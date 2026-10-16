@@ -1,0 +1,36 @@
+# Categories for GitHub auto-generated release notes (the iOS/Android workflows use
+# `generate_release_notes: true`). A PR lands in the first category whose label it has.
+# GitHub does not support wildcards here, so each `area:*` label is listed explicitly:
+# add a new area label to the list when you create one.
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+    authors:
+      - dependabot
+  categories:
+    - title: Tính năng mới
+      labels:
+        - feat
+    - title: Sửa lỗi
+      labels:
+        - fix
+    - title: Di động (iOS/Android)
+      labels:
+        - area:mobile
+        - area:ios
+        - area:android
+    - title: Backend và Supabase
+      labels:
+        - area:backend
+        - area:supabase
+    - title: Web
+      labels:
+        - area:web
+    - title: CI, release và tài liệu
+      labels:
+        - area:ci
+        - area:docs
+    - title: Khác
+      labels:
+        - '*'
