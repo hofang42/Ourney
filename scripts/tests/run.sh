@@ -242,7 +242,7 @@ check "SMTP: no secret in output or in the argv of supabase, jq and curl" $? "$O
 contains "$calls" "jq -n" && contains "$calls" "curl --silent"
 check "SMTP: the jq and curl calls were really logged (the check above is meaningful)" $? "$calls"
 grep -qxF 'header = "Authorization: Bearer sbp_test_token_0000"' "$CONFIG"
-check "SMTP: Authorization Bearer header is sent via the curl config" $? "$(cat "$CONFIG" 2> /dev/null | sed 's/Bearer .*/Bearer <redacted>/')"
+check "SMTP: Authorization Bearer header is sent via the curl config" $? "$(sed 's/Bearer .*/Bearer <redacted>/' "$CONFIG" 2> /dev/null)"
 
 export SMTP_RATE_LIMIT=030 SMTP_PORT=465 SMTP_SENDER_NAME=Ourney
 run bash "$DEPLOY"

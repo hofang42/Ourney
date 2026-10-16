@@ -73,7 +73,7 @@ for u in "${USERS[@]}"; do
       continue
       ;;
   esac
-  if printf '%s\n' "$pending" | grep -qix "$u"; then
+  if grep -qix "$u" <<<"$pending"; then
     echo "skip   @$u: invitation already pending"
     continue
   fi
