@@ -1,0 +1,11 @@
+name: ourney_core
+description: Pure Dart domain logic and contracts for Ourney (no Flutter).
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+
+dev_dependencies:
+  lints: any
+  test: any

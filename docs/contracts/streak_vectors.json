@@ -1,0 +1,14 @@
+{
+  "description": "Golden vectors for streak computation. Daily cadence, strict policy. 'today' is the evaluation local date. Current streak counts consecutive days ending today, or ending yesterday if today has no check-in yet (streak not lost until the day is over). 'best' is the longest run. 'completed' is number of distinct check-in dates within [start, start+duration-1] (or up to today when duration is null).",
+  "vectors": [
+    {"name": "empty", "start": "2026-10-01", "duration": 30, "today": "2026-10-05", "dates": [], "current": 0, "best": 0, "completed": 0},
+    {"name": "only today", "start": "2026-10-01", "duration": 30, "today": "2026-10-05", "dates": ["2026-10-05"], "current": 1, "best": 1, "completed": 1},
+    {"name": "yesterday kept alive", "start": "2026-10-01", "duration": 30, "today": "2026-10-05", "dates": ["2026-10-03", "2026-10-04"], "current": 2, "best": 2, "completed": 2},
+    {"name": "gap breaks", "start": "2026-10-01", "duration": 30, "today": "2026-10-05", "dates": ["2026-10-01", "2026-10-02", "2026-10-03"], "current": 0, "best": 3, "completed": 3},
+    {"name": "run through today", "start": "2026-10-01", "duration": 30, "today": "2026-10-05", "dates": ["2026-10-01", "2026-10-02", "2026-10-04", "2026-10-05"], "current": 2, "best": 2, "completed": 4},
+    {"name": "duplicates ignored and unsorted", "start": "2026-10-01", "duration": 30, "today": "2026-10-03", "dates": ["2026-10-03", "2026-10-01", "2026-10-02", "2026-10-02"], "current": 3, "best": 3, "completed": 3},
+    {"name": "dates outside journey ignored for completed", "start": "2026-10-01", "duration": 3, "today": "2026-10-05", "dates": ["2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"], "current": 0, "best": 5, "completed": 3},
+    {"name": "month boundary", "start": "2026-09-28", "duration": null, "today": "2026-10-02", "dates": ["2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02"], "current": 4, "best": 4, "completed": 4},
+    {"name": "leap day", "start": "2028-02-27", "duration": null, "today": "2028-03-01", "dates": ["2028-02-28", "2028-02-29", "2028-03-01"], "current": 3, "best": 3, "completed": 3}
+  ]
+}
