@@ -124,6 +124,21 @@ enum TemplateId {
   static TemplateId fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
 }
 
+/// The 6 distinct UI persona skins that adapt timeline, camera HUD, and share card.
+enum PersonaSkinId {
+  quietTransformer('quiet_transformer'),
+  accountabilitySquad('accountability_squad'),
+  memoryCollectors('memory_collectors'),
+  coupleRituals('couple_rituals'),
+  aestheticFlexer('aesthetic_flexer'),
+  minimalistHabit('minimalist_habit');
+
+  const PersonaSkinId(this.wireName);
+  final String wireName;
+  static PersonaSkinId fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
+}
+
 /// SQL `report_reason`.
 enum ReportReason {
   spam('spam'),
