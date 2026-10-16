@@ -1,6 +1,7 @@
 # Ourney — Kế hoạch implement v1 (đa agent)
 
 > 2026-10-16 · Đầu vào: [02-requirements-v2.md](02-requirements-v2.md) (mục 9–10 là scope đã chốt), [03-design-system.md](03-design-system.md).
+> Phần riêng iOS/Android + thứ tự ưu tiên iOS: xem [05-platform-plan-ios-android.md](05-platform-plan-ios-android.md).
 > Ký hiệu: ✅ đã kiểm chứng · ⚠️ chưa kiểm chứng, phải verify ở spike · **TBD** = chủ dự án quyết.
 
 ---
