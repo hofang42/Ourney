@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "safety_title": "An toàn & hỗ trợ",
+  "@safety_title": {
+    "description": "Title of the safety feature's main screen."
+  }
+}

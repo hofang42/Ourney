@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "groups_title": "Nhóm",
+  "@groups_title": {
+    "description": "Title of the groups feature's main screen."
+  }
+}

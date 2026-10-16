@@ -1,0 +1,22 @@
+{
+  "@@locale": "en",
+  "app_name": "Ourney",
+  "nav_journeys": "Journeys",
+  "nav_capture": "Capture",
+  "nav_groups": "Groups",
+  "common_retry": "Retry",
+  "common_cancel": "Cancel",
+  "common_ok": "OK",
+  "common_close": "Close",
+  "common_save": "Save",
+  "common_loading": "Loading…",
+  "common_errorGeneric": "Something went wrong. Please try again.",
+  "common_offline": "You're offline. Ourney will sync when you're back online.",
+  "empty_default_title": "Nothing here yet",
+  "streak_days": "{count, plural, =1{{count} day} other{{count} days}}",
+  "streak_semantics": "Streak of {count, plural, =1{{count} day} other{{count} days}}",
+  "streak_atRisk": "Streak at risk",
+  "needsServer_title": "Server needed",
+  "needsServer_message": "This build runs in on-device mode. Solo journeys work as usual; groups need a server.",
+  "placeholder_comingSoon": "Coming soon"
+}

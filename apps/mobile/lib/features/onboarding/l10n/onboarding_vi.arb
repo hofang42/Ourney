@@ -1,0 +1,11 @@
+{
+  "@@locale": "vi",
+  "onboarding_title": "Chào mừng đến Ourney",
+  "@onboarding_title": {
+    "description": "Title of the onboarding feature's main screen."
+  },
+  "onboarding_start": "Bắt đầu",
+  "@onboarding_start": {
+    "description": "Button that finishes onboarding."
+  }
+}

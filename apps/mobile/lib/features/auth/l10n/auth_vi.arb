@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "auth_title": "Đăng nhập",
+  "@auth_title": {
+    "description": "Title of the auth feature's main screen."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "checkin_title": "Check-in",
+  "@checkin_title": {
+    "description": "Title of the checkin feature's main screen."
+  }
+}

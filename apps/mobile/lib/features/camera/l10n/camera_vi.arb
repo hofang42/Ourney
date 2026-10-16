@@ -1,0 +1,7 @@
+{
+  "@@locale": "vi",
+  "camera_title": "Chụp check-in",
+  "@camera_title": {
+    "description": "Title of the camera feature's main screen."
+  }
+}
