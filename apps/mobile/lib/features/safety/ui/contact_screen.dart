@@ -19,7 +19,7 @@ class ContactScreen extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     final uri = Uri(
       scheme: 'mailto',
-      path: kSupportEmail,
+      path: ref.read(supportEmailProvider),
       query: 'subject=${Uri.encodeComponent(l10n.safety_contactSubject)}',
     );
     bool opened;
@@ -35,10 +35,12 @@ class ContactScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _copy(BuildContext context) async {
+  Future<void> _copy(BuildContext context, WidgetRef ref) async {
     final l10n = SafetyL10n.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    await Clipboard.setData(const ClipboardData(text: kSupportEmail));
+    await Clipboard.setData(
+      ClipboardData(text: ref.read(supportEmailProvider)),
+    );
     messenger.showSnackBar(SnackBar(content: Text(l10n.safety_contactCopied)));
   }
 
@@ -69,7 +71,7 @@ class ContactScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: OurneySpacing.xs),
                   SelectableText(
-                    kSupportEmail,
+                    ref.watch(supportEmailProvider),
                     key: const ValueKey('safety-contact-email'),
                     style: text.titleLarge,
                   ),
@@ -86,7 +88,7 @@ class ContactScreen extends ConsumerWidget {
                     label: l10n.safety_contactCopy,
                     icon: Icons.copy_rounded,
                     variant: ChunkyVariant.neutral,
-                    onPressed: () => _copy(context),
+                    onPressed: () => _copy(context, ref),
                   ),
                 ],
               ),

@@ -74,10 +74,13 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPPORT_EMAIL: ${{ secrets.SUPPORT_EMAIL }}
+        # SUPPORT_EMAIL is only added when set (the app falls back to its default otherwise).
         run: |
-          if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ]; then
-            jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" \
-              '{SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k}' > "$RUNNER_TEMP/dart-defines.json"
+          if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ] || [ -n "$SUPPORT_EMAIL" ]; then
+            jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" --arg e "$SUPPORT_EMAIL" \
+              '(if $u != "" or $k != "" then {SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k} else {} end)
+               + (if $e != "" then {SUPPORT_EMAIL: $e} else {} end)' > "$RUNNER_TEMP/dart-defines.json"
             echo "DART_DEFINES_FILE=$RUNNER_TEMP/dart-defines.json" >> "$GITHUB_ENV"
           fi
 

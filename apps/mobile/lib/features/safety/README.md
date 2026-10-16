@@ -43,6 +43,7 @@ only blocked ids, so the name is remembered on this device
 | `hiddenCheckInIdsProvider` | `Set<String>` of check-ins reported this session. **Filter group feeds with it** so reported content disappears at once (FR-F2); the server also hides it for the reporter. |
 | `blockedUserIdsProvider` | `SafetyRepository.watchBlockedIds()` |
 | `eulaAcceptedProvider` | `bool`, prefs key `safety.eulaAccepted`; `.notifier.accept()` / `.reset()` |
+| `supportEmailProvider` | `String`, support mailbox from `AppConfig` (contact page, mailto, copy) |
 | `safetyActionsProvider` | `report`, `block`, `unblock` (used by the UI above) |
 
 Repository calls: `SafetyRepository.report(checkInId | userId, reason, note)`
@@ -65,8 +66,10 @@ Groups: `groupSafetyHooksProvider` defaults to `safetyGroupHooks`
 
 ## Owner TODOs
 
-- `kSupportEmail = 'support@ourney.app'` is a placeholder: confirm the real
-  mailbox before release.
+- Support mailbox: `supportEmailProvider` reads `AppConfig.supportEmail`
+  (`--dart-define=SUPPORT_EMAIL=...`, CI secret `SUPPORT_EMAIL`) and falls back
+  to the placeholder `support@ourney.app`. Confirm the real mailbox before
+  release (see docs/adr/0002-support-email-and-legal-text.md).
 - Legal texts are in `l10n/safety_{vi,en}.arb` (`safety_eula*`,
   `safety_privacy*`); bump `kLegalLastUpdated` when they change. They need
   an owner/legal review.

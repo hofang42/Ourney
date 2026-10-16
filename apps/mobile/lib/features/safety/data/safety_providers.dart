@@ -6,10 +6,13 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/providers.dart';
 
-/// Support address shown on the contact page.
-// TODO(owner): confirm the real support mailbox before release (App Store
-// review needs a working contact). Placeholder chosen by C3.
-const String kSupportEmail = 'support@ourney.app';
+/// Support address shown on the contact page. Comes from
+/// `--dart-define=SUPPORT_EMAIL` (see `AppConfig`) and defaults to the
+/// placeholder `support@ourney.app` until the owner confirms the real mailbox
+/// (docs/adr/0002-support-email-and-legal-text.md).
+final supportEmailProvider = Provider<String>(
+  (ref) => ref.watch(appConfigProvider).supportEmail,
+);
 
 /// Date shown as "last updated" on the EULA and privacy pages. Bump when
 /// the texts in l10n/safety_*.arb change.
