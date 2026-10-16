@@ -63,7 +63,9 @@ void main() {
     ) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(disableAnimations: true);
-      addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      addTearDown(
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+      );
       await pumpOurneyApp(tester, onboarded: false);
       await tester.tap(byKey('onboarding-next'));
       await tester.pumpAndSettle();
@@ -80,11 +82,7 @@ void main() {
     testWidgets('no overflow at 2x text in English', (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      await pumpOurneyApp(
-        tester,
-        onboarded: false,
-        locale: const Locale('en'),
-      );
+      await pumpOurneyApp(tester, onboarded: false, locale: const Locale('en'));
       for (var i = 0; i < 3; i++) {
         expect(tester.takeException(), isNull);
         await tester.tap(byKey('onboarding-next'));

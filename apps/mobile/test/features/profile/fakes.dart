@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/test_helpers.dart';
 
@@ -151,8 +151,9 @@ Future<ProviderContainer> pumpBackendApp(
   ],
 );
 
+/// Location of the top-most route (includes pushed routes).
 String location(ProviderContainer c) =>
-    c.read(routerProvider).routerDelegate.currentConfiguration.uri.toString();
+    c.read(routerProvider).state.uri.toString();
 
 Future<void> goTo(WidgetTester tester, ProviderContainer c, String path) async {
   c.read(routerProvider).go(path);
