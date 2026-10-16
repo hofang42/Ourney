@@ -1,28 +1,26 @@
-import '../../../app/redirect.dart' show kDeepLinkScheme;
+import 'package:ourney_core/ourney_core.dart';
 
-/// Length of `journeys.invite_code` (docs/contracts/schema.md: 8 chars
-/// `[A-Z0-9]`).
-const int inviteCodeLength = 8;
+import '../../../app/redirect.dart' show kDeepLinkScheme;
 
 /// Maximum members of a group journey (FR-D2, `journeys.max_members`).
 const int maxGroupMembers = 10;
 
-final RegExp _validCode = RegExp(r'^[A-Z0-9]{8}$');
 final RegExp _separators = RegExp(r'[\s\-_.]');
 
-/// Normalises what a user typed or pasted: trims, drops spaces/dashes,
-/// upper-cases and accepts a pasted `ourney://join/<code>` link.
-String normalizeInviteCode(String input) {
+/// Cleans what a user typed or pasted before `join_by_code`: accepts a
+/// pasted `ourney://join/<code>` link, drops spaces/dashes, then applies
+/// [normalizeInviteCode] (trim + upper-case).
+String parseInviteInput(String input) {
   var s = input.trim();
   final uri = Uri.tryParse(s);
   if (uri != null && uri.scheme == kDeepLinkScheme && uri.host == 'join') {
     s = uri.pathSegments.isEmpty ? '' : uri.pathSegments.first;
   }
-  return s.replaceAll(_separators, '').toUpperCase();
+  return normalizeInviteCode(s.replaceAll(_separators, ''));
 }
 
-/// True when [code] (already normalised) has the server's shape.
-bool isValidInviteCode(String code) => _validCode.hasMatch(code);
+/// True when [code] (already parsed) has the server's shape (8 `[A-Z0-9]`).
+bool isValidInviteCode(String code) => validateInviteCode(code) == null;
 
 /// Share link for an invite code: `ourney://join/<code>` (FR-D1).
 String inviteLink(String code) =>

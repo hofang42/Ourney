@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ourney_core/ourney_core.dart' show inviteCodeLength;
 
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
@@ -29,7 +30,7 @@ class JoinScreen extends ConsumerStatefulWidget {
 
 class _JoinScreenState extends ConsumerState<JoinScreen> {
   late final TextEditingController _code = TextEditingController(
-    text: normalizeInviteCode(widget.initialCode ?? ''),
+    text: parseInviteInput(widget.initialCode ?? ''),
   );
   bool _busy = false;
   String? _error;
@@ -40,7 +41,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     super.dispose();
   }
 
-  String get _normalized => normalizeInviteCode(_code.text);
+  String get _normalized => parseInviteInput(_code.text);
 
   Future<void> _join() async {
     final code = _normalized;
