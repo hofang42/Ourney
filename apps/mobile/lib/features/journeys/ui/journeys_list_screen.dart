@@ -10,6 +10,7 @@ import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
+import '../../../shared/profile_button.dart';
 import '../../../shared/streak_flame.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -69,7 +70,10 @@ class JourneysListScreen extends ConsumerWidget {
 
     return Scaffold(
       key: const ValueKey('journeys-list'),
-      appBar: AppBar(title: Text(l10n.journeys_title)),
+      appBar: AppBar(
+        title: Text(l10n.journeys_title),
+        actions: const [ProfileButton()],
+      ),
       body: SafeArea(child: body),
       floatingActionButton: buckets == null || buckets.isEmpty
           ? null

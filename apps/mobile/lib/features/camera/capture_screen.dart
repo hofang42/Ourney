@@ -15,6 +15,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/ourney_chip.dart';
+import '../../shared/profile_button.dart';
 import '../checkin/captured_photo.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
@@ -353,22 +354,45 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
     final Widget body;
     if (journeys.hasValue && list.isEmpty) {
-      body = EmptyState(
-        key: const ValueKey('capture-no-journeys'),
-        icon: Icons.flag_rounded,
-        title: CameraL10n.of(context).camera_noJourneyTitle,
-        message: CameraL10n.of(context).camera_noJourneyMessage,
-        actionLabel: CameraL10n.of(context).camera_noJourneyAction,
-        onAction: () => context.go(AppRoutes.journeyNew),
+      body = Column(
+        children: [
+          const Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Padding(
+              padding: EdgeInsets.all(OurneySpacing.xs),
+              child: ProfileButton(compact: true),
+            ),
+          ),
+          Expanded(
+            child: EmptyState(
+              key: const ValueKey('capture-no-journeys'),
+              icon: Icons.flag_rounded,
+              title: CameraL10n.of(context).camera_noJourneyTitle,
+              message: CameraL10n.of(context).camera_noJourneyMessage,
+              actionLabel: CameraL10n.of(context).camera_noJourneyAction,
+              onAction: () => context.go(AppRoutes.journeyNew),
+            ),
+          ),
+        ],
       );
     } else {
       body = Column(
         children: [
-          _JourneyBar(
-            journeys: journeys,
-            selected: selected,
-            onSelect: _selectJourney,
-            onRetry: () => ref.invalidate(captureJourneysProvider),
+          Row(
+            children: [
+              Expanded(
+                child: _JourneyBar(
+                  journeys: journeys,
+                  selected: selected,
+                  onSelect: _selectJourney,
+                  onRetry: () => ref.invalidate(captureJourneysProvider),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsetsDirectional.only(end: OurneySpacing.xs),
+                child: ProfileButton(compact: true),
+              ),
+            ],
           ),
           Expanded(child: _buildViewfinder(context)),
           _buildControls(context, selected),
@@ -519,9 +543,15 @@ class _JourneyBar extends StatelessWidget {
                   ?.copyWith(color: c.ink),
             ),
           ),
-          TextButton(
-            onPressed: onRetry,
-            child: Text(AppLocalizations.of(context).common_retry),
+          Flexible(
+            child: TextButton(
+              onPressed: onRetry,
+              child: Text(
+                AppLocalizations.of(context).common_retry,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ),
         ],
       );

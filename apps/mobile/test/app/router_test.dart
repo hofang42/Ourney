@@ -6,7 +6,9 @@ import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
+import 'package:ourney/shared/profile_button.dart';
 
+import '../features/journeys/journeys_fakes.dart';
 import 'test_helpers.dart';
 
 String location(ProviderContainer c) =>
@@ -194,6 +196,73 @@ void main() {
     testWidgets('local-only users are never gated', (tester) async {
       final c = await pumpOurneyApp(tester, eulaAccepted: false);
       expect(location(c), AppRoutes.capture);
+    });
+  });
+
+  group('profile entry point (local-only guest too)', () {
+    Future<void> tapProfile(WidgetTester tester) async {
+      await tester.tap(find.byKey(ProfileButton.buttonKey));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> back(WidgetTester tester) async {
+      await tester.tap(find.byType(BackButton).first);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('journeys, groups and capture open /profile; reminders and '
+        'safety are reachable from there', (tester) async {
+      final c = await pumpJourneys(tester);
+
+      // Journeys tab.
+      await tapProfile(tester);
+      expect(
+        c.container.read(routerProvider).state.uri.path,
+        AppRoutes.profile,
+      );
+      expect(find.byKey(const ValueKey('profile-guest')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('profile-reminders')));
+      await tester.pumpAndSettle();
+      expect(
+        c.container.read(routerProvider).state.uri.path,
+        AppRoutes.reminders,
+      );
+      c.container.read(routerProvider).pop();
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('profile-safety')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const ValueKey('profile-safety')));
+      await tester.pumpAndSettle();
+      expect(c.container.read(routerProvider).state.uri.path, AppRoutes.safety);
+      c.container.read(routerProvider).pop();
+      await tester.pumpAndSettle();
+      await back(tester);
+      expect(location(c.container), AppRoutes.journeys);
+
+      // Groups tab (local-only: needs-server state still has the button).
+      await tester.tap(find.text('Nhóm'));
+      await tester.pumpAndSettle();
+      await tapProfile(tester);
+      expect(
+        c.container.read(routerProvider).state.uri.path,
+        AppRoutes.profile,
+      );
+      await back(tester);
+
+      // Capture screen (no journeys yet: the empty state keeps the button).
+      await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+      await tester.pumpAndSettle();
+      expect(location(c.container), AppRoutes.capture);
+      await tapProfile(tester);
+      expect(
+        c.container.read(routerProvider).state.uri.path,
+        AppRoutes.profile,
+      );
     });
   });
 

@@ -22,6 +22,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_groups => 'Groups';
 
   @override
+  String get nav_profile => 'Profile and settings';
+
+  @override
   String get common_retry => 'Retry';
 
   @override

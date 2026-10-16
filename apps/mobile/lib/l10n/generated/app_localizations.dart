@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Nhóm'**
   String get nav_groups;
 
+  /// Tooltip of the app-bar button that opens the profile (settings, reminders, safety).
+  ///
+  /// In vi, this message translates to:
+  /// **'Hồ sơ và cài đặt'**
+  String get nav_profile;
+
   /// No description provided for @common_retry.
   ///
   /// In vi, this message translates to:

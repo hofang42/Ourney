@@ -12,6 +12,7 @@ import '../../../shared/empty_state.dart';
 import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
+import '../../../shared/profile_button.dart';
 import '../data/groups_providers.dart';
 import '../domain/group_today.dart';
 import '../groups_paths.dart';
@@ -29,7 +30,10 @@ class GroupsListScreen extends ConsumerWidget {
     if (ref.watch(appConfigProvider).localOnly) {
       return Scaffold(
         key: const ValueKey('groups-list'),
-        appBar: AppBar(title: Text(l10n.groups_title)),
+        appBar: AppBar(
+          title: Text(l10n.groups_title),
+          actions: const [ProfileButton()],
+        ),
         body: const SafeArea(child: NeedsServerView()),
       );
     }
@@ -81,6 +85,7 @@ class GroupsListScreen extends ConsumerWidget {
             icon: const Icon(Icons.qr_code_2_rounded),
             onPressed: () => context.push(GroupsPaths.joinEntry),
           ),
+          const ProfileButton(),
         ],
       ),
       body: SafeArea(child: body),
