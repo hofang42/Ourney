@@ -1,19 +1,19 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
-import '../../shared/placeholder_screen.dart';
-import 'l10n/generated/auth_localizations.dart';
+import '../../app/redirect.dart' show safeFrom;
+import 'auth_screen.dart';
 
-/// PLACEHOLDER (A3): the auth feature agent (B2 (Mobile UI A)) replaces the screens.
+/// Sign-in (FR-A1), reachable only when a backend is configured: the router
+/// never shows `/auth` in local-only mode and leaves it once a user id exists.
+/// Profile setup after the first sign-in lives at `/profile/setup` (profile
+/// feature) because `/auth/*` is left as soon as the user is signed in.
 ///
 /// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> authRoutes`; top-level paths must start with a prefix listed
-/// for 'auth' in `featureRoutePrefixes` (lib/app/app_routes.dart).
-/// Full-screen (outside the tab shell).
+/// `List<RouteBase> authRoutes`. Full-screen (outside the tab shell).
 final List<RouteBase> authRoutes = [
   GoRoute(
     path: AppRoutes.auth,
-    builder: (context, state) =>
-        PlaceholderScreen(id: 'auth', title: AuthL10n.of(context).auth_title),
+    builder: (context, state) => AuthScreen(from: safeFrom(state.uri)),
   ),
 ];

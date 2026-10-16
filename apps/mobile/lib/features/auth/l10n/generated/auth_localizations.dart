@@ -97,11 +97,143 @@ abstract class AuthL10n {
     Locale('vi'),
   ];
 
-  /// Title of the auth feature's main screen.
+  /// Title of the sign-in screen (email step).
   ///
   /// In vi, this message translates to:
   /// **'Đăng nhập'**
   String get auth_title;
+
+  /// Explains email OTP sign-in (FR-A1).
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập email, Ourney gửi bạn mã 6 số. Không cần mật khẩu.'**
+  String get auth_subtitle;
+
+  /// Email field label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email'**
+  String get auth_emailLabel;
+
+  /// Email field placeholder.
+  ///
+  /// In vi, this message translates to:
+  /// **'ban@vidu.com'**
+  String get auth_emailHint;
+
+  /// Validation error for the email field.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email này chưa đúng định dạng.'**
+  String get auth_emailInvalid;
+
+  /// Button that sends the OTP email.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi mã'**
+  String get auth_sendCode;
+
+  /// Button label while the OTP is being sent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang gửi…'**
+  String get auth_sending;
+
+  /// Title of the OTP step.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập mã'**
+  String get auth_codeTitle;
+
+  /// Below the OTP title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã 6 số đã được gửi tới {email}.'**
+  String auth_codeSentTo(String email);
+
+  /// OTP field label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã 6 số'**
+  String get auth_codeLabel;
+
+  /// Validation error for the OTP field.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã gồm đúng 6 chữ số.'**
+  String get auth_codeInvalidFormat;
+
+  /// Button that verifies the OTP.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xác nhận'**
+  String get auth_verify;
+
+  /// Button label while the OTP is being verified.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang kiểm tra…'**
+  String get auth_verifying;
+
+  /// Resend OTP button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại mã'**
+  String get auth_resend;
+
+  /// Resend OTP button during the cooldown.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại sau {seconds} giây'**
+  String auth_resendIn(int seconds);
+
+  /// Confirmation after resending the OTP.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi mã mới. Kiểm tra hộp thư nhé.'**
+  String get auth_codeResent;
+
+  /// Go back to the email step.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi email'**
+  String get auth_changeEmail;
+
+  /// Legal note under the sign-in form.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khi tiếp tục, bạn đồng ý với điều khoản sử dụng và chính sách quyền riêng tư của Ourney.'**
+  String get auth_termsNote;
+
+  /// Opens the EULA/privacy pages.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem điều khoản'**
+  String get auth_termsLink;
+
+  /// OTP rejected (invalid / expired).
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.'**
+  String get auth_errorWrongCode;
+
+  /// Too many OTP requests or attempts.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn thử hơi nhiều rồi. Đợi một chút rồi thử lại nhé.'**
+  String get auth_errorRateLimited;
+
+  /// No connection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không có mạng. Kết nối lại rồi thử nhé.'**
+  String get auth_errorOffline;
+
+  /// Any other sign-in error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có lỗi xảy ra. Thử lại nhé.'**
+  String get auth_errorGeneric;
 }
 
 class _AuthL10nDelegate extends LocalizationsDelegate<AuthL10n> {

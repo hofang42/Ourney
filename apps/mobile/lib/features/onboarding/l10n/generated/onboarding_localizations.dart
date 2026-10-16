@@ -98,17 +98,83 @@ abstract class OnboardingL10n {
     Locale('vi'),
   ];
 
-  /// Title of the onboarding feature's main screen.
+  /// Eyebrow on the first onboarding page (also the feature title).
   ///
   /// In vi, this message translates to:
   /// **'Chào mừng đến Ourney'**
   String get onboarding_title;
 
-  /// Button that finishes onboarding.
+  /// Button on the last onboarding page that finishes onboarding.
   ///
   /// In vi, this message translates to:
   /// **'Bắt đầu'**
   String get onboarding_start;
+
+  /// Button that moves to the next onboarding page.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get onboarding_next;
+
+  /// Top-right button that finishes onboarding immediately.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ qua'**
+  String get onboarding_skip;
+
+  /// Page 1 (value proposition) headline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mỗi ngày một tấm. Thấy rõ mình tiến bộ.'**
+  String get onboarding_valueTitle;
+
+  /// Page 1 body.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney biến thói quen nhỏ thành một hành trình: giảm cân, học tiếng Anh, tập luyện hay một chuyến đi.'**
+  String get onboarding_valueBody;
+
+  /// Page 2 (how check-in works) headline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Check-in chỉ mất 5 giây'**
+  String get onboarding_howTitle;
+
+  /// Page 2, step 1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở app là chụp ngay'**
+  String get onboarding_howStep1;
+
+  /// Page 2, step 2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gắn ảnh vào hành trình, thêm ghi chú hoặc số đo'**
+  String get onboarding_howStep2;
+
+  /// Page 2, step 3.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ chuỗi ngày và rủ bạn bè cùng làm'**
+  String get onboarding_howStep3;
+
+  /// Page 3 headline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sẵn sàng chưa?'**
+  String get onboarding_readyTitle;
+
+  /// Page 3 body: permissions are asked in context (FR-A3).
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney chỉ xin quyền camera và thông báo đúng lúc cần, không làm phiền bạn ngay bây giờ.'**
+  String get onboarding_readyBody;
+
+  /// Screen reader label of the page indicator.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trang {current} trên {total}'**
+  String onboarding_pageSemantics(int current, int total);
 }
 
 class _OnboardingL10nDelegate extends LocalizationsDelegate<OnboardingL10n> {
