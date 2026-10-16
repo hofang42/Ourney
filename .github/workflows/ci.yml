@@ -42,6 +42,32 @@ jobs:
             echo "No test/ directory yet in ourney_core; skipping dart test."
           fi
 
+  supabase:
+    name: supabase (pgTAP + edge functions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      # https://github.com/supabase/setup-cli
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.121.0
+      # https://github.com/denoland/setup-deno
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Streak vectors in sync with contract
+        run: deno run --allow-read supabase/scripts/check-streak-vectors.ts
+      - name: Type-check edge functions
+        run: deno check supabase/functions/*/index.ts
+      - name: Start Supabase (db, auth, storage, rest)
+        run: supabase start -x studio,realtime,imgproxy,logflare,vector,mailpit,supavisor,postgres-meta,edge-runtime
+      - name: pgTAP
+        run: supabase test db
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
+
   mobile:
     name: apps/mobile (analyze + test)
     runs-on: ubuntu-latest
