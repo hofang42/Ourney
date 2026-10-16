@@ -2,7 +2,7 @@
 
 Chia sẻ hành trình (giảm cân, học tiếng Anh, du lịch, …) bằng check-in ảnh mỗi ngày kiểu Locket, cá nhân hoặc theo nhóm, và khoe như Strava.
 
-- iOS (SwiftUI), build bằng [xtool](https://github.com/xtool-org/xtool) trên Linux/WSL → `.ipa` chưa ký
+- Flutter (iOS ưu tiên + Android), iOS build trên GitHub Actions macOS → `.ipa` chưa ký
 - Backend: Supabase
 
-Tài liệu: [docs/](docs/)
+**Contributor mới: đọc [docs/SRS.md](docs/SRS.md) trước.** Tài liệu khác: [docs/](docs/)

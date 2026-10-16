@@ -12,3 +12,5 @@ supabase/.branches/
 .dart_tool/
 **/build/
 .claude/worktrees/
+env.json
+**/env.json
