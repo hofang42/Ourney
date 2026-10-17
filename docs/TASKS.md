@@ -78,7 +78,7 @@
 | 3 | Bug bash chung → H5 release `v0.1.0` → dogfood 14 ngày (mục tiêu SRS §8: D14 ≥ 40%) |
 
 ## 6. Quy tắc repo (ruleset trên GitHub)
-- `main`: cấm push thẳng, cấm force-push, cấm xoá; bắt buộc PR + 1 approval (approval cũ bị huỷ khi có commit mới), resolve hết comment, CI xanh (`ourney_core`, `supabase`, `apps/mobile`); chỉ squash merge hoặc merge commit. Admin (@hofang42) được bypass khi khẩn cấp.
+- `main`: cấm push thẳng, cấm force-push, cấm xoá; bắt buộc PR (không cần approval: ai có quyền ghi đều merge được), resolve hết comment, CI xanh (`ourney_core`, `supabase`, `apps/mobile`); chỉ squash merge hoặc merge commit. Admin (@hofang42) được bypass khi khẩn cấp.
 - `release/**`: cấm force-push, cấm xoá.
 - Tag `v*`: chỉ admin tạo/sửa/xoá (tag kích hoạt release IPA/APK).
 - Branch tính năng (`feat/*`, `fix/*`, `chore/*`) **không** khoá force-push để còn rebase lên `main`.

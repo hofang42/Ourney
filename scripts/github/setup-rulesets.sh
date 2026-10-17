@@ -17,7 +17,7 @@ upsert() {
   fi
 }
 
-# 1. main: PR + 1 approval + green CI, no force-push, no deletion.
+# 1. main: PR + green CI (no approval required; anyone with write access can merge), no force-push, no deletion.
 upsert "Protect main" "$(cat <<EOF
 {
   "name": "Protect main",
@@ -29,8 +29,8 @@ upsert "Protect main" "$(cat <<EOF
     {"type": "deletion"},
     {"type": "non_fast_forward"},
     {"type": "pull_request", "parameters": {
-      "required_approving_review_count": 1,
-      "dismiss_stale_reviews_on_push": true,
+      "required_approving_review_count": 0,
+      "dismiss_stale_reviews_on_push": false,
       "require_code_owner_review": false,
       "require_last_push_approval": false,
       "required_review_thread_resolution": true,
