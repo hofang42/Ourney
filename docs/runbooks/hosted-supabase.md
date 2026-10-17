@@ -80,13 +80,22 @@ Chạy lại workflow với `dry_run` = **false** (hoặc bỏ `--dry-run`). Scr
 1. `supabase link` rồi `supabase db push` (migration trong `supabase/migrations`).
 2. Deploy function `delete-account` (giữ kiểm tra JWT: hàm tự xác thực người gọi và xoá chính người đó).
 3. Deploy function `public-journey` với `--no-verify-jwt` (người xem link công khai không đăng nhập; truy cập được chặn bằng `public_token` có thể thu hồi).
-4. Nếu có đủ `SMTP_*`: cập nhật SMTP cho Auth.
+4. Cập nhật cấu hình Auth (luôn chạy, xem mục 4.4): email OTP dạng mã 6 số + `site_url`.
+5. Nếu có đủ `SMTP_*`: cập nhật SMTP cho Auth.
 
 Chạy lại bao nhiêu lần cũng được (idempotent). Khi gặp lỗi, đọc thông điệp ở log, sửa rồi chạy lại.
 
 ### 4.3 Kiểm tra sau deploy
 - Dashboard → *Database → Migrations*: thấy đủ 5 migration. *Edge Functions*: thấy 2 hàm. `curl "https://<ref>.supabase.co/functions/v1/public-journey?token=x"` trả `404 {"error":"not_found"}` (không phải 401).
 - *Authentication → Emails → SMTP Settings*: đã bật custom SMTP, đúng sender.
+
+### 4.4 Email đăng nhập là mã 6 số (OTP), không phải link
+App đăng nhập bằng `signInWithOtp` + `verifyOTP` nên người dùng phải nhận **mã 6 số**. Template email mặc định của Supabase gửi magic link tạo từ Site URL mặc định `http://localhost:3000`, nên mỗi lần deploy thật script tự `PATCH /v1/projects/<ref>/config/auth` với:
+- Template `supabase/templates/magic_link.html` và `confirmation.html` (song ngữ Việt/Anh, chỉ hiện `{{ .Token }}`, hiệu lực 60 phút, không có link) cùng tiêu đề lấy từ `supabase/config.toml`; `supabase start` local dùng đúng các template này.
+- `mailer_otp_length` = 6, `mailer_otp_exp` = 3600, `mailer_autoconfirm` = true (khớp `enable_confirmations = false` ở local).
+- `site_url` và `uri_allow_list` = `AUTH_SITE_URL` (mặc định `https://hofang42.github.io/Ourney/`). Muốn đổi, đặt *Environment variable* (không phải secret) `AUTH_SITE_URL` trong environment `production`; workflow đã truyền biến này cho script.
+
+Áp dụng cho project đang chạy: chỉ cần **chạy lại workflow Deploy Supabase (hosted)** với `dry_run` = false; bước này không cần SMTP và chạy lại nhiều lần vẫn an toàn. Sau đó thử đăng nhập: email phải có mã 6 số, không có link tới localhost.
 
 ## 5. Đưa `SUPABASE_URL` / `SUPABASE_ANON_KEY` vào app
 
