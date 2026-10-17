@@ -1,33 +1,3 @@
-# Ownership areas from docs/TASKS.md §2. Later rules override earlier ones.
-# Each area lists its owner and review pair so a reviewer is always requested.
-
-*                                   @hofang42 @nguyenductien-qnm
-/.github/                           @hofang42 @nguyenductien-qnm
-/docs/                              @hofang42 @nguyenductien-qnm
-/supabase/config.toml               @hofang42 @nguyenductien-qnm
-
-/docs/TRACE.md                      @thydynh03 @lken1514
-/docs/spikes/                       @thydynh03 @lken1514
-/apps/mobile/lib/app/               @thydynh03 @lken1514
-/apps/mobile/lib/shared/            @thydynh03 @lken1514
-/apps/mobile/lib/features/auth/     @thydynh03 @lken1514
-/apps/mobile/lib/features/camera/   @thydynh03 @lken1514
-/apps/mobile/lib/features/checkin/  @thydynh03 @lken1514
-/apps/mobile/lib/features/onboarding/ @thydynh03 @lken1514
-/apps/mobile/lib/features/profile/  @thydynh03 @lken1514
-/apps/mobile/lib/features/share_card/ @thydynh03 @lken1514
-
-/apps/mobile/lib/data/              @lken1514 @thydynh03
-/apps/mobile/lib/features/reminders/ @lken1514 @thydynh03
-/apps/mobile/android/               @lken1514 @thydynh03
-/apps/mobile/ios/                   @lken1514 @thydynh03
-
-/web/                               @nguyenductien-qnm @hofang42
-/supabase/migrations/               @nguyenductien-qnm @hofang42
-/supabase/functions/                @nguyenductien-qnm @hofang42
-/supabase/tests/                    @nguyenductien-qnm @hofang42
-/packages/ourney_core/              @nguyenductien-qnm @hofang42
-/docs/contracts/                    @nguyenductien-qnm @hofang42
-/apps/mobile/lib/features/groups/   @nguyenductien-qnm @hofang42
-/apps/mobile/lib/features/journeys/ @nguyenductien-qnm @hofang42
-/apps/mobile/lib/features/safety/   @nguyenductien-qnm @hofang42
+# The repo owner reviews everything. docs/TASKS.md §2 still lists who works where;
+# reviews within the team are requested by hand, not through CODEOWNERS.
+*                                   @hofang42
