@@ -55,7 +55,9 @@ exec "$REAL_JQ" "\$@"
 EOF
 
 # curl stub: logs argv, saves the body (stdin) and the --config file (the Authorization header).
-# STUB_CURL_FAIL=1 simulates an API error whose body echoes a secret (curl exit 22).
+# Each call's body is also kept as $STUB_BODY.<n> (n = call number).
+# STUB_CURL_FAIL=N simulates an API error whose body echoes a secret (curl exit 22) from the Nth
+# curl call on (1 = the Auth config PATCH, 2 = the SMTP PATCH).
 cat > "$BIN/curl" << 'EOF'
 #!/usr/bin/env bash
 echo "curl $*" >> "$STUB_LOG"
@@ -64,7 +66,9 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 cat > "$STUB_BODY"
-if [ -n "${STUB_CURL_FAIL:-}" ]; then
+n="$(grep -c '^curl ' "$STUB_LOG")"
+cp "$STUB_BODY" "$STUB_BODY.$n"
+if [ -n "${STUB_CURL_FAIL:-}" ] && [ "$n" -ge "$STUB_CURL_FAIL" ]; then
   echo '{"message":"x","smtp_pass":"leak"}'
   exit 22
 fi
@@ -115,6 +119,7 @@ export PATH="$BIN:$PATH"
 # run <cmd...>: sets OUT (stdout+stderr) and RC. Environment is whatever the caller exported.
 run() {
   : > "$LOG"
+  rm -f "$BODY".*
   OUT="$("$@" 2>&1)"
   RC=$?
 }
@@ -126,7 +131,7 @@ PREFLIGHT="$ROOT/scripts/release/preflight.sh"
 clean_env() {
   unset SUPABASE_ACCESS_TOKEN SUPABASE_PROJECT_REF SUPABASE_DB_PASSWORD \
     SMTP_HOST SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL SMTP_PORT SMTP_SENDER_NAME SMTP_RATE_LIMIT \
-    SUPABASE_API_URL STUB_PERMS STUB_PENDING STUB_CI_JSON STUB_SUPABASE_FAIL STUB_CURL_FAIL \
+    SUPABASE_API_URL AUTH_SITE_URL STUB_PERMS STUB_PENDING STUB_CI_JSON STUB_SUPABASE_FAIL STUB_CURL_FAIL \
     STUB_GH_UNAUTH
 }
 set_base_env() {
@@ -202,6 +207,8 @@ calls="$(cat "$LOG")"
   contains "$calls" "supabase db push --dry-run" &&
   ! contains "$calls" "functions deploy" && ! contains "$calls" "curl"
 check "--dry-run only links and runs db push --dry-run" $? "rc=$RC calls=$calls out=$OUT"
+[ "$(grep -c '^curl ' "$LOG")" -eq 0 ] && ! ls "$BODY".* > /dev/null 2>&1
+check "--dry-run makes zero curl calls" $? "$calls"
 ! contains "$OUT" "db-pass-for-tests" && ! contains "$OUT" "sbp_test_token_0000"
 check "--dry-run output has no secrets" $? "$OUT"
 
@@ -212,8 +219,66 @@ calls="$(cat "$LOG")"
 [ "$RC" -eq 0 ] && contains "$calls" "supabase db push --yes" &&
   contains "$calls" "supabase functions deploy delete-account --project-ref abcdefghijklmnopqrst" &&
   contains "$calls" "supabase functions deploy public-journey --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
-  ! contains "$calls" "curl"
-check "deploy without SMTP: db push + both functions, no API call" $? "rc=$RC calls=$calls out=$OUT"
+  [ "$(grep -c '^curl ' "$LOG")" -eq 1 ] && contains "$calls" "-X PATCH" &&
+  contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/auth"
+check "deploy without SMTP: db push + both functions + exactly one Auth config PATCH" $? "rc=$RC calls=$calls out=$OUT"
+contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://hofang42.github.io/Ourney/)" &&
+  contains "$OUT" "==> SMTP_* not set: leaving Auth SMTP settings untouched"
+check "deploy without SMTP: prints the Auth config and untouched-SMTP lines" $? "$OUT"
+jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
+  and .site_url == "https://hofang42.github.io/Ourney/"' "$BODY" > /dev/null
+check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY" 2> /dev/null)"
+jq -e 'has("uri_allow_list") | not' "$BODY" > /dev/null
+check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY" 2> /dev/null)"
+jq -e 'keys | map(select(startswith("smtp_") or . == "rate_limit_email_sent")) | length == 0' "$BODY" > /dev/null
+check "Auth config body (no SMTP) has no smtp_* fields" $? "$(jq -c keys "$BODY" 2> /dev/null)"
+jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" --rawfile c "$ROOT/supabase/templates/confirmation.html" \
+  '.mailer_templates_magic_link_content == $m and .mailer_templates_confirmation_content == $c
+   and (.mailer_templates_magic_link_content | contains("{{ .Token }}"))
+   and (.mailer_templates_confirmation_content | contains("{{ .Token }}"))
+   and ((.mailer_templates_magic_link_content + .mailer_templates_confirmation_content) | contains("ConfirmationURL") | not)' \
+  "$BODY" > /dev/null
+check "Auth config body: both templates carry {{ .Token }} and no ConfirmationURL" $? "template mismatch"
+jq -e '.mailer_subjects_magic_link == "Mã đăng nhập Ourney / Your Ourney sign-in code"
+  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"' "$BODY" > /dev/null
+check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation]' "$BODY" 2> /dev/null)"
+AUTH_SITE_URL="https://example.org/app/" run bash "$DEPLOY"
+jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY" > /dev/null
+check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY" 2> /dev/null)"
+AUTH_URI_ALLOW_LIST="https://example.org/app/,ourney://auth-callback" run bash "$DEPLOY"
+jq -e '.uri_allow_list == "https://example.org/app/,ourney://auth-callback"' "$BODY" > /dev/null
+check "AUTH_URI_ALLOW_LIST is sent as uri_allow_list when set" $? "rc=$RC $(jq -c '.uri_allow_list' "$BODY" 2> /dev/null)"
+for bad in "http://example.org/" "https://exa mple.org/" "https://a.org/,https://b.org/" "ftp" ""; do
+  [ -n "$bad" ] || continue
+  AUTH_SITE_URL="$bad" run bash "$DEPLOY" --dry-run
+  [ "$RC" -ne 0 ] && contains "$OUT" "AUTH_SITE_URL must start with https://" && [ ! -s "$LOG" ]
+  check "bad AUTH_SITE_URL rejected before any call (also --dry-run): $bad" $? "rc=$RC $OUT log=$(cat "$LOG")"
+done
+for bad in "http://example.org/" "https://a.org/,,https://b.org/" "https://a.org/, https://b.org/" "https://a.org/," "noscheme"; do
+  AUTH_URI_ALLOW_LIST="$bad" run bash "$DEPLOY" --dry-run
+  [ "$RC" -ne 0 ] && contains "$OUT" "AUTH_URI_ALLOW_LIST" && [ ! -s "$LOG" ]
+  check "bad AUTH_URI_ALLOW_LIST rejected before any call: $bad" $? "rc=$RC $OUT log=$(cat "$LOG")"
+done
+# Template / subject problems abort before ANY supabase call: run a copy of the repo bits.
+COPY="$TMP/repo-copy"
+mkdir -p "$COPY/scripts/supabase" "$COPY/supabase/templates"
+cp "$DEPLOY" "$COPY/scripts/supabase/"
+cp "$ROOT/supabase/config.toml" "$COPY/supabase/"
+cp "$ROOT/supabase/templates/"*.html "$COPY/supabase/templates/"
+rm "$COPY/supabase/templates/confirmation.html"
+run bash "$COPY/scripts/supabase/deploy-hosted.sh"
+[ "$RC" -ne 0 ] && contains "$OUT" "missing or empty email template" && [ ! -s "$LOG" ]
+check "missing template file fails before any supabase call" $? "rc=$RC $OUT log=$(cat "$LOG")"
+cp "$ROOT/supabase/templates/confirmation.html" "$COPY/supabase/templates/"
+sed -i 's|^subject = "Mã xác nhận.*|subject = "bad # subject"|' "$COPY/supabase/config.toml"
+run bash "$COPY/scripts/supabase/deploy-hosted.sh"
+[ "$RC" -ne 0 ] && contains "$OUT" "bad or missing email template subject" && [ ! -s "$LOG" ]
+check "malformed subject fails before any supabase call" $? "rc=$RC $OUT log=$(cat "$LOG")"
+STUB_CURL_FAIL=1 run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "Auth config update failed: x" && ! contains "$OUT" "leak" && ! contains "$OUT" "smtp_pass"
+check "Auth config: API failure shows the message only, never the body" $? "rc=$RC $OUT"
+run bash "$DEPLOY"
+calls="$(cat "$LOG")"
 line="$(grep -F "supabase functions deploy delete-account" "$LOG")"
 [ -n "$line" ] && ! contains "$line" "--no-verify-jwt"
 check "delete-account keeps JWT verification" $? "$line"
@@ -250,7 +315,15 @@ jq -e '.rate_limit_email_sent == 30' "$BODY" > /dev/null
 check "SMTP: leading zeros in SMTP_RATE_LIMIT are normalised" $? "rc=$RC $(cat "$BODY" 2> /dev/null)"
 unset SMTP_RATE_LIMIT SMTP_PORT SMTP_SENDER_NAME
 
-STUB_CURL_FAIL=1 run bash "$DEPLOY"
+jq -e '.mailer_otp_length == 6 and .mailer_autoconfirm == true and (has("smtp_host") | not)' "$BODY.1" > /dev/null &&
+  jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.2" > /dev/null
+check "SMTP: two PATCHes, Auth config first (no smtp_*) then SMTP" $? "$(ls "$BODY".* 2> /dev/null)"
+auth_line="$(grep -n 'Applying Auth config' <<< "$OUT" | cut -d: -f1)"
+smtp_line="$(grep -n 'Applying custom SMTP' <<< "$OUT" | cut -d: -f1)"
+[ -n "$auth_line" ] && [ -n "$smtp_line" ] && [ "$auth_line" -lt "$smtp_line" ]
+check "SMTP: Auth config step is announced before the SMTP step" $? "$OUT"
+
+STUB_CURL_FAIL=2 run bash "$DEPLOY"
 [ "$RC" -ne 0 ] && contains "$OUT" "SMTP update failed: x" && ! contains "$OUT" "leak"
 check "SMTP: API failure shows the message only, never the body" $? "rc=$RC $OUT"
 
@@ -273,6 +346,23 @@ export SMTP_PORT="46x5"
 run bash "$DEPLOY"
 [ "$RC" -ne 0 ] && contains "$OUT" "SMTP_PORT must be a number"
 check "SMTP: non-numeric port is rejected" $? "rc=$RC $OUT"
+
+clean_env
+set_base_env
+SUPABASE_API_URL="http://evil.example.com" run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "SUPABASE_API_URL must start with https://" && [ ! -s "$LOG" ]
+check "Auth config: plain-http remote API URL is rejected even without SMTP" $? "rc=$RC $OUT"
+
+# Email OTP templates (static) ---------------------------------------------------------------------
+for t in magic_link confirmation; do
+  f="$ROOT/supabase/templates/$t.html"
+  grep -qF '{{ .Token }}' "$f" && ! grep -qiE 'ConfirmationURL|href|\{\{ *\.(SiteURL|TokenHash|RedirectTo)' "$f"
+  check "template $t.html shows {{ .Token }} and has no link" $? "$f"
+  grep -qF '60 phút' "$f" && grep -qF '60 minutes' "$f"
+  check "template $t.html is bilingual and states the 60 minute validity" $? "$f"
+  grep -qF "content_path = \"./supabase/templates/$t.html\"" "$ROOT/supabase/config.toml"
+  check "config.toml wires template $t" $? ""
+done
 
 # invite-members.sh -------------------------------------------------------------------------------
 echo "invite-members.sh"
