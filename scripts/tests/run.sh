@@ -227,7 +227,7 @@ contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://hof
 check "deploy without SMTP: prints the Auth config and untouched-SMTP lines" $? "$OUT"
 jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
   and .site_url == "https://hofang42.github.io/Ourney/"' "$BODY" > /dev/null
-check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(cat "$BODY" 2> /dev/null | head -c 300)"
+check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY" 2> /dev/null)"
 jq -e 'has("uri_allow_list") | not' "$BODY" > /dev/null
 check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY" 2> /dev/null)"
 jq -e 'keys | map(select(startswith("smtp_") or . == "rate_limit_email_sent")) | length == 0' "$BODY" > /dev/null
