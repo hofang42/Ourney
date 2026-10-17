@@ -47,6 +47,8 @@ jobs:
           SMTP_SENDER_NAME: ${{ secrets.SMTP_SENDER_NAME }}
           # Optional (not a secret): Environment variable, default https://hofang42.github.io/Ourney/
           AUTH_SITE_URL: ${{ vars.AUTH_SITE_URL }}
+          # Optional: comma-separated redirect allow-list; unset = leave the project's list untouched
+          AUTH_URI_ALLOW_LIST: ${{ vars.AUTH_URI_ALLOW_LIST }}
           DRY_RUN: ${{ inputs.dry_run }}
         run: |
           args=()

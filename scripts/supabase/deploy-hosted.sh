@@ -13,7 +13,12 @@
 # hosted project must send CODE emails (supabase/templates/*.html, subjects from config.toml) and
 # use a real site_url instead of the default http://localhost:3000. Also sets the OTP length (6),
 # expiry (3600 s) and mailer_autoconfirm (same as local enable_confirmations = false).
-#   AUTH_SITE_URL (default https://hofang42.github.io/Ourney/)  used for site_url and uri_allow_list
+#   AUTH_SITE_URL (default https://hofang42.github.io/Ourney/)  always sent as site_url (https:// only)
+#   AUTH_URI_ALLOW_LIST (optional, comma-separated)  sent as uri_allow_list ONLY when set, so redirect
+#     URLs added by hand in the dashboard are never overwritten. Each entry is https://... or a custom
+#     scheme such as ourney://...
+# Only the magic_link and confirmation templates are code-based; recovery/invite/email_change keep
+# the default link emails. Env, templates and subjects are validated before any supabase call.
 #
 # Optional SMTP (all four required together, otherwise the script fails before doing anything):
 #   SMTP_HOST SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL
@@ -105,6 +110,30 @@ if ! [[ "$SUPABASE_API_URL" =~ $api_re ]]; then
   exit 1
 fi
 
+# Auth URLs: site_url must be https:// with no comma/whitespace. Allow-list entries (optional,
+# comma-separated) are https:// or a custom scheme (ourney://...), each without whitespace.
+site_re='^https://[^,[:space:]]+$'
+if ! [[ "$AUTH_SITE_URL" =~ $site_re ]]; then
+  echo "error: AUTH_SITE_URL must start with https:// and contain no comma or whitespace" >&2
+  exit 1
+fi
+AUTH_URI_ALLOW_LIST="${AUTH_URI_ALLOW_LIST:-}"
+if [ -n "$AUTH_URI_ALLOW_LIST" ]; then
+  entry_re='^(https://|[a-z][a-z0-9+.-]*://)[^,[:space:]]+$'
+  IFS=',' read -r -a allow_entries <<< "$AUTH_URI_ALLOW_LIST"
+  for entry in "${allow_entries[@]}"; do
+    if ! [[ "$entry" =~ $entry_re ]] || [[ "$entry" == http://* ]]; then
+      echo "error: AUTH_URI_ALLOW_LIST entries must be comma-separated https:// or custom-scheme URLs without whitespace" >&2
+      exit 1
+    fi
+  done
+  case "$AUTH_URI_ALLOW_LIST" in *, | ,*)
+    echo "error: AUTH_URI_ALLOW_LIST has an empty entry" >&2
+    exit 1
+    ;;
+  esac
+fi
+
 # --- 3. Tools ---------------------------------------------------------------------------------
 tools=(supabase)
 if [ "$DRY_RUN" -eq 0 ]; then tools+=(jq curl); fi
@@ -148,6 +177,25 @@ patch_auth_config() {
   fi
 }
 
+# Email templates and subjects are checked now, before any supabase call, so a bad template can
+# never abort a deploy halfway. Templates are plain files in the repo (not secrets).
+magic_file=supabase/templates/magic_link.html
+confirm_file=supabase/templates/confirmation.html
+for f in "$magic_file" "$confirm_file"; do
+  if [ ! -s "$f" ]; then
+    echo "error: missing or empty email template: $f" >&2
+    exit 1
+  fi
+done
+magic_subject="$(toml_subject magic_link)"
+confirm_subject="$(toml_subject confirmation)"
+for s in "$magic_subject" "$confirm_subject"; do
+  if [ -z "$s" ] || [[ "$s" == *'"'* ]] || [[ "$s" == *'#'* ]]; then
+    echo "error: bad or missing email template subject in supabase/config.toml (empty, or contains \" or #)" >&2
+    exit 1
+  fi
+done
+
 # --- 4. Link + migrations ---------------------------------------------------------------------
 echo "==> Linking project $SUPABASE_PROJECT_REF"
 supabase link --project-ref "$SUPABASE_PROJECT_REF"
@@ -177,31 +225,26 @@ supabase functions deploy public-journey --project-ref "$SUPABASE_PROJECT_REF" -
 # --- 6. Auth config: OTP code emails (always) --------------------------------------------------
 # Default hosted templates send a magic LINK built from the default Site URL (http://localhost:3000);
 # the app expects a 6-digit code. Templates are plain files in the repo (not secrets).
-magic_subject="$(toml_subject magic_link)"
-confirm_subject="$(toml_subject confirmation)"
-for f in supabase/templates/magic_link.html supabase/templates/confirmation.html; do
-  if [ ! -s "$f" ]; then
-    echo "error: missing email template: $f" >&2
-    exit 1
-  fi
-done
-if [ -z "$magic_subject" ] || [ -z "$confirm_subject" ]; then
-  echo "error: could not read the email template subjects from supabase/config.toml" >&2
+echo "==> Applying Auth config (OTP code emails, site_url $AUTH_SITE_URL)"
+export AUTH_SITE_URL AUTH_URI_ALLOW_LIST
+# uri_allow_list is only sent when AUTH_URI_ALLOW_LIST is set (never overwrite dashboard entries).
+body="$(
+  jq -n \
+    --arg magic_subject "$magic_subject" --arg confirm_subject "$confirm_subject" \
+    --rawfile magic_html "$magic_file" --rawfile confirm_html "$confirm_file" \
+    '{site_url: $ENV.AUTH_SITE_URL,
+      mailer_otp_length: 6, mailer_otp_exp: 3600, mailer_autoconfirm: true,
+      mailer_subjects_magic_link: $magic_subject,
+      mailer_templates_magic_link_content: $magic_html,
+      mailer_subjects_confirmation: $confirm_subject,
+      mailer_templates_confirmation_content: $confirm_html}
+     + (if ($ENV.AUTH_URI_ALLOW_LIST // "") != "" then {uri_allow_list: $ENV.AUTH_URI_ALLOW_LIST} else {} end)'
+)"
+if [ -z "$body" ]; then
+  echo "error: could not build the Auth config request body" >&2
   exit 1
 fi
-echo "==> Applying Auth config (OTP code emails, site_url $AUTH_SITE_URL)"
-export AUTH_SITE_URL
-jq -n \
-  --arg magic_subject "$magic_subject" --arg confirm_subject "$confirm_subject" \
-  --rawfile magic_html supabase/templates/magic_link.html \
-  --rawfile confirm_html supabase/templates/confirmation.html \
-  '{site_url: $ENV.AUTH_SITE_URL, uri_allow_list: $ENV.AUTH_SITE_URL,
-    mailer_otp_length: 6, mailer_otp_exp: 3600, mailer_autoconfirm: true,
-    mailer_subjects_magic_link: $magic_subject,
-    mailer_templates_magic_link_content: $magic_html,
-    mailer_subjects_confirmation: $confirm_subject,
-    mailer_templates_confirmation_content: $confirm_html}' |
-  patch_auth_config "Auth config"
+printf '%s' "$body" | patch_auth_config "Auth config"
 echo "Auth config applied."
 
 # --- 7. Optional SMTP (H2) --------------------------------------------------------------------

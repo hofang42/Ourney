@@ -207,6 +207,8 @@ calls="$(cat "$LOG")"
   contains "$calls" "supabase db push --dry-run" &&
   ! contains "$calls" "functions deploy" && ! contains "$calls" "curl"
 check "--dry-run only links and runs db push --dry-run" $? "rc=$RC calls=$calls out=$OUT"
+[ "$(grep -c '^curl ' "$LOG")" -eq 0 ] && ! ls "$BODY".* > /dev/null 2>&1
+check "--dry-run makes zero curl calls" $? "$calls"
 ! contains "$OUT" "db-pass-for-tests" && ! contains "$OUT" "sbp_test_token_0000"
 check "--dry-run output has no secrets" $? "$OUT"
 
@@ -224,8 +226,10 @@ contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://hof
   contains "$OUT" "==> SMTP_* not set: leaving Auth SMTP settings untouched"
 check "deploy without SMTP: prints the Auth config and untouched-SMTP lines" $? "$OUT"
 jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
-  and .site_url == "https://hofang42.github.io/Ourney/" and .uri_allow_list == .site_url' "$BODY" > /dev/null
-check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url + allow list" $? "$(cat "$BODY" 2> /dev/null | head -c 300)"
+  and .site_url == "https://hofang42.github.io/Ourney/"' "$BODY" > /dev/null
+check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(cat "$BODY" 2> /dev/null | head -c 300)"
+jq -e 'has("uri_allow_list") | not' "$BODY" > /dev/null
+check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY" 2> /dev/null)"
 jq -e 'keys | map(select(startswith("smtp_") or . == "rate_limit_email_sent")) | length == 0' "$BODY" > /dev/null
 check "Auth config body (no SMTP) has no smtp_* fields" $? "$(jq -c keys "$BODY" 2> /dev/null)"
 jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" --rawfile c "$ROOT/supabase/templates/confirmation.html" \
@@ -239,8 +243,37 @@ jq -e '.mailer_subjects_magic_link == "Mã đăng nhập Ourney / Your Ourney si
   and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"' "$BODY" > /dev/null
 check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation]' "$BODY" 2> /dev/null)"
 AUTH_SITE_URL="https://example.org/app/" run bash "$DEPLOY"
-jq -e '.site_url == "https://example.org/app/" and .uri_allow_list == "https://example.org/app/"' "$BODY" > /dev/null
-check "AUTH_SITE_URL overrides site_url and uri_allow_list" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY" 2> /dev/null)"
+jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY" > /dev/null
+check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY" 2> /dev/null)"
+AUTH_URI_ALLOW_LIST="https://example.org/app/,ourney://auth-callback" run bash "$DEPLOY"
+jq -e '.uri_allow_list == "https://example.org/app/,ourney://auth-callback"' "$BODY" > /dev/null
+check "AUTH_URI_ALLOW_LIST is sent as uri_allow_list when set" $? "rc=$RC $(jq -c '.uri_allow_list' "$BODY" 2> /dev/null)"
+for bad in "http://example.org/" "https://exa mple.org/" "https://a.org/,https://b.org/" "ftp" ""; do
+  [ -n "$bad" ] || continue
+  AUTH_SITE_URL="$bad" run bash "$DEPLOY" --dry-run
+  [ "$RC" -ne 0 ] && contains "$OUT" "AUTH_SITE_URL must start with https://" && [ ! -s "$LOG" ]
+  check "bad AUTH_SITE_URL rejected before any call (also --dry-run): $bad" $? "rc=$RC $OUT log=$(cat "$LOG")"
+done
+for bad in "http://example.org/" "https://a.org/,,https://b.org/" "https://a.org/, https://b.org/" "https://a.org/," "noscheme"; do
+  AUTH_URI_ALLOW_LIST="$bad" run bash "$DEPLOY" --dry-run
+  [ "$RC" -ne 0 ] && contains "$OUT" "AUTH_URI_ALLOW_LIST" && [ ! -s "$LOG" ]
+  check "bad AUTH_URI_ALLOW_LIST rejected before any call: $bad" $? "rc=$RC $OUT log=$(cat "$LOG")"
+done
+# Template / subject problems abort before ANY supabase call: run a copy of the repo bits.
+COPY="$TMP/repo-copy"
+mkdir -p "$COPY/scripts/supabase" "$COPY/supabase/templates"
+cp "$DEPLOY" "$COPY/scripts/supabase/"
+cp "$ROOT/supabase/config.toml" "$COPY/supabase/"
+cp "$ROOT/supabase/templates/"*.html "$COPY/supabase/templates/"
+rm "$COPY/supabase/templates/confirmation.html"
+run bash "$COPY/scripts/supabase/deploy-hosted.sh"
+[ "$RC" -ne 0 ] && contains "$OUT" "missing or empty email template" && [ ! -s "$LOG" ]
+check "missing template file fails before any supabase call" $? "rc=$RC $OUT log=$(cat "$LOG")"
+cp "$ROOT/supabase/templates/confirmation.html" "$COPY/supabase/templates/"
+sed -i 's|^subject = "Mã xác nhận.*|subject = "bad # subject"|' "$COPY/supabase/config.toml"
+run bash "$COPY/scripts/supabase/deploy-hosted.sh"
+[ "$RC" -ne 0 ] && contains "$OUT" "bad or missing email template subject" && [ ! -s "$LOG" ]
+check "malformed subject fails before any supabase call" $? "rc=$RC $OUT log=$(cat "$LOG")"
 STUB_CURL_FAIL=1 run bash "$DEPLOY"
 [ "$RC" -ne 0 ] && contains "$OUT" "Auth config update failed: x" && ! contains "$OUT" "leak" && ! contains "$OUT" "smtp_pass"
 check "Auth config: API failure shows the message only, never the body" $? "rc=$RC $OUT"
@@ -282,12 +315,12 @@ jq -e '.rate_limit_email_sent == 30' "$BODY" > /dev/null
 check "SMTP: leading zeros in SMTP_RATE_LIMIT are normalised" $? "rc=$RC $(cat "$BODY" 2> /dev/null)"
 unset SMTP_RATE_LIMIT SMTP_PORT SMTP_SENDER_NAME
 
-[ "$(grep -c '^curl ' "$LOG")" -eq 2 ] || run bash "$DEPLOY"
 jq -e '.mailer_otp_length == 6 and .mailer_autoconfirm == true and (has("smtp_host") | not)' "$BODY.1" > /dev/null &&
   jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.2" > /dev/null
 check "SMTP: two PATCHes, Auth config first (no smtp_*) then SMTP" $? "$(ls "$BODY".* 2> /dev/null)"
-lines="$(grep -n -e 'Applying Auth config' -e 'Applying custom SMTP' <<< "$OUT" | cut -d: -f1 | tr '\n' ' ')"
-[ "$lines" = "$(printf '%s\n' $lines | sort -n | tr '\n' ' ')" ] && [ -n "$lines" ]
+auth_line="$(grep -n 'Applying Auth config' <<< "$OUT" | cut -d: -f1)"
+smtp_line="$(grep -n 'Applying custom SMTP' <<< "$OUT" | cut -d: -f1)"
+[ -n "$auth_line" ] && [ -n "$smtp_line" ] && [ "$auth_line" -lt "$smtp_line" ]
 check "SMTP: Auth config step is announced before the SMTP step" $? "$OUT"
 
 STUB_CURL_FAIL=2 run bash "$DEPLOY"

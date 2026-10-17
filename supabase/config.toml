@@ -245,6 +245,8 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Email OTP templates: show the 6-digit code ({{ .Token }}), never a link.
+# Only magic_link and confirmation are code-based. recovery, invite and email_change still use the
+# default LINK emails: add code templates for them if the app ever uses those flows.
 # deploy-hosted.sh reads these subjects from here when it pushes the templates to the hosted project.
 [auth.email.template.magic_link]
 subject = "Mã đăng nhập Ourney / Your Ourney sign-in code"

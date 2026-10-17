@@ -93,7 +93,13 @@ Chạy lại bao nhiêu lần cũng được (idempotent). Khi gặp lỗi, đ�
 App đăng nhập bằng `signInWithOtp` + `verifyOTP` nên người dùng phải nhận **mã 6 số**. Template email mặc định của Supabase gửi magic link tạo từ Site URL mặc định `http://localhost:3000`, nên mỗi lần deploy thật script tự `PATCH /v1/projects/<ref>/config/auth` với:
 - Template `supabase/templates/magic_link.html` và `confirmation.html` (song ngữ Việt/Anh, chỉ hiện `{{ .Token }}`, hiệu lực 60 phút, không có link) cùng tiêu đề lấy từ `supabase/config.toml`; `supabase start` local dùng đúng các template này.
 - `mailer_otp_length` = 6, `mailer_otp_exp` = 3600, `mailer_autoconfirm` = true (khớp `enable_confirmations = false` ở local).
-- `site_url` và `uri_allow_list` = `AUTH_SITE_URL` (mặc định `https://hofang42.github.io/Ourney/`). Muốn đổi, đặt *Environment variable* (không phải secret) `AUTH_SITE_URL` trong environment `production`; workflow đã truyền biến này cho script.
+- `site_url` = `AUTH_SITE_URL` (mặc định `https://hofang42.github.io/Ourney/`; phải bắt đầu bằng `https://`, không có dấu phẩy/khoảng trắng). Muốn đổi, đặt *Environment variable* (không phải secret) `AUTH_SITE_URL` trong environment `production`; workflow đã truyền biến này cho script.
+- `uri_allow_list` **chỉ** được gửi khi đặt `AUTH_URI_ALLOW_LIST` (danh sách phân tách bằng dấu phẩy, mỗi mục `https://...` hoặc custom scheme như `ourney://...`). Không đặt thì danh sách redirect đang có trên dashboard được giữ nguyên.
+- Biến sai định dạng, thiếu file template hoặc subject lỗi sẽ làm script dừng **trước** mọi lệnh supabase (kể cả `--dry-run`).
+
+Lưu ý:
+- Chỉ `magic_link` và `confirmation` là template dạng mã. `recovery`, `invite`, `email_change` vẫn là email link mặc định; nếu app dùng các luồng đó thì phải thêm template mã tương ứng.
+- Email chỉ được gửi tin cậy khi đã có SMTP riêng (bước H2, mục 3): mail mặc định của Supabase bị giới hạn rất thấp. Cấu hình ở đây không thay thế SMTP.
 
 Áp dụng cho project đang chạy: chỉ cần **chạy lại workflow Deploy Supabase (hosted)** với `dry_run` = false; bước này không cần SMTP và chạy lại nhiều lần vẫn an toàn. Sau đó thử đăng nhập: email phải có mã 6 số, không có link tới localhost.
 
