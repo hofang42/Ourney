@@ -1,6 +1,6 @@
 ---
 name: design-ref
-description: Đọc bảng thiết kế UI của Ourney trong apps/mobile/assets/design_personas/ (6 persona × 3 màn timeline, camera HUD, share/squad) — cắt đúng màn cần làm, phóng to để xem chi tiết, rồi đối chiếu với token và spec (trỏ tới nguồn, không chép). Dùng trước khi code hoặc review một màn timeline, camera HUD, share card hay squad wall của persona; khi task F/J/V/S trong docs/TASKS.md §7 trỏ tới một bảng; hoặc khi user gõ /design-ref.
+description: Đọc bảng thiết kế UI của Ourney trong apps/mobile/assets/design_personas/ (6 persona × 3 màn timeline, camera HUD, share/squad) — cắt đúng màn cần làm, phóng to để xem chi tiết, rồi đối chiếu với token và spec (trỏ tới nguồn, không chép). Dùng trước khi code hoặc review một màn timeline, camera HUD, share card hay squad wall của persona; khi task trong docs/TASKS.md §7 (F, Q, R, S, M, D, Z) trỏ tới một bảng; hoặc khi user gõ /design-ref.
 argument-hint: "[persona 1-6 | PersonaSkinId] [timeline | camera | share | all]"
 allowed-tools:
   - Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/crop.py *)

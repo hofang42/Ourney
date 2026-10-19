@@ -195,7 +195,7 @@ Phát hành: admin tạo tag `v*`, workflow tự gắn IPA và APK vào GitHub R
 ## Đóng góp
 
 1. **Nhận task** trong [docs/TASKS.md](docs/TASKS.md). Mỗi người sở hữu một vùng thư mục (§2, và §7.1 cho giai đoạn Persona UI). Cần sửa ngoài vùng thì mở PR nhỏ và nhờ chủ vùng review.
-2. **Tạo branch** `feat/<task-id>-<slug>`, `fix/...` hoặc `chore/...`, ví dụ `feat/J3-chain-grid`.
+2. **Tạo branch** `feat/<task-id>-<slug>`, `fix/...` hoặc `chore/...`, ví dụ `feat/Z1-chain-grid`.
 3. **Commit** theo [Conventional Commits](https://www.conventionalcommits.org/): `feat(journeys): ...`, `fix(camera): ...`.
 4. **Mở PR** theo [template](.github/pull_request_template.md): làm gì, vì sao, bằng chứng test, ảnh hoặc video trên iPhone và Android với thay đổi UI.
 5. **Merge** khi CI xanh và đã resolve hết comment. Reviewer theo cặp trong TASKS, trả lời trong 24h.
@@ -227,12 +227,12 @@ Cloud session của Claude Code tự cài Flutter đúng phiên bản CI qua hoo
 
 ## Nhóm phát triển
 
-| Thành viên | Vai trò v0.1.0 | Module Persona UI ([TASKS §7](docs/TASKS.md#7-giai-đoạn-2--persona-ui-mỗi-người-một-module)) |
+| Thành viên | Vai trò v0.1.0 | Persona UI ([TASKS §7](docs/TASKS.md#7-giai-đoạn-2--persona-ui-mỗi-người-trọn-persona)) |
 |---|---|---|
-| [@hofang42](https://github.com/hofang42) | Owner, server hosted, release | S — Share card và Squad |
-| [@thydynh03](https://github.com/thydynh03) | QA iPhone, UI, truy vết yêu cầu | F — Nền tảng giao diện |
-| [@lken1514](https://github.com/lken1514) | Android, chạy nền, thông báo, native | V — Camera HUD và check-in |
-| [@nguyenductien-qnm](https://github.com/nguyenductien-qnm) | Web, backend, vận hành | J — Journeys và timeline |
+| [@hofang42](https://github.com/hofang42) | Owner, server hosted, release | Persona 1 Quiet Transformer, Persona 5 Aesthetic Flexer |
+| [@thydynh03](https://github.com/thydynh03) | QA iPhone, UI, truy vết yêu cầu | Nền tảng dùng chung: theme, dock, khung persona, Hub, tạo journey |
+| [@lken1514](https://github.com/lken1514) | Android, chạy nền, thông báo, native | Persona 4 Couple Rituals, Persona 6 Minimalist Habit |
+| [@nguyenductien-qnm](https://github.com/nguyenductien-qnm) | Web, backend, vận hành | Persona 2 Accountability Squad, Persona 3 Memory Collectors |
 
 ## Tài liệu
 
