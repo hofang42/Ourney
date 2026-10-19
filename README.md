@@ -2,7 +2,7 @@
 
 # Ourney
 
-**Locket cho mục tiêu.** Mỗi ngày một ảnh check-in để đi hết hành trình của bạn: giảm cân, học tiếng Anh, tập luyện, du lịch, hay bất cứ mục tiêu nào. Đi một mình hoặc cùng nhóm bạn thân, tới mốc thì khoe bằng share card kiểu Strava.
+**Locket cho mục tiêu.** Mỗi ngày chụp một tấm ảnh để chứng minh mình vẫn đang đi tiếp: giảm cân, học tiếng Anh, tập luyện, đi du lịch hay bất cứ mục tiêu nào bạn tự đặt ra. Đi một mình cũng được, rủ cả nhóm bạn thân càng vui. Chạm mốc thì xuất share card khoe lên mạng như Strava.
 
 [![CI](https://github.com/hofang42/Ourney/actions/workflows/ci.yml/badge.svg)](https://github.com/hofang42/Ourney/actions/workflows/ci.yml)
 [![Android](https://github.com/hofang42/Ourney/actions/workflows/android.yml/badge.svg)](https://github.com/hofang42/Ourney/actions/workflows/android.yml)
@@ -11,61 +11,46 @@
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres%20%2B%20RLS-3ECF8E?logo=supabase&logoColor=white)
 ![Platforms](https://img.shields.io/badge/platform-iOS%2015%2B%20%7C%20Android%208%2B-lightgrey)
 
-[Tài liệu](docs/) · [SRS](docs/SRS.md) · [Chia việc](docs/TASKS.md) · [Báo lỗi](https://github.com/hofang42/Ourney/issues)
+[Tài liệu](docs/) · [SRS](docs/SRS.md) · [Phân công](docs/TASKS.md) · [Báo lỗi](https://github.com/hofang42/Ourney/issues)
 
-<img src="docs/assets/design_personas/persona_2_accountability_squad.jpg" alt="Thiết kế persona Accountability Squad: timeline dạng đường đi, camera check-in, bức tường Polaroid của nhóm" width="860">
+<img src="docs/assets/design_personas/persona_2_accountability_squad.jpg" alt="Thiết kế persona Accountability Squad: timeline dạng con đường, màn chụp check-in và bức tường Polaroid của nhóm" width="860">
 
-<sub>Bản thiết kế tham chiếu (mockup), chưa phải ảnh chụp app.</sub>
+<sub>Ảnh thiết kế tham khảo, chưa phải ảnh chụp từ app.</sub>
 
 </div>
 
-## Mục lục
+## Ourney là gì?
 
-- [Giới thiệu](#giới-thiệu)
-- [Tính năng](#tính-năng)
-- [Giao diện: 6 persona](#giao-diện-6-persona)
-- [Kiến trúc](#kiến-trúc)
-- [Cấu trúc repo](#cấu-trúc-repo)
-- [Bắt đầu nhanh](#bắt-đầu-nhanh)
-- [Kiểm thử](#kiểm-thử)
-- [CI/CD và phát hành](#cicd-và-phát-hành)
-- [Đóng góp](#đóng-góp)
-- [Làm việc với Claude Code](#làm-việc-với-claude-code)
-- [Nhóm phát triển](#nhóm-phát-triển)
-- [Tài liệu](#tài-liệu)
+Strava, Duolingo hay Polarsteps đều rất giỏi trong mảng riêng của mình, nhưng chưa có app nào gom đủ ba thứ vào một chỗ: **đủ loại hành trình**, **bằng chứng mỗi ngày** và **nhóm bạn thân**. Ourney mượn thói quen chụp nhanh của Locket, BeReal rồi gắn nó vào một mục tiêu có thời hạn. Có streak phải giữ, có nhóm đang chờ mình check-in, nên ngày nào cũng có lý do để mở app.
 
-## Giới thiệu
+Hiện nhóm đang hoàn thiện bản beta `v0.1.0`. Code đã đủ các yêu cầu P1 trong [SRS](docs/SRS.md), CI đang xanh, đã có sẵn file `.ipa` chưa ký và `.apk`. Những việc còn lại nằm trong [docs/TASKS.md](docs/TASKS.md).
 
-App chuyên ngách như Strava, Duolingo hay Polarsteps rất mạnh trong ngách của mình, nhưng chưa app nào gom **mọi loại hành trình + bằng chứng mỗi ngày + nhóm bạn thân** vào một chỗ. Ourney lấy thói quen chụp nhanh của Locket/BeReal và gắn nó vào **mục tiêu có thời hạn**: có streak để giữ, có nhóm đang chờ mình check-in.
+## App làm được gì
 
-**Trạng thái:** đang chuẩn bị beta `v0.1.0`. Code v1 đủ các yêu cầu P1 trong [SRS](docs/SRS.md), CI xanh, CI build ra `.ipa` chưa ký và `.apk`. Việc còn lại nằm ở [docs/TASKS.md](docs/TASKS.md).
-
-## Tính năng
-
-| Nhóm | Có gì ở v1 |
+| Tính năng | Mô tả |
 |---|---|
-| **Check-in camera-first** | Mở app vào thẳng camera, đăng trong ≤ 3 chạm, 1 ảnh/ngày/journey. Nén trên máy, **offline-first**: lưu ngay, upload qua hàng đợi và tự thử lại |
-| **Journey** | 4 template (Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi) hoặc tự đặt. Solo hoặc nhóm, có metric tuỳ chọn. Timeline lưới lịch, streak, % hoàn thành |
-| **Nhóm** | Mời bằng mã 8 ký tự hoặc link `ourney://join/<code>`, tối đa 10 người. Màn "Hôm nay" xem ai đã check-in, thả reaction. Không xếp hạng theo kết quả |
-| **Chia sẻ** | Share card 1080×1920 (story) và 1080×1350 (feed) render trên máy. Link xem read-only cho journey solo |
-| **Riêng tư và an toàn** | Journey giảm cân mặc định ẩn số kg và làm mờ ảnh khi share. Report, block, EULA. Xoá tài khoản là xoá thật cả ảnh trên server |
-| **Nhắc nhở** | Thông báo local theo giờ của từng journey, cảnh báo 21:00 khi streak sắp mất |
-| **Local-only mode** | Chưa cấu hình server vẫn dùng đủ journey solo |
+| **Check-in thật nhanh** | Mở app là vào thẳng camera, chụp và đăng trong tối đa 3 chạm, mỗi hành trình một ảnh mỗi ngày. App nén ảnh ngay trên máy và lưu lại trước, có mạng thì tự tải lên, rớt mạng giữa chừng cũng không mất ảnh |
+| **Hành trình** | Có sẵn 4 mẫu (Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi) hoặc tự đặt. Đi một mình hay theo nhóm đều được, muốn theo dõi thêm chỉ số như cân nặng, số phút học thì bật lên. Cả hành trình hiện thành một lịch ảnh, kèm streak và phần trăm hoàn thành |
+| **Nhóm** | Mời bạn bằng mã 8 ký tự hoặc link `ourney://join/<code>`, mỗi nhóm tối đa 10 người. Màn "Hôm nay" cho biết ai đã check-in, ai chưa, mọi người thả reaction cho nhau. App không xếp hạng ai giảm được nhiều cân hơn, chỉ ghi nhận ai đều đặn |
+| **Khoe thành quả** | Share card cỡ story (1080×1920) và cỡ feed (1080×1350), tạo ngay trên máy. Hành trình một mình còn chia sẻ được bằng link chỉ xem |
+| **Riêng tư** | Hành trình giảm cân mặc định ẩn số kg và làm mờ ảnh khi chia sẻ. Có báo cáo, chặn người dùng, điều khoản sử dụng. Xoá tài khoản là xoá thật, kể cả ảnh trên server |
+| **Nhắc nhở** | Thông báo theo giờ bạn chọn cho từng hành trình. Tới 21:00 mà chưa check-in thì app nhắc streak sắp mất |
+| **Không cần server** | Chưa cấu hình backend thì app vẫn chạy đủ các hành trình một mình (local-only mode) |
 
-Phạm vi đầy đủ và mã yêu cầu (FR/NFR) ở [docs/SRS.md](docs/SRS.md) §3–4. Những gì để sau v1 ở §7.
+Danh sách yêu cầu đầy đủ, kèm mã FR/NFR, ở [docs/SRS.md](docs/SRS.md) mục 3 và 4. Những gì hẹn sang các bản sau thì xem mục 7.
 
-## Giao diện: 6 persona
+## Sáu phong cách giao diện
 
-Một app shell, sáu "skin" theo loại hành trình. Đổi journey thì màu, timeline, HUD camera và share card đổi theo mà **không reset app hay khởi động lại camera**. Mọi màn có cả light và dark. Thiết kế chi tiết: [docs/06-adaptive-persona-ui-system.md](docs/06-adaptive-persona-ui-system.md).
+Mỗi kiểu hành trình có một phong cách riêng: màu sắc, timeline, màn chụp và share card đều khác nhau. Chuyển sang hành trình khác thì giao diện đổi theo ngay tại chỗ, không phải tải lại app hay bật lại camera. Màn nào cũng có cả nền sáng lẫn nền tối. Chi tiết thiết kế ở [docs/06-adaptive-persona-ui-system.md](docs/06-adaptive-persona-ui-system.md).
 
-| # | Persona | Template | Timeline | Camera HUD | Share / Squad |
+| # | Persona | Dành cho | Timeline | Màn chụp | Chia sẻ |
 |:-:|---|---|---|---|---|
-| 1 | Quiet Transformer | Giảm cân | Đường cong cân nặng + ảnh mốc | Căn dáng theo ảnh ngày 1 | So sánh ngày 1 với hôm nay |
-| 2 | Accountability Squad | Học tiếng Anh | Đường đi tới cúp ngày 30 | Pill số phút học + streak | Tường Polaroid của nhóm |
-| 3 | Memory Collectors | Chuyến đi | Scrapbook, Polaroid dán băng dính | Máy film dùng một lần | Contact sheet 35mm |
-| 4 | Couple Rituals | Tự đặt, 2 người | Cặp ảnh theo từng ngày | Nửa khung ảnh của người kia | Poster mosaic của hai người |
-| 5 | Aesthetic Flexer | 30 ngày tập luyện | Sparkline neon + trục mốc | Sticker overlay kiểu Strava | Story 9:16 có heatmap |
-| 6 | Minimalist Habit | Tự đặt | Lưới lịch "đừng đứt chuỗi" | Chụp 1 chạm, không cần nhập chữ | Thẻ tổng kết tối giản |
+| 1 | Quiet Transformer | Giảm cân | Đường cong cân nặng nối với ảnh các mốc | Ảnh ngày đầu hiện mờ phía sau để đứng đúng dáng | Ảnh ngày đầu đặt cạnh ảnh hôm nay |
+| 2 | Accountability Squad | Học tiếng Anh | Con đường dẫn tới chiếc cúp ngày 30 | Hiện số phút học và streak | Bức tường Polaroid của cả nhóm |
+| 3 | Memory Collectors | Đi du lịch | Sổ scrapbook, ảnh Polaroid dán băng keo | Giống máy film dùng một lần | Contact sheet kiểu phim 35mm |
+| 4 | Couple Rituals | Cặp đôi (nhóm 2 người) | Mỗi ngày một cặp ảnh của hai người | Nửa khung là ảnh người kia, nửa còn lại để mình chụp | Poster ghép ảnh của hai người |
+| 5 | Aesthetic Flexer | 30 ngày tập luyện | Biểu đồ neon và các mốc tập | Sticker chỉ số kiểu Strava | Story 9:16 kèm dải ngày đã tập |
+| 6 | Minimalist Habit | Thói quen tự đặt | Lịch ảnh "đừng để đứt chuỗi" | Chạm một lần là xong, không phải gõ chữ | Thẻ tổng kết tối giản |
 
 <details>
 <summary>Xem 6 bảng thiết kế</summary>
@@ -81,173 +66,177 @@ Một app shell, sáu "skin" theo loại hành trình. Đổi journey thì màu,
 
 ## Kiến trúc
 
+App Flutter chia làm ba lớp: giao diện theo từng tính năng, lớp dữ liệu lưu trên máy rồi đồng bộ lên Supabase, và gói `ourney_core` chứa phần logic viết bằng Dart thuần để hai lớp kia cùng dùng.
+
 ```mermaid
 flowchart LR
   subgraph app["apps/mobile · Flutter"]
     features["lib/features/*<br/>Riverpod · go_router"]
-    data["lib/data/*<br/>drift (SQLite) · hàng đợi upload · sync"]
-    core["packages/ourney_core<br/>Dart thuần: model, streak, local_date, template"]
+    data["lib/data/*<br/>drift (SQLite) · hàng đợi tải ảnh · đồng bộ"]
+    core["packages/ourney_core<br/>Dart thuần: model, streak, local_date, mẫu hành trình"]
     features --> data
     features --> core
     data --> core
   end
   subgraph supabase["Supabase"]
-    auth["Auth<br/>email OTP"]
+    auth["Auth<br/>đăng nhập bằng mã OTP qua email"]
     db["Postgres<br/>RLS · RPC"]
-    storage["Storage<br/>bucket private"]
+    storage["Storage<br/>bucket riêng tư"]
     functions["Edge Functions<br/>Deno"]
   end
   data <-->|supabase_flutter| supabase
 ```
 
-| Lớp | Công nghệ |
+| Phần | Dùng gì |
 |---|---|
 | App | Flutter 3.47.7 / Dart 3.13, Riverpod, go_router, drift, camera, flutter_image_compress, share_plus, flutter_local_notifications |
-| Logic dùng chung | `packages/ourney_core`: Dart thuần, test được trên Linux, là hợp đồng giữa UI và data |
-| Backend | Supabase: Postgres + RLS trên mọi bảng, RPC `SECURITY DEFINER`, Storage private với signed URL, Edge Functions (Deno), test bằng pgTAP |
-| Build | GitHub Actions: Ubuntu cho test và Android, macOS cho iOS. Team không cần máy Mac |
+| Logic dùng chung | `packages/ourney_core`, viết bằng Dart thuần nên test được ngay trên Linux. Đây là "hợp đồng" giữa giao diện và dữ liệu |
+| Backend | Supabase: Postgres bật RLS cho mọi bảng, RPC `SECURITY DEFINER`, Storage riêng tư dùng signed URL, Edge Functions viết bằng Deno, test bằng pgTAP |
+| Build | GitHub Actions: Ubuntu chạy test và build Android, macOS build iOS. Cả nhóm không ai cần máy Mac |
 
-Hợp đồng dữ liệu (đọc trước khi đụng data hoặc backend): [docs/contracts/schema.md](docs/contracts/schema.md) và `packages/ourney_core/lib/src/models.dart`.
+Trước khi động vào dữ liệu hay backend, hãy đọc hợp đồng dữ liệu ở [docs/contracts/schema.md](docs/contracts/schema.md) và `packages/ourney_core/lib/src/models.dart`.
 
-## Cấu trúc repo
+## Thư mục trong repo
 
 ```
 .
-├── apps/mobile/            # App Flutter (iOS + Android)
-│   ├── lib/app/            #   shell, router, theme (persona), providers
-│   ├── lib/features/       #   mỗi tính năng một thư mục, xem lib/features/README.md
-│   ├── lib/data/           #   drift, repository, sync
-│   ├── lib/shared/         #   widget design system dùng chung
+├── apps/mobile/            # App Flutter cho iOS và Android
+│   ├── lib/app/            #   khung app, router, theme (persona), provider
+│   ├── lib/features/       #   mỗi tính năng một thư mục (quy ước ở lib/features/README.md)
+│   ├── lib/data/           #   drift, repository, đồng bộ
+│   ├── lib/shared/         #   widget dùng chung của design system
 │   └── assets/             #   font, bảng thiết kế persona
-├── packages/ourney_core/   # Model, streak, validation, template (Dart thuần)
-├── supabase/               # migrations, RLS, RPC, Edge Functions, pgTAP
-├── scripts/                # release, deploy Supabase, GitHub, build IPA
-├── docs/                   # SRS, chia việc, ADR, contract, runbook
-└── .github/                # CI/CD, CODEOWNERS, PR template
+├── packages/ourney_core/   # Model, streak, kiểm tra dữ liệu, mẫu hành trình (Dart thuần)
+├── supabase/               # Migration, RLS, RPC, Edge Functions, test pgTAP
+├── scripts/                # Script phát hành, deploy Supabase, GitHub, đóng gói IPA
+├── docs/                   # SRS, phân công, ADR, hợp đồng dữ liệu, runbook
+└── .github/                # CI/CD, CODEOWNERS, template PR
 ```
 
-## Bắt đầu nhanh
+## Cài đặt và chạy thử
 
-### Yêu cầu
+### Cần cài sẵn
 
-| Công cụ | Phiên bản | Dùng cho |
+| Công cụ | Phiên bản | Để làm gì |
 |---|---|---|
-| [Flutter](https://docs.flutter.dev/get-started/install) | 3.47.7 (Dart 3.13.5) | App và `ourney_core` |
-| [Docker](https://docs.docker.com/get-docker/) + [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) | CLI 2.121.0 | Backend local |
+| [Flutter](https://docs.flutter.dev/get-started/install) | 3.47.7 (Dart 3.13.5) | Chạy app và `ourney_core` |
+| [Docker](https://docs.docker.com/get-docker/) + [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started) | CLI 2.121.0 | Dựng backend trên máy |
 | [Deno](https://docs.deno.com/runtime/getting_started/installation/) | 2.x | Kiểm tra Edge Functions |
-| JDK | 17 | Build Android |
+| JDK | 17 | Build bản Android |
 
-Không cần Mac: iOS chỉ build trên GitHub Actions.
+Không cần máy Mac: bản iOS do GitHub Actions build.
 
-### Chạy app không cần server
+### Chạy thử không cần server
 
 ```bash
 git clone https://github.com/hofang42/Ourney.git
 cd Ourney/apps/mobile
 flutter pub get
-flutter run              # local-only mode: đủ journey solo, chưa có nhóm
+flutter run
 ```
 
-### Chạy với Supabase local
+Ở chế độ này (local-only), bạn dùng được đầy đủ các hành trình một mình, chỉ chưa có tính năng nhóm.
+
+### Chạy với Supabase trên máy
 
 ```bash
-# Ở gốc repo: dựng Postgres, Auth, Storage bằng Docker, áp migration trong supabase/
+# Ở thư mục gốc của repo: Docker dựng Postgres, Auth, Storage và áp migration trong supabase/
 supabase start           # in ra API URL và anon key
 
-# Điền URL và anon key vào env.json (đã gitignore)
+# Chép file mẫu rồi điền URL và anon key vào (env.json đã nằm trong .gitignore)
 cp apps/mobile/env.example.json apps/mobile/env.json
 
 cd apps/mobile
 flutter run --dart-define-from-file=env.json
 ```
 
-Chạy trên điện thoại thật thì đặt `SUPABASE_URL` là IP LAN của máy đang chạy Docker. **Không bao giờ** đưa `service_role` key vào app hay commit vào repo.
+Nếu chạy trên điện thoại thật, đặt `SUPABASE_URL` là địa chỉ IP LAN của máy đang chạy Docker. **Tuyệt đối không** đưa `service_role` key vào app hay commit lên repo.
 
-### Cài app bản build sẵn
+### Cài bản build sẵn
 
-- **Android:** tải `.apk` từ [Releases](https://github.com/hofang42/Ourney/releases) hoặc artifact của workflow `Android (APK)`.
-- **iOS:** tải `Ourney-unsigned.ipa` rồi tự ký bằng Apple ID miễn phí, theo [docs/platform/ios.md](docs/platform/ios.md).
+- **Android:** tải file `.apk` ở mục [Releases](https://github.com/hofang42/Ourney/releases), hoặc trong artifact của workflow `Android (APK)`.
+- **iOS:** tải `Ourney-unsigned.ipa` rồi tự ký bằng Apple ID miễn phí, làm theo [docs/platform/ios.md](docs/platform/ios.md).
 
-## Kiểm thử
+## Kiểm tra trước khi mở PR
 
-Mỗi dòng ứng với một job trong [`ci.yml`](.github/workflows/ci.yml). Chạy phần mình đụng trước khi mở PR.
+CI chạy bốn nhóm kiểm tra dưới đây (xem [`ci.yml`](.github/workflows/ci.yml)). Bạn sửa phần nào thì chạy phần đó trên máy trước khi mở PR.
 
-| Phạm vi | Lệnh | Chạy ở |
+| Phần | Lệnh | Chạy ở |
 |---|---|---|
 | Logic dùng chung | `dart pub get && dart analyze && dart test` | `packages/ourney_core` |
 | App | `flutter pub get`<br>`dart run tool/gen_l10n.dart`<br>`dart run build_runner build -d`<br>`flutter analyze && dart analyze && flutter test` | `apps/mobile` |
-| Backend | `supabase start && supabase test db`<br>`deno check supabase/functions/*/index.ts` | gốc repo |
-| Script | `find scripts -name '*.sh' -print0 \| xargs -0 shellcheck`<br>`bash scripts/tests/run.sh` | gốc repo |
+| Backend | `supabase start && supabase test db`<br>`deno check supabase/functions/*/index.ts` | Thư mục gốc |
+| Script | `find scripts -name '*.sh' -print0 \| xargs -0 shellcheck`<br>`bash scripts/tests/run.sh` | Thư mục gốc |
 
-File sinh ra (l10n, `*.g.dart`) được commit. CI fail nếu chạy codegen làm đổi file. `dart analyze` chạy thêm `riverpod_lint` mà `flutter analyze` không chạy.
+File sinh tự động (l10n, `*.g.dart`) phải commit kèm: nếu chạy lại codegen mà file thay đổi thì CI sẽ báo lỗi. Nhớ chạy cả `dart analyze`, vì chỉ lệnh này mới chạy `riverpod_lint`, còn `flutter analyze` thì không.
 
-## CI/CD và phát hành
+## Build và phát hành
 
-| Workflow | Chạy khi | Kết quả |
+| Workflow | Khi nào chạy | Kết quả |
 |---|---|---|
-| [`ci.yml`](.github/workflows/ci.yml) | Mọi PR, push lên `main` | Analyze + test cho core, app, Supabase, script |
-| [`android.yml`](.github/workflows/android.yml) | Push lên `main`, tag `v*` | APK release (ký bằng debug key nếu chưa có keystore) |
-| [`ios.yml`](.github/workflows/ios.yml) | Push lên `main`, tag `v*` | `Ourney-unsigned.ipa` |
-| [`deploy-supabase.yml`](.github/workflows/deploy-supabase.yml) | Chạy tay, chỉ từ `main` | Áp migration, deploy Edge Functions và cấu hình Auth trên Supabase hosted (mặc định dry run) |
+| [`ci.yml`](.github/workflows/ci.yml) | Mỗi PR và mỗi lần push lên `main` | Kiểm tra và chạy test cho core, app, Supabase, script |
+| [`android.yml`](.github/workflows/android.yml) | Push lên `main` hoặc tạo tag `v*` | File APK bản release (chưa có keystore thì ký bằng debug key) |
+| [`ios.yml`](.github/workflows/ios.yml) | Push lên `main` hoặc tạo tag `v*` | File `Ourney-unsigned.ipa` |
+| [`deploy-supabase.yml`](.github/workflows/deploy-supabase.yml) | Bấm chạy tay, chỉ từ `main` | Áp migration, deploy Edge Functions và cấu hình Auth trên Supabase hosted (mặc định chỉ chạy thử) |
 
-Phát hành: admin tạo tag `v*`, workflow tự gắn IPA và APK vào GitHub Release. Checklist ở [docs/runbooks/release.md](docs/runbooks/release.md); server hosted ở [docs/runbooks/hosted-supabase.md](docs/runbooks/hosted-supabase.md).
+Muốn phát hành, admin tạo tag `v*`, workflow sẽ tự đính kèm IPA và APK vào GitHub Release. Các bước chi tiết ở [docs/runbooks/release.md](docs/runbooks/release.md). Dựng server thật thì xem [docs/runbooks/hosted-supabase.md](docs/runbooks/hosted-supabase.md).
 
-## Đóng góp
+## Cách làm việc chung
 
-1. **Nhận task** trong [docs/TASKS.md](docs/TASKS.md). Mỗi người sở hữu một vùng thư mục (§2, và §7.1 cho giai đoạn Persona UI). Cần sửa ngoài vùng thì mở PR nhỏ và nhờ chủ vùng review.
-2. **Tạo branch** `feat/<task-id>-<slug>`, `fix/...` hoặc `chore/...`, ví dụ `feat/Z1-chain-grid`.
-3. **Commit** theo [Conventional Commits](https://www.conventionalcommits.org/): `feat(journeys): ...`, `fix(camera): ...`.
-4. **Mở PR** theo [template](.github/pull_request_template.md): làm gì, vì sao, bằng chứng test, ảnh hoặc video trên iPhone và Android với thay đổi UI.
-5. **Merge** khi CI xanh và đã resolve hết comment. Reviewer theo cặp trong TASKS, trả lời trong 24h.
+1. **Nhận việc** trong [docs/TASKS.md](docs/TASKS.md). Mỗi người phụ trách một vùng thư mục (mục 2; riêng giai đoạn Persona UI xem mục 7.1). Cần sửa sang vùng của người khác thì tách PR nhỏ và nhờ người đó review.
+2. **Đặt tên nhánh** theo dạng `feat/<mã task>-<tên ngắn>` (hoặc `fix/...`, `chore/...`), ví dụ `feat/Z1-chain-grid`.
+3. **Commit** theo [Conventional Commits](https://www.conventionalcommits.org/), ví dụ `feat(journeys): ...`, `fix(camera): ...`.
+4. **Mở PR** theo [template](.github/pull_request_template.md): làm gì, vì sao, đã test thế nào. Có sửa giao diện thì kèm ảnh hoặc video trên iPhone và Android.
+5. **Merge** khi CI xanh và mọi comment đã xử lý xong. Người review theo cặp ghi trong TASKS, cố gắng phản hồi trong 24 giờ.
 
-Luật không được phá ([SRS](docs/SRS.md) §6.4):
+Mấy luật bất di bất dịch ([SRS](docs/SRS.md) mục 6.4):
 
-- Không commit secret (`service_role`, SMTP key, keystore, Apple ID). Dùng GitHub Secrets hoặc `env.json`.
-- Bảng mới phải có RLS và pgTAP test. Repo public, anon key là public, nên RLS là lớp bảo vệ duy nhất.
+- Không commit secret (`service_role`, key SMTP, keystore, Apple ID). Secret để trong GitHub Secrets hoặc `env.json`.
+- Tạo bảng mới phải có RLS và test pgTAP. Repo để public, anon key vốn công khai, nên RLS là lớp bảo vệ duy nhất.
 - Không xếp hạng người dùng theo kết quả cơ thể.
-- Thư viện hoặc API mới phải kèm link tài liệu trong PR.
-- UI: đủ light và dark, không dùng chữ hay emoji thay icon hệ thống, không tràn chữ tiếng Việt ([CLAUDE.md](CLAUDE.md)).
+- Dùng thư viện hay API mới thì dẫn link tài liệu trong PR.
+- Giao diện phải đúng cả nền sáng lẫn nền tối, không dùng chữ hay emoji thay cho icon hệ thống, chữ tiếng Việt không được tràn hay mất dấu ([CLAUDE.md](CLAUDE.md)).
 
-## Làm việc với Claude Code
+## Dùng Claude Code trong dự án
 
-Repo có sẵn cấu hình cho [Claude Code](https://claude.com/claude-code):
+Repo đã cấu hình sẵn cho [Claude Code](https://claude.com/claude-code):
 
-- [`CLAUDE.md`](CLAUDE.md): luật UI/UX bắt buộc (theme, dock 3 tab, responsive, 6 persona).
-- [`.claude/skills/`](.claude/skills/README.md): skill của dự án, gọi bằng `/<tên>`.
+- [`CLAUDE.md`](CLAUDE.md) ghi các luật UI/UX bắt buộc: theme, thanh điều hướng 3 tab, responsive, 6 persona.
+- [`.claude/skills/`](.claude/skills/README.md) chứa các skill riêng của dự án, gọi bằng `/<tên skill>`.
 
-| Skill | Dùng khi |
+| Skill | Dùng lúc nào |
 |---|---|
-| `/recall [task ID]` | Bắt đầu hoặc tiếp tục một task: đọc task, nhật ký, bài học |
-| `/design-ref <persona> <màn>` | Làm UI persona: cắt và phóng to đúng màn trong bảng thiết kế |
-| `/pr-check [task ID]` | Trước khi mở PR: chạy đúng các job CI liên quan, soạn PR body |
-| `/wrap-up` | Cuối phiên: ghi nhật ký (task, commit, bằng chứng test) |
-| `/lesson [lỗi]` | Khi Claude làm sai: ghi bài học và đề xuất test chặn |
+| `/recall [mã task]` | Bắt đầu hoặc làm tiếp một task: gợi lại task, nhật ký và bài học cũ |
+| `/design-ref <persona> <màn>` | Làm giao diện persona: cắt và phóng to đúng màn trong bảng thiết kế |
+| `/pr-check [mã task]` | Trước khi mở PR: chạy đúng các job CI liên quan và soạn sẵn nội dung PR |
+| `/wrap-up` | Cuối buổi: ghi nhật ký gồm task, commit, bằng chứng test |
+| `/lesson [lỗi]` | Khi Claude làm sai: ghi lại bài học và đề xuất test để lỗi không lặp lại |
 
-Cloud session của Claude Code tự cài Flutter đúng phiên bản CI qua hook [`.claude/hooks/session-start.sh`](.claude/hooks/session-start.sh).
+Khi chạy trên cloud, Claude Code tự cài đúng phiên bản Flutter mà CI đang dùng nhờ hook [`.claude/hooks/session-start.sh`](.claude/hooks/session-start.sh).
 
-## Nhóm phát triển
+## Thành viên
 
-| Thành viên | Vai trò v0.1.0 | Persona UI ([TASKS §7](docs/TASKS.md#7-giai-đoạn-2--persona-ui-mỗi-người-trọn-persona)) |
+| Thành viên | Việc ở bản v0.1.0 | Phần Persona UI ([TASKS mục 7](docs/TASKS.md#7-giai-đoạn-2--persona-ui-mỗi-người-trọn-persona)) |
 |---|---|---|
-| [@hofang42](https://github.com/hofang42) | Owner, server hosted, release | Persona 1 Quiet Transformer, Persona 5 Aesthetic Flexer |
-| [@thydynh03](https://github.com/thydynh03) | QA iPhone, UI, truy vết yêu cầu | Nền tảng dùng chung: theme, dock, khung persona, Hub, tạo journey |
-| [@lken1514](https://github.com/lken1514) | Android, chạy nền, thông báo, native | Persona 4 Couple Rituals, Persona 6 Minimalist Habit |
+| [@hofang42](https://github.com/hofang42) | Chủ dự án, dựng server, phát hành | Persona 1 Quiet Transformer, Persona 5 Aesthetic Flexer |
+| [@thydynh03](https://github.com/thydynh03) | Kiểm thử trên iPhone, giao diện, truy vết yêu cầu | Phần nền dùng chung: theme, thanh điều hướng, khung persona, Hub, màn tạo hành trình |
+| [@lken1514](https://github.com/lken1514) | Android, chạy nền, thông báo, phần native | Persona 4 Couple Rituals, Persona 6 Minimalist Habit |
 | [@nguyenductien-qnm](https://github.com/nguyenductien-qnm) | Web, backend, vận hành | Persona 2 Accountability Squad, Persona 3 Memory Collectors |
 
-## Tài liệu
+## Tài liệu nên đọc
 
-| Tài liệu | Nội dung |
+| File | Nội dung |
 |---|---|
-| [SRS.md](docs/SRS.md) | **Đọc đầu tiên.** Sản phẩm là gì, phạm vi v1, yêu cầu, cách làm việc |
-| [TASKS.md](docs/TASKS.md) | Chia việc, vùng sở hữu, cặp review, lịch |
-| [03-design-system.md](docs/03-design-system.md) | Màu, font, motion, share card |
-| [06-adaptive-persona-ui-system.md](docs/06-adaptive-persona-ui-system.md) | 6 persona skin, token light/dark, chuyển journey không reset |
+| [SRS.md](docs/SRS.md) | **Đọc đầu tiên.** Ourney là gì, phạm vi bản v1, các yêu cầu và cách cả nhóm làm việc |
+| [TASKS.md](docs/TASKS.md) | Ai làm gì, ai phụ trách thư mục nào, ai review cho ai, lịch làm việc |
+| [03-design-system.md](docs/03-design-system.md) | Màu, font, chuyển động, share card |
+| [06-adaptive-persona-ui-system.md](docs/06-adaptive-persona-ui-system.md) | 6 persona, bảng màu sáng/tối, cách đổi hành trình mà không phải tải lại app |
 | [contracts/](docs/contracts/) | Hợp đồng dữ liệu giữa app và backend |
-| [adr/](docs/adr/) | Quyết định kiến trúc (iOS tối thiểu, email hỗ trợ, văn bản pháp lý) |
+| [adr/](docs/adr/) | Các quyết định kiến trúc đã chốt: phiên bản iOS tối thiểu, email hỗ trợ, văn bản pháp lý |
 | [platform/](docs/platform/) | Ghi chú riêng cho iOS và Android |
-| [runbooks/](docs/runbooks/) | Vận hành: Supabase hosted, release |
-| [01](docs/01-analysis.md) · [02](docs/02-requirements-v2.md) · [04](docs/04-implementation-plan-v1.md) · [05](docs/05-platform-plan-ios-android.md) | Phân tích, requirement chi tiết, plan triển khai, plan nền tảng |
+| [runbooks/](docs/runbooks/) | Hướng dẫn vận hành: Supabase hosted, phát hành |
+| [01](docs/01-analysis.md) · [02](docs/02-requirements-v2.md) · [04](docs/04-implementation-plan-v1.md) · [05](docs/05-platform-plan-ios-android.md) | Phân tích thị trường, yêu cầu chi tiết, kế hoạch triển khai, kế hoạch cho từng nền tảng |
 
 ## Giấy phép
 
-Chưa chọn giấy phép (repo chưa có file `LICENSE`).
+Dự án chưa chọn giấy phép, repo chưa có file `LICENSE`.
