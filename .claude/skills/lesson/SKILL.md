@@ -25,7 +25,7 @@ MEM = thư mục memory của phiên (mục Memory trong system prompt). File tr
    | Có lệnh đo mà không chạy | viết sẵn lệnh kiểm chứng rồi kết luận bằng suy luận |
    | Dừng ở khác biệt đầu tiên | thấy một nghi phạm là chốt, không liệt kê hết các tầng (app → data layer → RLS → storage → mạng) |
    | Làm trái rule hoặc tài liệu đã có | trái `CLAUDE.md`, `.claude/rules/`, hoặc quy ước ghi trong `docs/` |
-   | Bỏ qua bài học hoặc quyết định đã có | memory, ADR, TASKS §4 có sẵn mà không áp |
+   | Bỏ qua bài học hoặc quyết định đã có | memory, ADR có sẵn mà không áp |
    | Hiểu sai ý user | user hỏi A, trả lời B |
    | Dựa trí nhớ thay vì docs | bịa API của plugin, version, flag |
 
@@ -50,7 +50,7 @@ MEM = thư mục memory của phiên (mục Memory trong system prompt). File tr
    | App, data layer, sync (`apps/mobile/`) | test trong `apps/mobile/test/` | `flutter test` |
    | Loại lỗi CI hiện chưa bắt | đề xuất thêm step vào `.github/workflows/ci.yml` | chạy lại CI |
 
-   Test nằm ngoài vùng sở hữu của người đang làm thì nêu chủ vùng cần review (TASKS §2).
+   Test nằm ngoài vùng sở hữu của người đang làm thì nêu chủ vùng cần review (TASKS §1).
 7. **Viết hoặc cập nhật memory** theo khung, rồi thêm hoặc sửa dòng trong `MEM/MEMORY.md`:
 
    ```markdown

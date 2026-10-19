@@ -36,7 +36,7 @@ Task: $ARGUMENTS (trống thì lấy task ID từ tên nhánh bên dưới).
 ## Quy trình
 
 1. **Điều kiện trước:**
-   - Đang ở `main` → dừng, nhờ user tạo nhánh (đặt tên theo `docs/TASKS.md` hoặc `docs/SRS.md` §6.2). `main` không nhận push thẳng (TASKS §6).
+   - Đang ở `main` → dừng, nhờ user tạo nhánh (đặt tên theo `docs/TASKS.md` hoặc `docs/SRS.md` §6.2). `main` không nhận push thẳng (ruleset, xem `scripts/github/setup-rulesets.sh`).
    - Chạy `git fetch origin main`, rồi `git rev-list --left-right --count origin/main...HEAD` để biết nhánh có tụt sau `main` không.
    - Tụt sau `main` thì HỎI user có rebase không (SRS §6.2 bước 5). Có thay đổi chưa commit thì không rebase, báo user. Không bao giờ tự force-push.
 2. **Chọn job CI:** đọc `ci.yml`, chọn job theo vùng bị đụng ở bối cảnh trên. Gợi ý ánh xạ, kiểm lại với `ci.yml` và `pubspec.yaml` trước khi dùng:

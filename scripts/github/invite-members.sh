@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Invites the Ourney contributors (docs/TASKS.md §2) to the repo with `push` (write) permission.
+# Invites the Ourney contributors (docs/TASKS.md §1) to the repo with `push` (write) permission.
 #
 #   bash scripts/github/invite-members.sh            # dry run: prints what it would do
 #   bash scripts/github/invite-members.sh --apply    # really sends the invitations
@@ -11,7 +11,7 @@ set -euo pipefail
 
 REPO="${REPO:-hofang42/Ourney}"
 PERMISSION="push"
-USERS=(thydynh03 lken1514 nguyenductien-qnm)
+USERS=(thydynh03 lken1514 nguyenductien-qnm zacknguyn)
 
 DRY_RUN=1
 for arg in "$@"; do
