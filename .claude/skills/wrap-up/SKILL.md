@@ -28,7 +28,7 @@ MEM = thư mục memory của phiên (mục Memory trong system prompt). Auto me
    - Grep trước (`grep -ril "<từ khoá>" MEM`). Có file cùng chủ đề thì cập nhật file đó và thêm mốc ngày, không tạo bản trùng.
    - Memory nào phiên này chứng minh là sai hoặc lỗi thời → sửa hoặc xoá, sửa luôn dòng index.
    - Không ghi thứ git, code hay `docs/` đã ghi, và không chép rule vào memory.
-5. **Thứ cả nhóm cần biết thì ĐỀ XUẤT, không tự sửa:** quyết định kiến trúc → nháp ADR trong `docs/adr/`; đổi bảng, RPC → `docs/contracts/schema.md`; task xong hoặc đổi phạm vi → `docs/TASKS.md`; thấy repo nên có rule mới → đề xuất cho người phụ trách rule. Chủ vùng phải review xem TASKS §2.
+5. **Thứ cả nhóm cần biết thì ĐỀ XUẤT, không tự sửa:** quyết định kiến trúc → nháp ADR trong `docs/adr/`; đổi bảng, RPC → `docs/contracts/schema.md`; task xong hoặc đổi phạm vi → `docs/TASKS.md`; thấy repo nên có rule mới → đề xuất cho người phụ trách rule. Chủ vùng phải review xem TASKS §1.
 6. **MEMORY.md:** mỗi file mới thêm đúng 1 dòng `- [Tiêu đề](file.md) — móc nhớ ≤ 150 ký tự`. Ghi xong chạy `wc -l -c MEM/MEMORY.md`; quá 170 dòng hoặc 20KB thì đề xuất gộp, bỏ dòng cũ (Claude Code chỉ nạp 200 dòng hoặc 25KB đầu).
 7. **Báo cáo:** bảng `| Loại | File | Mới/Cập nhật | Nội dung một dòng |`, rồi một câu "Phiên sau bắt đầu từ: ...". User bảo bỏ dòng nào thì xoá ngay.
 

@@ -1,5 +1,5 @@
 ## Làm gì
-<!-- Task ID trong docs/TASKS.md (vd. L2) và mã yêu cầu SRS (vd. FR-C6) -->
+<!-- Task ID trong docs/TASKS.md (vd. Q1) và mã yêu cầu SRS (vd. FR-C6) -->
 
 ## Vì sao
 
@@ -10,7 +10,7 @@
 - [ ] UI: Android (hoặc ghi "android-verify pending")
 
 ## Checklist
-- [ ] Chỉ sửa trong vùng sở hữu (docs/TASKS.md §2), hoặc đã nhờ chủ vùng review
+- [ ] Chỉ sửa trong vùng sở hữu (docs/TASKS.md §1), hoặc đã nhờ chủ vùng review
 - [ ] Không có secret trong diff
 - [ ] Thư viện/API mới có link docs
 - [ ] Bảng mới có RLS + pgTAP test (nếu đụng `supabase/`)

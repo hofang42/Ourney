@@ -22,16 +22,16 @@ MEM = thư mục memory của phiên (mục Memory trong system prompt). Nhật 
 
 1. **Task:** task nằm ở `docs/TASKS.md`. Đọc dòng của task (cột "Xong khi", "Phụ thuộc") và mã FR/NFR liên quan trong `docs/SRS.md`. Nhánh không chứa task ID và user không nêu thì hỏi user đang làm task nào.
 2. **Việc còn dở:** đọc mục nhật ký gần nhất của task này trong `MEM/journal/` (file mới nhất trước), lấy dòng "Còn dở".
-3. **Rule và tài liệu áp cho task:** rule không có `paths` được Claude Code nạp sẵn, rule có `paths` chỉ nạp khi đụng file khớp; chỉ cần nêu rule nào áp cho phần sắp sửa. Tài liệu dự án thì tra theo vùng sắp đụng: `supabase/` → `docs/SRS.md` §6.4 và `docs/contracts/schema.md`; `lib/features/` → `apps/mobile/lib/features/README.md`; sửa ngoài vùng mình → `docs/TASKS.md` §2. Chỉ ghi tên rule hoặc file + số mục, không chép nội dung.
+3. **Rule và tài liệu áp cho task:** rule không có `paths` được Claude Code nạp sẵn, rule có `paths` chỉ nạp khi đụng file khớp; chỉ cần nêu rule nào áp cho phần sắp sửa. Tài liệu dự án thì tra theo vùng sắp đụng: `supabase/` → `docs/SRS.md` §6.4 và `docs/contracts/schema.md`; `lib/features/` → `apps/mobile/lib/features/README.md`; sửa ngoài vùng mình → `docs/TASKS.md` §1. Chỉ ghi tên rule hoặc file + số mục, không chép nội dung.
 4. **Bài học của mình:** `grep -ril -E "<kw1>|<kw2>|<kw3>" MEM` với từ khoá là task ID, tên feature, plugin, bảng DB, loại lỗi. Đọc trọn tối đa 5 file khớp nhất, vì file memory không tự nạp.
-5. **Đã chốt:** `docs/adr/`, `docs/runbooks/`, TASKS §4 "Quyết định mặc định", và quyết định ghi trong nhật ký.
+5. **Đã chốt:** `docs/adr/`, `docs/runbooks/`, và quyết định ghi trong nhật ký.
 6. **Kiểm memory còn đúng:** memory nhắc file, nhánh, PR, commit SHA thì kiểm còn tồn tại (`ls`, `git branch -a`, `git cat-file -t <sha>`, `gh pr view`) trước khi dựa vào. Sai thì nói ra và sửa memory.
 7. **Trả lời ngắn**, tối đa khoảng 14 dòng, theo 6 mục (mục nào trống thì bỏ):
    - **Task:** ID, "Xong khi", phụ thuộc
    - **Lần trước dừng ở:** ...
    - **Rule, tài liệu áp cho việc này:** tên rule, hoặc file + số mục
    - **Bài học của mình:** mỗi dòng một bài học, kèm link file memory
-   - **Đã chốt, đừng lật lại:** ADR, runbook, TASKS §4, nhật ký
+   - **Đã chốt, đừng lật lại:** ADR, runbook, nhật ký
    - **Bẫy đã gặp:** chuyện gì, ở đâu
 
    Không tìm thấy gì thì nói thẳng "chưa có ghi chú nào về <chủ đề>".

@@ -1,7 +1,7 @@
 # Runbook: Release `vX.Y.Z` (H5)
 
-> Chủ: @hofang42 (admin). Chỉ admin được tạo tag `v*` (ruleset, xem [TASKS.md](../TASKS.md) §6). Tag kích hoạt hai workflow **iOS (unsigned IPA)** và **Android (APK)**; mỗi workflow tự gắn file vào GitHub Release và sinh release notes theo [`.github/release.yml`](../../.github/release.yml).
-> Release theo **ngày cố định**: chỉ bug Blocker/Critical chặn release, việc chưa xong chuyển sang bản sau (TASKS §1, mục 5).
+> Chủ: @hofang42 (admin). Chỉ admin được tạo tag `v*` (ruleset, xem [`scripts/github/setup-rulesets.sh`](../../scripts/github/setup-rulesets.sh)). Tag kích hoạt hai workflow **iOS (unsigned IPA)** và **Android (APK)**; mỗi workflow tự gắn file vào GitHub Release và sinh release notes theo [`.github/release.yml`](../../.github/release.yml).
+> Release theo **ngày cố định**: chỉ bug Blocker/Critical chặn release, việc chưa xong chuyển sang bản sau.
 
 ## 1. Checklist
 

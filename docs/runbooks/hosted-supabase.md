@@ -1,7 +1,7 @@
 # Runbook: Supabase hosted + SMTP riêng (H1, H2)
 
 > Chủ: @hofang42. Script: [`scripts/supabase/deploy-hosted.sh`](../../scripts/supabase/deploy-hosted.sh). Workflow: [`deploy-supabase.yml`](../../.github/workflows/deploy-supabase.yml).
-> Chỉ cần cho dogfood nhóm. Dev/test hằng ngày vẫn dùng `supabase start` (local, mailpit), xem [TASKS.md](../TASKS.md) §1.
+> Chỉ cần cho dogfood nhóm. Dev/test hằng ngày vẫn dùng `supabase start` (local, mailpit), xem [README](../../README.md#chạy-cùng-supabase-trên-máy).
 
 ## 1. Tạo project (làm tay, một lần)
 

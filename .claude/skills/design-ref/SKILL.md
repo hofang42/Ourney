@@ -1,6 +1,6 @@
 ---
 name: design-ref
-description: Đọc bảng thiết kế UI của Ourney trong apps/mobile/assets/design_personas/ (6 persona × 3 màn timeline, camera HUD, share/squad) — cắt đúng màn cần làm, phóng to để xem chi tiết, rồi đối chiếu với token và spec (trỏ tới nguồn, không chép). Dùng trước khi code hoặc review một màn timeline, camera HUD, share card hay squad wall của persona; khi task trong docs/TASKS.md §7 (F, Q, R, S, M, D, Z) trỏ tới một bảng; hoặc khi user gõ /design-ref.
+description: Đọc bảng thiết kế UI của Ourney trong apps/mobile/assets/design_personas/ (6 persona × 3 màn timeline, camera HUD, share/squad) — cắt đúng màn cần làm, phóng to để xem chi tiết, rồi đối chiếu với token và spec (trỏ tới nguồn, không chép). Dùng trước khi code hoặc review một màn timeline, camera HUD, share card hay squad wall của persona; khi task trong docs/TASKS.md §3 (F, Q, R, S, M, D, Z, J) trỏ tới một bản thiết kế; hoặc khi user gõ /design-ref.
 argument-hint: "[persona 1-6 | PersonaSkinId] [timeline | camera | share | all]"
 allowed-tools:
   - Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/crop.py *)
@@ -8,7 +8,7 @@ allowed-tools:
 
 # Design ref — đọc bảng thiết kế persona (Ourney)
 
-Yêu cầu: $ARGUMENTS (trống thì lấy persona và màn từ dòng task trong `docs/TASKS.md` §7, cột "Bảng thiết kế"; vẫn không rõ thì hỏi user).
+Yêu cầu: $ARGUMENTS (trống thì lấy persona và màn từ dòng task trong `docs/TASKS.md` §3, cột "Bản thiết kế"; vẫn không rõ thì hỏi user).
 
 **Skill khác rule.** Skill này chỉ là quy trình đọc ảnh thiết kế. Rule UI nằm ở `CLAUDE.md` và `.agent/rules/adaptive-persona-ui.md`; rule thắng nếu ảnh hoặc skill mâu thuẫn với rule.
 

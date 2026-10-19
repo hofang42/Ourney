@@ -27,7 +27,7 @@ Ourney ra đời từ một điều rất quen thuộc: đặt mục tiêu thì 
 
 Strava dành cho người chạy bộ, Duolingo dành cho người học ngoại ngữ, còn Ourney dành cho mọi mục tiêu: giảm cân, học tiếng Anh, tập luyện, một chuyến đi xa hay một thói quen nhỏ bạn muốn giữ. Bạn có thể đi một mình, hoặc rủ vài người bạn thân cùng nhắc nhau. Chuỗi ngày liên tiếp càng dài lại càng tiếc nếu để đứt, và cả nhóm vẫn đang chờ bạn điểm danh, nên ngày nào cũng có một lý do để quay lại.
 
-Hiện nhóm đang hoàn thiện bản thử nghiệm đầu tiên, `v0.1.0`. Mã nguồn đã đáp ứng đủ các yêu cầu bắt buộc trong [tài liệu đặc tả](docs/SRS.md), toàn bộ kiểm thử tự động đều đạt, và đã có bản cài thử cho cả iOS lẫn Android. Những việc còn lại được ghi trong [docs/TASKS.md](docs/TASKS.md).
+Hiện nhóm đang hoàn thiện bản thử nghiệm đầu tiên, `v0.1.0`. Mã nguồn đã đáp ứng đủ các yêu cầu bắt buộc trong [tài liệu đặc tả](docs/SRS.md), toàn bộ kiểm thử tự động đều đạt, và đã có bản cài thử cho cả iOS lẫn Android. Đợt việc tiếp theo là làm đủ sáu phong cách giao diện, đã được chia cho cả nhóm trong [docs/TASKS.md](docs/TASKS.md).
 
 ## Tính năng chính
 
@@ -185,11 +185,11 @@ Các tệp sinh tự động (bản dịch, `*.g.dart`) cần được commit c�
 
 ## Quy trình làm việc
 
-1. **Nhận việc** trong [docs/TASKS.md](docs/TASKS.md). Mỗi người phụ trách một vùng thư mục riêng (mục 2; giai đoạn giao diện sáu phong cách xem mục 7.1). Khi cần sửa sang vùng của người khác, hãy tách thành một pull request nhỏ và nhờ chính người đó xem giúp.
+1. **Nhận việc** trong [docs/TASKS.md](docs/TASKS.md). Mỗi người phụ trách một vùng thư mục riêng, ghi ở mục 1. Khi cần sửa sang vùng của người khác, hãy tách thành một pull request nhỏ và nhờ chính người đó xem giúp.
 2. **Đặt tên nhánh** theo dạng `feat/<mã việc>-<tên ngắn>`, hoặc `fix/...`, `chore/...`; ví dụ `feat/Z1-chain-grid`.
 3. **Viết commit** theo chuẩn [Conventional Commits](https://www.conventionalcommits.org/), chẳng hạn `feat(journeys): ...` hay `fix(camera): ...`.
 4. **Mở pull request** theo [mẫu có sẵn](.github/pull_request_template.md): làm gì, vì sao, đã kiểm thử ra sao. Nếu có thay đổi giao diện, kèm ảnh hoặc video trên cả iPhone lẫn Android.
-5. **Gộp vào `main`** khi CI đạt và mọi góp ý đã được xử lý. Người xem lại được ghép cặp sẵn trong TASKS và cố gắng phản hồi trong vòng 24 giờ.
+5. **Gộp vào `main`** khi CI đạt và mọi góp ý đã được xử lý. Người review đã được phân sẵn trong TASKS và cố gắng phản hồi trong vòng 24 giờ.
 
 Những nguyên tắc bất di bất dịch (xem thêm mục 6.4 của [tài liệu đặc tả](docs/SRS.md)):
 
@@ -215,19 +215,20 @@ Khi chạy trên cloud, Claude Code tự cài đúng phiên bản Flutter mà CI
 
 ## Thành viên
 
-| Thành viên | Phụ trách ở bản v0.1.0 | Giai đoạn sáu phong cách ([TASKS mục 7](docs/TASKS.md#7-giai-đoạn-2--persona-ui-mỗi-người-trọn-persona)) |
-|---|---|---|
-| [@hofang42](https://github.com/hofang42) | Chủ dự án, dựng máy chủ, phát hành | Quiet Transformer và Aesthetic Flexer |
-| [@thydynh03](https://github.com/thydynh03) | Kiểm thử trên iPhone, giao diện, truy vết yêu cầu | Phần nền dùng chung: giao diện gốc, thanh điều hướng, khung phong cách, trang hành trình, màn tạo hành trình |
-| [@lken1514](https://github.com/lken1514) | Android, tác vụ nền, thông báo, mã native | Couple Rituals và Minimalist Habit |
-| [@nguyenductien-qnm](https://github.com/nguyenductien-qnm) | Web, máy chủ, vận hành | Accountability Squad và Memory Collectors |
+| Thành viên | Phụ trách ([TASKS mục 1](docs/TASKS.md#1-phân-công-và-thư-mục)) |
+|---|---|
+| [@hofang42](https://github.com/hofang42) | Chủ dự án. Phong cách Quiet Transformer và Aesthetic Flexer |
+| [@thydynh03](https://github.com/thydynh03) | Phần nền dùng chung: theme, thanh điều hướng, khung phong cách, widget dùng chung |
+| [@nguyenductien-qnm](https://github.com/nguyenductien-qnm) | Phong cách Accountability Squad và Memory Collectors |
+| [@lken1514](https://github.com/lken1514) | Phong cách Couple Rituals, kèm dữ liệu nhóm theo ngày |
+| [@zacknguyn](https://github.com/zacknguyn) | Phong cách Minimalist Habit, trang hành trình và màn tạo hành trình |
 
 ## Tài liệu
 
 | Tài liệu | Nội dung |
 |---|---|
 | [SRS.md](docs/SRS.md) | **Nên đọc đầu tiên.** Ourney là gì, phạm vi bản đầu tiên, các yêu cầu và cách cả nhóm làm việc |
-| [TASKS.md](docs/TASKS.md) | Ai làm việc gì, ai phụ trách thư mục nào, ai xem lại cho ai, và lịch làm việc |
+| [TASKS.md](docs/TASKS.md) | Ai làm việc gì, ai phụ trách thư mục nào, ai review cho ai, và lịch làm việc |
 | [03-design-system.md](docs/03-design-system.md) | Màu sắc, phông chữ, chuyển động, thiệp chia sẻ |
 | [06-adaptive-persona-ui-system.md](docs/06-adaptive-persona-ui-system.md) | Sáu phong cách giao diện, bảng màu sáng và tối, cách đổi hành trình mà không cần tải lại ứng dụng |
 | [contracts/](docs/contracts/) | Hợp đồng dữ liệu giữa ứng dụng và máy chủ |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Creates the repository rulesets described in docs/TASKS.md §6.
+# Creates the repository rulesets for main, release branches and v* tags.
 # Run once as a repo admin:  gh auth login && bash scripts/github/setup-rulesets.sh
 # Re-running is safe: existing rulesets with the same name are updated.
 set -euo pipefail
