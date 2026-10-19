@@ -10,6 +10,7 @@ Skill là quy trình mà Claude Code nạp khi được gọi (gõ `/<tên>`, ho
 | `/lesson [lỗi]` | user hoặc Claude | Truy vì sao Claude sai, ghi hoặc nâng cấp bài học, đề xuất test chặn loại lỗi đó |
 | `/wrap-up` | chỉ user | Ghi nhật ký cuối phiên: task ID, commit SHA, mã FR, bằng chứng test, việc còn dở |
 | `/pr-check [task ID]` | chỉ user | Chạy đúng các job CI mà thay đổi đụng tới, rà checklist PR template, soạn PR body |
+| `/design-ref [persona] [màn]` | user hoặc Claude | Cắt và phóng to đúng màn trong bảng thiết kế `apps/mobile/assets/design_personas/`, chỉ ra token cần dùng và lỗi của mockup không được chép. Cần `python3` + Pillow; thiếu Pillow thì đọc cả bảng |
 
 Nhật ký và bài học nằm trong thư mục auto-memory local của từng người (`~/.claude/projects/<repo>/memory/`), không commit.
 
