@@ -1,0 +1,131 @@
+{
+  "@@locale": "vi",
+  "accountability_squad_daysDuration": "{days} NGÀY",
+  "@accountability_squad_daysDuration": {
+    "description": "Badge số ngày tổng của hành trình trên pill đầu màn hình",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "accountability_squad_openDuration": "HẰNG NGÀY",
+  "@accountability_squad_openDuration": {
+    "description": "Nhãn cho hành trình mở (không giới hạn ngày)"
+  },
+  "accountability_squad_dayGoalTrophy": "MỤC TIÊU NGÀY {day}",
+  "@accountability_squad_dayGoalTrophy": {
+    "description": "Nhãn dưới chiếc cúp đích đến của con đường chữ S",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "accountability_squad_dayStartLabel": "NGÀY {day} · BẮT ĐẦU",
+  "@accountability_squad_dayStartLabel": {
+    "description": "Nhãn Polaroid ngày đầu tiên",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "accountability_squad_dayTodayLabel": "NGÀY {day} · HÔM NAY 🔥",
+  "@accountability_squad_dayTodayLabel": {
+    "description": "Nhãn Polaroid của ngày hôm nay",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "accountability_squad_dayWeekMilestone": "NGÀY {day} ★ TUẦN {week}",
+  "@accountability_squad_dayWeekMilestone": {
+    "description": "Nhãn Polaroid ở các mốc 7, 14, 21...",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "week": {
+        "type": "int"
+      }
+    }
+  },
+  "accountability_squad_dayRegularLabel": "NGÀY {day}",
+  "@accountability_squad_dayRegularLabel": {
+    "description": "Nhãn Polaroid cho ngày thường",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "accountability_squad_missedSlot": "Chưa chụp",
+  "@accountability_squad_missedSlot": {
+    "description": "Chú thích cho ô ngày lỡ hoặc hôm nay chưa chụp"
+  },
+  "accountability_squad_studyMetricBadge": "{value} {unit} HỌC",
+  "@accountability_squad_studyMetricBadge": {
+    "description": "Phần thời gian học trên pill màn hình chụp (S2)",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "accountability_squad_streakBadge": "🔥 {streak} CHUỖI NGÀY",
+  "@accountability_squad_streakBadge": {
+    "description": "Phần chuỗi ngày trên pill màn hình chụp (S2)",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "accountability_squad_checkedInProgress": "{done}/{total} ĐÃ CHECK-IN HÔM NAY",
+  "@accountability_squad_checkedInProgress": {
+    "description": "Thanh tiến độ đầu màn hình Squad Polaroid Wall (S3)",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "accountability_squad_memberWaiting": "{name} · ĐANG CHỜ",
+  "@accountability_squad_memberWaiting": {
+    "description": "Ô viền nét đứt cho thành viên chưa chụp ảnh hôm nay (S3)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "accountability_squad_waitingHint": "Chưa check-in hôm nay",
+  "@accountability_squad_waitingHint": {
+    "description": "Dòng phụ trong ô nét đứt đang chờ"
+  },
+  "accountability_squad_emptySquad": "Chưa có thành viên nào trong nhóm này.",
+  "@accountability_squad_emptySquad": {
+    "description": "Trạng thái rỗng khi danh sách thành viên trống"
+  },
+  "accountability_squad_addReaction": "Thả cảm xúc",
+  "@accountability_squad_addReaction": {
+    "description": "Nhãn trợ năng của nút mở bảng chọn cảm xúc dưới ảnh Polaroid (S3)"
+  },
+  "accountability_squad_nudge": "Nhắc {name} 👋",
+  "@accountability_squad_nudge": {
+    "description": "Nút tím nhắc thành viên chưa check-in trong ô chờ (S3, chỉ hiện khi bật Nudge)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
+}

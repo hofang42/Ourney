@@ -1,0 +1,13 @@
+{
+  "@@locale": "en",
+  "memory_collectors_daysHeader": "{title} · {days} DAYS",
+  "memory_collectors_openHeader": "{title} · TRIP JOURNAL",
+  "memory_collectors_dayCaption": "DAY {day} · {caption}",
+  "memory_collectors_dayToday": "DAY {day} · TODAY",
+  "memory_collectors_dayNumber": "DAY {day}",
+  "memory_collectors_filmRollBounded": "FILM ROLL {used}/{total}",
+  "memory_collectors_filmRollOpen": "FILM ROLL #{used}",
+  "memory_collectors_contactSheetSubtitle": "{count} MOMENTS · 35MM FILM",
+  "memory_collectors_sharePosterCta": "Share Trip Poster",
+  "memory_collectors_emptyFilmStrip": "No frames captured on this film roll yet."
+}

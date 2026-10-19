@@ -1,0 +1,19 @@
+{
+  "@@locale": "en",
+  "accountability_squad_daysDuration": "{days} DAYS",
+  "accountability_squad_openDuration": "DAILY",
+  "accountability_squad_dayGoalTrophy": "DAY {day} GOAL",
+  "accountability_squad_dayStartLabel": "DAY {day} · START",
+  "accountability_squad_dayTodayLabel": "DAY {day} · TODAY 🔥",
+  "accountability_squad_dayWeekMilestone": "DAY {day} ★ WEEK {week}",
+  "accountability_squad_dayRegularLabel": "DAY {day}",
+  "accountability_squad_missedSlot": "Not snapped yet",
+  "accountability_squad_studyMetricBadge": "{value} {unit} STUDY",
+  "accountability_squad_streakBadge": "🔥 {streak} STREAK",
+  "accountability_squad_checkedInProgress": "{done}/{total} CHECKED IN TODAY",
+  "accountability_squad_memberWaiting": "{name} · WAITING",
+  "accountability_squad_waitingHint": "Hasn't checked in today",
+  "accountability_squad_emptySquad": "No members in this squad yet.",
+  "accountability_squad_addReaction": "Add a reaction",
+  "accountability_squad_nudge": "Nudge {name} 👋"
+}

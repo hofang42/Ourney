@@ -1,0 +1,92 @@
+{
+  "@@locale": "vi",
+  "memory_collectors_daysHeader": "{title} · {days} NGÀY",
+  "@memory_collectors_daysHeader": {
+    "description": "Tiêu đề đầu dòng thời gian chuyến đi có số ngày cố định (M1)",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "memory_collectors_openHeader": "{title} · NHẬT KÝ HÀNH TRÌNH",
+  "@memory_collectors_openHeader": {
+    "description": "Tiêu đề đầu dòng thời gian chuyến đi mở rộng (M1)",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "memory_collectors_dayCaption": "NGÀY {day} · {caption}",
+  "@memory_collectors_dayCaption": {
+    "description": "Nhãn dưới ảnh Polaroid khi có chú thích (M1)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "caption": {
+        "type": "String"
+      }
+    }
+  },
+  "memory_collectors_dayToday": "NGÀY {day} · HÔM NAY",
+  "@memory_collectors_dayToday": {
+    "description": "Nhãn dưới ảnh Polaroid ngày hôm nay khi chưa có chú thích (M1)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "memory_collectors_dayNumber": "NGÀY {day}",
+  "@memory_collectors_dayNumber": {
+    "description": "Nhãn dưới ảnh Polaroid chỉ có số ngày (M1)",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "memory_collectors_filmRollBounded": "CUỘN PHIM {used}/{total}",
+  "@memory_collectors_filmRollBounded": {
+    "description": "Nhãn cuộn phim trên màn hình chụp khi có tổng số ngày (M2)",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "memory_collectors_filmRollOpen": "CUỘN PHIM #{used}",
+  "@memory_collectors_filmRollOpen": {
+    "description": "Nhãn cuộn phim trên màn hình chụp khi hành trình không giới hạn ngày (M2)",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "memory_collectors_contactSheetSubtitle": "{count} KHOẢNH KHẮC · PHIM 35MM",
+  "@memory_collectors_contactSheetSubtitle": {
+    "description": "Dòng phụ trên thiệp chia sẻ dải phim 35mm (M3)",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "memory_collectors_sharePosterCta": "Chia sẻ áp phích chuyến đi",
+  "@memory_collectors_sharePosterCta": {
+    "description": "Nút bấm chia sẻ ảnh dải phim 35mm (M3)"
+  },
+  "memory_collectors_emptyFilmStrip": "Chưa có khung hình nào trong cuộn phim này.",
+  "@memory_collectors_emptyFilmStrip": {
+    "description": "Trạng thái khi chưa có ảnh nào để dựng contact sheet"
+  }
+}
