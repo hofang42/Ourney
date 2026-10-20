@@ -1,0 +1,34 @@
+{
+  "@@locale": "vi",
+  "aesthetic_flexer_name": "Khoe nhịp tập",
+  "@aesthetic_flexer_name": {
+    "description": "Tên phong cách, hiện ở nhãn đầu màn"
+  },
+  "aesthetic_flexer_dayLabel": "Ngày {day}",
+  "@aesthetic_flexer_dayLabel": {
+    "description": "Ngày thứ N của hành trình",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "aesthetic_flexer_streakLabel": "Chuỗi {streak} ngày",
+  "@aesthetic_flexer_streakLabel": {
+    "description": "Chuỗi ngày liên tiếp",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "aesthetic_flexer_checkInsLabel": "{count} lần check-in",
+  "@aesthetic_flexer_checkInsLabel": {
+    "description": "Số lần check-in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}
