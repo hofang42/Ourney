@@ -10,6 +10,7 @@ import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/active_journey_sync.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../personas/persona_switchers.dart';
 import '../../../shared/chunky_button.dart';
@@ -117,116 +118,119 @@ class JourneyDetailScreen extends ConsumerWidget {
       if (perms.canDelete) _Action.delete,
     ];
 
-    return Scaffold(
-      key: const ValueKey('journey-detail'),
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
-            const SizedBox(width: OurneySpacing.sm),
-            Expanded(
-              child: Text(
-                journey.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+    return ActiveJourneySync(
+      journeyId: journey.id,
+      child: Scaffold(
+        key: const ValueKey('journey-detail'),
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
+              const SizedBox(width: OurneySpacing.sm),
+              Expanded(
+                child: Text(
+                  journey.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              key: const ValueKey('journey-share'),
+              tooltip: l10n.journeys_share,
+              icon: const Icon(Icons.ios_share_rounded),
+              onPressed: () => context.push(AppRoutes.share(journey.id)),
             ),
+            if (actions.isNotEmpty)
+              PopupMenuButton<_Action>(
+                key: const ValueKey('journey-more'),
+                tooltip: l10n.journeys_moreActions,
+                onSelected: (a) => _run(context, ref, journey, a),
+                itemBuilder: (context) => [
+                  for (final a in actions)
+                    PopupMenuItem(
+                      key: ValueKey('journey-action-${a.name}'),
+                      value: a,
+                      child: Text(switch (a) {
+                        _Action.end => l10n.journeys_endJourney,
+                        _Action.archive => l10n.journeys_archive,
+                        _Action.delete => l10n.journeys_delete,
+                      }),
+                    ),
+                ],
+              ),
           ],
         ),
-        actions: [
-          IconButton(
-            key: const ValueKey('journey-share'),
-            tooltip: l10n.journeys_share,
-            icon: const Icon(Icons.ios_share_rounded),
-            onPressed: () => context.push(AppRoutes.share(journey.id)),
-          ),
-          if (actions.isNotEmpty)
-            PopupMenuButton<_Action>(
-              key: const ValueKey('journey-more'),
-              tooltip: l10n.journeys_moreActions,
-              onSelected: (a) => _run(context, ref, journey, a),
-              itemBuilder: (context) => [
-                for (final a in actions)
-                  PopupMenuItem(
-                    key: ValueKey('journey-action-${a.name}'),
-                    value: a,
-                    child: Text(switch (a) {
-                      _Action.end => l10n.journeys_endJourney,
-                      _Action.archive => l10n.journeys_archive,
-                      _Action.delete => l10n.journeys_delete,
-                    }),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              OurneySpacing.screenMargin,
+              OurneySpacing.sm,
+              OurneySpacing.screenMargin,
+              OurneySpacing.xxl,
+            ),
+            children: [
+              if (!perms.isActive) const _ReadOnlyBanner(),
+              if (progress != null) _Stats(progress: progress),
+              const SizedBox(height: OurneySpacing.lg),
+              if (perms.canCheckIn)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: OurneySpacing.md),
+                  child: ChunkyButton(
+                    key: const ValueKey('journey-checkin'),
+                    label: l10n.journeys_checkInNow,
+                    icon: Icons.photo_camera_rounded,
+                    onPressed: () => checkInNow(context, ref, journey.id),
                   ),
-              ],
-            ),
-        ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            OurneySpacing.screenMargin,
-            OurneySpacing.sm,
-            OurneySpacing.screenMargin,
-            OurneySpacing.xxl,
+                ),
+              if (journey.kind == JourneyKind.group)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: OurneySpacing.md),
+                  child: ChunkyButton(
+                    key: const ValueKey('journey-open-group'),
+                    label: l10n.journeys_openGroup,
+                    icon: Icons.groups_rounded,
+                    variant: ChunkyVariant.neutral,
+                    onPressed: () => context.go(AppRoutes.groups),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(
+                  top: OurneySpacing.lg,
+                  bottom: OurneySpacing.md,
+                ),
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.journeys_timelineTitle,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ),
+              if (progress == null)
+                const Padding(
+                  padding: EdgeInsets.all(OurneySpacing.xl),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else
+                PersonaTimelineSwitcher(
+                  skin: personaSkinOf(journey),
+                  data: PersonaTimelineData.fromProgress(
+                    progress,
+                    hideMetric:
+                        membership?.hideMetric ?? journey.hideMetricDefault,
+                    onTapDay: (d) =>
+                        context.push(JourneysPaths.day(journey.id, d.date)),
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                  ),
+                ),
+              if (membership != null && perms.isActive)
+                _PrivacySection(journey: journey, membership: membership),
+            ],
           ),
-          children: [
-            if (!perms.isActive) const _ReadOnlyBanner(),
-            if (progress != null) _Stats(progress: progress),
-            const SizedBox(height: OurneySpacing.lg),
-            if (perms.canCheckIn)
-              Padding(
-                padding: const EdgeInsets.only(bottom: OurneySpacing.md),
-                child: ChunkyButton(
-                  key: const ValueKey('journey-checkin'),
-                  label: l10n.journeys_checkInNow,
-                  icon: Icons.photo_camera_rounded,
-                  onPressed: () => checkInNow(context, ref, journey.id),
-                ),
-              ),
-            if (journey.kind == JourneyKind.group)
-              Padding(
-                padding: const EdgeInsets.only(bottom: OurneySpacing.md),
-                child: ChunkyButton(
-                  key: const ValueKey('journey-open-group'),
-                  label: l10n.journeys_openGroup,
-                  icon: Icons.groups_rounded,
-                  variant: ChunkyVariant.neutral,
-                  onPressed: () => context.go(AppRoutes.groups),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.only(
-                top: OurneySpacing.lg,
-                bottom: OurneySpacing.md,
-              ),
-              child: Semantics(
-                header: true,
-                child: Text(
-                  l10n.journeys_timelineTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ),
-            if (progress == null)
-              const Padding(
-                padding: EdgeInsets.all(OurneySpacing.xl),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else
-              PersonaTimelineSwitcher(
-                skin: personaSkinOf(journey),
-                data: PersonaTimelineData.fromProgress(
-                  progress,
-                  hideMetric:
-                      membership?.hideMetric ?? journey.hideMetricDefault,
-                  onTapDay: (d) =>
-                      context.push(JourneysPaths.day(journey.id, d.date)),
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                ),
-              ),
-            if (membership != null && perms.isActive)
-              _PrivacySection(journey: journey, membership: membership),
-          ],
         ),
       ),
     );

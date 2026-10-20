@@ -4,6 +4,7 @@ import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/app/theme/tokens.dart';
 import 'package:ourney/features/groups/domain/group_today.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
+import 'package:ourney/personas/accountability_squad/persona_widgets.dart';
 import 'package:ourney/personas/accountability_squad/share_card.dart';
 import 'package:ourney/personas/memory_collectors/camera_hud.dart';
 import 'package:ourney/personas/memory_collectors/timeline.dart';
@@ -256,5 +257,41 @@ void main() {
       expect(find.text('default list'), findsOneWidget);
       expect(find.byType(SquadPolaroidWall), findsNothing);
     });
+  });
+
+  testWidgets('the last scrapbook Polaroid stays inside its timeline', (
+    tester,
+  ) async {
+    final j = _journey(TemplateId.travel);
+    await pumpPersona(
+      tester,
+      SingleChildScrollView(
+        child: Column(
+          children: [
+            SizedBox(
+              key: const ValueKey('timeline-box'),
+              child: ScrapbookThreadTimeline(
+                journey: j,
+                days: _timeline(j).days,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                photoBuilder: (_, _) => const ColoredBox(color: Colors.grey),
+              ),
+            ),
+            const Text('Privacy'),
+          ],
+        ),
+      ),
+      skin: PersonaSkinId.memoryCollectors,
+    );
+    final timeline = tester.getRect(find.byKey(const ValueKey('timeline-box')));
+    final lastCard = tester.getRect(find.byType(SquadPolaroidFrame).last);
+    // The card hangs at most a few points over (its tilt), not by half its
+    // height as before.
+    expect(lastCard.bottom, lessThanOrEqualTo(timeline.bottom + 4));
+    expect(
+      tester.getTopLeft(find.text('Privacy')).dy,
+      greaterThan(timeline.bottom - 1),
+    );
   });
 }

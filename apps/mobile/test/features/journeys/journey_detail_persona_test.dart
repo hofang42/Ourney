@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/journeys/ui/timeline_grid.dart';
 import 'package:ourney/personas/accountability_squad/timeline.dart';
 import 'package:ourney/personas/memory_collectors/timeline.dart';
+import 'package:ourney/shared/ourney_dock.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'journeys_fakes.dart';
@@ -27,6 +29,25 @@ void main() {
       ]),
     );
   }
+
+  testWidgets('opening a journey makes it the active one, so the dock and '
+      'the theme follow it', (tester) async {
+    final other = testJourney(id: 'other', templateId: TemplateId.weightLoss);
+    final trip = testJourney(id: 'trip', templateId: TemplateId.travel);
+    final h = await pumpJourneys(
+      tester,
+      locale: const Locale('en'),
+      location: AppRoutes.journey(trip.id),
+      journeys: FakeJourneyRepository(
+        journeys: [other, trip],
+        memberships: {trip.id: testMembership(trip)},
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(h.container.read(activeJourneyIdProvider), 'trip');
+    final dock = tester.element(find.byType(OurneyDock));
+    expect(OurneyPersonaTheme.of(dock).skinId, PersonaSkinId.memoryCollectors);
+  });
 
   testWidgets('travel draws the scrapbook thread', (tester) async {
     await pumpDetail(tester, TemplateId.travel);
