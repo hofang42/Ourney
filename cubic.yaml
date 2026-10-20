@@ -1,0 +1,35 @@
+# yaml-language-server: $schema=https://cubic.dev/schema/cubic-repository-config.schema.json
+# cubic AI code review — https://docs.cubic.dev/configure/cubic-yaml
+# cubic only reads this file from the default branch (main).
+version: 1
+
+reviews:
+  enabled: true
+  sensitivity: medium
+  # Re-review on every push to an open PR.
+  incremental_commits: true
+  check_drafts: false
+  resolve_threads_when_addressed: true
+  custom_instructions: |
+    Ourney is a Flutter app (apps/mobile) with a shared Dart package
+    (packages/ourney_core) and a Supabase backend (supabase/).
+    Review against the rules in CLAUDE.md. Write review comments in Vietnamese.
+  ignore:
+    files:
+      - "**/*.g.dart"
+      - "**/*.freezed.dart"
+      - apps/mobile/dist/
+      - apps/mobile/assets/
+      - "**/pubspec.lock"
+    pr_labels:
+      - skip-review
+  custom_rules:
+    - name: Ourney UI/UX rules
+      file_paths:
+        - CLAUDE.md
+      include:
+        - "apps/mobile/lib/**"
+        - "packages/ourney_core/lib/**"
+
+pr_descriptions:
+  generate: false
