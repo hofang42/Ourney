@@ -21,7 +21,9 @@ import 'share_card.dart';
 import 'timeline.dart';
 
 void main() {
-  runApp(const PersonaPreviewApp());
+  // Root scope (riverpod_lint requires one); the harness re-scopes the app
+  // config and group data below so each toggle gets fresh providers.
+  runApp(const ProviderScope(child: PersonaPreviewApp()));
 }
 
 enum _PreviewScreen {
@@ -85,7 +87,11 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
 
     return ProviderScope(
       overrides: [
+        // The providers below are intentionally re-scoped per toggle in this
+        // dev-only harness, so they declare no `dependencies`.
+        // ignore: riverpod_lint/scoped_providers_should_specify_dependencies
         appConfigProvider.overrideWithValue(config),
+        // ignore: riverpod_lint/scoped_providers_should_specify_dependencies
         currentUserIdProvider.overrideWithValue('u-1'),
         groupBlockedIdsProvider.overrideWith((ref) => Stream.value(const {})),
         for (var i = 1; i <= 5; i++)
