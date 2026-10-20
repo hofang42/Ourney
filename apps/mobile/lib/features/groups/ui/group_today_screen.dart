@@ -9,6 +9,8 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/persona_contract.dart';
+import '../../../personas/persona_switchers.dart';
 import '../../../shared/avatar.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/needs_server_view.dart';
@@ -186,19 +188,57 @@ class GroupTodayScreen extends ConsumerWidget {
               _EndedBanner(text: l10n.groups_endedBanner),
               const SizedBox(height: OurneySpacing.md),
             ],
-            _Header(view: view),
-            const SizedBox(height: OurneySpacing.lg),
-            if (view.done.isNotEmpty) ...[
-              _SectionHeader(l10n.groups_doneSection),
-              for (final e in view.done) _MemberCard(entry: e, perms: perms),
-            ],
-            if (view.pending.isNotEmpty) ...[
-              _SectionHeader(l10n.groups_pendingSection),
-              for (final e in view.pending) _MemberCard(entry: e, perms: perms),
-            ],
+            PersonaGroupSwitcher(
+              skin: personaSkinOf(journey),
+              data: PersonaGroupData(
+                journey: journey,
+                members: [...view.done, ...view.pending],
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+              ),
+              fallback: (context) => Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _Header(view: view),
+                  const SizedBox(height: OurneySpacing.lg),
+                  _MemberSections(view: view, perms: perms),
+                ],
+              ),
+              membersFooter: (context) => Padding(
+                padding: const EdgeInsets.only(top: OurneySpacing.lg),
+                child: _MemberSections(view: view, perms: perms),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Done and not-yet sections with one card per member. Each card carries the
+/// report, block and remove actions.
+class _MemberSections extends StatelessWidget {
+  const _MemberSections({required this.view, required this.perms});
+
+  final GroupTodayView view;
+  final GroupPermissions perms;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = GroupsL10n.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (view.done.isNotEmpty) ...[
+          _SectionHeader(l10n.groups_doneSection),
+          for (final e in view.done) _MemberCard(entry: e, perms: perms),
+        ],
+        if (view.pending.isNotEmpty) ...[
+          _SectionHeader(l10n.groups_pendingSection),
+          for (final e in view.pending) _MemberCard(entry: e, perms: perms),
+        ],
+      ],
     );
   }
 }
