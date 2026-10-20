@@ -229,7 +229,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
 
     return switch (journey) {
       AsyncData(value: final j?) => _scaffold(
-        title: '${j.emoji} ${j.title}',
+        title: j.title,
         body: _form(context, j, photo),
       ),
       AsyncData() || AsyncError() => _scaffold(

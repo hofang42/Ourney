@@ -61,7 +61,9 @@ void main() {
       expect(_text(tester, 'share-card-number'), '6');
       expect(_text(tester, 'share-card-caption'), 'ngày liên tiếp');
       expect(_text(tester, 'share-card-title'), 'Tập mỗi ngày');
-      expect(find.text('💪'), findsWidgets);
+      // The journey emoji is drawn as a vector icon, not as keyboard emoji.
+      expect(find.text('💪'), findsNothing);
+      expect(find.byIcon(Icons.fitness_center_rounded), findsWidgets);
       expect(_text(tester, 'share-card-logo'), 'Ourney');
       // No photo resolvable -> illustration.
       expect(_key('share-card-illustration'), findsOneWidget);

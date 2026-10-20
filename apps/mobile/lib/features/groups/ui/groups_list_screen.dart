@@ -13,6 +13,7 @@ import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/profile_button.dart';
+import '../../../shared/template_icons.dart';
 import '../data/groups_providers.dart';
 import '../domain/group_today.dart';
 import '../groups_paths.dart';
@@ -209,10 +210,10 @@ class GroupCard extends ConsumerWidget {
                   color: c.accent.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(OurneyRadii.chip),
                 ),
-                child: Text(
-                  journey.emoji,
-                  textScaler: TextScaler.noScaling,
-                  style: const TextStyle(fontSize: 28),
+                child: Icon(
+                  journeyIcon(journey.emoji, journey.templateId),
+                  size: 28,
+                  color: c.ink,
                 ),
               ),
             ),

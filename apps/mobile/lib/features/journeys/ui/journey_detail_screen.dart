@@ -17,6 +17,7 @@ import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
+import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -119,10 +120,18 @@ class JourneyDetailScreen extends ConsumerWidget {
     return Scaffold(
       key: const ValueKey('journey-detail'),
       appBar: AppBar(
-        title: Text(
-          '${journey.emoji} ${journey.title}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        title: Row(
+          children: [
+            Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
+            const SizedBox(width: OurneySpacing.sm),
+            Expanded(
+              child: Text(
+                journey.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
