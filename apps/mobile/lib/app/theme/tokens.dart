@@ -193,6 +193,12 @@ abstract final class OurneyDurations {
   static const reducedFade = Duration(milliseconds: 200);
   static const confetti = Duration(milliseconds: 1800);
   static const flame = Duration(milliseconds: 900);
+
+  /// Colors morph when the active journey changes persona (docs/06 §1 Q1).
+  static const personaTheme = Duration(milliseconds: 320);
+
+  /// Persona layouts cross-fade when the active journey changes persona.
+  static const personaSwitch = Duration(milliseconds: 260);
 }
 
 abstract final class OurneyCurves {
