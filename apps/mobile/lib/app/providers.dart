@@ -16,11 +16,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../personas/persona_contract.dart';
 import 'config.dart';
 import 'redirect.dart';
 import 'theme/motion.dart';
 
 part 'providers.g.dart';
+
+/// Never retry on a timer (no hidden work behind the theme or the camera).
+Duration? _noRetry(int _, Object _) => null;
 
 // ---------------------------------------------------------------------------
 // Configuration & platform singletons (overridden in main.dart).
@@ -166,4 +170,53 @@ class HapticsEnabled extends _$HapticsEnabled {
     OurneyHaptics.enabled = enabled;
     await ref.read(sharedPreferencesProvider).setBool(prefsKey, enabled);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Active journey and persona skin (F2, docs/06 §1 Q1).
+// ---------------------------------------------------------------------------
+
+/// The journey the user is working in. Its persona skin themes the whole
+/// app; switching it never rebuilds the router or restarts the camera.
+///
+/// Stored in `camera.lastJourneyId`, the same key the capture screen has
+/// always used for the journey chip, so both stay in step.
+@Riverpod(keepAlive: true)
+class ActiveJourneyId extends _$ActiveJourneyId {
+  static const prefsKey = 'camera.lastJourneyId';
+
+  @override
+  String? build() => ref.watch(sharedPreferencesProvider).getString(prefsKey);
+
+  /// Makes [id] the active journey and remembers it across launches.
+  Future<void> select(String id) async {
+    if (state == id) return;
+    state = id;
+    await ref.read(sharedPreferencesProvider).setString(prefsKey, id);
+  }
+}
+
+/// The active journey: the remembered one while it is still active, else the
+/// first active journey (what the capture screen preselects), else null.
+@Riverpod(keepAlive: true, retry: _noRetry)
+Stream<Journey?> activeJourney(Ref ref) {
+  final id = ref.watch(activeJourneyIdProvider);
+  return ref.watch(journeyRepositoryProvider).watchActive().map((all) {
+    final active = [
+      for (final j in all)
+        if (j.status == JourneyStatus.active) j,
+    ];
+    for (final j in active) {
+      if (j.id == id) return j;
+    }
+    return active.firstOrNull;
+  });
+}
+
+/// Persona skin of the active journey, or null for the neutral Ourney base
+/// (no journey yet, or the repository is not available).
+@Riverpod(keepAlive: true)
+PersonaSkinId? activePersonaSkin(Ref ref) {
+  final journey = ref.watch(activeJourneyProvider).value;
+  return journey == null ? null : personaSkinOf(journey);
 }
