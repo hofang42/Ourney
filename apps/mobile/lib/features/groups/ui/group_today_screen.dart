@@ -9,12 +9,16 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/active_journey_sync.dart';
+import '../../../personas/persona_contract.dart';
+import '../../../personas/persona_switchers.dart';
 import '../../../shared/avatar.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
+import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
 import '../data/groups_providers.dart';
@@ -154,51 +158,100 @@ class GroupTodayScreen extends ConsumerWidget {
       isAlone: view.isAlone,
     );
 
-    return Scaffold(
-      key: const ValueKey('group-today'),
-      appBar: AppBar(
-        title: Text(
-          '${journey.emoji} ${journey.title}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        actions: [
-          if (perms.canInvite)
-            IconButton(
-              key: const ValueKey('group-invite'),
-              tooltip: l10n.groups_invite,
-              icon: const Icon(Icons.person_add_alt_1_rounded),
-              onPressed: () => context.push(GroupsPaths.invite(journeyId)),
-            ),
-          _GroupMenu(perms: perms),
-        ],
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            OurneySpacing.screenMargin,
-            OurneySpacing.lg,
-            OurneySpacing.screenMargin,
-            OurneySpacing.xxl,
+    return ActiveJourneySync(
+      journeyId: journey.id,
+      child: Scaffold(
+        key: const ValueKey('group-today'),
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
+              const SizedBox(width: OurneySpacing.sm),
+              Expanded(
+                child: Text(
+                  journey.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
-          children: [
-            if (!perms.isActive) ...[
-              _EndedBanner(text: l10n.groups_endedBanner),
-              const SizedBox(height: OurneySpacing.md),
-            ],
-            _Header(view: view),
-            const SizedBox(height: OurneySpacing.lg),
-            if (view.done.isNotEmpty) ...[
-              _SectionHeader(l10n.groups_doneSection),
-              for (final e in view.done) _MemberCard(entry: e, perms: perms),
-            ],
-            if (view.pending.isNotEmpty) ...[
-              _SectionHeader(l10n.groups_pendingSection),
-              for (final e in view.pending) _MemberCard(entry: e, perms: perms),
-            ],
+          actions: [
+            if (perms.canInvite)
+              IconButton(
+                key: const ValueKey('group-invite'),
+                tooltip: l10n.groups_invite,
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                onPressed: () => context.push(GroupsPaths.invite(journeyId)),
+              ),
+            _GroupMenu(perms: perms),
           ],
         ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              OurneySpacing.screenMargin,
+              OurneySpacing.lg,
+              OurneySpacing.screenMargin,
+              OurneySpacing.xxl,
+            ),
+            children: [
+              if (!perms.isActive) ...[
+                _EndedBanner(text: l10n.groups_endedBanner),
+                const SizedBox(height: OurneySpacing.md),
+              ],
+              PersonaGroupSwitcher(
+                skin: personaSkinOf(journey),
+                data: PersonaGroupData(
+                  journey: journey,
+                  members: [...view.done, ...view.pending],
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                ),
+                fallback: (context) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Header(view: view),
+                    const SizedBox(height: OurneySpacing.lg),
+                    _MemberSections(view: view, perms: perms),
+                  ],
+                ),
+                membersFooter: (context) => Padding(
+                  padding: const EdgeInsets.only(top: OurneySpacing.lg),
+                  child: _MemberSections(view: view, perms: perms),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
+    );
+  }
+}
+
+/// Done and not-yet sections with one card per member. Each card carries the
+/// report, block and remove actions.
+class _MemberSections extends StatelessWidget {
+  const _MemberSections({required this.view, required this.perms});
+
+  final GroupTodayView view;
+  final GroupPermissions perms;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = GroupsL10n.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (view.done.isNotEmpty) ...[
+          _SectionHeader(l10n.groups_doneSection),
+          for (final e in view.done) _MemberCard(entry: e, perms: perms),
+        ],
+        if (view.pending.isNotEmpty) ...[
+          _SectionHeader(l10n.groups_pendingSection),
+          for (final e in view.pending) _MemberCard(entry: e, perms: perms),
+        ],
+      ],
     );
   }
 }

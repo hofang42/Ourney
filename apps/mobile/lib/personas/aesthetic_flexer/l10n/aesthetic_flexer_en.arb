@@ -1,0 +1,34 @@
+{
+  "@@locale": "en",
+  "aesthetic_flexer_name": "Aesthetic Flexer",
+  "@aesthetic_flexer_name": {
+    "description": "Persona name shown in the screen label"
+  },
+  "aesthetic_flexer_dayLabel": "Day {day}",
+  "@aesthetic_flexer_dayLabel": {
+    "description": "Ngày thứ N của hành trình",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "aesthetic_flexer_streakLabel": "{streak}-day streak",
+  "@aesthetic_flexer_streakLabel": {
+    "description": "Chuỗi ngày liên tiếp",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "aesthetic_flexer_checkInsLabel": "{count} check-ins",
+  "@aesthetic_flexer_checkInsLabel": {
+    "description": "Số lần check-in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

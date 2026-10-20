@@ -1,0 +1,30 @@
+name: Main guard
+
+# Work merges into develop; main only takes release PRs from develop.
+# The "main only accepts develop" check is required by the main ruleset,
+# so a PR into main from any other branch cannot be merged.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  head-is-develop:
+    name: main only accepts develop
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check the PR head branch
+        env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REPO" = "$REPO" ] && [ "$HEAD_REF" = "develop" ]; then
+            echo "Release PR from develop: OK."
+            exit 0
+          fi
+          echo "::error::PRs into main must come from develop (got $HEAD_REPO:$HEAD_REF). Retarget this PR to develop."
+          exit 1

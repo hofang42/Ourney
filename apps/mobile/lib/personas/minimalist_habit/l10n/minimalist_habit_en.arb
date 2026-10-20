@@ -1,0 +1,34 @@
+{
+  "@@locale": "en",
+  "minimalist_habit_name": "Minimalist Habit",
+  "@minimalist_habit_name": {
+    "description": "Persona name shown in the screen label"
+  },
+  "minimalist_habit_dayLabel": "Day {day}",
+  "@minimalist_habit_dayLabel": {
+    "description": "Ngày thứ N của hành trình",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_streakLabel": "{streak}-day streak",
+  "@minimalist_habit_streakLabel": {
+    "description": "Chuỗi ngày liên tiếp",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_checkInsLabel": "{count} check-ins",
+  "@minimalist_habit_checkInsLabel": {
+    "description": "Số lần check-in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

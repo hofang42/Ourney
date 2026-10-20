@@ -123,7 +123,9 @@ void main() {
     ) async {
       await _pumpDetail(
         tester,
-        journey: testJourney(templateId: TemplateId.travel, durationDays: null),
+        // `custom` keeps the day grid (the Minimalist persona still shows
+        // the shared grid); `travel` would draw the scrapbook thread.
+        journey: testJourney(templateId: TemplateId.custom, durationDays: null),
       );
       expect(_key('stat-percent'), findsNothing);
       expect(find.bySemanticsLabel('Progress: Day 7'), findsOneWidget);

@@ -10,6 +10,7 @@
 //
 //   lib/l10n/app_{vi,en}.arb                       -> AppLocalizations
 //   lib/features/<f>/l10n/<f>_{vi,en}.arb          -> <F>L10n
+//   lib/personas/<p>/l10n/<p>_{vi,en}.arb          -> <P>L10n
 //
 // Output goes to `<arb dir>/generated/` and is committed. Vietnamese is the
 // template. Generated `supportedLocales` lists are alphabetical (Flutter
@@ -26,19 +27,8 @@ Future<void> main(List<String> args) async {
       prefix: 'app',
       outputClass: 'AppLocalizations',
     ),
-    ...Directory('${root.path}/lib/features')
-        .listSync()
-        .whereType<Directory>()
-        .where((d) => Directory('${d.path}/l10n').existsSync())
-        .map((d) {
-          final feature = d.uri.pathSegments.where((s) => s.isNotEmpty).last;
-          return _ArbSet(
-            name: feature,
-            dir: 'lib/features/$feature/l10n',
-            prefix: feature,
-            outputClass: '${_pascal(feature)}L10n',
-          );
-        }),
+    ..._folderSets(root, 'lib/features'),
+    ..._folderSets(root, 'lib/personas'),
   ]..sort((a, b) => a.name.compareTo(b.name));
 
   final selected = args.isEmpty
@@ -86,6 +76,22 @@ Future<void> main(List<String> args) async {
     }
   }
 }
+
+/// One set per sub-folder of [parent] that has an `l10n` folder.
+Iterable<_ArbSet> _folderSets(Directory root, String parent) =>
+    Directory('${root.path}/$parent')
+        .listSync()
+        .whereType<Directory>()
+        .where((d) => Directory('${d.path}/l10n').existsSync())
+        .map((d) {
+          final name = d.uri.pathSegments.where((s) => s.isNotEmpty).last;
+          return _ArbSet(
+            name: name,
+            dir: '$parent/$name/l10n',
+            prefix: name,
+            outputClass: '${_pascal(name)}L10n',
+          );
+        });
 
 bool _noise(String line) =>
     line.contains('Woah! You appear to be trying to run flutter as root') ||

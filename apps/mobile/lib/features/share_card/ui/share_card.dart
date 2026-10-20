@@ -6,6 +6,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../shared/template_icons.dart';
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -152,7 +153,11 @@ class _Header extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(content.emoji, style: const TextStyle(fontSize: 28, height: 1.2)),
+        Icon(
+          journeyIcon(content.emoji, content.templateId),
+          size: 30,
+          color: _white,
+        ),
         const SizedBox(width: OurneySpacing.sm),
         Expanded(
           child: Text(
@@ -193,7 +198,9 @@ class _PhotoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = _Illustration(emoji: content.emoji);
+    final fallback = _Illustration(
+      icon: journeyIcon(content.emoji, content.templateId),
+    );
     Widget image = photo == null
         ? fallback
         : Image(
@@ -352,9 +359,9 @@ class _Badge extends StatelessWidget {
 }
 
 class _Illustration extends StatelessWidget {
-  const _Illustration({required this.emoji});
+  const _Illustration({required this.icon});
 
-  final String emoji;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -369,7 +376,7 @@ class _Illustration extends StatelessWidget {
       ),
       child: Align(
         alignment: const Alignment(0, -0.35),
-        child: Text(emoji, style: const TextStyle(fontSize: 96, height: 1.2)),
+        child: Icon(icon, size: 96, color: _white),
       ),
     );
   }

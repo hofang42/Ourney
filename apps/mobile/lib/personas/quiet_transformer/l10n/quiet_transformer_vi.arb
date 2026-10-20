@@ -1,0 +1,34 @@
+{
+  "@@locale": "vi",
+  "quiet_transformer_name": "Thay đổi thầm lặng",
+  "@quiet_transformer_name": {
+    "description": "Tên phong cách, hiện ở nhãn đầu màn"
+  },
+  "quiet_transformer_dayLabel": "Ngày {day}",
+  "@quiet_transformer_dayLabel": {
+    "description": "Ngày thứ N của hành trình",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "quiet_transformer_streakLabel": "Chuỗi {streak} ngày",
+  "@quiet_transformer_streakLabel": {
+    "description": "Chuỗi ngày liên tiếp",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "quiet_transformer_checkInsLabel": "{count} lần check-in",
+  "@quiet_transformer_checkInsLabel": {
+    "description": "Số lần check-in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

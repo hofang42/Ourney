@@ -11,6 +11,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
+import '../../../shared/template_icons.dart';
 import '../data/notification_gateway.dart';
 import '../data/reminder_permission.dart';
 import '../data/reminder_scheduler.dart';
@@ -275,7 +276,10 @@ class _JourneyReminderTile extends StatelessWidget {
           Row(
             children: [
               ExcludeSemantics(
-                child: Text(journey.emoji, style: text.headlineSmall),
+                child: Icon(
+                  journeyIcon(journey.emoji, journey.templateId),
+                  size: 28,
+                ),
               ),
               const SizedBox(width: OurneySpacing.md),
               Expanded(

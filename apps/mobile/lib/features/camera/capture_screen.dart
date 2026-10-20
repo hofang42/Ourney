@@ -12,11 +12,16 @@ import '../../app/theme/app_theme.dart';
 import '../../app/theme/motion.dart';
 import '../../app/theme/tokens.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../personas/persona_contract.dart';
+import '../../personas/persona_switchers.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/ourney_chip.dart';
 import '../../shared/profile_button.dart';
+import '../../shared/template_icons.dart';
 import '../checkin/captured_photo.dart';
+import '../journeys/data/journeys_providers.dart';
+import '../journeys/domain/journey_progress.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
 import 'capture_services.dart';
@@ -71,10 +76,17 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   String? _selectedJourneyId;
 
+  /// Redraws the HUD clock (S2 timestamp, M2 date back) while the camera is
+  /// on screen.
+  Timer? _hudClock;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _hudClock = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted && _wantCamera) setState(() {});
+    });
     final asked =
         ref
             .read(sharedPreferencesProvider)
@@ -82,8 +94,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         false;
     if (!asked) _phase = _Phase.prePrompt;
     _selectedJourneyId =
-        widget.initialJourneyId ??
-        CameraPrefs.readLastJourneyId(ref.read(sharedPreferencesProvider));
+        widget.initialJourneyId ?? ref.read(activeJourneyIdProvider);
+    final initial = widget.initialJourneyId;
+    if (initial != null) _rememberJourney(initial);
     ref.listenManual<AsyncValue<List<Journey>>>(captureJourneysProvider, (
       _,
       next,
@@ -102,6 +115,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final id = widget.initialJourneyId;
     if (id != null && id != oldWidget.initialJourneyId) {
       _selectedJourneyId = id;
+      _rememberJourney(id);
     }
   }
 
@@ -141,6 +155,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   @override
   void dispose() {
+    _hudClock?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _generation++;
     unawaited(_session?.stop());
@@ -272,9 +287,17 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   void _selectJourney(String id) {
     setState(() => _selectedJourneyId = id);
-    unawaited(
-      CameraPrefs.writeLastJourneyId(ref.read(sharedPreferencesProvider), id),
-    );
+    _rememberJourney(id);
+  }
+
+  /// Makes [id] the active journey, which also themes the app with its
+  /// persona (F2). Deferred: a provider must not change during a widget
+  /// lifecycle callback.
+  void _rememberJourney(String id) {
+    scheduleMicrotask(() {
+      if (!mounted) return;
+      unawaited(ref.read(activeJourneyIdProvider.notifier).select(id));
+    });
   }
 
   Future<void> _capture(Journey journey) async {
@@ -340,10 +363,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   /// complete if /checkin is replaced), and no state depends on it.
   void _openCheckin(CapturedPhoto photo) {
     unawaited(
-      CameraPrefs.writeLastJourneyId(
-        ref.read(sharedPreferencesProvider),
-        photo.journeyId,
-      ),
+      ref.read(activeJourneyIdProvider.notifier).select(photo.journeyId),
     );
     unawaited(context.push<void>(AppRoutes.checkin, extra: photo));
   }
@@ -351,6 +371,13 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   @override
   Widget build(BuildContext context) {
     final journeys = ref.watch(captureJourneysProvider);
+    // The Hub (or another tab) may pick a journey: follow it without
+    // touching the camera.
+    ref.listen<String?>(activeJourneyIdProvider, (_, next) {
+      if (next != null && next != _selectedJourneyId) {
+        setState(() => _selectedJourneyId = next);
+      }
+    });
     final lastId = _selectedJourneyId;
     final list = journeys.value ?? const <Journey>[];
     final selected = pickInitialJourney(list, lastId);
@@ -397,14 +424,17 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               ),
             ],
           ),
-          Expanded(child: _buildViewfinder(context)),
+          Expanded(child: _buildViewfinder(context, selected)),
           _buildControls(context, selected),
         ],
       );
     }
 
     return Theme(
-      data: buildAppTheme(Brightness.dark),
+      data: buildAppTheme(
+        Brightness.dark,
+        selected == null ? null : personaSkinOf(selected),
+      ),
       child: Scaffold(
         key: CaptureScreen.screenKey,
         backgroundColor: OurneyColors.cameraBg,
@@ -413,7 +443,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     );
   }
 
-  Widget _buildViewfinder(BuildContext context) {
+  Widget _buildViewfinder(BuildContext context, Journey? journey) {
     final c = OurneyColors.dark;
     final session = _session;
     final Widget content = switch (_phase) {
@@ -439,6 +469,29 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       ),
     };
 
+    // Preview, flash button and the shutter flash. Built once and handed to
+    // the persona HUD, so switching persona re-parents it and never restarts
+    // the camera session (docs/06 §1 Q1).
+    final viewfinder = Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: c.surface, child: content),
+        if (_phase == _Phase.ready && (session?.hasFlash ?? false))
+          Positioned(
+            top: OurneySpacing.md,
+            left: OurneySpacing.md,
+            child: _FlashButton(flash: _flash, onTap: _toggleFlash),
+          ),
+        IgnorePointer(
+          child: AnimatedOpacity(
+            opacity: _flashOverlay ? 1 : 0,
+            duration: OurneyDurations.flash,
+            child: const ColoredBox(color: Colors.white),
+          ),
+        ),
+      ],
+    );
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: OurneySpacing.sm),
       child: Center(
@@ -446,28 +499,41 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           aspectRatio: 3 / 4,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(OurneyRadii.media),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ColoredBox(color: c.surface, child: content),
-                if (_phase == _Phase.ready && (session?.hasFlash ?? false))
-                  Positioned(
-                    top: OurneySpacing.md,
-                    left: OurneySpacing.md,
-                    child: _FlashButton(flash: _flash, onTap: _toggleFlash),
+            child: journey == null
+                ? viewfinder
+                : PersonaCameraHudSwitcher(
+                    skin: personaSkinOf(journey),
+                    data: _hudData(journey, viewfinder),
                   ),
-                IgnorePointer(
-                  child: AnimatedOpacity(
-                    opacity: _flashOverlay ? 1 : 0,
-                    duration: OurneyDurations.flash,
-                    child: const ColoredBox(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
+    );
+  }
+
+  /// HUD input for [journey]: streak and roll count come from the caller's
+  /// check-ins; they stay 0 until those load or when the data layer is not
+  /// available.
+  PersonaCameraData _hudData(Journey journey, Widget viewfinder) {
+    final membership = ref.watch(myMembershipProvider(journey.id)).value;
+    final checkIns = ref.watch(myCheckInsProvider(journey.id)).value;
+    final now = clock.now();
+    final progress = checkIns == null
+        ? null
+        : JourneyProgress.compute(
+            journey: journey,
+            membership: membership,
+            checkIns: checkIns,
+            now: now.toUtc(),
+          );
+    return PersonaCameraData(
+      journey: journey,
+      viewfinder: viewfinder,
+      capturedAt: now,
+      currentStreak: progress?.summary.current ?? 0,
+      checkInCount: checkIns?.length ?? 0,
+      hideMetric: membership?.hideMetric ?? journey.hideMetricDefault,
+      borderRadius: 0,
     );
   }
 
@@ -576,7 +642,8 @@ class _JourneyBar extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 240),
                     child: OurneyChip(
                       key: ValueKey('journey-chip-${j.id}'),
-                      label: '${j.emoji} ${j.title}',
+                      label: j.title,
+                      icon: journeyIcon(j.emoji, j.templateId),
                       selected: j.id == selected?.id,
                       onTap: () => onSelect(j.id),
                     ),

@@ -12,6 +12,7 @@ import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/profile_button.dart';
 import '../../../shared/streak_flame.dart';
+import '../../../shared/template_icons.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../l10n/generated/journeys_localizations.dart';
@@ -207,10 +208,10 @@ class JourneyCard extends ConsumerWidget {
                           .withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(OurneyRadii.chip),
                 ),
-                child: Text(
-                  journey.emoji,
-                  textScaler: TextScaler.noScaling,
-                  style: const TextStyle(fontSize: 28),
+                child: Icon(
+                  journeyIcon(journey.emoji, journey.templateId),
+                  size: 28,
+                  color: c.ink,
                 ),
               ),
             ),
