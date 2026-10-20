@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/layout.dart';
+
 /// Colours that do **not** come from [OurneyPersonaTheme] because they belong
 /// to an illustration or to a camera/media surface, which stays the same in
 /// light and dark (`CLAUDE.md` §1.2, `OurneyColors.cameraBg`).
@@ -80,21 +82,20 @@ abstract final class PersonaPalette {
       : const Color(0xFFE4D8BE).withValues(alpha: 0.88);
 }
 
-/// Layout rules from `CLAUDE.md` §2–3 that every persona screen shares.
+/// Layout rules from `CLAUDE.md` §2–3 that every persona screen shares. Kept
+/// as thin aliases of [OurneyLayout] (F6) so S/M code reads the same numbers
+/// as every other screen.
 abstract final class PersonaLayout {
   /// Minimum touch target (`>= 44pt` iOS HIG, `48dp` Material).
-  static const double minTouchTarget = 48;
+  static const double minTouchTarget = OurneyLayout.minTouchTarget;
 
   /// Primary button height; compact variant is 44.
-  static const double primaryButtonHeight = 52;
+  static const double primaryButtonHeight = OurneyLayout.primaryButtonHeight;
 
   /// Widest a single-column feed or card grid may grow (large phones/tablets).
-  static const double maxContentWidth = 480;
+  static const double maxContentWidth = OurneyLayout.maxCardWidth;
 
   /// Horizontal screen padding by width: 16 (< 360), 20 (< 410), 24 above.
-  static double horizontalPadding(double width) => width < 360
-      ? 16.0
-      : width < 410
-      ? 20.0
-      : 24.0;
+  static double horizontalPadding(double width) =>
+      OurneyLayout.horizontalPadding(width);
 }
