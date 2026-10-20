@@ -10,6 +10,8 @@ import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/persona_contract.dart';
+import '../../../personas/persona_switchers.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
@@ -21,7 +23,6 @@ import '../domain/journey_progress.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_errors.dart';
-import 'timeline_grid.dart';
 
 enum _Action { end, archive, delete }
 
@@ -202,10 +203,17 @@ class JourneyDetailScreen extends ConsumerWidget {
                 child: Center(child: CircularProgressIndicator()),
               )
             else
-              TimelineGrid(
-                days: progress.timeline(),
-                onTapDay: (d) =>
-                    context.push(JourneysPaths.day(journey.id, d.date)),
+              PersonaTimelineSwitcher(
+                skin: personaSkinOf(journey),
+                data: PersonaTimelineData.fromProgress(
+                  progress,
+                  hideMetric:
+                      membership?.hideMetric ?? journey.hideMetricDefault,
+                  onTapDay: (d) =>
+                      context.push(JourneysPaths.day(journey.id, d.date)),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                ),
               ),
             if (membership != null && perms.isActive)
               _PrivacySection(journey: journey, membership: membership),
