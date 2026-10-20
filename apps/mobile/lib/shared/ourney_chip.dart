@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../app/theme/motion.dart';
+import '../app/theme/persona_theme.dart';
 import '../app/theme/tokens.dart';
+import 'color_utils.dart';
 
 /// Chip (radius 12). Selected state does not rely on color alone: it gets a
 /// check icon and a thicker border.
@@ -22,8 +24,11 @@ class OurneyChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = OurneyColors.of(context);
-    final bg = selected ? c.primaryDeep : c.surface;
-    final fg = selected ? c.onPrimaryDeep : c.ink;
+    // The selected chip wears the active persona's accent (neutral coral on
+    // the Hub); its label is white or dark ink, whichever reads better.
+    final accent = OurneyPersonaTheme.of(context).primaryAccent;
+    final bg = selected ? accent : c.surface;
+    final fg = selected ? readableOn(accent) : c.ink;
     final radius = BorderRadius.circular(OurneyRadii.chip);
     return Semantics(
       button: onTap != null,
@@ -39,7 +44,7 @@ class OurneyChip extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: radius,
               side: BorderSide(
-                color: selected ? c.primaryDeep : c.border,
+                color: selected ? accent : c.border,
                 width: selected ? 2 : 1,
               ),
             ),

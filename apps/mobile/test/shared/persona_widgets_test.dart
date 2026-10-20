@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/shared/color_utils.dart';
 import 'package:ourney/shared/dashed_placeholder.dart';
+import 'package:ourney/shared/ourney_chip.dart';
 import 'package:ourney/shared/ourney_pill_button.dart';
 import 'package:ourney/shared/ourney_primary_button.dart';
 import 'package:ourney/shared/persona_pill.dart';
@@ -207,6 +208,44 @@ void main() {
         ),
       );
       handle.dispose();
+    });
+  });
+
+  group('OurneyChip', () {
+    testWidgets('the selected chip takes the persona accent with a readable '
+        'label, in every persona and theme', (tester) async {
+      for (final skin in allSkins) {
+        for (final brightness in bothBrightness) {
+          await pumpPersona(
+            tester,
+            const OurneyChip(label: 'Trip', selected: true),
+            skin: skin,
+            brightness: brightness,
+          );
+          final accent = OurneyPersonaTheme.forSkin(
+            skin,
+            brightness,
+          ).primaryAccent;
+          final material = tester.widget<Material>(
+            find
+                .descendant(
+                  of: find.byType(OurneyChip),
+                  matching: find.byType(Material),
+                )
+                .first,
+          );
+          expect(
+            material.color,
+            accent,
+            reason: '${skin.name} ${brightness.name}',
+          );
+          final text = tester.widget<Text>(find.text('Trip'));
+          expect(
+            contrastRatio(text.style!.color!, accent),
+            greaterThanOrEqualTo(4.5),
+          );
+        }
+      }
     });
   });
 
