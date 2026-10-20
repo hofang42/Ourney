@@ -4,6 +4,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../app/theme/persona_theme.dart';
 import '../../features/journeys/domain/journey_progress.dart';
 import '../../features/journeys/ui/journey_photo.dart';
+import '../../shared/template_icons.dart';
 import 'l10n/generated/accountability_squad_localizations.dart';
 import 'persona_palette.dart';
 import 'persona_widgets.dart';
@@ -65,8 +66,7 @@ class SteppingStoneQuestTimeline extends StatelessWidget {
     final durationBadge = journey.durationDays != null
         ? l10n.accountability_squad_daysDuration(journey.durationDays!)
         : l10n.accountability_squad_openDuration;
-    final topPillText =
-        '${journey.emoji} ${journey.title.toUpperCase()} · $durationBadge';
+    final topPillText = '${journey.title.toUpperCase()} · $durationBadge';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -88,6 +88,11 @@ class SteppingStoneQuestTimeline extends StatelessWidget {
                     SquadPersonaPill(
                       key: const ValueKey('s1-top-pill'),
                       expand: true,
+                      leading: Icon(
+                        templateIcon(journey.templateId),
+                        size: 18,
+                        color: pTheme.ink,
+                      ),
                       label: topPillText,
                     ),
                     const SizedBox(height: 10),

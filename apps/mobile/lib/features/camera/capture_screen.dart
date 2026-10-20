@@ -18,6 +18,7 @@ import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
 import '../../shared/ourney_chip.dart';
 import '../../shared/profile_button.dart';
+import '../../shared/template_icons.dart';
 import '../checkin/captured_photo.dart';
 import '../journeys/data/journeys_providers.dart';
 import '../journeys/domain/journey_progress.dart';
@@ -641,7 +642,8 @@ class _JourneyBar extends StatelessWidget {
                     constraints: const BoxConstraints(maxWidth: 240),
                     child: OurneyChip(
                       key: ValueKey('journey-chip-${j.id}'),
-                      label: '${j.emoji} ${j.title}',
+                      label: j.title,
+                      icon: journeyIcon(j.emoji, j.templateId),
                       selected: j.id == selected?.id,
                       onTap: () => onSelect(j.id),
                     ),

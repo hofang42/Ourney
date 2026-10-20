@@ -59,12 +59,12 @@ class OurneyChip extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (selected || icon != null) ...[
-                      Icon(
-                        selected ? Icons.check_rounded : icon,
-                        size: 16,
-                        color: fg,
-                      ),
+                    if (selected) ...[
+                      Icon(Icons.check_rounded, size: 16, color: fg),
+                      const SizedBox(width: OurneySpacing.xs),
+                    ],
+                    if (icon != null) ...[
+                      Icon(icon, size: 16, color: fg),
                       const SizedBox(width: OurneySpacing.xs),
                     ],
                     Flexible(

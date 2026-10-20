@@ -214,7 +214,7 @@ void main() {
               find.byKey(const ValueKey('s1-node-day-21')),
               findsOneWidget,
             );
-            expect(find.textContaining('NGÀY 21 · HÔM NAY 🔥'), findsOneWidget);
+            expect(find.textContaining('NGÀY 21 · HÔM NAY'), findsOneWidget);
 
             // Scroll down to verify Day 14, Day 07, and Day 01 render without overflow.
             final scrollable = find.byType(Scrollable).first;
@@ -273,7 +273,7 @@ void main() {
         find.byKey(const ValueKey('s2-study-streak-pill')),
         findsOneWidget,
       );
-      expect(find.text('45 PHÚT STUDY · 🔥 21 STREAK'), findsOneWidget);
+      expect(find.text('45 PHÚT STUDY · 21 STREAK'), findsOneWidget);
       expect(find.text('06:15 AM'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -297,7 +297,7 @@ void main() {
         locale: const Locale('vi'),
       );
 
-      expect(find.text('🔥 12 CHUỖI NGÀY'), findsOneWidget);
+      expect(find.text('12 CHUỖI NGÀY'), findsOneWidget);
       expect(find.textContaining('HỌC'), findsNothing);
       expect(find.text('06:05 PM'), findsOneWidget);
       expect(tester.takeException(), isNull);

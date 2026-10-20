@@ -17,6 +17,7 @@ import '../../../shared/needs_server_view.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
+import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
 import '../data/groups_providers.dart';
@@ -159,10 +160,18 @@ class GroupTodayScreen extends ConsumerWidget {
     return Scaffold(
       key: const ValueKey('group-today'),
       appBar: AppBar(
-        title: Text(
-          '${journey.emoji} ${journey.title}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        title: Row(
+          children: [
+            Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
+            const SizedBox(width: OurneySpacing.sm),
+            Expanded(
+              child: Text(
+                journey.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
         actions: [
           if (perms.canInvite)

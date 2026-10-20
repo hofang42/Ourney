@@ -13,6 +13,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/ourney_chip.dart';
+import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_form.dart';
@@ -217,6 +218,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             for (final e in {form.template.emoji, ...journeyEmojiChoices})
               _EmojiChoice(
                 emoji: e,
+                template: form.template.id,
                 selected: form.emoji == e,
                 onTap: () => _update((f) => f.emoji = e),
               ),
@@ -398,11 +400,13 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
 class _EmojiChoice extends StatelessWidget {
   const _EmojiChoice({
     required this.emoji,
+    required this.template,
     required this.selected,
     required this.onTap,
   });
 
   final String emoji;
+  final TemplateId template;
   final bool selected;
   final VoidCallback onTap;
 
@@ -434,11 +438,7 @@ class _EmojiChoice extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Text(
-                  emoji,
-                  textScaler: TextScaler.noScaling,
-                  style: const TextStyle(fontSize: 26),
-                ),
+                Icon(journeyIcon(emoji, template), size: 28, color: c.ink),
                 if (selected)
                   Positioned(
                     right: 2,

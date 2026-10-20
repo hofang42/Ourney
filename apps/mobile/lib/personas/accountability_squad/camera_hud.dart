@@ -5,13 +5,14 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/persona_theme.dart';
 import '../../app/theme/tokens.dart' show OurneyColors;
+import '../../shared/template_icons.dart';
 import 'l10n/generated/accountability_squad_localizations.dart';
 import 'persona_palette.dart';
 import 'persona_widgets.dart';
 
 /// **Task S2** (`PersonaSkinId.accountabilitySquad` — `studyTimerSnap`):
 /// Camera HUD overlay displaying:
-/// - Top tactile pill: `<study minutes> · 🔥 <streak>` (hides the study minutes
+/// - Top tactile pill: `<study minutes> · <flame> <streak>` (hides the study minutes
 ///   part when the journey has no metric or metric is hidden).
 /// - Bottom glass timestamp pill: e.g., `06:15 AM`.
 class StudyTimerSnapHud extends StatelessWidget {
@@ -117,13 +118,20 @@ class StudyTimerSnapHud extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(12, 14, 12, 0),
                 child: SquadPersonaPill(
                   key: const ValueKey('s2-study-streak-pill'),
-                  leading: hasMetricConfigured
-                      ? Icon(
+                  leading: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (hasMetricConfigured) ...[
+                        Icon(
                           Icons.menu_book_rounded,
                           size: 16,
                           color: pTheme.ink,
-                        )
-                      : null,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Icon(streakIcon, size: 18, color: pTheme.ink),
+                    ],
+                  ),
                   label: topLabel,
                   backgroundColor: pTheme.surface,
                   foregroundColor: pTheme.ink,
