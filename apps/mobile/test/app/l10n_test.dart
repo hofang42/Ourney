@@ -15,6 +15,12 @@ import 'package:ourney/features/reminders/l10n/generated/reminders_localizations
 import 'package:ourney/features/safety/l10n/generated/safety_localizations.dart';
 import 'package:ourney/features/share_card/l10n/generated/share_card_localizations.dart';
 import 'package:ourney/l10n/generated/app_localizations.dart';
+import 'package:ourney/personas/accountability_squad/l10n/generated/accountability_squad_localizations.dart';
+import 'package:ourney/personas/aesthetic_flexer/l10n/generated/aesthetic_flexer_localizations.dart';
+import 'package:ourney/personas/couple_rituals/l10n/generated/couple_rituals_localizations.dart';
+import 'package:ourney/personas/memory_collectors/l10n/generated/memory_collectors_localizations.dart';
+import 'package:ourney/personas/minimalist_habit/l10n/generated/minimalist_habit_localizations.dart';
+import 'package:ourney/personas/quiet_transformer/l10n/generated/quiet_transformer_localizations.dart';
 
 import 'test_helpers.dart';
 
@@ -27,11 +33,12 @@ Set<String> messageKeys(Map<String, Object?> arb) =>
 /// (name, arb dir, file prefix, key prefix).
 List<(String, String, String, String)> arbSets() {
   final sets = [('app', 'lib/l10n', 'app', '')];
-  for (final dir in Directory(
-    'lib/features',
-  ).listSync().whereType<Directory>()) {
-    final f = dir.uri.pathSegments.where((s) => s.isNotEmpty).last;
-    sets.add((f, '${dir.path}/l10n', f, '${f}_'));
+  for (final parent in ['lib/features', 'lib/personas']) {
+    for (final dir in Directory(parent).listSync().whereType<Directory>()) {
+      if (!Directory('${dir.path}/l10n').existsSync()) continue;
+      final f = dir.uri.pathSegments.where((s) => s.isNotEmpty).last;
+      sets.add((f, '${dir.path}/l10n', f, '${f}_'));
+    }
   }
   return sets;
 }
@@ -47,6 +54,21 @@ void main() {
           File('${dir.path}/l10n/${f}_$locale.arb').existsSync(),
           isTrue,
           reason: 'missing lib/features/$f/l10n/${f}_$locale.arb',
+        );
+      }
+    }
+  });
+
+  test('every persona has its own vi + en ARB pair', () {
+    for (final dir in Directory(
+      'lib/personas',
+    ).listSync().whereType<Directory>()) {
+      final p = dir.uri.pathSegments.where((s) => s.isNotEmpty).last;
+      for (final locale in ['vi', 'en']) {
+        expect(
+          File('${dir.path}/l10n/${p}_$locale.arb').existsSync(),
+          isTrue,
+          reason: 'missing lib/personas/$p/l10n/${p}_$locale.arb',
         );
       }
     }
@@ -105,6 +127,16 @@ void main() {
         RemindersL10n.of(ctx).reminders_title,
       ];
       expect(titles.every((t) => t.isNotEmpty), isTrue);
+      // One class per persona (F1): all six load with the app delegates.
+      final personaNames = [
+        QuietTransformerL10n.of(ctx).quiet_transformer_name,
+        AccountabilitySquadL10n.of(ctx).accountability_squad_nudge('A'),
+        MemoryCollectorsL10n.of(ctx).memory_collectors_contactSheetSubtitle(1),
+        CoupleRitualsL10n.of(ctx).couple_rituals_name,
+        AestheticFlexerL10n.of(ctx).aesthetic_flexer_name,
+        MinimalistHabitL10n.of(ctx).minimalist_habit_name,
+      ];
+      expect(personaNames.every((t) => t.isNotEmpty), isTrue);
       expect(AppLocalizations.of(ctx).localeName, locale.languageCode);
     });
   }

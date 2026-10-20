@@ -84,6 +84,7 @@ agents ever edit the same ARB file.
 |---|---|---|
 | `lib/l10n/app_{vi,en}.arb` (shared: nav, common, streak, needs-server) | `AppLocalizations` | `package:ourney/l10n/generated/app_localizations.dart` |
 | `lib/features/<f>/l10n/<f>_{vi,en}.arb` | `<F>L10n` (`JourneysL10n`, `ShareCardL10n`, …) | `package:ourney/features/<f>/l10n/generated/<f>_localizations.dart` |
+| `lib/personas/<p>/l10n/<p>_{vi,en}.arb` | `<P>L10n` (`QuietTransformerL10n`, `CoupleRitualsL10n`, …) | `package:ourney/personas/<p>/l10n/generated/<p>_localizations.dart` |
 
 - Keys are `<feature>_<camelCase>`: `journeys_createTitle`,
   `share_card_saveButton`. vi is the template; en must define the same keys
@@ -117,6 +118,9 @@ agents ever edit the same ARB file.
 | `authStatusProvider` | `AuthStatus` | `localOnly`, `signedIn`, `signedOut` |
 | `onboardingCompleteProvider` | `bool` | `.notifier.complete()` / `.reset()` |
 | `hapticsEnabledProvider` | `bool` | `.notifier.set(enabled:)`; mirrors `OurneyHaptics.enabled` |
+| `activeJourneyIdProvider` | `String?` | `.notifier.select(id)`; saved in `camera.lastJourneyId`. Picking a journey anywhere (Hub card, camera chip) goes through it |
+| `activeJourneyProvider` | `Stream<Journey?>` | the remembered journey while still active, else the first active one |
+| `activePersonaSkinProvider` | `PersonaSkinId?` | skin of the active journey; null = neutral Ourney base. `OurneyApp` themes the whole app with it (320ms) |
 
 Interfaces come from `package:ourney_core/ourney_core.dart` (contract, do not
 change). Placeholder repositories throw `UnimplementedError` until B1 returns
@@ -151,6 +155,13 @@ work fully; any group/invite/reaction screen must show `NeedsServerView`
   `OurneyHaptics.*` (respects the user toggle).
 - Widgets (`lib/shared/`): `ChunkyButton`, `OurneyCard`, `OurneyChip`,
   `Avatar`, `EmptyState`, `NeedsServerView`, `StreakFlame`, `StampAnimation`.
+- Persona widgets (`lib/shared/`, read `OurneyPersonaTheme.of(context)`, work in
+  all six skins and both themes): `OurneyPrimaryButton` (52/44dp, 0.96 press,
+  bottom lip), `OurneyPillButton` (56x40 capsule), `PersonaPill` (screen
+  label), `PolaroidFrame` (tilted, taped), `DashedPlaceholder` (waiting slot),
+  `OurneyDock` (3-tab dock). `layout.dart` has `OurneyLayout` (16/20/24dp
+  margins, 480/520dp column) and `OurneyResponsiveBody`; `color_utils.dart`
+  has `readableOn` and `contrastRatio`.
 - Text scale is clamped to 2x app-wide; layouts must not overflow at 2x
   (wrap long content in scroll views, use `maxLines` + ellipsis for chips).
   Icon-only buttons need a `Semantics`/`tooltip` label; state never relies on
@@ -163,3 +174,39 @@ From `apps/mobile/`: `dart run tool/gen_l10n.dart`, `dart run build_runner build
 (only `dart analyze` runs the riverpod_lint plugin), `flutter test`.
 Test helpers: `test/app/test_helpers.dart` (`testApp`, `pumpOurneyApp`,
 `testPrefs`, `FakeAuthRepository`).
+
+## 6. Personas (`lib/personas/`)
+
+Six personas (`CLAUDE.md` §4), one folder each, each with the three screens
+`timeline.dart`, `camera_hud.dart` and `share_card.dart` and its own
+`l10n/`. Only the owner of a persona edits its folder (`docs/TASKS.md` §1).
+
+```
+lib/personas/
+├── persona_contract.dart    # PersonaTimelineData, PersonaCameraData, PersonaShareData,
+│                            # PersonaGroupData + personaSkinOf(journey)
+├── persona_registry.dart    # personaStyleFor(skin): which widget draws which screen
+├── persona_switchers.dart   # PersonaSkinScope + the four 260ms AnimatedSwitchers
+├── persona_placeholder.dart # temporary layouts for personas not designed yet
+└── <persona>/{timeline,camera_hud,share_card}.dart, l10n/
+```
+
+- **Screens never import a persona.** `journey_detail_screen`,
+  `capture_screen`, `share_card_screen` and `group_today_screen` build the
+  data object and call a switcher (`PersonaTimelineSwitcher`,
+  `PersonaCameraHudSwitcher`, `PersonaShareSwitcher`, `PersonaGroupSwitcher`).
+  Persona authors do not edit those screens.
+- **Finishing a persona:** replace the body of your three widgets (keep the
+  constructors `X({required this.data, super.key})`), or point your entry in
+  `persona_registry.dart` at your own widget with the signature
+  `Widget Function(BuildContext, Persona…Data)`.
+- **The camera is never restarted.** The capture screen builds the preview
+  once and passes it as `PersonaCameraData.viewfinder`; your HUD must draw it
+  (as a child) and may only add overlays.
+- **The squad wall** (`PersonaStyle.group`) sits above the member list, which
+  carries the report, block and remove actions. A wall tile that offers them
+  would let that list go.
+- **Tests:** `pumpPersona(tester, widget, skin:, brightness:, width:, textScale:)`
+  in `test/personas/pump_persona.dart`. Check light and dark, 320, 390 and
+  430dp, and 1.35x text. Colors come from `OurneyPersonaTheme`; contrast of
+  every token pair is held to AA by `test/app/theme_contrast_test.dart`.

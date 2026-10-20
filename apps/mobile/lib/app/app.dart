@@ -7,6 +7,7 @@ import 'localization.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
+import 'theme/tokens.dart';
 
 class OurneyApp extends ConsumerWidget {
   const OurneyApp({super.key});
@@ -16,13 +17,25 @@ class OurneyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     // Keep the haptics toggle mirrored into OurneyHaptics.enabled.
     ref.watch(hapticsEnabledProvider);
+    // The active journey's persona colors the whole app; the router is not
+    // rebuilt when it changes (docs/06 §1 Q1).
+    final skin = ref.watch(activePersonaSkinProvider);
+    final reduceMotion = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
+        .disableAnimations;
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).app_name,
       debugShowCheckedModeBanner: false,
       routerConfig: router,
-      theme: buildAppTheme(Brightness.light),
-      darkTheme: buildAppTheme(Brightness.dark),
+      theme: buildAppTheme(Brightness.light, skin),
+      darkTheme: buildAppTheme(Brightness.dark, skin),
       themeMode: ThemeMode.system,
+      themeAnimationDuration: reduceMotion
+          ? OurneyDurations.reducedFade
+          : OurneyDurations.personaTheme,
+      themeAnimationCurve: Curves.easeOutCubic,
       supportedLocales: ourneySupportedLocales,
       localizationsDelegates: ourneyLocalizationsDelegates,
       // Reminders: reschedule on start/resume, open the journey on a

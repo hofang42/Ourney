@@ -12,6 +12,8 @@ import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/persona_contract.dart';
+import '../../../personas/persona_switchers.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/placeholder_screen.dart';
@@ -303,6 +305,22 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               const SizedBox(height: OurneySpacing.xl),
               PublicLinkSection(journey: journey),
             ],
+            const SizedBox(height: OurneySpacing.xl),
+            PersonaShareSwitcher(
+              skin: personaSkinOf(journey),
+              data: PersonaShareData(
+                journey: journey,
+                checkIns: checkIns,
+                currentStreak: progress.summary.current,
+                dayNumber: progress.dayNumber,
+                hideMetric: content.metricHidden,
+                onShare: _busy
+                    ? null
+                    : () => _share(journey: journey, photo: photo),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+              ),
+            ),
           ],
         ),
       ),

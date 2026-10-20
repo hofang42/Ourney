@@ -4,6 +4,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/theme/tokens.dart';
 import '../../../shared/ourney_card.dart';
+import '../../../shared/template_icons.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 
@@ -35,9 +36,10 @@ class TemplatePickerScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       ExcludeSemantics(
-                        child: Text(
-                          t.emoji,
-                          style: const TextStyle(fontSize: 32),
+                        child: Icon(
+                          templateIcon(t.id),
+                          size: 32,
+                          color: OurneyColors.of(context).ink,
                         ),
                       ),
                       const SizedBox(width: OurneySpacing.lg),

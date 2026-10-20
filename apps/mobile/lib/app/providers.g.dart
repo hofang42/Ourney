@@ -724,3 +724,168 @@ abstract class _$HapticsEnabled extends $Notifier<bool> {
     return element.handleCreate(ref, build);
   }
 }
+
+/// The journey the user is working in. Its persona skin themes the whole
+/// app; switching it never rebuilds the router or restarts the camera.
+///
+/// Stored in `camera.lastJourneyId`, the same key the capture screen has
+/// always used for the journey chip, so both stay in step.
+
+@ProviderFor(ActiveJourneyId)
+final activeJourneyIdProvider = ActiveJourneyIdProvider._();
+
+/// The journey the user is working in. Its persona skin themes the whole
+/// app; switching it never rebuilds the router or restarts the camera.
+///
+/// Stored in `camera.lastJourneyId`, the same key the capture screen has
+/// always used for the journey chip, so both stay in step.
+final class ActiveJourneyIdProvider
+    extends $NotifierProvider<ActiveJourneyId, String?> {
+  /// The journey the user is working in. Its persona skin themes the whole
+  /// app; switching it never rebuilds the router or restarts the camera.
+  ///
+  /// Stored in `camera.lastJourneyId`, the same key the capture screen has
+  /// always used for the journey chip, so both stay in step.
+  ActiveJourneyIdProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activeJourneyIdProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeJourneyIdHash();
+
+  @$internal
+  @override
+  ActiveJourneyId create() => ActiveJourneyId();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String?>(value),
+    );
+  }
+}
+
+String _$activeJourneyIdHash() => r'a4deb79e1deb25029ad757983f4e6bceeaa641e6';
+
+/// The journey the user is working in. Its persona skin themes the whole
+/// app; switching it never rebuilds the router or restarts the camera.
+///
+/// Stored in `camera.lastJourneyId`, the same key the capture screen has
+/// always used for the journey chip, so both stay in step.
+
+abstract class _$ActiveJourneyId extends $Notifier<String?> {
+  String? build();
+  @$mustCallSuper
+  @override
+  WhenComplete runBuild() {
+    final ref = this.ref as $Ref<String?, String?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String?, String?>,
+              String?,
+              Object?,
+              Object?
+            >;
+    return element.handleCreate(ref, build);
+  }
+}
+
+/// The active journey: the remembered one while it is still active, else the
+/// first active journey (what the capture screen preselects), else null.
+
+@ProviderFor(activeJourney)
+final activeJourneyProvider = ActiveJourneyProvider._();
+
+/// The active journey: the remembered one while it is still active, else the
+/// first active journey (what the capture screen preselects), else null.
+
+final class ActiveJourneyProvider
+    extends
+        $FunctionalProvider<AsyncValue<Journey?>, Journey?, Stream<Journey?>>
+    with $FutureModifier<Journey?>, $StreamProvider<Journey?> {
+  /// The active journey: the remembered one while it is still active, else the
+  /// first active journey (what the capture screen preselects), else null.
+  ActiveJourneyProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: _noRetry,
+        name: r'activeJourneyProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activeJourneyHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<Journey?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<Journey?> create(Ref ref) {
+    return activeJourney(ref);
+  }
+}
+
+String _$activeJourneyHash() => r'1bc758aa43b9e9b68e86f0407a96bfa6cfcdaabe';
+
+/// Persona skin of the active journey, or null for the neutral Ourney base
+/// (no journey yet, or the repository is not available).
+
+@ProviderFor(activePersonaSkin)
+final activePersonaSkinProvider = ActivePersonaSkinProvider._();
+
+/// Persona skin of the active journey, or null for the neutral Ourney base
+/// (no journey yet, or the repository is not available).
+
+final class ActivePersonaSkinProvider
+    extends $FunctionalProvider<PersonaSkinId?, PersonaSkinId?, PersonaSkinId?>
+    with $Provider<PersonaSkinId?> {
+  /// Persona skin of the active journey, or null for the neutral Ourney base
+  /// (no journey yet, or the repository is not available).
+  ActivePersonaSkinProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'activePersonaSkinProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$activePersonaSkinHash();
+
+  @$internal
+  @override
+  $ProviderElement<PersonaSkinId?> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  PersonaSkinId? create(Ref ref) {
+    return activePersonaSkin(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(PersonaSkinId? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<PersonaSkinId?>(value),
+    );
+  }
+}
+
+String _$activePersonaSkinHash() => r'1e8e11222b4bf4131cc68bc2b61630e3d5d91fb4';

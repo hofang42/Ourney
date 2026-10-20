@@ -1,0 +1,34 @@
+{
+  "@@locale": "vi",
+  "couple_rituals_name": "Nghi thức đôi",
+  "@couple_rituals_name": {
+    "description": "Tên phong cách, hiện ở nhãn đầu màn"
+  },
+  "couple_rituals_dayLabel": "Ngày {day}",
+  "@couple_rituals_dayLabel": {
+    "description": "Ngày thứ N của hành trình",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "couple_rituals_streakLabel": "Chuỗi {streak} ngày",
+  "@couple_rituals_streakLabel": {
+    "description": "Chuỗi ngày liên tiếp",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "couple_rituals_checkInsLabel": "{count} lần check-in",
+  "@couple_rituals_checkInsLabel": {
+    "description": "Số lần check-in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

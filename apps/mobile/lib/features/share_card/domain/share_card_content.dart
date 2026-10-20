@@ -68,6 +68,7 @@ class ShareCardContent {
   const ShareCardContent({
     required this.title,
     required this.emoji,
+    required this.templateId,
     required this.headline,
     required this.number,
     required this.blurPhoto,
@@ -118,6 +119,7 @@ class ShareCardContent {
     return ShareCardContent(
       title: core.title,
       emoji: core.emoji,
+      templateId: journey.templateId,
       headline: headline,
       number: value,
       totalDays: journey.durationDays,
@@ -131,6 +133,9 @@ class ShareCardContent {
 
   final String title;
   final String emoji;
+
+  /// Fallback for the card icon when [emoji] has no vector icon.
+  final TemplateId templateId;
   final ShareCardHeadline headline;
 
   /// The big number.

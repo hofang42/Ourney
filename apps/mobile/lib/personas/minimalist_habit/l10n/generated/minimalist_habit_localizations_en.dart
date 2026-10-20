@@ -1,0 +1,29 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+
+import 'minimalist_habit_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class MinimalistHabitL10nEn extends MinimalistHabitL10n {
+  MinimalistHabitL10nEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get minimalist_habit_name => 'Minimalist Habit';
+
+  @override
+  String minimalist_habit_dayLabel(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String minimalist_habit_streakLabel(int streak) {
+    return '$streak-day streak';
+  }
+
+  @override
+  String minimalist_habit_checkInsLabel(int count) {
+    return '$count check-ins';
+  }
+}

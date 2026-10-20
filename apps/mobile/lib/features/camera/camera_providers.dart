@@ -25,7 +25,7 @@ final captureJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
 /// Shared-preferences keys owned by the camera feature.
 abstract final class CameraPrefs {
   /// Journey chosen last in the chip row (FR-C1).
-  static const lastJourneyId = 'camera.lastJourneyId';
+  static const lastJourneyId = ActiveJourneyId.prefsKey;
 
   /// Set once the in-context pre-prompt was accepted and the OS camera
   /// prompt was triggered, so later launches open the camera at once.

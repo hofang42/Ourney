@@ -1,0 +1,34 @@
+{
+  "@@locale": "en",
+  "quiet_transformer_name": "Quiet Transformer",
+  "@quiet_transformer_name": {
+    "description": "Persona name shown in the screen label"
+  },
+  "quiet_transformer_dayLabel": "Day {day}",
+  "@quiet_transformer_dayLabel": {
+    "description": "Ngày thứ N của hành trình",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "quiet_transformer_streakLabel": "{streak}-day streak",
+  "@quiet_transformer_streakLabel": {
+    "description": "Chuỗi ngày liên tiếp",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "quiet_transformer_checkInsLabel": "{count} check-ins",
+  "@quiet_transformer_checkInsLabel": {
+    "description": "Số lần check-in",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
+}

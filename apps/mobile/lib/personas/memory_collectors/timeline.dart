@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -211,6 +213,12 @@ class _ScrapbookSegment extends StatelessWidget {
         // slot vertically, like photos pinned along one string.
         final segmentHeight = cardWidth * 0.78 + 20.0;
         final nodeY = segmentHeight * 0.34;
+        // A Polaroid is taller than its slot. The next photo covers the
+        // overflow, but the last one has no neighbour and would hang over
+        // whatever sits below the timeline, so its slot is as tall as it.
+        final slotHeight = hasNext
+            ? segmentHeight
+            : math.max(segmentHeight, cardWidth * 1.25 + 12);
 
         // The thread meanders around the page centre and is tied to the inner
         // edge of whichever photo it passes.
@@ -265,7 +273,7 @@ class _ScrapbookSegment extends StatelessWidget {
         return Center(
           child: SizedBox(
             width: maxW,
-            height: segmentHeight,
+            height: slotHeight,
             child: Stack(
               clipBehavior: Clip.none,
               children: [

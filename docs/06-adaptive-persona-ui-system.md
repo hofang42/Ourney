@@ -50,13 +50,15 @@ Every `PersonaSkinId` **MUST** define both Light and Dark mode palettes:
 | `PersonaSkinId` | Light `bg` / `surface` / `ink` | Dark `bg` / `surface` / `ink` | `primaryAccent` | `secondaryAccent` | Border & Elevation Style |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`quietTransformer`** | `#EFF3F0` / `#FFFFFF` / `#0F172A` | `#0B0F12` / `#151C21` / `#F1F5F9` | `#10B981` (Emerald) | `#FF4D6D` (Coral Shutter) | Hairline `1px` border, soft clinical elevation |
-| **`accountabilitySquad`** | `#F7F1E5` / `#FFFDF9` / `#1E1B18` | `#12131A` / `#1D1F2B` / `#F8FAFC` | `#FF9F1C` (Flame Gold) | `#7C5CFF` (Squad Violet) | Tactile `2px` ink border + `3px` bottom lip |
-| **`memoryCollectors`** | `#F4EFE6` / `#FFFFFF` / `#231F1E` | `#141312` / `#1F1D1B` / `#F5F2EB` | `#D95338` (Terracotta) | `#4A6B53` (Olive Sage) | Paper shadow + masking tape + film sprocket |
+| **`accountabilitySquad`** | `#F7F1E5` / `#FFFDF9` / `#1E1B18` | `#12131A` / `#1D1F2B` / `#F8FAFC` | `#FF9F1C` (Flame Gold) | `#7556F8` (Squad Violet) | Tactile `2px` ink border + `3px` bottom lip |
+| **`memoryCollectors`** | `#F4EFE6` / `#FFFFFF` / `#231F1E` | `#141312` / `#1F1D1B` / `#F5F2EB` | `#CC4A2F` (Terracotta) | `#4A6B53` (Olive Sage) | Paper shadow + masking tape + film sprocket |
 | **`coupleRituals`** | `#F9F0EE` / `#FFFFFF` / `#261F22` | `#171215` / `#241C21` / `#FCE7F3` | `#E15B72` (Rose Coral) | `#9D174D` (Deep Berry) | Soft rounded `24px` paired diptych frames |
 | **`aestheticFlexer`** | `#F3F4F6` / `#FFFFFF` / `#090A0F` | `#090A0F` / `#14161F` / `#F8FAFC` | `#FF4D6D` (Electric Coral) | `#3DE88C` (Neon Lime) | Frosted glass (`BackdropFilter`) + glowing `1px` stroke |
 | **`minimalistHabit`** | `#F5F3EE` / `#FFFFFF` / `#1C1C1E` | `#0E0E10` / `#18181B` / `#F4F4F5` | `#EA580C` (Braun Orange) | `#27272A` (Matte Charcoal) | Crisp `1px` geometric grid, zero ornamental clutter |
 
 ---
+
+> **Contrast (F6).** Every text pair of every skin, in both modes, is held to WCAG AA 4.5:1 by `apps/mobile/test/app/theme_contrast_test.dart`: `ink` and `inkMuted` on `background`, `surface` and `surfaceElevated`, and the label on `primaryAccent` and `secondaryAccent` fills. Squad Violet and Terracotta are the nearest AA-safe shades of the original `#7C5CFF` and `#D95338`; `inkMuted` of Memory Collectors (light) went from `#6E665E` to `#6A625A` for the same reason. An accent used alone, as an icon or an indicator bar, is not held to 3:1 (Flame Gold on cream cannot reach it), so such an accent always comes with a label or a shape.
 
 ## 4. Mandatory Rules for Engineers & AI Agents
 

@@ -128,7 +128,7 @@ abstract class AccountabilitySquadL10n {
   /// Nhãn Polaroid của ngày hôm nay
   ///
   /// In vi, this message translates to:
-  /// **'NGÀY {day} · HÔM NAY 🔥'**
+  /// **'NGÀY {day} · HÔM NAY'**
   String accountability_squad_dayTodayLabel(String day);
 
   /// Nhãn Polaroid ở các mốc 7, 14, 21...
@@ -158,7 +158,7 @@ abstract class AccountabilitySquadL10n {
   /// Phần chuỗi ngày trên pill màn hình chụp (S2)
   ///
   /// In vi, this message translates to:
-  /// **'🔥 {streak} CHUỖI NGÀY'**
+  /// **'{streak} CHUỖI NGÀY'**
   String accountability_squad_streakBadge(int streak);
 
   /// Thanh tiến độ đầu màn hình Squad Polaroid Wall (S3)
@@ -194,7 +194,7 @@ abstract class AccountabilitySquadL10n {
   /// Nút tím nhắc thành viên chưa check-in trong ô chờ (S3, chỉ hiện khi bật Nudge)
   ///
   /// In vi, this message translates to:
-  /// **'Nhắc {name} 👋'**
+  /// **'Nhắc {name}'**
   String accountability_squad_nudge(String name);
 }
 

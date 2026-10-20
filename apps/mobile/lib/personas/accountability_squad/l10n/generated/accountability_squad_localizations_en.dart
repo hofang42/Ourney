@@ -29,7 +29,7 @@ class AccountabilitySquadL10nEn extends AccountabilitySquadL10n {
 
   @override
   String accountability_squad_dayTodayLabel(String day) {
-    return 'DAY $day · TODAY 🔥';
+    return 'DAY $day · TODAY';
   }
 
   @override
@@ -52,7 +52,7 @@ class AccountabilitySquadL10nEn extends AccountabilitySquadL10n {
 
   @override
   String accountability_squad_streakBadge(int streak) {
-    return '🔥 $streak STREAK';
+    return '$streak STREAK';
   }
 
   @override
@@ -76,6 +76,6 @@ class AccountabilitySquadL10nEn extends AccountabilitySquadL10n {
 
   @override
   String accountability_squad_nudge(String name) {
-    return 'Nudge $name 👋';
+    return 'Nudge $name';
   }
 }
