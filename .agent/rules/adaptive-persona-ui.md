@@ -103,7 +103,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
 ### Persona 2: `PersonaSkinId.accountabilitySquad` (`TemplateId.englishDaily`)
 - **Reference Image**: `apps/mobile/assets/design_personas/persona_2_accountability_squad.jpg`
 - **Palette**:
-  - Light: Bg `#F7F1E5`, Surface `#FFFDF9`, Ink `#1E1B18`, Primary `#FF9F1C` (Flame Orange), Secondary `#7C5CFF` (Squad Violet), `2dp` ink border + `3dp` bottom lip.
+  - Light: Bg `#F7F1E5`, Surface `#FFFDF9`, Ink `#1E1B18`, Primary `#FF9F1C` (Flame Orange), Secondary `#7556F8` (Squad Violet), `2dp` ink border + `3dp` bottom lip.
   - Dark: Bg `#12131A`, Surface `#1D1F2B`, Ink `#F8FAFC`, Primary `#FFB547`, Secondary `#9D85FF`.
 - **Signature Screens**:
   1. **Timeline (`steppingStoneQuest`)**: Vertical S-curve winding stepping-stone trail leading up to the `DAY 30 GOAL` trophy, with tilted Polaroid study checkpoints along the path.
@@ -113,7 +113,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
 ### Persona 3: `PersonaSkinId.memoryCollectors` (`TemplateId.travel`)
 - **Reference Image**: `apps/mobile/assets/design_personas/persona_3_memory_collectors.jpg`
 - **Palette**:
-  - Light: Bg `#F4EFE6`, Surface `#FFFFFF`, Ink `#231F1E`, Primary `#D95338` (Terracotta), Secondary `#4A6B53` (Olive Sage).
+  - Light: Bg `#F4EFE6`, Surface `#FFFFFF`, Ink `#231F1E`, Primary `#CC4A2F` (Terracotta), Secondary `#4A6B53` (Olive Sage).
   - Dark: Bg `#141312`, Surface `#1F1D1B`, Ink `#F5F2EB`, Primary `#E05A47`, Secondary `#658B6E`.
 - **Signature Screens**:
   1. **Timeline (`scrapbookThread`)**: Continuous terracotta red stitched thread running vertically down the page, connecting tilted Polaroid photo cards with masking-tape strips at top (`DAY 01 · PINE FOREST`, `DAY 02 · CLOUD HUNTING`, `DAY 03 · CAMPFIRE`).
