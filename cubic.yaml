@@ -21,6 +21,9 @@ reviews:
       - apps/mobile/dist/
       - apps/mobile/assets/
       - "**/pubspec.lock"
+    # Every PR targets main, so cubic only reviews when triggered after CI passes.
+    base_branches:
+      - main
     pr_labels:
       - skip-review
   custom_rules:

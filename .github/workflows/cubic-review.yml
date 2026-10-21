@@ -1,0 +1,36 @@
+name: Request cubic review
+
+# cubic cannot wait for CI by itself, so its automatic reviews are off
+# (cubic.yaml → reviews.ignore.base_branches). Once CI passes on a PR,
+# this workflow comments `@cubic-dev-ai review` to start a review.
+# workflow_run only fires from the copy of this file on the default branch.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  request-review:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Comment @cubic-dev-ai review on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          pr=$(gh pr list --repo "$REPO" --state open --search "$HEAD_SHA" \
+            --json number,isDraft,labels \
+            --jq '[.[] | select((.isDraft | not) and ([.labels[].name] | index("skip-review") | not))][0].number // empty')
+          if [ -z "$pr" ]; then
+            echo "No open, non-draft PR without skip-review for $HEAD_SHA; skipping."
+            exit 0
+          fi
+          gh pr comment "$pr" --repo "$REPO" --body "@cubic-dev-ai review"
