@@ -43,8 +43,12 @@ class PersonaTimelineData {
     required this.days,
     this.currentStreak = 0,
     this.hideMetric = false,
+    this.myName,
+    this.partnerName,
+    this.partnerCheckInsByDate = const {},
     this.onTapDay,
     this.photoBuilder,
+    this.partnerPhotoBuilder,
     this.shrinkWrap = false,
     this.physics,
   });
@@ -54,8 +58,12 @@ class PersonaTimelineData {
   factory PersonaTimelineData.fromProgress(
     JourneyProgress progress, {
     bool hideMetric = false,
+    String? myName,
+    String? partnerName,
+    Map<LocalDate, CheckIn> partnerCheckInsByDate = const {},
     ValueChanged<TimelineDay>? onTapDay,
     PersonaDayPhotoBuilder? photoBuilder,
+    PersonaCheckInPhotoBuilder? partnerPhotoBuilder,
     bool shrinkWrap = false,
     ScrollPhysics? physics,
   }) => PersonaTimelineData(
@@ -63,8 +71,12 @@ class PersonaTimelineData {
     days: progress.timeline(),
     currentStreak: progress.summary.current,
     hideMetric: hideMetric,
+    myName: myName,
+    partnerName: partnerName,
+    partnerCheckInsByDate: partnerCheckInsByDate,
     onTapDay: onTapDay,
     photoBuilder: photoBuilder,
+    partnerPhotoBuilder: partnerPhotoBuilder,
     shrinkWrap: shrinkWrap,
     physics: physics,
   );
@@ -77,8 +89,19 @@ class PersonaTimelineData {
 
   /// The caller hides their metric: draw no number and no curve (FR-B7).
   final bool hideMetric;
+
+  /// Optional display name for the current user (used by `coupleRituals` D2).
+  final String? myName;
+
+  /// Optional display name for the partner in a 2-member journey (D2).
+  final String? partnerName;
+
+  /// Partner's check-ins indexed by journey-local date (D1/D2).
+  final Map<LocalDate, CheckIn> partnerCheckInsByDate;
+
   final ValueChanged<TimelineDay>? onTapDay;
   final PersonaDayPhotoBuilder? photoBuilder;
+  final PersonaCheckInPhotoBuilder? partnerPhotoBuilder;
 
   /// True when the timeline sits inside another scrollable.
   final bool shrinkWrap;
@@ -110,6 +133,9 @@ class PersonaCameraData {
     this.metricValue,
     this.hideMetric = false,
     this.firstPhoto,
+    this.partnerName,
+    this.partnerTodayCheckIn,
+    this.partnerPhotoBuilder,
     this.bottomBar,
     this.borderRadius,
   });
@@ -133,6 +159,15 @@ class PersonaCameraData {
   /// Day-1 photo for personas that draw an alignment ghost (Q2).
   final ImageProvider? firstPhoto;
 
+  /// Display name of the partner in a 2-member journey (D3).
+  final String? partnerName;
+
+  /// Partner's check-in for today, if already taken (D3).
+  final CheckIn? partnerTodayCheckIn;
+
+  /// Optional test photo builder for [partnerTodayCheckIn] (D3).
+  final PersonaCheckInPhotoBuilder? partnerPhotoBuilder;
+
   /// Row drawn under the viewfinder by personas that own it.
   final Widget? bottomBar;
   final double? borderRadius;
@@ -147,6 +182,7 @@ class PersonaShareData {
   const PersonaShareData({
     required this.journey,
     required this.checkIns,
+    this.partnerCheckIns = const [],
     this.currentStreak = 0,
     this.dayNumber = 1,
     this.hideMetric = false,
@@ -161,6 +197,9 @@ class PersonaShareData {
 
   /// The caller's check-ins, any order.
   final List<CheckIn> checkIns;
+
+  /// Optional partner check-ins for couple mosaic posters (D4).
+  final List<CheckIn> partnerCheckIns;
   final int currentStreak;
   final int dayNumber;
 

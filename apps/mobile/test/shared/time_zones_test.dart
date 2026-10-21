@@ -65,10 +65,12 @@ void main() {
         'Etc/GMT-7',
       );
       expect(
-        guessTimeZoneForOffset(
-          const Duration(hours: 5, minutes: 30),
-          at: t,
-        ).timeZone(t.millisecondsSinceEpoch).offset,
+        Duration(
+          milliseconds: guessTimeZoneForOffset(
+            const Duration(hours: 5, minutes: 30),
+            at: t,
+          ).timeZone(t.millisecondsSinceEpoch).offset,
+        ),
         const Duration(hours: 5, minutes: 30),
       );
       expect(guessTimeZoneForOffset(Duration.zero).name, 'UTC');

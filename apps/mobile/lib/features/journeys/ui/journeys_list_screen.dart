@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../app/providers.dart';
+import '../../../app/theme/persona_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../personas/persona_contract.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
@@ -18,8 +23,12 @@ import '../domain/journey_progress.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_errors.dart';
 
-/// Journeys tab (`/journeys`): running journeys, then finished ones, and the
-/// "new journey" FAB guarded by the 3-active-journeys rule (FR-B3).
+/// **Task J1** (`JourneysListScreen` — Global Hub `/journeys`):
+/// - Renders on the neutral **Ourney Editorial Base** (`editorialNeutralBase`)
+///   so multiple journeys of different persona skins coexist harmoniously.
+/// - Each [JourneyCard] renders a badge colored with its own persona's
+///   `primaryAccent` (`OurneyPersonaTheme.forSkin`) and vector icon.
+/// - Tapping a card updates `activeJourneyIdProvider` and opens `/journey/:id`.
 class JourneysListScreen extends ConsumerWidget {
   const JourneysListScreen({super.key});
 
@@ -69,21 +78,41 @@ class JourneysListScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
-      key: const ValueKey('journeys-list'),
-      appBar: AppBar(
-        title: Text(l10n.journeys_title),
-        actions: const [ProfileButton()],
+    final baseTheme = Theme.of(context);
+    final neutralPersona = OurneyPersonaTheme.editorialNeutralBase(
+      baseTheme.brightness,
+    );
+
+    return Theme(
+      data: baseTheme.copyWith(
+        scaffoldBackgroundColor: neutralPersona.background,
+        appBarTheme: baseTheme.appBarTheme.copyWith(
+          backgroundColor: neutralPersona.background,
+          foregroundColor: neutralPersona.ink,
+        ),
+        extensions: [
+          for (final e in baseTheme.extensions.values)
+            if (e is! OurneyPersonaTheme) e,
+          neutralPersona,
+        ],
       ),
-      body: SafeArea(child: body),
-      floatingActionButton: buckets == null || buckets.isEmpty
-          ? null
-          : FloatingActionButton.extended(
-              key: const ValueKey('journeys-new'),
-              onPressed: () => startCreate(context, buckets),
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.journeys_newJourney),
-            ),
+      child: Scaffold(
+        key: const ValueKey('journeys-list'),
+        backgroundColor: neutralPersona.background,
+        appBar: AppBar(
+          title: Text(l10n.journeys_title),
+          actions: const [ProfileButton()],
+        ),
+        body: SafeArea(child: body),
+        floatingActionButton: buckets == null || buckets.isEmpty
+            ? null
+            : FloatingActionButton.extended(
+                key: const ValueKey('journeys-new'),
+                onPressed: () => startCreate(context, buckets),
+                icon: const Icon(Icons.add_rounded),
+                label: Text(l10n.journeys_newJourney),
+              ),
+      ),
     );
   }
 }
@@ -149,8 +178,8 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-/// One journey on the Journeys tab: emoji, title, day N/M, streak flame and
-/// whether today is done (icon + text, not color only).
+/// One journey on the Journeys tab: persona-colored badge, title, day N/M,
+/// streak flame and whether today is done (icon + text, not color only).
 class JourneyCard extends ConsumerWidget {
   const JourneyCard({required this.journey, super.key});
 
@@ -161,6 +190,7 @@ class JourneyCard extends ConsumerWidget {
     final l10n = JourneysL10n.of(context);
     final app = AppLocalizations.of(context);
     final c = OurneyColors.of(context);
+    final brightness = Theme.of(context).brightness;
     final text = Theme.of(context).textTheme;
     final membership = ref.watch(myMembershipProvider(journey.id));
     final checkIns = ref.watch(myCheckInsProvider(journey.id));
@@ -173,6 +203,10 @@ class JourneyCard extends ConsumerWidget {
           )
         : null;
     final active = journey.status == JourneyStatus.active;
+    final cardSkin = personaSkinOf(journey);
+    final cardPersona = OurneyPersonaTheme.forSkin(cardSkin, brightness);
+    final selectedId = ref.watch(activeJourneyIdProvider);
+    final isSelected = selectedId == journey.id;
 
     final dayText = progress == null
         ? null
@@ -194,24 +228,32 @@ class JourneyCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: OurneySpacing.md),
       child: OurneyCard(
         key: ValueKey('journey-card-${journey.id}'),
-        onTap: () => context.push(AppRoutes.journey(journey.id)),
+        onTap: () {
+          unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
+          context.push(AppRoutes.journey(journey.id));
+        },
         child: Row(
           children: [
             ExcludeSemantics(
               child: Container(
+                key: ValueKey('journey-badge-${journey.id}'),
                 width: 52,
                 height: 52,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color:
-                      (journey.kind == JourneyKind.group ? c.accent : c.primary)
-                          .withValues(alpha: 0.14),
+                  color: cardPersona.primaryAccent.withValues(alpha: 0.16),
                   borderRadius: BorderRadius.circular(OurneyRadii.chip),
+                  border: Border.all(
+                    color: isSelected
+                        ? cardPersona.primaryAccent
+                        : cardPersona.primaryAccent.withValues(alpha: 0.35),
+                    width: isSelected ? 2 : 1,
+                  ),
                 ),
                 child: Icon(
                   journeyIcon(journey.emoji, journey.templateId),
-                  size: 28,
-                  color: c.ink,
+                  size: 26,
+                  color: cardPersona.primaryAccent,
                 ),
               ),
             ),

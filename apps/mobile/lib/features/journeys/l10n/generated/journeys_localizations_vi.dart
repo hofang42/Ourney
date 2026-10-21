@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'journeys_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -81,6 +80,19 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_templateCustomHint => 'Tự đặt mọi thứ';
+
+  @override
+  String get journeys_templateCoupleTitle => 'Nghi thức cặp đôi';
+
+  @override
+  String get journeys_templateCoupleHint =>
+      'Hai người cùng lưu khoảnh khắc mỗi ngày';
+
+  @override
+  String get journeys_personaPreviewLabel => 'Xem trước giao diện';
+
+  @override
+  String get journeys_continueTemplateButton => 'Tiếp tục với kiểu này';
 
   @override
   String get journeys_createTitle => 'Tạo hành trình';

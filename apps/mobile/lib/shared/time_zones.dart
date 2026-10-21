@@ -182,7 +182,7 @@ tz.Location guessTimeZoneForOffset(Duration offset, {DateTime? at}) {
   for (final entry in db.entries) {
     if (!entry.key.contains('/') || entry.key.startsWith('Etc/')) continue;
     if (legacyTimeZoneAliases.containsKey(entry.key)) continue;
-    if (entry.value.timeZone(ms).offset == offset) {
+    if (Duration(milliseconds: entry.value.timeZone(ms).offset) == offset) {
       return entry.value;
     }
   }
@@ -191,7 +191,10 @@ tz.Location guessTimeZoneForOffset(Duration offset, {DateTime? at}) {
 
 /// UTC offset of zone [name] at [instant] (see [resolveTimeZone]).
 Duration timeZoneOffsetAt(String name, DateTime instant) {
-  return resolveTimeZone(name).timeZone(instant.millisecondsSinceEpoch).offset;
+  return Duration(
+    milliseconds:
+        resolveTimeZone(name).timeZone(instant.millisecondsSinceEpoch).offset,
+  );
 }
 
 @visibleForTesting

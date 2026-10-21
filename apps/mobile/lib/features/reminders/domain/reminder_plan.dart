@@ -267,7 +267,9 @@ LocalDate localDateIn(String timezone, DateTime instant) =>
 LocalDate _localDate(DateTime instant, tz.Location zone) {
   return localDateOf(
     instant,
-    zone.timeZone(instant.millisecondsSinceEpoch).offset,
+    Duration(
+      milliseconds: zone.timeZone(instant.millisecondsSinceEpoch).offset,
+    ),
   );
 }
 
@@ -283,7 +285,7 @@ DateTime wallClockToUtc(tz.Location zone, LocalDate date, ReminderTime time) {
     time.hour,
     time.minute,
   ).millisecondsSinceEpoch;
-  int offsetAt(int utcMs) => zone.timeZone(utcMs).offset.inMilliseconds;
+  int offsetAt(int utcMs) => zone.timeZone(utcMs).offset;
 
   // Offsets in force somewhat before and after the wall time cover any
   // single transition near it (transitions are never < 1 day apart).

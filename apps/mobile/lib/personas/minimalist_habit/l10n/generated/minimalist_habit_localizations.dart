@@ -121,6 +121,54 @@ abstract class MinimalistHabitL10n {
   /// In vi, this message translates to:
   /// **'{count} lần check-in'**
   String minimalist_habit_checkInsLabel(int count);
+
+  /// Tiêu đề lịch chuỗi ngày của phong cách 6
+  ///
+  /// In vi, this message translates to:
+  /// **'THÁNG {month} · CHUỖI {streak} NGÀY'**
+  String minimalist_habit_monthStreakHeader(int month, int streak);
+
+  /// Nhãn duy nhất trên màn chụp phong cách 6
+  ///
+  /// In vi, this message translates to:
+  /// **'{title} · NGÀY {day}'**
+  String minimalist_habit_cameraPill(String title, int day);
+
+  /// Nhãn phụ tối giản dưới khung ngắm
+  ///
+  /// In vi, this message translates to:
+  /// **'1 chạm · Không cần gõ chữ'**
+  String get minimalist_habit_quickSnapHint;
+
+  /// Dòng tổng kết khi hành trình có thời hạn
+  ///
+  /// In vi, this message translates to:
+  /// **'{done} / {total} NGÀY HOÀN THÀNH'**
+  String minimalist_habit_summaryCompleted(int done, int total);
+
+  /// Dòng tổng kết khi hành trình không giới hạn ngày
+  ///
+  /// In vi, this message translates to:
+  /// **'{done} NGÀY HOÀN THÀNH'**
+  String minimalist_habit_summaryOpen(int done);
+
+  /// Phần trăm đều đặn trên thiệp tối giản
+  ///
+  /// In vi, this message translates to:
+  /// **'{percent}% ĐỀU ĐẶN'**
+  String minimalist_habit_summaryConsistency(int percent);
+
+  /// Nút xuất thiệp tối giản
+  ///
+  /// In vi, this message translates to:
+  /// **'Xuất thiệp tối giản'**
+  String get minimalist_habit_exportCardButton;
+
+  /// Ô chờ khi chưa có ảnh
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có ảnh'**
+  String get minimalist_habit_noPhotoYet;
 }
 
 class _MinimalistHabitL10nDelegate

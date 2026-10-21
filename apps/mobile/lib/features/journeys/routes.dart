@@ -32,11 +32,13 @@ final List<RouteBase> journeysRoutes = [
           GoRoute(
             path: ':template',
             parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) => CreateJourneyScreen(
-              templateId: CreateJourneyScreen.parseTemplate(
-                state.pathParameters['template'],
-              ),
-            ),
+            builder: (context, state) {
+              final raw = state.pathParameters['template'];
+              return CreateJourneyScreen(
+                templateId: CreateJourneyScreen.parseTemplate(raw),
+                isCouplePreset: CreateJourneyScreen.isCoupleWire(raw),
+              );
+            },
           ),
         ],
       ),

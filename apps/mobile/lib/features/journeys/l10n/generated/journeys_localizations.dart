@@ -218,6 +218,30 @@ abstract class JourneysL10n {
   /// **'Tự đặt mọi thứ'**
   String get journeys_templateCustomHint;
 
+  /// No description provided for @journeys_templateCoupleTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nghi thức cặp đôi'**
+  String get journeys_templateCoupleTitle;
+
+  /// No description provided for @journeys_templateCoupleHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hai người cùng lưu khoảnh khắc mỗi ngày'**
+  String get journeys_templateCoupleHint;
+
+  /// No description provided for @journeys_personaPreviewLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem trước giao diện'**
+  String get journeys_personaPreviewLabel;
+
+  /// No description provided for @journeys_continueTemplateButton.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục với kiểu này'**
+  String get journeys_continueTemplateButton;
+
   /// No description provided for @journeys_createTitle.
   ///
   /// In vi, this message translates to:
