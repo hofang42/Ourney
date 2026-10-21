@@ -28,7 +28,7 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
   static const int heatmapBarCount = 21;
 
   /// Computes a boolean list of length [heatmapBarCount] representing whether
-  /// each day in the window (`1..21` or trailing 21 days up to `dayNumber`)
+  /// each day in the window (trailing 21 days ending at `currentDayNumber`)
   /// has a check-in.
   static List<bool> buildHeatmap(
     Journey journey,
@@ -36,11 +36,11 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
     int currentDayNumber,
   ) {
     final doneDates = {for (final c in checkIns) c.localDate};
-    final endDay = math.max(heatmapBarCount, currentDayNumber);
+    final endDay = math.max(1, currentDayNumber);
     final startDay = endDay - heatmapBarCount + 1;
     return [
       for (var d = startDay; d <= endDay; d++)
-        doneDates.contains(journey.startDate.addDays(d - 1)),
+        d >= 1 && doneDates.contains(journey.startDate.addDays(d - 1)),
     ];
   }
 
@@ -50,10 +50,13 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
     final l10n = AestheticFlexerL10n.of(context);
     final sorted = data.sortedCheckIns;
     final latest = sorted.lastOrNull;
+    final latestWithMetric = sorted.reversed
+        .where((c) => c.metricValue != null)
+        .firstOrNull;
     final heatmap = buildHeatmap(data.journey, sorted, data.dayNumber);
-    final activeCount = sorted.length;
+    final activeCount = {for (final c in sorted) c.localDate}.length;
     final dayDigits = data.dayNumber.toString().padLeft(2, '0');
-    final metricVal = data.hideMetric ? null : latest?.metricValue;
+    final metricVal = data.hideMetric ? null : latestWithMetric?.metricValue;
     final metricStr = metricVal == null
         ? null
         : MetricSeries.formatValue(metricVal, data.journey.metricUnit);
@@ -95,12 +98,12 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 12),
-              // 9:16 Story Frame Preview (capped in height so 320dp tests scroll cleanly).
+              // 9:16 Story Frame Preview (capped in width so 320dp tests scroll cleanly).
               Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 280),
+                  constraints: const BoxConstraints(maxWidth: 260),
                   child: AspectRatio(
-                    aspectRatio: 9 / 14,
+                    aspectRatio: 9 / 16,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(18),
                       child: Stack(
@@ -140,17 +143,38 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '${l10n.aesthetic_flexer_milestoneDay(dayDigits)} · '
-                                  '🔥 ${data.currentStreak}',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.3,
-                                  ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        '${l10n.aesthetic_flexer_milestoneDay(dayDigits)} · ',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.local_fire_department_rounded,
+                                      size: 14,
+                                      color: pTheme.primaryAccent,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${data.currentStreak}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,

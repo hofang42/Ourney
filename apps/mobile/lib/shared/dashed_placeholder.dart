@@ -14,6 +14,7 @@ class DashedPlaceholder extends StatelessWidget {
     this.aspectRatio = 1,
     this.radius,
     this.strokeWidth = 1.5,
+    this.color,
     super.key,
   });
 
@@ -25,9 +26,14 @@ class DashedPlaceholder extends StatelessWidget {
   final double? radius;
   final double strokeWidth;
 
+  /// Optional override for the dash border, icon, and label color (e.g. over
+  /// dark camera viewfinders in light mode).
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     final pTheme = OurneyPersonaTheme.of(context);
+    final fg = color ?? pTheme.inkMuted;
     final r = radius ?? (pTheme.cardRadius < 16 ? pTheme.cardRadius : 16.0);
     return Semantics(
       label: label,
@@ -36,7 +42,7 @@ class DashedPlaceholder extends StatelessWidget {
         aspectRatio: aspectRatio,
         child: CustomPaint(
           painter: _DashedBorderPainter(
-            color: pTheme.inkMuted,
+            color: fg,
             radius: r,
             strokeWidth: strokeWidth,
           ),
@@ -47,7 +53,7 @@ class DashedPlaceholder extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null)
-                    Icon(icon, color: pTheme.inkMuted, size: 24),
+                    Icon(icon, color: fg, size: 24),
                   if (icon != null && label != null) const SizedBox(height: 4),
                   if (label != null)
                     Flexible(
@@ -57,7 +63,7 @@ class DashedPlaceholder extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: pTheme.inkMuted,
+                          color: fg,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           height: 1.35,

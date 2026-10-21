@@ -6,6 +6,7 @@ import '../../app/theme/persona_theme.dart';
 import '../../features/journeys/domain/journey_progress.dart';
 import '../../features/journeys/ui/journey_photo.dart';
 import '../../features/journeys/ui/timeline_grid.dart';
+import '../../shared/color_utils.dart';
 import '../../shared/dashed_placeholder.dart';
 import '../../shared/layout.dart';
 import '../../shared/persona_pill.dart';
@@ -31,7 +32,7 @@ class ConnectedWeightCurveTimeline extends StatelessWidget {
     if (allDays.isEmpty) return const [];
     final reached = [
       for (final d in allDays)
-        if (d.state != DayState.future) d,
+        if (d.state != DayState.future && d.state != DayState.notCounted) d,
     ];
     return reached.isEmpty ? [allDays.first] : reached;
   }
@@ -191,12 +192,12 @@ class _TrendCurveCard extends StatelessWidget {
     }
 
     final delta = series.delta;
-    final summaryText = series.hasCurve
-        ? '${MetricSeries.formatValue(series.startValue!, unit)} ➔ '
-              '${MetricSeries.formatValue(series.latestValue!, unit)}'
-        : (series.isSingle
-              ? MetricSeries.formatValue(series.latestValue!, unit)
-              : null);
+    final startText = series.hasCurve
+        ? MetricSeries.formatValue(series.startValue!, unit)
+        : null;
+    final latestText = (series.hasCurve || series.isSingle)
+        ? MetricSeries.formatValue(series.latestValue!, unit)
+        : null;
 
     return Container(
       key: const ValueKey('q1-curve-card'),
@@ -255,19 +256,48 @@ class _TrendCurveCard extends StatelessWidget {
                 ),
             ],
           ),
-          if (summaryText != null) ...[
+          if (latestText != null) ...[
             const SizedBox(height: 6),
-            Text(
-              summaryText,
+            Row(
               key: const ValueKey('q1-curve-summary'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: displayStyle(
-                size: 19,
-                weight: 700,
-                color: pTheme.ink,
-                height: 1.3,
-              ),
+              children: [
+                if (startText != null) ...[
+                  Flexible(
+                    child: Text(
+                      startText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: displayStyle(
+                        size: 19,
+                        weight: 700,
+                        color: pTheme.inkMuted,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Icon(
+                      Icons.trending_flat_rounded,
+                      size: 18,
+                      color: pTheme.primaryAccent,
+                    ),
+                  ),
+                ],
+                Flexible(
+                  child: Text(
+                    latestText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: displayStyle(
+                      size: 19,
+                      weight: 700,
+                      color: pTheme.ink,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: 10),
@@ -398,7 +428,7 @@ class _MilestoneSpineRow extends StatelessWidget {
                                     : Icons.flag_rounded),
                           size: 14,
                           color: checkedIn || day.isToday
-                              ? Colors.white
+                              ? readableOn(pTheme.primaryAccent)
                               : pTheme.inkMuted,
                         )
                       : null,

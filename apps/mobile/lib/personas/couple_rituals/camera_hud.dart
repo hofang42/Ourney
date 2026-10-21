@@ -79,6 +79,7 @@ class HalfFrameDuoHud extends StatelessWidget {
             child: DashedPlaceholder(
               icon: Icons.favorite_border_rounded,
               label: l10n.couple_rituals_waitingPartner(partnerLabel),
+              color: Colors.white70,
               radius: 14,
             ),
           ),

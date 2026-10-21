@@ -130,13 +130,14 @@ class MetricCurvePainter extends CustomPainter {
       if (p.value < minV) minV = p.value;
       if (p.value > maxV) maxV = p.value;
     }
-    final range = (maxV - minV).abs() < 1e-6 ? 1.0 : (maxV - minV);
+    final isFlat = (maxV - minV).abs() < 1e-6;
+    final range = isFlat ? 1.0 : (maxV - minV);
 
     final offsets = <Offset>[];
     for (var i = 0; i < points.length; i++) {
       final t = i / (points.length - 1);
       final x = hPad + chartW * t;
-      final normY = (points[i].value - minV) / range;
+      final normY = isFlat ? 0.5 : (points[i].value - minV) / range;
       final y = vPad + chartH * (1.0 - normY);
       offsets.add(Offset(x, y));
     }

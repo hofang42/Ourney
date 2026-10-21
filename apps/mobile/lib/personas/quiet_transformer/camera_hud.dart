@@ -248,7 +248,7 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                       ),
                     ),
                     child: SizedBox(
-                      height: 36,
+                      height: OurneyLayout.minTouchTarget,
                       child: Slider(
                         key: const ValueKey('q2-metric-slider'),
                         value: _sliderValue,
@@ -258,6 +258,7 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                         onChanged: (v) {
                           setState(() => _sliderValue = v);
                           widget.onMetricChanged?.call(v);
+                          widget.data.onMetricChanged?.call(v);
                         },
                       ),
                     ),

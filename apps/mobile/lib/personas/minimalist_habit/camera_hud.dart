@@ -18,14 +18,19 @@ class ZeroText3SecHud extends StatelessWidget {
 
   static const Color _mediaBg = Color(0xFF0E0E10);
 
+  int get _dayNumber {
+    if (data.checkInCount > 0) return data.checkInCount + 1;
+    final days = data.journey.startDate.daysUntil(data.date) + 1;
+    return days < 1 ? 1 : days;
+  }
+
   @override
   Widget build(BuildContext context) {
     final pTheme = OurneyPersonaTheme.of(context);
     final l10n = MinimalistHabitL10n.of(context);
-    final dayNumber = data.checkInCount + 1;
     final pillText = l10n.minimalist_habit_cameraPill(
       data.journey.title.toUpperCase(),
-      dayNumber,
+      _dayNumber,
     );
 
     return ClipRRect(

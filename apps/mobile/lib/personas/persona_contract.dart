@@ -131,6 +131,7 @@ class PersonaCameraData {
     this.currentStreak = 0,
     this.checkInCount = 0,
     this.metricValue,
+    this.onMetricChanged,
     this.hideMetric = false,
     this.firstPhoto,
     this.partnerName,
@@ -154,6 +155,9 @@ class PersonaCameraData {
 
   /// Today's metric entry while the HUD has an input for it.
   final double? metricValue;
+
+  /// Callback when a persona HUD slider/control updates today's metric value.
+  final ValueChanged<double>? onMetricChanged;
   final bool hideMetric;
 
   /// Day-1 photo for personas that draw an alignment ghost (Q2).
