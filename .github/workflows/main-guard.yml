@@ -17,5 +17,5 @@ jobs:
     timeout-minutes: 2
     steps:
       - name: Allow trunk-based PR into main
-        run: echo "Trunk-based workflow active: PR into main allowed."
+        run: echo "Trunk-based workflow active - PR into main allowed."
 
