@@ -225,6 +225,25 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               ),
             ),
             const SizedBox(height: OurneySpacing.xl),
+            PersonaShareSwitcher(
+              skin: personaSkinOf(journey),
+              data: PersonaShareData(
+                journey: journey,
+                checkIns: checkIns,
+                partnerCheckIns: ref
+                    .watch(groupDailySnapshotProvider(journey))
+                    .partnerCheckIns,
+                currentStreak: progress.summary.current,
+                dayNumber: progress.dayNumber,
+                hideMetric: content.metricHidden,
+                onShare: _busy
+                    ? null
+                    : () => _share(journey: journey, photo: photo),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+              ),
+            ),
+            const SizedBox(height: OurneySpacing.xl),
             _SectionLabel(l10n.share_card_numberLabel),
             SegmentedButton<ShareCardNumber>(
               key: const ValueKey('share-card-number-mode'),
@@ -306,25 +325,6 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               const SizedBox(height: OurneySpacing.xl),
               PublicLinkSection(journey: journey),
             ],
-            const SizedBox(height: OurneySpacing.xl),
-            PersonaShareSwitcher(
-              skin: personaSkinOf(journey),
-              data: PersonaShareData(
-                journey: journey,
-                checkIns: checkIns,
-                partnerCheckIns: ref
-                    .watch(groupDailySnapshotProvider(journey))
-                    .partnerCheckIns,
-                currentStreak: progress.summary.current,
-                dayNumber: progress.dayNumber,
-                hideMetric: content.metricHidden,
-                onShare: _busy
-                    ? null
-                    : () => _share(journey: journey, photo: photo),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-              ),
-            ),
           ],
         ),
       ),

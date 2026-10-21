@@ -48,6 +48,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     super.initState();
     _drafts = ref.read(draftFilesProvider);
     _caption.addListener(_onCaptionChanged);
+    final initialMetric = widget.photo?.initialMetricValue;
+    if (initialMetric != null) {
+      _metric.text = initialMetric == initialMetric.roundToDouble()
+          ? initialMetric.toInt().toString()
+          : initialMetric.toStringAsFixed(1);
+    }
   }
 
   @override

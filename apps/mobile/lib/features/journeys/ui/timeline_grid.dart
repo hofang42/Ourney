@@ -71,10 +71,18 @@ class TimelineGrid extends StatelessWidget {
 /// color: photo (checked in), dashed outline (missed), thick ring + dot
 /// (today), faded number (future / not counted).
 class DayCell extends StatelessWidget {
-  const DayCell({required this.day, required this.onTap, super.key});
+  const DayCell({
+    required this.day,
+    required this.onTap,
+    this.childOverride,
+    super.key,
+  });
 
   final TimelineDay day;
   final VoidCallback onTap;
+
+  /// Optional persona visual override (e.g. Z1 `_ChainDayCell` visuals).
+  final Widget? childOverride;
 
   DayState get state => day.state;
 
@@ -176,15 +184,16 @@ class DayCell extends StatelessWidget {
               border: Border.all(color: c.primaryDeep, width: 2.5),
             ),
             padding: const EdgeInsets.all(2),
-            child: content,
+            child: childOverride ?? content,
           )
-        : content;
+        : (childOverride ?? content);
 
     final tappable = day.state == DayState.checkedIn;
     return Semantics(
       key: ValueKey('day-${day.date}'),
       label: label,
       button: tappable,
+      onTap: tappable ? onTap : null,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

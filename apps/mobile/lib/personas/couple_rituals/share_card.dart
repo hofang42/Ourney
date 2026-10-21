@@ -34,18 +34,12 @@ class CoupleMosaicPosterShareCard extends StatelessWidget {
     List<CheckIn> mine,
     List<CheckIn> partner,
   ) {
-    final sortedMine = [...mine]
-      ..sort((a, b) => a.localDate.compareTo(b.localDate));
-    final sortedPartner = [...partner]
-      ..sort((a, b) => a.localDate.compareTo(b.localDate));
-    final woven = <CheckIn>[];
-    final maxLen = sortedMine.length > sortedPartner.length
-        ? sortedMine.length
-        : sortedPartner.length;
-    for (var i = 0; i < maxLen; i++) {
-      if (i < sortedMine.length) woven.add(sortedMine[i]);
-      if (i < sortedPartner.length) woven.add(sortedPartner[i]);
-    }
+    final woven = <CheckIn>[...mine, ...partner]
+      ..sort((a, b) {
+        final cmp = a.localDate.compareTo(b.localDate);
+        if (cmp != 0) return cmp;
+        return a.capturedAt.compareTo(b.capturedAt);
+      });
     if (woven.length <= maxTiles) return woven;
     return woven.sublist(woven.length - maxTiles);
   }
@@ -62,94 +56,108 @@ class CoupleMosaicPosterShareCard extends StatelessWidget {
         final width = constraints.hasBoundedWidth
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
+        final maxW = OurneyLayout.contentMaxWidth(width);
         final pad = OurneyLayout.cardPadding(width);
         const columns = 3;
 
-        return SingleChildScrollView(
-          physics: data.physics,
-          child: Container(
-            key: const ValueKey('d4-couple-mosaic-card'),
-            padding: EdgeInsets.all(pad),
-            decoration: BoxDecoration(
-              color: pTheme.surface,
-              borderRadius: BorderRadius.circular(pTheme.cardRadius),
-              border: Border.all(color: pTheme.border, width: pTheme.borderWidth),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  alignment: WrapAlignment.spaceBetween,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    PersonaPill(
-                      key: const ValueKey('d4-style-pill'),
-                      icon: Icons.favorite_rounded,
-                      label: l10n.couple_rituals_name,
-                    ),
-                    PersonaPill(
-                      key: const ValueKey('d4-streak-pill'),
-                      icon: Icons.local_fire_department_rounded,
-                      label: l10n.couple_rituals_streakLabel(data.currentStreak),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.couple_rituals_mosaicTitle(data.dayNumber, totalMoments),
-                  key: const ValueKey('d4-mosaic-headline'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: displayStyle(
-                    size: 19,
-                    weight: 800,
-                    color: pTheme.ink,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  data.journey.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: pTheme.inkMuted,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.35,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                if (moments.isEmpty)
-                  SizedBox(
-                    height: 120,
-                    child: DashedPlaceholder(
-                      key: const ValueKey('d4-mosaic-empty'),
-                      icon: Icons.favorite_border_rounded,
-                      label: l10n.couple_rituals_checkInsLabel(0),
-                    ),
-                  )
-                else
-                  _WovenMosaicGrid(
-                    moments: moments,
-                    columns: columns,
-                    pTheme: pTheme,
-                    photoBuilder: data.photoBuilder,
-                  ),
-                const SizedBox(height: 16),
-                OurneyPrimaryButton(
-                  key: const ValueKey('d4-share-story-btn'),
-                  label: l10n.couple_rituals_shareStoryButton,
-                  icon: Icons.favorite_rounded,
-                  backgroundColor: pTheme.primaryAccent,
-                  onPressed: data.onShare,
-                ),
-              ],
+        final card = Container(
+          key: const ValueKey('d4-couple-mosaic-card'),
+          padding: EdgeInsets.all(pad),
+          decoration: BoxDecoration(
+            color: pTheme.surface,
+            borderRadius: BorderRadius.circular(pTheme.cardRadius),
+            border: Border.all(
+              color: pTheme.border,
+              width: pTheme.borderWidth,
             ),
           ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  PersonaPill(
+                    key: const ValueKey('d4-style-pill'),
+                    icon: Icons.favorite_rounded,
+                    label: l10n.couple_rituals_name,
+                  ),
+                  PersonaPill(
+                    key: const ValueKey('d4-streak-pill'),
+                    icon: Icons.local_fire_department_rounded,
+                    label: l10n.couple_rituals_streakLabel(data.currentStreak),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                l10n.couple_rituals_mosaicTitle(data.dayNumber, totalMoments),
+                key: const ValueKey('d4-mosaic-headline'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: displayStyle(
+                  size: 19,
+                  weight: 800,
+                  color: pTheme.ink,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                data.journey.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: pTheme.inkMuted,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.35,
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (moments.isEmpty)
+                SizedBox(
+                  height: 120,
+                  child: DashedPlaceholder(
+                    key: const ValueKey('d4-mosaic-empty'),
+                    icon: Icons.favorite_border_rounded,
+                    label: l10n.couple_rituals_checkInsLabel(0),
+                  ),
+                )
+              else
+                _WovenMosaicGrid(
+                  moments: moments,
+                  columns: columns,
+                  pTheme: pTheme,
+                  photoBuilder: data.photoBuilder,
+                ),
+              const SizedBox(height: 16),
+              OurneyPrimaryButton(
+                key: const ValueKey('d4-share-story-btn'),
+                label: l10n.couple_rituals_shareStoryButton,
+                icon: Icons.favorite_rounded,
+                backgroundColor: pTheme.primaryAccent,
+                onPressed: data.onShare,
+              ),
+            ],
+          ),
+        );
+
+        final constrained = Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxW),
+            child: card,
+          ),
+        );
+
+        if (data.shrinkWrap) return constrained;
+        return SingleChildScrollView(
+          physics: data.physics,
+          child: constrained,
         );
       },
     );

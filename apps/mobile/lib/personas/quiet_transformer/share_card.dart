@@ -51,13 +51,16 @@ class _SideBySideArchiveShareCardState
     final pTheme = OurneyPersonaTheme.of(context);
     final l10n = QuietTransformerL10n.of(context);
     final sorted = widget.data.sortedCheckIns;
-    final first = sorted.firstOrNull;
-    final latest = sorted.length >= 2 ? sorted.last : null;
+    final startDate = widget.data.journey.startDate;
+    final first = sorted.where((c) => c.localDate == startDate).firstOrNull;
+    final latest = sorted.lastOrNull != null && sorted.last.id != first?.id
+        ? sorted.last
+        : null;
     final unit = widget.data.journey.metricUnit;
     final hasMetric = widget.data.journey.metricName != null;
 
     final startVal = first?.metricValue;
-    final endVal = (latest ?? first)?.metricValue;
+    final endVal = latest?.metricValue;
     final delta = (startVal != null && endVal != null && latest != null)
         ? (endVal - startVal)
         : null;
@@ -69,137 +72,146 @@ class _SideBySideArchiveShareCardState
         final width = constraints.hasBoundedWidth
             ? constraints.maxWidth
             : MediaQuery.sizeOf(context).width;
+        final maxW = OurneyLayout.contentMaxWidth(width);
         final pad = OurneyLayout.cardPadding(width);
         final gap = OurneyLayout.gridSpacing(width);
 
-        return Container(
-          key: const ValueKey('q3-side-by-side-archive'),
-          padding: EdgeInsets.all(pad),
-          decoration: BoxDecoration(
-            color: pTheme.surface,
-            borderRadius: BorderRadius.circular(pTheme.cardRadius),
-            border: Border.all(color: pTheme.border, width: pTheme.borderWidth),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  PersonaPill(
-                    icon: Icons.lock_rounded,
-                    label: l10n.quiet_transformer_name,
-                  ),
-                  if (delta != null && !_hideExactWeight)
-                    PersonaPill(
-                      key: const ValueKey('q3-delta-pill'),
-                      emphasized: true,
-                      label: l10n.quiet_transformer_transformationBadge(
-                        MetricSeries.formatDelta(delta, unit),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                widget.data.journey.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: displayStyle(
-                  size: 19,
-                  weight: 700,
-                  color: pTheme.ink,
-                  height: 1.3,
+        return Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxW),
+            child: Container(
+              key: const ValueKey('q3-side-by-side-archive'),
+              padding: EdgeInsets.all(pad),
+              decoration: BoxDecoration(
+                color: pTheme.surface,
+                borderRadius: BorderRadius.circular(pTheme.cardRadius),
+                border: Border.all(
+                  color: pTheme.border,
+                  width: pTheme.borderWidth,
                 ),
               ),
-              const SizedBox(height: 12),
-              // Side-by-side Day 01 vs Day N comparison frame.
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: _ComparisonFrame(
-                      key: const ValueKey('q3-frame-start'),
-                      badge: l10n.quiet_transformer_compareDayStart,
-                      checkIn: first,
-                      metricLabel: _formatFrameMetric(
-                        first?.metricValue,
-                        unit: unit,
-                        hidden: _hideExactWeight || !hasMetric,
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      PersonaPill(
+                        icon: Icons.lock_rounded,
+                        label: l10n.quiet_transformer_name,
                       ),
-                      waitingLabel: l10n.quiet_transformer_waitingPhoto,
-                      photoBuilder: widget.data.photoBuilder,
+                      if (delta != null && !_hideExactWeight)
+                        PersonaPill(
+                          key: const ValueKey('q3-delta-pill'),
+                          emphasized: true,
+                          label: l10n.quiet_transformer_transformationBadge(
+                            MetricSeries.formatDelta(delta, unit),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.data.journey.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: displayStyle(
+                      size: 19,
+                      weight: 700,
+                      color: pTheme.ink,
+                      height: 1.3,
                     ),
                   ),
-                  SizedBox(width: gap),
-                  Expanded(
-                    child: _ComparisonFrame(
-                      key: const ValueKey('q3-frame-latest'),
-                      badge: l10n.quiet_transformer_compareDayNow(dayDigits),
-                      checkIn: latest ?? (sorted.length == 1 ? null : latest),
-                      metricLabel: _formatFrameMetric(
-                        latest?.metricValue,
-                        unit: unit,
-                        hidden: _hideExactWeight || !hasMetric,
+                  const SizedBox(height: 12),
+                  // Side-by-side Day 01 vs Day N comparison frame.
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _ComparisonFrame(
+                          key: const ValueKey('q3-frame-start'),
+                          badge: l10n.quiet_transformer_compareDayStart,
+                          checkIn: first,
+                          metricLabel: _formatFrameMetric(
+                            first?.metricValue,
+                            unit: unit,
+                            hidden: _hideExactWeight || !hasMetric,
+                          ),
+                          waitingLabel: l10n.quiet_transformer_waitingPhoto,
+                          photoBuilder: widget.data.photoBuilder,
+                        ),
                       ),
-                      waitingLabel: l10n.quiet_transformer_waitingPhoto,
-                      photoBuilder: widget.data.photoBuilder,
-                      highlight: true,
-                    ),
+                      SizedBox(width: gap),
+                      Expanded(
+                        child: _ComparisonFrame(
+                          key: const ValueKey('q3-frame-latest'),
+                          badge: l10n.quiet_transformer_compareDayNow(dayDigits),
+                          checkIn: latest,
+                          metricLabel: _formatFrameMetric(
+                            latest?.metricValue,
+                            unit: unit,
+                            hidden: _hideExactWeight || !hasMetric,
+                          ),
+                          waitingLabel: l10n.quiet_transformer_waitingPhoto,
+                          photoBuilder: widget.data.photoBuilder,
+                          highlight: true,
+                        ),
+                      ),
+                    ],
                   ),
+                  if (hasMetric) ...[
+                    const SizedBox(height: 10),
+                    Material(
+                      type: MaterialType.transparency,
+                      child: SwitchListTile(
+                        key: const ValueKey('q3-hide-metric-switch'),
+                        contentPadding: EdgeInsets.zero,
+                        activeThumbColor: pTheme.primaryAccent,
+                        title: Text(
+                          l10n.quiet_transformer_hideExactWeight,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: pTheme.ink,
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w700,
+                            height: 1.35,
+                          ),
+                        ),
+                        subtitle: Text(
+                          l10n.quiet_transformer_hideExactWeightSub,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: pTheme.inkMuted,
+                            fontSize: 12,
+                            height: 1.35,
+                          ),
+                        ),
+                        value: _hideExactWeight,
+                        onChanged: (v) => setState(() => _hideExactWeight = v),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  OurneyPrimaryButton(
+                    key: const ValueKey('q3-export-button'),
+                    label: l10n.quiet_transformer_exportCard,
+                    icon: Icons.ios_share_rounded,
+                    onPressed: widget.data.onShare,
+                  ),
+                  if (widget.data.publicLinkSection != null &&
+                      widget.data.journey.kind == JourneyKind.solo) ...[
+                    const SizedBox(height: 12),
+                    widget.data.publicLinkSection!,
+                  ],
                 ],
               ),
-              if (hasMetric) ...[
-                const SizedBox(height: 10),
-                Material(
-                  type: MaterialType.transparency,
-                  child: SwitchListTile(
-                    key: const ValueKey('q3-hide-metric-switch'),
-                    contentPadding: EdgeInsets.zero,
-                    activeThumbColor: pTheme.primaryAccent,
-                    title: Text(
-                      l10n.quiet_transformer_hideExactWeight,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: pTheme.ink,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        height: 1.35,
-                      ),
-                    ),
-                    subtitle: Text(
-                      l10n.quiet_transformer_hideExactWeightSub,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: pTheme.inkMuted,
-                        fontSize: 12,
-                        height: 1.35,
-                      ),
-                    ),
-                    value: _hideExactWeight,
-                    onChanged: (v) => setState(() => _hideExactWeight = v),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              OurneyPrimaryButton(
-                key: const ValueKey('q3-export-button'),
-                label: l10n.quiet_transformer_exportCard,
-                icon: Icons.ios_share_rounded,
-                onPressed: widget.data.onShare,
-              ),
-              if (widget.data.publicLinkSection != null &&
-                  widget.data.journey.kind == JourneyKind.solo) ...[
-                const SizedBox(height: 12),
-                widget.data.publicLinkSection!,
-              ],
-            ],
+            ),
           ),
         );
       },

@@ -205,8 +205,10 @@ class JourneyCard extends ConsumerWidget {
     final active = journey.status == JourneyStatus.active;
     final cardSkin = personaSkinOf(journey);
     final cardPersona = OurneyPersonaTheme.forSkin(cardSkin, brightness);
-    final selectedId = ref.watch(activeJourneyIdProvider);
-    final isSelected = selectedId == journey.id;
+    final activeId =
+        ref.watch(activeJourneyProvider).value?.id ??
+        ref.watch(activeJourneyIdProvider);
+    final isSelected = active && activeId == journey.id;
 
     final dayText = progress == null
         ? null
@@ -229,7 +231,11 @@ class JourneyCard extends ConsumerWidget {
       child: OurneyCard(
         key: ValueKey('journey-card-${journey.id}'),
         onTap: () {
-          unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
+          if (active) {
+            unawaited(
+              ref.read(activeJourneyIdProvider.notifier).select(journey.id),
+            );
+          }
           context.push(AppRoutes.journey(journey.id));
         },
         child: Row(
@@ -253,7 +259,7 @@ class JourneyCard extends ConsumerWidget {
                 child: Icon(
                   journeyIcon(journey.emoji, journey.templateId),
                   size: 26,
-                  color: cardPersona.primaryAccent,
+                  color: cardPersona.ink,
                 ),
               ),
             ),

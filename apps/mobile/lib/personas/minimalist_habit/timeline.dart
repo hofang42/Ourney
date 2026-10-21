@@ -234,21 +234,13 @@ class _ChainRow extends StatelessWidget {
                   aspectRatio: 1,
                   child: rowDays[c] == null
                       ? const SizedBox.shrink()
-                      : KeyedSubtree(
-                          key: ValueKey('z1-day-${rowDays[c]!.date}'),
-                          child: photoBuilder == null
-                              ? DayCell(
-                                  day: rowDays[c]!,
-                                  onTap: () => onTapDay?.call(rowDays[c]!),
-                                )
-                              : _ChainDayCell(
-                                  day: rowDays[c]!,
-                                  pTheme: pTheme,
-                                  onTap: onTapDay == null
-                                      ? null
-                                      : () => onTapDay!(rowDays[c]!),
-                                  photoBuilder: photoBuilder,
-                                ),
+                      : _ChainDayCell(
+                          day: rowDays[c]!,
+                          pTheme: pTheme,
+                          onTap: onTapDay == null
+                              ? null
+                              : () => onTapDay!(rowDays[c]!),
+                          photoBuilder: photoBuilder,
                         ),
                 ),
               ),
@@ -426,10 +418,21 @@ class _ChainDayCell extends StatelessWidget {
     };
 
     final tappable = day.state == DayState.checkedIn && onTap != null;
+    if (photoBuilder == null) {
+      return KeyedSubtree(
+        key: ValueKey('z1-day-${day.date}'),
+        child: DayCell(
+          day: day,
+          onTap: () => onTap?.call(),
+          childOverride: inner,
+        ),
+      );
+    }
     return Semantics(
       key: ValueKey('z1-day-${day.date}'),
       label: semanticLabel,
       button: tappable,
+      onTap: tappable ? onTap : null,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,

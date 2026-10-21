@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../app/providers.dart';
+import '../app/providers.dart';
+import '../features/groups/data/groups_providers.dart';
 
 /// Never retry on a timer so widget tests never leak pending timers.
 Duration? _noRetry(int _, Object _) => null;
@@ -56,17 +57,15 @@ class GroupDailySnapshot {
     final byDate = <LocalDate, CheckIn>{};
     final list = <CheckIn>[];
 
-    for (final c in allCheckIns) {
-      if (blockedIds.contains(c.userId)) continue;
-      final isMine = myUserId != null
-          ? c.userId == myUserId
-          : c.userId == journey.ownerId;
-      if (isMine) continue;
-      if (partnerId != null && c.userId != partnerId) continue;
+    if (partnerId != null) {
+      for (final c in allCheckIns) {
+        if (blockedIds.contains(c.userId)) continue;
+        if (c.userId != partnerId) continue;
 
-      final prev = byDate[c.localDate];
-      if (prev == null || c.capturedAt.isAfter(prev.capturedAt)) {
-        byDate[c.localDate] = c;
+        final prev = byDate[c.localDate];
+        if (prev == null || c.capturedAt.isAfter(prev.capturedAt)) {
+          byDate[c.localDate] = c;
+        }
       }
     }
 
@@ -130,11 +129,14 @@ final groupDailySnapshotProvider = Provider.autoDispose
       final members =
           ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
           const <MemberToday>[];
+      final blockedIds =
+          ref.watch(groupBlockedIdsProvider).value ?? const <String>{};
       final myUserId = ref.watch(currentUserIdProvider);
       return GroupDailySnapshot.build(
         journey: journey,
         allCheckIns: allCheckIns,
         members: members,
         myUserId: myUserId,
+        blockedIds: blockedIds,
       );
     });

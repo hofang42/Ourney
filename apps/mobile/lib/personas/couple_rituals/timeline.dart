@@ -27,7 +27,7 @@ class DuoSplitTimeline extends StatelessWidget {
     if (allDays.isEmpty) return const [];
     final reached = [
       for (final d in allDays)
-        if (d.state != DayState.future) d,
+        if (d.state != DayState.future && d.state != DayState.notCounted) d,
     ];
     return reached.isEmpty ? [allDays.first] : reached;
   }

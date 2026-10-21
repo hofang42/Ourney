@@ -76,6 +76,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   int _generation = 0;
 
   String? _selectedJourneyId;
+  final Map<String, double> _hudMetricByJourney = {};
 
   /// Redraws the HUD clock (S2 timestamp, M2 date back) while the camera is
   /// on screen.
@@ -334,7 +335,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     }
     if (!mounted) return;
     _openCheckin(
-      CapturedPhoto(journeyId: journey.id, path: path, capturedAt: capturedAt),
+      CapturedPhoto(
+        journeyId: journey.id,
+        path: path,
+        capturedAt: capturedAt,
+        initialMetricValue: _hudMetricByJourney[journey.id],
+      ),
     );
   }
 
@@ -356,6 +362,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         path: path,
         capturedAt: clock.now().toUtc(),
         fromLibrary: true,
+        initialMetricValue: _hudMetricByJourney[journey.id],
       ),
     );
   }
@@ -528,12 +535,24 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
             now: now.toUtc(),
           );
     final groupSnap = ref.watch(groupDailySnapshotProvider(journey));
+    final latestMetric = checkIns
+        ?.where((c) => c.metricValue != null)
+        .fold<CheckIn?>(
+          null,
+          (prev, c) =>
+              prev == null || c.localDate.compareTo(prev.localDate) >= 0
+              ? c
+              : prev,
+        )
+        ?.metricValue;
     return PersonaCameraData(
       journey: journey,
       viewfinder: viewfinder,
       capturedAt: now,
       currentStreak: progress?.summary.current ?? 0,
       checkInCount: checkIns?.length ?? 0,
+      metricValue: _hudMetricByJourney[journey.id] ?? latestMetric,
+      onMetricChanged: (v) => _hudMetricByJourney[journey.id] = v,
       hideMetric: membership?.hideMetric ?? journey.hideMetricDefault,
       partnerName: groupSnap.partnerName,
       partnerTodayCheckIn: groupSnap.partnerTodayCheckIn,

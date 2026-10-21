@@ -88,6 +88,9 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     if (widget.isCouplePreset) {
       form.emoji = '💞';
       form.title = JourneysL10n.of(context).journeys_templateCoupleTitle;
+      if (!ref.read(appConfigProvider).localOnly) {
+        form.kind = JourneyKind.group;
+      }
     }
     _title.text = form.title;
     _duration.text = form.durationDays?.toString() ?? '';
@@ -172,22 +175,24 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       ),
       duration: OurneyMotion.duration(context, OurneyDurations.personaTheme),
       curve: Curves.easeOutCubic,
-      child: Scaffold(
-        key: const ValueKey('journeys-create'),
-        backgroundColor: pTheme.background,
-        appBar: AppBar(
+      child: Builder(
+        builder: (innerContext) => Scaffold(
+          key: const ValueKey('journeys-create'),
           backgroundColor: pTheme.background,
-          foregroundColor: pTheme.ink,
-          title: Text(l10n.journeys_createTitle),
-        ),
-        body: SafeArea(
-          child: form == null
-              ? Center(
-                  child: CircularProgressIndicator(
-                    semanticsLabel: app.common_loading,
-                  ),
-                )
-              : _buildForm(context, form, skin),
+          appBar: AppBar(
+            backgroundColor: pTheme.background,
+            foregroundColor: pTheme.ink,
+            title: Text(l10n.journeys_createTitle),
+          ),
+          body: SafeArea(
+            child: form == null
+                ? Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: app.common_loading,
+                    ),
+                  )
+                : _buildForm(innerContext, form, skin),
+          ),
         ),
       ),
     );

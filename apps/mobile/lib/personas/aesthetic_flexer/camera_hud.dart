@@ -76,8 +76,8 @@ class _StravaStickerStudioHudState extends State<StravaStickerStudioHud> {
           right: 8,
           bottom: 8,
           child: Center(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -231,17 +231,31 @@ class _TelemetryOverlay extends StatelessWidget {
               horizontal: BorderSide(color: pTheme.secondaryAccent, width: 1.5),
             ),
           ),
-          child: Text(
-            '▣ $dayLabel · $streakLabel${metricLabel != null ? ' · $metricLabel' : ''}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: pTheme.secondaryAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-              height: 1.3,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.theaters_rounded,
+                size: 15,
+                color: pTheme.secondaryAccent,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  '$dayLabel · $streakLabel${metricLabel != null ? ' · $metricLabel' : ''}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: pTheme.secondaryAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -268,6 +282,7 @@ class _StylePill extends StatelessWidget {
       button: true,
       selected: selected,
       label: label,
+      onTap: onTap,
       excludeSemantics: true,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
