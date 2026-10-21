@@ -155,33 +155,36 @@ class _SideBySideArchiveShareCardState
               ),
               if (hasMetric) ...[
                 const SizedBox(height: 10),
-                SwitchListTile(
-                  key: const ValueKey('q3-hide-metric-switch'),
-                  contentPadding: EdgeInsets.zero,
-                  activeThumbColor: pTheme.primaryAccent,
-                  title: Text(
-                    l10n.quiet_transformer_hideExactWeight,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: pTheme.ink,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.w700,
-                      height: 1.35,
+                Material(
+                  type: MaterialType.transparency,
+                  child: SwitchListTile(
+                    key: const ValueKey('q3-hide-metric-switch'),
+                    contentPadding: EdgeInsets.zero,
+                    activeThumbColor: pTheme.primaryAccent,
+                    title: Text(
+                      l10n.quiet_transformer_hideExactWeight,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: pTheme.ink,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.35,
+                      ),
                     ),
-                  ),
-                  subtitle: Text(
-                    l10n.quiet_transformer_hideExactWeightSub,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: pTheme.inkMuted,
-                      fontSize: 12,
-                      height: 1.35,
+                    subtitle: Text(
+                      l10n.quiet_transformer_hideExactWeightSub,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: pTheme.inkMuted,
+                        fontSize: 12,
+                        height: 1.35,
+                      ),
                     ),
+                    value: _hideExactWeight,
+                    onChanged: (v) => setState(() => _hideExactWeight = v),
                   ),
-                  value: _hideExactWeight,
-                  onChanged: (v) => setState(() => _hideExactWeight = v),
                 ),
               ],
               const SizedBox(height: 12),
