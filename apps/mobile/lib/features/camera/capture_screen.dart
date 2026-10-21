@@ -123,7 +123,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final visible = TickerMode.of(context);
+    final visible = TickerMode.valuesOf(context).enabled;
     if (visible != _visible) {
       _visible = visible;
       _sync();

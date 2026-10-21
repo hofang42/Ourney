@@ -199,10 +199,7 @@ void main() {
         journeys: [journey(timezone: 'Nowhere/Zone')],
         streakAlerts: false,
       );
-      expect(
-        wall(plan.first.fireAt, resolveTimeZone('Mars/Olympus').name),
-        '2026-10-16 20:00',
-      );
+      expect(wall(plan.first.fireAt, 'Etc/UTC'), '2026-10-16 20:00');
     });
   });
 

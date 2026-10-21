@@ -96,7 +96,7 @@ class LocalNotificationGateway implements NotificationGateway {
     if (onTap != null) _onTap = onTap;
     return _init ??= _plugin
         .initialize(
-          const InitializationSettings(
+          settings: const InitializationSettings(
             android: AndroidInitializationSettings('@mipmap/ic_launcher'),
             iOS: DarwinInitializationSettings(
               requestAlertPermission: false,
@@ -163,6 +163,7 @@ class LocalNotificationGateway implements NotificationGateway {
   @override
   Future<void> openSettings() async {
     await initialize();
+    await _plugin.openAppNotificationSettings();
   }
 
   @override
@@ -175,19 +176,21 @@ class LocalNotificationGateway implements NotificationGateway {
   @override
   Future<void> cancel(int id) async {
     await initialize();
-    await _plugin.cancel(id);
+    await _plugin.cancel(id: id);
   }
 
   @override
   Future<void> schedule(NotificationRequest request) async {
     await initialize();
     await _plugin.zonedSchedule(
-      request.id,
-      request.title,
-      request.body,
+      id: request.id,
+      title: request.title,
+      body: request.body,
+      payload: request.payload,
       // Absolute instant: UTC avoids depending on `tz.local`.
-      tz.TZDateTime.from(request.fireAt, tz.UTC),
-      NotificationDetails(
+      scheduledDate: tz.TZDateTime.from(request.fireAt, tz.UTC),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           kReminderChannelId,
           channelName,
@@ -197,8 +200,6 @@ class LocalNotificationGateway implements NotificationGateway {
         ),
         iOS: const DarwinNotificationDetails(),
       ),
-      payload: request.payload,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 }

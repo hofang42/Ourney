@@ -182,8 +182,8 @@ void main() {
     final semantics = tester.ensureSemantics();
     await tester.pump();
     expect(
-      tester.getSemantics(key('day-$today')).flagsCollection.isButton,
-      isTrue,
+      tester.getSemantics(key('day-$today')),
+      isSemantics(isButton: true),
       reason: 'only checked-in days are tappable',
     );
     semantics.dispose();
