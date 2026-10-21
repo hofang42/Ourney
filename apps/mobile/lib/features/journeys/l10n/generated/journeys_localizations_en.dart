@@ -84,6 +84,19 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_templateCustomHint => 'Set everything yourself';
 
   @override
+  String get journeys_templateCoupleTitle => 'Couple ritual';
+
+  @override
+  String get journeys_templateCoupleHint =>
+      'Two people sharing a daily moment together';
+
+  @override
+  String get journeys_personaPreviewLabel => 'Live UI preview';
+
+  @override
+  String get journeys_continueTemplateButton => 'Continue with this style';
+
+  @override
   String get journeys_createTitle => 'Create journey';
 
   @override

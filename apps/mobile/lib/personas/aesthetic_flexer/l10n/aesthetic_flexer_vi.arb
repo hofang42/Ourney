@@ -30,5 +30,92 @@
         "type": "int"
       }
     }
+  },
+  "aesthetic_flexer_telemetryHeader": "{total} TỔNG · {latest} GẦN NHẤT",
+  "@aesthetic_flexer_telemetryHeader": {
+    "description": "Tiêu đề thông số khi hành trình có chỉ số",
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "latest": {
+        "type": "String"
+      }
+    }
+  },
+  "aesthetic_flexer_activeDaysHeader": "{active}/{total} NGÀY TẬP · 🔥 {streak} CHUỖI",
+  "@aesthetic_flexer_activeDaysHeader": {
+    "description": "Tiêu đề khi hành trình không có chỉ số",
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "aesthetic_flexer_milestoneStart": "NGÀY 01 · KHỞI ĐỘNG",
+  "@aesthetic_flexer_milestoneStart": {
+    "description": "Nhãn mốc ngày 1"
+  },
+  "aesthetic_flexer_milestoneStar": "NGÀY {day} ★ CỘT MỐC",
+  "@aesthetic_flexer_milestoneStar": {
+    "description": "Nhãn mốc ngày 7, 14, 21...",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "aesthetic_flexer_milestoneToday": "NGÀY {day} · HÔM NAY",
+  "@aesthetic_flexer_milestoneToday": {
+    "description": "Nhãn mốc hôm nay",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "aesthetic_flexer_milestoneDay": "NGÀY {day}",
+  "@aesthetic_flexer_milestoneDay": {
+    "description": "Nhãn ngày thường",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "aesthetic_flexer_styleBoldHud": "Bold HUD",
+  "@aesthetic_flexer_styleBoldHud": {
+    "description": "Kiểu lớp phủ Bold HUD"
+  },
+  "aesthetic_flexer_styleMinimalStamp": "Minimal Stamp",
+  "@aesthetic_flexer_styleMinimalStamp": {
+    "description": "Kiểu lớp phủ Minimal Stamp"
+  },
+  "aesthetic_flexer_styleFilmStrip": "Film Strip",
+  "@aesthetic_flexer_styleFilmStrip": {
+    "description": "Kiểu lớp phủ Film Strip"
+  },
+  "aesthetic_flexer_daysActiveBadge": "{count} NGÀY ĐÃ TẬP",
+  "@aesthetic_flexer_daysActiveBadge": {
+    "description": "Nhãn số ngày đã tập trên thiệp Story",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "aesthetic_flexer_shareStoryButton": "Chia sẻ lên Story",
+  "@aesthetic_flexer_shareStoryButton": {
+    "description": "Nút chia sẻ thiệp Story"
+  },
+  "aesthetic_flexer_waitingPhoto": "Chưa có ảnh tập",
+  "@aesthetic_flexer_waitingPhoto": {
+    "description": "Ô chờ khi chưa có ảnh"
   }
 }

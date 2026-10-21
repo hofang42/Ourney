@@ -11,6 +11,7 @@ import '../../app/providers.dart';
 import '../../app/theme/app_theme.dart';
 import '../../app/theme/motion.dart';
 import '../../app/theme/tokens.dart';
+import '../../data/group_daily_checkins_provider.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart';
 import '../../personas/persona_switchers.dart';
@@ -526,6 +527,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
             checkIns: checkIns,
             now: now.toUtc(),
           );
+    final groupSnap = ref.watch(groupDailySnapshotProvider(journey));
     return PersonaCameraData(
       journey: journey,
       viewfinder: viewfinder,
@@ -533,6 +535,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       currentStreak: progress?.summary.current ?? 0,
       checkInCount: checkIns?.length ?? 0,
       hideMetric: membership?.hideMetric ?? journey.hideMetricDefault,
+      partnerName: groupSnap.partnerName,
+      partnerTodayCheckIn: groupSnap.partnerTodayCheckIn,
       borderRadius: 0,
     );
   }

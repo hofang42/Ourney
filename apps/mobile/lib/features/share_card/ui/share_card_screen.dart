@@ -11,6 +11,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../personas/persona_switchers.dart';
@@ -311,6 +312,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               data: PersonaShareData(
                 journey: journey,
                 checkIns: checkIns,
+                partnerCheckIns: ref
+                    .watch(groupDailySnapshotProvider(journey))
+                    .partnerCheckIns,
                 currentStreak: progress.summary.current,
                 dayNumber: progress.dayNumber,
                 hideMetric: content.metricHidden,

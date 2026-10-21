@@ -26,4 +26,42 @@ class CoupleRitualsL10nEn extends CoupleRitualsL10n {
   String couple_rituals_checkInsLabel(int count) {
     return '$count check-ins';
   }
+
+  @override
+  String get couple_rituals_meDefault => 'You';
+
+  @override
+  String get couple_rituals_partnerDefault => 'Partner';
+
+  @override
+  String couple_rituals_waitingPartner(String name) {
+    return 'Waiting for $name';
+  }
+
+  @override
+  String get couple_rituals_completePairHint =>
+      'Snap your half · Complete pair';
+
+  @override
+  String couple_rituals_partnerDoneBadge(String name) {
+    return '$name · Snapped';
+  }
+
+  @override
+  String couple_rituals_mosaicTitle(int days, int moments) {
+    return '$days DAYS · $moments MOMENTS';
+  }
+
+  @override
+  String get couple_rituals_shareStoryButton => 'Share Our Story';
+
+  @override
+  String couple_rituals_dayHeader(String day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String couple_rituals_todayHeader(String day) {
+    return 'DAY $day · TODAY';
+  }
 }

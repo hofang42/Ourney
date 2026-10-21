@@ -39,6 +39,10 @@
     "placeholders": {"count": {"type": "int"}}
   },
   "journeys_templateCustomHint": "Tự đặt mọi thứ",
+  "journeys_templateCoupleTitle": "Nghi thức cặp đôi",
+  "journeys_templateCoupleHint": "Hai người cùng lưu khoảnh khắc mỗi ngày",
+  "journeys_personaPreviewLabel": "Xem trước giao diện",
+  "journeys_continueTemplateButton": "Tiếp tục với kiểu này",
   "journeys_createTitle": "Tạo hành trình",
   "journeys_fieldTitle": "Tên hành trình",
   "journeys_fieldEmoji": "Biểu tượng",

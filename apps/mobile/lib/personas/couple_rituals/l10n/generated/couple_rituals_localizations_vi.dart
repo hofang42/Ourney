@@ -26,4 +26,43 @@ class CoupleRitualsL10nVi extends CoupleRitualsL10n {
   String couple_rituals_checkInsLabel(int count) {
     return '$count lần check-in';
   }
+
+  @override
+  String get couple_rituals_meDefault => 'Bạn';
+
+  @override
+  String get couple_rituals_partnerDefault => 'Người đồng hành';
+
+  @override
+  String couple_rituals_waitingPartner(String name) {
+    return 'Đang chờ $name';
+  }
+
+  @override
+  String get couple_rituals_completePairHint =>
+      'Chụp nửa của bạn · Ghép trọn đôi';
+
+  @override
+  String couple_rituals_partnerDoneBadge(String name) {
+    return '$name · Đã chụp';
+  }
+
+  @override
+  String couple_rituals_mosaicTitle(int days, int moments) {
+    return '$days NGÀY · $moments KHOẢNH KHẮC';
+  }
+
+  @override
+  String get couple_rituals_shareStoryButton =>
+      'Chia sẻ câu chuyện của hai đứa';
+
+  @override
+  String couple_rituals_dayHeader(String day) {
+    return 'NGÀY $day';
+  }
+
+  @override
+  String couple_rituals_todayHeader(String day) {
+    return 'NGÀY $day · HÔM NAY';
+  }
 }

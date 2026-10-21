@@ -5,7 +5,11 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/journeys/ui/timeline_grid.dart';
 import 'package:ourney/personas/accountability_squad/timeline.dart';
+import 'package:ourney/personas/aesthetic_flexer/timeline.dart';
+import 'package:ourney/personas/couple_rituals/timeline.dart';
 import 'package:ourney/personas/memory_collectors/timeline.dart';
+import 'package:ourney/personas/minimalist_habit/timeline.dart';
+import 'package:ourney/personas/quiet_transformer/timeline.dart';
 import 'package:ourney/shared/ourney_dock.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -64,12 +68,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a persona still being designed keeps the day grid, in its '
-      'own colors', (tester) async {
+  testWidgets('weight loss draws the connected weight curve timeline in '
+      'quietTransformer colors', (tester) async {
     await pumpDetail(tester, TemplateId.weightLoss);
-    expect(find.byType(TimelineGrid), findsOneWidget);
-    final inner = tester.element(find.byType(TimelineGrid));
+    expect(find.byType(ConnectedWeightCurveTimeline), findsOneWidget);
+    final inner = tester.element(find.byType(ConnectedWeightCurveTimeline));
     expect(OurneyPersonaTheme.of(inner).skinId, PersonaSkinId.quietTransformer);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('workout30 draws athletic telemetry', (
+    tester,
+  ) async {
+    await pumpDetail(tester, TemplateId.workout30);
+    expect(find.byType(AthleticTelemetryTimeline), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('custom draws chain grid', (
+    tester,
+  ) async {
+    await pumpDetail(tester, TemplateId.custom);
+    expect(find.byType(ChainCalendarGridTimeline), findsOneWidget);
+    expect(find.byType(DuoSplitTimeline), findsNothing);
     expect(tester.takeException(), isNull);
   });
 

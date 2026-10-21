@@ -9,6 +9,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/active_journey_sync.dart';
 import '../../../personas/persona_contract.dart';
@@ -215,17 +216,27 @@ class JourneyDetailScreen extends ConsumerWidget {
                   child: Center(child: CircularProgressIndicator()),
                 )
               else
-                PersonaTimelineSwitcher(
-                  skin: personaSkinOf(journey),
-                  data: PersonaTimelineData.fromProgress(
-                    progress,
-                    hideMetric:
-                        membership?.hideMetric ?? journey.hideMetricDefault,
-                    onTapDay: (d) =>
-                        context.push(JourneysPaths.day(journey.id, d.date)),
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                  ),
+                Builder(
+                  builder: (context) {
+                    final groupSnap = ref.watch(
+                      groupDailySnapshotProvider(journey),
+                    );
+                    return PersonaTimelineSwitcher(
+                      skin: personaSkinOf(journey),
+                      data: PersonaTimelineData.fromProgress(
+                        progress,
+                        hideMetric:
+                            membership?.hideMetric ?? journey.hideMetricDefault,
+                        myName: groupSnap.myName,
+                        partnerName: groupSnap.partnerName,
+                        partnerCheckInsByDate: groupSnap.partnerCheckInsByDate,
+                        onTapDay: (d) =>
+                            context.push(JourneysPaths.day(journey.id, d.date)),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                      ),
+                    );
+                  },
                 ),
               if (membership != null && perms.isActive)
                 _PrivacySection(journey: journey, membership: membership),

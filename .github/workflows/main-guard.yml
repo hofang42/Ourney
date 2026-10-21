@@ -1,0 +1,21 @@
+name: Main guard
+
+# Trunk-based workflow: PRs target main directly.
+# Kept as a pass-through status check until a repo admin runs scripts/github/setup-rulesets.sh
+# to delete the legacy "main: only from develop" ruleset.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  head-is-develop:
+    name: main only accepts develop
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Allow trunk-based PR into main
+        run: echo "Trunk-based workflow active - PR into main allowed."
+

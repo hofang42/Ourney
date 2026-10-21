@@ -9,10 +9,14 @@ import 'package:uuid/uuid.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/motion.dart';
+import '../../../app/theme/persona_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/chunky_button.dart';
 import '../../../shared/ourney_chip.dart';
+import '../../../shared/persona_pill.dart';
 import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
@@ -25,13 +29,22 @@ import 'journey_errors.dart';
 /// solo/group, duration, optional metric, visibility, time zone (FR-B2),
 /// seeded from the template (FR-B7 defaults for weight loss).
 class CreateJourneyScreen extends ConsumerStatefulWidget {
-  const CreateJourneyScreen({required this.templateId, super.key});
+  const CreateJourneyScreen({
+    required this.templateId,
+    this.isCouplePreset = false,
+    super.key,
+  });
 
   final TemplateId templateId;
+  final bool isCouplePreset;
+
+  /// True when `:template` is the `couple` preset (`TemplateId.custom` + `💞`).
+  static bool isCoupleWire(String? wire) =>
+      wire == 'couple' || wire == 'couple_rituals';
 
   /// Parses the route parameter; unknown values fall back to Custom.
   static TemplateId parseTemplate(String? wire) {
-    if (wire == null) return TemplateId.custom;
+    if (wire == null || isCoupleWire(wire)) return TemplateId.custom;
     try {
       return TemplateId.fromWire(wire);
     } on FormatException {
@@ -72,6 +85,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       languageCode: Localizations.localeOf(context).languageCode,
       timezone: timezone,
     );
+    if (widget.isCouplePreset) {
+      form.emoji = '💞';
+      form.title = JourneysL10n.of(context).journeys_templateCoupleTitle;
+    }
     _title.text = form.title;
     _duration.text = form.durationDays?.toString() ?? '';
     _metricName.text = form.metricName;
@@ -114,6 +131,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
         }
       }
       if (!mounted) return;
+      unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
       if (!mounted) return;
@@ -135,23 +153,54 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     if (tz != null) _form ??= _initForm(tz);
     final form = _form;
 
-    return Scaffold(
-      key: const ValueKey('journeys-create'),
-      appBar: AppBar(title: Text(l10n.journeys_createTitle)),
-      body: SafeArea(
-        child: form == null
-            ? Center(
-                child: CircularProgressIndicator(
-                  semanticsLabel: app.common_loading,
-                ),
-              )
-            : _buildForm(context, form),
+    final skin = form == null
+        ? personaSkinForTemplate(
+            widget.templateId,
+            emoji: widget.isCouplePreset ? '💞' : null,
+          )
+        : personaSkinForTemplate(
+            form.template.id,
+            kind: form.kind,
+            emoji: form.emoji,
+          );
+    final brightness = Theme.of(context).brightness;
+    final pTheme = OurneyPersonaTheme.forSkin(skin, brightness);
+
+    return AnimatedTheme(
+      data: buildAppTheme(brightness, skin).copyWith(
+        scaffoldBackgroundColor: pTheme.background,
+      ),
+      duration: OurneyMotion.duration(context, OurneyDurations.personaTheme),
+      curve: Curves.easeOutCubic,
+      child: Scaffold(
+        key: const ValueKey('journeys-create'),
+        backgroundColor: pTheme.background,
+        appBar: AppBar(
+          backgroundColor: pTheme.background,
+          foregroundColor: pTheme.ink,
+          title: Text(l10n.journeys_createTitle),
+        ),
+        body: SafeArea(
+          child: form == null
+              ? Center(
+                  child: CircularProgressIndicator(
+                    semanticsLabel: app.common_loading,
+                  ),
+                )
+              : _buildForm(context, form, skin),
+        ),
       ),
     );
   }
 
-  Widget _buildForm(BuildContext context, JourneyForm form) {
+  Widget _buildForm(
+    BuildContext context,
+    JourneyForm form,
+    PersonaSkinId skin,
+  ) {
     final l10n = JourneysL10n.of(context);
+    final pTheme = OurneyPersonaTheme.of(context);
+    final designAsset = designAssetForPersona(skin);
     final text = Theme.of(context).textTheme;
     final c = OurneyColors.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
@@ -198,6 +247,52 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
         OurneySpacing.xxl,
       ),
       children: [
+        Container(
+          key: const ValueKey('journey-create-design-preview'),
+          padding: const EdgeInsets.all(OurneySpacing.md),
+          decoration: BoxDecoration(
+            color: pTheme.surface,
+            borderRadius: BorderRadius.circular(pTheme.cardRadius),
+            border: Border.all(
+              color: pTheme.border,
+              width: pTheme.borderWidth,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: PersonaPill(
+                  icon: Icons.palette_rounded,
+                  emphasized: true,
+                  label: l10n.journeys_personaPreviewLabel,
+                ),
+              ),
+              const SizedBox(height: OurneySpacing.sm),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Image.asset(
+                    designAsset,
+                    key: ValueKey('create-asset-$designAsset'),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => ColoredBox(
+                      color: pTheme.surfaceElevated,
+                      child: Center(
+                        child: Icon(
+                          Icons.image_outlined,
+                          color: pTheme.inkMuted,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
         label(l10n.journeys_fieldTitle),
         TextField(
           key: const ValueKey('journey-title'),

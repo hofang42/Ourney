@@ -10,6 +10,10 @@ abstract final class JourneysPaths {
   static String newFromTemplate(TemplateId id) =>
       '${AppRoutes.journeyNew}/${id.wireName}';
 
+  /// Create form seeded with the Couple Rituals preset (`TemplateId.custom`
+  /// with `💞` emoji): `/journeys/new/couple`.
+  static String get newCoupleRitual => '${AppRoutes.journeyNew}/couple';
+
   /// Full-screen photo of one day: `/journey/<id>/day/<YYYY-MM-DD>`.
   static String day(String journeyId, LocalDate date) =>
       '${AppRoutes.journey(journeyId)}/day/$date';

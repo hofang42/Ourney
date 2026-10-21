@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/personas/memory_collectors/share_card.dart';
+import 'package:ourney/personas/quiet_transformer/share_card.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'share_card_fakes.dart';
@@ -18,14 +19,15 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a persona still being designed shows its summary card', (
+  testWidgets('weight loss shows the side-by-side archive share card', (
     tester,
   ) async {
     final j = testJourney(templateId: TemplateId.weightLoss);
     await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
     expect(find.byKey(const ValueKey('share-card-story')), findsOneWidget);
     expect(find.byType(FilmContactSheetShareCard), findsNothing);
-    await tester.ensureVisible(find.text('Thay đổi thầm lặng'));
+    await tester.ensureVisible(find.byType(SideBySideArchiveShareCard));
+    expect(find.text('Thay đổi thầm lặng'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

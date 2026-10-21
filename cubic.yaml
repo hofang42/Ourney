@@ -6,7 +6,8 @@ version: 1
 reviews:
   enabled: true
   sensitivity: medium
-  # Re-review on every push to an open PR.
+  # Automatic reviews are suppressed (see ignore.base_branches below): the
+  # Request cubic review workflow comments `@cubic-dev-ai review` once CI passes.
   incremental_commits: true
   check_drafts: false
   resolve_threads_when_addressed: true
@@ -21,6 +22,9 @@ reviews:
       - apps/mobile/dist/
       - apps/mobile/assets/
       - "**/pubspec.lock"
+    # Every PR targets main, so cubic only reviews when triggered after CI passes.
+    base_branches:
+      - main
     pr_labels:
       - skip-review
   custom_rules:
