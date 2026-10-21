@@ -75,35 +75,35 @@ class _StravaStickerStudioHudState extends State<StravaStickerStudioHud> {
           left: 8,
           right: 8,
           bottom: 8,
-          child: Center(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _StylePill(
-                    key: const ValueKey('r2-pill-boldHud'),
-                    label: l10n.aesthetic_flexer_styleBoldHud,
-                    selected: _style == StravaStickerStyle.boldHud,
-                    onTap: () => _selectStyle(StravaStickerStyle.boldHud),
-                  ),
-                  const SizedBox(width: 6),
-                  _StylePill(
-                    key: const ValueKey('r2-pill-minimalStamp'),
-                    label: l10n.aesthetic_flexer_styleMinimalStamp,
-                    selected: _style == StravaStickerStyle.minimalStamp,
-                    onTap: () => _selectStyle(StravaStickerStyle.minimalStamp),
-                  ),
-                  const SizedBox(width: 6),
-                  _StylePill(
-                    key: const ValueKey('r2-pill-filmStrip'),
-                    label: l10n.aesthetic_flexer_styleFilmStrip,
-                    selected: _style == StravaStickerStyle.filmStrip,
-                    onTap: () => _selectStyle(StravaStickerStyle.filmStrip),
-                  ),
-                ],
+          child: Row(
+            children: [
+              Expanded(
+                child: _StylePill(
+                  key: const ValueKey('r2-pill-boldHud'),
+                  label: l10n.aesthetic_flexer_styleBoldHud,
+                  selected: _style == StravaStickerStyle.boldHud,
+                  onTap: () => _selectStyle(StravaStickerStyle.boldHud),
+                ),
               ),
-            ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _StylePill(
+                  key: const ValueKey('r2-pill-minimalStamp'),
+                  label: l10n.aesthetic_flexer_styleMinimalStamp,
+                  selected: _style == StravaStickerStyle.minimalStamp,
+                  onTap: () => _selectStyle(StravaStickerStyle.minimalStamp),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: _StylePill(
+                  key: const ValueKey('r2-pill-filmStrip'),
+                  label: l10n.aesthetic_flexer_styleFilmStrip,
+                  selected: _style == StravaStickerStyle.filmStrip,
+                  onTap: () => _selectStyle(StravaStickerStyle.filmStrip),
+                ),
+              ),
+            ],
           ),
         ),
       ],

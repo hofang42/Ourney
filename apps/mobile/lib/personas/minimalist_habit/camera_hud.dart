@@ -19,6 +19,7 @@ class ZeroText3SecHud extends StatelessWidget {
   static const Color _mediaBg = Color(0xFF0E0E10);
 
   int get _dayNumber {
+    if (data.checkInCount > 0) return data.checkInCount + 1;
     final days = data.journey.startDate.daysUntil(data.date) + 1;
     return days < 1 ? 1 : days;
   }
