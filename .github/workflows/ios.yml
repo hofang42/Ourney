@@ -4,9 +4,16 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      mode:
+        # debug = JIT build for hot reload on a real iPhone via MobAI (`builder dev flutter`).
+        description: 'Build mode'
+        type: choice
+        options: [release, debug]
+        default: release
 
 concurrency:
-  group: ios-${{ github.ref }}
+  group: ios-${{ github.ref }}-${{ inputs.mode || 'release' }}
   cancel-in-progress: true
 
 permissions:
@@ -59,22 +66,28 @@ jobs:
             echo "SUPABASE_*/SUPPORT_EMAIL secrets not set; building without --dart-define-from-file."
           fi
 
-      - name: Build iOS (release, no codesign)
+      - name: Build iOS (${{ inputs.mode || 'release' }}, no codesign)
         working-directory: apps/mobile
+        env:
+          MODE: ${{ inputs.mode || 'release' }}
         run: |
-          args=(--release --no-codesign)
+          args=("--$MODE" --no-codesign)
           if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then
             args+=("--dart-define-from-file=$DART_DEFINES_FILE")
           fi
           flutter build ios "${args[@]}"
 
       - name: Package unsigned IPA
-        run: scripts/ios/package_ipa.sh apps/mobile/build/ios/iphoneos/Runner.app Ourney-unsigned.ipa
+        env:
+          IPA: ${{ inputs.mode == 'debug' && 'Ourney-debug-unsigned.ipa' || 'Ourney-unsigned.ipa' }}
+        run: |
+          scripts/ios/package_ipa.sh apps/mobile/build/ios/iphoneos/Runner.app "$IPA"
+          echo "IPA=$IPA" >> "$GITHUB_ENV"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: Ourney-unsigned-ipa
-          path: Ourney-unsigned.ipa
+          name: ${{ inputs.mode == 'debug' && 'Ourney-debug-ipa' || 'Ourney-unsigned-ipa' }}
+          path: ${{ env.IPA }}
           if-no-files-found: error
           retention-days: 30
 
