@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 01 · Winding Valley O</title>
+  <path fill="#111111" fill-rule="evenodd" d="M 104 24 H 152 A 76 76 0 0 1 228 100 V 156 A 76 76 0 0 1 152 232 H 104 A 76 76 0 0 1 28 156 V 100 A 76 76 0 0 1 104 24 Z M 64 122 V 104 A 64 64 0 0 1 192 104 V 122 A 12 12 0 0 1 180 134 H 76 A 12 12 0 0 1 64 122 Z M 80 232 C 80 196 132 190 132 166 A 14 14 0 0 1 160 166 C 160 202 124 206 128 232 Z"/>
+  <path fill="#CC4A2F" d="M 106 92 A 22 22 0 1 1 150 92 A 22 22 0 1 1 106 92 Z"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 06 · Minimal Folded OJ</title>
+  <path fill="#1E1B4B" d="M 144 32 V 76 H 120 A 36 36 0 0 0 120 148 H 144 V 192 H 120 A 80 80 0 0 1 120 32 Z"/>
+  <path fill="#FF4D6D" d="M 168 72 L 216 24 V 148 A 80 80 0 0 1 136 228 H 96 A 24 24 0 0 1 96 180 H 136 A 32 32 0 0 0 168 148 Z"/>
+</svg>

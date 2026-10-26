@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 08 · Stepping-Stone Portal</title>
+  <path fill="#111111" d="M 40 208 V 114 A 88 88 0 0 1 216 114 V 208 A 20 20 0 0 1 196 228 H 168 V 114 A 40 40 0 0 0 88 114 V 228 H 60 A 20 20 0 0 1 40 208 Z M 94 204 H 134 A 10 10 0 0 1 144 214 V 214 A 10 10 0 0 1 134 224 H 94 A 10 10 0 0 1 84 214 V 214 A 10 10 0 0 1 94 204 Z M 122 172 H 162 A 10 10 0 0 1 172 182 V 182 A 10 10 0 0 1 162 192 H 122 A 10 10 0 0 1 112 182 V 182 A 10 10 0 0 1 122 172 Z M 102 140 H 142 A 10 10 0 0 1 152 150 V 150 A 10 10 0 0 1 142 160 H 102 A 10 10 0 0 1 92 150 V 150 A 10 10 0 0 1 102 140 Z"/>
+  <path fill="#CC4A2F" d="M 106 106 A 22 22 0 1 1 150 106 A 22 22 0 1 1 106 106 Z"/>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 02 · OJ Rangefinder</title>
+  <path fill="#111111" fill-rule="evenodd" d="M 28 132 A 72 72 0 1 1 172 132 A 72 72 0 1 1 28 132 Z M 64 132 A 36 36 0 1 0 136 132 A 36 36 0 1 0 64 132 Z"/>
+  <path fill="#111111" d="M 192 60 H 228 V 164 A 72 72 0 0 1 84 164 H 120 A 36 36 0 0 0 192 164 Z M 78 32 H 122 A 10 10 0 0 1 132 42 V 42 A 10 10 0 0 1 122 52 H 78 A 10 10 0 0 1 68 42 V 42 A 10 10 0 0 1 78 32 Z"/>
+  <path fill="#CC4A2F" d="M 194 36 A 16 16 0 1 1 226 36 A 16 16 0 1 1 194 36 Z"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>Ourney — 01 · Rainbow Prism Polaroid (6-colour instant camera + rainbow prism bars &amp; sun lens)</title>
+  <g id="symbol">
+    <path fill="#1E1B4B" d="M 32 80 A 44 44 0 0 1 76 36 H 180 A 44 44 0 0 1 224 80 V 96 H 183.4 A 64 64 0 0 0 72.6 96 H 32 Z"/>
+    <path fill="#1E1B4B" fill-rule="evenodd" d="M 32 168 H 72.6 A 64 64 0 0 0 183.4 168 H 224 V 192 A 40 40 0 0 1 184 232 H 72 A 40 40 0 0 1 32 192 Z M 98 202 A 6 6 0 0 0 92 208 V 208 A 6 6 0 0 0 98 214 H 158 A 6 6 0 0 0 164 208 V 208 A 6 6 0 0 0 158 202 H 98 Z"/>
+    <path fill="#06B6D4" d="M 148 36 V 30 A 6 6 0 0 1 154 24 H 186 A 6 6 0 0 1 192 30 V 36 Z"/>
+    <path fill="#F43F5E" d="M 32 102 H 62 V 120 H 32 Z M 194 102 H 224 V 120 H 194 Z"/>
+    <path fill="#FACC15" d="M 32 123 H 58 V 141 H 32 Z M 198 123 H 224 V 141 H 198 Z"/>
+    <path fill="#06B6D4" d="M 32 144 H 62 V 162 H 32 Z M 194 144 H 224 V 162 H 194 Z"/>
+    <path fill="#F43F5E" fill-rule="evenodd" d="M 80 132 A 48 48 0 1 1 176 132 A 48 48 0 1 1 80 132 Z M 102 132 A 26 26 0 1 0 154 132 A 26 26 0 1 0 102 132 Z"/>
+    <circle cx="128" cy="132" r="14" fill="#FACC15"/>
+  </g>
+</svg>

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 17 · Layered Journal Tabs</title>
+  <path fill="#EA580C" d="M 184 48 H 216 A 16 16 0 0 1 232 64 V 76 A 16 16 0 0 1 216 92 H 184 A 16 16 0 0 1 168 76 V 64 A 16 16 0 0 1 184 48 Z M 84 128 A 24 24 0 1 1 132 128 A 24 24 0 1 1 84 128 Z"/>
+  <path fill="#F59E0B" d="M 184 106 H 216 A 16 16 0 0 1 232 122 V 134 A 16 16 0 0 1 216 150 H 184 A 16 16 0 0 1 168 134 V 122 A 16 16 0 0 1 184 106 Z"/>
+  <path fill="#10B981" d="M 184 164 H 216 A 16 16 0 0 1 232 180 V 192 A 16 16 0 0 1 216 208 H 184 A 16 16 0 0 1 168 192 V 180 A 16 16 0 0 1 184 164 Z"/>
+  <path fill="#31102F" fill-rule="evenodd" d="M 72 28 H 144 A 48 48 0 0 1 192 76 V 180 A 48 48 0 0 1 144 228 H 72 A 48 48 0 0 1 24 180 V 76 A 48 48 0 0 1 72 28 Z M 60 128 A 48 48 0 1 0 156 128 A 48 48 0 1 0 60 128 Z"/>
+</svg>

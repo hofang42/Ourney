@@ -1,0 +1,61 @@
+{
+  "brand": "Ourney",
+  "tagline": "Every day, one shared frame",
+  "brief": "A daily photo-journey & habit-tracking mobile app for individuals, couples, and friend squads. It should feel tactile, warm, intentional, and enduring — like a pocket camera and a shared travel journal, far from cold corporate trackers or noisy social feeds.",
+  "adjectives": [
+    "tactile",
+    "warm",
+    "intentional",
+    "connected",
+    "enduring"
+  ],
+  "criteria": "Success: reads effortlessly at 16 px, works in one colour and dark mode, captures 'Our + Journey' and daily photography without clip-art camera clichés.",
+  "industry": "consumer-app",
+  "mockups": [
+    "app-icon",
+    "website",
+    "social",
+    "favicon-tab",
+    "tote",
+    "sticker"
+  ],
+  "nav": [
+    "Journeys",
+    "Squads",
+    "Stories",
+    "Download"
+  ],
+  "brand_color": "#CC4A2F",
+  "greyscale": false,
+  "final": true,
+  "designer": "Ourney Brand Studio",
+  "round": 2,
+  "concepts": [
+    {
+      "name": "Milestone Loop",
+      "symbol": "source/ourney-symbol-color.svg",
+      "lockup": "source/ourney-logo-horizontal-color.svg",
+      "stacked": "source/ourney-logo-stacked-color.svg",
+      "avatar": "source/ourney-symbol-small.svg",
+      "symbol_on_tile": "source/ourney-symbol-on-tile.svg",
+      "lockup_on_tile": "source/ourney-logo-horizontal-on-tile.svg",
+      "stacked_on_tile": "source/ourney-logo-stacked-on-tile.svg",
+      "symbol_on_dark": "source/ourney-symbol-on-dark.svg",
+      "lockup_on_dark": "source/ourney-logo-horizontal-on-dark.svg",
+      "stacked_on_dark": "source/ourney-logo-stacked-on-dark.svg",
+      "idea": "An open circular journey trail ('O') leading up to a bold tactile shutter milestone dot at 45°.",
+      "rationale": [
+        "Unites the initial 'O', a continuous daily path, and a tactile camera shutter button in just 8 anchor points",
+        "Generous negative-space channels and a dedicated 16 px small-size cut keep the mark razor-sharp down to browser favicons",
+        "Warm Editorial Ink (#1E1B18) and Ourney Terracotta (#CC4A2F) establish an ownable, non-blue visual signature with 4.62:1+ contrast",
+        "Pairs seamlessly with a custom-constructed geometric 'ourney' wordmark (zero stock font dependencies)"
+      ]
+    }
+  ],
+  "recommendation": "Milestone Loop is approved as Ourney's primary brand mark, delivering a timeless symbol that scales from a 16 px status icon to app tiles, shareable journey posters, and physical merch.",
+  "next_steps": [
+    "Deploy app-icon and web-icon assets into apps/mobile",
+    "Use horizontal and stacked SVG lockups across onboarding, splash, and share cards",
+    "Follow BRAND_GUIDELINES.md for clear space, minimum sizes, and dark/light persona themes"
+  ]
+}

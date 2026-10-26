@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>Ourney — 17 · Minimal Horizon Arch &amp; Bar (2-colour Teal stepped arch &amp; Amber sun + base bar (14 pts))</title>
+  <g id="symbol">
+    <path fill="#0F766E" d="M 32 180 V 128 A 96 96 0 0 1 224 128 V 180 H 156 V 144 H 180 V 128 A 52 52 0 0 0 76 128 V 144 H 100 V 180 Z"/>
+    <circle cx="128" cy="124" r="24" fill="#F59E0B"/>
+    <path fill="#F59E0B" d="M 77 198 H 179 A 13 13 0 0 1 192 211 V 211 A 13 13 0 0 1 179 224 H 77 A 13 13 0 0 1 64 211 V 211 A 13 13 0 0 1 77 198 Z"/>
+  </g>
+</svg>
