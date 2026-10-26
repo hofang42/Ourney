@@ -1,6 +1,6 @@
 # Ourney — Software Design Specification (UI/UX)
 
-> **Phiên bản 0.3** · 2026-10-22 · Áp dụng toàn bộ danh sách thay đổi của [08-SDS-review.md](08-SDS-review.md) §9 và các quyết định khách hàng: D1–D25 (§1.5), vòng 2 R2-01…R2-22 (§1.6), vòng 3 Q1–Q25 (§1.7).
+> **Phiên bản 0.4** · 2026-10-26 · Áp dụng toàn bộ danh sách thay đổi của [08-SDS-review.md](08-SDS-review.md) §9 và các quyết định khách hàng: D1–D25 (§1.5), vòng 2 R2-01…R2-22 (§1.6), vòng 3 Q1–Q25 (§1.7), vòng 4 S1–S18 — chia sẻ hành trình đã trải qua (§1.8, chi tiết ở [09-journey-sharing.md](09-journey-sharing.md)).
 > **Phạm vi tài liệu:** chỉ giao diện, màn hình, luồng đi và trạng thái. **Không** mô tả logic code, API hay cơ sở dữ liệu.
 > **Người đọc:** designer và các AI dựng giao diện (Figma Make, v0, Stitch, Claude…). Mỗi màn có ID dạng `SCR-xx` để trích riêng khi đưa cho AI.
 > **Quan hệ với tài liệu khác:** nếu mâu thuẫn với [SRS.md](SRS.md) hoặc [06-adaptive-persona-ui-system.md](06-adaptive-persona-ui-system.md), tài liệu này thắng **về mặt thiết kế**. Nhãn `[v1]`, `[v2]`, `[Plus]`, `[Soon]` ở §1.4.
@@ -25,9 +25,10 @@
 ### 1.2 Ourney là gì và không là gì
 | Là | Không là |
 |---|---|
-| Cuốn album/nhật ký ảnh cho từng mục tiêu, chuyến đi, giai đoạn | Mạng xã hội: không feed công khai, không follow người lạ, không khám phá |
+| Cuốn album/nhật ký ảnh cho từng mục tiêu, chuyến đi, giai đoạn | Mạng xã hội: không feed, không follow người lạ, không khám phá, không đếm follower công khai |
 | Công cụ biến hành trình thành thiệp, video, link đẹp để **khoe ra ngoài** (Instagram, TikTok, Facebook, Zalo, Threads) | Nơi so bì kết quả: không bảng xếp hạng theo cân nặng, tiền… |
-| Không gian riêng của một nhóm nhỏ (≤ 10) hoặc một cặp đôi | Ứng dụng chat |
+| Không gian riêng của một nhóm nhỏ (≤ 10) hoặc một cặp đôi | Ứng dụng chat chung: chỉ có trò chuyện 1-1 **bắt đầu từ một câu trả lời ảnh** trên hành trình được chia sẻ (S17) |
+| Nơi **chia sẻ hành trình đã trải qua** cho bạn bè hai chiều, và cho người khác **làm theo** lộ trình đó (S1–S18) | |
 
 ### 1.3 Người dùng
 | Nhóm | Đặc điểm | Hệ quả thiết kế |
@@ -130,6 +131,25 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | Q23 | **Không** chuyển ảnh sang hành trình khác |
 | Q24 | Giọng `Playful/Gentle` **chỉ áp cho thông báo** |
 | Q25 | Công tắc riêng tư màn khóa/widget ở **cả hai nơi**: mặc định toàn cục + ghi đè từng hành trình |
+
+### 1.8 Quyết định vòng 4 — chia sẻ hành trình (S1–S18)
+> Lý do, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: §5.9.
+
+| # | Tóm tắt |
+|---|---|
+| S1 | Ba phần: **kể lại** hành trình cũ (SCR-28), **chia sẻ** hành trình đã đi, **làm theo** lộ trình của người khác |
+| S2–S4 | **Bạn bè hai chiều** (phải `Accept`). Kết bạn bằng link/QR hoặc đúng @username. Danh sách bạn ở **Hồ sơ**; số bạn chỉ mình thấy |
+| S5 | **Không có feed.** Chỉ thấy kệ của mình và hành trình được mời xem |
+| S6–S7 | Hai mức: `Friends` (tick sẵn tất cả bạn; **mẫu nhạy cảm không tick sẵn ai**) và `Public link` |
+| S8 | Hub có segment thứ ba **`Shared with me`** |
+| S9 | Đang chạy: chỉ `Friends`. **Đã xong / trên kệ** mới bật được `Public link` và `Do this journey` |
+| S10 | `Public link` giữ Q12 (noindex, mặc định tắt), R2-06 (cảnh báo + ảnh xem trước mờ), R2-07 (khóa 13–17) |
+| S11 | Trước khi chia sẻ: ẩn bớt ảnh/kỳ, ẩn số liệu, viết lời kể |
+| S12 | Hành trình kể lại: nhãn `Imported` / `Kể lại`, không hiện chuỗi |
+| S13–S14 | Bạn bè: thả cảm xúc + trả lời bằng ảnh/clip (chỉ chủ thấy). Người xem qua link: chỉ xem + `Do this journey` |
+| S15 | `Do this journey` chỉ sao chép **khung lộ trình** (mẫu, thời lượng, nhịp, tên chỉ số, tiêu đề), không ảnh/số liệu |
+| S16–S17 | **Hộp thư** (icon trên header Hub) gộp trả lời, lời mời xem, lời mời kết bạn; **chat 1-1 qua lại** |
+| S18 | Thu hồi cho tất cả hoặc **gỡ từng người**; bản làm theo của người khác vẫn giữ |
 
 ---
 
@@ -252,7 +272,7 @@ Phần vỏ là mọi màn **không thuộc riêng một hành trình**: Hub, Sq
 | CMP-05 | Thẻ hành trình | Ảnh bìa mới nhất · tên · huy hiệu phong cách (chấm màu + tên mẫu) · CMP-17 · lửa + số chuỗi · trạng thái kỳ này (icon check + "Done" / vòng rỗng + "Not yet") · CMP-08 · hàng avatar nếu nhóm | Ảnh bìa thấp lại, chữ không chồng ảnh |
 | CMP-06 | Ô lịch (Day/Week/Month cell) | Vuông, bo 10. Có ảnh: ảnh bìa + **huy hiệu số** góc trên phải nếu > 1 ảnh, icon play nếu ảnh bìa là clip. **Ô lỡ:** viền nét đứt `line`. **Ô trung tính** (kỳ không bắt buộc, nhịp X lần/tuần): `surfaceSunken` trơn, không viền đứt. **Ô freeze:** họa tiết băng + icon bông tuyết `freeze`. **Tương lai:** `surfaceSunken` nhạt. **Hôm nay/kỳ này chưa chụp:** viền `accentInk` nét đứt + icon `+`. **Ảnh bị che** (Hide until they post): mờ + icon khóa | Huy hiệu số giữ nguyên, ô không co dưới 40dp |
 | CMP-07 | Huy hiệu chuỗi | Icon lửa vector (`streak`) + số (`ink`) + đơn vị kỳ ("21 days" / "5 weeks"). Trạng thái: đang cháy · sắp đứt (nhấp nháy theo §3.4 + chữ "Ends in 3h") · **được freeze cứu** (lửa + icon bông tuyết, "Saved by a freeze") · đã đứt (xám, "0") | Đơn vị xuống dòng |
-| CMP-08 | Nhãn riêng tư | `Private` (khóa) · `Squad` (hai người) · `Couple` (hai trái tim) · `Link on` (dây xích) — icon vector + chữ | Chỉ còn icon + tooltip khi quá hẹp |
+| CMP-08 | Nhãn riêng tư | `Private` (khóa) · `Squad` (hai người) · `Couple` (hai trái tim) · `Link on` (dây xích) · **`Friends · 5`** (người + dấu cộng, S6) — icon vector + chữ. Có thể ghép: `Friends · 5` + `Link on` | Chỉ còn icon + tooltip khi quá hẹp |
 | CMP-09 | Thanh reaction | 🔥 💪 👏 ❤️ 😂 + đếm. Giữ để xem ai đã thả | Cuộn ngang |
 | CMP-10 | Sticker | Viên bo tròn đặt trên ảnh, kéo/xoay/phóng được. **Luôn có nền đặc hoặc `chipDark`/`chipLight`**, viền 1px, bóng. Cao tối thiểu 28pt. Tránh vùng an toàn Story (trên 250px, dưới 340px). Danh sách §8.4 | Không áp (theo pixel ảnh) |
 | CMP-11 | Bộ chọn cảm xúc | 6 mặt vector theo màu phong cách + nhãn: Great · Good · Okay · Tired · Low · Proud | 2 hàng × 3 |
@@ -304,7 +324,7 @@ flowchart TD
   DONE -- Done --> HUB
   CAM -.-> TIMER[SCR-14 Đồng hồ học] & WORK[SCR-15 Buổi tập]
   HUB --> NEW[SCR-21 Chọn mẫu] --> SETUP[SCR-22 Thiết lập]
-  HUB --> IMP[SCR-28 Nhập hành trình]
+  HUB --> IMP[SCR-28 Kể lại hành trình]
   HUB --> JD[SCR-24 Chi tiết]
   JD --> DAY[SCR-25 Album kỳ] --> EDIT[SCR-25a Sửa check-in]
   JD --> JSET[SCR-26 Cài đặt] --> MEM[SCR-26a Thành viên]
@@ -317,6 +337,15 @@ flowchart TD
   HUB --> ME[SCR-70 Hồ sơ & cài đặt]
   ME --> NOTI[SCR-71 Thông báo] & PAY[SCR-60 Ourney Plus]
   DAY --> REP[SCR-72 Báo cáo & chặn]
+  ME --> FRI[SCR-80 Bạn bè] --> ADDF[SCR-81 Thêm bạn]
+  JD --> JSHARE[SCR-82 Chia sẻ hành trình] --> PREP[SCR-83 Chuẩn bị câu chuyện]
+  SHELF[SCR-27 Kệ] --> JSHARE
+  HUB -- Shared with me --> SVIEW[SCR-84 Hành trình được chia sẻ]
+  SVIEW --> FOLLOW[SCR-87 Làm theo] --> SETUP
+  HUB --> INBOX[SCR-85 Hộp thư] --> CHAT[SCR-86 Trò chuyện]
+  SVIEW -- trả lời ảnh --> CHAT
+  WEB1[WEB-01 Trang hành trình] --> FOLLOW
+  WEB5[WEB-05 Lời mời kết bạn] --> FRI
 ```
 Dock (CMP-01) có mặt ở Hub, Camera, Squad: `Journeys` → SCR-20 · nút giữa → SCR-10/SCR-11 theo §5.2 · `Squad` → SCR-40.
 
@@ -324,8 +353,8 @@ Dock (CMP-01) có mặt ở Hub, Camera, Squad: `Journeys` → SCR-20 · nút gi
 | Bề mặt | ID |
 |---|---|
 | Widget màn hình chính / màn khóa | WGT-01…05 (§11) |
-| Trang web | WEB-01…04 (§13) |
-| Thông báo | NTF-01…12 (§10) |
+| Trang web | WEB-01…05 (§13) |
+| Thông báo | NTF-01…16 (§10) |
 | Tablet | §12 |
 
 ### 4.3 Thời điểm xin quyền
@@ -364,7 +393,9 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 - **13–17 tuổi:** dùng bình thường; mọi công tắc link công khai bị khóa với chú thích "Public links are for 18+".
 
 #### SCR-04 Hành trình đầu tiên `[v1]`
-- "What's your first journey?". Lưới 2 cột **10 thẻ mẫu** + thẻ `Custom` + link `I was invited` (→ **SCR-43**, điểm nhập mã duy nhất) + `Import a past journey` (SCR-28).
+- "What's your first journey?". Lưới 2 cột **10 thẻ mẫu** + thẻ `Custom` + link `I was invited` (→ **SCR-43**, điểm nhập mã duy nhất).
+- Ngay dưới tiêu đề, một thẻ ngang nổi bật (S1): **`Retell a past journey`** / **`Kể lại một hành trình đã qua`** + dòng phụ "Already did it? Turn old photos into a story" / "Đã đi rồi? Biến ảnh cũ thành một câu chuyện" → SCR-28. Người có sẵn ảnh cũ thấy giá trị ngay, không phải chờ 30 ngày.
+- Đến từ link `Do this journey` (WEB-01): bỏ qua lưới mẫu, mở thẳng SCR-87.
 - Chọn mẫu → SCR-22 (chế độ nhanh). Tạo xong → xin quyền camera (§4.3) → mở camera.
 
 ### 5.2 Check-in
@@ -430,15 +461,16 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 #### SCR-20 Journeys Hub `[v1]`
 - Token Shell. Mỗi thẻ mang màu phong cách của nó.
 - **Bố cục:**
-  1. Header (56dp): "Journeys" (Title 1) + tìm kiếm + **`+`** (menu: `New journey` · `Import a past journey`) + avatar (→ SCR-70).
-  2. **Segment** (44dp): **`Active` | `Shelf`** / `Đang chạy` | `Trên kệ` (R2-02).
+  1. Header (56dp): "Journeys" (Title 1) + tìm kiếm + **`+`** (menu: `New journey` · `Retell a past journey`) + **hộp thư** (icon khay thư vector, chấm đỏ + số khi có mục chưa đọc → SCR-85, S16) + avatar (→ SCR-70). Header vẫn tối đa 3 icon + avatar; ở khổ 320 tìm kiếm thu vào trong segment.
+  2. **Segment** (44dp): **`Active` | `Shelf` | `Shared with me`** / `Đang chạy` | `Trên kệ` | `Được chia sẻ` (R2-02, S8). Segment thứ ba chỉ hiện khi đã có ít nhất một hành trình được chia sẻ cho mình (có chấm khi có hành trình mới). Ở chữ 1.35× hoặc khổ 320: segment cuộn ngang, không cắt chữ.
   3. *(Active)* **Dải "Today"** (96dp): vòng ảnh kiểu story cuộn ngang. Vòng có viền màu phong cách = chưa chụp kỳ này; có icon check = đã xong. Chưa xong xếp trước. Chạm vòng chưa xong → camera. Cuối dải: "+8" → SCR-10.
   4. *(Active)* Nút **`Sort & filter`** (khi ≤ 6 hành trình thì gập; > 6 thì hiện hàng chip): lọc `All` · `Today left` · `Solo` · theo loại mẫu; sắp `Needs a snap` (mặc định) · `Recently updated` · `Longest streak` · `A–Z`; kiểu xem **thẻ lớn** / **danh sách gọn** (64dp/dòng) / **lưới 2 cột**.
   5. *(Active)* **Pinned** (≤ 5): JourneyCard lớn, ảnh bìa 16:10.
   6. *(Active)* **Đang chạy**: phần còn lại theo kiểu xem.
   7. *(Shelf)* Nội dung **SCR-27**.
+  8. *(Shared with me)* Danh sách hành trình bạn bè chia sẻ cho mình, mới nhất trước: CMP-05 rút gọn (ảnh bìa, tên, avatar + tên chủ, phong cách, "Finished Oct 30" hoặc "Day 12 · live", nhãn `Imported` nếu là kể lại), chấm "New" khi có ảnh mới từ lần xem trước. Chạm → SCR-84. Nhấn giữ: `Hide from my list`. Rỗng: không hiện segment.
 - Nhiều hành trình (> 6): tự chuyển sang danh sách gọn. Nhấn giữ thẻ: `Pin` · `Mute reminders` · `End` · `Share`. Thư mục do người dùng đặt tên `[v2]`.
-- **Trạng thái:** 0 hành trình (minh họa + "Start your first journey" + 10 mẫu cuộn ngang); offline; skeleton; tìm không thấy.
+- **Trạng thái:** 0 hành trình (minh họa + "Start your first journey" + 10 mẫu cuộn ngang + nút phụ `Retell a past journey` → SCR-28); offline; skeleton; tìm không thấy.
 
 #### SCR-21 Chọn mẫu `[v1]`
 - "What are you working on?". Lưới thẻ mẫu (2 cột; tablet 3–4): ảnh xem trước của phong cách, tên, 1 dòng mô tả, nhãn "Solo · Group" / "Couple only" / "Solo only".
@@ -454,18 +486,19 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
   4. **Chỉ số** (0–3): tên, đơn vị, công tắc `Hide from others`.
   5. **Dữ liệu tự động:** `Add location & weather` (mặc định tắt, trừ Chuyến đi).
   6. **Nhắc nhở:** giờ nhắc; `Streak alert` (giờ, mặc định 21:00).
-  7. **Riêng tư:** ai thấy (`Only me` / `Squad` / `Couple`); `Allow share link` (chỉ solo, **mặc định tắt**; khóa với 13–17 tuổi; mẫu nhạy cảm bật lên thì hiện **sheet cảnh báo** §9.4); `Hide my photos until others post` (nhóm/cặp đôi, mặc định tắt).
+  7. **Riêng tư:** ai thấy (`Only me` / `Squad` / `Couple`); `Hide my photos until others post` (nhóm/cặp đôi, mặc định tắt). **Không có** công tắc link ở đây: link công khai chỉ bật được khi hành trình đã xong (S9); chia sẻ cho bạn bè làm ở SCR-82.
+- **Đến từ `Do this journey`** (SCR-87): mọi ô điền sẵn theo khung lộ trình nguồn, dòng nhỏ dưới tên "Based on {name}'s journey" / "Theo hành trình của {name}" (bỏ được; đề xuất tạm, còn mở O2 ở §15), chế độ `More options` mở sẵn để xem lại.
   8. **Khu vực** (chỉ Blueprint Makeover): thêm khu vực (gõ hoặc gợi ý Kitchen, Bedroom, Living room, Bathroom, Balcony, Garden…).
 - Tạo nhóm/cặp đôi xong → SCR-42.
 
 #### SCR-24 Chi tiết hành trình `[v1]`
 - Màu và dòng thời gian theo phong cách (§6.4).
-- **Header:** quay lại · tên (cắt "…") · CMP-08 · chia sẻ · "⋯" (SCR-26).
+- **Header:** quay lại · tên (cắt "…") · CMP-08 · chia sẻ · "⋯" (SCR-26). Nút chia sẻ mở sheet 2 dòng: `Make a card or video` (→ SCR-50) · `Share this journey` (→ SCR-82; chỉ hành trình solo, O1).
 - **Khối thống kê:** CMP-17 · chuỗi hiện tại · chuỗi dài nhất · số khoảnh khắc · CMP-19 (lượt freeze). Có chỉ số: biểu đồ nhỏ chỉ số chính (nếu không ẩn). **Nhóm:** hiện **chuỗi chung** + dòng "Kept alive by 3 of 5 today".
 - **Kiểu xem** (segmented): `Story` (dòng thời gian của phong cách) · `Calendar` (CMP-06, có nút đổi **Day / Week / Month**, mặc định theo nhịp — §7.2) · `Map` (icon **ghim địa điểm**, khi có địa điểm) · `Stats`.
 - **Nhóm/cặp đôi:** hàng avatar + "Today 3/5" → SCR-41.
 - **Nút nổi:** `Check in` (kỳ này chưa chụp) hoặc `Add more`.
-- **Trạng thái:** mới (kỳ đầu chưa chụp: ô chờ + lời mời); **đã kết thúc** (chỉ đọc; banner "Completed Oct 30" + `Reopen` kèm "6 days left to reopen" khi còn trong 7 ngày (Q10) + `Watch recap` + `Start season 2`); đang chờ tải (icon mây trên ô).
+- **Trạng thái:** mới (kỳ đầu chưa chụp: ô chờ + lời mời); **đã kết thúc** (chỉ đọc; banner "Completed Oct 30" + `Reopen` kèm "6 days left to reopen" khi còn trong 7 ngày (Q10) + `Watch recap` + `Share this journey` + `Start season 2`); **đang được chia sẻ** (dòng dưới khối thống kê "Shared with 5 friends · Link on" → SCR-82; ảnh đã ẩn khi chia sẻ có icon mắt gạch nhỏ ở góc ô); đang chờ tải (icon mây trên ô).
 
 #### SCR-25 Album của kỳ `[v1]`
 - Trình xem toàn màn nền tối. Vuốt ngang qua các ảnh/clip của ngày (hoặc tuần/tháng) đó, thanh chỉ số kiểu story ở trên. Vuốt dọc xuống để đóng.
@@ -481,7 +514,7 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 
 #### SCR-26 Cài đặt hành trình `[v1]`
 - Tên, icon, thời lượng (gia hạn khi còn chạy; đã kết thúc thì chỉ qua `Reopen` trong 7 ngày), **nhịp**, chỉ số, nhắc nhở (giờ nhắc, giờ cảnh báo chuỗi), vị trí & thời tiết.
-- **Riêng tư:** ai thấy · link chia sẻ (bật/tắt, mặc định tắt, `Copy link`, `Reset link`; mẫu nhạy cảm có sheet cảnh báo; khóa với 13–17 tuổi) · `Hide my photos until others post` · `Blur photos when sharing` · `Hide metrics when sharing`.
+- **Riêng tư:** ai thấy · **`Sharing`** → SCR-82 (dòng tóm tắt "Not shared" / "5 friends · Link off") · `Hide my photos until others post` · `Blur photos when sharing` · `Hide metrics when sharing`. Công tắc link nằm trong SCR-82 và chỉ bật được khi hành trình đã xong (S9).
 - **Màn khóa & widget** (ghi đè mặc định toàn cục, Q25): `Show photos on widgets` · `Show journey name in notifications`. Mẫu nhạy cảm mặc định tắt cả hai.
 - **Khu vực** (Blueprint): thêm, đổi tên, sắp xếp, đánh dấu xong.
 - **Thành viên** → SCR-26a.
@@ -499,11 +532,14 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 #### SCR-27 Kệ (nội dung segment `Shelf` của SCR-20) `[v1]`
 - Lưới **bìa album** 3:4 như kệ sách: ảnh bìa, tên, khoảng ngày, "28/30 days", màu gáy theo phong cách.
 - Lọc: năm, loại mẫu, solo/nhóm/cặp đôi. Tìm theo tên. Chạm → SCR-24 chỉ đọc.
-- Rỗng: "Your finished journeys live here".
+- Bìa đang được chia sẻ có huy hiệu nhỏ (icon hai người = bạn bè, dây xích = link). Nhấn giữ bìa: `Share this journey` (→ SCR-82) · `Edit story` (→ SCR-83).
+- Ô đầu kệ: **`+ Retell a past journey`** (→ SCR-28).
+- Rỗng: "Your finished journeys live here" + `Retell a past journey`.
 
-#### SCR-28 Nhập hành trình đã qua `[v1]`
-- **Bước 1:** mẫu + tên. **Bước 2:** khoảng ngày. **Bước 3:** chọn ảnh — **thanh tiến độ** khi nhập nhiều, ảnh trùng có nhãn "Already added", lưới hiển thị theo từng tháng. Ảnh tự xếp vào ngày theo ngày chụp, kéo thả đổi ngày được. **Bước 4:** `Save to shelf` hoặc `Continue this journey from today`.
-- Nhãn `Imported`. Phần quá khứ **không** tính chuỗi ("Imported days: 42", chuỗi bắt đầu từ 0). Ảnh chụp hôm nay thì hôm nay được tính.
+#### SCR-28 Kể lại hành trình đã qua `[v1]`
+- Tên màn "Retell a past journey" / "Kể lại một hành trình đã qua" (trước đây "Import a past journey").
+- **Bước 1:** mẫu + tên. **Bước 2:** khoảng ngày. **Bước 3:** chọn ảnh — **thanh tiến độ** khi nhập nhiều, ảnh trùng có nhãn "Already added", lưới hiển thị theo từng tháng. Ảnh tự xếp vào ngày theo ngày chụp, kéo thả đổi ngày được. **Bước 4:** `Save to shelf` hoặc `Continue this journey from today`. **Bước 5** (chỉ khi `Save to shelf`): thẻ "Want to share this story?" → `Write the story & share` (→ SCR-83) · `Not now`.
+- Nhãn `Imported` / `Kể lại`, **người xem cũng thấy** (S12). Phần quá khứ **không** tính chuỗi ("Imported days: 42", chuỗi bắt đầu từ 0), người xem không thấy số chuỗi. Ảnh chụp hôm nay thì hôm nay được tính.
 
 ### 5.4 Squad
 
@@ -540,7 +576,7 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
   | `Story` | 9:16 (1080×1920), vùng an toàn trên 250px, dưới 340px |
   | `Post` | 4:5 (1080×1350) |
   | `Video` | SCR-56. Có watermark miễn phí; bỏ watermark và 4K `[Plus]` |
-  | `Link` | Chỉ solo: bật link chỉ đọc (**mặc định tắt**, sheet cảnh báo với mẫu nhạy cảm, khóa với 13–17 tuổi), xem trước trang web, `Copy link`, `Reset link`. Trang link **không lên Google** |
+  | `Link` | Chỉ solo **đã xong** (S9): mở phần `Public link` của SCR-82. Hành trình đang chạy: tab hiện "Links open when this journey is finished. You can share it with friends now." + `Share with friends` |
 - Dải kiểu thiệp: đầu tiên là thiệp đặc trưng của phong cách (§6.4), sau đó mẫu chung (Big number · Grid · Before/After · Calendar).
 - Tùy chọn: chọn ảnh, `Hide metrics`, `Blur photos`, `Show my handle`, `Hide stickers`, nền sáng/tối.
 - Nút: `Share` · `Instagram Stories` `[v2]` · `Save`.
@@ -555,9 +591,10 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
   1. `Watch your recap` → SCR-56.
   2. `Make a summary card` → SCR-50.
   3. `Put it on the shelf` → hiệu ứng album bay vào kệ.
-  4. `Start season 2` → hành trình mới kế thừa tên, chỉ số, nhịp, liên kết "Season 1". Thành viên cũ nhận **lời mời** (SCR-40), không tự thêm.
-  5. `Reopen` (trong 7 ngày, Q10).
-  6. `Order a photo book` `[Soon]`.
+  4. **`Share this journey`** → SCR-83 rồi SCR-82 (solo). Dòng phụ "Let friends see it, or let anyone do it too" / "Cho bạn bè xem, hoặc để người khác làm theo".
+  5. `Start season 2` → hành trình mới kế thừa tên, chỉ số, nhịp, liên kết "Season 1". Thành viên cũ nhận **lời mời** (SCR-40), không tự thêm.
+  6. `Reopen` (trong 7 ngày, Q10).
+  7. `Order a photo book` `[Soon]`.
 
 #### SCR-56 Video recap `[v1]` (bỏ watermark `[Plus]`)
 - Player dọc 9:16. Mẫu: `1 second a day` · `Before → After morph` · `Beat montage` · `Grid build-up`. Nhạc nền có sẵn.
@@ -583,6 +620,7 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 
 #### SCR-70 Hồ sơ & cài đặt `[v1]`
 - Đầu trang: avatar, tên, @username, `Edit profile`. "5 journeys · 312 moments · longest streak 41".
+- **Dòng `Friends`** (S4) → SCR-80: "12 friends · 2 requests" — con số **chỉ chủ tài khoản thấy**, không hiện ở bất kỳ đâu cho người khác. Nút nhỏ `Add` → SCR-81.
 - Thẻ Plus (nếu chưa có).
 - **Nhóm cài đặt:**
   - Account: email, phương thức đăng nhập.
@@ -602,7 +640,8 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 
 #### SCR-72 Báo cáo & chặn `[v1]`
 - Lý do: **Child safety** (lên đầu khi nội dung thuộc Little Milestones) · Spam · Nudity · Harassment · Self-harm · Something else (+ ô chữ). Gửi xong: "Thanks. We'll review within 24 hours. You won't see this anymore."
-- Chặn: xác nhận + hệ quả (ẩn nội dung của nhau, không vào chung nhóm mới).
+- Chặn: xác nhận + hệ quả (ẩn nội dung của nhau, không vào chung nhóm mới, **hủy kết bạn, mất quyền xem hành trình đã chia sẻ cho nhau, ẩn cuộc trò chuyện, không gửi lại lời mời kết bạn được**).
+- Báo cáo được cả **tin nhắn** (SCR-86, nhấn giữ) và **người dùng** (SCR-80, SCR-86). Store yêu cầu báo cáo + chặn với tính năng nhắn tin.
 
 ### 5.8 Khi có rất nhiều hành trình (D19)
 Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50 hành trình**. Thiết kế mẫu cho cả bốn mức.
@@ -615,6 +654,85 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 | SCR-13 Đã đăng | "4 left today" + `Next: {journey}` + `Done` |
 | Thông báo | Từ 4 hành trình trở lên, gộp nhắc cùng giờ (NTF-11) |
 | Widget | Chọn hành trình, hoặc chế độ "Next up" tự đổi sang hành trình chưa xong |
+| SCR-20 `Shared with me` | Danh sách gọn khi > 6, tìm theo tên hành trình hoặc tên bạn |
+| SCR-80 Bạn bè | Tìm kiếm khi > 10 bạn; SCR-82 danh sách chọn bạn có `Select all` / `Clear` |
+
+### 5.9 Bạn bè, chia sẻ hành trình & hộp thư (S1–S18)
+> Áp dụng cho hành trình **solo** (gồm hành trình kể lại). Nhóm/cặp đôi còn mở (O1, §15). Lý do và quy tắc: [09-journey-sharing.md](09-journey-sharing.md).
+
+#### SCR-80 Bạn bè `[v1]`
+- Mở từ SCR-70. Token Shell. Tiêu đề "Friends" / "Bạn bè" + `Add` (→ SCR-81).
+- **Lời mời đang chờ** (trên cùng, khi có): avatar, tên, @username, `Accept` / `Decline`. Lời mời mình đã gửi: nhãn "Requested" + `Cancel`.
+- **Danh sách bạn:** avatar, tên, @username, dòng phụ "Shares 2 journeys with you" nếu có. Chạm → sheet bạn: hành trình bạn ấy chia sẻ cho mình (→ SCR-84), hành trình mình chia sẻ cho bạn ấy (gỡ được từng cái), `Message` (→ SCR-86 nếu đã có cuộc trò chuyện), `Remove friend`, `Block`, `Report`.
+- Tổng số bạn hiện ở tiêu đề phụ, **chỉ mình thấy** (S4). Không có danh sách "bạn chung".
+- `Remove friend`: xác nhận "You'll stop seeing each other's shared journeys." / "Hai bạn sẽ không còn thấy hành trình đã chia sẻ cho nhau."
+- Rỗng: minh họa + "Share journeys with the people who were there" + `Add friends`.
+
+#### SCR-81 Thêm bạn `[v1]`
+- Ba cách (S3), xếp dọc:
+  1. **`Share my invite link`** (→ share sheet hệ thống, link mở WEB-05) + `Copy`.
+  2. **Mã QR của tôi** (chạm phóng to) + `Scan a code` (xin quyền camera đúng lúc, §4.3).
+  3. **Tìm theo username:** ô "@username", chỉ trả về khi **khớp chính xác**; kết quả: avatar + tên + `Add friend`. Không gợi ý, không tìm theo tên.
+- Trạng thái: không tìm thấy ("No one with that username"), đã là bạn, đã gửi, bị chặn (hiện như "không tìm thấy"), gửi quá nhiều lần.
+
+#### SCR-82 Chia sẻ hành trình `[v1]`
+- Sheet đáy (CMP-13) kéo được lên toàn màn. Mở từ SCR-24, SCR-26, SCR-27, SCR-55.
+- **Đầu sheet:** thẻ xem trước nhỏ của hành trình (ảnh bìa câu chuyện, tiêu đề câu chuyện) + `Edit story` (→ SCR-83). Chưa có lời kể: SCR-83 mở trước.
+- **Khối `Friends`** (S6–S7):
+  - Danh sách bạn có ô tick. Mặc định **tick tất cả**; **mẫu nhạy cảm (1, 7, 8): không tick ai** + dòng giọng ấm "Pick who sees this. Nobody is selected yet." / "Chọn người được xem. Chưa ai được chọn."
+  - `Select all` · `Clear` · tìm kiếm (khi > 10).
+  - Bạn đã được chia sẻ: nhãn "Can see" + `Remove` (gỡ từng người, S18).
+  - Nút `Share with {n} friends` / `Chia sẻ cho {n} bạn`. Hành trình **đang chạy**: dòng phụ "They'll see new photos as you post" / "Bạn bè sẽ thấy ảnh mới khi bạn đăng".
+- **Khối `Public link`** (S9–S10):
+  - **Đang chạy:** khối mờ, icon khóa + "Links open when this journey is finished" / "Link mở khi hành trình kết thúc". Không bấm được.
+  - **Đã xong / trên kệ:** công tắc (mặc định tắt). Bật → mẫu nhạy cảm hiện **sheet cảnh báo** (§9.4). Bật rồi: link + `Copy link` · `Share` · `Reset link` · `Preview` (→ WEB-01), dòng "Anyone with the link can view it and do this journey too" / "Ai có link đều xem được và làm theo được".
+  - 13–17 tuổi: khóa + "Public links are for 18+".
+- **Đáy:** `Stop sharing` (đỏ chữ) — xác nhận "Everyone loses access. People who started this journey keep theirs." / "Mọi người mất quyền xem. Ai đã làm theo vẫn giữ hành trình của họ."
+- Không có bạn nào: khối Friends thành "Add friends to share with them" + `Add friends` (→ SCR-81).
+
+#### SCR-83 Chuẩn bị câu chuyện `[v1]`
+- Trình chỉnh toàn màn theo phong cách của hành trình. Header: `Cancel` · "Your story" · `Save`.
+- **Lời kể** (S11): `Story title` (≤ 60, mặc định tên hành trình), `Intro` (≤ 300, gợi ý theo mẫu: "Why I started…"), `What I learned` (≤ 300, tùy chọn), `Cover photo` (chọn từ ảnh của hành trình).
+- **Ẩn ảnh:** lưới lịch (CMP-06) với chế độ chọn. Chạm ô → ẩn cả kỳ (ô có mắt gạch + mờ); mở kỳ để ẩn từng ảnh. Người xem thấy kỳ ẩn là **ô trống trơn** (không nét đứt, không ghi "lỡ").
+- **Ẩn số liệu:** công tắc `Hide metrics` (mặc định bật với Quiet Transformer, Glow Ritual, Blueprint — §9.2) · `Hide captions` · `Blur photos in link previews`.
+- `Preview as a friend` → SCR-84 ở chế độ xem trước (dải "Preview" trên cùng).
+- Lưu xong quay về SCR-82.
+
+#### SCR-84 Hành trình được chia sẻ (người xem) `[v1]`
+- Giống SCR-24 **chỉ đọc**, theo phong cách của hành trình. Header: quay lại · tên câu chuyện · avatar + tên chủ · "⋯" (`Report`, `Hide from my list`).
+- **Đầu trang:** ảnh bìa câu chuyện, tiêu đề, intro (xem thêm), "What I learned" (gập), CMP-17, chuỗi (**ẩn với hành trình kể lại**, thay bằng nhãn `Imported` + khoảng ngày), số khoảnh khắc. Hành trình đang chạy: nhãn "Live · Day 12".
+- **Kiểu xem:** `Story` · `Calendar` (không có `Stats` chi tiết số liệu nếu chủ ẩn số).
+- **Trên từng ảnh** (SCR-25 ở chế độ người xem): CMP-09 thả cảm xúc · **`Reply`** (icon camera nhỏ) → camera gọn chụp ảnh/clip ≤ 5s (hoặc chọn từ thư viện) + caption ≤ 140 → gửi vào SCR-86. Dòng nhỏ "Only {name} sees your reply" / "Chỉ {name} thấy câu trả lời của bạn".
+- **Nút nổi:** `Do this journey` / `Làm theo` (→ SCR-87) — **chỉ khi hành trình đã xong** (S9). Đang chạy: không có nút.
+- Không có nút chia sẻ lại. Không thấy cảm xúc/câu trả lời của người khác.
+- **Trạng thái:** bị thu hồi / hết là bạn ("This journey is private now"); ảnh mới (chấm "New" trên ô); offline (ảnh đã cache).
+
+#### SCR-85 Hộp thư `[v1]`
+- Mở từ icon hộp thư trên header Hub (S16). Token Shell. Tiêu đề "Inbox" / "Hộp thư".
+- **Bộ lọc chip:** `All` · `Replies` · `Invites`.
+- **Các loại dòng** (mới nhất trước, chưa đọc in đậm + chấm):
+  - **Cuộc trò chuyện:** avatar người kia + ảnh nhỏ của khoảnh khắc được trả lời, "Nam replied to Day 12 of Daily Reading", tin cuối, giờ. Chạm → SCR-86.
+  - **Cảm xúc:** gộp theo hành trình, "Hà and 3 others reacted to Daily Reading" → SCR-24 cuộn tới ảnh.
+  - **Lời mời xem hành trình:** "Linh shared 'Da Lat in 5 photos' with you" + `View` (→ SCR-84).
+  - **Lời mời kết bạn:** avatar + `Accept` / `Decline` ngay trên dòng.
+- Vuốt trái dòng trò chuyện: `Mute` · `Delete conversation` (chỉ xóa phía mình).
+- Rỗng: "Replies and invites from friends land here" / "Câu trả lời và lời mời từ bạn bè sẽ ở đây".
+- `[v1]` chưa có push: số chưa đọc chỉ cập nhật khi mở app (chấm trên icon hộp thư + segment). Push NTF-13…16 là `[v2]`.
+
+#### SCR-86 Trò chuyện `[v1]`
+- Chat 1-1 (S17), gắn với **một hành trình**. Header: quay lại · avatar + tên · tên hành trình (chạm → SCR-24 / SCR-84) · "⋯" (`Mute`, `Block`, `Report`).
+- **Tin đầu tiên luôn là câu trả lời ảnh/clip**, hiển thị kèm ảnh gốc được trả lời (khung nhỏ phía trên, chạm mở SCR-25).
+- Bong bóng: chữ (≤ 500), ảnh, clip ≤ 5s. Giờ gửi, trạng thái `Sent` / `Seen`. Nhấn giữ tin: `Copy` · `Delete for me` · (tin người kia) `Report`.
+- Thanh nhập: camera · thư viện · ô chữ · `Send`. Không có sticker, không có tin thoại.
+- **Chỉ đọc** khi hết là bạn hoặc hành trình bị thu hồi: thanh nhập thay bằng "You can't reply to this conversation" / "Bạn không thể trả lời cuộc trò chuyện này".
+- Giọng ấm cố định ở các dòng hệ thống (báo cáo, chặn) theo §3.6.
+
+#### SCR-87 Làm theo `[v1]`
+- Mở từ SCR-84 hoặc WEB-01 (qua cài app → đăng nhập → SCR-04 chuyển thẳng tới đây).
+- Thẻ "Start your own {template}" theo phong cách nguồn: tên mẫu, thời lượng, nhịp, chỉ số (chỉ tên + đơn vị), ảnh bìa câu chuyện của người gốc (chỉ để nhận ra, không sao chép).
+- Danh sách "What you'll get" / "Bạn sẽ có": cùng phong cách · cùng nhịp · cùng chỉ số. Dòng "Your photos and numbers start fresh" / "Ảnh và số liệu của bạn bắt đầu từ đầu".
+- `Start this journey` → SCR-22 điền sẵn (S15). `Change something` mở SCR-22 ở `More options`.
+- Link đã thu hồi giữa chừng: vẫn tạo được từ khung đã tải, không hiện ảnh bìa nguồn.
 
 ---
 
@@ -852,9 +970,12 @@ Tối đa 3 mỗi hành trình. Kiểu nhập: số, thanh trượt (cân nặng
 ### 9.1 Ai thấy
 | Mức | Ai thấy trong app | Chia sẻ ra ngoài |
 |---|---|---|
-| `Only me` | Chỉ mình | Thiệp/video; link chỉ đọc nếu bật (mặc định tắt) |
-| `Squad` | Thành viên nhóm | Thiệp/video ảnh của mình; **không bao giờ có link** |
+| `Only me` | Chỉ mình | Thiệp/video; link chỉ đọc khi **đã xong** và tự bật (mặc định tắt, S9) |
+| `Only me` + chia sẻ `Friends` | Mình + bạn bè được chọn (SCR-82), ở segment `Shared with me` của họ | Như `Only me` |
+| `Squad` | Thành viên nhóm | Thiệp/video ảnh của mình; **không bao giờ có link** (chia sẻ cho bạn ngoài nhóm: còn mở O1) |
 | `Couple` | Hai người | Như Squad |
+
+Ảnh/kỳ ẩn khi chia sẻ và số liệu ẩn (SCR-83) áp cho **cả** bạn bè được chia sẻ và người xem qua link, không áp cho thành viên nhóm.
 
 ### 9.2 Mặc định theo mẫu
 - Quiet Transformer, Glow Ritual: ẩn số, làm mờ ảnh khi chia sẻ.
@@ -868,7 +989,7 @@ Tối đa 3 mỗi hành trình. Kiểu nhập: số, thanh trượt (cân nặng
 - Couple HUD và widget WGT-02 tuân theo cùng quy tắc.
 
 ### 9.4 Link công khai (R2-06, R2-07, Q12)
-- Chỉ hành trình solo. Công tắc **mặc định tắt**.
+- Chỉ hành trình solo **đã xong / trên kệ** (gồm hành trình kể lại đã lưu lên kệ) (S9). Công tắc **mặc định tắt**, nằm trong SCR-82. Hành trình mở lại (Q10) hoặc tiếp tục từ hôm nay: link tự tắt, bật lại khi kết thúc.
 - Trang link có `noindex`: **không lên Google**, chỉ ai có link mới xem.
 - **Mẫu nhạy cảm** (1, 7, 8): bật link → **sheet cảnh báo** giọng ấm: tiêu đề "Anyone with the link can see this journey" / "Ai có link đều xem được hành trình này", 3 gạch đầu dòng (ai xem được · ảnh nào hiện · cách tắt), `Turn on link` + `Cancel`. Ảnh trong ảnh xem trước link (WEB-02) **tự làm mờ** + nhãn "Photos blurred in previews".
 - **13–17 tuổi:** công tắc khóa + "Public links are for 18+".
@@ -897,6 +1018,10 @@ Hai giọng: `Playful` (mặc định) và `Gentle` (SCR-71). **Mẫu nhạy c�
 | NTF-10 | Nhận thêm freeze | "7 days straight = +1 freeze ❄ you're stacking" / "7 ngày liền = +1 freeze ❄ tích đồ ghê" · nhóm: "whole squad 7 days straight = +1 freeze ❄" | "7 days in a row. You earned a freeze." / "7 ngày liên tiếp. Bạn được thêm một lượt freeze." | `[v1]` local |
 | NTF-11 | Gộp nhắc (≥ 4 hành trình) | "3 journeys are waiting for a snap 📸" / "3 hành trình đang chờ bạn chụp 📸" | "3 journeys are waiting for today's photo." / "3 hành trình đang chờ ảnh hôm nay." | `[v1]` local |
 | NTF-12 | Lời mời mùa 2 | "Lan started Season 2 of IELTS Sprint. you in?" / "Lan mở mùa 2 IELTS Sprint rồi. Vô không?" | "Lan invited you to Season 2 of IELTS Sprint." / "Lan mời bạn vào mùa 2 của IELTS Sprint." | `[v2]` push |
+| NTF-13 | Lời mời kết bạn | "Khoa wants to be friends 👀" / "Khoa muốn kết bạn nè 👀" | "Khoa sent you a friend request." / "Khoa gửi lời mời kết bạn." | `[v2]` push · `[v1]` trong hộp thư |
+| NTF-14 | Được chia sẻ hành trình | "Linh let you in on 'Da Lat in 5 photos' 📖" / "Linh cho bạn xem 'Da Lat in 5 photos' nè 📖" | "Linh shared a journey with you." / "Linh đã chia sẻ một hành trình với bạn." | `[v2]` push · `[v1]` trong hộp thư |
+| NTF-15 | Có người trả lời ảnh | "Nam replied to your Day 12 📸" / "Nam vừa trả lời ảnh ngày 12 của bạn 📸" | "Nam replied to one of your photos." / "Nam đã trả lời một ảnh của bạn." | `[v2]` push · `[v1]` trong hộp thư |
+| NTF-16 | Tin nhắn mới | "Nam: {first 40 chars}" | "New message from Nam." / "Tin nhắn mới từ Nam." | `[v2]` push, gộp ≤ 1/5 phút mỗi cuộc |
 
 Bản cho mẫu nhạy cảm khi ẩn tên: "Time for today's photo ✨" / "Đến giờ chụp ảnh hôm nay rồi ✨".
 
@@ -935,9 +1060,10 @@ Bản cho mẫu nhạy cảm khi ẩn tên: "Time for today's photo ✨" / "Đ�
 
 Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (thông tin trái, lưới phải). Có sáng/tối theo hệ thống. Lightbox dùng được bằng bàn phím (mũi tên, Esc), ảnh có alt text. Mọi trang có `noindex`.
 
-#### WEB-01 Trang hành trình (link solo đã bật)
-- Header: logo + `Get the app`. Tên hành trình, avatar + tên, màu + kiểu dòng thời gian **rút gọn** của phong cách, CMP-17, chuỗi.
-- Lưới kỳ (CMP-06), chạm → lightbox. Chỉ số ẩn không hiện; ảnh đặt làm mờ thì mờ.
+#### WEB-01 Trang hành trình (link solo đã bật, hành trình đã xong)
+- Header: logo + `Get the app`. **Ảnh bìa câu chuyện**, tiêu đề câu chuyện, avatar + tên, intro, "What I learned" (gập), màu + kiểu dòng thời gian **rút gọn** của phong cách, CMP-17, chuỗi (**hành trình kể lại: nhãn `Imported` + khoảng ngày, không chuỗi**, S12).
+- Lưới kỳ (CMP-06), chạm → lightbox. Kỳ/ảnh ẩn khi chia sẻ là ô trống trơn. Chỉ số ẩn không hiện; ảnh đặt làm mờ thì mờ. Không có cảm xúc, câu trả lời hay ô bình luận (S14).
+- **Nút nổi `Do this journey` / `Làm theo`** (S15): thẻ tóm tắt khung lộ trình (mẫu, thời lượng, nhịp, chỉ số) + 2 nút store; đã cài app: `Open in Ourney` (mở SCR-87). Sau khi cài, app nhận lại lộ trình (cùng cơ chế dán mã như WEB-04).
 - Cuối trang: "Start your own journey" + nút store.
 
 #### WEB-02 Ảnh xem trước link (Open Graph)
@@ -952,6 +1078,11 @@ Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (t
 - 2 nút store. Dòng "Open Ourney and we'll fill in the code" / "Mở Ourney, mã sẽ được điền sẵn".
 - Đã cài app: nút `Open in Ourney` (`ourney://join/<code>`).
 - Mã hết hạn / nhóm đầy: thông báo + `Get the app`.
+
+#### WEB-05 Trang lời mời kết bạn (S3)
+- Avatar + tên + @username người mời, "{name} wants to be friends on Ourney" / "{name} muốn kết bạn trên Ourney". **Không** hiện hành trình, số bạn hay ảnh nào.
+- 2 nút store + dòng "Open Ourney and we'll send the request" / "Mở Ourney, lời mời sẽ được gửi". Đã cài app: `Open in Ourney` → SCR-80 với lời mời hiện sẵn để `Accept`.
+- Link đã thu hồi / người mời đã xóa tài khoản: "This invite isn't active anymore" + `Get the app`.
 
 ---
 
@@ -976,7 +1107,8 @@ Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (t
 ---
 
 ## 15. Tình trạng quyết định
-- **Đã chốt:** D1–D25, R2-01…R2-22, Q1–Q25 (§1.5–§1.7).
+- **Đã chốt:** D1–D25, R2-01…R2-22, Q1–Q25, S1–S18 (§1.5–§1.8).
+- **Còn mở của vòng 4** ([09-journey-sharing.md](09-journey-sharing.md) §7): **O1** chia sẻ hành trình nhóm/cặp đôi ra ngoài nhóm (tạm: v1 chỉ solo) · **O2** dòng "Based on {name}'s journey" và số người làm theo (tạm: có, chỉ chủ thấy số) · **O3** giới hạn số bạn và thời gian giữ tin nhắn.
 - **Màu sắc:** giá trị trong §3.1 và §6.3 là khởi điểm; **màu chốt do Figma Make đề xuất** trong khuôn ràng buộc (Q14–Q16).
 - **Còn mở duy nhất:** giá Ourney Plus (D23).
 - **Việc ngoài tài liệu này:** đồng bộ CLAUDE.md §4 sang 10 phong cách, bỏ "His & Her", sửa số mẫu (08-SDS-review F-57).
@@ -993,7 +1125,8 @@ Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (t
 7. SCR-50 Share Studio + thiệp × 10 + SCR-56.
 8. SCR-21/22 · SCR-26/26a · SCR-55 · SCR-27 · SCR-28.
 9. SCR-01…04 · SCR-60 · SCR-70…72.
-10. Widget · Tablet · Web.
+10. SCR-80…87 (bạn bè, chia sẻ, hộp thư, làm theo) + Hub segment `Shared with me` + WEB-01 bản mới + WEB-05.
+11. Widget · Tablet · Web.
 
 ---
 
@@ -1223,7 +1356,27 @@ label "Kitchen · 23 days", toggle "Hide cost: ON", button "Export Makeover Card
 | hub.active / hub.shelf | Active / Shelf | Đang chạy / Trên kệ |
 | hub.today | Today | Hôm nay |
 | hub.sortFilter | Sort & filter | Sắp xếp & lọc |
-| hub.new / hub.import | New journey / Import a past journey | Hành trình mới / Nhập hành trình đã qua |
+| hub.new / hub.import | New journey / Retell a past journey | Hành trình mới / Kể lại một hành trình đã qua |
+| hub.sharedWithMe | Shared with me | Được chia sẻ |
+| hub.inbox | Inbox | Hộp thư |
+| journey.imported | Imported | Kể lại |
+| share.title | Share this journey | Chia sẻ hành trình |
+| share.friends / share.link | Friends / Public link | Bạn bè / Link công khai |
+| share.withN | Share with {n} friends | Chia sẻ cho {n} bạn |
+| share.pickSensitive | Pick who sees this. Nobody is selected yet. | Chọn người được xem. Chưa ai được chọn. |
+| share.linkLocked | Links open when this journey is finished | Link mở khi hành trình kết thúc |
+| share.stop | Stop sharing | Dừng chia sẻ |
+| story.title / intro / learned | Story title / Intro / What I learned | Tiêu đề câu chuyện / Giới thiệu / Điều mình rút ra |
+| story.previewFriend | Preview as a friend | Xem như bạn bè |
+| viewer.reply / replyPrivate | Reply / Only {name} sees your reply | Trả lời / Chỉ {name} thấy câu trả lời của bạn |
+| viewer.private | This journey is private now | Hành trình này đã được ẩn |
+| follow.cta | Do this journey | Làm theo |
+| follow.fresh | Your photos and numbers start fresh | Ảnh và số liệu của bạn bắt đầu từ đầu |
+| friends.title / add | Friends / Add friends | Bạn bè / Thêm bạn |
+| friends.accept / decline / requested | Accept / Decline / Requested | Đồng ý / Từ chối / Đã gửi |
+| friends.remove | Remove friend | Hủy kết bạn |
+| inbox.empty | Replies and invites from friends land here | Câu trả lời và lời mời từ bạn bè sẽ ở đây |
+| chat.readOnly | You can't reply to this conversation | Bạn không thể trả lời cuộc trò chuyện này |
 | today.left | {n} left | Còn {n} |
 | today.allDone | All done for today 🎉 | Xong hết hôm nay rồi 🎉 |
 | today.atRisk / today.waiting / today.else | At risk / Squad is waiting / Everything else | Sắp đứt chuỗi / Nhóm đang chờ / Còn lại |
@@ -1288,7 +1441,9 @@ label "Kitchen · 23 days", toggle "Hide cost: ON", button "Export Makeover Card
 | 9 | Mochi Growing Up | Paw Growth | Solo | Weekly | Week 18/26 | 18 weeks | Done (tuần này) | 4 months · 7.9 kg |
 | 10 | Our Apartment Makeover | Blueprint Makeover | Cặp đôi (Linh & Khoa) | 3×/tuần | Day 23 (không ngày kết thúc) | 3 weeks | Tuần này 2/3 | Kitchen 80% · Bedroom 45% · Balcony 20% · tổng 62% |
 
-**Kệ:** "Summer Vietnamese Course" (Accountability Squad, 28/30 days, 06–07/2026) · "Phu Quoc Trip" (Memory Collectors, 5/5 days, 04/2026).
+**Kệ:** "Summer Vietnamese Course" (Accountability Squad, 28/30 days, 06–07/2026) · "Phu Quoc Trip" (Memory Collectors, 5/5 days, 04/2026) · "Hoi An 2024" (Memory Collectors, **kể lại** — nhãn `Imported`, 4 ngày 02/2024, 23 ảnh, đã chia sẻ cho 5 bạn + link bật).
+
+**Bạn bè & chia sẻ (§5.9):** Linh có **12 bạn** (chỉ Linh thấy số), 2 lời mời đang chờ (Khoa Le, Mai Pham). Hộp thư: 3 chưa đọc — Nam trả lời ảnh "Day 12" của Daily Reading ("đọc chương mấy rồi?"), Hà và 3 người khác thả cảm xúc "Hoi An 2024", lời mời kết bạn của Khoa. **Shared with me:** "Da Lat in 5 photos" của Hà (đã xong, có `Do this journey`) · "Couch to 5K" của Nam (Aesthetic Flexer, đang chạy, "Day 12 · live").
 
 **Bảng hôm nay khi mở app (lúc 21:00):** 5 hành trình chưa xong — At risk: Daily Reading (🔥 24, "Ends in 3h"), 30-Day Body Archive (🔥 21, "Ends in 3h"); Squad is waiting: Our Home Cooking (Khoa đã chụp); Everything else: 60-Day Skin Reset, Our Apartment Makeover (2/3 tuần này, còn đến Chủ nhật).
 

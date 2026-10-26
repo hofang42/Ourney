@@ -13,7 +13,8 @@
 ### 1.2 Vì sao làm
 - App chuyên từng ngách (Strava, Duolingo, MyFitnessPal, Polarsteps) rất mạnh trong ngách của nó, nhưng **không có app nào gom "mọi loại hành trình + bằng chứng hằng ngày + nhóm bạn thân"**.
 - Locket/BeReal đã chứng minh **chụp ảnh nhanh trong vòng bạn thân** tạo thói quen mạnh. Ourney gắn cơ chế đó vào **mục tiêu có thời hạn**, nên có lý do để quay lại mỗi ngày (streak, nhóm đang chờ mình).
-- Tăng trưởng không dựa vào feed công khai mà dựa vào **mời bạn vào nhóm** và **share card ra Instagram/Zalo/Facebook**.
+- Tăng trưởng không dựa vào feed công khai mà dựa vào **mời bạn vào nhóm**, **share card ra Instagram/Zalo/Facebook**, và **link hành trình đã xong có nút "Làm theo"** (FR-H).
+- Hành trình đã trải qua (đi xong trong app, hoặc đi từ trước khi có app) có **"đời sau"**: viết lời kể, chia sẻ cho bạn bè, nhận phản hồi, cho người khác làm theo ([09-journey-sharing.md](09-journey-sharing.md)).
 
 ### 1.3 Phạm vi v1 (MVP)
 App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v1 chỉ có ảnh** (chưa có clip), chưa có push, widget, universal link vì chưa có tài khoản Apple Developer trả phí. Chi tiết ở §4 và §7.
@@ -29,6 +30,11 @@ App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v
 | **Member** | Thành viên journey nhóm, vai trò `owner` hoặc `member` |
 | **Share card** | Ảnh 1080×1920 / 1080×1350 render trên máy để chia sẻ ra ngoài |
 | **Local-only mode** | App chạy không cần server (khi chưa cấu hình Supabase): solo journey dùng được, nhóm thì không |
+| **Friend** (bạn bè) | Quan hệ **hai chiều**, phải được chấp nhận. Không có follow một chiều |
+| **Journey share** | Quyền xem một journey của chủ cấp cho từng người bạn; thu hồi được từng người |
+| **Retold journey** (kể lại) | Journey tạo từ ảnh cũ trong máy, nhãn `Imported` / `Kể lại`, không tính streak |
+| **Follow-along** (làm theo) | Tạo journey mới từ **khung lộ trình** của journey đã xong (template, thời lượng, nhịp, chỉ số). Không sao chép ảnh/số liệu |
+| **Inbox** (hộp thư) | Nơi gộp câu trả lời ảnh, lời mời xem journey, lời mời kết bạn; mở thành chat 1-1 |
 
 ## 2. Mô tả tổng quan
 
@@ -99,7 +105,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-D1 | Mời bằng mã 8 ký tự / link `ourney://join/<code>`. Có ô nhập mã thủ công | P1 |
 | FR-D2 | Tối đa **10 thành viên**. Vai trò owner/member | P1 |
 | FR-D3 | Màn **"Hôm nay"**: ai đã/chưa check-in, ảnh mới nhất của từng người, streak từng người | P1 |
-| FR-D4 | Reaction emoji (🔥 💪 👏 ❤️ 😂) trên check-in. **Không có comment ở v1** | P1 |
+| FR-D4 | Reaction emoji (🔥 💪 👏 ❤️ 😂) trên check-in. **Không có comment công khai ở v1** (trả lời riêng bằng ảnh trên journey được chia sẻ: FR-H6) | P1 |
 | FR-D5 | **Không xếp hạng theo kết quả** (kg…), chỉ hiện mức độ đều đặn | P1 |
 | FR-D6 | Owner: đổi mã mời, xoá thành viên, kết thúc journey | P1 |
 | FR-D7 | Vòng đời: xem bảng §3.1 | P1 |
@@ -119,14 +125,14 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-E1 | Share card 1 theme, 2 cỡ (story 1080×1920 có vùng an toàn cho IG; feed 1080×1350): số lớn + ảnh + logo | P1 |
 | FR-E2 | Chia sẻ qua share sheet hệ thống. Tự gợi ý ở các mốc | P1 |
-| FR-E3 | Link xem read-only cho **journey solo** có visibility `link` (token thu hồi được). **Journey nhóm không bao giờ có link công khai** | P1 |
+| FR-E3 | Link xem read-only cho **journey solo đã kết thúc** (hoặc journey kể lại đã lên kệ) có visibility `link` (token thu hồi được). Journey đang chạy chỉ chia sẻ cho bạn bè (FR-H3). **Journey nhóm không bao giờ có link công khai** | P1 |
 | FR-E4 | Instagram Stories deep link, recap collage | P2 |
 
 ### FR-F — An toàn & tuân thủ
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
-| FR-F1 | Report check-in/người dùng (lý do: spam, khoả thân, quấy rối, tự hại, khác) → `moderation_queue` | P1 |
-| FR-F2 | Block / unblock. Nội dung đã report bị ẩn ngay với người report | P1 |
+| FR-F1 | Report check-in/người dùng/**tin nhắn** (lý do: spam, khoả thân, quấy rối, tự hại, an toàn trẻ em, khác) → `moderation_queue` | P1 |
+| FR-F2 | Block / unblock. Nội dung đã report bị ẩn ngay với người report. Block = hủy kết bạn + mất quyền xem journey đã chia sẻ cho nhau + ẩn cuộc trò chuyện | P1 |
 | FR-F3 | EULA (không dung thứ nội dung xấu), privacy policy, trang liên hệ | P1 |
 
 ### FR-G — Nhắc nhở
@@ -134,7 +140,22 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-G1 | Thông báo local theo giờ user chọn cho từng journey. Lên lịch cuốn chiếu 14 ngày, tổng ≤ 64 thông báo chờ (giới hạn của iOS) | P1 |
 | FR-G2 | 21:00 cảnh báo "streak sắp mất" nếu hôm nay chưa check-in | P1 |
-| FR-G3 | Nudge bạn bè, push thật | P2 (cần tài khoản Apple) |
+| FR-G3 | Nudge bạn bè, push thật (gồm push lời mời kết bạn, journey được chia sẻ, tin nhắn) | P2 (cần tài khoản Apple) |
+
+### FR-H — Bạn bè & chia sẻ hành trình đã trải qua
+Quyết định S1–S18, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9. v1 áp cho **journey solo** (gồm journey kể lại); journey nhóm còn mở (O1).
+
+| ID | Yêu cầu | Ưu tiên |
+|---|---|---|
+| FR-H1 | Bạn bè **hai chiều**: gửi lời mời qua link/QR hoặc đúng @username, bên kia chấp nhận. Không đồng bộ danh bạ, không gợi ý. Số bạn chỉ chủ tài khoản thấy | P1 |
+| FR-H2 | **Kể lại** journey cũ từ ảnh trong máy, nhãn `Imported` hiện cả với người xem, không tính/không hiện streak. Lối vào ở màn journey đầu tiên, Hub `+`, đầu Kệ | P1 |
+| FR-H3 | Chia sẻ journey cho bạn bè: tick sẵn tất cả, bỏ tick được; **mẫu nhạy cảm không tick sẵn ai**. Journey đang chạy chia sẻ được, người xem thấy ảnh mới | P1 |
+| FR-H4 | Trước khi chia sẻ: ẩn kỳ/ảnh, ẩn số liệu, viết lời kể (tiêu đề, giới thiệu, điều rút ra, ảnh bìa) | P1 |
+| FR-H5 | Người được chia sẻ thấy journey trong segment `Shared with me` của Hub. **Không có feed** | P1 |
+| FR-H6 | Người xem là bạn bè: reaction + **trả lời bằng ảnh/clip** trên từng ảnh, chỉ chủ thấy. Không chia sẻ lại được | P1 |
+| FR-H7 | **Hộp thư** (icon trên header Hub): trả lời, reaction, lời mời xem journey, lời mời kết bạn. Từ một câu trả lời mở **chat 1-1** (chữ ≤ 500, ảnh, clip ≤ 5s), có `Seen`, chặn, báo cáo. v1 chưa có push: số chưa đọc cập nhật khi mở app | P1 |
+| FR-H8 | **Làm theo**: từ journey đã xong (trong app hoặc link công khai) tạo journey mới với cùng template, thời lượng, nhịp, tên chỉ số. Không sao chép ảnh, caption, số liệu. Trang link có nút cài app rồi mở sẵn lộ trình | P1 |
+| FR-H9 | Thu hồi: dừng chia sẻ cho tất cả, gỡ từng người, `Reset link`. Hủy kết bạn = mất quyền xem; journey làm theo của người khác vẫn giữ | P1 |
 
 ## 4. Yêu cầu phi chức năng
 
@@ -215,7 +236,7 @@ supabase start && supabase test db
 ## 7. Ngoài phạm vi v1 → lộ trình
 | v0.2 (khi có tài khoản Apple $99) | v0.3+ |
 |---|---|
-| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge, universal/App Links, Sign in with Apple, đăng 1 ảnh cho nhiều journey, comment, streak freeze | Journey công khai + discover, thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
+| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge (gồm push tin nhắn, lời mời kết bạn), universal/App Links, Sign in with Apple, đăng 1 ảnh cho nhiều journey, comment, streak freeze, chia sẻ journey nhóm ra ngoài nhóm (O1) | Discover / feed công khai (vẫn **không** làm ở v1, kể cả khi đã có bạn bè), thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
 
 ## 8. Tiêu chí thành công v1
 - Beta `v0.1.0`: `.ipa` chưa ký + `.apk` trên GitHub Release.
@@ -230,4 +251,6 @@ supabase start && supabase test db
 | [03-design-system.md](03-design-system.md) | Màu, font, motion, share card |
 | [04-implementation-plan-v1.md](04-implementation-plan-v1.md) | Plan triển khai đa agent, các giai đoạn, wave |
 | [05-platform-plan-ios-android.md](05-platform-plan-ios-android.md) | Checklist iOS/Android, ưu tiên iOS |
+| [07-SDS-ui-design.md](07-SDS-ui-design.md) | Đặc tả giao diện: màn hình, luồng, trạng thái |
+| [09-journey-sharing.md](09-journey-sharing.md) | Bạn bè, chia sẻ hành trình đã trải qua, hộp thư, làm theo (FR-H) + đề xuất dữ liệu |
 | [contracts/](contracts/) | Hợp đồng dữ liệu |
