@@ -150,7 +150,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | S15 | `Do this journey` chỉ sao chép **khung lộ trình** (mẫu, thời lượng, nhịp, tên chỉ số, tiêu đề), không ảnh/số liệu |
 | S16–S17 | **Hộp thư** (icon trên header Hub) gộp trả lời, lời mời xem, lời mời kết bạn; **chat 1-1 qua lại** |
 | S18 | Thu hồi cho tất cả hoặc **gỡ từng người**; bản làm theo của người khác vẫn giữ |
-| S19–S21 | Hành trình có `Public link` **tự có thống kê**: lượt xem (chỉ là số), lượt thích (chủ thấy tên người thích), lượt làm theo. Xem ở SCR-24/SCR-82 → **SCR-88 Insights**, và tổng trong Hồ sơ (chỉ chủ thấy) |
+| S19–S21 | Hành trình có `Public link` **tự có thống kê**: lượt xem (chỉ là số), lượt thích (chủ thấy tên người thích; nhóm: mỗi thành viên chỉ thấy tên người thích ảnh của mình), lượt làm theo. Xem ở SCR-24/SCR-82 → **SCR-88 Insights**, và tổng trong Hồ sơ (chỉ chủ thấy) |
 | S22 | `Show counts` theo hành trình, **mặc định tắt**: người xem thấy lượt thích + lượt làm theo, **không** thấy lượt xem |
 | S23–S24 | Người lạ **phải có tài khoản** mới thích được; được thích, `Do this journey`, gửi lời mời kết bạn. Không trả lời ảnh, không chat |
 | S25–S26 | `Let anyone react` theo hành trình. Người lạ thích → lưu vào `Shared with me` → `Saved` |
@@ -783,12 +783,12 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 - **Ba ô số lớn:** `Views` (số **người** đã xem từ khi bật link — mỗi người chỉ tính **một lần trong toàn kỳ**, quay lại ngày khác không cộng thêm) · `Likes` · `Started this journey`. Dưới mỗi ô là mức tăng **của chính chỉ số đó** trong tuần này: `Views` "+56 new viewers this week" (người xem **lần đầu**) · `Likes` "+21 this week" (lượt thích mới, trừ lượt đã bỏ) · `Started` "+3 this week" (hành trình làm theo mới tạo).
 - **Biểu đồ cột theo ngày** (7 ngày / 30 ngày / từ khi bật link): mỗi cột là số người xem **trong ngày đó** (một người có thể xuất hiện ở nhiều cột), nên **cộng các cột không bằng** ô `Views`. Dòng chú thích dưới biểu đồ: "People who viewed each day" / "Số người xem mỗi ngày".
 - **Tách nguồn thích:** "Friends 42 · Others 298".
-- **Danh sách người thích** (S20): avatar, tên, @username, cảm xúc đã thả, giờ; nhãn "Friend" với bạn bè. Người lạ: nút `Add friend` nếu chưa là bạn, "⋯" (`Block`, `Report`). Chặn thì lượt thích của họ biến mất khỏi tổng.
+- **Danh sách người thích** (S20; nhóm/cặp đôi: chỉ người thích **ảnh của mình**): avatar, tên, @username, cảm xúc đã thả, giờ; nhãn "Friend" với bạn bè. Người lạ: nút `Add friend` nếu chưa là bạn, "⋯" (`Block`, `Report`). Chặn thì lượt thích của họ biến mất khỏi tổng.
 - **Không có danh sách người xem** — chỉ con số, kèm dòng "Views are counted, not listed. Nobody knows you saw their journey either." / "Lượt xem chỉ được đếm, không ghi tên. Bạn xem hành trình của người khác cũng vậy."
 - **Lối tắt cài đặt:** 3 công tắc `Show counts` · `Let anyone react` · `Allow friend requests from viewers` (cùng giá trị với SCR-82).
 - **Trạng thái:** link vừa bật ("Share your link to start counting" + `Share`); link đã tắt (số giữ lại, dòng "Link off · counts paused"); `Reset link` không xóa số đã đếm.
 - Không có so sánh với hành trình của người khác, không có xếp hạng.
-- **Nhóm/cặp đôi** (S32): mọi thành viên mở được; 3 công tắc chỉ chủ nhóm đổi được. Lượt thích tách thêm theo ảnh của từng thành viên, chỉ người đó thấy danh sách người thích ảnh của mình.
+- **Nhóm/cặp đôi** (S32): mọi thành viên mở được và thấy **cùng số liệu tổng** (Views, Likes, Started, biểu đồ, tách bạn bè/người lạ); 3 công tắc chỉ chủ nhóm đổi được. Thêm hàng "Likes by member" (avatar + **số** lượt thích ảnh của từng thành viên). **Danh sách tên người thích** chỉ gồm người thích **ảnh của chính mình**; dòng chú thích "You see who liked your photos. Others see who liked theirs." / "Bạn thấy ai thích ảnh của bạn. Mỗi người thấy người thích ảnh của họ."
 
 #### SCR-89 Yêu cầu đồng ý chia sẻ (nhóm/cặp đôi) `[v1]`
 - Sheet đáy mở từ hộp thư (SCR-85) hoặc thẻ trên SCR-41. Giọng ấm, rõ ràng.
