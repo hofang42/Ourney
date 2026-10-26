@@ -146,7 +146,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | S10 | `Public link` giữ Q12 (noindex, mặc định tắt), R2-06 (cảnh báo + ảnh xem trước mờ), R2-07 (khóa 13–17) |
 | S11 | Trước khi chia sẻ: ẩn bớt ảnh/kỳ, ẩn số liệu, viết lời kể |
 | S12 | Hành trình kể lại: nhãn `Imported` / `Kể lại`, không hiện chuỗi |
-| S13–S14 | Bạn bè: thả cảm xúc + trả lời bằng ảnh (clip `[v2]`) (chỉ chủ thấy). Người xem trên web chưa đăng nhập: chỉ xem + `Do this journey` + `Open the app to like`. Người lạ có tài khoản: S23–S24 |
+| S13–S14 | Bạn bè: thả cảm xúc + trả lời bằng ảnh (clip `[v2]`) (solo: chỉ chủ thấy; nhóm: chỉ người nhận theo S33 thấy). Người xem trên web chưa đăng nhập: chỉ xem + `Do this journey` + `Open the app to like`. Người lạ có tài khoản: S23–S24 |
 | S15 | `Do this journey` chỉ sao chép **khung lộ trình** (mẫu, thời lượng, nhịp, tên chỉ số, tiêu đề), không ảnh/số liệu |
 | S16–S17 | **Hộp thư** (icon trên header Hub) gộp trả lời, lời mời xem, lời mời kết bạn; **chat 1-1 qua lại** |
 | S18 | Thu hồi cho tất cả hoặc **gỡ từng người**; bản làm theo của người khác vẫn giữ |
@@ -780,7 +780,7 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 
 #### SCR-88 Insights `[v1]`
 - Thống kê **một** hành trình công khai (S19–S21), **chỉ chủ thấy**. Mở từ dòng thống kê ở SCR-24, SCR-82 hoặc từ `Your stories` ở SCR-70. Token Shell, chấm màu phong cách ở tiêu đề.
-- **Ba ô số lớn:** `Views` (số **người** đã xem từ khi bật link — mỗi người chỉ tính **một lần trong toàn kỳ**, quay lại ngày khác không cộng thêm) · `Likes` · `Started this journey`. Dưới mỗi ô: "+56 this week" (= người xem **lần đầu** trong tuần này).
+- **Ba ô số lớn:** `Views` (số **người** đã xem từ khi bật link — mỗi người chỉ tính **một lần trong toàn kỳ**, quay lại ngày khác không cộng thêm) · `Likes` · `Started this journey`. Dưới mỗi ô là mức tăng **của chính chỉ số đó** trong tuần này: `Views` "+56 new viewers this week" (người xem **lần đầu**) · `Likes` "+21 this week" (lượt thích mới, trừ lượt đã bỏ) · `Started` "+3 this week" (hành trình làm theo mới tạo).
 - **Biểu đồ cột theo ngày** (7 ngày / 30 ngày / từ khi bật link): mỗi cột là số người xem **trong ngày đó** (một người có thể xuất hiện ở nhiều cột), nên **cộng các cột không bằng** ô `Views`. Dòng chú thích dưới biểu đồ: "People who viewed each day" / "Số người xem mỗi ngày".
 - **Tách nguồn thích:** "Friends 42 · Others 298".
 - **Danh sách người thích** (S20): avatar, tên, @username, cảm xúc đã thả, giờ; nhãn "Friend" với bạn bè. Người lạ: nút `Add friend` nếu chưa là bạn, "⋯" (`Block`, `Report`). Chặn thì lượt thích của họ biến mất khỏi tổng.
