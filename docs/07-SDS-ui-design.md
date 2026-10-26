@@ -719,7 +719,7 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 - Không có bạn nào: khối Friends thành "Add friends to share with them" + `Add friends` (→ SCR-81).
 - **Hành trình nhóm/cặp đôi** (S29–S32):
   - **Khối `Squad consent`** trên cùng: hàng avatar thành viên với trạng thái `Agreed` (check) · `Waiting` (đồng hồ) · `Declined` (gạch) + dòng "Only photos of people who agreed are shared" / "Chỉ ảnh của người đã đồng ý được chia sẻ". Lần đầu chia sẻ: nút `Ask the squad` gửi yêu cầu (SCR-89) tới mọi người còn lại; người đề nghị tự tính là `Agreed`. `Remind` cho người `Waiting` (mỗi người một lần mỗi ngày).
-  - **Khối `Friends`**: ai cũng dùng được, danh sách là **bạn bè của chính mình**; dòng phụ "{n} friends of other members can also see this".
+  - **Khối `Friends`**: ai cũng dùng được, danh sách là **bạn bè của chính mình**; dòng phụ "{n} friends of other members can also see this". Bạn chung đã được thành viên khác chia sẻ: nhãn "Also shared by {name}". `Remove` chỉ gỡ **lượt chia sẻ của mình**; người đó vẫn xem được nếu thành viên khác còn chia sẻ.
   - **Khối `Public link`**, 3 công tắc công khai và `Edit story`: **chỉ chủ nhóm** chỉnh được; thành viên khác thấy trạng thái chỉ đọc "Managed by {owner}".
   - Dòng của chính mình: `Remove my photos from sharing` / `Rút ảnh của tôi khỏi chia sẻ` (S31).
 
