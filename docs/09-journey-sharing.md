@@ -1,8 +1,8 @@
 # Ourney — Chia sẻ hành trình đã trải qua (Journey Sharing)
 
-> Phiên bản 0.1 · 2026-10-26 · Trạng thái: **đã chốt với chủ dự án**, chờ thiết kế và PR contract dữ liệu.
-> **Vì sao có tài liệu này:** bản v0.3 tập trung vào check-in hằng ngày, chưa có cách để người đã đi xong một hành trình (hoặc đã đi từ trước khi có app) đưa nó lên và chia sẻ. Tài liệu này ghi lại quyết định (S1–S18), luồng, và **đề xuất** dữ liệu.
-> **Quan hệ với tài liệu khác:** màn hình chi tiết nằm trong [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9 (SCR-80…87) và §13 (WEB-01, WEB-05). Yêu cầu chức năng ở [SRS.md](SRS.md) FR-H. Phần dữ liệu ở §5 dưới đây **chỉ là đề xuất**: [contracts/schema.md](contracts/schema.md) chỉ đổi qua PR riêng cho contract.
+> Phiên bản 0.2 · 2026-10-26 · Trạng thái: **đã chốt với chủ dự án**, chờ thiết kế và PR contract dữ liệu. v0.2 thêm **công khai có thống kê** (S19–S28, §2.1).
+> **Vì sao có tài liệu này:** bản v0.3 tập trung vào check-in hằng ngày, chưa có cách để người đã đi xong một hành trình (hoặc đã đi từ trước khi có app) đưa nó lên và chia sẻ. Tài liệu này ghi lại quyết định (S1–S28), luồng, và **đề xuất** dữ liệu.
+> **Quan hệ với tài liệu khác:** màn hình chi tiết nằm trong [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9 (SCR-80…88) và §13 (WEB-01, WEB-05). Yêu cầu chức năng ở [SRS.md](SRS.md) FR-H. Phần dữ liệu ở §5 dưới đây **chỉ là đề xuất**: [contracts/schema.md](contracts/schema.md) chỉ đổi qua PR riêng cho contract.
 
 ---
 
@@ -13,10 +13,11 @@
 | **Kéo người dùng mới** | Link công khai của hành trình đã xong có nút `Do this journey` / `Làm theo` → tải app → mở sẵn lộ trình |
 | **Cảm hứng để bắt đầu** | Người mới thấy hành trình thật của bạn bè (Shared with me) và có thể làm theo; màn ngày 0 có lối `Retell a past journey` |
 | **Giá trị sau khi xong** | Hành trình trên kệ có "đời sau": viết lời kể, chia sẻ, nhận phản hồi |
+| **Biết mình lan tỏa tới đâu** | Hành trình công khai có **thống kê** (lượt xem, lượt thích, lượt làm theo) và tùy chọn cho người lạ có tài khoản thả thích (S19–S28) |
 
-**Vẫn giữ nguyên:** Ourney **không** có feed, không có Khám phá, không follow người lạ, không lên Google, không đếm follower công khai (D1, §1.2 của SDS).
+**Vẫn giữ nguyên:** Ourney **không** có feed, không có Khám phá, không follow người lạ, không lên Google, không đếm follower công khai (D1, §1.2 của SDS). Ngoại lệ duy nhất về con số công khai: chủ **tự bật** `Show counts` thì người xem thấy lượt thích + lượt làm theo của **một hành trình** (S22).
 
-## 2. Quyết định (S1–S18)
+## 2. Quyết định (S1–S28)
 
 | # | Quyết định |
 |---|---|
@@ -33,11 +34,26 @@
 | S11 | **Trước khi chia sẻ**, chủ được: **ẩn bớt ảnh/kỳ**, **ẩn số liệu**, **viết lời kể** (tiêu đề câu chuyện, đoạn giới thiệu, điều rút ra, ảnh bìa). Áp cho cả `Friends` và `Public link` |
 | S12 | Hành trình kể lại hiện nhãn **`Imported`** / **`Kể lại`** với người xem, khoảng ngày theo ngày chụp, **không hiện chuỗi** (giữ D15) |
 | S13 | Bạn bè được mời xem: **thả cảm xúc** (CMP-09) và **trả lời bằng ảnh/clip** trên từng ảnh. Câu trả lời **chỉ chủ hành trình thấy** |
-| S14 | Người xem qua link (web): **chỉ xem**, có nút `Do this journey`. Muốn thả cảm xúc / trả lời phải là bạn bè trong app |
+| S14 | Người xem qua link **trên web (chưa đăng nhập)**: **chỉ xem**, có nút `Do this journey` và `Open the app to like`. Trả lời bằng ảnh / chat chỉ dành cho bạn bè. Người lạ **có tài khoản**: xem S23–S24 |
 | S15 | `Do this journey` chỉ sao chép **khung lộ trình**: mẫu (→ phong cách), thời lượng, nhịp, tên + đơn vị chỉ số (không có giá trị), tiêu đề gợi ý. **Không** sao chép ảnh, caption, số liệu |
 | S16 | Phản hồi vào **hộp thư riêng** (SCR-85), icon trên header Hub cạnh avatar, chấm đỏ khi có mới. Hộp thư gộp: trả lời ảnh, lời mời xem hành trình, lời mời kết bạn |
 | S17 | Trong hộp thư, chủ và người trả lời **chat qua lại 1-1** (chữ, ảnh, clip ≤ 5s). Mỗi cuộc trò chuyện gắn với một hành trình |
 | S18 | **Thu hồi:** tắt chia sẻ cho tất cả hoặc **gỡ từng người**; `Reset link` làm link cũ chết. Người đã `Do this journey` vẫn giữ hành trình của họ |
+
+### 2.1 Công khai có thống kê (S19–S28)
+
+| # | Quyết định |
+|---|---|
+| S19 | Hành trình bật `Public link` **tự có thống kê**: **lượt xem** (người xem duy nhất, không đếm tải lại), **lượt thích/cảm xúc** (tách bạn bè / người lạ), **lượt làm theo** |
+| S20 | Chủ thấy **tên + avatar người đã thích**. Lượt xem **chỉ là con số**, không bao giờ lộ ai đã xem |
+| S21 | Thống kê ở hai nơi: dòng nhỏ trong SCR-24/SCR-82 ("1.2k views · 340 ❤️ · 28 started") → màn **Insights** (SCR-88); và **tổng trong Hồ sơ** ("Your stories reached 1.2k people"), chỉ chủ thấy |
+| S22 | Công tắc **`Show counts`** theo từng hành trình, **mặc định tắt**. Bật: người xem thấy **lượt thích + lượt làm theo** ("❤️ 340 · 28 people did this journey"). **Lượt xem luôn chỉ chủ thấy** |
+| S23 | Người lạ **phải có tài khoản** mới thả thích được. Web chưa đăng nhập không có nút thích, chỉ có `Open the app to like` |
+| S24 | Người lạ có tài khoản: **thích + `Do this journey` + gửi lời mời kết bạn**. **Không** trả lời ảnh, **không** chat |
+| S25 | Công tắc **`Let anyone react`** theo từng hành trình (cho người lạ có tài khoản thả thích). Tắt thì chỉ bạn bè được thích. Mặc định: **bật** với mẫu thường (đề xuất tạm, O4), theo S28 với mẫu nhạy cảm |
+| S26 | Người lạ thả thích → hành trình được lưu vào **`Shared with me` → `Saved`** của họ, gỡ được. Không thích thì không lưu |
+| S27 | Lời mời kết bạn từ người lạ vào mục riêng **"From your public journeys"** trong hộp thư, **không có chấm đỏ**. Công tắc `Allow friend requests from viewers` theo từng hành trình (mặc định bật). Giới hạn số lời mời mỗi người gửi mỗi ngày |
+| S28 | **Mẫu nhạy cảm:** giảm cân (1) và glow-up (7) — `Show counts`, `Let anyone react`, `Allow friend requests from viewers` **mặc định tắt**, bật lên có sheet cảnh báo giọng ấm. **Em bé (8): người lạ không bao giờ thả thích hay gửi lời mời được.** 13–17 tuổi vẫn khóa link công khai (R2-07) |
 
 ## 3. Luồng chính
 
@@ -58,8 +74,14 @@ flowchart TD
   end
   subgraph Người lạ
     LINK[WEB-01 Trang hành trình] -- Do this journey --> STORE[Tải app] --> FOLLOW
+    LINK -- Open the app to like --> STORE
+    STORE --> SVIEW2[SCR-84 chế độ người lạ]
+    SVIEW2 -- thích --> SAVED[Hub · Shared with me · Saved]
+    SVIEW2 -- Add friend --> REQ[Hộp thư chủ · From your public journeys]
   end
   FR --> NOTI
+  LINK -. lượt xem .-> INS[SCR-88 Insights của chủ]
+  SVIEW2 -. lượt thích .-> INS
 ```
 
 **Kết bạn:** SCR-80 → `Add friends` (SCR-81) → gửi link/QR hoặc tìm @username → người kia nhận lời mời trong hộp thư → `Accept`. Mở link mời khi chưa có app → WEB-05 → tải app → đăng nhập → lời mời hiện sẵn.
@@ -72,8 +94,9 @@ flowchart TD
 |---|---|---|
 | Chủ | Mọi thứ, kể cả ảnh/số liệu đã ẩn khi chia sẻ (có icon "ẩn khi chia sẻ") | Sửa lời kể, ẩn/hiện, quản lý người xem, đọc hộp thư |
 | Bạn bè được mời | Ảnh và kỳ không bị ẩn, lời kể, tiến độ; số liệu nếu chủ không ẩn; chuỗi (trừ hành trình kể lại) | Cảm xúc, trả lời bằng ảnh/clip (→ chat 1-1), `Do this journey` (chỉ khi đã xong) |
-| Người có link | Như bạn bè, nhưng ảnh đặt làm mờ thì mờ; ảnh xem trước link của mẫu nhạy cảm luôn mờ | Chỉ xem, `Do this journey`, `Get the app` |
-| Người đã bị gỡ / bị chặn / hết là bạn | Hành trình biến khỏi `Shared with me`; mở lại thấy "This journey is private now" | Không |
+| Người có link, trên web chưa đăng nhập | Như bạn bè, nhưng ảnh đặt làm mờ thì mờ; ảnh xem trước link của mẫu nhạy cảm luôn mờ; lượt thích + làm theo nếu chủ bật `Show counts` | Chỉ xem, `Do this journey`, `Open the app to like`, `Get the app` |
+| Người lạ có tài khoản (mở link trong app) | Như dòng trên, trong SCR-84 | Thích (nếu `Let anyone react`), `Do this journey`, `Add friend` (nếu `Allow friend requests from viewers`). Thích xong → lưu vào `Saved` |
+| Người đã bị gỡ / bị chặn / hết là bạn / link bị tắt hoặc reset | Hành trình biến khỏi `Shared with me` (kể cả `Saved`); mở lại thấy "This journey is private now" | Không |
 
 - **Không chia sẻ lại:** người xem không có nút chia sẻ hành trình của người khác.
 - **Hủy kết bạn** = mất quyền xem mọi hành trình được chia sẻ giữa hai người; cuộc trò chuyện chuyển thành chỉ đọc.
@@ -85,18 +108,20 @@ flowchart TD
 
 | Đối tượng | Đề xuất |
 |---|---|
-| `friendships` | `(user_low, user_high)` PK (sắp thứ tự để mỗi cặp một dòng), `requested_by`, `status` ∈ `pending`/`accepted`, `accepted_at`, soft delete khi hủy. Đọc: chỉ hai người trong cặp |
+| `friendships` | `(user_low, user_high)` PK (sắp thứ tự để mỗi cặp một dòng), `requested_by`, `status` ∈ `pending`/`accepted`, `accepted_at`, soft delete khi hủy. **`source`** ∈ `direct`/`public_journey` + `source_journey_id` (S27; lời mời từ `public_journey` có rate limit theo người gửi/ngày, O5). Đọc: chỉ hai người trong cặp |
 | `friend_invites` | `token` (thu hồi được) cho link/QR mời kết bạn; mở link → `request_friend_by_token` |
 | RPC tìm username | `find_user_by_username(username)` trả về avatar + tên **chỉ khi khớp chính xác**; rate limit như `join_by_code`. Hiện tại **chưa có** RPC tra cứu username (schema v1.2) |
 | `journey_shares` | `(journey_id, viewer_id)` PK, `granted_at`, `revoked_at`. Quyền xem của từng bạn bè (S7, S18). Chỉ chủ ghi; người xem chỉ đọc dòng của mình |
-| `journeys` | thêm `origin` ∈ `live`/`imported` (S12), `story_title`, `story_intro`, `story_lessons`, `cover_checkin_id`, `followed_from` (journey nguồn của `Do this journey`, chỉ để thống kê, không lộ cho người làm theo nếu nguồn đã thu hồi) |
+| `journeys` | thêm `origin` ∈ `live`/`imported` (S12), `story_title`, `story_intro`, `story_lessons`, `cover_checkin_id`, `followed_from` (journey nguồn của `Do this journey`, dùng để đếm lượt làm theo S19; không lộ cho người làm theo nếu nguồn đã thu hồi), `show_counts bool`, `allow_public_reactions bool`, `allow_viewer_requests bool` (S22–S27; mặc định theo S28, server ép `false` cho hai cột sau với Little Milestones) |
 | `check_ins` | thêm `hidden_in_share bool` (S11). Ẩn số liệu dùng lại `memberships.hide_metric` |
 | `journey_visibility` | giữ `private`/`group`/`link`. `set_public_link` chỉ cho bật khi `status = ended` hoặc `origin = imported` đã lên kệ (S9) |
-| `reactions` | mở RLS cho người có `journey_shares` còn hiệu lực (hiện chỉ cho member) |
+| `reactions` | mở RLS cho (a) người có `journey_shares` còn hiệu lực, và (b) **người lạ có tài khoản** khi `visibility = link` + `allow_public_reactions` (S23–S25). Hiện chỉ cho member. Người xem không đọc được reaction của người khác; chủ đọc danh sách người thích qua RPC insights |
 | `conversations` | `id`, `journey_id`, `owner_id`, `viewer_id`, `last_message_at`, `read_at` theo từng bên. Một cuộc / (journey, viewer) |
 | `messages` | `id`, `conversation_id`, `sender_id`, `reply_to_checkin_id null`, `kind` ∈ `text`/`photo`/`clip`, `body ≤ 500`, `media_path`, `created_at`, `deleted_at`. Storage `messages/{conversation_id}/{sender_id}/{id}.jpg` |
 | `reports` | thêm `target_message_id` + lý do như hiện có (FR-F1). Store yêu cầu báo cáo/chặn cho nhắn tin giữa người dùng |
-| Edge `public-journey` | trả thêm lời kể, bỏ ảnh `hidden_in_share`, trả khung lộ trình cho `Do this journey` |
+| Edge `public-journey` | trả thêm lời kể, bỏ ảnh `hidden_in_share`, trả khung lộ trình cho `Do this journey`; trả số thích + làm theo **chỉ khi** `show_counts` |
+| `journey_views` | `(journey_id, viewer_key, day)` PK — `viewer_key` = user id khi đăng nhập, hoặc hash ẩn danh theo trình duyệt (không lưu IP thô); không đếm chủ. Chỉ chủ đọc **tổng** qua RPC `journey_insights(journey)` (views, likes theo bạn bè/người lạ, follow-alongs, theo ngày, danh sách người thích); **không có API trả danh sách người xem** (S20) |
+| `saved_journeys` | `(user_id, journey_id)` PK, tạo khi người lạ thả thích (S26), xóa khi bỏ thích hoặc tự gỡ. Mất hiệu lực khi link bị tắt/reset |
 
 ## 6. Rủi ro
 
@@ -104,13 +129,18 @@ flowchart TD
 |---|---|---|
 | **Chat 1-1 ở v1 không có push** (chưa có tài khoản Apple trả phí) | Người dùng chỉ biết có tin mới khi tự mở app | Chấm đỏ ở icon hộp thư + số trên segment; push tin nhắn `[v2]` (NTF-16) |
 | Chat là khối lượng lớn nhất (realtime, đã đọc, chặn, báo cáo, xóa) | Có thể làm trễ v1 | Nếu cần cắt: giữ hộp thư + trả lời bằng ảnh, để trả lời lại bằng chữ sang v1.1 |
-| Đảo quyết định cũ: SDS §1.2 "không phải ứng dụng chat", SRS FR-D4 "không có comment ở v1", FR-E3 link cả khi đang chạy | Tài liệu và code cũ lệch nhau | PR này cập nhật SDS/SRS; code `set_public_link` đổi theo S9 trong PR contract |
+| Đảo quyết định cũ: SDS §1.2 "không phải ứng dụng chat", SRS FR-D4 "không có comment ở v1", FR-E3 link cả khi đang chạy | Tài liệu và code cũ lệch nhau | SDS (từ v0.4) và SRS đã cập nhật; code `set_public_link` đổi theo S9 trong PR contract |
 | Ảnh nhạy cảm đi tới bạn bè | Lộ ảnh cơ thể/trẻ em | S7 không tick sẵn, S10 giữ cảnh báo, S11 ẩn từng ảnh |
+| Con số công khai tạo áp lực so bì | Đi ngược "Consistency, not comparison" | `Show counts` mặc định tắt, không hiện lượt xem công khai, không có bảng xếp hạng hay "hành trình nổi bật" (S22) |
+| Lượt xem bị thổi phồng / bot | Số không đáng tin | Đếm người duy nhất theo ngày, không đếm tải lại; chấp nhận sai số với người xem ẩn danh |
+| Người lạ quấy rối qua lời mời kết bạn | Hộp thư bị ngập | Mục riêng không chấm đỏ, công tắc theo hành trình, rate limit, báo cáo/chặn (S27) |
 
 ## 7. Còn mở
 
 | # | Câu hỏi | Đề xuất tạm |
 |---|---|---|
 | O1 | Hành trình **nhóm/cặp đôi** có chia sẻ cho bạn bè ngoài nhóm hoặc bật link được không? (Hiện: nhóm không bao giờ có link) | v1 chỉ hành trình **solo** (gồm kể lại). Nhóm để sau, cần mọi thành viên đồng ý |
-| O2 | Người làm theo có thấy "From Linh's journey" không? Chủ có thấy số người đã làm theo không? | Có dòng nhỏ ở SCR-22; chủ thấy "4 people started this" (chỉ chủ thấy) |
+| O2 | Người làm theo có thấy "Based on Linh's journey" không? (Số người làm theo đã chốt ở S19/S22: chủ luôn thấy, người xem thấy khi `Show counts`) | Có dòng nhỏ ở SCR-22, bỏ được |
 | O3 | Giới hạn số bạn bè? Giữ lịch sử chat bao lâu? | Không giới hạn bạn; chat giữ đến khi một bên xóa tài khoản |
+| O4 | `Let anyone react` mặc định bật hay tắt với mẫu thường? | Bật (người đã bật link công khai thường muốn được tương tác); mẫu nhạy cảm theo S28 |
+| O5 | Giới hạn bao nhiêu lời mời kết bạn từ người lạ mỗi ngày (S27)? | 20 lời mời / người gửi / ngày, giống mức `rate_limited` của báo cáo |

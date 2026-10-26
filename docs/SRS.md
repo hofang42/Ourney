@@ -14,7 +14,7 @@
 - App chuyên từng ngách (Strava, Duolingo, MyFitnessPal, Polarsteps) rất mạnh trong ngách của nó, nhưng **không có app nào gom "mọi loại hành trình + bằng chứng hằng ngày + nhóm bạn thân"**.
 - Locket/BeReal đã chứng minh **chụp ảnh nhanh trong vòng bạn thân** tạo thói quen mạnh. Ourney gắn cơ chế đó vào **mục tiêu có thời hạn**, nên có lý do để quay lại mỗi ngày (streak, nhóm đang chờ mình).
 - Tăng trưởng không dựa vào feed công khai mà dựa vào **mời bạn vào nhóm**, **share card ra Instagram/Zalo/Facebook**, và **link hành trình đã xong có nút "Làm theo"** (FR-H).
-- Hành trình đã trải qua (đi xong trong app, hoặc đi từ trước khi có app) có **"đời sau"**: viết lời kể, chia sẻ cho bạn bè, nhận phản hồi, cho người khác làm theo ([09-journey-sharing.md](09-journey-sharing.md)).
+- Hành trình đã trải qua (đi xong trong app, hoặc đi từ trước khi có app) có **"đời sau"**: viết lời kể, chia sẻ cho bạn bè, nhận phản hồi, cho người khác làm theo, và biết câu chuyện công khai đã đến với bao nhiêu người (lượt xem, lượt thích, lượt làm theo) ([09-journey-sharing.md](09-journey-sharing.md)).
 
 ### 1.3 Phạm vi v1 (MVP)
 App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v1 chỉ có ảnh** (chưa có clip), chưa có push, widget, universal link vì chưa có tài khoản Apple Developer trả phí. Chi tiết ở §4 và §7.
@@ -143,7 +143,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-G3 | Nudge bạn bè, push thật (gồm push lời mời kết bạn, journey được chia sẻ, tin nhắn) | P2 (cần tài khoản Apple) |
 
 ### FR-H — Bạn bè & chia sẻ hành trình đã trải qua
-Quyết định S1–S18, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9. v1 áp cho **journey solo** (gồm journey kể lại); journey nhóm còn mở (O1).
+Quyết định S1–S28, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9. v1 áp cho **journey solo** (gồm journey kể lại); journey nhóm còn mở (O1).
 
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
@@ -151,11 +151,15 @@ Quyết định S1–S18, luồng và đề xuất dữ liệu: [09-journey-shar
 | FR-H2 | **Kể lại** journey cũ từ ảnh trong máy, nhãn `Imported` hiện cả với người xem, không tính/không hiện streak. Lối vào ở màn journey đầu tiên, Hub `+`, đầu Kệ | P1 |
 | FR-H3 | Chia sẻ journey cho bạn bè: tick sẵn tất cả, bỏ tick được; **mẫu nhạy cảm không tick sẵn ai**. Journey đang chạy chia sẻ được, người xem thấy ảnh mới | P1 |
 | FR-H4 | Trước khi chia sẻ: ẩn kỳ/ảnh, ẩn số liệu, viết lời kể (tiêu đề, giới thiệu, điều rút ra, ảnh bìa) | P1 |
-| FR-H5 | Người được chia sẻ thấy journey trong segment `Shared with me` của Hub. **Không có feed** | P1 |
+| FR-H5 | Người được chia sẻ thấy journey trong segment `Shared with me` của Hub (nhóm `From friends`; journey công khai đã thích nằm ở nhóm `Saved`, FR-H12). **Không có feed** | P1 |
 | FR-H6 | Người xem là bạn bè: reaction + **trả lời bằng ảnh/clip** trên từng ảnh, chỉ chủ thấy. Không chia sẻ lại được | P1 |
 | FR-H7 | **Hộp thư** (icon trên header Hub): trả lời, reaction, lời mời xem journey, lời mời kết bạn. Từ một câu trả lời mở **chat 1-1** (chữ ≤ 500, ảnh, clip ≤ 5s), có `Seen`, chặn, báo cáo. v1 chưa có push: số chưa đọc cập nhật khi mở app | P1 |
 | FR-H8 | **Làm theo**: từ journey đã xong (trong app hoặc link công khai) tạo journey mới với cùng template, thời lượng, nhịp, tên chỉ số. Không sao chép ảnh, caption, số liệu. Trang link có nút cài app rồi mở sẵn lộ trình | P1 |
 | FR-H9 | Thu hồi: dừng chia sẻ cho tất cả, gỡ từng người, `Reset link`. Hủy kết bạn = mất quyền xem; journey làm theo của người khác vẫn giữ | P1 |
+| FR-H10 | Journey có link công khai có **thống kê chỉ chủ thấy**: lượt xem (người duy nhất, chỉ là số, không bao giờ lộ ai đã xem), lượt thích (kèm tên người thích, tách bạn bè/người lạ), lượt làm theo. Xem theo từng journey (Insights) và tổng trong Hồ sơ | P1 |
+| FR-H11 | Công tắc `Show counts` theo journey (mặc định tắt): người xem thấy lượt thích + lượt làm theo. Lượt xem không bao giờ công khai | P1 |
+| FR-H12 | Người lạ **có tài khoản** mở link trong app: thích (nếu `Let anyone react`), làm theo, gửi lời mời kết bạn (nếu `Allow friend requests from viewers`). Không trả lời ảnh, không chat. Thích → journey được lưu vào `Saved`. Web chưa đăng nhập không thích được | P1 |
+| FR-H13 | Lời mời kết bạn từ người lạ vào mục riêng, không tính chưa đọc, có rate limit/ngày. Mẫu nhạy cảm: 3 công tắc công khai mặc định tắt + cảnh báo; em bé: người lạ không bao giờ thích/mời kết bạn | P1 |
 
 ## 4. Yêu cầu phi chức năng
 
