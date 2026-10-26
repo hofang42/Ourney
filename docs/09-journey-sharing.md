@@ -44,9 +44,9 @@
 
 | # | Quyết định |
 |---|---|
-| S19 | Hành trình bật `Public link` **tự có thống kê**: **lượt xem** (người xem duy nhất, không đếm tải lại), **lượt thích/cảm xúc** (tách bạn bè / người lạ), **lượt làm theo** |
+| S19 | Hành trình bật `Public link` **tự có thống kê**: **lượt xem** (số **người** đã xem, mỗi người tính **một lần trong toàn kỳ** — tải lại hay quay lại ngày khác không cộng thêm; biểu đồ theo ngày tính riêng từng ngày), **lượt thích/cảm xúc** (tách bạn bè / người lạ), **lượt làm theo** |
 | S20 | Chủ thấy **tên + avatar người đã thích**. Lượt xem **chỉ là con số**, không bao giờ lộ ai đã xem |
-| S21 | Thống kê ở hai nơi: dòng nhỏ trong SCR-24/SCR-82 ("1.2k views · 340 ❤️ · 28 started") → màn **Insights** (SCR-88); và **tổng trong Hồ sơ** ("Your stories reached 1.2k people"), chỉ chủ thấy |
+| S21 | Thống kê ở hai nơi: dòng nhỏ trong SCR-24/SCR-82 ("1.2k views · 340 ❤️ · 28 started") → màn **Insights** (SCR-88); và **tổng trong Hồ sơ** ("Your stories reached 1.2k people" = số người **khác nhau** đã xem ít nhất một hành trình công khai của mình), chỉ chủ thấy |
 | S22 | Công tắc **`Show counts`** theo từng hành trình, **mặc định tắt**. Bật: người xem thấy **lượt thích + lượt làm theo** ("❤️ 340 · 28 people did this journey"). **Lượt xem luôn chỉ chủ thấy** |
 | S23 | Người lạ **phải có tài khoản** mới thả thích được. Web chưa đăng nhập không có nút thích, chỉ có `Open the app to like` |
 | S24 | Người lạ có tài khoản: **thích + `Do this journey` + gửi lời mời kết bạn**. **Không** trả lời ảnh, **không** chat |
@@ -147,7 +147,7 @@ flowchart TD
 | `messages` | `id`, `conversation_id`, `sender_id`, `reply_to_checkin_id null`, `kind` ∈ `text`/`photo`/`clip`, `body ≤ 500`, `media_path`, `created_at`, `deleted_at`. Storage `messages/{conversation_id}/{sender_id}/{id}.jpg` |
 | `reports` | thêm `target_message_id` + lý do như hiện có (FR-F1). Store yêu cầu báo cáo/chặn cho nhắn tin giữa người dùng |
 | Edge `public-journey` | trả thêm lời kể, bỏ ảnh `hidden_in_share`, trả khung lộ trình cho `Do this journey`; trả số thích + làm theo **chỉ khi** `show_counts` |
-| `journey_views` | `(journey_id, viewer_key, day)` PK — `viewer_key` = user id khi đăng nhập, hoặc hash ẩn danh theo trình duyệt (không lưu IP thô); không đếm chủ. Chỉ chủ đọc **tổng** qua RPC `journey_insights(journey)` (views, likes theo bạn bè/người lạ, follow-alongs, theo ngày, danh sách người thích); **không có API trả danh sách người xem** (S20) |
+| `journey_views` | `(journey_id, viewer_key, day)` PK — `viewer_key` = user id khi đăng nhập, hoặc hash ẩn danh theo trình duyệt (không lưu IP thô); không đếm chủ. Chỉ chủ đọc **tổng** qua RPC `journey_insights(journey)`, **không có API trả danh sách người xem** (S20). Cách tính: **`Views` = `count(distinct viewer_key)` trên toàn kỳ** (không cộng các ngày); biểu đồ = số `viewer_key` khác nhau **mỗi ngày**; "+n this week" = `viewer_key` có ngày đầu tiên rơi vào tuần này; **reach ở Hồ sơ** = `count(distinct viewer_key)` trên mọi hành trình công khai của chủ. RPC còn trả likes theo bạn bè/người lạ, follow-alongs, danh sách người thích |
 | `saved_journeys` | `(user_id, journey_id)` PK, tạo khi người lạ thả thích (S26), xóa khi bỏ thích hoặc tự gỡ. Mất hiệu lực khi link bị tắt/reset |
 
 ## 6. Rủi ro
@@ -160,7 +160,7 @@ flowchart TD
 | Đảo quyết định cũ: SDS §1.2 "không phải ứng dụng chat", SRS FR-D4 "không có comment ở v1", FR-E3 link cả khi đang chạy và "nhóm không bao giờ có link" | Tài liệu và code cũ lệch nhau | SDS (từ v0.4) và SRS đã cập nhật; code `set_public_link` đổi theo S9 trong PR contract |
 | Ảnh nhạy cảm đi tới bạn bè | Lộ ảnh cơ thể/trẻ em | S7 không tick sẵn, S10 giữ cảnh báo, S11 ẩn từng ảnh |
 | Con số công khai tạo áp lực so bì | Đi ngược "Consistency, not comparison" | `Show counts` mặc định tắt, không hiện lượt xem công khai, không có bảng xếp hạng hay "hành trình nổi bật" (S22) |
-| Lượt xem bị thổi phồng / bot | Số không đáng tin | Đếm người duy nhất theo ngày, không đếm tải lại; chấp nhận sai số với người xem ẩn danh |
+| Lượt xem bị thổi phồng / bot | Số không đáng tin | Tổng đếm mỗi `viewer_key` một lần trong toàn kỳ, không đếm tải lại hay ngày quay lại. Sai số còn lại được chấp nhận: người xem ẩn danh dùng 2 trình duyệt/thiết bị, hoặc xem ẩn danh rồi đăng nhập, sẽ thành 2 người |
 | Người lạ quấy rối qua lời mời kết bạn | Hộp thư bị ngập | Mục riêng không chấm đỏ, công tắc theo hành trình, rate limit, báo cáo/chặn (S27) |
 
 ## 7. Còn mở

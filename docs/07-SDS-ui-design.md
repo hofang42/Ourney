@@ -641,7 +641,7 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
 #### SCR-70 Hồ sơ & cài đặt `[v1]`
 - Đầu trang: avatar, tên, @username, `Edit profile`. "5 journeys · 312 moments · longest streak 41".
 - **Dòng `Friends`** (S4) → SCR-80: "12 friends · 2 requests" — con số **chỉ chủ tài khoản thấy**, không hiện ở bất kỳ đâu cho người khác. Nút nhỏ `Add` → SCR-81.
-- **Dòng `Your stories`** (S21, chỉ khi có ≥ 1 hành trình bật link): "Your stories reached 1.2k people · 340 ❤️ · 28 started" — chỉ chủ thấy. Chạm → danh sách hành trình công khai, mỗi dòng mở SCR-88.
+- **Dòng `Your stories`** (S21, chỉ khi có ≥ 1 hành trình bật link): "Your stories reached 1.2k people · 340 ❤️ · 28 started" — chỉ chủ thấy. "people" = số người **khác nhau** đã xem **ít nhất một** hành trình công khai của mình (người xem nhiều hành trình chỉ tính một lần). Chạm → danh sách hành trình công khai, mỗi dòng mở SCR-88.
 - Thẻ Plus (nếu chưa có).
 - **Nhóm cài đặt:**
   - Account: email, phương thức đăng nhập.
@@ -780,8 +780,8 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 
 #### SCR-88 Insights `[v1]`
 - Thống kê **một** hành trình công khai (S19–S21), **chỉ chủ thấy**. Mở từ dòng thống kê ở SCR-24, SCR-82 hoặc từ `Your stories` ở SCR-70. Token Shell, chấm màu phong cách ở tiêu đề.
-- **Ba ô số lớn:** `Views` (người xem duy nhất) · `Likes` · `Started this journey`. Dưới mỗi ô: "+56 this week".
-- **Biểu đồ cột theo ngày** (7 ngày / 30 ngày / từ khi bật link) cho lượt xem và lượt thích.
+- **Ba ô số lớn:** `Views` (số **người** đã xem từ khi bật link — mỗi người chỉ tính **một lần trong toàn kỳ**, quay lại ngày khác không cộng thêm) · `Likes` · `Started this journey`. Dưới mỗi ô: "+56 this week" (= người xem **lần đầu** trong tuần này).
+- **Biểu đồ cột theo ngày** (7 ngày / 30 ngày / từ khi bật link): mỗi cột là số người xem **trong ngày đó** (một người có thể xuất hiện ở nhiều cột), nên **cộng các cột không bằng** ô `Views`. Dòng chú thích dưới biểu đồ: "People who viewed each day" / "Số người xem mỗi ngày".
 - **Tách nguồn thích:** "Friends 42 · Others 298".
 - **Danh sách người thích** (S20): avatar, tên, @username, cảm xúc đã thả, giờ; nhãn "Friend" với bạn bè. Người lạ: nút `Add friend` nếu chưa là bạn, "⋯" (`Block`, `Report`). Chặn thì lượt thích của họ biến mất khỏi tổng.
 - **Không có danh sách người xem** — chỉ con số, kèm dòng "Views are counted, not listed. Nobody knows you saw their journey either." / "Lượt xem chỉ được đếm, không ghi tên. Bạn xem hành trình của người khác cũng vậy."
@@ -1132,7 +1132,7 @@ Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (t
 - Lưới kỳ (CMP-06), chạm → lightbox. Kỳ/ảnh ẩn khi chia sẻ là ô trống trơn. Chỉ số ẩn không hiện; ảnh đặt làm mờ thì mờ. Không có ô bình luận hay câu trả lời (S14).
 - **Thích trên web:** không thả được khi chưa đăng nhập (S23). Khi chủ bật `Let anyone react`: nút tim viền + "Open the app to like" / "Mở app để thích" → `Open in Ourney` hoặc store; sau khi cài + đăng nhập, app mở SCR-84 của hành trình này.
 - **`Show counts` bật** (S22): dưới tiêu đề "❤️ 340 · 28 people did this journey". **Không bao giờ hiện lượt xem.**
-- Mở trang = một lượt xem (đếm người duy nhất theo ngày, không đếm chủ hành trình).
+- Mở trang được ghi nhận cho thống kê (không đếm chủ hành trình). Tổng `Views` đếm mỗi người **một lần trong toàn kỳ**; số theo ngày chỉ dùng cho biểu đồ của SCR-88.
 - **Nút nổi `Do this journey` / `Làm theo`** (S15): thẻ tóm tắt khung lộ trình (mẫu, thời lượng, nhịp, chỉ số) + 2 nút store; đã cài app: `Open in Ourney` (mở SCR-87). Sau khi cài, app nhận lại lộ trình (cùng cơ chế dán mã như WEB-04).
 - Cuối trang: "Start your own journey" + nút store.
 
