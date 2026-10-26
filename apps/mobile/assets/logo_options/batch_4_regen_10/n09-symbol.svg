@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 09 · Minimal Frame-Corner O</title>
+  <path fill="#2563EB" d="M 24 104 V 52 A 28 28 0 0 1 52 24 H 104 A 18 18 0 0 1 104 60 H 60 V 104 A 18 18 0 0 1 24 104 Z"/>
+  <path fill="#EA580C" fill-rule="evenodd" d="M 68 84 A 16 16 0 0 1 84 68 H 148 A 80 80 0 1 1 68 148 Z M 112 148 A 36 36 0 1 0 184 148 A 36 36 0 1 0 112 148 Z"/>
+</svg>

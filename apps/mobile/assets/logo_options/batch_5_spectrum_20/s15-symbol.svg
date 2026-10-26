@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>Ourney — 15 · Tri-Ribbon Delta Loop (3-colour interlocking L-ribbons &amp; central coral aperture)</title>
+  <g id="symbol">
+    <path fill="#0369A1" d="M 32 148 V 80 A 48 48 0 0 1 80 32 H 184 A 20 20 0 0 1 184 72 H 84 A 12 12 0 0 0 72 84 V 148 A 20 20 0 0 1 32 148 Z"/>
+    <path fill="#06B6D4" d="M 224 108 V 176 A 48 48 0 0 1 176 224 H 72 A 20 20 0 0 1 72 184 H 172 A 12 12 0 0 0 184 172 V 108 A 20 20 0 0 1 224 108 Z"/>
+    <path fill="#F97316" fill-rule="evenodd" d="M 90 128 A 38 38 0 1 1 166 128 A 38 38 0 1 1 90 128 Z M 112 128 A 16 16 0 1 0 144 128 A 16 16 0 1 0 112 128 Z"/>
+  </g>
+</svg>

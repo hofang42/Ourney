@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 05 · Sunny Pocket Polaroid</title>
+  <path fill="#10B981" d="M 158 16 H 198 A 10 10 0 0 1 208 26 V 34 A 10 10 0 0 1 198 44 H 158 A 10 10 0 0 1 148 34 V 26 A 10 10 0 0 1 158 16 Z"/>
+  <path fill="#312E81" fill-rule="evenodd" d="M 68 32 H 188 A 36 36 0 0 1 224 68 V 200 A 36 36 0 0 1 188 236 H 68 A 36 36 0 0 1 32 200 V 68 A 36 36 0 0 1 68 32 Z M 80 56 A 20 20 0 0 0 60 76 V 160 A 20 20 0 0 0 80 180 H 176 A 20 20 0 0 0 196 160 V 76 A 20 20 0 0 0 176 56 Z M 100 200 A 8 8 0 0 0 92 208 V 208 A 8 8 0 0 0 100 216 H 156 A 8 8 0 0 0 164 208 V 208 A 8 8 0 0 0 156 200 Z"/>
+  <path fill="#FF5A5F" fill-rule="evenodd" d="M 84 118 A 44 44 0 1 1 172 118 A 44 44 0 1 1 84 118 Z M 106 118 A 22 22 0 1 0 150 118 A 22 22 0 1 0 106 118 Z"/>
+  <path fill="#FACC15" d="M 114 118 A 14 14 0 1 1 142 118 A 14 14 0 1 1 114 118 Z"/>
+</svg>

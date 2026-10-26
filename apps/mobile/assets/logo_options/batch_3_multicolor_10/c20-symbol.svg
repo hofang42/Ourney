@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 20 · Mosaic Azulejo Tile</title>
+  <path fill="#1D4ED8" fill-rule="evenodd" d="M 24 128 V 72 A 48 48 0 0 1 72 24 H 128 V 68 A 60 60 0 0 0 68 128 H 24 Z M 86 128 A 42 42 0 1 1 170 128 A 42 42 0 1 1 86 128 Z M 110 128 A 18 18 0 1 0 146 128 A 18 18 0 1 0 110 128 Z"/>
+  <path fill="#EAB308" d="M 128 24 H 184 A 48 48 0 0 1 232 72 V 128 H 188 A 60 60 0 0 0 128 68 V 24 Z"/>
+  <path fill="#EA580C" d="M 232 128 V 184 A 48 48 0 0 1 184 232 H 128 V 188 A 60 60 0 0 0 188 128 H 232 Z"/>
+  <path fill="#0D9488" d="M 128 232 H 72 A 48 48 0 0 1 24 184 V 128 H 68 A 60 60 0 0 0 128 188 V 232 Z"/>
+</svg>

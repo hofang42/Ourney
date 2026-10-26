@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 09 · Viewfinder Figure-8</title>
+  <path fill="#111111" fill-rule="evenodd" d="M 64 92 A 64 64 0 0 1 192 92 V 156 A 64 64 0 0 1 64 156 Z M 102 86 A 26 26 0 1 0 154 86 A 26 26 0 1 0 102 86 Z M 96 162 A 32 32 0 1 0 160 162 A 32 32 0 1 0 96 162 Z"/>
+  <path fill="#CC4A2F" d="M 24 84 V 44 A 20 20 0 0 1 44 24 H 84 A 10 10 0 0 1 84 44 H 44 V 84 A 10 10 0 0 1 24 84 Z M 232 172 V 212 A 20 20 0 0 1 212 232 H 172 A 10 10 0 0 1 172 212 H 212 V 172 A 10 10 0 0 1 232 172 Z M 116 86 A 12 12 0 1 1 140 86 A 12 12 0 1 1 116 86 Z"/>
+</svg>

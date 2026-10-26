@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 14 · Paper Airplane Orbit</title>
+  <path fill="#06B6D4" d="M 207.14 180 A 96 96 0 1 1 76 48.86 A 18 18 0 0 1 94 80.04 A 60 60 0 1 0 175.96 162 A 18 18 0 0 1 207.14 180 Z"/>
+  <path fill="#EF4444" d="M 228 28 L 68 120.38 H 135.62 Z"/>
+  <path fill="#1E1B4B" d="M 228 28 L 135.62 120.38 V 188 Z"/>
+  <path fill="#F59E0B" d="M 166 164 A 18 18 0 1 1 202 164 A 18 18 0 1 1 166 164 Z"/>
+</svg>

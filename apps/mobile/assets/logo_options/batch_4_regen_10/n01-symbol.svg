@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 01 · Aurora Viewfinder Arch</title>
+  <path fill="#1D4ED8" d="M 32 156 V 120 A 96 96 0 0 1 224 120 V 156 H 184 V 120 A 56 56 0 0 0 72 120 V 156 Z"/>
+  <path fill="#F59E0B" fill-rule="evenodd" d="M 96 116 A 32 32 0 1 1 160 116 A 32 32 0 1 1 96 116 Z M 116 116 A 12 12 0 1 0 140 116 A 12 12 0 1 0 116 116 Z"/>
+  <path fill="#10B981" d="M 32 172 H 132 A 28 28 0 0 1 160 200 V 228 H 68 A 36 36 0 0 1 32 192 Z"/>
+  <path fill="#FF5A5F" d="M 176 172 H 224 V 192 A 36 36 0 0 1 188 228 H 176 Z"/>
+</svg>

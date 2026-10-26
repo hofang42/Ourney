@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 03 · Diptych Polaroids</title>
+  <path fill="#111111" d="M 52 24 H 132 A 28 28 0 0 1 160 52 V 64 H 132 V 52 H 52 V 132 H 76 V 176 H 52 A 28 28 0 0 1 24 148 V 52 A 28 28 0 0 1 52 24 Z"/>
+  <path fill="#111111" fill-rule="evenodd" d="M 120 72 H 204 A 28 28 0 0 1 232 100 V 204 A 28 28 0 0 1 204 232 H 120 A 28 28 0 0 1 92 204 V 100 A 28 28 0 0 1 120 72 Z M 128 96 A 12 12 0 0 0 116 108 V 168 A 12 12 0 0 0 128 180 H 196 A 12 12 0 0 0 208 168 V 108 A 12 12 0 0 0 196 96 Z M 143 198 A 7 7 0 0 0 136 205 V 205 A 7 7 0 0 0 143 212 H 181 A 7 7 0 0 0 188 205 V 205 A 7 7 0 0 0 181 198 Z"/>
+  <path fill="#CC4A2F" fill-rule="evenodd" d="M 138 138 A 24 24 0 1 1 186 138 A 24 24 0 1 1 138 138 Z M 152 138 A 10 10 0 1 0 172 138 A 10 10 0 1 0 152 138 Z"/>
+</svg>

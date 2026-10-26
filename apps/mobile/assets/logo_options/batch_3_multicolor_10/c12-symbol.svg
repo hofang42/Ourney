@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">Ourney 12 · Sunset Trail Patch</title>
+  <path fill="#1D4ED8" d="M 80 24 H 176 A 56 56 0 0 1 232 80 V 176 A 56 56 0 0 1 176 232 H 80 A 56 56 0 0 1 24 176 V 80 A 56 56 0 0 1 80 24 Z"/>
+  <path fill="#FBBF24" fill-rule="evenodd" d="M 94 88 A 34 34 0 1 1 162 88 A 34 34 0 1 1 94 88 Z M 114 88 A 14 14 0 1 0 142 88 A 14 14 0 1 0 114 88 Z"/>
+  <path fill="#10B981" d="M 24 148 H 232 V 176 A 56 56 0 0 1 176 232 H 80 A 56 56 0 0 1 24 176 Z"/>
+  <path fill="#FF5A5F" d="M 87.5 232 L 110 148 H 146 L 168.5 232 Z"/>
+</svg>

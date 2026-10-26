@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>Ourney — 13 · Hexagon Shutter Clamp O (3-colour Ocean &amp; Sky Blue chamfered clamps &amp; Tangerine ring)</title>
+  <g id="symbol">
+    <path fill="#0369A1" d="M 32 108 V 68 L 68 32 H 188 L 224 68 V 108 H 184 V 72 H 72 V 108 Z"/>
+    <path fill="#0EA5E9" d="M 32 148 H 72 V 184 H 184 V 148 H 224 V 188 L 188 224 H 68 L 32 188 Z"/>
+    <path fill="#F97316" fill-rule="evenodd" d="M 86 128 A 42 42 0 1 1 170 128 A 42 42 0 1 1 86 128 Z M 108 128 A 20 20 0 1 0 148 128 A 20 20 0 1 0 108 128 Z"/>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <title>Ourney — 04 · Sunrise Bridge Reflection (4-colour Sunset arch, Emerald bridge decks &amp; River Blue reflection)</title>
+  <g id="symbol">
+    <path fill="#F97316" d="M 32 114 A 96 96 0 0 1 224 114 H 184 A 56 56 0 0 0 72 114 Z"/>
+    <circle cx="128" cy="128" r="24" fill="#FACC15"/>
+    <path fill="#059669" d="M 38 122 H 86 A 10 10 0 0 1 96 132 V 132 A 10 10 0 0 1 86 142 H 38 A 10 10 0 0 1 28 132 V 132 A 10 10 0 0 1 38 122 Z"/>
+    <path fill="#059669" d="M 170 122 H 218 A 10 10 0 0 1 228 132 V 132 A 10 10 0 0 1 218 142 H 170 A 10 10 0 0 1 160 132 V 132 A 10 10 0 0 1 170 122 Z"/>
+    <path fill="#2563EB" d="M 44 152 H 84 A 44 44 0 0 0 172 152 H 212 A 84 84 0 0 1 44 152 Z"/>
+  </g>
+</svg>
