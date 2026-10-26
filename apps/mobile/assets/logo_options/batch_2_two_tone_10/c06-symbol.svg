@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 06 · Ollie Viewfinder Owl</title>
-  <path fill="#111111" fill-rule="evenodd" d="M 32 132 V 48 H 60 L 88 76 H 168 L 196 48 H 224 V 132 A 96 96 0 0 1 32 132 Z M 56 124 A 34 34 0 1 0 124 124 A 34 34 0 1 0 56 124 Z M 144 124 A 26 26 0 1 0 196 124 A 26 26 0 1 0 144 124 Z M 100 196 A 8 8 0 0 0 92 204 V 204 A 8 8 0 0 0 100 212 H 156 A 8 8 0 0 0 164 204 V 204 A 8 8 0 0 0 156 196 Z"/>
-  <path fill="#111111" d="M 76 124 A 14 14 0 1 1 104 124 A 14 14 0 1 1 76 124 Z"/>
-  <path fill="#CC4A2F" d="M 158 124 A 12 12 0 1 1 182 124 A 12 12 0 1 1 158 124 Z M 128 146 L 146 164 L 128 182 L 110 164 Z"/>
-</svg>

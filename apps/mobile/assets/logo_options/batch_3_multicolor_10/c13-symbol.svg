@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 13 · Duo Heart-Shutter</title>
-  <path fill="#E11D48" d="M 128 224 L 46 142 A 54 54 0 0 1 122 66 L 128 72 V 98 A 36 36 0 0 0 128 170 V 224 Z"/>
-  <path fill="#6D28D9" d="M 128 224 V 170 A 36 36 0 0 0 128 98 V 72 L 134 66 A 54 54 0 0 1 210 142 L 128 224 Z"/>
-  <path fill="#FF9F1C" d="M 110 134 A 18 18 0 1 1 146 134 A 18 18 0 1 1 110 134 Z M 114 36 A 14 14 0 1 1 142 36 A 14 14 0 1 1 114 36 Z"/>
-</svg>

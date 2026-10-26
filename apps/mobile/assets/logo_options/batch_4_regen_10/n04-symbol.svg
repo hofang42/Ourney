@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 04 · Compass Shutter Wheel</title>
-  <path fill="#0D9488" d="M 32 48 A 16 16 0 0 1 48 32 H 120 V 76 A 52 52 0 0 0 76 120 H 32 Z"/>
-  <path fill="#F59E0B" d="M 136 32 A 88 88 0 0 1 224 120 H 180 A 52 52 0 0 0 136 76 Z"/>
-  <path fill="#F43F5E" d="M 224 208 A 16 16 0 0 1 208 224 H 136 V 180 A 52 52 0 0 0 180 136 H 224 Z"/>
-  <path fill="#06B6D4" d="M 120 224 A 88 88 0 0 1 32 136 H 76 A 52 52 0 0 0 120 180 Z"/>
-  <path fill="#F43F5E" d="M 104 128 A 24 24 0 1 1 152 128 A 24 24 0 1 1 104 128 Z"/>
-</svg>
