@@ -1,7 +1,7 @@
 # Ourney — Chia sẻ hành trình đã trải qua (Journey Sharing)
 
-> Phiên bản 0.3 · 2026-10-26 · Trạng thái: **đã chốt với chủ dự án**, chờ thiết kế và PR contract dữ liệu. v0.2 thêm **công khai có thống kê** (S19–S28, §2.1). v0.3 thêm **chia sẻ hành trình nhóm/cặp đôi** (S29–S35, §2.2) và chốt các câu mở O1–O5 (S36–S39, §2.3).
-> **Vì sao có tài liệu này:** bản v0.3 tập trung vào check-in hằng ngày, chưa có cách để người đã đi xong một hành trình (hoặc đã đi từ trước khi có app) đưa nó lên và chia sẻ. Tài liệu này ghi lại quyết định (S1–S39), luồng, và **đề xuất** dữ liệu.
+> Phiên bản 0.3 · 2026-10-26 · Trạng thái: **đã chốt với chủ dự án**, chờ thiết kế và PR contract dữ liệu. v0.2 thêm **công khai có thống kê** (S19–S28, §2.1). v0.3 thêm **chia sẻ hành trình nhóm/cặp đôi** (S29–S35, §2.2) và chốt các câu mở O1–O6 (S36–S40, §2.3).
+> **Vì sao có tài liệu này:** bản v0.3 tập trung vào check-in hằng ngày, chưa có cách để người đã đi xong một hành trình (hoặc đã đi từ trước khi có app) đưa nó lên và chia sẻ. Tài liệu này ghi lại quyết định (S1–S40), luồng, và **đề xuất** dữ liệu.
 > **Quan hệ với tài liệu khác:** màn hình chi tiết nằm trong [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9 (SCR-80…89) và §13 (WEB-01, WEB-05). Yêu cầu chức năng ở [SRS.md](SRS.md) FR-H. Phần dữ liệu ở §5 dưới đây **chỉ là đề xuất**: [contracts/schema.md](contracts/schema.md) chỉ đổi qua PR riêng cho contract.
 
 ---
@@ -17,7 +17,7 @@
 
 **Vẫn giữ nguyên:** Ourney **không** có feed, không có Khám phá, không follow người lạ, không lên Google, không đếm follower công khai (D1, §1.2 của SDS). Ngoại lệ duy nhất về con số công khai: chủ **tự bật** `Show counts` thì người xem thấy lượt thích + lượt làm theo của **một hành trình** (S22).
 
-## 2. Quyết định (S1–S39)
+## 2. Quyết định (S1–S40)
 
 | # | Quyết định |
 |---|---|
@@ -68,7 +68,7 @@
 | S34 | Người xem thấy tên + avatar **chỉ của thành viên đã đồng ý**, cùng chuỗi chung của nhóm. Thống kê chuỗi từng người (SCR-55) **không** hiện với người ngoài nhóm |
 | S35 | **Làm theo** hành trình nhóm/cặp đôi → tạo hành trình **cùng kiểu** (nhóm hoặc cặp đôi), mình làm chủ, rồi mở SCR-42 để mời người của mình. Không sao chép thành viên hay ảnh |
 
-### 2.3 Chốt các câu mở trước đó (S36–S39)
+### 2.3 Chốt các câu mở trước đó (S36–S40)
 
 | # | Quyết định |
 |---|---|
@@ -76,6 +76,7 @@
 | S37 | (O3) **Không giới hạn** số bạn bè. Tin nhắn **giữ đến khi** một bên xóa cuộc trò chuyện (phía mình) hoặc xóa tài khoản |
 | S38 | (O4) `Let anyone react` **mặc định bật** với mẫu thường |
 | S39 | (O5) Tối đa **20 lời mời kết bạn từ trang công khai / người gửi / ngày** |
+| S40 | (O6) Ảnh bật `Hide until they post` (D16) **vẫn hiện với người xem ngoài nhóm** nếu tác giả đã đồng ý chia sẻ (S30). Luật che chỉ áp cho thành viên chưa chụp kỳ đó |
 
 **Chat 1-1 qua lại (S17) làm đủ ở v1**, không tách sang v1.1. Chấp nhận v1 chưa có push (§6).
 
@@ -164,8 +165,4 @@ flowchart TD
 
 ## 7. Còn mở
 
-O1–O5 đã chốt (S29–S39). Còn lại:
-
-| # | Câu hỏi | Đề xuất tạm |
-|---|---|---|
-| O6 | Ảnh bật `Hide until they post` (D16) có hiện với **người xem ngoài nhóm** không? | Có — luật Hide chỉ dành cho thành viên chưa chụp; người ngoài nhóm chỉ thấy ảnh của thành viên đã đồng ý (S30) |
+O1–O6 đã chốt (S29–S40). Không còn câu mở.

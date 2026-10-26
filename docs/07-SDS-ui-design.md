@@ -1,6 +1,6 @@
 # Ourney — Software Design Specification (UI/UX)
 
-> **Phiên bản 0.5** · 2026-10-26 · Áp dụng toàn bộ danh sách thay đổi của [08-SDS-review.md](08-SDS-review.md) §9 và các quyết định khách hàng: D1–D25 (§1.5), vòng 2 R2-01…R2-22 (§1.6), vòng 3 Q1–Q25 (§1.7), vòng 4 S1–S39 — chia sẻ hành trình đã trải qua (solo, nhóm, cặp đôi) và công khai có thống kê (§1.8, chi tiết ở [09-journey-sharing.md](09-journey-sharing.md)).
+> **Phiên bản 0.5** · 2026-10-26 · Áp dụng toàn bộ danh sách thay đổi của [08-SDS-review.md](08-SDS-review.md) §9 và các quyết định khách hàng: D1–D25 (§1.5), vòng 2 R2-01…R2-22 (§1.6), vòng 3 Q1–Q25 (§1.7), vòng 4 S1–S40 — chia sẻ hành trình đã trải qua (solo, nhóm, cặp đôi) và công khai có thống kê (§1.8, chi tiết ở [09-journey-sharing.md](09-journey-sharing.md)).
 > **Phạm vi tài liệu:** chỉ giao diện, màn hình, luồng đi và trạng thái. **Không** mô tả logic code, API hay cơ sở dữ liệu.
 > **Người đọc:** designer và các AI dựng giao diện (Figma Make, v0, Stitch, Claude…). Mỗi màn có ID dạng `SCR-xx` để trích riêng khi đưa cho AI.
 > **Quan hệ với tài liệu khác:** nếu mâu thuẫn với [SRS.md](SRS.md) hoặc [06-adaptive-persona-ui-system.md](06-adaptive-persona-ui-system.md), tài liệu này thắng **về mặt thiết kế**. Nhãn `[v1]`, `[v2]`, `[Plus]`, `[Soon]` ở §1.4.
@@ -28,7 +28,7 @@
 | Cuốn album/nhật ký ảnh cho từng mục tiêu, chuyến đi, giai đoạn | Mạng xã hội: không feed, không follow người lạ, không khám phá, không đếm follower công khai. **Ngoại lệ duy nhất:** chủ tự bật `Show counts` cho một hành trình công khai thì người xem thấy lượt thích + lượt làm theo của hành trình đó; lượt xem luôn chỉ chủ thấy (S22) |
 | Công cụ biến hành trình thành thiệp, video, link đẹp để **khoe ra ngoài** (Instagram, TikTok, Facebook, Zalo, Threads) | Nơi so bì kết quả: không bảng xếp hạng theo cân nặng, tiền… |
 | Không gian riêng của một nhóm nhỏ (≤ 10) hoặc một cặp đôi | Ứng dụng chat chung: chỉ có trò chuyện 1-1 **bắt đầu từ một câu trả lời ảnh** trên hành trình được chia sẻ (S17) |
-| Nơi **chia sẻ hành trình đã trải qua** cho bạn bè hai chiều, cho người khác **làm theo** lộ trình đó, và cho chủ biết câu chuyện đã **đến với bao nhiêu người** — áp cho cả solo, nhóm, cặp đôi (S1–S39) | |
+| Nơi **chia sẻ hành trình đã trải qua** cho bạn bè hai chiều, cho người khác **làm theo** lộ trình đó, và cho chủ biết câu chuyện đã **đến với bao nhiêu người** — áp cho cả solo, nhóm, cặp đôi (S1–S40) | |
 
 ### 1.3 Người dùng
 | Nhóm | Đặc điểm | Hệ quả thiết kế |
@@ -132,7 +132,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | Q24 | Giọng `Playful/Gentle` **chỉ áp cho thông báo** |
 | Q25 | Công tắc riêng tư màn khóa/widget ở **cả hai nơi**: mặc định toàn cục + ghi đè từng hành trình |
 
-### 1.8 Quyết định vòng 4 — chia sẻ hành trình (S1–S39)
+### 1.8 Quyết định vòng 4 — chia sẻ hành trình (S1–S40)
 > Lý do, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: §5.9.
 
 | # | Tóm tắt |
@@ -161,6 +161,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | S33–S34 | Trả lời ảnh trên hành trình nhóm → tới **người đã chia sẻ cho mình** (hoặc tác giả ảnh nếu là bạn). Người xem chỉ thấy tên thành viên đã đồng ý |
 | S35 | Làm theo hành trình nhóm/cặp đôi → hành trình **cùng kiểu**, mình làm chủ, mở SCR-42 mời người |
 | S36–S39 | "Based on {name}'s journey" ở SCR-22 (bỏ được) · không giới hạn bạn, giữ tin nhắn · `Let anyone react` mặc định bật · 20 lời mời kết bạn từ trang công khai / ngày. **Chat 1-1 làm đủ ở v1** |
+| S40 | Ảnh bật `Hide until they post` **vẫn hiện với người ngoài nhóm** nếu tác giả đã đồng ý chia sẻ; luật che chỉ áp cho thành viên chưa chụp |
 
 ---
 
@@ -677,7 +678,7 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 | SCR-20 `Shared with me` | Danh sách gọn khi > 6, tìm theo tên hành trình hoặc tên bạn |
 | SCR-80 Bạn bè | Tìm kiếm khi > 10 bạn; SCR-82 danh sách chọn bạn có `Select all` / `Clear` |
 
-### 5.9 Bạn bè, chia sẻ hành trình, hộp thư & thống kê (S1–S39)
+### 5.9 Bạn bè, chia sẻ hành trình, hộp thư & thống kê (S1–S40)
 > Áp dụng cho hành trình **solo** (gồm hành trình kể lại), **nhóm và cặp đôi**. Khác biệt của nhóm/cặp đôi ghi ở từng màn và ở SCR-89 (S29–S35). Lý do và quy tắc: [09-journey-sharing.md](09-journey-sharing.md).
 
 #### SCR-80 Bạn bè `[v1]`
@@ -744,7 +745,7 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 - **Trên từng ảnh** (SCR-25 ở chế độ người xem): CMP-09 thả cảm xúc (theo bảng trên) · **`Reply`** (chỉ bạn bè; icon camera nhỏ) → camera gọn chụp ảnh/clip ≤ 5s (hoặc chọn từ thư viện) + caption ≤ 140 → gửi vào SCR-86. Dòng nhỏ "Only {name} sees your reply" / "Chỉ {name} thấy câu trả lời của bạn".
 - **Nút nổi:** `Do this journey` / `Làm theo` (→ SCR-87) — **chỉ khi hành trình đã xong** (S9). Đang chạy: không có nút.
 - Không có nút chia sẻ lại. Không thấy **ai** đã thích hay trả lời; chỉ thấy tổng số thích khi chủ bật `Show counts`.
-- **Hành trình nhóm/cặp đôi** (S30, S33–S34): header có hàng avatar **chỉ của thành viên đã đồng ý** + "Shared by {name}". Kỳ không còn ảnh nào sau khi ẩn ảnh người chưa đồng ý: ô trống trơn. Hiện chuỗi chung; không hiện thống kê chuỗi từng người. `Reply` trên ảnh của thành viên khác: dòng nhỏ "Your reply goes to {sharer}" (hoặc tới tác giả nếu tác giả là bạn của mình).
+- **Hành trình nhóm/cặp đôi** (S30, S33–S34): header có hàng avatar **chỉ của thành viên đã đồng ý** + "Shared by {name}". Kỳ không còn ảnh nào sau khi ẩn ảnh người chưa đồng ý: ô trống trơn. Hiện chuỗi chung; không hiện thống kê chuỗi từng người. Ảnh bật `Hide until they post` hiện bình thường (S40). `Reply` trên ảnh của thành viên khác: dòng nhỏ "Your reply goes to {sharer}" (hoặc tới tác giả nếu tác giả là bạn của mình).
 - **Trạng thái:** bị thu hồi / hết là bạn / link bị tắt hoặc reset ("This journey is private now"); ảnh mới (chấm "New" trên ô); offline (ảnh đã cache).
 
 #### SCR-85 Hộp thư `[v1]`
@@ -1051,6 +1052,7 @@ Tối đa 3 mỗi hành trình. Kiểu nhập: số, thanh trượt (cân nặng
 - **Người đăng quyết định cho ảnh của mình.** Công tắc `Hide my photos until others post` trong SCR-26 (mặc định cho hành trình đó, **mặc định tắt**), đổi được từng ảnh ở SCR-12/25a.
 - Người xem **chưa check-in kỳ đó** thấy ảnh đã bật che là **ô mờ + icon khóa** ("Snap yours to see"). Áp cho **mọi kỳ**, kể cả ngày cũ.
 - Couple HUD và widget WGT-02 tuân theo cùng quy tắc.
+- **Người xem ngoài nhóm** (hành trình nhóm/cặp đôi được chia sẻ, S40): luật che **không áp**. Ảnh hiện bình thường nếu tác giả đã đồng ý chia sẻ (S30); chưa đồng ý thì ẩn hẳn.
 
 ### 9.4 Link công khai (R2-06, R2-07, Q12)
 - Chỉ hành trình **đã xong / trên kệ** (gồm hành trình kể lại đã lưu lên kệ) (S9). Solo: chủ bật. Nhóm/cặp đôi: **chủ nhóm** bật, trang chỉ có ảnh của thành viên đã đồng ý (S32). Công tắc **mặc định tắt**, nằm trong SCR-82. Hành trình mở lại (Q10) hoặc tiếp tục từ hôm nay: link tự tắt, bật lại khi kết thúc.
@@ -1175,8 +1177,8 @@ Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (t
 ---
 
 ## 15. Tình trạng quyết định
-- **Đã chốt:** D1–D25, R2-01…R2-22, Q1–Q25, S1–S39 (§1.5–§1.8).
-- **Còn mở của vòng 4** ([09-journey-sharing.md](09-journey-sharing.md) §7): **O6** ảnh bật `Hide until they post` có hiện với người xem ngoài nhóm không (tạm: có).
+- **Đã chốt:** D1–D25, R2-01…R2-22, Q1–Q25, S1–S40 (§1.5–§1.8).
+- **Vòng 4:** O1–O6 đã chốt (S29–S40), không còn câu mở ([09-journey-sharing.md](09-journey-sharing.md) §7).
 - **Màu sắc:** giá trị trong §3.1 và §6.3 là khởi điểm; **màu chốt do Figma Make đề xuất** trong khuôn ràng buộc (Q14–Q16).
 - **Còn mở duy nhất:** giá Ourney Plus (D23).
 - **Việc ngoài tài liệu này:** đồng bộ CLAUDE.md §4 sang 10 phong cách, bỏ "His & Her", sửa số mẫu (08-SDS-review F-57).

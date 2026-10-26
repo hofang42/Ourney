@@ -143,7 +143,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-G3 | Nudge bạn bè, push thật (gồm push lời mời kết bạn, journey được chia sẻ, tin nhắn) | P2 (cần tài khoản Apple) |
 
 ### FR-H — Bạn bè & chia sẻ hành trình đã trải qua
-Quyết định S1–S39, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9. v1 áp cho journey **solo** (gồm journey kể lại), **nhóm và cặp đôi** (FR-H14–H16).
+Quyết định S1–S40, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9. v1 áp cho journey **solo** (gồm journey kể lại), **nhóm và cặp đôi** (FR-H14–H16).
 
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
