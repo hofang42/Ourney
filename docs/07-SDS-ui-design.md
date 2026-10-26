@@ -71,7 +71,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | D14 | Phần vỏ: **"Sạch, cao cấp" + "Năng động Gen Z"** |
 | D15 | Có nhập hành trình đã qua. Quá khứ không tính chuỗi. Ảnh thư viện **chụp hôm nay** vẫn tính |
 | D16 | Che ảnh với người chưa check-in do **người đăng quyết định cho ảnh của mình**. → Q9: áp cho mọi ngày |
-| D17 | Clip tối đa **5 giây** cho mọi người. Dài hơn là Plus `[Soon]` |
+| D17 | Clip tối đa **5 giây** cho mọi người. Dài hơn là Plus `[Soon]`. **Clip là `[v2]`** (v0.2 theo SRS §1.3, §7): v1 chỉ có ảnh. Mọi chỗ khác trong tài liệu nhắc "ảnh/clip", icon play, nén clip (Q13) đều chỉ áp **từ `[v2]`**; vẫn thiết kế sẵn ngay bây giờ (§1.4) |
 | D18 | **Không giới hạn** số ảnh/clip mỗi ngày |
 | D19 | **Không giới hạn** số hành trình đang chạy (§5.8) |
 | D20 | Mang thai & em bé dùng quy tắc riêng tư **như mọi hành trình**. → R2-06 thêm cảnh báo khi bật link |
@@ -120,7 +120,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | Q10 | Hành trình đã kết thúc **mở lại/gia hạn được trong 7 ngày** |
 | Q11 | Xóa ảnh duy nhất của một ngày: **vẫn giữ chuỗi** |
 | Q12 | Trang link **không lên Google**; công tắc link **mặc định tắt** |
-| Q13 | Clip miễn phí nén **1080p**, Plus giữ gốc |
+| Q13 | Clip miễn phí nén **1080p**, Plus giữ gốc (áp khi có clip `[v2]`, D17) |
 | Q14–Q16 | **Màu chốt do Figma Make đề xuất.** Tài liệu giữ màu khởi điểm + ràng buộc |
 | Q17 | Duyệt 5 font: Fraunces, Baloo 2, Space Mono, Barlow Condensed, Patrick Hand |
 | Q18 | Glow Ritual: **lưới tuần + cặp trước/sau ghim trên đầu**. Paw Growth: **thước đo nằm ngang** |
@@ -146,7 +146,7 @@ Người dùng phải **từ 13 tuổi trở lên**; dưới 18 tuổi không b�
 | S10 | `Public link` giữ Q12 (noindex, mặc định tắt), R2-06 (cảnh báo + ảnh xem trước mờ), R2-07 (khóa 13–17) |
 | S11 | Trước khi chia sẻ: ẩn bớt ảnh/kỳ, ẩn số liệu, viết lời kể |
 | S12 | Hành trình kể lại: nhãn `Imported` / `Kể lại`, không hiện chuỗi |
-| S13–S14 | Bạn bè: thả cảm xúc + trả lời bằng ảnh/clip (chỉ chủ thấy). Người xem trên web chưa đăng nhập: chỉ xem + `Do this journey` + `Open the app to like`. Người lạ có tài khoản: S23–S24 |
+| S13–S14 | Bạn bè: thả cảm xúc + trả lời bằng ảnh (clip `[v2]`) (chỉ chủ thấy). Người xem trên web chưa đăng nhập: chỉ xem + `Do this journey` + `Open the app to like`. Người lạ có tài khoản: S23–S24 |
 | S15 | `Do this journey` chỉ sao chép **khung lộ trình** (mẫu, thời lượng, nhịp, tên chỉ số, tiêu đề), không ảnh/số liệu |
 | S16–S17 | **Hộp thư** (icon trên header Hub) gộp trả lời, lời mời xem, lời mời kết bạn; **chat 1-1 qua lại** |
 | S18 | Thu hồi cho tất cả hoặc **gỡ từng người**; bản làm theo của người khác vẫn giữ |
@@ -282,7 +282,7 @@ Phần vỏ là mọi màn **không thuộc riêng một hành trình**: Hub, Sq
 | CMP-03 | Nút viên thuốc | Cao hiển thị 36–40, **vùng chạm ≥ 48** | Cao theo chữ |
 | CMP-04 | Chip hành trình | Icon mẫu + tên + chevron. Trên camera dùng `cameraChrome`, nơi khác `surfaceSunken` | Tên cắt "…", tối đa 60% bề rộng |
 | CMP-05 | Thẻ hành trình | Ảnh bìa mới nhất · tên · huy hiệu phong cách (chấm màu + tên mẫu) · CMP-17 · lửa + số chuỗi · trạng thái kỳ này (icon check + "Done" / vòng rỗng + "Not yet") · CMP-08 · hàng avatar nếu nhóm | Ảnh bìa thấp lại, chữ không chồng ảnh |
-| CMP-06 | Ô lịch (Day/Week/Month cell) | Vuông, bo 10. Có ảnh: ảnh bìa + **huy hiệu số** góc trên phải nếu > 1 ảnh, icon play nếu ảnh bìa là clip. **Ô lỡ:** viền nét đứt `line`. **Ô trung tính** (kỳ không bắt buộc, nhịp X lần/tuần): `surfaceSunken` trơn, không viền đứt. **Ô freeze:** họa tiết băng + icon bông tuyết `freeze`. **Tương lai:** `surfaceSunken` nhạt. **Hôm nay/kỳ này chưa chụp:** viền `accentInk` nét đứt + icon `+`. **Ảnh bị che** (Hide until they post): mờ + icon khóa | Huy hiệu số giữ nguyên, ô không co dưới 40dp |
+| CMP-06 | Ô lịch (Day/Week/Month cell) | Vuông, bo 10. Có ảnh: ảnh bìa + **huy hiệu số** góc trên phải nếu > 1 ảnh, icon play nếu ảnh bìa là clip (`[v2]`). **Ô lỡ:** viền nét đứt `line`. **Ô trung tính** (kỳ không bắt buộc, nhịp X lần/tuần): `surfaceSunken` trơn, không viền đứt. **Ô freeze:** họa tiết băng + icon bông tuyết `freeze`. **Tương lai:** `surfaceSunken` nhạt. **Hôm nay/kỳ này chưa chụp:** viền `accentInk` nét đứt + icon `+`. **Ảnh bị che** (Hide until they post): mờ + icon khóa | Huy hiệu số giữ nguyên, ô không co dưới 40dp |
 | CMP-07 | Huy hiệu chuỗi | Icon lửa vector (`streak`) + số (`ink`) + đơn vị kỳ ("21 days" / "5 weeks"). Trạng thái: đang cháy · sắp đứt (nhấp nháy theo §3.4 + chữ "Ends in 3h") · **được freeze cứu** (lửa + icon bông tuyết, "Saved by a freeze") · đã đứt (xám, "0") | Đơn vị xuống dòng |
 | CMP-08 | Nhãn riêng tư | `Private` (khóa) · `Squad` (hai người) · `Couple` (hai trái tim) · `Link on` (dây xích) · **`Friends · 5`** (người + dấu cộng, S6) — icon vector + chữ. Có thể ghép: `Friends · 5` + `Link on` | Chỉ còn icon + tooltip khi quá hẹp |
 | CMP-09 | Thanh reaction | 🔥 💪 👏 ❤️ 😂 + đếm. Giữ để xem ai đã thả | Cuộn ngang |
@@ -443,14 +443,14 @@ Mỗi quyền có **sheet giải thích của Ourney trước** hộp thoại h�
   - **HUD riêng của phong cách** (§6.4), chip theo `chipDark`/`chipLight`.
 - **Vuốt ngang trên khung** để chuyển sang hành trình chưa xong kế tiếp (hai chiều). Hiện **chấm chỉ báo trang** dưới chip và **tên hành trình đích trượt vào** trong 260ms; HUD và màu đổi theo. **Ống kính giữ nguyên** (R2-17), người dùng tự bấm lật.
 - **Hàng điều khiển:** thư viện (trái) · **nút chụp 76pt** (giữa) · lật camera (phải). Phía trên: flash, hẹn giờ 3s, lưới căn (icon vector).
-- **Nút chụp:** chạm = ảnh. Giữ = clip, vòng chạy quanh nút, **tối đa 5s** (dài hơn `[Plus]` `[Soon]`). Nhả tay thì dừng.
+- **Nút chụp:** chạm = ảnh `[v1]`. Giữ = clip `[v2]`, vòng chạy quanh nút, **tối đa 5s** (dài hơn `[Plus]` `[Soon]`). Nhả tay thì dừng. Ở `[v1]` giữ nút vẫn chụp ảnh, không có vòng quay, không có gợi ý "hold to record".
 - **Ghost overlay** (ảnh mờ lần trước của một số phong cách) chỉ là **lớp xem trước**, **không bao giờ** lưu vào ảnh.
 - **Ảnh từ thư viện:** chọn nhiều được. Ảnh có nhãn `From library` trong album. Sau khi chọn, **một sheet gộp theo ngày**: "3 photos from today · 2 from Oct 18 → Add to their days". Ảnh chụp hôm nay tính như ảnh chụp trong app (cả chuỗi). Ảnh ngày cũ thêm vào đúng ngày, **không** cứu chuỗi. Ảnh không có ngày chụp: hỏi một lần, mặc định hôm nay.
 - **Trạng thái:** chưa cấp quyền camera (minh họa + `Allow camera` + `Choose from library`); quyền ảnh một phần (`Select more photos`); camera lỗi; hành trình đã kết thúc (khóa chụp, `Reopen` nếu còn trong 7 ngày hoặc `Start season 2`); chưa có hành trình (CTA tạo).
 
 #### SCR-12 Soạn check-in `[v1]`
 - **Header:** `Retake` (trái) · **tên hành trình + nhãn riêng tư CMP-08** (giữa, để không đăng nhầm) · `Post` (phải, cũng có nút Post lớn ở đáy).
-- Ảnh/clip vừa chụp (đặt sticker lên được). Thanh công cụ: `Aa` caption · cảm xúc · sticker · chỉ số (nếu có) · `+` chụp thêm vào cùng kỳ.
+- Ảnh vừa chụp (clip `[v2]`) (đặt sticker lên được). Thanh công cụ: `Aa` caption · cảm xúc · sticker · chỉ số (nếu có) · `+` chụp thêm vào cùng kỳ.
 - Caption: một dòng, ≤ 140 ký tự, gợi ý theo mẫu, đếm ký tự khi còn ≤ 20.
 - Cảm xúc: CMP-11, chọn 1 hoặc không.
 - Chỉ số: tối đa 3 ô (`Weight 62.0 kg`, `Minutes 45`…), điền sẵn giá trị gần nhất. Chỉ số ẩn có icon khóa và **không bao giờ** thành sticker hiển thị cho người khác.
@@ -742,7 +742,7 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
   | `Add friend` | – | Nút viên dưới tên chủ, chỉ khi chủ bật `Allow friend requests from viewers`; sau khi gửi: "Requested" |
 - **Đầu trang:** ảnh bìa câu chuyện, tiêu đề, intro (xem thêm), "What I learned" (gập), CMP-17, chuỗi (**ẩn với hành trình kể lại**, thay bằng nhãn `Imported` + khoảng ngày), số khoảnh khắc. Hành trình đang chạy: nhãn "Live · Day 12". Chủ bật `Show counts` (S22): dòng "❤️ 340 · 28 people did this journey" — **không bao giờ hiện lượt xem**.
 - **Kiểu xem:** `Story` · `Calendar` (không có `Stats` chi tiết số liệu nếu chủ ẩn số).
-- **Trên từng ảnh** (SCR-25 ở chế độ người xem): CMP-09 thả cảm xúc (theo bảng trên) · **`Reply`** (chỉ bạn bè; icon camera nhỏ) → camera gọn chụp ảnh/clip ≤ 5s (hoặc chọn từ thư viện) + caption ≤ 140 → gửi vào SCR-86. Dòng nhỏ "Only {name} sees your reply" / "Chỉ {name} thấy câu trả lời của bạn".
+- **Trên từng ảnh** (SCR-25 ở chế độ người xem): CMP-09 thả cảm xúc (theo bảng trên) · **`Reply`** (chỉ bạn bè; icon camera nhỏ) → camera gọn chụp ảnh `[v1]` / clip ≤ 5s `[v2]` (hoặc chọn từ thư viện) + caption ≤ 140 → gửi vào SCR-86. Dòng nhỏ "Only {name} sees your reply" / "Chỉ {name} thấy câu trả lời của bạn".
 - **Nút nổi:** `Do this journey` / `Làm theo` (→ SCR-87) — **chỉ khi hành trình đã xong** (S9). Đang chạy: không có nút.
 - Không có nút chia sẻ lại. Không thấy **ai** đã thích hay trả lời; chỉ thấy tổng số thích khi chủ bật `Show counts`.
 - **Hành trình nhóm/cặp đôi** (S30, S33–S34): header có hàng avatar **chỉ của thành viên đã đồng ý** + "Shared by {name}". Kỳ không còn ảnh nào sau khi ẩn ảnh người chưa đồng ý: ô trống trơn. Hiện chuỗi chung; không hiện thống kê chuỗi từng người. Ảnh bật `Hide until they post` hiện bình thường (S40). `Reply` trên ảnh của thành viên khác: dòng nhỏ "Your reply goes to {sharer}" (hoặc tới tác giả nếu tác giả là bạn của mình).
@@ -764,8 +764,8 @@ Mọi màn liệt kê hành trình phải dùng được với **1, 5, 20 và 50
 
 #### SCR-86 Trò chuyện `[v1]`
 - Chat 1-1 (S17), gắn với **một hành trình**. Header: quay lại · avatar + tên · tên hành trình (chạm → SCR-24 / SCR-84) · "⋯" (`Mute`, `Block`, `Report`).
-- **Tin đầu tiên luôn là câu trả lời ảnh/clip**, hiển thị kèm ảnh gốc được trả lời (khung nhỏ phía trên, chạm mở SCR-25).
-- Bong bóng: chữ (≤ 500), ảnh, clip ≤ 5s. Giờ gửi, trạng thái `Sent` / `Seen`. Nhấn giữ tin: `Copy` · `Delete for me` · (tin người kia) `Report`.
+- **Tin đầu tiên luôn là câu trả lời ảnh** (clip `[v2]`), hiển thị kèm ảnh gốc được trả lời (khung nhỏ phía trên, chạm mở SCR-25).
+- Bong bóng: chữ (≤ 500) `[v1]`, ảnh `[v1]`, clip ≤ 5s `[v2]`. Giờ gửi, trạng thái `Sent` / `Seen`. Nhấn giữ tin: `Copy` · `Delete for me` · (tin người kia) `Report`.
 - Thanh nhập: camera · thư viện · ô chữ · `Send`. Không có sticker, không có tin thoại.
 - **Chỉ đọc** khi hết là bạn hoặc hành trình bị thu hồi: thanh nhập thay bằng "You can't reply to this conversation" / "Bạn không thể trả lời cuộc trò chuyện này".
 - Giọng ấm cố định ở các dòng hệ thống (báo cáo, chặn) theo §3.6.
@@ -1172,7 +1172,7 @@ Responsive: < 600 một cột; 600–1023 hai cột hẹp; ≥ 1024 hai cột (t
 | Bị xóa khỏi nhóm / nhóm bị xóa | Thông báo một lần + về Squad |
 | Dưới 13 tuổi | Màn chặn (SCR-03) |
 
-**Khả năng tiếp cận:** VoiceOver/TalkBack cho mọi nút chỉ có icon (nút chụp: "Take photo. Hold to record video"), Dynamic Type đến 1.35×, Giảm chuyển động (§3.4), haptic tắt được, contrast theo §3.1.
+**Khả năng tiếp cận:** VoiceOver/TalkBack cho mọi nút chỉ có icon (nút chụp: `[v1]` "Take photo"; `[v2]` "Take photo. Hold to record video"), Dynamic Type đến 1.35×, Giảm chuyển động (§3.4), haptic tắt được, contrast theo §3.1.
 
 ---
 
