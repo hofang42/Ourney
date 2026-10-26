@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 07 · Bookmark Compass O</title>
-  <path fill="#111111" fill-rule="evenodd" d="M 24 128 A 104 104 0 1 1 232 128 A 104 104 0 1 1 24 128 Z M 60 128 A 68 68 0 1 0 196 128 A 68 68 0 1 0 60 128 Z"/>
-  <path fill="#111111" d="M 96 28 H 160 V 136 L 128 104 L 96 136 Z"/>
-  <path fill="#CC4A2F" d="M 128 140 L 150 162 L 128 184 L 106 162 Z"/>
-</svg>

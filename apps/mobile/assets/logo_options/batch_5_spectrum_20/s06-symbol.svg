@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
-  <title>Ourney — 06 · Isometric Cube-Lens O (4-colour 3D isometric hexagon tunnel &amp; floating Mint sphere)</title>
-  <g id="symbol">
-    <path fill="#F59E0B" d="M 128 28 L 214.6 78 L 169.57 104 A 48 48 0 0 0 86.43 104 L 41.4 78 Z"/>
-    <path fill="#E11D48" d="M 41.4 78 L 86.43 104 A 48 48 0 0 0 128 176 V 228 L 41.4 178 Z"/>
-    <path fill="#312E81" d="M 214.6 78 V 178 L 128 228 V 176 A 48 48 0 0 0 169.57 104 Z"/>
-    <circle cx="128" cy="128" r="24" fill="#10B981"/>
-  </g>
-</svg>

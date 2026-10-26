@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 15 · Squad Pinwheel O</title>
-  <path fill="#10B981" d="M 24 108 V 64 A 40 40 0 0 1 64 24 H 108 A 20 20 0 0 1 108 64 H 64 V 108 A 20 20 0 0 1 24 108 Z"/>
-  <path fill="#F97316" d="M 148 24 H 192 A 40 40 0 0 1 232 64 V 108 A 20 20 0 0 1 192 108 V 64 H 148 A 20 20 0 0 1 148 24 Z"/>
-  <path fill="#7C3AED" d="M 232 148 V 192 A 40 40 0 0 1 192 232 H 148 A 20 20 0 0 1 148 192 H 192 V 148 A 20 20 0 0 1 232 148 Z"/>
-  <path fill="#F43F5E" d="M 108 232 H 64 A 40 40 0 0 1 24 192 V 148 A 20 20 0 0 1 64 148 V 192 H 108 A 20 20 0 0 1 108 232 Z"/>
-  <path fill="#F97316" fill-rule="evenodd" d="M 86 128 A 42 42 0 1 1 170 128 A 42 42 0 1 1 86 128 Z M 110 128 A 18 18 0 1 0 146 128 A 18 18 0 1 0 110 128 Z"/>
-</svg>

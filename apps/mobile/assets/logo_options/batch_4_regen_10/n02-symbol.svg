@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 02 · Tangram Bird-Lens O</title>
-  <path fill="#1E1B4B" d="M 220 132 A 92 92 0 0 1 36 132 H 84 A 44 44 0 0 0 172 132 Z"/>
-  <path fill="#F97316" d="M 36 132 V 40 H 128 V 88 A 44 44 0 0 0 84 132 Z"/>
-  <path fill="#EAB308" d="M 128 40 A 92 92 0 0 1 220 132 H 172 A 44 44 0 0 0 128 88 Z"/>
-  <path fill="#EF4444" d="M 108 132 A 20 20 0 1 1 148 132 A 20 20 0 1 1 108 132 Z M 178 52 A 18 18 0 1 1 214 52 A 18 18 0 1 1 178 52 Z"/>
-</svg>

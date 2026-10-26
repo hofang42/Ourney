@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
-  <title id="title">Ourney 18 · Neon Sprint Spark</title>
-  <path fill="#0F172A" d="M 76 20 H 180 A 56 56 0 0 1 236 76 V 180 A 56 56 0 0 1 180 236 H 76 A 56 56 0 0 1 20 180 V 76 A 56 56 0 0 1 76 20 Z"/>
-  <path fill="#FF4D6D" d="M 187.4 187.4 A 84 84 0 0 1 68.6 68.6 A 18 18 0 0 1 94.06 94.06 A 48 48 0 0 0 161.94 161.94 A 18 18 0 0 1 187.4 187.4 Z"/>
-  <path fill="#22C55E" d="M 106.26 46.86 A 84 84 0 0 1 209.14 149.74 A 18 18 0 0 1 174.36 140.42 A 48 48 0 0 0 115.58 81.64 A 18 18 0 0 1 106.26 46.86 Z"/>
-  <path fill="#06B6D4" d="M 128 96 L 160 128 L 128 160 L 96 128 Z"/>
-</svg>
