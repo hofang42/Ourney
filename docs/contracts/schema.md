@@ -1,9 +1,23 @@
-# Contract: data schema (v1.2)
+# Contract: data schema (v1.3)
 
 Single source of truth shared by `supabase/migrations` (Postgres) and `apps/mobile/lib/data` (drift).
 Changes go through a PR touching only this folder (owner: Architect/Orchestrator).
-Since v1.1 the SQL in `supabase/migrations/0001..0005` is the server source of truth; this file
+Since v1.1 the SQL in `supabase/migrations/0001..0006` is the server source of truth; this file
 documents it (it wins only where the SQL contradicts `docs/SRS.md`).
+
+**v1.3 (0006_social)** — friends, journey sharing, story, follow-along, retold (imported)
+journeys, group share consents, 1-1 chat and insights. The wire API (tables, RPCs, JSON shapes,
+Edge Function changes) is specified in [sharing.md](sharing.md); highlights for existing clients:
+- `journeys` + `origin`, `story_*`, `cover_checkin_id`, `followed_from`, `show_counts`,
+  `allow_public_reactions`, `allow_viewer_requests`; `check_ins` + `hidden_in_share` (RPC only).
+- `public_token` is decoupled from `visibility` for groups (see rules below); `set_public_link`
+  gains `reset` and only enables for ended/archived or imported journeys (`invalid` otherwise).
+- Owner check-ins in `origin = 'imported'` journeys skip the 3-day window and the active rule.
+- `report_content` gains `p_message`; profiles are also visible to friends / pending requests /
+  conversation partners / owners and consenting members of journeys shared with the caller.
+- New tables: `friendships`, `friend_invites`, `journey_shares`, `journey_share_consents`,
+  `saved_journeys`, `journey_views`, `conversations`, `messages`, `message_hides`; new private
+  bucket `messages`.
 
 **v1.2 (0005_security_hardening)** — summary of the changes clients must know:
 - Metric values moved to the new table `check_in_metrics`; `check_ins.metric_value` is always NULL.
@@ -34,7 +48,8 @@ Wire values are the Postgres labels below (snake_case). Dart enums in `ourney_co
 | `reports.status` (text + CHECK) | `open`, `actioned`, `dismissed` | `ReportStatus` |
 
 Visibility rules (table CHECKs): solo → `private` or `link`; group → always `group`; `link` only
-for solo (FR-E3). `create_journey` raises `invalid` for group+`link` and solo+`group`, and
+for solo. **v1.3**: solo has a `public_token` iff `visibility = link`; a group may hold a
+`public_token` (set by its owner once ended, S32) while `visibility` stays `group`. `create_journey` raises `invalid` for group+`link` and solo+`group`, and
 normalises group+`private` to `group`. Dart: `JourneyDraft.visibility` defaults to
 `defaultVisibilityFor(kind)`; check with `validateJourneyVisibility(kind, visibility)`.
 
@@ -68,13 +83,13 @@ constraint (`23505` → `invalid`) — there is no lookup RPC.
 | metric_unit | text null | ≤ 16, e.g. "kg" |
 | hide_metric_default | bool | true for weight_loss; copied to `memberships.hide_metric` on join |
 | start_date | date | local date in `timezone`; immutable |
-| duration_days | int null | 7..365, null = open |
+| duration_days | int null | 7..365, null = open; **v1.3** 1..366 for `origin = imported` |
 | timezone | text | IANA, e.g. `Asia/Ho_Chi_Minh`; immutable |
 | visibility | journey_visibility | see rules above |
 | status | journey_status | default `active` |
 | invite_code | text null unique | 8 chars `[A-Z0-9]`, group only, rotatable (`rotate_invite`) |
 | max_members | int | 1..10, default 10; solo is always 1 |
-| public_token | text null unique | **v1.1** 40 chars `[a-z0-9]`; non-null **iff** `visibility = link` (solo only). Revocable/rotatable via `set_public_link`. Dart: `Journey.publicToken` |
+| public_token | text null unique | **v1.1** 40 chars `[a-z0-9]`. Solo: non-null **iff** `visibility = link`; **v1.3** group: may be set while `visibility = group`. Only for ended/archived or imported journeys (S9). Revocable/rotatable via `set_public_link(journey, enabled, reset)`. Dart: `Journey.publicToken` |
 
 Clients may only `update` `title, emoji, metric_name, metric_unit, hide_metric_default, duration_days`
 (owner, active journey). Everything else goes through RPCs.
@@ -191,16 +206,17 @@ All RPCs are `SECURITY DEFINER`, require a signed-in user, and raise errors by m
 | `moderate_checkin` | **v1.2, service_role only** `p_checkin` → sets `moderated_at` + `deleted_at` | moderators |
 | `end_journey` | `journey` → journeys row | `JourneyRepository.end` |
 | `delete_journey` | `journey` (owner alone only; tombstones rows, client then deletes its own media) | `JourneyRepository.delete` |
-| `set_public_link` | `journey, enabled` → token \| null | `JourneyRepository.setPublicLink` |
+| `set_public_link` | **v1.3** `journey, enabled, reset=false` → token \| null (S9: `invalid` unless ended/archived/imported) | `SharingRepository.setPublicLink` |
 | `group_today` | `journey` → `(user_id, username, display_name, avatar_path, role, checked_in, checkin_id, thumb_path, captured_at, current_streak)` | `GroupRepository.watchToday` → `MemberToday` |
-| `report_content` | `p_checkin, p_user, p_reason, p_note` → report id | `SafetyRepository.report` |
+| `report_content` | `p_checkin, p_user, p_reason, p_note, p_message=null` (**v1.3**) → report id | `SafetyRepository.report` |
 | `block_user` / `unblock_user` | `p_user` | `SafetyRepository.block` / `unblock` |
 | `journey_streak` | `journey, member, today=null` → `(current_streak, best_streak, completed_days)` | `computeMemberStreak` (local mirror) |
 | table upsert `check_ins` | on `(journey_id, user_id, local_date)` | `CheckInRepository.submit` |
 | table upsert `check_in_metrics` | **v1.2** on `checkin_id` | `CheckInRepository.submit` (outbox) |
 | table upsert `reactions` | on `(checkin_id, user_id)` | `GroupRepository.react` / `unreact` |
+| friends / sharing / consents / chat / insights | **v1.3** see [sharing.md](sharing.md) (`my_friends`, `share_journey`, `shared_journey`, `create_imported_journey`, `send_message`, `journey_insights`, ...) | `FriendRepository`, `SharingRepository`, `ShareConsentRepository`, `ChatRepository`, `InsightsRepository` |
 | Edge `delete-account` | `POST`, user JWT | `AuthRepository.deleteAccount` |
-| Edge `public-journey` | `GET ?token=<public_token>` → JSON (journey, streak, check-ins with signed URLs; metric/photos omitted per owner's `hide_metric`/`blur_media`) | `publicJourneyUri(supabaseUrl, token)` |
+| Edge `public-journey` | `GET ?token=<public_token>` → JSON (journey, story, origin, can_follow, frame, streak (solo live only), counts only with `show_counts`, check-ins with signed URLs; hidden-in-share and non-consenting authors dropped; metric/photos omitted per author `hide_metric`/`blur_media`); **v1.3** serves groups and records a hashed view | `publicJourneyUri(supabaseUrl, token)` |
 
 ## Errors
 Server error codes (exact strings) → Dart `OurneyErrorCode` (`fromWire`, `fromServer(message:, sqlstate:)`),
