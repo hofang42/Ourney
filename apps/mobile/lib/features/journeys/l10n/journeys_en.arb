@@ -108,5 +108,16 @@
   "journeys_privacyGroup": "Squad",
   "journeys_addJourney": "Add journey",
   "journeys_shelfEmpty": "Finished journeys rest here, ready to look back on.",
-  "journeys_activeEmpty": "Nothing running right now."
+  "journeys_activeEmpty": "Nothing running right now.",
+  "journeys_tagWeightLoss": "See small changes add up.",
+  "journeys_tagEnglish": "Keep the group moving.",
+  "journeys_tagTravel": "Save each day away.",
+  "journeys_tagCouple": "A shared table, remembered.",
+  "journeys_tagWorkout": "Show up, one run at a time.",
+  "journeys_tagCustom": "Build it your way.",
+  "journeys_modeSoloOnly": "Solo only",
+  "journeys_modeSoloGroup": "Solo · Group",
+  "journeys_modeCoupleOnly": "Couple only",
+  "journeys_styleLocked": "Style can't be changed later",
+  "journeys_moreOptions": "More options"
 }

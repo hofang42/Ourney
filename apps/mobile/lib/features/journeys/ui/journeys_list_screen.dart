@@ -174,9 +174,8 @@ class _HubHeader extends ConsumerWidget {
                     : l10n.journeys_greetingNamed(greeting, first),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(
-                  context,
-                ).textTheme.headlineSmall?.copyWith(height: 1.3),
+                style: Theme.of(context).textTheme.headlineSmall
+                    ?.copyWith(height: 1.3),
               ),
             ),
           ),
@@ -375,9 +374,7 @@ class HubSegments extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: s == value ? c.surfaceRaised : Colors.transparent,
-                      borderRadius: BorderRadius.circular(
-                        OurneyRadii.capsule,
-                      ),
+                      borderRadius: BorderRadius.circular(OurneyRadii.capsule),
                       boxShadow: s == value
                           ? const [
                               BoxShadow(
@@ -898,7 +895,11 @@ class _DashedBorderPainter extends CustomPainter {
 /// photo, or the journey icon on its style color), title, style dot + name,
 /// then streak, today status (icon + word, not color only) and visibility.
 class JourneyCard extends ConsumerWidget {
-  const JourneyCard({required this.journey, this.hideStreak = false, super.key});
+  const JourneyCard({
+    required this.journey,
+    this.hideStreak = false,
+    super.key,
+  });
 
   final Journey journey;
 
@@ -945,8 +946,10 @@ class JourneyCard extends ConsumerWidget {
         done ? l10n.journeys_checkedToday : l10n.journeys_notCheckedToday,
       _ => statusText,
     };
-    final (IconData privacyIcon, String privacyText) = switch (journey
-        .visibility) {
+    final (
+      IconData privacyIcon,
+      String privacyText,
+    ) = switch (journey.visibility) {
       JourneyVisibility.private => (
         Icons.lock_outline_rounded,
         l10n.journeys_privacyPrivate,

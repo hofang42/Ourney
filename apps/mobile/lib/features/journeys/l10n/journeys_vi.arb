@@ -330,5 +330,52 @@
   "journeys_activeEmpty": "Hiện chưa có hành trình nào đang chạy.",
   "@journeys_activeEmpty": {
     "description": "Empty Active segment."
+  },
+  "@journeys_pickTemplateTitle": {
+    "description": "Title of the template picker."
+  },
+  "journeys_tagWeightLoss": "Nhìn những thay đổi nhỏ cộng lại.",
+  "@journeys_tagWeightLoss": {
+    "description": "Template card tagline: Quiet Transformer."
+  },
+  "journeys_tagEnglish": "Giữ động lực cho cả nhóm.",
+  "@journeys_tagEnglish": {
+    "description": "Template card tagline: Accountability Squad."
+  },
+  "journeys_tagTravel": "Lưu lại từng ngày đi xa.",
+  "@journeys_tagTravel": {
+    "description": "Template card tagline: Memory Collectors."
+  },
+  "journeys_tagCouple": "Nhớ về từng khoảnh khắc chung.",
+  "@journeys_tagCouple": {
+    "description": "Template card tagline: Couple Rituals."
+  },
+  "journeys_tagWorkout": "Tiến lên qua từng buổi tập.",
+  "@journeys_tagWorkout": {
+    "description": "Template card tagline: Aesthetic Flexer."
+  },
+  "journeys_tagCustom": "Tạo theo cách của bạn.",
+  "@journeys_tagCustom": {
+    "description": "Template card tagline: Custom."
+  },
+  "journeys_modeSoloOnly": "Chỉ cá nhân",
+  "@journeys_modeSoloOnly": {
+    "description": "Template card footer: who can join."
+  },
+  "journeys_modeSoloGroup": "Cá nhân · Nhóm",
+  "@journeys_modeSoloGroup": {
+    "description": "Template card footer: who can join."
+  },
+  "journeys_modeCoupleOnly": "Chỉ cặp đôi",
+  "@journeys_modeCoupleOnly": {
+    "description": "Template card footer: who can join."
+  },
+  "journeys_styleLocked": "Phong cách không đổi được sau khi tạo",
+  "@journeys_styleLocked": {
+    "description": "Note under the create form's style header."
+  },
+  "journeys_moreOptions": "Tùy chọn khác",
+  "@journeys_moreOptions": {
+    "description": "Expands the advanced create options."
   }
 }

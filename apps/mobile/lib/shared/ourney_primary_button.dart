@@ -150,6 +150,9 @@ class _OurneyPrimaryButtonState extends State<OurneyPrimaryButton> {
           ),
           child: Center(
             widthFactor: widget.expand ? null : 1,
+            // Hug the button vertically: in a bottom bar the incoming
+            // height is unbounded-loose and must not be filled.
+            heightFactor: 1,
             child: AnimatedScale(
               scale: _pressed ? ourneyPressScale : 1,
               duration: OurneyMotion.movement(context, ourneyPressDuration),

@@ -6,19 +6,16 @@ import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/motion.dart';
 import '../../../app/theme/persona_theme.dart';
 import '../../../app/theme/tokens.dart';
-import '../../../shared/ourney_card.dart';
-import '../../../shared/persona_pill.dart';
-import '../../../shared/template_icons.dart';
+import '../../../shared/layout.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 
-/// Descriptor of one of the 6 persona style options on `TemplatePickerScreen` (J2).
-class _PersonaTemplateOption {
-  const _PersonaTemplateOption({
+/// One style card of the template picker.
+class _TemplateOption {
+  const _TemplateOption({
     required this.keyName,
     required this.templateId,
     required this.skinId,
-    required this.emoji,
     required this.routePath,
     this.isCouple = false,
   });
@@ -26,51 +23,41 @@ class _PersonaTemplateOption {
   final String keyName;
   final TemplateId templateId;
   final PersonaSkinId skinId;
-  final String emoji;
   final String routePath;
   final bool isCouple;
+
+  bool get isCustom => templateId == TemplateId.custom && !isCouple;
 }
 
-/// **Task J2** (`TemplatePickerScreen` — Step 1 of `/journeys/new`):
-/// - Lists all **6 persona style cards**: the 5 `JourneyTemplate`s plus the
-///   6th `Couple Rituals` option (`TemplateId.custom` with `💞`, `PersonaSkinId.coupleRituals`).
-/// - **Live Chameleon Preview**: selecting or previewing any card morphs the
-///   screen's theme (`AnimatedTheme`, `320ms`) and displays that persona's
-///   reference design board (`designAssetForPersona(skinId)`).
-/// - Tapping a card navigates directly to its create form (`template-<wireName>`
-///   or `template-couple`).
-class TemplatePickerScreen extends StatefulWidget {
+/// **Template picker** (Step 1 of `/journeys/new`, V1.0 `TemplateGrid`):
+/// a two-column grid of style cards, each painted in its journey style
+/// (paper, ink, accent) with the persona's reference photo, tagline and
+/// who can join, plus a dashed **Custom** card.
+///
+/// The 6th style, Couple Rituals, is `TemplateId.custom` with the `💞`
+/// preset. Tapping a card opens its create form.
+class TemplatePickerScreen extends StatelessWidget {
   const TemplatePickerScreen({super.key});
 
-  @override
-  State<TemplatePickerScreen> createState() => _TemplatePickerScreenState();
-}
-
-class _TemplatePickerScreenState extends State<TemplatePickerScreen> {
-  PersonaSkinId _previewSkin = PersonaSkinId.quietTransformer;
-
-  List<_PersonaTemplateOption> _buildOptions() => [
+  static List<_TemplateOption> _options() => [
     for (final t in allTemplates.where((t) => t.id != TemplateId.custom))
-      _PersonaTemplateOption(
+      _TemplateOption(
         keyName: t.id.wireName,
         templateId: t.id,
         skinId: t.personaSkinId,
-        emoji: t.emoji,
         routePath: JourneysPaths.newFromTemplate(t.id),
       ),
-    _PersonaTemplateOption(
+    _TemplateOption(
       keyName: 'couple',
       templateId: TemplateId.custom,
       skinId: PersonaSkinId.coupleRituals,
-      emoji: '💞',
       routePath: JourneysPaths.newCoupleRitual,
       isCouple: true,
     ),
-    _PersonaTemplateOption(
+    _TemplateOption(
       keyName: TemplateId.custom.wireName,
       templateId: TemplateId.custom,
       skinId: PersonaSkinId.minimalistHabit,
-      emoji: '✨',
       routePath: JourneysPaths.newFromTemplate(TemplateId.custom),
     ),
   ];
@@ -78,198 +65,265 @@ class _TemplatePickerScreenState extends State<TemplatePickerScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
-    final brightness = Theme.of(context).brightness;
-    final en = Localizations.localeOf(context).languageCode == 'en';
-    final options = _buildOptions();
-    final previewPersona = OurneyPersonaTheme.forSkin(_previewSkin, brightness);
-    final previewAsset = designAssetForPersona(_previewSkin);
-
-    return AnimatedTheme(
-      data: buildAppTheme(brightness, _previewSkin).copyWith(
-        scaffoldBackgroundColor: previewPersona.background,
-      ),
-      duration: OurneyMotion.duration(context, OurneyDurations.personaTheme),
-      curve: Curves.easeOutCubic,
-      child: Builder(
-        builder: (context) {
-          final pTheme = OurneyPersonaTheme.of(context);
-          final text = Theme.of(context).textTheme;
-          return Scaffold(
-            key: const ValueKey('journeys-template-picker'),
-            backgroundColor: pTheme.background,
-            appBar: AppBar(
-              backgroundColor: pTheme.background,
-              foregroundColor: pTheme.ink,
-              title: Text(l10n.journeys_pickTemplateTitle),
-            ),
-            body: SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-                children: [
-                  for (final opt in options)
-                    Builder(
-                      builder: (context) {
-                        final tpl = templateFor(opt.templateId);
-                        final cardPersona = OurneyPersonaTheme.forSkin(
-                          opt.skinId,
-                          brightness,
-                        );
-                        final isPreviewed = _previewSkin == opt.skinId;
-                        final title = opt.isCouple
-                            ? l10n.journeys_templateCoupleTitle
-                            : (en ? tpl.titleEn : tpl.titleVi);
-                        final subtitle = opt.isCouple
-                            ? l10n.journeys_templateCoupleHint
-                            : (opt.templateId == TemplateId.custom
-                                  ? l10n.journeys_templateCustomHint
-                                  : l10n.journeys_templateDays(
-                                      tpl.defaultDurationDays,
-                                    ));
-
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: OurneySpacing.md,
-                          ),
-                          child: OurneyCard(
-                            key: ValueKey('template-${opt.keyName}'),
-                            onTap: () {
-                              setState(() => _previewSkin = opt.skinId);
-                              context.push(opt.routePath);
-                            },
-                            child: Row(
-                              children: [
-                                ExcludeSemantics(
-                                  child: Container(
-                                    width: 48,
-                                    height: 48,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: cardPersona.primaryAccent
-                                          .withValues(alpha: 0.16),
-                                      borderRadius: BorderRadius.circular(
-                                        OurneyRadii.chip,
-                                      ),
-                                      border: Border.all(
-                                        color: isPreviewed
-                                            ? cardPersona.primaryAccent
-                                            : cardPersona.primaryAccent
-                                                  .withValues(alpha: 0.35),
-                                        width: isPreviewed ? 2 : 1,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      journeyIcon(opt.emoji, opt.templateId),
-                                      size: 26,
-                                      color: cardPersona.primaryAccent,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: OurneySpacing.lg),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: text.titleMedium?.copyWith(
-                                          color: pTheme.ink,
-                                        ),
-                                      ),
-                                      const SizedBox(height: OurneySpacing.xs),
-                                      Text(
-                                        subtitle,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: text.bodySmall?.copyWith(
-                                          color: pTheme.inkMuted,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                IconButton(
-                                  key: ValueKey(
-                                    'template-preview-${opt.keyName}',
-                                  ),
-                                  tooltip: l10n.journeys_personaPreviewLabel,
-                                  onPressed: () =>
-                                      setState(() => _previewSkin = opt.skinId),
-                                  icon: Icon(
-                                    isPreviewed
-                                        ? Icons.visibility_rounded
-                                        : Icons.visibility_outlined,
-                                    color: isPreviewed
-                                        ? cardPersona.primaryAccent
-                                        : pTheme.inkMuted,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  color: pTheme.inkMuted,
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  const SizedBox(height: OurneySpacing.sm),
-                  // Live Chameleon Design Reference Board Preview
-                  Container(
-                    key: const ValueKey('template-design-preview-card'),
-                    padding: const EdgeInsets.all(OurneySpacing.md),
-                    decoration: BoxDecoration(
-                      color: pTheme.surface,
-                      borderRadius: BorderRadius.circular(pTheme.cardRadius),
-                      border: Border.all(
-                        color: pTheme.border,
-                        width: pTheme.borderWidth,
-                      ),
-                    ),
-                    child: Column(
+    final options = _options();
+    final c = OurneyColors.of(context);
+    return Scaffold(
+      key: const ValueKey('journeys-template-picker'),
+      backgroundColor: c.bg,
+      appBar: AppBar(backgroundColor: c.bg),
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final pad = OurneyLayout.horizontalPadding(width);
+            final maxW = OurneyLayout.contentMaxWidth(width);
+            const gap = 10.0;
+            final rows = <Widget>[];
+            for (var i = 0; i < options.length; i += 2) {
+              rows.add(
+                Padding(
+                  padding: const EdgeInsets.only(bottom: gap),
+                  child: IntrinsicHeight(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: PersonaPill(
-                            icon: Icons.palette_rounded,
-                            emphasized: true,
-                            label: l10n.journeys_personaPreviewLabel,
-                          ),
-                        ),
-                        const SizedBox(height: OurneySpacing.sm),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: AspectRatio(
-                            aspectRatio: 16 / 10,
-                            child: Image.asset(
-                              previewAsset,
-                              key: ValueKey('template-asset-$previewAsset'),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => ColoredBox(
-                                color: pTheme.surfaceElevated,
-                                child: Center(
-                                  child: Icon(
-                                    Icons.image_outlined,
-                                    color: pTheme.inkMuted,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                        Expanded(child: _TemplateCard(option: options[i])),
+                        const SizedBox(width: gap),
+                        Expanded(
+                          child: i + 1 < options.length
+                              ? _TemplateCard(option: options[i + 1])
+                              : const SizedBox.shrink(),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
+              );
+            }
+            return Center(
+              child: SizedBox(
+                width: maxW,
+                child: ListView(
+                  padding: EdgeInsets.fromLTRB(pad, 4, pad, 32),
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        l10n.journeys_pickTemplateTitle,
+                        style: Theme.of(context).textTheme.headlineLarge,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ...rows,
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
+  }
+}
+
+class _TemplateCard extends StatelessWidget {
+  const _TemplateCard({required this.option});
+
+  final _TemplateOption option;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    final brightness = Theme.of(context).brightness;
+    final en = Localizations.localeOf(context).languageCode == 'en';
+    final style = OurneyPersonaTheme.forSkin(option.skinId, brightness);
+    final c = OurneyColors.of(context);
+    final tpl = templateFor(option.templateId);
+    final title = option.isCouple
+        ? l10n.journeys_templateCoupleTitle
+        : (en ? tpl.titleEn : tpl.titleVi);
+    final tagline = switch (option.templateId) {
+      _ when option.isCouple => l10n.journeys_tagCouple,
+      TemplateId.weightLoss => l10n.journeys_tagWeightLoss,
+      TemplateId.englishDaily => l10n.journeys_tagEnglish,
+      TemplateId.travel => l10n.journeys_tagTravel,
+      TemplateId.workout30 => l10n.journeys_tagWorkout,
+      TemplateId.custom => l10n.journeys_tagCustom,
+    };
+    final mode = switch (option.templateId) {
+      _ when option.isCouple => l10n.journeys_modeCoupleOnly,
+      TemplateId.weightLoss => l10n.journeys_modeSoloOnly,
+      _ => l10n.journeys_modeSoloGroup,
+    };
+    final days = option.isCustom
+        ? null
+        : l10n.journeys_templateDays(tpl.defaultDurationDays);
+
+    final bg = option.isCustom ? c.surface : style.background;
+    final ink = option.isCustom ? c.ink : style.ink;
+
+    final Widget content;
+    if (option.isCustom) {
+      content = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: c.surfaceSunken,
+            ),
+            child: Icon(Icons.add_rounded, color: ink),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: displayStyle(size: 15, weight: 700, height: 1.3, color: ink),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            tagline,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: kBodyFont,
+              fontSize: 11,
+              height: 1.4,
+              color: ink.withValues(alpha: 0.72),
+            ),
+          ),
+        ],
+      );
+    } else {
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 104,
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: style.primaryAccent, width: 5),
+              ),
+            ),
+            child: Image.asset(
+              designAssetForPersona(option.skinId),
+              fit: BoxFit.cover,
+              excludeFromSemantics: true,
+              errorBuilder: (_, _, _) =>
+                  ColoredBox(color: style.surfaceElevated),
+            ),
+          ),
+          const SizedBox(height: 9),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: displayStyle(size: 15, weight: 700, height: 1.3, color: ink),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            tagline,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: kBodyFont,
+              fontSize: 11,
+              height: 1.4,
+              color: ink.withValues(alpha: 0.78),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Spacer(),
+          Text(
+            [mode, ?days].join(' · ').toUpperCase(),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: kBodyFont,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+              height: 1.35,
+              color: ink,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: [title, tagline, mode, ?days].join(', '),
+      excludeSemantics: true,
+      child: Material(
+        color: bg,
+        child: InkWell(
+          key: ValueKey('template-${option.keyName}'),
+          onTap: () => context.push(option.routePath),
+          child: AnimatedContainer(
+            duration: OurneyMotion.duration(
+              context,
+              OurneyDurations.personaTheme,
+            ),
+            constraints: const BoxConstraints(minHeight: 220),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              border: option.isCustom
+                  ? null
+                  : Border.all(
+                      color: brightness == Brightness.dark ? c.border : ink,
+                    ),
+            ),
+            foregroundDecoration: option.isCustom
+                ? _DashedDecoration(color: c.border)
+                : null,
+            child: content,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dashed outline for the Custom card (V1.0 `border-style: dashed`).
+class _DashedDecoration extends Decoration {
+  const _DashedDecoration({required this.color});
+
+  final Color color;
+
+  @override
+  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
+      _DashedPainter(color);
+}
+
+class _DashedPainter extends BoxPainter {
+  _DashedPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
+    final size = configuration.size;
+    if (size == null) return;
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    final r = (offset & size).deflate(0.5);
+    void line(Offset a, Offset b) {
+      final length = (b - a).distance;
+      final dir = (b - a) / length;
+      for (var d = 0.0; d < length; d += 7) {
+        final end = d + 4 > length ? length : d + 4;
+        canvas.drawLine(a + dir * d, a + dir * end, paint);
+      }
+    }
+
+    line(r.topLeft, r.topRight);
+    line(r.topRight, r.bottomRight);
+    line(r.bottomRight, r.bottomLeft);
+    line(r.bottomLeft, r.topLeft);
   }
 }

@@ -14,9 +14,9 @@ import '../../../app/theme/motion.dart';
 import '../../../app/theme/persona_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../shared/chunky_button.dart';
+import '../../../shared/color_utils.dart';
 import '../../../shared/ourney_chip.dart';
-import '../../../shared/persona_pill.dart';
+import '../../../shared/ourney_primary_button.dart';
 import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
@@ -25,9 +25,11 @@ import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_errors.dart';
 
-/// Step 2 of the create flow (`/journeys/new/:template`): title, emoji,
-/// solo/group, duration, optional metric, visibility, time zone (FR-B2),
-/// seeded from the template (FR-B7 defaults for weight loss).
+/// Step 2 of the create flow (`/journeys/new/:template`), V1.0 "Quick
+/// setup": the whole screen takes the chosen style (paper, ink, accent);
+/// name, solo/group and duration up front; icon, metric, privacy, link and
+/// time zone under **More options** (FR-B2), seeded from the template
+/// (FR-B7 defaults for weight loss open those options so they are seen).
 class CreateJourneyScreen extends ConsumerStatefulWidget {
   const CreateJourneyScreen({
     required this.templateId,
@@ -65,6 +67,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
   final _metricUnit = TextEditingController();
   bool _submitted = false;
   bool _busy = false;
+
+  /// Null until the form exists: then opened when the template preset
+  /// touches privacy (weight loss hides kg and blurs shares).
+  bool? _moreOpen;
 
   /// One id per form: retrying after a lost response (offline, timeout)
   /// returns the same journey instead of creating a duplicate.
@@ -155,6 +161,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final tz = timezone.value ?? (timezone.hasError ? 'UTC' : null);
     if (tz != null) _form ??= _initForm(tz);
     final form = _form;
+    if (form != null) _moreOpen ??= form.trackMetric || form.blurOnShare;
 
     final skin = form == null
         ? personaSkinForTemplate(
@@ -170,9 +177,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final pTheme = OurneyPersonaTheme.forSkin(skin, brightness);
 
     return AnimatedTheme(
-      data: buildAppTheme(brightness, skin).copyWith(
-        scaffoldBackgroundColor: pTheme.background,
-      ),
+      data: buildAppTheme(
+        brightness,
+        skin,
+      ).copyWith(scaffoldBackgroundColor: pTheme.background),
       duration: OurneyMotion.duration(context, OurneyDurations.personaTheme),
       curve: Curves.easeOutCubic,
       child: Builder(
@@ -182,9 +190,9 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           appBar: AppBar(
             backgroundColor: pTheme.background,
             foregroundColor: pTheme.ink,
-            title: Text(l10n.journeys_createTitle),
           ),
           body: SafeArea(
+            top: false,
             child: form == null
                 ? Center(
                     child: CircularProgressIndicator(
@@ -193,6 +201,22 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                   )
                 : _buildForm(innerContext, form, skin),
           ),
+          bottomNavigationBar: form == null
+              ? null
+              : SafeArea(
+                  minimum: const EdgeInsets.fromLTRB(
+                    OurneySpacing.screenMargin,
+                    OurneySpacing.sm,
+                    OurneySpacing.screenMargin,
+                    OurneySpacing.lg,
+                  ),
+                  child: OurneyPrimaryButton(
+                    key: const ValueKey('journey-create'),
+                    label: l10n.journeys_createButton,
+                    backgroundColor: pTheme.primaryAccent,
+                    onPressed: _busy ? null : _submit,
+                  ),
+                ),
         ),
       ),
     );
@@ -205,7 +229,6 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
   ) {
     final l10n = JourneysL10n.of(context);
     final pTheme = OurneyPersonaTheme.of(context);
-    final designAsset = designAssetForPersona(skin);
     final text = Theme.of(context).textTheme;
     final c = OurneyColors.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
@@ -225,11 +248,18 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
         : null;
 
     Widget label(String s) => Padding(
-      padding: const EdgeInsets.only(
-        top: OurneySpacing.xl,
-        bottom: OurneySpacing.sm,
+      padding: const EdgeInsets.only(top: 18, bottom: 7),
+      child: Semantics(
+        header: true,
+        child: Text(
+          s,
+          style: text.labelSmall?.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: pTheme.ink.withValues(alpha: 0.78),
+          ),
+        ),
       ),
-      child: Semantics(header: true, child: Text(s, style: text.titleMedium)),
     );
 
     Widget note(IconData icon, String s) => Padding(
@@ -237,67 +267,66 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 18, color: c.inkMuted),
+          Icon(icon, size: 16, color: pTheme.inkMuted),
           const SizedBox(width: OurneySpacing.xs),
-          Expanded(child: Text(s, style: text.bodySmall)),
+          Expanded(
+            child: Text(
+              s,
+              style: text.bodySmall?.copyWith(color: pTheme.inkMuted),
+            ),
+          ),
         ],
       ),
     );
 
+    final more = _moreOpen ?? false;
+    final metricMissing = show && errors.metricName == true;
+    if (metricMissing && !more) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _moreOpen = true);
+      });
+    }
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         OurneySpacing.screenMargin,
-        OurneySpacing.sm,
+        0,
         OurneySpacing.screenMargin,
         OurneySpacing.xxl,
       ),
       children: [
-        Container(
-          key: const ValueKey('journey-create-design-preview'),
-          padding: const EdgeInsets.all(OurneySpacing.md),
-          decoration: BoxDecoration(
-            color: pTheme.surface,
-            borderRadius: BorderRadius.circular(pTheme.cardRadius),
-            border: Border.all(
-              color: pTheme.border,
-              width: pTheme.borderWidth,
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: PersonaPill(
-                  icon: Icons.palette_rounded,
-                  emphasized: true,
-                  label: l10n.journeys_personaPreviewLabel,
-                ),
-              ),
-              const SizedBox(height: OurneySpacing.sm),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: Image.asset(
-                    designAsset,
-                    key: ValueKey('create-asset-$designAsset'),
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => ColoredBox(
-                      color: pTheme.surfaceElevated,
-                      child: Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          color: pTheme.inkMuted,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        ExcludeSemantics(
+          child: Text(
+            personaStyleName(skin).toUpperCase(),
+            key: const ValueKey('journey-create-style'),
+            style: eyebrowStyle(color: pTheme.ink),
           ),
         ),
+        const SizedBox(height: OurneySpacing.xl),
+        Container(
+          key: const ValueKey('journey-create-design-preview'),
+          width: 68,
+          height: 68,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: pTheme.primaryAccent,
+            border: Border.all(color: pTheme.ink),
+          ),
+          child: Icon(
+            journeyIcon(form.emoji, form.template.id),
+            size: 28,
+            color: readableOn(pTheme.primaryAccent),
+          ),
+        ),
+        const SizedBox(height: OurneySpacing.lg),
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.journeys_createTitle,
+            style: text.headlineLarge?.copyWith(color: pTheme.ink),
+          ),
+        ),
+        const SizedBox(height: OurneySpacing.sm),
         label(l10n.journeys_fieldTitle),
         TextField(
           key: const ValueKey('journey-title'),
@@ -309,20 +338,6 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             errorMaxLines: 3,
           ),
           onChanged: (v) => _update((f) => f.title = v),
-        ),
-        label(l10n.journeys_fieldEmoji),
-        Wrap(
-          spacing: OurneySpacing.sm,
-          runSpacing: OurneySpacing.sm,
-          children: [
-            for (final e in {form.template.emoji, ...journeyEmojiChoices})
-              _EmojiChoice(
-                emoji: e,
-                template: form.template.id,
-                selected: form.emoji == e,
-                onTap: () => _update((f) => f.emoji = e),
-              ),
-          ],
         ),
         label(l10n.journeys_fieldKind),
         Wrap(
@@ -394,104 +409,149 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             f.durationDays = n ?? (f.allowOpenEnded ? null : 0);
           }),
         ),
-        label(l10n.journeys_fieldMetric),
-        SwitchListTile(
-          key: const ValueKey('journey-metric'),
-          contentPadding: EdgeInsets.zero,
-          title: Text(l10n.journeys_fieldMetric),
-          subtitle: Text(l10n.journeys_fieldMetricHint),
-          value: form.trackMetric,
-          onChanged: (v) => _update((f) => f.trackMetric = v),
-        ),
-        if (form.trackMetric) ...[
-          TextField(
-            key: const ValueKey('journey-metric-name'),
-            controller: _metricName,
-            decoration: InputDecoration(
-              labelText: l10n.journeys_metricName,
-              errorText: show && errors.metricName == true
-                  ? l10n.journeys_errorMetricName
-                  : null,
+        const SizedBox(height: OurneySpacing.lg),
+        note(Icons.lock_outline_rounded, l10n.journeys_styleLocked),
+        const SizedBox(height: OurneySpacing.sm),
+        Semantics(
+          button: true,
+          expanded: more,
+          child: InkWell(
+            key: const ValueKey('journey-more-options'),
+            onTap: () => setState(() => _moreOpen = !more),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 48),
+              child: Row(
+                children: [
+                  Text(
+                    l10n.journeys_moreOptions,
+                    style: text.labelLarge?.copyWith(color: pTheme.ink),
+                  ),
+                  const SizedBox(width: 4),
+                  AnimatedRotation(
+                    turns: more ? 0.5 : 0,
+                    duration: OurneyMotion.duration(
+                      context,
+                      OurneyDurations.tap,
+                    ),
+                    child: Icon(
+                      Icons.expand_more_rounded,
+                      size: 20,
+                      color: pTheme.ink,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            onChanged: (v) => _update((f) => f.metricName = v),
           ),
-          const SizedBox(height: OurneySpacing.md),
-          TextField(
-            key: const ValueKey('journey-metric-unit'),
-            controller: _metricUnit,
-            decoration: InputDecoration(labelText: l10n.journeys_metricUnit),
-            onChanged: (v) => _update((f) => f.metricUnit = v),
-          ),
-          SwitchListTile(
-            key: const ValueKey('journey-hide-metric'),
-            contentPadding: EdgeInsets.zero,
-            secondary: const Icon(Icons.visibility_off_rounded),
-            title: Text(l10n.journeys_hideMetric),
-            value: form.hideMetric,
-            onChanged: (v) => _update((f) => f.hideMetric = v),
-          ),
-        ],
-        SwitchListTile(
-          key: const ValueKey('journey-blur'),
-          contentPadding: EdgeInsets.zero,
-          secondary: const Icon(Icons.blur_on_rounded),
-          title: Text(l10n.journeys_blurOnShare),
-          value: form.blurOnShare,
-          onChanged: (v) => _update((f) => f.blurOnShare = v),
         ),
-        label(l10n.journeys_fieldVisibility),
-        if (form.kind == JourneyKind.group)
-          note(Icons.lock_rounded, l10n.journeys_visibilityGroup)
-        else ...[
+        if (more) ...[
+          label(l10n.journeys_fieldEmoji),
           Wrap(
             spacing: OurneySpacing.sm,
             runSpacing: OurneySpacing.sm,
             children: [
-              OurneyChip(
-                key: const ValueKey('journey-visibility-private'),
-                label: l10n.journeys_visibilityPrivate,
-                icon: Icons.lock_rounded,
-                selected: form.soloVisibility == JourneyVisibility.private,
-                onTap: () => _update(
-                  (f) => f.soloVisibility = JourneyVisibility.private,
+              for (final e in {form.template.emoji, ...journeyEmojiChoices})
+                _EmojiChoice(
+                  emoji: e,
+                  template: form.template.id,
+                  selected: form.emoji == e,
+                  onTap: () => _update((f) => f.emoji = e),
                 ),
+            ],
+          ),
+          label(l10n.journeys_fieldMetric),
+          SwitchListTile(
+            key: const ValueKey('journey-metric'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.journeys_fieldMetric),
+            subtitle: Text(l10n.journeys_fieldMetricHint),
+            value: form.trackMetric,
+            onChanged: (v) => _update((f) => f.trackMetric = v),
+          ),
+          if (form.trackMetric) ...[
+            TextField(
+              key: const ValueKey('journey-metric-name'),
+              controller: _metricName,
+              decoration: InputDecoration(
+                labelText: l10n.journeys_metricName,
+                errorText: show && errors.metricName == true
+                    ? l10n.journeys_errorMetricName
+                    : null,
               ),
-              OurneyChip(
-                key: const ValueKey('journey-visibility-link'),
-                label: l10n.journeys_visibilityLink,
-                icon: Icons.link_rounded,
-                selected: form.soloVisibility == JourneyVisibility.link,
-                onTap: localOnly
-                    ? null
-                    : () => _update(
-                        (f) => f.soloVisibility = JourneyVisibility.link,
-                      ),
+              onChanged: (v) => _update((f) => f.metricName = v),
+            ),
+            const SizedBox(height: OurneySpacing.md),
+            TextField(
+              key: const ValueKey('journey-metric-unit'),
+              controller: _metricUnit,
+              decoration: InputDecoration(labelText: l10n.journeys_metricUnit),
+              onChanged: (v) => _update((f) => f.metricUnit = v),
+            ),
+            SwitchListTile(
+              key: const ValueKey('journey-hide-metric'),
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.visibility_off_rounded),
+              title: Text(l10n.journeys_hideMetric),
+              value: form.hideMetric,
+              onChanged: (v) => _update((f) => f.hideMetric = v),
+            ),
+          ],
+          SwitchListTile(
+            key: const ValueKey('journey-blur'),
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.blur_on_rounded),
+            title: Text(l10n.journeys_blurOnShare),
+            value: form.blurOnShare,
+            onChanged: (v) => _update((f) => f.blurOnShare = v),
+          ),
+          label(l10n.journeys_fieldVisibility),
+          if (form.kind == JourneyKind.group)
+            note(Icons.lock_rounded, l10n.journeys_visibilityGroup)
+          else ...[
+            Wrap(
+              spacing: OurneySpacing.sm,
+              runSpacing: OurneySpacing.sm,
+              children: [
+                OurneyChip(
+                  key: const ValueKey('journey-visibility-private'),
+                  label: l10n.journeys_visibilityPrivate,
+                  icon: Icons.lock_rounded,
+                  selected: form.soloVisibility == JourneyVisibility.private,
+                  onTap: () => _update(
+                    (f) => f.soloVisibility = JourneyVisibility.private,
+                  ),
+                ),
+                OurneyChip(
+                  key: const ValueKey('journey-visibility-link'),
+                  label: l10n.journeys_visibilityLink,
+                  icon: Icons.link_rounded,
+                  selected: form.soloVisibility == JourneyVisibility.link,
+                  onTap: localOnly
+                      ? null
+                      : () => _update(
+                          (f) => f.soloVisibility = JourneyVisibility.link,
+                        ),
+                ),
+              ],
+            ),
+            if (localOnly)
+              note(Icons.cloud_off_rounded, l10n.journeys_linkNeedsServer),
+          ],
+          label(l10n.journeys_fieldTimezone),
+          Row(
+            children: [
+              Icon(Icons.public_rounded, color: c.inkMuted),
+              const SizedBox(width: OurneySpacing.sm),
+              Expanded(
+                child: Text(
+                  form.timezone,
+                  key: const ValueKey('journey-timezone'),
+                  style: text.bodyLarge,
+                ),
               ),
             ],
           ),
-          if (localOnly)
-            note(Icons.cloud_off_rounded, l10n.journeys_linkNeedsServer),
         ],
-        label(l10n.journeys_fieldTimezone),
-        Row(
-          children: [
-            Icon(Icons.public_rounded, color: c.inkMuted),
-            const SizedBox(width: OurneySpacing.sm),
-            Expanded(
-              child: Text(
-                form.timezone,
-                key: const ValueKey('journey-timezone'),
-                style: text.bodyLarge,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: OurneySpacing.xxl),
-        ChunkyButton(
-          key: const ValueKey('journey-create'),
-          label: l10n.journeys_createButton,
-          onPressed: _busy ? null : _submit,
-        ),
       ],
     );
   }

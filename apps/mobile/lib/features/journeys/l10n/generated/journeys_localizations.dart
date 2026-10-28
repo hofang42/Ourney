@@ -200,7 +200,7 @@ abstract class JourneysL10n {
   /// **'Không tải được hành trình.'**
   String get journeys_loadError;
 
-  /// No description provided for @journeys_pickTemplateTitle.
+  /// Title of the template picker.
   ///
   /// In vi, this message translates to:
   /// **'Chọn kiểu hành trình'**
@@ -751,6 +751,72 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Hiện chưa có hành trình nào đang chạy.'**
   String get journeys_activeEmpty;
+
+  /// Template card tagline: Quiet Transformer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhìn những thay đổi nhỏ cộng lại.'**
+  String get journeys_tagWeightLoss;
+
+  /// Template card tagline: Accountability Squad.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ động lực cho cả nhóm.'**
+  String get journeys_tagEnglish;
+
+  /// Template card tagline: Memory Collectors.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu lại từng ngày đi xa.'**
+  String get journeys_tagTravel;
+
+  /// Template card tagline: Couple Rituals.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhớ về từng khoảnh khắc chung.'**
+  String get journeys_tagCouple;
+
+  /// Template card tagline: Aesthetic Flexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiến lên qua từng buổi tập.'**
+  String get journeys_tagWorkout;
+
+  /// Template card tagline: Custom.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo theo cách của bạn.'**
+  String get journeys_tagCustom;
+
+  /// Template card footer: who can join.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ cá nhân'**
+  String get journeys_modeSoloOnly;
+
+  /// Template card footer: who can join.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cá nhân · Nhóm'**
+  String get journeys_modeSoloGroup;
+
+  /// Template card footer: who can join.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ cặp đôi'**
+  String get journeys_modeCoupleOnly;
+
+  /// Note under the create form's style header.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phong cách không đổi được sau khi tạo'**
+  String get journeys_styleLocked;
+
+  /// Expands the advanced create options.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tùy chọn khác'**
+  String get journeys_moreOptions;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

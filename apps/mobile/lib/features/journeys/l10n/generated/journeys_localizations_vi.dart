@@ -392,4 +392,37 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_activeEmpty => 'Hiện chưa có hành trình nào đang chạy.';
+
+  @override
+  String get journeys_tagWeightLoss => 'Nhìn những thay đổi nhỏ cộng lại.';
+
+  @override
+  String get journeys_tagEnglish => 'Giữ động lực cho cả nhóm.';
+
+  @override
+  String get journeys_tagTravel => 'Lưu lại từng ngày đi xa.';
+
+  @override
+  String get journeys_tagCouple => 'Nhớ về từng khoảnh khắc chung.';
+
+  @override
+  String get journeys_tagWorkout => 'Tiến lên qua từng buổi tập.';
+
+  @override
+  String get journeys_tagCustom => 'Tạo theo cách của bạn.';
+
+  @override
+  String get journeys_modeSoloOnly => 'Chỉ cá nhân';
+
+  @override
+  String get journeys_modeSoloGroup => 'Cá nhân · Nhóm';
+
+  @override
+  String get journeys_modeCoupleOnly => 'Chỉ cặp đôi';
+
+  @override
+  String get journeys_styleLocked => 'Phong cách không đổi được sau khi tạo';
+
+  @override
+  String get journeys_moreOptions => 'Tùy chọn khác';
 }

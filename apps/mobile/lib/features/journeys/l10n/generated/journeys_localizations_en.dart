@@ -396,4 +396,37 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_activeEmpty => 'Nothing running right now.';
+
+  @override
+  String get journeys_tagWeightLoss => 'See small changes add up.';
+
+  @override
+  String get journeys_tagEnglish => 'Keep the group moving.';
+
+  @override
+  String get journeys_tagTravel => 'Save each day away.';
+
+  @override
+  String get journeys_tagCouple => 'A shared table, remembered.';
+
+  @override
+  String get journeys_tagWorkout => 'Show up, one run at a time.';
+
+  @override
+  String get journeys_tagCustom => 'Build it your way.';
+
+  @override
+  String get journeys_modeSoloOnly => 'Solo only';
+
+  @override
+  String get journeys_modeSoloGroup => 'Solo · Group';
+
+  @override
+  String get journeys_modeCoupleOnly => 'Couple only';
+
+  @override
+  String get journeys_styleLocked => 'Style can\'t be changed later';
+
+  @override
+  String get journeys_moreOptions => 'More options';
 }
