@@ -124,5 +124,6 @@
   "journeys_daysUnit": "days",
   "journeys_dateRange": "{start} — {end}",
   "journeys_sinceDate": "Since {start}",
-  "journeys_addMore": "Add more"
+  "journeys_addMore": "Add more",
+  "journeys_statCurrentShort": "Current"
 }

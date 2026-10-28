@@ -448,4 +448,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_addMore => 'Add more';
+
+  @override
+  String get journeys_statCurrentShort => 'Current';
 }

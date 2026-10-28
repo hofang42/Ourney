@@ -413,5 +413,9 @@
   },
   "@journeys_checkInNow": {
     "description": "Floating check-in button on the journey screen."
+  },
+  "journeys_statCurrentShort": "Hiện tại",
+  "@journeys_statCurrentShort": {
+    "description": "Short visible label of the current-streak stat column."
   }
 }

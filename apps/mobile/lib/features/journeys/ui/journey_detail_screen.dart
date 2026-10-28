@@ -531,6 +531,7 @@ class _Stats extends StatelessWidget {
               _StatCell(
                 key: const ValueKey('stat-current'),
                 label: l10n.journeys_statCurrent,
+                shortLabel: l10n.journeys_statCurrentShort,
                 semantics: app.streak_semantics(s.current),
                 icon: Icons.local_fire_department_rounded,
                 value: '${s.current}',
@@ -576,10 +577,14 @@ class _StatCell extends StatelessWidget {
     this.icon,
     this.unit,
     this.rule,
+    this.shortLabel,
     super.key,
   });
 
   final String label;
+
+  /// Visible label when [label] is too long for a quarter column.
+  final String? shortLabel;
   final String semantics;
   final String value;
   final IconData? icon;
@@ -612,7 +617,7 @@ class _StatCell extends StatelessWidget {
                   ],
                   Flexible(
                     child: Text(
-                      label.toUpperCase(),
+                      (shortLabel ?? label).toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: eyebrowStyle(

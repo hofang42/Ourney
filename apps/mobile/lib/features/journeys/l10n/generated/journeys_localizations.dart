@@ -847,6 +847,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Thêm ảnh'**
   String get journeys_addMore;
+
+  /// Short visible label of the current-streak stat column.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện tại'**
+  String get journeys_statCurrentShort;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

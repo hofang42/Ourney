@@ -303,19 +303,22 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           ),
         ),
         const SizedBox(height: OurneySpacing.xl),
-        Container(
-          key: const ValueKey('journey-create-design-preview'),
-          width: 68,
-          height: 68,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: pTheme.primaryAccent,
-            border: Border.all(color: pTheme.ink),
-          ),
-          child: Icon(
-            journeyIcon(form.emoji, form.template.id),
-            size: 28,
-            color: readableOn(pTheme.primaryAccent),
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Container(
+            key: const ValueKey('journey-create-design-preview'),
+            width: 68,
+            height: 68,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: pTheme.primaryAccent,
+              border: Border.all(color: pTheme.ink),
+            ),
+            child: Icon(
+              journeyIcon(form.emoji, form.template.id),
+              size: 28,
+              color: readableOn(pTheme.primaryAccent),
+            ),
           ),
         ),
         const SizedBox(height: OurneySpacing.lg),

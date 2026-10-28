@@ -36,7 +36,7 @@ void main() {
 
     testWidgets('English when the device is English', (tester) async {
       await pumpOurneyApp(tester, locale: const Locale('en'));
-      expect(find.text('Groups'), findsOneWidget);
+      expect(find.text('Squad'), findsOneWidget);
     });
 
     testWidgets('tabs switch between journeys, capture and groups', (

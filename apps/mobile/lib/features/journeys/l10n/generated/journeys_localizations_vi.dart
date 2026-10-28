@@ -444,4 +444,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_addMore => 'Thêm ảnh';
+
+  @override
+  String get journeys_statCurrentShort => 'Hiện tại';
 }
