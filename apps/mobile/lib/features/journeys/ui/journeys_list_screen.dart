@@ -392,6 +392,8 @@ class HubSegments extends StatelessWidget {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     alignment: Alignment.center,
+                    constraints: const BoxConstraints(minHeight: 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
                     decoration: BoxDecoration(
                       color: s == value ? c.surfaceRaised : Colors.transparent,
                       borderRadius: BorderRadius.circular(OurneyRadii.capsule),

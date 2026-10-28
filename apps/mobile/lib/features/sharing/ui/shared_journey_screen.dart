@@ -365,7 +365,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                           alignment: AlignmentDirectional.centerStart,
                           child: TextButton(
                             style: TextButton.styleFrom(
-                              minimumSize: const Size(48, 40),
+                              minimumSize: const Size(48, 48),
                               foregroundColor: c.ink,
                               padding: EdgeInsets.zero,
                             ),
@@ -656,7 +656,7 @@ class _Moment extends StatelessWidget {
                           onTap: onLike,
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(
-                              minHeight: 44,
+                              minHeight: 48,
                               minWidth: 56,
                             ),
                             child: Padding(
@@ -692,7 +692,7 @@ class _Moment extends StatelessWidget {
                       key: ValueKey('shared-reply-${photo.checkInId}'),
                       onPressed: onReply,
                       style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(48, 44),
+                        minimumSize: const Size(48, 48),
                         shape: const StadiumBorder(),
                         foregroundColor: c.ink,
                         side: BorderSide(color: rule),

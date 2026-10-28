@@ -538,6 +538,7 @@ class _PickCell extends StatelessWidget {
                   tooltip: l10n.sharing_removePhoto,
                   onPressed: onRemove,
                   style: IconButton.styleFrom(
+                    minimumSize: const Size(48, 48),
                     backgroundColor: c.bg.withValues(alpha: 0.8),
                     foregroundColor: c.ink,
                   ),
@@ -555,7 +556,7 @@ class _PickCell extends StatelessWidget {
             key: ValueKey('retell-date-$index'),
             onTap: onDate,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 44),
+              constraints: const BoxConstraints(minHeight: 48),
               child: Row(
                 children: [
                   Icon(

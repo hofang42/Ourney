@@ -400,7 +400,7 @@ class _CoverPicker extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Container(
-                    constraints: const BoxConstraints(minHeight: 44),
+                    constraints: const BoxConstraints(minHeight: 48),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
                       color: OurneyColors.light.surface.withValues(alpha: 0.92),

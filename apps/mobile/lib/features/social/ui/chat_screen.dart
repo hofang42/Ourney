@@ -546,68 +546,87 @@ class _Bubble extends StatelessWidget {
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
-        child: GestureDetector(
-          key: ValueKey('message-${m.id}'),
-          onLongPress: onLongPress,
-          child: Container(
-            padding: m.kind == MessageKind.photo || m.replyToThumbPath != null
-                ? const EdgeInsets.all(8)
-                : const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: mine ? c.primary : c.surface,
-              borderRadius: radius,
-              border: mine ? null : Border.all(color: c.divider),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (m.replyToThumbPath != null) ...[
-                  Row(
-                    key: const ValueKey('message-reply-context'),
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.social_replyingTo,
-                          style: TextStyle(
-                            fontFamily: kBodyFont,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            height: 1.35,
-                            color: muted,
+        child: Semantics(
+          onLongPressHint: MaterialLocalizations.of(context).showMenuTooltip,
+          child: GestureDetector(
+            key: ValueKey('message-${m.id}'),
+            onLongPress: onLongPress,
+            child: Container(
+              padding: m.kind == MessageKind.photo || m.replyToThumbPath != null
+                  ? const EdgeInsets.all(8)
+                  : const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: mine ? c.primary : c.surface,
+                borderRadius: radius,
+                border: mine ? null : Border.all(color: c.divider),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (m.replyToThumbPath != null) ...[
+                    Row(
+                      key: const ValueKey('message-reply-context'),
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.social_replyingTo,
+                            style: TextStyle(
+                              fontFamily: kBodyFont,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              height: 1.35,
+                              color: muted,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 56,
-                        height: 56,
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: _MediaImage(
+                            path: m.replyToThumbPath!,
+                            radius: 8,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 7),
+                  ],
+                  if (m.kind == MessageKind.photo && m.mediaPath != null) ...[
+                    Semantics(
+                      label: l10n.social_photoSemantics,
+                      image: true,
+                      child: AspectRatio(
+                        aspectRatio: 4 / 3,
                         child: _MediaImage(
-                          path: m.replyToThumbPath!,
-                          radius: 8,
+                          key: const ValueKey('message-photo'),
+                          path: m.mediaPath!,
+                          radius: 10,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 7),
-                ],
-                if (m.kind == MessageKind.photo && m.mediaPath != null) ...[
-                  Semantics(
-                    label: l10n.social_photoSemantics,
-                    image: true,
-                    child: AspectRatio(
-                      aspectRatio: 4 / 3,
-                      child: _MediaImage(
-                        key: const ValueKey('message-photo'),
-                        path: m.mediaPath!,
-                        radius: 10,
+                    ),
+                    if (body != null && body.isNotEmpty)
+                      const SizedBox(height: 6),
+                  ],
+                  if (body != null && body.isNotEmpty)
+                    Padding(
+                      padding:
+                          m.kind == MessageKind.photo ||
+                              m.replyToThumbPath != null
+                          ? const EdgeInsets.symmetric(horizontal: 4)
+                          : EdgeInsets.zero,
+                      child: Text(
+                        body,
+                        style: TextStyle(
+                          fontFamily: kBodyFont,
+                          fontSize: 15,
+                          height: 1.4,
+                          color: fg,
+                        ),
                       ),
                     ),
-                  ),
-                  if (body != null && body.isNotEmpty)
-                    const SizedBox(height: 6),
-                ],
-                if (body != null && body.isNotEmpty)
+                  const SizedBox(height: 4),
                   Padding(
                     padding:
                         m.kind == MessageKind.photo ||
@@ -615,32 +634,17 @@ class _Bubble extends StatelessWidget {
                         ? const EdgeInsets.symmetric(horizontal: 4)
                         : EdgeInsets.zero,
                     child: Text(
-                      body,
+                      status == null ? time : '$time · $status',
                       style: TextStyle(
                         fontFamily: kBodyFont,
-                        fontSize: 15,
-                        height: 1.4,
-                        color: fg,
+                        fontSize: 11,
+                        height: 1.3,
+                        color: muted,
                       ),
                     ),
                   ),
-                const SizedBox(height: 4),
-                Padding(
-                  padding:
-                      m.kind == MessageKind.photo || m.replyToThumbPath != null
-                      ? const EdgeInsets.symmetric(horizontal: 4)
-                      : EdgeInsets.zero,
-                  child: Text(
-                    status == null ? time : '$time · $status',
-                    style: TextStyle(
-                      fontFamily: kBodyFont,
-                      fontSize: 11,
-                      height: 1.3,
-                      color: muted,
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -255,7 +255,7 @@ class SharingPillButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(48, 44),
+        minimumSize: const Size(48, 48),
         tapTargetSize: MaterialTapTargetSize.padded,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         shape: const StadiumBorder(),
