@@ -97,4 +97,20 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_done => 'Xong';
+
+  @override
+  String get checkin_posted => 'Đã đăng khoảnh khắc';
+
+  @override
+  String get checkin_chainKept => 'Giữ được chuỗi.';
+
+  @override
+  String checkin_daysUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ngày',
+    );
+    return '$_temp0';
+  }
 }

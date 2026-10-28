@@ -9,10 +9,12 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
+import '../../app/theme/persona_theme.dart';
 import '../../app/theme/tokens.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../shared/chunky_button.dart';
+import '../../personas/persona_contract.dart';
 import '../../shared/empty_state.dart';
+import '../../shared/ourney_primary_button.dart';
 import '../reminders/data/reminder_scheduler.dart';
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
@@ -259,7 +261,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       key: const ValueKey('checkin-screen'),
       appBar: AppBar(
         leading: CloseButton(onPressed: _close),
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        centerTitle: true,
+        title: Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
       ),
       body: SafeArea(child: body),
     );
@@ -360,10 +368,15 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             OurneySpacing.screenMargin,
             OurneySpacing.lg,
           ),
-          child: ChunkyButton(
+          // V1.0 "Post moment": the journey's accent with its readable ink.
+          child: OurneyPrimaryButton(
             key: const ValueKey('checkin-post'),
             label: _posting ? l10n.checkin_posting : l10n.checkin_post,
             icon: Icons.send_rounded,
+            backgroundColor: OurneyPersonaTheme.forSkin(
+              personaSkinOf(journey),
+              Theme.of(context).brightness,
+            ).primaryAccent,
             onPressed: _posting ? null : () => _post(journey, photo),
           ),
         ),

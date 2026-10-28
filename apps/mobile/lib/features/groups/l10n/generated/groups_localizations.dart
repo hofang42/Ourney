@@ -553,6 +553,12 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'Hành trình đã kết thúc nên không mời thêm được.'**
   String get groups_inviteClosed;
+
+  /// Eyebrow above the Squad tab title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những người đồng hành'**
+  String get groups_eyebrow;
 }
 
 class _GroupsL10nDelegate extends LocalizationsDelegate<GroupsL10n> {

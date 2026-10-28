@@ -27,20 +27,37 @@ void main() {
     expect(find.text('Dang'), findsOneWidget);
   });
 
-  testWidgets('ChunkyButton sinks 3pt while pressed', (tester) async {
+  testWidgets('ChunkyButton presses to 0.96 and is a 52dp capsule', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       testApp(ChunkyButton(label: 'Dang', onPressed: () {})),
     );
-    double faceTop() => tester.getTopLeft(find.text('Dang')).dy;
-    final rest = faceTop();
+    double scale() => tester
+        .widget<AnimatedScale>(
+          find.ancestor(
+            of: find.text('Dang'),
+            matching: find.byType(AnimatedScale),
+          ),
+        )
+        .scale;
+    expect(scale(), 1);
+    expect(
+      tester
+          .getSize(
+            find.ancestor(of: find.text('Dang'), matching: find.byType(Row)),
+          )
+          .height,
+      lessThanOrEqualTo(52),
+    );
     final gesture = await tester.startGesture(
       tester.getCenter(find.text('Dang')),
     );
     await tester.pumpAndSettle();
-    expect(faceTop() - rest, 3);
+    expect(scale(), 0.96);
     await gesture.up();
     await tester.pumpAndSettle();
-    expect(faceTop(), rest);
+    expect(scale(), 1);
   });
 
   testWidgets('StreakFlame static under reduce motion', (tester) async {

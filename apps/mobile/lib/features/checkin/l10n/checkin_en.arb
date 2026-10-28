@@ -26,5 +26,8 @@
   "checkin_milestoneFinish": "You made it!",
   "checkin_milestoneMessage": "Show your friends what you did.",
   "checkin_share": "Share",
-  "checkin_done": "Done"
+  "checkin_done": "Done",
+  "checkin_posted": "Moment posted",
+  "checkin_chainKept": "Chain kept.",
+  "checkin_daysUnit": "{count, plural, one{day} other{days}}"
 }

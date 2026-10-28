@@ -97,4 +97,21 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_done => 'Done';
+
+  @override
+  String get checkin_posted => 'Moment posted';
+
+  @override
+  String get checkin_chainKept => 'Chain kept.';
+
+  @override
+  String checkin_daysUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days',
+      one: 'day',
+    );
+    return '$_temp0';
+  }
 }

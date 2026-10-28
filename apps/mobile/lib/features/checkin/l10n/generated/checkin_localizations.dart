@@ -259,6 +259,24 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Xong'**
   String get checkin_done;
+
+  /// Eyebrow of the success screen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đăng khoảnh khắc'**
+  String get checkin_posted;
+
+  /// Headline of the success screen without a milestone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ được chuỗi.'**
+  String get checkin_chainKept;
+
+  /// Unit after the big streak number.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{ngày}}'**
+  String checkin_daysUnit(int count);
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {
