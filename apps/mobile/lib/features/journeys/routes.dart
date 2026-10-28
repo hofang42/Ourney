@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:ourney_core/ourney_core.dart' show JourneyFrame;
 
 import '../../app/app_routes.dart';
 import '../../app/navigator_keys.dart';
@@ -37,6 +38,11 @@ final List<RouteBase> journeysRoutes = [
               return CreateJourneyScreen(
                 templateId: CreateJourneyScreen.parseTemplate(raw),
                 isCouplePreset: CreateJourneyScreen.isCoupleWire(raw),
+                // "Do this journey" (SCR-87) hands its frame over.
+                frame: state.extra is JourneyFrame
+                    ? state.extra! as JourneyFrame
+                    : null,
+                openMoreOptions: state.uri.queryParameters['more'] == '1',
               );
             },
           ),

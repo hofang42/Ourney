@@ -13,7 +13,10 @@ void main() {
 
   // V1.0: the brand coral carries ink labels, never white (5.41:1).
   test('ink on the brand >= 4.5:1, white on the brand is not allowed', () {
-    final r = contrast(OurneyColors.light.onPrimary, OurneyColors.light.primary);
+    final r = contrast(
+      OurneyColors.light.onPrimary,
+      OurneyColors.light.primary,
+    );
     expect(r, greaterThanOrEqualTo(4.5), reason: 'ratio $r');
     expect(
       contrast(white, OurneyColors.light.primary),

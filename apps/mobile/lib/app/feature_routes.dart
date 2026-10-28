@@ -10,6 +10,7 @@ import '../features/profile/routes.dart';
 import '../features/reminders/routes.dart';
 import '../features/safety/routes.dart';
 import '../features/share_card/routes.dart';
+import '../features/sharing/routes.dart';
 import '../features/social/routes.dart';
 
 /// Route registry. Each feature owns `lib/features/<name>/routes.dart`
@@ -36,6 +37,7 @@ abstract final class FeatureRoutes {
     ...safetyRoutes,
     ...remindersRoutes,
     ...socialRoutes,
+    ...sharingRoutes,
   ];
 
   /// Every feature's routes keyed by folder name (used by tests to enforce
@@ -52,5 +54,6 @@ abstract final class FeatureRoutes {
     'safety': safetyRoutes,
     'reminders': remindersRoutes,
     'social': socialRoutes,
+    'sharing': sharingRoutes,
   };
 }

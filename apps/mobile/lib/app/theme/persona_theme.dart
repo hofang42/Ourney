@@ -1,4 +1,5 @@
 import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -91,13 +92,15 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
       shareVariant: ShareCardVariant.filmContactSheet,
       background: isDark ? const Color(0xFF0B0B0E) : const Color(0xFFFAFAF7),
       surface: isDark ? const Color(0xFF16161B) : const Color(0xFFFFFFFF),
-      surfaceElevated:
-          isDark ? const Color(0xFF26262D) : const Color(0xFFF1F1EC),
+      surfaceElevated: isDark
+          ? const Color(0xFF26262D)
+          : const Color(0xFFF1F1EC),
       ink: isDark ? const Color(0xFFF4F4F6) : const Color(0xFF111114),
       inkMuted: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF5E5E66),
       primaryAccent: accent,
-      secondaryAccent:
-          isDark ? const Color(0xFF9D85FF) : const Color(0xFF6D4BF0),
+      secondaryAccent: isDark
+          ? const Color(0xFF9D85FF)
+          : const Color(0xFF6D4BF0),
       border: isDark ? const Color(0xFF26262D) : const Color(0xFFE6E6E0),
       cardRadius: 0,
       borderWidth: 1,
@@ -106,10 +109,7 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
   }
 
   /// Resolves the complete Light or Dark theme tokens for any of the 6 Personas.
-  static OurneyPersonaTheme forSkin(
-    PersonaSkinId skin,
-    Brightness brightness,
-  ) {
+  static OurneyPersonaTheme forSkin(PersonaSkinId skin, Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     switch (skin) {
       case PersonaSkinId.quietTransformer:
@@ -118,11 +118,13 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
           timelineVariant: TimelineLayoutVariant.connectedWeightCurve,
           cameraVariant: CameraHudVariant.ghostAlignVault,
           shareVariant: ShareCardVariant.sideBySideArchive,
-          background:
-              isDark ? const Color(0xFF0B0F12) : const Color(0xFFEFF3F0),
+          background: isDark
+              ? const Color(0xFF0B0F12)
+              : const Color(0xFFEFF3F0),
           surface: isDark ? const Color(0xFF151C21) : const Color(0xFFFFFFFF),
-          surfaceElevated:
-              isDark ? const Color(0xFF1E282F) : const Color(0xFFE2EAE5),
+          surfaceElevated: isDark
+              ? const Color(0xFF1E282F)
+              : const Color(0xFFE2EAE5),
           ink: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A),
           inkMuted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
           primaryAccent: const Color(0xFF10B981),
@@ -139,11 +141,13 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
           timelineVariant: TimelineLayoutVariant.steppingStoneQuest,
           cameraVariant: CameraHudVariant.studyTimerSnap,
           shareVariant: ShareCardVariant.squadPolaroidWall,
-          background:
-              isDark ? const Color(0xFF12131A) : const Color(0xFFF7F1E5),
+          background: isDark
+              ? const Color(0xFF12131A)
+              : const Color(0xFFF7F1E5),
           surface: isDark ? const Color(0xFF1D1F2B) : const Color(0xFFFFFDF9),
-          surfaceElevated:
-              isDark ? const Color(0xFF282B3A) : const Color(0xFFEDE3D2),
+          surfaceElevated: isDark
+              ? const Color(0xFF282B3A)
+              : const Color(0xFFEDE3D2),
           ink: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E1B18),
           inkMuted: isDark ? const Color(0xFFA8A8B8) : const Color(0xFF5C554E),
           primaryAccent: const Color(0xFFFF9F1C),
@@ -160,11 +164,13 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
           timelineVariant: TimelineLayoutVariant.scrapbookThread,
           cameraVariant: CameraHudVariant.disposableFilmStamp,
           shareVariant: ShareCardVariant.filmContactSheet,
-          background:
-              isDark ? const Color(0xFF141312) : const Color(0xFFF4EFE6),
+          background: isDark
+              ? const Color(0xFF141312)
+              : const Color(0xFFF4EFE6),
           surface: isDark ? const Color(0xFF1F1D1B) : const Color(0xFFFFFFFF),
-          surfaceElevated:
-              isDark ? const Color(0xFF2B2825) : const Color(0xFFE8E0D2),
+          surfaceElevated: isDark
+              ? const Color(0xFF2B2825)
+              : const Color(0xFFE8E0D2),
           ink: isDark ? const Color(0xFFF5F2EB) : const Color(0xFF231F1E),
           inkMuted: isDark ? const Color(0xFFA8A096) : const Color(0xFF6A625A),
           primaryAccent: const Color(0xFFC2452B),
@@ -181,11 +187,13 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
           timelineVariant: TimelineLayoutVariant.duoSplitTimeline,
           cameraVariant: CameraHudVariant.halfFrameDuo,
           shareVariant: ShareCardVariant.coupleMosaicPoster,
-          background:
-              isDark ? const Color(0xFF171215) : const Color(0xFFF9F0EE),
+          background: isDark
+              ? const Color(0xFF171215)
+              : const Color(0xFFF9F0EE),
           surface: isDark ? const Color(0xFF241C21) : const Color(0xFFFFFFFF),
-          surfaceElevated:
-              isDark ? const Color(0xFF31262D) : const Color(0xFFF1E2DF),
+          surfaceElevated: isDark
+              ? const Color(0xFF31262D)
+              : const Color(0xFFF1E2DF),
           ink: isDark ? const Color(0xFFFCE7F3) : const Color(0xFF261F22),
           inkMuted: isDark ? const Color(0xFFC4A8B5) : const Color(0xFF705E66),
           primaryAccent: const Color(0xFFE15B72),
@@ -202,11 +210,13 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
           timelineVariant: TimelineLayoutVariant.athleticTelemetry,
           cameraVariant: CameraHudVariant.stravaStickerStudio,
           shareVariant: ShareCardVariant.transparentStorySticker,
-          background:
-              isDark ? const Color(0xFF090A0F) : const Color(0xFFF3F4F6),
+          background: isDark
+              ? const Color(0xFF090A0F)
+              : const Color(0xFFF3F4F6),
           surface: isDark ? const Color(0xFF14161F) : const Color(0xFFFFFFFF),
-          surfaceElevated:
-              isDark ? const Color(0xFF1E2230) : const Color(0xFFE5E7EB),
+          surfaceElevated: isDark
+              ? const Color(0xFF1E2230)
+              : const Color(0xFFE5E7EB),
           ink: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF090A0F),
           inkMuted: isDark ? const Color(0xFF94A3B8) : const Color(0xFF4B5563),
           primaryAccent: const Color(0xFFFF4D6D),
@@ -223,11 +233,13 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
           timelineVariant: TimelineLayoutVariant.chainCalendarGrid,
           cameraVariant: CameraHudVariant.zeroText3Sec,
           shareVariant: ShareCardVariant.zenSummaryCard,
-          background:
-              isDark ? const Color(0xFF0E0E10) : const Color(0xFFF5F3EE),
+          background: isDark
+              ? const Color(0xFF0E0E10)
+              : const Color(0xFFF5F3EE),
           surface: isDark ? const Color(0xFF18181B) : const Color(0xFFFFFFFF),
-          surfaceElevated:
-              isDark ? const Color(0xFF232329) : const Color(0xFFEBE8E0),
+          surfaceElevated: isDark
+              ? const Color(0xFF232329)
+              : const Color(0xFFEBE8E0),
           ink: isDark ? const Color(0xFFF4F4F5) : const Color(0xFF1C1C1E),
           inkMuted: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF636366),
           primaryAccent: const Color(0xFFEA580C),
