@@ -11,11 +11,17 @@ import 'local_store.dart';
 import 'media_store.dart';
 import 'remote/remote_api.dart';
 import 'repositories/auth_repository.dart';
+import 'repositories/chat_repository.dart';
 import 'repositories/check_in_repository.dart';
+import 'repositories/friend_repository.dart';
 import 'repositories/group_repository.dart';
+import 'repositories/insights_repository.dart';
 import 'repositories/journey_repository.dart';
 import 'repositories/profile_repository.dart';
 import 'repositories/safety_repository.dart';
+import 'repositories/share_consent_repository.dart';
+import 'repositories/sharing_repository.dart';
+import 'social_context.dart';
 import 'sync/outbox.dart';
 import 'sync/sync_engine.dart';
 import 'sync/sync_triggers.dart';
@@ -29,7 +35,7 @@ import 'sync/sync_triggers.dart';
 ///   Supabase, pull sync by `updated_at` cursor, triggered on start,
 ///   connectivity regained, app resume and sign-in.
 class DataLayer {
-  DataLayer._(this.ctx, this.auth);
+  DataLayer._(this.ctx, this.auth, {this.social});
 
   factory DataLayer.localOnly({
     required AppDatabase db,
@@ -60,6 +66,8 @@ class DataLayer {
     Stream<List<ConnectivityResult>>? connectivity,
     bool listenLifecycle = true,
     bool autoSync = true,
+    Duration? socialPollInterval = socialPollInterval,
+    PeriodicTimerFactory? socialPeriodic,
   }) {
     final files = MediaFiles(mediaRoot);
     final journeyClock = clock ?? JourneyClock();
@@ -87,7 +95,15 @@ class DataLayer {
       sync: sync,
       newId: newId,
     );
-    final layer = DataLayer._(ctx, SupabaseAuthRepository(ctx, remote));
+    final layer = DataLayer._(
+      ctx,
+      SupabaseAuthRepository(ctx, remote),
+      social: SocialContext(
+        ctx,
+        pollInterval: socialPollInterval,
+        periodic: socialPeriodic,
+      ),
+    );
     if (autoSync) {
       layer._triggers = SyncTriggers(
         onTrigger: () => unawaited(layer.syncNow()),
@@ -103,6 +119,9 @@ class DataLayer {
 
   final DataContext ctx;
   final AuthRepository auth;
+
+  /// Social v1.3 plumbing; null in local-only mode (server-only features).
+  final SocialContext? social;
   SyncTriggers? _triggers;
   StreamSubscription<String?>? _authSub;
 
@@ -112,6 +131,21 @@ class DataLayer {
   late final GroupRepository groups = DataGroupRepository(ctx);
   late final SafetyRepository safety = DataSafetyRepository(ctx);
   MediaStore get media => ctx.media;
+
+  // Social v1.3: null in local-only mode (the providers stay unwired and the
+  // UI shows NeedsServerView).
+  late final FriendRepository? friends = _social(DataFriendRepository.new);
+  late final SharingRepository? sharing = _social(DataSharingRepository.new);
+  late final ShareConsentRepository? shareConsents = _social(
+    DataShareConsentRepository.new,
+  );
+  late final ChatRepository? chat = _social(DataChatRepository.new);
+  late final InsightsRepository? insights = _social(DataInsightsRepository.new);
+
+  T? _social<T>(T Function(SocialContext) build) {
+    final s = social;
+    return s == null ? null : build(s);
+  }
 
   bool get isLocalOnly => ctx.localOnly;
 
@@ -138,5 +172,6 @@ class DataLayer {
     await _authSub?.cancel();
     ctx.outbox?.dispose();
     ctx.sync?.dispose();
+    await social?.dispose();
   }
 }

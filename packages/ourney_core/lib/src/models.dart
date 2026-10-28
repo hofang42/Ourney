@@ -1,5 +1,7 @@
 // Contract (A0): plain immutable domain models mirroring docs/contracts/schema.md.
 
+import 'contracts/social.dart' show JourneyOrigin;
+
 /// A calendar date without time or timezone (journey-local).
 class LocalDate implements Comparable<LocalDate> {
   const LocalDate(this.year, this.month, this.day);
@@ -194,6 +196,7 @@ class Journey {
     this.inviteCode,
     this.maxMembers = 10,
     this.publicToken,
+    this.origin = JourneyOrigin.live,
   });
 
   final String id;
@@ -217,6 +220,9 @@ class Journey {
   /// `visibility == link` (solo only). Build the share URL with
   /// `publicJourneyUri`. Rotated/revoked by `JourneyRepository.setPublicLink`.
   final String? publicToken;
+
+  /// `journeys.origin` (v1.3): lived in the app, or retold from old photos.
+  final JourneyOrigin origin;
 
   LocalDate? get endDate => durationDays == null ? null : startDate.addDays(durationDays! - 1);
 }

@@ -102,8 +102,59 @@ DataLayer dataLayer(Ref ref) {
 Future<String> mediaFile(Ref ref, String storagePath) =>
     ref.watch(mediaStoreProvider).localFileFor(storagePath);
 
+/// The social repository of [layer] chosen by [pick], or the same
+/// "not wired" [UnimplementedError] as the placeholder providers when the
+/// layer runs local-only (the UI then shows NeedsServerView).
+T _socialOf<T>(DataLayer layer, T? Function(DataLayer) pick, String name) =>
+    pick(layer) ??
+    (throw UnimplementedError(
+      '$name is not wired: social features need a server (local-only mode).',
+    ));
+
+/// Overrides of the social v1.3 providers (only when a backend is
+/// configured; see createDataOverrides).
+List<Override> socialOverrides() => [
+  friendRepositoryProvider.overrideWith(
+    (ref) => _socialOf(
+      ref.watch(dataLayerProvider),
+      (l) => l.friends,
+      'friendRepositoryProvider',
+    ),
+  ),
+  sharingRepositoryProvider.overrideWith(
+    (ref) => _socialOf(
+      ref.watch(dataLayerProvider),
+      (l) => l.sharing,
+      'sharingRepositoryProvider',
+    ),
+  ),
+  shareConsentRepositoryProvider.overrideWith(
+    (ref) => _socialOf(
+      ref.watch(dataLayerProvider),
+      (l) => l.shareConsents,
+      'shareConsentRepositoryProvider',
+    ),
+  ),
+  chatRepositoryProvider.overrideWith(
+    (ref) => _socialOf(
+      ref.watch(dataLayerProvider),
+      (l) => l.chat,
+      'chatRepositoryProvider',
+    ),
+  ),
+  insightsRepositoryProvider.overrideWith(
+    (ref) => _socialOf(
+      ref.watch(dataLayerProvider),
+      (l) => l.insights,
+      'insightsRepositoryProvider',
+    ),
+  ),
+];
+
 /// Overrides for the placeholder repository providers of lib/app/providers.dart.
-List<Override> dataOverrides(DataEnvironment env) => [
+/// [social] also wires the social v1.3 providers (defaults to "a test
+/// transport is set"; createDataOverrides passes `config.hasBackend`).
+List<Override> dataOverrides(DataEnvironment env, {bool? social}) => [
   dataEnvironmentProvider.overrideWithValue(env),
   authRepositoryProvider.overrideWith(
     (ref) => ref.watch(dataLayerProvider).auth,
@@ -124,4 +175,5 @@ List<Override> dataOverrides(DataEnvironment env) => [
     (ref) => ref.watch(dataLayerProvider).safety,
   ),
   mediaStoreProvider.overrideWith((ref) => ref.watch(dataLayerProvider).media),
+  if (social ?? env.remote != null) ...socialOverrides(),
 ];
