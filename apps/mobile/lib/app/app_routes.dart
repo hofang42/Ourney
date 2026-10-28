@@ -38,6 +38,20 @@ abstract final class AppRoutes {
   static String share(String journeyId) =>
       '/share/${Uri.encodeComponent(journeyId)}';
 
+  // social — full screen on the root navigator. Need the server.
+  static const friends = '/friends';
+  static const friendsAdd = '/friends/add';
+  static const inbox = '/inbox';
+
+  /// 1-1 conversation tied to a journey (SCR-86).
+  static String chat(String conversationId) =>
+      '/chat/${Uri.encodeComponent(conversationId)}';
+
+  /// Friend invite link. Target of `ourney://friend/<token>` and
+  /// `https://ourney.app/f/<token>`.
+  static String friendInvite(String token) =>
+      '/f/${Uri.encodeComponent(token)}';
+
   /// Query parameter carrying the location to return to after onboarding or
   /// sign-in (set by the router redirect).
   static const fromParam = 'from';
@@ -56,6 +70,7 @@ const Map<String, List<String>> featureRoutePrefixes = {
   'share_card': ['/share'],
   'safety': [AppRoutes.safety],
   'reminders': [AppRoutes.reminders],
+  'social': [AppRoutes.friends, AppRoutes.inbox, '/chat', '/f'],
 };
 
 /// Paths reachable before onboarding/sign-in is complete. Everything else is
