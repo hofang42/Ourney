@@ -40,6 +40,10 @@ JourneysCompanion journeyFromRemote(RemoteRow r) => JourneysCompanion(
   inviteCode: Value(r['invite_code'] as String?),
   maxMembers: Value((r['max_members'] as num?)?.toInt() ?? 10),
   publicToken: Value(r['public_token'] as String?),
+  // Absent before v1.3 (0006): every older journey is lived.
+  origin: Value(
+    JourneyOrigin.fromWire(r['origin'] as String? ?? 'live').wireName,
+  ),
   updatedAt: Value(r['updated_at'] as String?),
 );
 
@@ -61,6 +65,7 @@ Journey journeyFromRow(JourneyRow r) => Journey(
   inviteCode: r.inviteCode,
   maxMembers: r.maxMembers,
   publicToken: r.publicToken,
+  origin: JourneyOrigin.fromWire(r.origin),
 );
 
 /// `create_journey` arguments (names from 0004_rpc.sql).

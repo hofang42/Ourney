@@ -55,5 +55,8 @@ Future<List<Override>> createDataOverrides(AppConfig config) async {
           ? () => Connectivity().onConnectivityChanged
           : null,
     ),
+    // Social v1.3 is server-only: local-only keeps those providers unwired
+    // (the UI shows NeedsServerView).
+    social: config.hasBackend,
   );
 }
