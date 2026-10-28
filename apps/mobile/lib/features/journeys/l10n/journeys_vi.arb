@@ -417,5 +417,21 @@
   "journeys_statCurrentShort": "Hiện tại",
   "@journeys_statCurrentShort": {
     "description": "Short visible label of the current-streak stat column."
+  },
+  "journeys_sharedSection": "Được chia sẻ",
+  "@journeys_sharedSection": {
+    "description": "Hub segment: journeys others shared with me"
+  },
+  "journeys_retell": "Kể lại hành trình đã qua",
+  "@journeys_retell": {
+    "description": "Shelf button: import an old journey from photos"
+  },
+  "journeys_imported": "Đã nhập",
+  "@journeys_imported": {
+    "description": "Row tag: journey retold from past photos"
+  },
+  "journeys_shareCard": "Tạo thẻ chia sẻ",
+  "@journeys_shareCard": {
+    "description": "Journey menu: make an image card"
   }
 }

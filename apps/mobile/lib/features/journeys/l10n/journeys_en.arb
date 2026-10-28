@@ -125,5 +125,9 @@
   "journeys_dateRange": "{start} — {end}",
   "journeys_sinceDate": "Since {start}",
   "journeys_addMore": "Add more",
-  "journeys_statCurrentShort": "Current"
+  "journeys_statCurrentShort": "Current",
+  "journeys_sharedSection": "Shared with me",
+  "journeys_retell": "Retell a past journey",
+  "journeys_imported": "Imported",
+  "journeys_shareCard": "Share card"
 }

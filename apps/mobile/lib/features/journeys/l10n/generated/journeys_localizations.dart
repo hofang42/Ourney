@@ -853,6 +853,30 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Hiện tại'**
   String get journeys_statCurrentShort;
+
+  /// Hub segment: journeys others shared with me
+  ///
+  /// In vi, this message translates to:
+  /// **'Được chia sẻ'**
+  String get journeys_sharedSection;
+
+  /// Shelf button: import an old journey from photos
+  ///
+  /// In vi, this message translates to:
+  /// **'Kể lại hành trình đã qua'**
+  String get journeys_retell;
+
+  /// Row tag: journey retold from past photos
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã nhập'**
+  String get journeys_imported;
+
+  /// Journey menu: make an image card
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thẻ chia sẻ'**
+  String get journeys_shareCard;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

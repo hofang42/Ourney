@@ -20,6 +20,7 @@ import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_primary_button.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../reminders/data/reminder_scheduler.dart';
+import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
@@ -27,7 +28,7 @@ import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_errors.dart';
 
-enum _Action { end, archive, delete }
+enum _Action { card, end, archive, delete }
 
 /// What the caller may do with a journey (FR-B6, docs/02 §9.1).
 class JourneyPermissions {
@@ -114,6 +115,7 @@ class JourneyDetailScreen extends ConsumerWidget {
         : null;
 
     final actions = [
+      if (!ref.watch(appConfigProvider).localOnly) _Action.card,
       if (perms.canEnd) _Action.end,
       if (perms.canArchive) _Action.archive,
       if (perms.canDelete) _Action.delete,
@@ -159,7 +161,9 @@ class JourneyDetailScreen extends ConsumerWidget {
               key: const ValueKey('journey-share'),
               tooltip: l10n.journeys_share,
               icon: const Icon(Icons.ios_share_rounded),
-              onPressed: () => context.push(AppRoutes.share(journey.id)),
+              onPressed: () => ref.read(appConfigProvider).localOnly
+                  ? context.push(AppRoutes.share(journey.id))
+                  : showShareJourneySheet(context, journey),
             ),
             if (actions.isNotEmpty)
               PopupMenuButton<_Action>(
@@ -173,6 +177,7 @@ class JourneyDetailScreen extends ConsumerWidget {
                       key: ValueKey('journey-action-${a.name}'),
                       value: a,
                       child: Text(switch (a) {
+                        _Action.card => l10n.journeys_shareCard,
                         _Action.end => l10n.journeys_endJourney,
                         _Action.archive => l10n.journeys_archive,
                         _Action.delete => l10n.journeys_delete,
@@ -377,6 +382,8 @@ class JourneyDetailScreen extends ConsumerWidget {
     // Ended, archived and deleted journeys lose their reminders (FR-G1).
     final reminders = ref.read(reminderSchedulerProvider);
     switch (action) {
+      case _Action.card:
+        unawaited(context.push(AppRoutes.share(journey.id)));
       case _Action.end:
         final ok = await confirmJourneyAction(
           context,

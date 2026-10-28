@@ -282,7 +282,14 @@ void main() {
         backend: true,
         userId: 'u1',
       );
-      expect(_key('journey-more'), findsNothing);
+      // Only the share card is offered, never end/archive/delete.
+      await tester.tap(_key('journey-more'));
+      await tester.pumpAndSettle();
+      expect(_key('journey-action-card'), findsOneWidget);
+      expect(_key('journey-action-end'), findsNothing);
+      expect(_key('journey-action-delete'), findsNothing);
+      await tester.tapAt(Offset.zero);
+      await tester.pumpAndSettle();
       expect(_key('journey-checkin'), findsOneWidget);
       expect(_key('journey-timeline'), findsOneWidget);
       await _tap(tester, _key('journey-open-group'));

@@ -447,4 +447,16 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_statCurrentShort => 'Hiện tại';
+
+  @override
+  String get journeys_sharedSection => 'Được chia sẻ';
+
+  @override
+  String get journeys_retell => 'Kể lại hành trình đã qua';
+
+  @override
+  String get journeys_imported => 'Đã nhập';
+
+  @override
+  String get journeys_shareCard => 'Tạo thẻ chia sẻ';
 }

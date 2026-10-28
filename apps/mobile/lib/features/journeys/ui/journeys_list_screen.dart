@@ -21,6 +21,8 @@ import '../../../shared/placeholder_screen.dart';
 import '../../../shared/profile_button.dart';
 import '../../../shared/template_icons.dart';
 import '../../profile/profile_providers.dart';
+import '../../sharing/sharing.dart';
+import '../../social/social.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
@@ -30,7 +32,7 @@ import 'journey_errors.dart';
 import 'journey_photo.dart';
 
 /// Hub segment: running journeys or the shelf (ended + archived).
-enum HubSegment { active, shelf }
+enum HubSegment { active, shelf, shared }
 
 /// **Global Hub** (`/journeys`, Ourney V1.0 design):
 ///
@@ -186,6 +188,7 @@ class _HubHeader extends ConsumerWidget {
               onPressed: onAdd,
               icon: const Icon(Icons.add_rounded),
             ),
+          const InboxButton(),
           const ProfileButton(),
         ],
       ),
@@ -243,6 +246,7 @@ class _HubBody extends ConsumerWidget {
     final rows = segment == HubSegment.active
         ? buckets.active
         : buckets.finished;
+    final online = !ref.watch(appConfigProvider).localOnly;
 
     return OurneyResponsiveBody(
       applyHorizontalPadding: false,
@@ -296,10 +300,16 @@ class _HubBody extends ConsumerWidget {
                     '${l10n.journeys_activeSection} · '
                     '${buckets.activeCount}/$maxActiveJourneys',
                 HubSegment.shelf: l10n.journeys_finishedSection,
+                if (online) HubSegment.shared: l10n.journeys_sharedSection,
               },
             ),
           ),
-          if (rows.isEmpty)
+          if (segment == HubSegment.shared)
+            const SharedWithMeList(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+            )
+          else if (rows.isEmpty)
             Padding(
               padding: EdgeInsets.symmetric(horizontal: pad, vertical: 24),
               child: Text(
@@ -326,6 +336,16 @@ class _HubBody extends ConsumerWidget {
                       ),
                   ],
                 ),
+              ),
+            ),
+          if (segment == HubSegment.shelf && online)
+            Padding(
+              padding: EdgeInsets.fromLTRB(pad, OurneySpacing.md, pad, 0),
+              child: OutlinedButton.icon(
+                key: const ValueKey('journeys-retell'),
+                onPressed: () => context.push(AppRoutes.retell),
+                icon: const Icon(Icons.history_edu_rounded),
+                label: Text(l10n.journeys_retell),
               ),
             ),
         ],
@@ -360,7 +380,7 @@ class HubSegments extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final s in HubSegment.values)
+          for (final s in labels.keys)
             Expanded(
               child: Semantics(
                 button: true,
@@ -1049,9 +1069,12 @@ class JourneyCard extends ConsumerWidget {
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
-                            dayText == null
-                                ? personaStyleName(skin)
-                                : '${personaStyleName(skin)} · $dayText',
+                            [
+                              personaStyleName(skin),
+                              ?dayText,
+                              if (journey.origin == JourneyOrigin.imported)
+                                l10n.journeys_imported,
+                            ].join(' · '),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: meta,

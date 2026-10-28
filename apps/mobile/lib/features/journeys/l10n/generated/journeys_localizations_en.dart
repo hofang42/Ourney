@@ -451,4 +451,16 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_statCurrentShort => 'Current';
+
+  @override
+  String get journeys_sharedSection => 'Shared with me';
+
+  @override
+  String get journeys_retell => 'Retell a past journey';
+
+  @override
+  String get journeys_imported => 'Imported';
+
+  @override
+  String get journeys_shareCard => 'Share card';
 }

@@ -13,6 +13,7 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../shared/avatar.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/ourney_card.dart';
+import '../social/social.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
 import 'widgets/delete_account_dialog.dart';
@@ -58,6 +59,10 @@ class ProfileScreen extends ConsumerWidget {
               const _GuestHeader()
             else
               _ProfileHeader(profile: profile),
+            if (!localOnly) ...[
+              const SizedBox(height: OurneySpacing.lg),
+              const FriendsProfileTile(),
+            ],
             const SizedBox(height: OurneySpacing.xl),
             _SectionTitle(l10n.profile_sectionSettings),
             const _SettingsSection(),
