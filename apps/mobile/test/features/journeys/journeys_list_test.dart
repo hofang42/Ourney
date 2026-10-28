@@ -37,7 +37,7 @@ void main() {
       );
     });
 
-    testWidgets('cards show day N/M, today status, streak; finished section', (
+    testWidgets('rows show day N/M and today status; Today card; shelf', (
       tester,
     ) async {
       final active = testJourney();
@@ -67,15 +67,27 @@ void main() {
         ]),
       );
 
-      expect(find.text('Running · 2/3'), findsOneWidget);
-      expect(find.text('Finished'), findsOneWidget);
+      expect(find.text('Active · 2/3'), findsOneWidget);
+      expect(find.text('Shelf'), findsOneWidget);
       expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
-      expect(find.text('Day 7 of 14'), findsNWidgets(2)); // j1 + ended j3
-      expect(find.text('Day 7'), findsOneWidget); // open-ended
-      expect(find.text('Checked in today'), findsOneWidget);
-      expect(find.text('Not checked in today'), findsOneWidget);
-      expect(find.text('Ended'), findsOneWidget);
+      expect(find.textContaining('Day 7 of 14'), findsOneWidget); // j1
+      expect(find.textContaining('· Day 7'), findsNWidgets(2)); // + open j2
+      expect(find.text('Done'), findsOneWidget);
+      expect(find.text('Not yet'), findsOneWidget);
+      // j2 has no photo today: it leads the Today card.
+      expect(find.byKey(const ValueKey('journeys-today-j2')), findsOneWidget);
+      expect(
+        find.text("1 journey still needs today's photo."),
+        findsOneWidget,
+      );
       expect(find.byKey(const ValueKey('journeys-new')), findsOneWidget);
+
+      // Ended journeys live on the shelf.
+      expect(find.byKey(const ValueKey('journey-card-j3')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('hub-segment-shelf')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journey-card-j3')), findsOneWidget);
+      expect(find.text('Ended'), findsOneWidget);
     });
 
     testWidgets('tapping a card opens the journey', (tester) async {
@@ -105,7 +117,9 @@ void main() {
         locale: const Locale('en'),
         journeys: FakeJourneyRepository(journeys: journeys),
       );
-      expect(find.text('Running · 3/3'), findsOneWidget);
+      expect(find.text('Active · 3/3'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('hub-segment-shelf')));
+      await tester.pumpAndSettle();
       expect(find.text('Archived'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('journeys-new')));

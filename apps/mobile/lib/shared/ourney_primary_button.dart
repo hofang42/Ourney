@@ -15,7 +15,8 @@ const double ourneyPressScale = 0.96;
 /// The primary call-to-action of every persona screen (F5).
 ///
 /// * 52dp high (44dp when [compact]) with a hit area of at least 48dp.
-/// * Corners follow `OurneyPersonaTheme.cardRadius`, capped to a capsule.
+/// * Always a capsule (V1.0 design: every button is fully rounded).
+/// * Disabled: sunken fill, muted ink, no press animation.
 /// * Presses to 0.96 in 110ms (skipped under reduced motion).
 /// * Draws a physical bottom lip (and a tactile border) when the persona
 ///   sets `bottomLipHeight > 0`.
@@ -70,13 +71,11 @@ class _OurneyPrimaryButtonState extends State<OurneyPrimaryButton> {
         : OurneyLayout.primaryButtonHeight;
     final lip = pTheme.bottomLipHeight;
     final base = widget.backgroundColor ?? pTheme.primaryAccent;
-    final face = _enabled ? base : base.withValues(alpha: 0.38);
+    final face = _enabled ? base : pTheme.surfaceElevated;
     final fg = _enabled
         ? widget.foregroundColor ?? readableOn(base)
         : pTheme.inkMuted;
-    final radius = BorderRadius.circular(
-      pTheme.cardRadius < height / 2 ? pTheme.cardRadius : height / 2,
-    );
+    final radius = BorderRadius.circular(height / 2);
 
     final label = Text(
       widget.label,
@@ -85,7 +84,7 @@ class _OurneyPrimaryButtonState extends State<OurneyPrimaryButton> {
       textAlign: TextAlign.center,
       style: TextStyle(
         fontFamily: kBodyFont,
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: FontWeight.w700,
         height: 1.3,
         color: fg,
@@ -107,7 +106,7 @@ class _OurneyPrimaryButtonState extends State<OurneyPrimaryButton> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (widget.icon != null) ...[
-            Icon(widget.icon, color: fg, size: 22),
+            Icon(widget.icon, color: fg, size: 19),
             const SizedBox(width: 8),
           ],
           Flexible(child: label),

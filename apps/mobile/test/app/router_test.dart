@@ -61,7 +61,7 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+      await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.capture);
     });
@@ -255,7 +255,7 @@ void main() {
       await back(tester);
 
       // Capture screen (no journeys yet: the empty state keeps the button).
-      await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+      await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
       await tester.pumpAndSettle();
       expect(location(c.container), AppRoutes.capture);
       await tapProfile(tester);

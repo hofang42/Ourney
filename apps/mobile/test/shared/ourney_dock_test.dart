@@ -32,8 +32,8 @@ void main() {
           expect(tester.takeException(), isNull);
           expect(find.text('Journeys'), findsOneWidget);
           expect(find.text('Nhóm'), findsOneWidget);
-          expect(find.byIcon(Icons.map_rounded), findsOneWidget);
-          expect(find.byIcon(Icons.groups_rounded), findsOneWidget);
+          expect(find.byIcon(Icons.map_outlined), findsOneWidget);
+          expect(find.byIcon(Icons.people_outline_rounded), findsOneWidget);
 
           final pill = find.byKey(const ValueKey('ourney-pill-button-face'));
           expect(tester.getSize(pill), const Size(56, 40));

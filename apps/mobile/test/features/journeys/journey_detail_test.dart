@@ -219,6 +219,7 @@ void main() {
       await _tap(tester, _key('journey-action-archive'));
       expect(h.journeys.calls, contains('archive:j1'));
       expect(h.location, AppRoutes.journeys);
+      await _tap(tester, _key('hub-segment-shelf'));
       expect(find.text('Archived'), findsOneWidget);
     });
 

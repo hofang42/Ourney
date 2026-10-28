@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../app/theme/tokens.dart';
 
-/// Surface card: radius 20, 1px border, optional tap target.
+/// Flat editorial surface (V1.0): square corners, 1px hairline border,
+/// optional tap target. Pass [radius] for the rare rounded card.
 class OurneyCard extends StatelessWidget {
   const OurneyCard({
     required this.child,
@@ -10,6 +11,7 @@ class OurneyCard extends StatelessWidget {
     this.padding = const EdgeInsets.all(OurneySpacing.lg),
     this.gradient,
     this.semanticLabel,
+    this.radius = OurneyRadii.none,
     super.key,
   });
 
@@ -18,17 +20,18 @@ class OurneyCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final Gradient? gradient;
   final String? semanticLabel;
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
     final c = OurneyColors.of(context);
-    final radius = BorderRadius.circular(OurneyRadii.card);
+    final radius = BorderRadius.circular(this.radius);
     final card = Ink(
       decoration: BoxDecoration(
         color: gradient == null ? c.surface : null,
         gradient: gradient,
         borderRadius: radius,
-        border: Border.all(color: c.border),
+        border: Border.all(color: c.divider),
       ),
       child: Padding(padding: padding, child: child),
     );

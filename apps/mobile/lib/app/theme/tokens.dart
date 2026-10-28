@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens from docs/03-design-system.md. Colors are defined in code.
+/// Shell design tokens ("Neutral by design", Ourney V1.0 Figma Make).
 ///
-/// Contrast rules:
-/// * White text on [primary] / gradients: bold text >= 18pt only (3:1).
-/// * Body text on a coral background: use [primaryDeep] as the fill and
-///   [onPrimaryDeep] as the text (>= 4.5:1 in both modes).
+/// The shell is neutral: off-white paper, near-black ink and one brand
+/// coral. Journey styles (personas) lead indicators and fills, never body
+/// copy.
+///
+/// Contrast rules (from the design's token review):
+/// * [ink] on [bg] 18.03:1, on [surface] 18.85:1.
+/// * Brand buttons use [primary] with [onPrimary] ink text (5.41:1); the
+///   brand is never a text color.
+/// * [inkMuted] on [surfaceSunken] 5.67:1.
 /// * [sun] is decorative only; text on it must be [ink] light value.
 @immutable
 class OurneyColors extends ThemeExtension<OurneyColors> {
@@ -24,6 +29,13 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     required this.sun,
     required this.border,
     required this.danger,
+    required this.surfaceSunken,
+    required this.surfaceRaised,
+    required this.divider,
+    required this.warning,
+    required this.flame,
+    required this.successSoft,
+    required this.onSuccessSoft,
   });
 
   final Color bg;
@@ -46,38 +58,71 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
   final Color border;
   final Color danger;
 
+  /// Segmented controls, muted chips and disabled buttons.
+  final Color surfaceSunken;
+
+  /// Selected segment / pressed surface in dark mode, raised chips.
+  final Color surfaceRaised;
+
+  /// Hairlines between list rows (lighter than [border]).
+  final Color divider;
+
+  /// "Ends in 3h" style deadline text; readable on [bg].
+  final Color warning;
+
+  /// Streak flame fill.
+  final Color flame;
+
+  /// "All done" check badge.
+  final Color successSoft;
+  final Color onSuccessSoft;
+
   static const light = OurneyColors(
-    bg: Color(0xFFFFF8F0),
+    bg: Color(0xFFFAFAF7),
     surface: Color(0xFFFFFFFF),
-    ink: Color(0xFF1A1A22),
-    inkMuted: Color(0xFF5C5C6B),
-    primary: Color(0xFFFF4D6D),
-    onPrimary: Color(0xFFFFFFFF),
-    primaryDeep: Color(0xFFE11D48),
-    onPrimaryDeep: Color(0xFFFFFFFF),
-    accent: Color(0xFF7C5CFF),
-    streak: Color(0xFFFF9F1C),
-    success: Color(0xFF2BD97C),
+    ink: Color(0xFF111114),
+    inkMuted: Color(0xFF5E5E66),
+    primary: Color(0xFFFF3B5C),
+    onPrimary: Color(0xFF111114),
+    primaryDeep: Color(0xFFFF3B5C),
+    onPrimaryDeep: Color(0xFF111114),
+    accent: Color(0xFF6D4BF0),
+    streak: Color(0xFFD97706),
+    success: Color(0xFF15803D),
     sun: Color(0xFFFFD93D),
-    border: Color(0x1F1A1A22),
-    danger: Color(0xFFB42318),
+    border: Color(0xFFD9D9D3),
+    danger: Color(0xFFD92D20),
+    surfaceSunken: Color(0xFFF1F1EC),
+    surfaceRaised: Color(0xFFFFFFFF),
+    divider: Color(0xFFE6E6E0),
+    warning: Color(0xFFB33A0A),
+    flame: Color(0xFFD97706),
+    successSoft: Color(0xFFDCFCE7),
+    onSuccessSoft: Color(0xFF166534),
   );
 
   static const dark = OurneyColors(
-    bg: Color(0xFF0F0F14),
-    surface: Color(0xFF1C1C24),
-    ink: Color(0xFFF5F5FA),
-    inkMuted: Color(0xFFA8A8B8),
-    primary: Color(0xFFFF6B88),
-    onPrimary: Color(0xFF0F0F14),
-    primaryDeep: Color(0xFFFB7185),
-    onPrimaryDeep: Color(0xFF0F0F14),
+    bg: Color(0xFF0B0B0E),
+    surface: Color(0xFF16161B),
+    ink: Color(0xFFF4F4F6),
+    inkMuted: Color(0xFFA1A1AA),
+    primary: Color(0xFFFF3B5C),
+    onPrimary: Color(0xFF111114),
+    primaryDeep: Color(0xFFFF3B5C),
+    onPrimaryDeep: Color(0xFF111114),
     accent: Color(0xFF9D85FF),
-    streak: Color(0xFFFFB547),
-    success: Color(0xFF3DE88C),
+    streak: Color(0xFFF59E0B),
+    success: Color(0xFF4ADE80),
     sun: Color(0xFFFFD93D),
-    border: Color(0x24F5F5FA),
-    danger: Color(0xFFFDA29B),
+    border: Color(0xFF34343A),
+    danger: Color(0xFFFF6B5E),
+    surfaceSunken: Color(0xFF101014),
+    surfaceRaised: Color(0xFF26262D),
+    divider: Color(0xFF26262D),
+    warning: Color(0xFFFF9A62),
+    flame: Color(0xFFF59E0B),
+    successSoft: Color(0xFF14532D),
+    onSuccessSoft: Color(0xFFDCFCE7),
   );
 
   /// Camera/media surfaces are always dark, regardless of theme.
@@ -86,13 +131,13 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFF4D6D), Color(0xFF7C5CFF)],
+    colors: [Color(0xFFFF3B5C), Color(0xFF6D4BF0)],
   );
 
   static const warmGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFF9F1C), Color(0xFFFF4D6D)],
+    colors: [Color(0xFFFF9F1C), Color(0xFFFF3B5C)],
   );
 
   static OurneyColors of(BuildContext context) =>
@@ -115,6 +160,13 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     Color? sun,
     Color? border,
     Color? danger,
+    Color? surfaceSunken,
+    Color? surfaceRaised,
+    Color? divider,
+    Color? warning,
+    Color? flame,
+    Color? successSoft,
+    Color? onSuccessSoft,
   }) => OurneyColors(
     bg: bg ?? this.bg,
     surface: surface ?? this.surface,
@@ -130,6 +182,13 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     sun: sun ?? this.sun,
     border: border ?? this.border,
     danger: danger ?? this.danger,
+    surfaceSunken: surfaceSunken ?? this.surfaceSunken,
+    surfaceRaised: surfaceRaised ?? this.surfaceRaised,
+    divider: divider ?? this.divider,
+    warning: warning ?? this.warning,
+    flame: flame ?? this.flame,
+    successSoft: successSoft ?? this.successSoft,
+    onSuccessSoft: onSuccessSoft ?? this.onSuccessSoft,
   );
 
   @override
@@ -151,6 +210,13 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
       sun: l(sun, other.sun),
       border: l(border, other.border),
       danger: l(danger, other.danger),
+      surfaceSunken: l(surfaceSunken, other.surfaceSunken),
+      surfaceRaised: l(surfaceRaised, other.surfaceRaised),
+      divider: l(divider, other.divider),
+      warning: l(warning, other.warning),
+      flame: l(flame, other.flame),
+      successSoft: l(successSoft, other.successSoft),
+      onSuccessSoft: l(onSuccessSoft, other.onSuccessSoft),
     );
   }
 }
@@ -166,9 +232,14 @@ abstract final class OurneySpacing {
   static const double screenMargin = 20;
 }
 
-/// Corner radii: chip 12, card 20, sheet 28, media 32, capsule buttons.
+/// Corner radii. The V1.0 shell is flat and editorial: today/journey cards
+/// are square-cornered and outlined, thumbnails 12, menus 16, sheets 28,
+/// every button a capsule.
 abstract final class OurneyRadii {
+  static const double none = 0;
+  static const double thumb = 12;
   static const double chip = 12;
+  static const double menu = 16;
   static const double card = 20;
   static const double sheet = 28;
   static const double media = 32;
@@ -178,7 +249,11 @@ abstract final class OurneyRadii {
 /// Fixed component sizes.
 abstract final class OurneySizes {
   /// Minimum touch target.
-  static const double minTap = 44;
+  static const double minTap = 48;
+
+  /// Primary button height (compact: 44).
+  static const double button = 52;
+  static const double buttonCompact = 44;
   static const double captureButton = 76;
   static const double chunkyEdge = 4;
   static const double chunkySink = 3;

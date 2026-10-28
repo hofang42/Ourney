@@ -51,13 +51,17 @@ class OurneyDock extends StatelessWidget {
           final pTheme = OurneyPersonaTheme.of(context);
           final l10n = AppLocalizations.of(context);
           return Material(
-            color: onCapture ? OurneyColors.cameraBg : pTheme.surface,
+            // V1.0: translucent paper bar over the content, hairline top.
+            color: onCapture
+                ? OurneyColors.cameraBg
+                : pTheme.surface.withValues(alpha: 0.92),
             child: DecoratedBox(
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: pTheme.border,
-                    width: pTheme.borderWidth,
+                    color: onCapture
+                        ? Colors.white.withValues(alpha: 0.12)
+                        : OurneyColors.of(context).divider,
                   ),
                 ),
               ),
@@ -71,10 +75,11 @@ class OurneyDock extends StatelessWidget {
                     height: height,
                     child: Row(
                       children: [
+                        const SizedBox(width: 26),
                         Expanded(
                           child: _DockTab(
                             key: const ValueKey('dock-journeys'),
-                            icon: Icons.map_rounded,
+                            icon: Icons.map_outlined,
                             label: l10n.nav_journeys,
                             selected: currentIndex == journeysIndex,
                             onTap: () => onSelect(journeysIndex),
@@ -90,12 +95,13 @@ class OurneyDock extends StatelessWidget {
                         Expanded(
                           child: _DockTab(
                             key: const ValueKey('dock-groups'),
-                            icon: Icons.groups_rounded,
+                            icon: Icons.people_outline_rounded,
                             label: l10n.nav_groups,
                             selected: currentIndex == groupsIndex,
                             onTap: () => onSelect(groupsIndex),
                           ),
                         ),
+                        const SizedBox(width: 26),
                       ],
                     ),
                   ),
@@ -126,8 +132,8 @@ class _DockTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pTheme = OurneyPersonaTheme.of(context);
-    // Selected = ink + bold label + accent bar (never color alone); the
-    // accent itself is not text-safe on every persona surface.
+    // Selected = ink + bold label (V1.0 dock has no indicator bar); the
+    // selected state is also announced through semantics.
     final color = selected ? pTheme.ink : pTheme.inkMuted;
     return Semantics(
       button: true,
@@ -145,28 +151,18 @@ class _DockTab extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: 26),
-              const SizedBox(height: 2),
+              Icon(icon, color: color, size: 22),
+              const SizedBox(height: 3),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: kBodyFont,
-                  fontSize: 12,
-                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 11,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                   height: 1.3,
                   color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              AnimatedContainer(
-                duration: OurneyMotion.duration(context, OurneyDurations.tap),
-                width: selected ? 20 : 0,
-                height: 3,
-                decoration: BoxDecoration(
-                  color: pTheme.primaryAccent,
-                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ],
@@ -206,7 +202,7 @@ class _DockSnap extends StatelessWidget {
               )
             : OurneyPillButton(
                 key: const ValueKey('dock-snap-pill'),
-                icon: Icons.photo_camera_rounded,
+                icon: Icons.photo_camera_outlined,
                 semanticLabel: label,
                 width: OurneyDock.pillSize.width,
                 height: OurneyDock.pillSize.height,

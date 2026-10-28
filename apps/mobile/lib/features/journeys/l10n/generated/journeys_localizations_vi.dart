@@ -16,7 +16,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_activeSection => 'Đang chạy';
 
   @override
-  String get journeys_finishedSection => 'Đã kết thúc';
+  String get journeys_finishedSection => 'Trên kệ';
 
   @override
   String get journeys_emptyTitle => 'Chưa có hành trình nào';
@@ -300,4 +300,96 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_noCheckIn => 'Chưa có ảnh cho ngày này';
+
+  @override
+  String get journeys_greetingMorning => 'Chào buổi sáng';
+
+  @override
+  String get journeys_greetingAfternoon => 'Chào buổi chiều';
+
+  @override
+  String get journeys_greetingEvening => 'Chào buổi tối';
+
+  @override
+  String journeys_greetingNamed(String greeting, String name) {
+    return '$greeting, $name';
+  }
+
+  @override
+  String journeys_remainingToday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Còn $count hành trình chờ ảnh hôm nay.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_allDonePrompt =>
+      'Hôm nay xong hết rồi. Hẹn bạn ngày mai.';
+
+  @override
+  String get journeys_allDoneTitle => 'Xong hết hôm nay';
+
+  @override
+  String get journeys_todayLabel => 'Hôm nay';
+
+  @override
+  String journeys_dayShort(int day, int total) {
+    return 'Ngày $day/$total';
+  }
+
+  @override
+  String get journeys_streakWord => 'ngày liên tiếp';
+
+  @override
+  String journeys_endsInHours(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: 'Còn $hours giờ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_endsSoon => 'Còn chưa tới 1 giờ';
+
+  @override
+  String get journeys_startsToday => 'Bắt đầu hôm nay';
+
+  @override
+  String get journeys_lastSevenDays => 'Bảy ngày gần nhất';
+
+  @override
+  String get journeys_snapToday => 'Chụp hôm nay';
+
+  @override
+  String get journeys_yourJourneys => 'Hành trình của bạn';
+
+  @override
+  String get journeys_rowDone => 'Xong';
+
+  @override
+  String get journeys_rowNotYet => 'Chưa';
+
+  @override
+  String get journeys_privacyPrivate => 'Riêng tư';
+
+  @override
+  String get journeys_privacyLink => 'Bật link';
+
+  @override
+  String get journeys_privacyGroup => 'Nhóm';
+
+  @override
+  String get journeys_addJourney => 'Thêm hành trình';
+
+  @override
+  String get journeys_shelfEmpty =>
+      'Hành trình đã xong sẽ nằm ở đây để bạn xem lại.';
+
+  @override
+  String get journeys_activeEmpty => 'Hiện chưa có hành trình nào đang chạy.';
 }

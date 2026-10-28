@@ -11,14 +11,15 @@ double contrast(Color a, Color b) => contrastRatio(a, b);
 void main() {
   const white = Color(0xFFFFFFFF);
 
-  test('white on light primaryDeep >= 4.5:1', () {
-    final r = contrast(white, OurneyColors.light.primaryDeep);
+  // V1.0: the brand coral carries ink labels, never white (5.41:1).
+  test('ink on the brand >= 4.5:1, white on the brand is not allowed', () {
+    final r = contrast(OurneyColors.light.onPrimary, OurneyColors.light.primary);
     expect(r, greaterThanOrEqualTo(4.5), reason: 'ratio $r');
-  });
-
-  test('white on light primary only reaches large-text 3:1', () {
-    final r = contrast(white, OurneyColors.light.primary);
-    expect(r, greaterThanOrEqualTo(3.0), reason: 'ratio $r');
+    expect(
+      contrast(white, OurneyColors.light.primary),
+      lessThan(4.5),
+      reason: 'white text on #FF3B5C fails AA, so no widget may use it',
+    );
   });
 
   for (final entry in {

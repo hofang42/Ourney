@@ -81,24 +81,25 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
     Color? ambientAccentOverride,
   }) {
     final isDark = brightness == Brightness.dark;
-    final accent = ambientAccentOverride ??
-        (isDark ? const Color(0xFFFF6B88) : const Color(0xFFFF4D6D));
+    // V1.0 shell: neutral paper + near-black ink + brand coral (#FF3B5C,
+    // always with ink text on top).
+    final accent = ambientAccentOverride ?? const Color(0xFFFF3B5C);
     return OurneyPersonaTheme(
       skinId: null,
       timelineVariant: TimelineLayoutVariant.scrapbookThread,
       cameraVariant: CameraHudVariant.zeroText3Sec,
       shareVariant: ShareCardVariant.filmContactSheet,
-      background: isDark ? const Color(0xFF0F0F14) : const Color(0xFFF6F2EA),
-      surface: isDark ? const Color(0xFF181820) : const Color(0xFFFFFFFF),
+      background: isDark ? const Color(0xFF0B0B0E) : const Color(0xFFFAFAF7),
+      surface: isDark ? const Color(0xFF16161B) : const Color(0xFFFFFFFF),
       surfaceElevated:
-          isDark ? const Color(0xFF22222E) : const Color(0xFFEDE6D8),
-      ink: isDark ? const Color(0xFFF5F5FA) : const Color(0xFF1A1A22),
-      inkMuted: isDark ? const Color(0xFFA0A0B2) : const Color(0xFF5C5C6B),
+          isDark ? const Color(0xFF26262D) : const Color(0xFFF1F1EC),
+      ink: isDark ? const Color(0xFFF4F4F6) : const Color(0xFF111114),
+      inkMuted: isDark ? const Color(0xFFA1A1AA) : const Color(0xFF5E5E66),
       primaryAccent: accent,
       secondaryAccent:
-          isDark ? const Color(0xFF9D85FF) : const Color(0xFF7C5CFF),
-      border: isDark ? const Color(0x1FF5F5FA) : const Color(0x1A1A1A22),
-      cardRadius: 22,
+          isDark ? const Color(0xFF9D85FF) : const Color(0xFF6D4BF0),
+      border: isDark ? const Color(0xFF26262D) : const Color(0xFFE6E6E0),
+      cardRadius: 0,
       borderWidth: 1,
       bottomLipHeight: 0,
     );
@@ -166,7 +167,7 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
               isDark ? const Color(0xFF2B2825) : const Color(0xFFE8E0D2),
           ink: isDark ? const Color(0xFFF5F2EB) : const Color(0xFF231F1E),
           inkMuted: isDark ? const Color(0xFFA8A096) : const Color(0xFF6A625A),
-          primaryAccent: const Color(0xFFCC4A2F),
+          primaryAccent: const Color(0xFFC2452B),
           secondaryAccent: const Color(0xFF4A6B53),
           border: isDark ? const Color(0x22F5F2EB) : const Color(0x1F231F1E),
           cardRadius: 14,
@@ -345,3 +346,14 @@ class OurneyPersonaTheme extends ThemeExtension<OurneyPersonaTheme> {
     );
   }
 }
+
+/// Journey style name shown on hub cards and rows ("Minimalist Habit").
+/// These are product names and stay in English in every locale (V1.0).
+String personaStyleName(PersonaSkinId skin) => switch (skin) {
+  PersonaSkinId.quietTransformer => 'Quiet Transformer',
+  PersonaSkinId.accountabilitySquad => 'Accountability Squad',
+  PersonaSkinId.memoryCollectors => 'Memory Collectors',
+  PersonaSkinId.coupleRituals => 'Couple Rituals',
+  PersonaSkinId.aestheticFlexer => 'Aesthetic Flexer',
+  PersonaSkinId.minimalistHabit => 'Minimalist Habit',
+};

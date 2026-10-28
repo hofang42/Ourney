@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../app/theme/tokens.dart';
+import 'color_utils.dart';
 
-/// Circular avatar: image or deterministic initials. [checkedIn] adds a
-/// success ring plus a check badge (not color-only).
+/// Circular avatar: image or deterministic initials on a solid color from
+/// the V1.0 avatar palette. [checkedIn] adds a success ring plus a check
+/// badge (not color-only).
 class Avatar extends StatelessWidget {
   const Avatar({
     required this.name,
@@ -17,6 +19,15 @@ class Avatar extends StatelessWidget {
   final ImageProvider? image;
   final double size;
   final bool checkedIn;
+
+  /// Avatar fills from the V1.0 design.
+  static const palette = [
+    Color(0xFFE15B72),
+    Color(0xFF6D4BF0),
+    Color(0xFF2AA7E0),
+    Color(0xFF10B981),
+    Color(0xFFFF9F1C),
+  ];
 
   static String initialsOf(String name) {
     final parts = name
@@ -33,14 +44,13 @@ class Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = OurneyColors.of(context);
-    final tints = [c.primary, c.accent, c.streak, c.success];
-    final tint = tints[name.hashCode.abs() % tints.length];
+    final tint = palette[name.hashCode.abs() % palette.length];
     final ring = checkedIn ? 3.0 : 0.0;
     final inner = size - ring * 2 - (checkedIn ? 2 : 0);
 
     final face = CircleAvatar(
       radius: inner / 2,
-      backgroundColor: tint.withValues(alpha: 0.22),
+      backgroundColor: tint,
       foregroundImage: image,
       child: Text(
         initialsOf(name),
@@ -48,7 +58,7 @@ class Avatar extends StatelessWidget {
           fontFamily: 'BeVietnamPro',
           fontWeight: FontWeight.w700,
           fontSize: inner * 0.38,
-          color: c.ink,
+          color: readableOn(tint),
         ),
       ),
     );
