@@ -46,7 +46,9 @@ class ProfileButton extends ConsumerWidget {
                 color: c.ink,
               ),
             )
-          : ExcludeSemantics(child: Avatar(name: name, size: size)),
+          : ExcludeSemantics(
+              child: Avatar(name: name, size: size),
+            ),
       onPressed: () => context.push(AppRoutes.profile),
     );
   }

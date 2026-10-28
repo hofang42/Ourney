@@ -22,7 +22,7 @@ void main() {
       final c = await pumpOurneyApp(tester);
       expect(location(c), AppRoutes.capture);
       expect(find.byKey(const ValueKey('placeholder-camera')), findsOneWidget);
-      expect(find.byIcon(Icons.photo_camera_rounded), findsOneWidget);
+      expect(find.byKey(const ValueKey('dock-hero-shutter')), findsOneWidget);
       expect(find.text('Nhóm'), findsOneWidget);
       expect(find.text('Journeys'), findsOneWidget);
     });

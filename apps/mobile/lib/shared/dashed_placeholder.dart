@@ -52,8 +52,7 @@ class DashedPlaceholder extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (icon != null)
-                    Icon(icon, color: fg, size: 24),
+                  if (icon != null) Icon(icon, color: fg, size: 24),
                   if (icon != null && label != null) const SizedBox(height: 4),
                   if (label != null)
                     Flexible(

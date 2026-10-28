@@ -81,6 +81,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         hero: _PersonaShowcaseDeck(brightness: brightness, pTheme: pTheme),
         body: Text(
           l10n.onboarding_valueBody,
+          textAlign: TextAlign.center,
           style: text.bodyLarge?.copyWith(color: pTheme.inkMuted, height: 1.45),
         ),
       ),
@@ -118,6 +119,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         hero: _ReadyViewfinderHero(pTheme: pTheme),
         body: Text(
           l10n.onboarding_readyBody,
+          textAlign: TextAlign.center,
           style: text.bodyLarge?.copyWith(color: pTheme.inkMuted, height: 1.45),
         ),
       ),
@@ -242,8 +244,8 @@ class _OnboardingPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(
         horizontal: OurneySpacing.screenMargin,
       ),
+      // V1.0 first-run copy is centered under the art.
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ExcludeSemantics(child: hero),
           const SizedBox(height: OurneySpacing.xl),
@@ -259,11 +261,13 @@ class _OnboardingPage extends StatelessWidget {
             header: true,
             child: Text(
               title,
+              textAlign: TextAlign.center,
               style: displayStyle(
                 size: 28,
-                weight: 800,
+                weight: 700,
                 color: pTheme.ink,
                 height: 1.25,
+                tracking: -0.04,
               ),
             ),
           ),
@@ -278,10 +282,7 @@ class _OnboardingPage extends StatelessWidget {
 
 /// Page 1 hero: clean architectural showcase of Ourney's 6 persona skins.
 class _PersonaShowcaseDeck extends StatelessWidget {
-  const _PersonaShowcaseDeck({
-    required this.brightness,
-    required this.pTheme,
-  });
+  const _PersonaShowcaseDeck({required this.brightness, required this.pTheme});
 
   final Brightness brightness;
   final OurneyPersonaTheme pTheme;
@@ -313,9 +314,7 @@ class _PersonaShowcaseDeck extends StatelessWidget {
               children: [
                 for (var c = 0; c < 3; c++) ...[
                   if (c > 0) const SizedBox(width: 10),
-                  Expanded(
-                    child: _buildPersonaTile(_tiles[r * 3 + c]),
-                  ),
+                  Expanded(child: _buildPersonaTile(_tiles[r * 3 + c])),
                 ],
               ],
             ),
@@ -601,9 +600,8 @@ class _Step extends StatelessWidget {
             Expanded(
               child: Text(
                 '$index. $text',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: pTheme.ink,
-                ),
+                style: Theme.of(context).textTheme.titleMedium
+                    ?.copyWith(color: pTheme.ink),
               ),
             ),
           ],

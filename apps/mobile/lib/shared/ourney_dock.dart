@@ -5,7 +5,6 @@ import '../app/theme/motion.dart';
 import '../app/theme/persona_theme.dart';
 import '../app/theme/tokens.dart';
 import '../l10n/generated/app_localizations.dart';
-import 'color_utils.dart';
 import 'layout.dart';
 import 'ourney_pill_button.dart';
 import 'ourney_primary_button.dart';
@@ -233,7 +232,6 @@ class _HeroShutterState extends State<_HeroShutter> {
   @override
   Widget build(BuildContext context) {
     final pTheme = OurneyPersonaTheme.of(context);
-    final fg = readableOn(pTheme.primaryAccent);
     return Semantics(
       button: true,
       selected: true,
@@ -253,22 +251,23 @@ class _HeroShutterState extends State<_HeroShutter> {
           scale: _pressed ? ourneyPressScale : 1,
           duration: OurneyMotion.movement(context, ourneyPressDuration),
           curve: Curves.easeOut,
+          // V1.0 shutter: a 3dp white ring around a 64dp accent disc.
           child: Container(
             width: OurneyDock.heroSize,
             height: OurneyDock.heroSize,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: pTheme.primaryAccent,
-              border: Border.all(color: Colors.white, width: 4),
-              boxShadow: [
-                BoxShadow(
-                  color: pTheme.primaryAccent.withValues(alpha: 0.35),
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              border: Border.all(color: Colors.white, width: 3),
             ),
-            child: Icon(Icons.photo_camera_rounded, color: fg, size: 34),
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: pTheme.primaryAccent,
+              ),
+            ),
           ),
         ),
       ),

@@ -294,11 +294,16 @@ class _Badge extends StatelessWidget {
       child: Container(
         width: 72,
         height: 72,
+        // V1.0 brand mark: coral square, ink glyph.
         decoration: BoxDecoration(
-          gradient: OurneyColors.heroGradient,
+          color: OurneyColors.of(context).primary,
           borderRadius: BorderRadius.circular(OurneyRadii.card),
         ),
-        child: const Icon(Icons.mail_rounded, color: Colors.white, size: 36),
+        child: Icon(
+          Icons.mail_outline_rounded,
+          color: OurneyColors.of(context).onPrimary,
+          size: 34,
+        ),
       ),
     ),
   );

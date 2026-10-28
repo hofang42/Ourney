@@ -205,18 +205,18 @@ class _ProfileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = ProfileL10n.of(context);
     final text = Theme.of(context).textTheme;
-    // White text on the gradient: bold >= 18pt only (design system).
-    const onGradient = Colors.white;
+    // V1.0: a flat neutral card; the avatar color is the only accent.
+    final c = OurneyColors.of(context);
     return OurneyCard(
       key: const ValueKey('profile-card'),
-      gradient: OurneyColors.heroGradient,
+      radius: OurneyRadii.card,
       padding: const EdgeInsets.all(OurneySpacing.xl),
       child: Column(
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: onGradient, width: 3),
+              border: Border.all(color: c.surface, width: 3),
             ),
             child: ProfileAvatar(
               name: profile.displayName,
@@ -228,13 +228,13 @@ class _ProfileCard extends StatelessWidget {
           Text(
             profile.displayName,
             textAlign: TextAlign.center,
-            style: text.displaySmall?.copyWith(color: onGradient),
+            style: text.headlineMedium,
           ),
           const SizedBox(height: OurneySpacing.xs),
           Text(
             '@${profile.username}',
             textAlign: TextAlign.center,
-            style: text.titleLarge?.copyWith(color: onGradient),
+            style: text.titleSmall?.copyWith(color: c.inkMuted),
           ),
           const SizedBox(height: OurneySpacing.lg),
           ChunkyButton(
