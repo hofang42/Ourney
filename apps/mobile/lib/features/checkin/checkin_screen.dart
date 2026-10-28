@@ -191,6 +191,15 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       };
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
+    } on Object {
+      // Never leave the spinner up: anything else is a generic failure.
+      if (!mounted) return;
+      setState(() => _posting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).common_errorGeneric),
+        ),
+      );
     }
   }
 

@@ -245,6 +245,12 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
         ref.watch(sharingCheckInsProvider(widget.journeyId)).value ??
         const <CheckIn>[];
     final me = ref.watch(currentUserIdProvider);
+    final coverable = [
+      for (final ci in all)
+        if ((me == null || ci.userId == me) &&
+            !(_hidden?.contains(ci.id) ?? false))
+          ci,
+    ];
     final mine = [
       for (final ci in all)
         if (me == null || ci.userId == me) ci,
@@ -324,7 +330,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
             ),
             _CoverPicker(
               cover: cover,
-              onTap: all.isEmpty ? null : () => _pickCover(all),
+              // Only my visible photos: never a hidden or another member's.
+              onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
             ),
             const SizedBox(height: 22),
             Semantics(
