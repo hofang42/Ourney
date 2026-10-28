@@ -1203,12 +1203,6 @@ Future<bool> showSensitiveSwitchWarning(BuildContext context) async {
   return ok;
 }
 
-Color _warmPaper(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFF2A2119)
-    : const Color(0xFFFFF4DF);
+Color _warmPaper(BuildContext context) => OurneyColors.of(context).warmPaper;
 
-Color _warmInk(BuildContext context) =>
-    Theme.of(context).brightness == Brightness.dark
-    ? const Color(0xFFFFEBD0)
-    : const Color(0xFF3F2B1D);
+Color _warmInk(BuildContext context) => OurneyColors.of(context).warmInk;

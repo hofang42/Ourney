@@ -398,9 +398,9 @@ class HubSegments extends StatelessWidget {
                       color: s == value ? c.surfaceRaised : Colors.transparent,
                       borderRadius: BorderRadius.circular(OurneyRadii.capsule),
                       boxShadow: s == value
-                          ? const [
+                          ? [
                               BoxShadow(
-                                color: Color(0x0D111114),
+                                color: c.segmentShadow,
                                 blurRadius: 8,
                                 offset: Offset(0, 2),
                               ),
@@ -501,9 +501,9 @@ class TodayCard extends ConsumerWidget {
     final style = OurneyPersonaTheme.forSkin(skin, brightness);
     final dark = brightness == Brightness.dark;
     // Dark mode: every style shares the same near-black card (V1.0).
-    final bg = dark ? const Color(0xFF0E0E10) : style.background;
-    final ink = dark ? const Color(0xFFF4F4F5) : style.ink;
     final c = OurneyColors.of(context);
+    final bg = dark ? c.cardNight : style.background;
+    final ink = dark ? c.onCardNight : style.ink;
     final latest = _latestCheckIn(progress);
     final dayText = progress.totalDays == null
         ? l10n.journeys_dayOpen(progress.dayNumber)
@@ -552,7 +552,7 @@ class TodayCard extends ConsumerWidget {
           Container(
             height: 148,
             decoration: BoxDecoration(
-              color: const Color(0xFF18181B),
+              color: c.mediaPlaceholder,
               border: Border.all(color: ink),
             ),
             child: Stack(
@@ -658,9 +658,7 @@ class TodayCard extends ConsumerWidget {
                         Icon(
                           Icons.schedule_rounded,
                           size: 15,
-                          color: dark
-                              ? const Color(0xFFFF9A62)
-                              : const Color(0xFFB33A0A),
+                          color: c.warning,
                         ),
                         const SizedBox(width: 5),
                         Flexible(
@@ -672,9 +670,7 @@ class TodayCard extends ConsumerWidget {
                               fontFamily: kBodyFont,
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: dark
-                                  ? const Color(0xFFFF9A62)
-                                  : const Color(0xFFB33A0A),
+                              color: c.warning,
                             ),
                           ),
                         ),
@@ -815,8 +811,8 @@ class _DayCell extends StatelessWidget {
                   Icons.check_rounded,
                   size: 9,
                   color: ink.computeLuminance() > 0.5
-                      ? const Color(0xFF0E0E10)
-                      : Colors.white,
+                      ? OurneyColors.of(context).cardNight
+                      : OurneyColors.of(context).onCameraOverlay,
                 ),
               ),
             ),

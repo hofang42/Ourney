@@ -59,7 +59,7 @@ class OurneyDock extends StatelessWidget {
                 border: Border(
                   top: BorderSide(
                     color: onCapture
-                        ? Colors.white.withValues(alpha: 0.12)
+                        ? OurneyColors.of(context).cameraHairline
                         : OurneyColors.of(context).divider,
                   ),
                 ),
@@ -258,7 +258,10 @@ class _HeroShutterState extends State<_HeroShutter> {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(
+                color: OurneyColors.of(context).onCameraOverlay,
+                width: 3,
+              ),
             ),
             child: Container(
               width: 64,

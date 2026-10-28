@@ -36,6 +36,16 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     required this.flame,
     required this.successSoft,
     required this.onSuccessSoft,
+    required this.segmentShadow,
+    required this.cardNight,
+    required this.onCardNight,
+    required this.mediaPlaceholder,
+    required this.cameraOverlay,
+    required this.onCameraOverlay,
+    required this.onCameraMuted,
+    required this.cameraHairline,
+    required this.warmPaper,
+    required this.warmInk,
   });
 
   final Color bg;
@@ -77,6 +87,36 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
   final Color successSoft;
   final Color onSuccessSoft;
 
+  /// Soft shadow under the selected segment.
+  final Color segmentShadow;
+
+  /// Near-black journey card (dark mode surface and glyph-on-ink).
+  final Color cardNight;
+
+  /// Ink on [cardNight].
+  final Color onCardNight;
+
+  /// Backdrop behind photos while they load.
+  final Color mediaPlaceholder;
+
+  /// Translucent chip over camera/photo; always dark.
+  final Color cameraOverlay;
+
+  /// Text/icon/ring on camera surfaces and [cameraOverlay].
+  final Color onCameraOverlay;
+
+  /// Dim glyph on camera surfaces.
+  final Color onCameraMuted;
+
+  /// Hairline on camera-dark chrome.
+  final Color cameraHairline;
+
+  /// Warm sheet background.
+  final Color warmPaper;
+
+  /// Ink on [warmPaper].
+  final Color warmInk;
+
   static const light = OurneyColors(
     bg: Color(0xFFFAFAF7),
     surface: Color(0xFFFFFFFF),
@@ -99,6 +139,16 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     flame: Color(0xFFD97706),
     successSoft: Color(0xFFDCFCE7),
     onSuccessSoft: Color(0xFF166534),
+    segmentShadow: Color(0x0D111114),
+    cardNight: Color(0xFF0E0E10),
+    onCardNight: Color(0xFFF4F4F5),
+    mediaPlaceholder: Color(0xFF18181B),
+    cameraOverlay: Color(0x99000000),
+    onCameraOverlay: Color(0xFFFFFFFF),
+    onCameraMuted: Color(0x8AFFFFFF),
+    cameraHairline: Color(0x1FFFFFFF),
+    warmPaper: Color(0xFFFFF4DF),
+    warmInk: Color(0xFF3F2B1D),
   );
 
   static const dark = OurneyColors(
@@ -123,6 +173,16 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     flame: Color(0xFFF59E0B),
     successSoft: Color(0xFF14532D),
     onSuccessSoft: Color(0xFFDCFCE7),
+    segmentShadow: Color(0x0D111114),
+    cardNight: Color(0xFF0E0E10),
+    onCardNight: Color(0xFFF4F4F5),
+    mediaPlaceholder: Color(0xFF18181B),
+    cameraOverlay: Color(0x99000000),
+    onCameraOverlay: Color(0xFFFFFFFF),
+    onCameraMuted: Color(0x8AFFFFFF),
+    cameraHairline: Color(0x1FFFFFFF),
+    warmPaper: Color(0xFF2A2119),
+    warmInk: Color(0xFFFFEBD0),
   );
 
   /// Camera/media surfaces are always dark, regardless of theme.
@@ -167,6 +227,16 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     Color? flame,
     Color? successSoft,
     Color? onSuccessSoft,
+    Color? segmentShadow,
+    Color? cardNight,
+    Color? onCardNight,
+    Color? mediaPlaceholder,
+    Color? cameraOverlay,
+    Color? onCameraOverlay,
+    Color? onCameraMuted,
+    Color? cameraHairline,
+    Color? warmPaper,
+    Color? warmInk,
   }) => OurneyColors(
     bg: bg ?? this.bg,
     surface: surface ?? this.surface,
@@ -189,6 +259,16 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
     flame: flame ?? this.flame,
     successSoft: successSoft ?? this.successSoft,
     onSuccessSoft: onSuccessSoft ?? this.onSuccessSoft,
+    segmentShadow: segmentShadow ?? this.segmentShadow,
+    cardNight: cardNight ?? this.cardNight,
+    onCardNight: onCardNight ?? this.onCardNight,
+    mediaPlaceholder: mediaPlaceholder ?? this.mediaPlaceholder,
+    cameraOverlay: cameraOverlay ?? this.cameraOverlay,
+    onCameraOverlay: onCameraOverlay ?? this.onCameraOverlay,
+    onCameraMuted: onCameraMuted ?? this.onCameraMuted,
+    cameraHairline: cameraHairline ?? this.cameraHairline,
+    warmPaper: warmPaper ?? this.warmPaper,
+    warmInk: warmInk ?? this.warmInk,
   );
 
   @override
@@ -217,6 +297,16 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
       flame: l(flame, other.flame),
       successSoft: l(successSoft, other.successSoft),
       onSuccessSoft: l(onSuccessSoft, other.onSuccessSoft),
+      segmentShadow: l(segmentShadow, other.segmentShadow),
+      cardNight: l(cardNight, other.cardNight),
+      onCardNight: l(onCardNight, other.onCardNight),
+      mediaPlaceholder: l(mediaPlaceholder, other.mediaPlaceholder),
+      cameraOverlay: l(cameraOverlay, other.cameraOverlay),
+      onCameraOverlay: l(onCameraOverlay, other.onCameraOverlay),
+      onCameraMuted: l(onCameraMuted, other.onCameraMuted),
+      cameraHairline: l(cameraHairline, other.cameraHairline),
+      warmPaper: l(warmPaper, other.warmPaper),
+      warmInk: l(warmInk, other.warmInk),
     );
   }
 }

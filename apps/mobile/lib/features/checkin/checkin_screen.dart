@@ -413,9 +413,9 @@ class _PhotoPreview extends StatelessWidget {
                       File(photo.path),
                       fit: BoxFit.cover,
                       cacheWidth: 1080,
-                      errorBuilder: (_, _, _) => const Icon(
+                      errorBuilder: (_, _, _) => Icon(
                         Icons.image_not_supported_outlined,
-                        color: Colors.white54,
+                        color: OurneyColors.of(context).onCameraMuted,
                         size: 48,
                       ),
                     ),
@@ -451,22 +451,22 @@ class _FromLibraryBadge extends StatelessWidget {
         vertical: OurneySpacing.xs,
       ),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
+        color: OurneyColors.of(context).cameraOverlay,
         borderRadius: BorderRadius.circular(OurneyRadii.chip),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.photo_library_outlined,
             size: 16,
-            color: Colors.white,
+            color: OurneyColors.of(context).onCameraOverlay,
           ),
           const SizedBox(width: OurneySpacing.xs),
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium
-                ?.copyWith(color: Colors.white),
+                ?.copyWith(color: OurneyColors.of(context).onCameraOverlay),
           ),
         ],
       ),
