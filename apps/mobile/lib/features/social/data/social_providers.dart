@@ -62,7 +62,12 @@ class MyInviteToken extends Notifier<String?> {
   Future<String>? _pending;
 
   @override
-  String? build() => null;
+  String? build() {
+    // A new account must never reuse the previous account's link.
+    ref.watch(currentUserIdProvider);
+    _pending = null;
+    return null;
+  }
 
   /// Returns the session's token, creating it once.
   Future<String> ensure() {

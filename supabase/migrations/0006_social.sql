@@ -435,7 +435,12 @@ as $$
     select 1 from public.check_ins c
      where c.id = public.try_uuid(substring(p_name from '/([0-9a-f-]{36})(?:_t)?\.jpg$'))
        and (c.photo_path = p_name or c.thumb_path = p_name)
-       and (private.can_view_checkin(c.id) or private.viewer_can_see_checkin(c.id))
+       and (private.can_view_checkin(c.id)
+            or (private.viewer_can_see_checkin(c.id)
+                -- blur_media: viewers never get the original object (FR-B7).
+                and not exists (select 1 from public.memberships m
+                                 where m.journey_id = c.journey_id and m.user_id = c.user_id
+                                   and m.blur_media)))
   );
 $$;
 
@@ -891,6 +896,12 @@ begin
   if private.blocked_between(uid, v_inviter) then
     raise exception 'blocked';
   end if;
+  -- An old link must not undo a removal: a removed friend asks again instead.
+  if exists (select 1 from public.friendships f
+              where f.user_low = least(uid, v_inviter) and f.user_high = greatest(uid, v_inviter)
+                and f.deleted_at is not null) then
+    raise exception 'invalid';
+  end if;
   insert into public.friendships (user_low, user_high, requested_by, status, source, accepted_at)
   values (least(uid, v_inviter), greatest(uid, v_inviter), v_inviter, 'accepted', 'direct', now())
   on conflict (user_low, user_high) do update
@@ -1207,8 +1218,9 @@ begin
            'checkin_id', ph.id,
            'author', private.person(ph.user_id),
            'local_date', ph.local_date,
-           'photo_path', ph.photo_path,
-           'thumb_path', ph.thumb_path,
+           -- Blurred photos carry no object path: the client shows a placeholder.
+           'photo_path', case when not v_member and ph.blur_media then '' else ph.photo_path end,
+           'thumb_path', case when not v_member and ph.blur_media then '' else ph.thumb_path end,
            'caption', ph.caption,
            'metric_value', case when ph.user_id = uid or not ph.hide_metric then cm.metric_value end,
            'like_count', case when v_counts then rc.cnt else 0 end,

@@ -264,155 +264,163 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
       );
     }
 
-    return Scaffold(
-      key: const ValueKey('retell'),
-      appBar: appBar,
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-        child: bottom,
-      ),
-      body: SafeArea(
-        top: false,
-        child: AbsorbPointer(
-          absorbing: _busy,
-          child: SharingColumn(
-            builder: (context, gutter) => ListView(
-              padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 32),
-              children: [
-                Text(
-                  l10n.sharing_retellIntro,
-                  style: sharingBody(context, color: c.inkMuted),
-                ),
-                label(l10n.sharing_journeyName),
-                TextField(
-                  key: const ValueKey('retell-title'),
-                  controller: _title,
-                  maxLength: journeyTitleMax,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: InputDecoration(
-                    hintText: l10n.sharing_journeyName,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-                label(l10n.sharing_style),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final t in allTemplates)
-                      _StyleChip(
-                        template: t,
-                        selected: t.id == _template,
-                        onTap: () => setState(() => _template = t.id),
-                      ),
-                  ],
-                ),
-                label(l10n.sharing_metricOptional),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: TextField(
-                        key: const ValueKey('retell-metric-name'),
-                        controller: _metricName,
-                        decoration: InputDecoration(
-                          labelText: l10n.sharing_metricName,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
-                      child: TextField(
-                        key: const ValueKey('retell-metric-unit'),
-                        controller: _metricUnit,
-                        decoration: InputDecoration(
-                          labelText: l10n.sharing_metricUnit,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _picks.isEmpty
-                            ? l10n.sharing_pickPhotos
-                            : l10n.sharing_photosCount(_picks.length),
-                        style: headingStyle(size: 17),
-                      ),
-                    ),
-                    Flexible(
-                      child: SharingPillButton(
-                        key: const ValueKey('retell-pick'),
-                        icon: Icons.add_photo_alternate_outlined,
-                        label: _picks.isEmpty
-                            ? l10n.sharing_pickPhotos
-                            : l10n.sharing_addPhotos,
-                        onPressed: _pick,
-                      ),
-                    ),
-                  ],
-                ),
-                if (_picks.isNotEmpty) ...[
+    // Leaving mid-import would orphan a half-filled journey.
+    return PopScope(
+      canPop: !_busy,
+      child: Scaffold(
+        key: const ValueKey('retell'),
+        appBar: appBar,
+        bottomNavigationBar: SafeArea(
+          minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+          child: bottom,
+        ),
+        body: SafeArea(
+          top: false,
+          child: AbsorbPointer(
+            absorbing: _busy,
+            child: SharingColumn(
+              builder: (context, gutter) => ListView(
+                padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 32),
+                children: [
                   Text(
-                    l10n.sharing_rangeLine(
-                      formatDateRange(
-                        context,
-                        _picks.first.date,
-                        _picks.last.date,
-                      ),
-                      l10n.sharing_days(
-                        _picks.first.date.daysUntil(_picks.last.date) + 1,
-                      ),
+                    l10n.sharing_retellIntro,
+                    style: sharingBody(context, color: c.inkMuted),
+                  ),
+                  label(l10n.sharing_journeyName),
+                  TextField(
+                    key: const ValueKey('retell-title'),
+                    controller: _title,
+                    maxLength: journeyTitleMax,
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: InputDecoration(
+                      hintText: l10n.sharing_journeyName,
                     ),
-                    key: const ValueKey('retell-range'),
-                    style: sharingBody(context, size: 13, color: c.inkMuted),
+                    onChanged: (_) => setState(() {}),
                   ),
-                  Text(
-                    l10n.sharing_photosHint,
-                    style: sharingBody(context, size: 12, color: c.inkMuted),
-                  ),
-                  const SizedBox(height: 8),
-                  GridView.count(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: 6,
-                    crossAxisSpacing: 6,
-                    childAspectRatio: 0.72,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
+                  label(l10n.sharing_style),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
-                      for (var i = 0; i < _picks.length; i++)
-                        _PickCell(
-                          index: i,
-                          pick: _picks[i],
-                          duplicate: dupes.contains(_picks[i].date),
-                          onDate: () => _editDate(_picks[i]),
-                          onRemove: () => setState(() => _picks.removeAt(i)),
+                      for (final t in allTemplates)
+                        _StyleChip(
+                          template: t,
+                          selected: t.id == _template,
+                          onTap: () => setState(() => _template = t.id),
                         ),
                     ],
                   ),
-                  if (dupes.isNotEmpty)
+                  label(l10n.sharing_metricOptional),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          key: const ValueKey('retell-metric-name'),
+                          controller: _metricName,
+                          decoration: InputDecoration(
+                            labelText: l10n.sharing_metricName,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          key: const ValueKey('retell-metric-unit'),
+                          controller: _metricUnit,
+                          decoration: InputDecoration(
+                            labelText: l10n.sharing_metricUnit,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _picks.isEmpty
+                              ? l10n.sharing_pickPhotos
+                              : l10n.sharing_photosCount(_picks.length),
+                          style: headingStyle(size: 17),
+                        ),
+                      ),
+                      Flexible(
+                        child: SharingPillButton(
+                          key: const ValueKey('retell-pick'),
+                          icon: Icons.add_photo_alternate_outlined,
+                          label: _picks.isEmpty
+                              ? l10n.sharing_pickPhotos
+                              : l10n.sharing_addPhotos,
+                          onPressed: _pick,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_picks.isNotEmpty) ...[
+                    Text(
+                      l10n.sharing_rangeLine(
+                        formatDateRange(
+                          context,
+                          _picks.first.date,
+                          _picks.last.date,
+                        ),
+                        l10n.sharing_days(
+                          _picks.first.date.daysUntil(_picks.last.date) + 1,
+                        ),
+                      ),
+                      key: const ValueKey('retell-range'),
+                      style: sharingBody(context, size: 13, color: c.inkMuted),
+                    ),
+                    Text(
+                      l10n.sharing_photosHint,
+                      style: sharingBody(context, size: 12, color: c.inkMuted),
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 0.72,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: [
+                        for (var i = 0; i < _picks.length; i++)
+                          _PickCell(
+                            index: i,
+                            pick: _picks[i],
+                            duplicate: dupes.contains(_picks[i].date),
+                            onDate: () => _editDate(_picks[i]),
+                            onRemove: () => setState(() => _picks.removeAt(i)),
+                          ),
+                      ],
+                    ),
+                    if (dupes.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          l10n.sharing_sameDay,
+                          style: sharingBody(
+                            context,
+                            size: 12,
+                            color: c.warning,
+                          ),
+                        ),
+                      ),
+                  ],
+                  if (error != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: 14),
                       child: Text(
-                        l10n.sharing_sameDay,
-                        style: sharingBody(context, size: 12, color: c.warning),
+                        error,
+                        key: const ValueKey('retell-error'),
+                        style: sharingLabel(context, size: 13, color: c.danger),
                       ),
                     ),
                 ],
-                if (error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 14),
-                    child: Text(
-                      error,
-                      key: const ValueKey('retell-error'),
-                      style: sharingLabel(context, size: 13, color: c.danger),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         ),

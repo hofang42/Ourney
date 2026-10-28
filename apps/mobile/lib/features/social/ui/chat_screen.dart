@@ -209,8 +209,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
 
+    final error = messagesAsync.hasError ? messagesAsync.error : null;
+    final gone =
+        error != null &&
+        (socialErrorCode(error) == OurneyErrorCode.notFound ||
+            socialErrorCode(error) == OurneyErrorCode.forbidden);
     final Widget body;
-    if (messagesAsync.hasValue) {
+    // Blocked or cleared while open: drop the stale thread.
+    if (messagesAsync.hasValue && !gone) {
       final messages = [
         for (final m in messagesAsync.value!)
           if (!_hidden.contains(m.id)) m,
@@ -222,16 +228,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               title: l10n.social_chatEmpty,
             )
           : _thread(context, messages, myId, conv);
-    } else if (messagesAsync.hasError) {
-      final gone =
-          socialErrorCode(messagesAsync.error!) == OurneyErrorCode.notFound ||
-          socialErrorCode(messagesAsync.error!) == OurneyErrorCode.forbidden;
+    } else if (error != null) {
       body = EmptyState(
         key: const ValueKey('chat-error'),
         icon: gone ? Icons.speaker_notes_off_outlined : Icons.error_outline,
         title: gone
             ? l10n.social_conversationGone
-            : socialErrorMessage(context, messagesAsync.error!),
+            : socialErrorMessage(context, error),
         actionLabel: gone ? null : AppLocalizations.of(context).common_retry,
         onAction: gone
             ? null

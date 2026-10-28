@@ -299,7 +299,10 @@ class StoragePhoto extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final file = ref.watch(storageFileProvider(path)).value;
+    // Blurred photos arrive without a path (FR-B7): placeholder only.
+    final file = path.isEmpty
+        ? null
+        : ref.watch(storageFileProvider(path)).value;
     Widget child = file == null
         ? const PhotoPlaceholder()
         : Image.file(

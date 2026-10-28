@@ -127,7 +127,19 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
   _Like _likeOf(SharedPhoto p) =>
       _likes[p.checkInId] ?? (liked: p.likedByMe, count: p.likeCount);
 
+  final _liking = <String>{};
+
   Future<void> _toggleLike(SharedPhoto p) async {
+    // One call per photo at a time, so a rollback never undoes a newer tap.
+    if (!_liking.add(p.checkInId)) return;
+    try {
+      await _toggleLikeOnce(p);
+    } finally {
+      _liking.remove(p.checkInId);
+    }
+  }
+
+  Future<void> _toggleLikeOnce(SharedPhoto p) async {
     final l10n = SharingL10n.of(context);
     final before = _likeOf(p);
     final like = !before.liked;

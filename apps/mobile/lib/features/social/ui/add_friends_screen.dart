@@ -349,7 +349,10 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
     return v.trim();
   }
 
+  int _searchSeq = 0;
+
   Future<void> _search() async {
+    final seq = ++_searchSeq;
     final username = _normalize(_controller.text);
     if (username.isEmpty) {
       setState(() => _state = _SearchState.idle);
@@ -364,13 +367,14 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
       final hit = await ref
           .read(friendRepositoryProvider)
           .findByUsername(username);
-      if (!mounted) return;
+      // A newer search owns the result.
+      if (!mounted || seq != _searchSeq) return;
       setState(() {
         _result = hit;
         _state = _SearchState.done;
       });
     } on Object catch (e) {
-      if (!mounted) return;
+      if (!mounted || seq != _searchSeq) return;
       setState(() {
         _error = e;
         _state = _SearchState.error;
