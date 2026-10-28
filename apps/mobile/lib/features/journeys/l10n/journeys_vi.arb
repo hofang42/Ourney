@@ -133,7 +133,7 @@
       }
     }
   },
-  "journeys_checkInNow": "Check-in ngay",
+  "journeys_checkInNow": "Check-in",
   "journeys_share": "Chia sẻ",
   "journeys_openGroup": "Xem nhóm",
   "journeys_endJourney": "Kết thúc hành trình",
@@ -377,5 +377,41 @@
   "journeys_moreOptions": "Tùy chọn khác",
   "@journeys_moreOptions": {
     "description": "Expands the advanced create options."
+  },
+  "journeys_statMoments": "Khoảnh khắc",
+  "@journeys_statMoments": {
+    "description": "Detail stat: number of photos posted."
+  },
+  "journeys_daysUnit": "ngày",
+  "@journeys_daysUnit": {
+    "description": "Small unit after a streak number."
+  },
+  "journeys_dateRange": "{start} — {end}",
+  "@journeys_dateRange": {
+    "description": "Journey date range eyebrow.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_sinceDate": "Từ {start}",
+  "@journeys_sinceDate": {
+    "description": "Eyebrow of an open-ended journey.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_addMore": "Thêm ảnh",
+  "@journeys_addMore": {
+    "description": "Floating button when today is already posted."
+  },
+  "@journeys_checkInNow": {
+    "description": "Floating check-in button on the journey screen."
   }
 }

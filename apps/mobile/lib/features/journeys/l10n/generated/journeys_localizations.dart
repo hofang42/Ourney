@@ -458,10 +458,10 @@ abstract class JourneysL10n {
   /// **'{value}%'**
   String journeys_percent(int value);
 
-  /// No description provided for @journeys_checkInNow.
+  /// Floating check-in button on the journey screen.
   ///
   /// In vi, this message translates to:
-  /// **'Check-in ngay'**
+  /// **'Check-in'**
   String get journeys_checkInNow;
 
   /// No description provided for @journeys_share.
@@ -817,6 +817,36 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Tùy chọn khác'**
   String get journeys_moreOptions;
+
+  /// Detail stat: number of photos posted.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khoảnh khắc'**
+  String get journeys_statMoments;
+
+  /// Small unit after a streak number.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày'**
+  String get journeys_daysUnit;
+
+  /// Journey date range eyebrow.
+  ///
+  /// In vi, this message translates to:
+  /// **'{start} — {end}'**
+  String journeys_dateRange(String start, String end);
+
+  /// Eyebrow of an open-ended journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ {start}'**
+  String journeys_sinceDate(String start);
+
+  /// Floating button when today is already posted.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm ảnh'**
+  String get journeys_addMore;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

@@ -60,7 +60,7 @@
   "journeys_statComplete": "Complete",
   "journeys_statDay": "Progress",
   "journeys_percent": "{value}%",
-  "journeys_checkInNow": "Check in now",
+  "journeys_checkInNow": "Check in",
   "journeys_share": "Share",
   "journeys_openGroup": "Open group",
   "journeys_endJourney": "End journey",
@@ -119,5 +119,10 @@
   "journeys_modeSoloGroup": "Solo · Group",
   "journeys_modeCoupleOnly": "Couple only",
   "journeys_styleLocked": "Style can't be changed later",
-  "journeys_moreOptions": "More options"
+  "journeys_moreOptions": "More options",
+  "journeys_statMoments": "Moments",
+  "journeys_daysUnit": "days",
+  "journeys_dateRange": "{start} — {end}",
+  "journeys_sinceDate": "Since {start}",
+  "journeys_addMore": "Add more"
 }

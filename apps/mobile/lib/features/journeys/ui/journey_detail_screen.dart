@@ -3,26 +3,26 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/app_theme.dart';
+import '../../../app/theme/persona_theme.dart';
 import '../../../app/theme/tokens.dart';
 import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/active_journey_sync.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../personas/persona_switchers.dart';
-import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
-import '../../../shared/ourney_card.dart';
+import '../../../shared/ourney_primary_button.dart';
 import '../../../shared/placeholder_screen.dart';
-import '../../../shared/streak_flame.dart';
-import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
+import '../domain/journey_time.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_errors.dart';
@@ -119,22 +119,39 @@ class JourneyDetailScreen extends ConsumerWidget {
       if (perms.canDelete) _Action.delete,
     ];
 
+    final brightness = Theme.of(context).brightness;
+    final style = OurneyPersonaTheme.forSkin(
+      personaSkinOf(journey),
+      brightness,
+    );
+    final c = OurneyColors.of(context);
+    // V1.0: the journey screen sits on its style's paper; dark mode keeps
+    // the shell's near-black so photos stay the brightest thing.
+    final paper = brightness == Brightness.dark ? c.bg : style.background;
+    final rule = brightness == Brightness.dark
+        ? c.divider
+        : style.ink.withValues(alpha: 0.14);
+
     return ActiveJourneySync(
       journeyId: journey.id,
       child: Scaffold(
         key: const ValueKey('journey-detail'),
+        backgroundColor: paper,
         appBar: AppBar(
-          title: Row(
+          backgroundColor: paper,
+          toolbarHeight: 64,
+          centerTitle: true,
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
-              const SizedBox(width: OurneySpacing.sm),
-              Expanded(
-                child: Text(
-                  journey.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Text(
+                journey.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleSmall,
               ),
+              const SizedBox(height: 2),
+              _PrivacyTag(visibility: journey.visibility),
             ],
           ),
           actions: [
@@ -148,6 +165,7 @@ class JourneyDetailScreen extends ConsumerWidget {
               PopupMenuButton<_Action>(
                 key: const ValueKey('journey-more'),
                 tooltip: l10n.journeys_moreActions,
+                icon: const Icon(Icons.more_horiz_rounded),
                 onSelected: (a) => _run(context, ref, journey, a),
                 itemBuilder: (context) => [
                   for (final a in actions)
@@ -161,90 +179,176 @@ class JourneyDetailScreen extends ConsumerWidget {
                       }),
                     ),
                 ],
-              ),
+              )
+            else
+              const SizedBox(width: OurneySpacing.sm),
           ],
         ),
+        floatingActionButton: perms.canCheckIn
+            ? OurneyPrimaryButton(
+                key: const ValueKey('journey-checkin'),
+                expand: false,
+                label: progress?.checkedInToday ?? false
+                    ? l10n.journeys_addMore
+                    : l10n.journeys_checkInNow,
+                icon: Icons.photo_camera_outlined,
+                backgroundColor: style.primaryAccent,
+                onPressed: () => checkInNow(context, ref, journey.id),
+              )
+            : null,
         body: SafeArea(
+          top: false,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              OurneySpacing.screenMargin,
-              OurneySpacing.sm,
-              OurneySpacing.screenMargin,
-              OurneySpacing.xxl,
-            ),
+            padding: const EdgeInsets.only(bottom: 104),
             children: [
-              if (!perms.isActive) const _ReadOnlyBanner(),
-              if (progress != null) _Stats(progress: progress),
-              const SizedBox(height: OurneySpacing.lg),
-              if (perms.canCheckIn)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: OurneySpacing.md),
-                  child: ChunkyButton(
-                    key: const ValueKey('journey-checkin'),
-                    label: l10n.journeys_checkInNow,
-                    icon: Icons.photo_camera_rounded,
-                    onPressed: () => checkInNow(context, ref, journey.id),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: rule)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    OurneySpacing.screenMargin,
+                    22,
+                    OurneySpacing.screenMargin,
+                    8,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!perms.isActive) const _ReadOnlyBanner(),
+                      Text(
+                        _dateRange(context, journey).toUpperCase(),
+                        style: eyebrowStyle(color: c.inkMuted),
+                      ),
+                      const SizedBox(height: 4),
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          journey.title,
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      if (progress != null)
+                        _Stats(
+                          progress: progress,
+                          accent: style.primaryAccent,
+                          rule: rule,
+                        ),
+                    ],
                   ),
                 ),
+              ),
               if (journey.kind == JourneyKind.group)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: OurneySpacing.md),
-                  child: ChunkyButton(
+                  padding: const EdgeInsets.fromLTRB(
+                    OurneySpacing.screenMargin,
+                    OurneySpacing.lg,
+                    OurneySpacing.screenMargin,
+                    0,
+                  ),
+                  child: OutlinedButton.icon(
                     key: const ValueKey('journey-open-group'),
-                    label: l10n.journeys_openGroup,
-                    icon: Icons.groups_rounded,
-                    variant: ChunkyVariant.neutral,
+                    icon: const Icon(Icons.people_outline_rounded, size: 18),
+                    label: Text(l10n.journeys_openGroup),
                     onPressed: () => context.go(AppRoutes.groups),
                   ),
                 ),
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: OurneySpacing.lg,
-                  bottom: OurneySpacing.md,
+              Container(
+                margin: const EdgeInsets.only(top: 18),
+                height: 54,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border.symmetric(horizontal: BorderSide(color: rule)),
                 ),
                 child: Semantics(
                   header: true,
-                  child: Text(
-                    l10n.journeys_timelineTitle,
-                    style: Theme.of(context).textTheme.titleMedium,
+                  child: Container(
+                    height: 54,
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: style.primaryAccent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      l10n.journeys_timelineTitle,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
                   ),
                 ),
               ),
-              if (progress == null)
-                const Padding(
-                  padding: EdgeInsets.all(OurneySpacing.xl),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                Builder(
-                  builder: (context) {
-                    final groupSnap = ref.watch(
-                      groupDailySnapshotProvider(journey),
-                    );
-                    return PersonaTimelineSwitcher(
-                      skin: personaSkinOf(journey),
-                      data: PersonaTimelineData.fromProgress(
-                        progress,
-                        hideMetric:
-                            membership?.hideMetric ?? journey.hideMetricDefault,
-                        myName: groupSnap.myName,
-                        partnerName: groupSnap.partnerName,
-                        partnerCheckInsByDate: groupSnap.partnerCheckInsByDate,
-                        onTapDay: (d) =>
-                            context.push(JourneysPaths.day(journey.id, d.date)),
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                      ),
-                    );
-                  },
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  OurneySpacing.screenMargin,
+                  OurneySpacing.xl,
+                  OurneySpacing.screenMargin,
+                  0,
                 ),
+                child: progress == null
+                    ? const Padding(
+                        padding: EdgeInsets.all(OurneySpacing.xl),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : Builder(
+                        builder: (context) {
+                          final groupSnap = ref.watch(
+                            groupDailySnapshotProvider(journey),
+                          );
+                          return PersonaTimelineSwitcher(
+                            skin: personaSkinOf(journey),
+                            data: PersonaTimelineData.fromProgress(
+                              progress,
+                              hideMetric:
+                                  membership?.hideMetric ??
+                                  journey.hideMetricDefault,
+                              myName: groupSnap.myName,
+                              partnerName: groupSnap.partnerName,
+                              partnerCheckInsByDate:
+                                  groupSnap.partnerCheckInsByDate,
+                              onTapDay: (d) => context.push(
+                                JourneysPaths.day(journey.id, d.date),
+                              ),
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                            ),
+                          );
+                        },
+                      ),
+              ),
               if (membership != null && perms.isActive)
-                _PrivacySection(journey: journey, membership: membership),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: OurneySpacing.screenMargin,
+                  ),
+                  child: _PrivacySection(
+                    journey: journey,
+                    membership: membership,
+                  ),
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// "MON 28 SEP — TUE 27 OCT", or "Since MON 28 SEP" when open-ended.
+  static String _dateRange(BuildContext context, Journey journey) {
+    final l10n = JourneysL10n.of(context);
+    final f = DateFormat(
+      'EEE d MMM',
+      Localizations.localeOf(context).toString(),
+    );
+    final start = f.format(displayDate(journey.startDate));
+    final end = journey.endDate;
+    return end == null
+        ? l10n.journeys_sinceDate(start)
+        : l10n.journeys_dateRange(start, f.format(displayDate(end)));
   }
 
   /// Opens the camera with this journey preselected: writes
@@ -331,8 +435,8 @@ class _ReadOnlyBanner extends StatelessWidget {
         key: const ValueKey('journey-read-only'),
         padding: const EdgeInsets.all(OurneySpacing.md),
         decoration: BoxDecoration(
-          color: c.inkMuted.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(OurneyRadii.chip),
+          color: c.surfaceSunken,
+          border: Border.all(color: c.border),
         ),
         child: Row(
           children: [
@@ -351,12 +455,20 @@ class _ReadOnlyBanner extends StatelessWidget {
   }
 }
 
-/// FR-B5: current streak, longest, % complete, day N/M. Regularity only, no
-/// ranking or metric comparison (FR-D5).
+/// FR-B5 (V1.0 hero): "Day N / M" with the percent and a thin progress
+/// rule, then a 4-column stat row: current streak, longest, moments and
+/// percent complete. Regularity only, no ranking or metric comparison
+/// (FR-D5).
 class _Stats extends StatelessWidget {
-  const _Stats({required this.progress});
+  const _Stats({
+    required this.progress,
+    required this.accent,
+    required this.rule,
+  });
 
   final JourneyProgress progress;
+  final Color accent;
+  final Color rule;
 
   @override
   Widget build(BuildContext context) {
@@ -368,115 +480,216 @@ class _Stats extends StatelessWidget {
     final dayText = progress.totalDays == null
         ? l10n.journeys_dayOpen(progress.dayNumber)
         : l10n.journeys_dayOf(progress.dayNumber, progress.totalDays!);
+    final label = TextStyle(
+      fontFamily: kBodyFont,
+      fontSize: 14,
+      fontWeight: FontWeight.w700,
+      height: 1.35,
+      color: c.ink,
+    );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = (constraints.maxWidth - OurneySpacing.md) / 2;
-        return Wrap(
-          spacing: OurneySpacing.md,
-          runSpacing: OurneySpacing.md,
-          children: [
-            _StatTile(
-              key: const ValueKey('stat-current'),
-              width: width,
-              label: l10n.journeys_statCurrent,
-              semantics: app.streak_semantics(s.current),
-              value: StreakFlame(
-                days: s.current,
-                atRisk: progress.isActive && s.atRisk,
-                size: 28,
-                semanticLabel: app.streak_semantics(s.current),
-              ),
-            ),
-            _StatTile(
-              key: const ValueKey('stat-best'),
-              width: width,
-              label: l10n.journeys_statBest,
-              semantics: app.streak_days(s.best),
-              value: _Big(app.streak_days(s.best)),
-            ),
-            if (percent != null)
-              _StatTile(
-                key: const ValueKey('stat-percent'),
-                width: width,
-                label: l10n.journeys_statComplete,
-                semantics: l10n.journeys_percent(percent),
-                value: _Big(l10n.journeys_percent(percent)),
-                footer: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: s.progress,
-                    minHeight: 6,
-                    color: c.success,
-                    backgroundColor: c.inkMuted.withValues(alpha: 0.15),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          key: const ValueKey('stat-day'),
+          container: true,
+          label: '${l10n.journeys_statDay}: $dayText',
+          excludeSemantics: true,
+          child: Row(
+            children: [
+              Expanded(child: Text(dayText, style: label)),
+              if (percent != null)
+                Text(
+                  l10n.journeys_percent(percent),
+                  style: label.copyWith(
+                    fontWeight: FontWeight.w500,
+                    color: c.inkMuted,
                   ),
                 ),
-              ),
-            _StatTile(
-              key: const ValueKey('stat-day'),
-              width: width,
-              label: l10n.journeys_statDay,
-              semantics: dayText,
-              value: _Big(dayText),
+            ],
+          ),
+        ),
+        if (percent != null) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 5,
+            child: LinearProgressIndicator(
+              value: s.progress,
+              minHeight: 5,
+              color: accent,
+              backgroundColor: rule,
+              borderRadius: BorderRadius.zero,
             ),
-          ],
-        );
-      },
+          ),
+        ],
+        const SizedBox(height: 25),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _StatCell(
+                key: const ValueKey('stat-current'),
+                label: l10n.journeys_statCurrent,
+                semantics: app.streak_semantics(s.current),
+                icon: Icons.local_fire_department_rounded,
+                value: '${s.current}',
+                unit: l10n.journeys_daysUnit,
+                rule: rule,
+              ),
+              _StatCell(
+                key: const ValueKey('stat-best'),
+                label: l10n.journeys_statBest,
+                semantics: app.streak_days(s.best),
+                value: '${s.best}',
+                rule: rule,
+              ),
+              _StatCell(
+                key: const ValueKey('stat-moments'),
+                label: l10n.journeys_statMoments,
+                semantics: '${progress.checkInsByDate.length}',
+                value: '${progress.checkInsByDate.length}',
+                rule: percent == null ? null : rule,
+              ),
+              if (percent != null)
+                _StatCell(
+                  key: const ValueKey('stat-percent'),
+                  label: l10n.journeys_statComplete,
+                  semantics: l10n.journeys_percent(percent),
+                  value: l10n.journeys_percent(percent),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _Big extends StatelessWidget {
-  const _Big(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Text(
-    text,
-    style: displayStyle(size: 22, color: OurneyColors.of(context).ink),
-  );
-}
-
-class _StatTile extends StatelessWidget {
-  const _StatTile({
-    required this.width,
+/// One column of the stat row: tiny uppercase label, big Bricolage value,
+/// hairline on the right (except the last one).
+class _StatCell extends StatelessWidget {
+  const _StatCell({
     required this.label,
-    required this.value,
     required this.semantics,
-    this.footer,
+    required this.value,
+    this.icon,
+    this.unit,
+    this.rule,
     super.key,
   });
 
-  final double width;
   final String label;
-  final Widget value;
   final String semantics;
-  final Widget? footer;
+  final String value;
+  final IconData? icon;
+  final String? unit;
+  final Color? rule;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      child: OurneyCard(
-        padding: const EdgeInsets.all(OurneySpacing.md),
-        child: Semantics(
-          label: '$label: $semantics',
-          excludeSemantics: true,
+    final c = OurneyColors.of(context);
+    return Expanded(
+      child: Semantics(
+        container: true,
+        label: '$label: $semantics',
+        excludeSemantics: true,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            border: rule == null
+                ? null
+                : Border(right: BorderSide(color: rule!)),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height: OurneySpacing.xs),
-              value,
-              if (footer != null) ...[
-                const SizedBox(height: OurneySpacing.sm),
-                footer!,
-              ],
+              Row(
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 11, color: c.flame),
+                    const SizedBox(width: 2),
+                  ],
+                  Flexible(
+                    child: Text(
+                      label.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: eyebrowStyle(
+                        size: 8,
+                        color: c.inkMuted,
+                      ).copyWith(letterSpacing: 0.4),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 5),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text.rich(
+                  TextSpan(
+                    text: value,
+                    children: [
+                      if (unit != null)
+                        TextSpan(
+                          text: ' $unit',
+                          style: TextStyle(
+                            fontFamily: kBodyFont,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: c.inkMuted,
+                          ),
+                        ),
+                    ],
+                  ),
+                  style: displayStyle(size: 22, weight: 700, color: c.ink),
+                ),
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Visibility under the title: lock / link / people + word.
+class _PrivacyTag extends StatelessWidget {
+  const _PrivacyTag({required this.visibility});
+
+  final JourneyVisibility visibility;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    final c = OurneyColors.of(context);
+    final (IconData icon, String text) = switch (visibility) {
+      JourneyVisibility.private => (
+        Icons.lock_outline_rounded,
+        l10n.journeys_privacyPrivate,
+      ),
+      JourneyVisibility.link => (Icons.link_rounded, l10n.journeys_privacyLink),
+      JourneyVisibility.group => (
+        Icons.people_outline_rounded,
+        l10n.journeys_privacyGroup,
+      ),
+    };
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: c.inkMuted),
+        const SizedBox(width: 3),
+        Text(
+          text,
+          style: TextStyle(
+            fontFamily: kBodyFont,
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: c.inkMuted,
+          ),
+        ),
+      ],
     );
   }
 }

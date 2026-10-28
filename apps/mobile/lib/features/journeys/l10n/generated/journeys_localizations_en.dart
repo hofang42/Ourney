@@ -217,7 +217,7 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_checkInNow => 'Check in now';
+  String get journeys_checkInNow => 'Check in';
 
   @override
   String get journeys_share => 'Share';
@@ -429,4 +429,23 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_moreOptions => 'More options';
+
+  @override
+  String get journeys_statMoments => 'Moments';
+
+  @override
+  String get journeys_daysUnit => 'days';
+
+  @override
+  String journeys_dateRange(String start, String end) {
+    return '$start — $end';
+  }
+
+  @override
+  String journeys_sinceDate(String start) {
+    return 'Since $start';
+  }
+
+  @override
+  String get journeys_addMore => 'Add more';
 }

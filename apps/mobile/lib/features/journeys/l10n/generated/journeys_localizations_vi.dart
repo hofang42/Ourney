@@ -215,7 +215,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_checkInNow => 'Check-in ngay';
+  String get journeys_checkInNow => 'Check-in';
 
   @override
   String get journeys_share => 'Chia sẻ';
@@ -425,4 +425,23 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_moreOptions => 'Tùy chọn khác';
+
+  @override
+  String get journeys_statMoments => 'Khoảnh khắc';
+
+  @override
+  String get journeys_daysUnit => 'ngày';
+
+  @override
+  String journeys_dateRange(String start, String end) {
+    return '$start — $end';
+  }
+
+  @override
+  String journeys_sinceDate(String start) {
+    return 'Từ $start';
+  }
+
+  @override
+  String get journeys_addMore => 'Thêm ảnh';
 }
