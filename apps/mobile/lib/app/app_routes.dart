@@ -38,6 +38,29 @@ abstract final class AppRoutes {
   static String share(String journeyId) =>
       '/share/${Uri.encodeComponent(journeyId)}';
 
+  // sharing — journey sharing (SCR-28, SCR-82..84, 87, 88), full screen.
+  static const sharing = '/sharing';
+  static const shared = '/shared';
+  static const publicJourney = '/p';
+  static const follow = '/follow';
+  static const retell = '/retell';
+
+  /// Share this journey (SCR-82, full-screen version of the sheet).
+  static String shareJourney(String journeyId) =>
+      '/sharing/${Uri.encodeComponent(journeyId)}';
+
+  /// A journey shared with the caller (SCR-84).
+  static String sharedJourney(String journeyId) =>
+      '/shared/${Uri.encodeComponent(journeyId)}';
+
+  /// A public journey opened in the app by a signed-in stranger (SCR-84).
+  static String publicJourneyByToken(String token) =>
+      '/p/${Uri.encodeComponent(token)}';
+
+  /// Do this journey (SCR-87).
+  static String followJourney(String journeyId) =>
+      '/follow/${Uri.encodeComponent(journeyId)}';
+
   /// Query parameter carrying the location to return to after onboarding or
   /// sign-in (set by the router redirect).
   static const fromParam = 'from';
@@ -56,6 +79,13 @@ const Map<String, List<String>> featureRoutePrefixes = {
   'share_card': ['/share'],
   'safety': [AppRoutes.safety],
   'reminders': [AppRoutes.reminders],
+  'sharing': [
+    AppRoutes.sharing,
+    AppRoutes.shared,
+    AppRoutes.publicJourney,
+    AppRoutes.follow,
+    AppRoutes.retell,
+  ],
 };
 
 /// Paths reachable before onboarding/sign-in is complete. Everything else is

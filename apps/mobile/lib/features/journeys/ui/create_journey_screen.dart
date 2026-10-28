@@ -19,6 +19,7 @@ import '../../../shared/ourney_chip.dart';
 import '../../../shared/ourney_primary_button.dart';
 import '../../../shared/template_icons.dart';
 import '../../reminders/data/reminder_scheduler.dart';
+import '../../sharing/l10n/generated/sharing_localizations.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_form.dart';
 import '../domain/journey_time.dart';
@@ -34,11 +35,19 @@ class CreateJourneyScreen extends ConsumerStatefulWidget {
   const CreateJourneyScreen({
     required this.templateId,
     this.isCouplePreset = false,
+    this.frame,
+    this.openMoreOptions = false,
     super.key,
   });
 
   final TemplateId templateId;
   final bool isCouplePreset;
+
+  /// "Do this journey" (S15, SCR-87): prefill from another journey's frame.
+  final JourneyFrame? frame;
+
+  /// Open **More options** at once ("Change something").
+  final bool openMoreOptions;
 
   /// True when `:template` is the `couple` preset (`TemplateId.custom` + `💞`).
   static bool isCoupleWire(String? wire) =>
@@ -76,6 +85,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
   /// returns the same journey instead of creating a duplicate.
   final String _clientId = const Uuid().v4();
 
+  /// "Based on {name}'s journey" (S36); removing it also drops the link to
+  /// the source journey (no `markFollowed`).
+  late bool _basedOn = widget.frame != null;
+
   @override
   void dispose() {
     _title.dispose();
@@ -95,6 +108,22 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       form.emoji = '💞';
       form.title = JourneysL10n.of(context).journeys_templateCoupleTitle;
       if (!ref.read(appConfigProvider).localOnly) {
+        form.kind = JourneyKind.group;
+      }
+    }
+    final frame = widget.frame;
+    if (frame != null) {
+      form.title = frame.title;
+      form.emoji = frame.emoji;
+      if (frame.durationDays != null || form.allowOpenEnded) {
+        form.durationDays = frame.durationDays?.clamp(durationMin, durationMax);
+      }
+      form.trackMetric = frame.metricName != null;
+      form.metricName = frame.metricName ?? '';
+      form.metricUnit = frame.metricUnit ?? '';
+      // S35: a group/couple source makes a journey of the same kind.
+      if (frame.kind == JourneyKind.group &&
+          !ref.read(appConfigProvider).localOnly) {
         form.kind = JourneyKind.group;
       }
     }
@@ -139,6 +168,16 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           }
         }
       }
+      final frame = widget.frame;
+      if (frame != null && _basedOn) {
+        try {
+          await ref
+              .read(sharingRepositoryProvider)
+              .markFollowed(journey.id, frame.sourceJourneyId);
+        } on Object {
+          // Counting "started" is best effort; the journey exists.
+        }
+      }
       if (!mounted) return;
       unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
       context.go(AppRoutes.journey(journey.id));
@@ -161,7 +200,10 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final tz = timezone.value ?? (timezone.hasError ? 'UTC' : null);
     if (tz != null) _form ??= _initForm(tz);
     final form = _form;
-    if (form != null) _moreOpen ??= form.trackMetric || form.blurOnShare;
+    if (form != null) {
+      _moreOpen ??=
+          widget.openMoreOptions || form.trackMetric || form.blurOnShare;
+    }
 
     final skin = form == null
         ? personaSkinForTemplate(
@@ -326,6 +368,38 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             style: text.headlineLarge?.copyWith(color: pTheme.ink),
           ),
         ),
+        if (widget.frame != null && _basedOn) ...[
+          const SizedBox(height: OurneySpacing.md),
+          Container(
+            key: const ValueKey('journey-based-on'),
+            constraints: const BoxConstraints(minHeight: 44),
+            padding: const EdgeInsets.only(left: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: pTheme.ink.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    SharingL10n.of(context)
+                        .sharing_basedOn(widget.frame!.ownerName),
+                    style: text.labelMedium?.copyWith(
+                      color: pTheme.ink,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  key: const ValueKey('journey-based-on-remove'),
+                  tooltip: SharingL10n.of(context).sharing_removeBasedOn,
+                  color: pTheme.ink,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () => setState(() => _basedOn = false),
+                ),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: OurneySpacing.sm),
         label(l10n.journeys_fieldTitle),
         TextField(
