@@ -87,6 +87,28 @@ GroupRepository groupRepository(Ref ref) =>
 SafetyRepository safetyRepository(Ref ref) =>
     _notWired('safetyRepositoryProvider');
 
+// Social v1.3 (docs/contracts/sharing.md). Server-only: in local-only mode
+// they stay unwired and the social screens show `NeedsServerView`.
+
+@Riverpod(keepAlive: true)
+FriendRepository friendRepository(Ref ref) =>
+    _notWired('friendRepositoryProvider');
+
+@Riverpod(keepAlive: true)
+SharingRepository sharingRepository(Ref ref) =>
+    _notWired('sharingRepositoryProvider');
+
+@Riverpod(keepAlive: true)
+ShareConsentRepository shareConsentRepository(Ref ref) =>
+    _notWired('shareConsentRepositoryProvider');
+
+@Riverpod(keepAlive: true)
+ChatRepository chatRepository(Ref ref) => _notWired('chatRepositoryProvider');
+
+@Riverpod(keepAlive: true)
+InsightsRepository insightsRepository(Ref ref) =>
+    _notWired('insightsRepositoryProvider');
+
 @Riverpod(keepAlive: true)
 MediaStore mediaStore(Ref ref) => _notWired('mediaStoreProvider');
 
