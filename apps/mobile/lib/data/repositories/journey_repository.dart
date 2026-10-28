@@ -251,15 +251,24 @@ class DataJourneyRepository implements JourneyRepository {
       'enabled': enabled,
     });
     final value = token is String ? token : null;
+    final local = await (_db.select(
+      _db.journeys,
+    )..where((t) => t.id.equals(journeyId))).getSingleOrNull();
+    // Group journeys stay `group` (0006): only solo ones flip to `link`.
+    final solo = local == null || local.kind == JourneyKind.solo.wireName;
     await (_db.update(
       _db.journeys,
     )..where((t) => t.id.equals(journeyId))).write(
       JourneysCompanion(
         publicToken: Value(value),
-        visibility: Value(
-          (value == null ? JourneyVisibility.private : JourneyVisibility.link)
-              .wireName,
-        ),
+        visibility: solo
+            ? Value(
+                (value == null
+                        ? JourneyVisibility.private
+                        : JourneyVisibility.link)
+                    .wireName,
+              )
+            : const Value.absent(),
       ),
     );
     return value;

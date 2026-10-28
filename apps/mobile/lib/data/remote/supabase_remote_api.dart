@@ -206,11 +206,20 @@ class SupabaseRemoteApi implements RemoteApi {
 
   @override
   Future<List<String>> listFiles(String prefix) => guardRemote(() async {
-    final objects = await _bucket(prefix).list(path: prefix);
-    return [
-      for (final o in objects)
-        if (o.id != null) '$prefix/${o.name}',
-    ];
+    // Storage lists 100 objects per call by default: page until short.
+    const page = 100;
+    final names = <String>[];
+    for (var offset = 0; ; offset += page) {
+      final objects = await _bucket(prefix).list(
+        path: prefix,
+        searchOptions: SearchOptions(limit: page, offset: offset),
+      );
+      names.addAll([
+        for (final o in objects)
+          if (o.id != null) '$prefix/${o.name}',
+      ]);
+      if (objects.length < page) return names;
+    }
   });
 
   @override

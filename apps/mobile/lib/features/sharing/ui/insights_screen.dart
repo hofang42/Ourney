@@ -113,14 +113,8 @@ class _InsightsBody extends ConsumerWidget {
             personaSkinOf(journey!),
             Theme.of(context).brightness,
           ).primaryAccent;
-    final days = fillDays(
-      i.viewsByDay,
-      today: i.viewsByDay.isEmpty
-          ? _today()
-          : i.viewsByDay
-                .map((d) => d.day)
-                .reduce((a, b) => a.isAfter(b) ? a : b),
-    );
+    // fillDays already extends to a later view day; the chart ends today.
+    final days = fillDays(i.viewsByDay, today: _today());
     final peak = days.fold<int>(0, (m, d) => math.max(m, d.count));
 
     Widget tile(String key, String label, int value, String delta) => Expanded(

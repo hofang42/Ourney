@@ -356,17 +356,16 @@ class JourneyDetailScreen extends ConsumerWidget {
         : l10n.journeys_dateRange(start, f.format(displayDate(end)));
   }
 
-  /// Opens the camera with this journey preselected: writes
-  /// `camera.lastJourneyId` and passes `?journeyId=` (see README.md).
+  /// Opens the camera with this journey preselected: makes it the active
+  /// journey (`camera.lastJourneyId`) and passes `?journeyId=`.
   static Future<void> checkInNow(
     BuildContext context,
     WidgetRef ref,
     String journeyId,
   ) async {
     final router = GoRouter.of(context);
-    await ref
-        .read(sharedPreferencesProvider)
-        .setString(lastJourneyPrefsKey, journeyId);
+    // Through the provider, not prefs: the open camera listens to it.
+    await ref.read(activeJourneyIdProvider.notifier).select(journeyId);
     router.go(JourneysPaths.captureFor(journeyId));
   }
 
