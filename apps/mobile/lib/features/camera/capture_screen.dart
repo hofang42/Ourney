@@ -17,7 +17,6 @@ import '../../personas/persona_contract.dart';
 import '../../personas/persona_switchers.dart';
 import '../../shared/chunky_button.dart';
 import '../../shared/empty_state.dart';
-import '../../shared/ourney_chip.dart';
 import '../../shared/profile_button.dart';
 import '../../shared/template_icons.dart';
 import '../checkin/captured_photo.dart';
@@ -663,7 +662,7 @@ class _JourneyBar extends StatelessWidget {
                   padding: const EdgeInsets.only(right: OurneySpacing.sm),
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 240),
-                    child: OurneyChip(
+                    child: _GlassChip(
                       key: ValueKey('journey-chip-${j.id}'),
                       label: j.title,
                       icon: journeyIcon(j.emoji, j.templateId),
@@ -712,12 +711,13 @@ class _ShutterButton extends StatelessWidget {
         child: Container(
           width: OurneySizes.captureButton,
           height: OurneySizes.captureButton,
-          padding: const EdgeInsets.all(6),
+          // V1.0 shutter: 3dp white ring, 64dp accent disc.
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
               color: enabled ? Colors.white : c.inkMuted,
-              width: 4,
+              width: 3,
             ),
           ),
           child: DecoratedBox(
@@ -943,5 +943,83 @@ class _FailurePanel extends StatelessWidget {
           actions: [retry],
         );
     }
+  }
+}
+
+/// V1.0 camera chip: frosted paper capsule with ink text over the dark
+/// camera. The selected journey is solid paper with a check (not color
+/// only); the others are translucent with white text.
+class _GlassChip extends StatelessWidget {
+  const _GlassChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    const paper = Color(0xE0FFFFFF);
+    const ink = Color(0xFF111114);
+    final fg = selected ? ink : Colors.white;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? paper : Colors.white.withValues(alpha: 0.14),
+        shape: StadiumBorder(
+          side: BorderSide(
+            color: selected
+                ? const Color(0x1F000000)
+                : Colors.white.withValues(alpha: 0.18),
+          ),
+        ),
+        elevation: selected ? 4 : 0,
+        shadowColor: const Color(0x33000000),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: OurneySizes.minTap),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 13),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    selected ? Icons.check_rounded : icon,
+                    size: 17,
+                    color: fg,
+                  ),
+                  const SizedBox(width: 7),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: kBodyFont,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                        color: fg,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
