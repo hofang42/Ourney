@@ -180,6 +180,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const view = await admin.rpc("record_journey_view", { p_journey: journey.id, p_viewer_key: `web:${viewerKey}` });
   if (view.error) console.error("record_journey_view failed", view.error.message); // never fatal
 
+  const ownerVisible = journey.kind === "solo" || consented.has(journey.owner_id);
   const ownerHides = visibleAuthors.get(journey.owner_id)?.hide_metric ?? true;
   const canFollow = journey.status === "ended" || journey.status === "archived" || journey.origin === "imported";
   const coverVisible = rows.some((c) => c.id === journey.cover_checkin_id);
@@ -197,7 +198,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       status: journey.status,
       metric_name: ownerHides ? null : journey.metric_name,
       metric_unit: ownerHides ? null : journey.metric_unit,
-      owner_display_name: owner.data?.display_name ?? null,
+      // A group owner who has not consented stays anonymous (S29/S30).
+      owner_display_name: ownerVisible ? owner.data?.display_name ?? null : null,
     },
     origin: journey.origin,
     story: {
@@ -215,7 +217,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         kind: journey.kind,
         title: journey.title,
         emoji: journey.emoji,
-        owner_name: owner.data?.display_name ?? null,
+        owner_name: ownerVisible ? owner.data?.display_name ?? null : null,
         duration_days: journey.duration_days,
         metric_name: journey.metric_name,
         metric_unit: journey.metric_unit,

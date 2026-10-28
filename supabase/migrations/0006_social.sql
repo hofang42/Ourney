@@ -417,7 +417,7 @@ as $$
             or exists (
               select 1 from public.journeys j
                where j.deleted_at is null
-                 and (j.owner_id = other
+                 and ((j.owner_id = other and (j.kind = 'solo' or private.consent_accepted(j.id, other)))
                       or (private.is_active_member(j.id, other) and private.consent_accepted(j.id, other)))
                  and (private.has_active_share(j.id, (select auth.uid()))
                       or (j.public_token is not null
@@ -1137,6 +1137,20 @@ begin
 end;
 $$;
 
+-- Owner of a journey as seen by a non-member: a group owner who has not consented to
+-- sharing (S29/S30) stays anonymous (nil id, empty names), so viewers cannot reach them.
+create function private.owner_for_viewer(p_journey uuid) returns json
+language sql stable security definer set search_path = ''
+as $$
+  select case when j.kind = 'solo' or private.is_active_member(j.id, (select auth.uid()))
+                   or private.consent_accepted(j.id, j.owner_id)
+              then private.person(j.owner_id)
+              else json_build_object('user_id', '00000000-0000-0000-0000-000000000000',
+                                     'username', '', 'display_name', '', 'avatar_path', null)
+         end
+    from public.journeys j where j.id = p_journey;
+$$;
+
 create function public.shared_with_me() returns setof json
 language plpgsql stable security definer set search_path = ''
 as $$
@@ -1169,7 +1183,7 @@ begin
            'kind', j.kind,
            'origin', j.origin,
            'status', j.status,
-           'owner', private.person(j.owner_id),
+           'owner', private.owner_for_viewer(j.id),
            'shared_by', private.person(i.shared_by),
            'shared_at', i.shared_at,
            'photo_count', st.n,
@@ -1279,7 +1293,7 @@ begin
     'status', j.status,
     'duration_days', j.duration_days,
     'start_date', j.start_date,
-    'owner', private.person(j.owner_id),
+    'owner', private.owner_for_viewer(j.id),
     'members', v_members,
     'story', json_build_object(
       'title', j.story_title, 'intro', j.story_intro, 'lessons', j.story_lessons,
@@ -1289,7 +1303,9 @@ begin
     'current_streak', v_streak,
     'like_count', case when v_counts then v_total end,
     'follow_count', case when v_counts then
-      (select count(*)::int from public.journeys f where f.followed_from = j.id and f.deleted_at is null) end,
+      -- Distinct owners: one account cannot inflate the count with many journeys.
+      (select count(distinct f.owner_id)::int from public.journeys f
+        where f.followed_from = j.id and f.deleted_at is null) end,
     'metric_name', j.metric_name,
     'metric_unit', j.metric_unit,
     'shared_by', case when v_sharer is not null then private.person(v_sharer) end,
@@ -1300,6 +1316,7 @@ begin
     'can_reply', p_role = 'friend',
     'can_follow', j.status in ('ended', 'archived') or j.origin = 'imported',
     'can_add_owner', p_role = 'stranger' and j.allow_viewer_requests and j.owner_id <> uid
+                     and (j.kind = 'solo' or private.consent_accepted(j.id, j.owner_id))
                      and not exists (select 1 from public.friendships f
                                       where f.user_low = least(uid, j.owner_id)
                                         and f.user_high = greatest(uid, j.owner_id)
@@ -1399,7 +1416,7 @@ begin
     'kind', j.kind,
     'title', j.title,
     'emoji', j.emoji,
-    'owner_name', (select display_name from public.profiles where id = j.owner_id),
+    'owner_name', private.owner_for_viewer(j.id)->>'display_name',
     'duration_days', j.duration_days,
     'metric_name', j.metric_name,
     'metric_unit', j.metric_unit);
@@ -1958,7 +1975,7 @@ begin
                  where v.journey_id = p_journey group by v.day) d), '[]'::json),
       'likes_from_friends', (select count(*)::int from likes where from_friend),
       'likes_from_strangers', (select count(*)::int from likes where not from_friend),
-      'started', (select count(*)::int from public.journeys f
+      'started', (select count(distinct f.owner_id)::int from public.journeys f
                    where f.followed_from = p_journey and f.deleted_at is null),
       'views_this_week', (select count(*)::int from firsts where first_day >= v_week),
       'likes_this_week', (select count(*)::int from likes
@@ -2086,6 +2103,7 @@ grant execute on function
   private.is_conversation_participant(uuid), private.conversation_read_only(uuid),
   private.can_read_message(uuid)
   to authenticated, service_role;
+grant execute on function private.owner_for_viewer(uuid) to authenticated, service_role;
 revoke all on function private.group_streak(uuid), private.journey_view(uuid, text),
   private.viewer_role(uuid, boolean), private.consent_json(public.journey_share_consents),
   private.message_json(public.messages)
