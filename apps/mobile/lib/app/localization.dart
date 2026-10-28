@@ -11,6 +11,7 @@ import '../features/profile/l10n/generated/profile_localizations.dart';
 import '../features/reminders/l10n/generated/reminders_localizations.dart';
 import '../features/safety/l10n/generated/safety_localizations.dart';
 import '../features/share_card/l10n/generated/share_card_localizations.dart';
+import '../features/social/l10n/generated/social_localizations.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../personas/accountability_squad/l10n/generated/accountability_squad_localizations.dart';
 import '../personas/aesthetic_flexer/l10n/generated/aesthetic_flexer_localizations.dart';
@@ -41,6 +42,7 @@ const List<LocalizationsDelegate<Object?>> ourneyLocalizationsDelegates = [
   ShareCardL10n.delegate,
   SafetyL10n.delegate,
   RemindersL10n.delegate,
+  SocialL10n.delegate,
   QuietTransformerL10n.delegate,
   AccountabilitySquadL10n.delegate,
   MemoryCollectorsL10n.delegate,
