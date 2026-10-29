@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
+import '../../../ui/ui.dart';
 import '../data/social_providers.dart';
 import '../l10n/generated/social_localizations.dart';
 import '../social_paths.dart';
@@ -20,24 +20,22 @@ class InboxButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (ref.watch(appConfigProvider).localOnly) return const SizedBox.shrink();
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final dot = ref.watch(inboxCountsProvider).value?.hasDot ?? false;
-    return IconButton(
+    return UiPressable(
       key: buttonKey,
-      tooltip: dot ? l10n.social_inboxNew : l10n.social_inboxTitle,
-      constraints: const BoxConstraints(
-        minWidth: OurneySizes.minTap,
-        minHeight: OurneySizes.minTap,
-      ),
+      semanticLabel: dot ? l10n.social_inboxNew : l10n.social_inboxTitle,
+      excludeChildSemantics: true,
+      centerChild: true,
       onPressed: () => context.push(SocialPaths.inbox),
-      icon: SizedBox(
+      child: SizedBox(
         width: 28,
         height: 28,
         child: Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 24, color: c.ink),
+            Icon(Icons.inbox_outlined, size: 24, color: ui.ink),
             if (dot)
               Positioned(
                 right: -1,
@@ -47,9 +45,9 @@ class InboxButton extends ConsumerWidget {
                   width: 12,
                   height: 12,
                   decoration: BoxDecoration(
-                    color: c.danger,
+                    color: ui.danger,
                     shape: BoxShape.circle,
-                    border: Border.all(color: c.bg, width: 2),
+                    border: Border.all(color: ui.bg, width: 2),
                   ),
                 ),
               ),

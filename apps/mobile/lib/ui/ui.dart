@@ -14,6 +14,7 @@ export 'components/feedback.dart';
 export 'components/inputs.dart';
 export 'components/layout.dart';
 export 'components/memory_widgets.dart';
+export 'components/person_widgets.dart';
 export 'components/pressable.dart';
 export 'components/profile_entry.dart';
 export 'components/segmented.dart';

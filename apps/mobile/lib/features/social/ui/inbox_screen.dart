@@ -5,10 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/avatar.dart';
-import '../../../shared/empty_state.dart';
+import '../../../ui/ui.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -121,15 +118,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             title: l10n.social_friendRequestFrom(displayNameOf(p)),
             subtitle: '@${p.username} · ${socialTime(context, r.createdAt)}',
             actions: [
-              SocialPill(
+              UiButton(
                 key: ValueKey('inbox-accept-${p.userId}'),
                 label: l10n.social_accept,
+                compact: true,
+                expand: false,
                 onPressed: busy ? null : () => _respondFriend(p, accept: true),
               ),
-              SocialPill(
+              UiButton.secondary(
                 key: ValueKey('inbox-decline-${p.userId}'),
                 label: l10n.social_decline,
-                quiet: true,
+                compact: true,
+                expand: false,
                 onPressed: busy ? null : () => _respondFriend(p, accept: false),
               ),
             ],
@@ -146,21 +146,24 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             key: ValueKey('inbox-consent-${s.journeyId}'),
             person: s.requestedBy,
             unread: true,
-            leading: const _IconCircle(Icons.groups_outlined),
+            leading: const UiIconCircle(Icons.groups_outlined),
             title: l10n.social_consentRequest(
               displayNameOf(s.requestedBy),
               s.journeyTitle,
             ),
             actions: [
-              SocialPill(
+              UiButton(
                 key: ValueKey('consent-agree-${s.journeyId}'),
                 label: l10n.social_agree,
+                compact: true,
+                expand: false,
                 onPressed: busy ? null : () => _respondConsent(s, accept: true),
               ),
-              SocialPill(
+              UiButton.secondary(
                 key: ValueKey('consent-decline-${s.journeyId}'),
                 label: l10n.social_decline,
-                quiet: true,
+                compact: true,
+                expand: false,
                 onPressed: busy
                     ? null
                     : () => _respondConsent(s, accept: false),
@@ -192,7 +195,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         children: [
           _filters(context),
           Expanded(
-            child: EmptyState(
+            child: UiEmptyState(
               key: const ValueKey('inbox-empty'),
               icon: Icons.inbox_outlined,
               title: l10n.social_inboxEmpty,
@@ -215,37 +218,43 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     List<Friendship> requests,
   ) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final title =
         requests.first.sourceJourneyTitle ?? l10n.social_publicJourneyFallback;
     final open = _expanded.contains(journeyId);
     return [
-      InkWell(
+      UiPressable(
         key: ValueKey('inbox-public-$journeyId'),
-        onTap: () => setState(() {
+        onPressed: () => setState(() {
           if (!_expanded.remove(journeyId)) _expanded.add(journeyId);
         }),
+        borderRadius: BorderRadius.circular(UiRadius.input),
+        minSize: const Size(UiSize.tap, 68),
         child: Container(
           constraints: const BoxConstraints(minHeight: 68),
           decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: c.divider)),
+            border: Border(bottom: BorderSide(color: ui.divider)),
           ),
           child: Row(
             children: [
-              const _IconCircle(Icons.person_add_alt_outlined),
+              const UiIconCircle(Icons.person_add_alt_outlined),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   l10n.social_publicSummary(requests.length, title),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall
-                      ?.copyWith(height: 1.35),
+                  style: UiText.body(
+                    size: 15,
+                    weight: FontWeight.w700,
+                    height: 1.35,
+                    color: ui.ink,
+                  ),
                 ),
               ),
               Icon(
                 open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                color: c.inkMuted,
+                color: ui.inkMuted,
               ),
             ],
           ),
@@ -255,22 +264,18 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         Container(
           padding: const EdgeInsets.only(left: 14),
           decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: c.divider, width: 2)),
+            border: Border(left: BorderSide(color: ui.divider, width: 2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (final r in requests) _publicRow(context, r),
-              TextButton(
+              UiButton.ghost(
                 key: ValueKey('inbox-decline-all-$journeyId'),
-                style: TextButton.styleFrom(
-                  foregroundColor: c.danger,
-                  minimumSize: const Size.fromHeight(OurneySizes.minTap),
-                ),
+                label: l10n.social_declineAll,
                 onPressed: _busy.contains('all')
                     ? null
                     : () => _declineAll(requests),
-                child: Text(l10n.social_declineAll),
               ),
             ],
           ),
@@ -291,33 +296,49 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           : '${l10n.social_sawJourney(r.sourceJourneyTitle!)}'
                 ' · ${socialTime(context, r.createdAt)}',
       actions: [
-        SocialPill(
+        UiButton(
           key: ValueKey('inbox-accept-${p.userId}'),
           label: l10n.social_accept,
+          compact: true,
+          expand: false,
           onPressed: busy ? null : () => _respondFriend(p, accept: true),
         ),
-        SocialPill(
+        UiButton.secondary(
           key: ValueKey('inbox-decline-${p.userId}'),
           label: l10n.social_decline,
-          quiet: true,
+          compact: true,
+          expand: false,
           onPressed: busy ? null : () => _respondFriend(p, accept: false),
         ),
       ],
       trailing: [
-        PopupMenuButton<String>(
-          tooltip: l10n.social_more,
-          icon: const Icon(Icons.more_horiz_rounded),
-          onSelected: (v) {
-            if (v == 'block') {
-              confirmBlock(context, userId: p.userId, name: name);
-            } else {
-              showReportSheet(context, userId: p.userId, name: name);
-            }
-          },
-          itemBuilder: (_) => [
-            PopupMenuItem(value: 'block', child: Text(l10n.social_block)),
-            PopupMenuItem(value: 'report', child: Text(l10n.social_report)),
-          ],
+        UiIconButton(
+          icon: Icons.more_horiz_rounded,
+          label: l10n.social_more,
+          onPressed: () => showUiSheet<void>(
+            context: context,
+            builder: (sheet) => Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                UiMenuItem(
+                  label: l10n.social_block,
+                  icon: Icons.block_rounded,
+                  onPressed: () {
+                    Navigator.of(sheet).pop();
+                    confirmBlock(context, userId: p.userId, name: name);
+                  },
+                ),
+                UiMenuItem(
+                  label: l10n.social_report,
+                  icon: Icons.flag_outlined,
+                  onPressed: () {
+                    Navigator.of(sheet).pop();
+                    showReportSheet(context, userId: p.userId, name: name);
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -325,64 +346,31 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   Widget _filters(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
     final labels = {
       InboxFilter.all: l10n.social_filterAll,
       InboxFilter.replies: l10n.social_filterReplies,
       InboxFilter.invites: l10n.social_filterInvites,
     };
-    return SizedBox(
-      height: 64,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
-          for (final f in InboxFilter.values)
-            Padding(
-              padding: const EdgeInsets.only(right: 7),
-              child: Semantics(
-                selected: _filter == f,
-                child: TextButton(
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
+      child: SizedBox(
+        height: UiSize.tap,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: [
+            for (final f in InboxFilter.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 7),
+                child: UiChip(
                   key: ValueKey('inbox-filter-${f.name}'),
+                  label: labels[f]!,
+                  selected: _filter == f,
                   onPressed: () => setState(() => _filter = f),
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(72, OurneySizes.minTap),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    backgroundColor: _filter == f ? c.ink : c.surface,
-                    foregroundColor: _filter == f ? c.bg : c.ink,
-                    shape: StadiumBorder(
-                      side: BorderSide(color: _filter == f ? c.ink : c.border),
-                    ),
-                    textStyle: const TextStyle(
-                      fontFamily: kBodyFont,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      height: 1.3,
-                    ),
-                  ),
-                  child: Text(labels[f]!),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _IconCircle extends StatelessWidget {
-  const _IconCircle(this.icon);
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(color: c.surfaceSunken, shape: BoxShape.circle),
-      child: Icon(icon, size: 22, color: c.ink),
     );
   }
 }
@@ -395,45 +383,22 @@ class _NewSharesRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
     void open() => context.go(AppRoutes.journeys);
-    return InkWell(
+    return UiPersonRow(
       key: const ValueKey('inbox-new-shares'),
-      onTap: open,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 68),
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: c.divider)),
+      name: '',
+      title: l10n.social_newShares(count),
+      unread: true,
+      leading: const UiIconCircle(Icons.auto_stories_outlined),
+      onPressed: open,
+      trailing: [
+        UiButton.secondary(
+          label: l10n.social_view,
+          compact: true,
+          expand: false,
+          onPressed: open,
         ),
-        child: Row(
-          children: [
-            Container(
-              key: const ValueKey('unread-dot'),
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: c.danger,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            const _IconCircle(Icons.auto_stories_outlined),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                l10n.social_newShares(count),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall
-                    ?.copyWith(height: 1.35, fontWeight: FontWeight.w800),
-              ),
-            ),
-            const SizedBox(width: 6),
-            SocialPill(label: l10n.social_view, quiet: true, onPressed: open),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
@@ -446,119 +411,64 @@ class _ConversationRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final conv = conversation;
     final unread = conv.unreadCount > 0;
     final name = displayNameOf(conv.other);
     final preview = conv.lastMessageKind == MessageKind.photo
         ? l10n.social_photoMessage
         : conv.lastMessagePreview;
-    return InkWell(
+    return UiPersonRow(
       key: ValueKey('inbox-conversation-${conv.id}'),
-      onTap: () => context.push(SocialPaths.chat(conv.id)),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 82),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: c.divider)),
-        ),
-        child: Row(
+      name: name,
+      title: name,
+      subtitle: conv.journeyTitle,
+      extraLine: preview == null || preview.isEmpty ? null : preview,
+      unread: unread,
+      minHeight: 82,
+      onPressed: () => context.push(SocialPaths.chat(conv.id)),
+      trailing: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            if (conv.lastMessageAt != null)
+              Text(
+                socialTime(context, conv.lastMessageAt!),
+                style: UiText.body(size: 11, height: 1.3, color: ui.inkMuted),
+              ),
             if (unread) ...[
-              Container(
-                key: const ValueKey('unread-dot'),
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: c.danger,
-                  shape: BoxShape.circle,
+              const SizedBox(height: 4),
+              Semantics(
+                label: l10n.social_unread(conv.unreadCount),
+                excludeSemantics: true,
+                child: Container(
+                  key: const ValueKey('unread-badge'),
+                  constraints: const BoxConstraints(minWidth: 22),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: ui.brand,
+                    borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  ),
+                  child: Text(
+                    conv.unreadCount > 99 ? '99+' : '${conv.unreadCount}',
+                    textAlign: TextAlign.center,
+                    style: UiText.body(
+                      size: 11,
+                      weight: FontWeight.w800,
+                      height: 1.3,
+                      color: ui.onBrand,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(width: 6),
             ],
-            ExcludeSemantics(child: Avatar(name: name, size: 40)),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.titleSmall?.copyWith(
-                      height: 1.35,
-                      fontWeight: unread ? FontWeight.w800 : FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    conv.journeyTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: text.bodySmall?.copyWith(height: 1.35),
-                  ),
-                  if (preview != null && preview.isNotEmpty)
-                    Text(
-                      preview,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: text.bodySmall?.copyWith(
-                        height: 1.35,
-                        color: unread ? c.ink : c.inkMuted,
-                        fontWeight: unread ? FontWeight.w700 : null,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (conv.lastMessageAt != null)
-                  Text(
-                    socialTime(context, conv.lastMessageAt!),
-                    style: text.labelSmall,
-                  ),
-                if (unread) ...[
-                  const SizedBox(height: 4),
-                  Semantics(
-                    label: l10n.social_unread(conv.unreadCount),
-                    excludeSemantics: true,
-                    child: Container(
-                      key: const ValueKey('unread-badge'),
-                      constraints: const BoxConstraints(minWidth: 22),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: c.primary,
-                        borderRadius: BorderRadius.circular(
-                          OurneyRadii.capsule,
-                        ),
-                      ),
-                      child: Text(
-                        conv.unreadCount > 99 ? '99+' : '${conv.unreadCount}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontFamily: kBodyFont,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          height: 1.3,
-                          color: c.onPrimary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
