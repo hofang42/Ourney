@@ -1,6 +1,6 @@
 {
   "@@locale": "vi",
-  "auth_title": "Đăng nhập",
+  "auth_title": "Lưu giữ hành trình của bạn",
   "@auth_title": {
     "description": "Title of the sign-in screen (email step)."
   },
@@ -28,15 +28,13 @@
   "@auth_sending": {
     "description": "Button label while the OTP is being sent."
   },
-  "auth_codeTitle": "Nhập mã",
-  "@auth_codeTitle": {
-    "description": "Title of the OTP step."
-  },
   "auth_codeSentTo": "Mã 6 số đã được gửi tới {email}.",
   "@auth_codeSentTo": {
     "description": "Below the OTP title.",
     "placeholders": {
-      "email": {"type": "String"}
+      "email": {
+        "type": "String"
+      }
     }
   },
   "auth_codeLabel": "Mã 6 số",
@@ -63,7 +61,9 @@
   "@auth_resendIn": {
     "description": "Resend OTP button during the cooldown.",
     "placeholders": {
-      "seconds": {"type": "int"}
+      "seconds": {
+        "type": "int"
+      }
     }
   },
   "auth_codeResent": "Đã gửi mã mới. Kiểm tra hộp thư nhé.",
@@ -73,14 +73,6 @@
   "auth_changeEmail": "Đổi email",
   "@auth_changeEmail": {
     "description": "Go back to the email step."
-  },
-  "auth_termsNote": "Khi tiếp tục, bạn đồng ý với điều khoản sử dụng và chính sách quyền riêng tư của Ourney.",
-  "@auth_termsNote": {
-    "description": "Legal note under the sign-in form."
-  },
-  "auth_termsLink": "Xem điều khoản",
-  "@auth_termsLink": {
-    "description": "Opens the EULA/privacy pages."
   },
   "auth_errorWrongCode": "Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.",
   "@auth_errorWrongCode": {
@@ -97,5 +89,30 @@
   "auth_errorGeneric": "Có lỗi xảy ra. Thử lại nhé.",
   "@auth_errorGeneric": {
     "description": "Any other sign-in error."
+  },
+  "auth_eyebrow": "OURNEY",
+  "@auth_eyebrow": {
+    "description": "Small label above the sign-in headline."
+  },
+  "auth_eyebrowCheck": "KIỂM TRA EMAIL",
+  "@auth_eyebrowCheck": {
+    "description": "Small label above the headline on the code step."
+  },
+  "auth_terms": "Điều khoản",
+  "@auth_terms": {
+    "description": "Footer link to the terms."
+  },
+  "auth_privacy": "Quyền riêng tư",
+  "@auth_privacy": {
+    "description": "Footer link to the privacy policy."
+  },
+  "auth_digitSemantics": "Chữ số {n} trên 6",
+  "@auth_digitSemantics": {
+    "description": "Screen reader label of one OTP digit box.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }

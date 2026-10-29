@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
   "profile_title": "Profile",
-  "profile_setupTitle": "Create your profile",
+  "profile_setupTitle": "Your profile",
   "profile_setupSubtitle": "Friends see this name and photo on shared journeys.",
   "profile_editTitle": "Edit profile",
   "profile_usernameLabel": "Username",

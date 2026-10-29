@@ -12,6 +12,7 @@ import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/ourney_card.dart';
 import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart' show showUiPermissionSheet;
 import '../data/notification_gateway.dart';
 import '../data/reminder_permission.dart';
 import '../data/reminder_scheduler.dart';
@@ -82,28 +83,18 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
     if (permission != NotificationPermission.notDetermined) return true;
     if (!mounted) return false;
     final l10n = RemindersL10n.of(context);
-    final proceed = await showDialog<bool>(
+    final proceed = await showUiPermissionSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        key: const ValueKey('reminders-permission-dialog'),
-        icon: const Icon(Icons.notifications_active_rounded),
-        title: Text(l10n.reminders_permissionTitle),
-        content: Text(l10n.reminders_permissionMessage),
-        actions: [
-          TextButton(
-            key: const ValueKey('reminders-permission-later'),
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.reminders_permissionNotNow),
-          ),
-          FilledButton(
-            key: const ValueKey('reminders-permission-continue'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.reminders_permissionContinue),
-          ),
-        ],
-      ),
+      sheetKey: const ValueKey('reminders-permission-dialog'),
+      primaryKey: const ValueKey('reminders-permission-continue'),
+      secondaryKey: const ValueKey('reminders-permission-later'),
+      icon: Icons.notifications_active_outlined,
+      title: l10n.reminders_permissionTitle,
+      body: l10n.reminders_permissionMessage,
+      primaryLabel: l10n.reminders_permissionContinue,
+      secondaryLabel: l10n.reminders_permissionNotNow,
     );
-    if (proceed != true) return false;
+    if (!proceed) return false;
     await requestReminderPermission(ref);
     return true;
   }

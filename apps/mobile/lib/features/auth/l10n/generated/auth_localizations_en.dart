@@ -10,7 +10,7 @@ class AuthL10nEn extends AuthL10n {
   AuthL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get auth_title => 'Sign in';
+  String get auth_title => 'Save your journeys';
 
   @override
   String get auth_subtitle =>
@@ -30,9 +30,6 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_sending => 'Sending…';
-
-  @override
-  String get auth_codeTitle => 'Enter the code';
 
   @override
   String auth_codeSentTo(String email) {
@@ -66,13 +63,6 @@ class AuthL10nEn extends AuthL10n {
   String get auth_changeEmail => 'Change email';
 
   @override
-  String get auth_termsNote =>
-      'By continuing you agree to Ourney\'s terms of use and privacy policy.';
-
-  @override
-  String get auth_termsLink => 'Read the terms';
-
-  @override
   String get auth_errorWrongCode =>
       'That code is wrong or expired. Check it or ask for a new one.';
 
@@ -85,4 +75,21 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_errorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get auth_eyebrow => 'OURNEY';
+
+  @override
+  String get auth_eyebrowCheck => 'CHECK YOUR EMAIL';
+
+  @override
+  String get auth_terms => 'Terms';
+
+  @override
+  String get auth_privacy => 'Privacy';
+
+  @override
+  String auth_digitSemantics(int n) {
+    return 'Digit $n of 6';
+  }
 }

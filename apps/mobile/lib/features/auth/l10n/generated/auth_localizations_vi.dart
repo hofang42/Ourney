@@ -10,7 +10,7 @@ class AuthL10nVi extends AuthL10n {
   AuthL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get auth_title => 'Đăng nhập';
+  String get auth_title => 'Lưu giữ hành trình của bạn';
 
   @override
   String get auth_subtitle =>
@@ -30,9 +30,6 @@ class AuthL10nVi extends AuthL10n {
 
   @override
   String get auth_sending => 'Đang gửi…';
-
-  @override
-  String get auth_codeTitle => 'Nhập mã';
 
   @override
   String auth_codeSentTo(String email) {
@@ -66,13 +63,6 @@ class AuthL10nVi extends AuthL10n {
   String get auth_changeEmail => 'Đổi email';
 
   @override
-  String get auth_termsNote =>
-      'Khi tiếp tục, bạn đồng ý với điều khoản sử dụng và chính sách quyền riêng tư của Ourney.';
-
-  @override
-  String get auth_termsLink => 'Xem điều khoản';
-
-  @override
   String get auth_errorWrongCode =>
       'Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.';
 
@@ -85,4 +75,21 @@ class AuthL10nVi extends AuthL10n {
 
   @override
   String get auth_errorGeneric => 'Có lỗi xảy ra. Thử lại nhé.';
+
+  @override
+  String get auth_eyebrow => 'OURNEY';
+
+  @override
+  String get auth_eyebrowCheck => 'KIỂM TRA EMAIL';
+
+  @override
+  String get auth_terms => 'Điều khoản';
+
+  @override
+  String get auth_privacy => 'Quyền riêng tư';
+
+  @override
+  String auth_digitSemantics(int n) {
+    return 'Chữ số $n trên 6';
+  }
 }

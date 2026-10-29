@@ -4,7 +4,7 @@
   "@profile_title": {
     "description": "Title of the profile screen."
   },
-  "profile_setupTitle": "Tạo hồ sơ",
+  "profile_setupTitle": "Hồ sơ của bạn",
   "@profile_setupTitle": {
     "description": "Title of the profile setup screen shown after the first sign-in."
   },
@@ -28,14 +28,18 @@
   "@profile_usernameTooShort": {
     "description": "Username validation error.",
     "placeholders": {
-      "min": {"type": "int"}
+      "min": {
+        "type": "int"
+      }
     }
   },
   "profile_usernameTooLong": "Tối đa {max} ký tự.",
   "@profile_usernameTooLong": {
     "description": "Username validation error.",
     "placeholders": {
-      "max": {"type": "int"}
+      "max": {
+        "type": "int"
+      }
     }
   },
   "profile_usernameInvalidChars": "Chỉ dùng chữ thường a–z, số, dấu _ và dấu chấm.",
@@ -58,7 +62,9 @@
   "@profile_displayNameTooLong": {
     "description": "Display name validation error.",
     "placeholders": {
-      "max": {"type": "int"}
+      "max": {
+        "type": "int"
+      }
     }
   },
   "profile_avatarAdd": "Thêm ảnh đại diện",
@@ -89,7 +95,9 @@
   "@profile_avatarSemantics": {
     "description": "Screen reader label of the avatar.",
     "placeholders": {
-      "name": {"type": "String"}
+      "name": {
+        "type": "String"
+      }
     }
   },
   "profile_save": "Lưu",
@@ -196,7 +204,9 @@
   "@profile_deleteTypeToConfirm": {
     "description": "Instruction for the confirmation field.",
     "placeholders": {
-      "phrase": {"type": "String"}
+      "phrase": {
+        "type": "String"
+      }
     }
   },
   "profile_deleteConfirmWord": "XOA",
