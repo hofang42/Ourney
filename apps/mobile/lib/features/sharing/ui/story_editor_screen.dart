@@ -5,12 +5,9 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/persona_theme.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/persona_contract.dart';
-import '../../../shared/needs_server_view.dart';
+import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import 'sharing_widgets.dart';
@@ -113,51 +110,40 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
 
   Future<void> _pickCover(List<CheckIn> checkIns) async {
     final l10n = SharingL10n.of(context);
-    final picked = await showModalBottomSheet<String>(
+    final picked = await showUiSheet<String>(
       context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: OurneyColors.of(context).bg,
-      builder: (context) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        maxChildSize: 0.95,
-        builder: (context, controller) => CustomScrollView(
-          controller: controller,
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              sliver: SliverToBoxAdapter(
-                child: Text(l10n.sharing_coverTitle, style: headingStyle()),
-              ),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              sliver: SliverGrid.count(
-                crossAxisCount: 3,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
-                children: [
-                  for (final ci in checkIns)
-                    Semantics(
-                      button: true,
-                      selected: ci.id == _coverId,
-                      label: formatLocalDate(context, ci.localDate),
-                      child: InkWell(
-                        key: ValueKey('story-cover-option-${ci.id}'),
-                        onTap: () => Navigator.of(context).pop(ci.id),
-                        child: StoragePhoto(
-                          path: ci.thumbPath,
-                          cacheWidth: 240,
-                        ),
-                      ),
+      builder: (context) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.sharing_coverTitle,
+            style: UiText.h2(size: 20, color: context.ui.ink),
+          ),
+          const SizedBox(height: UiSpace.md),
+          GridView.count(
+            crossAxisCount: 3,
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              for (final ci in checkIns)
+                Semantics(
+                  button: true,
+                  selected: ci.id == _coverId,
+                  label: formatLocalDate(context, ci.localDate),
+                  child: UiPressable(
+                    key: ValueKey('story-cover-option-${ci.id}'),
+                    onPressed: () => Navigator.of(context).pop(ci.id),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(UiRadius.thumb),
+                      child: StoragePhoto(path: ci.thumbPath, cacheWidth: 240),
                     ),
-                ],
-              ),
-            ),
-          ],
-        ),
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
     if (picked != null && mounted) setState(() => _coverId = picked);
@@ -167,53 +153,26 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
     final app = AppLocalizations.of(context);
-    final c = OurneyColors.of(context);
-    final localOnly = ref.watch(appConfigProvider).localOnly;
+    final ui = context.ui;
 
-    Widget scaffold(Widget body, {Color? paper, bool canSave = false}) =>
-        Scaffold(
-          key: const ValueKey('story-editor'),
-          backgroundColor: paper,
-          appBar: AppBar(
-            backgroundColor: paper,
-            centerTitle: true,
-            leadingWidth: 96,
-            leading: TextButton(
-              key: const ValueKey('story-cancel'),
-              style: TextButton.styleFrom(foregroundColor: c.ink),
-              onPressed: _leave,
-              child: Text(
-                app.common_cancel,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: sharingLabel(context, size: 14),
-              ),
-            ),
-            title: SharingNavTitle(title: l10n.sharing_storyHeader),
-            actions: [
-              TextButton(
-                key: const ValueKey('story-save'),
-                style: TextButton.styleFrom(
-                  foregroundColor: c.ink,
-                  minimumSize: const Size(64, 48),
-                ),
-                onPressed: canSave && !_saving ? _save : null,
-                child: Text(
-                  app.common_save,
-                  style: sharingLabel(
-                    context,
-                    size: 14,
-                    color: canSave && !_saving ? c.ink : c.inkMuted,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-            ],
+    Widget page(List<Widget> children, {Color? paper, bool canSave = false}) =>
+        SharingPage(
+          scaffoldKey: const ValueKey('story-editor'),
+          background: paper,
+          onBack: _leave,
+          title: l10n.sharing_storyHeader,
+          trailing: UiTextAction(
+            key: const ValueKey('story-save'),
+            label: app.common_save,
+            color: canSave && !_saving ? ui.ink : ui.inkMuted,
+            onPressed: canSave && !_saving ? _save : null,
           ),
-          body: SafeArea(top: false, child: body),
+          children: children,
         );
 
-    if (localOnly) return scaffold(const NeedsServerView());
+    if (ref.watch(appConfigProvider).localOnly) {
+      return page(const [SharingNeedsServer()]);
+    }
 
     final journeyAsync = ref.watch(sharingJourneyProvider(widget.journeyId));
     final stateAsync = ref.watch(shareStateProvider(widget.journeyId));
@@ -221,26 +180,23 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final state = stateAsync.value;
     if (journey == null || state == null) {
       final error = journeyAsync.error ?? stateAsync.error;
-      return scaffold(
-        error == null
-            ? const SharingLoading()
-            : SharingErrorView(
-                error: error,
-                onRetry: () {
-                  ref.invalidate(sharingJourneyProvider(widget.journeyId));
-                  ref.invalidate(shareStateProvider(widget.journeyId));
-                },
-              ),
-      );
+      return page([
+        if (error == null)
+          const SharingLoading()
+        else
+          SharingErrorView(
+            error: error,
+            onRetry: () {
+              ref.invalidate(sharingJourneyProvider(widget.journeyId));
+              ref.invalidate(shareStateProvider(widget.journeyId));
+            },
+          ),
+      ]);
     }
     _seed(state, journey);
 
-    final brightness = Theme.of(context).brightness;
-    final style = OurneyPersonaTheme.forSkin(
-      personaSkinOf(journey),
-      brightness,
-    );
-    final paper = brightness == Brightness.dark ? c.bg : style.background;
+    final style = uiStyleForSkin(personaSkinOf(journey));
+    final paper = ui.brightness == Brightness.dark ? ui.bg : style.paper;
     final all =
         ref.watch(sharingCheckInsProvider(widget.journeyId)).value ??
         const <CheckIn>[];
@@ -258,115 +214,65 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final cover = all.where((ci) => ci.id == _coverId).firstOrNull;
     final hidden = _hidden!;
 
-    Widget field(
-      String key,
-      String label,
-      TextEditingController controller,
-      int max, {
-      String? hint,
-      bool optional = false,
-      int lines = 1,
-    }) => Padding(
-      padding: const EdgeInsets.only(bottom: 17),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text.rich(
-            TextSpan(
-              text: label,
-              children: [
-                if (optional)
-                  TextSpan(
-                    text: '  ${l10n.sharing_optional}',
-                    style: sharingBody(context, size: 12, color: c.inkMuted),
-                  ),
-              ],
-            ),
-            style: sharingLabel(context, size: 13),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            key: ValueKey(key),
-            controller: controller,
-            maxLength: max,
-            minLines: lines,
-            maxLines: lines == 1 ? 1 : 6,
-            textCapitalization: TextCapitalization.sentences,
-            style: sharingBody(context, size: 15),
-            decoration: InputDecoration(hintText: hint),
-          ),
-        ],
-      ),
-    );
-
-    return scaffold(
+    return page(
       paper: paper,
       canSave: true,
-      SharingColumn(
-        builder: (context, gutter) => ListView(
-          padding: EdgeInsets.fromLTRB(gutter, 22, gutter, 40),
+      [
+        const SizedBox(height: UiSpace.lg),
+        UiTextArea(
+          label: l10n.sharing_storyTitleField,
+          fieldKey: const ValueKey('story-title'),
+          controller: _title,
+          maxLength: storyTitleMax,
+        ),
+        const SizedBox(height: UiSpace.md),
+        UiTextArea(
+          label: l10n.sharing_introField,
+          fieldKey: const ValueKey('story-intro'),
+          controller: _intro,
+          hint: l10n.sharing_introHint,
+          maxLength: storyTextMax,
+          minLines: 3,
+        ),
+        const SizedBox(height: UiSpace.md),
+        UiTextArea(
+          label: l10n.sharing_lessonsField,
+          optionalLabel: l10n.sharing_optional,
+          fieldKey: const ValueKey('story-lessons'),
+          controller: _lessons,
+          maxLength: storyTextMax,
+          minLines: 3,
+        ),
+        const SizedBox(height: UiSpace.md),
+        _CoverPicker(
+          cover: cover,
+          // Only my visible photos: never a hidden or another member's.
+          onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
+        ),
+        const SizedBox(height: UiSpace.xl),
+        UiListHeading(title: l10n.sharing_hidePhotos),
+        const SizedBox(height: 4),
+        Text(
+          mine.isEmpty ? l10n.sharing_noPhotosYet : l10n.sharing_hidePhotosHint,
+          style: UiText.body(size: 13, color: ui.inkMuted),
+        ),
+        const SizedBox(height: UiSpace.sm),
+        GridView.count(
+          crossAxisCount: 4,
+          mainAxisSpacing: 6,
+          crossAxisSpacing: 6,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
-            field(
-              'story-title',
-              l10n.sharing_storyTitleField,
-              _title,
-              storyTitleMax,
-            ),
-            field(
-              'story-intro',
-              l10n.sharing_introField,
-              _intro,
-              storyTextMax,
-              hint: l10n.sharing_introHint,
-              lines: 3,
-            ),
-            field(
-              'story-lessons',
-              l10n.sharing_lessonsField,
-              _lessons,
-              storyTextMax,
-              optional: true,
-              lines: 3,
-            ),
-            _CoverPicker(
-              cover: cover,
-              // Only my visible photos: never a hidden or another member's.
-              onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
-            ),
-            const SizedBox(height: 22),
-            Semantics(
-              header: true,
-              child: Text(
-                l10n.sharing_hidePhotos,
-                style: headingStyle(size: 18),
+            for (final ci in mine)
+              _HideCell(
+                checkIn: ci,
+                hidden: hidden.contains(ci.id),
+                onTap: () => _toggleHidden(ci),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              mine.isEmpty
-                  ? l10n.sharing_noPhotosYet
-                  : l10n.sharing_hidePhotosHint,
-              style: sharingBody(context, size: 13, color: c.inkMuted),
-            ),
-            const SizedBox(height: 8),
-            GridView.count(
-              crossAxisCount: 4,
-              mainAxisSpacing: 4,
-              crossAxisSpacing: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              children: [
-                for (final ci in mine)
-                  _HideCell(
-                    checkIn: ci,
-                    hidden: hidden.contains(ci.id),
-                    onTap: () => _toggleHidden(ci),
-                  ),
-              ],
-            ),
           ],
         ),
-      ),
+      ],
     );
   }
 }
@@ -385,61 +291,37 @@ class _CoverPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return Semantics(
       button: true,
       label: l10n.sharing_pickCover,
       excludeSemantics: true,
-      child: InkWell(
+      child: UiPressable(
         key: const ValueKey('story-cover'),
-        onTap: onTap,
-        child: SizedBox(
-          height: 180,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (cover != null)
-                StoragePhoto(path: cover!.photoPath)
-              else
-                ColoredBox(color: c.surfaceSunken),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 48),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: OurneyColors.light.surface.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.image_outlined,
-                          size: 16,
-                          color: OurneyColors.light.ink,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            l10n.sharing_pickCover,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: sharingLabel(
-                              context,
-                              size: 13,
-                              color: OurneyColors.light.ink,
-                            ),
-                          ),
-                        ),
-                      ],
+        onPressed: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(UiRadius.card),
+          child: SizedBox(
+            height: 180,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (cover != null)
+                  StoragePhoto(path: cover!.photoPath)
+                else
+                  ColoredBox(color: ui.fill),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: UiSpace.md),
+                    child: UiGlassChip(
+                      leading: Icons.image_outlined,
+                      label: l10n.sharing_pickCover,
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -461,7 +343,7 @@ class _HideCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final date = formatLocalDate(context, checkIn.localDate);
     return Semantics(
       button: true,
@@ -470,32 +352,35 @@ class _HideCell extends StatelessWidget {
           ? l10n.sharing_photoHidden(date)
           : l10n.sharing_photoShown(date),
       excludeSemantics: true,
-      child: InkWell(
+      child: UiPressable(
         key: ValueKey('story-hide-${checkIn.id}'),
-        onTap: onTap,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Opacity(
-              opacity: hidden ? 0.32 : 1,
-              child: StoragePhoto(path: checkIn.thumbPath, cacheWidth: 200),
-            ),
-            if (hidden)
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: c.bg.withValues(alpha: 0.85),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.visibility_off_rounded,
-                    size: 20,
-                    color: c.ink,
+        onPressed: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(UiRadius.otp),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Opacity(
+                opacity: hidden ? 0.32 : 1,
+                child: StoragePhoto(path: checkIn.thumbPath, cacheWidth: 200),
+              ),
+              if (hidden)
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: ui.bg.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.visibility_off_rounded,
+                      size: 20,
+                      color: ui.ink,
+                    ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -8,7 +8,7 @@ import 'package:ourney/app/theme/app_theme.dart';
 import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/features/sharing/sharing.dart';
 import 'package:ourney/features/sharing/ui/insights_screen.dart';
-import 'package:ourney/shared/ourney_primary_button.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -24,10 +24,10 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
 }
 
 String _submitLabel(WidgetTester tester) =>
-    tester.widget<OurneyPrimaryButton>(_key('share-submit')).label;
+    tester.widget<UiButton>(_key('share-submit')).label;
 
 bool _submitEnabled(WidgetTester tester) =>
-    tester.widget<OurneyPrimaryButton>(_key('share-submit')).onPressed != null;
+    tester.widget<UiButton>(_key('share-submit')).onPressed != null;
 
 FakeJourneyRepository _journeys({
   TemplateId template = TemplateId.travel,

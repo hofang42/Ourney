@@ -19,6 +19,7 @@ export 'components/profile_entry.dart';
 export 'components/segmented.dart';
 export 'components/sheets.dart';
 export 'components/surfaces.dart';
+export 'components/text_area.dart';
 export 'journey_icons.dart';
 export 'journey_style_for.dart';
 export 'journey_styles.dart';

@@ -8,12 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/persona_theme.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/needs_server_view.dart';
-import '../../../shared/ourney_primary_button.dart';
-import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../data/sharing_providers.dart';
@@ -179,16 +174,12 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final localOnly = ref.watch(appConfigProvider).localOnly;
-    final appBar = AppBar(
-      centerTitle: true,
-      title: SharingNavTitle(title: l10n.sharing_retellTitle),
-    );
     if (localOnly) {
-      return Scaffold(
-        appBar: appBar,
-        body: const SafeArea(child: NeedsServerView()),
+      return SharingPage(
+        title: l10n.sharing_retellTitle,
+        children: const [SharingNeedsServer()],
       );
     }
     final error = _submitted ? _error(l10n) : null;
@@ -197,12 +188,14 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
       for (final d in dates)
         if (dates.where((x) => x == d).length > 1) d,
     };
+    final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
+    final vi = Localizations.localeOf(context).languageCode == 'vi';
 
     Widget label(String s) => Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 7),
+      padding: const EdgeInsets.only(top: UiSpace.xl, bottom: 7),
       child: Semantics(
         header: true,
-        child: Text(s, style: sharingLabel(context, size: 13)),
+        child: Text(s, style: UiText.fieldLabel(color: ui.inkMuted)),
       ),
     );
 
@@ -217,11 +210,10 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
             l10n.sharing_saving(_done, _picks.length),
             style: sharingLabel(context, size: 13),
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: _picks.isEmpty ? null : _done / _picks.length,
-            color: c.primary,
-            backgroundColor: c.surfaceSunken,
+          const SizedBox(height: UiSpace.sm),
+          UiProgressBar(
+            value: _picks.isEmpty ? 0 : _done / _picks.length,
+            semanticLabel: l10n.sharing_saving(_done, _picks.length),
           ),
         ],
       );
@@ -233,33 +225,25 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
         children: [
           Text(
             l10n.sharing_retellFailed(_failed),
-            style: sharingLabel(context, size: 13, color: c.danger),
+            style: sharingLabel(context, size: 13, color: ui.danger),
           ),
-          const SizedBox(height: 8),
-          OurneyPrimaryButton(
+          const SizedBox(height: UiSpace.sm),
+          UiButton(
             key: const ValueKey('retell-retry'),
             label: l10n.sharing_retry,
-            backgroundColor: c.primary,
-            foregroundColor: c.onPrimary,
             onPressed: _save,
           ),
-          TextButton(
+          UiButton.ghost(
             key: const ValueKey('retell-open'),
-            style: TextButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              foregroundColor: c.ink,
-            ),
+            label: l10n.sharing_openJourney,
             onPressed: () => context.go(AppRoutes.journey(_created!.id)),
-            child: Text(l10n.sharing_openJourney),
           ),
         ],
       );
     } else {
-      bottom = OurneyPrimaryButton(
+      bottom = UiButton(
         key: const ValueKey('retell-save'),
         label: l10n.sharing_saveToShelf,
-        backgroundColor: c.primary,
-        foregroundColor: c.onPrimary,
         onPressed: _save,
       );
     }
@@ -267,233 +251,158 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
     // Leaving mid-import would orphan a half-filled journey.
     return PopScope(
       canPop: !_busy,
-      child: Scaffold(
-        key: const ValueKey('retell'),
-        appBar: appBar,
-        bottomNavigationBar: SafeArea(
-          minimum: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      child: SharingPage(
+        scaffoldKey: const ValueKey('retell'),
+        title: l10n.sharing_retellTitle,
+        bottom: Padding(
+          padding: EdgeInsets.fromLTRB(
+            gutter,
+            UiSpace.sm,
+            gutter,
+            UiSpace.lg + MediaQuery.paddingOf(context).bottom,
+          ),
           child: bottom,
         ),
-        body: SafeArea(
-          top: false,
-          child: AbsorbPointer(
+        children: [
+          AbsorbPointer(
             absorbing: _busy,
-            child: SharingColumn(
-              builder: (context, gutter) => ListView(
-                padding: EdgeInsets.fromLTRB(gutter, 8, gutter, 32),
-                children: [
-                  Text(
-                    l10n.sharing_retellIntro,
-                    style: sharingBody(context, color: c.inkMuted),
-                  ),
-                  label(l10n.sharing_journeyName),
-                  TextField(
-                    key: const ValueKey('retell-title'),
-                    controller: _title,
-                    maxLength: journeyTitleMax,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
-                      hintText: l10n.sharing_journeyName,
-                    ),
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  label(l10n.sharing_style),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final t in allTemplates)
-                        _StyleChip(
-                          template: t,
-                          selected: t.id == _template,
-                          onTap: () => setState(() => _template = t.id),
-                        ),
-                    ],
-                  ),
-                  label(l10n.sharing_metricOptional),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: TextField(
-                          key: const ValueKey('retell-metric-name'),
-                          controller: _metricName,
-                          decoration: InputDecoration(
-                            labelText: l10n.sharing_metricName,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          key: const ValueKey('retell-metric-unit'),
-                          controller: _metricUnit,
-                          decoration: InputDecoration(
-                            labelText: l10n.sharing_metricUnit,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _picks.isEmpty
-                              ? l10n.sharing_pickPhotos
-                              : l10n.sharing_photosCount(_picks.length),
-                          style: headingStyle(size: 17),
-                        ),
-                      ),
-                      Flexible(
-                        child: SharingPillButton(
-                          key: const ValueKey('retell-pick'),
-                          icon: Icons.add_photo_alternate_outlined,
-                          label: _picks.isEmpty
-                              ? l10n.sharing_pickPhotos
-                              : l10n.sharing_addPhotos,
-                          onPressed: _pick,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_picks.isNotEmpty) ...[
-                    Text(
-                      l10n.sharing_rangeLine(
-                        formatDateRange(
-                          context,
-                          _picks.first.date,
-                          _picks.last.date,
-                        ),
-                        l10n.sharing_days(
-                          _picks.first.date.daysUntil(_picks.last.date) + 1,
-                        ),
-                      ),
-                      key: const ValueKey('retell-range'),
-                      style: sharingBody(context, size: 13, color: c.inkMuted),
-                    ),
-                    Text(
-                      l10n.sharing_photosHint,
-                      style: sharingBody(context, size: 12, color: c.inkMuted),
-                    ),
-                    const SizedBox(height: 8),
-                    GridView.count(
-                      crossAxisCount: 3,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 0.72,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        for (var i = 0; i < _picks.length; i++)
-                          _PickCell(
-                            index: i,
-                            pick: _picks[i],
-                            duplicate: dupes.contains(_picks[i].date),
-                            onDate: () => _editDate(_picks[i]),
-                            onRemove: () => setState(() => _picks.removeAt(i)),
-                          ),
-                      ],
-                    ),
-                    if (dupes.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          l10n.sharing_sameDay,
-                          style: sharingBody(
-                            context,
-                            size: 12,
-                            color: c.warning,
-                          ),
-                        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: UiSpace.sm),
+                Text(
+                  l10n.sharing_retellIntro,
+                  style: UiText.muted(color: ui.inkMuted, size: 14),
+                ),
+                const SizedBox(height: UiSpace.lg),
+                UiTextArea(
+                  label: l10n.sharing_journeyName,
+                  fieldKey: const ValueKey('retell-title'),
+                  controller: _title,
+                  hint: l10n.sharing_journeyName,
+                  maxLength: journeyTitleMax,
+                  onChanged: (_) => setState(() {}),
+                ),
+                label(l10n.sharing_style),
+                Wrap(
+                  spacing: UiSpace.sm,
+                  runSpacing: UiSpace.sm,
+                  children: [
+                    for (final t in allTemplates)
+                      UiChip(
+                        key: ValueKey('retell-style-${t.id.wireName}'),
+                        label: vi ? t.titleVi : t.titleEn,
+                        icon: uiTemplateIcon(t.id),
+                        selected: t.id == _template,
+                        onPressed: () => setState(() => _template = t.id),
                       ),
                   ],
-                  if (error != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 14),
+                ),
+                label(l10n.sharing_metricOptional),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: UiTextField(
+                        label: l10n.sharing_metricName,
+                        fieldKey: const ValueKey('retell-metric-name'),
+                        controller: _metricName,
+                      ),
+                    ),
+                    const SizedBox(width: UiSpace.sm),
+                    Expanded(
+                      flex: 2,
+                      child: UiTextField(
+                        label: l10n.sharing_metricUnit,
+                        fieldKey: const ValueKey('retell-metric-unit'),
+                        controller: _metricUnit,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: UiSpace.xl),
+                Row(
+                  children: [
+                    Expanded(
                       child: Text(
-                        error,
-                        key: const ValueKey('retell-error'),
-                        style: sharingLabel(context, size: 13, color: c.danger),
+                        _picks.isEmpty
+                            ? l10n.sharing_pickPhotos
+                            : l10n.sharing_photosCount(_picks.length),
+                        style: UiText.h2(size: 18, color: ui.ink),
+                      ),
+                    ),
+                    Flexible(
+                      child: SharingPillButton(
+                        key: const ValueKey('retell-pick'),
+                        icon: Icons.add_photo_alternate_outlined,
+                        label: _picks.isEmpty
+                            ? l10n.sharing_pickPhotos
+                            : l10n.sharing_addPhotos,
+                        onPressed: _pick,
+                      ),
+                    ),
+                  ],
+                ),
+                if (_picks.isNotEmpty) ...[
+                  Text(
+                    l10n.sharing_rangeLine(
+                      formatDateRange(
+                        context,
+                        _picks.first.date,
+                        _picks.last.date,
+                      ),
+                      l10n.sharing_days(
+                        _picks.first.date.daysUntil(_picks.last.date) + 1,
+                      ),
+                    ),
+                    key: const ValueKey('retell-range'),
+                    style: UiText.body(size: 13, color: ui.inkMuted),
+                  ),
+                  Text(
+                    l10n.sharing_photosHint,
+                    style: UiText.body(size: 12, color: ui.inkMuted),
+                  ),
+                  const SizedBox(height: UiSpace.sm),
+                  GridView.count(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 0.66,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      for (var i = 0; i < _picks.length; i++)
+                        _PickCell(
+                          index: i,
+                          pick: _picks[i],
+                          duplicate: dupes.contains(_picks[i].date),
+                          onDate: () => _editDate(_picks[i]),
+                          onRemove: () => setState(() => _picks.removeAt(i)),
+                        ),
+                    ],
+                  ),
+                  if (dupes.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: UiSpace.sm),
+                      child: Text(
+                        l10n.sharing_sameDay,
+                        style: UiText.body(size: 12, color: ui.warn),
                       ),
                     ),
                 ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StyleChip extends StatelessWidget {
-  const _StyleChip({
-    required this.template,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final JourneyTemplate template;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    final style = OurneyPersonaTheme.forSkin(
-      template.personaSkinId,
-      Theme.of(context).brightness,
-    );
-    final vi = Localizations.localeOf(context).languageCode == 'vi';
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: Material(
-        color: selected ? c.surfaceRaised : c.surface,
-        shape: StadiumBorder(
-          side: BorderSide(
-            color: selected ? c.ink : c.border,
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: InkWell(
-          key: ValueKey('retell-style-${template.id.wireName}'),
-          customBorder: const StadiumBorder(),
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: 48),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: style.primaryAccent,
-                      shape: BoxShape.circle,
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 14),
+                    child: KeyedSubtree(
+                      key: const ValueKey('retell-error'),
+                      child: UiInlineError(message: error),
                     ),
                   ),
-                  const SizedBox(width: 6),
-                  Icon(templateIcon(template.id), size: 16, color: c.ink),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      vi ? template.titleVi : template.titleEn,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: sharingLabel(context, size: 13),
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -517,54 +426,58 @@ class _PickCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final date = formatLocalDate(context, pick.date);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Image.file(
-                File(pick.path),
-                fit: BoxFit.cover,
-                cacheWidth: 240,
-                excludeFromSemantics: true,
-                errorBuilder: (context, error, stack) =>
-                    const PhotoPlaceholder(),
-              ),
-              if (pick.saved)
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Icon(Icons.check_circle_rounded, color: c.success),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(UiRadius.thumb),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.file(
+                  File(pick.path),
+                  fit: BoxFit.cover,
+                  cacheWidth: 240,
+                  excludeFromSemantics: true,
+                  errorBuilder: (context, error, stack) =>
+                      const PhotoPlaceholder(),
                 ),
-              Align(
-                alignment: Alignment.topRight,
-                child: IconButton(
-                  key: ValueKey('retell-remove-$index'),
-                  tooltip: l10n.sharing_removePhoto,
-                  onPressed: onRemove,
-                  style: IconButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    backgroundColor: c.bg.withValues(alpha: 0.8),
-                    foregroundColor: c.ink,
+                if (pick.saved)
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(Icons.check_circle_rounded, color: ui.success),
+                    ),
                   ),
-                  icon: const Icon(Icons.close_rounded, size: 18),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: UiIconButton(
+                    key: ValueKey('retell-remove-$index'),
+                    icon: Icons.close_rounded,
+                    label: l10n.sharing_removePhoto,
+                    background: ui.bg.withValues(alpha: 0.8),
+                    iconSize: 18,
+                    onPressed: onRemove,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         Semantics(
           button: true,
           label: l10n.sharing_changeDate(date),
           excludeSemantics: true,
-          child: InkWell(
+          child: UiPressable(
             key: ValueKey('retell-date-$index'),
-            onTap: onDate,
+            onPressed: onDate,
+            borderRadius: BorderRadius.circular(UiRadius.otp),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 48),
+              constraints: const BoxConstraints(minHeight: UiSize.tap),
               child: Row(
                 children: [
                   Icon(
@@ -572,7 +485,7 @@ class _PickCell extends StatelessWidget {
                         ? Icons.warning_amber_rounded
                         : Icons.event_rounded,
                     size: 14,
-                    color: duplicate ? c.warning : c.inkMuted,
+                    color: duplicate ? ui.warn : ui.inkMuted,
                   ),
                   const SizedBox(width: 4),
                   Expanded(

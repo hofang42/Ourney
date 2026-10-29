@@ -7,12 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/persona_theme.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/needs_server_view.dart';
-import '../../../shared/ourney_primary_button.dart';
-import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import '../sharing_paths.dart';
@@ -35,10 +30,7 @@ class SharedJourneyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (ref.watch(appConfigProvider).localOnly) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const SafeArea(child: NeedsServerView()),
-      );
+      return const SharingPage(children: [SharingNeedsServer()]);
     }
     final key = (id: id, byToken: byToken);
     final async = ref.watch(sharedViewProvider(key));
@@ -50,15 +42,16 @@ class SharedJourneyScreen extends ConsumerWidget {
           code == OurneyErrorCode.notFound) {
         return const _PrivateNow();
       }
-      return Scaffold(
-        appBar: AppBar(),
-        body: SharingErrorView(
-          error: async.error!,
-          onRetry: () => ref.invalidate(sharedViewProvider(key)),
-        ),
+      return SharingPage(
+        children: [
+          SharingErrorView(
+            error: async.error!,
+            onRetry: () => ref.invalidate(sharedViewProvider(key)),
+          ),
+        ],
       );
     }
-    return Scaffold(appBar: AppBar(), body: const SharingLoading());
+    return const SharingPage(children: [SharingLoading()]);
   }
 }
 
@@ -68,37 +61,18 @@ class _PrivateNow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
-    return Scaffold(
-      key: const ValueKey('shared-private-now'),
-      appBar: AppBar(),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(34),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.lock_outline_rounded, size: 58, color: c.ink),
-                const SizedBox(height: 18),
-                Text(
-                  l10n.sharing_privateNow,
-                  textAlign: TextAlign.center,
-                  style: headingStyle(size: 24),
-                ),
-                const SizedBox(height: 24),
-                SharingPillButton(
-                  key: const ValueKey('shared-go-back'),
-                  label: l10n.sharing_goBack,
-                  onPressed: () => context.canPop()
-                      ? context.pop()
-                      : context.go(AppRoutes.journeys),
-                ),
-              ],
-            ),
-          ),
+    return SharingPage(
+      scaffoldKey: const ValueKey('shared-private-now'),
+      onBack: () => sharingBack(context),
+      children: [
+        UiEmptyState(
+          icon: Icons.lock_outline_rounded,
+          title: l10n.sharing_privateNow,
+          actionLabel: l10n.sharing_goBack,
+          onAction: () =>
+              context.canPop() ? context.pop() : context.go(AppRoutes.journeys),
         ),
-      ),
+      ],
     );
   }
 }
@@ -209,19 +183,17 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final v = _view;
     final skin = personaSkinForTemplate(
       v.templateId,
       kind: v.kind,
       emoji: v.emoji,
     );
-    final brightness = Theme.of(context).brightness;
-    final style = OurneyPersonaTheme.forSkin(skin, brightness);
-    final paper = brightness == Brightness.dark ? c.bg : style.background;
-    final rule = brightness == Brightness.dark
-        ? c.divider
-        : style.ink.withValues(alpha: 0.16);
+    final style = uiStyleForSkin(skin);
+    final dark = ui.brightness == Brightness.dark;
+    final paper = dark ? ui.bg : style.paper;
+    final rule = dark ? ui.divider : style.ink.withValues(alpha: 0.16);
     final imported = v.origin == JourneyOrigin.imported;
     final photos = v.photos;
     final cover =
@@ -230,6 +202,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
             .firstOrNull ??
         photos.firstOrNull;
     final title = v.story.title ?? v.title;
+    final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
 
     final String eyebrow;
     if (imported && photos.isNotEmpty) {
@@ -241,7 +214,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
     } else if (v.status == JourneyStatus.active && photos.isNotEmpty) {
       eyebrow = l10n.sharing_liveDay(_dayOf(photos.last) ?? photos.length);
     } else {
-      eyebrow = personaStyleName(skin);
+      eyebrow = style.name;
     }
     final replyTo = v.kind == JourneyKind.group
         ? (v.sharedBy ?? v.owner).displayName
@@ -250,256 +223,216 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
     final intro = v.story.intro;
     final longIntro = intro != null && intro.length > 160;
 
-    return Scaffold(
+    Widget pad(Widget child, {double top = 0, double bottom = 0}) => Padding(
+      padding: EdgeInsets.fromLTRB(gutter, top, gutter, bottom),
+      child: child,
+    );
+
+    return KeyedSubtree(
       key: const ValueKey('shared-journey'),
-      backgroundColor: paper,
-      appBar: AppBar(
-        backgroundColor: paper,
-        centerTitle: true,
-        toolbarHeight: 66,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: sharingLabel(context, size: 15),
-            ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                PersonAvatar(person: v.owner, size: 20),
-                const SizedBox(width: 5),
-                Flexible(
-                  child: Text(
-                    v.owner.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: sharingBody(context, size: 12),
-                  ),
+      child: UiScaffold(
+        background: paper,
+        gutter: false,
+        padTop: 0,
+        padBottom: 16,
+        bottom: v.canFollow
+            ? Padding(
+                padding: EdgeInsets.fromLTRB(
+                  gutter,
+                  UiSpace.sm,
+                  gutter,
+                  UiSpace.lg + MediaQuery.paddingOf(context).bottom,
                 ),
-              ],
+                child: UiButton(
+                  key: const ValueKey('shared-do-journey'),
+                  label: l10n.sharing_doThisJourney,
+                  accent: style.accent,
+                  onAccent: style.onAccent,
+                  onPressed: () =>
+                      context.push(AppRoutes.followJourney(v.journeyId)),
+                ),
+              )
+            : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            pad(
+              UiBackHeader(
+                onBack: () => sharingBack(context),
+                backLabel: MaterialLocalizations.of(context).backButtonTooltip,
+                title: title,
+                subtitle: v.owner.displayName,
+              ),
             ),
-          ],
-        ),
-        actions: const [SizedBox(width: 48)],
-      ),
-      floatingActionButton: v.canFollow
-          ? OurneyPrimaryButton(
-              key: const ValueKey('shared-do-journey'),
-              expand: false,
-              label: l10n.sharing_doThisJourney,
-              backgroundColor: style.primaryAccent,
-              onPressed: () =>
-                  context.push(AppRoutes.followJourney(v.journeyId)),
-            )
-          : null,
-      body: SafeArea(
-        top: false,
-        child: SharingColumn(
-          builder: (context, gutter) => ListView(
-            padding: const EdgeInsets.only(bottom: 110),
-            children: [
-              if (cover != null)
-                AspectRatio(aspectRatio: 1, child: _Photo(photo: cover)),
-              Padding(
-                padding: EdgeInsets.fromLTRB(gutter, 24, gutter, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (v.canAddOwner) ...[
-                      Row(
-                        children: [
-                          PersonAvatar(person: v.owner, size: 28),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              v.owner.displayName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: sharingLabel(context, size: 14),
-                            ),
+            if (cover != null)
+              AspectRatio(aspectRatio: 1, child: _Photo(photo: cover)),
+            pad(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (v.canAddOwner) ...[
+                    Row(
+                      children: [
+                        PersonAvatar(person: v.owner, size: 28),
+                        const SizedBox(width: UiSpace.sm),
+                        Expanded(
+                          child: Text(
+                            v.owner.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: sharingLabel(context, size: 14),
                           ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: SharingPillButton(
-                              key: const ValueKey('shared-add-friend'),
-                              icon: _requested
-                                  ? Icons.check_rounded
-                                  : Icons.person_add_alt_1_rounded,
-                              label: _requested
-                                  ? l10n.sharing_requested
-                                  : l10n.sharing_addFriend,
-                              onPressed: _requested ? null : _addFriend,
-                            ),
+                        ),
+                        const SizedBox(width: UiSpace.sm),
+                        Flexible(
+                          child: SharingPillButton(
+                            key: const ValueKey('shared-add-friend'),
+                            icon: _requested
+                                ? Icons.check_rounded
+                                : Icons.person_add_alt_1_rounded,
+                            label: _requested
+                                ? l10n.sharing_requested
+                                : l10n.sharing_addFriend,
+                            onPressed: _requested ? null : _addFriend,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: UiSpace.lg),
+                  ],
+                  KeyedSubtree(
+                    key: const ValueKey('shared-eyebrow'),
+                    child: UiEyebrow(eyebrow.toUpperCase()),
+                  ),
+                  const SizedBox(height: 3),
+                  Semantics(
+                    header: true,
+                    child: Text(title, style: UiText.h1(color: ui.ink)),
+                  ),
+                  if (intro != null) ...[
+                    const SizedBox(height: 9),
                     Text(
-                      eyebrow.toUpperCase(),
-                      key: const ValueKey('shared-eyebrow'),
-                      style: eyebrowStyle(color: c.inkMuted),
+                      intro,
+                      maxLines: longIntro && !_introOpen ? 4 : null,
+                      overflow: longIntro && !_introOpen
+                          ? TextOverflow.ellipsis
+                          : null,
+                      style: UiText.muted(color: ui.inkMuted),
                     ),
-                    const SizedBox(height: 3),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        title,
-                        style: displayStyle(
-                          size: 30,
-                          weight: 700,
-                          height: 1.2,
-                          tracking: -0.03,
-                          color: c.ink,
-                        ),
-                      ),
-                    ),
-                    if (intro != null) ...[
-                      const SizedBox(height: 9),
-                      Text(
-                        intro,
-                        maxLines: longIntro && !_introOpen ? 4 : null,
-                        overflow: longIntro && !_introOpen
-                            ? TextOverflow.ellipsis
-                            : null,
-                        style: sharingBody(
-                          context,
-                          size: 15,
-                          color: c.inkMuted,
-                        ).copyWith(height: 1.6),
-                      ),
-                      if (longIntro)
-                        Align(
-                          alignment: AlignmentDirectional.centerStart,
-                          child: TextButton(
-                            style: TextButton.styleFrom(
-                              minimumSize: const Size(48, 48),
-                              foregroundColor: c.ink,
-                              padding: EdgeInsets.zero,
-                            ),
-                            onPressed: () =>
-                                setState(() => _introOpen = !_introOpen),
-                            child: Text(
-                              _introOpen
-                                  ? l10n.sharing_less
-                                  : l10n.sharing_more,
-                              style: sharingLabel(
-                                context,
-                                size: 13,
-                              ).copyWith(decoration: TextDecoration.underline),
-                            ),
-                          ),
-                        ),
-                    ],
-                    const SizedBox(height: 14),
-                    _ProgressBox(view: v, rule: rule),
-                    if (v.story.lessons != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            border: Border.symmetric(
-                              horizontal: BorderSide(color: rule),
-                            ),
-                          ),
-                          child: Theme(
-                            data: Theme.of(context)
-                                .copyWith(dividerColor: Colors.transparent),
-                            child: ExpansionTile(
-                              key: const ValueKey('shared-lessons'),
-                              tilePadding: EdgeInsets.zero,
-                              childrenPadding: const EdgeInsets.only(
-                                bottom: 12,
-                              ),
-                              expandedAlignment: Alignment.centerLeft,
-                              title: Text(
-                                l10n.sharing_lessonsField,
-                                style: sharingLabel(context, size: 14),
-                              ),
-                              children: [
-                                Text(
-                                  v.story.lessons!,
-                                  style: sharingBody(context),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    if (v.likeCount != null && v.followCount != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          l10n.sharing_counts(v.likeCount!, v.followCount!),
-                          key: const ValueKey('shared-counts'),
-                          style: sharingLabel(context, size: 13),
-                        ),
-                      ),
-                    if (v.kind == JourneyKind.group && v.members.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Wrap(
-                          spacing: 4,
-                          runSpacing: 4,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            for (final m in v.members)
-                              PersonAvatar(person: m, size: 28),
-                            if (v.sharedBy != null)
-                              Padding(
-                                padding: const EdgeInsets.only(left: 6),
-                                child: Text(
-                                  l10n.sharing_sharedBy(
-                                    v.sharedBy!.displayName,
-                                  ),
-                                  style: sharingBody(
-                                    context,
-                                    size: 12,
-                                    color: c.inkMuted,
-                                  ),
-                                ),
-                              ),
-                          ],
+                    if (longIntro)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: UiTextAction(
+                          label: _introOpen ? l10n.sharing_less : l10n.sharing_more,
+                          underline: true,
+                          size: 13,
+                          color: ui.ink,
+                          alignment: Alignment.centerLeft,
+                          onPressed: () =>
+                              setState(() => _introOpen = !_introOpen),
                         ),
                       ),
                   ],
+                  const SizedBox(height: 14),
+                  _ProgressBox(view: v, rule: rule),
+                  if (v.story.lessons != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: UiSpace.lg),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border.symmetric(
+                            horizontal: BorderSide(color: rule),
+                          ),
+                        ),
+                        child: Theme(
+                          data: Theme.of(
+                            context,
+                          ).copyWith(dividerColor: Colors.transparent),
+                          child: ExpansionTile(
+                            key: const ValueKey('shared-lessons'),
+                            tilePadding: EdgeInsets.zero,
+                            childrenPadding: const EdgeInsets.only(bottom: 12),
+                            expandedAlignment: Alignment.centerLeft,
+                            title: Text(
+                              l10n.sharing_lessonsField,
+                              style: sharingLabel(context, size: 14),
+                            ),
+                            children: [
+                              Text(
+                                v.story.lessons!,
+                                style: sharingBody(context),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (v.likeCount != null && v.followCount != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: UiSpace.md),
+                      child: Text(
+                        l10n.sharing_counts(v.likeCount!, v.followCount!),
+                        key: const ValueKey('shared-counts'),
+                        style: sharingLabel(context, size: 13),
+                      ),
+                    ),
+                  if (v.kind == JourneyKind.group && v.members.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: UiSpace.md),
+                      child: Wrap(
+                        spacing: 4,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          for (final m in v.members)
+                            PersonAvatar(person: m, size: 28),
+                          if (v.sharedBy != null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text(
+                                l10n.sharing_sharedBy(v.sharedBy!.displayName),
+                                style: UiText.body(
+                                  size: 12,
+                                  color: ui.inkMuted,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              top: 20,
+              bottom: UiSpace.lg,
+            ),
+            Divider(height: 1, color: rule),
+            if (photos.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(UiSpace.xl),
+                child: Text(
+                  l10n.sharing_noPhotosYet,
+                  textAlign: TextAlign.center,
+                  style: UiText.muted(color: ui.inkMuted, size: 14),
                 ),
               ),
-              Divider(height: 1, color: rule),
-              if (photos.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(OurneySpacing.xl),
-                  child: Text(
-                    l10n.sharing_noPhotosYet,
-                    textAlign: TextAlign.center,
-                    style: sharingBody(context, color: c.inkMuted),
-                  ),
+            for (final p in photos)
+              pad(
+                _Moment(
+                  photo: p,
+                  day: _dayOf(p),
+                  like: _likeOf(p),
+                  canReact: v.canReact,
+                  canReply: v.canReply,
+                  showCount: v.role == ViewerRole.member || v.likeCount != null,
+                  metricUnit: v.metricUnit,
+                  replyTo: replyTo,
+                  rule: rule,
+                  onLike: () => _toggleLike(p),
+                  onReply: () => _reply(p),
                 ),
-              for (final p in photos)
-                Padding(
-                  padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 0),
-                  child: _Moment(
-                    photo: p,
-                    day: _dayOf(p),
-                    like: _likeOf(p),
-                    canReact: v.canReact,
-                    canReply: v.canReply,
-                    showCount:
-                        v.role == ViewerRole.member || v.likeCount != null,
-                    metricUnit: v.metricUnit,
-                    replyTo: replyTo,
-                    rule: rule,
-                    accent: style.primaryAccent,
-                    onLike: () => _toggleLike(p),
-                    onReply: () => _reply(p),
-                  ),
-                ),
-            ],
-          ),
+                top: UiSpace.lg,
+              ),
+          ],
         ),
       ),
     );
@@ -532,7 +465,7 @@ class _ProgressBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     // S12: never a streak for a retold journey.
     final streak = view.origin == JourneyOrigin.imported
         ? null
@@ -545,8 +478,11 @@ class _ProgressBox extends StatelessWidget {
     return Container(
       key: const ValueKey('shared-progress'),
       constraints: const BoxConstraints(minHeight: 48),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(border: Border.all(color: rule)),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: rule),
+        borderRadius: BorderRadius.circular(UiRadius.menu),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -556,7 +492,7 @@ class _ProgressBox extends StatelessWidget {
             ),
           ),
           if (streak != null && streak > 0) ...[
-            Icon(streakIcon, size: 18, color: c.flame),
+            Icon(Icons.local_fire_department_rounded, size: 18, color: ui.flame),
             const SizedBox(width: 2),
             Text(
               '$streak',
@@ -581,7 +517,6 @@ class _Moment extends StatelessWidget {
     required this.metricUnit,
     required this.replyTo,
     required this.rule,
-    required this.accent,
     required this.onLike,
     required this.onReply,
   });
@@ -595,14 +530,13 @@ class _Moment extends StatelessWidget {
   final String? metricUnit;
   final String replyTo;
   final Color rule;
-  final Color accent;
   final VoidCallback onLike;
   final VoidCallback onReply;
 
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final label = day != null && day! > 0
         ? l10n.sharing_dayN(day!)
         : formatLocalDate(context, photo.localDate);
@@ -620,23 +554,20 @@ class _Moment extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: 430),
             child: AspectRatio(
               aspectRatio: 4 / 5,
-              child: _Photo(photo: photo),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(UiRadius.menu),
+                child: _Photo(photo: photo),
+              ),
             ),
           ),
           const SizedBox(height: 7),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  [
-                    label,
-                    if (metric != null)
-                      '${_fmt(metric)}${metricUnit == null ? '' : ' $metricUnit'}',
-                  ].join(' · '),
-                  style: sharingLabel(context, size: 13),
-                ),
-              ),
-            ],
+          Text(
+            [
+              label,
+              if (metric != null)
+                '${_fmt(metric)}${metricUnit == null ? '' : ' $metricUnit'}',
+            ].join(' · '),
+            style: sharingLabel(context, size: 13),
           ),
           if (photo.caption != null)
             Padding(
@@ -645,10 +576,10 @@ class _Moment extends StatelessWidget {
             ),
           if (canReact || canReply)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: UiSpace.sm),
               child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: UiSpace.sm,
+                runSpacing: UiSpace.sm,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   if (canReact)
@@ -659,61 +590,53 @@ class _Moment extends StatelessWidget {
                           ? l10n.sharing_unlike
                           : l10n.sharing_like,
                       excludeSemantics: true,
-                      child: Material(
-                        color: c.surface,
-                        shape: StadiumBorder(side: BorderSide(color: rule)),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          key: ValueKey('shared-like-${photo.checkInId}'),
-                          onTap: onLike,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              minHeight: 48,
-                              minWidth: 56,
+                      child: UiPressable(
+                        key: ValueKey('shared-like-${photo.checkInId}'),
+                        onPressed: onLike,
+                        minSize: const Size(56, UiSize.tap),
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minHeight: UiSize.tap,
+                            minWidth: 56,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: ui.surface,
+                            border: Border.all(color: rule),
+                            borderRadius: BorderRadius.circular(
+                              UiRadius.capsule,
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                like.liked
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 20,
+                                color: like.liked ? ui.danger : ui.ink,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    like.liked
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                    size: 20,
-                                    color: like.liked ? c.danger : c.ink,
-                                  ),
-                                  if (showCount && like.count > 0) ...[
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      '${like.count}',
-                                      style: sharingLabel(context, size: 13),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
+                              if (showCount && like.count > 0) ...[
+                                const SizedBox(width: 5),
+                                Text(
+                                  '${like.count}',
+                                  style: sharingLabel(context, size: 13),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ),
                     ),
                   if (canReply)
-                    OutlinedButton.icon(
+                    UiButton.secondary(
                       key: ValueKey('shared-reply-${photo.checkInId}'),
+                      label: l10n.sharing_reply,
+                      icon: Icons.photo_camera_outlined,
+                      compact: true,
+                      expand: false,
                       onPressed: onReply,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(48, 48),
-                        shape: const StadiumBorder(),
-                        foregroundColor: c.ink,
-                        side: BorderSide(color: rule),
-                      ),
-                      icon: const Icon(Icons.photo_camera_outlined, size: 16),
-                      label: Text(
-                        l10n.sharing_reply,
-                        style: sharingLabel(context, size: 13),
-                      ),
                     ),
                 ],
               ),
@@ -723,7 +646,7 @@ class _Moment extends StatelessWidget {
               padding: const EdgeInsets.only(top: 5),
               child: Text(
                 l10n.sharing_replyHint(replyTo),
-                style: sharingBody(context, size: 12, color: c.inkMuted),
+                style: UiText.body(size: 12, color: ui.inkMuted),
               ),
             ),
         ],

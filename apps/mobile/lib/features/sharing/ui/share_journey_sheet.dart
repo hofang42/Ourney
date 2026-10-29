@@ -7,14 +7,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/persona_theme.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../personas/persona_contract.dart';
-import '../../../shared/color_utils.dart';
-import '../../../shared/needs_server_view.dart';
-import '../../../shared/ourney_primary_button.dart';
-import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import '../sharing_paths.dart';
@@ -24,35 +18,17 @@ import 'sharing_widgets.dart';
 /// of the spec do not exist in the v1 enum.
 bool isSensitiveTemplate(TemplateId id) => id == TemplateId.weightLoss;
 
-/// Opens "Share this journey" (SCR-82) as a draggable bottom sheet over the
-/// root navigator. Exported for the journey screen / shelf (integrator).
-Future<void> showShareJourneySheet(BuildContext context, Journey journey) {
-  final c = OurneyColors.of(context);
-  return showModalBottomSheet<void>(
-    context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: c.bg,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(OurneyRadii.sheet),
-      ),
-    ),
-    builder: (context) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.92,
-      minChildSize: 0.5,
-      maxChildSize: 1,
-      builder: (context, controller) => ShareJourneyPanel(
+/// Opens "Share this journey" (SCR-82) as a kit bottom sheet over the root
+/// navigator. Exported for the journey screen / shelf (integrator).
+Future<void> showShareJourneySheet(BuildContext context, Journey journey) =>
+    showUiSheet<void>(
+      context: context,
+      builder: (context) => ShareJourneyPanel(
         key: const ValueKey('share-journey-sheet'),
         journey: journey,
         inSheet: true,
-        scrollController: controller,
       ),
-    ),
-  );
-}
+    );
 
 /// `/sharing/:journeyId`: full-screen version of the sheet.
 class ShareJourneyScreen extends ConsumerWidget {
@@ -67,16 +43,12 @@ class ShareJourneyScreen extends ConsumerWidget {
     final journey = localOnly
         ? null
         : ref.watch(sharingJourneyProvider(journeyId));
-    return Scaffold(
-      key: const ValueKey('share-journey-screen'),
-      appBar: AppBar(
-        centerTitle: true,
-        title: SharingNavTitle(title: l10n.sharing_shareThisJourney),
-      ),
-      body: SafeArea(
-        top: false,
-        child: switch (journey) {
-          null => const NeedsServerView(),
+    return SharingPage(
+      scaffoldKey: const ValueKey('share-journey-screen'),
+      title: l10n.sharing_shareThisJourney,
+      children: [
+        switch (journey) {
+          null => const SharingNeedsServer(),
           AsyncValue(value: final Journey j) => ShareJourneyPanel(journey: j),
           AsyncValue(:final error?) => SharingErrorView(
             error: error,
@@ -87,23 +59,22 @@ class ShareJourneyScreen extends ConsumerWidget {
             error: const OurneyException(OurneyErrorCode.notFound),
           ),
         },
-      ),
+      ],
     );
   }
 }
 
 /// Body of SCR-82: story preview, group consent, friends, public link.
+/// Not scrollable by itself: the sheet / page around it scrolls.
 class ShareJourneyPanel extends ConsumerStatefulWidget {
   const ShareJourneyPanel({
     required this.journey,
     this.inSheet = false,
-    this.scrollController,
     super.key,
   });
 
   final Journey journey;
   final bool inSheet;
-  final ScrollController? scrollController;
 
   @override
   ConsumerState<ShareJourneyPanel> createState() => _ShareJourneyPanelState();
@@ -274,7 +245,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
   @override
   Widget build(BuildContext context) {
     if (ref.watch(appConfigProvider).localOnly) {
-      return const NeedsServerView();
+      return const SharingNeedsServer();
     }
     final stateAsync = ref.watch(shareStateProvider(_journey.id));
     final friendsAsync = ref.watch(acceptedFriendsProvider);
@@ -318,117 +289,95 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
             (consents != null &&
                 myConsent?.status != ShareConsentStatus.accepted));
     final owner = _isOwner();
+    final l10n = SharingL10n.of(context);
+    final danger = context.ui.danger;
 
-    return SharingColumn(
-      builder: (context, gutter) => ListView(
-        controller: widget.scrollController,
-        padding: EdgeInsets.fromLTRB(
-          gutter,
-          widget.inSheet ? 0 : OurneySpacing.lg,
-          gutter,
-          OurneySpacing.xxl + MediaQuery.paddingOf(context).bottom,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _PreviewRow(
+          journey: _journey,
+          story: state.story,
+          onEdit: () => _open(SharingPaths.story(_journey.id)),
         ),
-        children: [
-          if (widget.inSheet) const _Grabber(),
-          _PreviewRow(
-            journey: _journey,
-            story: state.story,
-            onEdit: () => _open(SharingPaths.story(_journey.id)),
-          ),
-          if (_isGroup) ...[
-            const _Rule(),
-            _ConsentBlock(
-              consents: consents ?? const [],
-              needsConsent: needsConsent,
-              onAsk: _askGroup,
-            ),
-          ],
+        if (_isGroup) ...[
           const _Rule(),
-          _FriendsBlock(
-            friends: friends,
-            viewerIds: viewerIds,
-            ticked: ticked,
-            query: _query,
-            removing: _removing,
-            sensitive: _sensitive,
-            running: _journey.status == JourneyStatus.active,
-            busy: _sharing,
-            onQuery: (q) => setState(() => _query = q),
-            onToggle: (id) => setState(() {
-              final next = {..._ticked!};
-              if (!next.remove(id)) next.add(id);
-              _ticked = next;
-            }),
-            onSelectAll: () => setState(
-              () => _ticked = {
-                for (final f in friends)
-                  if (!viewerIds.contains(f.userId)) f.userId,
-              },
-            ),
-            onClear: () => setState(() => _ticked = {}),
-            onRemove: _unshareFriend,
-            onShare: () => _share(ticked.toList()),
+          _ConsentBlock(
+            consents: consents ?? const [],
+            needsConsent: needsConsent,
+            onAsk: _askGroup,
           ),
-          const _Rule(),
-          _LinkBlock(
-            journey: _journey,
-            state: state,
-            canManage: owner,
-            sensitive: _sensitive,
-            under18: _under18,
-            busy: _linkBusy,
-            linkUri: state.publicToken == null
-                ? null
-                : _linkUri(state.publicToken!),
-            onLink: (on) => _setLink(on),
-            onReset: () => _setLink(true, reset: true),
-            onPublic: _setPublic,
-            onInsights: () => _open(SharingPaths.insights(_journey.id)),
-          ),
-          if (state.viewers.isNotEmpty || state.linkOn) ...[
-            const SizedBox(height: OurneySpacing.md),
-            _DangerButton(
-              key: const ValueKey('share-stop'),
-              label: SharingL10n.of(context).sharing_stopSharing,
-              onPressed: () => _stopSharing(owner: owner),
-            ),
-          ],
-          if (_isGroup && myConsent?.status == ShareConsentStatus.accepted)
-            _DangerButton(
-              key: const ValueKey('share-withdraw'),
-              label: SharingL10n.of(context).sharing_removeMyPhotos,
-              onPressed: _withdraw,
-            ),
         ],
-      ),
+        const _Rule(),
+        _FriendsBlock(
+          friends: friends,
+          viewerIds: viewerIds,
+          ticked: ticked,
+          query: _query,
+          removing: _removing,
+          sensitive: _sensitive,
+          running: _journey.status == JourneyStatus.active,
+          busy: _sharing,
+          onQuery: (q) => setState(() => _query = q),
+          onToggle: (id) => setState(() {
+            final next = {..._ticked!};
+            if (!next.remove(id)) next.add(id);
+            _ticked = next;
+          }),
+          onSelectAll: () => setState(
+            () => _ticked = {
+              for (final f in friends)
+                if (!viewerIds.contains(f.userId)) f.userId,
+            },
+          ),
+          onClear: () => setState(() => _ticked = {}),
+          onRemove: _unshareFriend,
+          onShare: () => _share(ticked.toList()),
+        ),
+        const _Rule(),
+        _LinkBlock(
+          journey: _journey,
+          state: state,
+          canManage: owner,
+          sensitive: _sensitive,
+          under18: _under18,
+          busy: _linkBusy,
+          linkUri: state.publicToken == null
+              ? null
+              : _linkUri(state.publicToken!),
+          onLink: (on) => _setLink(on),
+          onReset: () => _setLink(true, reset: true),
+          onPublic: _setPublic,
+          onInsights: () => _open(SharingPaths.insights(_journey.id)),
+        ),
+        if (state.viewers.isNotEmpty || state.linkOn) ...[
+          const SizedBox(height: UiSpace.md),
+          UiTextAction(
+            key: const ValueKey('share-stop'),
+            label: l10n.sharing_stopSharing,
+            color: danger,
+            onPressed: () => _stopSharing(owner: owner),
+          ),
+        ],
+        if (_isGroup && myConsent?.status == ShareConsentStatus.accepted)
+          UiTextAction(
+            key: const ValueKey('share-withdraw'),
+            label: l10n.sharing_removeMyPhotos,
+            color: danger,
+            onPressed: _withdraw,
+          ),
+      ],
     );
   }
-}
-
-class _Grabber extends StatelessWidget {
-  const _Grabber();
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Container(
-      width: 42,
-      height: 5,
-      margin: const EdgeInsets.only(top: 12, bottom: 16),
-      decoration: BoxDecoration(
-        color: OurneyColors.of(context).border,
-        borderRadius: BorderRadius.circular(99),
-      ),
-    ),
-  );
 }
 
 class _Rule extends StatelessWidget {
   const _Rule();
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 14, bottom: 6),
-    child: Divider(height: 1, color: OurneyColors.of(context).divider),
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.only(top: UiSpace.md, bottom: 6),
+    child: UiDivider(),
   );
 }
 
@@ -447,11 +396,7 @@ class _PreviewRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
-    final style = OurneyPersonaTheme.forSkin(
-      personaSkinOf(journey),
-      Theme.of(context).brightness,
-    );
+    final style = uiStyleForSkin(personaSkinOf(journey));
     final coverId = story.coverCheckInId;
     final cover = coverId == null
         ? null
@@ -465,32 +410,27 @@ class _PreviewRow extends ConsumerWidget {
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(UiRadius.thumb),
             child: SizedBox(
               width: 52,
               height: 52,
               child: cover != null
                   ? StoragePhoto(path: cover.thumbPath, cacheWidth: 160)
                   : ColoredBox(
-                      color: style.primaryAccent,
+                      color: style.accent,
                       child: Icon(
-                        journeyIcon(journey.emoji, journey.templateId),
-                        color: readableOn(style.primaryAccent),
+                        uiJourneyIcon(journey.emoji, journey.templateId),
+                        color: style.onAccent,
                       ),
                     ),
             ),
           ),
-          const SizedBox(width: OurneySpacing.md),
+          const SizedBox(width: UiSpace.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  l10n.sharing_shareThisJourney.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: eyebrowStyle(size: 10, color: c.inkMuted),
-                ),
+                UiEyebrow(l10n.sharing_shareThisJourney.toUpperCase()),
                 Text(
                   story.title ?? journey.title,
                   maxLines: 2,
@@ -501,20 +441,11 @@ class _PreviewRow extends ConsumerWidget {
             ),
           ),
           Flexible(
-            child: TextButton(
+            child: UiTextAction(
               key: const ValueKey('share-edit-story'),
-              style: TextButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                foregroundColor: c.ink,
-              ),
+              label: l10n.sharing_editStory,
+              size: 13,
               onPressed: onEdit,
-              child: Text(
-                l10n.sharing_editStory,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: sharingLabel(context, size: 13),
-              ),
             ),
           ),
         ],
@@ -537,12 +468,12 @@ class _ConsentBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return Column(
       key: const ValueKey('share-consent'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SharingSectionHeader(title: l10n.sharing_consentTitle),
+        UiListHeading(title: l10n.sharing_consentTitle),
         for (final s in consents)
           ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 46),
@@ -550,7 +481,7 @@ class _ConsentBlock extends StatelessWidget {
               key: ValueKey('share-consent-${s.member.userId}'),
               children: [
                 PersonAvatar(person: s.member, size: 30),
-                const SizedBox(width: OurneySpacing.sm),
+                const SizedBox(width: UiSpace.sm),
                 Expanded(
                   child: Text(
                     s.member.displayName,
@@ -568,8 +499,8 @@ class _ConsentBlock extends StatelessWidget {
                   },
                   size: 16,
                   color: s.status == ShareConsentStatus.accepted
-                      ? c.success
-                      : c.inkMuted,
+                      ? ui.success
+                      : ui.inkMuted,
                 ),
                 const SizedBox(width: 4),
                 Text(switch (s.status) {
@@ -577,7 +508,7 @@ class _ConsentBlock extends StatelessWidget {
                   ShareConsentStatus.pending => l10n.sharing_consentWaiting,
                   ShareConsentStatus.declined => l10n.sharing_consentDeclined,
                   ShareConsentStatus.withdrawn => l10n.sharing_consentWithdrawn,
-                }, style: sharingBody(context, size: 12, color: c.inkMuted)),
+                }, style: UiText.body(size: 12, color: ui.inkMuted)),
               ],
             ),
           ),
@@ -585,15 +516,15 @@ class _ConsentBlock extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Text(
             l10n.sharing_consentHelper,
-            style: sharingBody(context, size: 12, color: c.inkMuted),
+            style: UiText.body(size: 12, color: ui.inkMuted),
           ),
         ),
         if (needsConsent) ...[
           Text(
             l10n.sharing_askGroupHint,
-            style: sharingBody(context, size: 13, color: c.warning),
+            style: UiText.body(size: 13, color: ui.warn),
           ),
-          const SizedBox(height: OurneySpacing.sm),
+          const SizedBox(height: UiSpace.sm),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: SharingPillButton(
@@ -645,7 +576,7 @@ class _FriendsBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final q = query.trim().toLowerCase();
     final shown = q.isEmpty
         ? friends
@@ -656,55 +587,74 @@ class _FriendsBlock extends StatelessWidget {
                 f,
           ];
     Widget note(String s) => Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Text(s, style: sharingBody(context, size: 12, color: c.inkMuted)),
+      padding: const EdgeInsets.only(top: UiSpace.sm),
+      child: Text(s, style: UiText.body(size: 12, color: ui.inkMuted)),
     );
-    TextButton headerAction(String key, String label, VoidCallback onTap) =>
-        TextButton(
-          key: ValueKey(key),
-          style: TextButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            foregroundColor: c.inkMuted,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-          ),
-          onPressed: onTap,
-          child: Text(label, style: sharingLabel(context, size: 12)),
-        );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SharingSectionHeader(
-          title: l10n.sharing_friends,
-          trailing: friends.isEmpty
-              ? null
-              : [
-                  headerAction(
-                    'share-select-all',
-                    l10n.sharing_selectAll,
-                    onSelectAll,
-                  ),
-                  headerAction('share-clear', l10n.sharing_clear, onClear),
-                ],
+        Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.sharing_friends,
+                  style: UiText.h2(size: 18, color: ui.ink),
+                ),
+              ),
+            ),
+            if (friends.isNotEmpty)
+              Flexible(
+                flex: 2,
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  children: [
+                    UiTextAction(
+                      key: const ValueKey('share-select-all'),
+                      label: l10n.sharing_selectAll,
+                      size: 12,
+                      color: ui.inkMuted,
+                      onPressed: onSelectAll,
+                    ),
+                    UiTextAction(
+                      key: const ValueKey('share-clear'),
+                      label: l10n.sharing_clear,
+                      size: 12,
+                      color: ui.inkMuted,
+                      onPressed: onClear,
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
         if (friends.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: OurneySpacing.md),
+            padding: const EdgeInsets.symmetric(vertical: UiSpace.md),
             child: Text(
               l10n.sharing_noFriends,
               key: const ValueKey('share-no-friends'),
-              style: sharingBody(context, color: c.inkMuted),
+              style: UiText.muted(color: ui.inkMuted, size: 14),
             ),
           ),
         if (friends.length > 10)
           Padding(
-            padding: const EdgeInsets.only(bottom: OurneySpacing.sm),
+            padding: const EdgeInsets.only(bottom: UiSpace.sm),
             child: TextField(
               key: const ValueKey('share-search'),
               onChanged: onQuery,
+              style: UiText.body(size: 15, color: ui.ink),
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search_rounded),
                 hintText: l10n.sharing_searchFriends,
+                filled: true,
+                fillColor: ui.surfaceInput,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.input),
+                  borderSide: BorderSide(color: ui.inputBorder),
+                ),
               ),
             ),
           ),
@@ -719,14 +669,12 @@ class _FriendsBlock extends StatelessWidget {
           ),
         if (sensitive) note(l10n.sharing_sensitiveHelper),
         if (running) note(l10n.sharing_runningHelper),
-        const SizedBox(height: OurneySpacing.md),
-        OurneyPrimaryButton(
+        const SizedBox(height: UiSpace.md),
+        UiButton(
           key: const ValueKey('share-submit'),
           label: ticked.isEmpty
               ? l10n.sharing_pickFriends
               : l10n.sharing_shareWith(ticked.length),
-          backgroundColor: c.primary,
-          foregroundColor: c.onPrimary,
           onPressed: ticked.isEmpty || busy ? null : onShare,
         ),
       ],
@@ -754,96 +702,48 @@ class _FriendRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
-    final body = Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: c.divider)),
-      ),
-      child: Row(
-        children: [
-          PersonAvatar(person: friend, size: 32),
-          const SizedBox(width: OurneySpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  friend.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sharingLabel(context, size: 14),
-                ),
-                Text(
-                  alreadyShared ? l10n.sharing_canSee : '@${friend.username}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: sharingBody(context, size: 12, color: c.inkMuted),
-                ),
-              ],
-            ),
-          ),
-          if (alreadyShared)
-            TextButton(
-              key: ValueKey('share-remove-${friend.userId}'),
-              style: TextButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                foregroundColor: c.danger,
-              ),
-              onPressed: removing ? null : onRemove,
-              child: Semantics(
-                label: l10n.sharing_removeFriendShare(friend.displayName),
-                excludeSemantics: true,
-                child: Text(
-                  l10n.sharing_remove,
-                  style: sharingLabel(context, size: 13, color: c.danger),
-                ),
-              ),
-            )
-          else
-            SizedBox(
-              width: 48,
-              height: 48,
-              child: Center(child: _CheckSquare(checked: ticked)),
-            ),
-        ],
-      ),
+    final ui = context.ui;
+    final subtitle = Text(
+      alreadyShared ? l10n.sharing_canSee : '@${friend.username}',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: UiText.body(size: 12, color: ui.inkMuted),
     );
-    if (alreadyShared) return body;
+    if (alreadyShared) {
+      return UiRow(
+        title: friend.displayName,
+        leading: PersonAvatar(person: friend, size: 32),
+        subtitle: subtitle,
+        showChevron: false,
+        minHeight: 56,
+        trailing: UiTextAction(
+          key: ValueKey('share-remove-${friend.userId}'),
+          label: l10n.sharing_remove,
+          color: ui.danger,
+          size: 13,
+          onPressed: removing ? null : onRemove,
+        ),
+      );
+    }
     return Semantics(
       checked: ticked,
       label: friend.displayName,
       excludeSemantics: true,
       onTap: onToggle,
-      child: InkWell(
+      child: UiRow(
         key: ValueKey('share-friend-${friend.userId}'),
-        onTap: onToggle,
-        child: body,
+        title: friend.displayName,
+        leading: PersonAvatar(person: friend, size: 32),
+        subtitle: subtitle,
+        showChevron: false,
+        minHeight: 56,
+        onPressed: onToggle,
+        trailing: SizedBox(
+          width: 48,
+          height: 48,
+          child: Center(child: SharingCheckSquare(checked: ticked)),
+        ),
       ),
-    );
-  }
-}
-
-/// Square check box of the V1.0 design (ink fill when ticked).
-class _CheckSquare extends StatelessWidget {
-  const _CheckSquare({required this.checked});
-
-  final bool checked;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        color: checked ? c.ink : Colors.transparent,
-        border: Border.all(color: checked ? c.ink : c.inkMuted),
-      ),
-      child: checked ? Icon(Icons.check_rounded, size: 16, color: c.bg) : null,
     );
   }
 }
@@ -879,40 +779,23 @@ class _LinkBlock extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SharingL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     // S9: only ended / archived (retold journeys are created ended).
     final eligible = journey.status != JourneyStatus.active;
 
     Widget locked(String title, String sub) => Opacity(
       opacity: 0.7,
-      child: ConstrainedBox(
+      child: UiRow(
         key: const ValueKey('share-link-locked'),
-        constraints: const BoxConstraints(minHeight: 66),
-        child: Row(
-          children: [
-            Icon(Icons.lock_outline_rounded, color: c.ink),
-            const SizedBox(width: OurneySpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: sharingLabel(context, size: 13)),
-                  Text(
-                    sub,
-                    style: sharingBody(context, size: 12, color: c.inkMuted),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        title: title,
+        leading: Icon(Icons.lock_outline_rounded, color: ui.ink),
+        subtitle: Text(sub, style: UiText.body(size: 12, color: ui.inkMuted)),
+        showChevron: false,
+        divider: false,
       ),
     );
 
-    final children = <Widget>[
-      SharingSectionHeader(title: l10n.sharing_publicLink),
-    ];
+    final children = <Widget>[UiListHeading(title: l10n.sharing_publicLink)];
     if (!eligible) {
       children.add(
         locked(l10n.sharing_linkLockedTitle, l10n.sharing_linkLockedSub),
@@ -927,10 +810,10 @@ class _LinkBlock extends ConsumerWidget {
     } else {
       final settings = state.publicSettings;
       children.addAll([
-        SharingSwitchRow(
+        UiSwitchRow(
           key: const ValueKey('share-link-switch'),
-          title: l10n.sharing_linkOn,
-          hint: state.linkOn
+          label: l10n.sharing_linkOn,
+          subtitle: state.linkOn
               ? (linkUri?.toString() ?? l10n.sharing_linkOn)
               : l10n.sharing_linkOff,
           value: state.linkOn,
@@ -938,11 +821,11 @@ class _LinkBlock extends ConsumerWidget {
         ),
         if (under18)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
             child: Text(
               l10n.sharing_under18,
               key: const ValueKey('share-under18'),
-              style: sharingLabel(context, size: 12, color: c.warning),
+              style: sharingLabel(context, size: 12, color: ui.warn),
             ),
           ),
         if (state.linkOn) ...[
@@ -951,12 +834,12 @@ class _LinkBlock extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 10),
               child: Row(
                 children: [
-                  Icon(Icons.blur_on_rounded, size: 18, color: c.inkMuted),
+                  Icon(Icons.blur_on_rounded, size: 18, color: ui.inkMuted),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       l10n.sharing_blurredPreview,
-                      style: sharingBody(context, size: 12, color: c.inkMuted),
+                      style: UiText.body(size: 12, color: ui.inkMuted),
                     ),
                   ),
                 ],
@@ -994,13 +877,13 @@ class _LinkBlock extends ConsumerWidget {
           ),
           Text(
             l10n.sharing_linkHelper,
-            style: sharingBody(context, size: 12, color: c.inkMuted),
+            style: UiText.body(size: 12, color: ui.inkMuted),
           ),
           const SizedBox(height: 6),
-          SharingSwitchRow(
+          UiSwitchRow(
             key: const ValueKey('share-show-counts'),
-            title: l10n.sharing_showCounts,
-            hint: l10n.sharing_showCountsHint,
+            label: l10n.sharing_showCounts,
+            subtitle: l10n.sharing_showCountsHint,
             value: settings.showCounts,
             onChanged: (v) => onPublic(
               PublicSettings(
@@ -1011,10 +894,10 @@ class _LinkBlock extends ConsumerWidget {
               turningOn: v,
             ),
           ),
-          SharingSwitchRow(
+          UiSwitchRow(
             key: const ValueKey('share-allow-reactions'),
-            title: l10n.sharing_letAnyoneReact,
-            hint: l10n.sharing_letAnyoneReactHint,
+            label: l10n.sharing_letAnyoneReact,
+            subtitle: l10n.sharing_letAnyoneReactHint,
             value: settings.allowPublicReactions,
             onChanged: (v) => onPublic(
               PublicSettings(
@@ -1025,11 +908,12 @@ class _LinkBlock extends ConsumerWidget {
               turningOn: v,
             ),
           ),
-          SharingSwitchRow(
+          UiSwitchRow(
             key: const ValueKey('share-allow-requests'),
-            title: l10n.sharing_allowRequests,
-            hint: l10n.sharing_allowRequestsHint,
+            label: l10n.sharing_allowRequests,
+            subtitle: l10n.sharing_allowRequestsHint,
             value: settings.allowViewerRequests,
+            divider: false,
             onChanged: (v) => onPublic(
               PublicSettings(
                 showCounts: settings.showCounts,
@@ -1047,39 +931,33 @@ class _LinkBlock extends ConsumerWidget {
       if (insights != null) {
         children.add(
           Padding(
-            padding: const EdgeInsets.only(top: OurneySpacing.md),
-            child: Material(
-              color: c.surfaceSunken,
-              child: InkWell(
-                key: const ValueKey('share-stats'),
-                onTap: onInsights,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            l10n.sharing_statsLine(
-                              compactCount(context, insights.views),
-                              compactCount(
-                                context,
-                                insights.likesFromFriends +
-                                    insights.likesFromStrangers,
-                              ),
-                              compactCount(context, insights.started),
-                            ),
-                            textAlign: TextAlign.center,
-                            style: sharingLabel(context, size: 13),
-                          ),
+            padding: const EdgeInsets.only(top: UiSpace.md),
+            child: UiCard(
+              key: const ValueKey('share-stats'),
+              radius: UiRadius.menu,
+              color: ui.fill,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              onPressed: onInsights,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.sharing_statsLine(
+                        compactCount(context, insights.views),
+                        compactCount(
+                          context,
+                          insights.likesFromFriends +
+                              insights.likesFromStrangers,
                         ),
-                        Icon(Icons.chevron_right_rounded, color: c.ink),
-                      ],
+                        compactCount(context, insights.started),
+                      ),
+                      textAlign: TextAlign.center,
+                      style: sharingLabel(context, size: 13),
                     ),
                   ),
-                ),
+                  Icon(Icons.chevron_right_rounded, color: ui.ink),
+                ],
               ),
             ),
           ),
@@ -1094,97 +972,48 @@ class _LinkBlock extends ConsumerWidget {
   }
 }
 
-class _DangerButton extends StatelessWidget {
-  const _DangerButton({
-    required this.label,
-    required this.onPressed,
-    super.key,
-  });
-
-  final String label;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return TextButton(
-      style: TextButton.styleFrom(
-        minimumSize: const Size.fromHeight(52),
-        foregroundColor: c.danger,
-      ),
-      onPressed: onPressed,
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: sharingLabel(context, size: 15, color: c.danger),
-      ),
-    );
-  }
-}
-
 /// Warm warning before a sensitive journey gets a public link (S10, R2-06).
 Future<bool> showSensitiveLinkWarning(BuildContext context) async {
   final l10n = SharingL10n.of(context);
-  final app = MaterialLocalizations.of(context);
-  final result = await showModalBottomSheet<bool>(
+  final cancel = MaterialLocalizations.of(context).cancelButtonLabel;
+  final result = await showUiSheet<bool>(
     context: context,
-    useRootNavigator: true,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: _warmPaper(context),
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(OurneyRadii.sheet),
-      ),
-    ),
     builder: (context) {
-      final ink = _warmInk(context);
+      final ui = context.ui;
       Widget bullet(IconData icon, String s) => Padding(
-        padding: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.only(bottom: UiSpace.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: ink),
+            Icon(icon, size: 20, color: ui.ink),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(s, style: sharingBody(context, color: ink)),
+              child: Text(s, style: UiText.body(size: 14, color: ui.ink)),
             ),
           ],
         ),
       );
-      return SingleChildScrollView(
+      return Column(
         key: const ValueKey('share-sensitive-warning'),
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              l10n.sharing_warnTitle,
-              style: headingStyle(size: 22, color: ink),
-            ),
-            const SizedBox(height: 16),
-            bullet(Icons.groups_rounded, l10n.sharing_warnAnyone),
-            bullet(Icons.visibility_outlined, l10n.sharing_warnSelected),
-            bullet(Icons.undo_rounded, l10n.sharing_warnUndo),
-            const SizedBox(height: 8),
-            OurneyPrimaryButton(
-              key: const ValueKey('share-warning-confirm'),
-              label: l10n.sharing_warnTurnOn,
-              backgroundColor: OurneyColors.light.primary,
-              foregroundColor: OurneyColors.light.onPrimary,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              style: TextButton.styleFrom(
-                minimumSize: const Size.fromHeight(52),
-                foregroundColor: ink,
-              ),
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(app.cancelButtonLabel),
-            ),
-          ],
-        ),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.sharing_warnTitle, style: UiText.h2(color: ui.ink)),
+          const SizedBox(height: UiSpace.lg),
+          bullet(Icons.groups_rounded, l10n.sharing_warnAnyone),
+          bullet(Icons.visibility_outlined, l10n.sharing_warnSelected),
+          bullet(Icons.undo_rounded, l10n.sharing_warnUndo),
+          const SizedBox(height: UiSpace.sm),
+          UiButton(
+            key: const ValueKey('share-warning-confirm'),
+            label: l10n.sharing_warnTurnOn,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.ghost(
+            label: cancel,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+        ],
       );
     },
   );
@@ -1192,17 +1021,12 @@ Future<bool> showSensitiveLinkWarning(BuildContext context) async {
 }
 
 /// Same warm tone before a public switch on a sensitive journey (S28).
-Future<bool> showSensitiveSwitchWarning(BuildContext context) async {
+Future<bool> showSensitiveSwitchWarning(BuildContext context) {
   final l10n = SharingL10n.of(context);
-  final ok = await confirmSharingAction(
+  return confirmSharingAction(
     context,
     title: l10n.sharing_warnSwitchTitle,
     message: l10n.sharing_warnSwitchBody,
     confirmLabel: l10n.sharing_warnSwitchConfirm,
   );
-  return ok;
 }
-
-Color _warmPaper(BuildContext context) => OurneyColors.of(context).warmPaper;
-
-Color _warmInk(BuildContext context) => OurneyColors.of(context).warmInk;
