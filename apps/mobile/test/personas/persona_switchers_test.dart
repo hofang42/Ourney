@@ -6,7 +6,6 @@ import 'package:ourney/features/groups/domain/group_today.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/personas/accountability_squad/persona_widgets.dart';
 import 'package:ourney/personas/accountability_squad/share_card.dart';
-import 'package:ourney/personas/memory_collectors/camera_hud.dart';
 import 'package:ourney/personas/memory_collectors/timeline.dart';
 import 'package:ourney/personas/persona_contract.dart';
 import 'package:ourney/personas/persona_switchers.dart';
@@ -39,15 +38,6 @@ PersonaTimelineData _timeline(Journey j) => PersonaTimelineData(
         isToday: i == 7,
       ),
   ],
-);
-
-PersonaCameraData _camera(Journey j) => PersonaCameraData(
-  journey: j,
-  viewfinder: const ColoredBox(
-    key: ValueKey('viewfinder'),
-    color: Colors.black,
-  ),
-  capturedAt: DateTime(2026, 10, 8, 6, 15),
 );
 
 void main() {
@@ -167,45 +157,6 @@ void main() {
         OurneyPersonaTheme.of(inner).skinId,
         PersonaSkinId.memoryCollectors,
       );
-    });
-  });
-
-  group('PersonaCameraHudSwitcher', () {
-    testWidgets('always shows the viewfinder, whichever persona wraps it', (
-      tester,
-    ) async {
-      for (final skin in allSkins) {
-        await pumpPersona(
-          tester,
-          SizedBox(
-            width: 300,
-            height: 400,
-            child: PersonaCameraHudSwitcher(
-              skin: skin,
-              data: _camera(_journey(TemplateId.custom)),
-            ),
-          ),
-          skin: skin,
-        );
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(find.byKey(const ValueKey('viewfinder')), findsOneWidget);
-      }
-    });
-
-    testWidgets('the film persona wraps it with its own HUD', (tester) async {
-      await pumpPersona(
-        tester,
-        SizedBox(
-          width: 300,
-          height: 400,
-          child: PersonaCameraHudSwitcher(
-            skin: PersonaSkinId.memoryCollectors,
-            data: _camera(_journey(TemplateId.travel)),
-          ),
-        ),
-        skin: PersonaSkinId.memoryCollectors,
-      );
-      expect(find.byType(DisposableFilmStampHud), findsOneWidget);
     });
   });
 

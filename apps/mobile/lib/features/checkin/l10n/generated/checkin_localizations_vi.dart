@@ -113,4 +113,26 @@ class CheckinL10nVi extends CheckinL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get checkin_retake => 'Chụp lại';
+
+  @override
+  String get checkin_privacyPrivate => 'Chỉ mình bạn';
+
+  @override
+  String get checkin_privacyCouple => 'Cặp đôi';
+
+  @override
+  String get checkin_privacySquad => 'Nhóm';
+
+  @override
+  String checkin_dayStamp(int day) {
+    return 'NGÀY $day';
+  }
+
+  @override
+  String checkin_calendarSemantics(int days) {
+    return 'Lịch $days ngày gần nhất, hôm nay có ảnh';
+  }
 }

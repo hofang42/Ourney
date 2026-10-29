@@ -7,18 +7,10 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/active_journey_sync.dart';
-import '../../../personas/persona_contract.dart';
-import '../../../personas/persona_switchers.dart';
-import '../../../shared/avatar.dart';
-import '../../../shared/empty_state.dart';
-import '../../../shared/needs_server_view.dart';
-import '../../../shared/ourney_card.dart';
-import '../../../shared/placeholder_screen.dart';
-import '../../../shared/streak_flame.dart';
-import '../../../shared/template_icons.dart';
+import '../../../personas/persona_contract.dart' show personaSkinOf;
+import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
@@ -69,38 +61,60 @@ class GroupPermissions {
   bool get canLeave => membership?.isActive ?? true;
 }
 
-/// `/groups/:journeyId`: the group "Today" screen (FR-D3). Who checked in
-/// today and who has not yet, each member's latest photo and streak,
-/// reactions (FR-D4). Consistency only: no ranking and no metric values
-/// (FR-D5). Blocked users' content is hidden (FR-F2).
+/// `/groups/:journeyId`: the squad wall (FR-D3, App.tsx `SquadWall`). Who
+/// checked in today as polaroids with reactions (FR-D4), who has not yet as
+/// waiting tiles. Consistency only: no ranking and no metric values (FR-D5).
+/// Blocked users' content is hidden (FR-F2).
 class GroupTodayScreen extends ConsumerWidget {
   const GroupTodayScreen({required this.journeyId, super.key});
 
   final String journeyId;
 
+  void _back(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.groups);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = GroupsL10n.of(context);
     final app = AppLocalizations.of(context);
+    final backLabel = MaterialLocalizations.of(context).backButtonTooltip;
+
+    Widget frame({String? title, required Widget body}) => UiScaffold(
+      key: const ValueKey('group-today'),
+      scroll: false,
+      padTop: 0,
+      child: Column(
+        children: [
+          UiBackHeader(
+            onBack: () => _back(context),
+            backLabel: backLabel,
+            title: title ?? l10n.groups_title,
+          ),
+          Expanded(child: UiFillScroll(child: body)),
+        ],
+      ),
+    );
+
     if (ref.watch(appConfigProvider).localOnly) {
-      return Scaffold(
-        key: const ValueKey('group-today'),
-        appBar: AppBar(title: Text(l10n.groups_title)),
-        body: const SafeArea(child: NeedsServerView()),
-      );
+      return frame(body: const GroupsNeedsServer());
     }
 
     final journeyAsync = ref.watch(journeyByIdProvider(journeyId));
     final todayAsync = ref.watch(groupTodayProvider(journeyId));
     final firstError = journeyAsync.error ?? todayAsync.error;
     if (firstError != null && isNotWired(firstError)) {
-      return PlaceholderScreen(id: 'group-today', title: l10n.groups_title);
+      return GroupsNotWired(id: 'group-today', title: l10n.groups_title);
     }
 
     final journey = journeyAsync.value;
     Widget? state;
     if (journeyAsync.hasValue && journey == null) {
-      state = EmptyState(
+      state = UiEmptyState(
         key: const ValueKey('group-not-found'),
         icon: Icons.search_off_rounded,
         title: l10n.groups_notFoundTitle,
@@ -111,11 +125,11 @@ class GroupTodayScreen extends ConsumerWidget {
       final e = rootError(firstError!);
       final forbidden =
           e is OurneyException && e.error == OurneyErrorCode.forbidden;
-      state = EmptyState(
+      state = UiEmptyState(
         key: ValueKey(forbidden ? 'group-not-member' : 'group-error'),
         icon: forbidden ? Icons.lock_outline_rounded : Icons.error_outline,
         title: forbidden ? l10n.groups_notMember : l10n.groups_todayLoadError,
-        message: forbidden ? null : groupErrorMessage(context, e),
+        body: forbidden ? null : groupErrorMessage(context, e),
         actionLabel: forbidden ? l10n.groups_title : app.common_retry,
         onAction: forbidden
             ? () => context.go(AppRoutes.groups)
@@ -130,13 +144,7 @@ class GroupTodayScreen extends ConsumerWidget {
         child: CircularProgressIndicator(semanticsLabel: app.common_loading),
       );
     }
-    if (state != null) {
-      return Scaffold(
-        key: const ValueKey('group-today'),
-        appBar: AppBar(title: Text(journey?.title ?? l10n.groups_title)),
-        body: SafeArea(child: state),
-      );
-    }
+    if (state != null) return frame(title: journey?.title, body: state);
 
     final myId = ref.watch(currentUserIdProvider);
     final membership = ref.watch(myMembershipProvider(journeyId)).value;
@@ -158,82 +166,145 @@ class GroupTodayScreen extends ConsumerWidget {
       currentUserId: myId,
       isAlone: view.isAlone,
     );
+    final style = uiStyleForSkin(personaSkinOf(journey));
+    final ui = context.ui;
 
     return ActiveJourneySync(
       journeyId: journey.id,
-      child: Scaffold(
+      child: UiScaffold(
         key: const ValueKey('group-today'),
-        appBar: AppBar(
-          title: Row(
-            children: [
-              Icon(journeyIcon(journey.emoji, journey.templateId), size: 24),
-              const SizedBox(width: OurneySpacing.sm),
-              Expanded(
-                child: Text(
-                  journey.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            if (perms.canInvite)
-              IconButton(
-                key: const ValueKey('group-invite'),
-                tooltip: l10n.groups_invite,
-                icon: const Icon(Icons.person_add_alt_1_rounded),
-                onPressed: () => context.push(GroupsPaths.invite(journeyId)),
-              ),
-            _GroupMenu(perms: perms),
-          ],
-        ),
-        body: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              OurneySpacing.screenMargin,
-              OurneySpacing.lg,
-              OurneySpacing.screenMargin,
-              OurneySpacing.xxl,
-            ),
-            children: [
-              if (!perms.isActive) ...[
-                _EndedBanner(text: l10n.groups_endedBanner),
-                const SizedBox(height: OurneySpacing.md),
-              ],
-              PersonaGroupSwitcher(
-                skin: personaSkinOf(journey),
-                data: PersonaGroupData(
-                  journey: journey,
-                  members: [...view.done, ...view.pending],
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                ),
-                fallback: (context) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        background: ui.isDark ? ui.bg : style.paper,
+        padTop: 0,
+        gutter: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
+              child: UiBackHeader(
+                onBack: () => _back(context),
+                backLabel: backLabel,
+                title: journey.title,
+                bordered: true,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _Header(view: view),
-                    const SizedBox(height: OurneySpacing.lg),
-                    _MemberSections(view: view, perms: perms),
+                    if (perms.canInvite)
+                      UiIconButton(
+                        key: const ValueKey('group-invite'),
+                        icon: Icons.person_add_alt_1_outlined,
+                        label: l10n.groups_invite,
+                        onPressed: () =>
+                            context.push(GroupsPaths.invite(journeyId)),
+                      ),
+                    _GroupMenu(perms: perms),
                   ],
                 ),
-                membersFooter: (context) => Padding(
-                  padding: const EdgeInsets.only(top: OurneySpacing.lg),
-                  child: _MemberSections(view: view, perms: perms),
-                ),
               ),
-            ],
-          ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                UiSpace.xl,
+                UiSpace.xl,
+                UiSpace.xl,
+                UiSpace.sm,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (!perms.isActive) ...[
+                    _EndedBanner(text: l10n.groups_endedBanner),
+                    const SizedBox(height: UiSpace.md),
+                  ],
+                  _SharedStreak(view: view, accent: style.accent),
+                  const SizedBox(height: UiSpace.lg),
+                  _MemberWall(view: view, perms: perms),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Done and not-yet sections with one card per member. Each card carries the
-/// report, block and remove actions.
-class _MemberSections extends StatelessWidget {
-  const _MemberSections({required this.view, required this.perms});
+/// `.shared-streak`: day, "done of members" and a progress bar.
+class _SharedStreak extends StatelessWidget {
+  const _SharedStreak({required this.view, required this.accent});
+
+  final GroupTodayView view;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = GroupsL10n.of(context);
+    final ui = context.ui;
+    final total = view.memberCount;
+    final value = total == 0 ? 0.0 : view.doneCount / total;
+    return Column(
+      key: const ValueKey('group-today-header'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.local_fire_department_rounded,
+              size: 16,
+              color: ui.flame,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                view.totalDays == null
+                    ? l10n.groups_dayOpen(view.dayNumber)
+                    : l10n.groups_dayOf(view.dayNumber, view.totalDays!),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.body(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  height: 1.4,
+                  color: ui.inkMuted,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '${view.doneCount}/$total',
+          style: UiText.display(
+            size: 48,
+            weight: 800,
+            height: 1.15,
+            color: ui.ink,
+          ),
+        ),
+        const SizedBox(height: UiSpace.sm),
+        UiProgressBar(
+          value: value,
+          color: accent,
+          semanticLabel: l10n.groups_todayHeader(view.doneCount, total),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          l10n.groups_todayHeader(view.doneCount, total),
+          style: UiText.body(
+            size: 12,
+            weight: FontWeight.w700,
+            height: 1.4,
+            color: ui.ink,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The polaroid wall: done members first, then the ones still waiting.
+class _MemberWall extends StatelessWidget {
+  const _MemberWall({required this.view, required this.perms});
 
   final GroupTodayView view;
   final GroupPermissions perms;
@@ -241,16 +312,47 @@ class _MemberSections extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
+    Widget grid(List<GroupMemberEntry> entries) => LayoutBuilder(
+      builder: (context, c) {
+        final cols = c.maxWidth >= 300 ? 2 : 1;
+        final rows = <Widget>[];
+        for (var i = 0; i < entries.length; i += cols) {
+          rows.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: UiSpace.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var k = 0; k < cols; k++) ...[
+                    if (k > 0) const SizedBox(width: UiSpace.md),
+                    Expanded(
+                      child: i + k < entries.length
+                          ? _MemberTile(
+                              entry: entries[i + k],
+                              perms: perms,
+                              tilt: (i + k).isEven ? -1 : 1.2,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }
+        return Column(children: rows);
+      },
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (view.done.isNotEmpty) ...[
-          _SectionHeader(l10n.groups_doneSection),
-          for (final e in view.done) _MemberCard(entry: e, perms: perms),
+          UiListHeading(title: l10n.groups_doneSection),
+          grid(view.done),
         ],
         if (view.pending.isNotEmpty) ...[
-          _SectionHeader(l10n.groups_pendingSection),
-          for (final e in view.pending) _MemberCard(entry: e, perms: perms),
+          UiListHeading(title: l10n.groups_pendingSection),
+          grid(view.pending),
         ],
       ],
     );
@@ -265,40 +367,65 @@ class _GroupMenu extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = GroupsL10n.of(context);
-    return PopupMenuButton<GroupAction>(
-      key: const ValueKey('group-menu'),
-      tooltip: l10n.groups_moreActions,
-      onSelected: (a) => runGroupAction(context, ref, perms, a),
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: GroupAction.timeline,
-          child: Text(l10n.groups_openTimeline),
+    Future<void> open() async {
+      final action = await showUiSheet<GroupAction>(
+        context: context,
+        builder: (context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            UiRow(
+              key: const ValueKey('group-action-timeline'),
+              title: l10n.groups_openTimeline,
+              leading: const Icon(Icons.timeline_rounded),
+              showChevron: false,
+              onPressed: () => Navigator.of(context).pop(GroupAction.timeline),
+            ),
+            if (perms.canRotate)
+              UiRow(
+                key: const ValueKey('group-action-rotate'),
+                title: l10n.groups_actionRotate,
+                leading: const Icon(Icons.autorenew_rounded),
+                showChevron: false,
+                onPressed: () => Navigator.of(context).pop(GroupAction.rotate),
+              ),
+            if (perms.canEnd)
+              UiRow(
+                key: const ValueKey('group-action-end'),
+                title: l10n.groups_actionEnd,
+                leading: const Icon(Icons.flag_outlined),
+                showChevron: false,
+                onPressed: () => Navigator.of(context).pop(GroupAction.end),
+              ),
+            if (perms.canDelete)
+              UiRow(
+                key: const ValueKey('group-action-delete'),
+                title: l10n.groups_actionDelete,
+                leading: const Icon(Icons.delete_outline_rounded),
+                showChevron: false,
+                onPressed: () => Navigator.of(context).pop(GroupAction.delete),
+              ),
+            if (perms.canLeave)
+              UiRow(
+                key: const ValueKey('group-action-leave'),
+                title: l10n.groups_actionLeave,
+                leading: const Icon(Icons.logout_rounded),
+                showChevron: false,
+                divider: false,
+                onPressed: () => Navigator.of(context).pop(GroupAction.leave),
+              ),
+          ],
         ),
-        if (perms.canRotate)
-          PopupMenuItem(
-            key: const ValueKey('group-action-rotate'),
-            value: GroupAction.rotate,
-            child: Text(l10n.groups_actionRotate),
-          ),
-        if (perms.canEnd)
-          PopupMenuItem(
-            key: const ValueKey('group-action-end'),
-            value: GroupAction.end,
-            child: Text(l10n.groups_actionEnd),
-          ),
-        if (perms.canDelete)
-          PopupMenuItem(
-            key: const ValueKey('group-action-delete'),
-            value: GroupAction.delete,
-            child: Text(l10n.groups_actionDelete),
-          ),
-        if (perms.canLeave)
-          PopupMenuItem(
-            key: const ValueKey('group-action-leave'),
-            value: GroupAction.leave,
-            child: Text(l10n.groups_actionLeave),
-          ),
-      ],
+      );
+      if (action != null && context.mounted) {
+        await runGroupAction(context, ref, perms, action);
+      }
+    }
+
+    return UiIconButton(
+      key: const ValueKey('group-menu'),
+      icon: Icons.more_horiz_rounded,
+      label: l10n.groups_moreActions,
+      onPressed: open,
     );
   }
 }
@@ -404,50 +531,24 @@ class _EndedBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return Container(
       key: const ValueKey('group-ended-banner'),
-      padding: const EdgeInsets.all(OurneySpacing.md),
+      padding: const EdgeInsets.all(UiSpace.md),
       decoration: BoxDecoration(
-        color: c.sun.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(OurneyRadii.chip),
+        color: ui.fill,
+        borderRadius: BorderRadius.circular(UiRadius.input),
+        border: Border.all(color: ui.border),
       ),
       child: Row(
         children: [
-          Icon(Icons.flag_rounded, color: c.ink),
-          const SizedBox(width: OurneySpacing.sm),
-          Expanded(child: Text(text)),
-        ],
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.view});
-
-  final GroupTodayView view;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = GroupsL10n.of(context);
-    final text = Theme.of(context).textTheme;
-    final total = view.totalDays;
-    return OurneyCard(
-      key: const ValueKey('group-today-header'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            total == null
-                ? l10n.groups_dayOpen(view.dayNumber)
-                : l10n.groups_dayOf(view.dayNumber, total),
-            style: text.bodyMedium,
-          ),
-          const SizedBox(height: OurneySpacing.xs),
-          Text(
-            l10n.groups_todayHeader(view.doneCount, view.memberCount),
-            style: text.titleLarge,
+          Icon(Icons.flag_outlined, color: ui.ink),
+          const SizedBox(width: UiSpace.sm),
+          Expanded(
+            child: Text(
+              text,
+              style: UiText.body(size: 13, height: 1.45, color: ui.ink),
+            ),
           ),
         ],
       ),
@@ -455,38 +556,24 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        top: OurneySpacing.sm,
-        bottom: OurneySpacing.md,
-      ),
-      child: Semantics(
-        header: true,
-        child: Text(text, style: Theme.of(context).textTheme.titleMedium),
-      ),
-    );
-  }
-}
-
-class _MemberCard extends ConsumerWidget {
-  const _MemberCard({required this.entry, required this.perms});
+/// One member on the wall: a polaroid when there is a photo, a waiting tile
+/// otherwise (`.waiting-tile`). Carries the report, block and remove actions.
+class _MemberTile extends ConsumerWidget {
+  const _MemberTile({
+    required this.entry,
+    required this.perms,
+    required this.tilt,
+  });
 
   final GroupMemberEntry entry;
   final GroupPermissions perms;
+  final double tilt;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = GroupsL10n.of(context);
     final app = AppLocalizations.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final m = entry.member;
     final photo = entry.photo;
     final hooks = ref.watch(groupSafetyHooksProvider);
@@ -495,123 +582,160 @@ class _MemberCard extends ConsumerWidget {
       if (!entry.isMe && hooks.onBlock != null) _MemberAction.block,
       if (!entry.isMe && perms.canRemoveMembers) _MemberAction.remove,
     ];
-
     final tags = [
       if (entry.isMe) l10n.groups_you,
       if (m.role == MemberRole.owner) l10n.groups_ownerBadge,
     ];
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: OurneySpacing.md),
-      child: OurneyCard(
-        key: ValueKey('group-member-${m.userId}'),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Avatar(
-                  name: m.displayName,
-                  image: groupAvatarImage(ref, m.avatarPath),
-                  checkedIn: entry.checkedInToday,
-                ),
-                const SizedBox(width: OurneySpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        m.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: text.titleMedium,
-                      ),
-                      if (tags.isNotEmpty)
-                        Text(
-                          tags.join(' · '),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: text.bodySmall,
-                        ),
-                      const SizedBox(height: OurneySpacing.xs),
-                      Row(
-                        key: ValueKey('group-member-status-${m.userId}'),
-                        children: [
-                          Icon(
-                            entry.checkedInToday
-                                ? Icons.check_circle_rounded
-                                : Icons.radio_button_unchecked_rounded,
-                            size: 18,
-                            color: entry.checkedInToday
-                                ? c.success
-                                : c.inkMuted,
-                          ),
-                          const SizedBox(width: OurneySpacing.xs),
-                          Flexible(
-                            child: Text(
-                              entry.checkedInToday
-                                  ? l10n.groups_statusDone
-                                  : l10n.groups_statusPending,
-                              style: text.bodySmall?.copyWith(color: c.ink),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: OurneySpacing.sm),
-                StreakFlame(
-                  key: ValueKey('group-member-streak-${m.userId}'),
-                  days: entry.streak,
-                  atRisk:
-                      perms.isActive &&
-                      !entry.checkedInToday &&
-                      entry.streak > 0,
-                  size: 24,
-                  semanticLabel: app.streak_semantics(entry.streak),
-                ),
-                if (memberActions.isNotEmpty)
-                  PopupMenuButton<_MemberAction>(
-                    key: ValueKey('group-member-menu-${m.userId}'),
-                    tooltip: l10n.groups_memberActions(m.displayName),
-                    onSelected: (a) => _onMemberAction(context, ref, a),
-                    itemBuilder: (context) => [
-                      for (final a in memberActions)
-                        PopupMenuItem(
-                          key: ValueKey('group-member-action-${a.name}'),
-                          value: a,
-                          child: Text(switch (a) {
-                            _MemberAction.report => l10n.groups_actionReport,
-                            _MemberAction.block => l10n.groups_actionBlock,
-                            _MemberAction.remove => l10n.groups_actionRemove,
-                          }),
-                        ),
-                    ],
-                  ),
-              ],
+    final nameRow = Row(
+      children: [
+        Expanded(
+          child: Text(
+            m.displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 14,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.ink,
             ),
-            const SizedBox(height: OurneySpacing.md),
-            if (photo == null)
-              Text(
-                l10n.groups_noPhotoYet,
-                key: ValueKey('group-member-nophoto-${m.userId}'),
-                style: text.bodySmall,
-              )
-            else ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(OurneyRadii.card),
-                child: AspectRatio(
-                  aspectRatio: 4 / 3,
-                  child: GroupPhoto(
-                    key: ValueKey('group-member-photo-${m.userId}'),
-                    checkIn: photo,
-                    dimmed: !entry.photoIsToday,
+          ),
+        ),
+        if (memberActions.isNotEmpty)
+          UiIconButton(
+            key: ValueKey('group-member-menu-${m.userId}'),
+            icon: Icons.more_horiz_rounded,
+            label: l10n.groups_memberActions(m.displayName),
+            size: UiSize.tap,
+            iconSize: 18,
+            onPressed: () => _openMenu(context, ref, memberActions),
+          ),
+      ],
+    );
+    final status = Row(
+      key: ValueKey('group-member-status-${m.userId}'),
+      children: [
+        Icon(
+          entry.checkedInToday
+              ? Icons.check_circle_rounded
+              : Icons.radio_button_unchecked_rounded,
+          size: 14,
+          color: entry.checkedInToday ? ui.success : ui.inkMuted,
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            entry.checkedInToday
+                ? l10n.groups_statusDone
+                : l10n.groups_statusPending,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(size: 11, height: 1.4, color: ui.inkMuted),
+          ),
+        ),
+      ],
+    );
+    final streak = Semantics(
+      label: app.streak_semantics(entry.streak),
+      excludeSemantics: true,
+      child: Row(
+        key: ValueKey('group-member-streak-${m.userId}'),
+        children: [
+          Icon(Icons.local_fire_department_rounded, size: 12, color: ui.flame),
+          const SizedBox(width: 2),
+          Text(
+            '${entry.streak}',
+            style: UiText.body(size: 11, height: 1.4, color: ui.inkMuted),
+          ),
+        ],
+      ),
+    );
+    final tagLine = tags.isEmpty
+        ? null
+        : Text(
+            tags.join(' · '),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(size: 11, height: 1.4, color: ui.inkMuted),
+          );
+
+    if (photo == null) {
+      return Container(
+        key: ValueKey('group-member-${m.userId}'),
+        padding: const EdgeInsets.all(UiSpace.md),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(UiRadius.menu),
+          border: Border.all(color: ui.border, width: 2),
+        ),
+        child: Column(
+          children: [
+            UiAvatar(
+              name: m.displayName,
+              colorIndex: UiAvatar.indexFor(m.userId),
+              size: UiSize.avatarLarge,
+              image: groupAvatarImage(ref, m.avatarPath),
+            ),
+            const SizedBox(height: UiSpace.sm),
+            nameRow,
+            ?tagLine,
+            status,
+            const SizedBox(height: 4),
+            Text(
+              l10n.groups_noPhotoYet,
+              key: ValueKey('group-member-nophoto-${m.userId}'),
+              textAlign: TextAlign.center,
+              style: UiText.body(size: 12, height: 1.45, color: ui.inkMuted),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return KeyedSubtree(
+      key: ValueKey('group-member-${m.userId}'),
+      child: UiPolaroid(
+        tilt: tilt,
+        photo: SizedBox(
+          height: 158,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              GroupPhoto(
+                key: ValueKey('group-member-photo-${m.userId}'),
+                checkIn: photo,
+                dimmed: !entry.photoIsToday,
+              ),
+              if (entry.checkedInToday)
+                Positioned(
+                  right: 7,
+                  top: 7,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF15803D),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-              if (!entry.photoIsToday) ...[
-                const SizedBox(height: OurneySpacing.xs),
+            ],
+          ),
+        ),
+        footer: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              nameRow,
+              ?tagLine,
+              status,
+              if (!entry.photoIsToday)
                 Text(
                   l10n.groups_latestPhoto(
                     MaterialLocalizations.of(context).formatMediumDate(
@@ -622,29 +746,65 @@ class _MemberCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  style: text.bodySmall,
+                  style: UiText.body(size: 11, height: 1.4, color: ui.inkMuted),
                 ),
-              ],
+              streak,
               if (photo.caption case final caption?
-                  when caption.trim().isNotEmpty) ...[
-                const SizedBox(height: OurneySpacing.xs),
-                Text(
-                  caption,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.bodyMedium,
+                  when caption.trim().isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    caption,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(size: 12, height: 1.45, color: ui.ink),
+                  ),
                 ),
-              ],
-              const SizedBox(height: OurneySpacing.sm),
+              const SizedBox(height: UiSpace.sm),
               ReactionBar(
                 checkInId: photo.id,
                 enabled: perms.isActive && !entry.isMe,
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _openMenu(
+    BuildContext context,
+    WidgetRef ref,
+    List<_MemberAction> actions,
+  ) async {
+    final l10n = GroupsL10n.of(context);
+    final picked = await showUiSheet<_MemberAction>(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final (i, a) in actions.indexed)
+            UiRow(
+              key: ValueKey('group-member-action-${a.name}'),
+              title: switch (a) {
+                _MemberAction.report => l10n.groups_actionReport,
+                _MemberAction.block => l10n.groups_actionBlock,
+                _MemberAction.remove => l10n.groups_actionRemove,
+              },
+              leading: Icon(switch (a) {
+                _MemberAction.report => Icons.flag_outlined,
+                _MemberAction.block => Icons.block_rounded,
+                _MemberAction.remove => Icons.person_remove_outlined,
+              }),
+              showChevron: false,
+              divider: i < actions.length - 1,
+              onPressed: () => Navigator.of(context).pop(a),
+            ),
+        ],
+      ),
+    );
+    if (picked == null || !context.mounted) return;
+    await _onMemberAction(context, ref, picked);
   }
 
   Future<void> _onMemberAction(

@@ -7,7 +7,6 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/personas/persona_contract.dart';
-import 'package:ourney/personas/quiet_transformer/camera_hud.dart';
 import 'package:ourney/personas/quiet_transformer/l10n/generated/quiet_transformer_localizations.dart';
 import 'package:ourney/personas/quiet_transformer/metric_curve_painter.dart';
 import 'package:ourney/personas/quiet_transformer/share_card.dart';
@@ -161,73 +160,6 @@ void main() {
             expect(tester.takeException(), isNull);
           }
         }
-      },
-    );
-  });
-
-  group('Q2 — GhostAlignVaultHud', () {
-    testWidgets(
-      'toggles Day 1 ghost silhouette and renders weight slider when metric is active',
-      (tester) async {
-        final journey = _weightJourney(hideMetricDefault: false);
-        double? updatedMetric;
-
-        await _pumpQuietWidget(
-          tester,
-          SizedBox(
-            height: 440,
-            child: GhostAlignVaultHud(
-              data: PersonaCameraData(
-                journey: journey,
-                capturedAt: DateTime.utc(2026, 10, 21, 7),
-                currentStreak: 21,
-                checkInCount: 20,
-                metricValue: 62.0,
-                hideMetric: false,
-                viewfinder: const ColoredBox(color: Colors.black87),
-              ),
-              onMetricChanged: (v) => updatedMetric = v,
-            ),
-          ),
-          width: 320,
-          textScale: 1.35,
-        );
-
-        expect(find.byKey(const ValueKey('q2-vault-pill')), findsOneWidget);
-        expect(find.byKey(const ValueKey('q2-ghost-overlay')), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('q2-metric-slider-card')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('q2-metric-value-text')),
-          findsOneWidget,
-        );
-
-        final opacityBefore = tester
-            .widget<AnimatedOpacity>(
-              find.byKey(const ValueKey('q2-ghost-overlay')),
-            )
-            .opacity;
-        expect(opacityBefore, closeTo(0.30, 0.01));
-
-        await tester.tap(find.byKey(const ValueKey('q2-ghost-toggle')));
-        await tester.pumpAndSettle();
-
-        final opacityAfter = tester
-            .widget<AnimatedOpacity>(
-              find.byKey(const ValueKey('q2-ghost-overlay')),
-            )
-            .opacity;
-        expect(opacityAfter, 0.0);
-
-        final slider = tester.widget<Slider>(
-          find.byKey(const ValueKey('q2-metric-slider')),
-        );
-        slider.onChanged?.call(61.5);
-        await tester.pump();
-        expect(updatedMetric, 61.5);
-        expect(tester.takeException(), isNull);
       },
     );
   });

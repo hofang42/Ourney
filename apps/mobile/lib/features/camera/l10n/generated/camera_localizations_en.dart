@@ -95,4 +95,20 @@ class CameraL10nEn extends CameraL10n {
   @override
   String get camera_captureFailed =>
       'Couldn\'t take the photo. Please try again.';
+
+  @override
+  String get camera_grid => 'Framing grid';
+
+  @override
+  String camera_dayHud(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get camera_swipeHint => 'Swipe for next journey';
+
+  @override
+  String camera_streakChip(int days) {
+    return '$days day streak';
+  }
 }

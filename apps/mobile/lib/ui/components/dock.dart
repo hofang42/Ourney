@@ -13,12 +13,16 @@ class UiDockItem {
     required this.label,
     required this.onPressed,
     this.active = false,
+    this.itemKey,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
   final bool active;
+
+  /// Key given to the tab (tests / integration).
+  final Key? itemKey;
 }
 
 /// `.dock`: the shared 3-tab bar. Left tab, center quick-snap pill
@@ -35,8 +39,12 @@ class UiDock extends StatelessWidget {
     this.onAccent,
     this.center,
     this.camera = false,
+    this.snapKey,
     super.key,
   });
+
+  /// Key of the quick-snap pill.
+  final Key? snapKey;
 
   final UiDockItem left;
   final UiDockItem right;
@@ -77,7 +85,7 @@ class UiDock extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _Tab(item: left, camera: camera),
+                child: _Tab(key: left.itemKey, item: left, camera: camera),
               ),
               SizedBox(
                 width: centerWidth,
@@ -85,7 +93,9 @@ class UiDock extends StatelessWidget {
                     center ??
                     Align(
                       alignment: Alignment.topCenter,
+                      heightFactor: 1,
                       child: UiSnapPill(
+                        key: snapKey,
                         label: snapLabel,
                         onPressed: onSnap,
                         accent: accent,
@@ -94,7 +104,7 @@ class UiDock extends StatelessWidget {
                     ),
               ),
               Expanded(
-                child: _Tab(item: right, camera: camera),
+                child: _Tab(key: right.itemKey, item: right, camera: camera),
               ),
             ],
           ),
@@ -105,7 +115,7 @@ class UiDock extends StatelessWidget {
 }
 
 class _Tab extends StatelessWidget {
-  const _Tab({required this.item, required this.camera});
+  const _Tab({required this.item, required this.camera, super.key});
 
   final UiDockItem item;
   final bool camera;
@@ -123,26 +133,30 @@ class _Tab extends StatelessWidget {
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(16),
       minSize: const Size(UiSize.tap, 56),
-      child: Container(
+      child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 56),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(item.icon, size: 22, color: color),
-            const SizedBox(height: 3),
-            Text(
-              item.label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(
-                size: 11,
-                weight: FontWeight.w600,
-                height: 1.35,
-                color: color,
+        // Shrink-wrap vertically: a bottom bar slot gives loose constraints
+        // as tall as the screen and `alignment` would fill them.
+        child: Center(
+          heightFactor: 1,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(item.icon, size: 22, color: color),
+              const SizedBox(height: 3),
+              Text(
+                item.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.body(
+                  size: 11,
+                  weight: FontWeight.w600,
+                  height: 1.35,
+                  color: color,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -8,7 +8,6 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/data/group_daily_checkins_provider.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
-import 'package:ourney/personas/couple_rituals/camera_hud.dart';
 import 'package:ourney/personas/couple_rituals/l10n/generated/couple_rituals_localizations.dart';
 import 'package:ourney/personas/couple_rituals/share_card.dart';
 import 'package:ourney/personas/couple_rituals/timeline.dart';
@@ -250,72 +249,6 @@ void main() {
             expect(tester.takeException(), isNull);
           }
         }
-      },
-    );
-  });
-
-  group('D3 — HalfFrameDuoHud', () {
-    testWidgets(
-      'shows partner half-frame photo when partner checked in, or waiting state when not',
-      (tester) async {
-        final journey = _coupleJourney();
-        final partnerCheckIn = _buildPartnerByDate(total: 1).values.single;
-
-        await _pumpCoupleWidget(
-          tester,
-          SizedBox(
-            height: 440,
-            child: HalfFrameDuoHud(
-              data: PersonaCameraData(
-                journey: journey,
-                capturedAt: DateTime.utc(2026, 10, 18, 7, 30),
-                currentStreak: 18,
-                checkInCount: 17,
-                partnerName: 'Lan',
-                partnerTodayCheckIn: partnerCheckIn,
-                partnerPhotoBuilder: (_, _) =>
-                    const ColoredBox(color: Colors.pinkAccent),
-                viewfinder: const ColoredBox(color: Colors.black87),
-              ),
-            ),
-          ),
-          width: 320,
-          textScale: 1.35,
-        );
-
-        expect(find.byKey(const ValueKey('d3-top-pill')), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('d3-partner-snapped')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const ValueKey('d3-my-viewfinder-half')),
-          findsOneWidget,
-        );
-
-        // When partner has NOT checked in today:
-        await _pumpCoupleWidget(
-          tester,
-          SizedBox(
-            height: 440,
-            child: HalfFrameDuoHud(
-              data: PersonaCameraData(
-                journey: journey,
-                capturedAt: DateTime.utc(2026, 10, 18, 7, 30),
-                currentStreak: 18,
-                checkInCount: 17,
-                partnerName: 'Lan',
-                partnerTodayCheckIn: null,
-                viewfinder: const ColoredBox(color: Colors.black87),
-              ),
-            ),
-          ),
-        );
-        expect(
-          find.byKey(const ValueKey('d3-partner-waiting')),
-          findsOneWidget,
-        );
-        expect(tester.takeException(), isNull);
       },
     );
   });

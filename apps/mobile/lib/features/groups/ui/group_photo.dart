@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
+import '../../../ui/ui.dart';
 
 /// A member's check-in photo, resolved through `MediaStore.localFileFor`
 /// (thumbnail by default). Uses the on-device file while the caller's own
@@ -53,10 +53,10 @@ class _PhotoFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return ColoredBox(
-      color: c.accent.withValues(alpha: 0.14),
-      child: Center(child: Icon(Icons.photo_rounded, color: c.inkMuted)),
+      color: ui.fill,
+      child: Center(child: Icon(Icons.photo_outlined, color: ui.inkMuted)),
     );
   }
 }

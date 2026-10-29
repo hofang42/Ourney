@@ -6,7 +6,6 @@ import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
-import 'package:ourney/personas/aesthetic_flexer/camera_hud.dart';
 import 'package:ourney/personas/aesthetic_flexer/l10n/generated/aesthetic_flexer_localizations.dart';
 import 'package:ourney/personas/aesthetic_flexer/share_card.dart';
 import 'package:ourney/personas/aesthetic_flexer/timeline.dart';
@@ -163,56 +162,6 @@ void main() {
         );
         expect(find.byKey(const ValueKey('r1-sparkline-card')), findsNothing);
         expect(find.byKey(const ValueKey('r1-active-pill')), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      },
-    );
-  });
-
-  group('R2 — StravaStickerStudioHud', () {
-    testWidgets(
-      'renders telemetry HUD and switches between Bold HUD, Minimal Stamp, and Film Strip styles',
-      (tester) async {
-        final journey = _workoutJourney();
-        await _pumpFlexerWidget(
-          tester,
-          SizedBox(
-            height: 440,
-            child: StravaStickerStudioHud(
-              data: PersonaCameraData(
-                journey: journey,
-                capturedAt: DateTime.utc(2026, 10, 21, 6),
-                currentStreak: 21,
-                checkInCount: 21,
-                metricValue: 5.4,
-                viewfinder: const ColoredBox(color: Colors.black87),
-              ),
-            ),
-          ),
-          width: 320,
-          textScale: 1.35,
-        );
-
-        expect(find.byKey(const ValueKey('r2-pill-boldHud')), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('r2-overlay-boldHud')),
-          findsOneWidget,
-        );
-        expect(find.textContaining('5.4 KM'), findsOneWidget);
-        expect(find.textContaining('5:04'), findsNothing);
-
-        await tester.tap(find.byKey(const ValueKey('r2-pill-minimalStamp')));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey('r2-overlay-minimalStamp')),
-          findsOneWidget,
-        );
-
-        await tester.tap(find.byKey(const ValueKey('r2-pill-filmStrip')));
-        await tester.pumpAndSettle();
-        expect(
-          find.byKey(const ValueKey('r2-overlay-filmStrip')),
-          findsOneWidget,
-        );
         expect(tester.takeException(), isNull);
       },
     );

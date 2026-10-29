@@ -191,6 +191,10 @@ void main() {
       await tester.pump();
       expect(camera.pictures, 0);
 
+      // The panel scrolls inside the viewfinder at large text / short screens.
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('capture-open-settings')),
+      );
       await tester.tap(find.byKey(const ValueKey('capture-open-settings')));
       await tester.pump();
       expect(settings.opened, 1);

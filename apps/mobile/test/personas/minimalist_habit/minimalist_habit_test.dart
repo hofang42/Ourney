@@ -6,7 +6,6 @@ import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
-import 'package:ourney/personas/minimalist_habit/camera_hud.dart';
 import 'package:ourney/personas/minimalist_habit/l10n/generated/minimalist_habit_localizations.dart';
 import 'package:ourney/personas/minimalist_habit/share_card.dart';
 import 'package:ourney/personas/minimalist_habit/timeline.dart';
@@ -144,43 +143,6 @@ void main() {
             expect(tester.takeException(), isNull);
           }
         }
-      },
-    );
-  });
-
-  group('Z2 — ZeroText3SecHud', () {
-    testWidgets(
-      'renders single top pill, zero TextFields, and 1-tap quick snap badge',
-      (tester) async {
-        final journey = _habitJourney();
-        await _pumpMinimalWidget(
-          tester,
-          SizedBox(
-            height: 440,
-            child: ZeroText3SecHud(
-              data: PersonaCameraData(
-                journey: journey,
-                capturedAt: DateTime.utc(2026, 10, 24, 21),
-                currentStreak: 24,
-                checkInCount: 23,
-                viewfinder: const ColoredBox(color: Colors.black87),
-              ),
-            ),
-          ),
-          width: 320,
-          textScale: 1.35,
-        );
-
-        expect(find.byKey(const ValueKey('z2-zero-text-hud')), findsOneWidget);
-        expect(find.byKey(const ValueKey('z2-top-pill')), findsOneWidget);
-        expect(find.textContaining('DAILY READING · DAY 24'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('z2-quick-snap-badge')),
-          findsOneWidget,
-        );
-        // Strictly zero text input fields on the HUD (Task Z2).
-        expect(find.byType(TextField), findsNothing);
-        expect(tester.takeException(), isNull);
       },
     );
   });

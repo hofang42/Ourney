@@ -61,14 +61,6 @@ PersonaTimelineData _timeline(Journey j) => PersonaTimelineData.fromProgress(
   photoBuilder: _photo,
 );
 
-PersonaCameraData _camera(Journey j) => PersonaCameraData(
-  journey: j,
-  viewfinder: const ColoredBox(color: Colors.black),
-  capturedAt: DateTime(2026, 10, 8, 6, 15),
-  currentStreak: 7,
-  checkInCount: 7,
-);
-
 PersonaShareData _share(Journey j) => PersonaShareData(
   journey: j,
   checkIns: _checkIns(j),
@@ -127,13 +119,12 @@ void main() {
   // text at 1.35x, nothing overflows, for every persona and screen.
   for (final skin in allSkins) {
     for (final brightness in bothBrightness) {
-      testWidgets('${skin.name} ${brightness.name}: timeline, camera and '
+      testWidgets('${skin.name} ${brightness.name}: timeline and '
           'share fit 320/390/430dp at 1.35x text', (tester) async {
         final j = _journey(skin);
         final style = personaStyleFor(skin);
         final screens = <String, Widget Function(BuildContext)>{
           'timeline': (c) => style.timeline(c, _timeline(j)),
-          'camera': (c) => style.camera(c, _camera(j)),
           'share': (c) => style.share(c, _share(j)),
         };
         for (final width in [320.0, 390.0, 430.0]) {
