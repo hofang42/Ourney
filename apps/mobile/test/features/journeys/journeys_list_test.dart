@@ -17,18 +17,26 @@ class _FailingJourneyRepository extends FakeJourneyRepository {
       Stream.error(const OurneyException(OurneyErrorCode.offline));
 }
 
+/// The hub's + opens the add menu; "New journey" starts the create flow.
+Future<void> _addJourney(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('journeys-new')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('journeys-menu-new')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('Journeys tab (FR-B3/B6)', () {
-    testWidgets('empty state offers creating the first journey', (
+    testWidgets('day-zero hub offers creating the first journey', (
       tester,
     ) async {
       final h = await pumpJourneys(tester, locale: const Locale('en'));
 
       expect(find.byKey(const ValueKey('journeys-empty')), findsOneWidget);
-      expect(find.text('No journeys yet'), findsOneWidget);
+      expect(find.text('Start your first journey'), findsOneWidget);
       expect(find.byKey(const ValueKey('journeys-new')), findsNothing);
 
-      await tester.tap(find.text('New journey'));
+      await tester.tap(find.text('Start your first journey'));
       await tester.pumpAndSettle();
       expect(h.location, AppRoutes.journeyNew);
       expect(
@@ -119,8 +127,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Archived'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('journeys-new')));
-      await tester.pumpAndSettle();
+      await _addJourney(tester);
 
       expect(
         find.byKey(const ValueKey('journeys-limit-dialog')),
@@ -143,8 +150,7 @@ void main() {
         tester,
         journeys: FakeJourneyRepository(journeys: journeys),
       );
-      await tester.tap(find.byKey(const ValueKey('journeys-new')));
-      await tester.pumpAndSettle();
+      await _addJourney(tester);
       expect(h.location, AppRoutes.journeyNew);
     });
 

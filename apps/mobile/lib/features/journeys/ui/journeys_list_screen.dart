@@ -1,52 +1,37 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/persona_theme.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../personas/persona_contract.dart';
-import '../../../shared/color_utils.dart';
-import '../../../shared/dashed_border_painter.dart';
-import '../../../shared/empty_state.dart';
-import '../../../shared/layout.dart';
-import '../../../shared/ourney_primary_button.dart';
-import '../../../shared/placeholder_screen.dart';
-import '../../../shared/profile_button.dart';
-import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart';
 import '../../profile/profile_providers.dart';
 import '../../sharing/sharing.dart';
 import '../../social/social.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
-import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'day_ticker.dart';
-import 'journey_detail_screen.dart';
 import 'journey_errors.dart';
-import 'journey_photo.dart';
+import 'journey_row.dart';
+import 'shelf_view.dart';
+import 'today_card.dart';
 
-/// Hub segment: running journeys or the shelf (ended + archived).
+/// Hub segment: running journeys, the shelf (ended + archived) or journeys
+/// others shared with me.
 enum HubSegment { active, shelf, shared }
 
-/// **Global Hub** (`/journeys`, Ourney V1.0 design):
+/// **Global Hub** (`/journeys`, Ourney V1.0 `Hub`):
 ///
-/// * greeting + "N journeys still need today's photo",
+/// * greeting + add menu + inbox + profile,
+/// * "N journeys still need today's photo",
 /// * the **Today card** for the next journey without a photo today, drawn in
-///   that journey's style (paper, ink, accent) with the last seven days and
-///   a "Snap today" button; an "All done" row once everything is posted,
-/// * "Your journeys" with an Active / Shelf segmented control and flat rows
-///   (thumbnail, style dot + name, streak, today status, visibility).
+///   that journey's style, or an "All done" row once everything is posted,
+/// * "Your journeys" with Active / Shelf / Shared segments.
 ///
-/// The shell around it stays on the neutral editorial base
-/// (`editorialNeutralBase`); only the Today card takes a persona's colors.
+/// Without journeys it is the **day-zero hub** (`DayZeroHub`).
 class JourneysListScreen extends ConsumerStatefulWidget {
   const JourneysListScreen({super.key});
 
@@ -61,6 +46,7 @@ class JourneysListScreen extends ConsumerStatefulWidget {
 
 class _JourneysListState extends ConsumerState<JourneysListScreen> {
   HubSegment _segment = HubSegment.active;
+  bool _menuOpen = false;
 
   @override
   Widget build(BuildContext context) {
@@ -69,133 +55,188 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
 
     if (journeys.hasError && isNotWired(journeys.error!)) {
       // Data layer (B1) not wired yet.
-      return PlaceholderScreen(id: 'journeys', title: l10n.journeys_title);
+      return UiScaffold(
+        key: const ValueKey('placeholder-journeys'),
+        child: UiEmptyState(
+          icon: Icons.route_rounded,
+          title: l10n.journeys_title,
+        ),
+      );
     }
 
     final buckets = journeys.hasValue ? JourneyBuckets(journeys.value!) : null;
 
     final Widget body;
-    if (buckets != null) {
-      body = buckets.isEmpty
-          ? EmptyState(
-              key: const ValueKey('journeys-empty'),
-              icon: Icons.route_rounded,
-              title: l10n.journeys_emptyTitle,
-              message: l10n.journeys_emptyMessage,
-              actionLabel: l10n.journeys_newJourney,
-              onAction: () => JourneysListScreen.startCreate(context, buckets),
-            )
-          : _HubBody(
-              buckets: buckets,
-              segment: _segment,
-              onSegment: (s) => setState(() => _segment = s),
-            );
+    if (buckets != null && buckets.isEmpty) {
+      body = _DayZero(
+        onStart: () => JourneysListScreen.startCreate(context, buckets),
+      );
+    } else if (buckets != null) {
+      body = _HubBody(
+        buckets: buckets,
+        segment: _segment,
+        onSegment: (s) => setState(() => _segment = s),
+        menuOpen: _menuOpen,
+        onMenu: () => setState(() => _menuOpen = !_menuOpen),
+        onCloseMenu: () => setState(() => _menuOpen = false),
+      );
     } else if (journeys.hasError) {
-      body = EmptyState(
-        key: const ValueKey('journeys-error'),
-        icon: Icons.error_outline_rounded,
-        title: l10n.journeys_loadError,
-        message: journeyErrorMessage(context, journeys.error!),
-        actionLabel: AppLocalizations.of(context).common_retry,
-        onAction: () => ref.invalidate(journeysListProvider),
+      body = Column(
+        children: [
+          const _HubHeader(),
+          UiEmptyState(
+            key: const ValueKey('journeys-error'),
+            icon: Icons.error_outline_rounded,
+            title: l10n.journeys_loadError,
+            body: journeyErrorMessage(context, journeys.error!),
+            actionLabel: AppLocalizations.of(context).common_retry,
+            onAction: () => ref.invalidate(journeysListProvider),
+          ),
+        ],
       );
     } else {
-      body = Center(
-        child: CircularProgressIndicator(
-          semanticsLabel: AppLocalizations.of(context).common_loading,
-        ),
+      body = Column(
+        children: [
+          const _HubHeader(),
+          const SizedBox(height: 80),
+          Center(
+            child: CircularProgressIndicator(
+              semanticsLabel: AppLocalizations.of(context).common_loading,
+            ),
+          ),
+        ],
       );
     }
 
-    final baseTheme = Theme.of(context);
-    final neutralPersona = OurneyPersonaTheme.editorialNeutralBase(
-      baseTheme.brightness,
-    );
-
     return DayTicker(
-      child: Theme(
-        data: baseTheme.copyWith(
-          scaffoldBackgroundColor: neutralPersona.background,
-          extensions: [
-            for (final e in baseTheme.extensions.values)
-              if (e is! OurneyPersonaTheme) e,
-            neutralPersona,
-          ],
-        ),
-        child: Scaffold(
-          key: const ValueKey('journeys-list'),
-          backgroundColor: neutralPersona.background,
-          body: SafeArea(
-            bottom: false,
-            child: buckets == null || buckets.isEmpty
-                ? Column(
-                    children: [
-                      const _HubHeader(onAdd: null),
-                      Expanded(child: body),
-                    ],
-                  )
-                : body,
-          ),
-        ),
+      child: UiScaffold(
+        key: const ValueKey('journeys-list'),
+        padBottom: 120,
+        child: body,
       ),
     );
   }
 }
 
-/// Horizontal page padding for the hub (CLAUDE.md §3 width classes).
-double _hubPadding(BuildContext context) =>
-    OurneyLayout.horizontalPadding(MediaQuery.sizeOf(context).width);
-
-/// Greeting row: "Good evening, Linh" · add · profile avatar.
+/// Greeting row: "Good evening, Linh" + add + inbox + profile avatar.
 class _HubHeader extends ConsumerWidget {
-  const _HubHeader({required this.onAdd});
+  const _HubHeader({this.onAdd, this.hello = false});
 
-  /// Null hides the add button (empty hub: the empty state offers it).
+  /// Null hides the add button (the empty hub offers its own start button).
   final VoidCallback? onAdd;
+
+  /// Day-zero greeting ("Hi, Linh") instead of the time-of-day one.
+  final bool hello;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
     final now = ref.watch(journeysNowProvider);
+    final name = ref.watch(myProfileProvider).value?.displayName.trim();
+    final first = name == null || name.isEmpty
+        ? null
+        : name.split(RegExp(r'\s+')).last;
     final greeting = now.hour < 12
         ? l10n.journeys_greetingMorning
         : now.hour < 18
         ? l10n.journeys_greetingAfternoon
         : l10n.journeys_greetingEvening;
-    final name = ref.watch(myProfileProvider).value?.displayName.trim();
-    final first = name == null || name.isEmpty
-        ? null
-        : name.split(RegExp(r'\s+')).last;
-    final pad = _hubPadding(context);
-    return Padding(
-      padding: EdgeInsets.fromLTRB(pad, OurneySpacing.md, pad - 8, 0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              header: true,
-              child: Text(
-                first == null
-                    ? greeting
-                    : l10n.journeys_greetingNamed(greeting, first),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineSmall
-                    ?.copyWith(height: 1.3),
-              ),
-            ),
+    final title = first == null
+        ? (hello ? l10n.journeys_title : greeting)
+        : (hello
+              ? l10n.journeys_greetingHi(first)
+              : l10n.journeys_greetingNamed(greeting, first));
+    return UiTopBar(
+      title: title,
+      actions: [
+        if (onAdd != null)
+          UiIconButton(
+            key: const ValueKey('journeys-new'),
+            icon: Icons.add_rounded,
+            label: l10n.journeys_addJourney,
+            onPressed: onAdd,
           ),
-          if (onAdd != null)
-            IconButton(
-              key: const ValueKey('journeys-new'),
-              tooltip: l10n.journeys_addJourney,
-              onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded),
-            ),
-          const InboxButton(),
-          const ProfileButton(),
-        ],
+        const InboxButton(),
+        _ProfileEntry(name: name),
+      ],
+    );
+  }
+}
+
+/// Avatar button to `/profile` (settings, reminders, safety).
+class _ProfileEntry extends StatelessWidget {
+  const _ProfileEntry({required this.name});
+
+  final String? name;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final label = AppLocalizations.of(context).nav_profile;
+    final hasName = name != null && name!.isNotEmpty;
+    return UiPressable(
+      key: const ValueKey('profile-entry'),
+      onPressed: () => context.push(AppRoutes.profile),
+      semanticLabel: label,
+      excludeChildSemantics: true,
+      child: Center(
+        child: hasName
+            ? UiAvatar(
+                name: name!,
+                size: UiSize.avatarLarge,
+                colorIndex: UiAvatar.indexFor(name!),
+              )
+            : Container(
+                width: UiSize.avatarLarge,
+                height: UiSize.avatarLarge,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ui.fill,
+                  border: Border.all(color: ui.border),
+                ),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  size: 22,
+                  color: ui.ink,
+                ),
+              ),
       ),
+    );
+  }
+}
+
+/// `DayZeroHub`: nothing to track yet, one clear way to start.
+class _DayZero extends StatelessWidget {
+  const _DayZero({required this.onStart});
+
+  final VoidCallback onStart;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    final ui = context.ui;
+    final height = MediaQuery.sizeOf(context).height;
+    return Column(
+      key: const ValueKey('journeys-empty'),
+      children: [
+        const _HubHeader(hello: true),
+        SizedBox(height: height * 0.18),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Text(
+            l10n.journeys_dayZeroBody,
+            textAlign: TextAlign.center,
+            style: UiText.body(size: 17, height: 1.6, color: ui.ink),
+          ),
+        ),
+        const SizedBox(height: UiSpace.xxl),
+        UiButton(
+          key: const ValueKey('journeys-start-first'),
+          label: l10n.journeys_dayZeroStart,
+          expand: false,
+          onPressed: onStart,
+        ),
+      ],
     );
   }
 }
@@ -207,15 +248,22 @@ class _HubBody extends ConsumerWidget {
     required this.buckets,
     required this.segment,
     required this.onSegment,
+    required this.menuOpen,
+    required this.onMenu,
+    required this.onCloseMenu,
   });
 
   final JourneyBuckets buckets;
   final HubSegment segment;
   final ValueChanged<HubSegment> onSegment;
+  final bool menuOpen;
+  final VoidCallback onMenu;
+  final VoidCallback onCloseMenu;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
+    final ui = context.ui;
     final now = ref.watch(journeysNowProvider);
     final progress = <String, JourneyProgress>{};
     for (final j in buckets.active) {
@@ -243,196 +291,123 @@ class _HubBody extends ConsumerWidget {
             orElse: () => pending.first,
           );
     final allDone = known && buckets.active.isNotEmpty && pending.isEmpty;
-    final pad = _hubPadding(context);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
-
-    final rows = segment == HubSegment.active
-        ? buckets.active
-        : buckets.finished;
     final online = !ref.watch(appConfigProvider).localOnly;
 
-    return OurneyResponsiveBody(
-      applyHorizontalPadding: false,
-      child: ListView(
-        padding: EdgeInsets.only(bottom: OurneySpacing.xxl * 2),
-        children: [
-          _HubHeader(
-            onAdd: () => JourneysListScreen.startCreate(context, buckets),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(pad, 2, pad, 18),
-            child: Text(
-              key: const ValueKey('journeys-hub-prompt'),
-              allDone
-                  ? l10n.journeys_allDonePrompt
-                  : l10n.journeys_remainingToday(pending.length),
-              style: text.bodyMedium?.copyWith(
-                color: c.inkMuted,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-          ),
-          if (next != null)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: pad),
-              child: TodayCard(progress: next),
-            )
-          else if (allDone)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: pad),
-              child: _AllDoneRow(count: buckets.active.length),
-            ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(pad, OurneySpacing.xl, pad, 8),
-            child: Semantics(
-              header: true,
-              child: Text(
-                l10n.journeys_yourJourneys,
-                style: headingStyle(size: 18, color: c.ink),
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(pad, 0, pad, OurneySpacing.md),
-            child: HubSegments(
-              value: segment,
-              onChanged: onSegment,
-              labels: {
-                HubSegment.active:
-                    '${l10n.journeys_activeSection} · '
-                    '${buckets.activeCount}/$maxActiveJourneys',
-                HubSegment.shelf: l10n.journeys_finishedSection,
-                if (online) HubSegment.shared: l10n.journeys_sharedSection,
-              },
-            ),
-          ),
-          if (segment == HubSegment.shared)
-            const SharedWithMeList(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-            )
-          else if (rows.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: pad, vertical: 24),
-              child: Text(
-                segment == HubSegment.active
-                    ? l10n.journeys_activeEmpty
-                    : l10n.journeys_shelfEmpty,
-                textAlign: TextAlign.center,
-                style: text.bodyMedium?.copyWith(color: c.inkMuted),
-              ),
-            )
-          else
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: pad),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: c.divider)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HubHeader(onAdd: onMenu),
+        if (menuOpen)
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: UiMenuSurface(
+              width: 260,
+              children: [
+                UiMenuItem(
+                  key: const ValueKey('journeys-menu-new'),
+                  icon: Icons.add_rounded,
+                  label: l10n.journeys_newJourney,
+                  onPressed: () {
+                    onCloseMenu();
+                    JourneysListScreen.startCreate(context, buckets);
+                  },
                 ),
-                child: Column(
-                  children: [
-                    for (final j in rows)
-                      JourneyCard(
-                        journey: j,
-                        hideStreak: next?.journey.id == j.id,
-                      ),
-                  ],
-                ),
-              ),
+                if (online)
+                  UiMenuItem(
+                    key: const ValueKey('journeys-menu-retell'),
+                    icon: Icons.image_outlined,
+                    label: l10n.journeys_retell,
+                    onPressed: () {
+                      onCloseMenu();
+                      context.push(AppRoutes.retell);
+                    },
+                  ),
+              ],
             ),
-          if (segment == HubSegment.shelf && online)
-            Padding(
-              padding: EdgeInsets.fromLTRB(pad, OurneySpacing.md, pad, 0),
-              child: OutlinedButton.icon(
-                key: const ValueKey('journeys-retell'),
-                onPressed: () => context.push(AppRoutes.retell),
-                icon: const Icon(Icons.history_edu_rounded),
-                label: Text(l10n.journeys_retell),
-              ),
+          ),
+        Padding(
+          padding: const EdgeInsets.only(top: 2, bottom: 18),
+          child: Text(
+            key: const ValueKey('journeys-hub-prompt'),
+            allDone
+                ? l10n.journeys_allDonePrompt
+                : l10n.journeys_remainingToday(pending.length),
+            style: UiText.muted(size: 14, color: ui.inkMuted),
+          ),
+        ),
+        if (next != null)
+          TodayCard(progress: next)
+        else if (allDone)
+          _AllDoneRow(count: buckets.active.length),
+        const SizedBox(height: UiSpace.xl),
+        UiListHeading(title: l10n.journeys_yourJourneys),
+        const SizedBox(height: UiSpace.sm),
+        UiSegmented<HubSegment>(
+          scrollable: true,
+          value: segment,
+          onChanged: onSegment,
+          segments: [
+            UiSegment(
+              key: const ValueKey('hub-segment-active'),
+              value: HubSegment.active,
+              label:
+                  '${l10n.journeys_activeSection} · '
+                  '${buckets.activeCount}/$maxActiveJourneys',
             ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Pill-shaped segmented control (V1.0 `.segments`): sunken track, the
-/// selected segment raised on a surface with a soft shadow.
-class HubSegments extends StatelessWidget {
-  const HubSegments({
-    required this.value,
-    required this.onChanged,
-    required this.labels,
-    super.key,
-  });
-
-  final HubSegment value;
-  final ValueChanged<HubSegment> onChanged;
-  final Map<HubSegment, String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: c.surfaceSunken,
-        borderRadius: BorderRadius.circular(OurneyRadii.capsule),
-      ),
-      child: Row(
-        children: [
-          for (final s in labels.keys)
-            Expanded(
-              child: Semantics(
-                button: true,
-                selected: s == value,
-                child: GestureDetector(
-                  key: ValueKey('hub-segment-${s.name}'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onChanged(s),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    alignment: Alignment.center,
-                    constraints: const BoxConstraints(minHeight: 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    decoration: BoxDecoration(
-                      color: s == value ? c.surfaceRaised : Colors.transparent,
-                      borderRadius: BorderRadius.circular(OurneyRadii.capsule),
-                      boxShadow: s == value
-                          ? [
-                              BoxShadow(
-                                color: c.segmentShadow,
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ]
-                          : null,
-                    ),
+            UiSegment(
+              key: const ValueKey('hub-segment-shelf'),
+              value: HubSegment.shelf,
+              label: l10n.journeys_finishedSection,
+            ),
+            if (online)
+              UiSegment(
+                key: const ValueKey('hub-segment-shared'),
+                value: HubSegment.shared,
+                label: l10n.journeys_sharedSection,
+              ),
+          ],
+        ),
+        const SizedBox(height: UiSpace.md),
+        switch (segment) {
+          HubSegment.shared => const SharedWithMeList(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+          ),
+          HubSegment.shelf => ShelfView(
+            journeys: buckets.finished,
+            online: online,
+          ),
+          HubSegment.active =>
+            buckets.active.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Text(
-                      labels[s]!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kBodyFont,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        height: 1.3,
-                        color: c.ink,
-                      ),
+                      l10n.journeys_activeEmpty,
+                      textAlign: TextAlign.center,
+                      style: UiText.muted(color: ui.inkMuted),
+                    ),
+                  )
+                : DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: ui.divider)),
+                    ),
+                    child: Column(
+                      children: [
+                        for (final j in buckets.active)
+                          JourneyRow(
+                            journey: j,
+                            hideStreak: next?.journey.id == j.id,
+                          ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-            ),
-        ],
-      ),
+        },
+      ],
     );
   }
 }
 
+/// `.hub-all-done`: every running journey has today's photo.
 class _AllDoneRow extends StatelessWidget {
   const _AllDoneRow({required this.count});
 
@@ -440,691 +415,40 @@ class _AllDoneRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = JourneysL10n.of(context);
-    final c = OurneyColors.of(context);
-    return Container(
+    final ui = context.ui;
+    return UiCard(
       key: const ValueKey('journeys-all-done'),
-      constraints: const BoxConstraints(minHeight: 72),
-      padding: const EdgeInsets.symmetric(horizontal: OurneySpacing.lg),
-      decoration: BoxDecoration(
-        color: c.surface,
-        border: Border.all(color: c.border),
+      padding: const EdgeInsets.symmetric(
+        horizontal: UiSpace.lg,
+        vertical: UiSpace.md,
       ),
       child: Row(
         children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: c.successSoft,
-            ),
-            child: Icon(Icons.check_rounded, size: 18, color: c.onSuccessSoft),
-          ),
+          const UiCheckBadge(),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              l10n.journeys_allDoneTitle,
-              style: TextStyle(
-                fontFamily: kBodyFont,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
+              JourneysL10n.of(context).journeys_allDoneTitle,
+              style: UiText.body(
+                size: 14,
+                weight: FontWeight.w700,
                 height: 1.35,
-                color: c.ink,
+                color: ui.ink,
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             '$count/$count',
-            style: TextStyle(
-              fontFamily: kBodyFont,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: c.inkMuted,
+            style: UiText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              height: 1.3,
+              color: ui.inkMuted,
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-/// The hub's hero: the next journey still waiting for today's photo, in its
-/// own style. Square, outlined, editorial (V1.0 `.hub-today-card`).
-class TodayCard extends ConsumerWidget {
-  const TodayCard({required this.progress, super.key});
-
-  final JourneyProgress progress;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = JourneysL10n.of(context);
-    final journey = progress.journey;
-    final brightness = Theme.of(context).brightness;
-    final skin = personaSkinOf(journey);
-    final style = OurneyPersonaTheme.forSkin(skin, brightness);
-    final dark = brightness == Brightness.dark;
-    // Dark mode: every style shares the same near-black card (V1.0).
-    final c = OurneyColors.of(context);
-    final bg = dark ? c.cardNight : style.background;
-    final ink = dark ? c.onCardNight : style.ink;
-    final latest = _latestCheckIn(progress);
-    final dayText = progress.totalDays == null
-        ? l10n.journeys_dayOpen(progress.dayNumber)
-        : l10n.journeys_dayShort(progress.dayNumber, progress.totalDays!);
-    final status = _deadlineText(
-      l10n,
-      progress,
-      ref.watch(journeysNowProvider),
-    );
-
-    TextStyle label(double size, {double opacity = 1}) => TextStyle(
-      fontFamily: kBodyFont,
-      fontSize: size,
-      fontWeight: FontWeight.w700,
-      height: 1.3,
-      letterSpacing: size * 0.08,
-      color: ink.withValues(alpha: opacity),
-    );
-
-    return AnimatedContainer(
-      key: ValueKey('journeys-today-${journey.id}'),
-      duration: OurneyDurations.personaTheme,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: bg,
-        border: Border.all(color: ink),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text(l10n.journeys_todayLabel.toUpperCase(), style: label(10)),
-              const Spacer(),
-              Flexible(
-                child: Text(
-                  personaStyleName(skin).toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: label(10, opacity: 0.72),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          Container(
-            height: 148,
-            decoration: BoxDecoration(
-              color: c.mediaPlaceholder,
-              border: Border.all(color: ink),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (latest != null)
-                  JourneyPhoto(checkIn: latest, thumbnail: false)
-                else
-                  ColoredBox(
-                    color: style.primaryAccent.withValues(alpha: 0.28),
-                    child: Icon(
-                      journeyIcon(journey.emoji, journey.templateId),
-                      size: 44,
-                      color: c.onCameraOverlay.withValues(alpha: 0.85),
-                    ),
-                  ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: [0.45, 1],
-                      colors: [
-                        Colors.transparent,
-                        c.cameraOverlay.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 12,
-                  right: 12,
-                  bottom: 10,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          journey.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: displayStyle(
-                            size: 20,
-                            weight: 700,
-                            height: 1.25,
-                            color: c.onCameraOverlay,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        dayText,
-                        style: TextStyle(
-                          fontFamily: kBodyFont,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: c.onCameraOverlay,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            constraints: const BoxConstraints(minHeight: 42),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: ink.withValues(alpha: 0.28)),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  size: 17,
-                  color: c.flame,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  '${progress.summary.current}',
-                  style: TextStyle(
-                    fontFamily: kBodyFont,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: ink,
-                  ),
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  l10n.journeys_streakWord,
-                  style: TextStyle(
-                    fontFamily: kBodyFont,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: ink.withValues(alpha: 0.72),
-                  ),
-                ),
-                const Spacer(),
-                if (status != null)
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.schedule_rounded,
-                          size: 15,
-                          color: c.warning,
-                        ),
-                        const SizedBox(width: 5),
-                        Flexible(
-                          child: Text(
-                            status,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontFamily: kBodyFont,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: c.warning,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          WeekStrip(progress: progress, ink: ink),
-          OurneyPrimaryButton(
-            key: const ValueKey('journeys-snap-today'),
-            label: l10n.journeys_snapToday,
-            icon: Icons.photo_camera_outlined,
-            backgroundColor: style.primaryAccent,
-            foregroundColor: readableOn(style.primaryAccent),
-            onPressed: () {
-              unawaited(
-                ref.read(activeJourneyIdProvider.notifier).select(journey.id),
-              );
-              unawaited(
-                JourneyDetailScreen.checkInNow(context, ref, journey.id),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  static CheckIn? _latestCheckIn(JourneyProgress p) {
-    CheckIn? latest;
-    for (final c in p.checkInsByDate.values) {
-      if (latest == null || c.localDate.isAfter(latest.localDate)) latest = c;
-    }
-    return latest;
-  }
-
-  /// "Starts today" on day 1, otherwise the time left before the journey's
-  /// local midnight ("Ends in 3h").
-  static String? _deadlineText(
-    JourneysL10n l10n,
-    JourneyProgress p,
-    DateTime now,
-  ) {
-    if (p.journey.startDate == p.today && p.summary.current == 0) {
-      return l10n.journeys_startsToday;
-    }
-    final offset = utcOffsetIn(p.journey.timezone, now);
-    final local = now.toUtc().add(offset);
-    final minutesLeft = (24 * 60) - (local.hour * 60 + local.minute);
-    final hours = minutesLeft ~/ 60;
-    return hours < 1
-        ? l10n.journeys_endsSoon
-        : l10n.journeys_endsInHours(hours);
-  }
-}
-
-/// The last seven days of a journey, oldest first, today last: photo cells
-/// with a check badge, a dashed camera cell for today, hairline empty cells
-/// for missed days and nothing before the journey started.
-class WeekStrip extends StatelessWidget {
-  const WeekStrip({required this.progress, required this.ink, super.key});
-
-  final JourneyProgress progress;
-  final Color ink;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = JourneysL10n.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    final today = progress.today;
-    final weekday = DateFormat.E(locale);
-    return Semantics(
-      label: l10n.journeys_lastSevenDays,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(0, 11, 0, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            for (var i = 6; i >= 0; i--) ...[
-              Expanded(
-                child: _DayCell(
-                  date: today.addDays(-i),
-                  isToday: i == 0,
-                  label: i == 0
-                      ? l10n.journeys_todayLabel
-                      : weekday.format(displayDate(today.addDays(-i))),
-                  checkIn: progress.checkInsByDate[today.addDays(-i)],
-                  beforeStart: today.addDays(-i).isBefore(progress.memberStart),
-                  ink: ink,
-                ),
-              ),
-              if (i > 0) const SizedBox(width: 4),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DayCell extends StatelessWidget {
-  const _DayCell({
-    required this.date,
-    required this.isToday,
-    required this.label,
-    required this.checkIn,
-    required this.beforeStart,
-    required this.ink,
-  });
-
-  final LocalDate date;
-  final bool isToday;
-  final String label;
-  final CheckIn? checkIn;
-  final bool beforeStart;
-  final Color ink;
-
-  @override
-  Widget build(BuildContext context) {
-    final Widget cell;
-    if (checkIn != null) {
-      cell = Container(
-        decoration: BoxDecoration(border: Border.all(color: ink)),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            JourneyPhoto(checkIn: checkIn!, cacheWidth: 120),
-            Positioned(
-              right: 1,
-              bottom: 1,
-              child: Container(
-                width: 12,
-                height: 12,
-                color: ink,
-                child: Icon(
-                  Icons.check_rounded,
-                  size: 9,
-                  color: ink.computeLuminance() > 0.5
-                      ? OurneyColors.of(context).cardNight
-                      : OurneyColors.of(context).onCameraOverlay,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (isToday) {
-      cell = CustomPaint(
-        painter: DashedBorderPainter(color: ink, dash: 3, gap: 2),
-        child: Center(
-          child: Icon(Icons.photo_camera_outlined, size: 14, color: ink),
-        ),
-      );
-    } else if (beforeStart) {
-      cell = const SizedBox.shrink();
-    } else {
-      cell = DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: ink.withValues(alpha: 0.35)),
-        ),
-      );
-    }
-    final small = TextStyle(
-      fontFamily: kBodyFont,
-      fontSize: 8,
-      fontWeight: FontWeight.w700,
-      height: 1.2,
-      color: isToday ? ink : ink.withValues(alpha: 0.72),
-    );
-    return ExcludeSemantics(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 20,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: small,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          AspectRatio(aspectRatio: 1, child: cell),
-          const SizedBox(height: 4),
-          Text(
-            '${date.day}',
-            style: TextStyle(
-              fontFamily: kBodyFont,
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-              color: ink,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// One journey row on the hub (V1.0 `.journey-row`): 66dp thumbnail (latest
-/// photo, or the journey icon on its style color), title, style dot + name,
-/// then streak, today status (icon + word, not color only) and visibility.
-class JourneyCard extends ConsumerWidget {
-  const JourneyCard({
-    required this.journey,
-    this.hideStreak = false,
-    super.key,
-  });
-
-  final Journey journey;
-
-  /// The Today card already shows this journey's streak.
-  final bool hideStreak;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = JourneysL10n.of(context);
-    final app = AppLocalizations.of(context);
-    final c = OurneyColors.of(context);
-    final brightness = Theme.of(context).brightness;
-    final membership = ref.watch(myMembershipProvider(journey.id));
-    final checkIns = ref.watch(myCheckInsProvider(journey.id));
-    final progress = checkIns.hasValue
-        ? JourneyProgress.compute(
-            journey: journey,
-            membership: membership.value,
-            checkIns: checkIns.value!,
-            now: ref.watch(journeysNowProvider),
-          )
-        : null;
-    final active = journey.status == JourneyStatus.active;
-    final skin = personaSkinOf(journey);
-    final style = OurneyPersonaTheme.forSkin(skin, brightness);
-    final latest = progress == null ? null : TodayCard._latestCheckIn(progress);
-
-    final dayText = progress == null
-        ? null
-        : (progress.totalDays == null
-              ? l10n.journeys_dayOpen(progress.dayNumber)
-              : l10n.journeys_dayOf(progress.dayNumber, progress.totalDays!));
-    final done = active && (progress?.checkedInToday ?? false);
-    final statusText = switch (journey.status) {
-      JourneyStatus.active =>
-        progress == null
-            ? null
-            : (done ? l10n.journeys_rowDone : l10n.journeys_rowNotYet),
-      JourneyStatus.ended => l10n.journeys_statusEnded,
-      JourneyStatus.archived => l10n.journeys_statusArchived,
-    };
-    final statusSemantics = switch (journey.status) {
-      JourneyStatus.active =>
-        done ? l10n.journeys_checkedToday : l10n.journeys_notCheckedToday,
-      _ => statusText,
-    };
-    final (
-      IconData privacyIcon,
-      String privacyText,
-    ) = switch (journey.visibility) {
-      JourneyVisibility.private => (
-        Icons.lock_outline_rounded,
-        l10n.journeys_privacyPrivate,
-      ),
-      JourneyVisibility.link => (Icons.link_rounded, l10n.journeys_privacyLink),
-      JourneyVisibility.group => (
-        Icons.people_outline_rounded,
-        l10n.journeys_privacyGroup,
-      ),
-    };
-
-    final meta = TextStyle(
-      fontFamily: kBodyFont,
-      fontSize: 11,
-      fontWeight: FontWeight.w500,
-      height: 1.35,
-      color: c.inkMuted,
-    );
-
-    return Semantics(
-      button: true,
-      label: [
-        journey.title,
-        personaStyleName(skin),
-        ?dayText,
-        ?statusSemantics,
-        if (progress != null && !hideStreak)
-          app.streak_semantics(progress.summary.current),
-        privacyText,
-      ].join(', '),
-      excludeSemantics: true,
-      child: InkWell(
-        key: ValueKey('journey-card-${journey.id}'),
-        onTap: () {
-          if (active) {
-            unawaited(
-              ref.read(activeJourneyIdProvider.notifier).select(journey.id),
-            );
-          }
-          context.push(AppRoutes.journey(journey.id));
-        },
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 94),
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: c.divider)),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                key: ValueKey('journey-badge-${journey.id}'),
-                borderRadius: BorderRadius.circular(OurneyRadii.thumb),
-                child: SizedBox.square(
-                  dimension: 66,
-                  child: latest != null
-                      ? JourneyPhoto(checkIn: latest, cacheWidth: 200)
-                      : ColoredBox(
-                          color: brightness == Brightness.dark
-                              ? style.surfaceElevated
-                              : style.background,
-                          child: Icon(
-                            journeyIcon(journey.emoji, journey.templateId),
-                            size: 28,
-                            color: style.ink,
-                          ),
-                        ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      journey.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontFamily: kBodyFont,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        height: 1.35,
-                        color: c.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Row(
-                      children: [
-                        Container(
-                          width: 7,
-                          height: 7,
-                          decoration: BoxDecoration(
-                            color: style.primaryAccent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            [
-                              personaStyleName(skin),
-                              ?dayText,
-                              if (journey.origin == JourneyOrigin.imported)
-                                l10n.journeys_imported,
-                            ].join(' · '),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: meta,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 3),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 2,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        if (progress != null && active && !hideStreak)
-                          _Meta(
-                            icon: Icons.local_fire_department_rounded,
-                            iconColor: c.flame,
-                            text: '${progress.summary.current}',
-                            style: meta,
-                          ),
-                        if (statusText != null)
-                          _Meta(
-                            key: ValueKey('journey-status-${journey.id}'),
-                            icon: !active
-                                ? Icons.flag_outlined
-                                : done
-                                ? Icons.check_rounded
-                                : Icons.circle_outlined,
-                            iconColor: done ? c.success : c.inkMuted,
-                            text: statusText,
-                            style: done
-                                ? meta.copyWith(color: c.success)
-                                : meta,
-                          ),
-                        _Meta(
-                          icon: privacyIcon,
-                          iconColor: c.inkMuted,
-                          text: privacyText,
-                          style: meta,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.chevron_right_rounded, size: 20, color: c.inkMuted),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Meta extends StatelessWidget {
-  const _Meta({
-    required this.icon,
-    required this.iconColor,
-    required this.text,
-    required this.style,
-    super.key,
-  });
-
-  final IconData icon;
-  final Color iconColor;
-  final String text;
-  final TextStyle style;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: iconColor),
-        const SizedBox(width: 3),
-        Text(text, style: style),
-      ],
     );
   }
 }

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
+import '../../../ui/ui.dart';
 
 /// Photo of a check-in: thumbnail in grid cells, full photo in the viewer.
 /// Shows [fallback] while loading or when the file cannot be read.
@@ -54,10 +54,10 @@ class _PhotoFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return ColoredBox(
-      color: c.success.withValues(alpha: 0.18),
-      child: Center(child: Icon(Icons.check_rounded, color: c.ink, size: 20)),
+      color: ui.success.withValues(alpha: 0.18),
+      child: Center(child: Icon(Icons.check_rounded, color: ui.ink, size: 20)),
     );
   }
 }

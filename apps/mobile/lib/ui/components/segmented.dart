@@ -10,7 +10,11 @@ class UiSegment<T> {
     required this.value,
     required this.label,
     this.showDot = false,
+    this.key,
   });
+
+  /// Key of the tappable segment (tests, other features).
+  final Key? key;
 
   final T value;
   final String label;
@@ -82,6 +86,7 @@ class UiSegmented<T> extends StatelessWidget {
         ),
       );
       final pressable = UiPressable(
+        key: s.key,
         onPressed: () => onChanged(s.value),
         selected: selected,
         semanticLabel: s.label,

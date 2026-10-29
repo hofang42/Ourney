@@ -459,4 +459,67 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_shareCard => 'Tạo thẻ chia sẻ';
+
+  @override
+  String get journeys_back => 'Quay lại';
+
+  @override
+  String get journeys_shelfIntro =>
+      'Những hành trình đã xong, được giữ như album.';
+
+  @override
+  String get journeys_dayZeroBody =>
+      'Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.';
+
+  @override
+  String get journeys_dayZeroStart => 'Bắt đầu hành trình đầu tiên';
+
+  @override
+  String journeys_greetingHi(String name) {
+    return 'Chào $name';
+  }
+
+  @override
+  String journeys_todayLeft(int count) {
+    return 'Còn $count';
+  }
+
+  @override
+  String get journeys_todayAtRisk => 'Sắp đứt chuỗi';
+
+  @override
+  String get journeys_todayRest => 'Còn lại';
+
+  @override
+  String get journeys_openJourneys => 'Mở hành trình';
+
+  @override
+  String journeys_doneOf(int done, int total) {
+    return '$done/$total đã xong';
+  }
+
+  @override
+  String get journeys_shareMakeCard => 'Tạo thẻ hoặc video';
+
+  @override
+  String get journeys_shareMakeCardHint => 'Chia sẻ một khoảnh khắc';
+
+  @override
+  String get journeys_shareJourney => 'Chia sẻ hành trình này';
+
+  @override
+  String get journeys_shareJourneyHint => 'Chọn bạn bè có thể theo dõi';
+
+  @override
+  String journeys_albumDays(int done, int total) {
+    return '$done/$total ngày';
+  }
+
+  @override
+  String journeys_albumMoments(int count) {
+    return '$count khoảnh khắc';
+  }
+
+  @override
+  String get journeys_streakDaysLabel => 'ngày liên tiếp';
 }

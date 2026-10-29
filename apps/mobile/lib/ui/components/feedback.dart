@@ -248,7 +248,12 @@ class UiInlineError extends StatelessWidget {
 
 /// `.toast`: ink pill with paper text. Fixed behavior so it never covers the
 /// primary action.
-void showUiToast(BuildContext context, String message) {
+/// [bottomOffset] lifts it above a pinned bottom button.
+void showUiToast(
+  BuildContext context,
+  String message, {
+  double bottomOffset = 36,
+}) {
   final ui = context.ui;
   final messenger = ScaffoldMessenger.maybeOf(context);
   messenger?.hideCurrentSnackBar();
@@ -257,7 +262,7 @@ void showUiToast(BuildContext context, String message) {
       behavior: SnackBarBehavior.floating,
       backgroundColor: ui.ink,
       shape: const StadiumBorder(),
-      margin: const EdgeInsets.fromLTRB(24, 0, 24, 36),
+      margin: EdgeInsets.fromLTRB(24, 0, 24, bottomOffset),
       content: Text(
         message,
         textAlign: TextAlign.center,

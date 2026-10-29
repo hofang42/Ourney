@@ -13,6 +13,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `typography.dart` | `UiText.h1/h2/eyebrow/muted/button/fieldLabel/wordmark/body/display`, `UiFonts` |
 | `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs `OurneyUi`, legacy `OurneyColors`, `OurneyPersonaTheme` |
 | `journey_styles.dart` | `uiJourneyStyles` (10 styles: accent, paper, ink, onAccent) |
+| `journey_icons.dart` | `uiJourneyIcon(emoji, template)`, `uiTemplateIcon(template)`: vector icon of a journey (no emoji in system UI) |
 
 ## CSS class -> Flutter widget
 | CSS / TSX | Widget |
@@ -22,7 +23,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.secondary-wide` | `UiButton.secondary` |
 | `.text-action`, `.auth-link` | `UiTextAction`, `UiButton.ghost` |
 | `.icon-button`, `IconButton` | `UiIconButton` |
-| `.segments`, `.hub-segments` | `UiSegmented<T>` (`scrollable`), `UiSegment` |
+| `.segments`, `.hub-segments` | `UiSegmented<T>` (`scrollable`), `UiSegment` (optional `key` per tab) |
 | `.language-chip`, `.inbox-filters button` | `UiChip` |
 | `.imported-badge`, `.add-more-label` | `UiTag` |
 | `Privacy` | `UiPrivacyTag` + `UiPrivacy` |
@@ -47,7 +48,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.all-done-illustration`, `.hub-all-done > span` | `UiCheckBadge` |
 | empty states | `UiEmptyState` |
 | inline errors | `UiInlineError` |
-| `.toast` | `showUiToast` |
+| `.toast` | `showUiToast` (`bottomOffset` lifts it above a pinned button) |
 | `.wordmark` | `UiWordmark` |
 | `.splash-screen` | `UiSplash` (shown on first launch by `OurneyApp`) |
 | screen frame (`.screen`, safe area, gutters) | `UiScaffold` |
@@ -57,3 +58,9 @@ Onboarding (`features/onboarding/onboarding_screen.dart`, `onboarding_art.dart`)
 (`features/auth/auth_screen.dart`), Profile setup (`features/profile/profile_setup_screen.dart`),
 Camera permission + Notification sheets (`features/onboarding/permission_sheets.dart`).
 The reminders permission prompt also uses `showUiPermissionSheet`.
+
+Journeys (`features/journeys/ui/`): Hub (`journeys_list_screen.dart`, `journey_row.dart`,
+`today_card.dart`, `shelf_view.dart`, day-zero), Today sheet (`today_sheet.dart`,
+`showTodaySheet`), template grid, quick setup, journey detail (hero, stats,
+`journey_chain.dart` calendar) and the day viewer. Journey-style screens use
+`JourneyPalette.of(context, style)` (`journey_style.dart`).

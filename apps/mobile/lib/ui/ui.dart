@@ -16,6 +16,7 @@ export 'components/pressable.dart';
 export 'components/segmented.dart';
 export 'components/sheets.dart';
 export 'components/surfaces.dart';
+export 'journey_icons.dart';
 export 'journey_styles.dart';
 export 'theme.dart';
 export 'tokens.dart';

@@ -463,4 +463,66 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_shareCard => 'Share card';
+
+  @override
+  String get journeys_back => 'Back';
+
+  @override
+  String get journeys_shelfIntro => 'Completed journeys, kept like albums.';
+
+  @override
+  String get journeys_dayZeroBody =>
+      'One photo a day keeps your journey. Start with something you care about.';
+
+  @override
+  String get journeys_dayZeroStart => 'Start your first journey';
+
+  @override
+  String journeys_greetingHi(String name) {
+    return 'Hi, $name';
+  }
+
+  @override
+  String journeys_todayLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get journeys_todayAtRisk => 'At risk';
+
+  @override
+  String get journeys_todayRest => 'Everything else';
+
+  @override
+  String get journeys_openJourneys => 'Open my journeys';
+
+  @override
+  String journeys_doneOf(int done, int total) {
+    return '$done/$total done';
+  }
+
+  @override
+  String get journeys_shareMakeCard => 'Make a card or video';
+
+  @override
+  String get journeys_shareMakeCardHint => 'Share a moment from this journey';
+
+  @override
+  String get journeys_shareJourney => 'Share this journey';
+
+  @override
+  String get journeys_shareJourneyHint => 'Choose friends who can follow along';
+
+  @override
+  String journeys_albumDays(int done, int total) {
+    return '$done/$total days';
+  }
+
+  @override
+  String journeys_albumMoments(int count) {
+    return '$count moments';
+  }
+
+  @override
+  String get journeys_streakDaysLabel => 'streak';
 }

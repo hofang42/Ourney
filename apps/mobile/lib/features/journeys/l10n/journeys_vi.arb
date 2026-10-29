@@ -433,5 +433,104 @@
   "journeys_shareCard": "Tạo thẻ chia sẻ",
   "@journeys_shareCard": {
     "description": "Journey menu: make an image card"
+  },
+  "journeys_back": "Quay lại",
+  "@journeys_back": {
+    "description": "Back button label on journey screens."
+  },
+  "journeys_shelfIntro": "Những hành trình đã xong, được giữ như album.",
+  "@journeys_shelfIntro": {
+    "description": "Intro line above the shelf albums."
+  },
+  "journeys_dayZeroBody": "Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.",
+  "@journeys_dayZeroBody": {
+    "description": "Empty hub body (no journeys yet)."
+  },
+  "journeys_dayZeroStart": "Bắt đầu hành trình đầu tiên",
+  "@journeys_dayZeroStart": {
+    "description": "Empty hub primary button."
+  },
+  "journeys_greetingHi": "Chào {name}",
+  "@journeys_greetingHi": {
+    "description": "Empty hub greeting.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_todayLeft": "Còn {count}",
+  "@journeys_todayLeft": {
+    "description": "Today sheet: journeys still waiting.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_todayAtRisk": "Sắp đứt chuỗi",
+  "@journeys_todayAtRisk": {
+    "description": "Today sheet group: streak about to break."
+  },
+  "journeys_todayRest": "Còn lại",
+  "@journeys_todayRest": {
+    "description": "Today sheet group: the other journeys."
+  },
+  "journeys_openJourneys": "Mở hành trình",
+  "@journeys_openJourneys": {
+    "description": "Today sheet: go to the hub."
+  },
+  "journeys_doneOf": "{done}/{total} đã xong",
+  "@journeys_doneOf": {
+    "description": "Today sheet progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_shareMakeCard": "Tạo thẻ hoặc video",
+  "@journeys_shareMakeCard": {
+    "description": "Detail share sheet: image card option."
+  },
+  "journeys_shareMakeCardHint": "Chia sẻ một khoảnh khắc",
+  "@journeys_shareMakeCardHint": {
+    "description": "Detail share sheet: card hint."
+  },
+  "journeys_shareJourney": "Chia sẻ hành trình này",
+  "@journeys_shareJourney": {
+    "description": "Detail share sheet: share with friends option."
+  },
+  "journeys_shareJourneyHint": "Chọn bạn bè có thể theo dõi",
+  "@journeys_shareJourneyHint": {
+    "description": "Detail share sheet: share hint."
+  },
+  "journeys_albumDays": "{done}/{total} ngày",
+  "@journeys_albumDays": {
+    "description": "Shelf album band: photos over duration.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_albumMoments": "{count} khoảnh khắc",
+  "@journeys_albumMoments": {
+    "description": "Shelf album band for open-ended journeys.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_streakDaysLabel": "ngày liên tiếp",
+  "@journeys_streakDaysLabel": {
+    "description": "Unit after a streak number on the Today sheet rows."
   }
 }

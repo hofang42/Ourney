@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/motion.dart';
-import '../../../app/theme/persona_theme.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/dashed_border_painter.dart';
-import '../../../shared/layout.dart';
+import '../../../ui/ui.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
+import 'journey_style.dart';
 
 /// One style card of the template picker.
 class _TemplateOption {
@@ -30,13 +26,13 @@ class _TemplateOption {
   bool get isCustom => templateId == TemplateId.custom && !isCouple;
 }
 
-/// **Template picker** (Step 1 of `/journeys/new`, V1.0 `TemplateGrid`):
-/// a two-column grid of style cards, each painted in its journey style
-/// (paper, ink, accent) with the persona's reference photo, tagline and
-/// who can join, plus a dashed **Custom** card.
+/// **Template picker** (step 1 of `/journeys/new`, V1.0 `TemplateGrid`): a
+/// two-column grid of style cards, each painted in its journey style (paper,
+/// ink, accent) with the style's reference photo, tagline and who can join,
+/// plus a dashed **Custom** card.
 ///
-/// The 6th style, Couple Rituals, is `TemplateId.custom` with the `💞`
-/// preset. Tapping a card opens its create form.
+/// The 6th style, Couple Rituals, is `TemplateId.custom` with the heart
+/// preset. Tapping a card opens its quick setup.
 class TemplatePickerScreen extends StatelessWidget {
   const TemplatePickerScreen({super.key});
 
@@ -66,63 +62,47 @@ class TemplatePickerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
+    final ui = context.ui;
     final options = _options();
-    final c = OurneyColors.of(context);
-    return Scaffold(
+    const gap = 10.0;
+    return UiScaffold(
       key: const ValueKey('journeys-template-picker'),
-      backgroundColor: c.bg,
-      appBar: AppBar(backgroundColor: c.bg),
-      body: SafeArea(
-        top: false,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final pad = OurneyLayout.horizontalPadding(width);
-            final maxW = OurneyLayout.contentMaxWidth(width);
-            const gap = 10.0;
-            final rows = <Widget>[];
-            for (var i = 0; i < options.length; i += 2) {
-              rows.add(
-                Padding(
-                  padding: const EdgeInsets.only(bottom: gap),
-                  child: IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(child: _TemplateCard(option: options[i])),
-                        const SizedBox(width: gap),
-                        Expanded(
-                          child: i + 1 < options.length
-                              ? _TemplateCard(option: options[i + 1])
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }
-            return Center(
-              child: SizedBox(
-                width: maxW,
-                child: ListView(
-                  padding: EdgeInsets.fromLTRB(pad, 4, pad, 32),
+      padTop: 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiBackHeader(
+            onBack: () => context.pop(),
+            backLabel: l10n.journeys_back,
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.journeys_pickTemplateTitle,
+              style: UiText.h1(color: ui.ink),
+            ),
+          ),
+          const SizedBox(height: 20),
+          for (var i = 0; i < options.length; i += 2)
+            Padding(
+              padding: const EdgeInsets.only(bottom: gap),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        l10n.journeys_pickTemplateTitle,
-                        style: Theme.of(context).textTheme.headlineLarge,
-                      ),
+                    Expanded(child: _TemplateCard(option: options[i])),
+                    const SizedBox(width: gap),
+                    Expanded(
+                      child: i + 1 < options.length
+                          ? _TemplateCard(option: options[i + 1])
+                          : const SizedBox.shrink(),
                     ),
-                    const SizedBox(height: 20),
-                    ...rows,
                   ],
                 ),
               ),
-            );
-          },
-        ),
+            ),
+        ],
       ),
     );
   }
@@ -136,10 +116,10 @@ class _TemplateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
-    final brightness = Theme.of(context).brightness;
+    final ui = context.ui;
     final en = Localizations.localeOf(context).languageCode == 'en';
-    final style = OurneyPersonaTheme.forSkin(option.skinId, brightness);
-    final c = OurneyColors.of(context);
+    final style = journeyStyleFor(option.skinId);
+    final pal = JourneyPalette.of(context, style);
     final tpl = templateFor(option.templateId);
     final title = option.isCouple
         ? l10n.journeys_templateCoupleTitle
@@ -161,8 +141,9 @@ class _TemplateCard extends StatelessWidget {
         ? null
         : l10n.journeys_templateDays(tpl.defaultDurationDays);
 
-    final bg = option.isCustom ? c.surface : style.background;
-    final ink = option.isCustom ? c.ink : style.ink;
+    // Dark mode: every style card shares one surface (V1.0 override).
+    final bg = option.isCustom || ui.isDark ? ui.surface : pal.paper;
+    final ink = option.isCustom || ui.isDark ? ui.ink : pal.ink;
 
     final Widget content;
     if (option.isCustom) {
@@ -172,28 +153,20 @@ class _TemplateCard extends StatelessWidget {
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: c.surfaceSunken,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: ui.fill),
             child: Icon(Icons.add_rounded, color: ink),
           ),
           const SizedBox(height: 10),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: displayStyle(size: 15, weight: 700, height: 1.3, color: ink),
+            style: UiText.display(size: 15, color: ink),
           ),
           const SizedBox(height: 3),
           Text(
             tagline,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontFamily: kBodyFont,
-              fontSize: 11,
-              height: 1.4,
-              color: ink.withValues(alpha: 0.72),
-            ),
+            style: UiText.body(size: 11, height: 1.4, color: ui.inkMuted),
           ),
         ],
       );
@@ -204,16 +177,13 @@ class _TemplateCard extends StatelessWidget {
           Container(
             height: 104,
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: style.primaryAccent, width: 5),
-              ),
+              border: Border(bottom: BorderSide(color: style.accent, width: 5)),
             ),
             child: Image.asset(
               designAssetForPersona(option.skinId),
               fit: BoxFit.cover,
               excludeFromSemantics: true,
-              errorBuilder: (_, _, _) =>
-                  ColoredBox(color: style.surfaceElevated),
+              errorBuilder: (_, _, _) => ColoredBox(color: ui.fill),
             ),
           ),
           const SizedBox(height: 9),
@@ -221,16 +191,15 @@ class _TemplateCard extends StatelessWidget {
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: displayStyle(size: 15, weight: 700, height: 1.3, color: ink),
+            style: UiText.display(size: 15, color: ink),
           ),
           const SizedBox(height: 3),
           Text(
             tagline,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: kBodyFont,
-              fontSize: 11,
+            style: UiText.body(
+              size: 11,
               height: 1.4,
               color: ink.withValues(alpha: 0.78),
             ),
@@ -238,14 +207,12 @@ class _TemplateCard extends StatelessWidget {
           const SizedBox(height: 8),
           const Spacer(),
           Text(
-            [mode, ?days].join(' · ').toUpperCase(),
+            [mode, ?days].join(' · '),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: kBodyFont,
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.4,
+            style: UiText.body(
+              size: 10,
+              weight: FontWeight.w700,
               height: 1.35,
               color: ink,
             ),
@@ -254,64 +221,23 @@ class _TemplateCard extends StatelessWidget {
       );
     }
 
-    return Semantics(
-      button: true,
-      label: [title, tagline, mode, ?days].join(', '),
-      excludeSemantics: true,
-      child: Material(
-        color: bg,
-        child: InkWell(
-          key: ValueKey('template-${option.keyName}'),
-          onTap: () => context.push(option.routePath),
-          child: AnimatedContainer(
-            duration: OurneyMotion.duration(
-              context,
-              OurneyDurations.personaTheme,
-            ),
-            constraints: const BoxConstraints(minHeight: 220),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: option.isCustom
-                  ? null
-                  : Border.all(
-                      color: brightness == Brightness.dark ? c.border : ink,
-                    ),
-            ),
-            foregroundDecoration: option.isCustom
-                ? _DashedDecoration(color: c.border)
-                : null,
-            child: content,
-          ),
+    return UiPressable(
+      key: ValueKey('template-${option.keyName}'),
+      onPressed: () => context.push(option.routePath),
+      semanticLabel: [title, tagline, mode, ?days].join(', '),
+      excludeChildSemantics: true,
+      borderRadius: BorderRadius.zero,
+      minSize: const Size(UiSize.tap, 220),
+      child: AnimatedContainer(
+        duration: UiMotion.of(context, UiMotion.theme),
+        constraints: const BoxConstraints(minHeight: 220),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: bg,
+          border: Border.all(color: option.isCustom ? ui.border : ink),
         ),
+        child: content,
       ),
     );
-  }
-}
-
-/// Dashed outline for the Custom card (V1.0 `border-style: dashed`).
-class _DashedDecoration extends Decoration {
-  const _DashedDecoration({required this.color});
-
-  final Color color;
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _DashedBoxPainter(color);
-}
-
-class _DashedBoxPainter extends BoxPainter {
-  _DashedBoxPainter(Color color) : _painter = DashedBorderPainter(color: color);
-
-  final DashedBorderPainter _painter;
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
-    final size = configuration.size;
-    if (size == null) return;
-    canvas
-      ..save()
-      ..translate(offset.dx, offset.dy);
-    _painter.paint(canvas, size);
-    canvas.restore();
   }
 }

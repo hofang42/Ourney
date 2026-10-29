@@ -877,6 +877,108 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Tạo thẻ chia sẻ'**
   String get journeys_shareCard;
+
+  /// Back button label on journey screens.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại'**
+  String get journeys_back;
+
+  /// Intro line above the shelf albums.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những hành trình đã xong, được giữ như album.'**
+  String get journeys_shelfIntro;
+
+  /// Empty hub body (no journeys yet).
+  ///
+  /// In vi, this message translates to:
+  /// **'Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.'**
+  String get journeys_dayZeroBody;
+
+  /// Empty hub primary button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu hành trình đầu tiên'**
+  String get journeys_dayZeroStart;
+
+  /// Empty hub greeting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chào {name}'**
+  String journeys_greetingHi(String name);
+
+  /// Today sheet: journeys still waiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {count}'**
+  String journeys_todayLeft(int count);
+
+  /// Today sheet group: streak about to break.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sắp đứt chuỗi'**
+  String get journeys_todayAtRisk;
+
+  /// Today sheet group: the other journeys.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn lại'**
+  String get journeys_todayRest;
+
+  /// Today sheet: go to the hub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở hành trình'**
+  String get journeys_openJourneys;
+
+  /// Today sheet progress.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} đã xong'**
+  String journeys_doneOf(int done, int total);
+
+  /// Detail share sheet: image card option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thẻ hoặc video'**
+  String get journeys_shareMakeCard;
+
+  /// Detail share sheet: card hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ một khoảnh khắc'**
+  String get journeys_shareMakeCardHint;
+
+  /// Detail share sheet: share with friends option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ hành trình này'**
+  String get journeys_shareJourney;
+
+  /// Detail share sheet: share hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn bạn bè có thể theo dõi'**
+  String get journeys_shareJourneyHint;
+
+  /// Shelf album band: photos over duration.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ngày'**
+  String journeys_albumDays(int done, int total);
+
+  /// Shelf album band for open-ended journeys.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} khoảnh khắc'**
+  String journeys_albumMoments(int count);
+
+  /// Unit after a streak number on the Today sheet rows.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày liên tiếp'**
+  String get journeys_streakDaysLabel;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -10,7 +11,7 @@ import 'journeys_fakes.dart';
 Finder _key(String k) => find.byKey(ValueKey(k));
 
 bool _switchValue(WidgetTester tester, String key) =>
-    tester.widget<SwitchListTile>(_key(key)).value;
+    tester.widget<UiSwitchRow>(_key(key)).value;
 
 Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.ensureVisible(f);
