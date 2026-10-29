@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/motion.dart';
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../shared/layout.dart';
 import '../../shared/persona_pill.dart';
 import '../persona_contract.dart';
@@ -48,8 +49,7 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
   }
 
   int get _dayNumber {
-    final days =
-        widget.data.journey.startDate.daysUntil(widget.data.date) + 1;
+    final days = widget.data.journey.startDate.daysUntil(widget.data.date) + 1;
     return days < 1 ? 1 : days;
   }
 
@@ -83,10 +83,7 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
               const Duration(milliseconds: 180),
             ),
             child: widget.data.firstPhoto != null
-                ? Image(
-                    image: widget.data.firstPhoto!,
-                    fit: BoxFit.cover,
-                  )
+                ? Image(image: widget.data.firstPhoto!, fit: BoxFit.cover)
                 : CustomPaint(
                     painter: _GhostSilhouettePainter(
                       color: pTheme.primaryAccent,
@@ -132,12 +129,16 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.62),
+                          color: OurneyColors.mediaBlack.withValues(
+                            alpha: 0.62,
+                          ),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
                             color: _ghostEnabled
                                 ? pTheme.primaryAccent
-                                : Colors.white24,
+                                : OurneyColors.mediaWhite.withValues(
+                                    alpha: 0.24,
+                                  ),
                           ),
                         ),
                         child: Row(
@@ -150,7 +151,9 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                               size: 15,
                               color: _ghostEnabled
                                   ? pTheme.primaryAccent
-                                  : Colors.white70,
+                                  : OurneyColors.mediaWhite.withValues(
+                                      alpha: 0.7,
+                                    ),
                             ),
                             const SizedBox(width: 6),
                             Flexible(
@@ -161,7 +164,7 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: OurneyColors.mediaWhite,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w700,
                                   height: 1.3,
@@ -188,7 +191,7 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
               key: const ValueKey('q2-metric-slider-card'),
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.68),
+                color: OurneyColors.mediaBlack.withValues(alpha: 0.68),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: pTheme.primaryAccent.withValues(alpha: 0.55),
@@ -212,8 +215,10 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: OurneyColors.mediaWhite.withValues(
+                              alpha: 0.7,
+                            ),
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
                             height: 1.3,
@@ -241,7 +246,9 @@ class _GhostAlignVaultHudState extends State<GhostAlignVaultHud> {
                   SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: pTheme.primaryAccent,
-                      inactiveTrackColor: Colors.white24,
+                      inactiveTrackColor: OurneyColors.mediaWhite.withValues(
+                        alpha: 0.24,
+                      ),
                       thumbColor: pTheme.primaryAccent,
                       overlayShape: const RoundSliderOverlayShape(
                         overlayRadius: 16,

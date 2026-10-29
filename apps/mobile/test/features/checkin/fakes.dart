@@ -13,7 +13,7 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
 import 'package:ourney/features/camera/camera_session.dart';
 import 'package:ourney/features/camera/capture_services.dart';
-import 'package:ourney/features/checkin/journey_clock.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -140,8 +140,8 @@ class FakePhotoCompressor implements PhotoCompressor {
 }
 
 /// Fixed clock in a +07:00 zone, so tests never load the tz database.
-class FakeJourneyClock implements JourneyClock {
-  FakeJourneyClock([DateTime? now]) : now = now ?? testNowUtc;
+class FakeCheckinClock implements CheckinClock {
+  FakeCheckinClock([DateTime? now]) : now = now ?? testNowUtc;
 
   DateTime now;
 

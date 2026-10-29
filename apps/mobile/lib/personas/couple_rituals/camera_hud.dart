@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../features/journeys/ui/journey_photo.dart';
 import '../../shared/dashed_placeholder.dart';
 import '../../shared/persona_pill.dart';
@@ -21,6 +22,7 @@ class HalfFrameDuoHud extends StatelessWidget {
 
   final PersonaCameraData data;
 
+  // Persona-specific viewfinder backdrop: always dark, theme-independent.
   static const Color _mediaBg = Color(0xFF141113);
 
   @override
@@ -50,7 +52,7 @@ class HalfFrameDuoHud extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: OurneyColors.mediaBlack.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -59,7 +61,7 @@ class HalfFrameDuoHud extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: OurneyColors.mediaWhite,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   height: 1.3,
@@ -79,7 +81,7 @@ class HalfFrameDuoHud extends StatelessWidget {
             child: DashedPlaceholder(
               icon: Icons.favorite_border_rounded,
               label: l10n.couple_rituals_waitingPartner(partnerLabel),
-              color: Colors.white70,
+              color: OurneyColors.mediaWhite.withValues(alpha: 0.7),
               radius: 14,
             ),
           ),
@@ -122,14 +124,16 @@ class HalfFrameDuoHud extends StatelessWidget {
                                   horizontal: 8,
                                   vertical: 5,
                                 ),
-                                color: Colors.black.withValues(alpha: 0.55),
+                                color: OurneyColors.mediaBlack.withValues(
+                                  alpha: 0.55,
+                                ),
                                 child: Text(
                                   l10n.couple_rituals_completePairHint,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
-                                    color: Colors.white,
+                                    color: OurneyColors.mediaWhite,
                                     fontSize: 10.5,
                                     fontWeight: FontWeight.w700,
                                     height: 1.25,
@@ -170,12 +174,15 @@ class HalfFrameDuoHud extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: pTheme.primaryAccent,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(
+                      color: OurneyColors.mediaWhite,
+                      width: 2,
+                    ),
                   ),
                   child: const Icon(
                     Icons.favorite_rounded,
                     size: 16,
-                    color: Colors.white,
+                    color: OurneyColors.mediaWhite,
                   ),
                 ),
               ),

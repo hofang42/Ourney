@@ -188,6 +188,17 @@ class OurneyColors extends ThemeExtension<OurneyColors> {
   /// Camera/media surfaces are always dark, regardless of theme.
   static const cameraBg = Color(0xFF000000);
 
+  /// Fixed (theme-independent) white / black for content drawn over photos,
+  /// the camera viewfinder and accent fills. Same value in light and dark.
+  static const mediaWhite = Color(0xFFFFFFFF);
+  static const mediaBlack = Color(0xFF000000);
+
+  /// Selected mode chip on the camera (translucent paper).
+  static const cameraChipPaper = Color(0xE0FFFFFF);
+
+  /// Barely-there card shadow tint (ink at 4%).
+  static const shadowSoft = Color(0x0A111114);
+
   static const heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

@@ -5,6 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/app_theme.dart' show displayStyle;
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../features/journeys/ui/journey_photo.dart';
 import '../../shared/dashed_placeholder.dart';
 import '../../shared/layout.dart';
@@ -152,7 +153,7 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                          color: Colors.white,
+                                          color: OurneyColors.mediaWhite,
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800,
                                           height: 1.3,
@@ -168,7 +169,7 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
                                     Text(
                                       '${data.currentStreak}',
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                        color: OurneyColors.mediaWhite,
                                         fontSize: 12,
                                         fontWeight: FontWeight.w800,
                                         height: 1.3,
@@ -187,7 +188,7 @@ class TransparentStoryStickerShareCard extends StatelessWidget {
                                       style: displayStyle(
                                         size: 18,
                                         weight: 800,
-                                        color: Colors.white,
+                                        color: OurneyColors.mediaWhite,
                                         height: 1.25,
                                       ),
                                     ),
@@ -284,7 +285,9 @@ class _HeatmapBar extends StatelessWidget {
     return Container(
       height: active ? 24 : 8,
       decoration: BoxDecoration(
-        color: active ? activeColor : Colors.white24,
+        color: active
+            ? activeColor
+            : OurneyColors.mediaWhite.withValues(alpha: 0.24),
         borderRadius: BorderRadius.circular(3),
       ),
     );

@@ -8,10 +8,7 @@ import '../../features/journeys/domain/journey_progress.dart';
 /// Data point extracted from a [TimelineDay] that has a non-null `metricValue`.
 @immutable
 class MetricCurvePoint {
-  const MetricCurvePoint({
-    required this.dayNumber,
-    required this.value,
-  });
+  const MetricCurvePoint({required this.dayNumber, required this.value});
 
   final int dayNumber;
   final double value;
@@ -49,8 +46,7 @@ class MetricSeries {
       hasCurve ? (points.last.value - points.first.value) : null;
 
   /// Sum of all logged values (used by R1 telemetry totals).
-  double get total =>
-      points.fold<double>(0, (sum, pt) => sum + pt.value);
+  double get total => points.fold<double>(0, (sum, pt) => sum + pt.value);
 
   /// Formats [v] with at most 1 decimal place (`65` -> `65.0`, `62.45` -> `62.5`),
   /// appending [unit] when non-empty.
@@ -157,14 +153,10 @@ class MetricCurvePainter extends CustomPainter {
       ..close();
     final fillPaint = Paint()
       ..style = PaintingStyle.fill
-      ..shader = ui.Gradient.linear(
-        Offset(0, vPad),
-        Offset(0, size.height),
-        [
-          lineColor.withValues(alpha: glow ? 0.34 : 0.24),
-          lineColor.withValues(alpha: 0.0),
-        ],
-      );
+      ..shader = ui.Gradient.linear(Offset(0, vPad), Offset(0, size.height), [
+        lineColor.withValues(alpha: glow ? 0.34 : 0.24),
+        lineColor.withValues(alpha: 0.0),
+      ]);
     canvas.drawPath(fillPath, fillPaint);
 
     if (glow) {

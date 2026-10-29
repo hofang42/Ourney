@@ -3,6 +3,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/app_theme.dart' show displayStyle;
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../features/journeys/domain/journey_progress.dart';
 import '../../features/journeys/ui/journey_photo.dart';
 import '../../features/journeys/ui/timeline_grid.dart';
@@ -115,10 +116,7 @@ class AthleticTelemetryTimeline extends StatelessWidget {
         );
 
         if (data.shrinkWrap) return column;
-        return SingleChildScrollView(
-          physics: data.physics,
-          child: column,
-        );
+        return SingleChildScrollView(physics: data.physics, child: column);
       },
     );
   }
@@ -255,7 +253,7 @@ class _AthleticSpineNode extends StatelessWidget {
                               : Icons.bolt_rounded),
                     size: 14,
                     color: checkedIn || day.isToday
-                        ? Colors.black
+                        ? OurneyColors.mediaBlack
                         : pTheme.inkMuted,
                   ),
                 ),

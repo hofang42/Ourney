@@ -45,9 +45,13 @@ List<TimelineDay> _buildCoupleDays({int total = 18}) {
           journeyId: 'j-couple',
           userId: 'u-1',
           localDate: const LocalDate(2026, 10, 1).addDays(i - 1),
-          capturedAt: DateTime.utc(2026, 10, 1, 7, 15).add(
-            Duration(days: i - 1),
-          ),
+          capturedAt: DateTime.utc(
+            2026,
+            10,
+            1,
+            7,
+            15,
+          ).add(Duration(days: i - 1)),
           photoPath: 'checkins/j-couple/u-1/my-c-$i.jpg',
           thumbPath: 'checkins/j-couple/u-1/my-c-${i}_t.jpg',
           uploaded: true,

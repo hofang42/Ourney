@@ -14,6 +14,7 @@ import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../shared/color_utils.dart';
+import '../../../shared/dashed_border_painter.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/layout.dart';
 import '../../../shared/ourney_primary_button.dart';
@@ -27,6 +28,7 @@ import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
+import 'day_ticker.dart';
 import 'journey_detail_screen.dart';
 import 'journey_errors.dart';
 import 'journey_photo.dart';
@@ -110,28 +112,30 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
       baseTheme.brightness,
     );
 
-    return Theme(
-      data: baseTheme.copyWith(
-        scaffoldBackgroundColor: neutralPersona.background,
-        extensions: [
-          for (final e in baseTheme.extensions.values)
-            if (e is! OurneyPersonaTheme) e,
-          neutralPersona,
-        ],
-      ),
-      child: Scaffold(
-        key: const ValueKey('journeys-list'),
-        backgroundColor: neutralPersona.background,
-        body: SafeArea(
-          bottom: false,
-          child: buckets == null || buckets.isEmpty
-              ? Column(
-                  children: [
-                    const _HubHeader(onAdd: null),
-                    Expanded(child: body),
-                  ],
-                )
-              : body,
+    return DayTicker(
+      child: Theme(
+        data: baseTheme.copyWith(
+          scaffoldBackgroundColor: neutralPersona.background,
+          extensions: [
+            for (final e in baseTheme.extensions.values)
+              if (e is! OurneyPersonaTheme) e,
+            neutralPersona,
+          ],
+        ),
+        child: Scaffold(
+          key: const ValueKey('journeys-list'),
+          backgroundColor: neutralPersona.background,
+          body: SafeArea(
+            bottom: false,
+            child: buckets == null || buckets.isEmpty
+                ? Column(
+                    children: [
+                      const _HubHeader(onAdd: null),
+                      Expanded(child: body),
+                    ],
+                  )
+                : body,
+          ),
         ),
       ),
     );
@@ -152,7 +156,7 @@ class _HubHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
-    final now = ref.watch(journeysClockProvider).now();
+    final now = ref.watch(journeysNowProvider);
     final greeting = now.hour < 12
         ? l10n.journeys_greetingMorning
         : now.hour < 18
@@ -212,7 +216,7 @@ class _HubBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
-    final now = ref.watch(journeysClockProvider).now();
+    final now = ref.watch(journeysNowProvider);
     final progress = <String, JourneyProgress>{};
     for (final j in buckets.active) {
       final checkIns = ref.watch(myCheckInsProvider(j.id));
@@ -511,7 +515,7 @@ class TodayCard extends ConsumerWidget {
     final status = _deadlineText(
       l10n,
       progress,
-      ref.watch(journeysClockProvider).now(),
+      ref.watch(journeysNowProvider),
     );
 
     TextStyle label(double size, {double opacity = 1}) => TextStyle(
@@ -566,16 +570,19 @@ class TodayCard extends ConsumerWidget {
                     child: Icon(
                       journeyIcon(journey.emoji, journey.templateId),
                       size: 44,
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: c.onCameraOverlay.withValues(alpha: 0.85),
                     ),
                   ),
-                const DecoratedBox(
+                DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       stops: [0.45, 1],
-                      colors: [Color(0x00000000), Color(0xCC000000)],
+                      colors: [
+                        Colors.transparent,
+                        c.cameraOverlay.withValues(alpha: 0.8),
+                      ],
                     ),
                   ),
                 ),
@@ -595,18 +602,18 @@ class TodayCard extends ConsumerWidget {
                             size: 20,
                             weight: 700,
                             height: 1.25,
-                            color: Colors.white,
+                            color: c.onCameraOverlay,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         dayText,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontFamily: kBodyFont,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Colors.white,
+                          color: c.onCameraOverlay,
                         ),
                       ),
                     ],
@@ -821,7 +828,7 @@ class _DayCell extends StatelessWidget {
       );
     } else if (isToday) {
       cell = CustomPaint(
-        painter: _DashedBorderPainter(ink),
+        painter: DashedBorderPainter(color: ink, dash: 3, gap: 2),
         child: Center(
           child: Icon(Icons.photo_camera_outlined, size: 14, color: ink),
         ),
@@ -876,39 +883,6 @@ class _DayCell extends StatelessWidget {
   }
 }
 
-class _DashedBorderPainter extends CustomPainter {
-  _DashedBorderPainter(this.color);
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-    const dash = 3.0;
-    const gap = 2.0;
-    void line(Offset a, Offset b) {
-      final length = (b - a).distance;
-      final dir = (b - a) / length;
-      for (var d = 0.0; d < length; d += dash + gap) {
-        final end = d + dash > length ? length : d + dash;
-        canvas.drawLine(a + dir * d, a + dir * end, paint);
-      }
-    }
-
-    final r = Offset.zero & size;
-    line(r.topLeft, r.topRight);
-    line(r.topRight, r.bottomRight);
-    line(r.bottomRight, r.bottomLeft);
-    line(r.bottomLeft, r.topLeft);
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
-}
-
 /// One journey row on the hub (V1.0 `.journey-row`): 66dp thumbnail (latest
 /// photo, or the journey icon on its style color), title, style dot + name,
 /// then streak, today status (icon + word, not color only) and visibility.
@@ -937,7 +911,7 @@ class JourneyCard extends ConsumerWidget {
             journey: journey,
             membership: membership.value,
             checkIns: checkIns.value!,
-            now: ref.watch(journeysClockProvider).now(),
+            now: ref.watch(journeysNowProvider),
           )
         : null;
     final active = journey.status == JourneyStatus.active;

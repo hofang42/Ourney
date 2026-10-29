@@ -127,10 +127,7 @@ class ConnectedWeightCurveTimeline extends StatelessWidget {
         );
 
         if (data.shrinkWrap) return column;
-        return SingleChildScrollView(
-          physics: data.physics,
-          child: column,
-        );
+        return SingleChildScrollView(physics: data.physics, child: column);
       },
     );
   }
@@ -394,9 +391,7 @@ class _MilestoneSpineRow extends StatelessWidget {
                     : l10n.quiet_transformer_milestoneDay(dayDigits)));
 
     final val = hideMetric ? null : day.checkIn?.metricValue;
-    final metricText = val == null
-        ? null
-        : MetricSeries.formatValue(val, unit);
+    final metricText = val == null ? null : MetricSeries.formatValue(val, unit);
 
     return IntrinsicHeight(
       child: Row(
@@ -454,9 +449,7 @@ class _MilestoneSpineRow extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(pTheme.cardRadius),
                     side: BorderSide(
-                      color: day.isToday
-                          ? pTheme.primaryAccent
-                          : pTheme.border,
+                      color: day.isToday ? pTheme.primaryAccent : pTheme.border,
                       width: day.isToday ? 1.5 : pTheme.borderWidth,
                     ),
                   ),

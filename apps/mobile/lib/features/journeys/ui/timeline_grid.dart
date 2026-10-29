@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/tokens.dart';
+import '../../../shared/dashed_border_painter.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
@@ -131,7 +132,7 @@ class DayCell extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 3),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.45),
+                color: OurneyColors.mediaBlack.withValues(alpha: 0.45),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -139,7 +140,7 @@ class DayCell extends StatelessWidget {
                 textScaler: TextScaler.noScaling,
                 style: const TextStyle(
                   fontSize: 10,
-                  color: Colors.white,
+                  color: OurneyColors.mediaWhite,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -148,7 +149,11 @@ class DayCell extends StatelessWidget {
         ],
       ),
       DayState.missed => CustomPaint(
-        painter: _DashedBorderPainter(color: c.inkMuted, radius: radius),
+        painter: DashedBorderPainter(
+          color: c.inkMuted,
+          radius: radius,
+          strokeWidth: 1.5,
+        ),
         child: Center(child: number),
       ),
       DayState.today => DecoratedBox(
@@ -202,34 +207,4 @@ class DayCell extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  _DashedBorderPainter({required this.color, required this.radius});
-
-  final Color color;
-  final BorderRadius radius;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final rrect = radius.toRRect(Offset.zero & size).deflate(0.75);
-    final path = Path()..addRRect(rrect);
-    const dash = 4.0;
-    const gap = 3.0;
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
-        distance += dash + gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter old) =>
-      old.color != color || old.radius != radius;
 }

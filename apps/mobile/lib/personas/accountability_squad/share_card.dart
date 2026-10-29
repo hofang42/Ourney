@@ -213,7 +213,7 @@ class _SquadProgressHeader extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
+              color: OurneyColors.mediaWhite,
               fontSize: 13,
               fontWeight: FontWeight.w800,
               height: 1.35,

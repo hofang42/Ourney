@@ -30,10 +30,7 @@ class CoupleMosaicPosterShareCard extends StatelessWidget {
 
   /// Interleaves the caller's check-ins and the partner's check-ins in
   /// chronological order so both partners' moments appear side-by-side.
-  static List<CheckIn> weaveMoments(
-    List<CheckIn> mine,
-    List<CheckIn> partner,
-  ) {
+  static List<CheckIn> weaveMoments(List<CheckIn> mine, List<CheckIn> partner) {
     final woven = <CheckIn>[...mine, ...partner]
       ..sort((a, b) {
         final cmp = a.localDate.compareTo(b.localDate);
@@ -66,10 +63,7 @@ class CoupleMosaicPosterShareCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: pTheme.surface,
             borderRadius: BorderRadius.circular(pTheme.cardRadius),
-            border: Border.all(
-              color: pTheme.border,
-              width: pTheme.borderWidth,
-            ),
+            border: Border.all(color: pTheme.border, width: pTheme.borderWidth),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -155,10 +149,7 @@ class CoupleMosaicPosterShareCard extends StatelessWidget {
         );
 
         if (data.shrinkWrap) return constrained;
-        return SingleChildScrollView(
-          physics: data.physics,
-          child: constrained,
-        );
+        return SingleChildScrollView(physics: data.physics, child: constrained);
       },
     );
   }
@@ -190,9 +181,7 @@ class _WovenMosaicGrid extends StatelessWidget {
             children: [
               for (var c = 0; c < columns; c++) ...[
                 if (c > 0) const SizedBox(width: 8),
-                Expanded(
-                  child: _buildCell(context, r * columns + c),
-                ),
+                Expanded(child: _buildCell(context, r * columns + c)),
               ],
             ],
           ),
@@ -212,10 +201,7 @@ class _WovenMosaicGrid extends StatelessWidget {
     return AspectRatio(
       key: ValueKey('d4-mosaic-tile-$index'),
       aspectRatio: 1,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: child,
-      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(12), child: child),
     );
   }
 }

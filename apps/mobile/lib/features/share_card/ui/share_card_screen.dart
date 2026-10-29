@@ -188,7 +188,9 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                           decoration: BoxDecoration(
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.18),
+                                color: OurneyColors.mediaBlack.withValues(
+                                  alpha: 0.18,
+                                ),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),

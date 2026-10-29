@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
-import 'package:ourney/features/checkin/journey_clock.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
 import 'package:ourney/shared/stamp_animation.dart';
@@ -45,7 +45,7 @@ void main() {
       overrides: [
         ...baseOverrides(prefs: prefs, journeys: journeys, checkIns: checkIns),
         photoCompressorProvider.overrideWithValue(compressor),
-        journeyClockProvider.overrideWithValue(FakeJourneyClock()),
+        checkinClockProvider.overrideWithValue(FakeCheckinClock()),
       ],
     );
     addTearDown(container.dispose);

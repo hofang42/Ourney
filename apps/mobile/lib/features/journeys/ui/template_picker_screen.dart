@@ -6,6 +6,7 @@ import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/motion.dart';
 import '../../../app/theme/persona_theme.dart';
 import '../../../app/theme/tokens.dart';
+import '../../../shared/dashed_border_painter.dart';
 import '../../../shared/layout.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
@@ -295,35 +296,22 @@ class _DashedDecoration extends Decoration {
 
   @override
   BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      _DashedPainter(color);
+      _DashedBoxPainter(color);
 }
 
-class _DashedPainter extends BoxPainter {
-  _DashedPainter(this.color);
+class _DashedBoxPainter extends BoxPainter {
+  _DashedBoxPainter(Color color) : _painter = DashedBorderPainter(color: color);
 
-  final Color color;
+  final DashedBorderPainter _painter;
 
   @override
   void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {
     final size = configuration.size;
     if (size == null) return;
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
-    final r = (offset & size).deflate(0.5);
-    void line(Offset a, Offset b) {
-      final length = (b - a).distance;
-      final dir = (b - a) / length;
-      for (var d = 0.0; d < length; d += 7) {
-        final end = d + 4 > length ? length : d + 4;
-        canvas.drawLine(a + dir * d, a + dir * end, paint);
-      }
-    }
-
-    line(r.topLeft, r.topRight);
-    line(r.topRight, r.bottomRight);
-    line(r.bottomRight, r.bottomLeft);
-    line(r.bottomLeft, r.topLeft);
+    canvas
+      ..save()
+      ..translate(offset.dx, offset.dy);
+    _painter.paint(canvas, size);
+    canvas.restore();
   }
 }

@@ -149,7 +149,9 @@ class _SideBySideArchiveShareCardState
                       Expanded(
                         child: _ComparisonFrame(
                           key: const ValueKey('q3-frame-latest'),
-                          badge: l10n.quiet_transformer_compareDayNow(dayDigits),
+                          badge: l10n.quiet_transformer_compareDayNow(
+                            dayDigits,
+                          ),
                           checkIn: latest,
                           metricLabel: _formatFrameMetric(
                             latest?.metricValue,

@@ -29,10 +29,7 @@ Journey _habitJourney({int? durationDays = 30}) => Journey(
   status: JourneyStatus.active,
 );
 
-List<TimelineDay> _buildHabitDays({
-  int total = 30,
-  int todayNumber = 24,
-}) {
+List<TimelineDay> _buildHabitDays({int total = 30, int todayNumber = 24}) {
   return [
     for (var i = 1; i <= total; i++)
       TimelineDay(

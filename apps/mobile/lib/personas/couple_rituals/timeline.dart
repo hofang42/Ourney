@@ -3,6 +3,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/app_theme.dart' show displayStyle;
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../features/journeys/domain/journey_progress.dart';
 import '../../features/journeys/ui/journey_photo.dart';
 import '../../shared/dashed_placeholder.dart';
@@ -104,10 +105,7 @@ class DuoSplitTimeline extends StatelessWidget {
         );
 
         if (data.shrinkWrap) return column;
-        return SingleChildScrollView(
-          physics: data.physics,
-          child: column,
-        );
+        return SingleChildScrollView(physics: data.physics, child: column);
       },
     );
   }
@@ -269,7 +267,7 @@ class _DuoDiptychDayCard extends StatelessWidget {
                                   : Icons.favorite_rounded,
                               size: 16,
                               color: bothDone || day.isToday
-                                  ? Colors.white
+                                  ? OurneyColors.mediaWhite
                                   : pTheme.inkMuted,
                             ),
                           ),

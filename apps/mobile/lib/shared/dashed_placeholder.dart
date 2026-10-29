@@ -1,8 +1,7 @@
-import 'dart:ui' show PathMetric;
-
 import 'package:flutter/material.dart';
 
 import '../app/theme/persona_theme.dart';
+import 'dashed_border_painter.dart';
 
 /// Empty slot with a dashed outline (F5): "waiting for a photo", a missed
 /// day, a squad member who has not checked in. The dashes plus [label] mean
@@ -41,10 +40,13 @@ class DashedPlaceholder extends StatelessWidget {
       child: AspectRatio(
         aspectRatio: aspectRatio,
         child: CustomPaint(
-          painter: _DashedBorderPainter(
+          painter: DashedBorderPainter(
             color: fg,
-            radius: r,
+            radius: BorderRadius.circular(r),
             strokeWidth: strokeWidth,
+            dash: 6,
+            gap: 4,
+            roundCaps: true,
           ),
           child: Padding(
             padding: const EdgeInsets.all(8),
@@ -77,52 +79,4 @@ class DashedPlaceholder extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  _DashedBorderPainter({
-    required this.color,
-    required this.radius,
-    required this.strokeWidth,
-  });
-
-  final Color color;
-  final double radius;
-  final double strokeWidth;
-
-  static const double _dash = 6;
-  static const double _gap = 4;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    final inset = rect.deflate(strokeWidth / 2);
-    final path = Path()
-      ..addRRect(RRect.fromRectAndRadius(inset, Radius.circular(radius)));
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    for (final PathMetric metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        final end = distance + _dash;
-        canvas.drawPath(
-          metric.extractPath(
-            distance,
-            end > metric.length ? metric.length : end,
-          ),
-          paint,
-        );
-        distance = end + _gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter old) =>
-      old.color != color ||
-      old.radius != radius ||
-      old.strokeWidth != strokeWidth;
 }

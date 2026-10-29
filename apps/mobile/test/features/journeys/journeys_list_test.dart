@@ -76,10 +76,7 @@ void main() {
       expect(find.text('Not yet'), findsOneWidget);
       // j2 has no photo today: it leads the Today card.
       expect(find.byKey(const ValueKey('journeys-today-j2')), findsOneWidget);
-      expect(
-        find.text("1 journey still needs today's photo."),
-        findsOneWidget,
-      );
+      expect(find.text("1 journey still needs today's photo."), findsOneWidget);
       expect(find.byKey(const ValueKey('journeys-new')), findsOneWidget);
 
       // Ended journeys live on the shelf.

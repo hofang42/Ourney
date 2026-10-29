@@ -3,6 +3,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../features/groups/domain/group_today.dart';
 import '../features/journeys/domain/journey_progress.dart';
+import '../shared/time_zones.dart';
 
 /// Input contracts of the persona widgets (task F1).
 ///
@@ -177,7 +178,7 @@ class PersonaCameraData {
   final double? borderRadius;
 
   /// Journey-local calendar date of [capturedAt].
-  LocalDate get date => groupLocalDate(journey.timezone, capturedAt);
+  LocalDate get date => journeyLocalDate(journey.timezone, capturedAt);
 }
 
 /// Input of the share board (share-card screen).

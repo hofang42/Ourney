@@ -493,7 +493,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           child: AnimatedOpacity(
             opacity: _flashOverlay ? 1 : 0,
             duration: OurneyDurations.flash,
-            child: const ColoredBox(color: Colors.white),
+            child: const ColoredBox(color: OurneyColors.mediaWhite),
           ),
         ),
       ],
@@ -716,7 +716,7 @@ class _ShutterButton extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             border: Border.all(
-              color: enabled ? Colors.white : c.inkMuted,
+              color: enabled ? OurneyColors.mediaWhite : c.inkMuted,
               width: 3,
             ),
           ),
@@ -784,8 +784,8 @@ class _FlashButton extends StatelessWidget {
       tooltip: label,
       style: IconButton.styleFrom(
         minimumSize: const Size.square(OurneySizes.minTap),
-        backgroundColor: Colors.black.withValues(alpha: 0.45),
-        foregroundColor: Colors.white,
+        backgroundColor: OurneyColors.mediaBlack.withValues(alpha: 0.45),
+        foregroundColor: OurneyColors.mediaWhite,
       ),
       icon: Icon(icon),
     );
@@ -965,25 +965,27 @@ class _GlassChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const paper = Color(0xE0FFFFFF);
-    const ink = Color(0xFF111114);
-    final fg = selected ? ink : Colors.white;
+    final paper = OurneyColors.cameraChipPaper;
+    final ink = OurneyColors.light.ink;
+    final fg = selected ? ink : OurneyColors.mediaWhite;
     return Semantics(
       button: true,
       selected: selected,
       label: label,
       excludeSemantics: true,
       child: Material(
-        color: selected ? paper : Colors.white.withValues(alpha: 0.14),
+        color: selected
+            ? paper
+            : OurneyColors.mediaWhite.withValues(alpha: 0.14),
         shape: StadiumBorder(
           side: BorderSide(
             color: selected
-                ? const Color(0x1F000000)
-                : Colors.white.withValues(alpha: 0.18),
+                ? OurneyColors.mediaBlack.withValues(alpha: 0.12)
+                : OurneyColors.mediaWhite.withValues(alpha: 0.18),
           ),
         ),
         elevation: selected ? 4 : 0,
-        shadowColor: const Color(0x33000000),
+        shadowColor: OurneyColors.mediaBlack.withValues(alpha: 0.2),
         child: InkWell(
           customBorder: const StadiumBorder(),
           onTap: onTap,

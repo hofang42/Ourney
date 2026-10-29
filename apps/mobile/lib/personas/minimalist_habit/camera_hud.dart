@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../shared/persona_pill.dart';
 import '../persona_contract.dart';
 import 'l10n/generated/minimalist_habit_localizations.dart';
@@ -16,6 +17,7 @@ class ZeroText3SecHud extends StatelessWidget {
 
   final PersonaCameraData data;
 
+  // Persona-specific viewfinder backdrop: always dark, theme-independent.
   static const Color _mediaBg = Color(0xFF0E0E10);
 
   int get _dayNumber {
@@ -81,7 +83,7 @@ class ZeroText3SecHud extends StatelessWidget {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.58),
+                      color: OurneyColors.mediaBlack.withValues(alpha: 0.58),
                       borderRadius: BorderRadius.circular(999),
                     ),
                     child: Row(
@@ -102,7 +104,7 @@ class ZeroText3SecHud extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: OurneyColors.mediaWhite,
                               fontSize: 11.5,
                               fontWeight: FontWeight.w600,
                               height: 1.3,

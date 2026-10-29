@@ -26,6 +26,7 @@ import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
+import 'day_ticker.dart';
 import 'journey_errors.dart';
 
 enum _Action { card, end, archive, delete }
@@ -110,7 +111,7 @@ class JourneyDetailScreen extends ConsumerWidget {
             journey: journey,
             membership: membership,
             checkIns: checkIns.value!,
-            now: ref.watch(journeysClockProvider).now(),
+            now: ref.watch(journeysNowProvider),
           )
         : null;
 
@@ -134,208 +135,212 @@ class JourneyDetailScreen extends ConsumerWidget {
         ? c.divider
         : style.ink.withValues(alpha: 0.14);
 
-    return ActiveJourneySync(
-      journeyId: journey.id,
-      child: Scaffold(
-        key: const ValueKey('journey-detail'),
-        backgroundColor: paper,
-        appBar: AppBar(
+    return DayTicker(
+      child: ActiveJourneySync(
+        journeyId: journey.id,
+        child: Scaffold(
+          key: const ValueKey('journey-detail'),
           backgroundColor: paper,
-          toolbarHeight: 64,
-          centerTitle: true,
-          title: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                journey.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.titleSmall,
+          appBar: AppBar(
+            backgroundColor: paper,
+            toolbarHeight: 64,
+            centerTitle: true,
+            title: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  journey.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 2),
+                _PrivacyTag(visibility: journey.visibility),
+              ],
+            ),
+            actions: [
+              IconButton(
+                key: const ValueKey('journey-share'),
+                tooltip: l10n.journeys_share,
+                icon: const Icon(Icons.ios_share_rounded),
+                onPressed: () => ref.read(appConfigProvider).localOnly
+                    ? context.push(AppRoutes.share(journey.id))
+                    : showShareJourneySheet(context, journey),
               ),
-              const SizedBox(height: 2),
-              _PrivacyTag(visibility: journey.visibility),
+              if (actions.isNotEmpty)
+                PopupMenuButton<_Action>(
+                  key: const ValueKey('journey-more'),
+                  tooltip: l10n.journeys_moreActions,
+                  icon: const Icon(Icons.more_horiz_rounded),
+                  onSelected: (a) => _run(context, ref, journey, a),
+                  itemBuilder: (context) => [
+                    for (final a in actions)
+                      PopupMenuItem(
+                        key: ValueKey('journey-action-${a.name}'),
+                        value: a,
+                        child: Text(switch (a) {
+                          _Action.card => l10n.journeys_shareCard,
+                          _Action.end => l10n.journeys_endJourney,
+                          _Action.archive => l10n.journeys_archive,
+                          _Action.delete => l10n.journeys_delete,
+                        }),
+                      ),
+                  ],
+                )
+              else
+                const SizedBox(width: OurneySpacing.sm),
             ],
           ),
-          actions: [
-            IconButton(
-              key: const ValueKey('journey-share'),
-              tooltip: l10n.journeys_share,
-              icon: const Icon(Icons.ios_share_rounded),
-              onPressed: () => ref.read(appConfigProvider).localOnly
-                  ? context.push(AppRoutes.share(journey.id))
-                  : showShareJourneySheet(context, journey),
-            ),
-            if (actions.isNotEmpty)
-              PopupMenuButton<_Action>(
-                key: const ValueKey('journey-more'),
-                tooltip: l10n.journeys_moreActions,
-                icon: const Icon(Icons.more_horiz_rounded),
-                onSelected: (a) => _run(context, ref, journey, a),
-                itemBuilder: (context) => [
-                  for (final a in actions)
-                    PopupMenuItem(
-                      key: ValueKey('journey-action-${a.name}'),
-                      value: a,
-                      child: Text(switch (a) {
-                        _Action.card => l10n.journeys_shareCard,
-                        _Action.end => l10n.journeys_endJourney,
-                        _Action.archive => l10n.journeys_archive,
-                        _Action.delete => l10n.journeys_delete,
-                      }),
+          floatingActionButton: perms.canCheckIn
+              ? OurneyPrimaryButton(
+                  key: const ValueKey('journey-checkin'),
+                  expand: false,
+                  label: progress?.checkedInToday ?? false
+                      ? l10n.journeys_addMore
+                      : l10n.journeys_checkInNow,
+                  icon: Icons.photo_camera_outlined,
+                  backgroundColor: style.primaryAccent,
+                  onPressed: () => checkInNow(context, ref, journey.id),
+                )
+              : null,
+          body: SafeArea(
+            top: false,
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 104),
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(top: BorderSide(color: rule)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      OurneySpacing.screenMargin,
+                      22,
+                      OurneySpacing.screenMargin,
+                      8,
                     ),
-                ],
-              )
-            else
-              const SizedBox(width: OurneySpacing.sm),
-          ],
-        ),
-        floatingActionButton: perms.canCheckIn
-            ? OurneyPrimaryButton(
-                key: const ValueKey('journey-checkin'),
-                expand: false,
-                label: progress?.checkedInToday ?? false
-                    ? l10n.journeys_addMore
-                    : l10n.journeys_checkInNow,
-                icon: Icons.photo_camera_outlined,
-                backgroundColor: style.primaryAccent,
-                onPressed: () => checkInNow(context, ref, journey.id),
-              )
-            : null,
-        body: SafeArea(
-          top: false,
-          child: ListView(
-            padding: const EdgeInsets.only(bottom: 104),
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: rule)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    OurneySpacing.screenMargin,
-                    22,
-                    OurneySpacing.screenMargin,
-                    8,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (!perms.isActive) const _ReadOnlyBanner(),
-                      Text(
-                        _dateRange(context, journey).toUpperCase(),
-                        style: eyebrowStyle(color: c.inkMuted),
-                      ),
-                      const SizedBox(height: 4),
-                      Semantics(
-                        header: true,
-                        child: Text(
-                          journey.title,
-                          style: Theme.of(context).textTheme.headlineLarge,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (!perms.isActive) const _ReadOnlyBanner(),
+                        Text(
+                          _dateRange(context, journey).toUpperCase(),
+                          style: eyebrowStyle(color: c.inkMuted),
                         ),
-                      ),
-                      const SizedBox(height: 22),
-                      if (progress != null)
-                        _Stats(
-                          progress: progress,
-                          accent: style.primaryAccent,
-                          rule: rule,
+                        const SizedBox(height: 4),
+                        Semantics(
+                          header: true,
+                          child: Text(
+                            journey.title,
+                            style: Theme.of(context).textTheme.headlineLarge,
+                          ),
                         ),
-                    ],
+                        const SizedBox(height: 22),
+                        if (progress != null)
+                          _Stats(
+                            progress: progress,
+                            accent: style.primaryAccent,
+                            rule: rule,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              if (journey.kind == JourneyKind.group)
+                if (journey.kind == JourneyKind.group)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      OurneySpacing.screenMargin,
+                      OurneySpacing.lg,
+                      OurneySpacing.screenMargin,
+                      0,
+                    ),
+                    child: OutlinedButton.icon(
+                      key: const ValueKey('journey-open-group'),
+                      icon: const Icon(Icons.people_outline_rounded, size: 18),
+                      label: Text(l10n.journeys_openGroup),
+                      onPressed: () => context.go(AppRoutes.groups),
+                    ),
+                  ),
+                Container(
+                  margin: const EdgeInsets.only(top: 18),
+                  height: 54,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.symmetric(
+                      horizontal: BorderSide(color: rule),
+                    ),
+                  ),
+                  child: Semantics(
+                    header: true,
+                    child: Container(
+                      height: 54,
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: style.primaryAccent,
+                            width: 3,
+                          ),
+                        ),
+                      ),
+                      child: Text(
+                        l10n.journeys_timelineTitle,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
                     OurneySpacing.screenMargin,
-                    OurneySpacing.lg,
+                    OurneySpacing.xl,
                     OurneySpacing.screenMargin,
                     0,
                   ),
-                  child: OutlinedButton.icon(
-                    key: const ValueKey('journey-open-group'),
-                    icon: const Icon(Icons.people_outline_rounded, size: 18),
-                    label: Text(l10n.journeys_openGroup),
-                    onPressed: () => context.go(AppRoutes.groups),
-                  ),
-                ),
-              Container(
-                margin: const EdgeInsets.only(top: 18),
-                height: 54,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  border: Border.symmetric(horizontal: BorderSide(color: rule)),
-                ),
-                child: Semantics(
-                  header: true,
-                  child: Container(
-                    height: 54,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: style.primaryAccent,
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      l10n.journeys_timelineTitle,
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  OurneySpacing.screenMargin,
-                  OurneySpacing.xl,
-                  OurneySpacing.screenMargin,
-                  0,
-                ),
-                child: progress == null
-                    ? const Padding(
-                        padding: EdgeInsets.all(OurneySpacing.xl),
-                        child: Center(child: CircularProgressIndicator()),
-                      )
-                    : Builder(
-                        builder: (context) {
-                          final groupSnap = ref.watch(
-                            groupDailySnapshotProvider(journey),
-                          );
-                          return PersonaTimelineSwitcher(
-                            skin: personaSkinOf(journey),
-                            data: PersonaTimelineData.fromProgress(
-                              progress,
-                              hideMetric:
-                                  membership?.hideMetric ??
-                                  journey.hideMetricDefault,
-                              myName: groupSnap.myName,
-                              partnerName: groupSnap.partnerName,
-                              partnerCheckInsByDate:
-                                  groupSnap.partnerCheckInsByDate,
-                              onTapDay: (d) => context.push(
-                                JourneysPaths.day(journey.id, d.date),
+                  child: progress == null
+                      ? const Padding(
+                          padding: EdgeInsets.all(OurneySpacing.xl),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      : Builder(
+                          builder: (context) {
+                            final groupSnap = ref.watch(
+                              groupDailySnapshotProvider(journey),
+                            );
+                            return PersonaTimelineSwitcher(
+                              skin: personaSkinOf(journey),
+                              data: PersonaTimelineData.fromProgress(
+                                progress,
+                                hideMetric:
+                                    membership?.hideMetric ??
+                                    journey.hideMetricDefault,
+                                myName: groupSnap.myName,
+                                partnerName: groupSnap.partnerName,
+                                partnerCheckInsByDate:
+                                    groupSnap.partnerCheckInsByDate,
+                                onTapDay: (d) => context.push(
+                                  JourneysPaths.day(journey.id, d.date),
+                                ),
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
                               ),
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-              if (membership != null && perms.isActive)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: OurneySpacing.screenMargin,
-                  ),
-                  child: _PrivacySection(
-                    journey: journey,
-                    membership: membership,
-                  ),
+                            );
+                          },
+                        ),
                 ),
-            ],
+                if (membership != null && perms.isActive)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: OurneySpacing.screenMargin,
+                    ),
+                    child: _PrivacySection(
+                      journey: journey,
+                      membership: membership,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

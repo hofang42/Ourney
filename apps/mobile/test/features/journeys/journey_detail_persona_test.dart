@@ -77,17 +77,13 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('workout30 draws athletic telemetry', (
-    tester,
-  ) async {
+  testWidgets('workout30 draws athletic telemetry', (tester) async {
     await pumpDetail(tester, TemplateId.workout30);
     expect(find.byType(AthleticTelemetryTimeline), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('custom draws chain grid', (
-    tester,
-  ) async {
+  testWidgets('custom draws chain grid', (tester) async {
     await pumpDetail(tester, TemplateId.custom);
     expect(find.byType(ChainCalendarGridTimeline), findsOneWidget);
     expect(find.byType(DuoSplitTimeline), findsNothing);

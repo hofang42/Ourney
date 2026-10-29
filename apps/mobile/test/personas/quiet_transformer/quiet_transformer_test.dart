@@ -37,10 +37,7 @@ Journey _weightJourney({
   hideMetricDefault: hideMetricDefault,
 );
 
-List<TimelineDay> _buildWeightDays({
-  int total = 21,
-  List<double?>? metrics,
-}) {
+List<TimelineDay> _buildWeightDays({int total = 21, List<double?>? metrics}) {
   return [
     for (var i = 1; i <= total; i++)
       TimelineDay(

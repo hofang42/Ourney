@@ -34,10 +34,7 @@ Journey _workoutJourney({
   metricUnit: metricUnit,
 );
 
-List<TimelineDay> _buildRunDays({
-  int total = 21,
-  bool withMetrics = true,
-}) {
+List<TimelineDay> _buildRunDays({int total = 21, bool withMetrics = true}) {
   return [
     for (var i = 1; i <= total; i++)
       TimelineDay(

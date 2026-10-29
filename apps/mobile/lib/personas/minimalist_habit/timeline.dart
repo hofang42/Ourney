@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme/app_theme.dart' show displayStyle;
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../features/journeys/domain/journey_progress.dart';
 import '../../features/journeys/domain/journey_time.dart';
 import '../../features/journeys/l10n/generated/journeys_localizations.dart';
@@ -100,10 +101,7 @@ class ChainCalendarGridTimeline extends StatelessWidget {
         );
 
         if (data.shrinkWrap) return card;
-        return SingleChildScrollView(
-          physics: data.physics,
-          child: card,
-        );
+        return SingleChildScrollView(physics: data.physics, child: card);
       },
     );
   }
@@ -205,8 +203,7 @@ class _ChainRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final rowDays = [for (var c = 0; c < 7; c++) _dayAt(c)];
     final checkedCols = [
-      for (var c = 0; c < 7; c++)
-        rowDays[c]?.state == DayState.checkedIn,
+      for (var c = 0; c < 7; c++) rowDays[c]?.state == DayState.checkedIn,
     ];
 
     return Stack(
@@ -302,9 +299,8 @@ class _ChainDayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final journeysL10n = Localizations.of<JourneysL10n>(context, JourneysL10n);
-    final dateText = MaterialLocalizations.of(
-      context,
-    ).formatMediumDate(displayDate(day.date));
+    final dateText = MaterialLocalizations.of(context)
+        .formatMediumDate(displayDate(day.date));
     final semanticLabel = journeysL10n == null
         ? 'Day ${day.dayNumber}'
         : switch (day.state) {
@@ -362,7 +358,7 @@ class _ChainDayCell extends StatelessWidget {
               child: const Icon(
                 Icons.check_rounded,
                 size: 10,
-                color: Colors.white,
+                color: OurneyColors.mediaWhite,
               ),
             ),
           ),
@@ -444,10 +440,7 @@ class _ChainDayCell extends StatelessWidget {
 }
 
 class _SquareDashedBorderPainter extends CustomPainter {
-  const _SquareDashedBorderPainter({
-    required this.color,
-    required this.radius,
-  });
+  const _SquareDashedBorderPainter({required this.color, required this.radius});
 
   final Color color;
   final double radius;

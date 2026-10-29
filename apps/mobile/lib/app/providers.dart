@@ -11,6 +11,7 @@
 //
 // Regenerate providers.g.dart with:
 //   dart run build_runner build
+import 'package:flutter_riverpod/flutter_riverpod.dart' show FutureProvider;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,6 +112,13 @@ InsightsRepository insightsRepository(Ref ref) =>
 
 @Riverpod(keepAlive: true)
 MediaStore mediaStore(Ref ref) => _notWired('mediaStoreProvider');
+
+/// Resolves a storage path to a local file (`MediaStore` disk cache, keyed
+/// by path). Shared by the journey and group photo widgets.
+final mediaFileProvider = FutureProvider.autoDispose.family<String, String>(
+  (ref, storagePath) => ref.watch(mediaStoreProvider).localFileFor(storagePath),
+  retry: _noRetry,
+);
 
 // ---------------------------------------------------------------------------
 // Session state used by the router.

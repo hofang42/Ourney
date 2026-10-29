@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
-import '../data/groups_providers.dart';
+import '../../journeys/data/journeys_providers.dart';
 import '../l10n/generated/groups_localizations.dart';
 
 /// User-facing message for a repository error (codes from
@@ -10,7 +10,7 @@ import '../l10n/generated/groups_localizations.dart';
 String groupErrorMessage(BuildContext context, Object error) {
   final l10n = GroupsL10n.of(context);
   final app = AppLocalizations.of(context);
-  final e = groupRootError(error);
+  final e = rootError(error);
   if (e is! OurneyException) return app.common_errorGeneric;
   return switch (e.error) {
     OurneyErrorCode.notFound => l10n.groups_errorNotFound,

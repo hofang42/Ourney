@@ -499,7 +499,7 @@ class _ReadyViewfinderHero extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: OurneyColors.mediaWhite.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
@@ -515,7 +515,7 @@ class _ReadyViewfinderHero extends StatelessWidget {
                       'DAY 01',
                       textScaler: TextScaler.noScaling,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: OurneyColors.mediaWhite,
                         fontSize: 11,
                         fontWeight: FontWeight.w800,
                         letterSpacing: 0.6,
@@ -527,7 +527,7 @@ class _ReadyViewfinderHero extends StatelessWidget {
               Icon(
                 Icons.flash_auto_rounded,
                 size: 18,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: OurneyColors.mediaWhite.withValues(alpha: 0.7),
               ),
             ],
           ),
@@ -538,7 +538,7 @@ class _ReadyViewfinderHero extends StatelessWidget {
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(color: OurneyColors.mediaWhite, width: 3),
             ),
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -547,7 +547,7 @@ class _ReadyViewfinderHero extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.photo_camera_rounded,
-                color: Colors.white,
+                color: OurneyColors.mediaWhite,
                 size: 26,
               ),
             ),

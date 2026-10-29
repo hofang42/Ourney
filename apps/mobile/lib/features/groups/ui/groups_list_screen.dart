@@ -15,8 +15,9 @@ import '../../../shared/needs_server_view.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/profile_button.dart';
 import '../../../shared/template_icons.dart';
+import '../../../shared/time_zones.dart';
+import '../../journeys/data/journeys_providers.dart';
 import '../data/groups_providers.dart';
-import '../domain/group_today.dart';
 import '../groups_paths.dart';
 import '../l10n/generated/groups_localizations.dart';
 import 'group_errors.dart';
@@ -41,7 +42,7 @@ class GroupsListScreen extends ConsumerWidget {
     }
 
     final groups = ref.watch(groupJourneysProvider);
-    if (groups.hasError && groupIsNotWired(groups.error!)) {
+    if (groups.hasError && isNotWired(groups.error!)) {
       // Data layer (B1) not wired yet.
       return PlaceholderScreen(id: 'groups', title: l10n.groups_title);
     }
@@ -197,9 +198,9 @@ class GroupCard extends ConsumerWidget {
     final l10n = GroupsL10n.of(context);
     final c = OurneyColors.of(context);
     final text = Theme.of(context).textTheme;
-    final today = groupLocalDate(
+    final today = journeyLocalDate(
       journey.timezone,
-      ref.watch(groupsClockProvider).now(),
+      ref.watch(journeysClockProvider).now(),
     );
     var day = journey.startDate.daysUntil(today) + 1;
     if (day < 1) day = 1;
@@ -241,7 +242,7 @@ class GroupCard extends ConsumerWidget {
                 border: Border.all(color: c.divider),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x0A111114),
+                    color: OurneyColors.shadowSoft,
                     blurRadius: 16,
                     offset: Offset(0, 5),
                   ),

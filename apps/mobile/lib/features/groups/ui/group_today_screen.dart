@@ -19,6 +19,7 @@ import '../../../shared/ourney_card.dart';
 import '../../../shared/placeholder_screen.dart';
 import '../../../shared/streak_flame.dart';
 import '../../../shared/template_icons.dart';
+import '../../journeys/data/journeys_providers.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
 import '../data/groups_providers.dart';
@@ -89,10 +90,10 @@ class GroupTodayScreen extends ConsumerWidget {
       );
     }
 
-    final journeyAsync = ref.watch(groupJourneyProvider(journeyId));
+    final journeyAsync = ref.watch(journeyByIdProvider(journeyId));
     final todayAsync = ref.watch(groupTodayProvider(journeyId));
     final firstError = journeyAsync.error ?? todayAsync.error;
-    if (firstError != null && groupIsNotWired(firstError)) {
+    if (firstError != null && isNotWired(firstError)) {
       return PlaceholderScreen(id: 'group-today', title: l10n.groups_title);
     }
 
@@ -107,7 +108,7 @@ class GroupTodayScreen extends ConsumerWidget {
         onAction: () => context.go(AppRoutes.groups),
       );
     } else if (todayAsync.hasError || journeyAsync.hasError) {
-      final e = groupRootError(firstError!);
+      final e = rootError(firstError!);
       final forbidden =
           e is OurneyException && e.error == OurneyErrorCode.forbidden;
       state = EmptyState(
@@ -120,7 +121,7 @@ class GroupTodayScreen extends ConsumerWidget {
             ? () => context.go(AppRoutes.groups)
             : () {
                 ref
-                  ..invalidate(groupJourneyProvider(journeyId))
+                  ..invalidate(journeyByIdProvider(journeyId))
                   ..invalidate(groupTodayProvider(journeyId));
               },
       );
@@ -138,11 +139,11 @@ class GroupTodayScreen extends ConsumerWidget {
     }
 
     final myId = ref.watch(currentUserIdProvider);
-    final membership = ref.watch(groupMembershipProvider(journeyId)).value;
+    final membership = ref.watch(myMembershipProvider(journeyId)).value;
     final view = GroupTodayView.build(
       journey: journey!,
       members: todayAsync.value!,
-      now: ref.watch(groupsClockProvider).now(),
+      now: ref.watch(journeysClockProvider).now(),
       myUserId: myId,
       blockedIds: ref.watch(groupBlockedIdsProvider).value ?? const {},
       hiddenCheckInIds: ref.watch(hiddenCheckInIdsProvider),

@@ -10,6 +10,7 @@ import '../../../shared/chunky_button.dart';
 import '../../../shared/empty_state.dart';
 import '../../../shared/needs_server_view.dart';
 import '../../../shared/placeholder_screen.dart';
+import '../../journeys/data/journeys_providers.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
 import '../l10n/generated/groups_localizations.dart';
@@ -73,9 +74,9 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     if (ref.watch(appConfigProvider).localOnly) {
       return scaffold(const NeedsServerView());
     }
-    final journeyAsync = ref.watch(groupJourneyProvider(widget.journeyId));
+    final journeyAsync = ref.watch(journeyByIdProvider(widget.journeyId));
     if (journeyAsync.hasError) {
-      if (groupIsNotWired(journeyAsync.error!)) {
+      if (isNotWired(journeyAsync.error!)) {
         return PlaceholderScreen(id: 'group-invite', title: l10n.groups_title);
       }
       return scaffold(
@@ -101,9 +102,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
         ),
       );
     }
-    final membership = ref
-        .watch(groupMembershipProvider(widget.journeyId))
-        .value;
+    final membership = ref.watch(myMembershipProvider(widget.journeyId)).value;
     final myId = ref.watch(currentUserIdProvider);
     final isOwner = membership != null
         ? membership.role == MemberRole.owner

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme/app_theme.dart' show displayStyle;
 import '../../app/theme/motion.dart';
 import '../../app/theme/persona_theme.dart';
+import '../../app/theme/tokens.dart';
 import '../../shared/layout.dart';
 import '../persona_contract.dart';
 import '../quiet_transformer/metric_curve_painter.dart';
@@ -139,7 +140,7 @@ class _TelemetryOverlay extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.62),
+              color: OurneyColors.mediaBlack.withValues(alpha: 0.62),
               borderRadius: BorderRadius.circular(999),
               border: Border.all(
                 color: pTheme.primaryAccent.withValues(alpha: 0.8),
@@ -150,7 +151,7 @@ class _TelemetryOverlay extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                color: Colors.white,
+                color: OurneyColors.mediaWhite,
                 fontSize: 12,
                 fontWeight: FontWeight.w800,
                 height: 1.3,
@@ -160,7 +161,7 @@ class _TelemetryOverlay extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.58),
+              color: OurneyColors.mediaBlack.withValues(alpha: 0.58),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Column(
@@ -174,7 +175,7 @@ class _TelemetryOverlay extends StatelessWidget {
                   style: displayStyle(
                     size: 16,
                     weight: 800,
-                    color: Colors.white,
+                    color: OurneyColors.mediaWhite,
                     height: 1.25,
                   ),
                 ),
@@ -202,7 +203,7 @@ class _TelemetryOverlay extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.55),
+            color: OurneyColors.mediaBlack.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -210,7 +211,7 @@ class _TelemetryOverlay extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: Colors.white,
+              color: OurneyColors.mediaWhite,
               fontSize: 12,
               fontWeight: FontWeight.w700,
               height: 1.3,
@@ -225,7 +226,7 @@ class _TelemetryOverlay extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.75),
+            color: OurneyColors.mediaBlack.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(8),
             border: Border.symmetric(
               horizontal: BorderSide(color: pTheme.secondaryAccent, width: 1.5),
@@ -298,10 +299,12 @@ class _StylePill extends StatelessWidget {
               decoration: BoxDecoration(
                 color: selected
                     ? pTheme.primaryAccent
-                    : Colors.black.withValues(alpha: 0.65),
+                    : OurneyColors.mediaBlack.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
-                  color: selected ? pTheme.primaryAccent : Colors.white30,
+                  color: selected
+                      ? pTheme.primaryAccent
+                      : OurneyColors.mediaWhite.withValues(alpha: 0.3),
                 ),
               ),
               child: Text(
@@ -309,7 +312,7 @@ class _StylePill extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: OurneyColors.mediaWhite,
                   fontSize: 11.5,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                   height: 1.3,
