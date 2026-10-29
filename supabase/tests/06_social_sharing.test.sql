@@ -4,7 +4,7 @@
 --        6 F friend of D and E, 7 S second stranger, 8 H late group joiner.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(98);
+select plan(101);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -178,6 +178,10 @@ do $$ begin perform tests.as_user(tests.u(3));
   perform public.create_journey(tests.j(3), 'solo', 'custom', 'Walk too', '🚶', null, null, false, current_date, 30, 'UTC'); end $$;
 select lives_ok($$ select public.mark_followed(tests.j(3), tests.j(1)) $$, 'mark_followed on a fresh own journey');
 select throws_ok($$ select public.mark_followed(tests.j(1), tests.j(3)) $$, '42501', 'forbidden', 'mark_followed needs own journey');
+do $$ begin perform tests.as_user(tests.u(3));
+  perform public.create_journey(tests.j(6), 'solo', 'custom', 'Walk again', '🚶', null, null, false, current_date, 30, 'UTC'); end $$;
+select lives_ok($$ select public.mark_followed(tests.j(6), tests.j(1)) $$,
+  'a second follow by the same owner (counted once below)');
 
 -- ===== insights ===============================================================
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
@@ -274,6 +278,15 @@ do $$ begin perform tests.as_user(tests.u(3)); end $$;
 select public.public_journey_by_token(:'gtok')::text as gs \gset
 select ok((:'gs'::json)->>'current_streak' is null and tests.photo_ids(:'gs'::json) = array[tests.c(10)],
   'stranger on a group: no streak, consenting photos only');
+select is((:'gs'::json)->'owner'->>'display_name', 'SH4', 'a consenting group owner is named');
+do $$ begin perform tests.as_postgres();
+  update public.journey_share_consents set status = 'pending' where journey_id = tests.j(10) and user_id = tests.u(4);
+  perform tests.as_user(tests.u(3)); end $$;
+select ok((public.public_journey_by_token(:'gtok'))->'owner'->>'display_name' = ''
+          and (public.public_journey_by_token(:'gtok'))->'owner'->>'user_id' = '00000000-0000-0000-0000-000000000000',
+  'a non-consenting group owner stays anonymous');
+do $$ begin perform tests.as_postgres();
+  update public.journey_share_consents set status = 'accepted' where journey_id = tests.j(10) and user_id = tests.u(4); end $$;
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select throws_ok($$ select public.share_consents(tests.j(10)) $$, '42501', 'forbidden', 'consents readable by members only');
 
