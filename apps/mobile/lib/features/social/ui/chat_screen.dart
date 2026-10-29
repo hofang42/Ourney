@@ -6,11 +6,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../shared/avatar.dart';
-import '../../../shared/empty_state.dart';
+import '../../../ui/ui.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -124,37 +121,33 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Future<void> _messageActions(ChatMessage m, Conversation? conv) async {
     final l10n = SocialL10n.of(context);
     final mine = m.senderId == ref.read(currentUserIdProvider);
-    final action = await showModalBottomSheet<String>(
+    final action = await showUiSheet<String>(
       context: context,
-      showDragHandle: true,
-      useSafeArea: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          key: const ValueKey('message-actions'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (m.kind == MessageKind.text && (m.body ?? '').isNotEmpty)
-              ListTile(
-                key: const ValueKey('message-copy'),
-                leading: const Icon(Icons.copy_rounded),
-                title: Text(l10n.social_copy),
-                onTap: () => Navigator.of(context).pop('copy'),
-              ),
-            ListTile(
-              key: const ValueKey('message-delete'),
-              leading: const Icon(Icons.delete_outline_rounded),
-              title: Text(l10n.social_deleteForMe),
-              onTap: () => Navigator.of(context).pop('delete'),
+      builder: (sheet) => Column(
+        key: const ValueKey('message-actions'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (m.kind == MessageKind.text && (m.body ?? '').isNotEmpty)
+            UiMenuItem(
+              key: const ValueKey('message-copy'),
+              icon: Icons.copy_rounded,
+              label: l10n.social_copy,
+              onPressed: () => Navigator.of(sheet).pop('copy'),
             ),
-            if (!mine)
-              ListTile(
-                key: const ValueKey('message-report'),
-                leading: const Icon(Icons.flag_outlined),
-                title: Text(l10n.social_report),
-                onTap: () => Navigator.of(context).pop('report'),
-              ),
-          ],
-        ),
+          UiMenuItem(
+            key: const ValueKey('message-delete'),
+            icon: Icons.delete_outline_rounded,
+            label: l10n.social_deleteForMe,
+            onPressed: () => Navigator.of(sheet).pop('delete'),
+          ),
+          if (!mine)
+            UiMenuItem(
+              key: const ValueKey('message-report'),
+              icon: Icons.flag_outlined,
+              label: l10n.social_report,
+              onPressed: () => Navigator.of(sheet).pop('report'),
+            ),
+        ],
       ),
     );
     if (!mounted || action == null) return;
@@ -222,14 +215,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (!_hidden.contains(m.id)) m,
       ];
       body = messages.isEmpty
-          ? EmptyState(
+          ? UiEmptyState(
               key: const ValueKey('chat-empty'),
               icon: Icons.chat_bubble_outline_rounded,
               title: l10n.social_chatEmpty,
             )
           : _thread(context, messages, myId, conv);
     } else if (error != null) {
-      body = EmptyState(
+      body = UiEmptyState(
         key: const ValueKey('chat-error'),
         icon: gone ? Icons.speaker_notes_off_outlined : Icons.error_outline,
         title: gone
@@ -252,58 +245,67 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ? const _ReadOnlyBanner()
           : _composer(context),
       header: conv == null ? null : _ChatTitle(conversation: conv),
-      action: _menu(context, conv),
+      action: UiIconButton(
+        key: const ValueKey('chat-menu'),
+        icon: Icons.more_horiz_rounded,
+        label: l10n.social_more,
+        onPressed: () => _openMenu(context, conv),
+      ),
     );
   }
 
-  Widget _menu(BuildContext context, Conversation? conv) {
+  Future<void> _openMenu(BuildContext context, Conversation? conv) async {
     final l10n = SocialL10n.of(context);
-    return PopupMenuButton<String>(
-      key: const ValueKey('chat-menu'),
-      tooltip: l10n.social_more,
-      icon: const Icon(Icons.more_horiz_rounded),
-      onSelected: (v) {
-        switch (v) {
-          case 'delete':
-            _deleteConversation(conv);
-          case 'report':
-            if (conv != null) {
-              showReportSheet(
-                context,
-                userId: conv.other.userId,
-                name: displayNameOf(conv.other),
-              );
-            }
-          case 'block':
-            if (conv != null) {
-              confirmBlock(
-                context,
-                userId: conv.other.userId,
-                name: displayNameOf(conv.other),
-              );
-            }
-        }
-      },
-      itemBuilder: (_) => [
-        PopupMenuItem(
-          key: const ValueKey('chat-menu-delete'),
-          value: 'delete',
-          child: Text(l10n.social_deleteConversation),
-        ),
-        if (conv != null) ...[
-          PopupMenuItem(
-            key: const ValueKey('chat-menu-report'),
-            value: 'report',
-            child: Text(l10n.social_report),
+    final action = await showUiSheet<String>(
+      context: context,
+      builder: (sheet) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          UiMenuItem(
+            key: const ValueKey('chat-menu-delete'),
+            icon: Icons.delete_outline_rounded,
+            label: l10n.social_deleteConversation,
+            destructive: true,
+            onPressed: () => Navigator.of(sheet).pop('delete'),
           ),
-          PopupMenuItem(
-            key: const ValueKey('chat-menu-block'),
-            value: 'block',
-            child: Text(l10n.social_block),
-          ),
+          if (conv != null) ...[
+            UiMenuItem(
+              key: const ValueKey('chat-menu-report'),
+              icon: Icons.flag_outlined,
+              label: l10n.social_report,
+              onPressed: () => Navigator.of(sheet).pop('report'),
+            ),
+            UiMenuItem(
+              key: const ValueKey('chat-menu-block'),
+              icon: Icons.block_rounded,
+              label: l10n.social_block,
+              onPressed: () => Navigator.of(sheet).pop('block'),
+            ),
+          ],
         ],
-      ],
+      ),
     );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'delete':
+        await _deleteConversation(conv);
+      case 'report':
+        if (conv != null) {
+          await showReportSheet(
+            this.context,
+            userId: conv.other.userId,
+            name: displayNameOf(conv.other),
+          );
+        }
+      case 'block':
+        if (conv != null) {
+          await confirmBlock(
+            this.context,
+            userId: conv.other.userId,
+            name: displayNameOf(conv.other),
+          );
+        }
+    }
   }
 
   Widget _thread(
@@ -317,12 +319,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final max = width > 600 ? 520.0 : width;
-        final side = (width - max) / 2 + 18;
         return ListView.builder(
           key: const ValueKey('chat-thread'),
           reverse: true,
-          padding: EdgeInsets.fromLTRB(side, 24, side, 24),
+          padding: const EdgeInsets.symmetric(vertical: UiSpace.xl),
           itemCount: messages.length,
           itemBuilder: (context, i) {
             final index = messages.length - 1 - i;
@@ -333,7 +333,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: _Bubble(
                 message: m,
                 mine: mine,
-                maxWidth: max * 0.78,
+                maxWidth: width * 0.78,
                 status: mine && index == lastMine ? l10n.social_sent : null,
                 onLongPress: () => _messageActions(m, conv),
               ),
@@ -346,75 +346,95 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _composer(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return Container(
       decoration: BoxDecoration(
-        color: c.surface,
-        border: Border(top: BorderSide(color: c.divider)),
+        color: ui.surface,
+        border: Border(top: BorderSide(color: ui.divider)),
       ),
       padding: EdgeInsets.fromLTRB(
         4,
-        8,
-        8,
-        8 + MediaQuery.paddingOf(context).bottom,
+        UiSpace.sm,
+        UiSpace.sm,
+        UiSpace.sm + MediaQuery.paddingOf(context).bottom,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          IconButton(
+          UiIconButton(
             key: const ValueKey('chat-camera'),
-            tooltip: l10n.social_camera,
-            icon: const Icon(Icons.photo_camera_outlined),
+            icon: Icons.photo_camera_outlined,
+            label: l10n.social_camera,
             onPressed: _sending ? null : () => _sendPhoto(camera: true),
           ),
-          IconButton(
+          UiIconButton(
             key: const ValueKey('chat-library'),
-            tooltip: l10n.social_library,
-            icon: const Icon(Icons.image_outlined),
+            icon: Icons.image_outlined,
+            label: l10n.social_library,
             onPressed: _sending ? null : () => _sendPhoto(camera: false),
           ),
           Expanded(
-            child: TextField(
-              key: const ValueKey('chat-input'),
-              controller: _controller,
-              maxLength: kChatMessageMaxLength,
-              minLines: 1,
-              maxLines: 4,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendText(),
-              style: const TextStyle(fontFamily: kBodyFont, height: 1.4),
-              decoration: InputDecoration(
-                hintText: l10n.social_messageHint,
-                counterText: '',
-                isDense: true,
-                filled: true,
-                fillColor: c.surfaceSunken,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(22),
-                  borderSide: BorderSide(color: c.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(22),
-                  borderSide: BorderSide(color: c.border),
+            child: Container(
+              constraints: const BoxConstraints(minHeight: UiSize.tap),
+              decoration: BoxDecoration(
+                color: ui.surfaceInput,
+                borderRadius: BorderRadius.circular(UiRadius.capsule),
+                border: Border.all(color: ui.inputBorder),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              alignment: Alignment.center,
+              child: TextField(
+                key: const ValueKey('chat-input'),
+                controller: _controller,
+                maxLength: kChatMessageMaxLength,
+                minLines: 1,
+                maxLines: 4,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendText(),
+                cursorColor: ui.ink,
+                style: UiText.body(size: 15, height: 1.4, color: ui.ink),
+                decoration: InputDecoration(
+                  hintText: l10n.social_messageHint,
+                  hintStyle: UiText.body(
+                    size: 15,
+                    height: 1.4,
+                    color: ui.inkMuted,
+                  ),
+                  counterText: '',
+                  isDense: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  filled: false,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
               ),
             ),
           ),
-          IconButton(
-            key: const ValueKey('chat-send'),
-            tooltip: l10n.social_send,
-            icon: _sending
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(Icons.send_rounded, color: c.ink),
-            onPressed: _sending ? null : _sendText,
-          ),
+          if (_sending)
+            SizedBox(
+              width: UiSize.tap,
+              height: UiSize.tap,
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: ui.ink,
+                  ),
+                ),
+              ),
+            )
+          else
+            UiIconButton(
+              key: const ValueKey('chat-send'),
+              icon: Icons.send_rounded,
+              label: l10n.social_send,
+              background: ui.brand,
+              color: ui.onBrand,
+              onPressed: _sendText,
+            ),
         ],
       ),
     );
@@ -428,11 +448,18 @@ class _ChatTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final name = displayNameOf(conversation.other);
     return Row(
       children: [
-        ExcludeSemantics(child: Avatar(name: name, size: 36)),
+        ExcludeSemantics(
+          child: UiAvatar(
+            name: name,
+            colorIndex: UiAvatar.indexFor(name),
+            size: 36,
+            ring: false,
+          ),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -446,12 +473,7 @@ class _ChatTitle extends StatelessWidget {
                   key: const ValueKey('chat-title-name'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: displayStyle(
-                    size: 17,
-                    weight: 700,
-                    height: 1.3,
-                    color: c.ink,
-                  ),
+                  style: UiText.h2(size: 17, color: ui.ink),
                 ),
               ),
               Text(
@@ -459,12 +481,7 @@ class _ChatTitle extends StatelessWidget {
                 key: const ValueKey('chat-title-journey'),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: kBodyFont,
-                  fontSize: 12,
-                  height: 1.35,
-                  color: c.inkMuted,
-                ),
+                style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
               ),
             ],
           ),
@@ -479,33 +496,28 @@ class _ReadOnlyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return Container(
       key: const ValueKey('chat-read-only'),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: c.surfaceSunken,
-        border: Border(top: BorderSide(color: c.divider)),
+        color: ui.fill,
+        border: Border(top: BorderSide(color: ui.divider)),
       ),
       padding: EdgeInsets.fromLTRB(
-        OurneySpacing.screenMargin,
-        OurneySpacing.lg,
-        OurneySpacing.screenMargin,
-        OurneySpacing.lg + MediaQuery.paddingOf(context).bottom,
+        UiSpace.lg,
+        UiSpace.lg,
+        UiSpace.lg,
+        UiSpace.lg + MediaQuery.paddingOf(context).bottom,
       ),
       child: Row(
         children: [
-          Icon(Icons.lock_outline_rounded, size: 18, color: c.inkMuted),
-          const SizedBox(width: OurneySpacing.sm),
+          Icon(Icons.lock_outline_rounded, size: 18, color: ui.inkMuted),
+          const SizedBox(width: UiSpace.sm),
           Expanded(
             child: Text(
               SocialL10n.of(context).social_readOnly,
-              style: TextStyle(
-                fontFamily: kBodyFont,
-                fontSize: 14,
-                height: 1.4,
-                color: c.inkMuted,
-              ),
+              style: UiText.body(size: 14, height: 1.4, color: ui.inkMuted),
             ),
           ),
         ],
@@ -532,10 +544,10 @@ class _Bubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final m = message;
-    final fg = mine ? c.onPrimary : c.ink;
-    final muted = mine ? c.onPrimary.withValues(alpha: 0.72) : c.inkMuted;
+    final fg = mine ? ui.onBrand : ui.ink;
+    final muted = mine ? ui.onBrand.withValues(alpha: 0.72) : ui.inkMuted;
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(16),
       topRight: const Radius.circular(16),
@@ -544,6 +556,10 @@ class _Bubble extends StatelessWidget {
     );
     final time = socialTime(context, m.createdAt);
     final body = m.body?.trim();
+    final rich = m.kind == MessageKind.photo || m.replyToThumbPath != null;
+    final inset = rich
+        ? const EdgeInsets.symmetric(horizontal: 4)
+        : EdgeInsets.zero;
 
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
@@ -555,13 +571,13 @@ class _Bubble extends StatelessWidget {
             key: ValueKey('message-${m.id}'),
             onLongPress: onLongPress,
             child: Container(
-              padding: m.kind == MessageKind.photo || m.replyToThumbPath != null
+              padding: rich
                   ? const EdgeInsets.all(8)
                   : const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: mine ? c.primary : c.surface,
+                color: mine ? ui.brand : ui.surface,
                 borderRadius: radius,
-                border: mine ? null : Border.all(color: c.divider),
+                border: mine ? null : Border.all(color: ui.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -574,11 +590,10 @@ class _Bubble extends StatelessWidget {
                         Expanded(
                           child: Text(
                             l10n.social_replyingTo,
-                            style: TextStyle(
-                              fontFamily: kBodyFont,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              height: 1.35,
+                            style: UiText.body(
+                              size: 12,
+                              weight: FontWeight.w700,
+                              height: 1.4,
                               color: muted,
                             ),
                           ),
@@ -614,36 +629,18 @@ class _Bubble extends StatelessWidget {
                   ],
                   if (body != null && body.isNotEmpty)
                     Padding(
-                      padding:
-                          m.kind == MessageKind.photo ||
-                              m.replyToThumbPath != null
-                          ? const EdgeInsets.symmetric(horizontal: 4)
-                          : EdgeInsets.zero,
+                      padding: inset,
                       child: Text(
                         body,
-                        style: TextStyle(
-                          fontFamily: kBodyFont,
-                          fontSize: 15,
-                          height: 1.4,
-                          color: fg,
-                        ),
+                        style: UiText.body(size: 15, height: 1.4, color: fg),
                       ),
                     ),
                   const SizedBox(height: 4),
                   Padding(
-                    padding:
-                        m.kind == MessageKind.photo ||
-                            m.replyToThumbPath != null
-                        ? const EdgeInsets.symmetric(horizontal: 4)
-                        : EdgeInsets.zero,
+                    padding: inset,
                     child: Text(
                       status == null ? time : '$time · $status',
-                      style: TextStyle(
-                        fontFamily: kBodyFont,
-                        fontSize: 11,
-                        height: 1.3,
-                        color: muted,
-                      ),
+                      style: UiText.body(size: 11, height: 1.3, color: muted),
                     ),
                   ),
                 ],
@@ -665,12 +662,12 @@ class _MediaImage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final file = ref.watch(socialMediaFileProvider(path)).value;
     final placeholder = ColoredBox(
-      color: c.surfaceSunken,
+      color: ui.fill,
       child: Center(
-        child: Icon(Icons.image_outlined, color: c.inkMuted, size: 22),
+        child: Icon(Icons.image_outlined, color: ui.inkMuted, size: 22),
       ),
     );
     return ClipRRect(

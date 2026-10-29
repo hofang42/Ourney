@@ -4,8 +4,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/tokens.dart';
+import '../../../ui/ui.dart';
 import '../data/social_providers.dart';
 import '../l10n/generated/social_localizations.dart';
 import '../social_paths.dart';
@@ -26,7 +25,7 @@ class AddFriendsScreen extends ConsumerWidget {
         children: [
           SizedBox(height: 18),
           _InviteLinkBlock(),
-          SizedBox(height: OurneySpacing.md),
+          SizedBox(height: UiSpace.md),
           _QrBlock(),
           SizedBox(height: 26),
           _UsernameSearch(),
@@ -54,84 +53,61 @@ class _Block extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    final radius = BorderRadius.circular(18);
-    return Material(
-      color: c.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: BorderSide(color: c.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(OurneyRadii.thumb),
-              child: Row(
-                children: [
-                  leading,
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: headingStyle(size: 16, color: c.ink),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: kBodyFont,
-                            fontSize: 12,
-                            height: 1.35,
-                            color: c.inkMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+    final ui = context.ui;
+    final head = Row(
+      children: [
+        leading,
+        const SizedBox(width: UiSpace.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.h2(size: 16, color: ui.ink),
               ),
-            ),
-            if (actions.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: OurneySpacing.sm,
-                runSpacing: OurneySpacing.sm,
-                alignment: WrapAlignment.end,
-                children: actions,
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
               ),
             ],
-          ],
+          ),
         ),
-      ),
+      ],
     );
-  }
-}
-
-class _IconTile extends StatelessWidget {
-  const _IconTile(this.icon);
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return Container(
-      width: 48,
-      height: 48,
-      decoration: BoxDecoration(
-        color: c.surfaceSunken,
-        borderRadius: BorderRadius.circular(14),
+    return UiCard(
+      radius: UiRadius.card,
+      padding: const EdgeInsets.all(14),
+      color: ui.surface,
+      borderColor: ui.border,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (onTap == null)
+            head
+          else
+            UiPressable(
+              onPressed: onTap,
+              borderRadius: BorderRadius.circular(UiRadius.thumb),
+              minSize: const Size(UiSize.tap, 62),
+              child: head,
+            ),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: UiSpace.sm,
+              runSpacing: UiSpace.sm,
+              alignment: WrapAlignment.end,
+              children: actions,
+            ),
+          ],
+        ],
       ),
-      child: Icon(icon, size: 22, color: c.ink),
     );
   }
 }
@@ -161,14 +137,15 @@ class _InviteLinkBlockState extends ConsumerState<_InviteLinkBlock> {
     final token = ref.watch(myInviteTokenProvider);
     final link = token == null ? null : SocialPaths.inviteUrl(token);
     return _Block(
-      leading: const _IconTile(Icons.link_rounded),
+      leading: const UiIconCircle(Icons.link_rounded, size: 48),
       title: l10n.social_inviteLinkTitle,
       subtitle: link ?? l10n.social_inviteLinkHint,
       actions: [
-        SocialPill(
+        UiButton.secondary(
           key: const ValueKey('invite-copy'),
           label: l10n.social_copy,
-          quiet: true,
+          compact: true,
+          expand: false,
           onPressed: _busy
               ? null
               : () => _withLink((link) async {
@@ -177,9 +154,11 @@ class _InviteLinkBlockState extends ConsumerState<_InviteLinkBlock> {
                   showSocialSnack(this.context, l10n.social_linkCopied);
                 }),
         ),
-        SocialPill(
+        UiButton(
           key: const ValueKey('invite-share'),
           label: l10n.social_share,
+          compact: true,
+          expand: false,
           onPressed: _busy
               ? null
               : () => _withLink(
@@ -216,28 +195,26 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
 
   Future<void> _enlarge(String link) {
     final l10n = SocialL10n.of(context);
-    return showDialog<void>(
+    return showUiSheet<void>(
       context: context,
-      builder: (context) => Dialog(
+      builder: (context) => Column(
         key: const ValueKey('invite-qr-large'),
-        child: InkWell(
-          onTap: () => Navigator.of(context).pop(),
-          child: Padding(
-            padding: const EdgeInsets.all(OurneySpacing.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _QrImage(link: link, size: 240, label: l10n.social_qrSemantics),
-                const SizedBox(height: OurneySpacing.md),
-                Text(
-                  link,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: _QrImage(
+              link: link,
+              size: 240,
+              label: l10n.social_qrSemantics,
             ),
           ),
-        ),
+          const SizedBox(height: UiSpace.md),
+          Text(
+            link,
+            textAlign: TextAlign.center,
+            style: UiText.muted(size: 13, color: context.ui.inkMuted),
+          ),
+        ],
       ),
     );
   }
@@ -245,7 +222,7 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final token = ref.watch(myInviteTokenProvider);
     final Widget leading;
     if (token != null) {
@@ -260,11 +237,11 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
         width: 62,
         height: 62,
         child: _busy
-            ? const Padding(
-                padding: EdgeInsets.all(18),
-                child: CircularProgressIndicator(strokeWidth: 2),
+            ? Padding(
+                padding: const EdgeInsets.all(18),
+                child: CircularProgressIndicator(strokeWidth: 2, color: ui.ink),
               )
-            : Icon(Icons.qr_code_2_rounded, size: 54, color: c.ink),
+            : Icon(Icons.qr_code_2_rounded, size: 54, color: ui.ink),
       );
     }
     return Semantics(
@@ -288,29 +265,30 @@ class _QrImage extends StatelessWidget {
     super.key,
   });
 
+  static const _paper = Color(0xFFFFFFFF);
+  static const _ink = Color(0xFF111111);
+
   final String link;
   final double size;
   final String label;
 
   @override
   Widget build(BuildContext context) {
+    final pad = size > 100 ? 8.0 : 3.0;
     return Semantics(
       label: label,
       image: true,
       child: Container(
-        color: OurneyColors.light.surface,
-        padding: EdgeInsets.all(size > 100 ? 8 : 3),
+        color: _paper,
+        padding: EdgeInsets.all(pad),
         child: QrImageView(
           data: link,
-          size: size - (size > 100 ? 16 : 6),
+          size: size - pad * 2,
           padding: EdgeInsets.zero,
-          eyeStyle: QrEyeStyle(
-            eyeShape: QrEyeShape.square,
-            color: OurneyColors.light.ink,
-          ),
-          dataModuleStyle: QrDataModuleStyle(
+          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: _ink),
+          dataModuleStyle: const QrDataModuleStyle(
             dataModuleShape: QrDataModuleShape.square,
-            color: OurneyColors.light.ink,
+            color: _ink,
           ),
         ),
       ),
@@ -407,7 +385,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -415,15 +393,16 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
           header: true,
           child: Text(
             l10n.social_findByUsername,
-            style: headingStyle(size: 18, color: c.ink),
+            style: UiText.h2(size: 18, color: ui.ink),
           ),
         ),
-        const SizedBox(height: OurneySpacing.md),
-        TextField(
-          key: const ValueKey('username-field'),
+        const SizedBox(height: UiSpace.md),
+        UiTextField(
+          fieldKey: const ValueKey('username-field'),
+          label: l10n.social_findByUsername,
           controller: _controller,
+          hint: l10n.social_usernameHint,
           autocorrect: false,
-          enableSuggestions: false,
           textInputAction: TextInputAction.search,
           onSubmitted: (_) => _search(),
           onChanged: (_) {
@@ -431,23 +410,19 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
               setState(() => _state = _SearchState.idle);
             }
           },
-          decoration: InputDecoration(
-            hintText: l10n.social_usernameHint,
-            prefixIcon: const Icon(Icons.search_rounded, size: 20),
-            suffixIcon: IconButton(
-              key: const ValueKey('username-search'),
-              tooltip: l10n.social_search,
-              icon: const Icon(Icons.arrow_forward_rounded),
-              onPressed: _search,
-            ),
+          trailing: UiIconButton(
+            key: const ValueKey('username-search'),
+            icon: Icons.arrow_forward_rounded,
+            label: l10n.social_search,
+            onPressed: _search,
           ),
         ),
-        const SizedBox(height: OurneySpacing.xs),
+        const SizedBox(height: UiSpace.xs),
         Text(
           l10n.social_exactMatchHint,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4),
+          style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
         ),
-        const SizedBox(height: OurneySpacing.sm),
+        const SizedBox(height: UiSpace.sm),
         _resultView(context),
       ],
     );
@@ -455,19 +430,14 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
 
   Widget _resultView(BuildContext context) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     Widget message(String text, Key key) => Padding(
       key: key,
       padding: const EdgeInsets.symmetric(vertical: 18),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: TextStyle(
-          fontFamily: kBodyFont,
-          fontSize: 13,
-          height: 1.4,
-          color: c.inkMuted,
-        ),
+        style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
       ),
     );
 
@@ -500,7 +470,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
   Widget _relation(BuildContext context, PersonSummary p) {
     final l10n = SocialL10n.of(context);
     if (p.userId == ref.watch(currentUserIdProvider)) {
-      return SocialStateLabel(l10n.social_thatsYou);
+      return UiStateLabel(l10n.social_thatsYou);
     }
     Friendship? link;
     for (final f
@@ -508,28 +478,32 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
       if (f.person.userId == p.userId) link = f;
     }
     if (link != null && link.isFriend) {
-      return SocialStateLabel(
+      return UiStateLabel(
         l10n.social_alreadyFriends,
         icon: Icons.check_rounded,
         key: const ValueKey('username-friends'),
       );
     }
     if (link != null && link.isIncomingRequest) {
-      return SocialPill(
+      return UiButton(
         key: const ValueKey('username-accept'),
         label: l10n.social_accept,
+        compact: true,
+        expand: false,
         onPressed: _sending ? null : () => _accept(p),
       );
     }
     if (link != null || _sent.contains(p.userId)) {
-      return SocialStateLabel(
+      return UiStateLabel(
         l10n.social_requested,
         key: const ValueKey('username-requested'),
       );
     }
-    return SocialPill(
+    return UiButton(
       key: const ValueKey('username-add'),
       label: l10n.social_addFriend,
+      compact: true,
+      expand: false,
       onPressed: _sending ? null : () => _send(p),
     );
   }

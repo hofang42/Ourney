@@ -58,6 +58,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('inbox-conversation-c1')), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Run Club'),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('Run Club'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.byKey(const ValueKey('inbox-public-hoi-an')),
@@ -104,8 +109,15 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).last,
     );
+    await tester.ensureVisible(summary);
+    await tester.pumpAndSettle();
     await tester.tap(summary);
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const ValueKey('inbox-public-request-tuan')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(
       find.byKey(const ValueKey('inbox-public-request-tuan')),
       findsOneWidget,
@@ -141,7 +153,15 @@ void main() {
 
   testWidgets('conversation row opens the chat', (tester) async {
     await pumpSocial(tester, location: SocialPaths.inbox, fakes: fullInbox());
-    await tester.tap(find.byKey(const ValueKey('inbox-conversation-c1')));
+    final row = find.byKey(const ValueKey('inbox-conversation-c1'));
+    await tester.scrollUntilVisible(
+      row,
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.ensureVisible(row);
+    await tester.pumpAndSettle();
+    await tester.tap(row);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('chat-screen')), findsOneWidget);
   });

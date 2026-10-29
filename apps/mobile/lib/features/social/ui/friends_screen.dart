@@ -4,11 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../shared/avatar.dart';
-import '../../../shared/empty_state.dart';
+import '../../../ui/ui.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -32,6 +29,13 @@ class FriendsScreen extends ConsumerStatefulWidget {
 class _FriendsScreenState extends ConsumerState<FriendsScreen> {
   final Set<String> _busy = {};
   String _filter = '';
+  final _filterController = TextEditingController();
+
+  @override
+  void dispose() {
+    _filterController.dispose();
+    super.dispose();
+  }
 
   Future<void> _act(String userId, Future<void> Function() action) async {
     setState(() => _busy.add(userId));
@@ -64,7 +68,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     } else if (list != null) {
       body = _body(context, list, friends);
     } else if (async.hasError) {
-      body = EmptyState(
+      body = UiEmptyState(
         key: const ValueKey('friends-error'),
         icon: Icons.error_outline_rounded,
         title: socialErrorMessage(context, async.error!),
@@ -81,7 +85,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       subtitle: list == null
           ? null
           : l10n.social_friendsSubtitle(friends.length),
-      action: SocialHeaderTextButton(
+      action: SocialHeaderAction(
         key: const ValueKey('friends-add'),
         icon: Icons.person_add_alt_1_outlined,
         label: l10n.social_add,
@@ -97,13 +101,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     List<Friendship> friends,
   ) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final requests = [
       for (final f in all)
         if (!f.isFriend) f,
     ];
     if (all.isEmpty) {
-      return EmptyState(
+      return UiEmptyState(
         key: const ValueKey('friends-empty'),
         icon: Icons.people_outline_rounded,
         title: l10n.social_emptyFriendsTitle,
@@ -126,15 +130,10 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         SocialSectionLabel(l10n.social_requests),
         if (requests.isEmpty)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: OurneySpacing.sm),
+            padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
             child: Text(
               l10n.social_noRequests,
-              style: TextStyle(
-                fontFamily: kBodyFont,
-                fontSize: 13,
-                height: 1.4,
-                color: c.inkMuted,
-              ),
+              style: UiText.muted(size: 13, color: ui.inkMuted),
             ),
           ),
         for (final r in requests) _requestRow(context, r),
@@ -142,14 +141,13 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           SocialSectionLabel(l10n.social_friendsTitle),
           if (friends.length > FriendsScreen.searchThreshold)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: OurneySpacing.sm),
-              child: TextField(
-                key: const ValueKey('friends-filter'),
+              padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
+              child: UiTextField(
+                fieldKey: const ValueKey('friends-filter'),
+                label: l10n.social_searchFriends,
+                hint: l10n.social_searchFriends,
+                controller: _filterController,
                 onChanged: (v) => setState(() => _filter = v),
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                  hintText: l10n.social_searchFriends,
-                ),
               ),
             ),
           for (final f in shown)
@@ -158,7 +156,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               person: f.person,
               onTap: () => showFriendSheet(context, f.person),
               trailing: [
-                Icon(Icons.chevron_right_rounded, size: 20, color: c.inkMuted),
+                Icon(Icons.chevron_right_rounded, size: 20, color: ui.chevron),
               ],
             ),
         ],
@@ -180,15 +178,18 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
         person: p,
         extraLine: fromPublic,
         actions: [
-          SocialPill(
+          UiButton(
             key: ValueKey('accept-${p.userId}'),
             label: l10n.social_accept,
+            compact: true,
+            expand: false,
             onPressed: busy ? null : () => _respond(p, accept: true),
           ),
-          SocialPill(
+          UiButton.secondary(
             key: ValueKey('decline-${p.userId}'),
             label: l10n.social_decline,
-            quiet: true,
+            compact: true,
+            expand: false,
             onPressed: busy ? null : () => _respond(p, accept: false),
           ),
         ],
@@ -199,10 +200,11 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       person: p,
       extraLine: l10n.social_requested,
       trailing: [
-        SocialPill(
+        UiButton.secondary(
           key: ValueKey('cancel-${p.userId}'),
           label: l10n.social_cancelRequest,
-          quiet: true,
+          compact: true,
+          expand: false,
           onPressed: busy ? null : () => _cancel(p),
         ),
       ],
@@ -213,11 +215,8 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
 /// Friend sheet: Message (when a conversation exists), Remove friend
 /// (confirmed), Block, Report.
 Future<void> showFriendSheet(BuildContext context, PersonSummary person) {
-  return showModalBottomSheet<void>(
+  return showUiSheet<void>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
     builder: (_) => _FriendSheet(person: person, hostContext: context),
   );
 }
@@ -227,13 +226,13 @@ class _FriendSheet extends ConsumerWidget {
 
   final PersonSummary person;
 
-  /// The screen under the sheet (dialogs and snack bars outlive the sheet).
+  /// The screen under the sheet (dialogs and toasts outlive the sheet).
   final BuildContext hostContext;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SocialL10n.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final name = displayNameOf(person);
     final conversations = ref.watch(conversationsProvider).value;
     Conversation? conversation;
@@ -244,128 +243,99 @@ class _FriendSheet extends ConsumerWidget {
       }
     }
 
-    Widget action(
-      String key,
-      IconData icon,
-      String label,
-      VoidCallback onTap, {
-      bool danger = false,
-    }) {
-      final color = danger ? c.danger : c.ink;
-      return InkWell(
-        key: ValueKey(key),
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minHeight: OurneySizes.button),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: c.divider)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: color),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontFamily: kBodyFont,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    height: 1.35,
-                    color: color,
-                  ),
-                ),
+    return Column(
+      key: const ValueKey('friend-sheet'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            ExcludeSemantics(
+              child: UiAvatar(
+                name: name,
+                colorIndex: UiAvatar.indexFor(name),
+                size: 48,
+                ring: false,
               ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(
-        OurneySpacing.screenMargin,
-        0,
-        OurneySpacing.screenMargin,
-        OurneySpacing.xl,
-      ),
-      child: Column(
-        key: const ValueKey('friend-sheet'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              ExcludeSemantics(child: Avatar(name: name, size: 48)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: headingStyle(size: 20, color: c.ink),
-                    ),
-                    Text(
-                      '@${person.username}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: OurneySpacing.lg),
-          if (conversation != null)
-            action(
-              'friend-message',
-              Icons.chat_bubble_outline_rounded,
-              l10n.social_message,
-              () {
-                Navigator.of(context).pop();
-                hostContext.push(SocialPaths.chat(conversation!.id));
-              },
             ),
-          action(
-            'friend-remove',
-            Icons.person_remove_outlined,
-            l10n.social_removeFriend,
-            () async {
-              // The sheet (and its ref) is gone after pop.
-              final repo = ref.read(friendRepositoryProvider);
+            const SizedBox(width: UiSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.h2(size: 20, color: ui.ink),
+                  ),
+                  Text(
+                    '@${person.username}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.muted(size: 13, color: ui.inkMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: UiSpace.lg),
+        if (conversation != null)
+          UiMenuItem(
+            key: const ValueKey('friend-message'),
+            icon: Icons.chat_bubble_outline_rounded,
+            label: l10n.social_message,
+            onPressed: () {
               Navigator.of(context).pop();
-              final ok = await confirmSocialAction(
-                hostContext,
-                title: l10n.social_removeFriendTitle(name),
-                message: l10n.social_removeFriendBody,
-                confirmLabel: l10n.social_removeFriend,
-                destructive: true,
-              );
-              if (!ok || !hostContext.mounted) return;
-              final done = await runSocialAction(
-                hostContext,
-                () => repo.remove(person.userId),
-              );
-              if (done && hostContext.mounted) {
-                showSocialSnack(hostContext, l10n.social_removed(name));
-              }
+              hostContext.push(SocialPaths.chat(conversation!.id));
             },
-            danger: true,
           ),
-          action('friend-block', Icons.block_rounded, l10n.social_block, () {
+        UiMenuItem(
+          key: const ValueKey('friend-remove'),
+          icon: Icons.person_remove_outlined,
+          label: l10n.social_removeFriend,
+          destructive: true,
+          onPressed: () async {
+            // The sheet (and its ref) is gone after pop.
+            final repo = ref.read(friendRepositoryProvider);
+            Navigator.of(context).pop();
+            final ok = await confirmSocialAction(
+              hostContext,
+              title: l10n.social_removeFriendTitle(name),
+              message: l10n.social_removeFriendBody,
+              confirmLabel: l10n.social_removeFriend,
+              destructive: true,
+            );
+            if (!ok || !hostContext.mounted) return;
+            final done = await runSocialAction(
+              hostContext,
+              () => repo.remove(person.userId),
+            );
+            if (done && hostContext.mounted) {
+              showSocialSnack(hostContext, l10n.social_removed(name));
+            }
+          },
+        ),
+        UiMenuItem(
+          key: const ValueKey('friend-block'),
+          icon: Icons.block_rounded,
+          label: l10n.social_block,
+          onPressed: () {
             Navigator.of(context).pop();
             confirmBlock(hostContext, userId: person.userId, name: name);
-          }),
-          action('friend-report', Icons.flag_outlined, l10n.social_report, () {
+          },
+        ),
+        UiMenuItem(
+          key: const ValueKey('friend-report'),
+          icon: Icons.flag_outlined,
+          label: l10n.social_report,
+          onPressed: () {
             Navigator.of(context).pop();
             showReportSheet(hostContext, userId: person.userId, name: name);
-          }),
-        ],
-      ),
+          },
+        ),
+      ],
     );
   }
 }
