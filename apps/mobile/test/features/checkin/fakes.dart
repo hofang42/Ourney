@@ -260,6 +260,7 @@ Widget routedTestApp({
   Object? initialExtra,
   required RouteLog log,
   Locale locale = const Locale('vi'),
+  Brightness brightness = Brightness.light,
 }) {
   final paths = {
     for (final r in routes)
@@ -288,7 +289,7 @@ Widget routedTestApp({
   return UncontrolledProviderScope(
     container: container,
     child: MaterialApp.router(
-      theme: buildAppTheme(Brightness.light),
+      theme: buildAppTheme(brightness),
       locale: locale,
       localizationsDelegates: ourneyLocalizationsDelegates,
       supportedLocales: ourneySupportedLocales,

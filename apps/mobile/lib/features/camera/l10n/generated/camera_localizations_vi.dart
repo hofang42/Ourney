@@ -94,4 +94,20 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_captureFailed => 'Chụp chưa được. Thử lại nhé.';
+
+  @override
+  String get camera_grid => 'Lưới căn khung';
+
+  @override
+  String camera_dayHud(int day) {
+    return 'Ngày $day';
+  }
+
+  @override
+  String get camera_swipeHint => 'Vuốt để sang hành trình khác';
+
+  @override
+  String camera_streakChip(int days) {
+    return 'Chuỗi $days ngày';
+  }
 }

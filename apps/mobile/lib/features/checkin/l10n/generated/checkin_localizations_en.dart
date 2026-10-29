@@ -114,4 +114,26 @@ class CheckinL10nEn extends CheckinL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get checkin_retake => 'Retake';
+
+  @override
+  String get checkin_privacyPrivate => 'Only you';
+
+  @override
+  String get checkin_privacyCouple => 'Couple';
+
+  @override
+  String get checkin_privacySquad => 'Squad';
+
+  @override
+  String checkin_dayStamp(int day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String checkin_calendarSemantics(int days) {
+    return 'Calendar of the last $days days, today has a photo';
+  }
 }

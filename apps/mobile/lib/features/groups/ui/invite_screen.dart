@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../shared/chunky_button.dart';
-import '../../../shared/empty_state.dart';
-import '../../../shared/needs_server_view.dart';
-import '../../../shared/placeholder_screen.dart';
+import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
@@ -58,29 +56,47 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     }
   }
 
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.groups);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
     final app = AppLocalizations.of(context);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
 
-    Scaffold scaffold(Widget body) => Scaffold(
+    Widget scaffold(Widget body, {bool scroll = false}) => UiScaffold(
       key: const ValueKey('group-invite-screen'),
-      appBar: AppBar(title: Text(l10n.groups_inviteTitle)),
-      body: SafeArea(child: body),
+      scroll: scroll,
+      padTop: 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiBackHeader(
+            onBack: _back,
+            backLabel: MaterialLocalizations.of(context).backButtonTooltip,
+            title: l10n.groups_inviteTitle,
+          ),
+          if (scroll) body else Expanded(child: UiFillScroll(child: body)),
+        ],
+      ),
     );
 
     if (ref.watch(appConfigProvider).localOnly) {
-      return scaffold(const NeedsServerView());
+      return scaffold(const GroupsNeedsServer());
     }
     final journeyAsync = ref.watch(journeyByIdProvider(widget.journeyId));
     if (journeyAsync.hasError) {
       if (isNotWired(journeyAsync.error!)) {
-        return PlaceholderScreen(id: 'group-invite', title: l10n.groups_title);
+        return GroupsNotWired(id: 'group-invite', title: l10n.groups_title);
       }
       return scaffold(
-        EmptyState(
+        UiEmptyState(
           icon: Icons.error_outline_rounded,
           title: groupErrorMessage(context, journeyAsync.error!),
         ),
@@ -96,7 +112,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     final journey = journeyAsync.value;
     if (journey == null) {
       return scaffold(
-        EmptyState(
+        UiEmptyState(
           icon: Icons.search_off_rounded,
           title: l10n.groups_notFoundTitle,
         ),
@@ -112,9 +128,9 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
 
     if (!active) {
       return scaffold(
-        EmptyState(
+        UiEmptyState(
           key: const ValueKey('group-invite-closed'),
-          icon: Icons.flag_rounded,
+          icon: Icons.flag_outlined,
           title: l10n.groups_inviteClosed,
         ),
       );
@@ -122,16 +138,21 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
 
     final link = code == null ? null : inviteLink(code);
     return scaffold(
-      ListView(
-        padding: const EdgeInsets.all(OurneySpacing.screenMargin),
+      scroll: true,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.groups_inviteMessage, style: text.bodyLarge),
-          const SizedBox(height: OurneySpacing.xl),
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            l10n.groups_inviteMessage,
+            style: UiText.muted(color: ui.inkMuted),
+          ),
+          const SizedBox(height: UiSpace.xl),
           if (code == null || link == null)
             Text(
               l10n.groups_noInviteCode,
               key: const ValueKey('group-invite-none'),
-              style: text.bodyLarge,
+              style: UiText.muted(color: ui.ink),
             )
           else ...[
             Center(
@@ -142,20 +163,25 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
                 child: SelectableText(
                   code,
                   key: const ValueKey('group-invite-code'),
-                  style: text.displaySmall?.copyWith(letterSpacing: 6),
+                  style: UiText.display(
+                    size: 34,
+                    weight: 800,
+                    height: 1.3,
+                    color: ui.ink,
+                  ).copyWith(letterSpacing: 6),
                 ),
               ),
             ),
-            const SizedBox(height: OurneySpacing.lg),
+            const SizedBox(height: UiSpace.lg),
             Center(
               child: Container(
                 decoration: BoxDecoration(
                   // The QR stays dark-on-white in dark mode too (scanners).
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(OurneyRadii.card),
-                  border: Border.all(color: c.border),
+                  borderRadius: BorderRadius.circular(UiRadius.card),
+                  border: Border.all(color: ui.border),
                 ),
-                padding: const EdgeInsets.all(OurneySpacing.sm),
+                padding: const EdgeInsets.all(UiSpace.md),
                 child: QrImageView(
                   key: const ValueKey('group-invite-qr'),
                   data: link,
@@ -165,23 +191,21 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: OurneySpacing.xl),
-            ChunkyButton(
+            const SizedBox(height: UiSpace.xl),
+            UiButton(
               key: const ValueKey('group-invite-share'),
               label: l10n.groups_shareLink,
               icon: Icons.ios_share_rounded,
-              variant: ChunkyVariant.accent,
               onPressed: () => ref.read(groupShareLauncherProvider)(
                 text: l10n.groups_shareText(journey.title, link, code),
                 subject: journey.title,
               ),
             ),
-            const SizedBox(height: OurneySpacing.md),
-            ChunkyButton(
+            const SizedBox(height: UiSpace.md),
+            UiButton.secondary(
               key: const ValueKey('group-invite-copy'),
               label: l10n.groups_copyCode,
               icon: Icons.copy_rounded,
-              variant: ChunkyVariant.neutral,
               onPressed: () async {
                 await ref.read(groupClipboardProvider)(code);
                 if (context.mounted) {
@@ -191,12 +215,12 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             ),
           ],
           if (isOwner) ...[
-            const SizedBox(height: OurneySpacing.lg),
-            TextButton.icon(
+            const SizedBox(height: UiSpace.sm),
+            UiButton.ghost(
               key: const ValueKey('group-invite-rotate'),
+              label: l10n.groups_actionRotate,
+              icon: Icons.autorenew_rounded,
               onPressed: _busy ? null : _rotate,
-              icon: const Icon(Icons.autorenew_rounded),
-              label: Text(l10n.groups_actionRotate),
             ),
           ],
         ],

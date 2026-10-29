@@ -85,5 +85,39 @@
         "type": "int"
       }
     }
+  },
+  "checkin_retake": "Chụp lại",
+  "@checkin_retake": {
+    "description": "Left action of the compose header: close and go back to the camera."
+  },
+  "checkin_privacyPrivate": "Chỉ mình bạn",
+  "@checkin_privacyPrivate": {
+    "description": "Privacy tag under the journey name on the compose screen: solo journey."
+  },
+  "checkin_privacyCouple": "Cặp đôi",
+  "@checkin_privacyCouple": {
+    "description": "Privacy tag on the compose screen: journey shared with one partner."
+  },
+  "checkin_privacySquad": "Nhóm",
+  "@checkin_privacySquad": {
+    "description": "Privacy tag on the compose screen: group journey."
+  },
+  "checkin_dayStamp": "NGÀY {day}",
+  "@checkin_dayStamp": {
+    "description": "Rubber stamp on the Moment posted calendar with the day number of the journey.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "checkin_calendarSemantics": "Lịch {days} ngày gần nhất, hôm nay có ảnh",
+  "@checkin_calendarSemantics": {
+    "description": "Semantics label of the mini calendar on the success screen.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
   }
 }

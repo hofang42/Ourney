@@ -42,32 +42,6 @@ class PlaceholderTimeline extends StatelessWidget {
   }
 }
 
-/// [PersonaCameraData.viewfinder] with a label pill over its top edge.
-class PlaceholderHud extends StatelessWidget {
-  const PlaceholderHud({required this.data, required this.label, super.key});
-
-  final PersonaCameraData data;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        data.viewfinder,
-        Positioned(
-          top: 12,
-          left: 72,
-          right: 72,
-          child: IgnorePointer(
-            child: Center(child: PersonaPill(label: label)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 /// Card with the journey title and a few facts.
 class PlaceholderShareBoard extends StatelessWidget {
   const PlaceholderShareBoard({

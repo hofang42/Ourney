@@ -49,15 +49,11 @@ class _PersonaSwitcher extends StatelessWidget {
     required this.skin,
     required this.name,
     required this.builder,
-    this.expand = false,
   });
 
   final PersonaSkinId skin;
   final String name;
   final WidgetBuilder builder;
-
-  /// Fill the parent (camera HUD) instead of sizing to the child.
-  final bool expand;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +63,7 @@ class _PersonaSwitcher extends StatelessWidget {
       switchOutCurve: Curves.easeOutCubic,
       layoutBuilder: (current, previous) => Stack(
         alignment: Alignment.topCenter,
-        fit: expand ? StackFit.expand : StackFit.loose,
+        fit: StackFit.loose,
         children: [...previous, ?current],
       ),
       child: KeyedSubtree(
@@ -97,28 +93,6 @@ class PersonaTimelineSwitcher extends StatelessWidget {
     skin: skin,
     name: 'timeline',
     builder: (context) => personaStyleFor(skin).timeline(context, data),
-  );
-}
-
-/// Camera HUD over the live preview (F3). The preview is [PersonaCameraData.viewfinder],
-/// built once by the capture screen, so switching persona never touches the
-/// `CameraController`.
-class PersonaCameraHudSwitcher extends StatelessWidget {
-  const PersonaCameraHudSwitcher({
-    required this.skin,
-    required this.data,
-    super.key,
-  });
-
-  final PersonaSkinId skin;
-  final PersonaCameraData data;
-
-  @override
-  Widget build(BuildContext context) => _PersonaSwitcher(
-    skin: skin,
-    name: 'camera',
-    expand: true,
-    builder: (context) => personaStyleFor(skin).camera(context, data),
   );
 }
 

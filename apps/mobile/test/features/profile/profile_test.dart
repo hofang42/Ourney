@@ -8,6 +8,7 @@ import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -235,8 +236,8 @@ void main() {
       expect(byKey('profile-delete-dialog'), findsOneWidget);
       expect(find.text('Gõ alice để xác nhận'), findsOneWidget);
 
-      FilledButton confirm() =>
-          tester.widget<FilledButton>(byKey('profile-delete-confirm'));
+      UiButton confirm() =>
+          tester.widget<UiButton>(byKey('profile-delete-confirm'));
       expect(confirm().onPressed, isNull);
       await tester.enterText(byKey('profile-delete-confirm-field'), 'Alice');
       await tester.pump();

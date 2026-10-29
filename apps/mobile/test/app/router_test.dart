@@ -206,7 +206,7 @@ void main() {
     }
 
     Future<void> back(WidgetTester tester) async {
-      await tester.tap(find.byType(BackButton).first);
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
       await tester.pumpAndSettle();
     }
 

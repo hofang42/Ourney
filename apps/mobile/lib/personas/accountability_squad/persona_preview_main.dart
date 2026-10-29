@@ -9,11 +9,9 @@ import '../../app/theme/persona_theme.dart';
 import '../../features/groups/data/groups_providers.dart';
 import '../../features/groups/domain/group_today.dart';
 import '../../features/journeys/domain/journey_progress.dart';
-import '../memory_collectors/camera_hud.dart';
 import '../memory_collectors/l10n/generated/memory_collectors_localizations.dart';
 import '../memory_collectors/share_card.dart';
 import '../memory_collectors/timeline.dart';
-import 'camera_hud.dart';
 import 'l10n/generated/accountability_squad_localizations.dart';
 import 'persona_preview_chrome.dart';
 import 'persona_preview_scenes.dart';
@@ -28,10 +26,8 @@ void main() {
 
 enum _PreviewScreen {
   s1Timeline('S1 · Stepping Stone'),
-  s2Camera('S2 · Study Timer HUD'),
   s3Squad('S3 · Squad Polaroid Wall'),
   m1Timeline('M1 · Scrapbook Thread'),
-  m2Camera('M2 · Film Stamp HUD'),
   m3Share('M3 · 35mm Contact Sheet');
 
   const _PreviewScreen(this.label);
@@ -48,7 +44,7 @@ class PersonaPreviewApp extends StatefulWidget {
 }
 
 class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
-  // `--dart-define=SCREEN=s2Camera --dart-define=DARK=true --dart-define=LOCALE=en`
+  // `--dart-define=SCREEN=s3Squad --dart-define=DARK=true --dart-define=LOCALE=en`
   // opens a given screen directly (handy for screenshots).
   _PreviewScreen _screen = _PreviewScreen.values.firstWhere(
     (e) => e.name == const String.fromEnvironment('SCREEN'),
@@ -62,12 +58,9 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
   );
   bool _localOnlyMode = false;
   bool _m3GroupMode = false;
-  bool _s2HasMetric = true;
 
   bool get _isMemoryPersona =>
-      _screen == _PreviewScreen.m1Timeline ||
-      _screen == _PreviewScreen.m2Camera ||
-      _screen == _PreviewScreen.m3Share;
+      _screen == _PreviewScreen.m1Timeline || _screen == _PreviewScreen.m3Share;
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +214,7 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
                   duration: const Duration(milliseconds: 240),
                   child: KeyedSubtree(
                     key: ValueKey(
-                      '${_screen.name}-${_brightness.name}-${_locale.languageCode}-$_localOnlyMode-$_m3GroupMode-$_s2HasMetric',
+                      '${_screen.name}-${_brightness.name}-${_locale.languageCode}-$_localOnlyMode-$_m3GroupMode',
                     ),
                     child: _buildActiveScreen(pTheme),
                   ),
@@ -236,21 +229,11 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
 
   /// Per-screen switches live in the app bar's tune menu, not on the page.
   bool get _hasOption =>
-      _screen == _PreviewScreen.s2Camera ||
-      _screen == _PreviewScreen.s3Squad ||
-      _screen == _PreviewScreen.m3Share;
+      _screen == _PreviewScreen.s3Squad || _screen == _PreviewScreen.m3Share;
 
   List<PopupMenuEntry<VoidCallback>> _optionItems(OurneyPersonaTheme pTheme) {
     final style = TextStyle(color: pTheme.ink, fontWeight: FontWeight.w700);
     switch (_screen) {
-      case _PreviewScreen.s2Camera:
-        return [
-          CheckedPopupMenuItem<VoidCallback>(
-            value: () => setState(() => _s2HasMetric = !_s2HasMetric),
-            checked: _s2HasMetric,
-            child: Text('Có chỉ số: 45 phút', style: style),
-          ),
-        ];
       case _PreviewScreen.s3Squad:
         return [
           CheckedPopupMenuItem<VoidCallback>(
@@ -269,7 +252,6 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
         ];
       case _PreviewScreen.s1Timeline:
       case _PreviewScreen.m1Timeline:
-      case _PreviewScreen.m2Camera:
         return const [];
     }
   }
@@ -287,32 +269,6 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
             ),
           ),
           const PreviewTabDock(),
-        );
-      case _PreviewScreen.s2Camera:
-        return ColoredBox(
-          color: Colors.black,
-          child: Column(
-            children: [
-              Expanded(
-                child: StudyTimerSnapHud(
-                  journey: _sampleSquadJourney(withMetric: _s2HasMetric),
-                  streak: 21,
-                  metricValue: _s2HasMetric ? 45 : null,
-                  capturedAt: DateTime(2026, 10, 16, 6, 15),
-                  borderRadius: 0,
-                  viewfinderChild: const SampleScene(
-                    SampleSceneKind.desk,
-                    seed: 3,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              const PreviewTabDock(
-                dark: true,
-                center: PreviewShutter(color: Color(0xFFFF5A5F)),
-              ),
-            ],
-          ),
         );
       case _PreviewScreen.s3Squad:
         return _withDock(
@@ -340,20 +296,6 @@ class _PersonaPreviewAppState extends State<PersonaPreviewApp> {
           const PreviewTabDock(
             leftIcon: Icons.map_outlined,
             centerIcon: Icons.photo_camera_outlined,
-          ),
-        );
-      case _PreviewScreen.m2Camera:
-        return DisposableFilmStampHud(
-          journey: _sampleMemoryJourney(durationDays: 36),
-          checkInCount: 24,
-          date: const LocalDate(2026, 10, 16),
-          viewfinderChild: const SampleScene(SampleSceneKind.group, seed: 5),
-          bottomBar: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 18),
-            child: PreviewShutter(
-              color: Color(0xFFD95338),
-              ring: Color(0xFFF4EFE6),
-            ),
           ),
         );
       case _PreviewScreen.m3Share:

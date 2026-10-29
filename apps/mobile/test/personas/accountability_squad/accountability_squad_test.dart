@@ -9,7 +9,6 @@ import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney/features/groups/domain/group_today.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
-import 'package:ourney/personas/accountability_squad/camera_hud.dart';
 import 'package:ourney/personas/accountability_squad/l10n/generated/accountability_squad_localizations.dart';
 import 'package:ourney/personas/accountability_squad/share_card.dart';
 import 'package:ourney/personas/accountability_squad/timeline.dart';
@@ -243,65 +242,6 @@ void main() {
         }
       },
     );
-  });
-
-  group('S2 — StudyTimerSnapHud', () {
-    testWidgets('shows study minutes and streak when metric exists', (
-      tester,
-    ) async {
-      final journey = _englishJourney(
-        metricName: 'Thời gian học',
-        metricUnit: 'phút',
-      );
-      await _pumpSquadWidget(
-        tester,
-        SizedBox(
-          height: 420,
-          child: StudyTimerSnapHud(
-            journey: journey,
-            streak: 21,
-            metricValue: 45,
-            capturedAt: DateTime(2026, 10, 19, 6, 15),
-          ),
-        ),
-        locale: const Locale('en'),
-        width: 320,
-        textScale: 1.35,
-      );
-
-      expect(
-        find.byKey(const ValueKey('s2-study-streak-pill')),
-        findsOneWidget,
-      );
-      expect(find.text('45 PHÚT STUDY · 21 STREAK'), findsOneWidget);
-      expect(find.text('06:15 AM'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-
-    testWidgets('hides study minutes part when journey has no metric', (
-      tester,
-    ) async {
-      final journey = _englishJourney(metricName: null, metricUnit: null);
-      await _pumpSquadWidget(
-        tester,
-        SizedBox(
-          height: 420,
-          child: StudyTimerSnapHud(
-            journey: journey,
-            streak: 12,
-            metricValue: null,
-            capturedAt: DateTime(2026, 10, 19, 18, 5),
-          ),
-        ),
-        brightness: Brightness.dark,
-        locale: const Locale('vi'),
-      );
-
-      expect(find.text('12 CHUỖI NGÀY'), findsOneWidget);
-      expect(find.textContaining('HỌC'), findsNothing);
-      expect(find.text('06:05 PM'), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
   });
 
   group('S3 — SquadPolaroidWall', () {

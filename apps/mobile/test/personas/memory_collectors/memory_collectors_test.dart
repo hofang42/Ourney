@@ -6,7 +6,6 @@ import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
-import 'package:ourney/personas/memory_collectors/camera_hud.dart';
 import 'package:ourney/personas/memory_collectors/l10n/generated/memory_collectors_localizations.dart';
 import 'package:ourney/personas/memory_collectors/share_card.dart';
 import 'package:ourney/personas/memory_collectors/timeline.dart';
@@ -157,42 +156,6 @@ void main() {
             expect(tester.takeException(), isNull);
           }
         }
-      },
-    );
-  });
-
-  group('M2 — DisposableFilmStampHud', () {
-    testWidgets(
-      'renders FILM ROLL n/N pill and amber date stamp without fake weather/location',
-      (tester) async {
-        final journey = _tripJourney(durationDays: 36);
-        await _pumpMemoryWidget(
-          tester,
-          SizedBox(
-            height: 440,
-            child: DisposableFilmStampHud(
-              journey: journey,
-              checkInCount: 24,
-              date: const LocalDate(2026, 10, 16),
-            ),
-          ),
-          locale: const Locale('en'),
-          width: 320,
-          textScale: 1.35,
-        );
-
-        expect(find.byKey(const ValueKey('m2-film-roll-pill')), findsOneWidget);
-        expect(find.text('FILM ROLL 24/36'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('m2-amber-date-stamp')),
-          findsOneWidget,
-        );
-        expect(find.text("16 OCT '26"), findsOneWidget);
-
-        // Must NOT fabricate temperature or location (TASKS.md §3 M2).
-        expect(find.textContaining('15°C'), findsNothing);
-        expect(find.textContaining('DA LAT'), findsNothing);
-        expect(tester.takeException(), isNull);
       },
     );
   });

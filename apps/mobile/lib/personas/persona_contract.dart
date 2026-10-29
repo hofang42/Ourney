@@ -3,7 +3,6 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../features/groups/domain/group_today.dart';
 import '../features/journeys/domain/journey_progress.dart';
-import '../shared/time_zones.dart';
 
 /// Input contracts of the persona widgets (task F1).
 ///
@@ -118,67 +117,6 @@ class PersonaTimelineData {
 
   /// Days with a check-in.
   int get checkInCount => days.where((d) => d.checkIn != null).length;
-}
-
-/// Input of the camera HUD. The live preview stays mounted by the screen and
-/// is passed as [viewfinder]; the HUD only wraps and decorates it, so
-/// switching persona never restarts the camera.
-@immutable
-class PersonaCameraData {
-  const PersonaCameraData({
-    required this.journey,
-    required this.viewfinder,
-    required this.capturedAt,
-    this.currentStreak = 0,
-    this.checkInCount = 0,
-    this.metricValue,
-    this.onMetricChanged,
-    this.hideMetric = false,
-    this.firstPhoto,
-    this.partnerName,
-    this.partnerTodayCheckIn,
-    this.partnerPhotoBuilder,
-    this.bottomBar,
-    this.borderRadius,
-  });
-
-  final Journey journey;
-
-  /// Preview, flash button and any state panel drawn by the capture screen.
-  final Widget viewfinder;
-
-  /// Timestamp shown on the HUD. Overlay only: never burned into the photo.
-  final DateTime capturedAt;
-  final int currentStreak;
-
-  /// Check-ins so far (`FILM ROLL n/N`).
-  final int checkInCount;
-
-  /// Today's metric entry while the HUD has an input for it.
-  final double? metricValue;
-
-  /// Callback when a persona HUD slider/control updates today's metric value.
-  final ValueChanged<double>? onMetricChanged;
-  final bool hideMetric;
-
-  /// Day-1 photo for personas that draw an alignment ghost (Q2).
-  final ImageProvider? firstPhoto;
-
-  /// Display name of the partner in a 2-member journey (D3).
-  final String? partnerName;
-
-  /// Partner's check-in for today, if already taken (D3).
-  final CheckIn? partnerTodayCheckIn;
-
-  /// Optional test photo builder for [partnerTodayCheckIn] (D3).
-  final PersonaCheckInPhotoBuilder? partnerPhotoBuilder;
-
-  /// Row drawn under the viewfinder by personas that own it.
-  final Widget? bottomBar;
-  final double? borderRadius;
-
-  /// Journey-local calendar date of [capturedAt].
-  LocalDate get date => journeyLocalDate(journey.timezone, capturedAt);
 }
 
 /// Input of the share board (share-card screen).

@@ -107,7 +107,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('capture-shutter')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(CloseButton));
+    await tester.tap(find.byKey(const ValueKey('checkin-retake')));
     await tester.pumpAndSettle();
     expect(c.read(routerProvider).state.uri.path, AppRoutes.capture);
     expect(drafts.discarded, ['/tmp/shot1.jpg']);

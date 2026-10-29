@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_dock.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/persona_theme.dart';
@@ -10,7 +11,6 @@ import 'package:ourney/personas/couple_rituals/timeline.dart';
 import 'package:ourney/personas/memory_collectors/timeline.dart';
 import 'package:ourney/personas/minimalist_habit/timeline.dart';
 import 'package:ourney/personas/quiet_transformer/timeline.dart';
-import 'package:ourney/shared/ourney_dock.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'journeys_fakes.dart';
@@ -49,7 +49,7 @@ void main() {
     );
     await tester.pump(const Duration(milliseconds: 400));
     expect(h.container.read(activeJourneyIdProvider), 'trip');
-    final dock = tester.element(find.byType(OurneyDock));
+    final dock = tester.element(find.byType(AppDock));
     expect(OurneyPersonaTheme.of(dock).skinId, PersonaSkinId.memoryCollectors);
   });
 

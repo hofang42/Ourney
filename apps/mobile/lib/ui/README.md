@@ -9,6 +9,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 ## Foundation
 | File | Contents |
 | --- | --- |
+| `journey_style_for.dart` | `uiStyleForSkin(PersonaSkinId)` -> `UiJourneyStyle` |
 | `tokens.dart` | `OurneyUi` (ThemeExtension, `context.ui`: bg, surface, fill, ink, inkMuted, border, brand, success, warn, danger...), `UiRadius`, `UiSpace` (`gutter(width)`, `maxContent`), `UiSize`, `UiMotion`, `UiCamera` |
 | `typography.dart` | `UiText.h1/h2/eyebrow/muted/button/fieldLabel/wordmark/body/display`, `UiFonts` |
 | `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs `OurneyUi`, legacy `OurneyColors`, `OurneyPersonaTheme` |
@@ -37,6 +38,15 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.avatar`, `Avatar` | `UiAvatar`; `.avatar-picker` -> `UiAvatarPicker` |
 | `.dock` | `UiDock`, `UiDockItem`, `UiSnapPill` (`.camera-capsule`) |
 | `.camera-dock`, `.shutter` | `UiDock(camera: true, center: UiShutter(...))`, `UiShutter` |
+| `.glass-chip` | `UiGlassChip` (camera journey / streak chips) |
+| `.day-hud` | `UiDayHud` |
+| `.camera-tools .icon-button`, `.camera-secondary-controls` | `UiCameraTool`, `UiLibraryThumb` |
+| `.page-dots` | `UiPageDots` |
+| profile avatar entry in top bars | `UiProfileEntry` (feature wrapper: `ProfileEntryButton`, key `profile-entry`) |
+| `.success-mark` | `UiSuccessMark` |
+| `.stamp` | `UiStamp` |
+| `.streak-celebrate`, `.shared-streak strong` | `UiStreakNumber` |
+| `.polaroid` | `UiPolaroid` |
 | `.field-label` + input | `UiTextField` |
 | `.otp-row` | `UiOtpField` |
 | `.switch-row` | `UiSwitchRow` |
@@ -57,3 +67,9 @@ Onboarding (`features/onboarding/onboarding_screen.dart`, `onboarding_art.dart`)
 (`features/auth/auth_screen.dart`), Profile setup (`features/profile/profile_setup_screen.dart`),
 Camera permission + Notification sheets (`features/onboarding/permission_sheets.dart`).
 The reminders permission prompt also uses `showUiPermissionSheet`.
+
+Also rebuilt on the kit: Camera (`features/camera/capture_screen.dart`, dark chrome, hero shutter
+in `AppDock(shutter: ...)`), Compose + Posted (`features/checkin`), Squad tab, Squad wall, invite and
+join (`features/groups/ui`), Profile + edit (`features/profile`), Share card screen
+(`features/share_card/ui`). The shell dock is `lib/app/app_dock.dart` (a `UiDock` wrapper with the
+active journey accent); the camera screen draws its own camera-mode dock.
