@@ -2,34 +2,22 @@ import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../app/theme/persona_theme.dart';
-import '../app/theme/tokens.dart' show OurneyColors;
 import 'tokens.dart';
 import 'typography.dart';
 
 /// Builds the app [ThemeData] from the V1.0 tokens.
 ///
 /// The base (scaffold, text, inputs, sheets, switches) comes from
-/// [OurneyUi]; the persona skin only contributes the [OurneyPersonaTheme]
-/// extension (journey accents), it never recolors the shell.
-///
-/// Extensions installed: [OurneyUi] (this kit), [OurneyPersonaTheme] and the
-/// legacy `OurneyColors` that screens not yet rebuilt still read.
+/// [OurneyUi]; the persona skin never recolors the shell (journey accents come
+/// from `uiStyleForSkin`). Extension installed: [OurneyUi].
 abstract final class OurneyTheme {
   static ThemeData build(Brightness brightness, [PersonaSkinId? skin]) {
     final ui = brightness == Brightness.dark ? OurneyUi.dark : OurneyUi.light;
-    final legacy = brightness == Brightness.dark
-        ? OurneyColors.dark
-        : OurneyColors.light;
-    final persona = skin != null
-        ? OurneyPersonaTheme.forSkin(skin, brightness)
-        : OurneyPersonaTheme.editorialNeutralBase(brightness);
-
     final scheme = ColorScheme(
       brightness: brightness,
       primary: ui.brand,
       onPrimary: ui.onBrand,
-      secondary: legacy.accent,
+      secondary: ui.brand,
       onSecondary: ui.isDark ? ui.bg : Colors.white,
       tertiary: ui.flame,
       onTertiary: OurneyUi.light.ink,
@@ -56,7 +44,7 @@ abstract final class OurneyTheme {
       canvasColor: ui.bg,
       fontFamily: UiFonts.body,
       textTheme: text,
-      extensions: [ui, legacy, persona],
+      extensions: [ui],
       splashFactory: NoSplash.splashFactory,
       focusColor: ui.focus,
       appBarTheme: AppBarTheme(

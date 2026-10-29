@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../l10n/generated/app_localizations.dart';
-import 'empty_state.dart';
+import '../ui/ui.dart';
 
 /// Local-only mode (FR-A5) state for features that need the backend
 /// (groups, invites, reactions). Show it when
@@ -17,11 +17,11 @@ class NeedsServerView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return EmptyState(
+    return UiEmptyState(
       key: const ValueKey('needs-server'),
       icon: Icons.cloud_off_rounded,
       title: l10n.needsServer_title,
-      message: l10n.needsServer_message,
+      body: l10n.needsServer_message,
       actionLabel: actionLabel,
       onAction: onAction,
     );

@@ -79,11 +79,11 @@ class UiTextArea extends StatelessWidget {
                 required isFocused,
                 required maxLength,
               }) => maxLength == null
-                  ? null
-                  : Text(
-                      '$currentLength/$maxLength',
-                      style: UiText.body(size: 11, color: ui.inkMuted),
-                    ),
+              ? null
+              : Text(
+                  '$currentLength/$maxLength',
+                  style: UiText.body(size: 11, color: ui.inkMuted),
+                ),
           decoration: InputDecoration(
             isDense: true,
             filled: true,

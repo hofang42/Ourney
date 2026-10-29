@@ -12,7 +12,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `journey_style_for.dart` | `uiStyleForSkin(PersonaSkinId)` -> `UiJourneyStyle` |
 | `tokens.dart` | `OurneyUi` (ThemeExtension, `context.ui`: bg, surface, fill, ink, inkMuted, border, brand, success, warn, danger...), `UiRadius`, `UiSpace` (`gutter(width)`, `maxContent`), `UiSize`, `UiMotion`, `UiCamera` |
 | `typography.dart` | `UiText.h1/h2/eyebrow/muted/button/fieldLabel/wordmark/body/display`, `UiFonts` |
-| `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs `OurneyUi`, legacy `OurneyColors`, `OurneyPersonaTheme` |
+| `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs the `OurneyUi` extension |
 | `journey_styles.dart` | `uiJourneyStyles` (10 styles: accent, paper, ink, onAccent) |
 | `journey_icons.dart` | `uiJourneyIcon(emoji, template)`, `uiTemplateIcon(template)`: vector icon of a journey (no emoji in system UI) |
 

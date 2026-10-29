@@ -7,7 +7,6 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/persona_contract.dart' show personaSkinOf;
-import '../../../shared/template_icons.dart';
 import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart';
@@ -226,7 +225,7 @@ class GroupCard extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
-                      journeyIcon(journey.emoji, journey.templateId),
+                      uiJourneyIcon(journey.emoji, journey.templateId),
                       size: 30,
                       color: ui.isDark ? style.accent : style.ink,
                     ),

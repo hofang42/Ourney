@@ -27,14 +27,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(byKey('safety-eula'), findsOneWidget);
       expect(find.text('2. Không dung thứ nội dung phản cảm'), findsOneWidget);
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(byKey('safety-hub-privacy'));
       await tester.pumpAndSettle();
       expect(byKey('safety-privacy'), findsOneWidget);
       expect(find.textContaining('Không bán dữ liệu'), findsOneWidget);
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
 
       await tester.tap(byKey('safety-hub-contact'));
@@ -66,7 +66,7 @@ void main() {
       await goTo(tester, c, SafetyPaths.privacy);
       expect(find.text('What we store'), findsOneWidget);
       // Back from a deep link goes to the hub.
-      await tester.tap(find.byType(BackButton));
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded));
       await tester.pumpAndSettle();
       expect(locationOf(c), AppRoutes.safety);
       expect(tester.takeException(), isNull);

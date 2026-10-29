@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../../shared/template_icons.dart';
 import '../../../ui/ui.dart';
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
@@ -167,7 +166,7 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
-          journeyIcon(content.emoji, content.templateId),
+          uiJourneyIcon(content.emoji, content.templateId),
           size: 30,
           color: _white,
         ),
@@ -212,7 +211,7 @@ class _PhotoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = _Illustration(
-      icon: journeyIcon(content.emoji, content.templateId),
+      icon: uiJourneyIcon(content.emoji, content.templateId),
     );
     Widget image = photo == null
         ? fallback

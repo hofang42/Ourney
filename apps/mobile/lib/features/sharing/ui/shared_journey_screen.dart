@@ -323,7 +323,9 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                       Align(
                         alignment: AlignmentDirectional.centerStart,
                         child: UiTextAction(
-                          label: _introOpen ? l10n.sharing_less : l10n.sharing_more,
+                          label: _introOpen
+                              ? l10n.sharing_less
+                              : l10n.sharing_more,
                           underline: true,
                           size: 13,
                           color: ui.ink,
@@ -345,9 +347,8 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                           ),
                         ),
                         child: Theme(
-                          data: Theme.of(
-                            context,
-                          ).copyWith(dividerColor: Colors.transparent),
+                          data: Theme.of(context)
+                              .copyWith(dividerColor: Colors.transparent),
                           child: ExpansionTile(
                             key: const ValueKey('shared-lessons'),
                             tilePadding: EdgeInsets.zero,
@@ -492,7 +493,11 @@ class _ProgressBox extends StatelessWidget {
             ),
           ),
           if (streak != null && streak > 0) ...[
-            Icon(Icons.local_fire_department_rounded, size: 18, color: ui.flame),
+            Icon(
+              Icons.local_fire_department_rounded,
+              size: 18,
+              color: ui.flame,
+            ),
             const SizedBox(width: 2),
             Text(
               '$streak',

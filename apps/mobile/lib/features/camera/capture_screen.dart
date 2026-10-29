@@ -12,7 +12,6 @@ import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
-import '../../shared/template_icons.dart';
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
 import '../journeys/data/journeys_providers.dart';
@@ -671,7 +670,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                     excludeSemantics: true,
                     child: UiGlassChip(
                       label: '${hud.summary.current}',
-                      leading: streakIcon,
+                      leading: Icons.local_fire_department_rounded,
                     ),
                   ),
                 ],
@@ -812,7 +811,7 @@ class _JourneyBar extends StatelessWidget {
                 child: _JourneyChip(
                   key: ValueKey('journey-chip-${j.id}'),
                   label: j.title,
-                  icon: journeyIcon(j.emoji, j.templateId),
+                  icon: uiJourneyIcon(j.emoji, j.templateId),
                   selected: j.id == selected?.id,
                   onTap: () => onSelect(j.id),
                 ),

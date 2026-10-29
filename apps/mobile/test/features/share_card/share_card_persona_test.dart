@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/personas/memory_collectors/share_card.dart';
-import 'package:ourney/personas/quiet_transformer/share_card.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'share_card_fakes.dart';
@@ -16,8 +14,6 @@ void main() {
       final j = testJourney(templateId: template);
       await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
       expect(find.byKey(const ValueKey('share-card-story')), findsOneWidget);
-      expect(find.byType(FilmContactSheetShareCard), findsNothing);
-      expect(find.byType(SideBySideArchiveShareCard), findsNothing);
       expect(find.byKey(const ValueKey('share-card-format')), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

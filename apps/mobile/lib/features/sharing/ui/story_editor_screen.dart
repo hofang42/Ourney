@@ -214,66 +214,62 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final cover = all.where((ci) => ci.id == _coverId).firstOrNull;
     final hidden = _hidden!;
 
-    return page(
-      paper: paper,
-      canSave: true,
-      [
-        const SizedBox(height: UiSpace.lg),
-        UiTextArea(
-          label: l10n.sharing_storyTitleField,
-          fieldKey: const ValueKey('story-title'),
-          controller: _title,
-          maxLength: storyTitleMax,
-        ),
-        const SizedBox(height: UiSpace.md),
-        UiTextArea(
-          label: l10n.sharing_introField,
-          fieldKey: const ValueKey('story-intro'),
-          controller: _intro,
-          hint: l10n.sharing_introHint,
-          maxLength: storyTextMax,
-          minLines: 3,
-        ),
-        const SizedBox(height: UiSpace.md),
-        UiTextArea(
-          label: l10n.sharing_lessonsField,
-          optionalLabel: l10n.sharing_optional,
-          fieldKey: const ValueKey('story-lessons'),
-          controller: _lessons,
-          maxLength: storyTextMax,
-          minLines: 3,
-        ),
-        const SizedBox(height: UiSpace.md),
-        _CoverPicker(
-          cover: cover,
-          // Only my visible photos: never a hidden or another member's.
-          onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
-        ),
-        const SizedBox(height: UiSpace.xl),
-        UiListHeading(title: l10n.sharing_hidePhotos),
-        const SizedBox(height: 4),
-        Text(
-          mine.isEmpty ? l10n.sharing_noPhotosYet : l10n.sharing_hidePhotosHint,
-          style: UiText.body(size: 13, color: ui.inkMuted),
-        ),
-        const SizedBox(height: UiSpace.sm),
-        GridView.count(
-          crossAxisCount: 4,
-          mainAxisSpacing: 6,
-          crossAxisSpacing: 6,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            for (final ci in mine)
-              _HideCell(
-                checkIn: ci,
-                hidden: hidden.contains(ci.id),
-                onTap: () => _toggleHidden(ci),
-              ),
-          ],
-        ),
-      ],
-    );
+    return page(paper: paper, canSave: true, [
+      const SizedBox(height: UiSpace.lg),
+      UiTextArea(
+        label: l10n.sharing_storyTitleField,
+        fieldKey: const ValueKey('story-title'),
+        controller: _title,
+        maxLength: storyTitleMax,
+      ),
+      const SizedBox(height: UiSpace.md),
+      UiTextArea(
+        label: l10n.sharing_introField,
+        fieldKey: const ValueKey('story-intro'),
+        controller: _intro,
+        hint: l10n.sharing_introHint,
+        maxLength: storyTextMax,
+        minLines: 3,
+      ),
+      const SizedBox(height: UiSpace.md),
+      UiTextArea(
+        label: l10n.sharing_lessonsField,
+        optionalLabel: l10n.sharing_optional,
+        fieldKey: const ValueKey('story-lessons'),
+        controller: _lessons,
+        maxLength: storyTextMax,
+        minLines: 3,
+      ),
+      const SizedBox(height: UiSpace.md),
+      _CoverPicker(
+        cover: cover,
+        // Only my visible photos: never a hidden or another member's.
+        onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
+      ),
+      const SizedBox(height: UiSpace.xl),
+      UiListHeading(title: l10n.sharing_hidePhotos),
+      const SizedBox(height: 4),
+      Text(
+        mine.isEmpty ? l10n.sharing_noPhotosYet : l10n.sharing_hidePhotosHint,
+        style: UiText.body(size: 13, color: ui.inkMuted),
+      ),
+      const SizedBox(height: UiSpace.sm),
+      GridView.count(
+        crossAxisCount: 4,
+        mainAxisSpacing: 6,
+        crossAxisSpacing: 6,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          for (final ci in mine)
+            _HideCell(
+              checkIn: ci,
+              hidden: hidden.contains(ci.id),
+              onTap: () => _toggleHidden(ci),
+            ),
+        ],
+      ),
+    ]);
   }
 }
 

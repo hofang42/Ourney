@@ -158,10 +158,7 @@ class _FollowBody extends StatelessWidget {
                 style: UiText.h2(size: 24, color: cardInk),
               ),
               const SizedBox(height: 6),
-              Text(
-                frame.title,
-                style: UiText.body(size: 14, color: cardInk),
-              ),
+              Text(frame.title, style: UiText.body(size: 14, color: cardInk)),
               const SizedBox(height: UiSpace.md),
               Wrap(
                 spacing: 6,

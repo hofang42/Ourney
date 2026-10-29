@@ -450,7 +450,10 @@ class _PickCell extends StatelessWidget {
                     alignment: Alignment.topLeft,
                     child: Padding(
                       padding: const EdgeInsets.all(4),
-                      child: Icon(Icons.check_circle_rounded, color: ui.success),
+                      child: Icon(
+                        Icons.check_circle_rounded,
+                        color: ui.success,
+                      ),
                     ),
                   ),
                 Align(

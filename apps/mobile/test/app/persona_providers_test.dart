@@ -1,9 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
-import 'package:ourney/app/router.dart';
-import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/camera/camera_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -112,51 +109,6 @@ void main() {
     test('is null, not an error, while the data layer is not wired', () async {
       final (c, _) = await _container(wired: false);
       expect(c.read(activePersonaSkinProvider), isNull);
-    });
-  });
-
-  group('app theme follows the active journey (F2)', () {
-    testWidgets('colors morph in place: same router, no route reload', (
-      tester,
-    ) async {
-      final repo = FakeJourneyRepository(journeys: [_running, _trip]);
-      final container = await pumpOurneyApp(
-        tester,
-        overrides: [journeyRepositoryProvider.overrideWithValue(repo)],
-      );
-      OurneyPersonaTheme persona() =>
-          OurneyPersonaTheme.of(tester.element(find.byType(Scaffold).first));
-      Future<void> settle() => tester.pump(const Duration(milliseconds: 400));
-
-      await settle();
-      expect(persona().skinId, PersonaSkinId.aestheticFlexer);
-
-      final router = container.read(routerProvider);
-      final location = router.state.uri.toString();
-
-      await container.read(activeJourneyIdProvider.notifier).select('trip');
-      // One frame for the new stream value, one to start the animation.
-      await tester.pump();
-      await tester.pump();
-      // 320ms theme animation: half way the colors are in between.
-      await tester.pump(const Duration(milliseconds: 160));
-      final mid = persona().primaryAccent;
-      final from = OurneyPersonaTheme.forSkin(
-        PersonaSkinId.aestheticFlexer,
-        Brightness.light,
-      ).primaryAccent;
-      final to = OurneyPersonaTheme.forSkin(
-        PersonaSkinId.memoryCollectors,
-        Brightness.light,
-      ).primaryAccent;
-      expect(mid, isNot(from));
-      expect(mid, isNot(to));
-
-      await settle();
-      expect(persona().skinId, PersonaSkinId.memoryCollectors);
-      expect(persona().primaryAccent, to);
-      expect(container.read(routerProvider), same(router));
-      expect(router.state.uri.toString(), location);
     });
   });
 }

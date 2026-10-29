@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/profile/profile_entry_button.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
-import 'package:ourney/shared/profile_button.dart';
 
 import '../features/journeys/journeys_fakes.dart';
 import 'test_helpers.dart';
@@ -201,7 +201,7 @@ void main() {
 
   group('profile entry point (local-only guest too)', () {
     Future<void> tapProfile(WidgetTester tester) async {
-      await tester.tap(find.byKey(ProfileButton.buttonKey));
+      await tester.tap(find.byKey(ProfileEntryButton.buttonKey));
       await tester.pumpAndSettle();
     }
 
