@@ -107,7 +107,7 @@ abstract class ProfileL10n {
   /// Title of the profile setup screen shown after the first sign-in.
   ///
   /// In vi, this message translates to:
-  /// **'Tạo hồ sơ'**
+  /// **'Hồ sơ của bạn'**
   String get profile_setupTitle;
 
   /// Subtitle of the profile setup screen.

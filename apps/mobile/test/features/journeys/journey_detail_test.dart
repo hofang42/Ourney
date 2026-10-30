@@ -4,9 +4,7 @@ import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
-import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
-import 'package:ourney/features/journeys/ui/timeline_grid.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -21,16 +19,14 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.pumpAndSettle();
 }
 
-DayState _cellState(WidgetTester tester, LocalDate d) => tester
-    .widget<DayCell>(
-      find.descendant(
-        of: find.byKey(const ValueKey('journey-timeline')),
-        matching: find.byWidgetPredicate(
-          (w) => w is DayCell && w.day.date == d,
-        ),
-      ),
-    )
-    .state;
+Finder _day(LocalDate d) => find.byKey(ValueKey('day-$d'));
+
+/// Every calendar square of the journey chain.
+Finder get _allDays => find.byWidgetPredicate(
+  (w) =>
+      w.key is ValueKey<String> &&
+      (w.key! as ValueKey<String>).value.startsWith('day-'),
+);
 
 /// Solo 14-day journey started 2026-10-10; today is 10-16 (day 7).
 /// Checked in 10, 11, 13, 14, 15; missed 12; today still open.
@@ -82,29 +78,16 @@ void main() {
       expect(find.bySemanticsLabel('Progress: Day 7 of 14'), findsOneWidget);
     });
 
-    testWidgets('timeline grid: checked, missed, today, future', (
+    testWidgets('journey chain: checked, missed, today, future', (
       tester,
     ) async {
       await _pumpDetail(tester);
-      expect(find.byType(DayCell), findsNWidgets(14));
-      expect(
-        _cellState(tester, const LocalDate(2026, 10, 10)),
-        DayState.checkedIn,
-      );
-      expect(
-        _cellState(tester, const LocalDate(2026, 10, 12)),
-        DayState.missed,
-      );
-      expect(_cellState(tester, testToday), DayState.today);
-      expect(
-        _cellState(tester, const LocalDate(2026, 10, 17)),
-        DayState.future,
-      );
-      expect(
-        _cellState(tester, const LocalDate(2026, 10, 23)),
-        DayState.future,
-      );
+      expect(_key('journey-timeline'), findsOneWidget);
+      expect(_allDays, findsNWidgets(14));
+      expect(_day(testToday), findsOneWidget);
+      expect(_day(const LocalDate(2026, 10, 23)), findsOneWidget);
       expect(_key('journey-today-ring'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r': checked in$')), findsNWidgets(5));
       expect(
         find.bySemanticsLabel(RegExp(r'^Day 3, .*: missed$')),
         findsOneWidget,
@@ -115,7 +98,6 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel(RegExp(r': checked in$')), findsNWidgets(5));
     });
 
     testWidgets('open-ended journeys show day N without a percentage', (
@@ -123,14 +105,12 @@ void main() {
     ) async {
       await _pumpDetail(
         tester,
-        // `custom` keeps the day grid (the Minimalist persona still shows
-        // the shared grid); `travel` would draw the scrapbook thread.
         journey: testJourney(templateId: TemplateId.custom, durationDays: null),
       );
       expect(_key('stat-percent'), findsNothing);
       expect(find.bySemanticsLabel('Progress: Day 7'), findsOneWidget);
       // Start to today.
-      expect(find.byType(DayCell), findsNWidgets(7));
+      expect(_allDays, findsNWidgets(7));
     });
 
     testWidgets('tapping a day opens the photo viewer; hidden metric', (
@@ -147,10 +127,7 @@ void main() {
         journey: j,
         membership: testMembership(j, hideMetric: true),
       );
-      final cell = find.byWidgetPredicate(
-        (w) => w is DayCell && w.day.date == const LocalDate(2026, 10, 15),
-      );
-      await _tap(tester, cell);
+      await _tap(tester, _day(const LocalDate(2026, 10, 15)));
       expect(
         h.location,
         JourneysPaths.day('j1', const LocalDate(2026, 10, 15)),
@@ -166,12 +143,7 @@ void main() {
 
     testWidgets('missed and future days are not tappable', (tester) async {
       final h = await _pumpDetail(tester);
-      await _tap(
-        tester,
-        find.byWidgetPredicate(
-          (w) => w is DayCell && w.day.date == const LocalDate(2026, 10, 12),
-        ),
-      );
+      await _tap(tester, _day(const LocalDate(2026, 10, 12)));
       expect(h.location, AppRoutes.journey('j1'));
     });
   });
@@ -191,7 +163,9 @@ void main() {
       );
     });
 
-    testWidgets('share opens the share card route', (tester) async {
+    testWidgets('share opens the share card route (local only)', (
+      tester,
+    ) async {
       final h = await _pumpDetail(tester);
       await _tap(tester, _key('journey-share'));
       expect(h.location, AppRoutes.share('j1'));
@@ -219,6 +193,7 @@ void main() {
       await _tap(tester, _key('journey-action-archive'));
       expect(h.journeys.calls, contains('archive:j1'));
       expect(h.location, AppRoutes.journeys);
+      await _tap(tester, _key('hub-segment-shelf'));
       expect(find.text('Archived'), findsOneWidget);
     });
 
@@ -281,11 +256,23 @@ void main() {
         backend: true,
         userId: 'u1',
       );
+      // Members never get end/archive/delete: no menu at all.
       expect(_key('journey-more'), findsNothing);
+      expect(_key('journey-share'), findsOneWidget);
       expect(_key('journey-checkin'), findsOneWidget);
       expect(_key('journey-timeline'), findsOneWidget);
       await _tap(tester, _key('journey-open-group'));
       expect(h.location, AppRoutes.groups);
+    });
+
+    testWidgets('share with a server offers the card or the journey sheet', (
+      tester,
+    ) async {
+      final h = await _pumpDetail(tester, backend: true, userId: 'u1');
+      await _tap(tester, _key('journey-share'));
+      expect(_key('journey-share-sheet'), findsOneWidget);
+      await _tap(tester, _key('journey-share-card'));
+      expect(h.location, AppRoutes.share('j1'));
     });
 
     testWidgets('privacy switches update my membership (FR-B7)', (

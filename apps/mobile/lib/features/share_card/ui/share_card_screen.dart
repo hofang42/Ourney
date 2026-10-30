@@ -10,14 +10,8 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../data/group_daily_checkins_provider.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../personas/persona_contract.dart';
-import '../../../personas/persona_switchers.dart';
-import '../../../shared/chunky_button.dart';
-import '../../../shared/empty_state.dart';
-import '../../../shared/placeholder_screen.dart';
+import '../../../ui/ui.dart';
 import '../../journeys/domain/journey_progress.dart';
 import '../data/share_card_exporter.dart';
 import '../data/share_card_providers.dart';
@@ -54,36 +48,66 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   };
   final _shareButtonKey = GlobalKey(debugLabel: 'share-card-share');
 
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.journeys);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = ShareCardL10n.of(context);
     final app = AppLocalizations.of(context);
+    final ui = context.ui;
     final id = widget.journeyId;
     final journeyAsync = ref.watch(shareJourneyProvider(id));
+    final backLabel = MaterialLocalizations.of(context).backButtonTooltip;
 
     if (journeyAsync.hasError && shareNotWired(journeyAsync.error!)) {
-      return PlaceholderScreen(id: 'share_card', title: l10n.share_card_title);
+      return UiScaffold(
+        key: const ValueKey('placeholder-share_card'),
+        scroll: false,
+        child: UiFillScroll(
+          child: UiEmptyState(
+            icon: Icons.construction_rounded,
+            title: l10n.share_card_title,
+            body: app.placeholder_comingSoon,
+          ),
+        ),
+      );
     }
     final journey = journeyAsync.value;
     if (journey == null) {
-      return Scaffold(
+      return UiScaffold(
         key: const ValueKey('share-card-empty'),
-        appBar: AppBar(title: Text(l10n.share_card_title)),
-        body: SafeArea(
-          child: journeyAsync.isLoading
-              ? Center(
-                  child: CircularProgressIndicator(
-                    semanticsLabel: app.common_loading,
-                  ),
-                )
-              : EmptyState(
-                  icon: Icons.search_off_rounded,
-                  title: l10n.share_card_notFound,
-                  actionLabel: app.common_close,
-                  onAction: () => context.canPop()
-                      ? context.pop()
-                      : context.go(AppRoutes.journeys),
-                ),
+        scroll: false,
+        padTop: 0,
+        child: Column(
+          children: [
+            UiBackHeader(
+              onBack: _back,
+              backLabel: backLabel,
+              title: l10n.share_card_title,
+            ),
+            Expanded(
+              child: UiFillScroll(
+                child: journeyAsync.isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          semanticsLabel: app.common_loading,
+                        ),
+                      )
+                    : UiEmptyState(
+                        icon: Icons.search_off_rounded,
+                        title: l10n.share_card_notFound,
+                        actionLabel: app.common_close,
+                        onAction: _back,
+                      ),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -127,81 +151,70 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     );
     final screenHeight = MediaQuery.sizeOf(context).height;
     final previewHeight = (screenHeight * 0.55).clamp(280.0, 620.0);
-    final text = Theme.of(context).textTheme;
 
-    return Scaffold(
+    return UiScaffold(
       key: const ValueKey('share-card-screen'),
-      appBar: AppBar(title: Text(l10n.share_card_title)),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-          children: [
-            _SectionLabel(l10n.share_card_sizeLabel),
-            SegmentedButton<ShareCardFormat>(
-              key: const ValueKey('share-card-format'),
-              showSelectedIcon: false,
+      padTop: 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiBackHeader(
+            onBack: _back,
+            backLabel: backLabel,
+            title: l10n.share_card_title,
+          ),
+          const SizedBox(height: UiSpace.sm),
+          _SectionLabel(l10n.share_card_sizeLabel),
+          KeyedSubtree(
+            key: const ValueKey('share-card-format'),
+            child: UiSegmented<ShareCardFormat>(
               segments: [
-                ButtonSegment(
+                UiSegment(
                   value: ShareCardFormat.story,
-                  icon: const Icon(Icons.crop_portrait_rounded),
-                  label: Text(
-                    l10n.share_card_sizeStory,
-                    key: const ValueKey('share-card-format-story'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  label: l10n.share_card_sizeStory,
                 ),
-                ButtonSegment(
+                UiSegment(
                   value: ShareCardFormat.feed,
-                  icon: const Icon(Icons.crop_3_2_rounded),
-                  label: Text(
-                    l10n.share_card_sizeFeed,
-                    key: const ValueKey('share-card-format-feed'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  label: l10n.share_card_sizeFeed,
                 ),
               ],
-              selected: {_format},
-              onSelectionChanged: (s) {
+              value: _format,
+              onChanged: (f) {
                 OurneyHaptics.selection();
-                setState(() => _format = s.first);
+                setState(() => _format = f);
               },
             ),
-            const SizedBox(height: OurneySpacing.lg),
-            SizedBox(
-              height: previewHeight,
-              child: AnimatedSwitcher(
-                duration: OurneyMotion.duration(
-                  context,
-                  OurneyDurations.navigation,
-                ),
-                child: KeyedSubtree(
-                  key: ValueKey('share-card-preview-${_format.name}'),
-                  child: Semantics(
-                    image: true,
-                    label: previewLabel,
-                    excludeSemantics: true,
-                    child: Center(
-                      child: FittedBox(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.18),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: RepaintBoundary(
-                            key: _boundaryKeys[_format],
-                            child: ShareCard(
-                              content: content,
-                              format: _format,
-                              blur: blur,
-                              photo: photo,
+          ),
+          const SizedBox(height: UiSpace.lg),
+          SizedBox(
+            height: previewHeight,
+            child: AnimatedSwitcher(
+              duration: UiMotion.of(context, UiMotion.sheet),
+              child: KeyedSubtree(
+                key: ValueKey('share-card-preview-${_format.name}'),
+                child: Semantics(
+                  image: true,
+                  label: previewLabel,
+                  excludeSemantics: true,
+                  child: Center(
+                    child: FittedBox(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          boxShadow: [
+                            BoxShadow(
+                              color: ui.shadow,
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
                             ),
+                          ],
+                        ),
+                        child: RepaintBoundary(
+                          key: _boundaryKeys[_format],
+                          child: ShareCard(
+                            content: content,
+                            format: _format,
+                            blur: blur,
+                            photo: photo,
                           ),
                         ),
                       ),
@@ -210,123 +223,95 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: OurneySpacing.xl),
-            KeyedSubtree(
-              key: _shareButtonKey,
-              child: ChunkyButton(
-                key: const ValueKey('share-card-share'),
-                label: _busy
-                    ? l10n.share_card_preparing
-                    : l10n.share_card_shareButton,
-                icon: Icons.ios_share_rounded,
-                onPressed: _busy
-                    ? null
-                    : () => _share(journey: journey, photo: photo),
-              ),
+          ),
+          const SizedBox(height: UiSpace.xl),
+          KeyedSubtree(
+            key: _shareButtonKey,
+            child: UiButton(
+              key: const ValueKey('share-card-share'),
+              label: _busy
+                  ? l10n.share_card_preparing
+                  : l10n.share_card_shareButton,
+              icon: Icons.ios_share_rounded,
+              loading: _busy,
+              onPressed: _busy
+                  ? null
+                  : () => _share(journey: journey, photo: photo),
             ),
-            const SizedBox(height: OurneySpacing.xl),
-            PersonaShareSwitcher(
-              skin: personaSkinOf(journey),
-              data: PersonaShareData(
-                journey: journey,
-                checkIns: checkIns,
-                partnerCheckIns: ref
-                    .watch(groupDailySnapshotProvider(journey))
-                    .partnerCheckIns,
-                currentStreak: progress.summary.current,
-                dayNumber: progress.dayNumber,
-                hideMetric: content.metricHidden,
-                onShare: _busy
-                    ? null
-                    : () => _share(journey: journey, photo: photo),
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-              ),
-            ),
-            const SizedBox(height: OurneySpacing.xl),
-            _SectionLabel(l10n.share_card_numberLabel),
-            SegmentedButton<ShareCardNumber>(
-              key: const ValueKey('share-card-number-mode'),
-              showSelectedIcon: false,
+          ),
+          const SizedBox(height: UiSpace.xl),
+          _SectionLabel(l10n.share_card_numberLabel),
+          KeyedSubtree(
+            key: const ValueKey('share-card-number-mode'),
+            child: UiSegmented<ShareCardNumber>(
               segments: [
-                ButtonSegment(
+                UiSegment(
                   value: ShareCardNumber.streak,
-                  label: Text(
-                    l10n.share_card_numberStreak,
-                    key: const ValueKey('share-card-number-streak'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  label: l10n.share_card_numberStreak,
                 ),
-                ButtonSegment(
+                UiSegment(
                   value: ShareCardNumber.day,
-                  label: Text(
-                    l10n.share_card_numberDay,
-                    key: const ValueKey('share-card-number-day'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  label: l10n.share_card_numberDay,
                 ),
               ],
-              selected: {_number},
-              onSelectionChanged: (s) {
+              value: _number,
+              onChanged: (n) {
                 OurneyHaptics.selection();
-                setState(() => _number = s.first);
+                setState(() => _number = n);
               },
             ),
-            const SizedBox(height: OurneySpacing.xl),
-            _SectionLabel(l10n.share_card_photoLabel),
-            if (candidates.isEmpty)
-              Text(
-                l10n.share_card_photoNone,
-                key: const ValueKey('share-card-photo-none'),
-                style: text.bodyMedium,
-              )
-            else ...[
-              _PhotoStrip(
-                candidates: candidates,
-                selectedId: selected?.id,
-                thumbnails: [
-                  for (final c in candidates) _photoProvider(c, thumb: true),
-                ],
-                onSelect: (c) => setState(() => _photoCheckInId = c.id),
-              ),
-              SwitchListTile(
-                key: const ValueKey('share-card-blur'),
-                contentPadding: EdgeInsets.zero,
-                secondary: const Icon(Icons.blur_on_rounded),
-                title: Text(l10n.share_card_blurPhoto),
-                subtitle: content.blurPhoto
-                    ? Text(l10n.share_card_blurPhotoHint)
-                    : null,
-                value: blur,
-                onChanged: (v) => setState(() => _blurOverride = v),
-              ),
-            ],
-            if (content.metricHidden)
-              Padding(
-                padding: const EdgeInsets.only(top: OurneySpacing.sm),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.visibility_off_rounded, size: 20),
-                    const SizedBox(width: OurneySpacing.sm),
-                    Expanded(
-                      child: Text(
-                        l10n.share_card_metricHidden,
-                        key: const ValueKey('share-card-metric-hidden'),
-                        style: text.bodyMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            if (showLink) ...[
-              const SizedBox(height: OurneySpacing.xl),
-              PublicLinkSection(journey: journey),
-            ],
+          ),
+          const SizedBox(height: UiSpace.xl),
+          _SectionLabel(l10n.share_card_photoLabel),
+          if (candidates.isEmpty)
+            Text(
+              l10n.share_card_photoNone,
+              key: const ValueKey('share-card-photo-none'),
+              style: UiText.muted(color: ui.inkMuted, size: 14),
+            )
+          else ...[
+            _PhotoStrip(
+              candidates: candidates,
+              selectedId: selected?.id,
+              thumbnails: [
+                for (final c in candidates) _photoProvider(c, thumb: true),
+              ],
+              onSelect: (c) => setState(() => _photoCheckInId = c.id),
+            ),
+            UiSwitchRow(
+              key: const ValueKey('share-card-blur'),
+              label: l10n.share_card_blurPhoto,
+              subtitle: content.blurPhoto
+                  ? l10n.share_card_blurPhotoHint
+                  : null,
+              value: blur,
+              divider: false,
+              onChanged: (v) => setState(() => _blurOverride = v),
+            ),
           ],
-        ),
+          if (content.metricHidden)
+            Padding(
+              padding: const EdgeInsets.only(top: UiSpace.sm),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.visibility_off_outlined, size: 20, color: ui.ink),
+                  const SizedBox(width: UiSpace.sm),
+                  Expanded(
+                    child: Text(
+                      l10n.share_card_metricHidden,
+                      key: const ValueKey('share-card-metric-hidden'),
+                      style: UiText.body(size: 14, height: 1.45, color: ui.ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (showLink) ...[
+            const SizedBox(height: UiSpace.xl),
+            PublicLinkSection(journey: journey),
+          ],
+        ],
       ),
     );
   }
@@ -397,11 +382,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     return box.localToGlobal(Offset.zero) & box.size;
   }
 
-  void _snack(String message) {
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
-  }
+  void _snack(String message) => showUiToast(context, message);
 }
 
 class _SectionLabel extends StatelessWidget {
@@ -411,10 +392,18 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: OurneySpacing.sm),
+    padding: const EdgeInsets.only(bottom: UiSpace.sm),
     child: Semantics(
       header: true,
-      child: Text(text, style: Theme.of(context).textTheme.titleMedium),
+      child: Text(
+        text,
+        style: UiText.body(
+          size: 14,
+          weight: FontWeight.w700,
+          height: 1.4,
+          color: context.ui.ink,
+        ),
+      ),
     ),
   );
 }
@@ -440,74 +429,72 @@ class _PhotoStrip extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = ShareCardL10n.of(context);
     final material = MaterialLocalizations.of(context);
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return SizedBox(
-      height: _size + OurneySpacing.sm,
+      height: _size + UiSpace.sm,
       child: ListView.separated(
         key: const ValueKey('share-card-photos'),
         scrollDirection: Axis.horizontal,
         itemCount: candidates.length,
-        separatorBuilder: (_, _) => const SizedBox(width: OurneySpacing.sm),
+        separatorBuilder: (_, _) => const SizedBox(width: UiSpace.sm),
         itemBuilder: (context, i) {
           final checkIn = candidates[i];
           final selected = checkIn.id == selectedId;
           final d = checkIn.localDate;
           final provider = thumbnails[i];
-          return Semantics(
-            button: true,
+          return UiPressable(
+            key: ValueKey('share-card-photo-${checkIn.id}'),
+            onPressed: () => onSelect(checkIn),
             selected: selected,
-            label: l10n.share_card_photoOfDay(
+            semanticLabel: l10n.share_card_photoOfDay(
               material.formatMediumDate(DateTime(d.year, d.month, d.day)),
             ),
-            excludeSemantics: true,
-            child: InkWell(
-              key: ValueKey('share-card-photo-${checkIn.id}'),
-              borderRadius: BorderRadius.circular(OurneyRadii.chip),
-              onTap: () => onSelect(checkIn),
-              child: Container(
-                width: _size,
-                height: _size,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  borderRadius: BorderRadius.circular(OurneyRadii.chip),
-                  border: Border.all(
-                    color: selected ? c.primary : c.border,
-                    width: selected ? 3 : 1,
-                  ),
+            excludeChildSemantics: true,
+            borderRadius: BorderRadius.circular(UiRadius.thumb),
+            minSize: const Size.square(_size),
+            child: Container(
+              width: _size,
+              height: _size,
+              clipBehavior: Clip.antiAlias,
+              decoration: BoxDecoration(
+                color: ui.surface,
+                borderRadius: BorderRadius.circular(UiRadius.thumb),
+                border: Border.all(
+                  color: selected ? ui.ink : ui.border,
+                  width: selected ? 3 : 1,
                 ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (provider == null)
-                      Icon(Icons.photo_rounded, color: c.inkMuted)
-                    else
-                      Image(
-                        image: provider,
-                        fit: BoxFit.cover,
-                        gaplessPlayback: true,
-                        errorBuilder: (context, error, stack) =>
-                            Icon(Icons.photo_rounded, color: c.inkMuted),
-                      ),
-                    // Selection is not shown by color alone.
-                    if (selected)
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                          margin: const EdgeInsets.all(OurneySpacing.xs),
-                          decoration: BoxDecoration(
-                            color: c.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.check_rounded,
-                            size: 18,
-                            color: c.onPrimary,
-                          ),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (provider == null)
+                    Icon(Icons.photo_outlined, color: ui.inkMuted)
+                  else
+                    Image(
+                      image: provider,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      errorBuilder: (context, error, stack) =>
+                          Icon(Icons.photo_outlined, color: ui.inkMuted),
+                    ),
+                  // Selection is not shown by color alone.
+                  if (selected)
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: Container(
+                        margin: const EdgeInsets.all(UiSpace.xs),
+                        decoration: BoxDecoration(
+                          color: ui.ink,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.check_rounded,
+                          size: 16,
+                          color: ui.bg,
                         ),
                       ),
-                  ],
-                ),
+                    ),
+                ],
               ),
             ),
           );

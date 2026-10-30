@@ -253,6 +253,30 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Chụp chưa được. Thử lại nhé.'**
   String get camera_captureFailed;
+
+  /// Tooltip of the button that toggles the 3x3 framing grid over the viewfinder.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưới căn khung'**
+  String get camera_grid;
+
+  /// Pill on the viewfinder showing the day number of the selected journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}'**
+  String camera_dayHud(int day);
+
+  /// Hint at the bottom of the viewfinder when there is more than one journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vuốt để sang hành trình khác'**
+  String get camera_swipeHint;
+
+  /// Semantics label of the streak counter chip at the top of the camera.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {days} ngày'**
+  String camera_streakChip(int days);
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

@@ -9,6 +9,7 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney/features/groups/ui/group_safety_hooks.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -278,7 +279,7 @@ Future<GroupsHarness> pumpGroups(
       ),
       safetyRepositoryProvider.overrideWithValue(s),
       mediaStoreProvider.overrideWithValue(FakeMediaStore()),
-      groupsClockProvider.overrideWithValue(Clock.fixed(testNow)),
+      journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
       groupSafetyHooksProvider.overrideWithValue(hooks),
       groupShareLauncherProvider.overrideWithValue(({
         required text,

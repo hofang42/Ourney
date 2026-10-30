@@ -1,33 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/personas/memory_collectors/share_card.dart';
-import 'package:ourney/personas/quiet_transformer/share_card.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'share_card_fakes.dart';
 
-/// F3: the share screen shows the persona's board under the exportable card.
+/// The share screen (kit UI) shows one exportable card whatever the
+/// journey's persona; the older per-persona boards are not stacked under it.
 void main() {
-  testWidgets('travel shows the film contact sheet and keeps the card', (
-    tester,
-  ) async {
-    final j = testJourney(templateId: TemplateId.travel);
-    await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
-    expect(find.byKey(const ValueKey('share-card-story')), findsOneWidget);
-    await tester.ensureVisible(find.byType(FilmContactSheetShareCard));
-    expect(find.byType(FilmContactSheetShareCard), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('weight loss shows the side-by-side archive share card', (
-    tester,
-  ) async {
-    final j = testJourney(templateId: TemplateId.weightLoss);
-    await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
-    expect(find.byKey(const ValueKey('share-card-story')), findsOneWidget);
-    expect(find.byType(FilmContactSheetShareCard), findsNothing);
-    await tester.ensureVisible(find.byType(SideBySideArchiveShareCard));
-    expect(find.text('Thay đổi thầm lặng'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  for (final template in [TemplateId.travel, TemplateId.weightLoss]) {
+    testWidgets('${template.name}: one exportable card, kit controls', (
+      tester,
+    ) async {
+      final j = testJourney(templateId: template);
+      await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
+      expect(find.byKey(const ValueKey('share-card-story')), findsOneWidget);
+      expect(find.byKey(const ValueKey('share-card-format')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }

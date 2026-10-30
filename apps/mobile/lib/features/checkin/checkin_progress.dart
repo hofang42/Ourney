@@ -1,6 +1,6 @@
 import 'package:ourney_core/ourney_core.dart';
 
-import 'journey_clock.dart';
+import 'checkin_clock.dart';
 
 /// The member's streak for [journey], counted from their join date like the
 /// server's `journey_streak` (falls back to the journey start when the
@@ -10,7 +10,7 @@ StreakSummary memberStreak({
   required Membership? membership,
   required LocalDate today,
   required Iterable<LocalDate> dates,
-  required JourneyClock clock,
+  required CheckinClock clock,
 }) {
   final joined = membership == null
       ? journey.startDate

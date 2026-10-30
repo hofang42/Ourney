@@ -1,0 +1,806 @@
+{
+  "@@locale": "vi",
+  "sharing_title": "Chia sẻ",
+  "@sharing_title": {
+    "description": "Feature name."
+  },
+  "sharing_shareThisJourney": "Chia sẻ hành trình",
+  "@sharing_shareThisJourney": {
+    "description": "SCR-82 eyebrow and full-screen title."
+  },
+  "sharing_editStory": "Sửa câu chuyện",
+  "@sharing_editStory": {
+    "description": "Opens SCR-83 from the share sheet."
+  },
+  "sharing_friends": "Bạn bè",
+  "@sharing_friends": {
+    "description": "Friends block heading."
+  },
+  "sharing_selectAll": "Chọn tất cả",
+  "@sharing_selectAll": {
+    "description": "Ticks every friend."
+  },
+  "sharing_clear": "Bỏ chọn",
+  "@sharing_clear": {
+    "description": "Unticks every friend."
+  },
+  "sharing_searchFriends": "Tìm bạn",
+  "@sharing_searchFriends": {
+    "description": "Friend search field (more than 10 friends)."
+  },
+  "sharing_canSee": "Có thể xem",
+  "@sharing_canSee": {
+    "description": "Label of a friend the journey is already shared with."
+  },
+  "sharing_remove": "Xóa",
+  "@sharing_remove": {
+    "description": "Removes one friend share / a saved journey."
+  },
+  "sharing_sensitiveHelper": "Hành trình nhạy cảm: chọn từng người",
+  "@sharing_sensitiveHelper": {
+    "description": "S7: nobody pre-ticked for sensitive templates."
+  },
+  "sharing_runningHelper": "Họ sẽ thấy ảnh mới khi bạn đăng",
+  "@sharing_runningHelper": {
+    "description": "Shown for a running journey."
+  },
+  "sharing_shareWith": "{count, plural, other{Chia sẻ cho {count} bạn}}",
+  "@sharing_shareWith": {
+    "description": "Primary button with the number of newly ticked friends.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_pickFriends": "Chọn bạn để chia sẻ",
+  "@sharing_pickFriends": {
+    "description": "Disabled primary button when no new friend is ticked."
+  },
+  "sharing_noFriends": "Kết bạn để chia sẻ hành trình với họ",
+  "@sharing_noFriends": {
+    "description": "Friends block without friends."
+  },
+  "sharing_sharedSnack": "{count, plural, other{Đã chia sẻ cho {count} bạn}}",
+  "@sharing_sharedSnack": {
+    "description": "Snack after sharing.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_removeFriendShare": "Gỡ {name} khỏi người xem",
+  "@sharing_removeFriendShare": {
+    "description": "Semantics of the Remove button on a friend row.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_publicLink": "Liên kết công khai",
+  "@sharing_publicLink": {
+    "description": "Public link block heading."
+  },
+  "sharing_linkLockedTitle": "Liên kết mở khi hành trình kết thúc",
+  "@sharing_linkLockedTitle": {
+    "description": "S9: link locked while the journey runs."
+  },
+  "sharing_linkLockedSub": "Chưa thể bật liên kết",
+  "@sharing_linkLockedSub": {
+    "description": "Second line of the locked link block."
+  },
+  "sharing_linkOwnerOnly": "Chủ hành trình quản lý liên kết",
+  "@sharing_linkOwnerOnly": {
+    "description": "Group member who is not the owner (S32)."
+  },
+  "sharing_linkOn": "Bật liên kết",
+  "@sharing_linkOn": {
+    "description": "Public link switch."
+  },
+  "sharing_linkOff": "Đang tắt",
+  "@sharing_linkOff": {
+    "description": "Subtitle of the link switch while off."
+  },
+  "sharing_under18": "Link công khai dành cho người từ 18 tuổi",
+  "@sharing_under18": {
+    "description": "R2-07: under-18 owners cannot turn the link on."
+  },
+  "sharing_blurredPreview": "Ảnh được làm mờ trong bản xem trước",
+  "@sharing_blurredPreview": {
+    "description": "Sensitive template link note."
+  },
+  "sharing_copyLink": "Sao chép",
+  "@sharing_copyLink": {
+    "description": "Copies the public link."
+  },
+  "sharing_linkCopied": "Đã sao chép liên kết",
+  "@sharing_linkCopied": {
+    "description": "Snack after copying."
+  },
+  "sharing_resetLink": "Đặt lại",
+  "@sharing_resetLink": {
+    "description": "Rotates the public token."
+  },
+  "sharing_resetConfirmTitle": "Đặt lại liên kết?",
+  "@sharing_resetConfirmTitle": {
+    "description": "Confirm dialog title."
+  },
+  "sharing_resetConfirmBody": "Liên kết cũ sẽ không mở được nữa. Số liệu đã đếm vẫn giữ.",
+  "@sharing_resetConfirmBody": {
+    "description": "Confirm dialog body."
+  },
+  "sharing_linkHelper": "Ai có liên kết cũng có thể xem và làm theo hành trình.",
+  "@sharing_linkHelper": {
+    "description": "Under the link actions."
+  },
+  "sharing_showCounts": "Hiện số liệu",
+  "@sharing_showCounts": {
+    "description": "S22 switch."
+  },
+  "sharing_showCountsHint": "Hiện lượt thích và số người làm theo cho người xem",
+  "@sharing_showCountsHint": {
+    "description": "S22 switch hint."
+  },
+  "sharing_letAnyoneReact": "Cho phép mọi người tương tác",
+  "@sharing_letAnyoneReact": {
+    "description": "S25 switch."
+  },
+  "sharing_letAnyoneReactHint": "Người có tài khoản Ourney có thể thích",
+  "@sharing_letAnyoneReactHint": {
+    "description": "S25 switch hint."
+  },
+  "sharing_allowRequests": "Cho phép người xem gửi lời mời kết bạn",
+  "@sharing_allowRequests": {
+    "description": "S27 switch."
+  },
+  "sharing_allowRequestsHint": "Người xem có thể gửi lời mời kết bạn",
+  "@sharing_allowRequestsHint": {
+    "description": "S27 switch hint."
+  },
+  "sharing_statsLine": "{views} lượt xem · {likes} ❤️ · {started} đã bắt đầu",
+  "@sharing_statsLine": {
+    "description": "S21 owner stats line, opens SCR-88.",
+    "placeholders": {
+      "views": {
+        "type": "String"
+      },
+      "likes": {
+        "type": "String"
+      },
+      "started": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_stopSharing": "Dừng chia sẻ",
+  "@sharing_stopSharing": {
+    "description": "Revokes every share."
+  },
+  "sharing_stopConfirm": "Mọi người sẽ mất quyền truy cập. Người đã bắt đầu vẫn giữ hành trình của họ.",
+  "@sharing_stopConfirm": {
+    "description": "Confirm text of Stop sharing (owner)."
+  },
+  "sharing_stopMineConfirm": "Những người bạn đã chia sẻ sẽ mất quyền xem. Lượt chia sẻ của thành viên khác vẫn giữ.",
+  "@sharing_stopMineConfirm": {
+    "description": "Confirm text of Stop sharing (group member)."
+  },
+  "sharing_removeMyPhotos": "Xóa ảnh của tôi khỏi chia sẻ",
+  "@sharing_removeMyPhotos": {
+    "description": "S31 withdraw consent."
+  },
+  "sharing_removeMyPhotosConfirm": "Ảnh của bạn sẽ không hiện với người ngoài nhóm nữa.",
+  "@sharing_removeMyPhotosConfirm": {
+    "description": "Confirm text of S31."
+  },
+  "sharing_warnTitle": "Ai có link đều xem được hành trình này",
+  "@sharing_warnTitle": {
+    "description": "Warm warning sheet (sensitive template, S10)."
+  },
+  "sharing_warnAnyone": "Bất kỳ ai nhận được link đều có thể xem.",
+  "@sharing_warnAnyone": {
+    "description": "Warning bullet 1."
+  },
+  "sharing_warnSelected": "Chỉ ảnh bạn chọn mới hiện; bản xem trước được làm mờ.",
+  "@sharing_warnSelected": {
+    "description": "Warning bullet 2."
+  },
+  "sharing_warnUndo": "Bạn có thể tắt link bất cứ lúc nào.",
+  "@sharing_warnUndo": {
+    "description": "Warning bullet 3."
+  },
+  "sharing_warnTurnOn": "Bật link",
+  "@sharing_warnTurnOn": {
+    "description": "Warning sheet confirm."
+  },
+  "sharing_warnSwitchTitle": "Đây là một hành trình riêng tư",
+  "@sharing_warnSwitchTitle": {
+    "description": "Warm warning before a public switch on a sensitive template (S28)."
+  },
+  "sharing_warnSwitchBody": "Người ngoài danh sách bạn bè sẽ thấy hoặc làm được nhiều hơn. Bạn có thể tắt lại bất cứ lúc nào.",
+  "@sharing_warnSwitchBody": {
+    "description": "Warning body."
+  },
+  "sharing_warnSwitchConfirm": "Vẫn bật",
+  "@sharing_warnSwitchConfirm": {
+    "description": "Warning confirm."
+  },
+  "sharing_consentTitle": "Đồng thuận của nhóm",
+  "@sharing_consentTitle": {
+    "description": "S29 block heading."
+  },
+  "sharing_consentHelper": "Chỉ ảnh của người đã đồng ý được chia sẻ",
+  "@sharing_consentHelper": {
+    "description": "S30."
+  },
+  "sharing_consentAgreed": "Đã đồng ý",
+  "@sharing_consentAgreed": {
+    "description": "Consent status."
+  },
+  "sharing_consentWaiting": "Đang chờ",
+  "@sharing_consentWaiting": {
+    "description": "Consent status."
+  },
+  "sharing_consentDeclined": "Đã từ chối",
+  "@sharing_consentDeclined": {
+    "description": "Consent status."
+  },
+  "sharing_consentWithdrawn": "Đã rút ảnh",
+  "@sharing_consentWithdrawn": {
+    "description": "Consent status."
+  },
+  "sharing_askGroup": "Hỏi nhóm trước",
+  "@sharing_askGroup": {
+    "description": "S29 consent request button."
+  },
+  "sharing_askGroupHint": "Hành trình nhóm cần hỏi mọi người trước khi chia sẻ ra ngoài.",
+  "@sharing_askGroupHint": {
+    "description": "Shown with Ask the group first."
+  },
+  "sharing_askedSnack": "Đã gửi yêu cầu tới nhóm",
+  "@sharing_askedSnack": {
+    "description": "Snack after asking the group."
+  },
+  "sharing_errorNotFriend": "Chỉ chia sẻ được với bạn bè",
+  "@sharing_errorNotFriend": {
+    "description": "forbidden from share_journey."
+  },
+  "sharing_errorRateLimited": "Chậm lại một chút rồi thử lại nhé",
+  "@sharing_errorRateLimited": {
+    "description": "rate_limited."
+  },
+  "sharing_storyHeader": "Câu chuyện của bạn",
+  "@sharing_storyHeader": {
+    "description": "SCR-83 header."
+  },
+  "sharing_storyTitleField": "Tiêu đề câu chuyện",
+  "@sharing_storyTitleField": {
+    "description": "SCR-83 field."
+  },
+  "sharing_introField": "Giới thiệu",
+  "@sharing_introField": {
+    "description": "SCR-83 field."
+  },
+  "sharing_introHint": "Vì sao tôi bắt đầu…",
+  "@sharing_introHint": {
+    "description": "SCR-83 intro hint."
+  },
+  "sharing_lessonsField": "Tôi đã học được gì",
+  "@sharing_lessonsField": {
+    "description": "SCR-83 field / SCR-84 section."
+  },
+  "sharing_optional": "Không bắt buộc",
+  "@sharing_optional": {
+    "description": "Optional field marker."
+  },
+  "sharing_pickCover": "Chọn ảnh bìa",
+  "@sharing_pickCover": {
+    "description": "Cover picker button."
+  },
+  "sharing_coverTitle": "Ảnh bìa",
+  "@sharing_coverTitle": {
+    "description": "Cover picker sheet title."
+  },
+  "sharing_noPhotosYet": "Chưa có ảnh nào",
+  "@sharing_noPhotosYet": {
+    "description": "Empty photo grid."
+  },
+  "sharing_hidePhotos": "Ẩn ảnh",
+  "@sharing_hidePhotos": {
+    "description": "SCR-83 grid heading."
+  },
+  "sharing_hidePhotosHint": "Chạm ảnh để ẩn khỏi mọi lượt chia sẻ",
+  "@sharing_hidePhotosHint": {
+    "description": "SCR-83 grid hint."
+  },
+  "sharing_photoHidden": "Ảnh ngày {date}, đã ẩn khi chia sẻ",
+  "@sharing_photoHidden": {
+    "description": "Semantics of a hidden photo.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_photoShown": "Ảnh ngày {date}, đang hiện khi chia sẻ",
+  "@sharing_photoShown": {
+    "description": "Semantics of a shown photo.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_storySaved": "Đã lưu câu chuyện",
+  "@sharing_storySaved": {
+    "description": "Snack after saving."
+  },
+  "sharing_fromFriends": "Từ bạn bè",
+  "@sharing_fromFriends": {
+    "description": "Shared with me section."
+  },
+  "sharing_saved": "Đã lưu",
+  "@sharing_saved": {
+    "description": "Saved public journeys (S26)."
+  },
+  "sharing_byName": "bởi {name}",
+  "@sharing_byName": {
+    "description": "Owner line of a shared journey row.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_imported": "Kể lại",
+  "@sharing_imported": {
+    "description": "S12 badge of a retold journey."
+  },
+  "sharing_newBadge": "Mới",
+  "@sharing_newBadge": {
+    "description": "Unseen share dot label."
+  },
+  "sharing_savedFromLink": "Đã thích qua liên kết",
+  "@sharing_savedFromLink": {
+    "description": "Saved row subtitle."
+  },
+  "sharing_live": "Đang diễn ra",
+  "@sharing_live": {
+    "description": "Row status of a running journey."
+  },
+  "sharing_finished": "Đã kết thúc",
+  "@sharing_finished": {
+    "description": "Row status of an ended journey."
+  },
+  "sharing_emptyTitle": "Chưa có ai chia sẻ với bạn",
+  "@sharing_emptyTitle": {
+    "description": "Shared with me empty state."
+  },
+  "sharing_emptyMessage": "Khi bạn bè chia sẻ một hành trình, nó sẽ hiện ở đây.",
+  "@sharing_emptyMessage": {
+    "description": "Shared with me empty state."
+  },
+  "sharing_removeSavedSemantics": "Xóa {title} khỏi mục đã lưu",
+  "@sharing_removeSavedSemantics": {
+    "description": "Semantics of the Remove button on a saved row.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_privateNow": "Hành trình này đã được đặt riêng tư",
+  "@sharing_privateNow": {
+    "description": "SCR-84 revoked state."
+  },
+  "sharing_goBack": "Quay lại",
+  "@sharing_goBack": {
+    "description": "Back button text."
+  },
+  "sharing_addFriend": "Thêm bạn",
+  "@sharing_addFriend": {
+    "description": "S24 stranger add owner."
+  },
+  "sharing_requested": "Đã gửi",
+  "@sharing_requested": {
+    "description": "After sending a friend request."
+  },
+  "sharing_liveDay": "Trực tiếp · Ngày {day}",
+  "@sharing_liveDay": {
+    "description": "Eyebrow of a running shared journey.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_importedRange": "Kể lại · {range} · theo ngày chụp",
+  "@sharing_importedRange": {
+    "description": "S12 eyebrow of a retold journey.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_moments": "{count, plural, other{{count} khoảnh khắc}}",
+  "@sharing_moments": {
+    "description": "Number of photos.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_more": "thêm",
+  "@sharing_more": {
+    "description": "Expands the intro."
+  },
+  "sharing_less": "thu gọn",
+  "@sharing_less": {
+    "description": "Collapses the intro."
+  },
+  "sharing_counts": "❤️ {likes} · {follows} người đã làm hành trình này",
+  "@sharing_counts": {
+    "description": "S22 counts line for viewers.",
+    "placeholders": {
+      "likes": {
+        "type": "int"
+      },
+      "follows": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_dayN": "Ngày {day}",
+  "@sharing_dayN": {
+    "description": "Day label of a photo.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_like": "Thích",
+  "@sharing_like": {
+    "description": "Like a photo."
+  },
+  "sharing_unlike": "Bỏ thích",
+  "@sharing_unlike": {
+    "description": "Unlike a photo."
+  },
+  "sharing_reply": "Trả lời",
+  "@sharing_reply": {
+    "description": "Reply with a photo (S13)."
+  },
+  "sharing_replyHint": "Chỉ {name} thấy câu trả lời của bạn",
+  "@sharing_replyHint": {
+    "description": "Under the reply button.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_doThisJourney": "Làm theo",
+  "@sharing_doThisJourney": {
+    "description": "S15 follow button."
+  },
+  "sharing_sharedBy": "{name} đã chia sẻ",
+  "@sharing_sharedBy": {
+    "description": "Group journey sharer line.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_savedSnack": "Đã lưu vào mục Đã lưu",
+  "@sharing_savedSnack": {
+    "description": "S26 after a stranger like."
+  },
+  "sharing_requestSentSnack": "Đã gửi lời mời kết bạn",
+  "@sharing_requestSentSnack": {
+    "description": "Snack after Add friend."
+  },
+  "sharing_photoBlurred": "Ảnh đã được làm mờ",
+  "@sharing_photoBlurred": {
+    "description": "Semantics of a blurred photo."
+  },
+  "sharing_preview": "Xem trước như bạn bè",
+  "@sharing_preview": {
+    "description": "Preview strip."
+  },
+  "sharing_followTitle": "Làm hành trình này",
+  "@sharing_followTitle": {
+    "description": "SCR-87 title."
+  },
+  "sharing_startYourOwn": "Bắt đầu hành trình {style} của riêng bạn",
+  "@sharing_startYourOwn": {
+    "description": "SCR-87 card title.",
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_days": "{count, plural, other{{count} ngày}}",
+  "@sharing_days": {
+    "description": "Duration chip.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_openEnded": "Không giới hạn",
+  "@sharing_openEnded": {
+    "description": "Open-ended duration chip."
+  },
+  "sharing_daily": "Hằng ngày",
+  "@sharing_daily": {
+    "description": "Rhythm chip."
+  },
+  "sharing_noMetrics": "Không số liệu",
+  "@sharing_noMetrics": {
+    "description": "Metric chip when none."
+  },
+  "sharing_whatYouGet": "Bạn sẽ có",
+  "@sharing_whatYouGet": {
+    "description": "SCR-87 list heading."
+  },
+  "sharing_sameStyle": "Cùng phong cách",
+  "@sharing_sameStyle": {
+    "description": "SCR-87 list item."
+  },
+  "sharing_sameRhythm": "Cùng nhịp điệu",
+  "@sharing_sameRhythm": {
+    "description": "SCR-87 list item."
+  },
+  "sharing_sameMetrics": "Cùng chỉ số",
+  "@sharing_sameMetrics": {
+    "description": "SCR-87 list item."
+  },
+  "sharing_startFresh": "Ảnh và số liệu của bạn bắt đầu mới hoàn toàn.",
+  "@sharing_startFresh": {
+    "description": "SCR-87 note."
+  },
+  "sharing_squadNote": "Hành trình nhóm — bạn sẽ mời người của mình",
+  "@sharing_squadNote": {
+    "description": "S35."
+  },
+  "sharing_startThis": "Bắt đầu hành trình",
+  "@sharing_startThis": {
+    "description": "SCR-87 primary."
+  },
+  "sharing_changeSomething": "Thay đổi một chút",
+  "@sharing_changeSomething": {
+    "description": "SCR-87 secondary."
+  },
+  "sharing_basedOn": "Theo hành trình của {name}",
+  "@sharing_basedOn": {
+    "description": "S36 chip on the prefilled quick setup.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_removeBasedOn": "Bỏ nguồn hành trình",
+  "@sharing_removeBasedOn": {
+    "description": "Semantics of the chip close button."
+  },
+  "sharing_insightsTitle": "Thông tin chi tiết",
+  "@sharing_insightsTitle": {
+    "description": "SCR-88 title."
+  },
+  "sharing_views": "Lượt xem",
+  "@sharing_views": {
+    "description": "SCR-88 tile."
+  },
+  "sharing_likes": "Lượt thích",
+  "@sharing_likes": {
+    "description": "SCR-88 tile."
+  },
+  "sharing_started": "Đã bắt đầu",
+  "@sharing_started": {
+    "description": "SCR-88 tile."
+  },
+  "sharing_newViewersWeek": "+{count} người xem mới tuần này",
+  "@sharing_newViewersWeek": {
+    "description": "Views delta.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_thisWeek": "+{count} tuần này",
+  "@sharing_thisWeek": {
+    "description": "Likes / started delta.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_viewsPerDay": "Số người xem mỗi ngày",
+  "@sharing_viewsPerDay": {
+    "description": "Chart caption."
+  },
+  "sharing_last30Days": "30 ngày qua",
+  "@sharing_last30Days": {
+    "description": "Chart range."
+  },
+  "sharing_chartSemantics": "Biểu đồ lượt xem 30 ngày qua, nhiều nhất {max} người một ngày",
+  "@sharing_chartSemantics": {
+    "description": "Chart semantics.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_likesFriends": "Bạn bè {count}",
+  "@sharing_likesFriends": {
+    "description": "Like split.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_likesOthers": "Người khác {count}",
+  "@sharing_likesOthers": {
+    "description": "Like split.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_likersTitle": "Ai đã thích ảnh của bạn",
+  "@sharing_likersTitle": {
+    "description": "S20 likers list heading."
+  },
+  "sharing_noLikers": "Chưa có lượt thích nào",
+  "@sharing_noLikers": {
+    "description": "Empty likers list."
+  },
+  "sharing_privacyNote": "Lượt xem được đếm, không liệt kê. Không ai biết bạn đã xem hành trình của họ.",
+  "@sharing_privacyNote": {
+    "description": "S20 privacy note."
+  },
+  "sharing_linkOffNote": "Liên kết đang tắt · tạm dừng đếm",
+  "@sharing_linkOffNote": {
+    "description": "SCR-88 link off state."
+  },
+  "sharing_retellTitle": "Kể lại một hành trình đã qua",
+  "@sharing_retellTitle": {
+    "description": "SCR-28 title."
+  },
+  "sharing_retellIntro": "Đã đi rồi? Biến ảnh cũ thành một câu chuyện",
+  "@sharing_retellIntro": {
+    "description": "SCR-28 intro."
+  },
+  "sharing_pickPhotos": "Chọn ảnh",
+  "@sharing_pickPhotos": {
+    "description": "Opens the photo library (multi select)."
+  },
+  "sharing_addPhotos": "Thêm ảnh",
+  "@sharing_addPhotos": {
+    "description": "Adds more photos."
+  },
+  "sharing_photosCount": "{count, plural, other{{count} ảnh}}",
+  "@sharing_photosCount": {
+    "description": "Number of picked photos.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_photosHint": "Ảnh tự xếp theo ngày. Chạm ngày để đổi.",
+  "@sharing_photosHint": {
+    "description": "SCR-28 grid hint."
+  },
+  "sharing_journeyName": "Tên hành trình",
+  "@sharing_journeyName": {
+    "description": "SCR-28 field."
+  },
+  "sharing_style": "Phong cách",
+  "@sharing_style": {
+    "description": "SCR-28 style picker."
+  },
+  "sharing_metricOptional": "Chỉ số (không bắt buộc)",
+  "@sharing_metricOptional": {
+    "description": "SCR-28 metric heading."
+  },
+  "sharing_metricName": "Tên chỉ số",
+  "@sharing_metricName": {
+    "description": "SCR-28 field."
+  },
+  "sharing_metricUnit": "Đơn vị",
+  "@sharing_metricUnit": {
+    "description": "SCR-28 field."
+  },
+  "sharing_changeDate": "Đổi ngày ảnh, hiện là {date}",
+  "@sharing_changeDate": {
+    "description": "Semantics of a photo date button.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_removePhoto": "Bỏ ảnh",
+  "@sharing_removePhoto": {
+    "description": "Removes a picked photo."
+  },
+  "sharing_sameDay": "Trùng ngày: ảnh sau thay ảnh trước",
+  "@sharing_sameDay": {
+    "description": "Two photos on one date."
+  },
+  "sharing_rangeLine": "{range} · {days}",
+  "@sharing_rangeLine": {
+    "description": "Date range of the picked photos and its length.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "sharing_saveToShelf": "Lưu lên kệ",
+  "@sharing_saveToShelf": {
+    "description": "SCR-28 primary."
+  },
+  "sharing_saving": "Đang lưu {done}/{total} ảnh…",
+  "@sharing_saving": {
+    "description": "SCR-28 progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_errorTitleEmpty": "Đặt tên cho hành trình",
+  "@sharing_errorTitleEmpty": {
+    "description": "SCR-28 validation."
+  },
+  "sharing_errorRange": "Tối đa 366 ngày từ ảnh đầu đến ảnh cuối",
+  "@sharing_errorRange": {
+    "description": "SCR-28 validation."
+  },
+  "sharing_errorFuture": "Ngày ảnh không thể ở tương lai",
+  "@sharing_errorFuture": {
+    "description": "SCR-28 validation."
+  },
+  "sharing_errorNoPhotos": "Chọn ít nhất một ảnh",
+  "@sharing_errorNoPhotos": {
+    "description": "SCR-28 validation."
+  },
+  "sharing_retellFailed": "{count, plural, other{{count} ảnh chưa lưu được}}",
+  "@sharing_retellFailed": {
+    "description": "SCR-28 partial failure.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sharing_retry": "Thử lại",
+  "@sharing_retry": {
+    "description": "Retry button."
+  },
+  "sharing_openJourney": "Mở hành trình",
+  "@sharing_openJourney": {
+    "description": "Opens the journey anyway."
+  }
+}

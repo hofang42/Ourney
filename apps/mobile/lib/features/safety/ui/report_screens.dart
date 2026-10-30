@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/chunky_button.dart';
 import '../../../shared/needs_server_view.dart';
+import '../../../ui/ui.dart';
 import '../l10n/generated/safety_localizations.dart';
 import 'block_dialogs.dart';
 import 'report_form.dart';
@@ -24,28 +23,17 @@ class ReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SafetyL10n.of(context);
-    return Scaffold(
-      key: const ValueKey('safety-report-screen'),
-      appBar: AppBar(
-        leading: CloseButton(
-          onPressed: () => closeOr(context, AppRoutes.capture, false),
-        ),
-        title: Text(
-          checkInId != null
-              ? l10n.safety_reportCheckInTitle
-              : l10n.safety_reportUserTitle,
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-          child: ReportForm(
-            checkInId: checkInId,
-            userId: userId,
-            name: name,
-            onClose: (sent) => closeOr(context, AppRoutes.capture, sent),
-          ),
-        ),
+    return SafetyPage(
+      pageKey: const ValueKey('safety-report-screen'),
+      title: checkInId != null
+          ? l10n.safety_reportCheckInTitle
+          : l10n.safety_reportUserTitle,
+      onBack: () => closeOr(context, AppRoutes.capture, false),
+      child: ReportForm(
+        checkInId: checkInId,
+        userId: userId,
+        name: name,
+        onClose: (sent) => closeOr(context, AppRoutes.capture, sent),
       ),
     );
   }
@@ -83,61 +71,53 @@ class _BlockUserScreenState extends ConsumerState<BlockUserScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = SafetyL10n.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final shown = (widget.name == null || widget.name!.isEmpty)
         ? l10n.safety_unknownUser
         : widget.name!;
     final localOnly = ref.watch(appConfigProvider).localOnly;
-    return Scaffold(
-      key: const ValueKey('safety-block-screen'),
-      appBar: AppBar(
-        leading: CloseButton(
-          onPressed: () => closeOr(context, AppRoutes.capture, false),
-        ),
-      ),
-      body: SafeArea(
-        child: localOnly
-            ? const NeedsServerView()
-            : ListView(
-                padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-                children: [
-                  Icon(
-                    Icons.block_rounded,
-                    size: 56,
-                    color: OurneyColors.of(context).danger,
-                  ),
-                  const SizedBox(height: OurneySpacing.lg),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.safety_blockTitle(shown),
-                      textAlign: TextAlign.center,
-                      style: text.headlineSmall,
-                    ),
-                  ),
-                  const SizedBox(height: OurneySpacing.md),
-                  Text(
-                    l10n.safety_blockBody,
+    return SafetyPage(
+      pageKey: const ValueKey('safety-block-screen'),
+      onBack: () => closeOr(context, AppRoutes.capture, false),
+      child: localOnly
+          ? const NeedsServerView()
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: UiSpace.lg),
+                Icon(Icons.block_rounded, size: 56, color: ui.danger),
+                const SizedBox(height: UiSpace.lg),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.safety_blockTitle(shown),
                     textAlign: TextAlign.center,
-                    style: text.bodyMedium,
+                    style: UiText.h2(color: ui.ink),
                   ),
-                  const SizedBox(height: OurneySpacing.xl),
-                  ChunkyButton(
-                    key: const ValueKey('safety-block-page-confirm'),
-                    label: l10n.safety_blockConfirm,
-                    icon: Icons.block_rounded,
-                    onPressed: _busy ? null : _block,
-                  ),
-                  const SizedBox(height: OurneySpacing.sm),
-                  TextButton(
-                    onPressed: _busy
-                        ? null
-                        : () => closeOr(context, AppRoutes.capture, false),
-                    child: Text(l10n.safety_blockCancel),
-                  ),
-                ],
-              ),
-      ),
+                ),
+                const SizedBox(height: UiSpace.md),
+                Text(
+                  l10n.safety_blockBody,
+                  textAlign: TextAlign.center,
+                  style: UiText.muted(color: ui.inkMuted),
+                ),
+                const SizedBox(height: UiSpace.xl),
+                UiButton(
+                  key: const ValueKey('safety-block-page-confirm'),
+                  label: l10n.safety_blockConfirm,
+                  icon: Icons.block_rounded,
+                  loading: _busy,
+                  onPressed: _busy ? null : _block,
+                ),
+                const SizedBox(height: UiSpace.sm),
+                UiTextAction(
+                  label: l10n.safety_blockCancel,
+                  onPressed: _busy
+                      ? null
+                      : () => closeOr(context, AppRoutes.capture, false),
+                ),
+              ],
+            ),
     );
   }
 }

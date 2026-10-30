@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/profile/profile_entry_button.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
-import 'package:ourney/shared/profile_button.dart';
 
 import '../features/journeys/journeys_fakes.dart';
 import 'test_helpers.dart';
@@ -22,7 +22,7 @@ void main() {
       final c = await pumpOurneyApp(tester);
       expect(location(c), AppRoutes.capture);
       expect(find.byKey(const ValueKey('placeholder-camera')), findsOneWidget);
-      expect(find.byIcon(Icons.photo_camera_rounded), findsOneWidget);
+      expect(find.byKey(const ValueKey('dock-hero-shutter')), findsOneWidget);
       expect(find.text('Nhóm'), findsOneWidget);
       expect(find.text('Journeys'), findsOneWidget);
     });
@@ -36,7 +36,7 @@ void main() {
 
     testWidgets('English when the device is English', (tester) async {
       await pumpOurneyApp(tester, locale: const Locale('en'));
-      expect(find.text('Groups'), findsOneWidget);
+      expect(find.text('Squad'), findsOneWidget);
     });
 
     testWidgets('tabs switch between journeys, capture and groups', (
@@ -61,7 +61,7 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+      await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.capture);
     });
@@ -201,12 +201,12 @@ void main() {
 
   group('profile entry point (local-only guest too)', () {
     Future<void> tapProfile(WidgetTester tester) async {
-      await tester.tap(find.byKey(ProfileButton.buttonKey));
+      await tester.tap(find.byKey(ProfileEntryButton.buttonKey));
       await tester.pumpAndSettle();
     }
 
     Future<void> back(WidgetTester tester) async {
-      await tester.tap(find.byType(BackButton).first);
+      await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
       await tester.pumpAndSettle();
     }
 
@@ -255,7 +255,7 @@ void main() {
       await back(tester);
 
       // Capture screen (no journeys yet: the empty state keeps the button).
-      await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+      await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
       await tester.pumpAndSettle();
       expect(location(c.container), AppRoutes.capture);
       await tapProfile(tester);

@@ -16,7 +16,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_activeSection => 'Đang chạy';
 
   @override
-  String get journeys_finishedSection => 'Đã kết thúc';
+  String get journeys_finishedSection => 'Trên kệ';
 
   @override
   String get journeys_emptyTitle => 'Chưa có hành trình nào';
@@ -215,7 +215,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_checkInNow => 'Check-in ngay';
+  String get journeys_checkInNow => 'Check-in';
 
   @override
   String get journeys_share => 'Chia sẻ';
@@ -300,4 +300,226 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_noCheckIn => 'Chưa có ảnh cho ngày này';
+
+  @override
+  String get journeys_greetingMorning => 'Chào buổi sáng';
+
+  @override
+  String get journeys_greetingAfternoon => 'Chào buổi chiều';
+
+  @override
+  String get journeys_greetingEvening => 'Chào buổi tối';
+
+  @override
+  String journeys_greetingNamed(String greeting, String name) {
+    return '$greeting, $name';
+  }
+
+  @override
+  String journeys_remainingToday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Còn $count hành trình chờ ảnh hôm nay.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_allDonePrompt =>
+      'Hôm nay xong hết rồi. Hẹn bạn ngày mai.';
+
+  @override
+  String get journeys_allDoneTitle => 'Xong hết hôm nay';
+
+  @override
+  String get journeys_todayLabel => 'Hôm nay';
+
+  @override
+  String journeys_dayShort(int day, int total) {
+    return 'Ngày $day/$total';
+  }
+
+  @override
+  String get journeys_streakWord => 'ngày liên tiếp';
+
+  @override
+  String journeys_endsInHours(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: 'Còn $hours giờ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_endsSoon => 'Còn chưa tới 1 giờ';
+
+  @override
+  String get journeys_startsToday => 'Bắt đầu hôm nay';
+
+  @override
+  String get journeys_lastSevenDays => 'Bảy ngày gần nhất';
+
+  @override
+  String get journeys_snapToday => 'Chụp hôm nay';
+
+  @override
+  String get journeys_yourJourneys => 'Hành trình của bạn';
+
+  @override
+  String get journeys_rowDone => 'Xong';
+
+  @override
+  String get journeys_rowNotYet => 'Chưa';
+
+  @override
+  String get journeys_privacyPrivate => 'Riêng tư';
+
+  @override
+  String get journeys_privacyLink => 'Bật link';
+
+  @override
+  String get journeys_privacyGroup => 'Nhóm';
+
+  @override
+  String get journeys_addJourney => 'Thêm hành trình';
+
+  @override
+  String get journeys_shelfEmpty =>
+      'Hành trình đã xong sẽ nằm ở đây để bạn xem lại.';
+
+  @override
+  String get journeys_activeEmpty => 'Hiện chưa có hành trình nào đang chạy.';
+
+  @override
+  String get journeys_tagWeightLoss => 'Nhìn những thay đổi nhỏ cộng lại.';
+
+  @override
+  String get journeys_tagEnglish => 'Giữ động lực cho cả nhóm.';
+
+  @override
+  String get journeys_tagTravel => 'Lưu lại từng ngày đi xa.';
+
+  @override
+  String get journeys_tagCouple => 'Nhớ về từng khoảnh khắc chung.';
+
+  @override
+  String get journeys_tagWorkout => 'Tiến lên qua từng buổi tập.';
+
+  @override
+  String get journeys_tagCustom => 'Tạo theo cách của bạn.';
+
+  @override
+  String get journeys_modeSoloOnly => 'Chỉ cá nhân';
+
+  @override
+  String get journeys_modeSoloGroup => 'Cá nhân · Nhóm';
+
+  @override
+  String get journeys_modeCoupleOnly => 'Chỉ cặp đôi';
+
+  @override
+  String get journeys_styleLocked => 'Phong cách không đổi được sau khi tạo';
+
+  @override
+  String get journeys_moreOptions => 'Tùy chọn khác';
+
+  @override
+  String get journeys_statMoments => 'Khoảnh khắc';
+
+  @override
+  String get journeys_daysUnit => 'ngày';
+
+  @override
+  String journeys_dateRange(String start, String end) {
+    return '$start — $end';
+  }
+
+  @override
+  String journeys_sinceDate(String start) {
+    return 'Từ $start';
+  }
+
+  @override
+  String get journeys_addMore => 'Thêm ảnh';
+
+  @override
+  String get journeys_statCurrentShort => 'Hiện tại';
+
+  @override
+  String get journeys_sharedSection => 'Được chia sẻ';
+
+  @override
+  String get journeys_retell => 'Kể lại hành trình đã qua';
+
+  @override
+  String get journeys_imported => 'Đã nhập';
+
+  @override
+  String get journeys_shareCard => 'Tạo thẻ chia sẻ';
+
+  @override
+  String get journeys_back => 'Quay lại';
+
+  @override
+  String get journeys_shelfIntro =>
+      'Những hành trình đã xong, được giữ như album.';
+
+  @override
+  String get journeys_dayZeroBody =>
+      'Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.';
+
+  @override
+  String get journeys_dayZeroStart => 'Bắt đầu hành trình đầu tiên';
+
+  @override
+  String journeys_greetingHi(String name) {
+    return 'Chào $name';
+  }
+
+  @override
+  String journeys_todayLeft(int count) {
+    return 'Còn $count';
+  }
+
+  @override
+  String get journeys_todayAtRisk => 'Sắp đứt chuỗi';
+
+  @override
+  String get journeys_todayRest => 'Còn lại';
+
+  @override
+  String get journeys_openJourneys => 'Mở hành trình';
+
+  @override
+  String journeys_doneOf(int done, int total) {
+    return '$done/$total đã xong';
+  }
+
+  @override
+  String get journeys_shareMakeCard => 'Tạo thẻ hoặc video';
+
+  @override
+  String get journeys_shareMakeCardHint => 'Chia sẻ một khoảnh khắc';
+
+  @override
+  String get journeys_shareJourney => 'Chia sẻ hành trình này';
+
+  @override
+  String get journeys_shareJourneyHint => 'Chọn bạn bè có thể theo dõi';
+
+  @override
+  String journeys_albumDays(int done, int total) {
+    return '$done/$total ngày';
+  }
+
+  @override
+  String journeys_albumMoments(int count) {
+    return '$count khoảnh khắc';
+  }
+
+  @override
+  String get journeys_streakDaysLabel => 'ngày liên tiếp';
 }

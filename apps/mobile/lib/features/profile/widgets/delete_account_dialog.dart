@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../ui/ui.dart';
 import '../../safety/data/safety_providers.dart';
 import '../l10n/generated/profile_localizations.dart';
-import 'inline_error.dart';
 
 /// Strong confirmation for FR-A4: the user must type [phrase] (their
 /// username, or a fixed word when it is unknown) before the destructive
 /// button enables. Calls `AuthRepository.deleteAccount()` itself so errors
 /// (safe to retry) are shown in place; on success it resets onboarding and
-/// the EULA acceptance and pops `true`. The router then leaves the signed-in area by itself.
+/// the EULA acceptance and pops `true`. The router then leaves the signed-in
+/// area by itself. Shown in a kit sheet.
 class DeleteAccountDialog extends ConsumerStatefulWidget {
   const DeleteAccountDialog({
     required this.phrase,
@@ -28,9 +28,9 @@ class DeleteAccountDialog extends ConsumerStatefulWidget {
     BuildContext context, {
     required String phrase,
     bool caseSensitive = true,
-  }) => showDialog<bool>(
+  }) => showUiSheet<bool>(
     context: context,
-    barrierDismissible: false,
+    dismissible: false,
     builder: (_) =>
         DeleteAccountDialog(phrase: phrase, caseSensitive: caseSensitive),
   );
@@ -87,81 +87,82 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
     // A new account on this device must accept the terms again (FR-F3).
     await eula.reset();
     // The router may already have replaced the stack (signed out), which
-    // removes this dialog too.
+    // removes this sheet too.
     if (mounted) navigator.pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = ProfileL10n.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     return PopScope(
       canPop: !_deleting,
-      child: AlertDialog(
+      child: Column(
         key: const ValueKey('profile-delete-dialog'),
-        icon: Icon(Icons.warning_amber_rounded, color: c.danger, size: 40),
-        title: Text(l10n.profile_deleteTitle),
-        scrollable: true,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(l10n.profile_deleteMessage, style: text.bodyMedium),
-            const SizedBox(height: OurneySpacing.lg),
-            Text(
-              l10n.profile_deleteTypeToConfirm(widget.phrase),
-              style: text.titleSmall,
-            ),
-            const SizedBox(height: OurneySpacing.sm),
-            TextField(
-              key: const ValueKey('profile-delete-confirm-field'),
-              controller: _controller,
-              enabled: !_deleting,
-              autocorrect: false,
-              enableSuggestions: false,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(hintText: widget.phrase),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: OurneySpacing.md),
-              InlineError(
-                key: const ValueKey('profile-delete-error'),
-                message: _error!,
-              ),
-            ],
-            if (_deleting) ...[
-              const SizedBox(height: OurneySpacing.md),
-              Row(
-                children: [
-                  const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2.5),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: ui.danger, size: 28),
+              const SizedBox(width: UiSpace.sm),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.profile_deleteTitle,
+                    style: UiText.h2(color: ui.ink),
                   ),
-                  const SizedBox(width: OurneySpacing.sm),
-                  Expanded(child: Text(l10n.profile_deleting)),
-                ],
+                ),
               ),
             ],
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            l10n.profile_deleteMessage,
+            style: UiText.muted(color: ui.inkMuted, size: 14),
+          ),
+          const SizedBox(height: UiSpace.lg),
+          UiTextField(
+            fieldKey: const ValueKey('profile-delete-confirm-field'),
+            label: l10n.profile_deleteTypeToConfirm(widget.phrase),
+            hint: widget.phrase,
+            controller: _controller,
+            enabled: !_deleting,
+            autocorrect: false,
+            onChanged: (_) => setState(() {}),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: UiSpace.md),
+            UiInlineError(
+              key: const ValueKey('profile-delete-error'),
+              message: _error!,
+            ),
           ],
-        ),
-        actions: [
-          TextButton(
+          if (_deleting) ...[
+            const SizedBox(height: UiSpace.md),
+            Text(
+              l10n.profile_deleting,
+              style: UiText.body(size: 13, color: ui.inkMuted),
+            ),
+          ],
+          const SizedBox(height: UiSpace.xl),
+          UiButton(
+            key: const ValueKey('profile-delete-confirm'),
+            label: l10n.profile_deleteConfirmButton,
+            icon: Icons.delete_outline_rounded,
+            loading: _deleting,
+            accent: ui.danger,
+            onAccent: Colors.white,
+            onPressed: _matches && !_deleting ? _delete : null,
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.secondary(
             key: const ValueKey('profile-delete-cancel'),
+            label: AppLocalizations.of(context).common_cancel,
             onPressed: _deleting
                 ? null
                 : () => Navigator.of(context).pop(false),
-            child: Text(AppLocalizations.of(context).common_cancel),
-          ),
-          FilledButton.icon(
-            key: const ValueKey('profile-delete-confirm'),
-            style: FilledButton.styleFrom(
-              backgroundColor: c.danger,
-              foregroundColor: Theme.of(context).colorScheme.onError,
-            ),
-            onPressed: _matches && !_deleting ? _delete : null,
-            icon: const Icon(Icons.delete_forever_rounded),
-            label: Text(l10n.profile_deleteConfirmButton),
           ),
         ],
       ),

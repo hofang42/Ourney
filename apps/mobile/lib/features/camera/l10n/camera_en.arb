@@ -25,5 +25,23 @@
   "camera_unavailableMessage": "This device has no usable camera. Choose a photo from your library instead.",
   "camera_failedTitle": "Couldn't open the camera",
   "camera_starting": "Opening camera…",
-  "camera_captureFailed": "Couldn't take the photo. Please try again."
+  "camera_captureFailed": "Couldn't take the photo. Please try again.",
+  "camera_grid": "Framing grid",
+  "camera_dayHud": "Day {day}",
+  "@camera_dayHud": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_swipeHint": "Swipe for next journey",
+  "camera_streakChip": "{days} day streak",
+  "@camera_streakChip": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  }
 }

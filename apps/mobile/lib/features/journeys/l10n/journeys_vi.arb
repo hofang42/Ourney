@@ -5,25 +5,44 @@
     "description": "Title of the journeys feature's main screen."
   },
   "journeys_activeSection": "Đang chạy",
-  "@journeys_activeSection": {"description": "List section header: running journeys."},
-  "journeys_finishedSection": "Đã kết thúc",
-  "@journeys_finishedSection": {"description": "List section header: ended or archived journeys."},
+  "@journeys_activeSection": {
+    "description": "Hub segment: running journeys."
+  },
+  "journeys_finishedSection": "Trên kệ",
+  "@journeys_finishedSection": {
+    "description": "Hub segment: ended and archived journeys (the shelf)."
+  },
   "journeys_emptyTitle": "Chưa có hành trình nào",
   "journeys_emptyMessage": "Bắt đầu hành trình đầu tiên: mỗi ngày một tấm ảnh.",
   "journeys_newJourney": "Hành trình mới",
-  "@journeys_newJourney": {"description": "FAB / button that starts the create flow."},
+  "@journeys_newJourney": {
+    "description": "FAB / button that starts the create flow."
+  },
   "journeys_limitTitle": "Bạn đang chạy 3 hành trình",
-  "@journeys_limitTitle": {"description": "FR-B3: shown when the user already has 3 active journeys."},
+  "@journeys_limitTitle": {
+    "description": "FR-B3: shown when the user already has 3 active journeys."
+  },
   "journeys_limitMessage": "Mỗi người chạy tối đa 3 hành trình cùng lúc để việc đăng ảnh luôn nhẹ nhàng. Kết thúc một hành trình rồi bắt đầu cái mới nhé.",
   "journeys_dayOf": "Ngày {day}/{total}",
   "@journeys_dayOf": {
     "description": "Day N of M (FR-B5).",
-    "placeholders": {"day": {"type": "int"}, "total": {"type": "int"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   },
   "journeys_dayOpen": "Ngày {day}",
   "@journeys_dayOpen": {
     "description": "Day N of an open-ended journey.",
-    "placeholders": {"day": {"type": "int"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
   },
   "journeys_checkedToday": "Hôm nay đã check-in",
   "journeys_notCheckedToday": "Hôm nay chưa check-in",
@@ -36,7 +55,11 @@
   "journeys_templateDays": "{count, plural, other{{count} ngày}}",
   "@journeys_templateDays": {
     "description": "Suggested duration on a template card.",
-    "placeholders": {"count": {"type": "int"}}
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "journeys_templateCustomHint": "Tự đặt mọi thứ",
   "journeys_templateCoupleTitle": "Nghi thức cặp đôi",
@@ -48,7 +71,11 @@
   "journeys_fieldEmoji": "Biểu tượng",
   "journeys_emojiSemantics": "Biểu tượng {emoji}",
   "@journeys_emojiSemantics": {
-    "placeholders": {"emoji": {"type": "String"}}
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
   },
   "journeys_fieldKind": "Một mình hay cùng nhóm?",
   "journeys_groupNeedsServer": "Hành trình nhóm cần máy chủ. Bản này đang chạy chỉ trên máy.",
@@ -71,11 +98,22 @@
   "journeys_errorTitleEmpty": "Đặt tên cho hành trình nhé.",
   "journeys_errorTitleTooLong": "Tên dài tối đa {max} ký tự.",
   "@journeys_errorTitleTooLong": {
-    "placeholders": {"max": {"type": "int"}}
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "journeys_errorDuration": "Thời lượng từ {min} đến {max} ngày.",
   "@journeys_errorDuration": {
-    "placeholders": {"min": {"type": "int"}, "max": {"type": "int"}}
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "journeys_errorMetricName": "Nhập tên chỉ số.",
   "journeys_errorVisibility": "Kiểu hiển thị này không dùng được cho hành trình này.",
@@ -89,9 +127,13 @@
   "journeys_statDay": "Tiến độ",
   "journeys_percent": "{value}%",
   "@journeys_percent": {
-    "placeholders": {"value": {"type": "int"}}
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
   },
-  "journeys_checkInNow": "Check-in ngay",
+  "journeys_checkInNow": "Check-in",
   "journeys_share": "Chia sẻ",
   "journeys_openGroup": "Xem nhóm",
   "journeys_endJourney": "Kết thúc hành trình",
@@ -108,28 +150,387 @@
   "journeys_cellChecked": "Ngày {day}, {date}: đã check-in",
   "@journeys_cellChecked": {
     "description": "Screen reader label of a timeline cell (FR-B4).",
-    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "journeys_cellMissed": "Ngày {day}, {date}: bỏ lỡ",
   "@journeys_cellMissed": {
-    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "journeys_cellToday": "Ngày {day}, {date}: hôm nay, chưa check-in",
   "@journeys_cellToday": {
-    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "journeys_cellFuture": "Ngày {day}, {date}: sắp tới",
   "@journeys_cellFuture": {
-    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "journeys_cellNotCounted": "Ngày {day}, {date}: trước khi bạn tham gia",
   "@journeys_cellNotCounted": {
-    "placeholders": {"day": {"type": "int"}, "date": {"type": "String"}}
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "journeys_today": "Hôm nay",
   "journeys_fromLibrary": "Từ thư viện",
   "journeys_metricHidden": "Đang ẩn",
   "journeys_showMetric": "Hiện con số",
   "journeys_photoUnavailable": "Ảnh chưa tải được",
-  "journeys_noCheckIn": "Chưa có ảnh cho ngày này"
+  "journeys_noCheckIn": "Chưa có ảnh cho ngày này",
+  "journeys_greetingMorning": "Chào buổi sáng",
+  "@journeys_greetingMorning": {
+    "description": "Hub greeting before noon."
+  },
+  "journeys_greetingAfternoon": "Chào buổi chiều",
+  "@journeys_greetingAfternoon": {
+    "description": "Hub greeting 12:00-17:59."
+  },
+  "journeys_greetingEvening": "Chào buổi tối",
+  "@journeys_greetingEvening": {
+    "description": "Hub greeting from 18:00."
+  },
+  "journeys_greetingNamed": "{greeting}, {name}",
+  "@journeys_greetingNamed": {
+    "description": "Greeting followed by the user's display name.",
+    "placeholders": {
+      "greeting": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_remainingToday": "{count, plural, other{Còn {count} hành trình chờ ảnh hôm nay.}}",
+  "@journeys_remainingToday": {
+    "description": "Hub prompt under the greeting.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_allDonePrompt": "Hôm nay xong hết rồi. Hẹn bạn ngày mai.",
+  "@journeys_allDonePrompt": {
+    "description": "Hub prompt when every running journey is checked in today."
+  },
+  "journeys_allDoneTitle": "Xong hết hôm nay",
+  "@journeys_allDoneTitle": {
+    "description": "All-done card on the hub."
+  },
+  "journeys_todayLabel": "Hôm nay",
+  "@journeys_todayLabel": {
+    "description": "Eyebrow of the Today card and label of today's cell."
+  },
+  "journeys_dayShort": "Ngày {day}/{total}",
+  "@journeys_dayShort": {
+    "description": "Compact day N/M on the Today card photo.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_streakWord": "ngày liên tiếp",
+  "@journeys_streakWord": {
+    "description": "Word after the streak count on the Today card."
+  },
+  "journeys_endsInHours": "{hours, plural, other{Còn {hours} giờ}}",
+  "@journeys_endsInHours": {
+    "description": "Time left to post today, in whole hours.",
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_endsSoon": "Còn chưa tới 1 giờ",
+  "@journeys_endsSoon": {
+    "description": "Less than one hour left to post today."
+  },
+  "journeys_startsToday": "Bắt đầu hôm nay",
+  "@journeys_startsToday": {
+    "description": "Today card status on day 1."
+  },
+  "journeys_lastSevenDays": "Bảy ngày gần nhất",
+  "@journeys_lastSevenDays": {
+    "description": "Semantics label of the 7-day strip."
+  },
+  "journeys_snapToday": "Chụp hôm nay",
+  "@journeys_snapToday": {
+    "description": "Primary button on the Today card."
+  },
+  "journeys_yourJourneys": "Hành trình của bạn",
+  "@journeys_yourJourneys": {
+    "description": "Hub list heading."
+  },
+  "journeys_rowDone": "Xong",
+  "@journeys_rowDone": {
+    "description": "Short status on a journey row: checked in today."
+  },
+  "journeys_rowNotYet": "Chưa",
+  "@journeys_rowNotYet": {
+    "description": "Short status on a journey row: not checked in today."
+  },
+  "journeys_privacyPrivate": "Riêng tư",
+  "@journeys_privacyPrivate": {
+    "description": "Visibility chip: only me."
+  },
+  "journeys_privacyLink": "Bật link",
+  "@journeys_privacyLink": {
+    "description": "Visibility chip: anyone with the link."
+  },
+  "journeys_privacyGroup": "Nhóm",
+  "@journeys_privacyGroup": {
+    "description": "Visibility chip: group members."
+  },
+  "journeys_addJourney": "Thêm hành trình",
+  "@journeys_addJourney": {
+    "description": "Tooltip of the + button in the hub header."
+  },
+  "journeys_shelfEmpty": "Hành trình đã xong sẽ nằm ở đây để bạn xem lại.",
+  "@journeys_shelfEmpty": {
+    "description": "Empty Shelf segment."
+  },
+  "journeys_activeEmpty": "Hiện chưa có hành trình nào đang chạy.",
+  "@journeys_activeEmpty": {
+    "description": "Empty Active segment."
+  },
+  "@journeys_pickTemplateTitle": {
+    "description": "Title of the template picker."
+  },
+  "journeys_tagWeightLoss": "Nhìn những thay đổi nhỏ cộng lại.",
+  "@journeys_tagWeightLoss": {
+    "description": "Template card tagline: Quiet Transformer."
+  },
+  "journeys_tagEnglish": "Giữ động lực cho cả nhóm.",
+  "@journeys_tagEnglish": {
+    "description": "Template card tagline: Accountability Squad."
+  },
+  "journeys_tagTravel": "Lưu lại từng ngày đi xa.",
+  "@journeys_tagTravel": {
+    "description": "Template card tagline: Memory Collectors."
+  },
+  "journeys_tagCouple": "Nhớ về từng khoảnh khắc chung.",
+  "@journeys_tagCouple": {
+    "description": "Template card tagline: Couple Rituals."
+  },
+  "journeys_tagWorkout": "Tiến lên qua từng buổi tập.",
+  "@journeys_tagWorkout": {
+    "description": "Template card tagline: Aesthetic Flexer."
+  },
+  "journeys_tagCustom": "Tạo theo cách của bạn.",
+  "@journeys_tagCustom": {
+    "description": "Template card tagline: Custom."
+  },
+  "journeys_modeSoloOnly": "Chỉ cá nhân",
+  "@journeys_modeSoloOnly": {
+    "description": "Template card footer: who can join."
+  },
+  "journeys_modeSoloGroup": "Cá nhân · Nhóm",
+  "@journeys_modeSoloGroup": {
+    "description": "Template card footer: who can join."
+  },
+  "journeys_modeCoupleOnly": "Chỉ cặp đôi",
+  "@journeys_modeCoupleOnly": {
+    "description": "Template card footer: who can join."
+  },
+  "journeys_styleLocked": "Phong cách không đổi được sau khi tạo",
+  "@journeys_styleLocked": {
+    "description": "Note under the create form's style header."
+  },
+  "journeys_moreOptions": "Tùy chọn khác",
+  "@journeys_moreOptions": {
+    "description": "Expands the advanced create options."
+  },
+  "journeys_statMoments": "Khoảnh khắc",
+  "@journeys_statMoments": {
+    "description": "Detail stat: number of photos posted."
+  },
+  "journeys_daysUnit": "ngày",
+  "@journeys_daysUnit": {
+    "description": "Small unit after a streak number."
+  },
+  "journeys_dateRange": "{start} — {end}",
+  "@journeys_dateRange": {
+    "description": "Journey date range eyebrow.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_sinceDate": "Từ {start}",
+  "@journeys_sinceDate": {
+    "description": "Eyebrow of an open-ended journey.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_addMore": "Thêm ảnh",
+  "@journeys_addMore": {
+    "description": "Floating button when today is already posted."
+  },
+  "@journeys_checkInNow": {
+    "description": "Floating check-in button on the journey screen."
+  },
+  "journeys_statCurrentShort": "Hiện tại",
+  "@journeys_statCurrentShort": {
+    "description": "Short visible label of the current-streak stat column."
+  },
+  "journeys_sharedSection": "Được chia sẻ",
+  "@journeys_sharedSection": {
+    "description": "Hub segment: journeys others shared with me"
+  },
+  "journeys_retell": "Kể lại hành trình đã qua",
+  "@journeys_retell": {
+    "description": "Shelf button: import an old journey from photos"
+  },
+  "journeys_imported": "Đã nhập",
+  "@journeys_imported": {
+    "description": "Row tag: journey retold from past photos"
+  },
+  "journeys_shareCard": "Tạo thẻ chia sẻ",
+  "@journeys_shareCard": {
+    "description": "Journey menu: make an image card"
+  },
+  "journeys_back": "Quay lại",
+  "@journeys_back": {
+    "description": "Back button label on journey screens."
+  },
+  "journeys_shelfIntro": "Những hành trình đã xong, được giữ như album.",
+  "@journeys_shelfIntro": {
+    "description": "Intro line above the shelf albums."
+  },
+  "journeys_dayZeroBody": "Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.",
+  "@journeys_dayZeroBody": {
+    "description": "Empty hub body (no journeys yet)."
+  },
+  "journeys_dayZeroStart": "Bắt đầu hành trình đầu tiên",
+  "@journeys_dayZeroStart": {
+    "description": "Empty hub primary button."
+  },
+  "journeys_greetingHi": "Chào {name}",
+  "@journeys_greetingHi": {
+    "description": "Empty hub greeting.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_todayLeft": "Còn {count}",
+  "@journeys_todayLeft": {
+    "description": "Today sheet: journeys still waiting.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_todayAtRisk": "Sắp đứt chuỗi",
+  "@journeys_todayAtRisk": {
+    "description": "Today sheet group: streak about to break."
+  },
+  "journeys_todayRest": "Còn lại",
+  "@journeys_todayRest": {
+    "description": "Today sheet group: the other journeys."
+  },
+  "journeys_openJourneys": "Mở hành trình",
+  "@journeys_openJourneys": {
+    "description": "Today sheet: go to the hub."
+  },
+  "journeys_doneOf": "{done}/{total} đã xong",
+  "@journeys_doneOf": {
+    "description": "Today sheet progress.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_shareMakeCard": "Tạo thẻ hoặc video",
+  "@journeys_shareMakeCard": {
+    "description": "Detail share sheet: image card option."
+  },
+  "journeys_shareMakeCardHint": "Chia sẻ một khoảnh khắc",
+  "@journeys_shareMakeCardHint": {
+    "description": "Detail share sheet: card hint."
+  },
+  "journeys_shareJourney": "Chia sẻ hành trình này",
+  "@journeys_shareJourney": {
+    "description": "Detail share sheet: share with friends option."
+  },
+  "journeys_shareJourneyHint": "Chọn bạn bè có thể theo dõi",
+  "@journeys_shareJourneyHint": {
+    "description": "Detail share sheet: share hint."
+  },
+  "journeys_albumDays": "{done}/{total} ngày",
+  "@journeys_albumDays": {
+    "description": "Shelf album band: photos over duration.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_albumMoments": "{count} khoảnh khắc",
+  "@journeys_albumMoments": {
+    "description": "Shelf album band for open-ended journeys.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_streakDaysLabel": "ngày liên tiếp",
+  "@journeys_streakDaysLabel": {
+    "description": "Unit after a streak number on the Today sheet rows."
+  }
 }

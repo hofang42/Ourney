@@ -13,10 +13,10 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_title => 'Journeys';
 
   @override
-  String get journeys_activeSection => 'Running';
+  String get journeys_activeSection => 'Active';
 
   @override
-  String get journeys_finishedSection => 'Finished';
+  String get journeys_finishedSection => 'Shelf';
 
   @override
   String get journeys_emptyTitle => 'No journeys yet';
@@ -217,7 +217,7 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_checkInNow => 'Check in now';
+  String get journeys_checkInNow => 'Check in';
 
   @override
   String get journeys_share => 'Share';
@@ -302,4 +302,227 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_noCheckIn => 'No photo for this day';
+
+  @override
+  String get journeys_greetingMorning => 'Good morning';
+
+  @override
+  String get journeys_greetingAfternoon => 'Good afternoon';
+
+  @override
+  String get journeys_greetingEvening => 'Good evening';
+
+  @override
+  String journeys_greetingNamed(String greeting, String name) {
+    return '$greeting, $name';
+  }
+
+  @override
+  String journeys_remainingToday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count journeys still need today\'s photo.',
+      one: '1 journey still needs today\'s photo.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_allDonePrompt =>
+      'Nothing left for today. See you tomorrow.';
+
+  @override
+  String get journeys_allDoneTitle => 'All done for today';
+
+  @override
+  String get journeys_todayLabel => 'Today';
+
+  @override
+  String journeys_dayShort(int day, int total) {
+    return 'Day $day/$total';
+  }
+
+  @override
+  String get journeys_streakWord => 'streak';
+
+  @override
+  String journeys_endsInHours(int hours) {
+    String _temp0 = intl.Intl.pluralLogic(
+      hours,
+      locale: localeName,
+      other: 'Ends in ${hours}h',
+      one: 'Ends in 1h',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_endsSoon => 'Ends in under an hour';
+
+  @override
+  String get journeys_startsToday => 'Starts today';
+
+  @override
+  String get journeys_lastSevenDays => 'Last seven days';
+
+  @override
+  String get journeys_snapToday => 'Snap today';
+
+  @override
+  String get journeys_yourJourneys => 'Your journeys';
+
+  @override
+  String get journeys_rowDone => 'Done';
+
+  @override
+  String get journeys_rowNotYet => 'Not yet';
+
+  @override
+  String get journeys_privacyPrivate => 'Private';
+
+  @override
+  String get journeys_privacyLink => 'Link on';
+
+  @override
+  String get journeys_privacyGroup => 'Squad';
+
+  @override
+  String get journeys_addJourney => 'Add journey';
+
+  @override
+  String get journeys_shelfEmpty =>
+      'Finished journeys rest here, ready to look back on.';
+
+  @override
+  String get journeys_activeEmpty => 'Nothing running right now.';
+
+  @override
+  String get journeys_tagWeightLoss => 'See small changes add up.';
+
+  @override
+  String get journeys_tagEnglish => 'Keep the group moving.';
+
+  @override
+  String get journeys_tagTravel => 'Save each day away.';
+
+  @override
+  String get journeys_tagCouple => 'A shared table, remembered.';
+
+  @override
+  String get journeys_tagWorkout => 'Show up, one run at a time.';
+
+  @override
+  String get journeys_tagCustom => 'Build it your way.';
+
+  @override
+  String get journeys_modeSoloOnly => 'Solo only';
+
+  @override
+  String get journeys_modeSoloGroup => 'Solo · Group';
+
+  @override
+  String get journeys_modeCoupleOnly => 'Couple only';
+
+  @override
+  String get journeys_styleLocked => 'Style can\'t be changed later';
+
+  @override
+  String get journeys_moreOptions => 'More options';
+
+  @override
+  String get journeys_statMoments => 'Moments';
+
+  @override
+  String get journeys_daysUnit => 'days';
+
+  @override
+  String journeys_dateRange(String start, String end) {
+    return '$start — $end';
+  }
+
+  @override
+  String journeys_sinceDate(String start) {
+    return 'Since $start';
+  }
+
+  @override
+  String get journeys_addMore => 'Add more';
+
+  @override
+  String get journeys_statCurrentShort => 'Current';
+
+  @override
+  String get journeys_sharedSection => 'Shared with me';
+
+  @override
+  String get journeys_retell => 'Retell a past journey';
+
+  @override
+  String get journeys_imported => 'Imported';
+
+  @override
+  String get journeys_shareCard => 'Share card';
+
+  @override
+  String get journeys_back => 'Back';
+
+  @override
+  String get journeys_shelfIntro => 'Completed journeys, kept like albums.';
+
+  @override
+  String get journeys_dayZeroBody =>
+      'One photo a day keeps your journey. Start with something you care about.';
+
+  @override
+  String get journeys_dayZeroStart => 'Start your first journey';
+
+  @override
+  String journeys_greetingHi(String name) {
+    return 'Hi, $name';
+  }
+
+  @override
+  String journeys_todayLeft(int count) {
+    return '$count left';
+  }
+
+  @override
+  String get journeys_todayAtRisk => 'At risk';
+
+  @override
+  String get journeys_todayRest => 'Everything else';
+
+  @override
+  String get journeys_openJourneys => 'Open my journeys';
+
+  @override
+  String journeys_doneOf(int done, int total) {
+    return '$done/$total done';
+  }
+
+  @override
+  String get journeys_shareMakeCard => 'Make a card or video';
+
+  @override
+  String get journeys_shareMakeCardHint => 'Share a moment from this journey';
+
+  @override
+  String get journeys_shareJourney => 'Share this journey';
+
+  @override
+  String get journeys_shareJourneyHint => 'Choose friends who can follow along';
+
+  @override
+  String journeys_albumDays(int done, int total) {
+    return '$done/$total days';
+  }
+
+  @override
+  String journeys_albumMoments(int count) {
+    return '$count moments';
+  }
+
+  @override
+  String get journeys_streakDaysLabel => 'streak';
 }

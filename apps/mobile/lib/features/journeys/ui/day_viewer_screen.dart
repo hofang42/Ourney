@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../../app/theme/tokens.dart';
+import '../../../app/app_routes.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_photo.dart';
 
 /// `/journey/:id/day/:date`: full photo of the caller's check-in for that
-/// day with caption and metric. The metric starts hidden when the journey or
-/// the caller hides it (FR-B7) and can be revealed on this device.
+/// day with caption and metric, on the camera black. The metric starts
+/// hidden when the journey or the caller hides it (FR-B7) and can be
+/// revealed on this device.
 class DayViewerScreen extends ConsumerStatefulWidget {
   const DayViewerScreen({
     required this.journeyId,
@@ -38,11 +41,12 @@ class DayViewerScreen extends ConsumerStatefulWidget {
 class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
   bool _revealMetric = false;
 
+  static const _muted = Color(0xFFA1A1AA);
+
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final app = AppLocalizations.of(context);
-    final dark = OurneyColors.dark;
     final journey = ref.watch(journeyByIdProvider(widget.journeyId)).value;
     final membership = ref.watch(myMembershipProvider(widget.journeyId)).value;
     final checkIns = ref.watch(myCheckInsProvider(widget.journeyId));
@@ -60,102 +64,124 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
     final hidden =
         (membership?.hideMetric ?? journey?.hideMetricDefault ?? false) &&
         !_revealMetric;
-    final text = Theme.of(context).textTheme;
     final dateText = date == null
         ? ''
         : MaterialLocalizations.of(context).formatFullDate(displayDate(date));
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        scaffoldBackgroundColor: OurneyColors.cameraBg,
-        appBarTheme: Theme.of(context).appBarTheme.copyWith(
-          backgroundColor: OurneyColors.cameraBg,
-          foregroundColor: dark.ink,
-        ),
-      ),
-      child: Scaffold(
-        key: const ValueKey('journey-day-viewer'),
-        appBar: AppBar(
-          title: Text(dateText, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ),
-        body: SafeArea(
-          child: checkIn == null
-              ? Center(
-                  child: checkIns.isLoading
-                      ? CircularProgressIndicator(
-                          semanticsLabel: app.common_loading,
-                        )
-                      : Text(
-                          l10n.journeys_noCheckIn,
-                          style: text.bodyLarge?.copyWith(color: dark.ink),
+    return UiScaffold(
+      key: const ValueKey('journey-day-viewer'),
+      background: UiCamera.bg,
+      padTop: 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              UiIconButton(
+                icon: Icons.arrow_back_rounded,
+                label: l10n.journeys_back,
+                color: UiCamera.ink,
+                onPressed: () => context.canPop()
+                    ? context.pop()
+                    : context.go(AppRoutes.journey(widget.journeyId)),
+              ),
+              Expanded(
+                child: Text(
+                  dateText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: UiText.body(
+                    size: 14,
+                    weight: FontWeight.w700,
+                    height: 1.4,
+                    color: UiCamera.ink,
+                  ),
+                ),
+              ),
+              const SizedBox(width: UiSize.tap),
+            ],
+          ),
+          const SizedBox(height: UiSpace.sm),
+          if (checkIn == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 120),
+              child: Center(
+                child: checkIns.isLoading
+                    ? CircularProgressIndicator(
+                        semanticsLabel: app.common_loading,
+                      )
+                    : Text(
+                        l10n.journeys_noCheckIn,
+                        textAlign: TextAlign.center,
+                        style: UiText.body(
+                          size: 16,
+                          height: 1.5,
+                          color: UiCamera.ink,
                         ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(OurneySpacing.lg),
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(OurneyRadii.media),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Semantics(
-                          image: true,
-                          label: checkIn.caption ?? dateText,
-                          child: JourneyPhoto(
-                            key: const ValueKey('journey-day-photo'),
-                            checkIn: checkIn,
-                            thumbnail: false,
-                            fallback: Center(
-                              child: Text(
-                                l10n.journeys_photoUnavailable,
-                                style: text.bodyMedium?.copyWith(
-                                  color: dark.inkMuted,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                      ),
+              ),
+            )
+          else ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(UiRadius.card),
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: Semantics(
+                  image: true,
+                  label: checkIn.caption ?? dateText,
+                  child: JourneyPhoto(
+                    key: const ValueKey('journey-day-photo'),
+                    checkIn: checkIn,
+                    thumbnail: false,
+                    fallback: Center(
+                      child: Text(
+                        l10n.journeys_photoUnavailable,
+                        style: UiText.body(size: 14, color: _muted),
                       ),
                     ),
-                    const SizedBox(height: OurneySpacing.lg),
-                    if (checkIn.fromLibrary)
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.photo_library_rounded,
-                            size: 18,
-                            color: dark.inkMuted,
-                          ),
-                          const SizedBox(width: OurneySpacing.xs),
-                          Text(
-                            l10n.journeys_fromLibrary,
-                            style: text.bodySmall?.copyWith(
-                              color: dark.inkMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (checkIn.caption != null &&
-                        checkIn.caption!.isNotEmpty) ...[
-                      const SizedBox(height: OurneySpacing.sm),
-                      Text(
-                        checkIn.caption!,
-                        key: const ValueKey('journey-day-caption'),
-                        style: text.bodyLarge?.copyWith(color: dark.ink),
-                      ),
-                    ],
-                    if (checkIn.metricValue != null) ...[
-                      const SizedBox(height: OurneySpacing.md),
-                      _MetricRow(
-                        name: journey?.metricName,
-                        unit: journey?.metricUnit,
-                        value: checkIn.metricValue!,
-                        hidden: hidden,
-                        onReveal: () => setState(() => _revealMetric = true),
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-        ),
+              ),
+            ),
+            const SizedBox(height: UiSpace.lg),
+            if (checkIn.fromLibrary)
+              Row(
+                children: [
+                  const Icon(
+                    Icons.photo_library_rounded,
+                    size: 18,
+                    color: _muted,
+                  ),
+                  const SizedBox(width: UiSpace.xs),
+                  Flexible(
+                    child: Text(
+                      l10n.journeys_fromLibrary,
+                      style: UiText.body(size: 12, color: _muted),
+                    ),
+                  ),
+                ],
+              ),
+            if (checkIn.caption != null && checkIn.caption!.isNotEmpty) ...[
+              const SizedBox(height: UiSpace.sm),
+              Text(
+                checkIn.caption!,
+                key: const ValueKey('journey-day-caption'),
+                style: UiText.body(size: 16, height: 1.5, color: UiCamera.ink),
+              ),
+            ],
+            if (checkIn.metricValue != null) ...[
+              const SizedBox(height: UiSpace.md),
+              _MetricRow(
+                name: journey?.metricName,
+                unit: journey?.metricUnit,
+                value: checkIn.metricValue!,
+                hidden: hidden,
+                onReveal: () => setState(() => _revealMetric = true),
+              ),
+            ],
+          ],
+        ],
       ),
     );
   }
@@ -179,42 +205,53 @@ class _MetricRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
-    final dark = OurneyColors.dark;
-    final text = Theme.of(context).textTheme;
     final number = value == value.roundToDouble()
         ? value.toStringAsFixed(0)
         : value.toStringAsFixed(1);
-    final shown = [number, if (unit != null) unit].join(' ');
+    final shown = [number, ?unit].join(' ');
+    final strong = UiText.body(
+      size: 16,
+      weight: FontWeight.w700,
+      height: 1.4,
+      color: UiCamera.ink,
+    );
     return Wrap(
       key: const ValueKey('journey-day-metric'),
-      spacing: OurneySpacing.sm,
-      runSpacing: OurneySpacing.xs,
+      spacing: UiSpace.sm,
+      runSpacing: UiSpace.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (name != null)
           Text(
             '$name:',
-            style: text.bodyMedium?.copyWith(color: dark.inkMuted),
+            style: UiText.body(
+              size: 14,
+              height: 1.4,
+              color: const Color(0xFFA1A1AA),
+            ),
           ),
         if (hidden) ...[
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.visibility_off_rounded, size: 18, color: dark.ink),
-              const SizedBox(width: OurneySpacing.xs),
-              Text(
-                l10n.journeys_metricHidden,
-                style: text.titleMedium?.copyWith(color: dark.ink),
+              const Icon(
+                Icons.visibility_off_rounded,
+                size: 18,
+                color: UiCamera.ink,
               ),
+              const SizedBox(width: UiSpace.xs),
+              Text(l10n.journeys_metricHidden, style: strong),
             ],
           ),
-          TextButton(
+          UiTextAction(
             key: const ValueKey('journey-day-reveal'),
+            label: l10n.journeys_showMetric,
+            color: UiCamera.ink,
+            underline: true,
             onPressed: onReveal,
-            child: Text(l10n.journeys_showMetric),
           ),
         ] else
-          Text(shown, style: text.titleMedium?.copyWith(color: dark.ink)),
+          Text(shown, style: strong),
       ],
     );
   }

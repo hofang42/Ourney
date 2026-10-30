@@ -3,8 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/chunky_button.dart';
+import '../../../ui/ui.dart';
 import '../data/safety_providers.dart';
 import '../l10n/generated/safety_localizations.dart';
 import 'block_dialogs.dart';
@@ -26,19 +25,16 @@ Future<bool> showReportSheet(
   String? name,
 }) async {
   assert(checkInId != null || userId != null, 'report needs a target');
-  final sent = await showModalBottomSheet<bool>(
+  final sent = await showUiSheet<bool>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    showDragHandle: true,
     builder: (context) => Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(
-          OurneySpacing.screenMargin,
+          UiSpace.xl,
           0,
-          OurneySpacing.screenMargin,
-          OurneySpacing.screenMargin,
+          UiSpace.xl,
+          UiSpace.xl,
         ),
         child: ReportForm(
           checkInId: checkInId,
@@ -139,19 +135,18 @@ class _ReportFormState extends ConsumerState<ReportForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = SafetyL10n.of(context);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final title = widget.checkInId != null
         ? l10n.safety_reportCheckInTitle
         : l10n.safety_reportUserTitle;
 
     if (ref.watch(appConfigProvider).localOnly) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: OurneySpacing.xl),
+        padding: const EdgeInsets.symmetric(vertical: UiSpace.xl),
         child: Text(
           l10n.safety_needsAccount,
           key: const ValueKey('safety-report-needs-server'),
-          style: text.bodyLarge,
+          style: UiText.muted(color: ui.inkMuted),
         ),
       );
     }
@@ -162,29 +157,28 @@ class _ReportFormState extends ConsumerState<ReportForm> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.check_circle_rounded, size: 56, color: c.success),
-          const SizedBox(height: OurneySpacing.md),
+          const Center(child: UiCheckBadge(size: 56)),
+          const SizedBox(height: UiSpace.md),
           Text(
             l10n.safety_reportSent,
             textAlign: TextAlign.center,
-            style: text.titleMedium,
+            style: UiText.body(color: ui.ink, weight: FontWeight.w700),
           ),
           if (_reason == ReportReason.selfHarm) ...[
-            const SizedBox(height: OurneySpacing.lg),
+            const SizedBox(height: UiSpace.lg),
             const SelfHarmSupportCard(),
           ],
-          const SizedBox(height: OurneySpacing.xl),
+          const SizedBox(height: UiSpace.xl),
           if (widget.userId != null) ...[
-            ChunkyButton(
+            UiButton.secondary(
               key: const ValueKey('safety-report-also-block'),
               label: l10n.safety_reportAlsoBlock,
               icon: Icons.block_rounded,
-              variant: ChunkyVariant.neutral,
               onPressed: _alsoBlock,
             ),
-            const SizedBox(height: OurneySpacing.md),
+            const SizedBox(height: UiSpace.md),
           ],
-          ChunkyButton(
+          UiButton(
             key: const ValueKey('safety-report-done'),
             label: l10n.safety_reportDone,
             onPressed: () => widget.onClose(true),
@@ -201,81 +195,66 @@ class _ReportFormState extends ConsumerState<ReportForm> {
         if (widget.showTitle) ...[
           Semantics(
             header: true,
-            child: Text(title, style: text.headlineSmall),
+            child: Text(title, style: UiText.h2(color: ui.ink)),
           ),
-          const SizedBox(height: OurneySpacing.sm),
+          const SizedBox(height: UiSpace.sm),
         ],
-        Text(
-          l10n.safety_reportPrompt,
-          style: text.bodyMedium?.copyWith(color: c.inkMuted),
-        ),
-        const SizedBox(height: OurneySpacing.md),
-        RadioGroup<ReportReason>(
-          groupValue: _reason,
-          onChanged: (r) => setState(() {
-            _reason = r;
-            _error = null;
-          }),
-          child: Column(
-            children: [
-              for (final r in ReportReason.values)
-                RadioListTile<ReportReason>(
-                  key: ValueKey('safety-reason-${r.wireName}'),
-                  value: r,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(_label(l10n, r)),
-                ),
-            ],
+        Text(l10n.safety_reportPrompt, style: UiText.muted(color: ui.inkMuted)),
+        const SizedBox(height: UiSpace.md),
+        for (final r in ReportReason.values)
+          UiRow(
+            key: ValueKey('safety-reason-${r.wireName}'),
+            title: _label(l10n, r),
+            showChevron: false,
+            minHeight: 52,
+            trailing: Icon(
+              _reason == r
+                  ? Icons.radio_button_checked_rounded
+                  : Icons.radio_button_unchecked_rounded,
+              color: _reason == r ? ui.brand : ui.inkMuted,
+            ),
+            onPressed: () => setState(() {
+              _reason = r;
+              _error = null;
+            }),
           ),
-        ),
         if (_reason == ReportReason.selfHarm) ...[
-          const SizedBox(height: OurneySpacing.sm),
+          const SizedBox(height: UiSpace.sm),
           const SelfHarmSupportCard(),
         ],
-        const SizedBox(height: OurneySpacing.md),
-        TextField(
-          key: const ValueKey('safety-report-note'),
+        const SizedBox(height: UiSpace.md),
+        UiTextArea(
+          fieldKey: const ValueKey('safety-report-note'),
           controller: _note,
+          label: l10n.safety_noteLabel,
+          hint: l10n.safety_noteHint,
           maxLength: kReportNoteMaxLength,
           minLines: 2,
           maxLines: 4,
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            labelText: l10n.safety_noteLabel,
-            hintText: l10n.safety_noteHint,
-          ),
         ),
         if (_error != null) ...[
-          const SizedBox(height: OurneySpacing.sm),
+          const SizedBox(height: UiSpace.sm),
           Semantics(
             liveRegion: true,
-            child: Row(
-              children: [
-                Icon(Icons.error_outline_rounded, color: c.danger),
-                const SizedBox(width: OurneySpacing.sm),
-                Expanded(
-                  child: Text(
-                    _error!,
-                    key: const ValueKey('safety-report-error'),
-                    style: text.bodyMedium?.copyWith(color: c.danger),
-                  ),
-                ),
-              ],
+            child: UiInlineError(
+              key: const ValueKey('safety-report-error'),
+              message: _error!,
             ),
           ),
         ],
-        const SizedBox(height: OurneySpacing.lg),
-        ChunkyButton(
+        const SizedBox(height: UiSpace.lg),
+        UiButton(
           key: const ValueKey('safety-report-submit'),
           label: l10n.safety_reportSubmit,
           icon: Icons.flag_rounded,
+          loading: _sending,
           onPressed: _reason == null || _sending ? null : _submit,
         ),
-        const SizedBox(height: OurneySpacing.sm),
-        TextButton(
+        const SizedBox(height: UiSpace.sm),
+        UiTextAction(
           key: const ValueKey('safety-report-cancel'),
+          label: l10n.safety_reportCancel,
           onPressed: _sending ? null : () => widget.onClose(false),
-          child: Text(l10n.safety_reportCancel),
         ),
       ],
     );

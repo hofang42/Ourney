@@ -1,34 +1,33 @@
 import 'dart:async';
-import 'dart:math' as math;
 
-import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../app/theme/motion.dart';
-import '../../app/theme/tokens.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../shared/chunky_button.dart';
-import '../../shared/stamp_animation.dart';
-import '../../shared/streak_flame.dart';
+import '../../ui/ui.dart';
+import '../groups/ui/group_photo.dart';
 import 'checkin_progress.dart';
 import 'l10n/generated/checkin_localizations.dart';
 
-/// Success state after posting (FR-C8): stamp (0.6s, haptic on impact),
-/// streak +1, confetti at milestones. Under Reduce Motion the stamp is a
-/// 0.2s fade and there is no confetti. Without a milestone the screen closes
-/// by itself so a check-in stays within 3 taps (FR-C4).
+/// Success state after posting (FR-C8, App.tsx `Posted`): green success
+/// mark, "Chain kept." (or the milestone), a four-week mini calendar with
+/// today's photo and a day stamp, the streak count, then Done (and Share at
+/// a milestone). Without a milestone the screen closes by itself so a
+/// check-in stays within 3 taps (FR-C4).
 class CheckinSuccessView extends StatefulWidget {
   const CheckinSuccessView({
     required this.outcome,
     required this.haptics,
     required this.onDone,
     required this.onShare,
+    this.journey,
     super.key,
   });
 
   final CheckInOutcome outcome;
+  final Journey? journey;
   final bool haptics;
   final VoidCallback onDone;
   final VoidCallback onShare;
@@ -41,7 +40,6 @@ class CheckinSuccessView extends StatefulWidget {
 }
 
 class _CheckinSuccessViewState extends State<CheckinSuccessView> {
-  final _confetti = ConfettiController(duration: OurneyDurations.confetti);
   Timer? _autoClose;
   bool _started = false;
 
@@ -50,9 +48,8 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
     super.didChangeDependencies();
     if (_started) return;
     _started = true;
-    if (widget.outcome.milestone != null) {
-      if (OurneyMotion.allowsDecoration(context)) _confetti.play();
-    } else {
+    if (widget.haptics) OurneyHaptics.success();
+    if (widget.outcome.milestone == null) {
       _autoClose = Timer(CheckinSuccessView.autoCloseDelay, widget.onDone);
     }
   }
@@ -60,7 +57,6 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
   @override
   void dispose() {
     _autoClose?.cancel();
-    _confetti.dispose();
     super.dispose();
   }
 
@@ -76,124 +72,225 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
   Widget build(BuildContext context) {
     final l10n = CheckinL10n.of(context);
     final common = AppLocalizations.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final outcome = widget.outcome;
     final milestoneTitle = _milestoneTitle(l10n);
+    final date = outcome.checkIn.localDate;
+    final journey = widget.journey;
+    final day = journey == null
+        ? null
+        : (journey.startDate.daysUntil(date) + 1).clamp(1, 100000);
 
-    return Stack(
-      children: [
-        Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(OurneySpacing.screenMargin),
+    return UiScaffold(
+      key: const ValueKey('checkin-success-screen'),
+      background: ui.isDark ? ui.bg : const Color(0xFFF5F3EE),
+      padTop: 40,
+      bottom: Center(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: UiSpace.maxContent(MediaQuery.sizeOf(context).width),
+          ),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              UiSpace.gutter(MediaQuery.sizeOf(context).width),
+              UiSpace.sm,
+              UiSpace.gutter(MediaQuery.sizeOf(context).width),
+              UiSpace.xxl,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                StampAnimation(
-                  haptic: widget.haptics,
-                  child: _Stamp(label: l10n.checkin_stamp),
-                ),
-                const SizedBox(height: OurneySpacing.xxl),
-                StreakFlame(
-                  key: const ValueKey('checkin-streak'),
-                  days: outcome.streakAfter,
-                  size: 48,
-                  semanticLabel: common.streak_semantics(outcome.streakAfter),
-                ),
-                const SizedBox(height: OurneySpacing.sm),
-                Text(
-                  outcome.replaced
-                      ? l10n.checkin_replaced
-                      : l10n.checkin_streakPlusOne,
-                  textAlign: TextAlign.center,
-                  style: text.titleMedium?.copyWith(color: c.inkMuted),
-                ),
                 if (milestoneTitle != null) ...[
-                  const SizedBox(height: OurneySpacing.xl),
-                  Text(
-                    milestoneTitle,
-                    key: const ValueKey('checkin-milestone'),
-                    textAlign: TextAlign.center,
-                    style: text.displaySmall,
-                  ),
-                  const SizedBox(height: OurneySpacing.sm),
-                  Text(
-                    l10n.checkin_milestoneMessage,
-                    textAlign: TextAlign.center,
-                    style: text.bodyMedium?.copyWith(color: c.inkMuted),
-                  ),
-                  const SizedBox(height: OurneySpacing.xl),
-                  ChunkyButton(
+                  UiButton(
                     key: const ValueKey('checkin-share'),
                     label: l10n.checkin_share,
                     icon: Icons.ios_share_rounded,
                     onPressed: widget.onShare,
                   ),
+                  const SizedBox(height: UiSpace.sm),
                 ],
-                const SizedBox(height: OurneySpacing.lg),
-                ChunkyButton(
+                UiButton.secondary(
                   key: const ValueKey('checkin-done'),
                   label: l10n.checkin_done,
-                  variant: ChunkyVariant.neutral,
                   onPressed: widget.onDone,
                 ),
               ],
             ),
           ),
         ),
-        Align(
-          alignment: Alignment.topCenter,
-          child: ExcludeSemantics(
-            child: ConfettiWidget(
-              confettiController: _confetti,
-              blastDirection: math.pi / 2,
-              blastDirectionality: BlastDirectionality.explosive,
-              numberOfParticles: 24,
-              emissionFrequency: 0.05,
-              gravity: 0.25,
-              colors: [c.primary, c.accent, c.streak, c.success, c.sun],
+      ),
+      child: Column(
+        children: [
+          const UiSuccessMark(),
+          const SizedBox(height: UiSpace.md),
+          Text(
+            l10n.checkin_posted,
+            textAlign: TextAlign.center,
+            style: UiText.body(
+              size: 13,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.success,
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: UiSpace.xs),
+          Semantics(
+            header: true,
+            child: Text(
+              milestoneTitle ?? l10n.checkin_chainKept,
+              key: milestoneTitle == null
+                  ? null
+                  : const ValueKey('checkin-milestone'),
+              textAlign: TextAlign.center,
+              style: UiText.h1(color: ui.ink),
+            ),
+          ),
+          const SizedBox(height: UiSpace.xl),
+          _MiniCalendar(
+            checkIn: outcome.checkIn,
+            streak: outcome.streakAfter,
+            stamp: day == null ? null : l10n.checkin_dayStamp(day),
+          ),
+          const SizedBox(height: UiSpace.lg),
+          KeyedSubtree(
+            key: const ValueKey('checkin-streak'),
+            child: UiStreakNumber(
+              value: outcome.streakAfter,
+              unit: l10n.checkin_daysUnit(outcome.streakAfter),
+              semanticLabel: common.streak_semantics(outcome.streakAfter),
+            ),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: UiSpace.xl),
+            child: Text(
+              outcome.replaced
+                  ? l10n.checkin_replaced
+                  : milestoneTitle != null
+                  ? l10n.checkin_milestoneMessage
+                  : l10n.checkin_streakPlusOne,
+              textAlign: TextAlign.center,
+              style: UiText.muted(color: ui.inkMuted, size: 16),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
-class _Stamp extends StatelessWidget {
-  const _Stamp({required this.label});
+/// `.mini-calendar`: four Monday-first weeks ending with the current week.
+/// The streak days before today are tinted with a check, today shows the
+/// posted photo; cells after today stay empty.
+class _MiniCalendar extends StatelessWidget {
+  const _MiniCalendar({
+    required this.checkIn,
+    required this.streak,
+    required this.stamp,
+  });
 
-  final String label;
+  final CheckIn checkIn;
+  final int streak;
+  final String? stamp;
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return Transform.rotate(
-      angle: -0.08,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: OurneySpacing.xl,
-          vertical: OurneySpacing.md,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(OurneyRadii.card),
-          border: Border.all(color: c.primaryDeep, width: 4),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.verified_rounded, color: c.primaryDeep, size: 36),
-            const SizedBox(width: OurneySpacing.sm),
-            Flexible(
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: displayStyle(size: 30, color: c.primaryDeep),
+    final l10n = CheckinL10n.of(context);
+    final ui = context.ui;
+    final locale = Localizations.localeOf(context).toString();
+    final d = checkIn.localDate;
+    final weekday = DateTime(d.year, d.month, d.day).weekday; // 1 = Monday
+    final todayIndex = 21 + weekday - 1;
+    const warm = Color(0xFFFBDCCA);
+    return Semantics(
+      label: l10n.checkin_calendarSemantics(28),
+      child: ExcludeSemantics(
+        child: UiCard(
+          radius: UiRadius.card,
+          color: ui.surface,
+          padding: const EdgeInsets.all(12),
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Row(
+                    children: [
+                      for (var i = 0; i < 7; i++)
+                        Expanded(
+                          child: Text(
+                            DateFormat.E(locale)
+                                .format(DateTime(2024, 1, 1 + i))
+                                .substring(0, 2),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: UiText.body(
+                              size: 11,
+                              height: 1.4,
+                              color: ui.inkMuted,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  for (var r = 0; r < 4; r++)
+                    Padding(
+                      padding: EdgeInsets.only(top: r == 0 ? 0 : 4),
+                      child: Row(
+                        children: [
+                          for (var c = 0; c < 7; c++) ...[
+                            if (c > 0) const SizedBox(width: 4),
+                            Expanded(
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: _cell(ui, r * 7 + c, todayIndex, warm),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
               ),
-            ),
-          ],
+              if (stamp != null)
+                Positioned(right: 0, bottom: 0, child: UiStamp(stamp!)),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _cell(OurneyUi ui, int i, int todayIndex, Color warm) {
+    if (i == todayIndex) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: const Color(0xFFEA580C), width: 3),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: GroupPhoto(checkIn: checkIn),
+        ),
+      );
+    }
+    final filled = i < todayIndex && todayIndex - i <= streak - 1;
+    return Container(
+      decoration: BoxDecoration(
+        color: i > todayIndex
+            ? ui.fill
+            : filled
+            ? (ui.isDark ? ui.successSoft : warm)
+            : ui.fill,
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: filled
+          ? Icon(
+              Icons.check_rounded,
+              size: 11,
+              color: ui.isDark ? ui.success : ui.warn,
+            )
+          : null,
     );
   }
 }

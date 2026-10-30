@@ -26,5 +26,28 @@
   "checkin_milestoneFinish": "You made it!",
   "checkin_milestoneMessage": "Show your friends what you did.",
   "checkin_share": "Share",
-  "checkin_done": "Done"
+  "checkin_done": "Done",
+  "checkin_posted": "Moment posted",
+  "checkin_chainKept": "Chain kept.",
+  "checkin_daysUnit": "{count, plural, one{day} other{days}}",
+  "checkin_retake": "Retake",
+  "checkin_privacyPrivate": "Only you",
+  "checkin_privacyCouple": "Couple",
+  "checkin_privacySquad": "Squad",
+  "checkin_dayStamp": "DAY {day}",
+  "@checkin_dayStamp": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "checkin_calendarSemantics": "Calendar of the last {days} days, today has a photo",
+  "@checkin_calendarSemantics": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  }
 }

@@ -443,6 +443,236 @@ final class SafetyRepositoryProvider
 
 String _$safetyRepositoryHash() => r'4b237ed6ef4776a0ec3d6313a310cc574b89d698';
 
+@ProviderFor(friendRepository)
+final friendRepositoryProvider = FriendRepositoryProvider._();
+
+final class FriendRepositoryProvider
+    extends
+        $FunctionalProvider<
+          FriendRepository,
+          FriendRepository,
+          FriendRepository
+        >
+    with $Provider<FriendRepository> {
+  FriendRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'friendRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$friendRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<FriendRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  FriendRepository create(Ref ref) {
+    return friendRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FriendRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FriendRepository>(value),
+    );
+  }
+}
+
+String _$friendRepositoryHash() => r'a05cdcd10c3128f494df85ec5718c5b831c719d0';
+
+@ProviderFor(sharingRepository)
+final sharingRepositoryProvider = SharingRepositoryProvider._();
+
+final class SharingRepositoryProvider
+    extends
+        $FunctionalProvider<
+          SharingRepository,
+          SharingRepository,
+          SharingRepository
+        >
+    with $Provider<SharingRepository> {
+  SharingRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'sharingRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$sharingRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<SharingRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SharingRepository create(Ref ref) {
+    return sharingRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SharingRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SharingRepository>(value),
+    );
+  }
+}
+
+String _$sharingRepositoryHash() => r'6dfa95a85d6d2c29537439e24d2b5f99466847b9';
+
+@ProviderFor(shareConsentRepository)
+final shareConsentRepositoryProvider = ShareConsentRepositoryProvider._();
+
+final class ShareConsentRepositoryProvider
+    extends
+        $FunctionalProvider<
+          ShareConsentRepository,
+          ShareConsentRepository,
+          ShareConsentRepository
+        >
+    with $Provider<ShareConsentRepository> {
+  ShareConsentRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'shareConsentRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$shareConsentRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ShareConsentRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ShareConsentRepository create(Ref ref) {
+    return shareConsentRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ShareConsentRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ShareConsentRepository>(value),
+    );
+  }
+}
+
+String _$shareConsentRepositoryHash() =>
+    r'67872c5b7194202d37174962dbd479baca99817e';
+
+@ProviderFor(chatRepository)
+final chatRepositoryProvider = ChatRepositoryProvider._();
+
+final class ChatRepositoryProvider
+    extends $FunctionalProvider<ChatRepository, ChatRepository, ChatRepository>
+    with $Provider<ChatRepository> {
+  ChatRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'chatRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$chatRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<ChatRepository> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  ChatRepository create(Ref ref) {
+    return chatRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ChatRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ChatRepository>(value),
+    );
+  }
+}
+
+String _$chatRepositoryHash() => r'b81b12cdd036026b2ef7093d567d7522749a73ff';
+
+@ProviderFor(insightsRepository)
+final insightsRepositoryProvider = InsightsRepositoryProvider._();
+
+final class InsightsRepositoryProvider
+    extends
+        $FunctionalProvider<
+          InsightsRepository,
+          InsightsRepository,
+          InsightsRepository
+        >
+    with $Provider<InsightsRepository> {
+  InsightsRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'insightsRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$insightsRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<InsightsRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  InsightsRepository create(Ref ref) {
+    return insightsRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(InsightsRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<InsightsRepository>(value),
+    );
+  }
+}
+
+String _$insightsRepositoryHash() =>
+    r'e0b568bece448e8b1d5d3de43311c5283ddfcb7d';
+
 @ProviderFor(mediaStore)
 final mediaStoreProvider = MediaStoreProvider._();
 

@@ -75,5 +75,6 @@
   "groups_shareText": "Join my journey \"{title}\" on Ourney: {link} (invite code {code})",
   "groups_qrSemantics": "QR code of the invite link",
   "groups_noInviteCode": "This group has no invite code yet.",
-  "groups_inviteClosed": "The journey has ended, so no one else can join."
+  "groups_inviteClosed": "The journey has ended, so no one else can join.",
+  "groups_eyebrow": "Your people"
 }

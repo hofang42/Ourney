@@ -104,16 +104,16 @@ abstract class JourneysL10n {
   /// **'Hành trình'**
   String get journeys_title;
 
-  /// List section header: running journeys.
+  /// Hub segment: running journeys.
   ///
   /// In vi, this message translates to:
   /// **'Đang chạy'**
   String get journeys_activeSection;
 
-  /// List section header: ended or archived journeys.
+  /// Hub segment: ended and archived journeys (the shelf).
   ///
   /// In vi, this message translates to:
-  /// **'Đã kết thúc'**
+  /// **'Trên kệ'**
   String get journeys_finishedSection;
 
   /// No description provided for @journeys_emptyTitle.
@@ -200,7 +200,7 @@ abstract class JourneysL10n {
   /// **'Không tải được hành trình.'**
   String get journeys_loadError;
 
-  /// No description provided for @journeys_pickTemplateTitle.
+  /// Title of the template picker.
   ///
   /// In vi, this message translates to:
   /// **'Chọn kiểu hành trình'**
@@ -458,10 +458,10 @@ abstract class JourneysL10n {
   /// **'{value}%'**
   String journeys_percent(int value);
 
-  /// No description provided for @journeys_checkInNow.
+  /// Floating check-in button on the journey screen.
   ///
   /// In vi, this message translates to:
-  /// **'Check-in ngay'**
+  /// **'Check-in'**
   String get journeys_checkInNow;
 
   /// No description provided for @journeys_share.
@@ -607,6 +607,378 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chưa có ảnh cho ngày này'**
   String get journeys_noCheckIn;
+
+  /// Hub greeting before noon.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chào buổi sáng'**
+  String get journeys_greetingMorning;
+
+  /// Hub greeting 12:00-17:59.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chào buổi chiều'**
+  String get journeys_greetingAfternoon;
+
+  /// Hub greeting from 18:00.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chào buổi tối'**
+  String get journeys_greetingEvening;
+
+  /// Greeting followed by the user's display name.
+  ///
+  /// In vi, this message translates to:
+  /// **'{greeting}, {name}'**
+  String journeys_greetingNamed(String greeting, String name);
+
+  /// Hub prompt under the greeting.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{Còn {count} hành trình chờ ảnh hôm nay.}}'**
+  String journeys_remainingToday(int count);
+
+  /// Hub prompt when every running journey is checked in today.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay xong hết rồi. Hẹn bạn ngày mai.'**
+  String get journeys_allDonePrompt;
+
+  /// All-done card on the hub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xong hết hôm nay'**
+  String get journeys_allDoneTitle;
+
+  /// Eyebrow of the Today card and label of today's cell.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay'**
+  String get journeys_todayLabel;
+
+  /// Compact day N/M on the Today card photo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}/{total}'**
+  String journeys_dayShort(int day, int total);
+
+  /// Word after the streak count on the Today card.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày liên tiếp'**
+  String get journeys_streakWord;
+
+  /// Time left to post today, in whole hours.
+  ///
+  /// In vi, this message translates to:
+  /// **'{hours, plural, other{Còn {hours} giờ}}'**
+  String journeys_endsInHours(int hours);
+
+  /// Less than one hour left to post today.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn chưa tới 1 giờ'**
+  String get journeys_endsSoon;
+
+  /// Today card status on day 1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu hôm nay'**
+  String get journeys_startsToday;
+
+  /// Semantics label of the 7-day strip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bảy ngày gần nhất'**
+  String get journeys_lastSevenDays;
+
+  /// Primary button on the Today card.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp hôm nay'**
+  String get journeys_snapToday;
+
+  /// Hub list heading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình của bạn'**
+  String get journeys_yourJourneys;
+
+  /// Short status on a journey row: checked in today.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xong'**
+  String get journeys_rowDone;
+
+  /// Short status on a journey row: not checked in today.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa'**
+  String get journeys_rowNotYet;
+
+  /// Visibility chip: only me.
+  ///
+  /// In vi, this message translates to:
+  /// **'Riêng tư'**
+  String get journeys_privacyPrivate;
+
+  /// Visibility chip: anyone with the link.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật link'**
+  String get journeys_privacyLink;
+
+  /// Visibility chip: group members.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhóm'**
+  String get journeys_privacyGroup;
+
+  /// Tooltip of the + button in the hub header.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm hành trình'**
+  String get journeys_addJourney;
+
+  /// Empty Shelf segment.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình đã xong sẽ nằm ở đây để bạn xem lại.'**
+  String get journeys_shelfEmpty;
+
+  /// Empty Active segment.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện chưa có hành trình nào đang chạy.'**
+  String get journeys_activeEmpty;
+
+  /// Template card tagline: Quiet Transformer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhìn những thay đổi nhỏ cộng lại.'**
+  String get journeys_tagWeightLoss;
+
+  /// Template card tagline: Accountability Squad.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ động lực cho cả nhóm.'**
+  String get journeys_tagEnglish;
+
+  /// Template card tagline: Memory Collectors.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu lại từng ngày đi xa.'**
+  String get journeys_tagTravel;
+
+  /// Template card tagline: Couple Rituals.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhớ về từng khoảnh khắc chung.'**
+  String get journeys_tagCouple;
+
+  /// Template card tagline: Aesthetic Flexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiến lên qua từng buổi tập.'**
+  String get journeys_tagWorkout;
+
+  /// Template card tagline: Custom.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo theo cách của bạn.'**
+  String get journeys_tagCustom;
+
+  /// Template card footer: who can join.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ cá nhân'**
+  String get journeys_modeSoloOnly;
+
+  /// Template card footer: who can join.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cá nhân · Nhóm'**
+  String get journeys_modeSoloGroup;
+
+  /// Template card footer: who can join.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ cặp đôi'**
+  String get journeys_modeCoupleOnly;
+
+  /// Note under the create form's style header.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phong cách không đổi được sau khi tạo'**
+  String get journeys_styleLocked;
+
+  /// Expands the advanced create options.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tùy chọn khác'**
+  String get journeys_moreOptions;
+
+  /// Detail stat: number of photos posted.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khoảnh khắc'**
+  String get journeys_statMoments;
+
+  /// Small unit after a streak number.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày'**
+  String get journeys_daysUnit;
+
+  /// Journey date range eyebrow.
+  ///
+  /// In vi, this message translates to:
+  /// **'{start} — {end}'**
+  String journeys_dateRange(String start, String end);
+
+  /// Eyebrow of an open-ended journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ {start}'**
+  String journeys_sinceDate(String start);
+
+  /// Floating button when today is already posted.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm ảnh'**
+  String get journeys_addMore;
+
+  /// Short visible label of the current-streak stat column.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện tại'**
+  String get journeys_statCurrentShort;
+
+  /// Hub segment: journeys others shared with me
+  ///
+  /// In vi, this message translates to:
+  /// **'Được chia sẻ'**
+  String get journeys_sharedSection;
+
+  /// Shelf button: import an old journey from photos
+  ///
+  /// In vi, this message translates to:
+  /// **'Kể lại hành trình đã qua'**
+  String get journeys_retell;
+
+  /// Row tag: journey retold from past photos
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã nhập'**
+  String get journeys_imported;
+
+  /// Journey menu: make an image card
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thẻ chia sẻ'**
+  String get journeys_shareCard;
+
+  /// Back button label on journey screens.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại'**
+  String get journeys_back;
+
+  /// Intro line above the shelf albums.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những hành trình đã xong, được giữ như album.'**
+  String get journeys_shelfIntro;
+
+  /// Empty hub body (no journeys yet).
+  ///
+  /// In vi, this message translates to:
+  /// **'Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.'**
+  String get journeys_dayZeroBody;
+
+  /// Empty hub primary button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu hành trình đầu tiên'**
+  String get journeys_dayZeroStart;
+
+  /// Empty hub greeting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chào {name}'**
+  String journeys_greetingHi(String name);
+
+  /// Today sheet: journeys still waiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {count}'**
+  String journeys_todayLeft(int count);
+
+  /// Today sheet group: streak about to break.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sắp đứt chuỗi'**
+  String get journeys_todayAtRisk;
+
+  /// Today sheet group: the other journeys.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn lại'**
+  String get journeys_todayRest;
+
+  /// Today sheet: go to the hub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở hành trình'**
+  String get journeys_openJourneys;
+
+  /// Today sheet progress.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} đã xong'**
+  String journeys_doneOf(int done, int total);
+
+  /// Detail share sheet: image card option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thẻ hoặc video'**
+  String get journeys_shareMakeCard;
+
+  /// Detail share sheet: card hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ một khoảnh khắc'**
+  String get journeys_shareMakeCardHint;
+
+  /// Detail share sheet: share with friends option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ hành trình này'**
+  String get journeys_shareJourney;
+
+  /// Detail share sheet: share hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn bạn bè có thể theo dõi'**
+  String get journeys_shareJourneyHint;
+
+  /// Shelf album band: photos over duration.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ngày'**
+  String journeys_albumDays(int done, int total);
+
+  /// Shelf album band for open-ended journeys.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} khoảnh khắc'**
+  String journeys_albumMoments(int count);
+
+  /// Unit after a streak number on the Today sheet rows.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày liên tiếp'**
+  String get journeys_streakDaysLabel;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

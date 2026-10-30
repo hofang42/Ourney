@@ -1,16 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/auth/auth_errors.dart';
 import 'package:ourney/features/auth/auth_screen.dart';
 import 'package:ourney/features/auth/l10n/generated/auth_localizations_en.dart';
 import 'package:ourney/features/profile/routes.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../profile/fakes.dart';
 
 Future<void> enterEmail(WidgetTester tester, String email) async {
   await tester.enterText(byKey('auth-email'), email);
+  await tester.ensureVisible(byKey('auth-send'));
+  await tester.pumpAndSettle();
   await tester.tap(byKey('auth-send'));
   await tester.pumpAndSettle();
 }
@@ -40,8 +42,8 @@ void main() {
       expect(auth.calls, ['sendOtp:alice@example.com']);
       expect(byKey('auth-step-code'), findsOneWidget);
 
-      ButtonStyleButton resend() =>
-          tester.widget<ButtonStyleButton>(byKey('auth-resend'));
+      UiTextAction resend() =>
+          tester.widget<UiTextAction>(byKey('auth-resend'));
       Future<void> wait(int seconds) async {
         for (var i = 0; i < seconds; i++) {
           await tester.pump(const Duration(seconds: 1));

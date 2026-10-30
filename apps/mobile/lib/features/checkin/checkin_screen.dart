@@ -9,10 +9,9 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
-import '../../app/theme/tokens.dart';
 import '../../l10n/generated/app_localizations.dart';
-import '../../shared/chunky_button.dart';
-import '../../shared/empty_state.dart';
+import '../../personas/persona_contract.dart' show personaSkinOf;
+import '../../ui/ui.dart';
 import '../reminders/data/reminder_scheduler.dart';
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
@@ -138,21 +137,32 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final mine = await _mine(journey.id);
     if (!mounted) return;
     if (poster.replacesExisting(journey, photo, mine)) {
-      final ok = await showDialog<bool>(
+      final ok = await showUiSheet<bool>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (context) => Column(
           key: const ValueKey('checkin-replace-dialog'),
-          title: Text(l10n.checkin_replaceTitle),
-          content: Text(l10n.checkin_replaceMessage),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(AppLocalizations.of(context).common_cancel),
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.checkin_replaceTitle,
+              style: UiText.h2(color: context.ui.ink),
             ),
-            TextButton(
+            const SizedBox(height: UiSpace.sm),
+            Text(
+              l10n.checkin_replaceMessage,
+              style: UiText.muted(color: context.ui.inkMuted, size: 14),
+            ),
+            const SizedBox(height: UiSpace.xl),
+            UiButton(
               key: const ValueKey('checkin-replace-confirm'),
+              label: l10n.checkin_replaceConfirm,
               onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.checkin_replaceConfirm),
+            ),
+            const SizedBox(height: UiSpace.sm),
+            UiButton.secondary(
+              label: AppLocalizations.of(context).common_cancel,
+              onPressed: () => Navigator.of(context).pop(false),
             ),
           ],
         ),
@@ -187,8 +197,12 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
           context,
         ).common_errorGeneric,
       };
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      showUiToast(context, message);
+    } on Object {
+      // Never leave the spinner up: anything else is a generic failure.
+      if (!mounted) return;
+      setState(() => _posting = false);
+      showUiToast(context, AppLocalizations.of(context).common_errorGeneric);
     }
   }
 
@@ -200,9 +214,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final photo = widget.photo;
 
     if (photo == null) {
-      return _scaffold(
-        title: l10n.checkin_title,
-        body: EmptyState(
+      return _frame(
+        body: UiEmptyState(
           key: const ValueKey('checkin-missing-photo'),
           icon: Icons.no_photography_outlined,
           title: l10n.checkin_missingPhoto,
@@ -214,16 +227,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
 
     final outcome = _outcome;
     if (outcome != null) {
-      return Scaffold(
+      return CheckinSuccessView(
         key: const ValueKey('checkin-success'),
-        body: SafeArea(
-          child: CheckinSuccessView(
-            outcome: outcome,
-            haptics: haptics,
-            onDone: _close,
-            onShare: () => _openShare(photo.journeyId),
-          ),
-        ),
+        outcome: outcome,
+        journey: ref.watch(checkinJourneyProvider(photo.journeyId)).value,
+        haptics: haptics,
+        onDone: _close,
+        onShare: () => _openShare(photo.journeyId),
       );
     }
 
@@ -234,41 +244,48 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final journey = ref.watch(checkinJourneyProvider(photo.journeyId));
 
     return switch (journey) {
-      AsyncData(value: final j?) => _scaffold(
-        title: j.title,
-        body: _form(context, j, photo),
-      ),
-      AsyncData() || AsyncError() => _scaffold(
-        title: l10n.checkin_title,
-        body: EmptyState(
+      AsyncData(value: final j?) => _compose(context, j, photo),
+      AsyncData() || AsyncError() => _frame(
+        body: UiEmptyState(
           key: const ValueKey('checkin-missing-journey'),
+          icon: Icons.flag_outlined,
           title: l10n.checkin_missingJourney,
           actionLabel: AppLocalizations.of(context).common_close,
           onAction: _close,
         ),
       ),
-      _ => _scaffold(
-        title: l10n.checkin_title,
-        body: const Center(child: CircularProgressIndicator()),
-      ),
+      _ => _frame(body: const Center(child: CircularProgressIndicator())),
     };
   }
 
-  Widget _scaffold({required String title, required Widget body}) {
-    return Scaffold(
+  /// Plain frame for the empty / loading states.
+  Widget _frame({required Widget body}) {
+    return UiScaffold(
       key: const ValueKey('checkin-screen'),
-      appBar: AppBar(
-        leading: CloseButton(onPressed: _close),
-        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      scroll: false,
+      child: Column(
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: UiIconButton(
+              icon: Icons.close_rounded,
+              label: AppLocalizations.of(context).common_close,
+              onPressed: _close,
+            ),
+          ),
+          Expanded(child: UiFillScroll(child: body)),
+        ],
       ),
-      body: SafeArea(child: body),
     );
   }
 
-  Widget _form(BuildContext context, Journey journey, CapturedPhoto photo) {
+  Widget _compose(BuildContext context, Journey journey, CapturedPhoto photo) {
     final l10n = CheckinL10n.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
+    final style = uiStyleForSkin(personaSkinOf(journey));
+    // `--accent-ink`: the accent as text, the warm ink where the accent is
+    // too light to read on paper.
+    final accentInk = ui.isDark ? style.accent : ui.warn;
     final count = _caption.text.runes.length;
     final membership = ref.watch(myMembershipProvider(journey.id)).value;
     final hideMetric = membership?.hideMetric ?? journey.hideMetricDefault;
@@ -280,98 +297,168 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         : journey.metricUnit == null
         ? metricName
         : '$metricName (${journey.metricUnit})';
+    final privacy = journey.kind == JourneyKind.solo
+        ? (UiPrivacy.private, l10n.checkin_privacyPrivate)
+        : journey.maxMembers == 2
+        ? (UiPrivacy.couple, l10n.checkin_privacyCouple)
+        : (UiPrivacy.squad, l10n.checkin_privacySquad);
+    final width = MediaQuery.sizeOf(context).width;
+    final gutter = UiSpace.gutter(width);
 
-    return Column(
-      children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _PhotoPreview(photo: photo),
-                const SizedBox(height: OurneySpacing.xl),
-                TextField(
-                  key: const ValueKey('checkin-caption'),
-                  controller: _caption,
-                  minLines: 1,
-                  maxLines: 4,
-                  textCapitalization: TextCapitalization.sentences,
-                  inputFormatters: [_CodePointLimit(captionMax)],
-                  decoration: InputDecoration(
-                    labelText: l10n.checkin_captionLabel,
-                    hintText: vi
-                        ? template.captionPromptVi
-                        : template.captionPromptEn,
-                    counter: Semantics(
-                      label: l10n.checkin_captionCounterSemantics(
-                        count,
-                        captionMax,
-                      ),
-                      child: ExcludeSemantics(
-                        child: Text(
-                          l10n.checkin_captionCounter(count, captionMax),
-                          key: const ValueKey('checkin-caption-counter'),
-                          style: text.bodySmall?.copyWith(
-                            color: count >= captionMax ? c.danger : c.inkMuted,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                if (metricLabel != null) ...[
-                  const SizedBox(height: OurneySpacing.lg),
-                  TextField(
-                    key: const ValueKey('checkin-metric'),
-                    controller: _metric,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-                    ],
-                    onChanged: (_) {
-                      if (_metricError) setState(() => _metricError = false);
-                    },
-                    decoration: InputDecoration(
-                      labelText: metricLabel,
-                      errorText: _metricError
-                          ? l10n.checkin_metricInvalid
-                          : null,
-                      helperText: hideMetric
-                          ? l10n.checkin_metricPrivate
-                          : null,
-                      helperMaxLines: 2,
-                      prefixIcon: hideMetric
-                          ? const Icon(Icons.lock_outline_rounded)
-                          : null,
-                    ),
-                  ),
-                ],
-              ],
+    return UiScaffold(
+      key: const ValueKey('checkin-screen'),
+      padTop: 0,
+      padBottom: UiSpace.lg,
+      bottom: Center(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
+          child: SafeArea(
+            top: false,
+            child: UiButton(
+              key: const ValueKey('checkin-post'),
+              label: _posting ? l10n.checkin_posting : l10n.checkin_post,
+              icon: Icons.send_rounded,
+              accent: style.accent,
+              onAccent: style.onAccent,
+              onPressed: _posting ? null : () => _post(journey, photo),
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            OurneySpacing.screenMargin,
-            OurneySpacing.sm,
-            OurneySpacing.screenMargin,
-            OurneySpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // `.compose-header`: Retake | journey + privacy | Post.
+          Row(
+            children: [
+              Expanded(
+                child: UiTextAction(
+                  key: const ValueKey('checkin-retake'),
+                  label: l10n.checkin_retake,
+                  onPressed: _posting ? null : _close,
+                  alignment: AlignmentDirectional.centerStart,
+                  size: 14,
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      journey.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: UiText.body(
+                        size: 13,
+                        weight: FontWeight.w700,
+                        height: 1.4,
+                        color: ui.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    UiPrivacyTag(type: privacy.$1, label: privacy.$2),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: UiTextAction(
+                  key: const ValueKey('checkin-post-link'),
+                  label: l10n.checkin_post,
+                  onPressed: _posting ? null : () => _post(journey, photo),
+                  alignment: AlignmentDirectional.centerEnd,
+                  color: accentInk,
+                  size: 14,
+                ),
+              ),
+            ],
           ),
-          child: ChunkyButton(
-            key: const ValueKey('checkin-post'),
-            label: _posting ? l10n.checkin_posting : l10n.checkin_post,
-            icon: Icons.send_rounded,
-            onPressed: _posting ? null : () => _post(journey, photo),
+          const SizedBox(height: UiSpace.sm),
+          _PhotoPreview(photo: photo),
+          const SizedBox(height: UiSpace.lg),
+          // `.caption-field`: label + underlined textarea.
+          Text(
+            l10n.checkin_captionLabel,
+            style: UiText.fieldLabel(color: ui.inkMuted),
           ),
-        ),
-      ],
+          TextField(
+            key: const ValueKey('checkin-caption'),
+            controller: _caption,
+            minLines: 1,
+            maxLines: 4,
+            textCapitalization: TextCapitalization.sentences,
+            inputFormatters: [_CodePointLimit(captionMax)],
+            cursorColor: ui.ink,
+            style: UiText.body(size: 16, height: 1.45, color: ui.ink),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: vi
+                  ? template.captionPromptVi
+                  : template.captionPromptEn,
+              hintStyle: UiText.body(
+                size: 16,
+                height: 1.45,
+                color: ui.inkMuted,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: ui.border),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: ui.ink, width: 2),
+              ),
+            ),
+          ),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: Semantics(
+              label: l10n.checkin_captionCounterSemantics(count, captionMax),
+              child: ExcludeSemantics(
+                child: Text(
+                  l10n.checkin_captionCounter(count, captionMax),
+                  key: const ValueKey('checkin-caption-counter'),
+                  style: UiText.body(
+                    size: 12,
+                    color: count >= captionMax ? ui.danger : ui.inkMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (metricLabel != null) ...[
+            const SizedBox(height: UiSpace.md),
+            UiTextField(
+              fieldKey: const ValueKey('checkin-metric'),
+              label: metricLabel,
+              controller: _metric,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+              ],
+              onChanged: (_) {
+                if (_metricError) setState(() => _metricError = false);
+              },
+              error: _metricError ? l10n.checkin_metricInvalid : null,
+              helper: hideMetric ? l10n.checkin_metricPrivate : null,
+              trailing: hideMetric
+                  ? Icon(
+                      Icons.lock_outline_rounded,
+                      size: 18,
+                      color: ui.inkMuted,
+                    )
+                  : null,
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
 
+/// `.compose-photo`: 3:4 photo with 20dp corners, capped in height.
 class _PhotoPreview extends StatelessWidget {
   const _PhotoPreview({required this.photo});
 
@@ -380,19 +467,19 @@ class _PhotoPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = CheckinL10n.of(context);
-    final height = MediaQuery.sizeOf(context).height * 0.45;
+    final height = (MediaQuery.sizeOf(context).height * 0.45).clamp(0.0, 462.0);
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: height),
         child: AspectRatio(
           aspectRatio: 3 / 4,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(OurneyRadii.media),
+            borderRadius: BorderRadius.circular(UiRadius.card),
             child: Stack(
               fit: StackFit.expand,
               children: [
                 ColoredBox(
-                  color: OurneyColors.cameraBg,
+                  color: UiCamera.bg,
                   child: Semantics(
                     image: true,
                     label: l10n.checkin_photoSemantics,
@@ -402,7 +489,7 @@ class _PhotoPreview extends StatelessWidget {
                       cacheWidth: 1080,
                       errorBuilder: (_, _, _) => const Icon(
                         Icons.image_not_supported_outlined,
-                        color: Colors.white54,
+                        color: UiCamera.ink,
                         size: 48,
                       ),
                     ),
@@ -410,52 +497,20 @@ class _PhotoPreview extends StatelessWidget {
                 ),
                 if (photo.fromLibrary)
                   Positioned(
-                    left: OurneySpacing.md,
-                    bottom: OurneySpacing.md,
-                    child: _FromLibraryBadge(label: l10n.checkin_fromLibrary),
+                    left: UiSpace.md,
+                    bottom: UiSpace.md,
+                    child: UiTag(
+                      key: const ValueKey('checkin-from-library'),
+                      label: l10n.checkin_fromLibrary,
+                      icon: Icons.photo_library_outlined,
+                      background: const Color(0xB3000000),
+                      foreground: UiCamera.ink,
+                    ),
                   ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// "From library" label (FR-C3): icon + text, not color alone.
-class _FromLibraryBadge extends StatelessWidget {
-  const _FromLibraryBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: const ValueKey('checkin-from-library'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: OurneySpacing.md,
-        vertical: OurneySpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(OurneyRadii.chip),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.photo_library_outlined,
-            size: 16,
-            color: Colors.white,
-          ),
-          const SizedBox(width: OurneySpacing.xs),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium
-                ?.copyWith(color: Colors.white),
-          ),
-        ],
       ),
     );
   }

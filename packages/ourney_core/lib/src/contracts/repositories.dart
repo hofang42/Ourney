@@ -192,6 +192,7 @@ enum OurneyErrorCode {
   rateLimited('rate_limited'),
   immutableColumn('immutable_column'), // 23514
   invalidCapturedAt('invalid_captured_at'), // 22008
+  consentRequired('consent_required'), // v1.3: group share needs consent first
   // Edge Function codes.
   methodNotAllowed('method_not_allowed'),
   storageListingFailed('storage_listing_failed'),

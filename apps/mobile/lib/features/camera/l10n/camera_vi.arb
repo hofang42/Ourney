@@ -11,36 +11,80 @@
   "camera_shutterFor": "Chụp ảnh check-in cho {journey}",
   "@camera_shutterFor": {
     "description": "Shutter button label naming the selected journey.",
-    "placeholders": {"journey": {"type": "String"}}
+    "placeholders": {
+      "journey": {
+        "type": "String"
+      }
+    }
   },
   "camera_flashOff": "Đèn flash: tắt",
-  "@camera_flashOff": {"description": "Flash toggle, current state off. Tap cycles off, auto, on."},
+  "@camera_flashOff": {
+    "description": "Flash toggle, current state off. Tap cycles off, auto, on."
+  },
   "camera_flashAuto": "Đèn flash: tự động",
   "camera_flashOn": "Đèn flash: bật",
   "camera_switchLens": "Đổi camera trước/sau",
-  "@camera_switchLens": {"description": "Button that switches between the front and back camera."},
+  "@camera_switchLens": {
+    "description": "Button that switches between the front and back camera."
+  },
   "camera_gallery": "Chọn ảnh từ thư viện",
-  "@camera_gallery": {"description": "Button that picks a photo from the library. The check-in is then labelled 'from library' (FR-C3)."},
+  "@camera_gallery": {
+    "description": "Button that picks a photo from the library. The check-in is then labelled 'from library' (FR-C3)."
+  },
   "camera_journeyPicker": "Chọn hành trình",
-  "@camera_journeyPicker": {"description": "Semantics label of the journey chip row."},
+  "@camera_journeyPicker": {
+    "description": "Semantics label of the journey chip row."
+  },
   "camera_journeysError": "Không tải được hành trình",
   "camera_noJourneyTitle": "Bắt đầu hành trình đầu tiên",
-  "@camera_noJourneyTitle": {"description": "Empty state on the camera when the user has no active journey."},
+  "@camera_noJourneyTitle": {
+    "description": "Empty state on the camera when the user has no active journey."
+  },
   "camera_noJourneyMessage": "Tạo một hành trình, rồi mỗi ngày chụp một tấm để giữ chuỗi.",
   "camera_noJourneyAction": "Tạo hành trình",
   "camera_prePromptTitle": "Mỗi ngày một tấm ảnh",
-  "@camera_prePromptTitle": {"description": "Friendly pre-prompt shown before the OS camera permission dialog."},
+  "@camera_prePromptTitle": {
+    "description": "Friendly pre-prompt shown before the OS camera permission dialog."
+  },
   "camera_prePromptMessage": "Ourney cần camera để bạn chụp ảnh check-in. Ảnh chỉ được đăng khi bạn bấm Đăng.",
   "camera_prePromptAction": "Cho phép camera",
   "camera_deniedTitle": "Chưa có quyền camera",
   "camera_deniedMessage": "Bật quyền camera để chụp check-in. Bạn vẫn có thể chọn ảnh từ thư viện.",
   "camera_deniedSettingsPath": "Vào Cài đặt › Ứng dụng › Ourney › Quyền › Camera, bật lên rồi quay lại.",
-  "@camera_deniedSettingsPath": {"description": "Shown on Android, where the app cannot open its Settings page directly."},
+  "@camera_deniedSettingsPath": {
+    "description": "Shown on Android, where the app cannot open its Settings page directly."
+  },
   "camera_openSettings": "Mở Cài đặt",
   "camera_restrictedMessage": "Camera đang bị giới hạn trên máy này. Bạn vẫn có thể chọn ảnh từ thư viện.",
   "camera_unavailableTitle": "Không tìm thấy camera",
   "camera_unavailableMessage": "Máy này không có camera dùng được. Hãy chọn ảnh từ thư viện.",
   "camera_failedTitle": "Camera chưa mở được",
   "camera_starting": "Đang mở camera…",
-  "camera_captureFailed": "Chụp chưa được. Thử lại nhé."
+  "camera_captureFailed": "Chụp chưa được. Thử lại nhé.",
+  "camera_grid": "Lưới căn khung",
+  "@camera_grid": {
+    "description": "Tooltip of the button that toggles the 3x3 framing grid over the viewfinder."
+  },
+  "camera_dayHud": "Ngày {day}",
+  "@camera_dayHud": {
+    "description": "Pill on the viewfinder showing the day number of the selected journey.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_swipeHint": "Vuốt để sang hành trình khác",
+  "@camera_swipeHint": {
+    "description": "Hint at the bottom of the viewfinder when there is more than one journey."
+  },
+  "camera_streakChip": "Chuỗi {days} ngày",
+  "@camera_streakChip": {
+    "description": "Semantics label of the streak counter chip at the top of the camera.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  }
 }
