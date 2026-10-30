@@ -29,6 +29,17 @@ rồi cài bằng công cụ cài `.ipa` bạn dùng (Sideloadly hoặc `idevice
 ### Cách C: MobAI re-sign
 Theo hướng dẫn của MobAI (bản free có thể có giới hạn, chưa kiểm chứng ở dự án này).
 
+### Hot reload trên iPhone thật từ Windows (MobAI + `builder`)
+Cần: iTunes (driver Apple), app [MobAI](https://mobai.run) đang mở với iPhone cắm USB, [`builder`](https://github.com/MobAI-App/ios-builder) v0.11.0, Flutter 3.47.7 (trùng CI). Không dùng `builder init`/`builder ios build`: workflow của nó build ở gốc repo, còn app nằm ở `apps/mobile`.
+
+1. Build bản **debug** một lần (chỉ cần lại khi đổi native: plugin, `Info.plist`, quyền):
+   ```bash
+   gh workflow run "iOS (unsigned IPA)" --repo hofang42/Ourney --ref main -f mode=debug
+   gh run download <run-id> --repo hofang42/Ourney -n Ourney-debug-ipa --dir apps/mobile/dist
+   ```
+2. Trong `apps/mobile`: `builder dev flutter`. Lần đầu nó cài IPA qua MobAI và ký lại bằng iCloud (nên dùng Apple ID phụ); bundle ID mới có hậu tố team ID.
+3. Các lần sau: `builder dev flutter --skip-install --bundle-id com.hofang42.ourney.<TEAMID>`. Lưu file `.dart` là app tự hot reload.
+
 ## 3. Giới hạn của Apple ID miễn phí
 
 - **Hết hạn sau 7 ngày**: app ngừng mở được, cần **ký lại và cài đè** (dữ liệu giữ nguyên nếu cài đè cùng bundle ID `com.hofang42.ourney`). Nhắc nhau ký lại hằng tuần.

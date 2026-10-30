@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Debug IPA downloaded for `builder dev flutter` (docs/platform/ios.md)
+/dist/
