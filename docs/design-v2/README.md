@@ -10,7 +10,7 @@
 **V2 có 3 nguyên tắc:**
 1. **Tạo hành trình là "đúc" ra một hành trình.** Mỗi loại hành trình có câu hỏi riêng. Câu trả lời sinh ra *Journey DNA* (ảnh bìa, motif, màu nhấn, tên các mốc, giọng văn, kiểu camera). Kết thúc luồng tạo là một **tấm vé khởi hành** riêng của hành trình đó.
 2. **Mỗi hành trình là một thế giới riêng.** Bước vào hành trình là đổi hẳn chất liệu: sổ dán ảnh, đường chạy neon, con đường quest… Không còn một lưới lịch dùng chung.
-3. **Vỏ chung neo-brutalism.** Hub, tạo hành trình, onboarding, hồ sơ và squad dùng chung ngôn ngữ "Soft Neo-Brutalism" (nền kem, viền mực 2px, bóng cứng). Khi vào hành trình, phần "xương" neo-brutalism vẫn còn (dock, nút chính, chip), còn "da" là của persona.
+3. **Vỏ chung neo-brutalism.** Hub, tạo hành trình, onboarding, hồ sơ và Hội dùng chung ngôn ngữ "Soft Neo-Brutalism" (nền kem, viền mực 2px, bóng cứng). Khi vào hành trình, phần "xương" neo-brutalism vẫn còn (dock, nút chính, chip), còn "da" là của persona.
 
 ## 1. Kiến trúc điều hướng V2
 
@@ -18,12 +18,12 @@ Mình giữ vòng lặp camera-first (≤ 3 chạm để check-in), nhưng làm 
 
 ```
 ┌──────────────────────────────────────┐
-│  [◉ Hành trình]   (  ◎ CHỤP  )   [☺ Squad] │  ← dock nổi, bo capsule, viền 2px + bóng cứng
+│  [◉ Hành trình]   (  ◎ CHỤP  )   [☺ Hội  ] │  ← dock nổi, bo capsule, viền 2px + bóng cứng
 └──────────────────────────────────────┘
 ```
 - **Trái, Hành trình:** Hub, gồm tất cả hành trình và nút "+ Hành trình mới".
-- **Giữa, Chụp:** nút chụp nổi 72pt, mang màu của hành trình đang chọn. Nhấn giữ để mở **journey switcher** dạng vòng xoay: mỗi hành trình một "đĩa" màu và emoji, vuốt để đổi.
-- **Phải, Squad:** "Hôm nay" của mọi nhóm, mời bạn, nhập mã.
+- **Giữa, Chụp:** nút chụp nổi 72pt, mang màu của hành trình đang chọn. Nhấn giữ để mở **journey switcher** dạng vòng xoay cuộn được: mỗi hành trình một "đĩa" màu và emoji, luôn có đĩa "+ mới" ở cuối; bấm một đĩa để chọn (không kéo thả). Không giới hạn số hành trình.
+- **Phải, Hội:** "Hôm nay" của mọi nhóm, mời bạn, nhập mã.
 - **Hồ sơ:** avatar ở góc phải trên của Hub (không chiếm tab).
 - Trong một hành trình, dock đổi chất liệu theo skin (kính mờ neon ở Aesthetic Flexer, giấy kraft ở Memory Collectors…), nhưng vị trí và hành vi không đổi.
 
@@ -55,7 +55,7 @@ Khi tạo, mỗi hành trình sinh ra một bộ DNA. Bộ này được lưu l�
 | **Biến thể màu** | mỗi skin có 3 biến thể; tự chọn theo từ khoá/điểm đến, người dùng đổi được | "Sương thông" (olive + terracotta) |
 | **Ảnh bìa sticker** | điểm đến, chủ đề, emoji | quả thông, sương, đồi |
 | **Motif** | skin + biến thể | băng keo giấy, chỉ khâu terracotta |
-| **Tên mốc** | loại + thời lượng | Ngày 1 "Mở cuộn phim" · Ngày 3 "Nửa cuộn" · Ngày 5 "Tráng phim" |
+| **Tên mốc** | loại + thời lượng | Ngày 3 "Giữa chuyến" · Ngày 5 "Hết cuộn" (chuyến 5 ngày); Ngày 7 "Tuần đầu trên đường" (chuyến dài hơn) |
 | **Câu hỏi caption** | loại + ngày | "Hôm nay cả bọn lạc ở đâu?" |
 | **Kiểu camera** | skin | máy film dùng một lần, `CUỘN PHIM 24/36` |
 | **Vé khởi hành** | skin | vé xe khách Sài Gòn → Đà Lạt |
@@ -90,13 +90,13 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
 4. Màn xin quyền đúng ngữ cảnh: camera (lần chụp đầu), thông báo (sau check-in đầu tiên). Mỗi màn có lý do cảm xúc và nút "để sau vậy."
 5. **Hub "hành trình."**:
    - Hero "Hôm nay" là việc quan trọng nhất kế tiếp, ví dụ "Còn 3 tiếng để giữ chuỗi 🔥 12 của *IELTS 7.5*".
-   - Mỗi hành trình là một thẻ mang DNA riêng (ảnh bìa sticker, màu biến thể, ngày N/M, streak, mặt squad).
+   - Mỗi hành trình là một thẻ mang DNA riêng (ảnh bìa sticker, màu biến thể, ngày N/M, streak, mặt hội).
    - Thẻ "+ hành trình mới".
-   - Có trạng thái trống, skeleton, lỗi, và trạng thái đã đạt giới hạn 3 hành trình.
+   - Có trạng thái trống, skeleton, lỗi, và offline. Danh sách cuộn được, không giới hạn số hành trình; dữ liệu mẫu có đủ 6 hành trình, mỗi skin một hành trình.
 6. Journey switcher (nhấn giữ nút chụp)
-7. Squad hub: "Hôm nay" của mọi nhóm, nhập mã 8 ký tự, lời mời đang chờ
+7. Hội: "Hôm nay" của mọi nhóm, nhập mã 8 ký tự, lời mời đang chờ
 8. Hồ sơ: thống kê, huy hiệu đều đặn (không xếp hạng theo kết quả), kho hành trình đã xong
-9. Cài đặt: nhắc nhở theo từng hành trình, ngôn ngữ, giao diện sáng/tối, quyền riêng tư, danh sách đã chặn, xoá tài khoản (vùng nguy hiểm)
+9. Cài đặt: nhắc nhở theo từng hành trình, giao diện sáng/tối, quyền riêng tư, danh sách đã chặn, xoá tài khoản (vùng nguy hiểm)
 10. Sheet báo cáo/chặn, toast, màn lỗi mất mạng ("đang lưu trên máy, sẽ tự gửi")
 
 ### B. Luồng tạo hành trình (5 bước, màn hình đổi skin ngay khi chọn)
@@ -123,7 +123,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
 3. **Sau khi chụp:** caption theo câu hỏi DNA, nhập chỉ số kiểu riêng của skin (thanh trượt kg / vòng phút / bàn phím km). Nút Đăng, tổng ≤ 3 chạm.
 4. **Ăn mừng check-in:** con dấu riêng của skin và streak +1. Ở mốc 7/30/về đích thì có confetti riêng của skin.
 5. **Xem một ngày** (day viewer): ảnh, caption, chỉ số, reaction 🔥 💪 👏 ❤️ 😂
-6. **Squad hôm nay** (nếu là nhóm): kiểu riêng của skin (polaroid wall, bàn đôi, contact sheet…). Ai chưa check-in có nút nhắc.
+6. **Hội hôm nay** (nếu là nhóm): kiểu riêng của skin (polaroid wall, bàn đôi, contact sheet…). Ai chưa check-in có nút nhắc.
 7. **Thiệp chia sẻ** story 9:16 và feed 4:5. Giảm cân mặc định ẩn kg và làm mờ ảnh.
 8. **Cập nhật hành trình:** sửa tên, bìa, biến thể, giờ nhắc, thành viên, mã mời (đổi mã), kết thúc hành trình
 9. **Về đích / kết thúc:** màn "Wrapped" dạng story nhiều trang theo skin, rồi tới thiệp tổng kết

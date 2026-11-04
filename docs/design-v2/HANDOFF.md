@@ -45,7 +45,7 @@ Việc cần làm:
 
 ---
 
-## Trạng thái (cập nhật lúc bàn giao)
+## Trạng thái (cập nhật 2026-11-04)
 
 | Việc | Trạng thái |
 |---|---|
@@ -54,6 +54,15 @@ Việc cần làm:
 | Chốt hướng với chủ dự án (vỏ chung + skin, tự do điều hướng, làm lại tất cả màn hình) | ✅ Xong |
 | Đặc tả V2 (`README.md`) | ✅ Xong |
 | Bộ prompt Figma Make 0 → 9 | ✅ Xong |
-| Chạy prompt trên Figma Make | ⏳ Chưa làm: cloud session không có Claude in Chrome, và máy `hofang-xbrain` chưa cho cloud session dùng thư mục nào qua Remote Control |
+| File Make | 🔄 Dùng https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System (link `/design` không mở được Make nên đã tạo file mới; tên sẽ đổi thành "Ourney V2") |
+| Prompt 0 trên Figma Make | 🔄 Đã chạy, chuyển thành khung app chạy được (FIX-1, FIX-3, FIX-4, FIX-5); đang kiểm tra mục Q |
+| Prompt 1 → 9 trên Figma Make | ⏳ Chưa chạy |
+| Quyết định mới: UI dùng nhãn "Hội" | ✅ Đã chốt |
+| Quyết định mới: thẻ Minimalist hiển thị "24/30 NGÀY · 80% ĐỀU ĐẶN" | ✅ Đã chốt |
+| Quyết định mới: nút chụp của Accountability Squad dùng `#FF9F1C` | ✅ Đã chốt |
+| Quyết định mới: luật "chỉ hai đứa" giữ theo luật loại cũ; hỏi thêm hai màn hình | ⏳ Chờ chủ dự án trả lời về hai màn hình |
+| Quyết định mới: bỏ giới hạn 3 hành trình | ✅ Đã chốt |
+| Quyết định mới: prompt chỉ đối soát với đặc tả V2 | ✅ Đã chốt |
+| Quyết định mới: kết quả phải là app có màn hình và tương tác thật | ✅ Đã chốt |
 | Đổi contract dữ liệu cho Journey DNA (`journey.dna`, trường theo loại) | ⏳ Cần một PR contract riêng sau khi chốt thiết kế |
 | Cập nhật CLAUDE.md / docs/06 theo hướng V2 (dock nổi, Journey DNA) | ⏳ Làm sau khi thiết kế được duyệt |
