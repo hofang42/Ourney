@@ -66,3 +66,24 @@ Việc cần làm:
 | Quyết định mới: kết quả phải là app có màn hình và tương tác thật | ✅ Đã chốt |
 | Đổi contract dữ liệu cho Journey DNA (`journey.dna`, trường theo loại) | ⏳ Cần một PR contract riêng sau khi chốt thiết kế |
 | Cập nhật CLAUDE.md / docs/06 theo hướng V2 (dock nổi, Journey DNA) | ⏳ Làm sau khi thiết kế được duyệt |
+
+## Điểm dừng mới nhất (2026-11-04)
+
+Làm tiếp theo quy trình trong `orchestration/` (brief, hợp đồng app, quy tắc F và Q). Thư mục SP trong các file đó là scratchpad cũ, có thể không còn; dùng scratchpad mới.
+
+- File Make: https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System (chưa đổi tên thành "Ourney V2").
+- Bộ prompt có 12 khối: 0, 1, 2, 3, 4, 5A, 5B, 6, 7, 8, 9, 10. Bảng trên ghi "1 → 9" là thiếu Prompt 10.
+- Đang dừng ở: Giai đoạn 5 của Prompt 0. Prompt 1–10 chưa chạy.
+- Đã chạy được: khung app, dock, vòng xoay chọn được hành trình, đĩa "+ mới" mở sheet, 6 hành trình mẫu.
+
+Lỗi cần sửa trong một prompt FIX trước Prompt 1:
+1. /hub và /squad: dock phải dùng chất liệu vỏ chung, chỉ nút Chụp mang màu hành trình; thẻ Hub giữ viền 2px, bóng cứng 4px theo vỏ chung (đang bị Minimalist bỏ bóng, Flexer thêm viền phát sáng).
+2. /squad dark: nền đang xám, phải là #121212, surface #1C1B19; dock đặc, nhãn không nằm trong hộp đen.
+3. Vòng xoay trên /hub light: không thấy hình tròn đĩa; đĩa và nhãn phải rõ trên lớp phủ ở cả light và dark.
+4. Nút "đổi hành trình" đè tên đĩa và thẻ cuối: tách khỏi nội dung, ẩn khi vòng xoay mở, vùng chạm ít nhất 44pt; danh sách có đệm đáy.
+5. Chữ tối thiểu 12px (nút đổi hành trình, nhãn đĩa, nhãn dock); vùng kéo sheet ít nhất 44pt.
+6. Hub lần đầu chỉ hiện 3 thẻ: phải luôn đủ 6 hành trình mẫu, kể cả khi còn trạng thái cũ.
+
+Không tính là lỗi của Prompt 0: sheet tạo là chỗ giữ chỗ (Prompt 3); HUD camera và thẻ theo DNA (Prompt 2, 5A–7). Q-vi và Q-ref của lượt này chưa có kết quả: chạy lại sau FIX.
+
+Nội dung subagent tự đặt, chờ duyệt: quy tắc chụp lại, câu chữ rời nhóm, nội dung mẫu Điều khoản/Chính sách/Liên hệ (email giữ chỗ), mã hex biến thể màu, màu lỗi. SRS vẫn ghi giới hạn 3 hành trình.
