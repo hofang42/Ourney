@@ -6,9 +6,13 @@ SP = C:\Users\T14s\AppData\Local\Temp\claude\C--Users-T14s--claude-spares-spare-
 
 Công cụ: Claude in Chrome. Tải schema một lần bằng ToolSearch query "select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__tabs_close_mcp,mcp__claude-in-chrome__get_page_text,mcp__claude-in-chrome__find,mcp__claude-in-chrome__javascript_tool,mcp__claude-in-chrome__browser_batch". Gọi tabs_context_mcp createIfEmpty: true, làm trong tab mới, không đụng tab của người dùng.
 
-Trình duyệt: nếu Chrome báo có hai trình duyệt và đòi chọn, tải thêm mcp__claude-in-chrome__list_connected_browsers và mcp__claude-in-chrome__select_browser, rồi chọn trình duyệt tên "Browser 1" theo deviceId đang hiện trong danh sách. Không dừng vì lý do này.
+Trình duyệt: nếu Chrome báo có hai trình duyệt và đòi chọn, tải thêm mcp__claude-in-chrome__list_connected_browsers và mcp__claude-in-chrome__select_browser, rồi chọn trình duyệt đang có inUse: true. Nếu trình duyệt đó mở Figma mà chưa đăng nhập hoặc không vào được file Make, thử trình duyệt còn lại (tên và deviceId có thể đổi giữa các lần). Không dừng vì lý do này.
 
 File Make hiện tại: https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System — mọi prompt gửi vào file này, không tạo file mới.
+
+Người dùng vừa mở extension mới: dùng trình duyệt có deviceId d3e926fe-31ea-4dd3-a535-8522c57dced4 (gọi select_browser trước), không dùng trình duyệt khác trừ khi nó mất kết nối. Nếu Make báo hết AI credit: dừng ngay, đóng tab, chép nguyên văn thông báo và báo về. Tuyệt đối không mua credit hay nâng gói.
+
+Tiết kiệm: mỗi màn hoặc trạng thái một ảnh, tối đa 30 ảnh mỗi lượt; không chụp lại màn đã chụp nếu không đổi.
 
 Dán prompt:
 - Lấy nguyên văn phần trong hàng rào ``` của prompt được giao trong D:\DuAnMa\JourneyShared\docs\design-v2\figma-make-prompts.md. Không thêm bớt.

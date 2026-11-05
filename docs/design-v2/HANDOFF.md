@@ -87,3 +87,33 @@ Lỗi cần sửa trong một prompt FIX trước Prompt 1:
 Không tính là lỗi của Prompt 0: sheet tạo là chỗ giữ chỗ (Prompt 3); HUD camera và thẻ theo DNA (Prompt 2, 5A–7). Q-vi và Q-ref của lượt này chưa có kết quả: chạy lại sau FIX.
 
 Nội dung subagent tự đặt, chờ duyệt: quy tắc chụp lại, câu chữ rời nhóm, nội dung mẫu Điều khoản/Chính sách/Liên hệ (email giữ chỗ), mã hex biến thể màu, màu lỗi. SRS vẫn ghi giới hạn 3 hành trình.
+
+## Điểm dừng cập nhật (2026-11-05): hết AI credit của Figma Make
+
+Mục này thay cho "Điểm dừng mới nhất" ở trên.
+
+- File Make: https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-V2 (đã đổi tên, preview chạy được).
+- Figma Make báo: "You're out of AI credits in Phan Le Thanh Hoang (K18 DN)'s team Education plan until they reset on Dec 1."
+
+| Prompt | Trạng thái |
+| --- | --- |
+| 0 khung app | Xong, đã kiểm tra Q |
+| 1 đăng nhập, onboarding | Xong, đã kiểm tra Q; lỗi đã gửi kèm prompt sau |
+| 2 Hub | Xong, đã kiểm tra một phần Q |
+| 3 luồng tạo | Xong, đã kiểm tra một phần Q |
+| 4 câu hỏi, 6 vé | Xong, chỉ bấm thử, chưa Q |
+| 5A Quiet Transformer | Xong, chỉ bấm thử, chưa Q |
+| 5B Accountability Squad | Xong, chỉ bấm thử, chưa Q |
+| 6 Memory, Couple | DỞ: đã gửi, Make chỉ sửa routes và dữ liệu; /j/dalat và /j/couple còn "sắp có". Khi có credit, gửi lại toàn bộ Prompt 6 |
+| 7, 8, 9, 10 | Chưa chạy |
+
+Việc khi có credit lại: gửi lại Prompt 6, chạy 7 → 10 và gửi kèm lỗi còn lại, rồi chạy Q cho Prompt 4 → 10.
+
+Lỗi còn lại cần gửi kèm:
+- Chuỗi "chữ S" và màn đã thấy chưa kiểm tra light/dark, 1.35x.
+- Giảm cân Q3 "Chụp ngay" về /create/3, chưa có màn chụp ghost.
+- /j/:id của Squad: offline chưa hiện "Cần mạng" trên tường.
+- Dock các skin cần khác hình khối rõ hơn (Q-skin).
+- Avatar, nút X và kéo sheet mời chưa thử.
+- Backlog5 đã gửi nhưng chưa kiểm tra lại: reset nháp tạo, sheet mời trong khung, biến thể màu vé, icon nửa khung.
+- Nút chụp phải mở bằng nhấn giữ 400ms: công cụ tự động chưa thử được, cần thử tay.
