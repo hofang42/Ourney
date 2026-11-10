@@ -189,3 +189,7 @@ Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh v
   - Camera Flexer có sticker HUD lớn ở đầu khung ngắm; camera Minimalist có cảnh sách và tách trà.
 - Make version 20: chip góc trên camera Flexer chỉ còn "CHẠY SÁNG · NGÀY 21"; số km/nhịp chỉ còn trong sticker HUD (đã đo: "5,42 KM" xuất hiện 1 lần).
 - Push: tài khoản `gh` đang đăng nhập (hofang42-xbrain) bị từ chối quyền với hofang42/Ourney (403); cần push bằng tài khoản hofang42.
+
+## Make version 22 (2026-11-11)
+
+Đã chạy kiểm tra Q cho Prompt 4 → 10 và sửa thêm (v21 dock Flexer ở Sáng, dấu phẩy thập phân, nút /create/4; v22 thẻ nhóm truy cập được bằng bàn phím). Báo cáo: `qa-make-v22.md`.
