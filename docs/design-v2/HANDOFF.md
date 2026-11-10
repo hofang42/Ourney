@@ -168,3 +168,14 @@ Bấm thử:
 - Prompt 10: panel Ngày 1, Đang tải, Lỗi, Chỉ có mình bạn, Chuỗi đứt, Ảnh ẩn, Bị xoá khỏi nhóm đều hiện đúng câu chữ. Lỗi: "Rời nhóm" không vào được (người dùng luôn là chủ nhóm); Couple "Ảnh ẩn" hiện tên Minh; "Lỗi" không hiện bản đã lưu.
 
 Đã gửi một lượt FIX gồm 11 mục trên (kèm lần thứ ba cho đường cam Minimalist).
+
+## Sau lượt FIX (Make version 18, 2026-11-11)
+
+Đo lại trên preview, cả 11 mục đã sửa:
+- Nút nguy hiểm ở Tối: chữ #1A1A1A trên nền #FF8A80. Chip đầu trang Squad ở Tối: chữ #1A1A1A. Minh hoạ Couple không còn chữ.
+- Reaction 🔥 2 → 3. /join/:code đổi đúng theo mã (NOJOIN01, K7Q2M9XA).
+- Panel có "vai trò: Chủ nhóm | Thành viên"; thành viên ở /j/dalat/edit không có "Đổi mã", có "Rời nhóm" → sheet → về /hub, Đà Lạt biến khỏi Hub.
+- Couple "Ảnh ẩn" hiện Nam; "Lỗi" hiện "Đang xem bản đã lưu"; Couple "Chuỗi đứt" ghi chuỗi dài nhất 18.
+- Minimalist: một polyline 36 điểm đi qua ngày 1–24 ở cả 4 hàng; số ngày 25–30 nằm trong ô nét đứt.
+
+Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh với bảng thiết kế persona (Q-ref) cho Prompt 4–10.
