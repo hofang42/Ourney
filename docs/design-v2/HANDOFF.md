@@ -140,3 +140,15 @@ Lỗi đã thấy, cần gửi kèm prompt sau:
 - /j/:id/edit phần "Bìa": ba ô đánh số "1 2 3", chưa phải bìa sticker.
 - Flexer: dock ở Light đã được yêu cầu hiện nhãn, ảnh mỗi ngày khác nhau, dấu phẩy thập phân (gửi kèm Prompt 8, chưa kiểm tra lại).
 - Các lỗi còn lại của mục 2026-11-05 vẫn còn nguyên (chưa kiểm tra lại).
+
+## Điểm dừng cập nhật (2026-11-11): đã chạy hết Prompt 0 → 10
+
+Mục này thay cho các mục điểm dừng ở trên.
+
+- Chạy bằng tài khoản Figma có seat còn 3.000 credit trong team của file.
+- Prompt 9: Make version 16 (làm nốt phần dở của lần hết credit). Prompt 10: Make version 17.
+- Đã xem nhanh trên preview: /squad, /settings, /me, /settings/terms, /j/minimal. Chưa bấm thử từng luồng theo checklist của Prompt 8–10, chưa chạy Q (skin, mode, a11y, vi, rules, ref) cho Prompt 4–10.
+
+Lỗi còn lại:
+- /j/minimal: đường cam liền chỉ hiện ở hàng 3–4, chưa xuyên qua hàng 1–2 (đã yêu cầu 3 lần, Make vẫn lệch; nên sửa tay trong code hoặc mô tả lại khác đi). Số "25" vẫn đè cạnh ô nét đứt.
+- Các lỗi của mục 2026-11-05 và 2026-11-10 chưa kiểm tra lại sau version 17.
