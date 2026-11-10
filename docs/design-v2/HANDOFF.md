@@ -179,3 +179,13 @@ Bấm thử:
 - Minimalist: một polyline 36 điểm đi qua ngày 1–24 ở cả 4 hàng; số ngày 25–30 nằm trong ô nét đứt.
 
 Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh với bảng thiết kế persona (Q-ref) cho Prompt 4–10.
+
+## Q-ref và nút chụp (Make version 19, 2026-11-11)
+
+- Nhấn giữ nút chụp (thử bằng pointer event): chạm 120ms → /j/ielts/camera; giữ ~550ms → mở vòng xoay hành trình, có nút đóng.
+- Q-ref: đã so trang chủ, camera, thiệp của 6 skin với `apps/mobile/assets/design_personas/`. Bố cục đúng tinh thần từng bảng (đường cong + trục dọc, đường chữ S + cúp, sợi chỉ + polaroid, trục tim đôi, telemetry kính tối, lịch 7 cột). Đã gửi lượt FIX 2 và đo lại sau version 19:
+  - Nhãn trên camera của Squad, Memory, Minimalist: trước là chữ trắng trên nền kem, giờ là chữ #1A1A1A; Squad đọc "📖 45 PHÚT · 🔥 18 LIỀN".
+  - Tường polaroid Squad có tranh minh hoạ bàn học; dòng thời gian Quiet có ảnh minh hoạ theo ngày.
+  - Camera Flexer có sticker HUD lớn ở đầu khung ngắm; camera Minimalist có cảnh sách và tách trà.
+- Còn nhỏ: camera Flexer vẫn còn một chip "5,42 KM · 5:04 /KM" nhỏ ở góc trên, trùng với sticker HUD.
+- Push: tài khoản `gh` đang đăng nhập (hofang42-xbrain) bị từ chối quyền với hofang42/Ourney (403); cần push bằng tài khoản hofang42.
