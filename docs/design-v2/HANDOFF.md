@@ -187,5 +187,5 @@ Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh v
   - Nhãn trên camera của Squad, Memory, Minimalist: trước là chữ trắng trên nền kem, giờ là chữ #1A1A1A; Squad đọc "📖 45 PHÚT · 🔥 18 LIỀN".
   - Tường polaroid Squad có tranh minh hoạ bàn học; dòng thời gian Quiet có ảnh minh hoạ theo ngày.
   - Camera Flexer có sticker HUD lớn ở đầu khung ngắm; camera Minimalist có cảnh sách và tách trà.
-- Còn nhỏ: camera Flexer vẫn còn một chip "5,42 KM · 5:04 /KM" nhỏ ở góc trên, trùng với sticker HUD.
+- Make version 20: chip góc trên camera Flexer chỉ còn "CHẠY SÁNG · NGÀY 21"; số km/nhịp chỉ còn trong sticker HUD (đã đo: "5,42 KM" xuất hiện 1 lần).
 - Push: tài khoản `gh` đang đăng nhập (hofang42-xbrain) bị từ chối quyền với hofang42/Ourney (403); cần push bằng tài khoản hofang42.
