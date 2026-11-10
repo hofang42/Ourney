@@ -56,6 +56,8 @@ type ImportedJourneyInput = {
   startDate: string
   endDate: string
   archived: boolean
+  place: string
+  totalDays: number
 }
 export type Profile = {
   name: string
@@ -101,6 +103,7 @@ export type Journey = {
   importedPhotos?: ImportedPhoto[]
   startDate?: string
   endDate?: string
+  totalDays?: number
 }
 
 type CheckInPayload = {
@@ -546,6 +549,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         startDate,
         endDate,
         archived,
+        place,
+        totalDays,
       }: ImportedJourneyInput) => {
         const id = `imported-${Date.now()}`
         const imported: Journey = {
@@ -553,8 +558,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           type,
           skin,
           variant: 0,
-          name: `Ký ức ${type.toLocaleLowerCase("vi")}`,
-          day: Math.max(1, new Set(photos.map((photo) => photo.date)).size),
+          name: place || `Ký ức ${type.toLocaleLowerCase("vi")}`,
+          day: totalDays,
           streak: 0,
           shared: false,
           visibility: "private",
@@ -562,11 +567,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           importedPhotos: photos,
           startDate,
           endDate,
+          totalDays,
           archived,
           owner: true,
           members: ["Linh"],
           lastWeight: type === "Giảm cân" ? 62 : undefined,
           totalKm: type === "Tập luyện" ? 0 : undefined,
+          lastPlace: place,
         }
         setJourneys((current) => [imported, ...current])
         setActiveJourneyIdState(id)

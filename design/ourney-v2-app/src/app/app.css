@@ -15215,6 +15215,18 @@
   border-style: dashed;
 }
 
+.import-timeline article.import-empty-day {
+  min-height: 66px;
+  border-style: dashed;
+  opacity: .64;
+}
+
+.import-empty-day > span {
+  min-height: 48px;
+  border: 2px dashed currentColor;
+  border-radius: 8px;
+}
+
 .import-timeline .library-scene {
   min-height: 76px;
 }
@@ -15285,6 +15297,21 @@
   padding: 5px;
 }
 
+.import-place-field {
+  margin-top: 16px;
+  display: grid;
+  gap: 6px;
+  font-size: calc(12px * var(--type-scale, 1));
+  font-weight: 700;
+}
+
+.import-place-field input {
+  min-height: 46px;
+  border: 1px solid currentColor;
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
 .import-undated button {
   min-height: 44px;
   color: #b3261e;
@@ -15347,6 +15374,30 @@
 
 .imported-summary span {
   font-size: calc(12px * var(--type-scale, 1));
+}
+
+.imported-share > main {
+  height: calc(100% - 74px);
+  overflow-y: auto;
+  padding: 22px 18px 40px;
+}
+
+.imported-share h1 {
+  margin: 0 0 5px;
+  font-size: calc(26px * var(--type-scale, 1));
+}
+
+.imported-share p,
+.imported-share small {
+  display: block;
+  margin: 0 0 5px;
+}
+
+.imported-share-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }
 
 /* Keep the camera selector a true one-line pill at every text scale. */
@@ -15547,9 +15598,17 @@
 
 .camera-screen .squad-camera-pill > b {
   overflow: visible;
-  font-size: calc(9px * var(--type-scale, 1));
+  font-size: calc(12px * var(--type-scale, 1));
   white-space: nowrap;
   text-overflow: clip;
+}
+
+.camera-screen .squad-camera-pill {
+  font-size: calc(12px * var(--type-scale, 1));
+}
+
+.camera-screen .squad-camera-pill > :is(b, span, small) {
+  font-size: calc(12px * var(--type-scale, 1));
 }
 
 .squad-ribbon-map .squad-stone > b {

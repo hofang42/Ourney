@@ -96,6 +96,42 @@ const typePastel: Record<Journey["type"], string> = {
   "Tự đặt": "#7EC8E3",
 }
 
+function dateDayOffset(startDate?: string, date?: string) {
+  if (!startDate || !date) return 1
+  const start = new Date(`${startDate}T12:00:00`)
+  const current = new Date(`${date}T12:00:00`)
+  return Math.max(
+    1,
+    Math.round((current.getTime() - start.getTime()) / 86_400_000) + 1,
+  )
+}
+
+function formatJourneyDate(date?: string) {
+  if (!date) return "Chưa có ngày"
+  const parsed = new Date(`${date}T12:00:00`)
+  return `${parsed.getDate()} THG ${parsed.getMonth() + 1}, ${parsed.getFullYear()}`
+}
+
+function journeyLength(journey: Journey) {
+  if (journey.totalDays) return journey.totalDays
+  if (journey.startDate && journey.endDate) {
+    return dateDayOffset(journey.startDate, journey.endDate)
+  }
+  if (journey.id === "dalat") return 5
+  const namedDuration = journey.name.match(/(\d+)\s*ngày/i)
+  return namedDuration ? Number(namedDuration[1]) : 30
+}
+
+function journeyCheckIns(journey: Journey) {
+  if (journey.importedPhotos) {
+    return (
+      new Set(journey.importedPhotos.map((photo) => photo.date).filter(Boolean))
+        .size + (journey.todayDone ? 1 : 0)
+    )
+  }
+  return Math.min(journey.day, journeyLength(journey))
+}
+
 function Root() {
   const store = useStore()
   const location = useLocation()
@@ -2023,7 +2059,10 @@ function MemoryTopBar({
       >
         <ArrowLeft size={21} weight="bold" />
       </button>
-      <b>ĐÀ LẠT · 5 NGÀY CÙNG BẠN BÈ</b>
+      <b>
+        {journey.name.toLocaleUpperCase("vi")} · NGÀY {journey.day}/
+        {journeyLength(journey)}
+      </b>
       {gear ? (
         <button
           onClick={() => navigate(`/j/${journey.id}/edit`)}
@@ -2051,11 +2090,17 @@ function MemoryPhoto({ scene = 0 }: { scene?: number }) {
 function MemoryJourneyHome({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
-  const frames = journey.frameCount ?? 12
+  const frames = journeyCheckIns(journey)
+  const totalDays = journeyLength(journey)
+  const ownLabel = (
+    journey.lastCaption ||
+    journey.lastPlace ||
+    journey.name
+  ).toLocaleUpperCase("vi")
   const entries = ([
-    [journey.day - 1, "SƯƠNG SỚM", 3],
-    [journey.day - 2, "ĐỒI CHÈ", 2],
-    [1, "RỪNG THÔNG", 0],
+    [journey.day - 1, ownLabel, 3],
+    [journey.day - 2, ownLabel, 2],
+    [1, ownLabel, 0],
   ] as Array<[number, string, number]>)
     .filter(([day]) => day >= 1)
     .filter(
@@ -2082,7 +2127,7 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
         )}
         <div className="memory-film-chip">
           <FilmStrip size={19} weight="bold" />
-          CUỘN PHIM {frames}/24
+          CUỘN PHIM {frames}/{totalDays}
         </div>
         <section className="memory-thread-timeline">
           <svg viewBox="0 0 330 520" aria-hidden="true">
@@ -2150,7 +2195,7 @@ function MemoryPost({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
   const [caption, setCaption] = useState(journey.lastCaption ?? "")
-  const [place, setPlace] = useState(journey.lastPlace ?? "Đồi chè Cầu Đất")
+  const [place, setPlace] = useState(journey.lastPlace ?? journey.name)
   function submit() {
     if (store.readOnly) return
     store.checkInJourney(journey.id, { caption, mood: "", place })
@@ -2216,7 +2261,8 @@ function MemoryPost({ journey }: { journey: Journey }) {
 function MemoryDone({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
-  const frames = journey.frameCount ?? 13
+  const frames = journeyCheckIns(journey)
+  const totalDays = journeyLength(journey)
   const day = Math.max(1, journey.day - 1)
   const milestone = day === 7 || frames === 24
   useEffect(() => {
@@ -2243,9 +2289,11 @@ function MemoryDone({ journey }: { journey: Journey }) {
         <span className="memory-tape" />
         <MemoryPhoto scene={3} />
       </div>
-      <div className="memory-done-stamp">ĐÃ DÁN · KHUNG {frames}/24</div>
+      <div className="memory-done-stamp">
+        ĐÃ DÁN · KHUNG {frames}/{totalDays}
+      </div>
       <h1>
-        {frames === 24
+        {frames === totalDays
           ? "Hết cuộn rồi đó."
           : day === 7
             ? "Tuần đầu trên đường"
@@ -2370,13 +2418,17 @@ function MemoryShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
-  const total = ratio === "story" ? 24 : 20
-  const shot = journey.frameCount ?? 12
+  const journeyDays = journeyLength(journey)
+  const total = Math.min(ratio === "story" ? 24 : 20, journeyDays)
+  const shot = journeyCheckIns(journey)
+  const posterTitle = `${journeyDays} NGÀY · ${journey.name}`.toLocaleUpperCase(
+    "vi",
+  )
   return (
     <section className="memory-journey-page memory-share">
       <MemoryTopBar journey={journey} onBack={() => navigate(-1)} />
       <div className="memory-page-scroll">
-        <h1>5 NGÀY THANH XUÂN · ĐÀ LẠT</h1>
+        <h1>{posterTitle}</h1>
         <div className="memory-share-tabs">
           <button
             className={ratio === "story" ? "selected" : ""}
@@ -2392,7 +2444,7 @@ function MemoryShare({ journey }: { journey: Journey }) {
           </button>
         </div>
         <div className={`memory-contact-poster ${ratio}`}>
-          <h2>5 NGÀY THANH XUÂN · ĐÀ LẠT</h2>
+          <h2>{posterTitle}</h2>
           <div className="memory-contact-sheet">
             {Array.from({ length: total }, (_, index) => (
               <span className={index < shot ? "shot" : ""} key={index}>
@@ -4551,28 +4603,54 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
   )
 }
 
-const wrappedPages: Record<string, string[]> = {
-  quiet: [
-    "30 ngày, 27 lần có mặt",
-    "Ngày 01 · ảnh đã làm mờ",
-    "Ngày 30 · ảnh đã làm mờ",
-    "Bạn đã về đích.",
-  ],
-  squad: [
-    "30 ngày cùng nhau",
-    "5/5 đã có mặt",
-    "Chiếc cúp đã sáng đèn",
-    "Về đích rồi, cả hội!",
-  ],
-  memory: ["5 ngày", "24 khung hình", "7 nơi đã qua", "Ảnh đẹp nhất"],
-  couple: [
-    "Hai đứa mình về đích rồi.",
-    "60 khoảnh khắc",
-    "30 ngày bên nhau",
-    "Bữa ăn đáng nhớ nhất",
-  ],
-  flexer: ["30 NGÀY", "142,6 KM", "NHỊP ĐỘ TỐT NHẤT", "ĐÃ VỀ ĐÍCH."],
-  minimal: ["30 NGÀY · MỘT ĐƯỜNG LIỀN"],
+function wrappedPagesFor(journey: Journey) {
+  const total = journeyLength(journey)
+  const checkIns = journeyCheckIns(journey)
+  const dateRange =
+    journey.startDate && journey.endDate
+      ? `${formatJourneyDate(journey.startDate)} – ${formatJourneyDate(journey.endDate)}`
+      : `Ngày ${journey.day}/${total}`
+  if (journey.skin === "quiet") {
+    return [
+      `${total} ngày, ${checkIns} lần có mặt`,
+      journey.name,
+      `Chuỗi ${journey.streak} ngày`,
+      "Bạn đã về đích.",
+    ]
+  }
+  if (journey.skin === "squad") {
+    return [
+      `${total} ngày cùng nhau`,
+      `${checkIns} lần điểm danh`,
+      journey.name,
+      "Về đích rồi, cả hội!",
+    ]
+  }
+  if (journey.skin === "memory") {
+    return [
+      `${total} ngày`,
+      `${journey.importedPhotos?.length ?? checkIns} khung hình`,
+      dateRange,
+      journey.lastPlace || journey.name,
+    ]
+  }
+  if (journey.skin === "couple") {
+    return [
+      journey.name,
+      `${checkIns * 2} khoảnh khắc`,
+      `${total} ngày bên nhau`,
+      journey.lastCaption || "Khoảnh khắc đáng nhớ nhất",
+    ]
+  }
+  if (journey.skin === "flexer") {
+    return [
+      `${total} NGÀY`,
+      `${journey.totalKm ?? 0} KM`,
+      journey.pace ? `NHỊP ĐỘ ${journey.pace}` : journey.name,
+      `CHUỖI ${journey.streak}.`,
+    ]
+  }
+  return [`${checkIns}/${total} NGÀY · ${journey.name.toLocaleUpperCase("vi")}`]
 }
 
 type WrappedVisualProps = {
@@ -4582,6 +4660,19 @@ type WrappedVisualProps = {
 
 function WrappedVisual(props: WrappedVisualProps) {
   const { journey, page } = props
+  if (journey.imported && journey.importedPhotos?.length) {
+    return (
+      <div className="wrapped-memory-film">
+        {journey.importedPhotos.slice(0, 4).map((photo, index) => (
+          <span
+            key={photo.id}
+            className={`library-scene scene-${(index % 6) + 1}`}
+            aria-label={`Ảnh ${formatJourneyDate(photo.date)}`}
+          />
+        ))}
+      </div>
+    )
+  }
   if (journey.skin === "quiet") {
     return page === 2 ? (
       <svg className="wrapped-quiet-curve" viewBox="0 0 280 120">
@@ -4602,11 +4693,21 @@ function WrappedVisual(props: WrappedVisualProps) {
     )
   }
   if (journey.skin === "memory") {
+    const photos = journey.importedPhotos
     return (
       <div className="wrapped-memory-film">
-        {[1, 2, 3, 4].map((item) => (
-          <MemoryPhoto key={item} scene={item} />
-        ))}
+        {(photos?.length ? photos.slice(0, 4) : [1, 2, 3, 4]).map(
+          (item, index) =>
+            typeof item === "number" ? (
+              <MemoryPhoto key={item} scene={item} />
+            ) : (
+              <span
+                key={item.id}
+                className={`library-scene scene-${(index % 6) + 1}`}
+                aria-label={`Ảnh ${formatJourneyDate(item.date)}`}
+              />
+            ),
+        )}
       </div>
     )
   }
@@ -4644,7 +4745,7 @@ function WrappedVisual(props: WrappedVisualProps) {
 function JourneyWrappedScreen({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
-  const pages = wrappedPages[journey.skin]
+  const pages = wrappedPagesFor(journey)
   const [page, setPage] = useState(0)
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
@@ -4738,7 +4839,7 @@ function JourneyWrappedScreen({ journey }: { journey: Journey }) {
                 : journey.skin === "squad"
                   ? "5/5 ĐÃ VỀ ĐÍCH"
                   : journey.skin === "memory"
-                    ? "5 NGÀY THANH XUÂN · ĐÀ LẠT"
+                    ? `${journeyLength(journey)} NGÀY · ${journey.name.toLocaleUpperCase("vi")}`
                     : journey.skin === "couple"
                       ? "30 NGÀY BÊN NHAU · 60 KHOẢNH KHẮC"
                       : journey.skin === "flexer"
@@ -4876,7 +4977,9 @@ function CameraScreen() {
               ) : memory ? (
                 <>
                   <FilmStrip size={16} weight="fill" />
-                  <b>CUỘN PHIM {active.frameCount ?? 12}/24</b>
+                  <b>
+                    CUỘN PHIM {journeyCheckIns(active)}/{journeyLength(active)}
+                  </b>
                 </>
               ) : couple ? (
                 <>
@@ -4960,8 +5063,14 @@ function CameraScreen() {
             <>
               <div className="memory-camera-grain" />
               <div className="memory-camera-stamp">
-                <b>18 THG 10 '26 · 15°C</b>
-                <span>ĐÀ LẠT</span>
+                <b>
+                  {active.endDate
+                    ? formatJourneyDate(active.endDate)
+                    : `NGÀY ${active.day}/${journeyLength(active)}`}
+                </b>
+                <span>
+                  {(active.lastPlace || active.name).toLocaleUpperCase("vi")}
+                </span>
               </div>
             </>
           ) : couple ? (
@@ -5385,56 +5494,24 @@ function JourneyCard({
   const [menuOpen, setMenuOpen] = useState(false)
   const selected = journey.id === store.activeJourneyId
   const skinClass = `dna-${journey.skin}`
-  const details: Record<string, {
-    stats: string
-    milestone: string
-    attendance?: string
-  }> = {
-    quiet: {
-      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
-        (journey.day / 30) * 100,
-      )}%`,
-      milestone: "Mốc kế: Ngày 30 · Về đích",
-    },
-    ielts: {
-      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
-        (journey.day / 30) * 100,
-      )}%`,
-      attendance: `${journey.attendance ?? (store.checkedIn ? 4 : 3)}/5 đã điểm danh`,
-      milestone: "Mốc kế: Ngày 30 · Về đích",
-    },
-    dalat: {
-      stats: `NGÀY ${journey.day}/5 · 🔥 ${journey.streak} · ${Math.round(
-        (journey.day / 5) * 100,
-      )}%`,
-      attendance: `${journey.frameCount ?? 12}/24 khung`,
-      milestone: "Mốc kế: Ngày 3 · Giữa chuyến",
-    },
-    couple: {
-      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
-        (journey.day / 30) * 100,
-      )}%`,
-      attendance: journey.pairComplete ? "đủ đôi" : "đang chờ một nửa",
-      milestone: "Mốc kế: Ngày 30 · Tròn 30 ngày",
-    },
-    running: {
-      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
-        (journey.day / 30) * 100,
-      )}%`,
-      milestone: "★ Mốc kế: Ngày 30 · Về đích",
-    },
-    minimal: {
-      stats: `NGÀY ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
-        (journey.day / 30) * 100,
-      )}% ĐỀU ĐẶN`,
-      milestone: "MỐC KẾ: NGÀY 30",
-    },
-  }
-  const detail = details[journey.id] ?? {
-    stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
-      (journey.day / 30) * 100,
-    )}%`,
-    milestone: "Mốc kế: Ngày 30",
+  const totalDays = journeyLength(journey)
+  const checkIns = journeyCheckIns(journey)
+  const progress = Math.min(100, Math.round((journey.day / totalDays) * 100))
+  const detail = {
+    stats: `Ngày ${journey.day}/${totalDays} · 🔥 ${journey.streak} · ${progress}%`,
+    milestone: journey.archived
+      ? `Đã khép lại · ${formatJourneyDate(journey.endDate)}`
+      : `Mốc kế: Ngày ${totalDays} · Về đích`,
+    attendance:
+      journey.skin === "squad"
+        ? `${journey.attendance ?? (store.checkedIn ? 4 : 3)}/${journey.members?.length ?? 5} đã điểm danh`
+        : journey.skin === "memory"
+          ? `${journey.importedPhotos?.length ?? checkIns}/${totalDays} khung`
+          : journey.skin === "couple"
+            ? journey.pairComplete
+              ? "đủ đôi"
+              : "đang chờ một nửa"
+            : undefined,
   }
 
   return (
@@ -5493,38 +5570,22 @@ function JourneyCard({
         {journey.skin === "quiet" && (
           <span className="private-chip">🔒 Riêng tư</span>
         )}
-        {journey.archived && (
+        {journey.archived ? (
           <span className="active-dna-chip">
             <Lock size={14} weight="bold" /> Đã kết thúc
           </span>
-        )}
-        {selected && (
+        ) : selected ? (
           <span className="active-dna-chip">
             <Check size={14} weight="bold" /> Đang hoạt động
           </span>
-        )}
+        ) : null}
         <p className="dna-stats">{detail.stats}</p>
         {journey.skin === "flexer" && <span className="neon-sparkline" />}
         {journey.skin === "minimal" && <span className="minimal-week-strip" />}
         <div className="dna-progress">
           <i
             style={{
-              width:
-                journey.skin === "quiet" ||
-                journey.skin === "squad" ||
-                journey.skin === "couple" ||
-                journey.skin === "flexer" ||
-                journey.skin === "minimal"
-                  ? `${Math.min(100, Math.round((journey.day / 30) * 100))}%`
-                  : journey.skin === "memory"
-                    ? `${Math.min(100, Math.round((journey.day / 5) * 100))}%`
-                    : journey.id === "dalat"
-                      ? "60%"
-                      : journey.id === "couple"
-                        ? "60%"
-                        : journey.id === "minimal"
-                          ? "80%"
-                          : "70%",
+              width: `${progress}%`,
             }}
           />
         </div>
@@ -5535,8 +5596,10 @@ function JourneyCard({
             <i>+3</i>
           </div>
           {detail.attendance && <span>{detail.attendance}</span>}
-          {journey.id === "dalat" && (
-            <span className="film-counter">12/24</span>
+          {journey.skin === "memory" && (
+            <span className="film-counter">
+              {journey.importedPhotos?.length ?? checkIns}/{totalDays}
+            </span>
           )}
         </div>
         <p className="dna-milestone">{detail.milestone}</p>
@@ -7265,19 +7328,29 @@ function ImportJourneyFlow() {
   const [skin, setSkin] = useState(source?.skin ?? "memory")
   const [selected, setSelected] = useState<string[]>([
     "old-1",
-    "old-3",
+    "old-4",
     "old-5",
+    "old-6",
   ])
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [startDate, setStartDate] = useState("2024-04-12")
   const [endDate, setEndDate] = useState("2024-04-20")
   const [continues, setContinues] = useState(false)
+  const [place, setPlace] = useState(
+    source?.lastPlace ?? (source ? source.name : "Hành trình đã qua"),
+  )
   const selectedPhotos = libraryPhotos
     .filter((photo) => selected.includes(photo.id))
     .map((photo) => ({ ...photo, date: assignments[photo.id] ?? photo.date }))
   const dated = selectedPhotos.filter((photo) => photo.date)
   const undated = selectedPhotos.filter((photo) => !photo.date)
-  const reviewDates = [...new Set(dated.map((photo) => photo.date))].sort()
+  const reviewDays = dateDayOffset(startDate, endDate)
+  const availableImportLayouts = layoutOptions.filter(([id]) => {
+    if (id === "memory" || id === "minimal") return true
+    if (id === "quiet") return type === "Giảm cân"
+    if (id === "flexer") return type === "Tập luyện"
+    return false
+  })
 
   useEffect(() => {
     const dates = selectedPhotos
@@ -7290,18 +7363,21 @@ function ImportJourneyFlow() {
     }
   }, [selected.join("|"), Object.values(assignments).join("|")])
 
+  useEffect(() => {
+    if (!availableImportLayouts.some(([id]) => id === skin)) setSkin("memory")
+  }, [type, skin])
+
   if (source && (source.members?.length ?? 0) > 2) {
     return <Navigate replace to={`/j/${source.id}/edit`} />
   }
 
   function saveImport() {
-    const dates = [...new Set(dated.map((photo) => photo.date))].sort()
     const photos = dated.map((photo) => {
       const sameDay = dated.filter((item) => item.date === photo.date)
       return {
         id: photo.id,
         date: photo.date,
-        day: dates.indexOf(photo.date) + 1,
+        day: dateDayOffset(startDate, photo.date),
         extra: sameDay.indexOf(photo) > 0,
       }
     })
@@ -7311,6 +7387,8 @@ function ImportJourneyFlow() {
       photos,
       startDate,
       endDate,
+      place,
+      totalDays: dateDayOffset(startDate, endDate),
       archived:
         !continues &&
         Boolean(endDate) &&
@@ -7352,9 +7430,17 @@ function ImportJourneyFlow() {
                 </button>
               ))}
             </div>
+            <label className="import-place-field">
+              <span>Tên hoặc địa điểm</span>
+              <input
+                value={place}
+                onChange={(event) => setPlace(event.target.value)}
+                placeholder="Hành trình đã qua"
+              />
+            </label>
             <h2>Giao diện</h2>
             <div className="import-layout-grid">
-              {layoutOptions.map(([id, label]) => (
+              {availableImportLayouts.map(([id, label]) => (
                 <button
                   key={id}
                   className={skin === id ? "selected" : ""}
@@ -7365,6 +7451,9 @@ function ImportJourneyFlow() {
                 </button>
               ))}
             </div>
+            <p className="edit-layout-note">
+              Một số giao diện cần thêm dữ liệu nên không hiện.
+            </p>
             <button
               className="import-primary"
               onClick={() => setStage("library")}
@@ -7422,23 +7511,38 @@ function ImportJourneyFlow() {
           <>
             <h1>Xem lại trong dòng thời gian.</h1>
             <div className={`import-timeline timeline-${skin}`}>
-              {dated.map((photo) => (
-                <article
-                  key={photo.id}
-                  className={photo.id.includes("old") ? "imported" : "captured"}
-                >
-                  <span
-                    className={`library-scene scene-${libraryPhotos.findIndex((item) => item.id === photo.id) + 1}`}
-                  />
-                  <div>
-                    <b>Ngày {reviewDates.indexOf(photo.date) + 1}</b>
-                    <small>{photo.date} · từ thư viện</small>
-                    {photo.date &&
-                      dated.filter((item) => item.date === photo.date)[0]
-                        ?.id !== photo.id && <em>ảnh thêm trong ngày</em>}
-                  </div>
-                </article>
-              ))}
+              {Array.from({ length: reviewDays }, (_, index) => index + 1).map(
+                (day) => {
+                  const photos = dated.filter(
+                    (photo) => dateDayOffset(startDate, photo.date) === day,
+                  )
+                  if (!photos.length) {
+                    return (
+                      <article className="import-empty-day" key={day}>
+                        <span />
+                        <div>
+                          <b>Ngày {day}</b>
+                          <small>Chưa có ảnh</small>
+                        </div>
+                      </article>
+                    )
+                  }
+                  return photos.map((photo, photoIndex) => (
+                    <article className="imported" key={photo.id}>
+                      <span
+                        className={`library-scene scene-${libraryPhotos.findIndex((item) => item.id === photo.id) + 1}`}
+                      />
+                      <div>
+                        <b>Ngày {day}</b>
+                        <small>
+                          {formatJourneyDate(photo.date)} · từ thư viện
+                        </small>
+                        {photoIndex > 0 && <em>ảnh thêm trong ngày</em>}
+                      </div>
+                    </article>
+                  ))
+                },
+              )}
             </div>
             {undated.length > 0 && (
               <section className="import-undated">
@@ -7447,7 +7551,7 @@ function ImportJourneyFlow() {
                   <div key={photo.id}>
                     <span className="library-scene scene-5" />
                     <label>
-                      Gán một ngày
+                      Gán ngày
                       <input
                         type="date"
                         onChange={(event) =>
@@ -7465,7 +7569,7 @@ function ImportJourneyFlow() {
                         )
                       }
                     >
-                      Xoá
+                      Bỏ
                     </button>
                   </div>
                 ))}
@@ -7523,6 +7627,7 @@ function ImportJourneyFlow() {
 
 function ImportedJourneyHome({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
+  const totalDays = journeyLength(journey)
   return (
     <ScreenShell
       bare
@@ -7543,21 +7648,42 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
       <main>
         <div className="imported-summary">
           <b>
-            {journey.startDate} – {journey.endDate}
+            {formatJourneyDate(journey.startDate)} –{" "}
+            {formatJourneyDate(journey.endDate)}
           </b>
           <span>Chuỗi 0 · ảnh nhập không tính chuỗi</span>
         </div>
         <div className="import-timeline">
-          {journey.importedPhotos?.map((photo, index) => (
-            <article key={photo.id} className="imported">
-              <span className={`library-scene scene-${(index % 6) + 1}`} />
-              <div>
-                <b>Ngày {photo.day}</b>
-                <small>{photo.date} · từ thư viện</small>
-                {photo.extra && <em>ảnh thêm trong ngày</em>}
-              </div>
-            </article>
-          ))}
+          {Array.from({ length: totalDays }, (_, index) => index + 1).map(
+            (day) => {
+              const photos =
+                journey.importedPhotos?.filter((photo) => photo.day === day) ??
+                []
+              if (!photos.length) {
+                return (
+                  <article className="import-empty-day" key={day}>
+                    <span />
+                    <div>
+                      <b>Ngày {day}</b>
+                      <small>Chưa có ảnh</small>
+                    </div>
+                  </article>
+                )
+              }
+              return photos.map((photo, photoIndex) => (
+                <article key={photo.id} className="imported">
+                  <span
+                    className={`library-scene scene-${((day + photoIndex) % 6) + 1}`}
+                  />
+                  <div>
+                    <b>Ngày {day}</b>
+                    <small>{formatJourneyDate(photo.date)} · từ thư viện</small>
+                    {photo.extra && <em>ảnh thêm trong ngày</em>}
+                  </div>
+                </article>
+              ))
+            },
+          )}
           {journey.todayDone && (
             <article className="captured">
               <span className="captured-scene">
@@ -7581,6 +7707,51 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
   )
 }
 
+function ImportedJourneyShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [shareOpen, setShareOpen] = useState(false)
+  return (
+    <section className={`journey-pushed imported-share pushed-${journey.skin}`}>
+      <PushedHeader title="chia sẻ hành trình." onBack={() => navigate(-1)} />
+      <main>
+        <h1>{journey.name}</h1>
+        <p>
+          {journeyLength(journey)} ngày · {journey.importedPhotos?.length ?? 0}{" "}
+          ảnh
+        </p>
+        <small>
+          {formatJourneyDate(journey.startDate)} –{" "}
+          {formatJourneyDate(journey.endDate)}
+        </small>
+        <div className="imported-share-grid">
+          {journey.importedPhotos?.map((photo, index) => (
+            <span
+              key={photo.id}
+              className={`library-scene scene-${(index % 6) + 1}`}
+              aria-label={`Ngày ${photo.day}, ${formatJourneyDate(photo.date)}`}
+            />
+          ))}
+        </div>
+        <button className="import-primary" onClick={() => setShareOpen(true)}>
+          <ShareNetwork size={18} weight="bold" /> Chia sẻ
+        </button>
+      </main>
+      <JourneyActionSheet
+        open={shareOpen}
+        title="chia sẻ hành trình."
+        onClose={() => setShareOpen(false)}
+      >
+        <button className="sheet-primary" onClick={() => setShareOpen(false)}>
+          Tin nhắn
+        </button>
+        <button className="sheet-secondary" onClick={() => setShareOpen(false)}>
+          Ứng dụng khác
+        </button>
+      </JourneyActionSheet>
+    </section>
+  )
+}
+
 function JourneyAttachment({
   mode = "home",
 }: {
@@ -7599,6 +7770,9 @@ function JourneyAttachment({
   if (journey && mode === "edit") return <JourneyEditScreen journey={journey} />
   if (journey && mode === "wrapped") {
     return <JourneyWrappedScreen journey={journey} />
+  }
+  if (journey?.imported && mode === "share") {
+    return <ImportedJourneyShare journey={journey} />
   }
   if (journey?.imported && journey.archived && mode === "home") {
     return <Navigate replace to={`/j/${journey.id}/wrapped`} />
