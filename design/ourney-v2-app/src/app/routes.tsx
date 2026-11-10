@@ -1,0 +1,7732 @@
+import {
+  ArrowLeft,
+  ArrowsClockwise,
+  BookOpen,
+  Camera,
+  Cat,
+  CaretDown,
+  Check,
+  Clock,
+  Copy,
+  CloudSlash,
+  DotsThree,
+  Eye,
+  EyeSlash,
+  FilmStrip,
+  FlagBanner,
+  GearSix,
+  HandWaving,
+  Image,
+  Images,
+  Lightning,
+  Lock,
+  MapPin,
+  MapTrifold,
+  Moon,
+  PaperPlaneTilt,
+  Plus,
+  ShareNetwork,
+  Star,
+  Sun,
+  Timer,
+  Trophy,
+  Trash,
+  UsersThree,
+  User,
+  Warning,
+  WifiSlash,
+  X,
+  Heart,
+  Desktop,
+  SignOut,
+  Bell,
+  CaretRight,
+} from "@phosphor-icons/react"
+import {
+  createBrowserRouter,
+  Link,
+  Navigate,
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+} from "react"
+import { skins, type Skin } from "../StyleGuide"
+import {
+  LoginFlow,
+  OnboardingFlow,
+  OtpFlow,
+  PermissionSheet,
+  ProfileSetupFlow,
+  SplashFlow,
+} from "./flow"
+import {
+  CreateStepFive,
+  CreateStepFour,
+  CreateStepOne,
+  CreateStepTwo,
+  CreateStepThree,
+  CreateStepThreeExtra,
+} from "./create"
+import { useStore, type Journey } from "./store"
+
+const typeEmoji: Record<Journey["type"], string> = {
+  "Giảm cân": "🌿",
+  "Tiếng Anh": "📒",
+  "Chuyến đi": "🎟️",
+  "Cặp đôi": "💌",
+  "Tập luyện": "🏋️",
+  "Tự đặt": "✦",
+}
+
+const typePastel: Record<Journey["type"], string> = {
+  "Giảm cân": "#7EE8A2",
+  "Tiếng Anh": "#FFD84D",
+  "Chuyến đi": "#FFB347",
+  "Cặp đôi": "#FF7E7E",
+  "Tập luyện": "#CF9FFF",
+  "Tự đặt": "#7EC8E3",
+}
+
+function Root() {
+  const store = useStore()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const activeJourney = store.journeys.find(
+    (journey) => journey.id === store.activeJourneyId,
+  )
+  const skin = skins.find((item) => item.id === activeJourney?.skin) ?? skins[0]
+  const dockMode = location.pathname.endsWith("/camera") ? "dark" : store.theme
+  const palette = skin[dockMode]
+  const shell =
+    store.theme === "light"
+      ? { bg: "#FFF8EE", surface: "#FFFFFF", ink: "#1A1A1A", muted: "#5A544C" }
+      : { bg: "#121212", surface: "#1C1B19", ink: "#F5F0E6", muted: "#B8B0A4" }
+  const baseVariant =
+    skin.variants[activeJourney?.variant ?? 0] ?? skin.variants[0]
+  const variant =
+    skin.id === "minimal" && activeJourney?.variant === 1 && dockMode === "dark"
+      ? { ...baseVariant, button: "#F4F4F5", buttonLabel: "#0E0E10" }
+      : baseVariant
+  const variables = {
+    "--bg": shell.bg,
+    "--surface": shell.surface,
+    "--ink": shell.ink,
+    "--muted": shell.muted,
+    "--accent": "#FF8A3D",
+    "--button": "#FF8A3D",
+    "--button-label": "#1A1A1A",
+    "--secondary": shell.surface,
+    "--heading-font": "'Space Grotesk', 'Be Vietnam Pro', sans-serif",
+    "--skin-bg": palette.bg,
+    "--skin-surface": palette.surface,
+    "--skin-ink": palette.ink,
+    "--skin-muted": palette.muted,
+    "--skin-accent": variant.accent,
+    "--skin-button": variant.button,
+    "--skin-button-label": variant.buttonLabel,
+    "--skin-secondary": variant.secondary,
+  } as CSSProperties
+
+  useEffect(() => {
+    store.setJourneyWheelOpen(false)
+  }, [location.pathname])
+
+  return (
+    <div
+      className={`app-root skin-${skin.id} app-${store.theme} ${
+        store.largeType ? "app-large-type" : ""
+      } ${store.reduceMotion ? "app-reduce-motion" : ""}`}
+      style={variables}
+    >
+      <ReviewerPanel skin={skin} activeJourney={activeJourney} />
+      <div className="phone-frame" aria-label="Ourney">
+        <div className="phone-speaker" aria-hidden="true" />
+        <div className="phone-screen" key={location.key}>
+          <Outlet context={{ skin, activeJourney }} />
+          {store.reminderBanner && <ReminderNotification />}
+          {store.appToast && (
+            <div className="system-toast">{store.appToast}</div>
+          )}
+          {store.missedDay &&
+            activeJourney &&
+            (activeJourney.skin === "quiet" ||
+              activeJourney.skin === "squad") &&
+            /^\/j\/[^/]+$/.test(location.pathname) && (
+              <MissedDayOverlay journey={activeJourney} />
+            )}
+          {activeJourney?.todayDone &&
+            /^\/j\/[^/]+$/.test(location.pathname) && (
+              <button
+                className={`today-retake-hero retake-${activeJourney.skin}`}
+                onClick={() => navigate(`/j/${activeJourney.id}/camera`)}
+              >
+                <Camera size={19} weight="bold" /> Chụp lại ảnh hôm nay
+              </button>
+            )}
+          {store.createSheetOpen && (
+            <CreateSheet onClose={() => store.setCreateSheetOpen(false)} />
+          )}
+          {store.inviteSheetOpen && <InviteSheet />}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+type ReminderCopy = {
+  daily: string
+  streak: string
+}
+
+const reminderCopy: Record<string, ReminderCopy> = {
+  quiet: {
+    daily: "Đến giờ của bạn rồi. Một tấm là đủ.",
+    streak: "Chuỗi 21 ngày còn đến 21:00. Vẫn kịp.",
+  },
+  squad: {
+    daily: "Tới giờ điểm danh! Cả hội đang chờ.",
+    streak: "🔥 21 sắp đứt lúc 21:00. Chụp ngay nào!",
+  },
+  memory: {
+    daily: "Thêm một khung hình cho cuộn phim?",
+    streak: "Cuộn phim còn mở đến 21:00.",
+  },
+  couple: {
+    daily: "Hai đứa ơi, đến giờ rồi.",
+    streak: "Chuỗi 18 ngày sắp đứt lúc 21:00.",
+  },
+  flexer: {
+    daily: "ĐẾN GIỜ. CHẠY ĐI.",
+    streak: "CHUỖI 21. CÒN ĐẾN 21:00.",
+  },
+  minimal: {
+    daily: "NGÀY 24.",
+    streak: "CHUỖI 24. 21:00.",
+  },
+}
+
+function ReminderNotification() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const startY = useRef(0)
+  const banner = store.reminderBanner
+  const journey = store.journeys.find((item) => item.id === banner?.journeyId)
+  if (!banner || !journey) return null
+  const dismiss = () => store.setReminderBanner(null)
+  return (
+    <div
+      className={`reminder-banner reminder-${journey.skin}`}
+      onPointerDown={(event) => {
+        startY.current = event.clientY
+      }}
+      onPointerUp={(event) => {
+        if (event.clientY < startY.current - 30) dismiss()
+      }}
+    >
+      <button
+        className="reminder-open"
+        onClick={() => {
+          dismiss()
+          store.selectJourney(journey.id)
+          navigate(`/j/${journey.id}/camera`)
+        }}
+      >
+        <span className="reminder-app-icon">
+          <Bell size={19} weight="bold" />
+        </span>
+        <span className="reminder-copy">
+          <small>
+            Ourney <i>bây giờ</i>
+          </small>
+          <b>{journey.type === "Giảm cân" ? "Ourney" : journey.name}</b>
+          <span>{reminderCopy[journey.skin][banner.kind]}</span>
+        </span>
+      </button>
+      <button className="reminder-dismiss" onClick={dismiss} aria-label="Đóng">
+        <X size={18} weight="bold" />
+      </button>
+    </div>
+  )
+}
+
+function MissedDayOverlay({ journey }: { journey: Journey }) {
+  const [open, setOpen] = useState(false)
+  const squad = journey.skin === "squad"
+  return (
+    <div className={`missed-day-overlay missed-${journey.skin}`}>
+      <button onClick={() => setOpen(true)}>
+        <span>{squad ? "NGÀY 9 · LỠ" : "NGÀY 9 · NGHỈ"}</span>
+      </button>
+      <div className="system-sheet-host">
+        <JourneyActionSheet
+          open={open}
+          title={squad ? "ngày lỡ." : "ngày nghỉ."}
+          body={
+            squad
+              ? "Lỡ một hôm thôi. Mai về lại đường nào!"
+              : "Một ngày nghỉ không xóa hành trình."
+          }
+          onClose={() => setOpen(false)}
+        >
+          <button className="sheet-primary" onClick={() => setOpen(false)}>
+            Đã hiểu
+          </button>
+        </JourneyActionSheet>
+      </div>
+    </div>
+  )
+}
+
+function ReviewerPanel({
+  skin,
+  activeJourney,
+}: {
+  skin: Skin
+  activeJourney?: Journey
+}) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(true)
+  const routes = [
+    ["/splash", "mở đầu"],
+    ["/onboarding/1", "câu 1"],
+    ["/onboarding/2", "câu 2"],
+    ["/onboarding/3", "câu 3"],
+    ["/login", "đăng nhập"],
+    ["/otp", "nhập mã"],
+    ["/profile-setup", "tạo hồ sơ"],
+    ["/camera", "máy ảnh"],
+    ["/hub", "hành trình"],
+    ["/squad", "hội"],
+    ["/me", "hồ sơ"],
+  ]
+
+  function changeUser(user: "new" | "old") {
+    store.setUser(user)
+    navigate("/splash")
+  }
+
+  return (
+    <aside className={`reviewer ${open ? "reviewer-open" : ""}`}>
+      <button
+        className="reviewer-toggle"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+      >
+        {open ? "thu bảng" : "mở bảng"}
+      </button>
+      {open && (
+        <div className="reviewer-body">
+          <div className="reviewer-title">
+            <b>bảng kiểm thử</b>
+            <span>không thuộc giao diện ứng dụng</span>
+          </div>
+          <Control label="người dùng">
+            <Segment
+              value={store.user}
+              options={[
+                ["new", "Người mới"],
+                ["old", "Người cũ"],
+              ]}
+              onChange={(value) => changeUser(value as "new" | "old")}
+            />
+          </Control>
+          <Control label="chế độ">
+            <Segment
+              value={store.theme}
+              options={[
+                ["light", "Sáng"],
+                ["dark", "Tối"],
+              ]}
+              onChange={(value) => store.setTheme(value as "light" | "dark")}
+            />
+          </Control>
+          <Control label="giao diện">
+            <select
+              value={skin.id}
+              disabled={!activeJourney}
+              onChange={(event) => store.setActiveSkin(event.target.value)}
+            >
+              {skins.map((item) => (
+                <option value={item.id} key={item.id}>
+                  {item.journey}
+                </option>
+              ))}
+            </select>
+          </Control>
+          <Control label="biến thể">
+            <select
+              value={activeJourney?.variant ?? 0}
+              disabled={!activeJourney}
+              onChange={(event) =>
+                store.setActiveVariant(Number(event.target.value))
+              }
+            >
+              {skin.variants.map((item, index) => (
+                <option value={index} key={item.name}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </Control>
+          <CheckControl
+            label="ngoại tuyến"
+            checked={store.offline}
+            onChange={store.setOffline}
+          />
+          <CheckControl
+            label="chỉ đọc"
+            checked={store.readOnly}
+            onChange={store.setReadOnly}
+          />
+          <CheckControl
+            label="ngày lỡ"
+            checked={store.missedDay}
+            onChange={store.setMissedDay}
+          />
+          <Control label="trạng thái hành trình">
+            <select
+              value={store.journeyDemoState}
+              onChange={(event) =>
+                store.setJourneyDemoState(
+                  event.target
+                    .value as "normal" | "day1" | "loading" | "error" | "only" | "broken" | "removed" | "hidden",
+                )
+              }
+            >
+              <option value="normal">Bình thường</option>
+              <option value="day1">Ngày 1</option>
+              <option value="loading">Đang tải</option>
+              <option value="error">Lỗi</option>
+              <option value="only">Chỉ có mình bạn</option>
+              <option value="broken">Chuỗi đứt</option>
+              <option value="hidden">Ảnh ẩn</option>
+              <option value="removed">Bị xoá khỏi nhóm</option>
+            </select>
+          </Control>
+          <Control label="vai trò">
+            <Segment
+              value={
+                (activeJourney?.owner ?? store.journeyOwner)
+                  ? "owner"
+                  : "member"
+              }
+              options={[
+                ["owner", "Chủ nhóm"],
+                ["member", "Thành viên"],
+              ]}
+              onChange={(value) => {
+                const owner = value === "owner"
+                store.setJourneyOwner(owner)
+                if (activeJourney) {
+                  store.updateJourney(activeJourney.id, { owner })
+                }
+              }}
+            />
+          </Control>
+          <CheckControl
+            label="chữ 135%"
+            checked={store.largeType}
+            onChange={store.setLargeType}
+          />
+          <CheckControl
+            label="giảm chuyển động"
+            checked={store.reduceMotion}
+            onChange={store.setReduceMotion}
+          />
+          <Control label="trạng thái mã">
+            <Segment
+              value={store.otpMode}
+              options={[
+                ["normal", "Bình thường"],
+                ["expired", "Hết hạn"],
+                ["locked", "Tạm khóa"],
+              ]}
+              onChange={(value) =>
+                store.setOtpMode(value as "normal" | "expired" | "locked")
+              }
+            />
+          </Control>
+          <Control label="quyền camera">
+            <select
+              value={store.cameraPermission}
+              onChange={(event) =>
+                store.setCameraPermission(
+                  event.target
+                    .value as "unknown" | "granted" | "deferred" | "denied",
+                )
+              }
+            >
+              <option value="unknown">Chưa hỏi</option>
+              <option value="granted">Đã cho phép</option>
+              <option value="deferred">Để sau</option>
+              <option value="denied">Đã tắt</option>
+            </select>
+          </Control>
+          <CheckControl
+            label="hết phiên"
+            checked={store.sessionExpired}
+            onChange={store.setSessionExpired}
+          />
+          <CheckControl
+            label="sheet thông báo"
+            checked={store.notificationSheetOpen}
+            onChange={store.setNotificationSheetOpen}
+          />
+          <CheckControl
+            label="đã điểm danh"
+            checked={store.checkedIn}
+            onChange={(value) => {
+              store.setCheckedIn(value)
+              if (activeJourney) {
+                store.updateJourney(activeJourney.id, { todayDone: value })
+              }
+            }}
+          />
+          <Control label="trạng thái Hub">
+            <select
+              value={store.hubState}
+              onChange={(event) =>
+                store.setHubState(
+                  event.target
+                    .value as "normal" | "empty" | "loading" | "error",
+                )
+              }
+            >
+              <option value="normal">Bình thường</option>
+              <option value="empty">Trống</option>
+              <option value="loading">Đang tải</option>
+              <option value="error">Lỗi</option>
+            </select>
+          </Control>
+          <Control label="hero Hub">
+            <select
+              value={store.hubHeroState}
+              onChange={(event) =>
+                store.setHubHeroState(
+                  event.target
+                    .value as "default" | "done" | "milestone" | "group",
+                )
+              }
+            >
+              <option value="default">Mặc định</option>
+              <option value="done">Đã xong</option>
+              <option value="milestone">Cột mốc</option>
+              <option value="group">Hội đang chờ</option>
+            </select>
+          </Control>
+          <Control label="nhảy tới màn">
+            <div className="reviewer-routes">
+              {routes.map(([path, label]) => (
+                <button key={path} onClick={() => navigate(path)}>
+                  {label}
+                  <code>{path}</code>
+                </button>
+              ))}
+            </div>
+          </Control>
+          <Control label="thông báo">
+            <div className="reviewer-routes reviewer-reminders">
+              {store.journeys.map((journey) => (
+                <div key={journey.id}>
+                  <b>{journey.name}</b>
+                  <button
+                    disabled={journey.todayDone}
+                    title={
+                      journey.todayDone ? "Hôm nay đã check-in" : undefined
+                    }
+                    onClick={() =>
+                      store.setReminderBanner({
+                        journeyId: journey.id,
+                        kind: "daily",
+                      })
+                    }
+                  >
+                    Nhắc giờ
+                    {journey.todayDone && <small>Hôm nay đã xong</small>}
+                  </button>
+                  <button
+                    disabled={journey.todayDone}
+                    title={
+                      journey.todayDone ? "Hôm nay đã check-in" : undefined
+                    }
+                    onClick={() =>
+                      store.setReminderBanner({
+                        journeyId: journey.id,
+                        kind: "streak",
+                      })
+                    }
+                  >
+                    Chuỗi sắp đứt 21:00
+                    {journey.todayDone && <small>Hôm nay đã xong</small>}
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() => {
+                  store.setSignedIn(false)
+                  store.setPendingJoin("K7Q2M9XA")
+                  navigate("/join/K7Q2M9XA")
+                }}
+              >
+                mở link khi chưa đăng nhập
+                <code>ourney://join/K7Q2M9XA</code>
+              </button>
+            </div>
+          </Control>
+          <SkinProof />
+        </div>
+      )}
+    </aside>
+  )
+}
+
+function SkinProof() {
+  return (
+    <div className="skin-proof">
+      <span>so sánh hình dạng</span>
+      <div className="skin-proof-row">
+        {skins.map((skin) => (
+          <div
+            className={`skin-proof-set proof-${skin.id}`}
+            style={
+              {
+                "--proof-accent": skin.variants[0].accent,
+                "--proof-button": skin.variants[0].button,
+              } as CSSProperties
+            }
+            key={skin.id}
+          >
+            <b>{skin.short}</b>
+            <button>nút</button>
+            <span>thẻ chọn</span>
+            <div>thẻ nội dung</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function Control({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <label className="reviewer-control">
+      <span>{label}</span>
+      {children}
+    </label>
+  )
+}
+
+function Segment({
+  value,
+  options,
+  onChange,
+}: {
+  value: string
+  options: string[][]
+  onChange: (value: string) => void
+}) {
+  return (
+    <span className="reviewer-segment">
+      {options.map(([option, label]) => (
+        <button
+          type="button"
+          className={value === option ? "active" : ""}
+          onClick={() => onChange(option)}
+          key={option}
+        >
+          {label}
+        </button>
+      ))}
+    </span>
+  )
+}
+
+function CheckControl({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (value: boolean) => void
+}) {
+  return (
+    <label className="reviewer-check">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      <span>{label}</span>
+    </label>
+  )
+}
+
+function Entry() {
+  return <Navigate replace to="/splash" />
+}
+
+function ScreenShell({
+  title,
+  children,
+  camera = false,
+  className = "",
+  bare = false,
+}: {
+  title?: string
+  children: React.ReactNode
+  camera?: boolean
+  className?: string
+  bare?: boolean
+}) {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const store = useStore()
+
+  function goBack() {
+    if (window.history.state?.idx > 0) navigate(-1)
+    else navigate("/camera")
+  }
+
+  return (
+    <section
+      className={`app-screen ${camera ? "camera-screen" : ""} ${className}`}
+    >
+      {!camera && !bare && (
+        <header className="screen-header">
+          {location.pathname === "/hub" ? (
+            <span aria-hidden="true" />
+          ) : (
+            <button onClick={goBack} aria-label="Quay lại">
+              <ArrowLeft size={22} weight="bold" />
+            </button>
+          )}
+          {title && <h1>{title}</h1>}
+          {location.pathname === "/hub" ? (
+            <span aria-hidden="true" />
+          ) : (
+            <span aria-hidden="true" />
+          )}
+        </header>
+      )}
+      {store.offline && !camera && !bare && (
+        <div className="offline-bar">
+          <WifiSlash size={15} weight="bold" /> Đang ngoại tuyến
+        </div>
+      )}
+      <div className="screen-content">{children}</div>
+      <FloatingDock currentPath={location.pathname} />
+    </section>
+  )
+}
+
+function InviteSheet() {
+  const store = useStore()
+  const [toast, setToast] = useState("")
+  const [shareOpen, setShareOpen] = useState(false)
+  const startY = useRef<number | null>(null)
+  const [drag, setDrag] = useState(0)
+  const close = () => store.setInviteSheetOpen(false)
+  const copied = (label: string) => {
+    setToast(`${label} đã được sao chép`)
+    window.setTimeout(() => setToast(""), 1800)
+  }
+  return (
+    <div
+      className="invite-scrim"
+      onPointerDown={(event) => event.target === event.currentTarget && close()}
+    >
+      <div
+        className="invite-sheet"
+        style={{ transform: `translateY(${drag}px)` }}
+      >
+        <div
+          className="invite-drag"
+          onPointerDown={(event) => {
+            startY.current = event.clientY
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) => {
+            if (startY.current !== null)
+              setDrag(Math.max(0, event.clientY - startY.current))
+          }}
+          onPointerUp={() => {
+            if (drag > 70) close()
+            setDrag(0)
+            startY.current = null
+          }}
+        >
+          <i />
+        </div>
+        <button className="invite-close" onClick={close} aria-label="Đóng">
+          <X size={22} weight="bold" />
+        </button>
+        <h2>mời hội của bạn.</h2>
+        <div className="invite-code" aria-label="Mã K7Q2 M9XA">
+          {"K7Q2M9XA".split("").map((letter, index) => (
+            <span key={`${letter}-${index}`}>{letter}</span>
+          ))}
+        </div>
+        <button className="invite-copy" onClick={() => copied("Mã")}>
+          <Copy size={20} weight="bold" /> Sao chép mã
+        </button>
+        <div className="invite-link">
+          <span>ourney://join/K7Q2M9XA</span>
+          <button onClick={() => copied("Link")}>Sao chép link</button>
+        </div>
+        <div className="invite-qr" aria-label="Mã QR">
+          {Array.from({ length: 64 }, (_, index) => (
+            <i
+              key={index}
+              className={index % 3 === 0 || index % 7 === 0 ? "on" : ""}
+            />
+          ))}
+        </div>
+        <button className="invite-share" onClick={() => setShareOpen(true)}>
+          <ShareNetwork size={20} weight="bold" /> Chia sẻ
+        </button>
+        <p>
+          Chỉ ai có mã hoặc link này mới vào được. Hành trình nhóm không có link
+          công khai.
+        </p>
+        <b className="invite-count">Đã mời 1/10</b>
+        <button className="invite-later" onClick={close}>
+          Để sau vậy.
+        </button>
+        {toast && <div className="invite-toast">{toast}</div>}
+        {shareOpen && (
+          <div className="share-mock">
+            <b>Chia sẻ lời mời</b>
+            <button onClick={() => setShareOpen(false)}>Tin nhắn</button>
+            <button onClick={() => setShareOpen(false)}>Ứng dụng khác</button>
+            <button onClick={() => setShareOpen(false)}>Đóng</button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function QuietTopBar({
+  journey,
+  gear = false,
+  onBack,
+}: {
+  journey: Journey
+  gear?: boolean
+  onBack?: () => void
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="quiet-topbar">
+      <button
+        onClick={onBack ?? (() => navigate("/hub"))}
+        aria-label="Quay lại"
+      >
+        <ArrowLeft size={21} weight="bold" />
+      </button>
+      <div>
+        <b>{journey.name.toLocaleUpperCase("vi")}</b>
+        <span>
+          <Lock size={13} weight="fill" /> Riêng tư
+        </span>
+      </div>
+      {gear ? (
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={21} weight="bold" />
+        </button>
+      ) : (
+        <span className="quiet-top-placeholder" />
+      )}
+    </header>
+  )
+}
+
+function QuietPhoto({
+  blurred = false,
+  scene = 0,
+}: {
+  blurred?: boolean
+  scene?: number
+}) {
+  return (
+    <div
+      className={`quiet-photo-placeholder quiet-progress-${scene % 4} ${
+        blurred ? "blurred" : ""
+      }`}
+      role="img"
+      aria-label={`Ảnh tiến trình minh hoạ ngày ${scene + 1}`}
+    >
+      <i />
+      <span />
+    </div>
+  )
+}
+
+function QuietJourneyHome({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [revealed, setRevealed] = useState(false)
+  const latestDay = journey.day
+  const timeline = [
+    { day: latestDay, today: true, value: "18", label: "HÔM NAY" },
+    { day: 14, value: "••", label: "NỬA CHẶNG" },
+    { day: 9, missed: true, value: "", label: "NGHỈ" },
+    { day: 7, value: "18", label: "★ TUẦN ĐẦU" },
+  ]
+  return (
+    <ScreenShell bare className="quiet-journey-screen">
+      <QuietTopBar journey={journey} gear />
+      <main className="quiet-home">
+        {store.offline && (
+          <div className="quiet-state-chip">
+            <CloudSlash size={17} weight="bold" />
+            Đang lưu trên máy · sẽ đồng bộ sau
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <button
+            className="quiet-readonly"
+            onClick={() => navigate(`/j/${journey.id}/wrapped`)}
+          >
+            <Lock size={17} weight="bold" />
+            Hành trình đã kết thúc · chỉ xem
+          </button>
+        )}
+        <section className="quiet-home-intro">
+          <h1>Nhìn lại từng chút một.</h1>
+          <p>
+            Ngày {journey.day}/30 · 🔥 {journey.streak}
+          </p>
+        </section>
+        <section className="quiet-chart-card">
+          <div className="quiet-axis">
+            <span>{revealed ? "65,2 KG" : "••,• KG"}</span>
+            <span>{revealed ? "62,0 KG" : "••,• KG"}</span>
+          </div>
+          <svg viewBox="0 0 300 118" role="img" aria-label="Đường tiến trình">
+            <defs>
+              <linearGradient id="quiet-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#10B981" stopOpacity=".24" />
+                <stop offset="1" stopColor="#10B981" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path
+              className="quiet-chart-fill"
+              d="M18 30 C72 42 95 48 132 59 S220 78 282 93 L282 116 L18 116 Z"
+            />
+            <path
+              className="quiet-chart-line"
+              d="M18 30 C72 42 95 48 132 59 S220 78 282 93"
+            />
+            <circle cx="18" cy="30" r="5" />
+            <circle cx="282" cy="93" r="5" />
+          </svg>
+          <button
+            className="quiet-hold"
+            onPointerDown={() => setRevealed(true)}
+            onPointerUp={() => setRevealed(false)}
+            onPointerCancel={() => setRevealed(false)}
+            onPointerLeave={() => setRevealed(false)}
+          >
+            {revealed ? <EyeSlash size={20} /> : <Eye size={20} />}
+            {revealed ? "Đang xem" : "Giữ để xem"}
+          </button>
+        </section>
+        <section className="quiet-timeline" aria-label="Dòng thời gian">
+          {timeline.map((item, index) => (
+            <button
+              key={`${item.day}-${index}`}
+              className={`${item.today ? "today" : ""} ${
+                item.missed ? "missed" : ""
+              }`}
+              onClick={() => navigate(`/j/${journey.id}/day/${item.day}`)}
+            >
+              <span className="quiet-timeline-photo">
+                {item.missed ? (
+                  <i className="quiet-missed-node" />
+                ) : (
+                  <QuietPhoto scene={index} />
+                )}
+                {store.offline && !item.missed && (
+                  <small>
+                    <Clock size={12} weight="bold" /> Chờ đồng bộ
+                  </small>
+                )}
+              </span>
+              <span className="quiet-node" />
+              <span className="quiet-timeline-copy">
+                <small>
+                  NGÀY {String(item.day).padStart(2, "0")} · {item.label}
+                </small>
+                {item.value && <b>{revealed ? item.value : "••"}</b>}
+                {item.missed && <em>Một ngày nghỉ không xóa hành trình.</em>}
+              </span>
+            </button>
+          ))}
+        </section>
+        <section className="quiet-milestones">
+          {[
+            [7, "Tuần đầu", true],
+            [14, "Nửa chặng", true],
+            [30, "Về đích", false],
+          ].map(([day, label, reached]) => (
+            <div key={String(day)}>
+              <span className={reached ? "reached" : ""}>
+                <Star size={17} weight={reached ? "fill" : "regular"} />
+              </span>
+              <small>NGÀY {String(day).padStart(2, "0")}</small>
+              <b>{String(label)}</b>
+            </div>
+          ))}
+        </section>
+        <div className="quiet-home-actions">
+          {journey.shared && (
+            <button onClick={() => navigate(`/j/${journey.id}/squad`)}>
+              <UsersThree size={19} weight="bold" /> Hội hôm nay
+            </button>
+          )}
+          <button onClick={() => navigate(`/j/${journey.id}/share`)}>
+            <ShareNetwork size={19} weight="bold" /> Tạo thiệp
+          </button>
+        </div>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function QuietPost({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [weight, setWeight] = useState(journey.lastWeight ?? 62)
+  const [mood, setMood] = useState(journey.lastMood ?? "")
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  function submit() {
+    if (store.readOnly) return
+    store.checkInJourney(journey.id, { caption, mood, weight })
+    if (journey.todayDone) {
+      store.showToast("Đã thay ảnh hôm nay.")
+      navigate(`/j/${journey.id}`, { replace: true })
+      return
+    }
+    if (!store.notificationPromptHandled) {
+      store.setNotificationSheetOpen(true)
+    }
+    navigate(`/j/${journey.id}/done`, { replace: true })
+  }
+  return (
+    <section className="quiet-page quiet-post">
+      <QuietTopBar journey={journey} />
+      <div className="quiet-page-scroll">
+        <QuietPhoto />
+        <section className="quiet-ruler">
+          <div>
+            <b>{weight.toFixed(1).replace(".", ",")} KG</b>
+            <span>(-3,2 KG)</span>
+          </div>
+          <input
+            type="range"
+            min="55"
+            max="75"
+            step=".1"
+            value={weight}
+            onChange={(event) => setWeight(Number(event.target.value))}
+            aria-label="Cân nặng"
+          />
+          <label>Cân nặng (không bắt buộc)</label>
+          <small>
+            <Lock size={13} weight="fill" /> Chỉ mình bạn thấy
+          </small>
+        </section>
+        <section className="quiet-caption">
+          <label htmlFor="quiet-caption">Hôm nay bạn cảm thấy thế nào?</label>
+          <div className="quiet-moods">
+            {["Nhẹ nhõm", "Bình thường", "Hơi mệt"].map((item) => (
+              <button
+                key={item}
+                className={mood === item ? "selected" : ""}
+                onClick={() => setMood(item)}
+                aria-pressed={mood === item}
+              >
+                {mood === item && <Check size={14} weight="bold" />}
+                {item}
+              </button>
+            ))}
+          </div>
+          <textarea
+            id="quiet-caption"
+            maxLength={140}
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+            placeholder="Viết một dòng cho riêng bạn..."
+          />
+          <small>{caption.length}/140</small>
+        </section>
+        <button className="quiet-post-primary" onClick={submit}>
+          {journey.todayDone ? "Thay ảnh" : "Đăng"}
+        </button>
+        <button
+          className="quiet-post-retake"
+          onClick={() =>
+            navigate(
+              journey.todayDone
+                ? `/j/${journey.id}`
+                : `/j/${journey.id}/camera`,
+            )
+          }
+        >
+          {journey.todayDone ? "Giữ ảnh cũ" : "Chụp lại"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function QuietDone({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const doneDay = Math.max(1, journey.day - 1)
+  const milestone = doneDay === 7 || doneDay === 30
+  useEffect(() => {
+    if (store.notificationSheetOpen) return
+    const timer = window.setTimeout(
+      () => navigate(`/j/${journey.id}`, { replace: true }),
+      store.reduceMotion ? 150 : 1800,
+    )
+    return () => window.clearTimeout(timer)
+  }, [store.notificationSheetOpen, store.reduceMotion, journey.id])
+  return (
+    <section
+      className={`quiet-page quiet-done ${milestone ? "milestone" : ""}`}
+      onClick={() => {
+        if (!store.notificationSheetOpen) {
+          navigate(`/j/${journey.id}`, { replace: true })
+        }
+      }}
+    >
+      <div className="quiet-celebration">
+        <div className="quiet-seal">
+          {milestone && <span className="quiet-star-ring">☆ ☆ ☆ ☆ ☆</span>}
+          <b>NGÀY {doneDay} ✓</b>
+        </div>
+        <h1>Chuỗi {journey.streak} ngày</h1>
+        {milestone && <h2>{doneDay === 7 ? "Tuần đầu" : "Về đích"}</h2>}
+        <p>Đã lưu. Chỉ mình bạn thấy.</p>
+        {milestone && (
+          <button
+            onClick={(event) => {
+              event.stopPropagation()
+              navigate(`/j/${journey.id}/share`)
+            }}
+          >
+            {journey.skin === "memory"
+              ? "Chia sẻ poster chuyến đi"
+              : journey.skin === "couple"
+                ? "Chia sẻ câu chuyện"
+                : journey.skin === "flexer"
+                  ? "Chia sẻ lên Story"
+                  : journey.skin === "minimal"
+                    ? "Xuất thẻ"
+                    : "Tạo thiệp"}
+          </button>
+        )}
+      </div>
+      {store.notificationSheetOpen && (
+        <PermissionSheet
+          kind="notification"
+          onClose={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+          onConfirm={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+        />
+      )}
+    </section>
+  )
+}
+
+function QuietSquad({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [shown, setShown] = useState<string[]>([])
+  const members = [
+    ["An", "Đã chụp 06:10", 6],
+    ["Bình", "Chưa chụp", 5],
+    ["Hà", "Đã chụp 07:20", 7],
+    ["Nam", "Chưa chụp", 4],
+  ] as const
+  return (
+    <section className="quiet-page quiet-squad">
+      <QuietTopBar journey={journey} />
+      <div className="quiet-page-scroll">
+        <h1>Hội hôm nay.</h1>
+        <p className="quiet-squad-intro">Xếp theo tên, không theo kết quả.</p>
+        <div className="quiet-member-list">
+          {members.map(([name, status, count]) => {
+            const visible = shown.includes(name)
+            return (
+              <article key={name}>
+                <span className="quiet-member-avatar">{name.slice(0, 1)}</span>
+                <div>
+                  <b>{name}</b>
+                  <small>
+                    {status === "Chưa chụp" ? (
+                      <Clock size={14} />
+                    ) : (
+                      <Check size={14} weight="bold" />
+                    )}
+                    {status}
+                  </small>
+                  <span className="quiet-seven-dots">
+                    {Array.from({ length: 7 }, (_, index) => (
+                      <i
+                        className={index < count ? "filled" : ""}
+                        key={index}
+                      />
+                    ))}
+                    <em>đều đặn {count}/7</em>
+                  </span>
+                </div>
+                <button
+                  onClick={() =>
+                    setShown((current) =>
+                      visible
+                        ? current.filter((item) => item !== name)
+                        : [...current, name],
+                    )
+                  }
+                >
+                  {visible ? "Ẩn ảnh" : "Xem ảnh"}
+                </button>
+                <QuietPhoto blurred={!visible} />
+              </article>
+            )
+          })}
+        </div>
+        <footer>
+          Không ai bị so cân. Chỉ đếm sự đều đặn.
+          <button onClick={() => navigate(`/j/${journey.id}`)}>Quay lại</button>
+        </footer>
+      </div>
+    </section>
+  )
+}
+
+function QuietPrivacySheet({
+  onClose,
+  onShow,
+}: {
+  onClose: () => void
+  onShow: () => void
+}) {
+  const startY = useRef(0)
+  const [drag, setDrag] = useState(0)
+  return (
+    <div
+      className="quiet-sheet-scrim"
+      onPointerDown={(event) =>
+        event.target === event.currentTarget && onClose()
+      }
+    >
+      <div
+        className="quiet-sheet"
+        style={{ transform: `translateY(${drag}px)` }}
+      >
+        <div
+          className="quiet-sheet-drag"
+          onPointerDown={(event) => {
+            startY.current = event.clientY
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) =>
+            setDrag(Math.max(0, event.clientY - startY.current))
+          }
+          onPointerUp={() => {
+            if (drag > 70) onClose()
+            setDrag(0)
+          }}
+        >
+          <i />
+        </div>
+        <button
+          className="quiet-sheet-close"
+          onClick={onClose}
+          aria-label="Đóng"
+        >
+          <X size={21} weight="bold" />
+        </button>
+        <h2>Hiện số kg trên thẻ?</h2>
+        <p>Ai xem thẻ đều thấy số này.</p>
+        <button className="quiet-sheet-primary" onClick={onClose}>
+          Giữ ẩn
+        </button>
+        <button className="quiet-sheet-secondary" onClick={onShow}>
+          Vẫn hiện
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function QuietShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [hideKg, setHideKg] = useState(true)
+  const [blurred, setBlurred] = useState(true)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [toast, setToast] = useState("")
+  return (
+    <section className="quiet-page quiet-share">
+      <QuietTopBar journey={journey} onBack={() => navigate(-1)} />
+      <div className="quiet-page-scroll">
+        <h1>Tạo thiệp.</h1>
+        <div className="quiet-ratio-tabs">
+          <button
+            className={ratio === "story" ? "selected" : ""}
+            onClick={() => setRatio("story")}
+          >
+            9:16
+          </button>
+          <button
+            className={ratio === "feed" ? "selected" : ""}
+            onClick={() => setRatio("feed")}
+          >
+            4:5
+          </button>
+        </div>
+        <div className={`quiet-share-card ${ratio}`}>
+          <div>
+            <figure>
+              <QuietPhoto blurred={blurred} />
+              <figcaption>NGÀY 01</figcaption>
+            </figure>
+            <figure>
+              <QuietPhoto blurred={blurred} />
+              <figcaption>NGÀY 21</figcaption>
+            </figure>
+          </div>
+          {!hideKg && <b>65,2 KG → 62,0 KG · -3,2 KG</b>}
+          <p>21 ngày đều đặn</p>
+          <small>Ourney</small>
+        </div>
+        <div className="quiet-share-controls">
+          <label>
+            <span>Ẩn số kg</span>
+            <span className="quiet-switch-hit">
+              <input
+                type="checkbox"
+                checked={hideKg}
+                onChange={(event) => {
+                  if (!event.target.checked) setConfirmOpen(true)
+                  else setHideKg(true)
+                }}
+              />
+            </span>
+          </label>
+          <label>
+            <span>Làm mờ ảnh</span>
+            <span className="quiet-switch-hit">
+              <input
+                type="checkbox"
+                checked={blurred}
+                onChange={(event) => setBlurred(event.target.checked)}
+              />
+            </span>
+          </label>
+        </div>
+        <button
+          className="quiet-export"
+          onClick={() => {
+            setToast("Đã lưu thẻ.")
+            window.setTimeout(() => setToast(""), 1800)
+          }}
+        >
+          Xuất thẻ
+        </button>
+      </div>
+      {confirmOpen && (
+        <QuietPrivacySheet
+          onClose={() => setConfirmOpen(false)}
+          onShow={() => {
+            setHideKg(false)
+            setConfirmOpen(false)
+          }}
+        />
+      )}
+      {toast && <div className="quiet-share-toast">{toast}</div>}
+    </section>
+  )
+}
+
+function SquadTopBar({
+  journey,
+  onBack,
+  gear = false,
+}: {
+  journey: Journey
+  onBack?: () => void
+  gear?: boolean
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="squad-journey-topbar">
+      <button
+        onClick={onBack ?? (() => navigate("/hub"))}
+        aria-label="Quay lại"
+      >
+        <ArrowLeft size={21} weight="bold" />
+      </button>
+      <b>{journey.name.toLocaleUpperCase("vi")}</b>
+      {gear ? (
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={21} weight="bold" />
+        </button>
+      ) : (
+        <span />
+      )}
+    </header>
+  )
+}
+
+function SquadPhoto({ scene = 0 }: { scene?: number }) {
+  const labels = [
+    "Bàn học với laptop",
+    "Vở ghi và cà phê",
+    "Góc học từ vựng",
+    "Bàn học buổi sáng",
+  ]
+  return (
+    <div
+      className={`squad-photo-placeholder squad-study-scene-${scene % 4}`}
+      role="img"
+      aria-label={labels[scene % labels.length]}
+    >
+      <span />
+      <i />
+      <em />
+      <strong />
+      <b>IELTS</b>
+    </div>
+  )
+}
+
+function SquadAvatarStack({ attendance }: { attendance: number }) {
+  return (
+    <span className="squad-avatar-stack" aria-label={`${attendance} trên 5`}>
+      {["L", "A", "H", "N", "M"].map((name, index) => (
+        <i className={index < attendance ? "checked" : ""} key={name}>
+          {name}
+        </i>
+      ))}
+    </span>
+  )
+}
+
+function SquadJourneyHome({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const attendance = journey.attendance ?? 3
+  const today = journey.day
+  const stones = [
+    { day: 30, label: "VỀ ĐÍCH", future: today < 30 },
+    { day: 24, label: "SẮP TỚI", future: today < 24 },
+    { day: today, label: "HÔM NAY 🔥", current: true },
+    { day: 14, label: "⭐ TUẦN 2" },
+    { day: 9, label: "LỠ", missed: true },
+    { day: 7, label: "⭐ TUẦN 1" },
+    { day: 1, label: "XUẤT PHÁT" },
+  ]
+  return (
+    <ScreenShell bare className="squad-journey-screen">
+      <SquadTopBar journey={journey} gear />
+      <main className="squad-journey-home">
+        {store.offline && (
+          <div className="squad-offline-pill">
+            <CloudSlash size={17} weight="bold" />
+            CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <button
+            className="squad-ended-stamp"
+            onClick={() => navigate(`/j/${journey.id}/wrapped`)}
+          >
+            <Lock size={16} weight="bold" /> ĐÃ KẾT THÚC · CHỈ XEM
+          </button>
+        )}
+        <button
+          className="squad-progress-chip"
+          onClick={() => navigate(`/j/${journey.id}/squad`)}
+        >
+          <span>🔥 HỘI IELTS 7.5 · 30 NGÀY</span>
+          <span>
+            <SquadAvatarStack attendance={attendance} />
+            <b>{attendance}/5 HÔM NAY</b>
+          </span>
+        </button>
+        <section className="squad-ribbon-map">
+          <button
+            className="squad-trophy"
+            onClick={() =>
+              navigate(
+                today >= 30
+                  ? `/j/${journey.id}/wrapped`
+                  : `/j/${journey.id}/share`,
+              )
+            }
+          >
+            <Trophy size={38} weight="fill" />
+            <b>CÚP 7.5</b>
+            <small>NGÀY 30</small>
+          </button>
+          <svg
+            className="squad-ribbon"
+            viewBox="0 0 330 650"
+            aria-hidden="true"
+          >
+            <path
+              className="squad-ribbon-border"
+              d="M166 630 C55 560 60 470 170 420 S276 276 168 230 S62 102 164 45"
+            />
+            <path
+              className="squad-ribbon-paper"
+              d="M166 630 C55 560 60 470 170 420 S276 276 168 230 S62 102 164 45"
+            />
+            <path
+              className="squad-ribbon-flame"
+              d="M168 230 C62 102 164 45 164 45"
+            />
+          </svg>
+          <div className="squad-stones">
+            {stones.map((stone, index) => (
+              <button
+                key={`${stone.day}-${index}`}
+                className={`squad-stone ${index % 2 ? "left" : "right"} ${
+                  stone.current ? "current" : ""
+                } ${stone.future ? "future" : ""} ${
+                  stone.missed ? "missed" : ""
+                }`}
+                onClick={() => navigate(`/j/${journey.id}/day/${stone.day}`)}
+              >
+                {stone.future || stone.missed ? (
+                  <span className="squad-empty-photo" />
+                ) : (
+                  <SquadPhoto />
+                )}
+                <b>
+                  NGÀY {String(stone.day).padStart(2, "0")} · {stone.label}
+                </b>
+                {stone.missed && (
+                  <small>Lỡ một hôm thôi. Mai về lại đường nào!</small>
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
+        <button
+          className="squad-group-action"
+          onClick={() => navigate(`/j/${journey.id}/share`)}
+        >
+          <ShareNetwork size={19} weight="bold" /> Tạo thiệp
+        </button>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function SquadPost({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [minutes, setMinutes] = useState<number | null>(
+    journey.lastMinutes ?? null,
+  )
+  const [custom, setCustom] = useState(45)
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  const choices = [15, 30, 45, 60]
+  function submit() {
+    const selectedMinutes = minutes === -1 ? custom : minutes
+    if (!selectedMinutes || store.readOnly) return
+    store.checkInJourney(journey.id, {
+      caption,
+      mood: "",
+      minutes: selectedMinutes,
+    })
+    if (journey.todayDone) {
+      store.showToast("Đã thay ảnh hôm nay.")
+      navigate(`/j/${journey.id}`, { replace: true })
+      return
+    }
+    if (!store.notificationPromptHandled) {
+      store.setNotificationSheetOpen(true)
+    }
+    navigate(`/j/${journey.id}/done`, { replace: true })
+  }
+  return (
+    <section className="squad-journey-page squad-post">
+      <SquadTopBar
+        journey={journey}
+        onBack={() => navigate(`/j/${journey.id}/camera`)}
+      />
+      <div className="squad-page-scroll">
+        <div className="squad-post-polaroid">
+          <SquadPhoto />
+          <b>NGÀY {journey.day}</b>
+        </div>
+        <section className="squad-minutes">
+          <h1>hôm nay học bao lâu.</h1>
+          <div>
+            {choices.map((value) => (
+              <button
+                key={value}
+                className={minutes === value ? "selected" : ""}
+                onClick={() => setMinutes(value)}
+                aria-pressed={minutes === value}
+              >
+                {minutes === value && <Check size={14} weight="bold" />}
+                {value}
+              </button>
+            ))}
+            <button
+              className={minutes === -1 ? "selected" : ""}
+              onClick={() => setMinutes(-1)}
+              aria-pressed={minutes === -1}
+            >
+              {minutes === -1 && <Check size={14} weight="bold" />}
+              Khác
+            </button>
+          </div>
+          {minutes === -1 && (
+            <div className="squad-stepper">
+              <button
+                onClick={() => setCustom(Math.max(5, custom - 5))}
+                aria-label="Giảm năm phút"
+              >
+                −
+              </button>
+              <b>{custom}</b>
+              <button
+                onClick={() => setCustom(Math.min(180, custom + 5))}
+                aria-label="Tăng năm phút"
+              >
+                +
+              </button>
+            </div>
+          )}
+          <span>PHÚT</span>
+        </section>
+        <section className="squad-caption">
+          <label htmlFor="squad-caption">Hôm nay bạn học được gì?</label>
+          <textarea
+            id="squad-caption"
+            maxLength={140}
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+            placeholder="Ghi nhanh một điều..."
+          />
+          <small>{caption.length}/140</small>
+        </section>
+        <button
+          className="squad-post-primary"
+          disabled={minutes === null || store.readOnly}
+          onClick={submit}
+        >
+          {journey.todayDone ? "Thay ảnh" : "Đăng"}
+        </button>
+        <button
+          className="squad-post-retake"
+          onClick={() =>
+            navigate(
+              journey.todayDone
+                ? `/j/${journey.id}`
+                : `/j/${journey.id}/camera`,
+            )
+          }
+        >
+          {journey.todayDone ? "Giữ ảnh cũ" : "Chụp lại"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function SquadDone({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const day = Math.max(1, journey.day - 1)
+  const attendance = journey.attendance ?? 4
+  const milestone = day === 7 || day === 30
+  useEffect(() => {
+    if (store.notificationSheetOpen) return
+    const timer = window.setTimeout(
+      () => navigate(`/j/${journey.id}`, { replace: true }),
+      store.reduceMotion ? 150 : 1800,
+    )
+    return () => window.clearTimeout(timer)
+  }, [store.notificationSheetOpen, store.reduceMotion, journey.id])
+  return (
+    <section
+      className={`squad-journey-page squad-done ${
+        milestone ? "milestone" : ""
+      }`}
+      onClick={() => {
+        if (!store.notificationSheetOpen) {
+          navigate(`/j/${journey.id}`, { replace: true })
+        }
+      }}
+    >
+      {milestone && day === 7 && (
+        <div className="squad-confetti" aria-hidden="true">
+          {Array.from({ length: 14 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </div>
+      )}
+      <div className="squad-celebration">
+        {day === 30 ? (
+          <Trophy className="squad-rising-trophy" size={92} weight="fill" />
+        ) : null}
+        <div className="squad-checkin-stamp">
+          {day === 30
+            ? "CÚP 7.5 VỀ TAY"
+            : day === 7
+              ? "TUẦN 1 XONG"
+              : "ĐÃ ĐIỂM DANH"}
+        </div>
+        <h1>
+          Ngày {day} · chuỗi {journey.streak}
+        </h1>
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            navigate(`/j/${journey.id}/squad`)
+          }}
+        >
+          <SquadAvatarStack attendance={attendance} />
+          {attendance}/5 đứa đã điểm danh
+        </button>
+      </div>
+      {store.notificationSheetOpen && (
+        <PermissionSheet
+          kind="notification"
+          onClose={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+          onConfirm={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+        />
+      )}
+    </section>
+  )
+}
+
+const squadMembers = [
+  ["AN", "06:02"],
+  ["HÀ", "06:08"],
+  ["LINH", "06:10"],
+  ["NAM", "06:14"],
+] as const
+
+function SquadToday({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const attendance = journey.attendance ?? 4
+  const [reaction, setReaction] = useState<Record<string, string>>({})
+  const [reminded, setReminded] = useState(false)
+  const [toast, setToast] = useState("")
+  const reactions = ["🔥", "💪", "👏", "❤️", "😂"]
+  const visibleMembers =
+    attendance >= 4
+      ? squadMembers
+      : squadMembers.filter(([name]) => name !== "LINH")
+  return (
+    <ScreenShell bare className="squad-journey-screen">
+      <SquadTopBar journey={journey} onBack={() => navigate(-1)} />
+      <main className="squad-today">
+        {store.offline && (
+          <div className="squad-offline-pill">
+            <CloudSlash size={17} weight="bold" />
+            CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <div className="squad-ended-stamp">
+            <Lock size={16} weight="bold" /> ĐÃ KẾT THÚC · CHỈ XEM
+          </div>
+        )}
+        <div className="squad-attendance-bar">
+          <span style={{ width: `${(attendance / 5) * 100}%` }} />
+          <b>{attendance}/5 ĐÃ ĐIỂM DANH</b>
+        </div>
+        <p className="squad-updated">Cập nhật lúc 06:12</p>
+        <div className="squad-wall">
+          {visibleMembers.map(([name, time], index) => (
+            <article key={name}>
+              <button
+                className="card-open-hit"
+                aria-label={`Mở ảnh hôm nay của ${name}`}
+                onClick={() => navigate(`/j/${journey.id}/day/${index + 18}`)}
+              />
+              <SquadPhoto scene={index} />
+              <b>
+                {name} <Check size={14} weight="bold" /> {time}
+              </b>
+              <span className="squad-reaction-counts">
+                🔥 {4 + (reaction[name] === "🔥" ? 1 : 0)} · 👏{" "}
+                {3 + (reaction[name] === "👏" ? 1 : 0)}
+                {reaction[name] &&
+                reaction[name] !== "🔥" &&
+                reaction[name] !== "👏"
+                  ? ` · ${reaction[name]} 1`
+                  : ""}
+              </span>
+              <div className="squad-reactions">
+                {reactions.map((item) => (
+                  <button
+                    key={item}
+                    className={reaction[name] === item ? "selected" : ""}
+                    disabled={store.readOnly}
+                    aria-pressed={reaction[name] === item}
+                    aria-label={`Phản ứng ${item} cho ${name}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setReaction((current) => ({
+                        ...current,
+                        [name]: current[name] === item ? "" : item,
+                      }))
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+          {!store.blocked.includes("Minh") && (
+            <article className="squad-waiting-tile">
+              <span className="squad-empty-photo" />
+              <b>MINH · ĐANG CHỜ</b>
+              <button
+                className="squad-remind"
+                disabled={store.offline || store.readOnly || reminded}
+                onClick={() => {
+                  setReminded(true)
+                  setToast("Đã nhắc Minh")
+                  window.setTimeout(() => setToast(""), 1800)
+                }}
+              >
+                {store.readOnly
+                  ? "Đã lưu trữ"
+                  : store.offline
+                    ? "Cần mạng"
+                    : reminded
+                      ? "Đã nhắc Minh"
+                      : "Nhắc Minh 👋"}
+              </button>
+            </article>
+          )}
+        </div>
+      </main>
+      {toast && <div className="squad-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+function SquadShareSheet({ onClose }: { onClose: () => void }) {
+  const startY = useRef(0)
+  const [drag, setDrag] = useState(0)
+  return (
+    <div
+      className="squad-share-scrim"
+      onPointerDown={(event) =>
+        event.target === event.currentTarget && onClose()
+      }
+    >
+      <div
+        className="squad-share-sheet"
+        style={{ transform: `translateY(${drag}px)` }}
+      >
+        <div
+          className="squad-share-drag"
+          onPointerDown={(event) => {
+            startY.current = event.clientY
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) =>
+            setDrag(Math.max(0, event.clientY - startY.current))
+          }
+          onPointerUp={() => {
+            if (drag > 70) onClose()
+            setDrag(0)
+          }}
+        >
+          <i />
+        </div>
+        <button
+          className="squad-share-close"
+          onClick={onClose}
+          aria-label="Đóng"
+        >
+          <X size={21} weight="bold" />
+        </button>
+        <h2>chia sẻ tấm thiệp.</h2>
+        <button onClick={onClose}>Tin nhắn</button>
+        <button onClick={onClose}>Ứng dụng khác</button>
+        <button onClick={onClose}>Lưu ảnh</button>
+      </div>
+    </div>
+  )
+}
+
+function SquadShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [shareOpen, setShareOpen] = useState(false)
+  return (
+    <section className="squad-journey-page squad-share-page">
+      <SquadTopBar journey={journey} onBack={() => navigate(-1)} />
+      <div className="squad-page-scroll">
+        <h1>tạo thiệp.</h1>
+        <div className="squad-share-tabs">
+          <button
+            className={ratio === "story" ? "selected" : ""}
+            onClick={() => setRatio("story")}
+          >
+            9:16
+          </button>
+          <button
+            className={ratio === "feed" ? "selected" : ""}
+            onClick={() => setRatio("feed")}
+          >
+            4:5
+          </button>
+        </div>
+        <div className={`squad-share-poster ${ratio}`}>
+          <h2>4/5 ĐÃ ĐIỂM DANH · NGÀY 21</h2>
+          <div className="squad-poster-wall">
+            {[1, 2, 3, 4].map((item) => (
+              <SquadPhoto key={item} />
+            ))}
+          </div>
+          <div className="squad-trophy-stamp">
+            <Trophy size={26} weight="fill" /> CÚP 7.5
+          </div>
+          <small>Ourney</small>
+        </div>
+        <button
+          className="squad-share-button"
+          onClick={() => setShareOpen(true)}
+        >
+          <ShareNetwork size={19} weight="bold" /> Chia sẻ
+        </button>
+      </div>
+      {shareOpen && <SquadShareSheet onClose={() => setShareOpen(false)} />}
+    </section>
+  )
+}
+
+function PosterShareSheet({
+  skin,
+  title,
+  onClose,
+}: {
+  skin: "memory" | "couple" | "flexer" | "minimal"
+  title: string
+  onClose: () => void
+}) {
+  const startY = useRef(0)
+  const [drag, setDrag] = useState(0)
+  return (
+    <div
+      className={`poster-share-scrim poster-share-${skin}`}
+      onPointerDown={(event) =>
+        event.target === event.currentTarget && onClose()
+      }
+    >
+      <div
+        className="poster-share-sheet"
+        style={{ transform: `translateY(${drag}px)` }}
+      >
+        <div
+          className="poster-share-drag"
+          onPointerDown={(event) => {
+            startY.current = event.clientY
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) =>
+            setDrag(Math.max(0, event.clientY - startY.current))
+          }
+          onPointerUp={() => {
+            if (drag > 70) onClose()
+            setDrag(0)
+          }}
+        >
+          <i />
+        </div>
+        <button
+          className="poster-share-close"
+          onClick={onClose}
+          aria-label="Đóng"
+        >
+          <X size={21} weight="bold" />
+        </button>
+        <h2>{title}</h2>
+        <button onClick={onClose}>Tin nhắn</button>
+        <button onClick={onClose}>Ứng dụng khác</button>
+        <button onClick={onClose}>Lưu ảnh</button>
+      </div>
+    </div>
+  )
+}
+
+function MemoryTopBar({
+  journey,
+  onBack,
+  gear = false,
+}: {
+  journey: Journey
+  onBack?: () => void
+  gear?: boolean
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="memory-topbar">
+      <button
+        onClick={onBack ?? (() => navigate("/hub"))}
+        aria-label="Quay lại"
+      >
+        <ArrowLeft size={21} weight="bold" />
+      </button>
+      <b>ĐÀ LẠT · 5 NGÀY CÙNG BẠN BÈ</b>
+      {gear ? (
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={21} weight="bold" />
+        </button>
+      ) : (
+        <span />
+      )}
+    </header>
+  )
+}
+
+function MemoryPhoto({ scene = 0 }: { scene?: number }) {
+  return (
+    <div className={`memory-photo-placeholder memory-scene-${scene % 4}`}>
+      <span />
+      <i />
+      <b>{scene % 2 ? "☁" : "▲"}</b>
+    </div>
+  )
+}
+
+function MemoryJourneyHome({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const frames = journey.frameCount ?? 12
+  const entries = ([
+    [journey.day - 1, "SƯƠNG SỚM", 3],
+    [journey.day - 2, "ĐỒI CHÈ", 2],
+    [1, "RỪNG THÔNG", 0],
+  ] as Array<[number, string, number]>)
+    .filter(([day]) => day >= 1)
+    .filter(
+      ([day], index, list) =>
+        list.findIndex(([candidate]) => candidate === day) === index,
+    )
+  return (
+    <ScreenShell bare className="memory-journey-screen">
+      <MemoryTopBar journey={journey} gear />
+      <main className="memory-home">
+        {store.offline && (
+          <div className="memory-offline-strip">
+            <CloudSlash size={17} weight="bold" />
+            Đang lưu trên máy. Có mạng sẽ tự gửi.
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <div className="memory-closed">
+            <span>ĐÃ ĐÓNG SỔ</span>
+            <button onClick={() => navigate(`/j/${journey.id}/wrapped`)}>
+              Xem tổng kết
+            </button>
+          </div>
+        )}
+        <div className="memory-film-chip">
+          <FilmStrip size={19} weight="bold" />
+          CUỘN PHIM {frames}/24
+        </div>
+        <section className="memory-thread-timeline">
+          <svg viewBox="0 0 330 520" aria-hidden="true">
+            <path d="M164 510 C48 455 55 370 170 330 S280 190 164 150 S55 70 166 12" />
+          </svg>
+          <div className="memory-thread-knot knot-one" />
+          <div className="memory-thread-knot knot-two" />
+          <div className="memory-thread-knot knot-three" />
+          <div className="memory-thread-knot knot-four" />
+          <button
+            className="memory-polaroid memory-today-slot"
+            onClick={() => navigate(`/j/${journey.id}/camera`)}
+          >
+            <span />
+            <b>HÔM NAY · chạm để chụp</b>
+          </button>
+          {entries.map(([day, label, scene], index) => {
+            const missed = store.missedDay && day === 3
+            return (
+              <button
+                key={`${day}-${label}`}
+                className={`memory-polaroid memory-entry-${index} ${
+                  missed ? "missed" : ""
+                }`}
+                onClick={() => navigate(`/j/${journey.id}/day/${day}`)}
+              >
+                {missed ? (
+                  <span className="memory-empty-frame" />
+                ) : (
+                  <MemoryPhoto scene={scene} />
+                )}
+                <b>
+                  NGÀY {String(day).padStart(2, "0")} ·{" "}
+                  {missed ? "KHUNG TRỐNG" : label}
+                </b>
+                {missed && (
+                  <small>ngày này chưa có ảnh. cuộn vẫn quay tiếp.</small>
+                )}
+                {store.offline && index === 0 && (
+                  <em>
+                    <Clock size={13} weight="bold" /> CHỜ GỬI
+                  </em>
+                )}
+              </button>
+            )
+          })}
+          {(store.readOnly || journey.archived) && (
+            <div className="memory-thread-bow">⌁</div>
+          )}
+        </section>
+        <div className="memory-home-actions">
+          <button onClick={() => navigate(`/j/${journey.id}/squad`)}>
+            <UsersThree size={18} weight="bold" /> Hội hôm nay
+          </button>
+          <button onClick={() => navigate(`/j/${journey.id}/share`)}>
+            <ShareNetwork size={18} weight="bold" /> Tạo poster
+          </button>
+        </div>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function MemoryPost({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  const [place, setPlace] = useState(journey.lastPlace ?? "Đồi chè Cầu Đất")
+  function submit() {
+    if (store.readOnly) return
+    store.checkInJourney(journey.id, { caption, mood: "", place })
+    if (journey.todayDone) {
+      store.showToast("Đã thay ảnh hôm nay.")
+      navigate(`/j/${journey.id}`, { replace: true })
+      return
+    }
+    if (!store.notificationPromptHandled) {
+      store.setNotificationSheetOpen(true)
+    }
+    navigate(`/j/${journey.id}/done`, { replace: true })
+  }
+  return (
+    <section className="memory-journey-page memory-post">
+      <MemoryTopBar
+        journey={journey}
+        onBack={() => navigate(`/j/${journey.id}/camera`)}
+      />
+      <div className="memory-page-scroll">
+        <div className="memory-post-photo">
+          <MemoryPhoto scene={3} />
+        </div>
+        <h1>Hôm nay cả bọn lạc ở đâu?</h1>
+        <label className="memory-place-field">
+          <MapPin size={19} weight="fill" />
+          <input
+            value={place}
+            onChange={(event) => setPlace(event.target.value)}
+            aria-label="Địa điểm"
+          />
+        </label>
+        <label className="memory-caption-field">
+          <span>Ghi lại một dòng</span>
+          <textarea
+            maxLength={140}
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+            placeholder="Hôm nay có chuyện gì đáng nhớ?"
+          />
+          <small>{caption.length}/140</small>
+        </label>
+        <button className="memory-post-primary" onClick={submit}>
+          {journey.todayDone ? "Thay ảnh" : "Dán vào sổ"}
+        </button>
+        <button
+          className="memory-retake"
+          onClick={() =>
+            navigate(
+              journey.todayDone
+                ? `/j/${journey.id}`
+                : `/j/${journey.id}/camera`,
+            )
+          }
+        >
+          {journey.todayDone ? "Giữ ảnh cũ" : "chụp lại"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function MemoryDone({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const frames = journey.frameCount ?? 13
+  const day = Math.max(1, journey.day - 1)
+  const milestone = day === 7 || frames === 24
+  useEffect(() => {
+    if (store.notificationSheetOpen) return
+    const timer = window.setTimeout(
+      () => navigate(`/j/${journey.id}`, { replace: true }),
+      store.reduceMotion ? 150 : 1800,
+    )
+    return () => window.clearTimeout(timer)
+  }, [store.notificationSheetOpen, store.reduceMotion, journey.id])
+  return (
+    <section
+      className={`memory-journey-page memory-done ${
+        milestone ? "milestone" : ""
+      }`}
+      onClick={() => {
+        if (!store.notificationSheetOpen) {
+          navigate(`/j/${journey.id}`, { replace: true })
+        }
+      }}
+    >
+      {milestone && <div className="memory-film-confetti">▰ ▱ ▰ ▱ ▰ ▱</div>}
+      <div className="memory-developing-photo">
+        <span className="memory-tape" />
+        <MemoryPhoto scene={3} />
+      </div>
+      <div className="memory-done-stamp">ĐÃ DÁN · KHUNG {frames}/24</div>
+      <h1>
+        {frames === 24
+          ? "Hết cuộn rồi đó."
+          : day === 7
+            ? "Tuần đầu trên đường"
+            : `tấm thứ ${frames} rồi đó.`}
+      </h1>
+      {milestone && (
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            navigate(`/j/${journey.id}/share`)
+          }}
+        >
+          Tạo poster
+        </button>
+      )}
+      {store.notificationSheetOpen && (
+        <PermissionSheet
+          kind="notification"
+          onClose={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+          onConfirm={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+        />
+      )}
+    </section>
+  )
+}
+
+function MemorySquad({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [reminded, setReminded] = useState(false)
+  const [toast, setToast] = useState("")
+  const [reaction, setReaction] = useState<Record<string, string>>({})
+  const members = ["AN", "LINH", "MINH", "NAM"].filter(
+    (name) => !store.blocked.includes(name === "MINH" ? "Minh" : name),
+  )
+  const reactions = ["🔥", "💪", "👏", "❤️", "😂"]
+  return (
+    <ScreenShell bare className="memory-journey-screen">
+      <MemoryTopBar journey={journey} onBack={() => navigate(-1)} />
+      <main className="memory-squad">
+        {store.offline && (
+          <div className="memory-offline-strip">
+            <CloudSlash size={17} weight="bold" />
+            Đang lưu trên máy. Có mạng sẽ tự gửi.
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <div className="memory-closed">
+            <span>ĐÃ ĐÓNG SỔ</span>
+          </div>
+        )}
+        <h1>HÔM NAY · 4/5 ĐÃ CÓ KHUNG</h1>
+        <div className="memory-film-strip">
+          {members.map((name, index) => (
+            <article key={name}>
+              <button
+                className="card-open-hit"
+                aria-label={`Mở khung hình của ${name}`}
+                onClick={() => navigate(`/j/${journey.id}/day/${index + 1}`)}
+              />
+              <span className="memory-sprockets" />
+              <MemoryPhoto scene={index} />
+              <b>
+                {name} · 07:{42 + index}
+              </b>
+              <div className="memory-reactions">
+                {reactions.map((item) => (
+                  <button
+                    key={item}
+                    className={reaction[name] === item ? "selected" : ""}
+                    disabled={store.readOnly}
+                    aria-pressed={reaction[name] === item}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setReaction((current) => ({
+                        ...current,
+                        [name]: current[name] === item ? "" : item,
+                      }))
+                    }}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </article>
+          ))}
+          <article className="memory-missing-frame">
+            <span className="memory-sprockets" />
+            <span className="memory-empty-frame" />
+            <b>HÀ · CHƯA CÓ KHUNG</b>
+            <button
+              disabled={store.offline || store.readOnly || reminded}
+              onClick={() => {
+                setReminded(true)
+                setToast("Đã nhắc Hà.")
+                window.setTimeout(() => setToast(""), 1800)
+              }}
+            >
+              {store.readOnly
+                ? "Đã khép lại"
+                : store.offline
+                  ? "Cần mạng"
+                  : reminded
+                    ? "Đã nhắc Hà"
+                    : "Nhắc Hà"}
+            </button>
+          </article>
+        </div>
+      </main>
+      {toast && <div className="memory-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+function MemoryShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [shareOpen, setShareOpen] = useState(false)
+  const total = ratio === "story" ? 24 : 20
+  const shot = journey.frameCount ?? 12
+  return (
+    <section className="memory-journey-page memory-share">
+      <MemoryTopBar journey={journey} onBack={() => navigate(-1)} />
+      <div className="memory-page-scroll">
+        <h1>5 NGÀY THANH XUÂN · ĐÀ LẠT</h1>
+        <div className="memory-share-tabs">
+          <button
+            className={ratio === "story" ? "selected" : ""}
+            onClick={() => setRatio("story")}
+          >
+            9:16
+          </button>
+          <button
+            className={ratio === "feed" ? "selected" : ""}
+            onClick={() => setRatio("feed")}
+          >
+            4:5
+          </button>
+        </div>
+        <div className={`memory-contact-poster ${ratio}`}>
+          <h2>5 NGÀY THANH XUÂN · ĐÀ LẠT</h2>
+          <div className="memory-contact-sheet">
+            {Array.from({ length: total }, (_, index) => (
+              <span className={index < shot ? "shot" : ""} key={index}>
+                {index < shot ? <MemoryPhoto scene={index} /> : null}
+                <b>{String(index + 1).padStart(2, "0")}</b>
+              </span>
+            ))}
+          </div>
+          <small>Ourney</small>
+        </div>
+        <button
+          className="memory-share-button"
+          onClick={() => setShareOpen(true)}
+        >
+          <ShareNetwork size={19} weight="bold" />
+          Chia sẻ poster chuyến đi
+        </button>
+      </div>
+      {shareOpen && (
+        <PosterShareSheet
+          skin="memory"
+          title="chia sẻ poster chuyến đi."
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </section>
+  )
+}
+
+function CoupleTopBar({
+  journey,
+  onBack,
+  gear = false,
+  showTitle = true,
+}: {
+  journey: Journey
+  onBack?: () => void
+  gear?: boolean
+  showTitle?: boolean
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="couple-topbar">
+      <button
+        onClick={onBack ?? (() => navigate("/hub"))}
+        aria-label="Quay lại"
+      >
+        <ArrowLeft size={21} weight="bold" />
+      </button>
+      <b>{showTitle ? journey.name.toLocaleUpperCase("vi") : "NAM · LINH"}</b>
+      {gear ? (
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={21} weight="bold" />
+        </button>
+      ) : (
+        <span />
+      )}
+    </header>
+  )
+}
+
+function CouplePhoto({
+  person,
+  scene = 0,
+}: {
+  person: "Nam" | "Linh"
+  scene?: number
+}) {
+  return (
+    <div
+      className={`couple-photo-placeholder couple-photo-${person.toLowerCase()} couple-dish-${scene % 4}`}
+    >
+      <span />
+      <i />
+    </div>
+  )
+}
+
+function CouplePair({
+  day,
+  waiting = false,
+  missed = false,
+  onClick,
+}: {
+  day: number
+  waiting?: boolean
+  missed?: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      className={`couple-pair ${waiting ? "waiting" : ""} ${
+        missed ? "missed" : ""
+      }`}
+      onClick={onClick}
+    >
+      <small>
+        NGÀY {String(day).padStart(2, "0")} ·{" "}
+        {day === 18 ? "HÔM NAY" : day === 14 ? "★ NỬA CHẶNG" : ""}
+      </small>
+      <div className="couple-half couple-left-half">
+        {missed ? (
+          <span className="couple-dashed-half" />
+        ) : (
+          <CouplePhoto person="Nam" scene={day} />
+        )}
+        <b>Nam</b>
+        <em>bữa sáng của Nam</em>
+      </div>
+      <span className="couple-axis-node">
+        <Heart size={18} weight={missed ? "regular" : "fill"} />
+      </span>
+      <div className="couple-half couple-right-half">
+        {waiting || missed ? (
+          <span className="couple-dashed-half">
+            {missed ? "cả hai đều nghỉ" : "đang chờ Linh"}
+          </span>
+        ) : (
+          <CouplePhoto person="Linh" scene={day + 1} />
+        )}
+        <b>Linh</b>
+        {!waiting && !missed && <em>bữa tối của Linh</em>}
+      </div>
+      {missed && <p>NGÀY 9 · CẢ HAI ĐỀU NGHỈ · mai mình gặp lại nhé.</p>}
+    </button>
+  )
+}
+
+function CoupleJourneyHome({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  return (
+    <ScreenShell bare className="couple-journey-screen">
+      <CoupleTopBar journey={journey} gear showTitle={false} />
+      <main className="couple-home">
+        {store.offline && (
+          <div className="couple-offline-banner">
+            <CloudSlash size={17} weight="bold" />
+            Đang lưu trên máy. Có mạng sẽ tự gửi.
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <div className="couple-finished">
+            <span>
+              <Heart size={16} weight="fill" /> Hai đứa đã về đích{" "}
+              <Heart size={16} weight="fill" />
+            </span>
+            <button onClick={() => navigate(`/j/${journey.id}/wrapped`)}>
+              Xem tổng kết
+            </button>
+          </div>
+        )}
+        <h1>30 NGÀY NẤU CHO NHAU · 🔥 {journey.streak}</h1>
+        <div className="couple-timeline">
+          <CouplePair
+            day={journey.day}
+            waiting={!journey.pairComplete}
+            onClick={() =>
+              navigate(
+                journey.pairComplete
+                  ? `/j/${journey.id}/day/${journey.day}`
+                  : `/j/${journey.id}/camera`,
+              )
+            }
+          />
+          <CouplePair
+            day={14}
+            onClick={() => navigate(`/j/${journey.id}/day/14`)}
+          />
+          {store.missedDay && (
+            <CouplePair
+              day={9}
+              missed
+              onClick={() => navigate(`/j/${journey.id}/day/9`)}
+            />
+          )}
+          <CouplePair
+            day={1}
+            onClick={() => navigate(`/j/${journey.id}/day/1`)}
+          />
+          <span className="couple-start-label">NGÀY 01 · BẮT ĐẦU</span>
+        </div>
+        <div className="couple-home-actions">
+          <button onClick={() => navigate(`/j/${journey.id}/squad`)}>
+            <UsersThree size={18} weight="bold" /> Hôm nay của hai đứa
+          </button>
+          <button onClick={() => navigate(`/j/${journey.id}/share`)}>
+            <ShareNetwork size={18} weight="bold" /> Tạo thiệp
+          </button>
+        </div>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function CouplePost({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [dish, setDish] = useState(journey.lastDish ?? "")
+  const [cook, setCook] = useState(journey.lastCook ?? "Linh")
+  const [hearts, setHearts] = useState(journey.lastHearts ?? 3)
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  function submit() {
+    if (store.readOnly) return
+    store.checkInJourney(journey.id, {
+      caption,
+      mood: "",
+      dish,
+      cook,
+      hearts,
+    })
+    if (journey.todayDone) {
+      store.showToast("Đã thay ảnh hôm nay.")
+      navigate(`/j/${journey.id}`, { replace: true })
+      return
+    }
+    if (!store.notificationPromptHandled) {
+      store.setNotificationSheetOpen(true)
+    }
+    navigate(`/j/${journey.id}/done`, { replace: true })
+  }
+  return (
+    <section className="couple-journey-page couple-post">
+      <CoupleTopBar
+        journey={journey}
+        onBack={() => navigate(`/j/${journey.id}/camera`)}
+      />
+      <div className="couple-page-scroll">
+        <div className="couple-post-diptych">
+          {journey.partnerShot ? (
+            <CouplePhoto person="Nam" />
+          ) : (
+            <span className="couple-dashed-half">đang chờ Nam</span>
+          )}
+          <CouplePhoto person="Linh" />
+        </div>
+        <h1>Hôm nay hai đứa nấu gì?</h1>
+        <label className="couple-field">
+          <span>Món hôm nay</span>
+          <input
+            value={dish}
+            onChange={(event) => setDish(event.target.value)}
+            placeholder="Để trống cũng được"
+          />
+        </label>
+        <div className="couple-cook-chips">
+          <span>Ai nấu?</span>
+          {["Nam", "Linh"].map((name) => (
+            <button
+              key={name}
+              className={cook === name ? "selected" : ""}
+              onClick={() => setCook(name)}
+            >
+              {cook === name && <Check size={14} weight="bold" />}
+              {name}
+            </button>
+          ))}
+        </div>
+        <div className="couple-heart-rating">
+          <span>Bữa này mấy tim?</span>
+          <div>
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                onClick={() => setHearts(value)}
+                aria-label={`${value} tim`}
+                aria-pressed={value <= hearts}
+              >
+                <Heart
+                  size={24}
+                  weight={value <= hearts ? "fill" : "regular"}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <label className="couple-caption">
+          <span>Ghi lại một dòng</span>
+          <textarea
+            maxLength={140}
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+            placeholder="Hôm nay hai đứa thấy sao?"
+          />
+          <small>{caption.length}/140</small>
+        </label>
+        <button className="couple-post-primary" onClick={submit}>
+          {journey.todayDone
+            ? "Thay ảnh"
+            : journey.partnerShot
+              ? "Gửi cho cả hai"
+              : "Gửi nửa của mình"}
+        </button>
+        {!journey.partnerShot && <p>đang chờ Nam</p>}
+        <button
+          className="couple-retake"
+          onClick={() =>
+            navigate(
+              journey.todayDone
+                ? `/j/${journey.id}`
+                : `/j/${journey.id}/camera`,
+            )
+          }
+        >
+          {journey.todayDone ? "Giữ ảnh cũ" : "chụp lại"}
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function CoupleDone({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const day = Math.max(1, journey.day - 1)
+  const complete = Boolean(journey.pairComplete)
+  const milestone = day === 7 || day === 30
+  useEffect(() => {
+    if (store.notificationSheetOpen) return
+    const timer = window.setTimeout(
+      () => navigate(`/j/${journey.id}`, { replace: true }),
+      store.reduceMotion ? 150 : 1800,
+    )
+    return () => window.clearTimeout(timer)
+  }, [store.notificationSheetOpen, store.reduceMotion, journey.id])
+  return (
+    <section
+      className={`couple-journey-page couple-done ${
+        milestone ? "milestone" : ""
+      }`}
+      onClick={() => {
+        if (!store.notificationSheetOpen) {
+          navigate(`/j/${journey.id}`, { replace: true })
+        }
+      }}
+    >
+      {milestone && <div className="couple-petals">♥ · ♥ · ♥ · ♥ · ♥</div>}
+      <div className="couple-click-halves">
+        <CouplePhoto person="Nam" />
+        <CouplePhoto person="Linh" />
+      </div>
+      <div className="couple-heart-seal">
+        <Heart size={42} weight="fill" />
+      </div>
+      <h1>
+        Ngày {day} · {complete ? "đủ đôi" : "đang chờ Nam"}
+      </h1>
+      <p>
+        {milestone
+          ? day === 30
+            ? "Tròn 30 ngày"
+            : "Tuần đầu bên nhau"
+          : complete
+            ? "đủ đôi rồi nè."
+            : "nửa của bạn đã được gửi."}
+      </p>
+      {milestone && (
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            navigate(`/j/${journey.id}/share`)
+          }}
+        >
+          Tạo thiệp
+        </button>
+      )}
+      {store.notificationSheetOpen && (
+        <PermissionSheet
+          kind="notification"
+          onClose={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+          onConfirm={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+        />
+      )}
+    </section>
+  )
+}
+
+function CoupleSquad({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [reminded, setReminded] = useState(false)
+  const [toast, setToast] = useState("")
+  const [reaction, setReaction] = useState("")
+  return (
+    <ScreenShell bare className="couple-journey-screen">
+      <CoupleTopBar journey={journey} onBack={() => navigate(-1)} />
+      <main className="couple-today">
+        {store.offline && (
+          <div className="couple-offline-banner">
+            <CloudSlash size={17} weight="bold" />
+            Đang lưu trên máy. Có mạng sẽ tự gửi.
+          </div>
+        )}
+        {(store.readOnly || journey.archived) && (
+          <div className="couple-finished">
+            <span>Hai đứa đã về đích</span>
+          </div>
+        )}
+        <h1>Hôm nay của hai đứa</h1>
+        <div className="couple-today-halves">
+          <article>
+            {store.offline ? (
+              <span className="couple-offline-skeleton">
+                ảnh của Nam chưa tải được
+              </span>
+            ) : (
+              <CouplePhoto person="Nam" />
+            )}
+            <b>Nam · đã chụp 07:30</b>
+            <div>
+              {["🔥", "💪", "👏", "❤️", "😂"].map((item) => (
+                <button
+                  key={item}
+                  className={reaction === item ? "selected" : ""}
+                  disabled={store.readOnly}
+                  onClick={() => setReaction(reaction === item ? "" : item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </article>
+          <article className={journey.ownShot ? "" : "waiting"}>
+            {journey.ownShot ? (
+              <>
+                <CouplePhoto person="Linh" />
+                <b>Linh · đã chụp</b>
+                {store.offline && (
+                  <span className="couple-waiting-sync">
+                    <Clock size={13} weight="bold" /> CHỜ GỬI · đã lưu trên máy
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <span className="couple-dashed-half">chưa chụp</span>
+                <b>Linh · chưa chụp</b>
+                <button
+                  disabled={store.offline || store.readOnly || reminded}
+                  onClick={() => {
+                    setReminded(true)
+                    setToast("Đã nhắc Linh.")
+                    window.setTimeout(() => setToast(""), 1800)
+                  }}
+                >
+                  {store.readOnly
+                    ? "Đã khép lại"
+                    : store.offline
+                      ? "Cần mạng"
+                      : reminded
+                        ? "Đã nhắc Linh"
+                        : "Nhắc Linh"}
+                </button>
+              </>
+            )}
+          </article>
+        </div>
+        <p className="couple-streak">🔥 {journey.streak} ngày bên nhau</p>
+      </main>
+      {toast && <div className="couple-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+function CoupleShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [shareOpen, setShareOpen] = useState(false)
+  const total = ratio === "story" ? 36 : 16
+  return (
+    <section className="couple-journey-page couple-share">
+      <CoupleTopBar journey={journey} onBack={() => navigate(-1)} />
+      <div className="couple-page-scroll">
+        <h1>18 NGÀY BÊN NHAU · 36 KHOẢNH KHẮC</h1>
+        <div className="couple-share-tabs">
+          <button
+            className={ratio === "story" ? "selected" : ""}
+            onClick={() => setRatio("story")}
+          >
+            9:16
+          </button>
+          <button
+            className={ratio === "feed" ? "selected" : ""}
+            onClick={() => setRatio("feed")}
+          >
+            4:5
+          </button>
+        </div>
+        <div className={`couple-share-card ${ratio}`}>
+          <h2>18 NGÀY BÊN NHAU · 36 KHOẢNH KHẮC</h2>
+          <div>
+            {Array.from({ length: total }, (_, index) => (
+              <CouplePhoto person={index % 2 ? "Linh" : "Nam"} key={index} />
+            ))}
+          </div>
+          <small>Ourney</small>
+        </div>
+        <button
+          className="couple-share-button"
+          onClick={() => setShareOpen(true)}
+        >
+          <ShareNetwork size={19} weight="bold" />
+          Chia sẻ câu chuyện của mình
+        </button>
+      </div>
+      {shareOpen && (
+        <PosterShareSheet
+          skin="couple"
+          title="chia sẻ câu chuyện."
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </section>
+  )
+}
+
+function FlexerTopBar({
+  journey,
+  onBack,
+  gear = false,
+}: {
+  journey: Journey
+  onBack?: () => void
+  gear?: boolean
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="flexer-topbar">
+      <button
+        onClick={onBack ?? (() => navigate("/hub"))}
+        aria-label="Quay lại"
+      >
+        <ArrowLeft size={21} weight="bold" />
+      </button>
+      <b>CHẠY SÁNG · NGÀY {journey.day}/30</b>
+      {gear ? (
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={21} weight="bold" />
+        </button>
+      ) : (
+        <span />
+      )}
+    </header>
+  )
+}
+
+function FlexerPhoto({ index = 0 }: { index?: number }) {
+  const scenes = ["đường sớm", "đường chạy", "công viên", "cây cầu", "mưa"]
+  return (
+    <div
+      className={`flexer-photo flexer-photo-${index % 5}`}
+      role="img"
+      aria-label={`Cảnh ${scenes[index % 5]}`}
+    >
+      <span />
+      <i />
+    </div>
+  )
+}
+
+function FlexerJourneyHome({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const formatKm = (value: number) =>
+    new Intl.NumberFormat("vi-VN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+  const rows = [
+    [journey.day, "HÔM NAY", journey.lastKm ?? 5.42],
+    [14, "★ CỘT MỐC · NỬA CHẶNG", 5.18],
+    [9, store.missedDay ? "NGHỈ" : "CHẠY NHẸ", 0],
+    [7, "★ CỘT MỐC · TUẦN ĐẦU", 5.0],
+    [1, "BẮT ĐẦU", 5.0],
+  ] as const
+  return (
+    <ScreenShell bare className="flexer-journey-screen">
+      <FlexerTopBar journey={journey} gear />
+      <main className="flexer-home">
+        {(store.readOnly || journey.archived) && (
+          <button
+            className="flexer-readonly"
+            onClick={() => navigate(`/j/${journey.id}/wrapped`)}
+          >
+            <Lock size={17} weight="bold" /> ĐÃ VỀ ĐÍCH · CHỈ ĐỌC
+          </button>
+        )}
+        <button
+          className="flexer-attendance-chip"
+          onClick={() => navigate(`/j/${journey.id}/squad`)}
+        >
+          3/4 ĐÃ CHẠY
+        </button>
+        <section className="flexer-summary">
+          <svg viewBox="0 0 320 90" aria-label="Nhịp chạy">
+            <path d="M4 72 L36 61 L66 67 L99 39 L128 52 L158 22 L191 35 L224 13 L256 29 L286 10 L316 18" />
+          </svg>
+          <p>
+            {(journey.totalKm ?? 92.4).toFixed(1).replace(".", ",")} KM TỔNG ·{" "}
+            {journey.pace ?? "5:04"} /KM NHỊP TB
+          </p>
+        </section>
+        <section className="flexer-axis">
+          {rows.map(([day, label, km], index) => {
+            const missed = store.missedDay && day === 9
+            return (
+              <button
+                key={`${day}-${label}`}
+                className={`${index === 0 ? "today" : ""} ${
+                  missed ? "missed" : ""
+                }`}
+                onClick={() =>
+                  navigate(
+                    index === 0
+                      ? `/j/${journey.id}/camera`
+                      : `/j/${journey.id}/day/${day}`,
+                  )
+                }
+              >
+                <FlexerPhoto index={index} />
+                <span className="flexer-node">
+                  {String(label).includes("CỘT MỐC") && (
+                    <Star size={16} weight="fill" />
+                  )}
+                </span>
+                <span>
+                  <small>
+                    NGÀY {day} · {label}
+                  </small>
+                  {index === 0 ? (
+                    <b>
+                      {formatKm(Number(km))} <em>KM</em>
+                    </b>
+                  ) : (
+                    <strong>
+                      {missed ? "CHỜ LẦN TỚI" : `${formatKm(Number(km))} KM`}
+                    </strong>
+                  )}
+                  {store.offline && index === 0 && (
+                    <i>
+                      <CloudSlash size={13} /> CHỜ ĐỒNG BỘ
+                    </i>
+                  )}
+                </span>
+              </button>
+            )
+          })}
+        </section>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function FlexerPost({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [field, setField] = useState<"km" | "pace">("km")
+  const [km, setKm] = useState(String(journey.lastKm ?? 5.42).replace(".", ","))
+  const [pace, setPace] = useState(journey.pace ?? "5:04")
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  function typeKey(key: string) {
+    if (field === "km") {
+      setKm((current) =>
+        key === "⌫" ? current.slice(0, -1) : `${current}${key}`.slice(-6),
+      )
+    } else {
+      setPace((current) =>
+        key === "⌫" ? current.slice(0, -1) : `${current}${key}`.slice(-5),
+      )
+    }
+  }
+  function submit() {
+    store.checkInJourney(journey.id, {
+      caption,
+      mood: "",
+      km: Number(km.replace(",", ".")) || 5.42,
+      pace: pace || "5:04",
+    })
+    if (journey.todayDone) {
+      store.showToast("Đã thay ảnh hôm nay.")
+      navigate(`/j/${journey.id}`, { replace: true })
+      return
+    }
+    navigate(`/j/${journey.id}/done`, { replace: true })
+  }
+  return (
+    <section className="flexer-journey-page flexer-post">
+      <FlexerTopBar
+        journey={journey}
+        onBack={() => navigate(`/j/${journey.id}/camera`)}
+      />
+      <div className="flexer-page-scroll">
+        <FlexerPhoto index={1} />
+        <div className="flexer-metrics">
+          <button
+            className={field === "km" ? "selected" : ""}
+            onClick={() => setField("km")}
+          >
+            <b>{km || "0"}</b> <span>KM</span>
+          </button>
+          <button
+            className={field === "pace" ? "selected" : ""}
+            onClick={() => setField("pace")}
+          >
+            <b>{pace || "0:00"}</b> <span>/KM</span>
+          </button>
+        </div>
+        <div className="flexer-keypad">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"].map(
+            (key) => (
+              <button key={key} onClick={() => typeKey(key)}>
+                {key}
+              </button>
+            ),
+          )}
+        </div>
+        <label className="flexer-caption">
+          <span>Hôm nay chạy thế nào?</span>
+          <textarea
+            maxLength={140}
+            value={caption}
+            onChange={(event) => setCaption(event.target.value)}
+          />
+          <small>{caption.length}/140</small>
+        </label>
+        <button className="flexer-primary" onClick={submit}>
+          {journey.todayDone ? "Thay ảnh" : "Đăng"}
+        </button>
+        {journey.todayDone && (
+          <button
+            className="flexer-keep-old"
+            onClick={() => navigate(`/j/${journey.id}`)}
+          >
+            Giữ ảnh cũ
+          </button>
+        )}
+        {store.offline && (
+          <p className="flexer-offline-note">
+            Đã lưu trên máy, sẽ đồng bộ sau.
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+function FlexerDone({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const day = Math.max(1, journey.day - 1)
+  const milestone = day === 7 || day === 30
+  const [displayDay, setDisplayDay] = useState(store.reduceMotion ? day : 0)
+  useEffect(() => {
+    if (store.reduceMotion) {
+      setDisplayDay(day)
+      return
+    }
+    const timer = window.setInterval(
+      () => {
+        setDisplayDay((current) => {
+          if (current >= day) {
+            window.clearInterval(timer)
+            return day
+          }
+          return current + 1
+        })
+      },
+      Math.max(20, Math.floor(700 / day)),
+    )
+    return () => window.clearInterval(timer)
+  }, [day, store.reduceMotion])
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => navigate(`/j/${journey.id}`, { replace: true }),
+      store.reduceMotion ? 150 : 1800,
+    )
+    return () => window.clearTimeout(timer)
+  }, [store.reduceMotion, journey.id])
+  return (
+    <section
+      className={`flexer-journey-page flexer-done ${
+        milestone ? "milestone" : ""
+      }`}
+      onClick={() => navigate(`/j/${journey.id}`, { replace: true })}
+    >
+      {milestone && <div className="flexer-confetti">▮ ▪ ▮ ▪ ▮ ▪ ▮</div>}
+      <div className="flexer-pulse-ring">
+        <b>{displayDay}</b>
+      </div>
+      <h1>
+        {milestone
+          ? day === 30
+            ? "VỀ ĐÍCH. 30/30"
+            : "TUẦN ĐẦU XONG"
+          : `NGÀY ${day}. ${journey.streak} NGÀY LIỀN.`}
+      </h1>
+      {milestone && (
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            navigate(`/j/${journey.id}/share`)
+          }}
+        >
+          Tạo thiệp
+        </button>
+      )}
+    </section>
+  )
+}
+
+function FlexerSquad({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [reaction, setReaction] = useState<Record<string, string>>({})
+  const [reminded, setReminded] = useState(false)
+  const [toast, setToast] = useState("")
+  const members = [
+    ["AN", "05:50"],
+    ["LINH", "06:10"],
+    ["NAM", "06:24"],
+  ] as const
+  return (
+    <ScreenShell bare className="flexer-journey-screen">
+      <FlexerTopBar journey={journey} onBack={() => navigate(-1)} />
+      <main className="flexer-squad">
+        <h1>3/4 ĐÃ CHẠY</h1>
+        {members.map(([name, time], index) => (
+          <article key={name}>
+            <span className="flexer-avatar">{name.slice(0, 1)}</span>
+            <div>
+              <b>{name}</b>
+              <small>
+                <Check size={14} weight="bold" /> Đã chạy · {time}
+              </small>
+              {name === "LINH" && <em>5,42 KM · 5:04 /KM</em>}
+              <div>
+                {["🔥", "💪", "👏", "❤️", "😂"].map((item) => (
+                  <button
+                    key={item}
+                    className={reaction[name] === item ? "selected" : ""}
+                    onClick={() =>
+                      setReaction((current) => ({
+                        ...current,
+                        [name]: current[name] === item ? "" : item,
+                      }))
+                    }
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <FlexerPhoto index={index} />
+          </article>
+        ))}
+        {!store.blocked.includes("Minh") && (
+          <article className="flexer-waiting">
+            <span className="flexer-avatar">M</span>
+            <div>
+              <b>MINH</b>
+              <small>CHƯA CHẠY</small>
+            </div>
+            <button
+              disabled={store.offline || reminded}
+              onClick={() => {
+                setReminded(true)
+                setToast("Đã nhắc Minh.")
+                window.setTimeout(() => setToast(""), 1800)
+              }}
+            >
+              {store.offline
+                ? "Cần mạng"
+                : reminded
+                  ? "Đã nhắc Minh"
+                  : "Nhắc Minh"}
+            </button>
+          </article>
+        )}
+      </main>
+      {toast && <div className="flexer-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+function FlexerShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [shareOpen, setShareOpen] = useState(false)
+  return (
+    <section className="flexer-journey-page flexer-share">
+      <FlexerTopBar journey={journey} onBack={() => navigate(-1)} />
+      <div className="flexer-page-scroll">
+        <div className="flexer-share-tabs">
+          {[
+            ["story", "9:16"],
+            ["feed", "4:5"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              className={ratio === value ? "selected" : ""}
+              onClick={() => setRatio(value as "story" | "feed")}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className={`flexer-share-card ${ratio}`}>
+          <FlexerPhoto index={2} />
+          <div className="flexer-share-hud">
+            <b>5,42 KM</b>
+            <span>NGÀY 21 · 5:04 /KM</span>
+          </div>
+          <div className="flexer-bars">
+            {Array.from({ length: 21 }, (_, index) => (
+              <i className={index % 6 === 0 ? "weak" : ""} key={index} />
+            ))}
+          </div>
+          <p>21 NGÀY HOẠT ĐỘNG</p>
+        </div>
+        <button className="flexer-primary" onClick={() => setShareOpen(true)}>
+          Chia sẻ lên Story
+        </button>
+      </div>
+      {shareOpen && (
+        <PosterShareSheet
+          skin="flexer"
+          title="chia sẻ thành tích."
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </section>
+  )
+}
+
+function MinimalTopBar({
+  journey,
+  onBack,
+  gear = false,
+}: {
+  journey: Journey
+  onBack?: () => void
+  gear?: boolean
+}) {
+  const navigate = useNavigate()
+  return (
+    <header className="minimal-topbar">
+      <button
+        onClick={onBack ?? (() => navigate("/hub"))}
+        aria-label="Quay lại"
+      >
+        <ArrowLeft size={21} />
+      </button>
+      <b>ĐỌC 10 TRANG</b>
+      {gear ? (
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={21} />
+        </button>
+      ) : (
+        <span />
+      )}
+    </header>
+  )
+}
+
+function MinimalPhoto({ index = 0 }: { index?: number }) {
+  return (
+    <div
+      className={`minimal-photo minimal-photo-${index % 4}`}
+      style={
+        {
+          "--minimal-day-photo": `hsl(${(index * 29) % 360} 18% 78%)`,
+        } as CSSProperties
+      }
+    >
+      <span />
+      <i />
+    </div>
+  )
+}
+
+function MinimalJourneyHome({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const streak = store.missedDay ? 15 : journey.streak
+  const days = Array.from({ length: 30 }, (_, index) => index + 1)
+  const calendarRef = useRef<HTMLElement | null>(null)
+  const [chainRuns, setChainRuns] = useState<string[]>([])
+  const [chainSize, setChainSize] = useState({ width: 0, height: 0 })
+  useLayoutEffect(() => {
+    const calendar = calendarRef.current
+    if (!calendar) return
+    const measure = () => {
+      const wrapper = calendar.getBoundingClientRect()
+      const cells = Array.from(
+        calendar.querySelectorAll<HTMLButtonElement>(
+          "button.done:not(.missed)[data-day]",
+        ),
+      )
+        .map((cell) => {
+          const rect = cell.getBoundingClientRect()
+          return {
+            day: Number(cell.dataset.day),
+            x: rect.left - wrapper.left + rect.width / 2,
+            y: rect.top - wrapper.top + rect.height / 2,
+          }
+        })
+        .sort((a, b) => a.day - b.day)
+      const runs: typeof cells[] = []
+      cells.forEach((cell) => {
+        const run = runs[runs.length - 1]
+        if (!run || cell.day !== run[run.length - 1].day + 1) {
+          runs.push([cell])
+        } else {
+          run.push(cell)
+        }
+      })
+      setChainRuns(
+        runs.map((run) => {
+          const points: string[] = []
+          run.forEach((cell, index) => {
+            const previous = run[index - 1]
+            if (previous && Math.abs(previous.y - cell.y) > 2) {
+              const middleY = (previous.y + cell.y) / 2
+              points.push(
+                `${wrapper.width + 5},${previous.y}`,
+                `${wrapper.width + 5},${middleY}`,
+                `-5,${middleY}`,
+                `-5,${cell.y}`,
+              )
+            }
+            points.push(`${cell.x},${cell.y}`)
+          })
+          return points.join(" ")
+        }),
+      )
+      setChainSize({ width: wrapper.width, height: wrapper.height })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(calendar)
+    window.addEventListener("resize", measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", measure)
+    }
+  }, [journey.day, store.missedDay])
+  return (
+    <ScreenShell bare className="minimal-journey-screen">
+      <MinimalTopBar journey={journey} gear />
+      <main className="minimal-home">
+        {(store.readOnly || journey.archived) && (
+          <button
+            className="minimal-readonly"
+            onClick={() => navigate(`/j/${journey.id}/wrapped`)}
+          >
+            <Lock size={16} /> ĐÃ KẾT THÚC · CHỈ ĐỌC
+          </button>
+        )}
+        <div className="minimal-month-header">
+          <span />
+          THÁNG 10 · CHUỖI {streak} NGÀY
+        </div>
+        <button
+          className="minimal-attendance-chip"
+          onClick={() => navigate(`/j/${journey.id}/squad`)}
+        >
+          3/4 ĐÃ XONG
+        </button>
+        <div className="minimal-weekdays">
+          {["T2", "T3", "T4", "T5", "T6", "T7", "CN"].map((day) => (
+            <span key={day}>{day}</span>
+          ))}
+        </div>
+        <section
+          ref={calendarRef}
+          className={`minimal-calendar ${store.missedDay ? "has-gap" : ""}`}
+        >
+          <svg
+            width={chainSize.width}
+            height={chainSize.height}
+            viewBox={`0 0 ${chainSize.width} ${chainSize.height}`}
+            aria-hidden="true"
+          >
+            {chainRuns.map((points, index) => (
+              <polyline key={`${index}-${points}`} points={points} />
+            ))}
+          </svg>
+          {[0, 1, 2].map((blank) => (
+            <span className="minimal-blank" key={`blank-${blank}`} />
+          ))}
+          {days.map((day) => {
+            const future = day > journey.day
+            const missed = store.missedDay && day === 9
+            return (
+              <button
+                key={day}
+                data-day={day}
+                className={`${future ? "future" : "done"} ${
+                  day === journey.day ? "today" : ""
+                } ${missed ? "missed" : ""}`}
+                onClick={() =>
+                  navigate(
+                    day === journey.day
+                      ? `/j/${journey.id}/camera`
+                      : `/j/${journey.id}/day/${day}`,
+                  )
+                }
+              >
+                <b>{day}</b>
+                {future || missed ? <span /> : <MinimalPhoto index={day} />}
+                {store.offline && day === journey.day && (
+                  <i>
+                    <Clock size={12} /> CHỜ ĐỒNG BỘ
+                  </i>
+                )}
+              </button>
+            )
+          })}
+        </section>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function MinimalPost({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [count, setCount] = useState(3)
+  const [stopped, setStopped] = useState(Boolean(journey.todayDone))
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  const posted = useRef(false)
+  function submit() {
+    if (posted.current) return
+    posted.current = true
+    store.checkInJourney(journey.id, { caption, mood: "" })
+    if (journey.todayDone) {
+      store.showToast("Đã thay ảnh hôm nay.")
+      navigate(`/j/${journey.id}`, { replace: true })
+      return
+    }
+    navigate(`/j/${journey.id}/done`, { replace: true })
+  }
+  useEffect(() => {
+    if (stopped || store.reduceMotion) return
+    const timer = window.setInterval(() => {
+      setCount((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer)
+          window.setTimeout(submit, 0)
+          return 0
+        }
+        return current - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [stopped, store.reduceMotion])
+  return (
+    <section
+      className="minimal-journey-page minimal-post"
+      onPointerDown={() => setStopped(true)}
+    >
+      <MinimalTopBar
+        journey={journey}
+        onBack={() => navigate(`/j/${journey.id}/camera`)}
+      />
+      <div className="minimal-page-scroll">
+        <MinimalPhoto index={journey.day} />
+        <div className="minimal-countdown">
+          {store.reduceMotion ? (
+            <span>Tự đăng sau 3 giây</span>
+          ) : (
+            <b>{count}</b>
+          )}
+        </div>
+        {noteOpen && (
+          <label className="minimal-caption">
+            <span>Ghi chú</span>
+            <textarea
+              maxLength={140}
+              value={caption}
+              onChange={(event) => setCaption(event.target.value)}
+            />
+            <small>{caption.length}/140</small>
+          </label>
+        )}
+        <button className="minimal-primary" onClick={submit}>
+          {journey.todayDone ? "Thay ảnh" : "Đăng ngay"}
+        </button>
+        {journey.todayDone && (
+          <button
+            className="minimal-add-note"
+            onClick={() => navigate(`/j/${journey.id}`)}
+          >
+            Giữ ảnh cũ
+          </button>
+        )}
+        <button className="minimal-add-note" onClick={() => setNoteOpen(true)}>
+          Thêm ghi chú
+        </button>
+      </div>
+    </section>
+  )
+}
+
+function MinimalDone({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const day = Math.max(1, journey.day - 1)
+  const milestone = day === 7 || day === 30
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => navigate(`/j/${journey.id}`, { replace: true }),
+      store.reduceMotion ? 150 : 1500,
+    )
+    return () => window.clearTimeout(timer)
+  }, [store.reduceMotion, journey.id])
+  return (
+    <section
+      className={`minimal-journey-page minimal-done ${
+        milestone ? "milestone" : ""
+      }`}
+      onClick={() => navigate(`/j/${journey.id}`, { replace: true })}
+    >
+      {milestone && <div className="minimal-confetti">▪ ▪ ▪ ▪ ▪ ▪</div>}
+      <div className="minimal-growing-dot" />
+      <h1>
+        {milestone ? (day === 30 ? "ĐỦ 30 NGÀY" : "7 NGÀY LIỀN") : "XONG."}
+      </h1>
+      {milestone && (
+        <button
+          onClick={(event) => {
+            event.stopPropagation()
+            navigate(`/j/${journey.id}/share`)
+          }}
+        >
+          Tạo thiệp
+        </button>
+      )}
+    </section>
+  )
+}
+
+function MinimalSquad({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [reaction, setReaction] = useState<Record<string, string>>({})
+  const [reminded, setReminded] = useState(false)
+  const [toast, setToast] = useState("")
+  const members = [
+    ["AN", "06:03"],
+    ["LINH", "06:18"],
+    ["NAM", "06:29"],
+  ] as const
+  return (
+    <ScreenShell bare className="minimal-journey-screen">
+      <MinimalTopBar journey={journey} onBack={() => navigate(-1)} />
+      <main className="minimal-squad">
+        <h1>3/4 ĐÃ XONG</h1>
+        {members.map(([name, time], index) => (
+          <article key={name}>
+            <span>{name.slice(0, 1)}</span>
+            <div>
+              <b>{name}</b>
+              <small>{time}</small>
+              <div>
+                {["🔥", "💪", "👏", "❤️", "😂"].map((item) => (
+                  <button
+                    key={item}
+                    className={reaction[name] === item ? "selected" : ""}
+                    onClick={() =>
+                      setReaction((current) => ({
+                        ...current,
+                        [name]: current[name] === item ? "" : item,
+                      }))
+                    }
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <MinimalPhoto index={index} />
+          </article>
+        ))}
+        {!store.blocked.includes("Hà") && (
+          <article className="minimal-pending">
+            <span>H</span>
+            <div>
+              <b>HÀ</b>
+              <small>CHƯA</small>
+            </div>
+            <button
+              disabled={store.offline || reminded}
+              onClick={() => {
+                setReminded(true)
+                setToast("Đã nhắc Hà.")
+                window.setTimeout(() => setToast(""), 1800)
+              }}
+            >
+              {store.offline ? "Cần mạng" : reminded ? "Đã nhắc Hà" : "Nhắc Hà"}
+            </button>
+          </article>
+        )}
+      </main>
+      {toast && <div className="minimal-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+function MinimalShare({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [shareOpen, setShareOpen] = useState(false)
+  return (
+    <section className="minimal-journey-page minimal-share">
+      <MinimalTopBar journey={journey} onBack={() => navigate(-1)} />
+      <div className="minimal-page-scroll">
+        <div className="minimal-share-tabs">
+          <button
+            className={ratio === "story" ? "selected" : ""}
+            onClick={() => setRatio("story")}
+          >
+            9:16
+          </button>
+          <button
+            className={ratio === "feed" ? "selected" : ""}
+            onClick={() => setRatio("feed")}
+          >
+            4:5
+          </button>
+        </div>
+        <div className={`minimal-share-card ${ratio}`}>
+          <h1>
+            24/30 NGÀY
+            <br />
+            80% ĐỀU ĐẶN
+          </h1>
+          <MinimalPhoto index={24} />
+          <small>Ourney</small>
+        </div>
+        <button className="minimal-export" onClick={() => setShareOpen(true)}>
+          Xuất thẻ tối giản
+        </button>
+      </div>
+      {shareOpen && (
+        <PosterShareSheet
+          skin="minimal"
+          title="xuất thẻ tối giản."
+          onClose={() => setShareOpen(false)}
+        />
+      )}
+    </section>
+  )
+}
+
+function PushedHeader({
+  title,
+  onBack,
+  action,
+}: {
+  title: string
+  onBack: () => void
+  action?: React.ReactNode
+}) {
+  return (
+    <header className="pushed-header">
+      <button onClick={onBack} aria-label="Quay lại">
+        <ArrowLeft size={21} weight="bold" />
+      </button>
+      <b>{title}</b>
+      {action ?? <span />}
+    </header>
+  )
+}
+
+function JourneyActionSheet({
+  open,
+  title,
+  body,
+  children,
+  onClose,
+}: {
+  open: boolean
+  title: string
+  body?: string
+  children: React.ReactNode
+  onClose: () => void
+}) {
+  const startY = useRef(0)
+  const [drag, setDrag] = useState(0)
+  if (!open) return null
+  return (
+    <div
+      className="journey-action-scrim"
+      onPointerDown={(event) =>
+        event.target === event.currentTarget && onClose()
+      }
+    >
+      <div
+        className="journey-action-sheet"
+        style={{ transform: `translateY(${drag}px)` }}
+      >
+        <div
+          className="journey-action-drag"
+          onPointerDown={(event) => {
+            startY.current = event.clientY
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) =>
+            setDrag(Math.max(0, event.clientY - startY.current))
+          }
+          onPointerUp={() => {
+            if (drag > 70) onClose()
+            setDrag(0)
+          }}
+        >
+          <i />
+        </div>
+        <button
+          className="journey-action-close"
+          onClick={onClose}
+          aria-label="Đóng"
+        >
+          <X size={21} weight="bold" />
+        </button>
+        <h2>{title}</h2>
+        {body && <p>{body}</p>}
+        {children}
+      </div>
+    </div>
+  )
+}
+
+const skinDayCopy: Record<string, {
+  label: string
+  caption: string
+  metric: string
+}> = {
+  quiet: {
+    label: "NGÀY 14 · NỬA CHẶNG",
+    caption: "Hôm nay mình thấy nhẹ nhõm và bình yên hơn.",
+    metric: "••• kg",
+  },
+  squad: {
+    label: "NGÀY 21 · HÔM NAY",
+    caption: "Hôm nay mình đã hiểu thêm một dạng bài khó.",
+    metric: "📖 45 PHÚT",
+  },
+  memory: {
+    label: "NGÀY 03 · ĐÊM LỬA TRẠI",
+    caption: "Sương xuống rất nhanh, cả bọn vẫn ngồi kể chuyện.",
+    metric: "18 THG 10 '26 · 15°C · ĐÀ LẠT",
+  },
+  couple: {
+    label: "NGÀY 18 · ĐỦ ĐÔI",
+    caption: "Một bữa tối nhỏ nhưng có đủ hai người.",
+    metric: "Nam | Linh",
+  },
+  flexer: {
+    label: "NGÀY 21 · HÔM NAY",
+    caption: "TIẾP. KHÔNG DỪNG.",
+    metric: "5,42 KM · 5:04 /KM",
+  },
+  minimal: {
+    label: "NGÀY 24",
+    caption: "XONG.",
+    metric: "24 / 30",
+  },
+}
+
+type DayVisualProps = {
+  journey: Journey
+  day: number
+}
+
+function DayVisual(props: DayVisualProps) {
+  const { journey, day } = props
+  if (journey.skin === "quiet") return <QuietPhoto />
+  if (journey.skin === "squad") return <SquadPhoto />
+  if (journey.skin === "memory") return <MemoryPhoto scene={day} />
+  if (journey.skin === "couple") {
+    return (
+      <div className="day-couple-diptych">
+        <figure>
+          <CouplePhoto person="Nam" scene={day} />
+          <figcaption>bữa sáng của Nam</figcaption>
+        </figure>
+        {day % 3 === 0 ? (
+          <figure>
+            <span className="couple-dashed-half">đang chờ Linh</span>
+            <figcaption>nửa của Linh</figcaption>
+          </figure>
+        ) : (
+          <figure>
+            <CouplePhoto person="Linh" scene={day + 1} />
+            <figcaption>bữa tối của Linh</figcaption>
+          </figure>
+        )}
+      </div>
+    )
+  }
+  if (journey.skin === "flexer") return <FlexerPhoto index={day} />
+  return <MinimalPhoto index={day} />
+}
+
+function JourneyDayScreen({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const { day = "1" } = useParams()
+  const numericDay = Number(day)
+  const copy = skinDayCopy[journey.skin] ?? skinDayCopy.minimal
+  const reactionKey = `${journey.id}:${numericDay}`
+  const selectedReaction = store.reactions[reactionKey] ?? ""
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [blockOpen, setBlockOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [reason, setReason] = useState("")
+  const [hidden, setHidden] = useState(false)
+  const [toast, setToast] = useState("")
+  const [revealed, setRevealed] = useState(false)
+  const reactions = ["🔥", "💪", "👏", "❤️", "😂"]
+  return (
+    <section className={`journey-pushed day-screen pushed-${journey.skin}`}>
+      <PushedHeader
+        title={copy.label}
+        onBack={() => navigate(-1)}
+        action={
+          <button
+            className="day-menu-button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Mở tuỳ chọn"
+          >
+            <DotsThree size={24} weight="bold" />
+          </button>
+        }
+      />
+      {menuOpen && (
+        <div className="day-overflow-menu">
+          {journey.shared ? (
+            <>
+              <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  setReportOpen(true)
+                }}
+              >
+                Báo cáo
+              </button>
+              <button
+                onClick={() => {
+                  setMenuOpen(false)
+                  setBlockOpen(true)
+                }}
+              >
+                Chặn
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                setMenuOpen(false)
+                setDeleteOpen(true)
+              }}
+            >
+              Xoá ảnh
+            </button>
+          )}
+        </div>
+      )}
+      <main className="day-content">
+        <article className={`day-photo-card ${hidden ? "hidden-photo" : ""}`}>
+          {hidden ? (
+            <div className="day-hidden-state">
+              <Lock size={25} />
+              Ảnh đã ẩn với bạn
+            </div>
+          ) : (
+            <DayVisual journey={journey} day={numericDay} />
+          )}
+          {numericDay % 4 === 0 && <small>từ thư viện</small>}
+        </article>
+        <div className="day-copy">
+          <span>{copy.label}</span>
+          <h1>{copy.metric}</h1>
+          {journey.skin === "quiet" && (
+            <button
+              className="day-hold-weight"
+              onPointerDown={() => setRevealed(true)}
+              onPointerUp={() => setRevealed(false)}
+              onPointerLeave={() => setRevealed(false)}
+            >
+              <Eye size={17} />
+              {revealed ? "62,0 kg" : "Giữ để xem"}
+            </button>
+          )}
+          <p>{copy.caption}</p>
+        </div>
+        <div className="day-reactions" aria-label="Phản ứng">
+          {reactions.map((item, index) => (
+            <button
+              key={item}
+              className={selectedReaction === item ? "selected" : ""}
+              aria-pressed={selectedReaction === item}
+              aria-label={`Phản ứng ${item}`}
+              onClick={() => store.setReaction(reactionKey, item)}
+            >
+              <span>{item}</span>
+              <b>
+                {2 + index + (store.reactionCounts[reactionKey]?.[item] ?? 0)}
+              </b>
+            </button>
+          ))}
+        </div>
+      </main>
+      <JourneyActionSheet
+        open={reportOpen}
+        title="Báo cáo ảnh này"
+        body="Chỉ đội ngũ Ourney xem báo cáo này. Ảnh sẽ ẩn với bạn ngay."
+        onClose={() => setReportOpen(false)}
+      >
+        <div className="report-reasons">
+          {["Spam", "Khoả thân", "Quấy rối", "Tự hại", "Khác"].map((item) => (
+            <button
+              key={item}
+              className={reason === item ? "selected" : ""}
+              onClick={() => setReason(item)}
+            >
+              {reason === item && <Check size={15} weight="bold" />}
+              {item}
+            </button>
+          ))}
+        </div>
+        <button
+          className="sheet-primary"
+          disabled={!reason}
+          onClick={() => {
+            setHidden(true)
+            setReportOpen(false)
+            setToast("Đã gửi báo cáo.")
+          }}
+        >
+          Gửi báo cáo
+        </button>
+      </JourneyActionSheet>
+      <JourneyActionSheet
+        open={blockOpen}
+        title="Chặn Minh?"
+        body="Hai bên sẽ không thấy nội dung của nhau."
+        onClose={() => setBlockOpen(false)}
+      >
+        <button
+          className="sheet-destructive"
+          onClick={() => {
+            store.blockUser("Minh")
+            setBlockOpen(false)
+            setHidden(true)
+            setToast("Đã chặn Minh.")
+          }}
+        >
+          Chặn
+        </button>
+        <button className="sheet-secondary" onClick={() => setBlockOpen(false)}>
+          Thôi
+        </button>
+      </JourneyActionSheet>
+      <JourneyActionSheet
+        open={deleteOpen}
+        title="Xoá ảnh này?"
+        body="Ngày và chuỗi hiện tại sẽ được tính lại."
+        onClose={() => setDeleteOpen(false)}
+      >
+        <button
+          className="sheet-destructive"
+          onClick={() => {
+            store.deleteLatestCheckIn(journey.id)
+            navigate(-1)
+          }}
+        >
+          Xoá ảnh
+        </button>
+        <button
+          className="sheet-secondary"
+          onClick={() => setDeleteOpen(false)}
+        >
+          Thôi
+        </button>
+      </JourneyActionSheet>
+      {toast && <div className="pushed-toast">{toast}</div>}
+    </section>
+  )
+}
+
+const variantNames: Record<string, string[]> = {
+  quiet: ["Lục ngọc", "Xanh sage", "Sương mù"],
+  squad: ["Lửa", "Tím", "Phấn"],
+  memory: ["Sương thông", "Biển muối", "Phố đêm"],
+  couple: ["Hồng", "Mâm xôi", "Đào"],
+  flexer: ["Lime neon", "San hô điện", "Băng"],
+  minimal: ["Cam", "Than", "Trời"],
+}
+
+const layoutOptions = [
+  ["quiet", "Quiet"],
+  ["squad", "Squad"],
+  ["memory", "Memory"],
+  ["couple", "Couple"],
+  ["flexer", "Flexer"],
+  ["minimal", "Minimalist"],
+] as const
+
+function LayoutPreview({
+  skin,
+  large = false,
+}: {
+  skin: string
+  large?: boolean
+}) {
+  return (
+    <div
+      className={`layout-preview layout-preview-${skin} ${
+        large ? "large" : ""
+      }`}
+    >
+      <div className="layout-preview-top">
+        <i />
+        <b>{skin === "minimal" ? "NGÀY 21" : "Ngày 21"}</b>
+        <i />
+      </div>
+      <div className="layout-preview-timeline">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="layout-preview-hud">
+        <Camera size={large ? 22 : 14} weight="bold" />
+        <span>{skin === "flexer" ? "5,42 KM · 5:04" : "HUD máy ảnh"}</span>
+      </div>
+    </div>
+  )
+}
+
+function JourneyEditScreen({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const initialMembers =
+    journey.members ?? (journey.shared ? ["Linh", "An", "Hà", "Nam"] : ["Linh"])
+  const [name, setName] = useState(journey.name)
+  const [variant, setVariant] = useState(journey.variant)
+  const [layoutPreview, setLayoutPreview] = useState<string | null>(null)
+  const [cover, setCover] = useState(journey.cover ?? 0)
+  const [reminder, setReminder] = useState(journey.reminderTime ?? "20:30")
+  const [visibility, setVisibility] = useState<"private" | "link">(
+    journey.visibility ?? "private",
+  )
+  const [hud, setHud] = useState(journey.hud ?? "HUD đậm")
+  const [members, setMembers] = useState(initialMembers)
+  const [endOpen, setEndOpen] = useState(false)
+  const [leaveOpen, setLeaveOpen] = useState(false)
+  const [codeOpen, setCodeOpen] = useState(false)
+  const [toast, setToast] = useState("")
+  const isOwner = journey.owner ?? store.journeyOwner
+  const groupJourney = (journey.members?.length ?? 0) >= 2
+  const canImport =
+    !journey.shared ||
+    journey.skin === "couple" ||
+    journey.members?.length === 2
+  const layoutAvailable = (skin: string) => {
+    if (skin === "quiet") return journey.lastWeight !== undefined
+    if (skin === "couple") return journey.members?.length === 2
+    if (skin === "squad") return groupJourney
+    if (skin === "flexer") {
+      return (
+        journey.type === "Tập luyện" ||
+        journey.totalKm !== undefined ||
+        journey.lastMinutes !== undefined
+      )
+    }
+    return true
+  }
+  const changed =
+    name !== journey.name ||
+    variant !== journey.variant ||
+    cover !== (journey.cover ?? 0) ||
+    reminder !== (journey.reminderTime ?? "20:30") ||
+    visibility !== (journey.visibility ?? "private") ||
+    hud !== (journey.hud ?? "HUD đậm") ||
+    members.join("|") !== initialMembers.join("|")
+  function save() {
+    store.updateJourney(journey.id, {
+      name,
+      variant,
+      cover,
+      reminderTime: reminder,
+      members,
+      hud,
+      visibility,
+    })
+    navigate(-1)
+  }
+  return (
+    <section className={`journey-pushed edit-screen pushed-${journey.skin}`}>
+      <PushedHeader
+        title="cập nhật hành trình."
+        onBack={() => navigate(-1)}
+        action={
+          <button className="edit-save-top" disabled={!changed} onClick={save}>
+            Lưu
+          </button>
+        }
+      />
+      <main className="edit-content">
+        {journey.skin === "quiet" && (
+          <div className="quiet-edit-lock">
+            <Lock size={16} weight="fill" /> Riêng tư
+          </div>
+        )}
+        <section className="edit-section">
+          <h2>Tên</h2>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </section>
+        <section className="edit-section">
+          <h2>Bìa</h2>
+          <div className="edit-cover-options">
+            {[0, 1, 2].map((item) => (
+              <button
+                key={item}
+                className={cover === item ? "selected" : ""}
+                onClick={() => setCover(item)}
+              >
+                <span className={`skin-cover-sticker cover-sticker-${item}`}>
+                  <i />
+                  <em />
+                </span>
+                {cover === item && <Check size={15} weight="bold" />}
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="edit-section edit-layout-section">
+          <h2>Giao diện</h2>
+          {groupJourney && !isOwner ? (
+            <div className="edit-layout-readonly">
+              <LayoutPreview skin={journey.skin} />
+              <p>Chủ nhóm chọn giao diện cho cả hội.</p>
+            </div>
+          ) : (
+            <div className="edit-layout-grid">
+              {layoutOptions
+                .filter(([skin]) => layoutAvailable(skin))
+                .map(([skin, label]) => (
+                  <button
+                    key={skin}
+                    className={journey.skin === skin ? "selected" : ""}
+                    onClick={() => setLayoutPreview(skin)}
+                    aria-label={`Xem trước giao diện ${label}`}
+                  >
+                    <LayoutPreview skin={skin} />
+                    <span>{label}</span>
+                    {journey.skin === skin && <b>Đang dùng</b>}
+                  </button>
+                ))}
+            </div>
+          )}
+          <p className="edit-layout-note">
+            Một số giao diện cần thêm dữ liệu nên không hiện.
+          </p>
+        </section>
+        <section className="edit-section">
+          <h2>Màu</h2>
+          <div className="edit-variant-options">
+            {variantNames[journey.skin].map((item, index) => (
+              <button
+                key={item}
+                className={variant === index ? "selected" : ""}
+                onClick={() => setVariant(index)}
+              >
+                <i />
+                {item}
+                {variant === index && <Check size={15} weight="bold" />}
+              </button>
+            ))}
+          </div>
+        </section>
+        {journey.skin === "squad" && (
+          <section className="edit-section edit-trophy-field">
+            <h2>Tên chiếc cúp</h2>
+            <input defaultValue="Cúp 7.5" />
+          </section>
+        )}
+        {journey.skin === "memory" && (
+          <section className="edit-section edit-readonly-row">
+            <h2>Cuộn phim</h2>
+            <span>24 · chỉ xem</span>
+          </section>
+        )}
+        {journey.skin === "couple" && (
+          <section className="edit-section edit-couple-fields">
+            <h2>Hai đứa mình</h2>
+            <div>
+              <input defaultValue="Nam" />
+              <input defaultValue="Linh" />
+            </div>
+            <input defaultValue="Nấu cho nhau" />
+          </section>
+        )}
+        {journey.skin === "flexer" && (
+          <section className="edit-section">
+            <h2>Kiểu HUD</h2>
+            <div className="edit-hud-options">
+              {["HUD đậm", "Dấu tối giản", "Dải phim"].map((item) => (
+                <button
+                  key={item}
+                  className={hud === item ? "selected" : ""}
+                  onClick={() => setHud(item)}
+                >
+                  {hud === item && <Check size={14} weight="bold" />}
+                  {item.replace("HUD ", "")}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+        <section className="edit-section">
+          <h2>Giờ nhắc</h2>
+          <input
+            type="time"
+            value={reminder}
+            onChange={(event) => setReminder(event.target.value)}
+          />
+        </section>
+        <section className="edit-section">
+          <h2>Ai được xem</h2>
+          {journey.shared ? (
+            <div className="edit-locked-row">
+              <Lock size={17} />
+              <span>
+                <b>Chỉ thành viên</b>
+                hành trình nhóm không có link công khai
+              </span>
+            </div>
+          ) : (
+            <div className="edit-visibility-options">
+              {[
+                ["private", "Chỉ mình tôi"],
+                ["link", "Có link xem (thu hồi được)"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  className={visibility === value ? "selected" : ""}
+                  onClick={() => setVisibility(value as "private" | "link")}
+                >
+                  {visibility === value && <Check size={15} weight="bold" />}
+                  {label}
+                </button>
+              ))}
+              {journey.skin === "quiet" && visibility === "link" && (
+                <p>Trang xem luôn ẩn số kg và làm mờ ảnh theo mặc định.</p>
+              )}
+            </div>
+          )}
+        </section>
+        {journey.skin === "quiet" && (
+          <section className="edit-section quiet-private-toggle">
+            <span>Ẩn số kg khi chia sẻ</span>
+            <input type="checkbox" defaultChecked />
+          </section>
+        )}
+        {journey.shared && (
+          <>
+            <section className="edit-section">
+              <h2>Thành viên · {members.length}/10</h2>
+              <div className="edit-members">
+                {members.map((member, index) => (
+                  <div key={member}>
+                    <span>{member.slice(0, 1)}</span>
+                    <b>{member}</b>
+                    {index === 0 ? (
+                      <em>Chủ hành trình</em>
+                    ) : isOwner ? (
+                      <button
+                        onClick={() => {
+                          setMembers((current) =>
+                            current.filter((item) => item !== member),
+                          )
+                        }}
+                      >
+                        Xoá
+                      </button>
+                    ) : (
+                      <em>Thành viên</em>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+            {isOwner ? (
+              <section className="edit-section edit-code">
+                <h2>Mã mời</h2>
+                <b>{journey.inviteCode ?? "K7Q2M9XA"}</b>
+                <button onClick={() => setCodeOpen(true)}>Đổi mã</button>
+                <p>Mã cũ sẽ hết hiệu lực.</p>
+                <p>Quyền chủ nhóm chuyển cho người vào sớm nhất.</p>
+              </section>
+            ) : (
+              <section className="edit-section edit-readonly-row">
+                <h2>Mã mời</h2>
+                <span>Chỉ chủ nhóm có thể đổi mã.</span>
+              </section>
+            )}
+          </>
+        )}
+        {store.blocked.length > 0 && (
+          <section className="edit-section">
+            <h2>Người bị chặn</h2>
+            {store.blocked.map((name) => (
+              <div className="blocked-person" key={name}>
+                <Lock size={16} /> {name}
+              </div>
+            ))}
+          </section>
+        )}
+        {canImport && (
+          <button
+            className="edit-import-button"
+            onClick={() => navigate(`/j/${journey.id}/import`)}
+          >
+            <Images size={18} weight="bold" /> Nhập ảnh cũ
+          </button>
+        )}
+        <button
+          className="edit-end-button"
+          onClick={() =>
+            journey.shared && !isOwner ? setLeaveOpen(true) : setEndOpen(true)
+          }
+        >
+          {journey.shared && !isOwner ? "Rời nhóm" : "Kết thúc hành trình"}
+        </button>
+      </main>
+      {layoutPreview && (
+        <div className={`layout-full-preview previewing-${layoutPreview}`}>
+          <header>
+            <button
+              onClick={() => setLayoutPreview(null)}
+              aria-label="Quay lại"
+            >
+              <ArrowLeft size={22} weight="bold" />
+            </button>
+            <b>{journey.name}</b>
+            <span />
+          </header>
+          <LayoutPreview skin={layoutPreview} large />
+          <div className="layout-preview-actions">
+            <button
+              onClick={() => {
+                store.updateJourney(journey.id, {
+                  skin: layoutPreview,
+                  variant: 0,
+                })
+                setVariant(0)
+                setLayoutPreview(null)
+                store.showToast("Đã đổi giao diện cho hành trình.")
+              }}
+            >
+              Dùng giao diện này
+            </button>
+            <button onClick={() => setLayoutPreview(null)}>Thôi</button>
+          </div>
+        </div>
+      )}
+      <JourneyActionSheet
+        open={codeOpen}
+        title="Đổi mã mời?"
+        body="Mã cũ sẽ hết hiệu lực."
+        onClose={() => setCodeOpen(false)}
+      >
+        <button
+          className="sheet-primary group-action"
+          onClick={() => {
+            const nextCode = Math.random()
+              .toString(36)
+              .slice(2, 10)
+              .toUpperCase()
+            store.updateJourney(journey.id, { inviteCode: nextCode })
+            setCodeOpen(false)
+            setToast("Đã đổi mã mời.")
+          }}
+        >
+          Đổi mã
+        </button>
+        <button className="sheet-secondary" onClick={() => setCodeOpen(false)}>
+          Thôi
+        </button>
+      </JourneyActionSheet>
+      <JourneyActionSheet
+        open={leaveOpen}
+        title="Rời nhóm?"
+        body="Bạn sẽ không thấy hành trình này nữa. Muốn vào lại cần mã mời."
+        onClose={() => setLeaveOpen(false)}
+      >
+        <button
+          className="sheet-destructive"
+          onClick={() => {
+            store.showToast("Đã rời nhóm.")
+            store.removeJourney(journey.id)
+            setLeaveOpen(false)
+            navigate("/hub", { replace: true })
+          }}
+        >
+          <SignOut size={18} weight="bold" /> Rời nhóm
+        </button>
+        <button className="sheet-secondary" onClick={() => setLeaveOpen(false)}>
+          Thôi
+        </button>
+      </JourneyActionSheet>
+      <JourneyActionSheet
+        open={endOpen}
+        title="Kết thúc hành trình?"
+        body="Bạn vẫn xem lại được, nhưng không chụp thêm."
+        onClose={() => setEndOpen(false)}
+      >
+        <button
+          className="sheet-destructive"
+          onClick={() => {
+            store.updateJourney(journey.id, { archived: true })
+            navigate(`/j/${journey.id}`, { replace: true })
+          }}
+        >
+          <Trash size={18} weight="bold" /> Kết thúc
+        </button>
+        <button className="sheet-secondary" onClick={() => setEndOpen(false)}>
+          Thôi
+        </button>
+      </JourneyActionSheet>
+      {toast && <div className="pushed-toast">{toast}</div>}
+    </section>
+  )
+}
+
+const wrappedPages: Record<string, string[]> = {
+  quiet: [
+    "30 ngày, 27 lần có mặt",
+    "Ngày 01 · ảnh đã làm mờ",
+    "Ngày 30 · ảnh đã làm mờ",
+    "Bạn đã về đích.",
+  ],
+  squad: [
+    "30 ngày cùng nhau",
+    "5/5 đã có mặt",
+    "Chiếc cúp đã sáng đèn",
+    "Về đích rồi, cả hội!",
+  ],
+  memory: ["5 ngày", "24 khung hình", "7 nơi đã qua", "Ảnh đẹp nhất"],
+  couple: [
+    "Hai đứa mình về đích rồi.",
+    "60 khoảnh khắc",
+    "30 ngày bên nhau",
+    "Bữa ăn đáng nhớ nhất",
+  ],
+  flexer: ["30 NGÀY", "142,6 KM", "NHỊP ĐỘ TỐT NHẤT", "ĐÃ VỀ ĐÍCH."],
+  minimal: ["30 NGÀY · MỘT ĐƯỜNG LIỀN"],
+}
+
+type WrappedVisualProps = {
+  journey: Journey
+  page: number
+}
+
+function WrappedVisual(props: WrappedVisualProps) {
+  const { journey, page } = props
+  if (journey.skin === "quiet") {
+    return page === 2 ? (
+      <svg className="wrapped-quiet-curve" viewBox="0 0 280 120">
+        <path d="M8 98 C80 76 120 92 168 45 S236 28 272 12" />
+      </svg>
+    ) : (
+      <div className="wrapped-quiet-photos">
+        <QuietPhoto blurred />
+        <QuietPhoto blurred />
+      </div>
+    )
+  }
+  if (journey.skin === "squad") {
+    return page === 2 ? (
+      <Trophy className="wrapped-trophy" size={94} weight="fill" />
+    ) : (
+      <div className="wrapped-squad-path">● ┈ ● ┈ ● ┈ ● ┈ ★</div>
+    )
+  }
+  if (journey.skin === "memory") {
+    return (
+      <div className="wrapped-memory-film">
+        {[1, 2, 3, 4].map((item) => (
+          <MemoryPhoto key={item} scene={item} />
+        ))}
+      </div>
+    )
+  }
+  if (journey.skin === "couple") {
+    return (
+      <div className="wrapped-couple-frame">
+        <CouplePhoto person="Nam" scene={page} />
+        <Heart size={34} weight="fill" />
+        <CouplePhoto person="Linh" scene={page + 1} />
+      </div>
+    )
+  }
+  if (journey.skin === "flexer") {
+    return page === 2 ? (
+      <svg className="wrapped-flexer-chart" viewBox="0 0 280 100">
+        <path d="M4 82 L42 68 L77 73 L110 39 L151 54 L187 24 L228 36 L276 8" />
+      </svg>
+    ) : (
+      <div className="wrapped-flexer-bars">
+        {Array.from({ length: 30 }, (_, index) => (
+          <i key={index} />
+        ))}
+      </div>
+    )
+  }
+  return (
+    <div className="wrapped-minimal-chain">
+      {Array.from({ length: 30 }, (_, index) => (
+        <i key={index} />
+      ))}
+    </div>
+  )
+}
+
+function JourneyWrappedScreen({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const pages = wrappedPages[journey.skin]
+  const [page, setPage] = useState(0)
+  const [ratio, setRatio] = useState<"story" | "feed">("story")
+  const [shareOpen, setShareOpen] = useState(false)
+  const [toast, setToast] = useState("")
+  const [hideKg, setHideKg] = useState(true)
+  const [blurred, setBlurred] = useState(true)
+  const startX = useRef(0)
+  const summary = page >= pages.length
+  function move(direction: number) {
+    setPage((current) =>
+      Math.max(0, Math.min(pages.length, current + direction)),
+    )
+  }
+  return (
+    <section
+      className={`journey-pushed wrapped-screen pushed-${journey.skin}`}
+      onPointerDown={(event) => {
+        startX.current = event.clientX
+      }}
+      onPointerUp={(event) => {
+        const distance = event.clientX - startX.current
+        if (Math.abs(distance) > 40) move(distance < 0 ? 1 : -1)
+      }}
+    >
+      <PushedHeader
+        title="Hành trình đã về đích"
+        onBack={() => navigate(`/j/${journey.id}`)}
+        action={
+          <button
+            className="wrapped-close"
+            onClick={() => navigate(`/j/${journey.id}`)}
+            aria-label="Đóng"
+          >
+            <X size={21} />
+          </button>
+        }
+      />
+      <div className="wrapped-progress">
+        {pages.map((label, index) => (
+          <button
+            key={label}
+            className={
+              index === Math.min(page, pages.length - 1) ? "selected" : ""
+            }
+            onClick={() => setPage(index)}
+          >
+            <i />
+            <span>Bước {index + 1}</span>
+          </button>
+        ))}
+      </div>
+      {!summary ? (
+        <main
+          className="wrapped-story"
+          onClick={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect()
+            move(event.clientX > bounds.left + bounds.width / 2 ? 1 : -1)
+          }}
+        >
+          <WrappedVisual journey={journey} page={page} />
+          <h1>{pages[page]}</h1>
+          {journey.skin === "memory" && page === pages.length - 1 && (
+            <p>Cuộn phim đã hết. Mang đi in thôi.</p>
+          )}
+        </main>
+      ) : (
+        <main className="wrapped-summary">
+          <div className="wrapped-ratio-tabs">
+            <button
+              className={ratio === "story" ? "selected" : ""}
+              onClick={() => setRatio("story")}
+            >
+              9:16
+            </button>
+            <button
+              className={ratio === "feed" ? "selected" : ""}
+              onClick={() => setRatio("feed")}
+            >
+              4:5
+            </button>
+          </div>
+          <div
+            className={`wrapped-card ${ratio} ${
+              journey.skin === "quiet" && blurred ? "blurred-photos" : ""
+            }`}
+          >
+            <WrappedVisual journey={journey} page={pages.length - 1} />
+            <h2>
+              {journey.skin === "quiet"
+                ? "NGÀY 01 vs NGÀY 30"
+                : journey.skin === "squad"
+                  ? "5/5 ĐÃ VỀ ĐÍCH"
+                  : journey.skin === "memory"
+                    ? "5 NGÀY THANH XUÂN · ĐÀ LẠT"
+                    : journey.skin === "couple"
+                      ? "30 NGÀY BÊN NHAU · 60 KHOẢNH KHẮC"
+                      : journey.skin === "flexer"
+                        ? "30 NGÀY · 142,6 KM"
+                        : "24/30 NGÀY · 80% ĐỀU ĐẶN"}
+            </h2>
+            {journey.skin === "quiet" && (
+              <div className="wrapped-privacy">
+                <button onClick={() => setHideKg(!hideKg)}>
+                  {hideKg ? <Check size={14} /> : <Eye size={14} />}
+                  Ẩn số kg · {hideKg ? "Bật" : "Tắt"}
+                </button>
+                <button onClick={() => setBlurred(!blurred)}>
+                  {blurred ? <Check size={14} /> : <Eye size={14} />}
+                  Làm mờ ảnh · {blurred ? "Bật" : "Tắt"}
+                </button>
+                {!hideKg && <b>65,2 kg → 62,0 kg</b>}
+              </div>
+            )}
+            <small>Ourney</small>
+          </div>
+          <button
+            className="wrapped-create-card"
+            onClick={() => {
+              setToast("Thiệp đã sẵn sàng.")
+              window.setTimeout(() => setToast(""), 1800)
+            }}
+          >
+            {journey.skin === "memory"
+              ? "Chia sẻ poster chuyến đi"
+              : journey.skin === "couple"
+                ? "Chia sẻ câu chuyện"
+                : journey.skin === "flexer"
+                  ? "Chia sẻ lên Story"
+                  : journey.skin === "minimal"
+                    ? "Xuất thẻ"
+                    : "Tạo thiệp"}
+          </button>
+          <div className="wrapped-actions">
+            <button onClick={() => setShareOpen(true)}>Chia sẻ</button>
+            <button
+              onClick={() => {
+                setToast("Đã lưu ảnh.")
+                window.setTimeout(() => setToast(""), 1800)
+              }}
+            >
+              Lưu ảnh
+            </button>
+          </div>
+        </main>
+      )}
+      <JourneyActionSheet
+        open={shareOpen}
+        title="chia sẻ tấm thiệp."
+        onClose={() => setShareOpen(false)}
+      >
+        <button className="sheet-primary" onClick={() => setShareOpen(false)}>
+          Tin nhắn
+        </button>
+        <button className="sheet-secondary" onClick={() => setShareOpen(false)}>
+          Ứng dụng khác
+        </button>
+      </JourneyActionSheet>
+      {toast && <div className="pushed-toast">{toast}</div>}
+    </section>
+  )
+}
+
+function CameraScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [flashOn, setFlashOn] = useState(false)
+  const [frontCamera, setFrontCamera] = useState(false)
+  const [ghostOn, setGhostOn] = useState(true)
+  const active = store.journeys.find(
+    (journey) => journey.id === store.activeJourneyId,
+  )
+  const cameraReady = store.cameraPermission === "granted"
+  const noJourney = store.journeys.length === 0 || !active
+  const quiet = active?.skin === "quiet"
+  const squad = active?.skin === "squad"
+  const memory = active?.skin === "memory"
+  const couple = active?.skin === "couple"
+  const flexer = active?.skin === "flexer"
+  const minimal = active?.skin === "minimal"
+
+  return (
+    <ScreenShell camera>
+      <div className="camera-ui">
+        <div className="camera-safe-top">
+          {active && (
+            <button
+              className={`active-journey-chip ${
+                quiet
+                  ? "quiet-camera-pill"
+                  : squad
+                    ? "squad-camera-pill"
+                    : memory
+                      ? "memory-camera-pill"
+                      : couple
+                        ? "couple-camera-pill"
+                        : flexer
+                          ? "flexer-camera-pill"
+                          : minimal
+                            ? "minimal-camera-pill"
+                            : ""
+              }`}
+              style={
+                { "--journey-pastel": typePastel[active.type] } as CSSProperties
+              }
+              onClick={() => store.setJourneyWheelOpen(true)}
+            >
+              {active.todayDone ? (
+                <>
+                  <Check size={15} weight="bold" />
+                  <b>
+                    {quiet
+                      ? "Đã có ảnh hôm nay. Chụp lại sẽ thay ảnh."
+                      : "ĐÃ CÓ ẢNH HÔM NAY · CHỤP LẠI SẼ THAY ẢNH"}
+                  </b>
+                </>
+              ) : quiet ? (
+                <>
+                  <Lock size={15} weight="fill" />
+                  <b>
+                    Riêng tư · Ngày{" "}
+                    {active.todayDone ? active.day - 1 : active.day}
+                  </b>
+                </>
+              ) : squad ? (
+                <b>
+                  📖 {active.lastMinutes ?? 45} PHÚT · 🔥 {active.streak} LIÊN
+                  TIẾP
+                </b>
+              ) : memory ? (
+                <>
+                  <FilmStrip size={16} weight="fill" />
+                  <b>CUỘN PHIM {active.frameCount ?? 12}/24</b>
+                </>
+              ) : couple ? (
+                <>
+                  <Heart size={16} weight="fill" />
+                  <b>
+                    {active.partnerShot ? "Chụp nửa của Linh" : "Ghép đủ đôi"}
+                  </b>
+                </>
+              ) : flexer ? (
+                <b>CHẠY SÁNG · NGÀY {active.day}</b>
+              ) : minimal ? (
+                <b>ĐỌC 10 TRANG · NGÀY {active.day}</b>
+              ) : (
+                <>
+                  <span>{typeEmoji[active.type]}</span>
+                  <b>
+                    {active.name} · Ngày {active.day}/30
+                  </b>
+                  <CaretDown size={16} weight="bold" />
+                </>
+              )}
+            </button>
+          )}
+          {!active && <span />}
+          <div className="camera-top-actions">
+            {quiet ? (
+              <button
+                onClick={() => navigate(`/j/${active.id}`)}
+                aria-label="Đóng máy ảnh"
+              >
+                <X size={21} weight="bold" />
+              </button>
+            ) : minimal ? (
+              <span />
+            ) : (
+              <>
+                <button
+                  className={flashOn ? "active" : ""}
+                  aria-label="Đèn chớp"
+                  aria-pressed={flashOn}
+                  onClick={() => setFlashOn(!flashOn)}
+                >
+                  <Lightning size={21} weight="bold" />
+                </button>
+                <button
+                  className={frontCamera ? "active" : ""}
+                  aria-label="Đổi camera"
+                  aria-pressed={frontCamera}
+                  onClick={() => setFrontCamera(!frontCamera)}
+                >
+                  <ArrowsClockwise size={21} weight="bold" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div
+          className={`live-viewfinder ${quiet ? "quiet-live-viewfinder" : ""} ${
+            memory ? "memory-live-viewfinder" : ""
+          } ${couple ? "couple-live-viewfinder" : ""} ${
+            flexer ? "flexer-live-viewfinder" : ""
+          } ${minimal ? "minimal-live-viewfinder" : ""} ${
+            !cameraReady || noJourney ? "dimmed" : ""
+          }`}
+        >
+          {quiet ? (
+            <>
+              {ghostOn && <div className="quiet-camera-ghost" />}
+              <button
+                className={`quiet-ghost-toggle ${ghostOn ? "on" : ""}`}
+                onClick={() => setGhostOn(!ghostOn)}
+                aria-pressed={ghostOn}
+              >
+                {ghostOn ? <Eye size={17} /> : <EyeSlash size={17} />}
+                Bóng ngày 1 · {ghostOn ? "Bật" : "Tắt"}
+              </button>
+            </>
+          ) : squad ? (
+            <div className="squad-camera-time">06:15</div>
+          ) : memory ? (
+            <>
+              <div className="memory-camera-grain" />
+              <div className="memory-camera-stamp">
+                <b>18 THG 10 '26 · 15°C</b>
+                <span>ĐÀ LẠT</span>
+              </div>
+            </>
+          ) : couple ? (
+            <div className="couple-camera-split">
+              <div className={active.partnerShot ? "shot" : "empty"}>
+                {active.partnerShot ? (
+                  <>
+                    <CouplePhoto person="Nam" />
+                    <span>ẢNH CỦA NAM · 07:30</span>
+                  </>
+                ) : (
+                  <span>Nam chưa chụp. Bạn chụp trước nhé.</span>
+                )}
+              </div>
+              <div className="live-half">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  defaultValue="58"
+                  aria-label="Điều chỉnh khung hình"
+                />
+              </div>
+            </div>
+          ) : flexer ? (
+            <>
+              <div
+                className={`flexer-camera-hud hud-${active.hud ?? "HUD đậm"}`}
+              >
+                <b>
+                  NGÀY {active.day} · 🔥 {active.streak} LIỀN
+                </b>
+                <span>
+                  {(active.lastKm ?? 5.42).toFixed(2).replace(".", ",")} KM ·{" "}
+                  {active.pace ?? "5:04"} /KM
+                </span>
+              </div>
+              {store.offline && (
+                <div className="flexer-camera-sync">
+                  <CloudSlash size={14} /> CHỜ ĐỒNG BỘ
+                </div>
+              )}
+            </>
+          ) : minimal ? (
+            <>
+              <div
+                className="minimal-live-scene"
+                role="img"
+                aria-label="Sách và tách trà trên bàn gỗ"
+              >
+                <span className="minimal-live-book">
+                  <i />
+                  <i />
+                </span>
+                <span className="minimal-live-cup">
+                  <i />
+                </span>
+                <span className="minimal-live-shadow" />
+              </div>
+              {store.offline && (
+                <div className="minimal-camera-sync">
+                  <Clock size={14} /> CHỜ ĐỒNG BỘ
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="ghost-frame">
+                <span />
+                <span />
+                <span />
+                <span />
+              </div>
+              {cameraReady && !noJourney && <p>Đặt khoảnh khắc vào khung</p>}
+            </>
+          )}
+          {store.offline &&
+            cameraReady &&
+            !noJourney &&
+            !flexer &&
+            !minimal && (
+              <div className="camera-offline-pill">
+                đang lưu trên máy, có mạng sẽ tự gửi
+              </div>
+            )}
+          {!cameraReady && (
+            <div className="camera-state-card">
+              <div className="camera-state-sticker">
+                <Camera size={34} weight="duotone" />
+              </div>
+              <h2>
+                {store.cameraPermission === "denied"
+                  ? "camera đang tắt."
+                  : "camera chưa bật."}
+              </h2>
+              {store.cameraPermission === "denied" && (
+                <p>Vào Cài đặt của máy, mục ourney, để bật lại.</p>
+              )}
+              {store.cameraPermission !== "denied" && (
+                <p>
+                  Cho phép camera hoặc chọn một ảnh từ thư viện để tiếp tục.
+                </p>
+              )}
+              <button
+                className="camera-card-primary"
+                onClick={() =>
+                  store.cameraPermission === "denied"
+                    ? store.setCameraPermission("granted")
+                    : store.setCameraPermission("unknown")
+                }
+              >
+                {store.cameraPermission === "denied" ? (
+                  <>
+                    <GearSix size={20} weight="bold" /> Mở cài đặt
+                  </>
+                ) : (
+                  "Bật camera"
+                )}
+              </button>
+              <button
+                className="camera-library-button"
+                onClick={() =>
+                  active
+                    ? navigate(`/j/${active.id}/post`)
+                    : (store.beginCreate("/camera"), navigate("/create/1"))
+                }
+              >
+                <Image size={20} weight="bold" /> Chọn ảnh từ thư viện
+              </button>
+            </div>
+          )}
+          {cameraReady && noJourney && (
+            <div className="camera-state-card no-journey-card">
+              <div className="camera-state-sticker">📒</div>
+              <h2>chưa có hành trình nào.</h2>
+              <p>Mỗi tấm ảnh cần một hành trình để cất.</p>
+              {store.draft.type && (
+                <span className="draft-suggestion">
+                  gợi ý:{" "}
+                  {store.draft.type === "Tiếng Anh"
+                    ? "Học tiếng Anh"
+                    : store.draft.type}{" "}
+                  · {store.draft.who === "group" ? "rủ hội bạn" : "một mình"}
+                </span>
+              )}
+              <button
+                className="camera-card-primary"
+                onClick={() => {
+                  store.beginCreate("/camera")
+                  navigate("/create/1")
+                }}
+              >
+                Tạo hành trình đầu tiên
+              </button>
+            </div>
+          )}
+        </div>
+        {flexer && active && (
+          <div className="flexer-hud-chips">
+            {["HUD đậm", "Dấu tối giản", "Dải phim"].map((hud) => (
+              <button
+                key={hud}
+                className={active.hud === hud ? "selected" : ""}
+                onClick={() => store.setJourneyHud(active.id, hud)}
+              >
+                {active.hud === hud && <Check size={13} weight="bold" />}
+                {hud}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {store.signedIn && store.cameraPermission === "unknown" && (
+        <PermissionSheet
+          kind="camera"
+          reason={
+            noJourney
+              ? "Để chụp ảnh khi bạn bắt đầu. Ảnh chỉ hiện với người bạn chọn."
+              : undefined
+          }
+          onClose={() => store.setCameraPermission("deferred")}
+          onConfirm={() => store.setCameraPermission("granted")}
+        />
+      )}
+      {store.notificationSheetOpen && (
+        <PermissionSheet
+          kind="notification"
+          onClose={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+          onConfirm={() => {
+            store.setNotificationPromptHandled(true)
+            store.setNotificationSheetOpen(false)
+          }}
+        />
+      )}
+      {store.sessionExpired && (
+        <PermissionSheet
+          kind="session"
+          onClose={() => store.setSessionExpired(false)}
+          onConfirm={() => {
+            store.setSessionExpired(false)
+            navigate("/otp")
+          }}
+        />
+      )}
+    </ScreenShell>
+  )
+}
+
+function HubScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [toast, setToast] = useState("")
+  const showLoading = store.hubState === "loading"
+  const showError = store.hubState === "error"
+  const showEmpty =
+    !showError && (store.hubState === "empty" || store.journeys.length === 0)
+  const initial =
+    store.profile?.name?.trim().slice(0, 1).toLocaleUpperCase("vi") || "L"
+
+  useEffect(() => {
+    if (store.hubState === "empty" || store.hubState === "error") {
+      document.querySelector(".hub-screen .screen-content")?.scrollTo(0, 0)
+    }
+  }, [store.hubState])
+
+  function showSyncToast() {
+    store.setOffline(false)
+    setToast("đã gửi xong.")
+    window.setTimeout(() => setToast(""), 2200)
+  }
+
+  return (
+    <ScreenShell title="hành trình." className="hub-screen">
+      <div className="hub-content">
+        <div className="hub-greeting">
+          <h1>chào {store.profile?.name || "Linh"}.</h1>
+          <button
+            className="hub-avatar"
+            onClick={() => navigate("/me")}
+            aria-label="Mở hồ sơ"
+          >
+            <span>{initial}</span>
+          </button>
+        </div>
+
+        {store.offline && (
+          <div className="hub-offline-banner">
+            <CloudSlash size={21} weight="bold" />
+            <span>đang lưu trên máy, có mạng sẽ tự gửi</span>
+          </div>
+        )}
+
+        {showLoading ? (
+          <HubSkeleton />
+        ) : showError ? (
+          <HubStateCard
+            kind="error"
+            action={() => {
+              store.restoreSeedJourneys()
+              store.setHubState("normal")
+            }}
+          />
+        ) : showEmpty ? (
+          <HubStateCard
+            kind="empty"
+            action={() => {
+              store.beginCreate("/hub")
+              navigate("/create/1")
+            }}
+          />
+        ) : (
+          <>
+            <HubHero state={store.hubHeroState} />
+            <div className="hub-section-heading">
+              <h2>hành trình của bạn.</h2>
+              <span>
+                <MapTrifold size={17} weight="bold" />
+                {store.journeys.length} đang chạy
+              </span>
+            </div>
+            <div className="hub-list">
+              {store.journeys.map((journey) => (
+                <JourneyCard
+                  journey={journey}
+                  key={journey.id}
+                  onPendingSync={showSyncToast}
+                />
+              ))}
+              <button
+                className="new-journey-card"
+                onClick={() => {
+                  store.beginCreate("/hub")
+                  navigate("/create/1")
+                }}
+              >
+                <span>
+                  <PaperPlaneTilt size={35} weight="duotone" />
+                </span>
+                <div>
+                  <b>hành trình mới.</b>
+                  <small>chọn một thế giới để bắt đầu</small>
+                </div>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+      <div className={`hub-toast ${toast ? "show" : ""}`} role="status">
+        <span>✦</span>
+        {toast}
+      </div>
+    </ScreenShell>
+  )
+}
+
+function HubHero({
+  state,
+}: {
+  state: "default" | "done" | "milestone" | "group"
+}) {
+  const navigate = useNavigate()
+  const copy = {
+    default: "Còn 3 tiếng để giữ 🔥 21 của IELTS 7.5",
+    done: "Hôm nay xong hết rồi. Mai gặp lại.",
+    milestone: "Mai là Ngày 30 — về đích!",
+    group: "Nam & Hà đang chờ bạn.",
+  }[state]
+  return (
+    <article className={`hub-hero hero-${state}`}>
+      <div className="hero-copy-block">
+        <span className="today-chip">HÔM NAY</span>
+        <h2>{copy}</h2>
+        {state === "default" && (
+          <div className="hero-timer">
+            <Timer size={20} weight="bold" /> 03:12:40
+          </div>
+        )}
+        {state === "group" && (
+          <div className="hero-waiting-avatars">
+            <i>N</i>
+            <i>H</i>
+          </div>
+        )}
+      </div>
+      {state === "done" && (
+        <div className="hero-state-sticker cat-sticker">
+          <Cat size={43} weight="duotone" />
+        </div>
+      )}
+      {state === "milestone" && (
+        <div className="hero-state-sticker flag-sticker">
+          <FlagBanner size={42} weight="duotone" />
+        </div>
+      )}
+      {state !== "done" && (
+        <button onClick={() => navigate("/j/ielts/camera")}>Chụp ngay</button>
+      )}
+    </article>
+  )
+}
+
+function HubStateCard({
+  kind,
+  action,
+}: {
+  kind: "empty" | "error"
+  action: () => void
+}) {
+  return (
+    <div className={`hub-main-state state-${kind}`}>
+      <div className="hub-state-sticker">
+        {kind === "empty" ? (
+          <Camera size={40} weight="duotone" />
+        ) : (
+          <CloudSlash size={40} weight="duotone" />
+        )}
+      </div>
+      <h2>
+        {kind === "empty"
+          ? "chưa có hành trình nào."
+          : "không tải được. thử lại?"}
+      </h2>
+      {kind === "empty" && <p>một tấm mỗi ngày, giữ được cả chặng đường.</p>}
+      <button onClick={action}>
+        {kind === "empty" ? "Tạo hành trình đầu tiên" : "Thử lại"}
+      </button>
+    </div>
+  )
+}
+
+function HubSkeleton() {
+  return (
+    <div className="hub-skeletons" aria-label="Đang tải">
+      <div className="hub-hero-skeleton skeleton-piece" />
+      {[1, 2, 3].map((item) => (
+        <div className="hub-card-skeleton skeleton-piece" key={item}>
+          <i />
+          <div>
+            <b />
+            <span />
+            <span />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function JourneyCard({
+  journey,
+  onPendingSync,
+}: {
+  journey: Journey
+  onPendingSync: () => void
+}) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const selected = journey.id === store.activeJourneyId
+  const skinClass = `dna-${journey.skin}`
+  const details: Record<string, {
+    stats: string
+    milestone: string
+    attendance?: string
+  }> = {
+    quiet: {
+      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
+        (journey.day / 30) * 100,
+      )}%`,
+      milestone: "Mốc kế: Ngày 30 · Về đích",
+    },
+    ielts: {
+      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
+        (journey.day / 30) * 100,
+      )}%`,
+      attendance: `${journey.attendance ?? (store.checkedIn ? 4 : 3)}/5 đã điểm danh`,
+      milestone: "Mốc kế: Ngày 30 · Về đích",
+    },
+    dalat: {
+      stats: `NGÀY ${journey.day}/5 · 🔥 ${journey.streak} · ${Math.round(
+        (journey.day / 5) * 100,
+      )}%`,
+      attendance: `${journey.frameCount ?? 12}/24 khung`,
+      milestone: "Mốc kế: Ngày 3 · Giữa chuyến",
+    },
+    couple: {
+      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
+        (journey.day / 30) * 100,
+      )}%`,
+      attendance: journey.pairComplete ? "đủ đôi" : "đang chờ một nửa",
+      milestone: "Mốc kế: Ngày 30 · Tròn 30 ngày",
+    },
+    running: {
+      stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
+        (journey.day / 30) * 100,
+      )}%`,
+      milestone: "★ Mốc kế: Ngày 30 · Về đích",
+    },
+    minimal: {
+      stats: `NGÀY ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
+        (journey.day / 30) * 100,
+      )}% ĐỀU ĐẶN`,
+      milestone: "MỐC KẾ: NGÀY 30",
+    },
+  }
+  const detail = details[journey.id] ?? {
+    stats: `Ngày ${journey.day}/30 · 🔥 ${journey.streak} · ${Math.round(
+      (journey.day / 30) * 100,
+    )}%`,
+    milestone: "Mốc kế: Ngày 30",
+  }
+
+  return (
+    <article
+      className={`dna-journey-card ${skinClass} ${selected ? "selected" : ""}`}
+    >
+      <button
+        className="card-open-hit"
+        aria-label={`Mở hành trình ${journey.name}`}
+        onClick={() => navigate(`/j/${journey.id}`)}
+      />
+      {journey.skin === "memory" && <span className="memory-tape" />}
+      <div
+        className="dna-cover"
+        style={{ "--cover": typePastel[journey.type] } as CSSProperties}
+      >
+        <span>{typeEmoji[journey.type]}</span>
+        <i>
+          {{
+            quiet: "⚖️",
+            squad: "🏆",
+            memory: "🌲",
+            couple: "💞",
+            flexer: "💪",
+            minimal: "📚",
+          }[journey.skin] ?? "✦"}
+        </i>
+      </div>
+      <div className="dna-card-body">
+        <div className="dna-title-row">
+          <h3>{journey.name}</h3>
+          <button
+            className="make-primary-button"
+            aria-label={`Mở menu của ${journey.name}`}
+            onClick={(event) => {
+              event.stopPropagation()
+              setMenuOpen(!menuOpen)
+            }}
+          >
+            <DotsThree size={20} weight="bold" />
+          </button>
+          {menuOpen && (
+            <div className="journey-card-menu">
+              <button
+                onClick={(event) => {
+                  event.stopPropagation()
+                  store.selectJourney(journey.id)
+                  setMenuOpen(false)
+                }}
+              >
+                <Check size={17} weight="bold" /> Đặt làm chính
+              </button>
+            </div>
+          )}
+        </div>
+        {journey.skin === "quiet" && (
+          <span className="private-chip">🔒 Riêng tư</span>
+        )}
+        {journey.archived && (
+          <span className="active-dna-chip">
+            <Lock size={14} weight="bold" /> Đã kết thúc
+          </span>
+        )}
+        {selected && (
+          <span className="active-dna-chip">
+            <Check size={14} weight="bold" /> Đang hoạt động
+          </span>
+        )}
+        <p className="dna-stats">{detail.stats}</p>
+        {journey.skin === "flexer" && <span className="neon-sparkline" />}
+        {journey.skin === "minimal" && <span className="minimal-week-strip" />}
+        <div className="dna-progress">
+          <i
+            style={{
+              width:
+                journey.skin === "quiet" ||
+                journey.skin === "squad" ||
+                journey.skin === "couple" ||
+                journey.skin === "flexer" ||
+                journey.skin === "minimal"
+                  ? `${Math.min(100, Math.round((journey.day / 30) * 100))}%`
+                  : journey.skin === "memory"
+                    ? `${Math.min(100, Math.round((journey.day / 5) * 100))}%`
+                    : journey.id === "dalat"
+                      ? "60%"
+                      : journey.id === "couple"
+                        ? "60%"
+                        : journey.id === "minimal"
+                          ? "80%"
+                          : "70%",
+            }}
+          />
+        </div>
+        <div className="dna-meta-row">
+          <div className="dna-avatars">
+            <i>L</i>
+            <i>N</i>
+            <i>+3</i>
+          </div>
+          {detail.attendance && <span>{detail.attendance}</span>}
+          {journey.id === "dalat" && (
+            <span className="film-counter">12/24</span>
+          )}
+        </div>
+        <p className="dna-milestone">{detail.milestone}</p>
+        {store.offline && journey.id === "ielts" && (
+          <button
+            className="pending-chip"
+            onClick={(event) => {
+              event.stopPropagation()
+              onPendingSync()
+            }}
+          >
+            <Clock size={16} weight="bold" /> chờ gửi · 1 ảnh
+          </button>
+        )}
+      </div>
+    </article>
+  )
+}
+
+type MemberSheetProps = {
+  name: string
+  onClose: () => void
+}
+
+function MemberSheet({ name, onClose }: MemberSheetProps) {
+  const store = useStore()
+  const [view, setView] = useState<"member" | "report" | "block" | "done">(
+    "member",
+  )
+  const [reason, setReason] = useState("")
+  const [note, setNote] = useState("")
+  return (
+    <div className="system-sheet-host">
+      <JourneyActionSheet
+        open
+        title={
+          view === "member"
+            ? name
+            : view === "report"
+              ? "báo cáo."
+              : view === "block"
+                ? `Chặn ${name}?`
+                : "Đã nhận báo cáo."
+        }
+        body={
+          view === "member"
+            ? `@${name.toLocaleLowerCase("vi")}.ourney`
+            : view === "block"
+              ? `Bạn và ${name} sẽ không thấy nội dung của nhau. Bạn có thể bỏ chặn trong cài đặt.`
+              : view === "done"
+                ? "Nội dung này đã được ẩn với bạn."
+                : undefined
+        }
+        onClose={onClose}
+      >
+        {view === "member" && (
+          <>
+            <div className="member-sheet-avatar">{name.slice(0, 1)}</div>
+            <div className="member-sheet-actions">
+              <button onClick={() => setView("report")}>
+                <Warning size={19} weight="bold" /> Báo cáo người dùng
+              </button>
+              <button onClick={() => setView("block")}>
+                <Lock size={19} weight="bold" /> Chặn
+              </button>
+            </div>
+          </>
+        )}
+        {view === "report" && (
+          <>
+            <div className="report-reasons">
+              {["Spam", "Khoả thân", "Quấy rối", "Tự hại", "Khác"].map(
+                (item) => (
+                  <button
+                    key={item}
+                    className={reason === item ? "selected" : ""}
+                    onClick={() => setReason(item)}
+                  >
+                    <Warning size={17} weight="bold" />
+                    {reason === item && <Check size={15} weight="bold" />}
+                    {item}
+                  </button>
+                ),
+              )}
+            </div>
+            {reason === "Tự hại" && (
+              <p className="self-harm-note">
+                Nếu ai đó đang gặp nguy hiểm, hãy liên hệ người thân hoặc dịch
+                vụ khẩn cấp ở nơi bạn sống.
+              </p>
+            )}
+            <label className="report-note">
+              <span>Ghi chú không bắt buộc</span>
+              <textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                maxLength={280}
+              />
+            </label>
+            <button
+              className="sheet-primary"
+              disabled={!reason}
+              onClick={() => setView("done")}
+            >
+              Gửi báo cáo
+            </button>
+          </>
+        )}
+        {view === "block" && (
+          <>
+            <button
+              className="sheet-destructive"
+              onClick={() => {
+                store.blockUser(name)
+                onClose()
+              }}
+            >
+              <Lock size={18} weight="bold" /> Chặn
+            </button>
+            <button className="sheet-secondary" onClick={onClose}>
+              Huỷ
+            </button>
+          </>
+        )}
+        {view === "done" && (
+          <button className="sheet-primary" onClick={onClose}>
+            Xong
+          </button>
+        )}
+      </JourneyActionSheet>
+    </div>
+  )
+}
+
+function SquadScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [code, setCode] = useState("")
+  const [inviteVisible, setInviteVisible] = useState(true)
+  const [member, setMember] = useState("")
+  const [toast, setToast] = useState("")
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const groups = store.journeys.filter(
+    (journey) => journey.shared && !journey.archived,
+  )
+  function normalizedCode() {
+    return code
+      .replace(/[^a-z0-9]/gi, "")
+      .toUpperCase()
+      .slice(0, 8)
+  }
+  function nudge(name: string) {
+    store.nudge(name)
+    setToast(`Đã nhắc ${name}`)
+    window.setTimeout(() => setToast(""), 1800)
+  }
+  return (
+    <ScreenShell title="hội." className="all-groups-screen">
+      <div className="all-groups-content">
+        {!store.signedIn && (
+          <div className="groups-locked">
+            <Lock size={25} weight="bold" />
+            <b>Đăng nhập để dùng nhóm.</b>
+            <button onClick={() => navigate("/login")}>Đăng nhập</button>
+          </div>
+        )}
+        {store.offline && (
+          <div className="groups-offline">
+            <CloudSlash size={18} weight="bold" />
+            Đang xem bản đã lưu. Cần có mạng để tham gia hoặc nhắc người khác.
+          </div>
+        )}
+        <section className="join-inline">
+          <label htmlFor="join-code">nhập mã mời</label>
+          <div>
+            <input
+              ref={inputRef}
+              id="join-code"
+              value={
+                normalizedCode().length > 4
+                  ? `${normalizedCode().slice(0, 4)}-${normalizedCode().slice(4)}`
+                  : normalizedCode()
+              }
+              onChange={(event) => setCode(event.target.value)}
+              placeholder="K7Q2-M9XA"
+              maxLength={9}
+            />
+            <button aria-label="Dán mã" onClick={() => setCode("K7Q2M9XA")}>
+              <Copy size={20} weight="bold" />
+            </button>
+          </div>
+          <button
+            className="system-primary"
+            disabled={
+              normalizedCode().length !== 8 || store.offline || !store.signedIn
+            }
+            onClick={() => navigate(`/join/${normalizedCode()}`)}
+          >
+            Tham gia
+          </button>
+        </section>
+        <section className="groups-today">
+          <h2>hôm nay</h2>
+          {store.hubState === "loading" ? (
+            <div className="groups-skeleton">
+              <i />
+              <i />
+            </div>
+          ) : groups.length === 0 ? (
+            <div className="groups-empty">
+              <span>
+                <UsersThree size={40} weight="duotone" />
+              </span>
+              <h3>chưa có hội nào.</h3>
+              <p>Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.</p>
+              <button onClick={() => inputRef.current?.focus()}>
+                Nhập mã mời
+              </button>
+            </div>
+          ) : (
+            groups.map((journey, journeyIndex) => {
+              const avatars = (
+                journey.members ?? ["Linh", "An", "Nam", "Minh", "Hà"]
+              ).filter((name) => !store.blocked.includes(name))
+              const waiting = avatars[avatars.length - 1] ?? "Minh"
+              return (
+                <article
+                  className={`group-overview-card ${
+                    !store.signedIn ? "locked" : ""
+                  }`}
+                  key={journey.id}
+                >
+                  <button
+                    className="card-open-hit"
+                    aria-label={`Mở hội hôm nay của ${journey.name}`}
+                    disabled={!store.signedIn}
+                    onClick={() => navigate(`/j/${journey.id}/squad`)}
+                  />
+                  <div className="group-card-heading">
+                    <span
+                      className="group-type-badge"
+                      style={{ background: typePastel[journey.type] }}
+                    >
+                      {typeEmoji[journey.type]}
+                    </span>
+                    <div>
+                      <h3>{journey.name}</h3>
+                      <p>
+                        {journey.attendance ?? 3}/{Math.max(5, avatars.length)}{" "}
+                        đã check-in
+                      </p>
+                    </div>
+                  </div>
+                  <div className="group-avatar-row">
+                    {avatars.slice(0, 5).map((name, index) => {
+                      const checked = index < (journey.attendance ?? 3)
+                      return (
+                        <button
+                          key={name}
+                          className={checked ? "checked" : "waiting"}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            if (store.signedIn) setMember(name)
+                          }}
+                        >
+                          <span>{name.slice(0, 1)}</span>
+                          <small>
+                            {checked ? (
+                              <>
+                                <Check size={12} weight="bold" />{" "}
+                                {`07:${12 + index}`}
+                              </>
+                            ) : (
+                              <>
+                                <Clock size={12} weight="bold" /> chưa
+                              </>
+                            )}
+                          </small>
+                        </button>
+                      )
+                    })}
+                    {avatars.length > 5 && <b>+{avatars.length - 5}</b>}
+                  </div>
+                  <button
+                    className="group-nudge"
+                    disabled={
+                      !store.signedIn ||
+                      store.offline ||
+                      store.nudged.includes(waiting)
+                    }
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      nudge(waiting)
+                    }}
+                  >
+                    {store.nudged.includes(waiting) ? (
+                      <>
+                        <Check size={15} weight="bold" /> Đã nhắc {waiting}
+                      </>
+                    ) : (
+                      <>
+                        <HandWaving size={16} weight="bold" /> Nhắc {waiting}
+                      </>
+                    )}
+                  </button>
+                  <span className="sr-only">Nhóm thứ {journeyIndex + 1}</span>
+                </article>
+              )
+            })
+          )}
+        </section>
+        {inviteVisible && (
+          <section className="pending-invites">
+            <h2>lời mời đang chờ</h2>
+            <article>
+              <p>Hà mời bạn vào Hội IELTS 7.5</p>
+              <div>
+                <button onClick={() => navigate("/join/K7Q2M9XA")}>
+                  Tham gia
+                </button>
+                <button onClick={() => setInviteVisible(false)}>Bỏ qua</button>
+              </div>
+            </article>
+          </section>
+        )}
+      </div>
+      {member && <MemberSheet name={member} onClose={() => setMember("")} />}
+      {toast && <div className="system-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+function JoinScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const params = useParams()
+  const [code, setCode] = useState(
+    (params.code ?? store.pendingJoin).replace(/[^a-z0-9]/gi, "").toUpperCase(),
+  )
+  const normalized = code.slice(0, 8)
+  const valid = normalized === "K7Q2M9XA"
+  const errors: Record<string, string> = {
+    AAAAAAAA: "Mã chưa đúng. Kiểm tra lại đủ 8 ký tự nhé.",
+    EXPIRED1: "Mã này đã hết hiệu lực. Nhờ chủ nhóm gửi mã mới.",
+    FULL0010: "Nhóm đã đủ 10 người.",
+    NOJOIN01: "Không thể tham gia nhóm này.",
+  }
+  const error =
+    store.offline && normalized.length === 8
+      ? "Cần có mạng để tham gia."
+      : (errors[normalized] ??
+        (normalized.length === 8 && !valid
+          ? "Mã chưa đúng. Kiểm tra lại đủ 8 ký tự nhé."
+          : ""))
+  useEffect(() => {
+    setCode(
+      (params.code ?? store.pendingJoin)
+        .replace(/[^a-z0-9]/gi, "")
+        .toUpperCase(),
+    )
+  }, [params.code, store.pendingJoin])
+  useEffect(() => {
+    if (!store.signedIn) {
+      store.setPendingJoin(normalized)
+      navigate("/splash", { replace: true })
+    }
+  }, [store.signedIn])
+  function addKey(key: string) {
+    setCode((current) =>
+      key === "⌫" ? current.slice(0, -1) : `${current}${key}`.slice(0, 8),
+    )
+  }
+  return (
+    <section className="system-pushed join-screen">
+      <PushedHeader title="vào nhóm." onBack={() => navigate(-1)} />
+      <main>
+        <div className="join-code-boxes">
+          {Array.from({ length: 8 }, (_, index) => (
+            <span key={index}>{normalized[index] ?? ""}</span>
+          ))}
+        </div>
+        {valid && !store.offline && (
+          <>
+            <article className="join-ticket-preview">
+              <div className="join-ticket-head">
+                <span>📚</span>
+                <div>
+                  <h2>Hội IELTS 7.5</h2>
+                  <p>Chủ nhóm · Hà</p>
+                </div>
+              </div>
+              <dl>
+                <div>
+                  <dt>Thành viên</dt>
+                  <dd>5/10 người</dd>
+                </div>
+                <div>
+                  <dt>Thời lượng</dt>
+                  <dd>30 ngày</dd>
+                </div>
+                <div>
+                  <dt>Tiến độ</dt>
+                  <dd>Ngày 21/30</dd>
+                </div>
+              </dl>
+              <p>
+                Tiến độ của bạn tính từ ngày bạn vào. Bạn vẫn xem được lịch sử
+                nhóm.
+              </p>
+              <p>
+                Nhóm này không có link công khai. Chỉ người có mã mới vào được.
+              </p>
+            </article>
+            <button
+              className="system-primary"
+              onClick={() => {
+                const existing = store.journeys.find(
+                  (journey) => journey.inviteCode === normalized,
+                )
+                if (existing) {
+                  store.selectJourney(existing.id)
+                  store.showToast("Bạn đã ở trong nhóm này.")
+                  navigate(`/j/${existing.id}`, { replace: true })
+                  return
+                }
+                const id = store.addJoinedJourney(normalized)
+                navigate(`/j/${id}`, { replace: true })
+              }}
+            >
+              Tham gia
+            </button>
+            <button className="join-later" onClick={() => navigate("/squad")}>
+              Để sau
+            </button>
+          </>
+        )}
+        {error && (
+          <div className="join-error">
+            <Warning size={20} weight="bold" />
+            {error}
+          </div>
+        )}
+        {!valid && (
+          <div className="join-keyboard">
+            {"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789⌫".split("").map((key) => (
+              <button key={key} onClick={() => addKey(key)}>
+                {key}
+              </button>
+            ))}
+          </div>
+        )}
+      </main>
+    </section>
+  )
+}
+
+const profileAvatarColors = ["#7EC8E3", "#FFD84D", "#FFB347", "#CF9FFF"]
+
+function ProfileScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [editOpen, setEditOpen] = useState(false)
+  const [name, setName] = useState(store.profile?.name ?? "Linh")
+  const [username, setUsername] = useState(
+    store.profile?.username ?? "linh.tran",
+  )
+  const [avatar, setAvatar] = useState(store.profile?.avatar ?? 0)
+  const [badgeRule, setBadgeRule] = useState("")
+  const completed = store.journeys.slice(0, 3)
+  return (
+    <section className="system-pushed profile-screen">
+      <PushedHeader
+        title="hồ sơ."
+        onBack={() => navigate(-1)}
+        action={
+          <button onClick={() => navigate("/settings")} aria-label="Cài đặt">
+            <GearSix size={21} weight="bold" />
+          </button>
+        }
+      />
+      <main>
+        <section className="profile-identity">
+          <div
+            className="profile-main-avatar"
+            style={{
+              background:
+                profileAvatarColors[store.profile?.avatar ?? avatar] ??
+                profileAvatarColors[0],
+            }}
+          >
+            {(store.profile?.name ?? "Linh").slice(0, 1)}
+          </div>
+          <h1>{store.profile?.name ?? "Linh"}</h1>
+          <p>@{store.profile?.username ?? "linh.tran"}</p>
+          <button onClick={() => setEditOpen(true)}>Sửa hồ sơ</button>
+        </section>
+        <section className="profile-stats">
+          {[
+            ["148", "tổng ngày check-in"],
+            ["41", "chuỗi dài nhất"],
+            ["3", "hành trình đã xong"],
+          ].map(([value, label]) => (
+            <article key={label}>
+              <b>{value}</b>
+              <span>{label}</span>
+            </article>
+          ))}
+        </section>
+        <section className="profile-badges">
+          <h2>huy hiệu đều đặn.</h2>
+          <div>
+            {[
+              ["Đều 7 ngày", true, "Có mặt đủ 7 ngày liên tiếp."],
+              ["Đều 30 ngày", true, "Có mặt đủ 30 ngày liên tiếp."],
+              ["Về đích đầu tiên", true, "Hoàn thành hành trình đầu tiên."],
+              ["Đủ 100 ngày", false, "Check-in đủ 100 ngày."],
+            ].map(([label, unlocked, rule]) => (
+              <button
+                key={String(label)}
+                className={unlocked ? "unlocked" : "locked"}
+                onClick={() => setBadgeRule(String(rule))}
+              >
+                <span>
+                  {unlocked ? (
+                    <Check size={18} weight="bold" />
+                  ) : (
+                    <Lock size={18} weight="bold" />
+                  )}
+                </span>
+                <b>{String(label)}</b>
+              </button>
+            ))}
+          </div>
+          {badgeRule && <p>{badgeRule}</p>}
+        </section>
+        <section className="profile-shelf">
+          <h2>kệ hành trình đã xong.</h2>
+          {completed.length ? (
+            <div>
+              {completed.map((journey, index) => (
+                <button
+                  key={journey.id}
+                  className={`shelf-ticket shelf-${journey.skin}`}
+                  aria-label={`Mở hành trình đã hoàn thành ${journey.name}`}
+                  style={{ transform: `rotate(${index - 1.5}deg)` }}
+                  onClick={() => {
+                    store.updateJourney(journey.id, { archived: true })
+                    navigate(`/j/${journey.id}`)
+                  }}
+                >
+                  <span>{typeEmoji[journey.type]}</span>
+                  <b>{journey.name}</b>
+                  <small>Đã về đích</small>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p>Kệ còn trống. Hành trình xong sẽ về đây.</p>
+          )}
+        </section>
+      </main>
+      <JourneyActionSheet
+        open={editOpen}
+        title="sửa hồ sơ."
+        onClose={() => setEditOpen(false)}
+      >
+        <div className="avatar-picker">
+          {["L", "H", "N", "A"].map((item, index) => (
+            <button
+              key={item}
+              className={avatar === index ? "selected" : ""}
+              onClick={() => setAvatar(index)}
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+        <label className="profile-edit-field">
+          <span>Tên hiển thị</span>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+        </label>
+        <label className="profile-edit-field">
+          <span>Tên người dùng</span>
+          <input
+            value={username}
+            onChange={(event) =>
+              setUsername(
+                event.target.value
+                  .toLocaleLowerCase("vi")
+                  .replace(/[^a-z0-9_.]/g, "")
+                  .slice(0, 20),
+              )
+            }
+          />
+          <small>3-20 ký tự: a-z, 0-9, _ .</small>
+          {username === "ourney" && <em>Tên này đã có người dùng.</em>}
+        </label>
+        <button
+          className="sheet-primary"
+          disabled={username.length < 3 || username === "ourney"}
+          onClick={() => {
+            store.setProfile({ name, username, avatar })
+            setEditOpen(false)
+          }}
+        >
+          Lưu
+        </button>
+      </JourneyActionSheet>
+    </section>
+  )
+}
+
+function SystemSwitch({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean
+  onChange: () => void
+  label: string
+}) {
+  return (
+    <button
+      className={`system-switch ${checked ? "on" : ""}`}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+    >
+      <span>{checked && <Check size={13} weight="bold" />}</span>
+    </button>
+  )
+}
+
+function SettingsScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [notice, setNotice] = useState("")
+  function showNotice(message: string) {
+    setNotice(message)
+    window.setTimeout(() => setNotice(""), 1800)
+  }
+  return (
+    <section className="system-pushed settings-screen">
+      <PushedHeader title="cài đặt." onBack={() => navigate(-1)} />
+      <main>
+        <section className="settings-group">
+          <h2>tài khoản</h2>
+          <div className="settings-card">
+            <div className="settings-readonly">
+              <span>Email</span>
+              <b>{store.email}</b>
+            </div>
+            <button
+              onClick={() => {
+                store.setSignedIn(false)
+                navigate("/login", { replace: true })
+              }}
+            >
+              <SignOut size={19} weight="bold" /> Đăng xuất
+            </button>
+          </div>
+        </section>
+        <section className="settings-group">
+          <h2>nhắc nhở</h2>
+          <div className="settings-card">
+            {store.journeys
+              .filter((journey) => !journey.archived)
+              .map((journey) => (
+                <div className="settings-reminder" key={journey.id}>
+                  <span>{typeEmoji[journey.type]}</span>
+                  <div>
+                    <b>{journey.name}</b>
+                    <small>20:30</small>
+                  </div>
+                  <SystemSwitch
+                    label={`Nhắc ${journey.name}`}
+                    checked={store.reminderEnabled[journey.id] ?? true}
+                    onChange={() =>
+                      store.setReminderEnabled(
+                        journey.id,
+                        !(store.reminderEnabled[journey.id] ?? true),
+                      )
+                    }
+                  />
+                </div>
+              ))}
+            <div className="settings-reminder">
+              <span>
+                <Bell size={19} weight="bold" />
+              </span>
+              <div>
+                <b>Báo trước khi chuỗi sắp đứt</b>
+                <small>21:00</small>
+              </div>
+              <SystemSwitch
+                label="Báo trước khi chuỗi sắp đứt"
+                checked={store.streakReminder}
+                onChange={() => store.setStreakReminder(!store.streakReminder)}
+              />
+            </div>
+          </div>
+          {store.notificationPermission === "denied" && (
+            <div className="permission-note">
+              <p>Thông báo đang tắt. Bật trong cài đặt của máy.</p>
+              <button
+                onClick={() => showNotice("Đã mở hướng dẫn cài đặt thông báo.")}
+              >
+                Mở cài đặt máy
+              </button>
+            </div>
+          )}
+        </section>
+        <section className="settings-group">
+          <h2>giao diện</h2>
+          <div className="theme-segmented">
+            {[
+              ["light", "Sáng", Sun],
+              ["dark", "Tối", Moon],
+              ["system", "Theo máy", Desktop],
+            ].map(([value, label, Icon]) => (
+              <button
+                key={String(value)}
+                className={store.themePreference === value ? "active" : ""}
+                onClick={() =>
+                  store.setThemePreference(value as "light" | "dark" | "system")
+                }
+              >
+                <Icon size={18} weight="bold" />
+                {label as string}
+                {store.themePreference === value && (
+                  <Check size={14} weight="bold" />
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
+        <section className="settings-group">
+          <h2>riêng tư</h2>
+          <div className="settings-card">
+            <div className="privacy-row">
+              <span>Ẩn số kg khi chia sẻ</span>
+              <SystemSwitch
+                label="Ẩn số kg khi chia sẻ"
+                checked={store.hideWeightOnShare}
+                onChange={() =>
+                  store.setHideWeightOnShare(!store.hideWeightOnShare)
+                }
+              />
+            </div>
+            <div className="privacy-row">
+              <span>Làm mờ ảnh khi chia sẻ</span>
+              <SystemSwitch
+                label="Làm mờ ảnh khi chia sẻ"
+                checked={store.blurPhotosOnShare}
+                onChange={() =>
+                  store.setBlurPhotosOnShare(!store.blurPhotosOnShare)
+                }
+              />
+            </div>
+            <div className="blocked-heading">Người bị chặn</div>
+            {store.blocked.length ? (
+              store.blocked.map((name) => (
+                <div className="blocked-user" key={name}>
+                  <span>{name.slice(0, 1)}</span>
+                  <b>{name}</b>
+                  <button onClick={() => store.unblockUser(name)}>
+                    Bỏ chặn
+                  </button>
+                </div>
+              ))
+            ) : (
+              <p className="blocked-empty">Bạn chưa chặn ai.</p>
+            )}
+          </div>
+        </section>
+        <section className="settings-group">
+          <h2>thông tin</h2>
+          <div className="settings-card info-card">
+            {[
+              ["Điều khoản sử dụng (EULA)", "/settings/terms"],
+              ["Chính sách riêng tư", "/settings/privacy"],
+              ["Liên hệ", "/settings/contact"],
+            ].map(([label, path]) => (
+              <button key={label} onClick={() => navigate(path)}>
+                {label}
+                <CaretRight size={18} weight="bold" />
+              </button>
+            ))}
+            <div className="settings-readonly">
+              <span>Phiên bản</span>
+              <b>1.0</b>
+            </div>
+          </div>
+        </section>
+        <button
+          className="danger-zone"
+          onClick={() => navigate("/settings/delete/1")}
+        >
+          <Warning size={21} weight="bold" />
+          Xoá tài khoản
+        </button>
+      </main>
+      {notice && <div className="system-toast">{notice}</div>}
+    </section>
+  )
+}
+
+const legalSections = {
+  terms: {
+    title: "điều khoản sử dụng.",
+    sections: [
+      [
+        "Dùng Ourney",
+        "Dùng Ourney để lưu lại hành trình của bạn một cách an toàn và tôn trọng người khác.",
+      ],
+      [
+        "Nội dung của bạn",
+        "Ảnh là của bạn. Chỉ người trong hành trình bạn chọn mới thấy ảnh.",
+      ],
+      [
+        "Điều không được đăng",
+        "Không đăng nội dung khoả thân, quấy rối, tự hại hoặc spam.",
+      ],
+      [
+        "Báo cáo và chặn",
+        "Bạn có thể báo cáo hoặc chặn. Ourney có thể gỡ nội dung hoặc khoá tài khoản vi phạm.",
+      ],
+      [
+        "Xoá tài khoản",
+        "Bạn có thể xoá tài khoản bất cứ lúc nào trong Cài đặt.",
+      ],
+      [
+        "Thay đổi điều khoản",
+        "Nếu điều khoản thay đổi đáng kể, Ourney sẽ thông báo trong ứng dụng.",
+      ],
+    ],
+  },
+  privacy: {
+    title: "chính sách riêng tư.",
+    sections: [
+      [
+        "Mình lưu gì",
+        "Ourney lưu email, ảnh, caption và các chỉ số bạn tự nhập.",
+      ],
+      [
+        "Ai thấy ảnh",
+        "Người trong hành trình thấy ảnh. Nhóm không có link công khai.",
+      ],
+      [
+        "Giảm cân",
+        "Số kg chỉ mình bạn thấy. Ảnh chia sẻ được làm mờ theo mặc định.",
+      ],
+      [
+        "Máy ảnh và thông báo",
+        "Ourney xin quyền đúng lúc. Bạn có thể tắt trong cài đặt của máy.",
+      ],
+      [
+        "Xoá dữ liệu",
+        "Xoá tài khoản sẽ xoá toàn bộ dữ liệu và ảnh trên máy chủ.",
+      ],
+    ],
+  },
+}
+
+function LegalPage({ kind }: { kind: "terms" | "privacy" }) {
+  const navigate = useNavigate()
+  const page = legalSections[kind]
+  return (
+    <section className="system-pushed legal-page">
+      <PushedHeader title={page.title} onBack={() => navigate(-1)} />
+      <main>
+        <p className="legal-updated">Cập nhật lần cuối: 01/11/2026</p>
+        {page.sections.map(([heading, body]) => (
+          <section key={heading}>
+            <h2>{heading}</h2>
+            <p>{body}</p>
+          </section>
+        ))}
+      </main>
+    </section>
+  )
+}
+
+function ContactPage() {
+  const navigate = useNavigate()
+  const [toast, setToast] = useState("")
+  function notify(message: string) {
+    setToast(message)
+    window.setTimeout(() => setToast(""), 1800)
+  }
+  return (
+    <section className="system-pushed legal-page contact-page">
+      <PushedHeader title="liên hệ." onBack={() => navigate(-1)} />
+      <main>
+        <p className="legal-updated">Cập nhật lần cuối: 01/11/2026</p>
+        <button onClick={() => notify("Đã mở ứng dụng thư")}>
+          <PaperPlaneTilt size={21} weight="bold" />
+          <span>
+            <b>Gửi email hỗ trợ</b>
+            <small>hotro@ourney.example</small>
+          </span>
+          <CaretRight size={18} weight="bold" />
+        </button>
+        <button onClick={() => notify("Đã mở biểu mẫu báo lỗi")}>
+          <Warning size={21} weight="bold" />
+          <span>
+            <b>Báo lỗi</b>
+            <small>Mô tả điều chưa ổn</small>
+          </span>
+          <CaretRight size={18} weight="bold" />
+        </button>
+      </main>
+      {toast && <div className="system-toast">{toast}</div>}
+    </section>
+  )
+}
+
+function DeleteAccountScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const params = useParams()
+  const step = params.step ?? "1"
+  const [accepted, setAccepted] = useState(false)
+  const [otp, setOtp] = useState("")
+  const [seconds, setSeconds] = useState(30)
+  const [status, setStatus] = useState<"ready" | "deleting" | "done" | "error">(
+    "ready",
+  )
+  useEffect(() => {
+    if (step !== "2" || seconds <= 0) return
+    const timer = window.setInterval(
+      () => setSeconds((current) => current - 1),
+      1000,
+    )
+    return () => window.clearInterval(timer)
+  }, [step, seconds])
+  if (step === "3") {
+    const done = status === "done"
+    return (
+      <section className="system-pushed delete-screen delete-progress">
+        <PushedHeader title="đang xoá…" onBack={() => navigate(-1)} />
+        <main>
+          {status === "deleting" && (
+            <div className="delete-loader" aria-label="Đang xoá" />
+          )}
+          {done && (
+            <div className="delete-done">
+              <span>
+                <Check size={48} weight="bold" />
+              </span>
+              <h1>Đã xoá tài khoản.</h1>
+              <p>Cảm ơn bạn đã dùng Ourney.</p>
+              <button
+                className="system-primary"
+                onClick={() => {
+                  store.resetAccount()
+                  navigate("/splash", { replace: true })
+                }}
+              >
+                Về màn đầu
+              </button>
+            </div>
+          )}
+          {status === "error" && (
+            <div className="delete-error">
+              <Warning size={24} weight="bold" />
+              <p>
+                {store.offline
+                  ? "Cần có mạng để xoá tài khoản."
+                  : "Chưa xoá được. Dữ liệu của bạn vẫn nguyên. Thử lại sau nhé."}
+              </p>
+              <button onClick={() => navigate("/settings")}>Về cài đặt</button>
+            </div>
+          )}
+        </main>
+      </section>
+    )
+  }
+  if (step === "2") {
+    return (
+      <section className="system-pushed delete-screen">
+        <PushedHeader title="xác nhận bằng mã." onBack={() => navigate(-1)} />
+        <main>
+          <p className="delete-lead">Mã gồm 6 số vừa gửi tới {store.email}</p>
+          <div className="delete-otp">
+            {Array.from({ length: 6 }, (_, index) => (
+              <span key={index}>{otp[index] ?? ""}</span>
+            ))}
+          </div>
+          <label className="delete-otp-input">
+            <span>Nhập mã xác nhận</span>
+            <input
+              inputMode="numeric"
+              value={otp}
+              maxLength={6}
+              onChange={(event) =>
+                setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
+              }
+            />
+          </label>
+          <button
+            className="resend-code"
+            disabled={seconds > 0}
+            onClick={() => setSeconds(30)}
+          >
+            {seconds > 0 ? `Gửi lại sau ${seconds}s` : "Gửi lại mã"}
+          </button>
+          <button
+            className="delete-final"
+            disabled={otp.length !== 6}
+            onClick={() => {
+              setStatus("deleting")
+              navigate("/settings/delete/3", { replace: true })
+              window.setTimeout(() => {
+                if (store.offline || otp !== "123456") setStatus("error")
+                else setStatus("done")
+              }, 1100)
+            }}
+          >
+            <Trash size={18} weight="bold" /> Xoá vĩnh viễn
+          </button>
+          {otp.length === 6 && otp !== "123456" && (
+            <p className="otp-error">Mã chưa đúng. Kiểm tra lại nhé.</p>
+          )}
+        </main>
+      </section>
+    )
+  }
+  return (
+    <section className="system-pushed delete-screen">
+      <PushedHeader title="xoá tài khoản." onBack={() => navigate(-1)} />
+      <main>
+        <div className="delete-warning">
+          <Warning size={25} weight="bold" />
+          <p>
+            Toàn bộ dữ liệu và ảnh trên máy chủ sẽ bị xoá vĩnh viễn. Không thể
+            khôi phục.
+          </p>
+        </div>
+        <ul className="delete-list">
+          <li>
+            <User size={20} weight="bold" /> Hồ sơ của bạn
+          </li>
+          <li>
+            <Images size={20} weight="bold" /> Mọi hành trình và ảnh
+          </li>
+          <li>
+            <UsersThree size={20} weight="bold" /> Tư cách thành viên trong các
+            nhóm
+          </li>
+        </ul>
+        <p className="delete-owner-note">
+          Nếu bạn là chủ nhóm, quyền chủ nhóm chuyển cho người vào sớm nhất.
+        </p>
+        <label className="delete-understand">
+          <input
+            type="checkbox"
+            checked={accepted}
+            onChange={(event) => setAccepted(event.target.checked)}
+          />
+          <span>Tôi hiểu việc này không thể hoàn tác.</span>
+        </label>
+        <button className="keep-account" onClick={() => navigate(-1)}>
+          Giữ tài khoản
+        </button>
+        <button
+          className="delete-continue"
+          disabled={!accepted}
+          onClick={() => navigate("/settings/delete/2")}
+        >
+          <Trash size={18} weight="bold" /> Tiếp tục
+        </button>
+      </main>
+    </section>
+  )
+}
+
+function FloatingDock({ currentPath }: { currentPath: string }) {
+  const navigate = useNavigate()
+  const store = useStore()
+  const wheelOpen = store.journeyWheelOpen
+  const pressStartedAt = useRef(0)
+  const pressFrame = useRef<number | null>(null)
+  const longPressOpened = useRef(false)
+  const stripRef = useRef<HTMLDivElement | null>(null)
+  const dragStartX = useRef(0)
+  const dragStartScroll = useRef(0)
+  const stripPointerDown = useRef(false)
+  const stripDragged = useRef(false)
+  const activeJourney = store.journeys.find(
+    (journey) => journey.id === store.activeJourneyId,
+  )
+  const onCamera =
+    currentPath === "/camera" || /^\/j\/[^/]+\/camera$/.test(currentPath)
+  const shutterDisabled =
+    store.readOnly ||
+    Boolean(activeJourney?.archived) ||
+    (onCamera && (!activeJourney || store.cameraPermission !== "granted"))
+  const quietDock = activeJourney?.skin === "quiet"
+  const squadDock = activeJourney?.skin === "squad"
+  const memoryDock = activeJourney?.skin === "memory"
+  const coupleDock = activeJourney?.skin === "couple"
+  const flexerDock = activeJourney?.skin === "flexer"
+  const minimalDock = activeJourney?.skin === "minimal"
+  const onJourneyHome = /^\/j\/[^/]+$/.test(currentPath)
+  const onJourneySquad = /^\/j\/[^/]+\/squad$/.test(currentPath)
+
+  function openWheel() {
+    store.setJourneyWheelOpen(true)
+  }
+
+  function startPress(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (shutterDisabled) return
+    if (event.button !== 0) return
+    pressStartedAt.current = performance.now()
+    longPressOpened.current = false
+
+    const watchPress = (now: number) => {
+      if (now - pressStartedAt.current >= 400) {
+        longPressOpened.current = true
+        openWheel()
+        pressFrame.current = null
+        return
+      }
+      pressFrame.current = window.requestAnimationFrame(watchPress)
+    }
+
+    pressFrame.current = window.requestAnimationFrame(watchPress)
+  }
+
+  function endPress() {
+    if (shutterDisabled) return
+    if (pressFrame.current !== null) {
+      window.cancelAnimationFrame(pressFrame.current)
+      pressFrame.current = null
+    }
+    if (!longPressOpened.current) {
+      if (onCamera && activeJourney) {
+        navigate(`/j/${activeJourney.id}/post`)
+      } else if (activeJourney) {
+        navigate(`/j/${activeJourney.id}/camera`)
+      } else {
+        navigate("/camera")
+      }
+    }
+  }
+
+  function cancelPress() {
+    if (pressFrame.current !== null) {
+      window.cancelAnimationFrame(pressFrame.current)
+      pressFrame.current = null
+    }
+  }
+
+  function chooseJourney(id: string) {
+    if (stripDragged.current) return
+    store.selectJourney(id)
+    store.setJourneyWheelOpen(false)
+  }
+
+  function createJourney() {
+    if (stripDragged.current) return
+    store.setJourneyWheelOpen(false)
+    store.beginCreate(onCamera ? "/camera" : "/hub")
+    navigate("/create/1")
+  }
+
+  useLayoutEffect(() => {
+    if (!wheelOpen) return
+    const selected = stripRef.current?.querySelector<HTMLElement>(
+      '[aria-current="true"]',
+    )
+    selected?.scrollIntoView({
+      behavior: "auto",
+      block: "nearest",
+      inline: "center",
+    })
+  }, [wheelOpen])
+
+  useEffect(
+    () => () => {
+      if (pressFrame.current !== null) {
+        window.cancelAnimationFrame(pressFrame.current)
+      }
+    },
+    [],
+  )
+
+  return (
+    <>
+      {wheelOpen && (
+        <div className="journey-wheel-overlay">
+          <button
+            className="journey-wheel-backdrop"
+            aria-label="Đóng vòng chọn hành trình"
+            onClick={() => store.setJourneyWheelOpen(false)}
+          />
+          <button
+            className="journey-wheel-close"
+            onClick={() => store.setJourneyWheelOpen(false)}
+            aria-label="Đóng vòng chọn"
+          >
+            <X size={22} weight="bold" />
+          </button>
+          <div
+            className="journey-wheel-container"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+          >
+            <div
+              ref={stripRef}
+              className="journey-disc-strip"
+              aria-label="Chọn hành trình"
+              onWheel={(event) => {
+                event.preventDefault()
+                event.currentTarget.scrollLeft += event.deltaY || event.deltaX
+              }}
+              onPointerDown={(event) => {
+                if (event.pointerType === "mouse" && event.button !== 0) return
+                dragStartX.current = event.clientX
+                dragStartScroll.current = event.currentTarget.scrollLeft
+                stripPointerDown.current = true
+                stripDragged.current = false
+              }}
+              onPointerMove={(event) => {
+                if (!stripPointerDown.current) return
+                const distance = event.clientX - dragStartX.current
+                if (Math.abs(distance) < 5 && !stripDragged.current) return
+                stripDragged.current = true
+                if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+                  event.currentTarget.setPointerCapture(event.pointerId)
+                }
+                event.currentTarget.scrollLeft =
+                  dragStartScroll.current - distance
+              }}
+              onPointerUp={(event) => {
+                stripPointerDown.current = false
+                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                  event.currentTarget.releasePointerCapture(event.pointerId)
+                }
+                window.requestAnimationFrame(() => {
+                  stripDragged.current = false
+                })
+              }}
+              onPointerCancel={() => {
+                stripPointerDown.current = false
+                stripDragged.current = false
+              }}
+            >
+              {store.journeys.map((journey) => {
+                const journeySkin =
+                  skins.find((item) => item.id === journey.skin) ?? skins[0]
+                const accent =
+                  journeySkin.variants[journey.variant]?.accent ??
+                  journeySkin.variants[0].accent
+                const selected = store.activeJourneyId === journey.id
+                return (
+                  <button
+                    key={journey.id}
+                    className={`journey-disc ${selected ? "selected" : ""}`}
+                    data-testid={`journey-disc-${journey.id}`}
+                    aria-current={selected}
+                    aria-label={`${journey.name}, ngày ${journey.day}`}
+                    style={
+                      {
+                        "--disc-accent": accent,
+                        "--disc-text":
+                          journey.skin === "couple" || journey.skin === "memory"
+                            ? "#FFFFFF"
+                            : "#111111",
+                      } as CSSProperties
+                    }
+                    onClick={() => chooseJourney(journey.id)}
+                  >
+                    <span className="journey-disc-circle">
+                      <span>{typeEmoji[journey.type]}</span>
+                      {selected && (
+                        <i>
+                          <Check size={12} weight="bold" />
+                        </i>
+                      )}
+                    </span>
+                    <b className="journey-disc-day">Ngày {journey.day}</b>
+                    <small aria-label={journey.name} title={journey.name}>
+                      {journey.name}
+                    </small>
+                  </button>
+                )
+              })}
+              <button
+                className="journey-disc journey-disc-new"
+                data-testid="journey-disc-new"
+                onClick={createJourney}
+              >
+                <span className="journey-disc-circle">
+                  <Plus size={19} weight="bold" />
+                </span>
+                <b className="journey-disc-day">mới</b>
+                <small>tạo hành trình</small>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <nav
+        className={`floating-dock app-dock ${quietDock ? "quiet-dock" : ""} ${
+          squadDock ? "squad-dock" : ""
+        } ${memoryDock ? "memory-dock" : ""} ${
+          coupleDock ? "couple-dock" : ""
+        } ${flexerDock ? "flexer-dock" : ""} ${
+          minimalDock ? "minimal-dock" : ""
+        } ${store.readOnly || activeJourney?.archived ? "dock-readonly" : ""}`}
+        aria-label="Điều hướng chính"
+      >
+        <button
+          className={`dock-tab ${
+            currentPath === "/hub" || onJourneyHome ? "active" : ""
+          }`}
+          onClick={() => navigate("/hub")}
+        >
+          <span className="dock-pill">
+            <MapTrifold
+              size={24}
+              weight={currentPath === "/hub" || onJourneyHome ? "fill" : "bold"}
+            />
+          </span>
+          <span>Hành trình</span>
+        </button>
+        <button
+          className={`shutter ${onCamera ? "active" : ""} ${
+            !activeJourney ? "no-journey" : ""
+          }`}
+          aria-label={
+            activeJourney
+              ? `Chụp ảnh cho ${activeJourney.name.replace(/^Hội /, "")}. Nhấn giữ để đổi hành trình.`
+              : "Tạo hành trình đầu tiên"
+          }
+          disabled={shutterDisabled}
+          onPointerDown={startPress}
+          onPointerUp={endPress}
+          onPointerCancel={cancelPress}
+          onContextMenu={(event) => event.preventDefault()}
+        >
+          {store.readOnly || activeJourney?.archived ? (
+            <>
+              <Lock size={28} weight="bold" />
+              <span className="readonly-shutter-label">
+                {activeJourney?.skin === "memory" ||
+                activeJourney?.skin === "couple" ||
+                activeJourney?.skin === "flexer" ||
+                activeJourney?.skin === "minimal"
+                  ? "Đã khép lại"
+                  : "Đã lưu trữ"}
+              </span>
+            </>
+          ) : (
+            <Camera size={32} weight="bold" />
+          )}
+        </button>
+        <button
+          className={`dock-tab ${
+            currentPath === "/squad" || onJourneySquad ? "active" : ""
+          }`}
+          onClick={() => navigate("/squad")}
+        >
+          <span className="dock-pill">
+            <UsersThree
+              size={24}
+              weight={
+                currentPath === "/squad" || onJourneySquad ? "fill" : "bold"
+              }
+            />
+          </span>
+          <span>Hội</span>
+        </button>
+      </nav>
+    </>
+  )
+}
+
+function CreateSheet({ onClose }: { onClose: () => void }) {
+  const startY = useRef<number | null>(null)
+  const [drag, setDrag] = useState(0)
+
+  function dragStart(event: ReactPointerEvent<HTMLDivElement>) {
+    startY.current = event.clientY
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function dragging(event: ReactPointerEvent<HTMLDivElement>) {
+    if (startY.current === null) return
+    setDrag(Math.max(0, event.clientY - startY.current))
+  }
+
+  function dragEnd() {
+    if (drag > 70) onClose()
+    setDrag(0)
+    startY.current = null
+  }
+
+  return (
+    <div
+      className="app-sheet-scrim"
+      onPointerDown={(event) =>
+        event.target === event.currentTarget && onClose()
+      }
+    >
+      <div
+        className="app-sheet"
+        role="dialog"
+        aria-modal="true"
+        style={{ transform: `translateY(${drag}px)` }}
+      >
+        <div
+          className="sheet-drag-zone"
+          onPointerDown={dragStart}
+          onPointerMove={dragging}
+          onPointerUp={dragEnd}
+        >
+          <div className="grab" />
+        </div>
+        <button className="sheet-close" onClick={onClose} aria-label="Đóng">
+          <X size={22} weight="bold" />
+        </button>
+        <span>Bắt đầu điều mới</span>
+        <h2>tạo hành trình.</h2>
+        <div className="coming-card">
+          <Plus size={25} weight="bold" />
+          <p>sắp có</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function NotFound() {
+  return <Navigate replace to="/camera" />
+}
+
+function CreateAttachment() {
+  const navigate = useNavigate()
+  return (
+    <section className="flow-screen create-attachment">
+      <header className="simple-flow-header">
+        <button
+          className="flow-back"
+          onClick={() => navigate(-1)}
+          aria-label="Quay lại"
+        >
+          <ArrowLeft size={22} weight="bold" />
+        </button>
+      </header>
+      <div>
+        <h1>tạo hành trình.</h1>
+        <p>sắp có</p>
+      </div>
+    </section>
+  )
+}
+
+const scenarioCopy: Record<string, {
+  day: string
+  broken: string
+  error: string
+  only: string
+}> = {
+  quiet: {
+    day: "Bắt đầu từ hôm nay. Một tấm là đủ.",
+    broken: "Chuỗi bắt đầu lại. Hành trình vẫn ở đây.",
+    error: "Chưa tải được. Dữ liệu của bạn vẫn an toàn.",
+    only: "Mới có mình bạn. Ở đây chỉ đếm sự đều đặn.",
+  },
+  squad: {
+    day: "Chụp tấm đầu tiên nào!",
+    broken: "Chuỗi về 0. Hôm nay bắt đầu lại, cả hội đợi!",
+    error: "Chưa tải được. Thử lại nha!",
+    only: "Hội chưa có ai. Gửi mã mời đi!",
+  },
+  memory: {
+    day: "cuộn phim còn trống.",
+    broken: "Cuộn phim vẫn quay tiếp.",
+    error: "Cuộn phim chưa tải được. Thử lại nhé.",
+    only: "Cuộn phim này mới có mình bạn.",
+  },
+  couple: {
+    day: "Ngày 1 · hai đứa bắt đầu nhé.",
+    broken: "Chuỗi chung về 0. Hai đứa bắt đầu lại nhé.",
+    error: "Chưa tải được hai nửa. Thử lại nhé.",
+    only: "Linh chưa vào. Mời Linh nhé.",
+  },
+  flexer: {
+    day: "NGÀY 01/30 · XUẤT PHÁT.",
+    broken: "CHUỖI 0. TIẾP.",
+    error: "KHÔNG TẢI ĐƯỢC. THỬ LẠI.",
+    only: "MỘT MÌNH. MỜI THÊM.",
+  },
+  minimal: {
+    day: "CHUỖI 0 NGÀY",
+    broken: "CHUỖI 0.",
+    error: "LỖI. THỬ LẠI.",
+    only: "MỘT MÌNH.",
+  },
+}
+
+function JourneyScenarioScreen({
+  journey,
+  mode,
+}: {
+  journey: Journey
+  mode: "home" | "squad"
+}) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const state = store.journeyDemoState
+  const copy = scenarioCopy[journey.skin] ?? scenarioCopy.quiet
+  const [toast, setToast] = useState("")
+  function showToast(message: string) {
+    setToast(message)
+    window.setTimeout(() => setToast(""), 1800)
+  }
+  if (state === "removed") {
+    return (
+      <ScreenShell bare className={`scenario-screen scenario-${journey.skin}`}>
+        <main className="scenario-removed">
+          <div className="scenario-sticker">
+            <UsersThree size={36} weight="duotone" />
+          </div>
+          <h1>Bạn không còn trong nhóm này.</h1>
+          <p>
+            Chủ nhóm đã bỏ bạn khỏi nhóm. Bạn có thể vào lại nếu được mời lại.
+          </p>
+          <button
+            onClick={() => {
+              store.removeJourney(journey.id)
+              store.setJourneyDemoState("normal")
+              navigate("/hub", { replace: true })
+            }}
+          >
+            Về hành trình
+          </button>
+        </main>
+      </ScreenShell>
+    )
+  }
+  return (
+    <ScreenShell bare className={`scenario-screen scenario-${journey.skin}`}>
+      <header className="scenario-header">
+        <button onClick={() => navigate("/hub")} aria-label="Quay lại">
+          <ArrowLeft size={21} weight="bold" />
+        </button>
+        <b>{mode === "squad" ? "hội hôm nay." : journey.name}</b>
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt"
+        >
+          <GearSix size={20} weight="bold" />
+        </button>
+      </header>
+      <main className="scenario-content">
+        {state === "loading" && (
+          <div className={`scenario-skeleton skeleton-${journey.skin}`}>
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
+        )}
+        {state === "error" && (
+          <div className="scenario-message">
+            <div className="scenario-cache-strip">
+              <CloudSlash size={18} weight="bold" />
+              Đang xem bản đã lưu
+            </div>
+            <div
+              className={`scenario-cached-content cached-${journey.skin}`}
+              aria-label="Nội dung hành trình đã lưu"
+            >
+              <DayVisual journey={journey} day={journey.day} />
+              <div>
+                <b>{journey.name}</b>
+                <span>
+                  Ngày {journey.day} · chuỗi {journey.streak}
+                </span>
+              </div>
+            </div>
+            <p className="scenario-error-line">{copy.error}</p>
+            <button onClick={() => store.setJourneyDemoState("normal")}>
+              <ArrowsClockwise size={18} weight="bold" /> Thử lại
+            </button>
+          </div>
+        )}
+        {state === "day1" && (
+          <div className="scenario-day-one">
+            <span className="scenario-kicker">
+              {journey.skin === "quiet"
+                ? "NGÀY 1/30"
+                : journey.skin === "squad"
+                  ? "NGÀY 01 · XUẤT PHÁT"
+                  : journey.skin === "memory"
+                    ? "CUỘN PHIM 0/24"
+                    : journey.skin === "flexer"
+                      ? "0,0 KM"
+                      : journey.skin === "minimal"
+                        ? "THÁNG 11"
+                        : "NGÀY 1"}
+            </span>
+            <div className={`scenario-start-art start-${journey.skin}`}>
+              {journey.skin === "couple" ? (
+                <>
+                  <span>Nam</span>
+                  <Heart size={30} weight="regular" />
+                  <span>Linh</span>
+                </>
+              ) : journey.skin === "memory" ? (
+                <button onClick={() => navigate(`/j/${journey.id}/camera`)}>
+                  <Camera size={22} weight="bold" />
+                  HÔM NAY · chạm để chụp
+                </button>
+              ) : journey.skin === "squad" ? (
+                <>
+                  <Trophy size={54} weight="duotone" />
+                  <span>0/5 HÔM NAY</span>
+                </>
+              ) : (
+                <span />
+              )}
+            </div>
+            <h1>{copy.day}</h1>
+            {journey.shared && (
+              <button
+                className="scenario-invite"
+                onClick={() => store.setInviteSheetOpen(true)}
+              >
+                <UsersThree size={18} weight="bold" /> Mời bạn
+              </button>
+            )}
+          </div>
+        )}
+        {state === "only" && (
+          <div className="scenario-only">
+            <h1>{copy.only}</h1>
+            <div className="scenario-only-grid">
+              <article>
+                <span>L</span>
+                <b>Bạn · 07:12</b>
+                <Check size={18} weight="bold" />
+              </article>
+              <button onClick={() => store.setInviteSheetOpen(true)}>
+                <Plus size={22} weight="bold" />
+                Mời bạn
+              </button>
+            </div>
+          </div>
+        )}
+        {state === "broken" && (
+          <div className="scenario-broken">
+            <span>0</span>
+            <h1>{copy.broken}</h1>
+            <p>chuỗi dài nhất {journey.streak}</p>
+          </div>
+        )}
+        {state === "hidden" && (
+          <div className="scenario-hidden-wrap">
+            <button
+              className={`scenario-hidden hidden-${journey.skin}`}
+              onClick={() =>
+                showToast(
+                  store.blocked.length
+                    ? "Bạn đã chặn người này."
+                    : "Bạn đã báo cáo ảnh này.",
+                )
+              }
+            >
+              <EyeSlash size={28} weight="bold" />
+              <b>Ảnh đã ẩn</b>
+              <span>
+                {store.blocked.length
+                  ? "Bạn đã chặn người này."
+                  : "Bạn đã báo cáo ảnh này."}
+              </span>
+            </button>
+            <div className="scenario-hidden-meta">
+              <span>
+                {journey.skin === "couple"
+                  ? (journey.members
+                      ?.find((name) => name !== "Linh")
+                      ?.slice(0, 1) ?? "N")
+                  : "M"}
+              </span>
+              <b>
+                {journey.skin === "couple"
+                  ? (journey.members?.find((name) => name !== "Linh") ?? "Nam")
+                  : "Minh"}
+              </b>
+              <small>07:12</small>
+            </div>
+          </div>
+        )}
+      </main>
+      {toast && <div className="system-toast">{toast}</div>}
+    </ScreenShell>
+  )
+}
+
+const libraryPhotos = [
+  { id: "old-1", date: "2024-04-12", label: "12 THG 4, 2024" },
+  { id: "old-2", date: "2024-04-12", label: "12 THG 4, 2024" },
+  { id: "old-3", date: "2024-04-15", label: "15 THG 4, 2024" },
+  { id: "old-4", date: "2024-04-18", label: "18 THG 4, 2024" },
+  { id: "old-5", date: undefined, label: "Không có ngày" },
+  { id: "old-6", date: "2024-04-20", label: "20 THG 4, 2024" },
+]
+
+function ImportJourneyFlow() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const params = useParams()
+  const source = store.journeys.find((journey) => journey.id === params.id)
+  const [stage, setStage] = useState<"setup" | "library" | "review">("setup")
+  const [type, setType] = useState<Journey["type"]>(source?.type ?? "Chuyến đi")
+  const [skin, setSkin] = useState(source?.skin ?? "memory")
+  const [selected, setSelected] = useState<string[]>([
+    "old-1",
+    "old-3",
+    "old-5",
+  ])
+  const [assignments, setAssignments] = useState<Record<string, string>>({})
+  const [startDate, setStartDate] = useState("2024-04-12")
+  const [endDate, setEndDate] = useState("2024-04-20")
+  const [continues, setContinues] = useState(false)
+  const selectedPhotos = libraryPhotos
+    .filter((photo) => selected.includes(photo.id))
+    .map((photo) => ({ ...photo, date: assignments[photo.id] ?? photo.date }))
+  const dated = selectedPhotos.filter((photo) => photo.date)
+  const undated = selectedPhotos.filter((photo) => !photo.date)
+  const reviewDates = [...new Set(dated.map((photo) => photo.date))].sort()
+
+  useEffect(() => {
+    const dates = selectedPhotos
+      .map((photo) => photo.date)
+      .filter(Boolean)
+      .sort() as string[]
+    if (dates.length) {
+      setStartDate(dates[0])
+      setEndDate(dates[dates.length - 1])
+    }
+  }, [selected.join("|"), Object.values(assignments).join("|")])
+
+  if (source && (source.members?.length ?? 0) > 2) {
+    return <Navigate replace to={`/j/${source.id}/edit`} />
+  }
+
+  function saveImport() {
+    const dates = [...new Set(dated.map((photo) => photo.date))].sort()
+    const photos = dated.map((photo) => {
+      const sameDay = dated.filter((item) => item.date === photo.date)
+      return {
+        id: photo.id,
+        date: photo.date,
+        day: dates.indexOf(photo.date) + 1,
+        extra: sameDay.indexOf(photo) > 0,
+      }
+    })
+    const id = store.addImportedJourney({
+      type,
+      skin,
+      photos,
+      startDate,
+      endDate,
+      archived:
+        !continues &&
+        Boolean(endDate) &&
+        new Date(`${endDate}T23:59:59`).getTime() < Date.now(),
+    })
+    navigate(continues ? `/j/${id}` : `/j/${id}/wrapped`, { replace: true })
+  }
+
+  return (
+    <section className={`import-flow import-skin-${skin}`}>
+      <PushedHeader
+        title="nhập hành trình cũ."
+        onBack={() =>
+          stage === "setup"
+            ? navigate(-1)
+            : setStage(stage === "review" ? "library" : "setup")
+        }
+      />
+      <main>
+        {stage === "setup" && (
+          <>
+            <h1>Chọn loại và giao diện.</h1>
+            <div className="import-type-grid">
+              {([
+                "Giảm cân",
+                "Tiếng Anh",
+                "Chuyến đi",
+                "Cặp đôi",
+                "Tập luyện",
+                "Tự đặt",
+              ] as Journey["type"][]).map((item) => (
+                <button
+                  key={item}
+                  className={type === item ? "selected" : ""}
+                  onClick={() => setType(item)}
+                >
+                  <span>{typeEmoji[item]}</span>
+                  {item}
+                </button>
+              ))}
+            </div>
+            <h2>Giao diện</h2>
+            <div className="import-layout-grid">
+              {layoutOptions.map(([id, label]) => (
+                <button
+                  key={id}
+                  className={skin === id ? "selected" : ""}
+                  onClick={() => setSkin(id)}
+                >
+                  <LayoutPreview skin={id} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              className="import-primary"
+              onClick={() => setStage("library")}
+            >
+              Chọn ảnh cũ
+            </button>
+          </>
+        )}
+        {stage === "library" && (
+          <>
+            <h1>Chọn ảnh cũ.</h1>
+            <p className="import-intro">
+              Chọn nhiều ảnh. Ourney đọc ngày chụp để xếp vào hành trình.
+            </p>
+            <div className="import-photo-grid">
+              {libraryPhotos.map((photo, index) => {
+                const active = selected.includes(photo.id)
+                return (
+                  <button
+                    key={photo.id}
+                    className={active ? "selected" : ""}
+                    onClick={() =>
+                      setSelected((current) =>
+                        active
+                          ? current.filter((id) => id !== photo.id)
+                          : [...current, photo.id],
+                      )
+                    }
+                    aria-pressed={active}
+                    aria-label={`${
+                      active ? "Bỏ chọn" : "Chọn"
+                    } ảnh ${photo.label}`}
+                  >
+                    <span className={`library-scene scene-${index + 1}`} />
+                    <small>{photo.label}</small>
+                    {active && (
+                      <i>
+                        <Check size={15} weight="bold" />
+                      </i>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+            <button
+              className="import-primary"
+              disabled={!selected.length}
+              onClick={() => setStage("review")}
+            >
+              Xem lại {selected.length} ảnh
+            </button>
+          </>
+        )}
+        {stage === "review" && (
+          <>
+            <h1>Xem lại trong dòng thời gian.</h1>
+            <div className={`import-timeline timeline-${skin}`}>
+              {dated.map((photo) => (
+                <article
+                  key={photo.id}
+                  className={photo.id.includes("old") ? "imported" : "captured"}
+                >
+                  <span
+                    className={`library-scene scene-${libraryPhotos.findIndex((item) => item.id === photo.id) + 1}`}
+                  />
+                  <div>
+                    <b>Ngày {reviewDates.indexOf(photo.date) + 1}</b>
+                    <small>{photo.date} · từ thư viện</small>
+                    {photo.date &&
+                      dated.filter((item) => item.date === photo.date)[0]
+                        ?.id !== photo.id && <em>ảnh thêm trong ngày</em>}
+                  </div>
+                </article>
+              ))}
+            </div>
+            {undated.length > 0 && (
+              <section className="import-undated">
+                <h2>Chưa có ngày</h2>
+                {undated.map((photo) => (
+                  <div key={photo.id}>
+                    <span className="library-scene scene-5" />
+                    <label>
+                      Gán một ngày
+                      <input
+                        type="date"
+                        onChange={(event) =>
+                          setAssignments((current) => ({
+                            ...current,
+                            [photo.id]: event.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                    <button
+                      onClick={() =>
+                        setSelected((current) =>
+                          current.filter((id) => id !== photo.id),
+                        )
+                      }
+                    >
+                      Xoá
+                    </button>
+                  </div>
+                ))}
+              </section>
+            )}
+            <div className="import-date-range">
+              <label>
+                Bắt đầu
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(event) => setStartDate(event.target.value)}
+                />
+              </label>
+              <label>
+                Kết thúc
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(event) => setEndDate(event.target.value)}
+                />
+              </label>
+            </div>
+            <label className="import-continue">
+              <input
+                type="checkbox"
+                checked={continues}
+                onChange={(event) => setContinues(event.target.checked)}
+              />
+              <span>
+                <b>Chụp tiếp</b>
+                Chuỗi bắt đầu từ ảnh chụp thật đầu tiên; ảnh nhập không tính
+                chuỗi.
+              </span>
+            </label>
+            {type === "Giảm cân" && (
+              <p className="import-private-note">
+                <Lock size={15} weight="fill" /> Số kg vẫn ẩn và ảnh vẫn làm mờ
+                khi chia sẻ.
+              </p>
+            )}
+            <button
+              className="import-primary"
+              disabled={!dated.length || undated.length > 0}
+              onClick={saveImport}
+            >
+              Lưu hành trình
+            </button>
+          </>
+        )}
+      </main>
+    </section>
+  )
+}
+
+function ImportedJourneyHome({ journey }: { journey: Journey }) {
+  const navigate = useNavigate()
+  return (
+    <ScreenShell
+      bare
+      className={`imported-journey-home imported-${journey.skin}`}
+    >
+      <PushedHeader
+        title={journey.name}
+        onBack={() => navigate("/hub")}
+        action={
+          <button
+            onClick={() => navigate(`/j/${journey.id}/edit`)}
+            aria-label="Sửa"
+          >
+            <GearSix size={20} />
+          </button>
+        }
+      />
+      <main>
+        <div className="imported-summary">
+          <b>
+            {journey.startDate} – {journey.endDate}
+          </b>
+          <span>Chuỗi 0 · ảnh nhập không tính chuỗi</span>
+        </div>
+        <div className="import-timeline">
+          {journey.importedPhotos?.map((photo, index) => (
+            <article key={photo.id} className="imported">
+              <span className={`library-scene scene-${(index % 6) + 1}`} />
+              <div>
+                <b>Ngày {photo.day}</b>
+                <small>{photo.date} · từ thư viện</small>
+                {photo.extra && <em>ảnh thêm trong ngày</em>}
+              </div>
+            </article>
+          ))}
+          {journey.todayDone && (
+            <article className="captured">
+              <span className="captured-scene">
+                <Camera size={24} weight="bold" />
+              </span>
+              <div>
+                <b>Ảnh chụp mới</b>
+                <small>ảnh chụp thật · bắt đầu chuỗi</small>
+              </div>
+            </article>
+          )}
+        </div>
+        <button
+          className="import-primary"
+          onClick={() => navigate(`/j/${journey.id}/camera`)}
+        >
+          <Camera size={18} weight="bold" /> Chụp tiếp
+        </button>
+      </main>
+    </ScreenShell>
+  )
+}
+
+function JourneyAttachment({
+  mode = "home",
+}: {
+  mode?: "home" | "camera" | "post" | "done" | "squad" | "share" | "day" | "edit" | "wrapped"
+}) {
+  const store = useStore()
+  const params = useParams()
+  const journey = store.journeys.find((item) => item.id === params.id)
+
+  useEffect(() => {
+    if (journey) store.selectJourney(journey.id)
+  }, [journey?.id])
+
+  if (mode === "camera") return <CameraScreen />
+  if (journey && mode === "day") return <JourneyDayScreen journey={journey} />
+  if (journey && mode === "edit") return <JourneyEditScreen journey={journey} />
+  if (journey && mode === "wrapped") {
+    return <JourneyWrappedScreen journey={journey} />
+  }
+  if (journey?.imported && journey.archived && mode === "home") {
+    return <Navigate replace to={`/j/${journey.id}/wrapped`} />
+  }
+  if (journey?.imported && mode === "home") {
+    return <ImportedJourneyHome journey={journey} />
+  }
+  if (
+    journey &&
+    store.journeyDemoState !== "normal" &&
+    (mode === "home" || mode === "squad")
+  ) {
+    return (
+      <JourneyScenarioScreen
+        journey={journey}
+        mode={mode === "squad" ? "squad" : "home"}
+      />
+    )
+  }
+
+  if (journey?.skin === "quiet") {
+    if (mode === "post") return <QuietPost journey={journey} />
+    if (mode === "done") return <QuietDone journey={journey} />
+    if (mode === "squad") {
+      return journey.shared ? (
+        <QuietSquad journey={journey} />
+      ) : (
+        <Navigate replace to={`/j/${journey.id}`} />
+      )
+    }
+    if (mode === "share") return <QuietShare journey={journey} />
+    return <QuietJourneyHome journey={journey} />
+  }
+
+  if (journey?.skin === "squad") {
+    if (mode === "post") return <SquadPost journey={journey} />
+    if (mode === "done") return <SquadDone journey={journey} />
+    if (mode === "squad") return <SquadToday journey={journey} />
+    if (mode === "share") return <SquadShare journey={journey} />
+    return <SquadJourneyHome journey={journey} />
+  }
+
+  if (journey?.skin === "memory") {
+    if (mode === "post") return <MemoryPost journey={journey} />
+    if (mode === "done") return <MemoryDone journey={journey} />
+    if (mode === "squad") return <MemorySquad journey={journey} />
+    if (mode === "share") return <MemoryShare journey={journey} />
+    return <MemoryJourneyHome journey={journey} />
+  }
+
+  if (journey?.skin === "couple") {
+    if (mode === "post") return <CouplePost journey={journey} />
+    if (mode === "done") return <CoupleDone journey={journey} />
+    if (mode === "squad") return <CoupleSquad journey={journey} />
+    if (mode === "share") return <CoupleShare journey={journey} />
+    return <CoupleJourneyHome journey={journey} />
+  }
+
+  if (journey?.skin === "flexer") {
+    if (mode === "post") return <FlexerPost journey={journey} />
+    if (mode === "done") return <FlexerDone journey={journey} />
+    if (mode === "squad") return <FlexerSquad journey={journey} />
+    if (mode === "share") return <FlexerShare journey={journey} />
+    return <FlexerJourneyHome journey={journey} />
+  }
+
+  if (journey?.skin === "minimal") {
+    if (mode === "post") return <MinimalPost journey={journey} />
+    if (mode === "done") return <MinimalDone journey={journey} />
+    if (mode === "squad") return <MinimalSquad journey={journey} />
+    if (mode === "share") return <MinimalShare journey={journey} />
+    return <MinimalJourneyHome journey={journey} />
+  }
+
+  return (
+    <ScreenShell
+      title={
+        journey ? `${journey.name.toLocaleLowerCase("vi")}.` : "hành trình."
+      }
+      className="journey-owned-screen"
+    >
+      <div className="profile-placeholder">
+        <p>sắp có</p>
+      </div>
+    </ScreenShell>
+  )
+}
+
+export const router = createBrowserRouter([
+  {
+    path: "/",
+    Component: Root,
+    children: [
+      { index: true, Component: Entry },
+      { path: "camera", Component: CameraScreen },
+      { path: "hub", Component: HubScreen },
+      { path: "squad", Component: SquadScreen },
+      { path: "join/:code", Component: JoinScreen },
+      { path: "me", Component: ProfileScreen },
+      { path: "settings", Component: SettingsScreen },
+      { path: "settings/terms", element: <LegalPage kind="terms" /> },
+      { path: "settings/privacy", element: <LegalPage kind="privacy" /> },
+      { path: "settings/contact", Component: ContactPage },
+      { path: "settings/delete/:step", Component: DeleteAccountScreen },
+      { path: "splash", Component: SplashFlow },
+      { path: "onboarding/:step", Component: OnboardingFlow },
+      { path: "login", Component: LoginFlow },
+      { path: "otp", Component: OtpFlow },
+      { path: "profile-setup", Component: ProfileSetupFlow },
+      { path: "create/1", Component: CreateStepOne },
+      { path: "create/2/:question", Component: CreateStepTwo },
+      { path: "create/3", Component: CreateStepThree },
+      { path: "create/3/extra/1", element: <CreateStepThreeExtra page={1} /> },
+      { path: "create/3/extra/2", element: <CreateStepThreeExtra page={2} /> },
+      { path: "create/4", Component: CreateStepFour },
+      { path: "create/5", Component: CreateStepFive },
+      { path: "import", Component: ImportJourneyFlow },
+      { path: "j/:id", element: <JourneyAttachment /> },
+      { path: "j/:id/camera", element: <JourneyAttachment mode="camera" /> },
+      { path: "j/:id/post", element: <JourneyAttachment mode="post" /> },
+      { path: "j/:id/done", element: <JourneyAttachment mode="done" /> },
+      { path: "j/:id/squad", element: <JourneyAttachment mode="squad" /> },
+      { path: "j/:id/share", element: <JourneyAttachment mode="share" /> },
+      { path: "j/:id/day/:day", element: <JourneyAttachment mode="day" /> },
+      { path: "j/:id/edit", element: <JourneyAttachment mode="edit" /> },
+      { path: "j/:id/import", Component: ImportJourneyFlow },
+      { path: "j/:id/wrapped", element: <JourneyAttachment mode="wrapped" /> },
+      { path: "*", Component: NotFound },
+    ],
+  },
+])
