@@ -54,7 +54,7 @@ Việc cần làm:
 | Code ở `design/ourney-v2-app` | ✅ Đã chép và commit nguồn version 26 (routes, app.css, store đọc lại qua Figma MCP; create, flow giữ từ version 25 vì typecheck khớp). Typecheck và build đạt |
 | Phản hồi chủ dự án (onboarding mang sang Tạo hành trình, vòng xoay đổi hành trình, HUD Squad, nút đổi hành trình trên camera, rà lỗi bo elip/chữ cắt/đè/chiều cao/mép) | 🔄 Đã tái hiện đủ, ghi nguyên nhân trong `feedback-2026-11-11.md`; ✅ Đã sửa trên Make version 24–25 (xem dòng Make version 25) |
 | Lỗi "bấm Cài đặt ở màn hành trình" | ✅ Chủ dự án báo đã được sửa |
-| Đề xuất dock 5 nút + chỗ dùng liquid glass | ⏳ Đã viết đề xuất (`feedback-2026-11-11.md` mục 4), chờ chủ dự án duyệt, chưa gửi Make |
+| Đề xuất dock 5 nút + chỗ dùng liquid glass | ✅ Chủ dự án đã duyệt (2026-11-11); đã gửi Make (kèm màn /activity và công tắc "giảm trong suốt"); CLAUDE.md mục 2 đã đổi sang dock 5 nút |
 | Spec A (đổi bố cục trong hành trình), spec B (nhập hành trình đã qua) | 🔄 Đã viết (`feedback-2026-11-11.md` mục 2, 3; coi là câu trả lời câu 3 và 25 trong `docs/client-questions.md`), đã gửi Make trong cùng prompt FIX |
 | Prompt 0 → 10 và các lượt FIX trước | ✅ Xong tới version 22 (xem các mục bên dưới và `qa-make-v22.md`) |
 | Đọc context repo (CLAUDE.md, SRS, docs/03, docs/06, templates, 6 ảnh persona) | ✅ Xong |
@@ -201,3 +201,10 @@ Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh v
 ## Make version 22 (2026-11-11)
 
 Đã chạy kiểm tra Q cho Prompt 4 → 10 và sửa thêm (v21 dock Flexer ở Sáng, dấu phẩy thập phân, nút /create/4; v22 thẻ nhóm truy cập được bằng bàn phím). Báo cáo: `qa-make-v22.md`.
+
+## Dock 5 nút + liquid glass (Make version 27–28, 2026-11-11)
+
+- Chủ dự án duyệt đề xuất ở `feedback-2026-11-11.md` mục 4; chọn bỏ qua thử trên thiết bị thật (chỉ có kết quả giả lập trong trình duyệt).
+- Đo trên preview: dock 5 nút (Hành trình · Hội · Chụp 72×72 · Hoạt động · Hồ sơ, mỗi mục 68×56) ở Hub, Couple, Flexer, camera; dock kính `blur(20px) saturate(1.6)` giữ viền; công tắc "giảm trong suốt" tắt kính. Màn `/activity` có nhóm Hôm nay / Tuần này; mỗi dòng là nút ≥ 44pt và mở đúng chỗ (điểm danh → `/j/ielts/squad`). Tab Hồ sơ mở `/me`.
+- `CLAUDE.md` mục 2 đã đổi sang dock 5 nút và quy tắc liquid glass.
+- Code ở `design/ourney-v2-app` đang là version 26; version 27–28 chưa chép về.

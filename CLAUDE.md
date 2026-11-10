@@ -15,11 +15,12 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 ---
 
 ## 2. Synchronized Navigation & Button Standards
-1. **Unified 3-Tab Bottom Dock**:
-   - Every primary screen shares the same 3-tab dock structure:
-     - **Left**: `Journeys` (Map/Timeline vector icon)
-     - **Center**: `Snap Shutter` (`76x76pt` Hero Shutter on Camera screen; `56x40pt` quick-snap pill on Hub/Timeline/Squad screens, colored with `pTheme.primaryAccent`)
-     - **Right**: `Squad` (Group/People vector icon)
+1. **Unified 5-Tab Bottom Dock** (V2, approved 2026-11-11; see `docs/design-v2/feedback-2026-11-11.md`):
+   - Every primary screen shares the same 5-tab dock, in this order:
+     - `Journeys` (Map/Timeline vector icon) · `Squad` (Group/People vector icon)
+     - **Center**: `Snap Shutter` (`76x76pt` Hero Shutter on Camera screen; `56x40pt` quick-snap pill on Hub/Timeline/Squad screens, colored with `pTheme.primaryAccent`; long-press opens the journey wheel)
+     - `Activity` (Bell vector icon) · `Profile` (UserCircle vector icon)
+   - Liquid glass is allowed only on the floating navigation layer (dock, floating camera buttons, top bar once content scrolls under it, journey-wheel backdrop, sheet top edge), never on cards, timelines, share cards or primary buttons; keep the 2px border + hard shadow and a solid fallback for Reduce Transparency.
 2. **Button Hierarchy & Touch Targets**:
    - Minimum touch target: **`48x48dp`** (`>= 44pt` iOS HIG) on all interactive controls.
    - Primary buttons: `52dp` height (or `44dp` compact), capsule/rounded corners matching `pTheme.cardRadius`, `0.96` press scale animation (`110ms`), and physical bottom lip when `pTheme.bottomLipHeight > 0`.
