@@ -153,3 +153,18 @@ Lỗi còn lại:
 - /j/minimal: đường cam liền chỉ hiện ở hàng 3–4, chưa xuyên qua hàng 1–2 (đã yêu cầu 3 lần, Make vẫn lệch; nên sửa tay trong code hoặc mô tả lại khác đi). Số "25" vẫn đè cạnh ô nét đứt.
 - Các lỗi của mục 2026-11-05 và 2026-11-10 chưa kiểm tra lại sau version 17.
 - Đã kiểm tra lại sau version 17 và thấy đã sửa: polaroid /j/ielts/day/21 có ảnh; "Bìa" ở /j/:id/edit là bìa sticker; /join/K7Q2M9XA hiện vé xem trước, hai dòng "tiến độ tính từ ngày vào" và "không có link công khai".
+
+## Kiểm tra tự động sau version 17 (2026-11-11)
+
+Cách làm: mở thẳng URL preview `*.makeproxy-c.figma.site` (lấy từ iframe của trang Make) để đọc được DOM, rồi chạy script đo trong khung `.phone-frame` ở cả Sáng và Tối: cỡ chữ < 12px, vùng chạm < 44pt, chữ tiếng Anh, màn trống, tương phản chữ; và bấm thử luồng bằng click DOM.
+
+Kết quả đo (13 route vỏ chung + 6 skin × 9 route):
+- Cỡ chữ, vùng chạm, tiếng Anh: sạch, trừ công tắc ở /j/quiet/share cao 28px.
+- Tương phản ở Tối: nút nguy hiểm "Xoá" / "Kết thúc hành trình" ~2,3:1 (chữ #9F1239 trên nền tối); chip đầu trang Squad 1,96:1; chữ "CƠM/CANH" trong minh hoạ Couple 1,14:1. (Số đo ở Sáng phần lớn là báo nhầm vì script lấy nền viền khung máy.)
+
+Bấm thử:
+- Prompt 8: reaction đổi một lúc một (nhưng 🔥 tăng 2 thay vì 1); menu "⋯" nhóm có Báo cáo/Chặn; "Lưu" chỉ bật sau khi sửa, tên mới hiện ở Hub; "Kết thúc hành trình" → chỉ đọc → Wrapped.
+- Prompt 9: "Tham gia" tắt khi trống; mã sai, hết hạn có thẻ lỗi; mã hợp lệ → /j/ielts; "Nhắc Minh" → "Đã nhắc Minh" và tắt; cài đặt "Tối" đổi theme; xoá tài khoản 1 → 2 → 3. Lỗi: /join/:code giữ trạng thái mã đầu tiên khi đổi mã.
+- Prompt 10: panel Ngày 1, Đang tải, Lỗi, Chỉ có mình bạn, Chuỗi đứt, Ảnh ẩn, Bị xoá khỏi nhóm đều hiện đúng câu chữ. Lỗi: "Rời nhóm" không vào được (người dùng luôn là chủ nhóm); Couple "Ảnh ẩn" hiện tên Minh; "Lỗi" không hiện bản đã lưu.
+
+Đã gửi một lượt FIX gồm 11 mục trên (kèm lần thứ ba cho đường cam Minimalist).
