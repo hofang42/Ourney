@@ -152,3 +152,4 @@ Mục này thay cho các mục điểm dừng ở trên.
 Lỗi còn lại:
 - /j/minimal: đường cam liền chỉ hiện ở hàng 3–4, chưa xuyên qua hàng 1–2 (đã yêu cầu 3 lần, Make vẫn lệch; nên sửa tay trong code hoặc mô tả lại khác đi). Số "25" vẫn đè cạnh ô nét đứt.
 - Các lỗi của mục 2026-11-05 và 2026-11-10 chưa kiểm tra lại sau version 17.
+- Đã kiểm tra lại sau version 17 và thấy đã sửa: polaroid /j/ielts/day/21 có ảnh; "Bìa" ở /j/:id/edit là bìa sticker; /join/K7Q2M9XA hiện vé xem trước, hai dòng "tiến độ tính từ ngày vào" và "không có link công khai".
