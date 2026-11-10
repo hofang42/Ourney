@@ -51,7 +51,7 @@ Việc cần làm:
 |---|---|
 | Make version 23: chế độ "chữ 135%" dùng `--type-scale` | ✅ Xong, chưa đo lại chữ bị cắt khi bật 135% |
 | Code ở `design/ourney-v2-app` | ✅ Đã chép đè bằng nguồn version 23 qua Figma MCP (15 file; không dùng 36 ảnh PNG trong Make vì code không tham chiếu), typecheck và build đạt. Chưa commit |
-| Phản hồi chủ dự án (onboarding mang sang Tạo hành trình, vòng xoay đổi hành trình, HUD Squad, nút đổi hành trình trên camera, rà lỗi bo elip/chữ cắt/đè/chiều cao/mép) | 🔄 Đã tái hiện đủ, ghi nguyên nhân trong `feedback-2026-11-11.md`; prompt "FIX 2026-11-11" đã gửi Make, chờ kết quả |
+| Phản hồi chủ dự án (onboarding mang sang Tạo hành trình, vòng xoay đổi hành trình, HUD Squad, nút đổi hành trình trên camera, rà lỗi bo elip/chữ cắt/đè/chiều cao/mép) | 🔄 Đã tái hiện đủ, ghi nguyên nhân trong `feedback-2026-11-11.md`; prompt "FIX 2026-11-11" đã gửi Make nhưng Make hết credit giữa chừng ("You're out of AI credits in Phan Le Thanh Hoang (K18 DN)'s team Education plan until they reset on Dec 1."): đã sửa 5 file +1177 dòng, CHƯA tạo version, chưa kiểm tra. Khi có credit: gửi tin "tiếp tục và làm xong prompt trước" (hoặc gửi lại nguyên khối FIX 2026-11-11), rồi rà lại bằng script đo DOM |
 | Lỗi "bấm Cài đặt ở màn hành trình" | ✅ Chủ dự án báo đã được sửa |
 | Đề xuất dock 5 nút + chỗ dùng liquid glass | ⏳ Đã viết đề xuất (`feedback-2026-11-11.md` mục 4), chờ chủ dự án duyệt, chưa gửi Make |
 | Spec A (đổi bố cục trong hành trình), spec B (nhập hành trình đã qua) | 🔄 Đã viết (`feedback-2026-11-11.md` mục 2, 3; coi là câu trả lời câu 3 và 25 trong `docs/client-questions.md`), đã gửi Make trong cùng prompt FIX |
