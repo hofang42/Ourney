@@ -117,3 +117,26 @@ Lỗi còn lại cần gửi kèm:
 - Avatar, nút X và kéo sheet mời chưa thử.
 - Backlog5 đã gửi nhưng chưa kiểm tra lại: reset nháp tạo, sheet mời trong khung, biến thể màu vé, icon nửa khung.
 - Nút chụp phải mở bằng nhấn giữ 400ms: công cụ tự động chưa thử được, cần thử tay.
+
+## Điểm dừng cập nhật (2026-11-10): hết credit lần hai giữa Prompt 9
+
+Mục này thay cho hai mục điểm dừng ở trên.
+
+- Đã đổi sang tài khoản Figma khác (có quyền sửa file), nhưng credit AI vẫn tính vào team chứa file: Make lại báo "You're out of AI credits in Phan Le Thanh Hoang (K18 DN)'s team Education plan until they reset on Dec 1." Muốn chạy tiếp cần chuyển file sang team còn credit, hoặc chờ ngày 1/12.
+- Route để kiểm tra (gõ vào ô địa chỉ của preview): id hành trình là `quiet`, `ielts`, `dalat`, `couple`, `running`, `minimal`.
+
+| Prompt | Trạng thái |
+| --- | --- |
+| 0 → 5B | Xong (như bảng trên) |
+| 6 Memory, Couple | Xong, Make version 13. /j/dalat và /j/couple chạy được (ghi chú "sắp có" trước đây là sai) |
+| 7 Flexer, Minimalist | Xong, Make version 14, kèm sửa ảnh Couple và tiêu đề lặp |
+| 8 xem một ngày, cập nhật, về đích | Xong, Make version 15 |
+| 9 Hội, hồ sơ, cài đặt | DỞ: Make đã sửa routes.tsx (Hội, vào nhóm, hồ sơ, một phần cài đặt/xoá tài khoản; +1004 −29) rồi hết credit, chưa tạo version, chưa có CSS. Khi có credit: gửi lại toàn bộ Prompt 9 cùng các lỗi bên dưới |
+| 10 | Chưa chạy |
+
+Lỗi đã thấy, cần gửi kèm prompt sau:
+- Minimalist /j/minimal: đường cam vẫn là các vạch rời trong từng ô (đã yêu cầu 2 lần); ô đã xong vẫn là ô trắng như icon, chưa có ảnh. Prompt 9 đã ghi cách vẽ cụ thể (một svg polyline phủ lưới), nhưng chưa chạy xong.
+- /j/ielts/day/21: polaroid trắng, không có ảnh.
+- /j/:id/edit phần "Bìa": ba ô đánh số "1 2 3", chưa phải bìa sticker.
+- Flexer: dock ở Light đã được yêu cầu hiện nhãn, ảnh mỗi ngày khác nhau, dấu phẩy thập phân (gửi kèm Prompt 8, chưa kiểm tra lại).
+- Các lỗi còn lại của mục 2026-11-05 vẫn còn nguyên (chưa kiểm tra lại).
