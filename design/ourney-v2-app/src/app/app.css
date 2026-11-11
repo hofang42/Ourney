@@ -17658,3 +17658,146 @@
   flex: 0 0 auto;
   overscroll-behavior: contain;
 }
+
+/* V2 shell dock: shell routes never inherit the active journey material. */
+.shell-dock.app-dock {
+  --dock-hard-shadow: 4px 4px 0 var(--ink);
+  color: var(--ink);
+  border: 2px solid var(--ink) !important;
+  background: color-mix(in srgb, #fff8ee 78%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 42%),
+    var(--dock-hard-shadow) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+}
+
+.app-dark .shell-dock.app-dock {
+  --dock-hard-shadow: 4px 4px 0 #f5f0e6;
+  color: #f5f0e6;
+  border-color: #f5f0e6 !important;
+  background: color-mix(in srgb, #1c1b19 80%, transparent) !important;
+}
+
+.shell-dock.app-dock .dock-tab {
+  color: color-mix(in srgb, var(--ink) 72%, transparent) !important;
+}
+
+.shell-dock.app-dock .dock-tab.active {
+  color: var(--ink) !important;
+}
+
+.shell-dock.app-dock .dock-tab.active .dock-icon,
+.shell-dock.app-dock .dock-tab.active .dock-icon svg {
+  color: var(--ink) !important;
+}
+
+.shell-dock.app-dock .dock-selection-capsule {
+  border-color: var(--ink);
+  background: color-mix(in srgb, #ff8a3d 30%, var(--surface));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 55%),
+    inset 0 -1px 0 rgb(0 0 0 / 8%),
+    2px 2px 0 var(--ink);
+}
+
+.app-reduce-transparency .shell-dock.app-dock {
+  background: #fff8ee !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.app-dark.app-reduce-transparency .shell-dock.app-dock {
+  background: #1c1b19 !important;
+}
+
+/* Segments use an inline check; grid tiles reserve a dedicated corner row. */
+.theme-segmented button {
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding-inline: 6px;
+}
+
+.theme-option-label {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.theme-option-label svg {
+  flex: 0 0 auto;
+}
+
+.app-icon-picker button {
+  min-height: 112px;
+  padding: 38px 4px 8px;
+}
+
+.app-icon-picker button > .corner-check-badge {
+  width: 28px;
+  height: 28px;
+  top: 6px;
+  right: 6px;
+}
+
+.app-icon-picker button > .ourney-mark {
+  max-width: 38px;
+  max-height: 38px;
+}
+
+.avatar-picker button {
+  width: 68px;
+  height: 86px;
+  position: relative;
+  display: grid;
+  place-items: end center;
+  padding: 34px 6px 8px;
+  border-radius: 14px;
+  background: var(--push-surface) !important;
+}
+
+.avatar-picker button > span {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--push-ink);
+  border-radius: 999px;
+  color: #1a1a1a;
+  background: #7ec8e3;
+}
+
+.avatar-picker button:nth-child(2) > span {
+  background: #ffd84d;
+}
+
+.avatar-picker button:nth-child(3) > span {
+  background: #ffb347;
+}
+
+.avatar-picker button:nth-child(4) > span {
+  background: #cf9fff;
+}
+
+.avatar-picker button > .corner-check-badge,
+.ticket-choices button > .corner-check-badge {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  top: 6px;
+  right: 6px;
+}
+
+.ticket-choices button {
+  min-height: 108px;
+  padding: 36px 6px 8px;
+}
+
+.ticket-choices button > i:not(.corner-check-badge) {
+  max-width: 34px;
+  max-height: 34px;
+}

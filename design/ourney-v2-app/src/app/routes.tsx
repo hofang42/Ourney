@@ -654,7 +654,7 @@ function ReviewerPanel({
       .querySelectorAll<HTMLElement>("[data-corner-badge]")
       .forEach((badge) => {
         const card = badge.closest<HTMLElement>(
-          ".answer-choice, .theme-segmented button, .app-icon-picker button",
+          ".answer-choice, .app-icon-picker button, .avatar-picker button, .ticket-choices button, .edit-layout-grid > button, .import-layout-grid > button, .create-deck-card",
         )
         if (!card) return
         const badgeRect = badge.getBoundingClientRect()
@@ -666,6 +666,44 @@ function ReviewerPanel({
             `badge góc: cách trên ${topGap.toFixed(1)}px, phải ${rightGap.toFixed(1)}px`,
           )
         }
+        const intersects = (rect: DOMRect) =>
+          badgeRect.left < rect.right &&
+          badgeRect.right > rect.left &&
+          badgeRect.top < rect.bottom &&
+          badgeRect.bottom > rect.top
+        const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT)
+        let textNode = walker.nextNode()
+        while (textNode) {
+          const parent = textNode.parentElement
+          if (
+            parent &&
+            !badge.contains(parent) &&
+            textNode.textContent?.trim()
+          ) {
+            const range = document.createRange()
+            range.selectNodeContents(textNode)
+            if (intersects(range.getBoundingClientRect())) {
+              failures.push("badge góc: chạm nội dung chữ trong cùng control")
+              break
+            }
+          }
+          textNode = walker.nextNode()
+        }
+        card
+          .querySelectorAll<HTMLElement>(
+            "svg, .ourney-mark, [role='img'], .create-preview, .layout-preview-card, .library-scene, .avatar-picker button > span, .ticket-choices button > i:not(.corner-check-badge)",
+          )
+          .forEach((preview) => {
+            if (
+              preview !== badge &&
+              !badge.contains(preview) &&
+              intersects(preview.getBoundingClientRect())
+            ) {
+              failures.push(
+                "badge góc: chạm icon hoặc preview trong cùng control",
+              )
+            }
+          })
       })
     setIconCheckResults(failures)
   }
@@ -7099,7 +7137,12 @@ function ProfileScreen() {
               onClick={() => setAvatar(index)}
               aria-label={`Chọn màu ảnh đại diện ${index + 1}`}
             >
-              {name.slice(0, 1) || "L"}
+              <span>{name.slice(0, 1) || "L"}</span>
+              {avatar === index && (
+                <i className="corner-check-badge" data-corner-badge>
+                  <OIcon name="check" size={14} weight="bold" />
+                </i>
+              )}
             </button>
           ))}
         </div>
@@ -7432,12 +7475,12 @@ function SettingsScreen() {
                 }
               >
                 <OIcon name={icon as OIconName} size={18} weight="bold" />
-                {label as string}
-                {store.themePreference === value && (
-                  <i className="corner-check-badge" data-corner-badge>
+                <span className="theme-option-label">
+                  {store.themePreference === value && (
                     <OIcon name="check" size={14} weight="bold" />
-                  </i>
-                )}
+                  )}
+                  {label as string}
+                </span>
               </button>
             ))}
           </div>
@@ -7848,16 +7891,17 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
   )
   const onCamera =
     currentPath === "/camera" || /^\/j\/[^/]+\/camera$/.test(currentPath)
+  const journeyOwnedDock = /^\/j\/[^/]+(?:\/.*)?$/.test(currentPath)
   const shutterDisabled =
     store.readOnly ||
     Boolean(activeJourney?.archived) ||
     (onCamera && Boolean(activeJourney) && store.cameraPermission !== "granted")
-  const quietDock = activeJourney?.skin === "quiet"
-  const squadDock = activeJourney?.skin === "squad"
-  const memoryDock = activeJourney?.skin === "memory"
-  const coupleDock = activeJourney?.skin === "couple"
-  const flexerDock = activeJourney?.skin === "flexer"
-  const minimalDock = activeJourney?.skin === "minimal"
+  const quietDock = journeyOwnedDock && activeJourney?.skin === "quiet"
+  const squadDock = journeyOwnedDock && activeJourney?.skin === "squad"
+  const memoryDock = journeyOwnedDock && activeJourney?.skin === "memory"
+  const coupleDock = journeyOwnedDock && activeJourney?.skin === "couple"
+  const flexerDock = journeyOwnedDock && activeJourney?.skin === "flexer"
+  const minimalDock = journeyOwnedDock && activeJourney?.skin === "minimal"
   const onJourneyHome = /^\/j\/[^/]+$/.test(currentPath)
   const onJourneySquad = /^\/j\/[^/]+\/squad$/.test(currentPath)
   const hubActive = currentPath === "/hub" || onJourneyHome
@@ -8127,13 +8171,15 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
       )}
       <nav
         ref={dockRef}
-        className={`floating-dock app-dock ${quietDock ? "quiet-dock" : ""} ${
-          squadDock ? "squad-dock" : ""
-        } ${memoryDock ? "memory-dock" : ""} ${
-          coupleDock ? "couple-dock" : ""
-        } ${flexerDock ? "flexer-dock" : ""} ${
-          minimalDock ? "minimal-dock" : ""
-        } ${store.readOnly || activeJourney?.archived ? "dock-readonly" : ""}`}
+        className={`floating-dock app-dock ${
+          journeyOwnedDock ? "journey-dock" : "shell-dock"
+        } ${quietDock ? "quiet-dock" : ""} ${squadDock ? "squad-dock" : ""} ${
+          memoryDock ? "memory-dock" : ""
+        } ${coupleDock ? "couple-dock" : ""} ${
+          flexerDock ? "flexer-dock" : ""
+        } ${minimalDock ? "minimal-dock" : ""} ${
+          store.readOnly || activeJourney?.archived ? "dock-readonly" : ""
+        }`}
         aria-label="Điều hướng chính"
         style={
           {

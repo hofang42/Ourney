@@ -1604,7 +1604,11 @@ export function CreateStepFive() {
                 >
                   <i style={{ background: color }} />
                   <span>{name}</span>
-                  {selected && <OIcon name="check" size={16} weight="bold" />}
+                  {selected && (
+                    <i className="corner-check-badge" data-corner-badge>
+                      <OIcon name="check" size={14} weight="bold" />
+                    </i>
+                  )}
                 </button>
               )
             })}
@@ -1622,7 +1626,11 @@ export function CreateStepFive() {
                   aria-label={`Bìa ${name}`}
                 >
                   <i>{index === 0 ? "30" : index === 1 ? "DNA" : "01"}</i>
-                  {selected && <OIcon name="check" size={16} weight="bold" />}
+                  {selected && (
+                    <i className="corner-check-badge" data-corner-badge>
+                      <OIcon name="check" size={14} weight="bold" />
+                    </i>
+                  )}
                 </button>
               )
             })}
