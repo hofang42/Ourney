@@ -135,6 +135,8 @@ export type Journey = {
   totalDays?: number
 }
 
+export type CameraPickerMode = "camera" | "compose"
+
 type CheckInPayload = {
   caption: string
   mood: string
@@ -279,6 +281,76 @@ const seededJourneys: Journey[] = [
     members: ["Linh", "An", "Nam", "Hà"],
     owner: true,
   },
+  {
+    id: "yoga",
+    type: "Tập luyện",
+    skin: "quiet",
+    variant: 1,
+    name: "Yoga trước khi ngủ",
+    day: 12,
+    streak: 8,
+    reminderTime: "21:30",
+  },
+  {
+    id: "japanese",
+    type: "Tiếng Anh",
+    skin: "minimal",
+    variant: 1,
+    name: "15 phút tiếng Nhật",
+    day: 9,
+    streak: 9,
+    reminderTime: "19:45",
+  },
+  {
+    id: "family",
+    type: "Tự đặt",
+    skin: "squad",
+    variant: 2,
+    name: "Ảnh gia đình mỗi ngày",
+    day: 14,
+    streak: 11,
+    shared: true,
+    attendance: 2,
+    members: ["Linh", "Mẹ", "Bố", "An"],
+    reminderTime: "20:00",
+  },
+  {
+    id: "saigon",
+    type: "Chuyến đi",
+    skin: "memory",
+    variant: 1,
+    name: "Sài Gòn qua ô cửa",
+    day: 6,
+    streak: 6,
+    todayDone: true,
+    frameCount: 8,
+    reminderTime: "18:15",
+    days: [seedDay(6, [seedPhoto("saigon-6-1", "08:20", "Nắng đầu ngày")])],
+  },
+  {
+    id: "water",
+    type: "Tự đặt",
+    skin: "minimal",
+    variant: 2,
+    name: "Uống đủ nước",
+    day: 27,
+    streak: 20,
+    todayDone: true,
+    reminderTime: "17:30",
+    days: [seedDay(26, [seedPhoto("water-26-1", "17:10", "Đủ tám cốc")])],
+  },
+  {
+    id: "summer",
+    type: "Chuyến đi",
+    skin: "couple",
+    variant: 1,
+    name: "Mùa hè của hai đứa",
+    day: 30,
+    streak: 30,
+    archived: true,
+    shared: true,
+    members: ["Linh", "Nam"],
+  },
 ]
 
 function mergeSeedJourneys(current: Journey[]) {
@@ -359,6 +431,20 @@ type AppStore = {
   setNotificationPromptHandled: (value: boolean) => void
   journeyWheelOpen: boolean
   setJourneyWheelOpen: (value: boolean) => void
+  cameraPickerOpen: boolean
+  cameraPickerMode: CameraPickerMode
+  openCameraPicker: (mode?: CameraPickerMode) => void
+  closeCameraPicker: () => void
+  pinnedCameraJourneyIds: string[]
+  pinCameraJourney: (id: string, replaceId?: string) => boolean
+  unpinCameraJourney: (id: string) => void
+  cameraPinHint: boolean
+  dismissCameraPinHint: () => void
+  crossPostJourneyIds: string[]
+  toggleCrossPostJourney: (id: string) => void
+  clearCrossPostJourneys: () => void
+  demoJourneyCount: 6 | 12
+  setDemoJourneyCount: (count: 6 | 12) => void
   profile: Profile | null
   setProfile: (profile: Profile) => void
   hubState: HubState
@@ -567,6 +653,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [notificationPromptHandled, setNotificationPromptHandled] =
     useState(false)
   const [journeyWheelOpen, setJourneyWheelOpen] = useState(false)
+  const [cameraPickerOpen, setCameraPickerOpen] = useState(false)
+  const [cameraPickerMode, setCameraPickerMode] =
+    useState<CameraPickerMode>("camera")
+  const [pinnedCameraJourneyIds, setPinnedCameraJourneyIds] = useState([
+    "ielts",
+    "running",
+  ])
+  const [cameraPinHint, setCameraPinHint] = useState(false)
+  const [crossPostJourneyIds, setCrossPostJourneyIds] = useState<string[]>([])
+  const [demoJourneyCount, setDemoJourneyCountState] = useState<6 | 12>(12)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [hubState, setHubState] = useState<HubState>("normal")
   const [hubHeroState, setHubHeroState] = useState<HubHeroState>("default")
@@ -748,6 +844,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setNotificationPromptHandled,
       journeyWheelOpen,
       setJourneyWheelOpen,
+      cameraPickerOpen,
+      cameraPickerMode,
+      openCameraPicker: (mode: CameraPickerMode = "camera") => {
+        setCameraPickerMode(mode)
+        setCameraPickerOpen(true)
+        setJourneyWheelOpen(false)
+      },
+      closeCameraPicker: () => setCameraPickerOpen(false),
+      pinnedCameraJourneyIds,
+      pinCameraJourney: (id: string, replaceId?: string) => {
+        if (pinnedCameraJourneyIds.includes(id)) return true
+        if (pinnedCameraJourneyIds.length >= 3 && !replaceId) return false
+        setPinnedCameraJourneyIds((current) =>
+          [
+            ...current.filter((item) => item !== replaceId && item !== id),
+            id,
+          ].slice(0, 3),
+        )
+        return true
+      },
+      unpinCameraJourney: (id: string) =>
+        setPinnedCameraJourneyIds((current) =>
+          current.filter((item) => item !== id),
+        ),
+      cameraPinHint,
+      dismissCameraPinHint: () => setCameraPinHint(false),
+      crossPostJourneyIds,
+      toggleCrossPostJourney: (id: string) =>
+        setCrossPostJourneyIds((current) =>
+          current.includes(id)
+            ? current.filter((item) => item !== id)
+            : [...current, id],
+        ),
+      clearCrossPostJourneys: () => setCrossPostJourneyIds([]),
+      demoJourneyCount,
+      setDemoJourneyCount: (count: 6 | 12) => {
+        setDemoJourneyCountState(count)
+        setJourneys(seededJourneys.slice(0, count))
+        setActiveJourneyIdState((current) =>
+          seededJourneys
+            .slice(0, count)
+            .some((journey) => journey.id === current)
+            ? current
+            : "ielts",
+        )
+      },
       profile,
       setProfile,
       hubState,
@@ -849,7 +991,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               ? String(draft.answers?.hud || "HUD đậm")
               : undefined,
         }
-        setJourneys((current) => [nextJourney, ...current])
+        setJourneys((current) => {
+          if (current.filter((journey) => !journey.archived).length === 5) {
+            setCameraPinHint(true)
+          }
+          return [nextJourney, ...current]
+        })
         setActiveJourneyIdState(id)
         setCreateProgress(null)
         writeCreateProgress(null)
@@ -945,12 +1092,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ? appendJourneyPhoto(target, payload, photo).result
           : fallback
         setJourneys((current) =>
-          current.map((journey) =>
-            journey.id === id
-              ? appendJourneyPhoto(journey, payload, photo).journey
-              : journey,
-          ),
+          current.map((journey) => {
+            if (
+              journey.id !== id &&
+              !crossPostJourneyIds.includes(journey.id)
+            ) {
+              return journey
+            }
+            const journeyPhoto =
+              journey.id === id
+                ? photo
+                : { ...photo, id: `${journey.id}-${now.getTime()}` }
+            return appendJourneyPhoto(journey, payload, journeyPhoto).journey
+          }),
         )
+        setCrossPostJourneyIds([])
         return outcome
       },
       setJourneyHud: (id: string, hud: string) => {
@@ -1196,6 +1352,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       notificationSheetOpen,
       notificationPromptHandled,
       journeyWheelOpen,
+      cameraPickerOpen,
+      cameraPickerMode,
+      pinnedCameraJourneyIds,
+      cameraPinHint,
+      crossPostJourneyIds,
+      demoJourneyCount,
       profile,
       hubState,
       hubHeroState,

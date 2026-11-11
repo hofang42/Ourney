@@ -393,6 +393,7 @@ function Root() {
             <CreateSheet onClose={() => store.setCreateSheetOpen(false)} />
           )}
           {store.inviteSheetOpen && <InviteSheet />}
+          <CameraJourneyPicker />
         </div>
       </div>
     </div>
@@ -907,6 +908,18 @@ function ReviewerPanel({
             checked={store.reduceTransparency}
             onChange={store.setReduceTransparency}
           />
+          <Control label="dữ liệu hành trình">
+            <Segment
+              value={String(store.demoJourneyCount)}
+              options={[
+                ["12", "12 hành trình"],
+                ["6", "6 hành trình"],
+              ]}
+              onChange={(value) =>
+                store.setDemoJourneyCount(value === "6" ? 6 : 12)
+              }
+            />
+          </Control>
           <Control label="trạng thái hoạt động">
             <Segment
               value={store.activityState}
@@ -1510,6 +1523,55 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
   )
 }
 
+function ComposeJourneyTargets({ journey }: { journey: Journey }) {
+  const store = useStore()
+  const [expanded, setExpanded] = useState(false)
+  const choices = store.journeys.filter(
+    (item) => !item.archived && item.id !== journey.id,
+  )
+  return (
+    <section className="compose-journey-targets">
+      <button
+        className="compose-target-chip"
+        onClick={() => store.openCameraPicker("compose")}
+      >
+        <TypeBadge type={journey.type} size={28} />
+        <span>
+          <small>Đăng vào</small>
+          <b>{journey.name}</b>
+        </span>
+        <OIcon name="caret-down" size={16} weight="bold" />
+      </button>
+      <button
+        className="compose-add-more"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+      >
+        <OIcon name="plus" size={17} weight="bold" /> Đăng thêm vào…
+      </button>
+      {expanded && (
+        <div className="compose-multi-list">
+          {choices.map((item) => {
+            const selected = store.crossPostJourneyIds.includes(item.id)
+            return (
+              <button
+                key={item.id}
+                className={selected ? "selected" : ""}
+                onClick={() => store.toggleCrossPostJourney(item.id)}
+                aria-pressed={selected}
+              >
+                <TypeBadge type={item.type} size={26} />
+                <span>{item.name}</span>
+                {selected && <OIcon name="check" size={15} weight="bold" />}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
 function QuietPost({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
@@ -1579,6 +1641,7 @@ function QuietPost({ journey }: { journey: Journey }) {
           />
           <small>{caption.length}/140</small>
         </section>
+        <ComposeJourneyTargets journey={journey} />
         <button className="quiet-post-primary" onClick={submit}>
           {journey.todayDone ? "Thêm ảnh" : "Đăng"}
         </button>
@@ -2147,6 +2210,7 @@ function SquadPost({ journey }: { journey: Journey }) {
           />
           <small>{caption.length}/140</small>
         </section>
+        <ComposeJourneyTargets journey={journey} />
         <button
           className="squad-post-primary"
           disabled={minutes === null || store.readOnly}
@@ -2783,6 +2847,7 @@ function MemoryPost({ journey }: { journey: Journey }) {
           />
           <small>{caption.length}/140</small>
         </label>
+        <ComposeJourneyTargets journey={journey} />
         <button className="memory-post-primary" onClick={submit}>
           {journey.todayDone ? "Thêm vào cuộn" : "Dán vào sổ"}
         </button>
@@ -3314,6 +3379,7 @@ function CouplePost({ journey }: { journey: Journey }) {
           />
           <small>{caption.length}/140</small>
         </label>
+        <ComposeJourneyTargets journey={journey} />
         <button className="couple-post-primary" onClick={submit}>
           {journey.todayDone
             ? "Thêm ảnh"
@@ -3813,6 +3879,7 @@ function FlexerPost({ journey }: { journey: Journey }) {
           />
           <small>{caption.length}/140</small>
         </label>
+        <ComposeJourneyTargets journey={journey} />
         <button className="flexer-primary" onClick={submit}>
           {journey.todayDone ? "Thêm ảnh" : "Đăng"}
         </button>
@@ -4276,6 +4343,7 @@ function MinimalPost({ journey }: { journey: Journey }) {
       />
       <div className="minimal-page-scroll">
         <MinimalPhoto index={journey.day} />
+        <ComposeJourneyTargets journey={journey} />
         <div className="minimal-countdown">
           {store.reduceMotion ? (
             <span>Tự đăng sau 3 giây</span>
@@ -5053,6 +5121,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
   const [endOpen, setEndOpen] = useState(false)
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [codeOpen, setCodeOpen] = useState(false)
+  const [pinReplaceOpen, setPinReplaceOpen] = useState(false)
   const [toast, setToast] = useState("")
   const isOwner = journey.owner ?? store.journeyOwner
   const groupJourney = (journey.members?.length ?? 0) >= 2
@@ -5105,6 +5174,25 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
             onChange={(event) => setName(event.target.value)}
           />
         </section>
+        {store.journeys.filter((item) => !item.archived).length > 5 && (
+          <section className="edit-section edit-camera-pin">
+            <div>
+              <h2>Hiện trên camera</h2>
+              <p>Ghim hành trình này vào bộ chọn nhanh.</p>
+            </div>
+            <SystemSwitch
+              label="Hiện trên camera"
+              checked={store.pinnedCameraJourneyIds.includes(journey.id)}
+              onChange={() => {
+                if (store.pinnedCameraJourneyIds.includes(journey.id)) {
+                  store.unpinCameraJourney(journey.id)
+                } else if (!store.pinCameraJourney(journey.id)) {
+                  setPinReplaceOpen(true)
+                }
+              }}
+            />
+          </section>
+        )}
         <section className="edit-section">
           <h2>Bìa</h2>
           <div className="edit-cover-options">
@@ -5331,6 +5419,31 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
           {journey.shared && !isOwner ? "Rời nhóm" : "Kết thúc hành trình"}
         </button>
       </main>
+      <JourneyActionSheet
+        open={pinReplaceOpen}
+        title="thay hành trình đã ghim."
+        body="Bạn đã ghim đủ 3 hành trình. Chọn một hành trình để thay."
+        onClose={() => setPinReplaceOpen(false)}
+      >
+        <div className="camera-pin-replace">
+          {store.pinnedCameraJourneyIds.map((id) => {
+            const pinnedJourney = store.journeys.find((item) => item.id === id)
+            if (!pinnedJourney) return null
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  store.pinCameraJourney(journey.id, id)
+                  setPinReplaceOpen(false)
+                }}
+              >
+                <TypeBadge type={pinnedJourney.type} size={30} />
+                {pinnedJourney.name}
+              </button>
+            )
+          })}
+        </div>
+      </JourneyActionSheet>
       {layoutPreview && (
         <div className={`layout-full-preview previewing-${layoutPreview}`}>
           <header>
@@ -5901,6 +6014,18 @@ function CameraScreen() {
             )}
           </div>
         </div>
+        {store.cameraPinHint && (
+          <div className="camera-pin-hint">
+            <OIcon name="map-pin" size={18} weight="bold" />
+            <span>Ghim tối đa 3 hành trình hay chụp lên camera</span>
+            <button
+              onClick={store.dismissCameraPinHint}
+              aria-label="Đóng gợi ý ghim"
+            >
+              <OIcon name="close" size={16} weight="bold" />
+            </button>
+          </div>
+        )}
         <div
           className={`live-viewfinder ${quiet ? "quiet-live-viewfinder" : ""} ${
             memory ? "memory-live-viewfinder" : ""
@@ -7866,6 +7991,201 @@ function DeleteAccountScreen() {
   )
 }
 
+function CameraJourneyPicker() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [query, setQuery] = useState("")
+  const [endedOpen, setEndedOpen] = useState(false)
+  const [replaceTarget, setReplaceTarget] = useState("")
+  const pressTimer = useRef<number | null>(null)
+  const longPressed = useRef(false)
+  const activeJourneys = store.journeys.filter((journey) => !journey.archived)
+  const pinningEnabled = activeJourneys.length > 5
+  const matches = (journey: Journey) =>
+    journey.name.toLocaleLowerCase("vi").includes(query.toLocaleLowerCase("vi"))
+  const pinned = store.pinnedCameraJourneyIds
+    .map((id) => store.journeys.find((journey) => journey.id === id))
+    .filter((journey): journey is Journey =>
+      Boolean(journey && !journey.archived && matches(journey)),
+    )
+  const pinnedIds = new Set(pinned.map((journey) => journey.id))
+  const notShot = activeJourneys.filter(
+    (journey) =>
+      !pinnedIds.has(journey.id) && !journey.todayDone && matches(journey),
+  )
+  const shot = activeJourneys.filter(
+    (journey) =>
+      !pinnedIds.has(journey.id) && journey.todayDone && matches(journey),
+  )
+  const ended = store.journeys.filter(
+    (journey) => journey.archived && matches(journey),
+  )
+
+  function selectJourney(journey: Journey) {
+    if (longPressed.current) {
+      longPressed.current = false
+      return
+    }
+    store.selectJourney(journey.id)
+    store.closeCameraPicker()
+    setQuery("")
+    if (store.cameraPickerMode === "compose") {
+      navigate(`/j/${journey.id}/post`)
+    }
+  }
+
+  function togglePin(journey: Journey) {
+    if (!pinningEnabled || journey.archived) return
+    if (store.pinnedCameraJourneyIds.includes(journey.id)) {
+      store.unpinCameraJourney(journey.id)
+      store.showToast("Bỏ ghim khỏi camera")
+      return
+    }
+    if (store.pinCameraJourney(journey.id)) {
+      store.showToast("Ghim lên camera")
+    } else {
+      setReplaceTarget(journey.id)
+    }
+  }
+
+  function startLongPress(journey: Journey) {
+    if (!pinningEnabled || journey.archived) return
+    longPressed.current = false
+    pressTimer.current = window.setTimeout(() => {
+      longPressed.current = true
+      togglePin(journey)
+    }, 520)
+  }
+
+  function stopLongPress() {
+    if (pressTimer.current !== null) {
+      window.clearTimeout(pressTimer.current)
+      pressTimer.current = null
+    }
+  }
+
+  function renderRow(journey: Journey) {
+    const isPinned = store.pinnedCameraJourneyIds.includes(journey.id)
+    return (
+      <button
+        className="camera-picker-row"
+        key={journey.id}
+        onClick={() => selectJourney(journey)}
+        onPointerDown={() => startLongPress(journey)}
+        onPointerUp={stopLongPress}
+        onPointerCancel={stopLongPress}
+        onPointerLeave={stopLongPress}
+        onContextMenu={(event) => {
+          event.preventDefault()
+          togglePin(journey)
+        }}
+      >
+        <TypeBadge type={journey.type} size={38} />
+        <span>
+          <b>{journey.name}</b>
+          <small>
+            Ngày {journeyDisplayDay(journey)}/{journeyLength(journey)} · chuỗi{" "}
+            {journey.streak}
+          </small>
+          {isPinned && pinningEnabled && (
+            <em>
+              <OIcon name="map-pin" size={13} weight="bold" /> Đã ghim
+            </em>
+          )}
+        </span>
+        {journey.todayDone && (
+          <i aria-label="Đã chụp hôm nay">
+            <OIcon name="check" size={16} weight="bold" />
+          </i>
+        )}
+      </button>
+    )
+  }
+
+  return (
+    <JourneyActionSheet
+      open={store.cameraPickerOpen}
+      title="tất cả hành trình."
+      onClose={() => {
+        store.closeCameraPicker()
+        setQuery("")
+        setReplaceTarget("")
+        setEndedOpen(false)
+      }}
+    >
+      <label className="camera-picker-search">
+        <OIcon name="search" size={19} weight="bold" />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Tìm hành trình"
+        />
+      </label>
+      {replaceTarget ? (
+        <section className="camera-pin-replace">
+          <h3>Thay hành trình đã ghim nào?</h3>
+          {pinned.map((journey) => (
+            <button
+              key={journey.id}
+              onClick={() => {
+                store.pinCameraJourney(replaceTarget, journey.id)
+                setReplaceTarget("")
+              }}
+            >
+              <TypeBadge type={journey.type} size={30} />
+              {journey.name}
+            </button>
+          ))}
+          <button
+            className="sheet-secondary"
+            onClick={() => setReplaceTarget("")}
+          >
+            Thôi
+          </button>
+        </section>
+      ) : (
+        <div className="camera-picker-sections">
+          {pinningEnabled && pinned.length > 0 && (
+            <section>
+              <h3>Đã ghim</h3>
+              {pinned.map(renderRow)}
+            </section>
+          )}
+          {notShot.length > 0 && (
+            <section>
+              <h3>Hôm nay chưa chụp</h3>
+              {notShot.map(renderRow)}
+            </section>
+          )}
+          {shot.length > 0 && (
+            <section>
+              <h3>Đã chụp hôm nay</h3>
+              {shot.map(renderRow)}
+            </section>
+          )}
+          {ended.length > 0 && (
+            <section>
+              <button
+                className="camera-ended-toggle"
+                onClick={() => setEndedOpen(!endedOpen)}
+                aria-expanded={endedOpen}
+              >
+                Đã kết thúc
+                <OIcon
+                  name={endedOpen ? "caret-down" : "caret-right"}
+                  size={16}
+                  weight="bold"
+                />
+              </button>
+              {endedOpen && ended.map(renderRow)}
+            </section>
+          )}
+        </div>
+      )}
+    </JourneyActionSheet>
+  )
+}
+
 let lastDockTabIndex: number | null = null
 
 function FloatingDock({ currentPath }: { currentPath: string }) {
@@ -7881,14 +8201,48 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
   const pressStartedAt = useRef(0)
   const pressFrame = useRef<number | null>(null)
   const longPressOpened = useRef(false)
-  const stripRef = useRef<HTMLDivElement | null>(null)
-  const dragStartX = useRef(0)
-  const dragStartScroll = useRef(0)
-  const stripPointerDown = useRef(false)
-  const stripDragged = useRef(false)
   const activeJourney = store.journeys.find(
     (journey) => journey.id === store.activeJourneyId,
   )
+  const activeCameraJourneys = store.journeys.filter(
+    (journey) => !journey.archived,
+  )
+  const reminderDistance = (time?: string) => {
+    if (!time) return Number.MAX_SAFE_INTEGER
+    const [hour, minute] = time.split(":").map(Number)
+    const now = new Date()
+    const current = now.getHours() * 60 + now.getMinutes()
+    const target = hour * 60 + minute
+    return (target - current + 24 * 60) % (24 * 60)
+  }
+  const pinnedQuick = store.pinnedCameraJourneyIds
+    .map((id) => activeCameraJourneys.find((journey) => journey.id === id))
+    .filter((journey): journey is Journey => Boolean(journey))
+  const pinnedQuickIds = new Set(pinnedQuick.map((journey) => journey.id))
+  const automaticQuick = activeCameraJourneys
+    .filter((journey) => !pinnedQuickIds.has(journey.id) && !journey.todayDone)
+    .sort((left, right) => {
+      const leftWaiting =
+        left.shared &&
+        (left.members?.length ?? 0) > (left.attendance ?? 0) &&
+        !left.todayDone
+      const rightWaiting =
+        right.shared &&
+        (right.members?.length ?? 0) > (right.attendance ?? 0) &&
+        !right.todayDone
+      if (leftWaiting !== rightWaiting) return leftWaiting ? -1 : 1
+      const reminder =
+        reminderDistance(left.reminderTime) -
+        reminderDistance(right.reminderTime)
+      if (reminder !== 0) return reminder
+      if (left.id === store.activeJourneyId) return -1
+      if (right.id === store.activeJourneyId) return 1
+      return 0
+    })
+  const quickJourneys =
+    activeCameraJourneys.length <= 5
+      ? activeCameraJourneys
+      : [...pinnedQuick, ...automaticQuick].slice(0, 4)
   const onCamera =
     currentPath === "/camera" || /^\/j\/[^/]+\/camera$/.test(currentPath)
   const journeyOwnedDock = /^\/j\/[^/]+(?:\/.*)?$/.test(currentPath)
@@ -7967,29 +8321,9 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
   }
 
   function chooseJourney(id: string) {
-    if (stripDragged.current) return
     store.selectJourney(id)
     store.setJourneyWheelOpen(false)
   }
-
-  function createJourney() {
-    if (stripDragged.current) return
-    store.setJourneyWheelOpen(false)
-    store.beginCreate(onCamera ? "/camera" : "/hub")
-    navigate("/create/1")
-  }
-
-  useLayoutEffect(() => {
-    if (!wheelOpen) return
-    const selected = stripRef.current?.querySelector<HTMLElement>(
-      '[aria-current="true"]',
-    )
-    selected?.scrollIntoView({
-      behavior: "auto",
-      block: "nearest",
-      inline: "center",
-    })
-  }, [wheelOpen])
 
   useLayoutEffect(() => {
     const dock = dockRef.current
@@ -8074,47 +8408,8 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
             onPointerDown={(event) => event.stopPropagation()}
             onPointerUp={(event) => event.stopPropagation()}
           >
-            <div
-              ref={stripRef}
-              className="journey-disc-strip"
-              aria-label="Chọn hành trình"
-              onWheel={(event) => {
-                event.preventDefault()
-                event.currentTarget.scrollLeft += event.deltaY || event.deltaX
-              }}
-              onPointerDown={(event) => {
-                if (event.pointerType === "mouse" && event.button !== 0) return
-                dragStartX.current = event.clientX
-                dragStartScroll.current = event.currentTarget.scrollLeft
-                stripPointerDown.current = true
-                stripDragged.current = false
-              }}
-              onPointerMove={(event) => {
-                if (!stripPointerDown.current) return
-                const distance = event.clientX - dragStartX.current
-                if (Math.abs(distance) < 5 && !stripDragged.current) return
-                stripDragged.current = true
-                if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  event.currentTarget.setPointerCapture(event.pointerId)
-                }
-                event.currentTarget.scrollLeft =
-                  dragStartScroll.current - distance
-              }}
-              onPointerUp={(event) => {
-                stripPointerDown.current = false
-                if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-                  event.currentTarget.releasePointerCapture(event.pointerId)
-                }
-                window.requestAnimationFrame(() => {
-                  stripDragged.current = false
-                })
-              }}
-              onPointerCancel={() => {
-                stripPointerDown.current = false
-                stripDragged.current = false
-              }}
-            >
-              {store.journeys.map((journey) => {
+            <div className="journey-disc-strip" aria-label="Chọn hành trình">
+              {quickJourneys.map((journey) => {
                 const journeySkin =
                   skins.find((item) => item.id === journey.skin) ?? skins[0]
                 const accent =
@@ -8151,20 +8446,40 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
                     <small aria-label={journey.name} title={journey.name}>
                       {journey.name}
                     </small>
+                    {activeCameraJourneys.length > 5 &&
+                      pinnedQuickIds.has(journey.id) && (
+                        <em className="journey-disc-pin">
+                          <OIcon name="map-pin" size={12} weight="bold" /> Đã
+                          ghim
+                        </em>
+                      )}
+                    {activeCameraJourneys.length > 5 &&
+                      !pinnedQuickIds.has(journey.id) &&
+                      journey.shared &&
+                      (journey.members?.length ?? 0) >
+                        (journey.attendance ?? 0) && (
+                        <em className="journey-disc-status">
+                          {journey.attendance ?? 0}/
+                          {journey.members?.length ?? 0} đã điểm danh
+                        </em>
+                      )}
                   </button>
                 )
               })}
-              <button
-                className="journey-disc journey-disc-new"
-                data-testid="journey-disc-new"
-                onClick={createJourney}
-              >
-                <span className="journey-disc-circle">
-                  <OIcon name="plus" size={19} weight="bold" />
-                </span>
-                <b className="journey-disc-day">mới</b>
-                <small>tạo hành trình</small>
-              </button>
+              {activeCameraJourneys.length > 5 && (
+                <button
+                  className="journey-disc journey-disc-all"
+                  onClick={() => store.openCameraPicker("camera")}
+                >
+                  <span className="journey-disc-circle">
+                    <OIcon name="journeys" size={24} weight="bold" />
+                  </span>
+                  <b className="journey-disc-day">
+                    Tất cả ({store.journeys.length})
+                  </b>
+                  <small>tìm hành trình</small>
+                </button>
+              )}
             </div>
           </div>
         </div>

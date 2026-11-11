@@ -17801,3 +17801,330 @@
   max-width: 34px;
   max-height: 34px;
 }
+
+/* Camera quick targets: five fixed slots, with the full list in a phone sheet. */
+.journey-wheel-container {
+  width: calc(100% - 18px);
+  height: 190px;
+  left: 9px;
+  right: 9px;
+}
+
+.journey-disc-strip {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: start;
+  gap: 4px;
+  overflow: hidden;
+  padding: 8px 4px;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
+.journey-disc {
+  width: 100%;
+  min-width: 0;
+  min-height: 170px;
+  gap: 4px;
+}
+
+.journey-disc-circle {
+  width: 54px;
+  height: 54px;
+}
+
+.journey-disc small {
+  width: 100%;
+  padding-inline: 2px;
+  font-size: calc(10px * var(--type-scale, 1));
+}
+
+.journey-disc-day {
+  font-size: calc(10px * var(--type-scale, 1));
+  text-align: center;
+}
+
+.journey-disc-pin {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--ink);
+  font-size: calc(9px * var(--type-scale, 1));
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.journey-disc-status {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: calc(8px * var(--type-scale, 1));
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.journey-disc-all .journey-disc-circle {
+  border-style: dashed;
+}
+
+.camera-picker-search {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 2px solid var(--push-ink);
+  border-radius: 14px;
+  padding: 0 12px;
+  color: var(--push-ink);
+  background: var(--push-surface);
+}
+
+.phone-screen > .journey-action-scrim {
+  --push-bg: var(--bg);
+  --push-surface: var(--surface);
+  --push-ink: var(--ink);
+  --push-muted: var(--muted);
+  --push-accent: #ff8a3d;
+}
+
+.camera-picker-search input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+}
+
+.camera-picker-sections {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.camera-picker-sections section {
+  display: grid;
+  gap: 7px;
+}
+
+.camera-picker-sections h3,
+.camera-pin-replace h3 {
+  margin: 0;
+  color: var(--push-muted);
+  font-size: calc(12px * var(--type-scale, 1));
+  text-transform: uppercase;
+}
+
+.camera-picker-row {
+  width: 100%;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid color-mix(in srgb, var(--push-ink) 18%, transparent);
+  border-radius: 14px;
+  padding: 8px 10px;
+  color: var(--push-ink);
+  background: var(--push-surface);
+  text-align: left;
+}
+
+.camera-picker-row > span {
+  min-width: 0;
+  display: grid;
+}
+
+.camera-picker-row b,
+.camera-picker-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.camera-picker-row small {
+  color: var(--push-muted);
+  font-size: calc(11px * var(--type-scale, 1));
+}
+
+.camera-picker-row em {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--push-accent);
+  font-size: calc(10px * var(--type-scale, 1));
+  font-style: normal;
+  font-weight: 800;
+}
+
+.camera-picker-row > i {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--push-ink);
+  border-radius: 999px;
+  background: #10b981;
+}
+
+.camera-ended-toggle {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--push-ink);
+  font-weight: 800;
+}
+
+.camera-pin-replace {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.camera-pin-replace > button:not(.sheet-secondary) {
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid color-mix(in srgb, var(--push-ink) 20%, transparent);
+  border-radius: 13px;
+  padding: 8px 10px;
+  color: var(--push-ink);
+  background: var(--push-surface);
+  text-align: left;
+  font-weight: 750;
+}
+
+.camera-pin-hint {
+  width: calc(100% - 24px);
+  min-height: 54px;
+  position: absolute;
+  z-index: 35;
+  top: 96px;
+  left: 12px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 36px;
+  align-items: center;
+  gap: 7px;
+  border: 2px solid #f5f0e6;
+  border-radius: 15px;
+  padding: 7px 8px 7px 11px;
+  color: #f5f0e6;
+  background: rgb(20 22 31 / 88%);
+  box-shadow: 3px 3px 0 #000;
+  font-size: calc(12px * var(--type-scale, 1));
+  font-weight: 750;
+}
+
+.camera-pin-hint button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+}
+
+.edit-camera-pin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-camera-pin p {
+  margin: 3px 0 0;
+  color: var(--push-muted);
+  font-size: calc(11px * var(--type-scale, 1));
+}
+
+.compose-journey-targets {
+  margin: 12px 0;
+  display: grid;
+  gap: 7px;
+  color: var(--push-ink, currentColor);
+}
+
+.compose-target-chip,
+.compose-add-more {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid currentColor;
+  border-radius: 14px;
+  padding: 7px 11px;
+  color: inherit;
+  background: var(--push-surface, transparent);
+  text-align: left;
+}
+
+.compose-target-chip > span {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+}
+
+.compose-target-chip :is(b, small) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compose-target-chip small {
+  opacity: .7;
+  font-size: calc(10px * var(--type-scale, 1));
+}
+
+.compose-add-more {
+  justify-content: center;
+  border-style: dashed;
+  font-weight: 800;
+  text-align: center;
+}
+
+.compose-multi-list {
+  max-height: 220px;
+  overflow-y: auto;
+  display: grid;
+  gap: 5px;
+}
+
+.compose-multi-list button {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 7px;
+  border-radius: 12px;
+  padding: 6px 9px;
+  color: inherit;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  text-align: left;
+}
+
+.compose-multi-list button.selected {
+  outline: 2px solid currentColor;
+}
+
+.app-large-type .journey-disc-strip {
+  gap: 2px;
+}
+
+.app-large-type .journey-disc-circle {
+  width: 48px;
+  height: 48px;
+}
+
+.app-large-type .camera-picker-row {
+  min-height: 78px;
+}
