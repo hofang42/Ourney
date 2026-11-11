@@ -15,7 +15,7 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react"
-import { OIcon, type OIconName } from "./icons"
+import { OIcon, TypeBadge, type OIconName } from "./icons"
 import { Wordmark } from "./brand"
 import { skins, type Skin } from "../StyleGuide"
 import {
@@ -36,15 +36,6 @@ import {
 } from "./create"
 import { useStore, type Journey } from "./store"
 
-const typeEmoji: Record<Journey["type"], string> = {
-  "Giảm cân": "🌿",
-  "Tiếng Anh": "📒",
-  "Chuyến đi": "🎟️",
-  "Cặp đôi": "💌",
-  "Tập luyện": "🏋️",
-  "Tự đặt": "✦",
-}
-
 const typePastel: Record<Journey["type"], string> = {
   "Giảm cân": "#7EE8A2",
   "Tiếng Anh": "#FFD84D",
@@ -52,6 +43,51 @@ const typePastel: Record<Journey["type"], string> = {
   "Cặp đôi": "#FF7E7E",
   "Tập luyện": "#CF9FFF",
   "Tự đặt": "#7EC8E3",
+}
+
+const reactionOptions = [
+  { id: "clap", icon: "react-clap", label: "Vỗ tay" },
+  { id: "flex", icon: "react-flex", label: "Cố lên" },
+  { id: "heart", icon: "react-heart", label: "Thương" },
+  { id: "laugh", icon: "react-laugh", label: "Haha" },
+  { id: "fire", icon: "react-fire", label: "Cháy" },
+  { id: "wave", icon: "react-wave", label: "Vẫy tay" },
+] as const satisfies ReadonlyArray<{
+  id: string
+  icon: OIconName
+  label: string
+}>
+
+function ReactionIcon({
+  id,
+  size = 20,
+}: {
+  id: typeof reactionOptions[number]["id"]
+  size?: number
+}) {
+  const reaction = reactionOptions.find((item) => item.id === id)
+  return reaction ? (
+    <OIcon
+      name={reaction.icon}
+      size={size}
+      active
+      className={`reaction-${id}`}
+    />
+  ) : null
+}
+
+type StreakValueProps = {
+  count: number
+  suffix?: string
+}
+
+function StreakValue({ count, suffix }: StreakValueProps) {
+  return (
+    <span className="icon-text">
+      <OIcon name="flame" size={17} active /> {count}
+      {suffix ? ` ${suffix}` : ""}
+    </span>
+  )
 }
 
 function dateDayOffset(startDate?: string, date?: string) {
@@ -310,7 +346,7 @@ const reminderCopy: Record<string, ReminderCopy> = {
   },
   squad: {
     daily: "Tới giờ điểm danh! Cả hội đang chờ.",
-    streak: "🔥 21 sắp đứt lúc 21:00. Chụp ngay nào!",
+    streak: "Chuỗi 21 sắp đứt lúc 21:00. Chụp ngay nào!",
   },
   memory: {
     daily: "Thêm một khung hình cho cuộn phim?",
@@ -415,6 +451,9 @@ function ReviewerPanel({
   const [layoutCheckResults, setLayoutCheckResults] = useState<string[] | null>(
     null,
   )
+  const [emojiCheckResults, setEmojiCheckResults] = useState<string[] | null>(
+    null,
+  )
   const routes = [
     ["/splash", "mở đầu"],
     ["/onboarding/1", "câu 1"],
@@ -480,6 +519,14 @@ function ReviewerPanel({
       }
     }
     setLayoutCheckResults([...new Set(failures)])
+  }
+
+  function checkEmoji() {
+    const screenText =
+      document.querySelector(".phone-screen")?.textContent ?? ""
+    const forbidden =
+      /\p{Extended_Pictographic}|[\u25CF\u25CC\u2605\u2606\u2665\u2659\u2601\u2713\u25B2]/gu
+    setEmojiCheckResults([...new Set(screenText.match(forbidden) ?? [])])
   }
 
   return (
@@ -564,6 +611,25 @@ function ReviewerPanel({
                 ) : (
                   <b>Không tìm thấy nội dung từ journey khác.</b>
                 )}
+              </div>
+            )}
+          </Control>
+          <Control label="quét biểu tượng hệ thống trên màn điện thoại">
+            <button className="reviewer-layout-check" onClick={checkEmoji}>
+              Kiểm tra emoji
+            </button>
+            {emojiCheckResults && (
+              <div className="reviewer-layout-results">
+                <b>{emojiCheckResults.length} kết quả</b>
+                {emojiCheckResults.map((result, index) => (
+                  <span key={`${result}-${index}`}>
+                    U+
+                    {result
+                      .codePointAt(0)
+                      ?.toString(16)
+                      .toLocaleUpperCase("vi")}
+                  </span>
+                ))}
               </div>
             )}
           </Control>
@@ -1102,7 +1168,7 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
     { day: latestDay, today: true, value: "18", label: "HÔM NAY" },
     { day: 14, value: "••", label: "NỬA CHẶNG" },
     { day: 9, missed: true, value: "", label: "NGHỈ" },
-    { day: 7, value: "18", label: "★ TUẦN ĐẦU" },
+    { day: 7, value: "18", label: "TUẦN ĐẦU", milestone: true },
   ]
   return (
     <ScreenShell bare className="quiet-journey-screen">
@@ -1125,8 +1191,9 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
         )}
         <section className="quiet-home-intro">
           <h1>Nhìn lại từng chút một.</h1>
-          <p>
-            Ngày {journey.day}/30 · 🔥 {journey.streak}
+          <p className="icon-text">
+            Ngày {journey.day}/30 · <OIcon name="flame" size={17} active />{" "}
+            {journey.streak}
           </p>
         </section>
         <section className="quiet-chart-card">
@@ -1346,10 +1413,20 @@ function QuietDone({ journey }: { journey: Journey }) {
     >
       <div className="quiet-celebration">
         <div className="quiet-seal">
-          {milestone && <span className="quiet-star-ring">☆ ☆ ☆ ☆ ☆</span>}
-          <b>NGÀY {doneDay} ✓</b>
+          {milestone && (
+            <span className="quiet-star-ring">
+              {Array.from({ length: 5 }, (_, index) => (
+                <OIcon name="star" size={18} key={index} active />
+              ))}
+            </span>
+          )}
+          <b>
+            NGÀY {doneDay} <OIcon name="check" size={18} />
+          </b>
         </div>
-        <h1>Chuỗi {journey.streak} ngày</h1>
+        <h1>
+          Chuỗi <StreakValue count={journey.streak} suffix="ngày" />
+        </h1>
         {milestone && <h2>{doneDay === 7 ? "Tuần đầu" : "Về đích"}</h2>}
         <p>Đã lưu. Chỉ mình bạn thấy.</p>
         {milestone && (
@@ -1548,7 +1625,11 @@ function QuietShare({ journey }: { journey: Journey }) {
               <figcaption>NGÀY 21</figcaption>
             </figure>
           </div>
-          {!hideKg && <b>65,2 KG → 62,0 KG · -3,2 KG</b>}
+          {!hideKg && (
+            <b className="icon-text">
+              65,2 KG <OIcon name="caret-right" size={16} /> 62,0 KG · -3,2 KG
+            </b>
+          )}
           <p>21 ngày đều đặn</p>
           {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
@@ -1672,6 +1753,7 @@ function SquadAvatarStack({ attendance }: { attendance: number }) {
       {["L", "A", "H", "N", "M"].map((name, index) => (
         <i className={index < attendance ? "checked" : ""} key={name}>
           {name}
+          {index < attendance && <OIcon name="check" size={12} />}
         </i>
       ))}
     </span>
@@ -1686,10 +1768,10 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
   const stones = [
     { day: 30, label: "VỀ ĐÍCH", future: today < 30 },
     { day: 24, label: "SẮP TỚI", future: today < 24 },
-    { day: today, label: "HÔM NAY 🔥", current: true },
-    { day: 14, label: "⭐ TUẦN 2" },
+    { day: today, label: "HÔM NAY", current: true },
+    { day: 14, label: "TUẦN 2", milestone: true },
     { day: 9, label: "LỠ", missed: true },
-    { day: 7, label: "⭐ TUẦN 1" },
+    { day: 7, label: "TUẦN 1", milestone: true },
     { day: 1, label: "XUẤT PHÁT" },
   ]
   return (
@@ -1714,7 +1796,9 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
           className="squad-progress-chip"
           onClick={() => navigate(`/j/${journey.id}/squad`)}
         >
-          <span>🔥 HỘI IELTS 7.5 · 30 NGÀY</span>
+          <span className="icon-text">
+            <OIcon name="flame" size={17} active /> HỘI IELTS 7.5 · 30 NGÀY
+          </span>
           <span>
             <SquadAvatarStack attendance={attendance} />
             <b>{attendance}/5 HÔM NAY</b>
@@ -1770,7 +1854,10 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
                   <SquadPhoto />
                 )}
                 <b>
-                  NGÀY {String(stone.day).padStart(2, "0")} · {stone.label}
+                  NGÀY {String(stone.day).padStart(2, "0")} ·{" "}
+                  {stone.milestone && <OIcon name="star" size={15} active />}{" "}
+                  {stone.current && <OIcon name="flame" size={15} active />}{" "}
+                  {stone.label}
                 </b>
                 {stone.missed && (
                   <small>Lỡ một hôm thôi. Mai về lại đường nào!</small>
@@ -1955,8 +2042,8 @@ function SquadDone({ journey }: { journey: Journey }) {
               ? "TUẦN 1 XONG"
               : "ĐÃ ĐIỂM DANH"}
         </div>
-        <h1>
-          Ngày {day} · chuỗi {journey.streak}
+        <h1 className="icon-text">
+          Ngày {day} · chuỗi <StreakValue count={journey.streak} />
         </h1>
         <button
           onClick={(event) => {
@@ -1999,7 +2086,7 @@ function SquadToday({ journey }: { journey: Journey }) {
   const [reaction, setReaction] = useState<Record<string, string>>({})
   const [reminded, setReminded] = useState(false)
   const [toast, setToast] = useState("")
-  const reactions = ["🔥", "💪", "👏", "❤️", "😂"]
+  const reactions = reactionOptions
   const visibleMembers =
     attendance >= 4
       ? squadMembers
@@ -2037,31 +2124,37 @@ function SquadToday({ journey }: { journey: Journey }) {
                 {name} <OIcon name="check" size={14} weight="bold" /> {time}
               </b>
               <span className="squad-reaction-counts">
-                🔥 {4 + (reaction[name] === "🔥" ? 1 : 0)} · 👏{" "}
-                {3 + (reaction[name] === "👏" ? 1 : 0)}
+                <ReactionIcon id="fire" size={15} />{" "}
+                {4 + (reaction[name] === "fire" ? 1 : 0)} ·{" "}
+                <ReactionIcon id="clap" size={15} />{" "}
+                {3 + (reaction[name] === "clap" ? 1 : 0)}
                 {reaction[name] &&
-                reaction[name] !== "🔥" &&
-                reaction[name] !== "👏"
-                  ? ` · ${reaction[name]} 1`
-                  : ""}
+                  reaction[name] !== "fire" &&
+                  reaction[name] !== "clap" && (
+                    <>
+                      {" "}
+                      · <ReactionIcon id={reaction[name] as "flex"} size={15} />{" "}
+                      1
+                    </>
+                  )}
               </span>
               <div className="squad-reactions">
                 {reactions.map((item) => (
                   <button
-                    key={item}
-                    className={reaction[name] === item ? "selected" : ""}
+                    key={item.id}
+                    className={reaction[name] === item.id ? "selected" : ""}
                     disabled={store.readOnly}
-                    aria-pressed={reaction[name] === item}
-                    aria-label={`Phản ứng ${item} cho ${name}`}
+                    aria-pressed={reaction[name] === item.id}
+                    aria-label={item.label}
                     onClick={(event) => {
                       event.stopPropagation()
                       setReaction((current) => ({
                         ...current,
-                        [name]: current[name] === item ? "" : item,
+                        [name]: current[name] === item.id ? "" : item.id,
                       }))
                     }}
                   >
-                    {item}
+                    <OIcon name={item.icon} size={20} active />
                   </button>
                 ))}
               </div>
@@ -2080,13 +2173,17 @@ function SquadToday({ journey }: { journey: Journey }) {
                   window.setTimeout(() => setToast(""), 1800)
                 }}
               >
-                {store.readOnly
-                  ? "Đã lưu trữ"
-                  : store.offline
-                    ? "Cần mạng"
-                    : reminded
-                      ? "Đã nhắc Minh"
-                      : "Nhắc Minh 👋"}
+                {store.readOnly ? (
+                  "Đã lưu trữ"
+                ) : store.offline ? (
+                  "Cần mạng"
+                ) : reminded ? (
+                  "Đã nhắc Minh"
+                ) : (
+                  <>
+                    Nhắc Minh <ReactionIcon id="wave" size={16} />
+                  </>
+                )}
               </button>
             </article>
           )}
@@ -2314,7 +2411,9 @@ function MemoryPhoto({ scene = 0 }: { scene?: number }) {
     <div className={`memory-photo-placeholder memory-scene-${scene % 4}`}>
       <span />
       <i />
-      <b>{scene % 2 ? "☁" : "▲"}</b>
+      <b>
+        <OIcon name={scene % 2 ? "cloud" : "pine"} size={24} />
+      </b>
     </div>
   )
 }
@@ -2407,7 +2506,9 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
             )
           })}
           {(store.readOnly || journey.archived) && (
-            <div className="memory-thread-bow">⌁</div>
+            <div className="memory-thread-bow">
+              <OIcon name="type-custom" size={24} active />
+            </div>
           )}
         </section>
         <div className="memory-home-actions">
@@ -2516,7 +2617,13 @@ function MemoryDone({ journey }: { journey: Journey }) {
         }
       }}
     >
-      {milestone && <div className="memory-film-confetti">▰ ▱ ▰ ▱ ▰ ▱</div>}
+      {milestone && (
+        <div className="memory-film-confetti">
+          {Array.from({ length: 6 }, (_, index) => (
+            <OIcon name="star" size={15} active key={index} />
+          ))}
+        </div>
+      )}
       <div className="memory-developing-photo">
         <span className="memory-tape" />
         <MemoryPhoto scene={3} />
@@ -2567,7 +2674,7 @@ function MemorySquad({ journey }: { journey: Journey }) {
   const members = ["AN", "LINH", "MINH", "NAM"].filter(
     (name) => !store.blocked.includes(name === "MINH" ? "Minh" : name),
   )
-  const reactions = ["🔥", "💪", "👏", "❤️", "😂"]
+  const reactions = reactionOptions
   return (
     <ScreenShell bare className="memory-journey-screen">
       <MemoryTopBar journey={journey} onBack={() => navigate(-1)} />
@@ -2600,19 +2707,20 @@ function MemorySquad({ journey }: { journey: Journey }) {
               <div className="memory-reactions">
                 {reactions.map((item) => (
                   <button
-                    key={item}
-                    className={reaction[name] === item ? "selected" : ""}
+                    key={item.id}
+                    className={reaction[name] === item.id ? "selected" : ""}
                     disabled={store.readOnly}
-                    aria-pressed={reaction[name] === item}
+                    aria-pressed={reaction[name] === item.id}
+                    aria-label={item.label}
                     onClick={(event) => {
                       event.stopPropagation()
                       setReaction((current) => ({
                         ...current,
-                        [name]: current[name] === item ? "" : item,
+                        [name]: current[name] === item.id ? "" : item.id,
                       }))
                     }}
                   >
-                    {item}
+                    <OIcon name={item.icon} size={20} active />
                   </button>
                 ))}
               </div>
@@ -2781,7 +2889,15 @@ function CouplePair({
     >
       <small>
         NGÀY {String(day).padStart(2, "0")} ·{" "}
-        {day === 18 ? "HÔM NAY" : day === 14 ? "★ NỬA CHẶNG" : ""}
+        {day === 18 ? (
+          "HÔM NAY"
+        ) : day === 14 ? (
+          <>
+            <OIcon name="star" size={14} active /> NỬA CHẶNG
+          </>
+        ) : (
+          ""
+        )}
       </small>
       <div className="couple-half couple-left-half">
         {missed ? (
@@ -2835,7 +2951,10 @@ function CoupleJourneyHome({ journey }: { journey: Journey }) {
             </button>
           </div>
         )}
-        <h1>30 NGÀY NẤU CHO NHAU · 🔥 {journey.streak}</h1>
+        <h1 className="icon-text">
+          30 NGÀY NẤU CHO NHAU · <OIcon name="flame" size={20} active />{" "}
+          {journey.streak}
+        </h1>
         <div className="couple-timeline">
           <CouplePair
             day={journey.day}
@@ -3020,7 +3139,13 @@ function CoupleDone({ journey }: { journey: Journey }) {
         }
       }}
     >
-      {milestone && <div className="couple-petals">♥ · ♥ · ♥ · ♥ · ♥</div>}
+      {milestone && (
+        <div className="couple-petals">
+          {Array.from({ length: 5 }, (_, index) => (
+            <OIcon name="heart" size={18} active key={index} />
+          ))}
+        </div>
+      )}
       <div className="couple-click-halves">
         <CouplePhoto person="Nam" />
         <CouplePhoto person="Linh" />
@@ -3100,14 +3225,17 @@ function CoupleSquad({ journey }: { journey: Journey }) {
             )}
             <b>Nam · đã chụp 07:30</b>
             <div>
-              {["🔥", "💪", "👏", "❤️", "😂"].map((item) => (
+              {reactionOptions.map((item) => (
                 <button
-                  key={item}
-                  className={reaction === item ? "selected" : ""}
+                  key={item.id}
+                  className={reaction === item.id ? "selected" : ""}
                   disabled={store.readOnly}
-                  onClick={() => setReaction(reaction === item ? "" : item)}
+                  aria-label={item.label}
+                  onClick={() =>
+                    setReaction(reaction === item.id ? "" : item.id)
+                  }
                 >
-                  {item}
+                  <OIcon name={item.icon} size={20} active />
                 </button>
               ))}
             </div>
@@ -3148,7 +3276,9 @@ function CoupleSquad({ journey }: { journey: Journey }) {
             )}
           </article>
         </div>
-        <p className="couple-streak">🔥 {journey.streak} ngày bên nhau</p>
+        <p className="couple-streak icon-text">
+          <OIcon name="flame" size={18} active /> {journey.streak} ngày bên nhau
+        </p>
       </main>
       {toast && <div className="couple-toast">{toast}</div>}
     </ScreenShell>
@@ -3267,9 +3397,9 @@ function FlexerJourneyHome({ journey }: { journey: Journey }) {
     }).format(value)
   const rows = [
     [journey.day, "HÔM NAY", journey.lastKm ?? 5.42],
-    [14, "★ CỘT MỐC · NỬA CHẶNG", 5.18],
+    [14, "CỘT MỐC · NỬA CHẶNG", 5.18],
     [9, store.missedDay ? "NGHỈ" : "CHẠY NHẸ", 0],
-    [7, "★ CỘT MỐC · TUẦN ĐẦU", 5.0],
+    [7, "CỘT MỐC · TUẦN ĐẦU", 5.0],
     [1, "BẮT ĐẦU", 5.0],
   ] as const
   return (
@@ -3360,11 +3490,15 @@ function FlexerPost({ journey }: { journey: Journey }) {
   function typeKey(key: string) {
     if (field === "km") {
       setKm((current) =>
-        key === "⌫" ? current.slice(0, -1) : `${current}${key}`.slice(-6),
+        key === "BACKSPACE"
+          ? current.slice(0, -1)
+          : `${current}${key}`.slice(-6),
       )
     } else {
       setPace((current) =>
-        key === "⌫" ? current.slice(0, -1) : `${current}${key}`.slice(-5),
+        key === "BACKSPACE"
+          ? current.slice(0, -1)
+          : `${current}${key}`.slice(-5),
       )
     }
   }
@@ -3405,13 +3539,24 @@ function FlexerPost({ journey }: { journey: Journey }) {
           </button>
         </div>
         <div className="flexer-keypad">
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "0", "⌫"].map(
-            (key) => (
-              <button key={key} onClick={() => typeKey(key)}>
-                {key}
-              </button>
-            ),
-          )}
+          {[
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            ",",
+            "0",
+            "BACKSPACE",
+          ].map((key) => (
+            <button key={key} onClick={() => typeKey(key)}>
+              {key === "BACKSPACE" ? <OIcon name="back" size={18} /> : key}
+            </button>
+          ))}
         </div>
         <label className="flexer-caption">
           <span>Hôm nay chạy thế nào?</span>
@@ -3482,7 +3627,13 @@ function FlexerDone({ journey }: { journey: Journey }) {
       }`}
       onClick={() => navigate(`/j/${journey.id}`, { replace: true })}
     >
-      {milestone && <div className="flexer-confetti">▮ ▪ ▮ ▪ ▮ ▪ ▮</div>}
+      {milestone && (
+        <div className="flexer-confetti">
+          {Array.from({ length: 7 }, (_, index) => (
+            <OIcon name="star" size={15} active key={index} />
+          ))}
+        </div>
+      )}
       <div className="flexer-pulse-ring">
         <b>{displayDay}</b>
       </div>
@@ -3533,18 +3684,19 @@ function FlexerSquad({ journey }: { journey: Journey }) {
               </small>
               {name === "LINH" && <em>5,42 KM · 5:04 /KM</em>}
               <div>
-                {["🔥", "💪", "👏", "❤️", "😂"].map((item) => (
+                {reactionOptions.map((item) => (
                   <button
-                    key={item}
-                    className={reaction[name] === item ? "selected" : ""}
+                    key={item.id}
+                    className={reaction[name] === item.id ? "selected" : ""}
+                    aria-label={item.label}
                     onClick={() =>
                       setReaction((current) => ({
                         ...current,
-                        [name]: current[name] === item ? "" : item,
+                        [name]: current[name] === item.id ? "" : item.id,
                       }))
                     }
                   >
-                    {item}
+                    <OIcon name={item.icon} size={20} active />
                   </button>
                 ))}
               </div>
@@ -3762,9 +3914,9 @@ function MinimalJourneyHome({ journey }: { journey: Journey }) {
             <OIcon name="lock" size={16} /> ĐÃ KẾT THÚC · CHỈ ĐỌC
           </button>
         )}
-        <div className="minimal-month-header">
+        <div className="minimal-month-header icon-text">
           <span />
-          THÁNG 10 · CHUỖI {streak} NGÀY
+          THÁNG 10 · CHUỖI <StreakValue count={streak} suffix="NGÀY" />
         </div>
         <button
           className="minimal-attendance-chip"
@@ -3928,7 +4080,13 @@ function MinimalDone({ journey }: { journey: Journey }) {
       }`}
       onClick={() => navigate(`/j/${journey.id}`, { replace: true })}
     >
-      {milestone && <div className="minimal-confetti">▪ ▪ ▪ ▪ ▪ ▪</div>}
+      {milestone && (
+        <div className="minimal-confetti">
+          {Array.from({ length: 6 }, (_, index) => (
+            <OIcon name="star" size={13} active key={index} />
+          ))}
+        </div>
+      )}
       <div className="minimal-growing-dot" />
       <h1>
         {milestone ? (day === 30 ? "ĐỦ 30 NGÀY" : "7 NGÀY LIỀN") : "XONG."}
@@ -3970,18 +4128,19 @@ function MinimalSquad({ journey }: { journey: Journey }) {
               <b>{name}</b>
               <small>{time}</small>
               <div>
-                {["🔥", "💪", "👏", "❤️", "😂"].map((item) => (
+                {reactionOptions.map((item) => (
                   <button
-                    key={item}
-                    className={reaction[name] === item ? "selected" : ""}
+                    key={item.id}
+                    className={reaction[name] === item.id ? "selected" : ""}
+                    aria-label={item.label}
                     onClick={() =>
                       setReaction((current) => ({
                         ...current,
-                        [name]: current[name] === item ? "" : item,
+                        [name]: current[name] === item.id ? "" : item.id,
                       }))
                     }
                   >
-                    {item}
+                    <OIcon name={item.icon} size={20} active />
                   </button>
                 ))}
               </div>
@@ -4158,7 +4317,7 @@ const skinDayCopy: Record<string, {
   squad: {
     label: "NGÀY 21 · HÔM NAY",
     caption: "Hôm nay mình đã hiểu thêm một dạng bài khó.",
-    metric: "📖 45 PHÚT",
+    metric: "45 PHÚT",
   },
   memory: {
     label: "NGÀY 03 · ĐÊM LỬA TRẠI",
@@ -4233,7 +4392,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
   const [hidden, setHidden] = useState(false)
   const [toast, setToast] = useState("")
   const [revealed, setRevealed] = useState(false)
-  const reactions = ["🔥", "💪", "👏", "❤️", "😂"]
+  const reactions = reactionOptions
   return (
     <section className={`journey-pushed day-screen pushed-${journey.skin}`}>
       <PushedHeader
@@ -4313,15 +4472,17 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
         <div className="day-reactions" aria-label="Phản ứng">
           {reactions.map((item, index) => (
             <button
-              key={item}
-              className={selectedReaction === item ? "selected" : ""}
-              aria-pressed={selectedReaction === item}
-              aria-label={`Phản ứng ${item}`}
-              onClick={() => store.setReaction(reactionKey, item)}
+              key={item.id}
+              className={selectedReaction === item.id ? "selected" : ""}
+              aria-pressed={selectedReaction === item.id}
+              aria-label={item.label}
+              onClick={() => store.setReaction(reactionKey, item.id)}
             >
-              <span>{item}</span>
+              <OIcon name={item.icon} size={22} active />
               <b>
-                {2 + index + (store.reactionCounts[reactionKey]?.[item] ?? 0)}
+                {2 +
+                  index +
+                  (store.reactionCounts[reactionKey]?.[item.id] ?? 0)}
               </b>
             </button>
           ))}
@@ -4944,7 +5105,12 @@ function WrappedVisual(props: WrappedVisualProps) {
     return page === 2 ? (
       <OIcon name="trophy" className="wrapped-trophy" size={94} weight="fill" />
     ) : (
-      <div className="wrapped-squad-path">● ┈ ● ┈ ● ┈ ● ┈ ★</div>
+      <div className="wrapped-squad-path">
+        {Array.from({ length: 4 }, (_, index) => (
+          <OIcon name="crew-dot" size={17} active key={index} />
+        ))}
+        <OIcon name="trophy" size={25} active />
+      </div>
     )
   }
   if (journey.skin === "memory") {
@@ -5120,7 +5286,11 @@ function JourneyWrappedScreen({ journey }: { journey: Journey }) {
                   )}
                   Làm mờ ảnh · {blurred ? "Bật" : "Tắt"}
                 </button>
-                {!hideKg && <b>65,2 kg → 62,0 kg</b>}
+                {!hideKg && (
+                  <b className="icon-text">
+                    65,2 kg <OIcon name="caret-right" size={16} /> 62,0 kg
+                  </b>
+                )}
               </div>
             )}
             {!hideBrand && <Wordmark size={56} className="share-brand" />}
@@ -5227,7 +5397,7 @@ function CameraScreen() {
             >
               {switchedLayout ? (
                 <>
-                  <span>{typeEmoji[active.type]}</span>
+                  <TypeBadge type={active.type} size={28} />
                   <b>{journeyDisplayTitle(active).toLocaleUpperCase("vi")}</b>
                 </>
               ) : active.todayDone ? (
@@ -5248,9 +5418,10 @@ function CameraScreen() {
                   </b>
                 </>
               ) : squad ? (
-                <b>
-                  📖 {active.lastMinutes ?? 45} PHÚT · 🔥 {active.streak} LIÊN
-                  TIẾP
+                <b className="icon-text">
+                  <OIcon name="book" size={16} /> {active.lastMinutes ?? 45}{" "}
+                  PHÚT · <OIcon name="flame" size={16} active /> {active.streak}{" "}
+                  LIÊN TIẾP
                 </b>
               ) : memory ? (
                 <>
@@ -5272,7 +5443,7 @@ function CameraScreen() {
                 <b>ĐỌC 10 TRANG · NGÀY {active.day}</b>
               ) : (
                 <>
-                  <span>{typeEmoji[active.type]}</span>
+                  <TypeBadge type={active.type} size={28} />
                   <b>
                     {active.name} · Ngày {active.day}/30
                   </b>
@@ -5393,8 +5564,9 @@ function CameraScreen() {
               <div
                 className={`flexer-camera-hud hud-${active.hud ?? "HUD đậm"}`}
               >
-                <b>
-                  NGÀY {active.day} · 🔥 {active.streak} LIỀN
+                <b className="icon-text">
+                  NGÀY {active.day} · <OIcon name="flame" size={17} active />{" "}
+                  {active.streak} LIỀN
                 </b>
                 <span>
                   {(active.lastKm ?? 5.42).toFixed(2).replace(".", ",")} KM ·{" "}
@@ -5498,7 +5670,9 @@ function CameraScreen() {
           )}
           {noJourney && (
             <div className="camera-state-card no-journey-card">
-              <div className="camera-state-sticker">📒</div>
+              <div className="camera-state-sticker">
+                <OIcon name="book" size={34} active />
+              </div>
               <h2>chưa có hành trình nào.</h2>
               <p className="no-journey-helper">
                 Mỗi tấm ảnh cần một hành trình để cất.
@@ -5699,7 +5873,9 @@ function HubScreen() {
         )}
       </div>
       <div className={`hub-toast ${toast ? "show" : ""}`} role="status">
-        <span>✦</span>
+        <span>
+          <OIcon name="type-custom" size={18} active />
+        </span>
         {toast}
       </div>
     </ScreenShell>
@@ -5713,7 +5889,11 @@ function HubHero({
 }) {
   const navigate = useNavigate()
   const copy = {
-    default: "Còn 3 tiếng để giữ 🔥 21 của IELTS 7.5",
+    default: (
+      <>
+        Còn 3 tiếng để giữ <StreakValue count={21} /> của IELTS 7.5
+      </>
+    ),
     done: "Hôm nay xong hết rồi. Mai gặp lại.",
     milestone: "Mai là Ngày 30 — về đích!",
     group: "Nam & Hà đang chờ bạn.",
@@ -5815,7 +5995,7 @@ function JourneyCard({
   const checkIns = journeyCheckIns(journey)
   const progress = Math.min(100, Math.round((journey.day / totalDays) * 100))
   const detail = {
-    stats: `Ngày ${journey.day}/${totalDays} · 🔥 ${journey.streak} · ${progress}%`,
+    stats: `Ngày ${journey.day}/${totalDays}`,
     milestone: journey.archived
       ? `Đã khép lại · ${formatJourneyDate(journey.endDate)}`
       : `Mốc kế: Ngày ${totalDays} · Về đích`,
@@ -5847,16 +6027,22 @@ function JourneyCard({
         className="dna-cover"
         style={{ "--cover": typePastel[journey.type] } as CSSProperties}
       >
-        <span>{typeEmoji[journey.type]}</span>
+        <TypeBadge type={journey.type} size={38} />
         <i>
-          {{
-            quiet: "⚖️",
-            squad: "🏆",
-            memory: "🌲",
-            couple: "💞",
-            flexer: "💪",
-            minimal: "📚",
-          }[journey.skin] ?? "✦"}
+          <OIcon
+            name={
+              ({
+                quiet: "scales",
+                squad: "trophy",
+                memory: "pine",
+                couple: "type-couple",
+                flexer: "react-flex",
+                minimal: "book",
+              } as const)[journey.skin] ?? "type-custom"
+            }
+            size={24}
+            active
+          />
         </i>
       </div>
       <div className="dna-card-body">
@@ -5887,7 +6073,9 @@ function JourneyCard({
           )}
         </div>
         {journey.skin === "quiet" && (
-          <span className="private-chip">🔒 Riêng tư</span>
+          <span className="private-chip">
+            <OIcon name="lock" size={14} /> Riêng tư
+          </span>
         )}
         {journey.archived ? (
           <span className="active-dna-chip">
@@ -5898,7 +6086,10 @@ function JourneyCard({
             <OIcon name="check" size={14} weight="bold" /> Đang hoạt động
           </span>
         ) : null}
-        <p className="dna-stats">{detail.stats}</p>
+        <p className="dna-stats icon-text">
+          {detail.stats} · <OIcon name="flame" size={15} active />{" "}
+          {journey.streak} · {progress}%
+        </p>
         {journey.skin === "flexer" && <span className="neon-sparkline" />}
         {journey.skin === "minimal" && <span className="minimal-week-strip" />}
         <div className="dna-progress">
@@ -6165,7 +6356,7 @@ function SquadScreen() {
                       className="group-type-badge"
                       style={{ background: typePastel[journey.type] }}
                     >
-                      {typeEmoji[journey.type]}
+                      <TypeBadge type={journey.type} size={38} />
                     </span>
                     <div>
                       <h3>{journey.name}</h3>
@@ -6294,7 +6485,9 @@ function JoinScreen() {
   }, [store.signedIn])
   function addKey(key: string) {
     setCode((current) =>
-      key === "⌫" ? current.slice(0, -1) : `${current}${key}`.slice(0, 8),
+      key === "BACKSPACE"
+        ? current.slice(0, -1)
+        : `${current}${key}`.slice(0, 8),
     )
   }
   return (
@@ -6310,7 +6503,7 @@ function JoinScreen() {
           <>
             <article className="join-ticket-preview">
               <div className="join-ticket-head">
-                <span>📚</span>
+                <TypeBadge type="Tiếng Anh" size={38} />
                 <div>
                   <h2>Hội IELTS 7.5</h2>
                   <p>Chủ nhóm · Hà</p>
@@ -6369,11 +6562,13 @@ function JoinScreen() {
         )}
         {!valid && (
           <div className="join-keyboard">
-            {"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789⌫".split("").map((key) => (
-              <button key={key} onClick={() => addKey(key)}>
-                {key}
-              </button>
-            ))}
+            {[..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "BACKSPACE"].map(
+              (key) => (
+                <button key={key} onClick={() => addKey(key)}>
+                  {key === "BACKSPACE" ? <OIcon name="back" size={18} /> : key}
+                </button>
+              ),
+            )}
           </div>
         )}
       </main>
@@ -6474,7 +6669,7 @@ function ProfileScreen() {
                     navigate(`/j/${journey.id}`)
                   }}
                 >
-                  <span>{typeEmoji[journey.type]}</span>
+                  <TypeBadge type={journey.type} size={38} />
                   <b>{journey.name}</b>
                   <small>Đã về đích</small>
                 </button>
@@ -6559,7 +6754,7 @@ function ActivityScreen() {
     },
     {
       skin: "squad",
-      text: "An thả 🔥 vào ảnh Ngày 21 của bạn",
+      text: "An thả phản ứng Cháy vào ảnh Ngày 21 của bạn",
       context: "Hội IELTS 7.5",
       time: "06:48",
       path: "/j/ielts/day/21",
@@ -6592,7 +6787,13 @@ function ActivityScreen() {
         aria-label={fullSentence}
       >
         <span className={`activity-skin-badge badge-${event.skin}`}>
-          {event.skin === "squad" ? "🏆" : event.skin === "quiet" ? "🌿" : "📚"}
+          {event.skin === "squad" ? (
+            <OIcon name="trophy" size={20} active />
+          ) : event.skin === "quiet" ? (
+            <OIcon name="type-weight" size={20} active />
+          ) : (
+            <OIcon name="book" size={20} active />
+          )}
         </span>
         <div>
           <b>{event.text}</b>
@@ -6641,7 +6842,9 @@ function ActivityScreen() {
                     onClick={() => navigate("/join/K7Q2M9XA")}
                     aria-label="Hà mời bạn vào Hội IELTS 7.5 · Mã mời K7Q2M9XA · T3"
                   >
-                    <span className="activity-skin-badge badge-squad">🏆</span>
+                    <span className="activity-skin-badge badge-squad">
+                      <OIcon name="trophy" size={20} active />
+                    </span>
                     <div>
                       <b>Hà mời bạn vào Hội IELTS 7.5</b>
                       <span>Mã mời K7Q2M9XA</span>
@@ -6757,7 +6960,7 @@ function SettingsScreen() {
               .filter((journey) => !journey.archived)
               .map((journey) => (
                 <div className="settings-reminder" key={journey.id}>
-                  <span>{typeEmoji[journey.type]}</span>
+                  <TypeBadge type={journey.type} size={38} />
                   <div>
                     <b>{journey.name}</b>
                     <small>20:30</small>
@@ -7474,7 +7677,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
                     onClick={() => chooseJourney(journey.id)}
                   >
                     <span className="journey-disc-circle">
-                      <span>{typeEmoji[journey.type]}</span>
+                      <TypeBadge type={journey.type} size={38} />
                       {selected && (
                         <i>
                           <OIcon name="check" size={12} weight="bold" />
@@ -7833,8 +8036,9 @@ function JourneyScenarioScreen({
               <DayVisual journey={journey} day={journey.day} />
               <div>
                 <b>{journey.name}</b>
-                <span>
-                  Ngày {journey.day} · chuỗi {journey.streak}
+                <span className="icon-text">
+                  Ngày {journey.day} · chuỗi{" "}
+                  <StreakValue count={journey.streak} />
                 </span>
               </div>
             </div>
@@ -8073,7 +8277,7 @@ function ImportJourneyFlow() {
                   className={type === item ? "selected" : ""}
                   onClick={() => setType(item)}
                 >
-                  <span>{typeEmoji[item]}</span>
+                  <TypeBadge type={item} size={36} />
                   {item}
                 </button>
               ))}
@@ -8423,7 +8627,9 @@ function AdaptiveJourneyVisual({
       role="img"
       aria-label={`Ảnh ${journey.name}, ngày ${Math.max(1, journey.day - index)}`}
     >
-      <i>{typeEmoji[journey.type]}</i>
+      <i>
+        <TypeBadge type={journey.type} size={38} />
+      </i>
     </span>
   )
 }
@@ -8517,8 +8723,8 @@ function AdaptiveJourneyScreen({
         <h1>
           NGÀY {journey.day}/{total}
         </h1>
-        <p>
-          {journey.name} · Chuỗi {journey.streak}
+        <p className="icon-text">
+          {journey.name} · Chuỗi <StreakValue count={journey.streak} />
         </p>
       </section>
     )
@@ -8571,7 +8777,9 @@ function AdaptiveJourneyScreen({
             </b>
             <AdaptiveJourneyVisual journey={journey} />
             <p>{metric}</p>
-            <small>Chuỗi {journey.streak}</small>
+            <small className="icon-text">
+              Chuỗi <StreakValue count={journey.streak} />
+            </small>
             {!hideBrand && <Wordmark size={56} className="share-brand" />}
           </div>
           <button
@@ -8632,8 +8840,9 @@ function AdaptiveJourneyScreen({
         <section className="adaptive-summary">
           <h1>{journey.name}</h1>
           <b>{metric}</b>
-          <span>
-            NGÀY {journey.day}/{total} · 🔥 {journey.streak}
+          <span className="icon-text">
+            NGÀY {journey.day}/{total} · <OIcon name="flame" size={16} active />{" "}
+            {journey.streak}
           </span>
         </section>
         <section className="adaptive-timeline">

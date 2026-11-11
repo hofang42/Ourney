@@ -9,7 +9,7 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 2. **Dark & Light Theme Mandatory**: Every screen, sheet, dialog, timeline, camera HUD, and widget MUST support both **Light Mode** and **Dark Mode** via `OurneyPersonaTheme.of(context)`. Never hardcode static light-only or dark-only colors inside widgets.
 3. **Zero Hardcoded Text Icons / Zero AI Slop**:
    - Never use placeholder text (`"..."`, `"3-tab"`, `"icon"`, `"[+]"`) in place of icons. Always use vector `Icons`, `CupertinoIcons`, or `CustomPainter` / SVG paths.
-   - Never use emojis as system navigation icons. Emojis are only allowed in Journey template badges, streak indicators (`🔥`), and user reactions (`👏`, `💪`).
+   - No system/default icons anywhere in the app (owner decision 2026-11-11): no emoji and no Unicode symbol glyphs (`●`, `★`, `♥`, `✓`…) as icons, including journey type badges, streak (`flame` icon), reactions and HUD text. Use only the Ourney designed icon set (prototype: `design/ourney-v2-app/src/app/icons.tsx`) or custom SVG/`CustomPainter` illustrations. Emoji typed by users in captions stay as user content.
    - All text widgets displaying dynamic user content or Vietnamese diacritics (`ệ`, `ữ`, `ấ`) must use proper line height (`height: 1.3–1.45`) and overflow handling (`TextOverflow.ellipsis`, `Flexible`, `Expanded`).
 
 ---
@@ -47,7 +47,7 @@ Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board 
 | # | `PersonaSkinId` | `TemplateId` | Visual Reference Asset | Timeline Variant | Camera HUD Variant | Share / Squad Variant |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1** | `quietTransformer` | `weightLoss` | `persona_1_quiet_transformer.jpg` | `connectedWeightCurve` (Weight trend curve + vertical nodes) | `ghostAlignVault` (Day 1 silhouette guide + `Private Vault` + weight slider) | `sideBySideArchive` (`DAY 01 vs DAY 21` + `Hide Exact Weight` toggle) |
-| **2** | `accountabilitySquad` | `englishDaily` | `persona_2_accountability_squad.jpg` | `steppingStoneQuest` (S-curve winding path to Day 30 Trophy) | `studyTimerSnap` (`45 MIN STUDY · 🔥 21 STREAK` + timestamp) | `squadPolaroidWall` (`4/5 Checked In` 2x2 grid + `Nudge 👋` button) |
+| **2** | `accountabilitySquad` | `englishDaily` | `persona_2_accountability_squad.jpg` | `steppingStoneQuest` (S-curve winding path to Day 30 Trophy) | `studyTimerSnap` (`45 MIN STUDY · [flame] 21 STREAK` + timestamp) | `squadPolaroidWall` (`4/5 Checked In` 2x2 grid + `Nudge [wave]` button) |
 | **3** | `memoryCollectors` | `travel` | `persona_3_memory_collectors.jpg` | `scrapbookThread` (Stitched terracotta line + taped Polaroids) | `disposableFilmStamp` (`FILM ROLL` + retro date/temp stamp) | `filmContactSheet` (35mm Kodak 20-frame contact sheet poster) |
 | **4** | `coupleRituals` | `couple` | `persona_4_couple_rituals.jpg` | `duoSplitTimeline` (His & Her paired daily photos + heart nodes) | `halfFrameDuo` (Left: Partner's photo, Right: Live viewfinder) | `coupleMosaicPoster` (`18 DAYS TOGETHER · 36 MOMENTS` diptych grid) |
 | **5** | `aestheticFlexer` | `workout30` | `persona_5_aesthetic_flexers.jpg` | `athleticTelemetry` (Neon pace sparkline + vertical run nodes) | `stravaStickerStudio` (`Bold HUD`, `Minimal Stamp`, `Film Strip`) | `transparentStorySticker` (9:16 Story card + 21-bar active heatmap) |

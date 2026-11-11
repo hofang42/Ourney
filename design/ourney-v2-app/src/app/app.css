@@ -6918,18 +6918,19 @@
 }
 
 .squad-avatar-stack i.checked::after {
-  content: "✓";
+  content: none;
+}
+
+.squad-avatar-stack i.checked > svg {
   width: 12px;
   height: 12px;
   position: absolute;
   margin: 18px 0 0 17px;
-  display: grid;
-  place-items: center;
+  padding: 1px;
   border: 1px solid var(--squad-ink);
   border-radius: 999px;
   color: var(--squad-ink);
   background: var(--squad-flame);
-  font-size: calc(12px * var(--type-scale, 1));
 }
 
 .squad-ribbon-map {
@@ -8527,12 +8528,17 @@
 
 .memory-sprockets::before,
 .memory-sprockets::after {
-  content: "▫ ▫ ▫ ▫ ▫";
+  content: "";
   position: absolute;
   left: -25px;
   color: #f5f2eb;
-  writing-mode: vertical-rl;
-  font-size: calc(16px * var(--type-scale, 1));
+  width: 8px;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    currentColor 0 7px,
+    transparent 7px 15px
+  );
 }
 
 .memory-sprockets::after {
@@ -16771,6 +16777,61 @@
   stroke: currentColor;
   stroke-width: 2px;
 }
+
+.o-icon-active:is(
+  .o-icon-flame,
+  .o-icon-trophy,
+  .o-icon-star,
+  .o-icon-heart,
+  .o-icon-react-clap,
+  .o-icon-react-flex,
+  .o-icon-react-heart,
+  .o-icon-react-laugh,
+  .o-icon-react-fire,
+  .o-icon-react-wave
+) .o-icon-lines {
+  fill: currentColor;
+}
+
+.o-icon-react-clap { color: #ffb347; }
+.o-icon-react-flex { color: #cf9fff; }
+.o-icon-react-heart { color: #ff7e7e; }
+.o-icon-react-laugh { color: #ffd84d; }
+.o-icon-react-fire { color: #ff7043; }
+.o-icon-react-wave { color: #7ec8e3; }
+
+.ourney-type-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+  border-radius: 30%;
+  color: #1a1a1a;
+  background: var(--type-badge);
+  box-shadow:
+    0 0 0 2px currentColor,
+    2px 3px 0 currentColor;
+  vertical-align: middle;
+}
+
+.ourney-type-badge .o-icon-blob {
+  opacity: .1;
+}
+
+.icon-text {
+  display: inline-flex;
+  align-items: center;
+  gap: .22em;
+  flex-wrap: wrap;
+}
+
+.reaction-clap { color: #ffb347; }
+.reaction-flex { color: #cf9fff; }
+.reaction-heart { color: #ff7e7e; }
+.reaction-laugh { color: #ffd84d; }
+.reaction-fire { color: #ff7043; }
+.reaction-wave { color: #7ec8e3; }
 
 .ourney-wordmark {
   width: var(--wordmark-size);

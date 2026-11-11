@@ -1,17 +1,5 @@
-import {
-  ArrowRight,
-  Camera,
-  Check,
-  Heart,
-  MapTrifold,
-  Moon,
-  Plus,
-  Sparkle,
-  Sun,
-  UsersThree,
-  X,
-} from "@phosphor-icons/react"
 import { useMemo, useState } from "react"
+import { OIcon, TypeBadge, type JourneyType, type OIconName } from "./app/icons"
 
 type Mode = "light" | "dark"
 
@@ -27,7 +15,7 @@ export type Skin = {
   id: string
   short: string
   journey: string
-  emoji: string
+  type: JourneyType
   heading: string
   mood: string
   light: {
@@ -50,7 +38,7 @@ export const skins: Skin[] = [
     id: "quiet",
     short: "Lặng",
     journey: "Giảm cân",
-    emoji: "🌿",
+    type: "Giảm cân",
     heading: "Fraunces",
     mood: "Lâm sàng dịu nhẹ · nét mảnh",
     light: {
@@ -93,7 +81,7 @@ export const skins: Skin[] = [
     id: "squad",
     short: "Đội",
     journey: "Tiếng Anh",
-    emoji: "📒",
+    type: "Tiếng Anh",
     heading: "Space Grotesk",
     mood: "Sổ kem · đồng đội rực lửa",
     light: {
@@ -136,7 +124,7 @@ export const skins: Skin[] = [
     id: "memory",
     short: "Ký ức",
     journey: "Chuyến đi",
-    emoji: "🎟️",
+    type: "Chuyến đi",
     heading: "Fraunces",
     mood: "Giấy hạt · băng dính · phim",
     light: {
@@ -179,7 +167,7 @@ export const skins: Skin[] = [
     id: "couple",
     short: "Đôi",
     journey: "Cặp đôi",
-    emoji: "💌",
+    type: "Cặp đôi",
     heading: "Playfair Display",
     mood: "Khung đôi · lãng mạn thanh lịch",
     light: {
@@ -222,7 +210,7 @@ export const skins: Skin[] = [
     id: "flexer",
     short: "Năng lượng",
     journey: "Tập luyện",
-    emoji: "🏋️",
+    type: "Tập luyện",
     heading: "Barlow Condensed",
     mood: "Kính mờ · viền phát sáng",
     light: {
@@ -265,7 +253,7 @@ export const skins: Skin[] = [
     id: "minimal",
     short: "Tối giản",
     journey: "Tự đặt",
-    emoji: "✦",
+    type: "Tự đặt",
     heading: "Space Grotesk",
     mood: "Lưới 1 điểm · không trang trí",
     light: {
@@ -313,21 +301,20 @@ function Icon({
   name: "sun" | "moon" | "map" | "camera" | "users" | "check" | "plus" | "close" | "heart" | "spark" | "arrow"
   size?: number
 }) {
-  const props = { size, weight: "bold" as const, "aria-hidden": true }
-  const icons = {
-    sun: <Sun {...props} />,
-    moon: <Moon {...props} />,
-    map: <MapTrifold {...props} />,
-    camera: <Camera {...props} />,
-    users: <UsersThree {...props} />,
-    check: <Check {...props} />,
-    plus: <Plus {...props} />,
-    close: <X {...props} />,
-    heart: <Heart {...props} />,
-    spark: <Sparkle {...props} weight="duotone" />,
-    arrow: <ArrowRight {...props} />,
+  const icons: Record<typeof name, OIconName> = {
+    sun: "sun",
+    moon: "moon",
+    map: "journeys",
+    camera: "camera",
+    users: "squad",
+    check: "check",
+    plus: "plus",
+    close: "close",
+    heart: "heart",
+    spark: "type-custom",
+    arrow: "caret-right",
   }
-  return icons[name]
+  return <OIcon name={icons[name]} size={size} weight="bold" />
 }
 
 function SectionTitle({
@@ -517,11 +504,15 @@ export default function App() {
             <span>ngày hôm nay</span>
           </div>
           <div className="polaroid p-one">
-            <div>🌿</div>
+            <div>
+              <TypeBadge type="Giảm cân" size={38} />
+            </div>
             <strong>ngày 12.</strong>
           </div>
           <div className="polaroid p-two">
-            <div>🏋️</div>
+            <div>
+              <TypeBadge type="Tập luyện" size={38} />
+            </div>
             <strong>tiếp tục nhé.</strong>
           </div>
           <svg className="hero-line" viewBox="0 0 320 200" aria-hidden="true">
@@ -586,15 +577,15 @@ export default function App() {
             <h3>Mã loại hành trình</h3>
             <div className="pastels">
               {[
-                ["#7EE8A2", "Giảm cân", "🌿"],
-                ["#FFD84D", "Tiếng Anh", "📒"],
-                ["#FFB347", "Chuyến đi", "🎟️"],
-                ["#FF7E7E", "Cặp đôi", "💌"],
-                ["#CF9FFF", "Tập luyện", "🏋️"],
-                ["#7EC8E3", "Tự đặt", "✦"],
-              ].map(([color, label, emoji]) => (
+                ["#7EE8A2", "Giảm cân"],
+                ["#FFD84D", "Tiếng Anh"],
+                ["#FFB347", "Chuyến đi"],
+                ["#FF7E7E", "Cặp đôi"],
+                ["#CF9FFF", "Tập luyện"],
+                ["#7EC8E3", "Tự đặt"],
+              ].map(([color, label]) => (
                 <span key={label} style={{ background: color }}>
-                  {emoji} {label}
+                  <TypeBadge type={label as JourneyType} size={30} /> {label}
                 </span>
               ))}
             </div>
@@ -616,7 +607,7 @@ export default function App() {
               aria-selected={skinIndex === index}
               onClick={() => chooseSkin(index)}
             >
-              <span>{item.emoji}</span>
+              <TypeBadge type={item.type} size={32} />
               <b>{item.short}</b>
               <small>{item.journey}</small>
             </button>
@@ -670,10 +661,14 @@ export default function App() {
           </div>
           <div className="skin-preview">
             <article className="journey-card">
-              <div className="cover-sticker">{skin.emoji}</div>
+              <div className="cover-sticker">
+                <TypeBadge type={skin.type} size={42} />
+              </div>
               <div className="card-top">
                 <span>Ngày 12/30</span>
-                <span>🔥 12</span>
+                <span>
+                  <OIcon name="flame" size={16} active /> 12
+                </span>
               </div>
               <h4>{skin.journey.toLocaleLowerCase("vi")}.</h4>
               <p>Mốc kế tiếp · Ba tuần đều đặn</p>
@@ -801,11 +796,24 @@ export default function App() {
               ))}
             </div>
             <div className="reaction-bar" aria-label="Phản ứng">
-              <button>🔥</button>
-              <button>💪</button>
-              <button>👏</button>
-              <button>❤️</button>
-              <button>😂</button>
+              <button aria-label="Vỗ tay">
+                <OIcon name="react-clap" active />
+              </button>
+              <button aria-label="Cố lên">
+                <OIcon name="react-flex" active />
+              </button>
+              <button aria-label="Thương">
+                <OIcon name="react-heart" active />
+              </button>
+              <button aria-label="Haha">
+                <OIcon name="react-laugh" active />
+              </button>
+              <button aria-label="Cháy">
+                <OIcon name="react-fire" active />
+              </button>
+              <button aria-label="Vẫy tay">
+                <OIcon name="react-wave" active />
+              </button>
             </div>
           </article>
 
@@ -890,7 +898,9 @@ export default function App() {
                 </div>
               </div>
               <div className="streak-badge">
-                <span>🔥</span>
+                <span>
+                  <OIcon name="flame" size={24} active />
+                </span>
                 <div>
                   <b>12 ngày</b>
                   <small>Chuỗi dài nhất</small>
@@ -944,17 +954,19 @@ export default function App() {
               </div>
               <div className={`journey-wheel ${wheelOpen ? "open" : ""}`}>
                 <button className="disc one">
-                  <span>🌿</span>
+                  <TypeBadge type="Giảm cân" size={32} />
                   <b>Ngày 12</b>
                   <small>Giảm cân</small>
                 </button>
                 <button className="disc two">
-                  <span>📒</span>
+                  <TypeBadge type="Tiếng Anh" size={32} />
                   <b>Ngày 8</b>
                   <small>Tiếng Anh</small>
                 </button>
                 <button className="disc three">
-                  <span>＋</span>
+                  <span>
+                    <OIcon name="plus" size={24} />
+                  </span>
                   <b>Mới</b>
                   <small>Tạo thêm</small>
                 </button>
@@ -1016,7 +1028,7 @@ export default function App() {
                   <i />
                 </button>
                 <button className="flip" aria-label="Đổi máy ảnh">
-                  ↻
+                  <OIcon name="switch-camera" size={22} />
                 </button>
               </div>
             </div>
@@ -1065,7 +1077,14 @@ export default function App() {
           <span>O</span>urney
         </div>
         <p>Hệ thống thiết kế · được tạo cho những tiến bộ có thể nhìn thấy.</p>
-        <a href="#dau-trang">Về đầu trang ↑</a>
+        <a href="#dau-trang">
+          Về đầu trang{" "}
+          <OIcon
+            name="caret-right"
+            size={16}
+            style={{ transform: "rotate(-90deg)" }}
+          />
+        </a>
       </footer>
 
       {sheetOpen && (

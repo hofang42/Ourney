@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
-import { OIcon } from "./icons"
+import { OIcon, TypeBadge } from "./icons"
 import { skins } from "../StyleGuide"
 import { PermissionSheet } from "./flow"
 import { useStore, type Draft, type Journey } from "./store"
@@ -17,7 +17,6 @@ type CreateType = {
   type: Journey["type"]
   skin: string
   name: string
-  emoji: string
   tagline: string
   icon: ReactNode
 }
@@ -27,7 +26,6 @@ const createTypes: CreateType[] = [
     type: "Giảm cân",
     skin: "quiet",
     name: "Giảm cân",
-    emoji: "⚖️",
     tagline: "nhẹ nhàng, chỉ mình bạn thấy.",
     icon: <OIcon name="scales" size={27} weight="duotone" />,
   },
@@ -35,7 +33,6 @@ const createTypes: CreateType[] = [
     type: "Tiếng Anh",
     skin: "squad",
     name: "Học tiếng Anh",
-    emoji: "📚",
     tagline: "điểm danh đủ hội nào!",
     icon: <OIcon name="book" size={27} weight="duotone" />,
   },
@@ -43,7 +40,6 @@ const createTypes: CreateType[] = [
     type: "Tập luyện",
     skin: "flexer",
     name: "30 ngày tập luyện",
-    emoji: "💪",
     tagline: "km. pace. xong.",
     icon: <OIcon name="fitness" size={27} weight="duotone" />,
   },
@@ -51,7 +47,6 @@ const createTypes: CreateType[] = [
     type: "Chuyến đi",
     skin: "memory",
     name: "Chuyến đi",
-    emoji: "✈️",
     tagline: "nhớ từng chặng đường.",
     icon: <OIcon name="trip" size={27} weight="duotone" />,
   },
@@ -59,7 +54,6 @@ const createTypes: CreateType[] = [
     type: "Cặp đôi",
     skin: "couple",
     name: "Hai đứa mình",
-    emoji: "💞",
     tagline: "mỗi ngày một cặp ảnh.",
     icon: <OIcon name="heart" size={27} weight="duotone" />,
   },
@@ -67,7 +61,6 @@ const createTypes: CreateType[] = [
     type: "Tự đặt",
     skin: "minimal",
     name: "Tự đặt",
-    emoji: "✨",
     tagline: "chụp.",
     icon: <OIcon name="camera" size={27} weight="duotone" />,
   },
@@ -259,7 +252,7 @@ function PreviewCard({ item }: { item: CreateType }) {
   return (
     <div className={`create-preview preview-${item.skin}`}>
       <div className="preview-card-top">
-        <span>{item.emoji}</span>
+        <TypeBadge type={item.type} size={40} />
         <b>{item.name}</b>
       </div>
       <div className="preview-live-area">
@@ -281,28 +274,37 @@ function PreviewCard({ item }: { item: CreateType }) {
             <i />
             <i />
             <i />
-            <span>🏆</span>
+            <OIcon name="trophy" size={22} active />
           </div>
         )}
         {item.skin === "flexer" && <span className="preview-neon-line" />}
         {item.skin === "memory" && (
           <div className="preview-polaroid">
-            <span>🌲</span>
+            <OIcon name="pine" size={26} />
             <i />
           </div>
         )}
         {item.skin === "couple" && (
           <div className="preview-diptych">
             <i />
-            <b>♥</b>
+            <OIcon name="heart" size={20} active />
             <i />
           </div>
         )}
         {item.skin === "minimal" && <span className="preview-seven-grid" />}
       </div>
       <div className="preview-hud">
-        {item.skin === "quiet" && <span className="ghost-body">♙</span>}
-        {item.skin === "squad" && <span>📖 45 PHÚT · 🔥 21</span>}
+        {item.skin === "quiet" && (
+          <span className="ghost-body">
+            <OIcon name="ghost-body" size={28} />
+          </span>
+        )}
+        {item.skin === "squad" && (
+          <span className="icon-text">
+            <OIcon name="book" size={14} /> 45 PHÚT
+            <OIcon name="flame" size={14} active /> 21
+          </span>
+        )}
         {item.skin === "flexer" && <span>5,2 KM · 5:48</span>}
         {item.skin === "memory" && <span>CUỘN PHIM 12/24</span>}
         {item.skin === "couple" && <span>hai nửa · một ngày</span>}
@@ -783,7 +785,11 @@ export function CreateStepTwo() {
         ))}
         {place === "Đà Lạt" && (
           <div className="pine-sticker">
-            <span>▲ ▲ ▲</span>
+            <span className="pine-icon-row">
+              <OIcon name="pine" size={24} />
+              <OIcon name="pine" size={29} />
+              <OIcon name="pine" size={22} />
+            </span>
             <b>Rừng thông và sương</b>
           </div>
         )}
@@ -1013,7 +1019,10 @@ export function CreateStepThree() {
       </div>
       {toast && (
         <div className="create-toast">
-          <span>chuyển sang phong cách Hai đứa mình 💞</span>
+          <span className="icon-text">
+            chuyển sang phong cách Hai đứa mình
+            <OIcon name="type-couple" size={18} />
+          </span>
           <button onClick={undo}>Hoàn tác</button>
         </div>
       )}
@@ -1486,9 +1495,22 @@ export function CreateStepFive() {
             <>
               <small>NHIỆM VỤ 30 NGÀY</small>
               <h2>{String(answers.goal ?? "IELTS")}</h2>
-              <div className="quest-path">● ┈ ● ┈ ● ┈ ● ┈ 🏆</div>
+              <div className="quest-path">
+                {[0, 1, 2, 3].map((item) => (
+                  <OIcon name="crew-dot" size={12} key={item} />
+                ))}
+                <OIcon name="trophy" size={22} active />
+              </div>
               <b>{String(answers.trophy ?? "Cúp 7.5")}</b>
-              <div className="ticket-crew">● ● ◌ ◌ ◌ · còn trống</div>
+              <div className="ticket-crew">
+                {[0, 1].map((item) => (
+                  <OIcon name="crew-dot" size={13} key={`full-${item}`} />
+                ))}
+                {[0, 1, 2].map((item) => (
+                  <OIcon name="crew-dot-empty" size={13} key={`open-${item}`} />
+                ))}
+                <span>còn trống</span>
+              </div>
               <em>Điểm danh mỗi ngày, cả hội cùng lên!</em>
             </>
           )}
@@ -1508,11 +1530,18 @@ export function CreateStepFive() {
             <>
               <span className="round-stamp">ĐÀ LẠT</span>
               <small>VÉ KÝ ỨC</small>
-              <h2>SGN → {String(answers.place ?? "ĐÀ LẠT").toUpperCase()}</h2>
+              <h2 className="icon-text">
+                SGN <OIcon name="caret-right" size={20} />{" "}
+                {String(answers.place ?? "ĐÀ LẠT").toUpperCase()}
+              </h2>
               <p>{ticketDates}</p>
               <small>{durationSummary.toUpperCase()}</small>
               <b>CUỘN PHIM {String(answers.film ?? "24 TẤM").toUpperCase()}</b>
-              <div className="ticket-crew">● ● ●</div>
+              <div className="ticket-crew">
+                {[0, 1, 2].map((item) => (
+                  <OIcon name="crew-dot" size={13} key={item} />
+                ))}
+              </div>
               <b>CUỘN PHIM {String(answers.film ?? "24 TẤM").toUpperCase()}</b>
               <div className="fake-barcode">|||| ||| || |||| |</div>
               <em>Mang về thật nhiều khung hình.</em>
@@ -1522,7 +1551,9 @@ export function CreateStepFive() {
             <>
               <div className="ticket-halves">
                 <span>{String(answers.nameLeft ?? "Bạn")}</span>
-                <b>♥</b>
+                <b>
+                  <OIcon name="heart" size={20} active />
+                </b>
                 <span>{String(answers.nameRight ?? "Người ấy")}</span>
               </div>
               <h2>
