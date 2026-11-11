@@ -119,7 +119,16 @@ function drawing(name: OIconName): ReactNode {
       )
     case "flame":
       return (
-        <P d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" />
+        <>
+          <path
+            className="o-flame-outer"
+            d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"
+          />
+          <path
+            className="o-flame-inner"
+            d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z"
+          />
+        </>
       )
     case "trophy":
       return (
@@ -441,6 +450,33 @@ const typeColor: Record<JourneyType, string> = {
   "Tự đặt": "#7EC8E3",
 }
 
+const compactColorIcons: OIconName[] = [
+  "flame",
+  "book",
+  "trophy",
+  "star",
+  "lock",
+  "check",
+  "heart",
+  "type-weight",
+  "type-study",
+  "type-trip",
+  "type-couple",
+  "type-workout",
+  "type-custom",
+  "react-clap",
+  "react-flex",
+  "react-heart",
+  "react-laugh",
+  "react-fire",
+  "react-wave",
+  "pine",
+  "cloud",
+  "ghost-body",
+  "crew-dot",
+  "crew-dot-empty",
+]
+
 export function OIcon({
   name,
   size = 24,
@@ -449,6 +485,8 @@ export function OIcon({
   className = "",
   ...props
 }: Props) {
+  const compact = size < 24 && compactColorIcons.includes(name)
+  const sticker = active && size >= 24
   return (
     <svg
       viewBox="0 0 24 24"
@@ -459,13 +497,13 @@ export function OIcon({
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`o-icon o-icon-${name} ${
-        active ? "o-icon-active" : ""
-      } ${className}`}
+      className={`o-icon o-icon-${name} ${active ? "o-icon-active" : ""} ${
+        compact ? "o-icon-compact" : ""
+      } ${sticker ? "o-icon-sticker" : ""} ${className}`}
       aria-hidden={props["aria-label"] ? undefined : true}
       {...props}
     >
-      {active ? (
+      {sticker ? (
         <>
           <path
             className="o-icon-sticker-outer"
@@ -476,12 +514,12 @@ export function OIcon({
             d="M4 3.8Q12 1.8 20 4.4L21 19Q12 22.2 3.4 19Z"
           />
         </>
-      ) : (
+      ) : !compact && !active ? (
         <path
           className="o-icon-blob"
           d="M5 6Q12 2.8 19 6L18.5 18Q12 21 5 17Z"
         />
-      )}
+      ) : null}
       <g className="o-icon-lines">{drawing(name)}</g>
     </svg>
   )

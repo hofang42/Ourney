@@ -16779,10 +16779,16 @@
 }
 
 .o-icon-active:is(
-  .o-icon-flame,
   .o-icon-trophy,
   .o-icon-star,
   .o-icon-heart,
+  .o-icon-check,
+  .o-icon-type-weight,
+  .o-icon-type-study,
+  .o-icon-type-trip,
+  .o-icon-type-couple,
+  .o-icon-type-workout,
+  .o-icon-type-custom,
   .o-icon-react-clap,
   .o-icon-react-flex,
   .o-icon-react-heart,
@@ -16791,6 +16797,62 @@
   .o-icon-react-wave
 ) .o-icon-lines {
   fill: currentColor;
+}
+
+.o-icon-flame .o-flame-outer {
+  fill: #ff8a3d;
+  stroke: #1a1a1a;
+  stroke-width: 1.5px;
+}
+
+.o-icon-flame .o-flame-inner {
+  fill: #ffd84d;
+  stroke: #1a1a1a;
+  stroke-width: 1.2px;
+}
+
+.o-icon-compact .o-icon-lines {
+  stroke: #1a1a1a;
+  stroke-width: 1.5px;
+}
+
+.o-icon-compact:is(
+  .o-icon-book,
+  .o-icon-trophy,
+  .o-icon-star,
+  .o-icon-lock,
+  .o-icon-heart,
+  .o-icon-react-clap,
+  .o-icon-react-flex,
+  .o-icon-react-heart,
+  .o-icon-react-laugh,
+  .o-icon-react-fire,
+  .o-icon-react-wave,
+  .o-icon-pine,
+  .o-icon-cloud,
+  .o-icon-ghost-body,
+  .o-icon-crew-dot
+) .o-icon-lines {
+  fill: currentColor;
+}
+
+.o-icon-compact.o-icon-book { color: #ffd84d; }
+.o-icon-compact.o-icon-trophy,
+.o-icon-compact.o-icon-star { color: #ffb347; }
+.o-icon-compact.o-icon-lock { color: #7ec8e3; }
+.o-icon-compact.o-icon-check,
+.o-icon-compact.o-icon-type-weight,
+.o-icon-compact.o-icon-pine { color: #7ee8a2; }
+.o-icon-compact.o-icon-type-study { color: #ffd84d; }
+.o-icon-compact.o-icon-type-trip { color: #ffb347; }
+.o-icon-compact.o-icon-type-couple,
+.o-icon-compact.o-icon-heart { color: #ff7e7e; }
+.o-icon-compact.o-icon-type-workout,
+.o-icon-compact.o-icon-ghost-body { color: #cf9fff; }
+.o-icon-compact.o-icon-type-custom,
+.o-icon-compact.o-icon-cloud { color: #7ec8e3; }
+.o-icon-compact:is(.o-icon-crew-dot, .o-icon-crew-dot-empty) {
+  color: #ff8a3d;
 }
 
 .o-icon-react-clap { color: #ffb347; }
