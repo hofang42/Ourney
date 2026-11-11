@@ -5402,7 +5402,7 @@
 
 /* Invite sheet over Day 1 camera */
 .invite-scrim {
-  position: fixed;
+  position: absolute;
   z-index: 120;
   inset: 0;
   display: flex;
@@ -13554,6 +13554,14 @@
   gap: 8px;
 }
 
+.profile-edit-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--push-muted);
+  font-size: calc(12px * var(--type-scale, 1));
+  font-weight: 700;
+}
+
 .avatar-picker button {
   width: 48px;
   height: 48px;
@@ -16744,141 +16752,122 @@
   position: relative;
 }
 
-/* Ourney sticker icon and brand primitives. */
+/* Ourney die-cut sticker icon system. */
 .o-icon {
+  --o-icon-ink: #1a1a1a;
+  --o-icon-shadow: #1a1a1a;
   display: inline-block;
   flex: 0 0 auto;
   overflow: visible;
   vertical-align: middle;
 }
 
-.o-icon-blob {
-  fill: currentColor;
-  stroke: none;
-  opacity: .18;
+.app-dark .o-icon,
+.mode-dark .o-icon {
+  --o-icon-ink: #f5f0e6;
+  --o-icon-shadow: #000;
 }
 
-.o-icon-sticker-outer {
+.o-icon-sticker {
+  transform: rotate(var(--o-icon-tilt, 0deg));
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.o-icon-art {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.o-icon-art :is(path, circle, rect, polygon) {
+  vector-effect: non-scaling-stroke;
+}
+
+.o-icon-shape {
+  color: var(--o-icon-color);
   fill: currentColor;
-  fill-opacity: .18;
   stroke: currentColor;
+  stroke-width: 2px;
+  paint-order: stroke fill;
+}
+
+.o-icon-ink {
+  fill: var(--o-icon-ink);
+  stroke: var(--o-icon-ink);
   stroke-width: 6px;
+  paint-order: stroke fill;
 }
 
-.o-icon-sticker-cut {
-  fill: currentColor;
-  fill-opacity: .18;
+.o-icon-diecut {
+  fill: white;
   stroke: white;
-  stroke-width: 4px;
+  stroke-width: 12px;
+  paint-order: stroke fill;
 }
 
-.o-icon-lines {
-  fill: none;
-  stroke: currentColor;
+.o-icon-shadow {
+  translate: 2px 2px;
+  fill: var(--o-icon-shadow);
+  stroke: var(--o-icon-shadow);
+  stroke-width: 12px;
+  paint-order: stroke fill;
+}
+
+.o-icon-mid .o-icon-ink {
+  stroke-width: 5px;
+}
+
+.o-icon-mid .o-icon-shape {
   stroke-width: 2px;
 }
 
-.o-icon-active:is(
-  .o-icon-trophy,
-  .o-icon-star,
-  .o-icon-heart,
-  .o-icon-check,
-  .o-icon-type-weight,
-  .o-icon-type-study,
-  .o-icon-type-trip,
-  .o-icon-type-couple,
-  .o-icon-type-workout,
-  .o-icon-type-custom,
-  .o-icon-react-clap,
-  .o-icon-react-flex,
-  .o-icon-react-heart,
-  .o-icon-react-laugh,
-  .o-icon-react-fire,
-  .o-icon-react-wave
-) .o-icon-lines {
-  fill: currentColor;
+.o-icon-tiny .o-icon-shape {
+  stroke: currentColor;
+  stroke-width: 3.5px;
 }
 
-.o-icon-flame .o-flame-outer {
-  fill: #ff8a3d;
-  stroke: #1a1a1a;
-  stroke-width: 1.5px;
+.o-icon-tiny .o-icon-sticker,
+.o-icon-mid .o-icon-sticker,
+.o-icon-flat .o-icon-sticker {
+  transform: none;
 }
 
-.o-icon-flame .o-flame-inner {
+.o-icon-shape .o-flame-inner {
+  fill: #ff9f1c;
+}
+
+.o-icon-type-workout .o-icon-shape circle {
   fill: #ffd84d;
   stroke: #1a1a1a;
-  stroke-width: 1.2px;
+  stroke-width: 1px;
 }
 
-.o-icon-compact .o-icon-lines {
-  stroke: #1a1a1a;
-  stroke-width: 1.5px;
+.o-icon-type-couple .o-icon-shape path:first-child {
+  fill: #111;
 }
 
-.o-icon-compact:is(
-  .o-icon-book,
-  .o-icon-trophy,
-  .o-icon-star,
-  .o-icon-lock,
-  .o-icon-heart,
-  .o-icon-react-clap,
-  .o-icon-react-flex,
-  .o-icon-react-heart,
-  .o-icon-react-laugh,
-  .o-icon-react-fire,
-  .o-icon-react-wave,
-  .o-icon-pine,
-  .o-icon-cloud,
-  .o-icon-ghost-body,
-  .o-icon-crew-dot
-) .o-icon-lines {
-  fill: currentColor;
+.o-icon-type-couple .o-icon-shape path:last-child {
+  fill: #ff4d6d;
 }
 
-.o-icon-compact.o-icon-book { color: #ffd84d; }
-.o-icon-compact.o-icon-trophy,
-.o-icon-compact.o-icon-star { color: #ffb347; }
-.o-icon-compact.o-icon-lock { color: #7ec8e3; }
-.o-icon-compact.o-icon-check,
-.o-icon-compact.o-icon-type-weight,
-.o-icon-compact.o-icon-pine { color: #7ee8a2; }
-.o-icon-compact.o-icon-type-study { color: #ffd84d; }
-.o-icon-compact.o-icon-type-trip { color: #ffb347; }
-.o-icon-compact.o-icon-type-couple,
-.o-icon-compact.o-icon-heart { color: #ff7e7e; }
-.o-icon-compact.o-icon-type-workout,
-.o-icon-compact.o-icon-ghost-body { color: #cf9fff; }
-.o-icon-compact.o-icon-type-custom,
-.o-icon-compact.o-icon-cloud { color: #7ec8e3; }
-.o-icon-compact:is(.o-icon-crew-dot, .o-icon-crew-dot-empty) {
-  color: #ff8a3d;
+.o-icon-type-trip .o-icon-shape path:first-child {
+  fill: #f3e3c3;
 }
 
-.o-icon-react-clap { color: #ffb347; }
-.o-icon-react-flex { color: #cf9fff; }
-.o-icon-react-heart { color: #ff7e7e; }
-.o-icon-react-laugh { color: #ffd84d; }
-.o-icon-react-fire { color: #ff7043; }
-.o-icon-react-wave { color: #7ec8e3; }
+.o-icon-type-trip .o-icon-shape path:last-child {
+  fill: #c2452b;
+}
 
 .ourney-type-badge {
-  display: inline-flex;
+  display: inline-grid;
   flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 3px solid white;
-  border-radius: 30%;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
   color: #1a1a1a;
-  background: var(--type-badge);
-  box-shadow:
-    0 0 0 2px currentColor,
-    2px 3px 0 currentColor;
+  background: transparent;
+  box-shadow: none;
   vertical-align: middle;
-}
-
-.ourney-type-badge .o-icon-blob {
-  opacity: .1;
 }
 
 .icon-text {
@@ -17401,4 +17390,271 @@
   position: absolute;
   top: 4px;
   right: 4px;
+}
+
+/* Optical alignment contract for icon badges and selectable-card ticks. */
+.choice-check,
+.corner-check-badge {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  position: absolute;
+  z-index: 5;
+  top: 13px;
+  right: 13px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid #1a1a1a;
+  border-radius: 999px;
+  color: #1a1a1a;
+  background: #fff;
+  box-shadow: 2px 2px 0 #1a1a1a;
+  line-height: 0;
+}
+
+.theme-segmented button {
+  position: relative;
+}
+
+:is(
+  .choice-check,
+  .corner-check-badge,
+  .ourney-type-badge,
+  .squad-reactions button,
+  .memory-reactions button,
+  .camera-top-actions button,
+  .settings-reminder > span,
+  .activity-skin-badge
+) {
+  display: grid;
+  place-items: center;
+}
+
+:is(
+  .choice-check,
+  .corner-check-badge,
+  .ourney-type-badge,
+  .squad-reactions button,
+  .memory-reactions button,
+  .day-reactions button,
+  .camera-top-actions button,
+  .settings-card > button,
+  .settings-reminder > span,
+  .activity-skin-badge,
+  .create-focused-badge,
+  .app-icon-picker button
+) svg {
+  display: block;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  justify-self: center;
+  vertical-align: middle;
+}
+
+.create-flow button > i:has(> svg) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.create-flow button > i > svg {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.squad-avatar-stack i {
+  position: relative;
+}
+
+.squad-avatar-stack i.checked > svg {
+  width: 14px;
+  height: 14px;
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  margin: 0;
+  padding: 0;
+  display: block;
+  border: 1px solid var(--squad-ink);
+  border-radius: 999px;
+  color: var(--squad-ink);
+  background: var(--squad-flame);
+}
+
+.activity-dock-icon {
+  display: inline-grid;
+  place-items: center;
+}
+
+.app-icon-picker button > .corner-check-badge {
+  top: 12px;
+  right: 12px;
+}
+
+.app-icon-picker button > .o-icon {
+  position: static;
+}
+
+.squad-wall article > b {
+  margin-top: 8px;
+}
+
+.squad-member-photos small,
+.couple-member-photos small {
+  right: 8px;
+  bottom: 8px;
+}
+
+/* A checked-in day remains visible after its final photo is removed. */
+.deleted-day-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  border: 2px dashed currentColor;
+  border-radius: inherit;
+  color: var(--skin-ink, var(--push-ink, var(--ink)));
+  background: color-mix(
+    in srgb,
+    var(--skin-surface, var(--push-surface, var(--surface))) 88%,
+    transparent
+  );
+  text-align: center;
+}
+
+.deleted-day-check {
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  background: var(--skin-button, #ffd84d);
+  box-shadow: 2px 2px 0 currentColor;
+  line-height: 0;
+}
+
+.deleted-day-placeholder :is(svg, .o-icon) {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.deleted-day-placeholder b {
+  font-size: calc(13px * var(--type-scale, 1));
+}
+
+.deleted-day-placeholder small {
+  font-size: calc(11px * var(--type-scale, 1));
+}
+
+/* Badges share one centring contract, including camera, reactions and rows. */
+:is(
+  .choice-check,
+  .corner-check-badge,
+  .ourney-type-badge,
+  .squad-reactions button,
+  .memory-reactions button,
+  .day-reactions button,
+  .camera-top-actions button,
+  .camera-safe-top > button,
+  .camera-state-sticker,
+  .settings-reminder > span,
+  .activity-skin-badge,
+  .activity-dock-icon,
+  .deleted-day-check
+) {
+  display: grid;
+  place-items: center;
+}
+
+:is(
+  .choice-check,
+  .corner-check-badge,
+  .ourney-type-badge,
+  .squad-reactions button,
+  .memory-reactions button,
+  .day-reactions button,
+  .camera-top-actions button,
+  .camera-safe-top > button,
+  .camera-state-sticker,
+  .settings-card > button,
+  .settings-reminder > span,
+  .activity-skin-badge,
+  .activity-dock-icon,
+  .deleted-day-check
+) svg {
+  display: block;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  justify-self: center;
+}
+
+.activity-unread-dot {
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* All dialogs are portalled into and clipped by the phone, never the viewport. */
+.phone-screen
+  > :is(
+    .app-sheet-scrim,
+    .create-sheet-scrim,
+    .invite-scrim,
+    .journey-action-scrim,
+    .permission-scrim,
+    .poster-share-scrim,
+    .quiet-sheet-scrim,
+    .squad-share-scrim
+  ) {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 200;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.phone-screen
+  > :is(
+    .app-sheet-scrim,
+    .create-sheet-scrim,
+    .invite-scrim,
+    .journey-action-scrim,
+    .permission-scrim,
+    .poster-share-scrim,
+    .quiet-sheet-scrim,
+    .squad-share-scrim
+  )
+  > :is(
+    .app-sheet,
+    .create-sheet,
+    .invite-sheet,
+    .journey-action-sheet,
+    .permission-sheet,
+    .poster-share-sheet,
+    .quiet-sheet,
+    .squad-share-sheet
+  ) {
+  width: 100%;
+  max-height: calc(100% - 12px);
+  margin: 0;
+  flex: 0 0 auto;
+  overscroll-behavior: contain;
 }

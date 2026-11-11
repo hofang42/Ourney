@@ -9,6 +9,7 @@ import {
 } from "react"
 import { useLocation, useNavigate, useParams } from "react-router"
 import { OIcon, TypeBadge } from "./icons"
+import { PhoneOverlay } from "./overlay"
 import { skins } from "../StyleGuide"
 import { PermissionSheet } from "./flow"
 import { useStore, type Draft, type Journey } from "./store"
@@ -117,41 +118,43 @@ function ExitCreateSheet({
     startY.current = null
   }
   return (
-    <div
-      className="create-sheet-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onStay()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="create-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="create-sheet-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onStay()
+        }
       >
         <div
-          className="create-sheet-drag"
-          onPointerDown={dragStart}
-          onPointerMove={dragMove}
-          onPointerUp={dragEnd}
+          className="create-sheet"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
+          <div
+            className="create-sheet-drag"
+            onPointerDown={dragStart}
+            onPointerMove={dragMove}
+            onPointerUp={dragEnd}
+          >
+            <i />
+          </div>
+          <button
+            className="create-sheet-close"
+            onClick={onStay}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={22} weight="bold" />
+          </button>
+          <h2>thoát khỏi việc tạo?</h2>
+          <p>Bản nháp được lưu trên máy để bạn tiếp tục sau.</p>
+          <button className="create-stay" onClick={onKeep}>
+            Thoát, giữ bản nháp
+          </button>
+          <button className="create-exit" onClick={onDiscard}>
+            Bỏ bản nháp
+          </button>
         </div>
-        <button
-          className="create-sheet-close"
-          onClick={onStay}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={22} weight="bold" />
-        </button>
-        <h2>thoát khỏi việc tạo?</h2>
-        <p>Bản nháp được lưu trên máy để bạn tiếp tục sau.</p>
-        <button className="create-stay" onClick={onKeep}>
-          Thoát, giữ bản nháp
-        </button>
-        <button className="create-exit" onClick={onDiscard}>
-          Bỏ bản nháp
-        </button>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -1111,60 +1114,62 @@ function CalendarSheet({ onClose }: { onClose: () => void }) {
   const startY = useRef<number | null>(null)
   const [drag, setDrag] = useState(0)
   return (
-    <div
-      className="create-sheet-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="create-sheet calendar-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="create-sheet-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="create-sheet-drag"
-          onPointerDown={(event) => {
-            startY.current = event.clientY
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) => {
-            if (startY.current === null) return
-            setDrag(Math.max(0, event.clientY - startY.current))
-          }}
-          onPointerUp={() => {
-            if (drag > 70) onClose()
-            startY.current = null
-            setDrag(0)
-          }}
+          className="create-sheet calendar-sheet"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
+          <div
+            className="create-sheet-drag"
+            onPointerDown={(event) => {
+              startY.current = event.clientY
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) => {
+              if (startY.current === null) return
+              setDrag(Math.max(0, event.clientY - startY.current))
+            }}
+            onPointerUp={() => {
+              if (drag > 70) onClose()
+              startY.current = null
+              setDrag(0)
+            }}
+          >
+            <i />
+          </div>
+          <button
+            className="create-sheet-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={22} weight="bold" />
+          </button>
+          <h2>sửa ngày.</h2>
+          <InlineDateRange
+            value={store.draft.dates ?? ""}
+            onChange={(dates) =>
+              store.setDraft({
+                dates,
+                answers: { ...store.draft.answers, tripDates: dates },
+              })
+            }
+          />
+          <button
+            className="create-stay"
+            onClick={onClose}
+            disabled={!store.draft.dates}
+          >
+            Dùng ngày này
+          </button>
         </div>
-        <button
-          className="create-sheet-close"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={22} weight="bold" />
-        </button>
-        <h2>sửa ngày.</h2>
-        <InlineDateRange
-          value={store.draft.dates ?? ""}
-          onChange={(dates) =>
-            store.setDraft({
-              dates,
-              answers: { ...store.draft.answers, tripDates: dates },
-            })
-          }
-        />
-        <button
-          className="create-stay"
-          onClick={onClose}
-          disabled={!store.draft.dates}
-        >
-          Dùng ngày này
-        </button>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 

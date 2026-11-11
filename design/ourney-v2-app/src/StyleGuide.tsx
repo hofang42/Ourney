@@ -1,5 +1,11 @@
 import { useMemo, useState } from "react"
-import { OIcon, TypeBadge, type JourneyType, type OIconName } from "./app/icons"
+import {
+  OIcon,
+  TypeBadge,
+  oIconNames,
+  type JourneyType,
+  type OIconName,
+} from "./app/icons"
 
 type Mode = "light" | "dark"
 
@@ -454,6 +460,7 @@ export default function App() {
         </a>
         <nav aria-label="Mục lục">
           <a href="#nen-tang">Nền tảng</a>
+          <a href="#bo-icon">Icon</a>
           <a href="#giao-dien">Giao diện</a>
           <a href="#thanh-phan">Thành phần</a>
           <a href="#tuong-tac">Tương tác</a>
@@ -593,9 +600,42 @@ export default function App() {
         </div>
       </section>
 
+      <section className="doc-section icon-proof-section" id="bo-icon">
+        <SectionTitle
+          kicker="02 · Sticker icons"
+          title="cùng một tờ sticker."
+          note="Toàn bộ icon ở ba kích thước thật: die-cut 48/24, silhouette gọn 16; luôn kiểm tra song song trên nền sáng và tối."
+        />
+        <div className="icon-proof-themes">
+          {(["light", "dark"] as const).map((proofMode) => (
+            <article
+              className={`icon-proof-theme mode-${proofMode}`}
+              key={proofMode}
+            >
+              <header>
+                <b>{proofMode === "light" ? "Nền sáng" : "Nền tối"}</b>
+                <span>48 · 24 · 16 px</span>
+              </header>
+              <div className="icon-proof-grid">
+                {oIconNames.map((name) => (
+                  <div className="icon-proof-item" key={name}>
+                    <span>
+                      <OIcon name={name} size={48} active />
+                      <OIcon name={name} size={24} active />
+                      <OIcon name={name} size={16} active />
+                    </span>
+                    <code>{name}</code>
+                  </div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="doc-section skins-section" id="giao-dien">
         <SectionTitle
-          kicker="02 · Giao diện"
+          kicker="03 · Giao diện"
           title="sáu chất riêng."
           note="Không chỉ đổi màu. Mỗi giao diện có chất liệu, kiểu chữ, đường viền và nhịp điệu riêng nhưng cùng giữ một cấu trúc cốt lõi."
         />
@@ -723,7 +763,7 @@ export default function App() {
 
       <section className="doc-section components" id="thanh-phan">
         <SectionTitle
-          kicker="03 · Thành phần"
+          kicker="04 · Thành phần"
           title="một bộ, nhiều giọng."
           note="Mọi thành phần dùng đúng token của giao diện đang chọn. Thử chế độ chữ lớn để kiểm tra khả năng co giãn."
         />
@@ -932,7 +972,7 @@ export default function App() {
 
       <section className="doc-section interaction" id="tuong-tac">
         <SectionTitle
-          kicker="04 · Điều hướng & phản hồi"
+          kicker="05 · Điều hướng & phản hồi"
           title="luôn trong tầm tay."
           note="Dock giữ nguyên vị trí, kích thước và hành vi. Chất liệu thay đổi theo giao diện; màu nút chụp theo hành trình đang hoạt động."
         />

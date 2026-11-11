@@ -2,6 +2,76 @@ import type { CSSProperties, ReactNode, SVGProps } from "react"
 
 export type OIconName = "journeys" | "squad" | "camera" | "activity" | "profile" | "settings" | "back" | "close" | "plus" | "share" | "lock" | "eye" | "eye-off" | "heart" | "star" | "flame" | "trophy" | "map-pin" | "clock" | "image" | "trash" | "more" | "check" | "warning" | "wifi-off" | "cloud-off" | "sun" | "moon" | "desktop" | "sign-out" | "nudge" | "copy" | "caret-right" | "caret-down" | "timer" | "film" | "calendar" | "switch-camera" | "lightning" | "search" | "email" | "phone" | "book" | "fitness" | "scales" | "trip" | "edit" | "paper-plane" | "flag" | "cat" | "type-weight" | "type-study" | "type-trip" | "type-couple" | "type-workout" | "type-custom" | "react-clap" | "react-flex" | "react-heart" | "react-laugh" | "react-fire" | "react-wave" | "pine" | "cloud" | "ghost-body" | "crew-dot" | "crew-dot-empty"
 
+export const oIconNames: OIconName[] = [
+  "journeys",
+  "squad",
+  "camera",
+  "activity",
+  "profile",
+  "settings",
+  "back",
+  "close",
+  "plus",
+  "share",
+  "lock",
+  "eye",
+  "eye-off",
+  "heart",
+  "star",
+  "flame",
+  "trophy",
+  "map-pin",
+  "clock",
+  "image",
+  "trash",
+  "more",
+  "check",
+  "warning",
+  "wifi-off",
+  "cloud-off",
+  "sun",
+  "moon",
+  "desktop",
+  "sign-out",
+  "nudge",
+  "copy",
+  "caret-right",
+  "caret-down",
+  "timer",
+  "film",
+  "calendar",
+  "switch-camera",
+  "lightning",
+  "search",
+  "email",
+  "phone",
+  "book",
+  "fitness",
+  "scales",
+  "trip",
+  "edit",
+  "paper-plane",
+  "flag",
+  "cat",
+  "type-weight",
+  "type-study",
+  "type-trip",
+  "type-couple",
+  "type-workout",
+  "type-custom",
+  "react-clap",
+  "react-flex",
+  "react-heart",
+  "react-laugh",
+  "react-fire",
+  "react-wave",
+  "pine",
+  "cloud",
+  "ghost-body",
+  "crew-dot",
+  "crew-dot-empty",
+]
+
 export type JourneyType = "Giảm cân" | "Tiếng Anh" | "Chuyến đi" | "Cặp đôi" | "Tập luyện" | "Tự đặt"
 
 type Props = Omit<SVGProps<SVGSVGElement>, "name"> & {
@@ -175,7 +245,7 @@ function drawing(name: OIconName): ReactNode {
         </>
       )
     case "check":
-      return <P d="m4 12.5 5 5L20 6" />
+      return <P d="m6 12.5 4 4 8-9" />
     case "warning":
       return (
         <>
@@ -332,48 +402,37 @@ function drawing(name: OIconName): ReactNode {
       )
     case "type-weight":
       return (
-        <>
-          <P d="M5 10h14l-1 10H6Z" />
-          <P d="M9 10a3 3 0 0 1 6 0M12 7v3" />
-          <P d="M17 5c1.5-2 3-1.8 4-1-1 2.1-2.3 2.8-4 2.3" />
-        </>
+        <P d="M12 3.2c5.5 0 9 3.5 9 8.8s-3.5 8.8-9 8.8S3 17.3 3 12s3.5-8.8 9-8.8Zm0 5C9.6 8.2 8.1 9.7 8.1 12s1.5 3.8 3.9 3.8 3.9-1.5 3.9-3.8-1.5-3.8-3.9-3.8Z" />
       )
     case "type-study":
       return (
-        <>
-          <P d="M3 5h7c2 0 2 2 2 2v13c0-2-2-2-2-2H3ZM21 5h-7c-2 0-2 2-2 2v13c0-2 2-2 2-2h7Z" />
-          <P d="m15 13 4-4 2 2-4 4-3 1Z" />
-        </>
+        <P d="M3.5 3.5h5.7v10.2c0 1.7.9 2.6 2.8 2.6s2.8-.9 2.8-2.6V3.5h5.7v10.8c0 4.4-3.2 7-8.5 7s-8.5-2.6-8.5-7Z" />
       )
     case "type-trip":
       return (
         <>
-          <P d="M3 6h18v12H3Z" />
-          <C cx="8" cy="12" r="3" />
-          <P d="M15 8v8M19 8v8" />
+          <P d="M2.5 3h19v18h-19Z" />
+          <P d="M4 4h5.2v2.4C10.5 4.6 12.4 3.6 15 3.6c.8 0 1.6.1 2.2.3l-.6 5.2c-.8-.3-1.6-.5-2.5-.5-3 0-4.5 1.6-4.5 4.9V21H4Z" />
         </>
       )
     case "type-couple":
       return (
         <>
-          <P d="M9.5 19S3 15.4 3 10.5C3 7 7 6 9.5 9c2.3-3 6.5-2 6.5 1.5 0 4.9-6.5 8.5-6.5 8.5Z" />
-          <P d="M14.5 17S8 13.4 8 8.5C8 5 12 4 14.5 7 16.8 4 21 5 21 8.5c0 4.9-6.5 8.5-6.5 8.5Z" />
+          <P d="M2.2 4.3h19.6v15.4H2.2Z" />
+          <P d="M18.3 14.9c-1.7 1.2-3.8 1.8-6.2 1.8-4.5 0-7.4-2.4-7.4-6.3 0-4 3-6.5 7.3-6.5 4.5 0 7.1 2.6 7.1 7.2v1.3H10c.4 1 1.4 1.5 3 1.5 1.5 0 2.8-.4 4.1-1.2ZM10 9.4h3.8c-.1-1.1-.8-1.7-1.9-1.7-1 0-1.7.6-1.9 1.7Z" />
         </>
       )
     case "type-workout":
       return (
         <>
-          <P d="m5 15 5-1 3-5 3 4 5 3-2 4H8c-3 0-5-2-3-5Z" />
-          <P d="m8 5-2 4h3l-1 4 5-6h-3l1-2Z" />
+          <P d="M3.5 20.5v-17h5.2l6.6 9.1V3.5h5.2v17h-5.2l-6.6-9v9Z" />
+          <C cx="6.2" cy="6.2" r="1.15" />
+          <C cx="17.8" cy="17.8" r="1.15" />
+          <C cx="17.8" cy="6.2" r=".85" />
         </>
       )
     case "type-custom":
-      return (
-        <>
-          <P d="m12 3 1.6 5.1L19 10l-5.4 1.9L12 17l-1.6-5.1L5 10l5.4-1.9Z" />
-          <P d="m19 16 .7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7Z" />
-        </>
-      )
+      return <P d="M2.8 3.5h6l3.3 7.1 3.2-7.1h5.9L14.8 16v5H9.2v-5Z" />
     case "react-clap":
       return (
         <>
@@ -442,40 +501,94 @@ const typeIcon: Record<JourneyType, OIconName> = {
 }
 
 const typeColor: Record<JourneyType, string> = {
-  "Giảm cân": "#7EE8A2",
-  "Tiếng Anh": "#FFD84D",
-  "Chuyến đi": "#FFB347",
-  "Cặp đôi": "#FF7E7E",
-  "Tập luyện": "#CF9FFF",
-  "Tự đặt": "#7EC8E3",
+  "Giảm cân": "#10B981",
+  "Tiếng Anh": "#FF9F1C",
+  "Chuyến đi": "#C2452B",
+  "Cặp đôi": "#FF4D6D",
+  "Tập luyện": "#2AA7E0",
+  "Tự đặt": "#A13CC9",
 }
 
-const compactColorIcons: OIconName[] = [
-  "flame",
-  "book",
-  "trophy",
-  "star",
-  "lock",
-  "check",
-  "heart",
-  "type-weight",
-  "type-study",
-  "type-trip",
-  "type-couple",
-  "type-workout",
-  "type-custom",
-  "react-clap",
-  "react-flex",
-  "react-heart",
-  "react-laugh",
-  "react-fire",
-  "react-wave",
-  "pine",
-  "cloud",
-  "ghost-body",
-  "crew-dot",
-  "crew-dot-empty",
-]
+const palette: Record<OIconName, string> = {
+  journeys: "#C2452B",
+  squad: "#FF9F1C",
+  camera: "#10B981",
+  activity: "#FF4D6D",
+  profile: "#A13CC9",
+  settings: "#2AA7E0",
+  back: "#2AA7E0",
+  close: "#C2452B",
+  plus: "#10B981",
+  share: "#2AA7E0",
+  lock: "#2AA7E0",
+  eye: "#A13CC9",
+  "eye-off": "#A13CC9",
+  heart: "#FF4D6D",
+  star: "#FF9F1C",
+  flame: "#C2452B",
+  trophy: "#FF9F1C",
+  "map-pin": "#C2452B",
+  clock: "#2AA7E0",
+  image: "#10B981",
+  trash: "#C2452B",
+  more: "#A13CC9",
+  check: "#10B981",
+  warning: "#FF9F1C",
+  "wifi-off": "#C2452B",
+  "cloud-off": "#2AA7E0",
+  sun: "#FF9F1C",
+  moon: "#A13CC9",
+  desktop: "#2AA7E0",
+  "sign-out": "#C2452B",
+  nudge: "#FF9F1C",
+  copy: "#2AA7E0",
+  "caret-right": "#2AA7E0",
+  "caret-down": "#2AA7E0",
+  timer: "#FF9F1C",
+  film: "#C2452B",
+  calendar: "#FF4D6D",
+  "switch-camera": "#10B981",
+  lightning: "#FF9F1C",
+  search: "#2AA7E0",
+  email: "#FF9F1C",
+  phone: "#10B981",
+  book: "#FF9F1C",
+  fitness: "#A13CC9",
+  scales: "#10B981",
+  trip: "#C2452B",
+  edit: "#A13CC9",
+  "paper-plane": "#2AA7E0",
+  flag: "#C2452B",
+  cat: "#FF9F1C",
+  "type-weight": "#10B981",
+  "type-study": "#FF9F1C",
+  "type-trip": "#C2452B",
+  "type-couple": "#FF4D6D",
+  "type-workout": "#2AA7E0",
+  "type-custom": "#A13CC9",
+  "react-clap": "#FF9F1C",
+  "react-flex": "#A13CC9",
+  "react-heart": "#FF4D6D",
+  "react-laugh": "#FF9F1C",
+  "react-fire": "#C2452B",
+  "react-wave": "#2AA7E0",
+  pine: "#10B981",
+  cloud: "#2AA7E0",
+  "ghost-body": "#A13CC9",
+  "crew-dot": "#FF9F1C",
+  "crew-dot-empty": "#F3E3C3",
+}
+
+const tilts = [-5, 3, -2, 5, -4, 2, -3, 4] as const
+
+type IconArtProps = {
+  name: OIconName
+  layer: string
+}
+
+function IconArt({ name, layer }: IconArtProps) {
+  return <g className={`o-icon-art o-icon-${layer}`}>{drawing(name)}</g>
+}
 
 export function OIcon({
   name,
@@ -483,44 +596,37 @@ export function OIcon({
   active = false,
   weight: _weight,
   className = "",
+  style,
   ...props
 }: Props) {
-  const compact = size < 24 && compactColorIcons.includes(name)
-  const sticker = active && size >= 24
+  const tier =
+    size >= 24 ? (active ? "full" : "flat") : size >= 16 ? "mid" : "tiny"
+  const tilt =
+    tier === "full" ? tilts[oIconNames.indexOf(name) % tilts.length] : 0
   return (
     <svg
       viewBox="0 0 24 24"
       width={size}
       height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`o-icon o-icon-${name} ${active ? "o-icon-active" : ""} ${
-        compact ? "o-icon-compact" : ""
-      } ${sticker ? "o-icon-sticker" : ""} ${className}`}
+      className={`o-icon o-icon-${name} o-icon-${tier} ${
+        active ? "o-icon-active" : "o-icon-inactive"
+      } ${className}`}
+      style={
+        {
+          "--o-icon-color": palette[name],
+          "--o-icon-tilt": `${tilt}deg`,
+          ...style,
+        } as CSSProperties
+      }
       aria-hidden={props["aria-label"] ? undefined : true}
       {...props}
     >
-      {sticker ? (
-        <>
-          <path
-            className="o-icon-sticker-outer"
-            d="M4 3.8Q12 1.8 20 4.4L21 19Q12 22.2 3.4 19Z"
-          />
-          <path
-            className="o-icon-sticker-cut"
-            d="M4 3.8Q12 1.8 20 4.4L21 19Q12 22.2 3.4 19Z"
-          />
-        </>
-      ) : !compact && !active ? (
-        <path
-          className="o-icon-blob"
-          d="M5 6Q12 2.8 19 6L18.5 18Q12 21 5 17Z"
-        />
-      ) : null}
-      <g className="o-icon-lines">{drawing(name)}</g>
+      <g className="o-icon-sticker">
+        {tier === "full" && <IconArt name={name} layer="shadow" />}
+        {tier === "full" && <IconArt name={name} layer="diecut" />}
+        {tier !== "tiny" && <IconArt name={name} layer="ink" />}
+        <IconArt name={name} layer="shape" />
+      </g>
     </svg>
   )
 }
@@ -546,7 +652,7 @@ export function TypeBadge({
       }
       aria-hidden="true"
     >
-      <OIcon name={typeIcon[type]} size={Math.round(size * 0.62)} />
+      <OIcon name={typeIcon[type]} size={Math.round(size * 0.72)} active />
     </span>
   )
 }

@@ -17,8 +17,9 @@ import {
   type ReactNode,
 } from "react"
 import { OIcon, TypeBadge, type OIconName } from "./icons"
+import { PhoneOverlay } from "./overlay"
 import { Wordmark } from "./brand"
-import { skins, type Skin } from "../StyleGuide"
+import StyleGuide, { skins, type Skin } from "../StyleGuide"
 import {
   LoginFlow,
   OnboardingFlow,
@@ -154,6 +155,18 @@ function journeyPhotoCount(journey: Journey) {
   )
 }
 
+function DeletedDayPlaceholder() {
+  return (
+    <span className="deleted-day-placeholder">
+      <i className="deleted-day-check">
+        <OIcon name="check" size={20} weight="bold" />
+      </i>
+      <b>đã điểm danh</b>
+      <small>ảnh đã xoá</small>
+    </span>
+  )
+}
+
 function DayPhotoStack({
   journey,
   day,
@@ -163,7 +176,9 @@ function DayPhotoStack({
   day: number
   children: ReactNode
 }) {
-  const count = journeyDayEntry(journey, day)?.photos.length ?? 0
+  const entry = journeyDayEntry(journey, day)
+  const count = entry?.photos.length ?? 0
+  if (entry && count === 0) return <DeletedDayPlaceholder />
   if (count < 2) return children
   return (
     <span className="day-photo-stack">
@@ -497,6 +512,7 @@ function ReviewerPanel({
 }) {
   const store = useStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const [open, setOpen] = useState(true)
   const [layoutCheckResults, setLayoutCheckResults] = useState<string[] | null>(
     null,
@@ -504,6 +520,10 @@ function ReviewerPanel({
   const [emojiCheckResults, setEmojiCheckResults] = useState<string[] | null>(
     null,
   )
+  const [iconCheckResults, setIconCheckResults] = useState<string[] | null>(
+    null,
+  )
+  const iconAuditActive = useRef(false)
   const routes = [
     ["/splash", "mở đầu"],
     ["/onboarding/1", "câu 1"],
@@ -578,6 +598,83 @@ function ReviewerPanel({
       /\p{Extended_Pictographic}|[\u25CF\u25CC\u2605\u2606\u2665\u2659\u2601\u2713\u25B2]/gu
     setEmojiCheckResults([...new Set(screenText.match(forbidden) ?? [])])
   }
+
+  function checkIconAlignment() {
+    iconAuditActive.current = true
+    const screen = document.querySelector(".phone-screen")
+    if (!screen) {
+      setIconCheckResults(["Không tìm thấy màn điện thoại."])
+      return
+    }
+    const failures: string[] = []
+    const badgeSelector = [
+      ".choice-check",
+      ".corner-check-badge",
+      ".ourney-type-badge",
+      ".squad-reactions button",
+      ".memory-reactions button",
+      ".day-reactions button",
+      ".camera-top-actions button",
+      ".camera-safe-top > button",
+      ".camera-state-sticker",
+      ".settings-reminder > span",
+      ".activity-skin-badge",
+      ".squad-avatar-stack i.checked > svg",
+      ".activity-dock-icon",
+      ".deleted-day-check",
+    ].join(",")
+    screen
+      .querySelectorAll<HTMLElement | SVGElement>(badgeSelector)
+      .forEach((badge) => {
+        const svg =
+          badge instanceof SVGElement
+            ? badge
+            : badge.querySelector<SVGElement>("svg")
+        if (!svg) return
+        const badgeRect = badge.getBoundingClientRect()
+        if (badgeRect.width > 48 || badgeRect.height > 48) return
+        const iconRect = svg.getBoundingClientRect()
+        const deltaX = Math.abs(
+          iconRect.left +
+            iconRect.width / 2 -
+            (badgeRect.left + badgeRect.width / 2),
+        )
+        const deltaY = Math.abs(
+          iconRect.top +
+            iconRect.height / 2 -
+            (badgeRect.top + badgeRect.height / 2),
+        )
+        if (deltaX > 1 || deltaY > 1) {
+          failures.push(
+            `${badge.className || badge.tagName}: lệch ${deltaX.toFixed(1)}px ngang, ${deltaY.toFixed(1)}px dọc`,
+          )
+        }
+      })
+    screen
+      .querySelectorAll<HTMLElement>("[data-corner-badge]")
+      .forEach((badge) => {
+        const card = badge.closest<HTMLElement>(
+          ".answer-choice, .theme-segmented button, .app-icon-picker button",
+        )
+        if (!card) return
+        const badgeRect = badge.getBoundingClientRect()
+        const cardRect = card.getBoundingClientRect()
+        const topGap = badgeRect.top - cardRect.top
+        const rightGap = cardRect.right - badgeRect.right
+        if (topGap < 6 || rightGap < 6) {
+          failures.push(
+            `badge góc: cách trên ${topGap.toFixed(1)}px, phải ${rightGap.toFixed(1)}px`,
+          )
+        }
+      })
+    setIconCheckResults(failures)
+  }
+
+  useEffect(() => {
+    if (!iconAuditActive.current) return
+    const frame = window.requestAnimationFrame(checkIconAlignment)
+    return () => window.cancelAnimationFrame(frame)
+  }, [location.pathname, store.theme, store.largeType])
 
   return (
     <aside className={`reviewer ${open ? "reviewer-open" : ""}`}>
@@ -680,6 +777,25 @@ function ReviewerPanel({
                       .toLocaleUpperCase("vi")}
                   </span>
                 ))}
+              </div>
+            )}
+          </Control>
+          <Control label="đo tâm icon và khoảng cách badge góc">
+            <button
+              className="reviewer-layout-check"
+              onClick={checkIconAlignment}
+            >
+              Kiểm tra căn icon
+            </button>
+            {iconCheckResults && (
+              <div className="reviewer-layout-results">
+                {iconCheckResults.length ? (
+                  iconCheckResults.map((result, index) => (
+                    <span key={`${result}-${index}`}>{result}</span>
+                  ))
+                ) : (
+                  <b>0 lỗi căn icon</b>
+                )}
               </div>
             )}
           </Control>
@@ -1075,78 +1191,82 @@ function InviteSheet() {
     window.setTimeout(() => setToast(""), 1800)
   }
   return (
-    <div
-      className="invite-scrim"
-      onPointerDown={(event) => event.target === event.currentTarget && close()}
-    >
+    <PhoneOverlay>
       <div
-        className="invite-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="invite-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && close()
+        }
       >
         <div
-          className="invite-drag"
-          onPointerDown={(event) => {
-            startY.current = event.clientY
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) => {
-            if (startY.current !== null)
-              setDrag(Math.max(0, event.clientY - startY.current))
-          }}
-          onPointerUp={() => {
-            if (drag > 70) close()
-            setDrag(0)
-            startY.current = null
-          }}
+          className="invite-sheet"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
-        </div>
-        <button className="invite-close" onClick={close} aria-label="Đóng">
-          <OIcon name="close" size={22} weight="bold" />
-        </button>
-        <h2>mời hội của bạn.</h2>
-        <div className="invite-code" aria-label="Mã K7Q2 M9XA">
-          {"K7Q2M9XA".split("").map((letter, index) => (
-            <span key={`${letter}-${index}`}>{letter}</span>
-          ))}
-        </div>
-        <button className="invite-copy" onClick={() => copied("Mã")}>
-          <OIcon name="copy" size={20} weight="bold" /> Sao chép mã
-        </button>
-        <div className="invite-link">
-          <span>ourney://join/K7Q2M9XA</span>
-          <button onClick={() => copied("Link")}>Sao chép link</button>
-        </div>
-        <div className="invite-qr" aria-label="Mã QR">
-          {Array.from({ length: 64 }, (_, index) => (
-            <i
-              key={index}
-              className={index % 3 === 0 || index % 7 === 0 ? "on" : ""}
-            />
-          ))}
-        </div>
-        <button className="invite-share" onClick={() => setShareOpen(true)}>
-          <OIcon name="share" size={20} weight="bold" /> Chia sẻ
-        </button>
-        <p>
-          Chỉ ai có mã hoặc link này mới vào được. Hành trình nhóm không có link
-          công khai.
-        </p>
-        <b className="invite-count">Đã mời 1/10</b>
-        <button className="invite-later" onClick={close}>
-          Để sau vậy.
-        </button>
-        {toast && <div className="invite-toast">{toast}</div>}
-        {shareOpen && (
-          <div className="share-mock">
-            <b>Chia sẻ lời mời</b>
-            <button onClick={() => setShareOpen(false)}>Tin nhắn</button>
-            <button onClick={() => setShareOpen(false)}>Ứng dụng khác</button>
-            <button onClick={() => setShareOpen(false)}>Đóng</button>
+          <div
+            className="invite-drag"
+            onPointerDown={(event) => {
+              startY.current = event.clientY
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) => {
+              if (startY.current !== null)
+                setDrag(Math.max(0, event.clientY - startY.current))
+            }}
+            onPointerUp={() => {
+              if (drag > 70) close()
+              setDrag(0)
+              startY.current = null
+            }}
+          >
+            <i />
           </div>
-        )}
+          <button className="invite-close" onClick={close} aria-label="Đóng">
+            <OIcon name="close" size={22} weight="bold" />
+          </button>
+          <h2>mời hội của bạn.</h2>
+          <div className="invite-code" aria-label="Mã K7Q2 M9XA">
+            {"K7Q2M9XA".split("").map((letter, index) => (
+              <span key={`${letter}-${index}`}>{letter}</span>
+            ))}
+          </div>
+          <button className="invite-copy" onClick={() => copied("Mã")}>
+            <OIcon name="copy" size={20} weight="bold" /> Sao chép mã
+          </button>
+          <div className="invite-link">
+            <span>ourney://join/K7Q2M9XA</span>
+            <button onClick={() => copied("Link")}>Sao chép link</button>
+          </div>
+          <div className="invite-qr" aria-label="Mã QR">
+            {Array.from({ length: 64 }, (_, index) => (
+              <i
+                key={index}
+                className={index % 3 === 0 || index % 7 === 0 ? "on" : ""}
+              />
+            ))}
+          </div>
+          <button className="invite-share" onClick={() => setShareOpen(true)}>
+            <OIcon name="share" size={20} weight="bold" /> Chia sẻ
+          </button>
+          <p>
+            Chỉ ai có mã hoặc link này mới vào được. Hành trình nhóm không có
+            link công khai.
+          </p>
+          <b className="invite-count">Đã mời 1/10</b>
+          <button className="invite-later" onClick={close}>
+            Để sau vậy.
+          </button>
+          {toast && <div className="invite-toast">{toast}</div>}
+          {shareOpen && (
+            <div className="share-mock">
+              <b>Chia sẻ lời mời</b>
+              <button onClick={() => setShareOpen(false)}>Tin nhắn</button>
+              <button onClick={() => setShareOpen(false)}>Ứng dụng khác</button>
+              <button onClick={() => setShareOpen(false)}>Đóng</button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -1593,49 +1713,51 @@ function QuietPrivacySheet({
   const startY = useRef(0)
   const [drag, setDrag] = useState(0)
   return (
-    <div
-      className="quiet-sheet-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="quiet-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="quiet-sheet-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="quiet-sheet-drag"
-          onPointerDown={(event) => {
-            startY.current = event.clientY
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) =>
-            setDrag(Math.max(0, event.clientY - startY.current))
-          }
-          onPointerUp={() => {
-            if (drag > 70) onClose()
-            setDrag(0)
-          }}
+          className="quiet-sheet"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
+          <div
+            className="quiet-sheet-drag"
+            onPointerDown={(event) => {
+              startY.current = event.clientY
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) =>
+              setDrag(Math.max(0, event.clientY - startY.current))
+            }
+            onPointerUp={() => {
+              if (drag > 70) onClose()
+              setDrag(0)
+            }}
+          >
+            <i />
+          </div>
+          <button
+            className="quiet-sheet-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={21} weight="bold" />
+          </button>
+          <h2>Hiện số kg trên thẻ?</h2>
+          <p>Ai xem thẻ đều thấy số này.</p>
+          <button className="quiet-sheet-primary" onClick={onClose}>
+            Giữ ẩn
+          </button>
+          <button className="quiet-sheet-secondary" onClick={onShow}>
+            Vẫn hiện
+          </button>
         </div>
-        <button
-          className="quiet-sheet-close"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={21} weight="bold" />
-        </button>
-        <h2>Hiện số kg trên thẻ?</h2>
-        <p>Ai xem thẻ đều thấy số này.</p>
-        <button className="quiet-sheet-primary" onClick={onClose}>
-          Giữ ẩn
-        </button>
-        <button className="quiet-sheet-secondary" onClick={onShow}>
-          Vẫn hiện
-        </button>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -2245,50 +2367,52 @@ function SquadShareSheet({
   const startY = useRef(0)
   const [drag, setDrag] = useState(0)
   return (
-    <div
-      className="squad-share-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="squad-share-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="squad-share-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="squad-share-drag"
-          onPointerDown={(event) => {
-            startY.current = event.clientY
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) =>
-            setDrag(Math.max(0, event.clientY - startY.current))
-          }
-          onPointerUp={() => {
-            if (drag > 70) onClose()
-            setDrag(0)
-          }}
+          className="squad-share-sheet"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
+          <div
+            className="squad-share-drag"
+            onPointerDown={(event) => {
+              startY.current = event.clientY
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) =>
+              setDrag(Math.max(0, event.clientY - startY.current))
+            }
+            onPointerUp={() => {
+              if (drag > 70) onClose()
+              setDrag(0)
+            }}
+          >
+            <i />
+          </div>
+          <button
+            className="squad-share-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={21} weight="bold" />
+          </button>
+          <h2>chia sẻ tấm thiệp.</h2>
+          <button className="share-brand-toggle" onClick={onToggleBrand}>
+            <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
+            Ẩn chữ ourney
+            <span>{hideBrand ? "Bật" : "Tắt"}</span>
+          </button>
+          <button onClick={onClose}>Tin nhắn</button>
+          <button onClick={onClose}>Ứng dụng khác</button>
+          <button onClick={onClose}>Lưu ảnh</button>
         </div>
-        <button
-          className="squad-share-close"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={21} weight="bold" />
-        </button>
-        <h2>chia sẻ tấm thiệp.</h2>
-        <button className="share-brand-toggle" onClick={onToggleBrand}>
-          <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
-          Ẩn chữ ourney
-          <span>{hideBrand ? "Bật" : "Tắt"}</span>
-        </button>
-        <button onClick={onClose}>Tin nhắn</button>
-        <button onClick={onClose}>Ứng dụng khác</button>
-        <button onClick={onClose}>Lưu ảnh</button>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -2362,50 +2486,52 @@ function PosterShareSheet({
   const startY = useRef(0)
   const [drag, setDrag] = useState(0)
   return (
-    <div
-      className={`poster-share-scrim poster-share-${skin}`}
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="poster-share-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className={`poster-share-scrim poster-share-${skin}`}
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="poster-share-drag"
-          onPointerDown={(event) => {
-            startY.current = event.clientY
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) =>
-            setDrag(Math.max(0, event.clientY - startY.current))
-          }
-          onPointerUp={() => {
-            if (drag > 70) onClose()
-            setDrag(0)
-          }}
+          className="poster-share-sheet"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
+          <div
+            className="poster-share-drag"
+            onPointerDown={(event) => {
+              startY.current = event.clientY
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) =>
+              setDrag(Math.max(0, event.clientY - startY.current))
+            }
+            onPointerUp={() => {
+              if (drag > 70) onClose()
+              setDrag(0)
+            }}
+          >
+            <i />
+          </div>
+          <button
+            className="poster-share-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={21} weight="bold" />
+          </button>
+          <h2>{title}</h2>
+          <button className="share-brand-toggle" onClick={onToggleBrand}>
+            <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
+            Ẩn chữ ourney
+            <span>{hideBrand ? "Bật" : "Tắt"}</span>
+          </button>
+          <button onClick={onClose}>Tin nhắn</button>
+          <button onClick={onClose}>Ứng dụng khác</button>
+          <button onClick={onClose}>Lưu ảnh</button>
         </div>
-        <button
-          className="poster-share-close"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={21} weight="bold" />
-        </button>
-        <h2>{title}</h2>
-        <button className="share-brand-toggle" onClick={onToggleBrand}>
-          <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
-          Ẩn chữ ourney
-          <span>{hideBrand ? "Bật" : "Tắt"}</span>
-        </button>
-        <button onClick={onClose}>Tin nhắn</button>
-        <button onClick={onClose}>Ứng dụng khác</button>
-        <button onClick={onClose}>Lưu ảnh</button>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -4351,44 +4477,48 @@ function JourneyActionSheet({
   const [drag, setDrag] = useState(0)
   if (!open) return null
   return (
-    <div
-      className="journey-action-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="journey-action-sheet"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="journey-action-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="journey-action-drag"
-          onPointerDown={(event) => {
-            startY.current = event.clientY
-            event.currentTarget.setPointerCapture(event.pointerId)
-          }}
-          onPointerMove={(event) =>
-            setDrag(Math.max(0, event.clientY - startY.current))
-          }
-          onPointerUp={() => {
-            if (drag > 70) onClose()
-            setDrag(0)
-          }}
+          className="journey-action-sheet"
+          role="dialog"
+          aria-modal="true"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
+          <div
+            className="journey-action-drag"
+            onPointerDown={(event) => {
+              startY.current = event.clientY
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) =>
+              setDrag(Math.max(0, event.clientY - startY.current))
+            }
+            onPointerUp={() => {
+              if (drag > 70) onClose()
+              setDrag(0)
+            }}
+          >
+            <i />
+          </div>
+          <button
+            className="journey-action-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={21} weight="bold" />
+          </button>
+          <h2>{title}</h2>
+          {body && <p>{body}</p>}
+          {children}
         </div>
-        <button
-          className="journey-action-close"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={21} weight="bold" />
-        </button>
-        <h2>{title}</h2>
-        {body && <p>{body}</p>}
-        {children}
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -4436,6 +4566,8 @@ type DayVisualProps = {
 
 function DayVisual(props: DayVisualProps) {
   const { journey, day } = props
+  const entry = journeyDayEntry(journey, day)
+  if (entry && entry.photos.length === 0) return <DeletedDayPlaceholder />
   if (journey.skin === "quiet") return <QuietPhoto />
   if (journey.skin === "squad") return <SquadPhoto />
   if (journey.skin === "memory") return <MemoryPhoto scene={day} />
@@ -4471,6 +4603,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
   const numericDay = Number(day)
   const copy = skinDayCopy[journey.skin] ?? skinDayCopy.minimal
   const dayEntry = journeyDayEntry(journey, numericDay)
+  const emptyDay = Boolean(dayEntry && dayEntry.photos.length === 0)
   const coverIndex = Math.max(
     0,
     dayEntry?.photos.findIndex((photo) => photo.id === dayEntry.coverPhotoId) ??
@@ -4487,7 +4620,13 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
     },
   ]
   const [activePhoto, setActivePhoto] = useState(coverIndex)
-  const currentPhoto = photos[Math.min(activePhoto, photos.length - 1)]
+  const currentPhoto = photos[Math.min(activePhoto, photos.length - 1)] ?? {
+    id: `${journey.id}-${numericDay}-deleted`,
+    time: "",
+    caption: "",
+    mood: "",
+    reactions: {},
+  }
   const reactionKey = `${journey.id}:${numericDay}:${currentPhoto.id}`
   const selectedReaction = store.reactions[reactionKey] ?? ""
   const [menuOpen, setMenuOpen] = useState(false)
@@ -4506,13 +4645,17 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
         title={copy.label}
         onBack={() => navigate(-1)}
         action={
-          <button
-            className="day-menu-button"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Mở tuỳ chọn"
-          >
-            <OIcon name="more" size={24} weight="bold" />
-          </button>
+          emptyDay ? (
+            <span />
+          ) : (
+            <button
+              className="day-menu-button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Mở tuỳ chọn"
+            >
+              <OIcon name="more" size={24} weight="bold" />
+            </button>
+          )
         }
       />
       {menuOpen && (
@@ -4555,52 +4698,58 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
               <OIcon name="lock" size={25} />
               Ảnh đã ẩn với bạn
             </div>
+          ) : emptyDay ? (
+            <DeletedDayPlaceholder />
           ) : (
             <DayVisual journey={journey} day={numericDay + activePhoto} />
           )}
-          {currentPhoto.imported && <small>từ thư viện</small>}
+          {!emptyDay && currentPhoto.imported && <small>từ thư viện</small>}
         </article>
-        <div className="day-photo-browser">
-          <button
-            aria-label="Ảnh trước"
-            disabled={activePhoto === 0}
-            onClick={() =>
-              setActivePhoto((current) => Math.max(0, current - 1))
-            }
-          >
-            <OIcon name="back" size={18} />
-          </button>
-          <div className="day-photo-strip" aria-label="Ảnh trong ngày">
-            {photos.map((photo, index) => (
-              <button
-                key={photo.id}
-                className={activePhoto === index ? "selected" : ""}
-                onClick={() => setActivePhoto(index)}
-                aria-label={`Ảnh ${index + 1}, ${photo.time}`}
-              >
-                <DayVisual journey={journey} day={numericDay + index} />
-                <span>{photo.time}</span>
-              </button>
-            ))}
+        {!emptyDay && (
+          <div className="day-photo-browser">
+            <button
+              aria-label="Ảnh trước"
+              disabled={activePhoto === 0}
+              onClick={() =>
+                setActivePhoto((current) => Math.max(0, current - 1))
+              }
+            >
+              <OIcon name="back" size={18} />
+            </button>
+            <div className="day-photo-strip" aria-label="Ảnh trong ngày">
+              {photos.map((photo, index) => (
+                <button
+                  key={photo.id}
+                  className={activePhoto === index ? "selected" : ""}
+                  onClick={() => setActivePhoto(index)}
+                  aria-label={`Ảnh ${index + 1}, ${photo.time}`}
+                >
+                  <DayVisual journey={journey} day={numericDay + index} />
+                  <span>{photo.time}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              aria-label="Ảnh sau"
+              disabled={activePhoto >= photos.length - 1}
+              onClick={() =>
+                setActivePhoto((current) =>
+                  Math.min(photos.length - 1, current + 1),
+                )
+              }
+            >
+              <OIcon name="caret-right" size={18} />
+            </button>
           </div>
-          <button
-            aria-label="Ảnh sau"
-            disabled={activePhoto >= photos.length - 1}
-            onClick={() =>
-              setActivePhoto((current) =>
-                Math.min(photos.length - 1, current + 1),
-              )
-            }
-          >
-            <OIcon name="caret-right" size={18} />
-          </button>
-        </div>
+        )}
         <div className="day-copy">
           <span>
-            {copy.label} · {currentPhoto.time}
+            {emptyDay
+              ? `NGÀY ${numericDay} · ĐÃ ĐIỂM DANH`
+              : `${copy.label} · ${currentPhoto.time}`}
           </span>
-          <h1>{copy.metric}</h1>
-          {journey.skin === "quiet" && (
+          <h1>{emptyDay ? "ảnh đã xoá" : copy.metric}</h1>
+          {!emptyDay && journey.skin === "quiet" && (
             <button
               className="day-hold-weight"
               onPointerDown={() => setRevealed(true)}
@@ -4611,75 +4760,88 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
               {revealed ? "62,0 kg" : "Giữ để xem"}
             </button>
           )}
-          <p>{currentPhoto.caption || copy.caption}</p>
-          {currentPhoto.mood && <small>{currentPhoto.mood}</small>}
+          <p>
+            {emptyDay
+              ? "Ngày này vẫn được tính cho chuỗi."
+              : currentPhoto.caption || copy.caption}
+          </p>
+          {!emptyDay && currentPhoto.mood && <small>{currentPhoto.mood}</small>}
         </div>
-        <div className="day-reactions" aria-label="Phản ứng">
-          {reactions.map((item) => (
+        {!emptyDay && (
+          <div className="day-reactions" aria-label="Phản ứng">
+            {reactions.map((item) => (
+              <button
+                key={item.id}
+                className={selectedReaction === item.id ? "selected" : ""}
+                aria-pressed={selectedReaction === item.id}
+                aria-label={item.label}
+                onClick={() => {
+                  if (selectedReaction !== item.id && dayEntry) {
+                    store.reactToJourneyPhoto(
+                      journey.id,
+                      numericDay,
+                      currentPhoto.id,
+                      item.id,
+                    )
+                  }
+                  store.setReaction(reactionKey, item.id)
+                }}
+              >
+                <OIcon name={item.icon} size={22} active />
+                <b>{currentPhoto.reactions[item.id] ?? 0}</b>
+              </button>
+            ))}
+          </div>
+        )}
+        {!emptyDay && (
+          <div className="day-photo-actions">
             <button
-              key={item.id}
-              className={selectedReaction === item.id ? "selected" : ""}
-              aria-pressed={selectedReaction === item.id}
-              aria-label={item.label}
+              disabled={!dayEntry || dayEntry.coverPhotoId === currentPhoto.id}
               onClick={() => {
-                if (selectedReaction !== item.id && dayEntry) {
-                  store.reactToJourneyPhoto(
-                    journey.id,
-                    numericDay,
-                    currentPhoto.id,
-                    item.id,
-                  )
-                }
-                store.setReaction(reactionKey, item.id)
+                store.setDayCoverPhoto(journey.id, numericDay, currentPhoto.id)
+                setToast("Đã đặt làm ảnh đại diện.")
               }}
             >
-              <OIcon name={item.icon} size={22} active />
-              <b>{currentPhoto.reactions[item.id] ?? 0}</b>
+              <OIcon name="image" size={17} /> Đặt làm ảnh đại diện
             </button>
-          ))}
-        </div>
-        <div className="day-photo-actions">
-          <button
-            disabled={!dayEntry || dayEntry.coverPhotoId === currentPhoto.id}
-            onClick={() => {
-              store.setDayCoverPhoto(journey.id, numericDay, currentPhoto.id)
-              setToast("Đã đặt làm ảnh đại diện.")
-            }}
+            <button onClick={() => setDeleteOpen(true)}>
+              <OIcon name="trash" size={17} /> Xoá ảnh này
+            </button>
+          </div>
+        )}
+        {!emptyDay && (
+          <div className="day-share-mode" aria-label="Kiểu thiệp ngày">
+            <button
+              className={shareMode === "single" ? "selected" : ""}
+              onClick={() => setShareMode("single")}
+            >
+              1 ảnh
+            </button>
+            <button
+              className={shareMode === "collage" ? "selected" : ""}
+              disabled={photos.length < 2}
+              onClick={() => setShareMode("collage")}
+            >
+              Ghép 2–4 ảnh
+            </button>
+          </div>
+        )}
+        {!emptyDay && (
+          <div
+            className={`day-share-preview preview-${shareMode}`}
+            aria-label="Xem trước thiệp ngày"
           >
-            <OIcon name="image" size={17} /> Đặt làm ảnh đại diện
-          </button>
-          <button onClick={() => setDeleteOpen(true)}>
-            <OIcon name="trash" size={17} /> Xoá ảnh này
-          </button>
-        </div>
-        <div className="day-share-mode" aria-label="Kiểu thiệp ngày">
-          <button
-            className={shareMode === "single" ? "selected" : ""}
-            onClick={() => setShareMode("single")}
-          >
-            1 ảnh
-          </button>
-          <button
-            className={shareMode === "collage" ? "selected" : ""}
-            disabled={photos.length < 2}
-            onClick={() => setShareMode("collage")}
-          >
-            Ghép 2–4 ảnh
-          </button>
-        </div>
-        <div
-          className={`day-share-preview preview-${shareMode}`}
-          aria-label="Xem trước thiệp ngày"
-        >
-          {(shareMode === "collage" ? photos.slice(0, 4) : [currentPhoto]).map(
-            (photo, index) => (
+            {(shareMode === "collage"
+              ? photos.slice(0, 4)
+              : [currentPhoto]
+            ).map((photo, index) => (
               <span key={photo.id}>
                 <DayVisual journey={journey} day={numericDay + index} />
               </span>
-            ),
-          )}
-          <b>{shareMode === "collage" ? "Ghép ảnh trong ngày" : "1 ảnh"}</b>
-        </div>
+            ))}
+            <b>{shareMode === "collage" ? "Ghép ảnh trong ngày" : "1 ảnh"}</b>
+          </div>
+        )}
       </main>
       <JourneyActionSheet
         open={reportOpen}
@@ -4736,10 +4898,14 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
       </JourneyActionSheet>
       <JourneyActionSheet
         open={deleteOpen}
-        title="Xoá ảnh này?"
+        title={
+          photos.length === 1
+            ? "Xoá ảnh này? Ngày này vẫn được tính cho chuỗi."
+            : "Xoá ảnh này?"
+        }
         body={
           photos.length === 1
-            ? "Đây là ảnh cuối của hôm nay. Ngày và chuỗi hiện tại sẽ được tính lại."
+            ? undefined
             : "Các ảnh còn lại của ngày này vẫn được giữ."
         }
         onClose={() => setDeleteOpen(false)}
@@ -4754,7 +4920,8 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
             }
             setDeleteOpen(false)
             if (photos.length === 1) {
-              navigate(-1)
+              setActivePhoto(0)
+              setToast("Đã xoá ảnh. Ngày này vẫn được tính cho chuỗi.")
             } else {
               setActivePhoto(Math.max(0, activePhoto - 1))
               setToast("Đã xoá ảnh.")
@@ -6810,6 +6977,23 @@ function ProfileScreen() {
   const [avatar, setAvatar] = useState(store.profile?.avatar ?? 0)
   const [badgeRule, setBadgeRule] = useState("")
   const completed = store.journeys.slice(0, 3)
+  const location = useLocation()
+  const resetEdit = () => {
+    setName(store.profile?.name ?? "Linh")
+    setUsername(store.profile?.username ?? "linh.tran")
+    setAvatar(store.profile?.avatar ?? 0)
+  }
+  const closeEdit = () => {
+    resetEdit()
+    setEditOpen(false)
+  }
+  const openEdit = () => {
+    resetEdit()
+    setEditOpen(true)
+  }
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get("edit") === "1") openEdit()
+  }, [location.search])
   return (
     <section className="system-pushed profile-screen">
       <PushedHeader
@@ -6834,7 +7018,7 @@ function ProfileScreen() {
           </div>
           <h1>{store.profile?.name ?? "Linh"}</h1>
           <p>@{store.profile?.username ?? "linh.tran"}</p>
-          <button onClick={() => setEditOpen(true)}>Sửa hồ sơ</button>
+          <button onClick={openEdit}>Sửa hồ sơ</button>
         </section>
         <section className="profile-stats">
           {[
@@ -6904,16 +7088,18 @@ function ProfileScreen() {
       <JourneyActionSheet
         open={editOpen}
         title="sửa hồ sơ."
-        onClose={() => setEditOpen(false)}
+        onClose={closeEdit}
       >
+        <span className="profile-edit-label">Màu ảnh đại diện</span>
         <div className="avatar-picker">
           {["L", "H", "N", "A"].map((item, index) => (
             <button
               key={item}
               className={avatar === index ? "selected" : ""}
               onClick={() => setAvatar(index)}
+              aria-label={`Chọn màu ảnh đại diện ${index + 1}`}
             >
-              {item}
+              {name.slice(0, 1) || "L"}
             </button>
           ))}
         </div>
@@ -6949,6 +7135,9 @@ function ProfileScreen() {
           }}
         >
           Lưu
+        </button>
+        <button className="sheet-secondary" onClick={closeEdit}>
+          Huỷ
         </button>
       </JourneyActionSheet>
       <FloatingDock currentPath="/me" />
@@ -7138,6 +7327,9 @@ function SettingsScreen() {
         <section className="settings-group">
           <h2>tài khoản</h2>
           <div className="settings-card">
+            <button onClick={() => navigate("/me?edit=1")}>
+              <OIcon name="profile" size={19} weight="bold" /> Sửa hồ sơ
+            </button>
             {(["google", "email", "phone"] as const).map((method) => (
               <div className="settings-readonly" key={method}>
                 <span>
@@ -7242,7 +7434,9 @@ function SettingsScreen() {
                 <OIcon name={icon as OIconName} size={18} weight="bold" />
                 {label as string}
                 {store.themePreference === value && (
-                  <OIcon name="check" size={14} weight="bold" />
+                  <i className="corner-check-badge" data-corner-badge>
+                    <OIcon name="check" size={14} weight="bold" />
+                  </i>
                 )}
               </button>
             ))}
@@ -7273,7 +7467,11 @@ function SettingsScreen() {
                 >
                   <Wordmark size={42} variant="small" />
                   <span>{label}</span>
-                  {store.appIcon === value && <OIcon name="check" size={14} />}
+                  {store.appIcon === value && (
+                    <i className="corner-check-badge" data-corner-badge>
+                      <OIcon name="check" size={14} />
+                    </i>
+                  )}
                 </button>
               ))}
             </div>
@@ -8078,37 +8276,39 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="app-sheet-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="app-sheet"
-        role="dialog"
-        aria-modal="true"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="app-sheet-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="sheet-drag-zone"
-          onPointerDown={dragStart}
-          onPointerMove={dragging}
-          onPointerUp={dragEnd}
+          className="app-sheet"
+          role="dialog"
+          aria-modal="true"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <div className="grab" />
-        </div>
-        <button className="sheet-close" onClick={onClose} aria-label="Đóng">
-          <OIcon name="close" size={22} weight="bold" />
-        </button>
-        <span>Bắt đầu điều mới</span>
-        <h2>tạo hành trình.</h2>
-        <div className="coming-card">
-          <OIcon name="plus" size={25} weight="bold" />
-          <p>sắp có</p>
+          <div
+            className="sheet-drag-zone"
+            onPointerDown={dragStart}
+            onPointerMove={dragging}
+            onPointerUp={dragEnd}
+          >
+            <div className="grab" />
+          </div>
+          <button className="sheet-close" onClick={onClose} aria-label="Đóng">
+            <OIcon name="close" size={22} weight="bold" />
+          </button>
+          <span>Bắt đầu điều mới</span>
+          <h2>tạo hành trình.</h2>
+          <div className="coming-card">
+            <OIcon name="plus" size={25} weight="bold" />
+            <p>sắp có</p>
+          </div>
         </div>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
 
@@ -9236,6 +9436,10 @@ function JourneyAttachment({
 }
 
 export const router = createBrowserRouter([
+  {
+    path: "/style-guide",
+    Component: StyleGuide,
+  },
   {
     path: "/",
     Component: Root,

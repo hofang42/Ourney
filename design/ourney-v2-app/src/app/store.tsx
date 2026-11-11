@@ -1024,38 +1024,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             const entry = journey.days?.find((item) => item.day === day)
             if (!entry) return journey
             const photos = entry.photos.filter((photo) => photo.id !== photoId)
-            const deletingLastTodayPhoto =
-              photos.length === 0 &&
-              journey.todayDone &&
-              day === latestPhotoDay(journey)
-            const days = photos.length
-              ? journey.days?.map((item) =>
-                  item.day === day
-                    ? {
-                        ...item,
-                        photos,
-                        coverPhotoId:
-                          item.coverPhotoId === photoId
-                            ? photos[0].id
-                            : item.coverPhotoId,
-                      }
-                    : item,
-                )
-              : journey.days?.filter((item) => item.day !== day)
+            const days = journey.days?.map((item) =>
+              item.day === day
+                ? {
+                    ...item,
+                    photos,
+                    coverPhotoId:
+                      item.coverPhotoId === photoId
+                        ? (photos[0]?.id ?? "")
+                        : item.coverPhotoId,
+                  }
+                : item,
+            )
             return {
               ...journey,
               days,
-              todayDone: deletingLastTodayPhoto ? false : journey.todayDone,
-              day: deletingLastTodayPhoto
-                ? Math.max(1, journey.day - 1)
-                : journey.day,
-              streak: deletingLastTodayPhoto
-                ? Math.max(0, journey.streak - 1)
-                : journey.streak,
-              attendance:
-                deletingLastTodayPhoto && (journey.members?.length ?? 0) > 2
-                  ? Math.max(0, (journey.attendance ?? 1) - 1)
-                  : journey.attendance,
               frameCount:
                 journey.skin === "memory"
                   ? Math.max(0, (journey.frameCount ?? 1) - 1)

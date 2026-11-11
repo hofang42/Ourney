@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react"
 import { OIcon } from "./icons"
+import { PhoneOverlay } from "./overlay"
 import { Wordmark } from "./brand"
 import { Link, useNavigate, useParams } from "react-router"
 import { useStore, type Draft, type Journey } from "./store"
@@ -247,7 +248,7 @@ export function OnboardingFlow() {
                   <span>{choice.icon}</span>
                   <b>{choice.label}</b>
                   {active && (
-                    <i className="choice-check">
+                    <i className="choice-check" data-corner-badge>
                       <OIcon name="check" size={14} weight="bold" />
                     </i>
                   )}
@@ -280,7 +281,7 @@ export function OnboardingFlow() {
                     <small>{choice.hint}</small>
                   </span>
                   {active && (
-                    <i className="choice-check">
+                    <i className="choice-check" data-corner-badge>
                       <OIcon name="check" size={14} weight="bold" />
                     </i>
                   )}
@@ -314,7 +315,7 @@ export function OnboardingFlow() {
                       <small>{choice.hint}</small>
                     </span>
                     {active && (
-                      <i className="choice-check">
+                      <i className="choice-check" data-corner-badge>
                         <OIcon name="check" size={14} weight="bold" />
                       </i>
                     )}
@@ -982,45 +983,47 @@ export function PermissionSheet({
   }
 
   return (
-    <div
-      className="permission-scrim"
-      onPointerDown={(event) =>
-        event.target === event.currentTarget && onClose()
-      }
-    >
+    <PhoneOverlay>
       <div
-        className="permission-sheet"
-        role="dialog"
-        aria-modal="true"
-        style={{ transform: `translateY(${drag}px)` }}
+        className="permission-scrim"
+        onPointerDown={(event) =>
+          event.target === event.currentTarget && onClose()
+        }
       >
         <div
-          className="permission-drag"
-          onPointerDown={dragStart}
-          onPointerMove={dragMove}
-          onPointerUp={dragEnd}
+          className="permission-sheet"
+          role="dialog"
+          aria-modal="true"
+          style={{ transform: `translateY(${drag}px)` }}
         >
-          <i />
-        </div>
-        <button
-          className="permission-close"
-          onClick={onClose}
-          aria-label="Đóng"
-        >
-          <OIcon name="close" size={22} weight="bold" />
-        </button>
-        <div className="permission-sticker">{copy.icon}</div>
-        <h2>{copy.title}</h2>
-        <p>{reason ?? copy.body}</p>
-        <button className="flow-primary" onClick={onConfirm}>
-          {copy.action}
-        </button>
-        {kind !== "session" && (
-          <button className="permission-later" onClick={onClose}>
-            để sau vậy.
+          <div
+            className="permission-drag"
+            onPointerDown={dragStart}
+            onPointerMove={dragMove}
+            onPointerUp={dragEnd}
+          >
+            <i />
+          </div>
+          <button
+            className="permission-close"
+            onClick={onClose}
+            aria-label="Đóng"
+          >
+            <OIcon name="close" size={22} weight="bold" />
           </button>
-        )}
+          <div className="permission-sticker">{copy.icon}</div>
+          <h2>{copy.title}</h2>
+          <p>{reason ?? copy.body}</p>
+          <button className="flow-primary" onClick={onConfirm}>
+            {copy.action}
+          </button>
+          {kind !== "session" && (
+            <button className="permission-later" onClick={onClose}>
+              để sau vậy.
+            </button>
+          )}
+        </div>
       </div>
-    </div>
+    </PhoneOverlay>
   )
 }
