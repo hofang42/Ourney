@@ -56,6 +56,27 @@ export type ImportedPhoto = {
   day?: number
   extra?: boolean
 }
+export type JourneyPhoto = {
+  id: string
+  time: string
+  caption: string
+  mood: string
+  reactions: Record<string, number>
+  imported?: boolean
+  person?: string
+}
+export type JourneyDay = {
+  day: number
+  date?: string
+  photos: JourneyPhoto[]
+  coverPhotoId: string
+}
+export type CheckInResult = {
+  photoId: string
+  day: number
+  count: number
+  first: boolean
+}
 type ImportedJourneyInput = {
   type: Journey["type"]
   skin: string
@@ -108,6 +129,7 @@ export type Journey = {
   owner?: boolean
   imported?: boolean
   importedPhotos?: ImportedPhoto[]
+  days?: JourneyDay[]
   startDate?: string
   endDate?: string
   totalDays?: number
@@ -124,6 +146,20 @@ type CheckInPayload = {
   hearts?: number
   km?: number
   pace?: string
+  person?: string
+}
+
+function seedPhoto(
+  id: string,
+  time: string,
+  caption: string,
+  person?: string,
+): JourneyPhoto {
+  return { id, time, caption, mood: "", reactions: {}, person }
+}
+
+function seedDay(day: number, photos: JourneyPhoto[]): JourneyDay {
+  return { day, photos, coverPhotoId: photos[0]?.id ?? "" }
 }
 
 const seededJourneys: Journey[] = [
@@ -152,6 +188,14 @@ const seededJourneys: Journey[] = [
     inviteCode: "K7Q2M9XA",
     members: ["Linh", "An", "Hà", "Nam", "Minh"],
     owner: true,
+    todayDone: true,
+    days: [
+      seedDay(21, [
+        seedPhoto("ielts-21-1", "06:12", "45 phút tập trung", "Linh"),
+        seedPhoto("ielts-21-2", "12:40", "Ôn lại từ mới", "An"),
+        seedPhoto("ielts-21-3", "20:18", "Xong đề hôm nay", "An"),
+      ]),
+    ],
   },
   {
     id: "dalat",
@@ -163,11 +207,19 @@ const seededJourneys: Journey[] = [
     streak: 3,
     shared: true,
     attendance: 4,
-    frameCount: 12,
+    frameCount: 14,
     lastPlace: "Đồi chè Cầu Đất",
     inviteCode: "DLAT2026",
     members: ["Hà", "Linh", "An", "Nam", "Minh"],
     owner: false,
+    days: [
+      seedDay(2, [
+        seedPhoto("dalat-2-1", "07:10", "Sương sớm"),
+        seedPhoto("dalat-2-2", "09:24", "Đồi chè"),
+        seedPhoto("dalat-2-3", "14:08", "Một góc phố"),
+        seedPhoto("dalat-2-4", "18:32", "Chiều xuống"),
+      ]),
+    ],
   },
   {
     id: "couple",
@@ -179,12 +231,21 @@ const seededJourneys: Journey[] = [
     streak: 18,
     shared: true,
     partnerShot: true,
-    ownShot: false,
-    pairComplete: false,
+    ownShot: true,
+    pairComplete: true,
     lastHearts: 3,
     inviteCode: "NAMLINH2",
     members: ["Linh", "Nam"],
     owner: true,
+    todayDone: true,
+    days: [
+      seedDay(18, [
+        seedPhoto("couple-18-nam-1", "07:30", "Bữa sáng", "Nam"),
+        seedPhoto("couple-18-linh-1", "07:42", "Nửa của Linh", "Linh"),
+        seedPhoto("couple-18-nam-2", "12:15", "Bữa trưa", "Nam"),
+        seedPhoto("couple-18-linh-2", "12:28", "Cùng ăn", "Linh"),
+      ]),
+    ],
   },
   {
     id: "running",
@@ -320,7 +381,7 @@ type AppStore = {
   setInviteSheetOpen: (value: boolean) => void
   addJourneyFromDraft: () => string
   addImportedJourney: (input: ImportedJourneyInput) => string
-  checkInJourney: (id: string, payload: CheckInPayload) => void
+  checkInJourney: (id: string, payload: CheckInPayload) => CheckInResult
   setJourneyHud: (id: string, hud: string) => void
   updateJourney: (id: string, patch: Partial<Journey>) => void
   reactions: Record<string, string>
@@ -329,6 +390,14 @@ type AppStore = {
   blocked: string[]
   blockUser: (name: string) => void
   deleteLatestCheckIn: (id: string) => void
+  setDayCoverPhoto: (id: string, day: number, photoId: string) => void
+  deleteJourneyPhoto: (id: string, day: number, photoId: string) => void
+  reactToJourneyPhoto: (
+    id: string,
+    day: number,
+    photoId: string,
+    reaction: string,
+  ) => void
   nudged: string[]
   nudge: (name: string) => void
   pendingJoin: string
@@ -378,6 +447,80 @@ function writeCreateProgress(progress: CreateProgress | null) {
     }
   } catch {
     // The in-memory draft still works when storage is unavailable.
+  }
+}
+
+function latestPhotoDay(journey: Journey) {
+  return journey.days?.reduce((latest, entry) => Math.max(latest, entry.day), 0)
+}
+
+function appendJourneyPhoto(
+  journey: Journey,
+  payload: CheckInPayload,
+  photo: JourneyPhoto,
+) {
+  const first = !journey.todayDone
+  const photoDay = first
+    ? journey.day
+    : latestPhotoDay(journey) || Math.max(1, journey.day - 1)
+  const existing = journey.days?.find((entry) => entry.day === photoDay)
+  const nextDay: JourneyDay = existing
+    ? { ...existing, photos: [...existing.photos, photo] }
+    : { day: photoDay, photos: [photo], coverPhotoId: photo.id }
+  const days = [
+    ...(journey.days ?? []).filter((entry) => entry.day !== photoDay),
+    nextDay,
+  ].sort((a, b) => a.day - b.day)
+
+  return {
+    journey: {
+      ...journey,
+      days,
+      day: first ? journey.day + 1 : journey.day,
+      streak: first ? journey.streak + 1 : journey.streak,
+      todayDone: true,
+      lastCaption: payload.caption,
+      lastMood: payload.mood,
+      lastWeight: payload.weight ?? journey.lastWeight,
+      lastMinutes: payload.minutes ?? journey.lastMinutes,
+      attendance:
+        (journey.members?.length ?? 0) > 2 && first
+          ? Math.min(
+              journey.members?.length ?? 5,
+              (journey.attendance ?? 3) + 1,
+            )
+          : journey.attendance,
+      frameCount:
+        journey.skin === "memory"
+          ? (journey.frameCount ?? 12) + 1
+          : journey.frameCount,
+      lastPlace: payload.place ?? journey.lastPlace,
+      ownShot: journey.skin === "couple" ? true : journey.ownShot,
+      pairComplete:
+        journey.skin === "couple"
+          ? Boolean(journey.partnerShot)
+          : journey.pairComplete,
+      lastDish: payload.dish ?? journey.lastDish,
+      lastCook: payload.cook ?? journey.lastCook,
+      lastHearts: payload.hearts ?? journey.lastHearts,
+      totalKm:
+        journey.skin === "flexer" && first
+          ? Number(
+              (
+                (journey.totalKm ?? 92.4) +
+                (payload.km ?? journey.lastKm ?? 5.42)
+              ).toFixed(2),
+            )
+          : journey.totalKm,
+      lastKm: payload.km ?? journey.lastKm,
+      pace: payload.pace ?? journey.pace,
+    },
+    result: {
+      photoId: photo.id,
+      day: photoDay,
+      count: nextDay.photos.length,
+      first,
+    },
   }
 }
 
@@ -692,6 +835,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           name: defaultNames[type],
           day: 1,
           streak: 0,
+          days: [],
           shared: draft.who === "group" || draft.who === "couple",
           frameCount: type === "Chuyến đi" ? 0 : undefined,
           partnerShot: type === "Cặp đôi" ? false : undefined,
@@ -735,6 +879,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           visibility: "private",
           imported: true,
           importedPhotos: photos,
+          days: Object.values(
+            photos.reduce<Record<number, JourneyDay>>(
+              (grouped, photo, index) => {
+                const day = photo.day ?? 1
+                const journeyPhoto: JourneyPhoto = {
+                  id: photo.id,
+                  time: `${String(8 + (index % 10)).padStart(2, "0")}:${String(
+                    (index * 11) % 60,
+                  ).padStart(2, "0")}`,
+                  caption: place || "Ảnh từ thư viện",
+                  mood: "",
+                  reactions: {},
+                  imported: true,
+                }
+                const entry = grouped[day]
+                grouped[day] = entry
+                  ? { ...entry, photos: [...entry.photos, journeyPhoto] }
+                  : {
+                      day,
+                      date: photo.date,
+                      photos: [journeyPhoto],
+                      coverPhotoId: journeyPhoto.id,
+                    }
+                return grouped
+              },
+              {},
+            ),
+          ).sort((a, b) => a.day - b.day),
           startDate,
           endDate,
           totalDays,
@@ -750,52 +922,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return id
       },
       checkInJourney: (id: string, payload: CheckInPayload) => {
+        const target = journeys.find((journey) => journey.id === id)
+        const now = new Date()
+        const photo: JourneyPhoto = {
+          id: `${id}-${now.getTime()}`,
+          time: now.toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          caption: payload.caption,
+          mood: payload.mood,
+          reactions: {},
+          person: payload.person,
+        }
+        const fallback: CheckInResult = {
+          photoId: photo.id,
+          day: target?.day ?? 1,
+          count: 1,
+          first: !target?.todayDone,
+        }
+        const outcome = target
+          ? appendJourneyPhoto(target, payload, photo).result
+          : fallback
         setJourneys((current) =>
           current.map((journey) =>
             journey.id === id
-              ? {
-                  ...journey,
-                  day: journey.todayDone ? journey.day : journey.day + 1,
-                  streak: journey.todayDone
-                    ? journey.streak
-                    : journey.streak + 1,
-                  todayDone: true,
-                  lastCaption: payload.caption,
-                  lastMood: payload.mood,
-                  lastWeight: payload.weight,
-                  lastMinutes: payload.minutes,
-                  attendance:
-                    journey.skin === "squad" && !journey.todayDone
-                      ? Math.min(5, (journey.attendance ?? 3) + 1)
-                      : journey.attendance,
-                  frameCount:
-                    journey.skin === "memory" && !journey.todayDone
-                      ? Math.min(24, (journey.frameCount ?? 12) + 1)
-                      : journey.frameCount,
-                  lastPlace: payload.place ?? journey.lastPlace,
-                  ownShot: journey.skin === "couple" ? true : journey.ownShot,
-                  pairComplete:
-                    journey.skin === "couple"
-                      ? Boolean(journey.partnerShot)
-                      : journey.pairComplete,
-                  lastDish: payload.dish ?? journey.lastDish,
-                  lastCook: payload.cook ?? journey.lastCook,
-                  lastHearts: payload.hearts ?? journey.lastHearts,
-                  totalKm:
-                    journey.skin === "flexer" && !journey.todayDone
-                      ? Number(
-                          (
-                            (journey.totalKm ?? 92.4) +
-                            (payload.km ?? journey.lastKm ?? 5.42)
-                          ).toFixed(2),
-                        )
-                      : journey.totalKm,
-                  lastKm: payload.km ?? journey.lastKm,
-                  pace: payload.pace ?? journey.pace,
-                }
+              ? appendJourneyPhoto(journey, payload, photo).journey
               : journey,
           ),
         )
+        return outcome
       },
       setJourneyHud: (id: string, hud: string) => {
         setJourneys((current) =>
@@ -844,6 +1000,105 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ),
         )
       },
+      setDayCoverPhoto: (id: string, day: number, photoId: string) => {
+        setJourneys((current) =>
+          current.map((journey) =>
+            journey.id === id
+              ? {
+                  ...journey,
+                  days: journey.days?.map((entry) =>
+                    entry.day === day &&
+                    entry.photos.some((photo) => photo.id === photoId)
+                      ? { ...entry, coverPhotoId: photoId }
+                      : entry,
+                  ),
+                }
+              : journey,
+          ),
+        )
+      },
+      deleteJourneyPhoto: (id: string, day: number, photoId: string) => {
+        setJourneys((current) =>
+          current.map((journey) => {
+            if (journey.id !== id) return journey
+            const entry = journey.days?.find((item) => item.day === day)
+            if (!entry) return journey
+            const photos = entry.photos.filter((photo) => photo.id !== photoId)
+            const deletingLastTodayPhoto =
+              photos.length === 0 &&
+              journey.todayDone &&
+              day === latestPhotoDay(journey)
+            const days = photos.length
+              ? journey.days?.map((item) =>
+                  item.day === day
+                    ? {
+                        ...item,
+                        photos,
+                        coverPhotoId:
+                          item.coverPhotoId === photoId
+                            ? photos[0].id
+                            : item.coverPhotoId,
+                      }
+                    : item,
+                )
+              : journey.days?.filter((item) => item.day !== day)
+            return {
+              ...journey,
+              days,
+              todayDone: deletingLastTodayPhoto ? false : journey.todayDone,
+              day: deletingLastTodayPhoto
+                ? Math.max(1, journey.day - 1)
+                : journey.day,
+              streak: deletingLastTodayPhoto
+                ? Math.max(0, journey.streak - 1)
+                : journey.streak,
+              attendance:
+                deletingLastTodayPhoto && (journey.members?.length ?? 0) > 2
+                  ? Math.max(0, (journey.attendance ?? 1) - 1)
+                  : journey.attendance,
+              frameCount:
+                journey.skin === "memory"
+                  ? Math.max(0, (journey.frameCount ?? 1) - 1)
+                  : journey.frameCount,
+            }
+          }),
+        )
+      },
+      reactToJourneyPhoto: (
+        id: string,
+        day: number,
+        photoId: string,
+        reaction: string,
+      ) => {
+        setJourneys((current) =>
+          current.map((journey) =>
+            journey.id === id
+              ? {
+                  ...journey,
+                  days: journey.days?.map((entry) =>
+                    entry.day === day
+                      ? {
+                          ...entry,
+                          photos: entry.photos.map((photo) =>
+                            photo.id === photoId
+                              ? {
+                                  ...photo,
+                                  reactions: {
+                                    ...photo.reactions,
+                                    [reaction]:
+                                      (photo.reactions[reaction] ?? 0) + 1,
+                                  },
+                                }
+                              : photo,
+                          ),
+                        }
+                      : entry,
+                  ),
+                }
+              : journey,
+          ),
+        )
+      },
       nudged,
       nudge: (name: string) =>
         setNudged((current) =>
@@ -867,6 +1122,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           name: "Hội IELTS 7.5",
           day: 21,
           streak: 0,
+          days: [],
           shared: true,
           attendance: 5,
           inviteCode: code,

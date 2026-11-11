@@ -14,6 +14,7 @@ import {
   useState,
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type ReactNode,
 } from "react"
 import { OIcon, TypeBadge, type OIconName } from "./icons"
 import { Wordmark } from "./brand"
@@ -117,6 +118,7 @@ function journeyLength(journey: Journey) {
 }
 
 function journeyCheckIns(journey: Journey) {
+  if (journey.days?.length) return journey.days.length
   if (journey.importedPhotos) {
     return (
       new Set(journey.importedPhotos.map((photo) => photo.date).filter(Boolean))
@@ -124,6 +126,53 @@ function journeyCheckIns(journey: Journey) {
     )
   }
   return Math.min(journey.day, journeyLength(journey))
+}
+
+function journeyDayEntry(journey: Journey, day: number) {
+  return journey.days?.find((entry) => entry.day === day)
+}
+
+function journeyLatestPhotoDay(journey: Journey) {
+  return journey.days?.reduce((latest, entry) => Math.max(latest, entry.day), 0)
+}
+
+function journeyTodayEntry(journey: Journey) {
+  const day = journey.todayDone ? journeyLatestPhotoDay(journey) : journey.day
+  return day ? journeyDayEntry(journey, day) : undefined
+}
+
+function journeyDisplayDay(journey: Journey) {
+  return journey.todayDone
+    ? (journeyLatestPhotoDay(journey) ?? Math.max(1, journey.day - 1))
+    : journey.day
+}
+
+function journeyPhotoCount(journey: Journey) {
+  return (journey.days ?? []).reduce(
+    (total, entry) => total + entry.photos.length,
+    0,
+  )
+}
+
+function DayPhotoStack({
+  journey,
+  day,
+  children,
+}: {
+  journey: Journey
+  day: number
+  children: ReactNode
+}) {
+  const count = journeyDayEntry(journey, day)?.photos.length ?? 0
+  if (count < 2) return children
+  return (
+    <span className="day-photo-stack">
+      <i />
+      {count > 2 && <i />}
+      {children}
+      <b aria-label={`${count} ảnh`}>+{count - 1}</b>
+    </span>
+  )
 }
 
 const nativeSkinByType: Record<Journey["type"], string> = {
@@ -193,6 +242,7 @@ function journeyDisplayTitle(journey: Journey) {
 
 function journeyTimelineRows(journey: Journey) {
   const total = journeyLength(journey)
+  const currentDay = journeyDisplayDay(journey)
   const action =
     journey.type === "Tiếng Anh"
       ? "HỌC"
@@ -206,7 +256,7 @@ function journeyTimelineRows(journey: Journey) {
               ? "KỶ NIỆM"
               : "CHECK-IN"
   return [
-    { day: journey.day, label: `${action} · HÔM NAY` },
+    { day: currentDay, label: `${action} · HÔM NAY` },
     { day: Math.max(1, Math.ceil(total / 2)), label: `${action} · NỬA CHẶNG` },
     ...(total >= 7 ? [{ day: 7, label: `${action} · TUẦN ĐẦU` }] : []),
     { day: 1, label: `${action} · BẮT ĐẦU` },
@@ -320,8 +370,8 @@ function Root() {
                 className={`today-retake-hero retake-${activeJourney.skin}`}
                 onClick={() => navigate(`/j/${activeJourney.id}/camera`)}
               >
-                <OIcon name="camera" size={19} weight="bold" /> Chụp lại ảnh hôm
-                nay
+                <OIcon name="camera" size={19} weight="bold" /> Chụp thêm ảnh
+                hôm nay
               </button>
             )}
           {store.createSheetOpen && (
@@ -1163,7 +1213,7 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
   const [revealed, setRevealed] = useState(false)
-  const latestDay = journey.day
+  const latestDay = journeyDisplayDay(journey)
   const timeline = [
     { day: latestDay, today: true, value: "18", label: "HÔM NAY" },
     { day: 14, value: "••", label: "NỬA CHẶNG" },
@@ -1247,7 +1297,9 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
                 {item.missed ? (
                   <i className="quiet-missed-node" />
                 ) : (
-                  <QuietPhoto scene={index} />
+                  <DayPhotoStack journey={journey} day={item.day}>
+                    <QuietPhoto scene={index} />
+                  </DayPhotoStack>
                 )}
                 {store.offline && !item.missed && (
                   <small>
@@ -1308,10 +1360,10 @@ function QuietPost({ journey }: { journey: Journey }) {
   const [caption, setCaption] = useState(journey.lastCaption ?? "")
   function submit() {
     if (store.readOnly) return
-    store.checkInJourney(journey.id, { caption, mood, weight })
-    if (journey.todayDone) {
-      store.showToast("Đã thay ảnh hôm nay.")
-      navigate(`/j/${journey.id}`, { replace: true })
+    const result = store.checkInJourney(journey.id, { caption, mood, weight })
+    if (!result.first) {
+      store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+      navigate(`/j/${journey.id}/camera`, { replace: true })
       return
     }
     if (!store.notificationPromptHandled) {
@@ -1370,7 +1422,7 @@ function QuietPost({ journey }: { journey: Journey }) {
           <small>{caption.length}/140</small>
         </section>
         <button className="quiet-post-primary" onClick={submit}>
-          {journey.todayDone ? "Thay ảnh" : "Đăng"}
+          {journey.todayDone ? "Thêm ảnh" : "Đăng"}
         </button>
         <button
           className="quiet-post-retake"
@@ -1382,7 +1434,7 @@ function QuietPost({ journey }: { journey: Journey }) {
             )
           }
         >
-          {journey.todayDone ? "Giữ ảnh cũ" : "Chụp lại"}
+          {journey.todayDone ? "Bỏ ảnh này" : "Chụp lại"}
         </button>
       </div>
     </section>
@@ -1590,10 +1642,7 @@ function QuietPrivacySheet({
 function QuietShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
-  const [hideKg, setHideKg] = useState(true)
-  const [blurred, setBlurred] = useState(true)
   const [hideBrand, setHideBrand] = useState(true)
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [toast, setToast] = useState("")
   return (
     <section className="quiet-page quiet-share">
@@ -1617,46 +1666,20 @@ function QuietShare({ journey }: { journey: Journey }) {
         <div className={`quiet-share-card ${ratio}`}>
           <div>
             <figure>
-              <QuietPhoto blurred={blurred} />
-              <figcaption>NGÀY 01</figcaption>
-            </figure>
-            <figure>
-              <QuietPhoto blurred={blurred} />
-              <figcaption>NGÀY 21</figcaption>
+              <QuietPhoto blurred />
+              <figcaption>
+                NGÀY {journeyTodayEntry(journey)?.day ?? journey.day}
+              </figcaption>
             </figure>
           </div>
-          {!hideKg && (
-            <b className="icon-text">
-              65,2 KG <OIcon name="caret-right" size={16} /> 62,0 KG · -3,2 KG
-            </b>
-          )}
           <p>21 ngày đều đặn</p>
           {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <div className="quiet-share-controls">
-          <label>
-            <span>Ẩn số kg</span>
-            <span className="quiet-switch-hit">
-              <input
-                type="checkbox"
-                checked={hideKg}
-                onChange={(event) => {
-                  if (!event.target.checked) setConfirmOpen(true)
-                  else setHideKg(true)
-                }}
-              />
-            </span>
-          </label>
-          <label>
-            <span>Làm mờ ảnh</span>
-            <span className="quiet-switch-hit">
-              <input
-                type="checkbox"
-                checked={blurred}
-                onChange={(event) => setBlurred(event.target.checked)}
-              />
-            </span>
-          </label>
+          <p className="quiet-share-private-note">
+            <OIcon name="lock" size={15} /> Ảnh đại diện được làm mờ · số kg
+            luôn ẩn
+          </p>
           <label>
             <span>Ẩn chữ ourney</span>
             <span className="quiet-switch-hit">
@@ -1678,15 +1701,6 @@ function QuietShare({ journey }: { journey: Journey }) {
           Xuất thẻ
         </button>
       </div>
-      {confirmOpen && (
-        <QuietPrivacySheet
-          onClose={() => setConfirmOpen(false)}
-          onShow={() => {
-            setHideKg(false)
-            setConfirmOpen(false)
-          }}
-        />
-      )}
       {toast && <div className="quiet-share-toast">{toast}</div>}
     </section>
   )
@@ -1764,7 +1778,7 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
   const attendance = journey.attendance ?? 3
-  const today = journey.day
+  const today = journeyDisplayDay(journey)
   const stones = [
     { day: 30, label: "VỀ ĐÍCH", future: today < 30 },
     { day: 24, label: "SẮP TỚI", future: today < 24 },
@@ -1851,7 +1865,9 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
                 {stone.future || stone.missed ? (
                   <span className="squad-empty-photo" />
                 ) : (
-                  <SquadPhoto />
+                  <DayPhotoStack journey={journey} day={stone.day}>
+                    <SquadPhoto />
+                  </DayPhotoStack>
                 )}
                 <b>
                   NGÀY {String(stone.day).padStart(2, "0")} ·{" "}
@@ -1889,14 +1905,15 @@ function SquadPost({ journey }: { journey: Journey }) {
   function submit() {
     const selectedMinutes = minutes === -1 ? custom : minutes
     if (!selectedMinutes || store.readOnly) return
-    store.checkInJourney(journey.id, {
+    const result = store.checkInJourney(journey.id, {
       caption,
       mood: "",
       minutes: selectedMinutes,
+      person: "Linh",
     })
-    if (journey.todayDone) {
-      store.showToast("Đã thay ảnh hôm nay.")
-      navigate(`/j/${journey.id}`, { replace: true })
+    if (!result.first) {
+      store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+      navigate(`/j/${journey.id}/camera`, { replace: true })
       return
     }
     if (!store.notificationPromptHandled) {
@@ -1975,7 +1992,7 @@ function SquadPost({ journey }: { journey: Journey }) {
           disabled={minutes === null || store.readOnly}
           onClick={submit}
         >
-          {journey.todayDone ? "Thay ảnh" : "Đăng"}
+          {journey.todayDone ? "Thêm ảnh" : "Đăng"}
         </button>
         <button
           className="squad-post-retake"
@@ -1987,7 +2004,7 @@ function SquadPost({ journey }: { journey: Journey }) {
             )
           }
         >
-          {journey.todayDone ? "Giữ ảnh cũ" : "Chụp lại"}
+          {journey.todayDone ? "Bỏ ảnh này" : "Chụp lại"}
         </button>
       </div>
     </section>
@@ -2091,6 +2108,7 @@ function SquadToday({ journey }: { journey: Journey }) {
     attendance >= 4
       ? squadMembers
       : squadMembers.filter(([name]) => name !== "LINH")
+  const todayPhotos = journeyTodayEntry(journey)?.photos ?? []
   return (
     <ScreenShell bare className="squad-journey-screen">
       <SquadTopBar journey={journey} onBack={() => navigate(-1)} />
@@ -2112,54 +2130,75 @@ function SquadToday({ journey }: { journey: Journey }) {
         </div>
         <p className="squad-updated">Cập nhật lúc 06:12</p>
         <div className="squad-wall">
-          {visibleMembers.map(([name, time], index) => (
-            <article key={name}>
-              <button
-                className="card-open-hit"
-                aria-label={`Mở ảnh hôm nay của ${name}`}
-                onClick={() => navigate(`/j/${journey.id}/day/${index + 18}`)}
-              />
-              <SquadPhoto scene={index} />
-              <b>
-                {name} <OIcon name="check" size={14} weight="bold" /> {time}
-              </b>
-              <span className="squad-reaction-counts">
-                <ReactionIcon id="fire" size={15} />{" "}
-                {4 + (reaction[name] === "fire" ? 1 : 0)} ·{" "}
-                <ReactionIcon id="clap" size={15} />{" "}
-                {3 + (reaction[name] === "clap" ? 1 : 0)}
-                {reaction[name] &&
-                  reaction[name] !== "fire" &&
-                  reaction[name] !== "clap" && (
-                    <>
-                      {" "}
-                      · <ReactionIcon id={reaction[name] as "flex"} size={15} />{" "}
-                      1
-                    </>
+          {visibleMembers.map(([name, time], index) => {
+            const memberPhotos = todayPhotos.filter(
+              (photo) =>
+                photo.person?.toLocaleUpperCase("vi") ===
+                name.toLocaleUpperCase("vi"),
+            )
+            return (
+              <article key={name}>
+                <button
+                  className="card-open-hit"
+                  aria-label={`Mở ảnh hôm nay của ${name}`}
+                  onClick={() =>
+                    navigate(
+                      `/j/${journey.id}/day/${journeyTodayEntry(journey)?.day ?? journey.day}`,
+                    )
+                  }
+                />
+                <div className="squad-member-photos">
+                  {(memberPhotos.length ? memberPhotos : [null]).map(
+                    (photo, photoIndex) => (
+                      <span key={photo?.id ?? `${name}-fallback`}>
+                        <SquadPhoto scene={index + photoIndex} />
+                        <small>{photo?.time ?? time}</small>
+                      </span>
+                    ),
                   )}
-              </span>
-              <div className="squad-reactions">
-                {reactions.map((item) => (
-                  <button
-                    key={item.id}
-                    className={reaction[name] === item.id ? "selected" : ""}
-                    disabled={store.readOnly}
-                    aria-pressed={reaction[name] === item.id}
-                    aria-label={item.label}
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      setReaction((current) => ({
-                        ...current,
-                        [name]: current[name] === item.id ? "" : item.id,
-                      }))
-                    }}
-                  >
-                    <OIcon name={item.icon} size={20} active />
-                  </button>
-                ))}
-              </div>
-            </article>
-          ))}
+                </div>
+                <b>
+                  {name} <OIcon name="check" size={14} weight="bold" /> {time}
+                </b>
+                <span className="squad-reaction-counts">
+                  <ReactionIcon id="fire" size={15} />{" "}
+                  {4 + (reaction[name] === "fire" ? 1 : 0)} ·{" "}
+                  <ReactionIcon id="clap" size={15} />{" "}
+                  {3 + (reaction[name] === "clap" ? 1 : 0)}
+                  {reaction[name] &&
+                    reaction[name] !== "fire" &&
+                    reaction[name] !== "clap" && (
+                      <>
+                        {" "}
+                        ·{" "}
+                        <ReactionIcon id={reaction[name] as "flex"} size={15} />{" "}
+                        1
+                      </>
+                    )}
+                </span>
+                <div className="squad-reactions">
+                  {reactions.map((item) => (
+                    <button
+                      key={item.id}
+                      className={reaction[name] === item.id ? "selected" : ""}
+                      disabled={store.readOnly}
+                      aria-pressed={reaction[name] === item.id}
+                      aria-label={item.label}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setReaction((current) => ({
+                          ...current,
+                          [name]: current[name] === item.id ? "" : item.id,
+                        }))
+                      }}
+                    >
+                      <OIcon name={item.icon} size={20} active />
+                    </button>
+                  ))}
+                </div>
+              </article>
+            )
+          })}
           {!store.blocked.includes("Minh") && (
             <article className="squad-waiting-tile">
               <span className="squad-empty-photo" />
@@ -2421,8 +2460,8 @@ function MemoryPhoto({ scene = 0 }: { scene?: number }) {
 function MemoryJourneyHome({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
-  const frames = journeyCheckIns(journey)
-  const totalDays = journeyLength(journey)
+  const frames = journey.frameCount ?? journeyPhotoCount(journey)
+  const totalDays = 24
   const ownLabel = (
     journey.lastCaption ||
     journey.lastPlace ||
@@ -2460,6 +2499,9 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
           <OIcon name="film" size={19} weight="bold" />
           CUỘN PHIM {frames}/{totalDays}
         </div>
+        {frames >= totalDays && (
+          <p className="memory-roll-note">Hết cuộn 24 tấm · mở cuộn mới</p>
+        )}
         <section className="memory-thread-timeline">
           <svg viewBox="0 0 330 520" aria-hidden="true">
             <path d="M164 510 C48 455 55 370 170 330 S280 190 164 150 S55 70 166 12" />
@@ -2488,7 +2530,9 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
                 {missed ? (
                   <span className="memory-empty-frame" />
                 ) : (
-                  <MemoryPhoto scene={scene} />
+                  <DayPhotoStack journey={journey} day={day}>
+                    <MemoryPhoto scene={scene} />
+                  </DayPhotoStack>
                 )}
                 <b>
                   NGÀY {String(day).padStart(2, "0")} ·{" "}
@@ -2531,10 +2575,14 @@ function MemoryPost({ journey }: { journey: Journey }) {
   const [place, setPlace] = useState(journey.lastPlace ?? journey.name)
   function submit() {
     if (store.readOnly) return
-    store.checkInJourney(journey.id, { caption, mood: "", place })
-    if (journey.todayDone) {
-      store.showToast("Đã thay ảnh hôm nay.")
-      navigate(`/j/${journey.id}`, { replace: true })
+    const result = store.checkInJourney(journey.id, {
+      caption,
+      mood: "",
+      place,
+    })
+    if (!result.first) {
+      store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+      navigate(`/j/${journey.id}/camera`, { replace: true })
       return
     }
     if (!store.notificationPromptHandled) {
@@ -2572,7 +2620,7 @@ function MemoryPost({ journey }: { journey: Journey }) {
           <small>{caption.length}/140</small>
         </label>
         <button className="memory-post-primary" onClick={submit}>
-          {journey.todayDone ? "Thay ảnh" : "Dán vào sổ"}
+          {journey.todayDone ? "Thêm vào cuộn" : "Dán vào sổ"}
         </button>
         <button
           className="memory-retake"
@@ -2584,7 +2632,7 @@ function MemoryPost({ journey }: { journey: Journey }) {
             )
           }
         >
-          {journey.todayDone ? "Giữ ảnh cũ" : "chụp lại"}
+          {journey.todayDone ? "Bỏ ảnh này" : "chụp lại"}
         </button>
       </div>
     </section>
@@ -2594,7 +2642,7 @@ function MemoryPost({ journey }: { journey: Journey }) {
 function MemoryDone({ journey }: { journey: Journey }) {
   const store = useStore()
   const navigate = useNavigate()
-  const frames = journeyCheckIns(journey)
+  const frames = journey.frameCount ?? journeyPhotoCount(journey)
   const totalDays = journeyLength(journey)
   const day = Math.max(1, journey.day - 1)
   const milestone = day === 7 || frames === 24
@@ -2761,7 +2809,7 @@ function MemoryShare({ journey }: { journey: Journey }) {
   const [hideBrand, setHideBrand] = useState(false)
   const journeyDays = journeyLength(journey)
   const total = Math.min(ratio === "story" ? 24 : 20, journeyDays)
-  const shot = journeyCheckIns(journey)
+  const shot = journey.frameCount ?? journeyPhotoCount(journey)
   const posterTitle = `${journeyDays} NGÀY · ${journey.name}`.toLocaleUpperCase(
     "vi",
   )
@@ -2870,16 +2918,19 @@ function CouplePhoto({
 }
 
 function CouplePair({
+  journey,
   day,
   waiting = false,
   missed = false,
   onClick,
 }: {
+  journey: Journey
   day: number
   waiting?: boolean
   missed?: boolean
   onClick: () => void
 }) {
+  const photoCount = journeyDayEntry(journey, day)?.photos.length ?? 0
   return (
     <button
       className={`couple-pair ${waiting ? "waiting" : ""} ${
@@ -2899,6 +2950,11 @@ function CouplePair({
           ""
         )}
       </small>
+      {photoCount > 1 && (
+        <b className="couple-photo-count" aria-label={`${photoCount} ảnh`}>
+          +{photoCount - 1}
+        </b>
+      )}
       <div className="couple-half couple-left-half">
         {missed ? (
           <span className="couple-dashed-half" />
@@ -2957,7 +3013,8 @@ function CoupleJourneyHome({ journey }: { journey: Journey }) {
         </h1>
         <div className="couple-timeline">
           <CouplePair
-            day={journey.day}
+            journey={journey}
+            day={journeyDisplayDay(journey)}
             waiting={!journey.pairComplete}
             onClick={() =>
               navigate(
@@ -2968,17 +3025,20 @@ function CoupleJourneyHome({ journey }: { journey: Journey }) {
             }
           />
           <CouplePair
+            journey={journey}
             day={14}
             onClick={() => navigate(`/j/${journey.id}/day/14`)}
           />
           {store.missedDay && (
             <CouplePair
+              journey={journey}
               day={9}
               missed
               onClick={() => navigate(`/j/${journey.id}/day/9`)}
             />
           )}
           <CouplePair
+            journey={journey}
             day={1}
             onClick={() => navigate(`/j/${journey.id}/day/1`)}
           />
@@ -3006,16 +3066,17 @@ function CouplePost({ journey }: { journey: Journey }) {
   const [caption, setCaption] = useState(journey.lastCaption ?? "")
   function submit() {
     if (store.readOnly) return
-    store.checkInJourney(journey.id, {
+    const result = store.checkInJourney(journey.id, {
       caption,
       mood: "",
       dish,
       cook,
       hearts,
+      person: "Linh",
     })
-    if (journey.todayDone) {
-      store.showToast("Đã thay ảnh hôm nay.")
-      navigate(`/j/${journey.id}`, { replace: true })
+    if (!result.first) {
+      store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+      navigate(`/j/${journey.id}/camera`, { replace: true })
       return
     }
     if (!store.notificationPromptHandled) {
@@ -3091,7 +3152,7 @@ function CouplePost({ journey }: { journey: Journey }) {
         </label>
         <button className="couple-post-primary" onClick={submit}>
           {journey.todayDone
-            ? "Thay ảnh"
+            ? "Thêm ảnh"
             : journey.partnerShot
               ? "Gửi cho cả hai"
               : "Gửi nửa của mình"}
@@ -3107,7 +3168,7 @@ function CouplePost({ journey }: { journey: Journey }) {
             )
           }
         >
-          {journey.todayDone ? "Giữ ảnh cũ" : "chụp lại"}
+          {journey.todayDone ? "Bỏ ảnh này" : "chụp lại"}
         </button>
       </div>
     </section>
@@ -3198,6 +3259,9 @@ function CoupleSquad({ journey }: { journey: Journey }) {
   const [reminded, setReminded] = useState(false)
   const [toast, setToast] = useState("")
   const [reaction, setReaction] = useState("")
+  const todayPhotos = journeyTodayEntry(journey)?.photos ?? []
+  const namPhotos = todayPhotos.filter((photo) => photo.person === "Nam")
+  const linhPhotos = todayPhotos.filter((photo) => photo.person === "Linh")
   return (
     <ScreenShell bare className="couple-journey-screen">
       <CoupleTopBar journey={journey} onBack={() => navigate(-1)} />
@@ -3221,7 +3285,14 @@ function CoupleSquad({ journey }: { journey: Journey }) {
                 ảnh của Nam chưa tải được
               </span>
             ) : (
-              <CouplePhoto person="Nam" />
+              <div className="couple-member-photos">
+                {(namPhotos.length ? namPhotos : [null]).map((photo, index) => (
+                  <span key={photo?.id ?? "nam-fallback"}>
+                    <CouplePhoto person="Nam" scene={index} />
+                    <small>{photo?.time ?? "07:30"}</small>
+                  </span>
+                ))}
+              </div>
             )}
             <b>Nam · đã chụp 07:30</b>
             <div>
@@ -3243,7 +3314,16 @@ function CoupleSquad({ journey }: { journey: Journey }) {
           <article className={journey.ownShot ? "" : "waiting"}>
             {journey.ownShot ? (
               <>
-                <CouplePhoto person="Linh" />
+                <div className="couple-member-photos">
+                  {(linhPhotos.length ? linhPhotos : [null]).map(
+                    (photo, index) => (
+                      <span key={photo?.id ?? "linh-fallback"}>
+                        <CouplePhoto person="Linh" scene={index + 1} />
+                        <small>{photo?.time ?? "07:42"}</small>
+                      </span>
+                    ),
+                  )}
+                </div>
                 <b>Linh · đã chụp</b>
                 {store.offline && (
                   <span className="couple-waiting-sync">
@@ -3396,7 +3476,7 @@ function FlexerJourneyHome({ journey }: { journey: Journey }) {
       maximumFractionDigits: 2,
     }).format(value)
   const rows = [
-    [journey.day, "HÔM NAY", journey.lastKm ?? 5.42],
+    [journeyDisplayDay(journey), "HÔM NAY", journey.lastKm ?? 5.42],
     [14, "CỘT MỐC · NỬA CHẶNG", 5.18],
     [9, store.missedDay ? "NGHỈ" : "CHẠY NHẸ", 0],
     [7, "CỘT MỐC · TUẦN ĐẦU", 5.0],
@@ -3446,7 +3526,9 @@ function FlexerJourneyHome({ journey }: { journey: Journey }) {
                   )
                 }
               >
-                <FlexerPhoto index={index} />
+                <DayPhotoStack journey={journey} day={day}>
+                  <FlexerPhoto index={index} />
+                </DayPhotoStack>
                 <span className="flexer-node">
                   {String(label).includes("CỘT MỐC") && (
                     <OIcon name="star" size={16} weight="fill" />
@@ -3503,15 +3585,15 @@ function FlexerPost({ journey }: { journey: Journey }) {
     }
   }
   function submit() {
-    store.checkInJourney(journey.id, {
+    const result = store.checkInJourney(journey.id, {
       caption,
       mood: "",
       km: Number(km.replace(",", ".")) || 5.42,
       pace: pace || "5:04",
     })
-    if (journey.todayDone) {
-      store.showToast("Đã thay ảnh hôm nay.")
-      navigate(`/j/${journey.id}`, { replace: true })
+    if (!result.first) {
+      store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+      navigate(`/j/${journey.id}/camera`, { replace: true })
       return
     }
     navigate(`/j/${journey.id}/done`, { replace: true })
@@ -3568,14 +3650,14 @@ function FlexerPost({ journey }: { journey: Journey }) {
           <small>{caption.length}/140</small>
         </label>
         <button className="flexer-primary" onClick={submit}>
-          {journey.todayDone ? "Thay ảnh" : "Đăng"}
+          {journey.todayDone ? "Thêm ảnh" : "Đăng"}
         </button>
         {journey.todayDone && (
           <button
             className="flexer-keep-old"
             onClick={() => navigate(`/j/${journey.id}`)}
           >
-            Giữ ảnh cũ
+            Bỏ ảnh này
           </button>
         )}
         {store.offline && (
@@ -3965,7 +4047,13 @@ function MinimalJourneyHome({ journey }: { journey: Journey }) {
                 }
               >
                 <b>{day}</b>
-                {future || missed ? <span /> : <MinimalPhoto index={day} />}
+                {future || missed ? (
+                  <span />
+                ) : (
+                  <DayPhotoStack journey={journey} day={day}>
+                    <MinimalPhoto index={day} />
+                  </DayPhotoStack>
+                )}
                 {store.offline && day === journey.day && (
                   <i>
                     <OIcon name="clock" size={12} /> CHỜ ĐỒNG BỘ
@@ -3991,10 +4079,10 @@ function MinimalPost({ journey }: { journey: Journey }) {
   function submit() {
     if (posted.current) return
     posted.current = true
-    store.checkInJourney(journey.id, { caption, mood: "" })
-    if (journey.todayDone) {
-      store.showToast("Đã thay ảnh hôm nay.")
-      navigate(`/j/${journey.id}`, { replace: true })
+    const result = store.checkInJourney(journey.id, { caption, mood: "" })
+    if (!result.first) {
+      store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+      navigate(`/j/${journey.id}/camera`, { replace: true })
       return
     }
     navigate(`/j/${journey.id}/done`, { replace: true })
@@ -4043,14 +4131,14 @@ function MinimalPost({ journey }: { journey: Journey }) {
           </label>
         )}
         <button className="minimal-primary" onClick={submit}>
-          {journey.todayDone ? "Thay ảnh" : "Đăng ngay"}
+          {journey.todayDone ? "Thêm ảnh" : "Đăng ngay"}
         </button>
         {journey.todayDone && (
           <button
             className="minimal-add-note"
             onClick={() => navigate(`/j/${journey.id}`)}
           >
-            Giữ ảnh cũ
+            Bỏ ảnh này
           </button>
         )}
         <button className="minimal-add-note" onClick={() => setNoteOpen(true)}>
@@ -4382,7 +4470,25 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
   const { day = "1" } = useParams()
   const numericDay = Number(day)
   const copy = skinDayCopy[journey.skin] ?? skinDayCopy.minimal
-  const reactionKey = `${journey.id}:${numericDay}`
+  const dayEntry = journeyDayEntry(journey, numericDay)
+  const coverIndex = Math.max(
+    0,
+    dayEntry?.photos.findIndex((photo) => photo.id === dayEntry.coverPhotoId) ??
+      0,
+  )
+  const photos = dayEntry?.photos ?? [
+    {
+      id: `${journey.id}-${numericDay}-legacy`,
+      time: "07:30",
+      caption: copy.caption,
+      mood: "",
+      reactions: {},
+      imported: numericDay % 4 === 0,
+    },
+  ]
+  const [activePhoto, setActivePhoto] = useState(coverIndex)
+  const currentPhoto = photos[Math.min(activePhoto, photos.length - 1)]
+  const reactionKey = `${journey.id}:${numericDay}:${currentPhoto.id}`
   const selectedReaction = store.reactions[reactionKey] ?? ""
   const [menuOpen, setMenuOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
@@ -4392,6 +4498,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
   const [hidden, setHidden] = useState(false)
   const [toast, setToast] = useState("")
   const [revealed, setRevealed] = useState(false)
+  const [shareMode, setShareMode] = useState<"single" | "collage">("single")
   const reactions = reactionOptions
   return (
     <section className={`journey-pushed day-screen pushed-${journey.skin}`}>
@@ -4436,7 +4543,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
                 setDeleteOpen(true)
               }}
             >
-              Xoá ảnh
+              Xoá ảnh này
             </button>
           )}
         </div>
@@ -4449,12 +4556,49 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
               Ảnh đã ẩn với bạn
             </div>
           ) : (
-            <DayVisual journey={journey} day={numericDay} />
+            <DayVisual journey={journey} day={numericDay + activePhoto} />
           )}
-          {numericDay % 4 === 0 && <small>từ thư viện</small>}
+          {currentPhoto.imported && <small>từ thư viện</small>}
         </article>
+        <div className="day-photo-browser">
+          <button
+            aria-label="Ảnh trước"
+            disabled={activePhoto === 0}
+            onClick={() =>
+              setActivePhoto((current) => Math.max(0, current - 1))
+            }
+          >
+            <OIcon name="back" size={18} />
+          </button>
+          <div className="day-photo-strip" aria-label="Ảnh trong ngày">
+            {photos.map((photo, index) => (
+              <button
+                key={photo.id}
+                className={activePhoto === index ? "selected" : ""}
+                onClick={() => setActivePhoto(index)}
+                aria-label={`Ảnh ${index + 1}, ${photo.time}`}
+              >
+                <DayVisual journey={journey} day={numericDay + index} />
+                <span>{photo.time}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            aria-label="Ảnh sau"
+            disabled={activePhoto >= photos.length - 1}
+            onClick={() =>
+              setActivePhoto((current) =>
+                Math.min(photos.length - 1, current + 1),
+              )
+            }
+          >
+            <OIcon name="caret-right" size={18} />
+          </button>
+        </div>
         <div className="day-copy">
-          <span>{copy.label}</span>
+          <span>
+            {copy.label} · {currentPhoto.time}
+          </span>
           <h1>{copy.metric}</h1>
           {journey.skin === "quiet" && (
             <button
@@ -4467,25 +4611,74 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
               {revealed ? "62,0 kg" : "Giữ để xem"}
             </button>
           )}
-          <p>{copy.caption}</p>
+          <p>{currentPhoto.caption || copy.caption}</p>
+          {currentPhoto.mood && <small>{currentPhoto.mood}</small>}
         </div>
         <div className="day-reactions" aria-label="Phản ứng">
-          {reactions.map((item, index) => (
+          {reactions.map((item) => (
             <button
               key={item.id}
               className={selectedReaction === item.id ? "selected" : ""}
               aria-pressed={selectedReaction === item.id}
               aria-label={item.label}
-              onClick={() => store.setReaction(reactionKey, item.id)}
+              onClick={() => {
+                if (selectedReaction !== item.id && dayEntry) {
+                  store.reactToJourneyPhoto(
+                    journey.id,
+                    numericDay,
+                    currentPhoto.id,
+                    item.id,
+                  )
+                }
+                store.setReaction(reactionKey, item.id)
+              }}
             >
               <OIcon name={item.icon} size={22} active />
-              <b>
-                {2 +
-                  index +
-                  (store.reactionCounts[reactionKey]?.[item.id] ?? 0)}
-              </b>
+              <b>{currentPhoto.reactions[item.id] ?? 0}</b>
             </button>
           ))}
+        </div>
+        <div className="day-photo-actions">
+          <button
+            disabled={!dayEntry || dayEntry.coverPhotoId === currentPhoto.id}
+            onClick={() => {
+              store.setDayCoverPhoto(journey.id, numericDay, currentPhoto.id)
+              setToast("Đã đặt làm ảnh đại diện.")
+            }}
+          >
+            <OIcon name="image" size={17} /> Đặt làm ảnh đại diện
+          </button>
+          <button onClick={() => setDeleteOpen(true)}>
+            <OIcon name="trash" size={17} /> Xoá ảnh này
+          </button>
+        </div>
+        <div className="day-share-mode" aria-label="Kiểu thiệp ngày">
+          <button
+            className={shareMode === "single" ? "selected" : ""}
+            onClick={() => setShareMode("single")}
+          >
+            1 ảnh
+          </button>
+          <button
+            className={shareMode === "collage" ? "selected" : ""}
+            disabled={photos.length < 2}
+            onClick={() => setShareMode("collage")}
+          >
+            Ghép 2–4 ảnh
+          </button>
+        </div>
+        <div
+          className={`day-share-preview preview-${shareMode}`}
+          aria-label="Xem trước thiệp ngày"
+        >
+          {(shareMode === "collage" ? photos.slice(0, 4) : [currentPhoto]).map(
+            (photo, index) => (
+              <span key={photo.id}>
+                <DayVisual journey={journey} day={numericDay + index} />
+              </span>
+            ),
+          )}
+          <b>{shareMode === "collage" ? "Ghép ảnh trong ngày" : "1 ảnh"}</b>
         </div>
       </main>
       <JourneyActionSheet
@@ -4544,14 +4737,28 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
       <JourneyActionSheet
         open={deleteOpen}
         title="Xoá ảnh này?"
-        body="Ngày và chuỗi hiện tại sẽ được tính lại."
+        body={
+          photos.length === 1
+            ? "Đây là ảnh cuối của hôm nay. Ngày và chuỗi hiện tại sẽ được tính lại."
+            : "Các ảnh còn lại của ngày này vẫn được giữ."
+        }
         onClose={() => setDeleteOpen(false)}
       >
         <button
           className="sheet-destructive"
           onClick={() => {
-            store.deleteLatestCheckIn(journey.id)
-            navigate(-1)
+            if (dayEntry) {
+              store.deleteJourneyPhoto(journey.id, numericDay, currentPhoto.id)
+            } else {
+              store.deleteLatestCheckIn(journey.id)
+            }
+            setDeleteOpen(false)
+            if (photos.length === 1) {
+              navigate(-1)
+            } else {
+              setActivePhoto(Math.max(0, activePhoto - 1))
+              setToast("Đã xoá ảnh.")
+            }
           }}
         >
           Xoá ảnh
@@ -5022,13 +5229,16 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
 function wrappedPagesFor(journey: Journey) {
   const total = journeyLength(journey)
   const checkIns = journeyCheckIns(journey)
+  const moments =
+    journeyPhotoCount(journey) || journey.importedPhotos?.length || checkIns
+  const momentSummary = `${moments} khoảnh khắc trong ${checkIns} ngày`
   const dateRange =
     journey.startDate && journey.endDate
       ? `${formatJourneyDate(journey.startDate)} – ${formatJourneyDate(journey.endDate)}`
       : `Ngày ${journey.day}/${total}`
   if (journey.skin === "quiet") {
     return [
-      `${total} ngày, ${checkIns} lần có mặt`,
+      momentSummary,
       journey.name,
       `Chuỗi ${journey.streak} ngày`,
       "Bạn đã về đích.",
@@ -5036,7 +5246,7 @@ function wrappedPagesFor(journey: Journey) {
   }
   if (journey.skin === "squad") {
     return [
-      `${total} ngày cùng nhau`,
+      momentSummary,
       `${checkIns} lần điểm danh`,
       journey.name,
       "Về đích rồi, cả hội!",
@@ -5044,7 +5254,7 @@ function wrappedPagesFor(journey: Journey) {
   }
   if (journey.skin === "memory") {
     return [
-      `${total} ngày`,
+      momentSummary,
       `${journey.importedPhotos?.length ?? checkIns} khung hình`,
       dateRange,
       journey.lastPlace || journey.name,
@@ -5052,21 +5262,24 @@ function wrappedPagesFor(journey: Journey) {
   }
   if (journey.skin === "couple") {
     return [
+      momentSummary,
       journey.name,
-      `${checkIns * 2} khoảnh khắc`,
       `${total} ngày bên nhau`,
       journey.lastCaption || "Khoảnh khắc đáng nhớ nhất",
     ]
   }
   if (journey.skin === "flexer") {
     return [
-      `${total} NGÀY`,
+      momentSummary.toLocaleUpperCase("vi"),
       `${journey.totalKm ?? 0} KM`,
       journey.pace ? `NHỊP ĐỘ ${journey.pace}` : journey.name,
       `CHUỖI ${journey.streak}.`,
     ]
   }
-  return [`${checkIns}/${total} NGÀY · ${journey.name.toLocaleUpperCase("vi")}`]
+  return [
+    momentSummary.toLocaleUpperCase("vi"),
+    `${checkIns}/${total} NGÀY · ${journey.name.toLocaleUpperCase("vi")}`,
+  ]
 }
 
 type WrappedVisualProps = {
@@ -5368,6 +5581,7 @@ function CameraScreen() {
   const flexer = active?.skin === "flexer"
   const minimal = active?.skin === "minimal"
   const switchedLayout = Boolean(active && hasSwitchedLayout(active))
+  const todayEntry = active ? journeyTodayEntry(active) : undefined
 
   return (
     <ScreenShell camera>
@@ -5402,12 +5616,8 @@ function CameraScreen() {
                 </>
               ) : active.todayDone ? (
                 <>
-                  <OIcon name="check" size={15} weight="bold" />
-                  <b>
-                    {quiet
-                      ? "Đã có ảnh hôm nay. Chụp lại sẽ thay ảnh."
-                      : "ĐÃ CÓ ẢNH HÔM NAY · CHỤP LẠI SẼ THAY ẢNH"}
-                  </b>
+                  <OIcon name="image" size={15} weight="bold" />
+                  <b>Hôm nay · {todayEntry?.photos.length ?? 1} ảnh</b>
                 </>
               ) : quiet ? (
                 <>
@@ -5427,7 +5637,8 @@ function CameraScreen() {
                 <>
                   <OIcon name="film" size={16} weight="fill" />
                   <b>
-                    CUỘN PHIM {journeyCheckIns(active)}/{journeyLength(active)}
+                    CUỘN PHIM {active.frameCount ?? journeyPhotoCount(active)}
+                    /24
                   </b>
                 </>
               ) : couple ? (
@@ -5621,6 +5832,16 @@ function CameraScreen() {
                 đang lưu trên máy, có mạng sẽ tự gửi
               </div>
             )}
+          {active && todayEntry?.photos.length ? (
+            <button
+              className="camera-latest-photo"
+              onClick={() => navigate(`/j/${active.id}/day/${todayEntry.day}`)}
+              aria-label={`Mở ${todayEntry.photos.length} ảnh hôm nay`}
+            >
+              <DayVisual journey={active} day={todayEntry.day} />
+              <span>{todayEntry.photos.length} ảnh</span>
+            </button>
+          ) : null}
           {!cameraReady && !noJourney && (
             <div className="camera-state-card">
               <div className="camera-state-sticker">
@@ -6754,7 +6975,7 @@ function ActivityScreen() {
     },
     {
       skin: "squad",
-      text: "An thả phản ứng Cháy vào ảnh Ngày 21 của bạn",
+      text: "An vừa thêm 2 ảnh vào Hội IELTS 7.5",
       context: "Hội IELTS 7.5",
       time: "06:48",
       path: "/j/ielts/day/21",
@@ -8224,15 +8445,11 @@ function ImportJourneyFlow() {
   }
 
   function saveImport() {
-    const photos = dated.map((photo) => {
-      const sameDay = dated.filter((item) => item.date === photo.date)
-      return {
-        id: photo.id,
-        date: photo.date,
-        day: dateDayOffset(startDate, photo.date),
-        extra: sameDay.indexOf(photo) > 0,
-      }
-    })
+    const photos = dated.map((photo) => ({
+      id: photo.id,
+      date: photo.date,
+      day: dateDayOffset(startDate, photo.date),
+    }))
     const id = store.addImportedJourney({
       type,
       skin,
@@ -8522,18 +8739,21 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
                   </article>
                 )
               }
-              return photos.map((photo, photoIndex) => (
-                <article key={photo.id} className="imported">
-                  <span
-                    className={`library-scene scene-${((day + photoIndex) % 6) + 1}`}
-                  />
+              const photo = photos[0]
+              return (
+                <article key={day} className="imported">
+                  <DayPhotoStack journey={journey} day={day}>
+                    <span className={`library-scene scene-${(day % 6) + 1}`} />
+                  </DayPhotoStack>
                   <div>
                     <b>Ngày {day}</b>
-                    <small>{formatJourneyDate(photo.date)} · từ thư viện</small>
-                    {photo.extra && <em>ảnh thêm trong ngày</em>}
+                    <small>
+                      {formatJourneyDate(photo.date)} · từ thư viện ·{" "}
+                      {photos.length} ảnh
+                    </small>
                   </div>
                 </article>
-              ))
+              )
             },
           )}
           {journey.todayDone && (
@@ -8696,14 +8916,19 @@ function AdaptiveJourneyScreen({
           <button
             className="adaptive-primary"
             onClick={() => {
-              store.checkInJourney(journey.id, {
+              const result = store.checkInJourney(journey.id, {
                 caption,
                 mood: "",
                 minutes: journey.lastMinutes,
                 km: journey.totalKm !== undefined ? journey.lastKm : undefined,
                 pace: journey.totalKm !== undefined ? journey.pace : undefined,
               })
-              navigate(`/j/${journey.id}/done`, { replace: true })
+              if (result.first) {
+                navigate(`/j/${journey.id}/done`, { replace: true })
+              } else {
+                store.showToast(`Đã thêm ảnh thứ ${result.count} hôm nay`)
+                navigate(`/j/${journey.id}/camera`, { replace: true })
+              }
             }}
           >
             Lưu check-in
