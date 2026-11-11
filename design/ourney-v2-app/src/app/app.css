@@ -15631,3 +15631,376 @@
 .squad-ribbon-map .squad-stone.right > b {
   transform: rotate(-4deg);
 }
+
+/* Five-tab navigation and approved liquid-glass navigation layer. */
+.app-dock {
+  --dock-hard-shadow: 4px 4px 0 var(--skin-ink);
+  width: 380px;
+  max-width: calc(100% - 10px);
+  height: 76px;
+  grid-template-columns: 1fr 1fr 82px 1fr 1fr;
+  border: 2px solid var(--skin-ink);
+  background: color-mix(in srgb, var(--skin-surface) 62%, transparent) !important;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 42%),
+    var(--dock-hard-shadow) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+}
+
+.quiet-dock.app-dock {
+  --dock-hard-shadow: 2px 2px 0 var(--skin-ink);
+}
+
+.squad-dock.app-dock {
+  --dock-hard-shadow: 0 3px 0 var(--skin-ink);
+}
+
+.memory-dock.app-dock,
+.minimal-dock.app-dock {
+  --dock-hard-shadow: 3px 3px 0 var(--skin-ink);
+}
+
+.couple-dock.app-dock {
+  --dock-hard-shadow: 3px 3px 0 var(--skin-secondary);
+}
+
+.app-root .app-screen .flexer-dock.app-dock {
+  --dock-hard-shadow: 4px 4px 0 var(--skin-accent);
+  background: rgb(20 22 31 / 70%) !important;
+}
+
+.app-dock .dock-tab {
+  width: 100%;
+  min-width: 44px;
+  min-height: 56px;
+  height: auto;
+  padding: 4px 1px;
+  gap: 1px;
+  font-weight: 600;
+}
+
+.app-dock .dock-tab > span:last-child {
+  min-width: 0;
+  font-size: calc(12px * var(--type-scale, 1));
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.app-dock .dock-tab.active {
+  font-weight: 900;
+}
+
+.app-dock .dock-tab.active .dock-pill {
+  min-width: 38px;
+  background: color-mix(in srgb, var(--skin-accent) 32%, transparent);
+}
+
+.activity-dock-pill {
+  position: relative;
+}
+
+.activity-unread-dot {
+  width: 8px;
+  height: 8px;
+  position: absolute;
+  right: 5px;
+  top: 1px;
+  border: 1px solid var(--skin-surface);
+  border-radius: 999px;
+  background: #e11d48;
+}
+
+.camera-screen :is(
+    .camera-top-actions button,
+    .camera-safe-top > button,
+    .active-journey-chip,
+    .journey-wheel-close
+  ) {
+  border-color: rgb(255 255 255 / 24%);
+  color: #fff;
+  background: rgb(20 22 31 / 68%) !important;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 22%);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.journey-wheel-backdrop {
+  background: color-mix(in srgb, #14161f 54%, transparent);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+.screen-header,
+.quiet-topbar,
+.squad-journey-topbar,
+.memory-topbar,
+.couple-topbar,
+.flexer-topbar,
+.minimal-topbar,
+.pushed-header {
+  background: transparent;
+  transition:
+    background-color 160ms ease,
+    backdrop-filter 160ms ease;
+}
+
+.app-content-scrolled :is(
+    .screen-header,
+    .quiet-topbar,
+    .squad-journey-topbar,
+    .memory-topbar,
+    .couple-topbar,
+    .flexer-topbar,
+    .minimal-topbar,
+    .pushed-header
+  ) {
+  background: color-mix(
+    in srgb,
+    var(--push-surface, var(--skin-surface)) 62%,
+    transparent
+  );
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 28%);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+}
+
+:is(
+    .journey-action-sheet,
+    .app-sheet,
+    .permission-sheet,
+    .create-sheet,
+    .invite-sheet,
+    .squad-share-sheet,
+    .poster-share-sheet
+  ) {
+  isolation: isolate;
+}
+
+:is(
+    .journey-action-sheet,
+    .app-sheet,
+    .permission-sheet,
+    .create-sheet,
+    .invite-sheet,
+    .squad-share-sheet,
+    .poster-share-sheet
+  )::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 58px;
+  border-radius: inherit;
+  background: color-mix(
+    in srgb,
+    var(--push-surface, var(--surface)) 62%,
+    transparent
+  );
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 38%);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  pointer-events: none;
+}
+
+.app-reduce-transparency :is(
+    .app-dock,
+    .camera-top-actions button,
+    .camera-safe-top > button,
+    .active-journey-chip,
+    .journey-wheel-close,
+    .journey-wheel-backdrop,
+    .screen-header,
+    .quiet-topbar,
+    .squad-journey-topbar,
+    .memory-topbar,
+    .couple-topbar,
+    .flexer-topbar,
+    .minimal-topbar,
+    .pushed-header
+  ),
+.app-reduce-transparency
+  :is(
+    .journey-action-sheet,
+    .app-sheet,
+    .permission-sheet,
+    .create-sheet,
+    .invite-sheet,
+    .squad-share-sheet,
+    .poster-share-sheet
+  )::before {
+  background: var(--push-surface, var(--skin-surface)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.activity-feed {
+  min-height: 100%;
+  padding: 12px 16px 126px;
+}
+
+.activity-feed > section + section {
+  margin-top: 24px;
+}
+
+.activity-feed section > h2 {
+  margin: 0 0 8px;
+  font-size: calc(13px * var(--type-scale, 1));
+}
+
+.activity-row {
+  width: 100%;
+  min-height: 76px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  padding: 10px 0;
+  color: var(--ink);
+  text-align: left;
+}
+
+.activity-row:focus-visible {
+  outline: 3px solid var(--skin-accent);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+.activity-skin-badge {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  color: #1a1a1a;
+  background: #ffd84d;
+  color: #1a1a1a !important;
+}
+
+.activity-skin-badge.badge-quiet {
+  background: #7ee8a2;
+}
+
+.activity-skin-badge.badge-minimal {
+  background: #ff8a3d;
+}
+
+.activity-row > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.activity-row b {
+  font-size: calc(13px * var(--type-scale, 1));
+  line-height: 1.35;
+}
+
+.activity-row span,
+.activity-row time {
+  color: var(--muted);
+  font-size: calc(12px * var(--type-scale, 1));
+  line-height: 1.35;
+}
+
+.activity-row time {
+  align-self: start;
+  padding-top: 3px;
+}
+
+.activity-invite {
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+.activity-invite .activity-row {
+  border-bottom: 0;
+}
+
+.activity-invite-actions {
+  display: flex;
+  gap: 7px;
+  margin: -5px 0 10px 54px;
+}
+
+.activity-invite-actions button {
+  min-height: 44px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-weight: 800;
+}
+
+.activity-invite-actions button:first-child {
+  color: #1a1a1a;
+  background: #ff8a3d;
+}
+
+.activity-offline {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 11px;
+  color: var(--ink);
+  background: var(--surface);
+  font-size: calc(12px * var(--type-scale, 1));
+}
+
+.activity-empty {
+  min-height: 420px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.activity-empty > span {
+  width: 78px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 42% 58% 48% 52%;
+  background: #cf9fff;
+  transform: rotate(-4deg);
+}
+
+.activity-empty h2,
+.activity-empty p {
+  margin: 0;
+}
+
+.activity-empty p {
+  max-width: 260px;
+  color: var(--muted);
+}
+
+.activity-skeleton {
+  display: grid;
+  gap: 10px;
+}
+
+.activity-skeleton i {
+  height: 76px;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    var(--surface),
+    color-mix(in srgb, var(--ink) 8%, var(--surface)),
+    var(--surface)
+  );
+  background-size: 200% 100%;
+  animation: system-shimmer 1.4s infinite;
+}
+
+.profile-screen > main {
+  padding-bottom: 126px;
+}

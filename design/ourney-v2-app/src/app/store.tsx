@@ -15,6 +15,7 @@ export type OtpMode = "normal" | "expired" | "locked"
 export type CameraPermission = "unknown" | "granted" | "deferred" | "denied"
 export type HubState = "normal" | "empty" | "loading" | "error"
 export type HubHeroState = "default" | "done" | "milestone" | "group"
+export type ActivityState = "normal" | "empty" | "loading"
 export type JourneyDemoState = "normal" | "day1" | "loading" | "error" | "only" | "broken" | "removed" | "hidden"
 export type ReminderBanner = {
   journeyId: string
@@ -241,6 +242,12 @@ type AppStore = {
   setLargeType: (value: boolean) => void
   reduceMotion: boolean
   setReduceMotion: (value: boolean) => void
+  reduceTransparency: boolean
+  setReduceTransparency: (value: boolean) => void
+  activityState: ActivityState
+  setActivityState: (value: ActivityState) => void
+  activityUnread: boolean
+  markActivityRead: () => void
   createSheetOpen: boolean
   setCreateSheetOpen: (value: boolean) => void
   openCreateJourney: () => void
@@ -334,6 +341,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [missedDay, setMissedDay] = useState(false)
   const [largeType, setLargeType] = useState(false)
   const [reduceMotion, setReduceMotion] = useState(false)
+  const [reduceTransparency, setReduceTransparency] = useState(false)
+  const [activityState, setActivityState] = useState<ActivityState>("normal")
+  const [activityUnread, setActivityUnread] = useState(true)
   const [createSheetOpen, setCreateSheetOpen] = useState(false)
   const [signedIn, setSignedIn] = useState(true)
   const [email, setEmail] = useState("linh.tran@gmail.com")
@@ -437,6 +447,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setLargeType,
       reduceMotion,
       setReduceMotion,
+      reduceTransparency,
+      setReduceTransparency,
+      activityState,
+      setActivityState,
+      activityUnread,
+      markActivityRead: () => setActivityUnread(false),
       createSheetOpen,
       setCreateSheetOpen,
       openCreateJourney: () => setCreateSheetOpen(true),
@@ -763,6 +779,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       missedDay,
       largeType,
       reduceMotion,
+      reduceTransparency,
+      activityState,
+      activityUnread,
       createSheetOpen,
       signedIn,
       email,

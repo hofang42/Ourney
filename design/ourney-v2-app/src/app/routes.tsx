@@ -33,6 +33,7 @@ import {
   Trash,
   UsersThree,
   User,
+  UserCircle,
   Warning,
   WifiSlash,
   X,
@@ -136,6 +137,7 @@ function Root() {
   const store = useStore()
   const location = useLocation()
   const navigate = useNavigate()
+  const [contentScrolled, setContentScrolled] = useState(false)
   const activeJourney = store.journeys.find(
     (journey) => journey.id === store.activeJourneyId,
   )
@@ -180,13 +182,24 @@ function Root() {
     <div
       className={`app-root skin-${skin.id} app-${store.theme} ${
         store.largeType ? "app-large-type" : ""
-      } ${store.reduceMotion ? "app-reduce-motion" : ""}`}
+      } ${store.reduceMotion ? "app-reduce-motion" : ""} ${
+        store.reduceTransparency ? "app-reduce-transparency" : ""
+      } ${contentScrolled ? "app-content-scrolled" : ""}`}
       style={variables}
     >
       <ReviewerPanel skin={skin} activeJourney={activeJourney} />
       <div className="phone-frame" aria-label="Ourney">
         <div className="phone-speaker" aria-hidden="true" />
-        <div className="phone-screen" key={location.key}>
+        <div
+          className="phone-screen"
+          key={location.key}
+          onScrollCapture={(event) =>
+            setContentScrolled(
+              event.currentTarget !== event.target &&
+                (event.target as HTMLElement).scrollTop > 8,
+            )
+          }
+        >
           <Outlet context={{ skin, activeJourney }} />
           {store.reminderBanner && <ReminderNotification />}
           {store.appToast && (
@@ -343,6 +356,7 @@ function ReviewerPanel({
     ["/camera", "máy ảnh"],
     ["/hub", "hành trình"],
     ["/squad", "hội"],
+    ["/activity", "hoạt động"],
     ["/me", "hồ sơ"],
   ]
 
@@ -479,6 +493,24 @@ function ReviewerPanel({
             checked={store.reduceMotion}
             onChange={store.setReduceMotion}
           />
+          <CheckControl
+            label="giảm trong suốt"
+            checked={store.reduceTransparency}
+            onChange={store.setReduceTransparency}
+          />
+          <Control label="trạng thái hoạt động">
+            <Segment
+              value={store.activityState}
+              options={[
+                ["normal", "Bình thường"],
+                ["empty", "Trống"],
+                ["loading", "Đang tải"],
+              ]}
+              onChange={(value) =>
+                store.setActivityState(value as "normal" | "empty" | "loading")
+              }
+            />
+          </Control>
           <Control label="trạng thái mã">
             <Segment
               value={store.otpMode}
@@ -746,7 +778,7 @@ function ScreenShell({
     >
       {!camera && !bare && (
         <header className="screen-header">
-          {location.pathname === "/hub" ? (
+          {location.pathname === "/hub" || location.pathname === "/activity" ? (
             <span aria-hidden="true" />
           ) : (
             <button onClick={goBack} aria-label="Quay lại">
@@ -754,7 +786,7 @@ function ScreenShell({
             </button>
           )}
           {title && <h1>{title}</h1>}
-          {location.pathname === "/hub" ? (
+          {location.pathname === "/hub" || location.pathname === "/activity" ? (
             <span aria-hidden="true" />
           ) : (
             <span aria-hidden="true" />
@@ -3822,14 +3854,18 @@ function PushedHeader({
   action,
 }: {
   title: string
-  onBack: () => void
+  onBack?: () => void
   action?: React.ReactNode
 }) {
   return (
     <header className="pushed-header">
-      <button onClick={onBack} aria-label="Quay lại">
-        <ArrowLeft size={21} weight="bold" />
-      </button>
+      {onBack ? (
+        <button onClick={onBack} aria-label="Quay lại">
+          <ArrowLeft size={21} weight="bold" />
+        </button>
+      ) : (
+        <span />
+      )}
       <b>{title}</b>
       {action ?? <span />}
     </header>
@@ -5290,9 +5326,6 @@ function HubScreen() {
   const showError = store.hubState === "error"
   const showEmpty =
     !showError && (store.hubState === "empty" || store.journeys.length === 0)
-  const initial =
-    store.profile?.name?.trim().slice(0, 1).toLocaleUpperCase("vi") || "L"
-
   useEffect(() => {
     if (store.hubState === "empty" || store.hubState === "error") {
       document.querySelector(".hub-screen .screen-content")?.scrollTo(0, 0)
@@ -5310,13 +5343,6 @@ function HubScreen() {
       <div className="hub-content">
         <div className="hub-greeting">
           <h1>chào {store.profile?.name || "Linh"}.</h1>
-          <button
-            className="hub-avatar"
-            onClick={() => navigate("/me")}
-            aria-label="Mở hồ sơ"
-          >
-            <span>{initial}</span>
-          </button>
         </div>
 
         {store.offline && (
@@ -6073,7 +6099,6 @@ function ProfileScreen() {
     <section className="system-pushed profile-screen">
       <PushedHeader
         title="hồ sơ."
-        onBack={() => navigate(-1)}
         action={
           <button onClick={() => navigate("/settings")} aria-label="Cài đặt">
             <GearSix size={21} weight="bold" />
@@ -6211,7 +6236,144 @@ function ProfileScreen() {
           Lưu
         </button>
       </JourneyActionSheet>
+      <FloatingDock currentPath="/me" />
     </section>
+  )
+}
+
+function ActivityScreen() {
+  const store = useStore()
+  const navigate = useNavigate()
+  const [inviteVisible, setInviteVisible] = useState(true)
+
+  useEffect(() => {
+    store.markActivityRead()
+  }, [])
+
+  const today = [
+    {
+      skin: "squad",
+      text: "Minh vừa điểm danh",
+      context: "Hội IELTS 7.5",
+      time: "07:12",
+      path: "/j/ielts/squad",
+    },
+    {
+      skin: "squad",
+      text: "An thả 🔥 vào ảnh Ngày 21 của bạn",
+      context: "Hội IELTS 7.5",
+      time: "06:48",
+      path: "/j/ielts/day/21",
+    },
+    {
+      skin: "quiet",
+      text: "Còn 3 ngày tới mốc Nửa chặng",
+      context: "30 ngày cơ thể",
+      time: "06:30",
+      path: "/j/quiet",
+    },
+  ]
+  const week = [
+    {
+      skin: "minimal",
+      text: "Nhắc giờ",
+      context: "Đọc 10 trang · 20:30",
+      time: "T2",
+      path: "/j/minimal",
+    },
+  ]
+
+  function eventRow(event: typeof today[number]) {
+    const fullSentence = `${event.text} · ${event.context} · ${event.time}`
+    return (
+      <button
+        className="activity-row"
+        key={`${event.text}-${event.time}`}
+        onClick={() => navigate(event.path)}
+        aria-label={fullSentence}
+      >
+        <span className={`activity-skin-badge badge-${event.skin}`}>
+          {event.skin === "squad" ? "🏆" : event.skin === "quiet" ? "🌿" : "📚"}
+        </span>
+        <div>
+          <b>{event.text}</b>
+          <span>{event.context}</span>
+        </div>
+        <time>{event.time}</time>
+      </button>
+    )
+  }
+
+  return (
+    <ScreenShell title="hoạt động." className="activity-screen">
+      <main className="activity-feed">
+        {store.offline && (
+          <div className="activity-offline">
+            <WifiSlash size={17} weight="bold" /> Đang xem bản đã lưu.
+          </div>
+        )}
+        {store.activityState === "loading" ? (
+          <div className="activity-skeleton" aria-label="Đang tải hoạt động">
+            {Array.from({ length: 5 }, (_, index) => (
+              <i key={index} />
+            ))}
+          </div>
+        ) : store.activityState === "empty" ? (
+          <div className="activity-empty">
+            <span>
+              <Bell size={38} weight="duotone" />
+            </span>
+            <h2>chưa có gì mới.</h2>
+            <p>Những cập nhật từ hành trình sẽ xuất hiện ở đây.</p>
+          </div>
+        ) : (
+          <>
+            <section>
+              <h2>Hôm nay</h2>
+              {today.map(eventRow)}
+            </section>
+            <section>
+              <h2>Tuần này</h2>
+              {inviteVisible && (
+                <article className="activity-invite">
+                  <button
+                    className="activity-row activity-invite-open"
+                    onClick={() => navigate("/join/K7Q2M9XA")}
+                    aria-label="Hà mời bạn vào Hội IELTS 7.5 · Mã mời K7Q2M9XA · T3"
+                  >
+                    <span className="activity-skin-badge badge-squad">🏆</span>
+                    <div>
+                      <b>Hà mời bạn vào Hội IELTS 7.5</b>
+                      <span>Mã mời K7Q2M9XA</span>
+                    </div>
+                    <time>T3</time>
+                  </button>
+                  <div className="activity-invite-actions">
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        navigate("/join/K7Q2M9XA")
+                      }}
+                    >
+                      Tham gia
+                    </button>
+                    <button
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        setInviteVisible(false)
+                      }}
+                    >
+                      Bỏ qua
+                    </button>
+                  </div>
+                </article>
+              )}
+              {week.map(eventRow)}
+            </section>
+          </>
+        )}
+      </main>
+    </ScreenShell>
   )
 }
 
@@ -6934,6 +7096,22 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
           <span>Hành trình</span>
         </button>
         <button
+          className={`dock-tab ${
+            currentPath === "/squad" || onJourneySquad ? "active" : ""
+          }`}
+          onClick={() => navigate("/squad")}
+        >
+          <span className="dock-pill">
+            <UsersThree
+              size={24}
+              weight={
+                currentPath === "/squad" || onJourneySquad ? "fill" : "bold"
+              }
+            />
+          </span>
+          <span>Hội</span>
+        </button>
+        <button
           className={`shutter ${onCamera ? "active" : ""} ${
             !activeJourney ? "no-journey" : ""
           }`}
@@ -6965,20 +7143,31 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
           )}
         </button>
         <button
-          className={`dock-tab ${
-            currentPath === "/squad" || onJourneySquad ? "active" : ""
-          }`}
-          onClick={() => navigate("/squad")}
+          className={`dock-tab ${currentPath === "/activity" ? "active" : ""}`}
+          onClick={() => navigate("/activity")}
+        >
+          <span className="dock-pill activity-dock-pill">
+            <Bell
+              size={24}
+              weight={currentPath === "/activity" ? "fill" : "bold"}
+            />
+            {store.activityUnread && currentPath !== "/activity" && (
+              <i className="activity-unread-dot" />
+            )}
+          </span>
+          <span>Hoạt động</span>
+        </button>
+        <button
+          className={`dock-tab ${currentPath === "/me" ? "active" : ""}`}
+          onClick={() => navigate("/me")}
         >
           <span className="dock-pill">
-            <UsersThree
+            <UserCircle
               size={24}
-              weight={
-                currentPath === "/squad" || onJourneySquad ? "fill" : "bold"
-              }
+              weight={currentPath === "/me" ? "fill" : "bold"}
             />
           </span>
-          <span>Hội</span>
+          <span>Hồ sơ</span>
         </button>
       </nav>
     </>
@@ -7870,6 +8059,7 @@ export const router = createBrowserRouter([
       { path: "camera", Component: CameraScreen },
       { path: "hub", Component: HubScreen },
       { path: "squad", Component: SquadScreen },
+      { path: "activity", Component: ActivityScreen },
       { path: "join/:code", Component: JoinScreen },
       { path: "me", Component: ProfileScreen },
       { path: "settings", Component: SettingsScreen },
