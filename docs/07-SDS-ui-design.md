@@ -1028,6 +1028,19 @@ Tối đa 3 mỗi hành trình. Kiểu nhập: số, thanh trượt (cân nặng
 ### 8.6 Ghost overlay
 Ảnh mờ của lần trước (phong cách 1, 7, 8, 9, 10) chỉ là **lớp xem trước** trên camera, bật/tắt được, **không bao giờ** lưu vào ảnh hay rời khỏi máy.
 
+
+### 8.7 Tuỳ biến hành trình: avatar, nền, tem/huy chương (SRS FR-B8–B11) `[v1.x]`
+- **Vào từ:** Cài đặt hành trình → mục `Customize`. Hành trình nhóm: chỉ chủ nhóm sửa avatar/nền; thành viên thấy chỉ đọc.
+- **Avatar:** lưới chọn: biểu tượng loại (mặc định), ảnh trong hành trình, `Upload`, sticker của app. Cắt tròn, xem trước ở đĩa camera + thẻ Hub.
+- **Nền:** hoạ tiết theo phong cách (mặc định), ảnh trong hành trình, `Upload`. Lớp phủ tự động giữ chữ ≥ 4.5:1; xem trước sáng/tối cạnh nhau.
+- **Tem/huy chương:** khay sticker (đã tải lên + huy chương mốc đã đạt). Kéo thả vào 4 góc của thẻ hành trình, ảnh ngày, share card; tối đa 4 mỗi chỗ; xoay ±15°, co giãn 0.6–1.4×. Sticker tải lên có viền bế trắng như logo, tự tách nền nếu máy hỗ trợ.
+- **Mở khoá:** mục chưa mở hiện khoá + điều kiện ("Mở khoá khi đạt chuỗi 7 ngày" hoặc gói trả phí, chưa chốt). Không hiện giá khi chưa có mô hình kiếm tiền.
+- **An toàn/riêng tư:** ảnh tải lên đi qua báo cáo/kiểm duyệt như check-in; phong cách Giảm cân không cho ảnh cơ thể làm avatar/nền trên thiệp chia sẻ.
+
+### 8.8 Chọn hành trình trên camera khi có nhiều hành trình
+- Vòng chọn tối đa 5 đĩa: ghim (≤ 3) → hành trình chưa chụp hôm nay → `All (N)` mở sheet có tìm kiếm. Chi tiết: `docs/design-v2/camera-journey-picker.md` (nhánh `design/v2-spec`).
+- **Đĩa chỉ là hình** (avatar hành trình, mục 8.7), không chữ bên dưới; trạng thái bằng hình nhỏ (ghim, đã chụp, vòng tiến độ nhóm). **Một khối tiêu đề duy nhất** phía trên dải đĩa cho đĩa đang chọn: tên đầy đủ tối đa 2 dòng, không cắt `...`, dòng phụ "Day 21/30 · 3/5 checked in". Chi tiết: `docs/design-v2/camera-hud-and-customization.md`.
+
 ---
 
 ## 9. Riêng tư
