@@ -1,24 +1,12 @@
 import {
-  ArrowLeft,
-  Barbell,
-  BookOpen,
-  Camera,
-  Check,
-  EnvelopeSimple,
-  Heart,
-  PencilSimple,
-  Scales,
-  SuitcaseRolling,
-  WarningCircle,
-  X,
-} from "@phosphor-icons/react"
-import {
   useEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react"
+import { OIcon } from "./icons"
+import { Wordmark } from "./brand"
 import { Link, useNavigate, useParams } from "react-router"
 import { useStore, type Draft, type Journey } from "./store"
 
@@ -30,24 +18,29 @@ const journeyChoices: Array<{
   color: string
   icon: ReactNode
 }> = [
-  { type: "Giảm cân", label: "Giảm cân", color: "#7EE8A2", icon: <Scales /> },
+  {
+    type: "Giảm cân",
+    label: "Giảm cân",
+    color: "#7EE8A2",
+    icon: <OIcon name="scales" />,
+  },
   {
     type: "Tiếng Anh",
     label: "Học tiếng Anh",
     color: "#FFD84D",
-    icon: <BookOpen />,
+    icon: <OIcon name="book" />,
   },
   {
     type: "Tập luyện",
     label: "Tập luyện",
     color: "#CF9FFF",
-    icon: <Barbell />,
+    icon: <OIcon name="fitness" />,
   },
   {
     type: "Chuyến đi",
     label: "Một chuyến đi",
     color: "#FFB347",
-    icon: <SuitcaseRolling />,
+    icon: <OIcon name="trip" />,
   },
   {
     type: "Cặp đôi",
@@ -55,8 +48,8 @@ const journeyChoices: Array<{
     color: "#FF7E7E",
     icon: (
       <span className="double-heart">
-        <Heart />
-        <Heart />
+        <OIcon name="heart" />
+        <OIcon name="heart" />
       </span>
     ),
   },
@@ -64,23 +57,22 @@ const journeyChoices: Array<{
     type: "Tự đặt",
     label: "Một thói quen nhỏ",
     color: "#7EC8E3",
-    icon: <PencilSimple />,
+    icon: <OIcon name="edit" />,
   },
 ]
 
 function FlowBack({ onClick }: { onClick: () => void }) {
   return (
     <button className="flow-back" onClick={onClick} aria-label="Quay lại">
-      <ArrowLeft size={22} weight="bold" />
+      <OIcon name="back" size={22} weight="bold" />
     </button>
   )
 }
 
-function Wordmark({ loading = false }: { loading?: boolean }) {
+function SplashWordmark({ loading = false }: { loading?: boolean }) {
   return (
     <div className="flow-wordmark">
-      <strong>ourney</strong>
-      <i />
+      <Wordmark size={174} />
       {loading && <span className="returning-loader" aria-label="Đang mở" />}
     </div>
   )
@@ -143,7 +135,7 @@ export function SplashFlow() {
           ))}
         </div>
       )}
-      <Wordmark loading={store.user === "old"} />
+      <SplashWordmark loading={store.user === "old"} />
       {store.user === "new" && (
         <p key={store.reduceMotion ? "static" : tagline}>
           {store.reduceMotion ? taglines[0] : taglines[tagline]}
@@ -219,7 +211,13 @@ export function OnboardingFlow() {
             ))}
           </div>
         </div>
-        <button className="flow-skip" onClick={() => navigate("/login")}>
+        <button
+          className="flow-skip"
+          onClick={() => {
+            store.skipOnboarding()
+            navigate("/login")
+          }}
+        >
           Bỏ qua
         </button>
       </header>
@@ -250,7 +248,7 @@ export function OnboardingFlow() {
                   <b>{choice.label}</b>
                   {active && (
                     <i className="choice-check">
-                      <Check size={14} weight="bold" />
+                      <OIcon name="check" size={14} weight="bold" />
                     </i>
                   )}
                 </button>
@@ -283,7 +281,7 @@ export function OnboardingFlow() {
                   </span>
                   {active && (
                     <i className="choice-check">
-                      <Check size={14} weight="bold" />
+                      <OIcon name="check" size={14} weight="bold" />
                     </i>
                   )}
                 </button>
@@ -317,7 +315,7 @@ export function OnboardingFlow() {
                     </span>
                     {active && (
                       <i className="choice-check">
-                        <Check size={14} weight="bold" />
+                        <OIcon name="check" size={14} weight="bold" />
                       </i>
                     )}
                   </button>
@@ -374,7 +372,7 @@ export function OnboardingFlow() {
 export function ErrorMessage({ children }: { children: ReactNode }) {
   return (
     <div className="flow-error" role="alert">
-      <WarningCircle size={20} weight="bold" />
+      <OIcon name="warning" size={20} weight="bold" />
       <span>{children}</span>
     </div>
   )
@@ -383,7 +381,7 @@ export function ErrorMessage({ children }: { children: ReactNode }) {
 export function OfflineBanner({ retry }: { retry?: () => void }) {
   return (
     <div className="flow-offline" role="status">
-      <WarningCircle size={20} weight="bold" />
+      <OIcon name="warning" size={20} weight="bold" />
       <span>Chưa có mạng nên chưa gửi được mã. Bật mạng rồi thử lại.</span>
       {retry && <button onClick={retry}>Thử lại</button>}
     </div>
@@ -393,14 +391,51 @@ export function OfflineBanner({ retry }: { retry?: () => void }) {
 export function LoginFlow() {
   const store = useStore()
   const navigate = useNavigate()
+  const [tab, setTab] = useState<"email" | "phone">("email")
   const [email, setEmail] = useState(store.email)
+  const [phone, setPhone] = useState("")
+  const [passwordMode, setPasswordMode] = useState(false)
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [sending, setSending] = useState(false)
 
-  function submit() {
+  const continueAfterAuth = (method: "email" | "phone" | "google") => {
+    store.linkAuthMethod(method)
+    store.setSignedIn(true)
+    if (store.user === "old") {
+      navigate(store.pendingJoin ? `/join/${store.pendingJoin}` : "/camera", {
+        replace: true,
+      })
+    } else {
+      navigate("/profile-setup")
+    }
+  }
+
+  function submitEmail() {
     if (store.offline) return
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const value = email.trim()
+    const isEmail = value.includes("@")
+    if (isEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       setError("Email chưa đúng dạng. Ví dụ: ten@gmail.com")
+      return
+    }
+    if (!isEmail && !["linh", "linhtran"].includes(value.toLowerCase())) {
+      setError("Không tìm thấy tên người dùng này.")
+      return
+    }
+    if (!value) {
+      setError("Nhập email hoặc tên người dùng.")
+      return
+    }
+    if (passwordMode) {
+      if (password !== "ourney123") {
+        setError("Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.")
+        return
+      }
+      store.setEmail(isEmail ? value : "linh.tran@gmail.com")
+      store.setAuthAttempt("email", value)
+      continueAfterAuth("email")
       return
     }
     setError("")
@@ -411,38 +446,170 @@ export function LoginFlow() {
         setError("Chưa gửi được mã. Thử lại sau ít phút.")
         return
       }
-      store.setEmail(email)
+      store.setEmail(isEmail ? value : "linh.tran@gmail.com")
+      store.setAuthAttempt("email", value)
       navigate("/otp")
     }, 650)
+  }
+
+  function submitPhone() {
+    if (store.offline) return
+    const digits = phone.replace(/\D/g, "").replace(/^84/, "").replace(/^0/, "")
+    if (!/^\d{9,10}$/.test(digits)) {
+      setError("Số điện thoại Việt Nam cần 9–10 số sau 0 hoặc +84.")
+      return
+    }
+    const destination = `+84 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`
+    setError("")
+    store.setAuthAttempt("phone", destination)
+    navigate("/otp")
+  }
+
+  function googleLogin() {
+    if (store.offline) return
+    setError("")
+    store.setAuthAttempt("google", "Linh Google")
+    continueAfterAuth("google")
+  }
+
+  function resetPassword() {
+    const value = email.trim()
+    if (
+      !value ||
+      (!value.includes("@") &&
+        !["linh", "linhtran"].includes(value.toLowerCase()))
+    ) {
+      setError("Nhập email hoặc tên người dùng đã đăng ký.")
+      return
+    }
+    const destination = value.includes("@")
+      ? value
+      : store.email || "linh.tran@gmail.com"
+    store.setEmail(destination)
+    store.setAuthAttempt("email", destination, "reset-password")
+    navigate("/otp")
   }
 
   return (
     <section className="flow-screen login-flow">
       <div className="flow-scroll">
-        <div className="envelope-sticker">
-          <EnvelopeSimple size={58} weight="duotone" />
-        </div>
+        <Wordmark size={116} className="login-wordmark" />
         <h1>đăng nhập.</h1>
-        <p>Nhập email, mình gửi mã 6 số để vào. Không cần mật khẩu.</p>
+        {store.onboardingChoice && (
+          <p className="auth-next-step">
+            Sau bước này: tạo hành trình {store.onboardingChoice.type} của bạn.
+          </p>
+        )}
         {store.offline && <OfflineBanner retry={() => setError("")} />}
-        <label className={`flow-field ${error ? "has-error" : ""}`}>
-          <span>Email</span>
-          <div>
-            <EnvelopeSimple size={22} weight="bold" />
-            <input
-              type="email"
-              value={email}
-              disabled={sending}
-              placeholder="ten@email.com"
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
-          </div>
-        </label>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-        <button className="flow-primary" disabled={sending} onClick={submit}>
-          {sending ? "Đang gửi…" : "Gửi mã"}
+        <button className="google-login-button" onClick={googleLogin}>
+          <span aria-hidden="true">G</span>
+          Tiếp tục với Google
         </button>
+        <div className="login-tabs" role="tablist">
+          <button
+            role="tab"
+            aria-selected={tab === "email"}
+            className={tab === "email" ? "active" : ""}
+            onClick={() => {
+              setTab("email")
+              setError("")
+            }}
+          >
+            Email
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "phone"}
+            className={tab === "phone" ? "active" : ""}
+            onClick={() => {
+              setTab("phone")
+              setError("")
+            }}
+          >
+            Số điện thoại
+          </button>
+        </div>
+        {tab === "email" ? (
+          <>
+            <label className={`flow-field ${error ? "has-error" : ""}`}>
+              <span>Email hoặc tên người dùng</span>
+              <div>
+                <OIcon name="email" size={22} weight="bold" />
+                <input
+                  value={email}
+                  disabled={sending}
+                  placeholder="ten@email.com hoặc @ten"
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="username"
+                />
+              </div>
+            </label>
+            {passwordMode && (
+              <label className={`flow-field ${error ? "has-error" : ""}`}>
+                <span>Mật khẩu</span>
+                <div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    className="password-visibility"
+                    onClick={() => setShowPassword(!showPassword)}
+                    type="button"
+                    aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                  >
+                    {showPassword ? (
+                      <OIcon name="eye-off" size={20} />
+                    ) : (
+                      <OIcon name="eye" size={20} />
+                    )}
+                  </button>
+                </div>
+              </label>
+            )}
+          </>
+        ) : (
+          <label className={`flow-field ${error ? "has-error" : ""}`}>
+            <span>Số điện thoại</span>
+            <div>
+              <OIcon name="phone" size={22} weight="bold" />
+              <b>+84</b>
+              <input
+                inputMode="tel"
+                value={phone}
+                placeholder="912 345 678"
+                onChange={(event) => setPhone(event.target.value)}
+                autoComplete="tel-national"
+              />
+            </div>
+          </label>
+        )}
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+        <button
+          className="flow-primary"
+          disabled={sending}
+          onClick={tab === "phone" ? submitPhone : submitEmail}
+        >
+          {sending
+            ? "Đang gửi…"
+            : tab === "phone"
+              ? "Gửi mã SMS"
+              : passwordMode
+                ? "Đăng nhập"
+                : "Gửi mã"}
+        </button>
+        {tab === "email" && (
+          <div className="login-method-links">
+            <button onClick={() => setPasswordMode(!passwordMode)}>
+              {passwordMode ? "Dùng mã đăng nhập" : "Dùng mật khẩu"}
+            </button>
+            {passwordMode && (
+              <button onClick={resetPassword}>Quên mật khẩu?</button>
+            )}
+          </div>
+        )}
         <p className="legal-copy">
           Tiếp tục nghĩa là bạn đồng ý
           <Link to="/settings/terms">Điều khoản sử dụng</Link>
@@ -493,9 +660,16 @@ export function OtpFlow() {
       if (code === "123456") {
         setStatus("success")
         window.setTimeout(() => {
-          if (store.pendingJoin && store.user === "old") {
+          if (store.otpPurpose === "reset-password") {
+            store.setHasPassword(true)
+            navigate("/login", { replace: true })
+          } else if (store.pendingJoin && store.user === "old") {
             store.setSignedIn(true)
             navigate(`/join/${store.pendingJoin}`, { replace: true })
+          } else if (store.user === "old") {
+            store.linkAuthMethod(store.authMethod)
+            store.setSignedIn(true)
+            navigate("/camera", { replace: true })
           } else {
             navigate("/profile-setup")
           }
@@ -533,12 +707,21 @@ export function OtpFlow() {
         <FlowBack onClick={() => navigate(-1)} />
       </header>
       <div className="flow-scroll">
-        <h1>nhập mã.</h1>
+        <h1>
+          {store.otpPurpose === "reset-password"
+            ? "đặt lại mật khẩu."
+            : "nhập mã."}
+        </h1>
+        {store.onboardingChoice && (
+          <p className="auth-next-step">
+            Sau bước này: tạo hành trình {store.onboardingChoice.type} của bạn.
+          </p>
+        )}
         <p>
-          Mã gồm 6 số vừa gửi tới <b>{store.email}</b>
+          Mã gồm 6 số vừa gửi tới <b>{store.authDestination}</b>
         </p>
         <button className="text-action" onClick={() => navigate(-1)}>
-          Đổi email
+          {store.authMethod === "phone" ? "Đổi số điện thoại" : "Đổi email"}
         </button>
         {store.offline && (
           <OfflineBanner retry={() => store.setOffline(false)} />
@@ -555,7 +738,9 @@ export function OtpFlow() {
               className={index === code.length && !locked ? "active" : ""}
             >
               {code[index] ?? ""}
-              {status === "success" && <Check size={22} weight="bold" />}
+              {status === "success" && (
+                <OIcon name="check" size={22} weight="bold" />
+              )}
             </span>
           ))}
           <input
@@ -613,7 +798,7 @@ export function OtpFlow() {
         </p>
       </div>
       <div className={`flow-toast ${toast ? "show" : ""}`} role="status">
-        <Check size={18} weight="bold" />
+        <OIcon name="check" size={18} weight="bold" />
         Đã gửi mã mới. Mã cũ không dùng được nữa.
       </div>
     </section>
@@ -633,7 +818,9 @@ export function ProfileSetupFlow() {
   const store = useStore()
   const navigate = useNavigate()
   const [avatar, setAvatar] = useState(0)
-  const [name, setName] = useState("Linh")
+  const [name, setName] = useState(
+    store.authMethod === "google" ? store.authDestination : "Linh",
+  )
   const [username, setUsername] = useState("linhtran")
   const valid = /^[a-z0-9_.]{3,20}$/.test(username)
   const taken = username === "linh"
@@ -642,16 +829,26 @@ export function ProfileSetupFlow() {
     if (!valid || taken) return
     store.setProfile({ name, username })
     store.setSignedIn(true)
-    store.setCameraPermission("unknown")
-    navigate(store.pendingJoin ? `/join/${store.pendingJoin}` : "/camera", {
-      replace: true,
+    store.linkAuthMethod(store.authMethod)
+    if (store.pendingJoin) {
+      navigate(`/join/${store.pendingJoin}`, { replace: true })
+      return
+    }
+    store.beginCreate("/hub", {
+      fromOnboarding: Boolean(store.onboardingChoice),
     })
+    navigate("/create/1", { replace: true })
   }
 
   return (
     <section className="flow-screen profile-setup-flow">
       <div className="flow-scroll">
         <h1>hồ sơ của bạn.</h1>
+        {store.onboardingChoice && (
+          <p className="auth-next-step">
+            Sau bước này: tạo hành trình {store.onboardingChoice.type} của bạn.
+          </p>
+        )}
         <div
           className="profile-avatar-large"
           style={{ background: avatarColors[avatar] }}
@@ -670,7 +867,9 @@ export function ProfileSetupFlow() {
               onClick={() => setAvatar(index)}
               aria-label={`Màu đại diện ${index + 1}`}
             >
-              {avatar === index && <Check size={17} weight="bold" />}
+              {avatar === index && (
+                <OIcon name="check" size={17} weight="bold" />
+              )}
             </button>
           ))}
         </div>
@@ -706,9 +905,9 @@ export function ProfileSetupFlow() {
           }`}
         >
           {!valid || taken ? (
-            <WarningCircle size={20} weight="bold" />
+            <OIcon name="warning" size={20} weight="bold" />
           ) : (
-            <Check size={20} weight="bold" />
+            <OIcon name="check" size={20} weight="bold" />
           )}
           <span>
             {!valid
@@ -750,19 +949,19 @@ export function PermissionSheet({
       title: "cho ourney dùng camera.",
       body: "Để chụp tấm đầu tiên của hành trình. Ảnh chỉ hiện với người trong hành trình đó.",
       action: "Cho phép",
-      icon: <Camera size={38} weight="duotone" />,
+      icon: <OIcon name="camera" size={38} weight="duotone" />,
     },
     notification: {
       title: "để mình khẽ nhắc trước khi chuỗi đứt.",
       body: "Bật nhắc để mình nhắc theo giờ bạn đặt. Có thể trễ tuỳ máy.",
       action: "Cho phép",
-      icon: <Heart size={38} weight="duotone" />,
+      icon: <OIcon name="heart" size={38} weight="duotone" />,
     },
     session: {
       title: "phiên đăng nhập đã hết.",
       body: "Đăng nhập lại để đồng bộ. Ảnh trên máy vẫn còn nguyên.",
       action: "Gửi mã",
-      icon: <WarningCircle size={38} weight="duotone" />,
+      icon: <OIcon name="warning" size={38} weight="duotone" />,
     },
   }[kind]
 
@@ -808,7 +1007,7 @@ export function PermissionSheet({
           onClick={onClose}
           aria-label="Đóng"
         >
-          <X size={22} weight="bold" />
+          <OIcon name="close" size={22} weight="bold" />
         </button>
         <div className="permission-sticker">{copy.icon}</div>
         <h2>{copy.title}</h2>

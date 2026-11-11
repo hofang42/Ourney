@@ -13,6 +13,8 @@ export type Theme = "light" | "dark"
 export type ThemePreference = Theme | "system"
 export type OtpMode = "normal" | "expired" | "locked"
 export type CameraPermission = "unknown" | "granted" | "deferred" | "denied"
+export type AuthMethod = "email" | "phone" | "google"
+export type OtpPurpose = "login" | "reset-password"
 export type HubState = "normal" | "empty" | "loading" | "error"
 export type HubHeroState = "default" | "done" | "milestone" | "group"
 export type ActivityState = "normal" | "empty" | "loading"
@@ -44,6 +46,10 @@ export type Draft = {
   fromOnboarding?: boolean
 }
 export type OnboardingChoice = Pick<Draft, "type" | "who" | "reminder">
+export type CreateProgress = {
+  route: string
+  draft: Draft
+}
 export type ImportedPhoto = {
   id: string
   date?: string
@@ -142,6 +148,7 @@ const seededJourneys: Journey[] = [
     streak: 18,
     shared: true,
     attendance: 3,
+    lastMinutes: 45,
     inviteCode: "K7Q2M9XA",
     members: ["Linh", "An", "Hà", "Nam", "Minh"],
     owner: true,
@@ -244,6 +251,8 @@ type AppStore = {
   setReduceMotion: (value: boolean) => void
   reduceTransparency: boolean
   setReduceTransparency: (value: boolean) => void
+  appIcon: string
+  setAppIcon: (value: string) => void
   activityState: ActivityState
   setActivityState: (value: ActivityState) => void
   activityUnread: boolean
@@ -259,8 +268,24 @@ type AppStore = {
   setEmail: (value: string) => void
   draft: Draft
   setDraft: (draft: Partial<Draft>) => void
+  createProgress: CreateProgress | null
+  saveCreateProgress: (route: string) => void
+  resumeCreateRoute: string
   onboardingChoice: OnboardingChoice | null
   setOnboardingChoice: (choice: OnboardingChoice) => void
+  skipOnboarding: () => void
+  authMethod: AuthMethod
+  authDestination: string
+  otpPurpose: OtpPurpose
+  setAuthAttempt: (
+    method: AuthMethod,
+    destination: string,
+    purpose?: OtpPurpose,
+  ) => void
+  linkedMethods: AuthMethod[]
+  linkAuthMethod: (method: AuthMethod) => void
+  hasPassword: boolean
+  setHasPassword: (value: boolean) => void
   otpMode: OtpMode
   setOtpMode: (mode: OtpMode) => void
   cameraPermission: CameraPermission
@@ -280,7 +305,13 @@ type AppStore = {
   hubHeroState: HubHeroState
   setHubHeroState: (state: HubHeroState) => void
   createOrigin: "/hub" | "/camera"
-  beginCreate: (origin: "/hub" | "/camera") => void
+  beginCreate: (
+    origin: "/hub" | "/camera",
+    options?: {
+      fromOnboarding?: boolean
+      prefill?: OnboardingChoice
+    },
+  ) => void
   discardCreate: () => void
   restoreSeedJourneys: () => void
   checkedIn: boolean
@@ -327,7 +358,31 @@ type AppStore = {
 
 const StoreContext = createContext<AppStore | null>(null)
 
+const CREATE_PROGRESS_KEY = "ourney-create-progress"
+
+function readCreateProgress(): CreateProgress | null {
+  try {
+    const value = window.localStorage.getItem(CREATE_PROGRESS_KEY)
+    return value ? JSON.parse(value) as CreateProgress : null
+  } catch {
+    return null
+  }
+}
+
+function writeCreateProgress(progress: CreateProgress | null) {
+  try {
+    if (progress) {
+      window.localStorage.setItem(CREATE_PROGRESS_KEY, JSON.stringify(progress))
+    } else {
+      window.localStorage.removeItem(CREATE_PROGRESS_KEY)
+    }
+  } catch {
+    // The in-memory draft still works when storage is unavailable.
+  }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const initialCreateProgress = useRef(readCreateProgress())
   const [user, setUserState] = useState<UserKind>("old")
   const [journeys, setJourneys] = useState<Journey[]>(seededJourneys)
   const [activeJourneyId, setActiveJourneyIdState] = useState<string | null>(
@@ -342,15 +397,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [largeType, setLargeType] = useState(false)
   const [reduceMotion, setReduceMotion] = useState(false)
   const [reduceTransparency, setReduceTransparency] = useState(false)
+  const [appIcon, setAppIcon] = useState("default")
   const [activityState, setActivityState] = useState<ActivityState>("normal")
   const [activityUnread, setActivityUnread] = useState(true)
   const [createSheetOpen, setCreateSheetOpen] = useState(false)
   const [signedIn, setSignedIn] = useState(true)
   const [email, setEmail] = useState("linh.tran@gmail.com")
-  const [draft, setDraftState] = useState<Draft>({})
+  const [draft, setDraftState] = useState<Draft>(
+    initialCreateProgress.current?.draft ?? {},
+  )
+  const [createProgress, setCreateProgress] = useState<CreateProgress | null>(
+    initialCreateProgress.current,
+  )
   const [onboardingChoice, setOnboardingChoiceState] =
     useState<OnboardingChoice | null>(null)
-  const onboardingUsed = useRef(false)
+  const [authMethod, setAuthMethod] = useState<AuthMethod>("email")
+  const [authDestination, setAuthDestination] = useState("linh.tran@gmail.com")
+  const [otpPurpose, setOtpPurpose] = useState<OtpPurpose>("login")
+  const [linkedMethods, setLinkedMethods] = useState<AuthMethod[]>(["email"])
+  const [hasPassword, setHasPassword] = useState(true)
   const [otpMode, setOtpMode] = useState<OtpMode>("normal")
   const [cameraPermission, setCameraPermission] =
     useState<CameraPermission>("granted")
@@ -393,15 +458,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setJourneys([])
       setActiveJourneyIdState(null)
       setSignedIn(false)
+      setEmail("")
       setCameraPermission("unknown")
       setDraftState({})
+      setCreateProgress(null)
+      writeCreateProgress(null)
       setOnboardingChoiceState(null)
-      onboardingUsed.current = false
+      setProfile(null)
+      setLinkedMethods([])
+      setHasPassword(false)
+      setAuthMethod("email")
+      setAuthDestination("")
+      setOtpPurpose("login")
     } else {
       setJourneys((current) => mergeSeedJourneys(current))
       setActiveJourneyIdState("ielts")
       setSignedIn(true)
+      setEmail("linh.tran@gmail.com")
       setCameraPermission("granted")
+      setLinkedMethods(["email"])
+      setHasPassword(true)
+      setOnboardingChoiceState(null)
+      setDraftState({})
+      setCreateProgress(null)
+      writeCreateProgress(null)
+      setAuthMethod("email")
+      setAuthDestination("linh.tran@gmail.com")
+      setOtpPurpose("login")
     }
   }
 
@@ -449,6 +532,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setReduceMotion,
       reduceTransparency,
       setReduceTransparency,
+      appIcon,
+      setAppIcon,
       activityState,
       setActivityState,
       activityUnread,
@@ -463,12 +548,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       email,
       setEmail,
       draft,
-      setDraft: (nextDraft: Partial<Draft>) =>
-        setDraftState((current) => ({ ...current, ...nextDraft })),
+      setDraft: (nextDraft: Partial<Draft>) => {
+        const next = { ...draft, ...nextDraft }
+        setDraftState(next)
+        if (createProgress) {
+          const updated = { ...createProgress, draft: next }
+          setCreateProgress(updated)
+          writeCreateProgress(updated)
+        }
+      },
+      createProgress,
+      saveCreateProgress: (route: string) => {
+        const progress = { route, draft }
+        setCreateProgress(progress)
+        writeCreateProgress(progress)
+      },
+      resumeCreateRoute: createProgress?.route ?? "/create/1",
       onboardingChoice,
       setOnboardingChoice: (choice: OnboardingChoice) => {
         setOnboardingChoiceState(choice)
       },
+      skipOnboarding: () => {
+        setOnboardingChoiceState(null)
+        setDraftState({})
+        setCreateProgress(null)
+        writeCreateProgress(null)
+      },
+      authMethod,
+      authDestination,
+      otpPurpose,
+      setAuthAttempt: (
+        method: AuthMethod,
+        destination: string,
+        purpose: OtpPurpose = "login",
+      ) => {
+        setAuthMethod(method)
+        setAuthDestination(destination)
+        setOtpPurpose(purpose)
+      },
+      linkedMethods,
+      linkAuthMethod: (method: AuthMethod) =>
+        setLinkedMethods((current) =>
+          current.includes(method) ? current : [...current, method],
+        ),
+      hasPassword,
+      setHasPassword,
       otpMode,
       setOtpMode,
       cameraPermission,
@@ -488,9 +612,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       hubHeroState,
       setHubHeroState,
       createOrigin,
-      beginCreate: (origin: "/hub" | "/camera") => {
+      beginCreate: (
+        origin: "/hub" | "/camera",
+        options?: {
+          fromOnboarding?: boolean
+          prefill?: OnboardingChoice
+        },
+      ) => {
         setCreateOrigin(origin)
-        if (!onboardingUsed.current && draft.type) {
+        if (createProgress && !options) {
+          setDraftState(createProgress.draft)
+          return
+        }
+        const onboarding =
+          options?.prefill ??
+          (options?.fromOnboarding ? onboardingChoice : null)
+        if (onboarding?.type) {
           const defaultSkin: Record<Journey["type"], string> = {
             "Giảm cân": "quiet",
             "Tiếng Anh": "squad",
@@ -499,21 +636,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             "Tập luyện": "flexer",
             "Tự đặt": "minimal",
           }
-          setDraftState({
-            type: draft.type,
-            skin: draft.who === "couple" ? "couple" : defaultSkin[draft.type],
-            who: draft.who,
+          const nextDraft: Draft = {
+            type: onboarding.type,
+            skin:
+              onboarding.who === "couple"
+                ? "couple"
+                : defaultSkin[onboarding.type],
+            who: onboarding.who,
             reminderEnabled: true,
-            reminderTime: draft.reminder,
+            reminder: onboarding.reminder,
+            reminderTime: onboarding.reminder,
             fromOnboarding: true,
-          })
-          onboardingUsed.current = true
+          }
+          setDraftState(nextDraft)
+          const progress = { route: "/create/1", draft: nextDraft }
+          setCreateProgress(progress)
+          writeCreateProgress(progress)
           return
-        } else {
-          setDraftState({})
         }
+        const nextDraft = options?.prefill ?? {}
+        setDraftState(nextDraft)
+        const progress = { route: "/create/1", draft: nextDraft }
+        setCreateProgress(progress)
+        writeCreateProgress(progress)
       },
-      discardCreate: () => setDraftState({}),
+      discardCreate: () => {
+        setDraftState({})
+        setCreateProgress(null)
+        writeCreateProgress(null)
+      },
       restoreSeedJourneys: () => {
         setJourneys(seededJourneys)
         setActiveJourneyIdState("ielts")
@@ -556,6 +707,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         setJourneys((current) => [nextJourney, ...current])
         setActiveJourneyIdState(id)
+        setCreateProgress(null)
+        writeCreateProgress(null)
+        setDraftState({})
         return id
       },
       addImportedJourney: ({
@@ -760,8 +914,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setNudged([])
         setPendingJoin("")
         setDraftState({})
+        setCreateProgress(null)
+        writeCreateProgress(null)
         setOnboardingChoiceState(null)
-        onboardingUsed.current = false
+        setLinkedMethods([])
+        setHasPassword(false)
         setReminderEnabledState({})
         setJourneyDemoState("normal")
         setReminderBanner(null)
@@ -780,13 +937,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       largeType,
       reduceMotion,
       reduceTransparency,
+      appIcon,
       activityState,
       activityUnread,
       createSheetOpen,
       signedIn,
       email,
       draft,
+      createProgress,
       onboardingChoice,
+      authMethod,
+      authDestination,
+      otpPurpose,
+      linkedMethods,
+      hasPassword,
       otpMode,
       cameraPermission,
       sessionExpired,

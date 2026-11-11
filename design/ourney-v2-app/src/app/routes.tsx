@@ -1,49 +1,4 @@
 import {
-  ArrowLeft,
-  ArrowsClockwise,
-  BookOpen,
-  Camera,
-  Cat,
-  CaretDown,
-  Check,
-  Clock,
-  Copy,
-  CloudSlash,
-  DotsThree,
-  Eye,
-  EyeSlash,
-  FilmStrip,
-  FlagBanner,
-  GearSix,
-  HandWaving,
-  Image,
-  Images,
-  Lightning,
-  Lock,
-  MapPin,
-  MapTrifold,
-  Moon,
-  PaperPlaneTilt,
-  Plus,
-  ShareNetwork,
-  Star,
-  Sun,
-  Timer,
-  Trophy,
-  Trash,
-  UsersThree,
-  User,
-  UserCircle,
-  Warning,
-  WifiSlash,
-  X,
-  Heart,
-  Desktop,
-  SignOut,
-  Bell,
-  CaretRight,
-} from "@phosphor-icons/react"
-import {
   createBrowserRouter,
   Link,
   Navigate,
@@ -60,6 +15,8 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react"
+import { OIcon, type OIconName } from "./icons"
+import { Wordmark } from "./brand"
 import { skins, type Skin } from "../StyleGuide"
 import {
   LoginFlow,
@@ -327,7 +284,8 @@ function Root() {
                 className={`today-retake-hero retake-${activeJourney.skin}`}
                 onClick={() => navigate(`/j/${activeJourney.id}/camera`)}
               >
-                <Camera size={19} weight="bold" /> Chụp lại ảnh hôm nay
+                <OIcon name="camera" size={19} weight="bold" /> Chụp lại ảnh hôm
+                nay
               </button>
             )}
           {store.createSheetOpen && (
@@ -399,7 +357,7 @@ function ReminderNotification() {
         }}
       >
         <span className="reminder-app-icon">
-          <Bell size={19} weight="bold" />
+          <OIcon name="activity" size={19} weight="bold" />
         </span>
         <span className="reminder-copy">
           <small>
@@ -410,7 +368,7 @@ function ReminderNotification() {
         </span>
       </button>
       <button className="reminder-dismiss" onClick={dismiss} aria-label="Đóng">
-        <X size={18} weight="bold" />
+        <OIcon name="close" size={18} weight="bold" />
       </button>
     </div>
   )
@@ -474,7 +432,7 @@ function ReviewerPanel({
 
   function changeUser(user: "new" | "old") {
     store.setUser(user)
-    navigate("/splash")
+    window.setTimeout(() => navigate("/splash"), 0)
   }
 
   function checkLayouts() {
@@ -549,6 +507,12 @@ function ReviewerPanel({
               onChange={(value) => changeUser(value as "new" | "old")}
             />
           </Control>
+          <button
+            className="reviewer-layout-check"
+            onClick={() => changeUser("new")}
+          >
+            Người dùng mới: chạy lại từ đầu
+          </button>
           <Control label="chế độ">
             <Segment
               value={store.theme}
@@ -957,10 +921,14 @@ function ScreenShell({
             <span aria-hidden="true" />
           ) : (
             <button onClick={goBack} aria-label="Quay lại">
-              <ArrowLeft size={22} weight="bold" />
+              <OIcon name="back" size={22} weight="bold" />
             </button>
           )}
-          {title && <h1>{title}</h1>}
+          {location.pathname === "/hub" ? (
+            <Wordmark size={92} className="hub-wordmark" />
+          ) : (
+            title && <h1>{title}</h1>
+          )}
           {location.pathname === "/hub" || location.pathname === "/activity" ? (
             <span aria-hidden="true" />
           ) : (
@@ -970,7 +938,7 @@ function ScreenShell({
       )}
       {store.offline && !camera && !bare && (
         <div className="offline-bar">
-          <WifiSlash size={15} weight="bold" /> Đang ngoại tuyến
+          <OIcon name="wifi-off" size={15} weight="bold" /> Đang ngoại tuyến
         </div>
       )}
       <div className="screen-content">{children}</div>
@@ -1018,7 +986,7 @@ function InviteSheet() {
           <i />
         </div>
         <button className="invite-close" onClick={close} aria-label="Đóng">
-          <X size={22} weight="bold" />
+          <OIcon name="close" size={22} weight="bold" />
         </button>
         <h2>mời hội của bạn.</h2>
         <div className="invite-code" aria-label="Mã K7Q2 M9XA">
@@ -1027,7 +995,7 @@ function InviteSheet() {
           ))}
         </div>
         <button className="invite-copy" onClick={() => copied("Mã")}>
-          <Copy size={20} weight="bold" /> Sao chép mã
+          <OIcon name="copy" size={20} weight="bold" /> Sao chép mã
         </button>
         <div className="invite-link">
           <span>ourney://join/K7Q2M9XA</span>
@@ -1042,7 +1010,7 @@ function InviteSheet() {
           ))}
         </div>
         <button className="invite-share" onClick={() => setShareOpen(true)}>
-          <ShareNetwork size={20} weight="bold" /> Chia sẻ
+          <OIcon name="share" size={20} weight="bold" /> Chia sẻ
         </button>
         <p>
           Chỉ ai có mã hoặc link này mới vào được. Hành trình nhóm không có link
@@ -1082,12 +1050,12 @@ function QuietTopBar({
         onClick={onBack ?? (() => navigate("/hub"))}
         aria-label="Quay lại"
       >
-        <ArrowLeft size={21} weight="bold" />
+        <OIcon name="back" size={21} weight="bold" />
       </button>
       <div>
         <b>{journey.name.toLocaleUpperCase("vi")}</b>
         <span>
-          <Lock size={13} weight="fill" /> Riêng tư
+          <OIcon name="lock" size={13} weight="fill" /> Riêng tư
         </span>
       </div>
       {gear ? (
@@ -1095,7 +1063,7 @@ function QuietTopBar({
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={21} weight="bold" />
+          <OIcon name="settings" size={21} weight="bold" />
         </button>
       ) : (
         <span className="quiet-top-placeholder" />
@@ -1142,7 +1110,7 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
       <main className="quiet-home">
         {store.offline && (
           <div className="quiet-state-chip">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             Đang lưu trên máy · sẽ đồng bộ sau
           </div>
         )}
@@ -1151,7 +1119,7 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
             className="quiet-readonly"
             onClick={() => navigate(`/j/${journey.id}/wrapped`)}
           >
-            <Lock size={17} weight="bold" />
+            <OIcon name="lock" size={17} weight="bold" />
             Hành trình đã kết thúc · chỉ xem
           </button>
         )}
@@ -1191,7 +1159,11 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
             onPointerCancel={() => setRevealed(false)}
             onPointerLeave={() => setRevealed(false)}
           >
-            {revealed ? <EyeSlash size={20} /> : <Eye size={20} />}
+            {revealed ? (
+              <OIcon name="eye-off" size={20} />
+            ) : (
+              <OIcon name="eye" size={20} />
+            )}
             {revealed ? "Đang xem" : "Giữ để xem"}
           </button>
         </section>
@@ -1212,7 +1184,7 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
                 )}
                 {store.offline && !item.missed && (
                   <small>
-                    <Clock size={12} weight="bold" /> Chờ đồng bộ
+                    <OIcon name="clock" size={12} weight="bold" /> Chờ đồng bộ
                   </small>
                 )}
               </span>
@@ -1235,7 +1207,11 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
           ].map(([day, label, reached]) => (
             <div key={String(day)}>
               <span className={reached ? "reached" : ""}>
-                <Star size={17} weight={reached ? "fill" : "regular"} />
+                <OIcon
+                  name="star"
+                  size={17}
+                  weight={reached ? "fill" : "regular"}
+                />
               </span>
               <small>NGÀY {String(day).padStart(2, "0")}</small>
               <b>{String(label)}</b>
@@ -1245,11 +1221,11 @@ function QuietJourneyHome({ journey }: { journey: Journey }) {
         <div className="quiet-home-actions">
           {journey.shared && (
             <button onClick={() => navigate(`/j/${journey.id}/squad`)}>
-              <UsersThree size={19} weight="bold" /> Hội hôm nay
+              <OIcon name="squad" size={19} weight="bold" /> Hội hôm nay
             </button>
           )}
           <button onClick={() => navigate(`/j/${journey.id}/share`)}>
-            <ShareNetwork size={19} weight="bold" /> Tạo thiệp
+            <OIcon name="share" size={19} weight="bold" /> Tạo thiệp
           </button>
         </div>
       </main>
@@ -1297,7 +1273,7 @@ function QuietPost({ journey }: { journey: Journey }) {
           />
           <label>Cân nặng (không bắt buộc)</label>
           <small>
-            <Lock size={13} weight="fill" /> Chỉ mình bạn thấy
+            <OIcon name="lock" size={13} weight="fill" /> Chỉ mình bạn thấy
           </small>
         </section>
         <section className="quiet-caption">
@@ -1310,7 +1286,9 @@ function QuietPost({ journey }: { journey: Journey }) {
                 onClick={() => setMood(item)}
                 aria-pressed={mood === item}
               >
-                {mood === item && <Check size={14} weight="bold" />}
+                {mood === item && (
+                  <OIcon name="check" size={14} weight="bold" />
+                )}
                 {item}
               </button>
             ))}
@@ -1435,9 +1413,9 @@ function QuietSquad({ journey }: { journey: Journey }) {
                   <b>{name}</b>
                   <small>
                     {status === "Chưa chụp" ? (
-                      <Clock size={14} />
+                      <OIcon name="clock" size={14} />
                     ) : (
-                      <Check size={14} weight="bold" />
+                      <OIcon name="check" size={14} weight="bold" />
                     )}
                     {status}
                   </small>
@@ -1517,7 +1495,7 @@ function QuietPrivacySheet({
           onClick={onClose}
           aria-label="Đóng"
         >
-          <X size={21} weight="bold" />
+          <OIcon name="close" size={21} weight="bold" />
         </button>
         <h2>Hiện số kg trên thẻ?</h2>
         <p>Ai xem thẻ đều thấy số này.</p>
@@ -1537,6 +1515,7 @@ function QuietShare({ journey }: { journey: Journey }) {
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [hideKg, setHideKg] = useState(true)
   const [blurred, setBlurred] = useState(true)
+  const [hideBrand, setHideBrand] = useState(true)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [toast, setToast] = useState("")
   return (
@@ -1571,7 +1550,7 @@ function QuietShare({ journey }: { journey: Journey }) {
           </div>
           {!hideKg && <b>65,2 KG → 62,0 KG · -3,2 KG</b>}
           <p>21 ngày đều đặn</p>
-          <small>Ourney</small>
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <div className="quiet-share-controls">
           <label>
@@ -1594,6 +1573,16 @@ function QuietShare({ journey }: { journey: Journey }) {
                 type="checkbox"
                 checked={blurred}
                 onChange={(event) => setBlurred(event.target.checked)}
+              />
+            </span>
+          </label>
+          <label>
+            <span>Ẩn chữ ourney</span>
+            <span className="quiet-switch-hit">
+              <input
+                type="checkbox"
+                checked={hideBrand}
+                onChange={(event) => setHideBrand(event.target.checked)}
               />
             </span>
           </label>
@@ -1638,7 +1627,7 @@ function SquadTopBar({
         onClick={onBack ?? (() => navigate("/hub"))}
         aria-label="Quay lại"
       >
-        <ArrowLeft size={21} weight="bold" />
+        <OIcon name="back" size={21} weight="bold" />
       </button>
       <b>{journey.name.toLocaleUpperCase("vi")}</b>
       {gear ? (
@@ -1646,7 +1635,7 @@ function SquadTopBar({
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={21} weight="bold" />
+          <OIcon name="settings" size={21} weight="bold" />
         </button>
       ) : (
         <span />
@@ -1709,7 +1698,7 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
       <main className="squad-journey-home">
         {store.offline && (
           <div className="squad-offline-pill">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY
           </div>
         )}
@@ -1718,7 +1707,7 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
             className="squad-ended-stamp"
             onClick={() => navigate(`/j/${journey.id}/wrapped`)}
           >
-            <Lock size={16} weight="bold" /> ĐÃ KẾT THÚC · CHỈ XEM
+            <OIcon name="lock" size={16} weight="bold" /> ĐÃ KẾT THÚC · CHỈ XEM
           </button>
         )}
         <button
@@ -1742,7 +1731,7 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
               )
             }
           >
-            <Trophy size={38} weight="fill" />
+            <OIcon name="trophy" size={38} weight="fill" />
             <b>CÚP 7.5</b>
             <small>NGÀY 30</small>
           </button>
@@ -1794,7 +1783,7 @@ function SquadJourneyHome({ journey }: { journey: Journey }) {
           className="squad-group-action"
           onClick={() => navigate(`/j/${journey.id}/share`)}
         >
-          <ShareNetwork size={19} weight="bold" /> Tạo thiệp
+          <OIcon name="share" size={19} weight="bold" /> Tạo thiệp
         </button>
       </main>
     </ScreenShell>
@@ -1849,7 +1838,9 @@ function SquadPost({ journey }: { journey: Journey }) {
                 onClick={() => setMinutes(value)}
                 aria-pressed={minutes === value}
               >
-                {minutes === value && <Check size={14} weight="bold" />}
+                {minutes === value && (
+                  <OIcon name="check" size={14} weight="bold" />
+                )}
                 {value}
               </button>
             ))}
@@ -1858,7 +1849,7 @@ function SquadPost({ journey }: { journey: Journey }) {
               onClick={() => setMinutes(-1)}
               aria-pressed={minutes === -1}
             >
-              {minutes === -1 && <Check size={14} weight="bold" />}
+              {minutes === -1 && <OIcon name="check" size={14} weight="bold" />}
               Khác
             </button>
           </div>
@@ -1950,7 +1941,12 @@ function SquadDone({ journey }: { journey: Journey }) {
       )}
       <div className="squad-celebration">
         {day === 30 ? (
-          <Trophy className="squad-rising-trophy" size={92} weight="fill" />
+          <OIcon
+            name="trophy"
+            className="squad-rising-trophy"
+            size={92}
+            weight="fill"
+          />
         ) : null}
         <div className="squad-checkin-stamp">
           {day === 30
@@ -2014,13 +2010,13 @@ function SquadToday({ journey }: { journey: Journey }) {
       <main className="squad-today">
         {store.offline && (
           <div className="squad-offline-pill">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY
           </div>
         )}
         {(store.readOnly || journey.archived) && (
           <div className="squad-ended-stamp">
-            <Lock size={16} weight="bold" /> ĐÃ KẾT THÚC · CHỈ XEM
+            <OIcon name="lock" size={16} weight="bold" /> ĐÃ KẾT THÚC · CHỈ XEM
           </div>
         )}
         <div className="squad-attendance-bar">
@@ -2038,7 +2034,7 @@ function SquadToday({ journey }: { journey: Journey }) {
               />
               <SquadPhoto scene={index} />
               <b>
-                {name} <Check size={14} weight="bold" /> {time}
+                {name} <OIcon name="check" size={14} weight="bold" /> {time}
               </b>
               <span className="squad-reaction-counts">
                 🔥 {4 + (reaction[name] === "🔥" ? 1 : 0)} · 👏{" "}
@@ -2101,7 +2097,15 @@ function SquadToday({ journey }: { journey: Journey }) {
   )
 }
 
-function SquadShareSheet({ onClose }: { onClose: () => void }) {
+function SquadShareSheet({
+  onClose,
+  hideBrand,
+  onToggleBrand,
+}: {
+  onClose: () => void
+  hideBrand: boolean
+  onToggleBrand: () => void
+}) {
   const startY = useRef(0)
   const [drag, setDrag] = useState(0)
   return (
@@ -2136,9 +2140,14 @@ function SquadShareSheet({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           aria-label="Đóng"
         >
-          <X size={21} weight="bold" />
+          <OIcon name="close" size={21} weight="bold" />
         </button>
         <h2>chia sẻ tấm thiệp.</h2>
+        <button className="share-brand-toggle" onClick={onToggleBrand}>
+          <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
+          Ẩn chữ ourney
+          <span>{hideBrand ? "Bật" : "Tắt"}</span>
+        </button>
         <button onClick={onClose}>Tin nhắn</button>
         <button onClick={onClose}>Ứng dụng khác</button>
         <button onClick={onClose}>Lưu ảnh</button>
@@ -2151,6 +2160,7 @@ function SquadShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
+  const [hideBrand, setHideBrand] = useState(false)
   return (
     <section className="squad-journey-page squad-share-page">
       <SquadTopBar journey={journey} onBack={() => navigate(-1)} />
@@ -2178,18 +2188,24 @@ function SquadShare({ journey }: { journey: Journey }) {
             ))}
           </div>
           <div className="squad-trophy-stamp">
-            <Trophy size={26} weight="fill" /> CÚP 7.5
+            <OIcon name="trophy" size={26} weight="fill" /> CÚP 7.5
           </div>
-          <small>Ourney</small>
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <button
           className="squad-share-button"
           onClick={() => setShareOpen(true)}
         >
-          <ShareNetwork size={19} weight="bold" /> Chia sẻ
+          <OIcon name="share" size={19} weight="bold" /> Chia sẻ
         </button>
       </div>
-      {shareOpen && <SquadShareSheet onClose={() => setShareOpen(false)} />}
+      {shareOpen && (
+        <SquadShareSheet
+          onClose={() => setShareOpen(false)}
+          hideBrand={hideBrand}
+          onToggleBrand={() => setHideBrand(!hideBrand)}
+        />
+      )}
     </section>
   )
 }
@@ -2198,10 +2214,14 @@ function PosterShareSheet({
   skin,
   title,
   onClose,
+  hideBrand,
+  onToggleBrand,
 }: {
   skin: "memory" | "couple" | "flexer" | "minimal"
   title: string
   onClose: () => void
+  hideBrand: boolean
+  onToggleBrand: () => void
 }) {
   const startY = useRef(0)
   const [drag, setDrag] = useState(0)
@@ -2237,9 +2257,14 @@ function PosterShareSheet({
           onClick={onClose}
           aria-label="Đóng"
         >
-          <X size={21} weight="bold" />
+          <OIcon name="close" size={21} weight="bold" />
         </button>
         <h2>{title}</h2>
+        <button className="share-brand-toggle" onClick={onToggleBrand}>
+          <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
+          Ẩn chữ ourney
+          <span>{hideBrand ? "Bật" : "Tắt"}</span>
+        </button>
         <button onClick={onClose}>Tin nhắn</button>
         <button onClick={onClose}>Ứng dụng khác</button>
         <button onClick={onClose}>Lưu ảnh</button>
@@ -2264,7 +2289,7 @@ function MemoryTopBar({
         onClick={onBack ?? (() => navigate("/hub"))}
         aria-label="Quay lại"
       >
-        <ArrowLeft size={21} weight="bold" />
+        <OIcon name="back" size={21} weight="bold" />
       </button>
       <b>
         {journey.name.toLocaleUpperCase("vi")} · NGÀY {journey.day}/
@@ -2275,7 +2300,7 @@ function MemoryTopBar({
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={21} weight="bold" />
+          <OIcon name="settings" size={21} weight="bold" />
         </button>
       ) : (
         <span />
@@ -2320,7 +2345,7 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
       <main className="memory-home">
         {store.offline && (
           <div className="memory-offline-strip">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             Đang lưu trên máy. Có mạng sẽ tự gửi.
           </div>
         )}
@@ -2333,7 +2358,7 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
           </div>
         )}
         <div className="memory-film-chip">
-          <FilmStrip size={19} weight="bold" />
+          <OIcon name="film" size={19} weight="bold" />
           CUỘN PHIM {frames}/{totalDays}
         </div>
         <section className="memory-thread-timeline">
@@ -2375,7 +2400,7 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
                 )}
                 {store.offline && index === 0 && (
                   <em>
-                    <Clock size={13} weight="bold" /> CHỜ GỬI
+                    <OIcon name="clock" size={13} weight="bold" /> CHỜ GỬI
                   </em>
                 )}
               </button>
@@ -2387,10 +2412,10 @@ function MemoryJourneyHome({ journey }: { journey: Journey }) {
         </section>
         <div className="memory-home-actions">
           <button onClick={() => navigate(`/j/${journey.id}/squad`)}>
-            <UsersThree size={18} weight="bold" /> Hội hôm nay
+            <OIcon name="squad" size={18} weight="bold" /> Hội hôm nay
           </button>
           <button onClick={() => navigate(`/j/${journey.id}/share`)}>
-            <ShareNetwork size={18} weight="bold" /> Tạo poster
+            <OIcon name="share" size={18} weight="bold" /> Tạo poster
           </button>
         </div>
       </main>
@@ -2428,7 +2453,7 @@ function MemoryPost({ journey }: { journey: Journey }) {
         </div>
         <h1>Hôm nay cả bọn lạc ở đâu?</h1>
         <label className="memory-place-field">
-          <MapPin size={19} weight="fill" />
+          <OIcon name="map-pin" size={19} weight="fill" />
           <input
             value={place}
             onChange={(event) => setPlace(event.target.value)}
@@ -2549,7 +2574,7 @@ function MemorySquad({ journey }: { journey: Journey }) {
       <main className="memory-squad">
         {store.offline && (
           <div className="memory-offline-strip">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             Đang lưu trên máy. Có mạng sẽ tự gửi.
           </div>
         )}
@@ -2625,6 +2650,7 @@ function MemoryShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
+  const [hideBrand, setHideBrand] = useState(false)
   const journeyDays = journeyLength(journey)
   const total = Math.min(ratio === "story" ? 24 : 20, journeyDays)
   const shot = journeyCheckIns(journey)
@@ -2660,13 +2686,13 @@ function MemoryShare({ journey }: { journey: Journey }) {
               </span>
             ))}
           </div>
-          <small>Ourney</small>
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <button
           className="memory-share-button"
           onClick={() => setShareOpen(true)}
         >
-          <ShareNetwork size={19} weight="bold" />
+          <OIcon name="share" size={19} weight="bold" />
           Chia sẻ poster chuyến đi
         </button>
       </div>
@@ -2675,6 +2701,8 @@ function MemoryShare({ journey }: { journey: Journey }) {
           skin="memory"
           title="chia sẻ poster chuyến đi."
           onClose={() => setShareOpen(false)}
+          hideBrand={hideBrand}
+          onToggleBrand={() => setHideBrand(!hideBrand)}
         />
       )}
     </section>
@@ -2699,7 +2727,7 @@ function CoupleTopBar({
         onClick={onBack ?? (() => navigate("/hub"))}
         aria-label="Quay lại"
       >
-        <ArrowLeft size={21} weight="bold" />
+        <OIcon name="back" size={21} weight="bold" />
       </button>
       <b>{showTitle ? journey.name.toLocaleUpperCase("vi") : "NAM · LINH"}</b>
       {gear ? (
@@ -2707,7 +2735,7 @@ function CoupleTopBar({
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={21} weight="bold" />
+          <OIcon name="settings" size={21} weight="bold" />
         </button>
       ) : (
         <span />
@@ -2765,7 +2793,7 @@ function CouplePair({
         <em>bữa sáng của Nam</em>
       </div>
       <span className="couple-axis-node">
-        <Heart size={18} weight={missed ? "regular" : "fill"} />
+        <OIcon name="heart" size={18} weight={missed ? "regular" : "fill"} />
       </span>
       <div className="couple-half couple-right-half">
         {waiting || missed ? (
@@ -2792,15 +2820,15 @@ function CoupleJourneyHome({ journey }: { journey: Journey }) {
       <main className="couple-home">
         {store.offline && (
           <div className="couple-offline-banner">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             Đang lưu trên máy. Có mạng sẽ tự gửi.
           </div>
         )}
         {(store.readOnly || journey.archived) && (
           <div className="couple-finished">
             <span>
-              <Heart size={16} weight="fill" /> Hai đứa đã về đích{" "}
-              <Heart size={16} weight="fill" />
+              <OIcon name="heart" size={16} weight="fill" /> Hai đứa đã về đích{" "}
+              <OIcon name="heart" size={16} weight="fill" />
             </span>
             <button onClick={() => navigate(`/j/${journey.id}/wrapped`)}>
               Xem tổng kết
@@ -2839,10 +2867,10 @@ function CoupleJourneyHome({ journey }: { journey: Journey }) {
         </div>
         <div className="couple-home-actions">
           <button onClick={() => navigate(`/j/${journey.id}/squad`)}>
-            <UsersThree size={18} weight="bold" /> Hôm nay của hai đứa
+            <OIcon name="squad" size={18} weight="bold" /> Hôm nay của hai đứa
           </button>
           <button onClick={() => navigate(`/j/${journey.id}/share`)}>
-            <ShareNetwork size={18} weight="bold" /> Tạo thiệp
+            <OIcon name="share" size={18} weight="bold" /> Tạo thiệp
           </button>
         </div>
       </main>
@@ -2908,7 +2936,7 @@ function CouplePost({ journey }: { journey: Journey }) {
               className={cook === name ? "selected" : ""}
               onClick={() => setCook(name)}
             >
-              {cook === name && <Check size={14} weight="bold" />}
+              {cook === name && <OIcon name="check" size={14} weight="bold" />}
               {name}
             </button>
           ))}
@@ -2923,7 +2951,8 @@ function CouplePost({ journey }: { journey: Journey }) {
                 aria-label={`${value} tim`}
                 aria-pressed={value <= hearts}
               >
-                <Heart
+                <OIcon
+                  name="heart"
                   size={24}
                   weight={value <= hearts ? "fill" : "regular"}
                 />
@@ -2997,7 +3026,7 @@ function CoupleDone({ journey }: { journey: Journey }) {
         <CouplePhoto person="Linh" />
       </div>
       <div className="couple-heart-seal">
-        <Heart size={42} weight="fill" />
+        <OIcon name="heart" size={42} weight="fill" />
       </div>
       <h1>
         Ngày {day} · {complete ? "đủ đôi" : "đang chờ Nam"}
@@ -3050,7 +3079,7 @@ function CoupleSquad({ journey }: { journey: Journey }) {
       <main className="couple-today">
         {store.offline && (
           <div className="couple-offline-banner">
-            <CloudSlash size={17} weight="bold" />
+            <OIcon name="cloud-off" size={17} weight="bold" />
             Đang lưu trên máy. Có mạng sẽ tự gửi.
           </div>
         )}
@@ -3090,7 +3119,8 @@ function CoupleSquad({ journey }: { journey: Journey }) {
                 <b>Linh · đã chụp</b>
                 {store.offline && (
                   <span className="couple-waiting-sync">
-                    <Clock size={13} weight="bold" /> CHỜ GỬI · đã lưu trên máy
+                    <OIcon name="clock" size={13} weight="bold" /> CHỜ GỬI · đã
+                    lưu trên máy
                   </span>
                 )}
               </>
@@ -3129,6 +3159,7 @@ function CoupleShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
+  const [hideBrand, setHideBrand] = useState(false)
   const total = ratio === "story" ? 36 : 16
   return (
     <section className="couple-journey-page couple-share">
@@ -3156,13 +3187,13 @@ function CoupleShare({ journey }: { journey: Journey }) {
               <CouplePhoto person={index % 2 ? "Linh" : "Nam"} key={index} />
             ))}
           </div>
-          <small>Ourney</small>
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <button
           className="couple-share-button"
           onClick={() => setShareOpen(true)}
         >
-          <ShareNetwork size={19} weight="bold" />
+          <OIcon name="share" size={19} weight="bold" />
           Chia sẻ câu chuyện của mình
         </button>
       </div>
@@ -3171,6 +3202,8 @@ function CoupleShare({ journey }: { journey: Journey }) {
           skin="couple"
           title="chia sẻ câu chuyện."
           onClose={() => setShareOpen(false)}
+          hideBrand={hideBrand}
+          onToggleBrand={() => setHideBrand(!hideBrand)}
         />
       )}
     </section>
@@ -3193,7 +3226,7 @@ function FlexerTopBar({
         onClick={onBack ?? (() => navigate("/hub"))}
         aria-label="Quay lại"
       >
-        <ArrowLeft size={21} weight="bold" />
+        <OIcon name="back" size={21} weight="bold" />
       </button>
       <b>CHẠY SÁNG · NGÀY {journey.day}/30</b>
       {gear ? (
@@ -3201,7 +3234,7 @@ function FlexerTopBar({
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={21} weight="bold" />
+          <OIcon name="settings" size={21} weight="bold" />
         </button>
       ) : (
         <span />
@@ -3248,7 +3281,7 @@ function FlexerJourneyHome({ journey }: { journey: Journey }) {
             className="flexer-readonly"
             onClick={() => navigate(`/j/${journey.id}/wrapped`)}
           >
-            <Lock size={17} weight="bold" /> ĐÃ VỀ ĐÍCH · CHỈ ĐỌC
+            <OIcon name="lock" size={17} weight="bold" /> ĐÃ VỀ ĐÍCH · CHỈ ĐỌC
           </button>
         )}
         <button
@@ -3286,7 +3319,7 @@ function FlexerJourneyHome({ journey }: { journey: Journey }) {
                 <FlexerPhoto index={index} />
                 <span className="flexer-node">
                   {String(label).includes("CỘT MỐC") && (
-                    <Star size={16} weight="fill" />
+                    <OIcon name="star" size={16} weight="fill" />
                   )}
                 </span>
                 <span>
@@ -3304,7 +3337,7 @@ function FlexerJourneyHome({ journey }: { journey: Journey }) {
                   )}
                   {store.offline && index === 0 && (
                     <i>
-                      <CloudSlash size={13} /> CHỜ ĐỒNG BỘ
+                      <OIcon name="cloud-off" size={13} /> CHỜ ĐỒNG BỘ
                     </i>
                   )}
                 </span>
@@ -3496,7 +3529,7 @@ function FlexerSquad({ journey }: { journey: Journey }) {
             <div>
               <b>{name}</b>
               <small>
-                <Check size={14} weight="bold" /> Đã chạy · {time}
+                <OIcon name="check" size={14} weight="bold" /> Đã chạy · {time}
               </small>
               {name === "LINH" && <em>5,42 KM · 5:04 /KM</em>}
               <div>
@@ -3552,6 +3585,7 @@ function FlexerShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
+  const [hideBrand, setHideBrand] = useState(false)
   return (
     <section className="flexer-journey-page flexer-share">
       <FlexerTopBar journey={journey} onBack={() => navigate(-1)} />
@@ -3582,6 +3616,7 @@ function FlexerShare({ journey }: { journey: Journey }) {
             ))}
           </div>
           <p>21 NGÀY HOẠT ĐỘNG</p>
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <button className="flexer-primary" onClick={() => setShareOpen(true)}>
           Chia sẻ lên Story
@@ -3592,6 +3627,8 @@ function FlexerShare({ journey }: { journey: Journey }) {
           skin="flexer"
           title="chia sẻ thành tích."
           onClose={() => setShareOpen(false)}
+          hideBrand={hideBrand}
+          onToggleBrand={() => setHideBrand(!hideBrand)}
         />
       )}
     </section>
@@ -3614,7 +3651,7 @@ function MinimalTopBar({
         onClick={onBack ?? (() => navigate("/hub"))}
         aria-label="Quay lại"
       >
-        <ArrowLeft size={21} />
+        <OIcon name="back" size={21} />
       </button>
       <b>ĐỌC 10 TRANG</b>
       {gear ? (
@@ -3622,7 +3659,7 @@ function MinimalTopBar({
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={21} />
+          <OIcon name="settings" size={21} />
         </button>
       ) : (
         <span />
@@ -3722,7 +3759,7 @@ function MinimalJourneyHome({ journey }: { journey: Journey }) {
             className="minimal-readonly"
             onClick={() => navigate(`/j/${journey.id}/wrapped`)}
           >
-            <Lock size={16} /> ĐÃ KẾT THÚC · CHỈ ĐỌC
+            <OIcon name="lock" size={16} /> ĐÃ KẾT THÚC · CHỈ ĐỌC
           </button>
         )}
         <div className="minimal-month-header">
@@ -3779,7 +3816,7 @@ function MinimalJourneyHome({ journey }: { journey: Journey }) {
                 {future || missed ? <span /> : <MinimalPhoto index={day} />}
                 {store.offline && day === journey.day && (
                   <i>
-                    <Clock size={12} /> CHỜ ĐỒNG BỘ
+                    <OIcon name="clock" size={12} /> CHỜ ĐỒNG BỘ
                   </i>
                 )}
               </button>
@@ -3981,6 +4018,7 @@ function MinimalShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [ratio, setRatio] = useState<"story" | "feed">("story")
   const [shareOpen, setShareOpen] = useState(false)
+  const [hideBrand, setHideBrand] = useState(false)
   return (
     <section className="minimal-journey-page minimal-share">
       <MinimalTopBar journey={journey} onBack={() => navigate(-1)} />
@@ -4006,7 +4044,7 @@ function MinimalShare({ journey }: { journey: Journey }) {
             80% ĐỀU ĐẶN
           </h1>
           <MinimalPhoto index={24} />
-          <small>Ourney</small>
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <button className="minimal-export" onClick={() => setShareOpen(true)}>
           Xuất thẻ tối giản
@@ -4017,6 +4055,8 @@ function MinimalShare({ journey }: { journey: Journey }) {
           skin="minimal"
           title="xuất thẻ tối giản."
           onClose={() => setShareOpen(false)}
+          hideBrand={hideBrand}
+          onToggleBrand={() => setHideBrand(!hideBrand)}
         />
       )}
     </section>
@@ -4036,7 +4076,7 @@ function PushedHeader({
     <header className="pushed-header">
       {onBack ? (
         <button onClick={onBack} aria-label="Quay lại">
-          <ArrowLeft size={21} weight="bold" />
+          <OIcon name="back" size={21} weight="bold" />
         </button>
       ) : (
         <span />
@@ -4095,7 +4135,7 @@ function JourneyActionSheet({
           onClick={onClose}
           aria-label="Đóng"
         >
-          <X size={21} weight="bold" />
+          <OIcon name="close" size={21} weight="bold" />
         </button>
         <h2>{title}</h2>
         {body && <p>{body}</p>}
@@ -4205,7 +4245,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Mở tuỳ chọn"
           >
-            <DotsThree size={24} weight="bold" />
+            <OIcon name="more" size={24} weight="bold" />
           </button>
         }
       />
@@ -4246,7 +4286,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
         <article className={`day-photo-card ${hidden ? "hidden-photo" : ""}`}>
           {hidden ? (
             <div className="day-hidden-state">
-              <Lock size={25} />
+              <OIcon name="lock" size={25} />
               Ảnh đã ẩn với bạn
             </div>
           ) : (
@@ -4264,7 +4304,7 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
               onPointerUp={() => setRevealed(false)}
               onPointerLeave={() => setRevealed(false)}
             >
-              <Eye size={17} />
+              <OIcon name="eye" size={17} />
               {revealed ? "62,0 kg" : "Giữ để xem"}
             </button>
           )}
@@ -4300,7 +4340,9 @@ function JourneyDayScreen({ journey }: { journey: Journey }) {
               className={reason === item ? "selected" : ""}
               onClick={() => setReason(item)}
             >
-              {reason === item && <Check size={15} weight="bold" />}
+              {reason === item && (
+                <OIcon name="check" size={15} weight="bold" />
+              )}
               {item}
             </button>
           ))}
@@ -4413,7 +4455,7 @@ function LayoutPreview({
         <span />
       </div>
       <div className="layout-preview-hud">
-        <Camera size={large ? 22 : 14} weight="bold" />
+        <OIcon name="camera" size={large ? 22 : 14} weight="bold" />
         <span>{journey ? journeyMetric(journey) : "HUD máy ảnh"}</span>
       </div>
     </div>
@@ -4480,7 +4522,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
       <main className="edit-content">
         {journey.skin === "quiet" && (
           <div className="quiet-edit-lock">
-            <Lock size={16} weight="fill" /> Riêng tư
+            <OIcon name="lock" size={16} weight="fill" /> Riêng tư
           </div>
         )}
         <section className="edit-section">
@@ -4503,7 +4545,9 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
                   <i />
                   <em />
                 </span>
-                {cover === item && <Check size={15} weight="bold" />}
+                {cover === item && (
+                  <OIcon name="check" size={15} weight="bold" />
+                )}
               </button>
             ))}
           </div>
@@ -4548,7 +4592,9 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
               >
                 <i />
                 {item}
-                {variant === index && <Check size={15} weight="bold" />}
+                {variant === index && (
+                  <OIcon name="check" size={15} weight="bold" />
+                )}
               </button>
             ))}
           </div>
@@ -4585,7 +4631,9 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
                   className={hud === item ? "selected" : ""}
                   onClick={() => setHud(item)}
                 >
-                  {hud === item && <Check size={14} weight="bold" />}
+                  {hud === item && (
+                    <OIcon name="check" size={14} weight="bold" />
+                  )}
                   {item.replace("HUD ", "")}
                 </button>
               ))}
@@ -4604,7 +4652,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
           <h2>Ai được xem</h2>
           {journey.shared ? (
             <div className="edit-locked-row">
-              <Lock size={17} />
+              <OIcon name="lock" size={17} />
               <span>
                 <b>Chỉ thành viên</b>
                 hành trình nhóm không có link công khai
@@ -4621,7 +4669,9 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
                   className={visibility === value ? "selected" : ""}
                   onClick={() => setVisibility(value as "private" | "link")}
                 >
-                  {visibility === value && <Check size={15} weight="bold" />}
+                  {visibility === value && (
+                    <OIcon name="check" size={15} weight="bold" />
+                  )}
                   {label}
                 </button>
               ))}
@@ -4686,7 +4736,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
             <h2>Người bị chặn</h2>
             {store.blocked.map((name) => (
               <div className="blocked-person" key={name}>
-                <Lock size={16} /> {name}
+                <OIcon name="lock" size={16} /> {name}
               </div>
             ))}
           </section>
@@ -4696,7 +4746,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
             className="edit-import-button"
             onClick={() => navigate(`/j/${journey.id}/import`)}
           >
-            <Images size={18} weight="bold" /> Nhập ảnh cũ
+            <OIcon name="image" size={18} weight="bold" /> Nhập ảnh cũ
           </button>
         )}
         <button
@@ -4715,7 +4765,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
               onClick={() => setLayoutPreview(null)}
               aria-label="Quay lại"
             >
-              <ArrowLeft size={22} weight="bold" />
+              <OIcon name="back" size={22} weight="bold" />
             </button>
             <b>{journey.name}</b>
             <span />
@@ -4778,7 +4828,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
             navigate("/hub", { replace: true })
           }}
         >
-          <SignOut size={18} weight="bold" /> Rời nhóm
+          <OIcon name="sign-out" size={18} weight="bold" /> Rời nhóm
         </button>
         <button className="sheet-secondary" onClick={() => setLeaveOpen(false)}>
           Thôi
@@ -4797,7 +4847,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
             navigate(`/j/${journey.id}`, { replace: true })
           }}
         >
-          <Trash size={18} weight="bold" /> Kết thúc
+          <OIcon name="trash" size={18} weight="bold" /> Kết thúc
         </button>
         <button className="sheet-secondary" onClick={() => setEndOpen(false)}>
           Thôi
@@ -4892,7 +4942,7 @@ function WrappedVisual(props: WrappedVisualProps) {
   }
   if (journey.skin === "squad") {
     return page === 2 ? (
-      <Trophy className="wrapped-trophy" size={94} weight="fill" />
+      <OIcon name="trophy" className="wrapped-trophy" size={94} weight="fill" />
     ) : (
       <div className="wrapped-squad-path">● ┈ ● ┈ ● ┈ ● ┈ ★</div>
     )
@@ -4920,7 +4970,7 @@ function WrappedVisual(props: WrappedVisualProps) {
     return (
       <div className="wrapped-couple-frame">
         <CouplePhoto person="Nam" scene={page} />
-        <Heart size={34} weight="fill" />
+        <OIcon name="heart" size={34} weight="fill" />
         <CouplePhoto person="Linh" scene={page + 1} />
       </div>
     )
@@ -4957,6 +5007,7 @@ function JourneyWrappedScreen({ journey }: { journey: Journey }) {
   const [toast, setToast] = useState("")
   const [hideKg, setHideKg] = useState(true)
   const [blurred, setBlurred] = useState(true)
+  const [hideBrand, setHideBrand] = useState(journey.skin === "quiet")
   const startX = useRef(0)
   const summary = page >= pages.length
   function move(direction: number) {
@@ -4984,7 +5035,7 @@ function JourneyWrappedScreen({ journey }: { journey: Journey }) {
             onClick={() => navigate(`/j/${journey.id}`)}
             aria-label="Đóng"
           >
-            <X size={21} />
+            <OIcon name="close" size={21} />
           </button>
         }
       />
@@ -5054,17 +5105,25 @@ function JourneyWrappedScreen({ journey }: { journey: Journey }) {
             {journey.skin === "quiet" && (
               <div className="wrapped-privacy">
                 <button onClick={() => setHideKg(!hideKg)}>
-                  {hideKg ? <Check size={14} /> : <Eye size={14} />}
+                  {hideKg ? (
+                    <OIcon name="check" size={14} />
+                  ) : (
+                    <OIcon name="eye" size={14} />
+                  )}
                   Ẩn số kg · {hideKg ? "Bật" : "Tắt"}
                 </button>
                 <button onClick={() => setBlurred(!blurred)}>
-                  {blurred ? <Check size={14} /> : <Eye size={14} />}
+                  {blurred ? (
+                    <OIcon name="check" size={14} />
+                  ) : (
+                    <OIcon name="eye" size={14} />
+                  )}
                   Làm mờ ảnh · {blurred ? "Bật" : "Tắt"}
                 </button>
                 {!hideKg && <b>65,2 kg → 62,0 kg</b>}
               </div>
             )}
-            <small>Ourney</small>
+            {!hideBrand && <Wordmark size={56} className="share-brand" />}
           </div>
           <button
             className="wrapped-create-card"
@@ -5101,6 +5160,14 @@ function JourneyWrappedScreen({ journey }: { journey: Journey }) {
         title="chia sẻ tấm thiệp."
         onClose={() => setShareOpen(false)}
       >
+        <button
+          className="sheet-secondary share-brand-toggle"
+          onClick={() => setHideBrand(!hideBrand)}
+        >
+          <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
+          Ẩn chữ ourney
+          <span>{hideBrand ? "Bật" : "Tắt"}</span>
+        </button>
         <button className="sheet-primary" onClick={() => setShareOpen(false)}>
           Tin nhắn
         </button>
@@ -5165,7 +5232,7 @@ function CameraScreen() {
                 </>
               ) : active.todayDone ? (
                 <>
-                  <Check size={15} weight="bold" />
+                  <OIcon name="check" size={15} weight="bold" />
                   <b>
                     {quiet
                       ? "Đã có ảnh hôm nay. Chụp lại sẽ thay ảnh."
@@ -5174,7 +5241,7 @@ function CameraScreen() {
                 </>
               ) : quiet ? (
                 <>
-                  <Lock size={15} weight="fill" />
+                  <OIcon name="lock" size={15} weight="fill" />
                   <b>
                     Riêng tư · Ngày{" "}
                     {active.todayDone ? active.day - 1 : active.day}
@@ -5187,14 +5254,14 @@ function CameraScreen() {
                 </b>
               ) : memory ? (
                 <>
-                  <FilmStrip size={16} weight="fill" />
+                  <OIcon name="film" size={16} weight="fill" />
                   <b>
                     CUỘN PHIM {journeyCheckIns(active)}/{journeyLength(active)}
                   </b>
                 </>
               ) : couple ? (
                 <>
-                  <Heart size={16} weight="fill" />
+                  <OIcon name="heart" size={16} weight="fill" />
                   <b>
                     {active.partnerShot ? "Chụp nửa của Linh" : "Ghép đủ đôi"}
                   </b>
@@ -5209,7 +5276,7 @@ function CameraScreen() {
                   <b>
                     {active.name} · Ngày {active.day}/30
                   </b>
-                  <CaretDown size={16} weight="bold" />
+                  <OIcon name="caret-down" size={16} weight="bold" />
                 </>
               )}
             </button>
@@ -5221,7 +5288,7 @@ function CameraScreen() {
                 onClick={() => navigate(`/j/${active.id}`)}
                 aria-label="Đóng máy ảnh"
               >
-                <X size={21} weight="bold" />
+                <OIcon name="close" size={21} weight="bold" />
               </button>
             ) : minimal ? (
               <span />
@@ -5233,7 +5300,7 @@ function CameraScreen() {
                   aria-pressed={flashOn}
                   onClick={() => setFlashOn(!flashOn)}
                 >
-                  <Lightning size={21} weight="bold" />
+                  <OIcon name="lightning" size={21} weight="bold" />
                 </button>
                 <button
                   className={frontCamera ? "active" : ""}
@@ -5241,7 +5308,7 @@ function CameraScreen() {
                   aria-pressed={frontCamera}
                   onClick={() => setFrontCamera(!frontCamera)}
                 >
-                  <ArrowsClockwise size={21} weight="bold" />
+                  <OIcon name="switch-camera" size={21} weight="bold" />
                 </button>
               </>
             )}
@@ -5275,7 +5342,11 @@ function CameraScreen() {
                 onClick={() => setGhostOn(!ghostOn)}
                 aria-pressed={ghostOn}
               >
-                {ghostOn ? <Eye size={17} /> : <EyeSlash size={17} />}
+                {ghostOn ? (
+                  <OIcon name="eye" size={17} />
+                ) : (
+                  <OIcon name="eye-off" size={17} />
+                )}
                 Bóng ngày 1 · {ghostOn ? "Bật" : "Tắt"}
               </button>
             </>
@@ -5332,7 +5403,7 @@ function CameraScreen() {
               </div>
               {store.offline && (
                 <div className="flexer-camera-sync">
-                  <CloudSlash size={14} /> CHỜ ĐỒNG BỘ
+                  <OIcon name="cloud-off" size={14} /> CHỜ ĐỒNG BỘ
                 </div>
               )}
             </>
@@ -5354,7 +5425,7 @@ function CameraScreen() {
               </div>
               {store.offline && (
                 <div className="minimal-camera-sync">
-                  <Clock size={14} /> CHỜ ĐỒNG BỘ
+                  <OIcon name="clock" size={14} /> CHỜ ĐỒNG BỘ
                 </div>
               )}
             </>
@@ -5378,10 +5449,10 @@ function CameraScreen() {
                 đang lưu trên máy, có mạng sẽ tự gửi
               </div>
             )}
-          {!cameraReady && (
+          {!cameraReady && !noJourney && (
             <div className="camera-state-card">
               <div className="camera-state-sticker">
-                <Camera size={34} weight="duotone" />
+                <OIcon name="camera" size={34} weight="duotone" />
               </div>
               <h2>
                 {store.cameraPermission === "denied"
@@ -5406,7 +5477,7 @@ function CameraScreen() {
               >
                 {store.cameraPermission === "denied" ? (
                   <>
-                    <GearSix size={20} weight="bold" /> Mở cài đặt
+                    <OIcon name="settings" size={20} weight="bold" /> Mở cài đặt
                   </>
                 ) : (
                   "Bật camera"
@@ -5420,29 +5491,45 @@ function CameraScreen() {
                     : (store.beginCreate("/camera"), navigate("/create/1"))
                 }
               >
-                <Image size={20} weight="bold" /> Chọn ảnh từ thư viện
+                <OIcon name="image" size={20} weight="bold" /> Chọn ảnh từ thư
+                viện
               </button>
             </div>
           )}
-          {cameraReady && noJourney && (
+          {noJourney && (
             <div className="camera-state-card no-journey-card">
               <div className="camera-state-sticker">📒</div>
               <h2>chưa có hành trình nào.</h2>
-              <p>Mỗi tấm ảnh cần một hành trình để cất.</p>
-              {store.draft.type && (
-                <span className="draft-suggestion">
-                  gợi ý:{" "}
-                  {store.draft.type === "Tiếng Anh"
-                    ? "Học tiếng Anh"
-                    : store.draft.type}{" "}
-                  · {store.draft.who === "group" ? "rủ hội bạn" : "một mình"}
+              <p className="no-journey-helper">
+                Mỗi tấm ảnh cần một hành trình để cất.
+              </p>
+              <button
+                className="draft-suggestion"
+                onClick={() => {
+                  store.beginCreate("/camera", {
+                    prefill: store.onboardingChoice ?? {
+                      type: "Tự đặt",
+                      who: "solo",
+                    },
+                  })
+                  navigate("/create/1")
+                }}
+              >
+                <span>
+                  Gợi ý: {store.onboardingChoice?.type ?? "Một thói quen nhỏ"} ·{" "}
+                  {store.onboardingChoice?.who === "group"
+                    ? "rủ hội bạn"
+                    : store.onboardingChoice?.who === "couple"
+                      ? "chỉ hai đứa"
+                      : "một mình"}
                 </span>
-              )}
+                <OIcon name="caret-right" size={19} weight="bold" />
+              </button>
               <button
                 className="camera-card-primary"
                 onClick={() => {
                   store.beginCreate("/camera")
-                  navigate("/create/1")
+                  navigate(store.resumeCreateRoute)
                 }}
               >
                 Tạo hành trình đầu tiên
@@ -5458,14 +5545,16 @@ function CameraScreen() {
                 className={active.hud === hud ? "selected" : ""}
                 onClick={() => store.setJourneyHud(active.id, hud)}
               >
-                {active.hud === hud && <Check size={13} weight="bold" />}
+                {active.hud === hud && (
+                  <OIcon name="check" size={13} weight="bold" />
+                )}
                 {hud}
               </button>
             ))}
           </div>
         )}
       </div>
-      {store.signedIn && store.cameraPermission === "unknown" && (
+      {store.signedIn && !noJourney && store.cameraPermission === "unknown" && (
         <PermissionSheet
           kind="camera"
           reason={
@@ -5533,9 +5622,25 @@ function HubScreen() {
 
         {store.offline && (
           <div className="hub-offline-banner">
-            <CloudSlash size={21} weight="bold" />
+            <OIcon name="cloud-off" size={21} weight="bold" />
             <span>đang lưu trên máy, có mạng sẽ tự gửi</span>
           </div>
+        )}
+        {store.createProgress && (
+          <button
+            className="hub-create-progress"
+            onClick={() => navigate(store.createProgress!.route)}
+          >
+            <span>
+              <b>Tiếp tục tạo hành trình</b>
+              <small>
+                bước{" "}
+                {store.createProgress.route.match(/\/create\/(\d)/)?.[1] ?? "1"}
+                /5
+              </small>
+            </span>
+            <OIcon name="caret-right" size={20} weight="bold" />
+          </button>
         )}
 
         {showLoading ? (
@@ -5553,7 +5658,7 @@ function HubScreen() {
             kind="empty"
             action={() => {
               store.beginCreate("/hub")
-              navigate("/create/1")
+              navigate(store.resumeCreateRoute)
             }}
           />
         ) : (
@@ -5562,7 +5667,7 @@ function HubScreen() {
             <div className="hub-section-heading">
               <h2>hành trình của bạn.</h2>
               <span>
-                <MapTrifold size={17} weight="bold" />
+                <OIcon name="journeys" size={17} weight="bold" />
                 {store.journeys.length} đang chạy
               </span>
             </div>
@@ -5582,7 +5687,7 @@ function HubScreen() {
                 }}
               >
                 <span>
-                  <PaperPlaneTilt size={35} weight="duotone" />
+                  <OIcon name="paper-plane" size={35} weight="duotone" />
                 </span>
                 <div>
                   <b>hành trình mới.</b>
@@ -5620,7 +5725,7 @@ function HubHero({
         <h2>{copy}</h2>
         {state === "default" && (
           <div className="hero-timer">
-            <Timer size={20} weight="bold" /> 03:12:40
+            <OIcon name="timer" size={20} weight="bold" /> 03:12:40
           </div>
         )}
         {state === "group" && (
@@ -5632,12 +5737,12 @@ function HubHero({
       </div>
       {state === "done" && (
         <div className="hero-state-sticker cat-sticker">
-          <Cat size={43} weight="duotone" />
+          <OIcon name="cat" size={43} weight="duotone" />
         </div>
       )}
       {state === "milestone" && (
         <div className="hero-state-sticker flag-sticker">
-          <FlagBanner size={42} weight="duotone" />
+          <OIcon name="flag" size={42} weight="duotone" />
         </div>
       )}
       {state !== "done" && (
@@ -5658,9 +5763,9 @@ function HubStateCard({
     <div className={`hub-main-state state-${kind}`}>
       <div className="hub-state-sticker">
         {kind === "empty" ? (
-          <Camera size={40} weight="duotone" />
+          <OIcon name="camera" size={40} weight="duotone" />
         ) : (
-          <CloudSlash size={40} weight="duotone" />
+          <OIcon name="cloud-off" size={40} weight="duotone" />
         )}
       </div>
       <h2>
@@ -5765,7 +5870,7 @@ function JourneyCard({
               setMenuOpen(!menuOpen)
             }}
           >
-            <DotsThree size={20} weight="bold" />
+            <OIcon name="more" size={20} weight="bold" />
           </button>
           {menuOpen && (
             <div className="journey-card-menu">
@@ -5776,7 +5881,7 @@ function JourneyCard({
                   setMenuOpen(false)
                 }}
               >
-                <Check size={17} weight="bold" /> Đặt làm chính
+                <OIcon name="check" size={17} weight="bold" /> Đặt làm chính
               </button>
             </div>
           )}
@@ -5786,11 +5891,11 @@ function JourneyCard({
         )}
         {journey.archived ? (
           <span className="active-dna-chip">
-            <Lock size={14} weight="bold" /> Đã kết thúc
+            <OIcon name="lock" size={14} weight="bold" /> Đã kết thúc
           </span>
         ) : selected ? (
           <span className="active-dna-chip">
-            <Check size={14} weight="bold" /> Đang hoạt động
+            <OIcon name="check" size={14} weight="bold" /> Đang hoạt động
           </span>
         ) : null}
         <p className="dna-stats">{detail.stats}</p>
@@ -5825,7 +5930,7 @@ function JourneyCard({
               onPendingSync()
             }}
           >
-            <Clock size={16} weight="bold" /> chờ gửi · 1 ảnh
+            <OIcon name="clock" size={16} weight="bold" /> chờ gửi · 1 ảnh
           </button>
         )}
       </div>
@@ -5874,10 +5979,11 @@ function MemberSheet({ name, onClose }: MemberSheetProps) {
             <div className="member-sheet-avatar">{name.slice(0, 1)}</div>
             <div className="member-sheet-actions">
               <button onClick={() => setView("report")}>
-                <Warning size={19} weight="bold" /> Báo cáo người dùng
+                <OIcon name="warning" size={19} weight="bold" /> Báo cáo người
+                dùng
               </button>
               <button onClick={() => setView("block")}>
-                <Lock size={19} weight="bold" /> Chặn
+                <OIcon name="lock" size={19} weight="bold" /> Chặn
               </button>
             </div>
           </>
@@ -5892,8 +5998,10 @@ function MemberSheet({ name, onClose }: MemberSheetProps) {
                     className={reason === item ? "selected" : ""}
                     onClick={() => setReason(item)}
                   >
-                    <Warning size={17} weight="bold" />
-                    {reason === item && <Check size={15} weight="bold" />}
+                    <OIcon name="warning" size={17} weight="bold" />
+                    {reason === item && (
+                      <OIcon name="check" size={15} weight="bold" />
+                    )}
                     {item}
                   </button>
                 ),
@@ -5931,7 +6039,7 @@ function MemberSheet({ name, onClose }: MemberSheetProps) {
                 onClose()
               }}
             >
-              <Lock size={18} weight="bold" /> Chặn
+              <OIcon name="lock" size={18} weight="bold" /> Chặn
             </button>
             <button className="sheet-secondary" onClick={onClose}>
               Huỷ
@@ -5975,14 +6083,14 @@ function SquadScreen() {
       <div className="all-groups-content">
         {!store.signedIn && (
           <div className="groups-locked">
-            <Lock size={25} weight="bold" />
+            <OIcon name="lock" size={25} weight="bold" />
             <b>Đăng nhập để dùng nhóm.</b>
             <button onClick={() => navigate("/login")}>Đăng nhập</button>
           </div>
         )}
         {store.offline && (
           <div className="groups-offline">
-            <CloudSlash size={18} weight="bold" />
+            <OIcon name="cloud-off" size={18} weight="bold" />
             Đang xem bản đã lưu. Cần có mạng để tham gia hoặc nhắc người khác.
           </div>
         )}
@@ -6002,7 +6110,7 @@ function SquadScreen() {
               maxLength={9}
             />
             <button aria-label="Dán mã" onClick={() => setCode("K7Q2M9XA")}>
-              <Copy size={20} weight="bold" />
+              <OIcon name="copy" size={20} weight="bold" />
             </button>
           </div>
           <button
@@ -6025,7 +6133,7 @@ function SquadScreen() {
           ) : groups.length === 0 ? (
             <div className="groups-empty">
               <span>
-                <UsersThree size={40} weight="duotone" />
+                <OIcon name="squad" size={40} weight="duotone" />
               </span>
               <h3>chưa có hội nào.</h3>
               <p>Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.</p>
@@ -6083,12 +6191,13 @@ function SquadScreen() {
                           <small>
                             {checked ? (
                               <>
-                                <Check size={12} weight="bold" />{" "}
+                                <OIcon name="check" size={12} weight="bold" />{" "}
                                 {`07:${12 + index}`}
                               </>
                             ) : (
                               <>
-                                <Clock size={12} weight="bold" /> chưa
+                                <OIcon name="clock" size={12} weight="bold" />{" "}
+                                chưa
                               </>
                             )}
                           </small>
@@ -6111,11 +6220,13 @@ function SquadScreen() {
                   >
                     {store.nudged.includes(waiting) ? (
                       <>
-                        <Check size={15} weight="bold" /> Đã nhắc {waiting}
+                        <OIcon name="check" size={15} weight="bold" /> Đã nhắc{" "}
+                        {waiting}
                       </>
                     ) : (
                       <>
-                        <HandWaving size={16} weight="bold" /> Nhắc {waiting}
+                        <OIcon name="nudge" size={16} weight="bold" /> Nhắc{" "}
+                        {waiting}
                       </>
                     )}
                   </button>
@@ -6252,7 +6363,7 @@ function JoinScreen() {
         )}
         {error && (
           <div className="join-error">
-            <Warning size={20} weight="bold" />
+            <OIcon name="warning" size={20} weight="bold" />
             {error}
           </div>
         )}
@@ -6289,7 +6400,7 @@ function ProfileScreen() {
         title="hồ sơ."
         action={
           <button onClick={() => navigate("/settings")} aria-label="Cài đặt">
-            <GearSix size={21} weight="bold" />
+            <OIcon name="settings" size={21} weight="bold" />
           </button>
         }
       />
@@ -6337,9 +6448,9 @@ function ProfileScreen() {
               >
                 <span>
                   {unlocked ? (
-                    <Check size={18} weight="bold" />
+                    <OIcon name="check" size={18} weight="bold" />
                   ) : (
-                    <Lock size={18} weight="bold" />
+                    <OIcon name="lock" size={18} weight="bold" />
                   )}
                 </span>
                 <b>{String(label)}</b>
@@ -6497,7 +6608,8 @@ function ActivityScreen() {
       <main className="activity-feed">
         {store.offline && (
           <div className="activity-offline">
-            <WifiSlash size={17} weight="bold" /> Đang xem bản đã lưu.
+            <OIcon name="wifi-off" size={17} weight="bold" /> Đang xem bản đã
+            lưu.
           </div>
         )}
         {store.activityState === "loading" ? (
@@ -6509,7 +6621,7 @@ function ActivityScreen() {
         ) : store.activityState === "empty" ? (
           <div className="activity-empty">
             <span>
-              <Bell size={38} weight="duotone" />
+              <OIcon name="activity" size={38} weight="duotone" />
             </span>
             <h2>chưa có gì mới.</h2>
             <p>Những cập nhật từ hành trình sẽ xuất hiện ở đây.</p>
@@ -6582,7 +6694,7 @@ function SystemSwitch({
       aria-label={label}
       onClick={onChange}
     >
-      <span>{checked && <Check size={13} weight="bold" />}</span>
+      <span>{checked && <OIcon name="check" size={13} weight="bold" />}</span>
     </button>
   )
 }
@@ -6602,17 +6714,39 @@ function SettingsScreen() {
         <section className="settings-group">
           <h2>tài khoản</h2>
           <div className="settings-card">
-            <div className="settings-readonly">
-              <span>Email</span>
-              <b>{store.email}</b>
-            </div>
+            {(["google", "email", "phone"] as const).map((method) => (
+              <div className="settings-readonly" key={method}>
+                <span>
+                  {method === "google"
+                    ? "Google"
+                    : method === "phone"
+                      ? "Số điện thoại"
+                      : "Email"}
+                </span>
+                <b>
+                  {store.linkedMethods.includes(method)
+                    ? method === "email"
+                      ? store.email
+                      : "Đã liên kết"
+                    : "Chưa liên kết"}
+                </b>
+              </div>
+            ))}
+            <button
+              onClick={() => {
+                store.setHasPassword(true)
+                showNotice("Đã đặt mật khẩu cho tài khoản.")
+              }}
+            >
+              <OIcon name="lock" size={19} weight="bold" /> Đặt mật khẩu
+            </button>
             <button
               onClick={() => {
                 store.setSignedIn(false)
                 navigate("/login", { replace: true })
               }}
             >
-              <SignOut size={19} weight="bold" /> Đăng xuất
+              <OIcon name="sign-out" size={19} weight="bold" /> Đăng xuất
             </button>
           </div>
         </section>
@@ -6642,7 +6776,7 @@ function SettingsScreen() {
               ))}
             <div className="settings-reminder">
               <span>
-                <Bell size={19} weight="bold" />
+                <OIcon name="activity" size={19} weight="bold" />
               </span>
               <div>
                 <b>Báo trước khi chuỗi sắp đứt</b>
@@ -6670,10 +6804,10 @@ function SettingsScreen() {
           <h2>giao diện</h2>
           <div className="theme-segmented">
             {[
-              ["light", "Sáng", Sun],
-              ["dark", "Tối", Moon],
-              ["system", "Theo máy", Desktop],
-            ].map(([value, label, Icon]) => (
+              ["light", "Sáng", "sun"],
+              ["dark", "Tối", "moon"],
+              ["system", "Theo máy", "desktop"],
+            ].map(([value, label, icon]) => (
               <button
                 key={String(value)}
                 className={store.themePreference === value ? "active" : ""}
@@ -6681,13 +6815,44 @@ function SettingsScreen() {
                   store.setThemePreference(value as "light" | "dark" | "system")
                 }
               >
-                <Icon size={18} weight="bold" />
+                <OIcon name={icon as OIconName} size={18} weight="bold" />
                 {label as string}
                 {store.themePreference === value && (
-                  <Check size={14} weight="bold" />
+                  <OIcon name="check" size={14} weight="bold" />
                 )}
               </button>
             ))}
+          </div>
+          <div className="app-icon-picker">
+            <b>Icon ứng dụng</b>
+            <div>
+              {[
+                ["default", "#FF4D6D", "#10B981", "Mặc định"],
+                ["quiet", "#DFF7EC", "#10B981", "Giảm cân"],
+                ["squad", "#FFF0C7", "#FF9F1C", "Hội"],
+                ["memory", "#F3E3C3", "#C2452B", "Ký ức"],
+                ["couple", "#FFE0E9", "#E15B72", "Hai đứa"],
+                ["flexer", "#14161F", "#3DE88C", "Tập luyện"],
+                ["minimal", "#F4F4F5", "#EA580C", "Tối giản"],
+              ].map(([value, tile, mark, label]) => (
+                <button
+                  key={value}
+                  className={store.appIcon === value ? "selected" : ""}
+                  style={
+                    {
+                      "--app-icon-tile": tile,
+                      "--app-icon-mark": mark,
+                    } as CSSProperties
+                  }
+                  onClick={() => store.setAppIcon(value)}
+                  aria-label={`Icon ứng dụng ${label}`}
+                >
+                  <Wordmark size={42} variant="small" />
+                  <span>{label}</span>
+                  {store.appIcon === value && <OIcon name="check" size={14} />}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
         <section className="settings-group">
@@ -6739,7 +6904,7 @@ function SettingsScreen() {
             ].map(([label, path]) => (
               <button key={label} onClick={() => navigate(path)}>
                 {label}
-                <CaretRight size={18} weight="bold" />
+                <OIcon name="caret-right" size={18} weight="bold" />
               </button>
             ))}
             <div className="settings-readonly">
@@ -6752,7 +6917,7 @@ function SettingsScreen() {
           className="danger-zone"
           onClick={() => navigate("/settings/delete/1")}
         >
-          <Warning size={21} weight="bold" />
+          <OIcon name="warning" size={21} weight="bold" />
           Xoá tài khoản
         </button>
       </main>
@@ -6850,20 +7015,20 @@ function ContactPage() {
       <main>
         <p className="legal-updated">Cập nhật lần cuối: 01/11/2026</p>
         <button onClick={() => notify("Đã mở ứng dụng thư")}>
-          <PaperPlaneTilt size={21} weight="bold" />
+          <OIcon name="paper-plane" size={21} weight="bold" />
           <span>
             <b>Gửi email hỗ trợ</b>
             <small>hotro@ourney.example</small>
           </span>
-          <CaretRight size={18} weight="bold" />
+          <OIcon name="caret-right" size={18} weight="bold" />
         </button>
         <button onClick={() => notify("Đã mở biểu mẫu báo lỗi")}>
-          <Warning size={21} weight="bold" />
+          <OIcon name="warning" size={21} weight="bold" />
           <span>
             <b>Báo lỗi</b>
             <small>Mô tả điều chưa ổn</small>
           </span>
-          <CaretRight size={18} weight="bold" />
+          <OIcon name="caret-right" size={18} weight="bold" />
         </button>
       </main>
       {toast && <div className="system-toast">{toast}</div>}
@@ -6878,6 +7043,7 @@ function DeleteAccountScreen() {
   const step = params.step ?? "1"
   const [accepted, setAccepted] = useState(false)
   const [otp, setOtp] = useState("")
+  const deleteOtpRef = useRef<HTMLInputElement | null>(null)
   const [seconds, setSeconds] = useState(30)
   const [status, setStatus] = useState<"ready" | "deleting" | "done" | "error">(
     "ready",
@@ -6902,7 +7068,7 @@ function DeleteAccountScreen() {
           {done && (
             <div className="delete-done">
               <span>
-                <Check size={48} weight="bold" />
+                <OIcon name="check" size={48} weight="bold" />
               </span>
               <h1>Đã xoá tài khoản.</h1>
               <p>Cảm ơn bạn đã dùng Ourney.</p>
@@ -6919,7 +7085,7 @@ function DeleteAccountScreen() {
           )}
           {status === "error" && (
             <div className="delete-error">
-              <Warning size={24} weight="bold" />
+              <OIcon name="warning" size={24} weight="bold" />
               <p>
                 {store.offline
                   ? "Cần có mạng để xoá tài khoản."
@@ -6938,22 +7104,26 @@ function DeleteAccountScreen() {
         <PushedHeader title="xác nhận bằng mã." onBack={() => navigate(-1)} />
         <main>
           <p className="delete-lead">Mã gồm 6 số vừa gửi tới {store.email}</p>
-          <div className="delete-otp">
+          <div
+            className="delete-otp"
+            onClick={() => deleteOtpRef.current?.focus()}
+          >
             {Array.from({ length: 6 }, (_, index) => (
               <span key={index}>{otp[index] ?? ""}</span>
             ))}
-          </div>
-          <label className="delete-otp-input">
-            <span>Nhập mã xác nhận</span>
             <input
+              ref={deleteOtpRef}
+              className="otp-native-input"
               inputMode="numeric"
+              autoComplete="one-time-code"
+              autoFocus
               value={otp}
-              maxLength={6}
               onChange={(event) =>
                 setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))
               }
+              aria-label="Mã xác nhận xoá tài khoản gồm 6 số"
             />
-          </label>
+          </div>
           <button
             className="resend-code"
             disabled={seconds > 0}
@@ -6973,7 +7143,7 @@ function DeleteAccountScreen() {
               }, 1100)
             }}
           >
-            <Trash size={18} weight="bold" /> Xoá vĩnh viễn
+            <OIcon name="trash" size={18} weight="bold" /> Xoá vĩnh viễn
           </button>
           {otp.length === 6 && otp !== "123456" && (
             <p className="otp-error">Mã chưa đúng. Kiểm tra lại nhé.</p>
@@ -6987,7 +7157,7 @@ function DeleteAccountScreen() {
       <PushedHeader title="xoá tài khoản." onBack={() => navigate(-1)} />
       <main>
         <div className="delete-warning">
-          <Warning size={25} weight="bold" />
+          <OIcon name="warning" size={25} weight="bold" />
           <p>
             Toàn bộ dữ liệu và ảnh trên máy chủ sẽ bị xoá vĩnh viễn. Không thể
             khôi phục.
@@ -6995,14 +7165,14 @@ function DeleteAccountScreen() {
         </div>
         <ul className="delete-list">
           <li>
-            <User size={20} weight="bold" /> Hồ sơ của bạn
+            <OIcon name="profile" size={20} weight="bold" /> Hồ sơ của bạn
           </li>
           <li>
-            <Images size={20} weight="bold" /> Mọi hành trình và ảnh
+            <OIcon name="image" size={20} weight="bold" /> Mọi hành trình và ảnh
           </li>
           <li>
-            <UsersThree size={20} weight="bold" /> Tư cách thành viên trong các
-            nhóm
+            <OIcon name="squad" size={20} weight="bold" /> Tư cách thành viên
+            trong các nhóm
           </li>
         </ul>
         <p className="delete-owner-note">
@@ -7024,17 +7194,25 @@ function DeleteAccountScreen() {
           disabled={!accepted}
           onClick={() => navigate("/settings/delete/2")}
         >
-          <Trash size={18} weight="bold" /> Tiếp tục
+          <OIcon name="trash" size={18} weight="bold" /> Tiếp tục
         </button>
       </main>
     </section>
   )
 }
 
+let lastDockTabIndex: number | null = null
+
 function FloatingDock({ currentPath }: { currentPath: string }) {
   const navigate = useNavigate()
   const store = useStore()
   const wheelOpen = store.journeyWheelOpen
+  const dockRef = useRef<HTMLElement | null>(null)
+  const [selectionGeometry, setSelectionGeometry] = useState({
+    x: 0,
+    width: 0,
+    fromX: null as number | null,
+  })
   const pressStartedAt = useRef(0)
   const pressFrame = useRef<number | null>(null)
   const longPressOpened = useRef(false)
@@ -7051,7 +7229,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
   const shutterDisabled =
     store.readOnly ||
     Boolean(activeJourney?.archived) ||
-    (onCamera && (!activeJourney || store.cameraPermission !== "granted"))
+    (onCamera && Boolean(activeJourney) && store.cameraPermission !== "granted")
   const quietDock = activeJourney?.skin === "quiet"
   const squadDock = activeJourney?.skin === "squad"
   const memoryDock = activeJourney?.skin === "memory"
@@ -7060,6 +7238,19 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
   const minimalDock = activeJourney?.skin === "minimal"
   const onJourneyHome = /^\/j\/[^/]+$/.test(currentPath)
   const onJourneySquad = /^\/j\/[^/]+\/squad$/.test(currentPath)
+  const hubActive = currentPath === "/hub" || onJourneyHome
+  const squadActive = currentPath === "/squad" || onJourneySquad
+  const activityActive = currentPath === "/activity"
+  const profileActive = currentPath === "/me"
+  const activeDockIndex = hubActive
+    ? 0
+    : squadActive
+      ? 1
+      : activityActive
+        ? 2
+        : profileActive
+          ? 3
+          : -1
 
   function openWheel() {
     store.setJourneyWheelOpen(true)
@@ -7096,7 +7287,8 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
       } else if (activeJourney) {
         navigate(`/j/${activeJourney.id}/camera`)
       } else {
-        navigate("/camera")
+        store.beginCreate("/camera")
+        navigate(store.resumeCreateRoute)
       }
     }
   }
@@ -7133,6 +7325,58 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
     })
   }, [wheelOpen])
 
+  useLayoutEffect(() => {
+    const dock = dockRef.current
+    if (!dock || activeDockIndex < 0) {
+      setSelectionGeometry({ x: 0, width: 0, fromX: null })
+      return
+    }
+
+    const tabGeometry = (tab: HTMLElement) => ({
+      x: tab.offsetLeft,
+      width: tab.offsetWidth,
+    })
+    const activeTab = dock.querySelector<HTMLElement>(
+      '.dock-tab[aria-current="page"]',
+    )
+    if (!activeTab) return
+
+    const previousTab =
+      lastDockTabIndex === null
+        ? null
+        : dock.querySelector<HTMLElement>(
+            `[data-dock-index="${lastDockTabIndex}"]`,
+          )
+    const shouldSlide =
+      !store.reduceMotion &&
+      previousTab !== null &&
+      lastDockTabIndex !== activeDockIndex
+
+    const activeGeometry = tabGeometry(activeTab)
+    const previousGeometry = previousTab ? tabGeometry(previousTab) : null
+    setSelectionGeometry({
+      ...activeGeometry,
+      fromX: shouldSlide ? (previousGeometry?.x ?? null) : null,
+    })
+
+    // Defer the shared index so React Strict Mode's effect replay keeps the
+    // same origin and the remounted route can animate from the previous tab.
+    window.setTimeout(() => {
+      lastDockTabIndex = activeDockIndex
+    }, 0)
+    const observer = new ResizeObserver(() => {
+      setSelectionGeometry((current) => ({
+        ...tabGeometry(activeTab),
+        fromX: current.fromX,
+      }))
+    })
+    observer.observe(dock)
+    observer.observe(activeTab)
+    return () => {
+      observer.disconnect()
+    }
+  }, [activeDockIndex, store.reduceMotion])
+
   useEffect(
     () => () => {
       if (pressFrame.current !== null) {
@@ -7156,7 +7400,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
             onClick={() => store.setJourneyWheelOpen(false)}
             aria-label="Đóng vòng chọn"
           >
-            <X size={22} weight="bold" />
+            <OIcon name="close" size={22} weight="bold" />
           </button>
           <div
             className="journey-wheel-container"
@@ -7233,7 +7477,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
                       <span>{typeEmoji[journey.type]}</span>
                       {selected && (
                         <i>
-                          <Check size={12} weight="bold" />
+                          <OIcon name="check" size={12} weight="bold" />
                         </i>
                       )}
                     </span>
@@ -7250,7 +7494,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
                 onClick={createJourney}
               >
                 <span className="journey-disc-circle">
-                  <Plus size={19} weight="bold" />
+                  <OIcon name="plus" size={19} weight="bold" />
                 </span>
                 <b className="journey-disc-day">mới</b>
                 <small>tạo hành trình</small>
@@ -7260,6 +7504,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
         </div>
       )}
       <nav
+        ref={dockRef}
         className={`floating-dock app-dock ${quietDock ? "quiet-dock" : ""} ${
           squadDock ? "squad-dock" : ""
         } ${memoryDock ? "memory-dock" : ""} ${
@@ -7268,33 +7513,42 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
           minimalDock ? "minimal-dock" : ""
         } ${store.readOnly || activeJourney?.archived ? "dock-readonly" : ""}`}
         aria-label="Điều hướng chính"
+        style={
+          {
+            "--dock-selection-x": `${selectionGeometry.x}px`,
+            "--dock-selection-width": `${selectionGeometry.width}px`,
+            "--dock-selection-from-x": `${selectionGeometry.fromX ?? selectionGeometry.x}px`,
+          } as CSSProperties
+        }
       >
         <button
-          className={`dock-tab ${
-            currentPath === "/hub" || onJourneyHome ? "active" : ""
-          }`}
+          className={`dock-tab ${hubActive ? "active" : ""}`}
+          data-dock-index="0"
+          aria-current={hubActive ? "page" : undefined}
           onClick={() => navigate("/hub")}
         >
-          <span className="dock-pill">
-            <MapTrifold
+          <span className="dock-icon">
+            <OIcon
+              name="journeys"
               size={24}
-              weight={currentPath === "/hub" || onJourneyHome ? "fill" : "bold"}
+              active={hubActive}
+              weight={hubActive ? "fill" : "bold"}
             />
           </span>
           <span>Hành trình</span>
         </button>
         <button
-          className={`dock-tab ${
-            currentPath === "/squad" || onJourneySquad ? "active" : ""
-          }`}
+          className={`dock-tab ${squadActive ? "active" : ""}`}
+          data-dock-index="1"
+          aria-current={squadActive ? "page" : undefined}
           onClick={() => navigate("/squad")}
         >
-          <span className="dock-pill">
-            <UsersThree
+          <span className="dock-icon">
+            <OIcon
+              name="squad"
               size={24}
-              weight={
-                currentPath === "/squad" || onJourneySquad ? "fill" : "bold"
-              }
+              active={squadActive}
+              weight={squadActive ? "fill" : "bold"}
             />
           </span>
           <span>Hội</span>
@@ -7316,7 +7570,7 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
         >
           {store.readOnly || activeJourney?.archived ? (
             <>
-              <Lock size={28} weight="bold" />
+              <OIcon name="lock" size={28} weight="bold" />
               <span className="readonly-shutter-label">
                 {activeJourney?.skin === "memory" ||
                 activeJourney?.skin === "couple" ||
@@ -7327,36 +7581,53 @@ function FloatingDock({ currentPath }: { currentPath: string }) {
               </span>
             </>
           ) : (
-            <Camera size={32} weight="bold" />
+            <OIcon name="camera" size={32} active={onCamera} weight="bold" />
           )}
         </button>
         <button
-          className={`dock-tab ${currentPath === "/activity" ? "active" : ""}`}
+          className={`dock-tab ${activityActive ? "active" : ""}`}
+          data-dock-index="2"
+          aria-current={activityActive ? "page" : undefined}
           onClick={() => navigate("/activity")}
         >
-          <span className="dock-pill activity-dock-pill">
-            <Bell
+          <span className="dock-icon activity-dock-icon">
+            <OIcon
+              name="activity"
               size={24}
-              weight={currentPath === "/activity" ? "fill" : "bold"}
+              active={activityActive}
+              weight={activityActive ? "fill" : "bold"}
             />
-            {store.activityUnread && currentPath !== "/activity" && (
+            {store.activityUnread && !activityActive && (
               <i className="activity-unread-dot" />
             )}
           </span>
           <span>Hoạt động</span>
         </button>
         <button
-          className={`dock-tab ${currentPath === "/me" ? "active" : ""}`}
+          className={`dock-tab ${profileActive ? "active" : ""}`}
+          data-dock-index="3"
+          aria-current={profileActive ? "page" : undefined}
           onClick={() => navigate("/me")}
         >
-          <span className="dock-pill">
-            <UserCircle
+          <span className="dock-icon">
+            <OIcon
+              name="profile"
               size={24}
-              weight={currentPath === "/me" ? "fill" : "bold"}
+              active={profileActive}
+              weight={profileActive ? "fill" : "bold"}
             />
           </span>
           <span>Hồ sơ</span>
         </button>
+        {activeDockIndex >= 0 && selectionGeometry.width > 0 && (
+          <span
+            key={activeDockIndex}
+            className={`dock-selection-capsule ${
+              selectionGeometry.fromX === null ? "" : "dock-selection-enter"
+            }`}
+            aria-hidden="true"
+          />
+        )}
       </nav>
     </>
   )
@@ -7404,12 +7675,12 @@ function CreateSheet({ onClose }: { onClose: () => void }) {
           <div className="grab" />
         </div>
         <button className="sheet-close" onClick={onClose} aria-label="Đóng">
-          <X size={22} weight="bold" />
+          <OIcon name="close" size={22} weight="bold" />
         </button>
         <span>Bắt đầu điều mới</span>
         <h2>tạo hành trình.</h2>
         <div className="coming-card">
-          <Plus size={25} weight="bold" />
+          <OIcon name="plus" size={25} weight="bold" />
           <p>sắp có</p>
         </div>
       </div>
@@ -7431,7 +7702,7 @@ function CreateAttachment() {
           onClick={() => navigate(-1)}
           aria-label="Quay lại"
         >
-          <ArrowLeft size={22} weight="bold" />
+          <OIcon name="back" size={22} weight="bold" />
         </button>
       </header>
       <div>
@@ -7507,7 +7778,7 @@ function JourneyScenarioScreen({
       <ScreenShell bare className={`scenario-screen scenario-${journey.skin}`}>
         <main className="scenario-removed">
           <div className="scenario-sticker">
-            <UsersThree size={36} weight="duotone" />
+            <OIcon name="squad" size={36} weight="duotone" />
           </div>
           <h1>Bạn không còn trong nhóm này.</h1>
           <p>
@@ -7530,14 +7801,14 @@ function JourneyScenarioScreen({
     <ScreenShell bare className={`scenario-screen scenario-${journey.skin}`}>
       <header className="scenario-header">
         <button onClick={() => navigate("/hub")} aria-label="Quay lại">
-          <ArrowLeft size={21} weight="bold" />
+          <OIcon name="back" size={21} weight="bold" />
         </button>
         <b>{mode === "squad" ? "hội hôm nay." : journey.name}</b>
         <button
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt"
         >
-          <GearSix size={20} weight="bold" />
+          <OIcon name="settings" size={20} weight="bold" />
         </button>
       </header>
       <main className="scenario-content">
@@ -7552,7 +7823,7 @@ function JourneyScenarioScreen({
         {state === "error" && (
           <div className="scenario-message">
             <div className="scenario-cache-strip">
-              <CloudSlash size={18} weight="bold" />
+              <OIcon name="cloud-off" size={18} weight="bold" />
               Đang xem bản đã lưu
             </div>
             <div
@@ -7569,7 +7840,7 @@ function JourneyScenarioScreen({
             </div>
             <p className="scenario-error-line">{copy.error}</p>
             <button onClick={() => store.setJourneyDemoState("normal")}>
-              <ArrowsClockwise size={18} weight="bold" /> Thử lại
+              <OIcon name="switch-camera" size={18} weight="bold" /> Thử lại
             </button>
           </div>
         )}
@@ -7592,17 +7863,17 @@ function JourneyScenarioScreen({
               {journey.skin === "couple" ? (
                 <>
                   <span>Nam</span>
-                  <Heart size={30} weight="regular" />
+                  <OIcon name="heart" size={30} weight="regular" />
                   <span>Linh</span>
                 </>
               ) : journey.skin === "memory" ? (
                 <button onClick={() => navigate(`/j/${journey.id}/camera`)}>
-                  <Camera size={22} weight="bold" />
+                  <OIcon name="camera" size={22} weight="bold" />
                   HÔM NAY · chạm để chụp
                 </button>
               ) : journey.skin === "squad" ? (
                 <>
-                  <Trophy size={54} weight="duotone" />
+                  <OIcon name="trophy" size={54} weight="duotone" />
                   <span>0/5 HÔM NAY</span>
                 </>
               ) : (
@@ -7615,7 +7886,7 @@ function JourneyScenarioScreen({
                 className="scenario-invite"
                 onClick={() => store.setInviteSheetOpen(true)}
               >
-                <UsersThree size={18} weight="bold" /> Mời bạn
+                <OIcon name="squad" size={18} weight="bold" /> Mời bạn
               </button>
             )}
           </div>
@@ -7627,10 +7898,10 @@ function JourneyScenarioScreen({
               <article>
                 <span>L</span>
                 <b>Bạn · 07:12</b>
-                <Check size={18} weight="bold" />
+                <OIcon name="check" size={18} weight="bold" />
               </article>
               <button onClick={() => store.setInviteSheetOpen(true)}>
-                <Plus size={22} weight="bold" />
+                <OIcon name="plus" size={22} weight="bold" />
                 Mời bạn
               </button>
             </div>
@@ -7655,7 +7926,7 @@ function JourneyScenarioScreen({
                 )
               }
             >
-              <EyeSlash size={28} weight="bold" />
+              <OIcon name="eye-off" size={28} weight="bold" />
               <b>Ảnh đã ẩn</b>
               <span>
                 {store.blocked.length
@@ -7868,7 +8139,7 @@ function ImportJourneyFlow() {
                     <small>{photo.label}</small>
                     {active && (
                       <i>
-                        <Check size={15} weight="bold" />
+                        <OIcon name="check" size={15} weight="bold" />
                       </i>
                     )}
                   </button>
@@ -7984,8 +8255,8 @@ function ImportJourneyFlow() {
             </label>
             {type === "Giảm cân" && (
               <p className="import-private-note">
-                <Lock size={15} weight="fill" /> Số kg vẫn ẩn và ảnh vẫn làm mờ
-                khi chia sẻ.
+                <OIcon name="lock" size={15} weight="fill" /> Số kg vẫn ẩn và
+                ảnh vẫn làm mờ khi chia sẻ.
               </p>
             )}
             <button
@@ -8018,7 +8289,7 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
             onClick={() => navigate(`/j/${journey.id}/edit`)}
             aria-label="Sửa"
           >
-            <GearSix size={20} />
+            <OIcon name="settings" size={20} />
           </button>
         }
       />
@@ -8064,7 +8335,7 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
           {journey.todayDone && (
             <article className="captured">
               <span className="captured-scene">
-                <Camera size={24} weight="bold" />
+                <OIcon name="camera" size={24} weight="bold" />
               </span>
               <div>
                 <b>Ảnh chụp mới</b>
@@ -8077,7 +8348,7 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
           className="import-primary"
           onClick={() => navigate(`/j/${journey.id}/camera`)}
         >
-          <Camera size={18} weight="bold" /> Chụp tiếp
+          <OIcon name="camera" size={18} weight="bold" /> Chụp tiếp
         </button>
       </main>
     </ScreenShell>
@@ -8087,6 +8358,7 @@ function ImportedJourneyHome({ journey }: { journey: Journey }) {
 function ImportedJourneyShare({ journey }: { journey: Journey }) {
   const navigate = useNavigate()
   const [shareOpen, setShareOpen] = useState(false)
+  const [hideBrand, setHideBrand] = useState(false)
   return (
     <section className={`journey-pushed imported-share pushed-${journey.skin}`}>
       <PushedHeader title="chia sẻ hành trình." onBack={() => navigate(-1)} />
@@ -8108,9 +8380,10 @@ function ImportedJourneyShare({ journey }: { journey: Journey }) {
               aria-label={`Ngày ${photo.day}, ${formatJourneyDate(photo.date)}`}
             />
           ))}
+          {!hideBrand && <Wordmark size={56} className="share-brand" />}
         </div>
         <button className="import-primary" onClick={() => setShareOpen(true)}>
-          <ShareNetwork size={18} weight="bold" /> Chia sẻ
+          <OIcon name="share" size={18} weight="bold" /> Chia sẻ
         </button>
       </main>
       <JourneyActionSheet
@@ -8118,6 +8391,14 @@ function ImportedJourneyShare({ journey }: { journey: Journey }) {
         title="chia sẻ hành trình."
         onClose={() => setShareOpen(false)}
       >
+        <button
+          className="sheet-secondary share-brand-toggle"
+          onClick={() => setHideBrand(!hideBrand)}
+        >
+          <OIcon name={hideBrand ? "eye-off" : "eye"} size={20} />
+          Ẩn chữ ourney
+          <span>{hideBrand ? "Bật" : "Tắt"}</span>
+        </button>
         <button className="sheet-primary" onClick={() => setShareOpen(false)}>
           Tin nhắn
         </button>
@@ -8159,6 +8440,7 @@ function AdaptiveJourneyScreen({
   const params = useParams()
   const [caption, setCaption] = useState(journey.lastCaption ?? "")
   const [toast, setToast] = useState("")
+  const [hideBrand, setHideBrand] = useState(journey.skin === "quiet")
   const total = journeyLength(journey)
   const members = journey.members ?? []
   const attendance = Math.min(journey.attendance ?? 0, members.length)
@@ -8174,14 +8456,14 @@ function AdaptiveJourneyScreen({
           onClick={() => (back ? navigate(-1) : navigate("/hub"))}
           aria-label="Quay lại"
         >
-          <ArrowLeft size={21} weight="bold" />
+          <OIcon name="back" size={21} weight="bold" />
         </button>
         <b>{title.toLocaleUpperCase("vi")}</b>
         <button
           onClick={() => navigate(`/j/${journey.id}/edit`)}
           aria-label="Cài đặt hành trình"
         >
-          <GearSix size={20} weight="bold" />
+          <OIcon name="settings" size={20} weight="bold" />
         </button>
       </header>
     )
@@ -8231,7 +8513,7 @@ function AdaptiveJourneyScreen({
         className={`journey-pushed adaptive-page adaptive-done adaptive-${journey.skin}`}
         onClick={() => navigate(`/j/${journey.id}`, { replace: true })}
       >
-        <Check size={54} weight="bold" />
+        <OIcon name="check" size={54} weight="bold" />
         <h1>
           NGÀY {journey.day}/{total}
         </h1>
@@ -8289,8 +8571,16 @@ function AdaptiveJourneyScreen({
             </b>
             <AdaptiveJourneyVisual journey={journey} />
             <p>{metric}</p>
-            <small>Chuỗi {journey.streak} · Ourney</small>
+            <small>Chuỗi {journey.streak}</small>
+            {!hideBrand && <Wordmark size={56} className="share-brand" />}
           </div>
+          <button
+            className="adaptive-brand-toggle"
+            onClick={() => setHideBrand(!hideBrand)}
+          >
+            <OIcon name={hideBrand ? "eye-off" : "eye"} size={18} />
+            Ẩn chữ ourney · {hideBrand ? "Bật" : "Tắt"}
+          </button>
           <button
             className="adaptive-primary"
             onClick={() => {
@@ -8298,7 +8588,7 @@ function AdaptiveJourneyScreen({
               window.setTimeout(() => setToast(""), 1600)
             }}
           >
-            <ShareNetwork size={18} weight="bold" /> Tạo thiệp
+            <OIcon name="share" size={18} weight="bold" /> Tạo thiệp
           </button>
         </main>
         {toast && <div className="system-toast">{toast}</div>}
@@ -8373,7 +8663,7 @@ function AdaptiveJourneyScreen({
           className="adaptive-share-button"
           onClick={() => navigate(`/j/${journey.id}/share`)}
         >
-          <ShareNetwork size={18} weight="bold" /> Tạo thiệp
+          <OIcon name="share" size={18} weight="bold" /> Tạo thiệp
         </button>
       </main>
     </ScreenShell>

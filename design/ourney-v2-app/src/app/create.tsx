@@ -1,24 +1,4 @@
 import {
-  ArrowLeft,
-  ArrowRight,
-  Barbell,
-  BookOpen,
-  Camera,
-  Check,
-  CloudSlash,
-  Heart,
-  Lock,
-  MapPin,
-  MagnifyingGlass,
-  Scales,
-  SuitcaseRolling,
-  Timer,
-  UsersThree,
-  User,
-  X,
-  Trophy,
-} from "@phosphor-icons/react"
-import {
   useEffect,
   useLayoutEffect,
   useRef,
@@ -27,7 +7,8 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react"
-import { useNavigate, useParams } from "react-router"
+import { useLocation, useNavigate, useParams } from "react-router"
+import { OIcon } from "./icons"
 import { skins } from "../StyleGuide"
 import { PermissionSheet } from "./flow"
 import { useStore, type Draft, type Journey } from "./store"
@@ -48,7 +29,7 @@ const createTypes: CreateType[] = [
     name: "Giảm cân",
     emoji: "⚖️",
     tagline: "nhẹ nhàng, chỉ mình bạn thấy.",
-    icon: <Scales size={27} weight="duotone" />,
+    icon: <OIcon name="scales" size={27} weight="duotone" />,
   },
   {
     type: "Tiếng Anh",
@@ -56,7 +37,7 @@ const createTypes: CreateType[] = [
     name: "Học tiếng Anh",
     emoji: "📚",
     tagline: "điểm danh đủ hội nào!",
-    icon: <BookOpen size={27} weight="duotone" />,
+    icon: <OIcon name="book" size={27} weight="duotone" />,
   },
   {
     type: "Tập luyện",
@@ -64,7 +45,7 @@ const createTypes: CreateType[] = [
     name: "30 ngày tập luyện",
     emoji: "💪",
     tagline: "km. pace. xong.",
-    icon: <Barbell size={27} weight="duotone" />,
+    icon: <OIcon name="fitness" size={27} weight="duotone" />,
   },
   {
     type: "Chuyến đi",
@@ -72,7 +53,7 @@ const createTypes: CreateType[] = [
     name: "Chuyến đi",
     emoji: "✈️",
     tagline: "nhớ từng chặng đường.",
-    icon: <SuitcaseRolling size={27} weight="duotone" />,
+    icon: <OIcon name="trip" size={27} weight="duotone" />,
   },
   {
     type: "Cặp đôi",
@@ -80,7 +61,7 @@ const createTypes: CreateType[] = [
     name: "Hai đứa mình",
     emoji: "💞",
     tagline: "mỗi ngày một cặp ảnh.",
-    icon: <Heart size={27} weight="duotone" />,
+    icon: <OIcon name="heart" size={27} weight="duotone" />,
   },
   {
     type: "Tự đặt",
@@ -88,7 +69,7 @@ const createTypes: CreateType[] = [
     name: "Tự đặt",
     emoji: "✨",
     tagline: "chụp.",
-    icon: <Camera size={27} weight="duotone" />,
+    icon: <OIcon name="camera" size={27} weight="duotone" />,
   },
 ]
 
@@ -120,10 +101,12 @@ function createVariables(skinId: string | undefined, mode: "light" | "dark") {
 
 function ExitCreateSheet({
   onStay,
-  onExit,
+  onKeep,
+  onDiscard,
 }: {
   onStay: () => void
-  onExit: () => void
+  onKeep: () => void
+  onDiscard: () => void
 }) {
   const startY = useRef<number | null>(null)
   const [drag, setDrag] = useState(0)
@@ -164,15 +147,15 @@ function ExitCreateSheet({
           onClick={onStay}
           aria-label="Đóng"
         >
-          <X size={22} weight="bold" />
+          <OIcon name="close" size={22} weight="bold" />
         </button>
         <h2>thoát khỏi việc tạo?</h2>
-        <p>Chưa lưu gì cả.</p>
-        <button className="create-stay" onClick={onStay}>
-          Ở lại
+        <p>Bản nháp được lưu trên máy để bạn tiếp tục sau.</p>
+        <button className="create-stay" onClick={onKeep}>
+          Thoát, giữ bản nháp
         </button>
-        <button className="create-exit" onClick={onExit}>
-          Thoát
+        <button className="create-exit" onClick={onDiscard}>
+          Bỏ bản nháp
         </button>
       </div>
     </div>
@@ -198,11 +181,22 @@ function CreateFrame({
 }) {
   const store = useStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const [exitOpen, setExitOpen] = useState(false)
   const variables = createVariables(skinId, store.theme)
 
-  function exit() {
+  useEffect(() => {
+    store.saveCreateProgress(location.pathname)
+  }, [location.pathname])
+
+  function discardAndExit() {
     store.discardCreate()
+    setExitOpen(false)
+    navigate(store.createOrigin, { replace: true })
+  }
+
+  function keepAndExit() {
+    store.saveCreateProgress(location.pathname)
     setExitOpen(false)
     navigate(store.createOrigin, { replace: true })
   }
@@ -216,7 +210,7 @@ function CreateFrame({
     >
       <header className="create-topbar">
         <button onClick={() => navigate(-1)} aria-label="Quay lại">
-          <ArrowLeft size={22} weight="bold" />
+          <OIcon name="back" size={22} weight="bold" />
         </button>
         <div>
           <b>bước {step}/5</b>
@@ -231,12 +225,12 @@ function CreateFrame({
           {extra && <span className="create-extra-chip">{extra}</span>}
         </div>
         <button onClick={() => setExitOpen(true)} aria-label="Đóng">
-          <X size={22} weight="bold" />
+          <OIcon name="close" size={22} weight="bold" />
         </button>
       </header>
       {store.offline && (
         <div className="create-offline-banner">
-          <CloudSlash size={20} weight="bold" />
+          <OIcon name="cloud-off" size={20} weight="bold" />
           <span>đang lưu trên máy, có mạng sẽ tự gửi</span>
         </div>
       )}
@@ -251,7 +245,11 @@ function CreateFrame({
         </div>
       )}
       {exitOpen && (
-        <ExitCreateSheet onStay={() => setExitOpen(false)} onExit={exit} />
+        <ExitCreateSheet
+          onStay={() => setExitOpen(false)}
+          onKeep={keepAndExit}
+          onDiscard={discardAndExit}
+        />
       )}
     </section>
   )
@@ -274,7 +272,7 @@ function PreviewCard({ item }: { item: CreateType }) {
               <i />
             </div>
             <span className="preview-private">
-              <Lock size={15} weight="bold" /> Riêng tư
+              <OIcon name="lock" size={15} weight="bold" /> Riêng tư
             </span>
           </>
         )}
@@ -377,6 +375,21 @@ export function CreateStepOne() {
       actionLabel={onboardingPrefilled ? "Tiếp tục" : "Chọn kiểu này"}
     >
       <div className="create-heading">
+        {store.draft.fromOnboarding && store.onboardingChoice && (
+          <div className="onboarding-create-summary">
+            <span>Từ câu trả lời của bạn:</span>
+            <b>
+              {store.onboardingChoice.type} ·{" "}
+              {store.onboardingChoice.who === "group"
+                ? "Rủ hội bạn"
+                : store.onboardingChoice.who === "couple"
+                  ? "Chỉ hai đứa"
+                  : "Một mình"}{" "}
+              · Nhắc {store.onboardingChoice.reminder}
+            </b>
+            <button onClick={() => navigate("/onboarding/1")}>Sửa</button>
+          </div>
+        )}
         <h1>tạo hành trình.</h1>
         <p>
           {store.draft.fromOnboarding
@@ -427,7 +440,7 @@ export function CreateStepOne() {
             <PreviewCard item={type} />
             {focused === index && (
               <span className="create-focused-badge">
-                <Check size={15} weight="bold" /> Đã chọn
+                <OIcon name="check" size={15} weight="bold" /> Đã chọn
               </span>
             )}
           </button>
@@ -439,7 +452,7 @@ export function CreateStepOne() {
           disabled={focused === 0}
           aria-label="Thẻ trước"
         >
-          <ArrowLeft size={20} weight="bold" />
+          <OIcon name="back" size={20} weight="bold" />
         </button>
         <span>{focused + 1}/6</span>
         <button
@@ -447,7 +460,7 @@ export function CreateStepOne() {
           disabled={focused === createTypes.length - 1}
           aria-label="Thẻ sau"
         >
-          <ArrowRight size={20} weight="bold" />
+          <OIcon name="caret-right" size={20} weight="bold" />
         </button>
       </div>
       <button
@@ -621,7 +634,6 @@ export function CreateStepTwo() {
     store.setDraft({ answers: { ...answers, [key]: value } })
   const next = () =>
     navigate(type === "Tự đặt" || q === 3 ? "/create/3" : `/create/2/${q + 1}`)
-  const [permissionOpen, setPermissionOpen] = useState(false)
 
   let title = ""
   let body: ReactNode
@@ -654,7 +666,7 @@ export function CreateStepTwo() {
                 <b>{label}</b>
                 <small>{hint}</small>
               </span>
-              {selected && <Check size={20} weight="bold" />}
+              {selected && <OIcon name="check" size={20} weight="bold" />}
             </button>
           )
         })}
@@ -682,7 +694,7 @@ export function CreateStepTwo() {
           <span>120 kg</span>
         </div>
         <span className="privacy-chip">
-          <Lock size={17} weight="fill" /> Chỉ mình bạn thấy
+          <OIcon name="lock" size={17} weight="fill" /> Chỉ mình bạn thấy
         </span>
         <label className="private-toggle">
           <span>Ẩn số kg khi chia sẻ</span>
@@ -713,14 +725,19 @@ export function CreateStepTwo() {
       </div>
     )
     actionLabel = "Chụp ngay"
-    action = () => setPermissionOpen(true)
+    action = () => {
+      store.setDraft({
+        answers: { ...answers, ghostRequested: true },
+      })
+      next()
+    }
   } else if (type === "Tiếng Anh") {
     title = "đặt tên chiếc cúp ở đích."
     const value = String(answers.trophy ?? "")
     ready = Boolean(value.trim())
     body = (
       <div className="focused-field trophy-field">
-        <Trophy size={76} weight="duotone" />
+        <OIcon name="trophy" size={76} weight="duotone" />
         <b className="live-trophy-name">{value || "Cúp 7.5"}</b>
         <label>
           <span>Tên chiếc cúp</span>
@@ -742,7 +759,7 @@ export function CreateStepTwo() {
     body = (
       <div className="place-question">
         <label className="search-place">
-          <MagnifyingGlass size={20} />
+          <OIcon name="search" size={20} />
           <input
             autoFocus
             placeholder="Tìm một nơi..."
@@ -756,12 +773,12 @@ export function CreateStepTwo() {
             className={`place-suggestion ${place === city ? "selected" : ""}`}
             onClick={() => setAnswer("place", city)}
           >
-            <MapPin size={21} weight="fill" />
+            <OIcon name="map-pin" size={21} weight="fill" />
             <span>
               <b>{city}</b>
               <small>Việt Nam</small>
             </span>
-            {place === city && <Check size={19} weight="bold" />}
+            {place === city && <OIcon name="check" size={19} weight="bold" />}
           </button>
         ))}
         {place === "Đà Lạt" && (
@@ -823,7 +840,9 @@ export function CreateStepTwo() {
               <i />
             </span>
             <b>{label}</b>
-            {answers.side === label && <Check size={20} weight="bold" />}
+            {answers.side === label && (
+              <OIcon name="check" size={20} weight="bold" />
+            )}
           </button>
         ))}
       </div>
@@ -861,38 +880,20 @@ export function CreateStepTwo() {
   }
 
   return (
-    <>
-      <CreateFrame
-        step={2}
-        skinId={store.draft.skin}
-        extra={type === "Tự đặt" ? undefined : `Câu ${q}/3`}
-        action={action}
-        actionLabel={actionLabel}
-        actionDisabled={!ready}
-      >
-        <div className="create-heading step-two-heading">
-          <h1>{title}</h1>
-        </div>
-        {body}
-        {!ready && (
-          <p className="answer-required">chọn một đáp án để tiếp tục</p>
-        )}
-      </CreateFrame>
-      {permissionOpen && (
-        <PermissionSheet
-          kind="camera"
-          onClose={() => setPermissionOpen(false)}
-          onConfirm={() => {
-            setPermissionOpen(false)
-            store.setDraft({
-              ghostCaptured: true,
-              ghostPhoto: "local://day-1-ghost",
-            })
-            next()
-          }}
-        />
-      )}
-    </>
+    <CreateFrame
+      step={2}
+      skinId={store.draft.skin}
+      extra={type === "Tự đặt" ? undefined : `Câu ${q}/3`}
+      action={action}
+      actionLabel={actionLabel}
+      actionDisabled={!ready}
+    >
+      <div className="create-heading step-two-heading">
+        <h1>{title}</h1>
+      </div>
+      {body}
+      {!ready && <p className="answer-required">chọn một đáp án để tiếp tục</p>}
+    </CreateFrame>
   )
 }
 
@@ -906,19 +907,19 @@ const whoOptions: Array<{
     value: "solo",
     title: "Một mình",
     body: "chỉ bạn và chiếc máy ảnh.",
-    icon: <User size={30} weight="duotone" />,
+    icon: <OIcon name="profile" size={30} weight="duotone" />,
   },
   {
     value: "group",
     title: "Rủ hội",
     body: "tối đa 10 người, mời bằng mã.",
-    icon: <UsersThree size={30} weight="duotone" />,
+    icon: <OIcon name="squad" size={30} weight="duotone" />,
   },
   {
     value: "couple",
     title: "Chỉ hai đứa",
     body: "một cặp, một nhịp.",
-    icon: <Heart size={30} weight="duotone" />,
+    icon: <OIcon name="heart" size={30} weight="duotone" />,
   },
 ]
 
@@ -1003,7 +1004,7 @@ export function CreateStepThree() {
               </div>
               {selected && (
                 <i>
-                  <Check size={16} weight="bold" /> Đã chọn
+                  <OIcon name="check" size={16} weight="bold" /> Đã chọn
                 </i>
               )}
             </button>
@@ -1084,7 +1085,7 @@ export function CreateStepThreeExtra({ page }: { page: 1 | 2 }) {
                 </div>
                 {selected && (
                   <i>
-                    <Check size={16} weight="bold" /> Đã chọn
+                    <OIcon name="check" size={16} weight="bold" /> Đã chọn
                   </i>
                 )}
               </button>
@@ -1134,7 +1135,7 @@ function CalendarSheet({ onClose }: { onClose: () => void }) {
           onClick={onClose}
           aria-label="Đóng"
         >
-          <X size={22} weight="bold" />
+          <OIcon name="close" size={22} weight="bold" />
         </button>
         <h2>sửa ngày.</h2>
         <InlineDateRange
@@ -1222,7 +1223,7 @@ export function CreateStepFour() {
                       })
                     }
                   >
-                    {selected && <Check size={15} weight="bold" />}
+                    {selected && <OIcon name="check" size={15} weight="bold" />}
                     {days} ngày {selected && <span>Đã chọn</span>}
                   </button>
                 )
@@ -1232,7 +1233,9 @@ export function CreateStepFour() {
                   className={store.draft.noEnd ? "selected" : ""}
                   onClick={() => store.setDraft({ noEnd: true })}
                 >
-                  {store.draft.noEnd && <Check size={15} weight="bold" />}
+                  {store.draft.noEnd && (
+                    <OIcon name="check" size={15} weight="bold" />
+                  )}
                   không hẹn ngày về
                   {store.draft.noEnd && <span>Đã chọn</span>}
                 </button>
@@ -1268,7 +1271,7 @@ export function CreateStepFour() {
           {store.draft.reminderEnabled && (
             <div className="time-wheel">
               <button onClick={() => store.setDraft({ reminderTime: "20:30" })}>
-                <Timer size={20} weight="bold" /> 20:30
+                <OIcon name="timer" size={20} weight="bold" /> 20:30
               </button>
               <p>Mình sẽ khẽ nhắc lúc {store.draft.reminderTime ?? "20:30"}.</p>
             </div>
@@ -1286,11 +1289,11 @@ export function CreateStepFour() {
                   onClick={() => store.setDraft({ visibility: "private" })}
                 >
                   <span>
-                    <Lock size={20} weight="bold" /> Chỉ mình tôi
+                    <OIcon name="lock" size={20} weight="bold" /> Chỉ mình tôi
                   </span>
                   {store.draft.visibility === "private" && (
                     <i>
-                      <Check size={15} weight="bold" /> Đã chọn
+                      <OIcon name="check" size={15} weight="bold" /> Đã chọn
                     </i>
                   )}
                 </button>
@@ -1303,7 +1306,7 @@ export function CreateStepFour() {
                   <span>Ai có link (chỉ đọc)</span>
                   {store.draft.visibility === "link" && (
                     <i>
-                      <Check size={15} weight="bold" /> Đã chọn
+                      <OIcon name="check" size={15} weight="bold" /> Đã chọn
                     </i>
                   )}
                 </button>
@@ -1314,7 +1317,7 @@ export function CreateStepFour() {
                 <button className="selected">
                   <span>{group ? "Cả nhóm" : "Hai đứa"}</span>
                   <i>
-                    <Check size={15} weight="bold" /> Đã chọn
+                    <OIcon name="check" size={15} weight="bold" /> Đã chọn
                   </i>
                 </button>
                 <button disabled>
@@ -1326,7 +1329,7 @@ export function CreateStepFour() {
           </div>
           {type === "Giảm cân" && (
             <div className="locked-share-note">
-              <Lock size={19} weight="bold" />
+              <OIcon name="lock" size={19} weight="bold" />
               <span>
                 Ảnh làm mờ và ẩn số kg khi chia sẻ, kể cả qua link chỉ đọc.
               </span>
@@ -1357,6 +1360,7 @@ export function CreateStepFive() {
   const navigate = useNavigate()
   const [forging, setForging] = useState(!store.reduceMotion)
   const [tab, setTab] = useState<"color" | "cover">("color")
+  const [permissionOpen, setPermissionOpen] = useState(false)
   const type = createTypes.find((item) => item.type === store.draft.type)
   const skin = store.draft.skin ?? "minimal"
   const answers = store.draft.answers ?? {}
@@ -1416,15 +1420,23 @@ export function CreateStepFive() {
     return () => window.clearTimeout(timer)
   }, [store.reduceMotion])
 
-  function launch() {
+  function finishLaunch(permission: "granted" | "deferred") {
+    store.setCameraPermission(permission)
     const id = store.addJourneyFromDraft()
-    store.setCameraPermission("granted")
     store.setInviteSheetOpen(
       store.draft.who === "group" ||
         store.draft.who === "couple" ||
         store.draft.type === "Cặp đôi",
     )
     navigate(`/j/${id}/camera`)
+  }
+
+  function launch() {
+    if (store.cameraPermission === "unknown") {
+      setPermissionOpen(true)
+      return
+    }
+    finishLaunch(store.cameraPermission === "granted" ? "granted" : "deferred")
   }
 
   if (forging) {
@@ -1459,7 +1471,7 @@ export function CreateStepFive() {
           {skin === "quiet" && (
             <>
               <span className="ticket-lock">
-                <Lock size={27} weight="fill" />
+                <OIcon name="lock" size={27} weight="fill" />
               </span>
               <small>HỒ SƠ RIÊNG TƯ</small>
               <h2>Hồ sơ riêng tư · 30 ngày</h2>
@@ -1556,7 +1568,7 @@ export function CreateStepFive() {
                 >
                   <i style={{ background: color }} />
                   <span>{name}</span>
-                  {selected && <Check size={16} weight="bold" />}
+                  {selected && <OIcon name="check" size={16} weight="bold" />}
                 </button>
               )
             })}
@@ -1574,7 +1586,7 @@ export function CreateStepFive() {
                   aria-label={`Bìa ${name}`}
                 >
                   <i>{index === 0 ? "30" : index === 1 ? "DNA" : "01"}</i>
-                  {selected && <Check size={16} weight="bold" />}
+                  {selected && <OIcon name="check" size={16} weight="bold" />}
                 </button>
               )
             })}
@@ -1589,6 +1601,13 @@ export function CreateStepFive() {
         >
           Sửa lại
         </button>
+        {permissionOpen && (
+          <PermissionSheet
+            kind="camera"
+            onClose={() => finishLaunch("deferred")}
+            onConfirm={() => finishLaunch("granted")}
+          />
+        )}
       </div>
     </CreateFrame>
   )
