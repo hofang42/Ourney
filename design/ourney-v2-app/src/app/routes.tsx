@@ -133,6 +133,115 @@ function journeyCheckIns(journey: Journey) {
   return Math.min(journey.day, journeyLength(journey))
 }
 
+const nativeSkinByType: Record<Journey["type"], string> = {
+  "Giảm cân": "quiet",
+  "Tiếng Anh": "squad",
+  "Chuyến đi": "memory",
+  "Cặp đôi": "couple",
+  "Tập luyện": "flexer",
+  "Tự đặt": "minimal",
+}
+
+function hasSwitchedLayout(journey: Journey) {
+  return journey.skin !== nativeSkinByType[journey.type]
+}
+
+function journeyAttendanceVerb(journey: Journey) {
+  if (journey.type === "Tập luyện") {
+    return journey.totalKm !== undefined ? "ĐÃ CHẠY" : "ĐÃ TẬP"
+  }
+  if (journey.type === "Tiếng Anh") return "ĐÃ HỌC"
+  return "ĐÃ ĐIỂM DANH"
+}
+
+function journeyMetric(journey: Journey) {
+  if (journey.skin === "flexer") {
+    if (journey.totalKm !== undefined) {
+      return `${new Intl.NumberFormat("vi-VN", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 2,
+      }).format(journey.totalKm)} KM`
+    }
+    if (journey.lastMinutes !== undefined) {
+      return `${journey.lastMinutes} PHÚT`
+    }
+    return "ĐÃ CHỤP"
+  }
+  if (journey.skin === "quiet") {
+    return journey.lastWeight !== undefined
+      ? `${journey.lastWeight.toFixed(1).replace(".", ",")} KG`
+      : "ĐÃ CHỤP"
+  }
+  if (journey.skin === "memory") {
+    if (journey.frameCount !== undefined) {
+      return `${journey.frameCount} KHUNG`
+    }
+    if (journey.lastPlace) return journey.lastPlace.toLocaleUpperCase("vi")
+    return "ĐÃ CHỤP"
+  }
+  if (journey.skin === "couple") {
+    return journey.members?.length ? journey.members.join(" | ") : "ĐÃ CHỤP"
+  }
+  if (journey.totalKm !== undefined) {
+    return `${new Intl.NumberFormat("vi-VN", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 2,
+    }).format(journey.totalKm)} KM`
+  }
+  if (journey.lastMinutes !== undefined) {
+    return `${journey.lastMinutes} PHÚT`
+  }
+  return "ĐÃ CHỤP"
+}
+
+function journeyDisplayTitle(journey: Journey) {
+  return `${journey.name} · NGÀY ${journey.day}/${journeyLength(journey)}`
+}
+
+function journeyTimelineRows(journey: Journey) {
+  const total = journeyLength(journey)
+  const action =
+    journey.type === "Tiếng Anh"
+      ? "HỌC"
+      : journey.type === "Tập luyện"
+        ? "TẬP"
+        : journey.type === "Giảm cân"
+          ? "TIẾN TRÌNH"
+          : journey.type === "Cặp đôi"
+            ? "CÙNG NHAU"
+            : journey.type === "Chuyến đi"
+              ? "KỶ NIỆM"
+              : "CHECK-IN"
+  return [
+    { day: journey.day, label: `${action} · HÔM NAY` },
+    { day: Math.max(1, Math.ceil(total / 2)), label: `${action} · NỬA CHẶNG` },
+    ...(total >= 7 ? [{ day: 7, label: `${action} · TUẦN ĐẦU` }] : []),
+    { day: 1, label: `${action} · BẮT ĐẦU` },
+  ].filter(
+    (row, index, rows) =>
+      rows.findIndex((candidate) => candidate.day === row.day) === index,
+  )
+}
+
+function availableLayoutsForJourney(journey: Journey) {
+  const groupJourney = (journey.members?.length ?? 0) >= 2
+  return ["quiet", "squad", "memory", "couple", "flexer", "minimal"].filter(
+    (skin) => {
+      if (skin === "quiet") return journey.lastWeight !== undefined
+      if (skin === "couple") return journey.members?.length === 2
+      if (skin === "squad") return groupJourney
+      if (skin === "flexer") {
+        return (
+          journey.type === "Tập luyện" ||
+          journey.totalKm !== undefined ||
+          journey.lastMinutes !== undefined
+        )
+      }
+      return true
+    },
+  )
+}
+
 function Root() {
   const store = useStore()
   const location = useLocation()
@@ -345,6 +454,9 @@ function ReviewerPanel({
   const store = useStore()
   const navigate = useNavigate()
   const [open, setOpen] = useState(true)
+  const [layoutCheckResults, setLayoutCheckResults] = useState<string[] | null>(
+    null,
+  )
   const routes = [
     ["/splash", "mở đầu"],
     ["/onboarding/1", "câu 1"],
@@ -363,6 +475,53 @@ function ReviewerPanel({
   function changeUser(user: "new" | "old") {
     store.setUser(user)
     navigate("/splash")
+  }
+
+  function checkLayouts() {
+    const seedTerms: Record<string, string[]> = {
+      quiet: ["30 NGÀY CƠ THỂ", "65,2 KG", "62,0 KG"],
+      ielts: ["HỘI IELTS 7.5", "CÚP 7.5"],
+      dalat: ["ĐÀ LẠT", "ĐỒI CHÈ", "CUỘN PHIM 12/24"],
+      couple: ["30 NGÀY NẤU CHO NHAU", "NAM | LINH"],
+      running: ["CHẠY SÁNG", "92,4 KM", "5,42 KM", "5:04"],
+      minimal: ["ĐỌC 10 TRANG", "24/30"],
+    }
+    const failures: string[] = []
+    for (const journey of store.journeys) {
+      for (const layout of availableLayoutsForJourney(journey)) {
+        const auditText = [
+          journeyDisplayTitle(journey),
+          journeyMetric({ ...journey, skin: layout }),
+          ...journeyTimelineRows(journey).map(
+            (row) => `${row.day} ${row.label}`,
+          ),
+          ...(journey.members ?? []),
+          journey.lastCaption ?? "",
+          journey.lastPlace ?? "",
+        ]
+          .join(" ")
+          .toLocaleUpperCase("vi")
+        for (const [seedId, terms] of Object.entries(seedTerms)) {
+          if (seedId === journey.id) continue
+          const leaked = terms.find((term) => auditText.includes(term))
+          if (leaked) {
+            failures.push(`${journey.id} × ${layout}: “${leaked}”`)
+          }
+        }
+      }
+    }
+    const screenText =
+      document
+        .querySelector(".phone-screen")
+        ?.textContent?.toLocaleUpperCase("vi") ?? ""
+    if (activeJourney) {
+      for (const [seedId, terms] of Object.entries(seedTerms)) {
+        if (seedId === activeJourney.id) continue
+        const leaked = terms.find((term) => screenText.includes(term))
+        if (leaked) failures.push(`màn hiện tại: “${leaked}”`)
+      }
+    }
+    setLayoutCheckResults([...new Set(failures)])
   }
 
   return (
@@ -427,6 +586,22 @@ function ReviewerPanel({
                 </option>
               ))}
             </select>
+          </Control>
+          <Control label="kiểm tra dữ liệu layout">
+            <button className="reviewer-layout-check" onClick={checkLayouts}>
+              Kiểm tra giao diện
+            </button>
+            {layoutCheckResults && (
+              <div className="reviewer-layout-results">
+                {layoutCheckResults.length ? (
+                  layoutCheckResults.map((result) => (
+                    <span key={result}>{result}</span>
+                  ))
+                ) : (
+                  <b>Không tìm thấy nội dung từ journey khác.</b>
+                )}
+              </div>
+            )}
           </Control>
           <CheckControl
             label="ngoại tuyến"
@@ -4211,9 +4386,11 @@ const layoutOptions = [
 function LayoutPreview({
   skin,
   large = false,
+  journey,
 }: {
   skin: string
   large?: boolean
+  journey?: Journey
 }) {
   return (
     <div
@@ -4223,7 +4400,11 @@ function LayoutPreview({
     >
       <div className="layout-preview-top">
         <i />
-        <b>{skin === "minimal" ? "NGÀY 21" : "Ngày 21"}</b>
+        <b>
+          {journey
+            ? `NGÀY ${journey.day}/${journeyLength(journey)}`
+            : "XEM TRƯỚC"}
+        </b>
         <i />
       </div>
       <div className="layout-preview-timeline">
@@ -4233,7 +4414,7 @@ function LayoutPreview({
       </div>
       <div className="layout-preview-hud">
         <Camera size={large ? 22 : 14} weight="bold" />
-        <span>{skin === "flexer" ? "5,42 KM · 5:04" : "HUD máy ảnh"}</span>
+        <span>{journey ? journeyMetric(journey) : "HUD máy ảnh"}</span>
       </div>
     </div>
   )
@@ -4264,19 +4445,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
     !journey.shared ||
     journey.skin === "couple" ||
     journey.members?.length === 2
-  const layoutAvailable = (skin: string) => {
-    if (skin === "quiet") return journey.lastWeight !== undefined
-    if (skin === "couple") return journey.members?.length === 2
-    if (skin === "squad") return groupJourney
-    if (skin === "flexer") {
-      return (
-        journey.type === "Tập luyện" ||
-        journey.totalKm !== undefined ||
-        journey.lastMinutes !== undefined
-      )
-    }
-    return true
-  }
+  const availableLayouts = availableLayoutsForJourney(journey)
   const changed =
     name !== journey.name ||
     variant !== journey.variant ||
@@ -4343,13 +4512,13 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
           <h2>Giao diện</h2>
           {groupJourney && !isOwner ? (
             <div className="edit-layout-readonly">
-              <LayoutPreview skin={journey.skin} />
+              <LayoutPreview skin={journey.skin} journey={journey} />
               <p>Chủ nhóm chọn giao diện cho cả hội.</p>
             </div>
           ) : (
             <div className="edit-layout-grid">
               {layoutOptions
-                .filter(([skin]) => layoutAvailable(skin))
+                .filter(([skin]) => availableLayouts.includes(skin))
                 .map(([skin, label]) => (
                   <button
                     key={skin}
@@ -4357,7 +4526,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
                     onClick={() => setLayoutPreview(skin)}
                     aria-label={`Xem trước giao diện ${label}`}
                   >
-                    <LayoutPreview skin={skin} />
+                    <LayoutPreview skin={skin} journey={journey} />
                     <span>{label}</span>
                     {journey.skin === skin && <b>Đang dùng</b>}
                   </button>
@@ -4551,7 +4720,7 @@ function JourneyEditScreen({ journey }: { journey: Journey }) {
             <b>{journey.name}</b>
             <span />
           </header>
-          <LayoutPreview skin={layoutPreview} large />
+          <LayoutPreview skin={layoutPreview} large journey={journey} />
           <div className="layout-preview-actions">
             <button
               onClick={() => {
@@ -4961,6 +5130,7 @@ function CameraScreen() {
   const couple = active?.skin === "couple"
   const flexer = active?.skin === "flexer"
   const minimal = active?.skin === "minimal"
+  const switchedLayout = Boolean(active && hasSwitchedLayout(active))
 
   return (
     <ScreenShell camera>
@@ -4988,7 +5158,12 @@ function CameraScreen() {
               }
               onClick={() => store.setJourneyWheelOpen(true)}
             >
-              {active.todayDone ? (
+              {switchedLayout ? (
+                <>
+                  <span>{typeEmoji[active.type]}</span>
+                  <b>{journeyDisplayTitle(active).toLocaleUpperCase("vi")}</b>
+                </>
+              ) : active.todayDone ? (
                 <>
                   <Check size={15} weight="bold" />
                   <b>
@@ -5081,7 +5256,18 @@ function CameraScreen() {
             !cameraReady || noJourney ? "dimmed" : ""
           }`}
         >
-          {quiet ? (
+          {switchedLayout && active ? (
+            <div className={`adaptive-camera-hud adaptive-${active.skin}`}>
+              <b>{journeyDisplayTitle(active).toLocaleUpperCase("vi")}</b>
+              <span>{journeyMetric(active)}</span>
+              {(active.members?.length ?? 0) >= 2 && (
+                <small>
+                  {active.attendance ?? 0}/{active.members?.length}{" "}
+                  {journeyAttendanceVerb(active)}
+                </small>
+              )}
+            </div>
+          ) : quiet ? (
             <>
               {ghostOn && <div className="quiet-camera-ghost" />}
               <button
@@ -5529,15 +5715,17 @@ function JourneyCard({
       ? `Đã khép lại · ${formatJourneyDate(journey.endDate)}`
       : `Mốc kế: Ngày ${totalDays} · Về đích`,
     attendance:
-      journey.skin === "squad"
-        ? `${journey.attendance ?? (store.checkedIn ? 4 : 3)}/${journey.members?.length ?? 5} đã điểm danh`
-        : journey.skin === "memory"
-          ? `${journey.importedPhotos?.length ?? checkIns}/${totalDays} khung`
-          : journey.skin === "couple"
-            ? journey.pairComplete
-              ? "đủ đôi"
-              : "đang chờ một nửa"
-            : undefined,
+      hasSwitchedLayout(journey) && (journey.members?.length ?? 0) >= 2
+        ? `${journey.attendance ?? 0}/${journey.members?.length} ${journeyAttendanceVerb(journey).toLocaleLowerCase("vi")}`
+        : journey.skin === "squad"
+          ? `${journey.attendance ?? (store.checkedIn ? 4 : 3)}/${journey.members?.length ?? 5} đã điểm danh`
+          : journey.skin === "memory"
+            ? `${journey.importedPhotos?.length ?? checkIns}/${totalDays} khung`
+            : journey.skin === "couple"
+              ? journey.pairComplete
+                ? "đủ đôi"
+                : "đang chờ một nửa"
+              : undefined,
   }
 
   return (
@@ -7941,6 +8129,257 @@ function ImportedJourneyShare({ journey }: { journey: Journey }) {
   )
 }
 
+function AdaptiveJourneyVisual({
+  journey,
+  index = 0,
+}: {
+  journey: Journey
+  index?: number
+}) {
+  return (
+    <span
+      className={`adaptive-visual adaptive-visual-${journey.skin} visual-${index % 4}`}
+      role="img"
+      aria-label={`Ảnh ${journey.name}, ngày ${Math.max(1, journey.day - index)}`}
+    >
+      <i>{typeEmoji[journey.type]}</i>
+    </span>
+  )
+}
+
+function AdaptiveJourneyScreen({
+  journey,
+  mode,
+}: {
+  journey: Journey
+  mode: "home" | "post" | "done" | "squad" | "share" | "day"
+}) {
+  const store = useStore()
+  const navigate = useNavigate()
+  const params = useParams()
+  const [caption, setCaption] = useState(journey.lastCaption ?? "")
+  const [toast, setToast] = useState("")
+  const total = journeyLength(journey)
+  const members = journey.members ?? []
+  const attendance = Math.min(journey.attendance ?? 0, members.length)
+  const title = journeyDisplayTitle(journey)
+  const metric = journeyMetric(journey)
+  const rows = journeyTimelineRows(journey)
+  const numericDay = Number(params.day ?? journey.day)
+
+  function header(back = false) {
+    return (
+      <header className={`adaptive-topbar adaptive-${journey.skin}`}>
+        <button
+          onClick={() => (back ? navigate(-1) : navigate("/hub"))}
+          aria-label="Quay lại"
+        >
+          <ArrowLeft size={21} weight="bold" />
+        </button>
+        <b>{title.toLocaleUpperCase("vi")}</b>
+        <button
+          onClick={() => navigate(`/j/${journey.id}/edit`)}
+          aria-label="Cài đặt hành trình"
+        >
+          <GearSix size={20} weight="bold" />
+        </button>
+      </header>
+    )
+  }
+
+  if (mode === "post") {
+    return (
+      <section
+        className={`journey-pushed adaptive-page adaptive-${journey.skin}`}
+      >
+        {header(true)}
+        <main className="adaptive-post">
+          <AdaptiveJourneyVisual journey={journey} />
+          <h1>{journey.name}</h1>
+          <p>{metric}</p>
+          <label>
+            <span>Ghi lại một dòng</span>
+            <textarea
+              maxLength={140}
+              value={caption}
+              onChange={(event) => setCaption(event.target.value)}
+            />
+          </label>
+          <button
+            className="adaptive-primary"
+            onClick={() => {
+              store.checkInJourney(journey.id, {
+                caption,
+                mood: "",
+                minutes: journey.lastMinutes,
+                km: journey.totalKm !== undefined ? journey.lastKm : undefined,
+                pace: journey.totalKm !== undefined ? journey.pace : undefined,
+              })
+              navigate(`/j/${journey.id}/done`, { replace: true })
+            }}
+          >
+            Lưu check-in
+          </button>
+        </main>
+      </section>
+    )
+  }
+
+  if (mode === "done") {
+    return (
+      <section
+        className={`journey-pushed adaptive-page adaptive-done adaptive-${journey.skin}`}
+        onClick={() => navigate(`/j/${journey.id}`, { replace: true })}
+      >
+        <Check size={54} weight="bold" />
+        <h1>
+          NGÀY {journey.day}/{total}
+        </h1>
+        <p>
+          {journey.name} · Chuỗi {journey.streak}
+        </p>
+      </section>
+    )
+  }
+
+  if (mode === "squad") {
+    return (
+      <ScreenShell
+        bare
+        className={`adaptive-journey-screen adaptive-${journey.skin}`}
+      >
+        {header(true)}
+        <main className="adaptive-members">
+          <h1>{journey.name}</h1>
+          {members.length >= 2 && (
+            <div className="adaptive-attendance">
+              {attendance}/{members.length} {journeyAttendanceVerb(journey)}
+            </div>
+          )}
+          {members.map((member, index) => (
+            <article key={member}>
+              <span>{member.slice(0, 1)}</span>
+              <div>
+                <b>{member}</b>
+                <small>
+                  {index < attendance
+                    ? journeyAttendanceVerb(journey)
+                    : "CHƯA CHECK-IN"}
+                </small>
+              </div>
+              <AdaptiveJourneyVisual journey={journey} index={index} />
+            </article>
+          ))}
+        </main>
+      </ScreenShell>
+    )
+  }
+
+  if (mode === "share") {
+    return (
+      <section
+        className={`journey-pushed adaptive-page adaptive-${journey.skin}`}
+      >
+        {header(true)}
+        <main className="adaptive-share">
+          <div>
+            <h1>{journey.name}</h1>
+            <b>
+              NGÀY {journey.day}/{total}
+            </b>
+            <AdaptiveJourneyVisual journey={journey} />
+            <p>{metric}</p>
+            <small>Chuỗi {journey.streak} · Ourney</small>
+          </div>
+          <button
+            className="adaptive-primary"
+            onClick={() => {
+              setToast("Thiệp đã sẵn sàng.")
+              window.setTimeout(() => setToast(""), 1600)
+            }}
+          >
+            <ShareNetwork size={18} weight="bold" /> Tạo thiệp
+          </button>
+        </main>
+        {toast && <div className="system-toast">{toast}</div>}
+      </section>
+    )
+  }
+
+  if (mode === "day") {
+    return (
+      <section
+        className={`journey-pushed adaptive-page adaptive-${journey.skin}`}
+      >
+        {header(true)}
+        <main className="adaptive-day">
+          <AdaptiveJourneyVisual journey={journey} index={numericDay} />
+          <h1>
+            {journey.name} · NGÀY {numericDay}/{total}
+          </h1>
+          <b>{metric}</b>
+          <p>{journey.lastCaption || `${journey.type} · đã check-in`}</p>
+        </main>
+      </section>
+    )
+  }
+
+  return (
+    <ScreenShell
+      bare
+      className={`adaptive-journey-screen adaptive-${journey.skin}`}
+    >
+      {header()}
+      <main className="adaptive-home">
+        {members.length >= 2 && (
+          <button
+            className="adaptive-attendance"
+            onClick={() => navigate(`/j/${journey.id}/squad`)}
+          >
+            {attendance}/{members.length} {journeyAttendanceVerb(journey)}
+          </button>
+        )}
+        <section className="adaptive-summary">
+          <h1>{journey.name}</h1>
+          <b>{metric}</b>
+          <span>
+            NGÀY {journey.day}/{total} · 🔥 {journey.streak}
+          </span>
+        </section>
+        <section className="adaptive-timeline">
+          {rows.map((row, index) => (
+            <button
+              key={row.day}
+              onClick={() =>
+                navigate(
+                  row.day === journey.day
+                    ? `/j/${journey.id}/camera`
+                    : `/j/${journey.id}/day/${row.day}`,
+                )
+              }
+            >
+              <AdaptiveJourneyVisual journey={journey} index={index} />
+              <span>
+                <small>
+                  NGÀY {row.day}/{total}
+                </small>
+                <b>{row.label}</b>
+                {row.day === journey.day && <em>{metric}</em>}
+              </span>
+            </button>
+          ))}
+        </section>
+        <button
+          className="adaptive-share-button"
+          onClick={() => navigate(`/j/${journey.id}/share`)}
+        >
+          <ShareNetwork size={18} weight="bold" /> Tạo thiệp
+        </button>
+      </main>
+    </ScreenShell>
+  )
+}
+
 function JourneyAttachment({
   mode = "home",
 }: {
@@ -7955,6 +8394,28 @@ function JourneyAttachment({
   }, [journey?.id])
 
   if (mode === "camera") return <CameraScreen />
+  if (
+    journey &&
+    !journey.imported &&
+    hasSwitchedLayout(journey) &&
+    mode !== "edit" &&
+    mode !== "wrapped"
+  ) {
+    return (
+      <AdaptiveJourneyScreen
+        journey={journey}
+        mode={
+          mode === "post" ||
+          mode === "done" ||
+          mode === "squad" ||
+          mode === "share" ||
+          mode === "day"
+            ? mode
+            : "home"
+        }
+      />
+    )
+  }
   if (journey && mode === "day") return <JourneyDayScreen journey={journey} />
   if (journey && mode === "edit") return <JourneyEditScreen journey={journey} />
   if (journey && mode === "wrapped") {

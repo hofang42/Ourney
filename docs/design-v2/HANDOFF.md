@@ -51,7 +51,8 @@ Việc cần làm:
 |---|---|
 | Make version 25 (tài khoản Make mới) | ✅ Prompt "FIX 2026-11-11" xong ở version 24, lượt sửa onboarding + nhãn polaroid ở version 25. Đo lại trên preview: chip camera 6 skin dạng viên thuốc nền tối, "18 LIÊN TIẾP" đủ chữ; vòng xoay vuốt ngang được (`touch-action: pan-x`), mờ mép, chip tên cao đều 44, không đè nút chụp, tự đóng khi đổi màn; polaroid không đè "Tạo thiệp", nhãn cao đều; onboarding "Học tiếng Anh · Rủ hội" → /create/1 chọn sẵn đúng thẻ, nút "Tiếp tục", bước 3 chọn sẵn "Rủ hội"; `/j/:id/edit` có mục "Giao diện" lọc theo dữ liệu; có "Nhập hành trình đã qua" và "Nhập ảnh cũ" |
 | Make version 26 | ✅ Đã bấm thử và sửa: luồng nhập ảnh cũ (chỉ hiện giao diện hợp lệ, ngày dạng "12 THG 4, 2024", đánh số theo ngày chụp Ngày 1/7/9 kèm ô trống, khay "Chưa có ngày" với "Gán ngày"/"Bỏ" và Lưu khoá tới khi xử lý xong, Wrapped "9 ngày" đúng dữ liệu, thẻ Hub một trạng thái "Đã kết thúc"); đổi giao diện có xem trước toàn màn, áp dụng và đổi lại được, bố cục mới dùng dữ liệu của chính hành trình ("30 NGÀY CƠ THỂ · NGÀY 21/30"); chữ 135% trên các màn mới không bị cắt (chỉ có thẻ băng chuyền/đĩa vòng xoay nằm ngoài khung, đã có lớp mờ); chip camera Squad hết chữ 9px |
-| Code ở `design/ourney-v2-app` | ✅ Đã chép và commit nguồn version 26 (routes, app.css, store đọc lại qua Figma MCP; create, flow giữ từ version 25 vì typecheck khớp). Typecheck và build đạt |
+| Make version 29 | ✅ Sửa lỗi đổi giao diện hiện nội dung của hành trình mẫu khác (Hội IELTS đổi sang Flexer hiện "CHẠY SÁNG", "92,4 KM"). Đo lại: IELTS sang Flexer/Memory/Minimalist/Squad và Đọc 10 trang sang Memory đều giữ tên, ngày, "3/5 ĐÃ HỌC", phút của chính hành trình; hành trình không phải chủ nhóm (Chạy sáng, Đà Lạt) không có mục đổi giao diện, đúng spec |
+| Code ở `design/ourney-v2-app` | ✅ Đã chép và commit nguồn version 29 (routes, app.css, store, create, flow đọc lại qua Figma MCP). Typecheck đạt |
 | Phản hồi chủ dự án (onboarding mang sang Tạo hành trình, vòng xoay đổi hành trình, HUD Squad, nút đổi hành trình trên camera, rà lỗi bo elip/chữ cắt/đè/chiều cao/mép) | 🔄 Đã tái hiện đủ, ghi nguyên nhân trong `feedback-2026-11-11.md`; ✅ Đã sửa trên Make version 24–25 (xem dòng Make version 25) |
 | Lỗi "bấm Cài đặt ở màn hành trình" | ✅ Chủ dự án báo đã được sửa |
 | Đề xuất dock 5 nút + chỗ dùng liquid glass | ✅ Chủ dự án đã duyệt (2026-11-11); đã gửi Make (kèm màn /activity và công tắc "giảm trong suốt"); CLAUDE.md mục 2 đã đổi sang dock 5 nút |
@@ -206,5 +207,6 @@ Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh v
 
 - Chủ dự án duyệt đề xuất ở `feedback-2026-11-11.md` mục 4; chọn bỏ qua thử trên thiết bị thật (chỉ có kết quả giả lập trong trình duyệt).
 - Đo trên preview: dock 5 nút (Hành trình · Hội · Chụp 72×72 · Hoạt động · Hồ sơ, mỗi mục 68×56) ở Hub, Couple, Flexer, camera; dock kính `blur(20px) saturate(1.6)` giữ viền; công tắc "giảm trong suốt" tắt kính. Màn `/activity` có nhóm Hôm nay / Tuần này; mỗi dòng là nút ≥ 44pt và mở đúng chỗ (điểm danh → `/j/ielts/squad`). Tab Hồ sơ mở `/me`.
+- Đã bấm thử đủ 5 dòng ở `/activity` (version 29): điểm danh → `/j/ielts/squad`, reaction → `/j/ielts/day/21`, mốc → `/j/quiet`, lời mời → `/join/K7Q2M9XA`, nhắc giờ → `/j/minimal`.
 - `CLAUDE.md` mục 2 đã đổi sang dock 5 nút và quy tắc liquid glass.
-- Code ở `design/ourney-v2-app` đang là version 26; version 27–28 chưa chép về.
+- Code ở `design/ourney-v2-app` đã chép tới version 29.
