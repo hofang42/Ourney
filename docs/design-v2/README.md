@@ -28,7 +28,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
 - **Giữa, Chụp:** Hero Shutter **76×76pt** trên màn camera, viên chụp nhanh 56×40pt ở Hub/timeline/Hội; mang màu của hành trình đang chọn. Nhấn giữ để mở vòng chọn hành trình (tối đa 5 đĩa: đã ghim + chưa chụp hôm nay + "Tất cả" có tìm kiếm, xem `camera-journey-picker.md`).
 - **Hoạt động:** thông báo, reaction, lời mời.
 - **Hồ sơ:** hồ sơ, cài đặt, tuỳ biến.
-- **Số hành trình:** thiết kế V2 không giới hạn. Contract hiện tại chặn **tối đa 3 hành trình đang chạy** mỗi người; mở giới hạn cần PR contract/server riêng (HANDOFF, dòng "Đổi contract dữ liệu cho Journey DNA"). Trước khi PR đó merge, app thật vẫn giữ 3 hành trình đang chạy, danh sách đã kết thúc không giới hạn.
+- **Số hành trình:** không giới hạn (chủ dự án chốt 2026-11-12, SRS FR-B3). Server và app Flutter hiện vẫn chặn 3; việc bỏ chặn nằm trong migration/contract tiếp theo (`docs/contracts/schema.md`).
 - Liquid glass chỉ ở lớp điều hướng nổi (dock, nút camera nổi, thanh trên khi cuộn, nền vòng chọn), luôn giữ viền 2px + bóng cứng và nền đặc khi bật Giảm trong suốt.
 - Trong một hành trình, dock đổi chất liệu theo skin (kính mờ neon ở Aesthetic Flexer, giấy kraft ở Memory Collectors…), nhưng vị trí và hành vi không đổi.
 

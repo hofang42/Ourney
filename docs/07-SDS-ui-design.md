@@ -982,7 +982,7 @@ Quy tắc (D5, chốt lại 2026-11-11 cùng SRS FR-C7):
 - Nhóm/cặp đôi: kỳ của thành viên đạt khi người đó có ≥ 1 ảnh; điểm danh tính theo người, không theo số ảnh. Cặp đôi: mỗi bên có ảnh bìa và số riêng.
 - Memory (cuộn phim): mỗi ảnh là một khung; hết cuộn thì báo nhẹ và mở cuộn mới.
 - Riêng tư Quiet: thiệp mặc định dùng ảnh bìa; người dùng vẫn chọn thêm ảnh trong SCR-50 và SCR-83 như hiện tại. Mọi ảnh được chia sẻ vẫn làm mờ và ẩn kg theo §6.4.
-- Share card một ngày: `1 photo` ở v1; `Collage 2–4` là P2 (cùng FR-E4 recap collage). Wrapped/Year-in-review hoãn tới v0.3+ (SRS §7); khi làm sẽ đếm "N khoảnh khắc trong M ngày".
+- Share card một ngày: `1 photo` hoặc `Collage 2–4` (SRS FR-E5, v1). Wrapped của hành trình đếm "N khoảnh khắc trong M ngày" (SRS FR-E6, v1); Year-in-review cả năm vẫn ở v0.3+.
 - Prototype V2 (Figma Make bản 36) đã chạy luồng này: `design/ourney-v2-app` trên nhánh `design/v2-spec`, spec `docs/design-v2/multi-photo-day.md`.
 
 | Kiểu xem | Cách hiển thị |

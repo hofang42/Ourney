@@ -22,7 +22,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
 - Nhóm tối đa 10 người, mời bằng mã 8 ký tự hoặc link. Màn "Hôm nay" cho thấy ai đã/chưa check-in.
   Có reaction 🔥 💪 👏 ❤️ 😂, không có comment.
 - Luật cứng:
-  - Thiết kế không giới hạn số hành trình (contract hiện còn tối đa 3 hành trình đang chạy, sẽ mở trong PR contract riêng; xem README §1).
+  - Không giới hạn số hành trình (chốt 2026-11-12, SRS FR-B3).
   - KHÔNG xếp hạng theo kết quả cơ thể.
   - Giảm cân: mặc định ẩn kg và làm mờ ảnh khi chia sẻ.
   - Hành trình nhóm không bao giờ có link công khai.

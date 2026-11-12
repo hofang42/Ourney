@@ -81,7 +81,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-B1 | Tạo journey từ 4 template (Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi) hoặc Custom | P1 |
 | FR-B2 | Chọn solo/nhóm, thời lượng, metric tuỳ chọn, emoji, tiêu đề | P1 |
-| FR-B3 | Tối đa **3 journey đang chạy** mỗi người (server chặn, client báo trước) | P1 |
+| FR-B3 | **Không giới hạn** số journey đang chạy mỗi người (chủ dự án chốt 2026-11-12, bỏ luật tối đa 3). Camera dùng vòng chọn tối đa 5 đĩa + "Tất cả" có tìm kiếm (SDS §8.8). Server và client hiện vẫn chặn 3: cần migration bỏ `_active_journey_count(...) >= 3`, bỏ mã lỗi `limit` và hộp thoại giới hạn (xem `docs/contracts/schema.md`) | P1 |
 | FR-B4 | Timeline dạng **lưới lịch**: mỗi ô là ảnh của ngày, ngày lỡ hiện ô trống nét đứt | P1 |
 | FR-B5 | Hiện streak hiện tại, streak dài nhất, % hoàn thành, ngày thứ N/M | P1 |
 | FR-B6 | Kết thúc / lưu trữ journey. Journey đã kết thúc thì chỉ đọc | P1 |
@@ -131,7 +131,9 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-E1 | Share card 1 theme, 2 cỡ (story 1080×1920 có vùng an toàn cho IG; feed 1080×1350): số lớn + ảnh + logo | P1 |
 | FR-E2 | Chia sẻ qua share sheet hệ thống. Tự gợi ý ở các mốc | P1 |
 | FR-E3 | Link xem read-only cho **journey solo đã kết thúc** (hoặc journey kể lại đã lên kệ) có visibility `link` (token thu hồi được). Journey đang chạy chỉ chia sẻ cho bạn bè (FR-H3). **Journey nhóm/cặp đôi** có link công khai khi đã kết thúc, do owner bật, chỉ gồm ảnh của thành viên đã đồng ý (FR-H14) | P1 |
-| FR-E4 | Instagram Stories deep link, recap collage | P2 |
+| FR-E4 | Instagram Stories deep link | P2 |
+| FR-E5 | Thiệp một ngày chọn `1 ảnh` hoặc **ghép 2–4 ảnh** trong ngày (chủ dự án chốt 2026-11-12, đưa vào v1) | P1 |
+| FR-E6 | **Wrapped của hành trình** khi về đích hoặc kết thúc: tóm tắt "N khoảnh khắc trong M ngày", ảnh nổi bật, chuỗi dài nhất, thiệp chia sẻ (chủ dự án chốt 2026-11-12, đưa vào v1). Khác Year-in-review tổng kết cả năm, vẫn ở v0.3+ | P1 |
 
 ### FR-F — An toàn & tuân thủ
 | ID | Yêu cầu | Ưu tiên |

@@ -232,7 +232,7 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 | `not_found` | unknown id/code/token, invisible target; public-journey 404 |
 | `full` | group has 10 active members |
 | `blocked` | block in either direction with an active member |
-| `limit` | 3 active journeys |
+| `limit` | 3 active journeys (**to be removed**: owner dropped the cap on 2026-11-12, SRS FR-B3) |
 | `ended` | journey not active / past last day |
 | `not_alone` | `delete_journey` with other active members (end it instead) |
 | `rate_limited` | > 20 reports in 24 h; **v1.2** ≥ 10 failed invite codes in 1 h (`join_by_code`) |
@@ -242,7 +242,7 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 | `offline`, `unknown` | client-side only |
 
 ## Rules (enforced server-side; client mirrors for UX)
-- Max **3 active journeys** per user (as owner or active member).
+- Max **3 active journeys** per user (as owner or active member). **Pending change (decided 2026-11-12, not migrated yet):** no cap; the next migration drops the `_active_journey_count(...) >= 3` checks and the `limit` error, and the client drops its limit dialog.
 - Max **10 active members** per group journey.
 - Streak: daily cadence, strict. See `streak_vectors.json`.
 - **Late joiners**: a member's streak/progress window starts at
