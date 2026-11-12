@@ -86,7 +86,7 @@ Chưa chốt mô hình kiếm tiền (câu 12 trong `docs/client-questions.md` v
 #### Ảnh hưởng tài liệu và dữ liệu
 - SRS: thêm FR-B (tuỳ biến avatar/nền/sticker, mở khoá) — nhánh `docs/journey-customization`.
 - SDS: thêm mục tuỳ biến và sửa SCR-10 (camera) theo mục 1.
-- Contract dữ liệu (đề xuất, chưa migrate): `journeys.avatar_path`, `journeys.background_kind` (`preset|photo|upload`) + `background_ref`; bảng `journey_stickers(id, journey_id, owner_id, target (card|day|share), corner, rotation, scale, asset_path, created_at)`; bảng `user_unlocks(user_id, key, unlocked_at, source)`.
+- Contract dữ liệu (đề xuất, chưa migrate): `journeys.avatar_path`, `journeys.background_kind` (`preset|photo|upload`) + `background_ref`; bảng `journey_stickers(id, journey_id, owner_id, target (card|day|photo|share), local_date null, checkin_id null, share_card_id null, corner, rotation, scale, asset_path, created_at)` với ràng buộc theo loại đích: `card` (thẻ hành trình) không cần khoá thêm; `day` bắt buộc `local_date`; `photo` bắt buộc `checkin_id`; `share` bắt buộc `share_card_id`; các khoá không thuộc loại đó phải null; bảng `user_unlocks(user_id, key, unlocked_at, source)`.
 
 
 ### Prompt gửi Make cho A1 + A3
@@ -196,7 +196,7 @@ CHANGE (owner decision, no redesign). 1) Post screen: remove the "Đăng thêm v
 Đã rà `app.css` bản 42. Đã có kính mờ: dock mọi skin, viên chọn trên dock, nền vòng chọn, chip hành trình đang chọn, thanh trên khi cuộn (`adaptive-topbar`), HUD camera chung, nút camera nổi của Quiet, Flexer, Minimalist, sheet, và thẻ nội dung của Flexer (ô số liệu, thẻ tóm tắt, thẻ hội, Wrapped). Chế độ Giảm trong suốt đã có nền đặc thay thế.
 
 Còn thiếu:
-- **Nút camera nổi (`*-camera-pill`) của Squad, Memory, Couple** đang nền đặc (`background: … !important`, không `backdrop-filter`). Đây là lớp điều hướng nổi nên được dùng kính: giữ tông màu của skin (kem giấy Squad, giấy kraft Memory, tối hồng Couple) ở độ đục ~70–80% + blur 14–18px, viền 2px + bóng cứng giữ nguyên, nền đặc khi bật Giảm trong suốt.
+- **Nút camera nổi (`*-camera-pill`) của Squad, Memory, Couple** đang nền đặc (`background: … !important`, không `backdrop-filter`). Đây là lớp điều hướng nổi nên được dùng kính: giữ tông màu của skin (kem giấy Squad, giấy kraft Memory, đen 68% Couple) ở độ đục ~70–80% + blur 14–18px, viền 2px + bóng cứng giữ nguyên, nền đặc khi bật Giảm trong suốt.
 
 Thẻ, timeline, thiệp chia sẻ và nút chính của các skin khác vẫn nền đặc theo `CLAUDE.md` §2.
 

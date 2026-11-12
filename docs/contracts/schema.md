@@ -83,7 +83,7 @@ constraint (`23505` → `invalid`) — there is no lookup RPC.
 | metric_unit | text null | ≤ 16, e.g. "kg" |
 | hide_metric_default | bool | true for weight_loss; copied to `memberships.hide_metric` on join |
 | start_date | date | local date in `timezone`; immutable |
-| duration_days | int null | 7..365, null = open; **v1.3** 1..366 for `origin = imported` |
+| duration_days | int null | 7..365, null = open; **v1.3** 1..366 for `origin = imported`. **Pending change (decided 2026-11-12):** imported journeys (album of past photos) have no length cap, so the next version drops the 366 upper bound for `origin = imported` (docs/design-v2/bugs.md A2) |
 | timezone | text | IANA, e.g. `Asia/Ho_Chi_Minh`; immutable |
 | visibility | journey_visibility | see rules above |
 | status | journey_status | default `active` |
