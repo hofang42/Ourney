@@ -86,6 +86,10 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-B5 | Hiện streak hiện tại, streak dài nhất, % hoàn thành, ngày thứ N/M | P1 |
 | FR-B6 | Kết thúc / lưu trữ journey. Journey đã kết thúc thì chỉ đọc | P1 |
 | FR-B7 | Giảm cân: **mặc định ẩn số kg và làm mờ ảnh khi share ra ngoài** | P1 |
+| FR-B8 | **Avatar hành trình** (quyết định 2026-11-12): ảnh tròn đại diện, dùng ở chọn hành trình trên camera, thẻ Hub, đầu trang hành trình, Hội. Nguồn: biểu tượng loại hành trình (mặc định), ảnh trong hành trình, ảnh tải lên, sticker của app. Hành trình nhóm: chỉ chủ nhóm đổi | P2 |
+| FR-B9 | **Nền hành trình**: hoạ tiết theo phong cách (mặc định), ảnh trong hành trình hoặc ảnh tải lên, có lớp phủ tự động giữ tương phản chữ ≥ 4.5:1 ở sáng/tối. Giảm cân: không dùng ảnh cơ thể làm avatar/nền trên thứ được chia sẻ ra ngoài | P2 |
+| FR-B10 | **Tem/huy chương dán góc**: sticker tự tải lên (viền bế trắng) hoặc huy chương mốc đã đạt, dán ở 4 góc thẻ hành trình, ảnh ngày, share card; tối đa 4 mỗi chỗ, xoay ±15°, co giãn 0.6–1.4×. Sticker cá nhân trong nhóm chỉ hiện trên ảnh của chính người đó. Ảnh tải lên được báo cáo/kiểm duyệt như check-in (FR-F1), ≤ 2MB, ≤ 20 sticker/tài khoản | P2 |
+| FR-B11 | **Mở khoá tuỳ biến**: huy chương mốc miễn phí khi đạt; tải avatar/nền/sticker riêng và bộ hoạ tiết thêm là mục **có thể mở khoá** (theo mốc chuỗi hoặc gói trả phí, chưa chốt — câu 12 `docs/client-questions.md`). App lưu cờ mở khoá theo tài khoản | P2 |
 
 ### FR-C — Check-in (camera-first)
 | ID | Yêu cầu | Ưu tiên |
