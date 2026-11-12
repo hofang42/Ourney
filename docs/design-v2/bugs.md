@@ -11,6 +11,7 @@ File duy nhất ghi lỗi của prototype Figma Make (`design/ourney-v2-app`). L
 | A3 | Tính năng | Tuỳ biến avatar, nền, tem/huy chương (có mở khoá) | SRS FR-B8–B11 + SDS 8.7 trên nhánh `docs/journey-customization`; prompt chưa gửi |
 | A4 | Trung bình | 20 lỗi logic/trợ năng trong code prototype do cubic review PR #34 chỉ ra (2026-11-12), đã kiểm lại trong code | Có prompt, chưa gửi Make |
 | A5 | Trung bình | Bỏ "Đăng thêm vào…" (R2-10); gợi ý ghim từ hành trình thứ 5 | Chủ dự án chốt 2026-11-12, có prompt, chưa gửi Make |
+| A6 | Thấp | Liquid glass còn thiếu ở nút camera nổi của Squad, Memory, Couple | Chủ dự án chốt 2026-11-12, có prompt, chưa gửi Make |
 
 ### A1. Tên hành trình trên camera bị cắt, rối mắt
 
@@ -188,6 +189,21 @@ Run tsc and build.
 
 ```
 CHANGE (owner decision, no redesign). 1) Post screen: remove the "Đăng thêm vào…" button (compose-add-more), its journey checklist, and crossPostJourneyIds / toggleCrossPostJourney / clearCrossPostJourneys from the store. One photo belongs to exactly one journey: keep the "Đăng vào <journey>" chip, which only switches to ONE other journey. 2) Camera wheel keeps 5 discs = up to 4 journeys + "Tất cả (N)". Show the one-time pin hint ("Ghim tối đa 3 hành trình hay chụp lên camera.") when the user creates their 5th active journey (not the 6th); compute it outside the setJourneys updater. Keep OIcon only, light/dark, 135% type. Run tsc and build.
+```
+
+### A6. Liquid glass còn thiếu (chủ dự án chốt 2026-11-12: chỗ nào làm được thì làm)
+
+Đã rà `app.css` bản 42. Đã có kính mờ: dock mọi skin, viên chọn trên dock, nền vòng chọn, chip hành trình đang chọn, thanh trên khi cuộn (`adaptive-topbar`), HUD camera chung, nút camera nổi của Quiet, Flexer, Minimalist, sheet, và thẻ nội dung của Flexer (ô số liệu, thẻ tóm tắt, thẻ hội, Wrapped). Chế độ Giảm trong suốt đã có nền đặc thay thế.
+
+Còn thiếu:
+- **Nút camera nổi (`*-camera-pill`) của Squad, Memory, Couple** đang nền đặc (`background: … !important`, không `backdrop-filter`). Đây là lớp điều hướng nổi nên được dùng kính: giữ tông màu của skin (kem giấy Squad, giấy kraft Memory, tối hồng Couple) ở độ đục ~70–80% + blur 14–18px, viền 2px + bóng cứng giữ nguyên, nền đặc khi bật Giảm trong suốt.
+
+Thẻ, timeline, thiệp chia sẻ và nút chính của các skin khác vẫn nền đặc theo `CLAUDE.md` §2.
+
+#### Prompt gửi Make cho A6
+
+```
+POLISH (owner decision, no layout change). Liquid glass on the floating camera pills of Squad, Memory and Couple (.squad-camera-pill, .memory-camera-pill, .couple-camera-pill): keep each skin tint at 70-80% opacity (Squad cream #F7F1E5, Memory kraft #F4EFE6, Couple dark rgb(0 0 0)) with backdrop-filter blur(16px) saturate(140%), keep the 2px border and hard shadow, keep text contrast >= 4.5:1, and add them to the .app-reduce-transparency solid fallback list. Do not add glass to cards, timelines, share cards or primary buttons outside the Flexer skin. Keep OIcon only, light/dark, 135% type. Run tsc and build.
 ```
 
 ## B. Lỗi đã sửa

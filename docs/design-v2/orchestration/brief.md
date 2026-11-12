@@ -1,7 +1,7 @@
 # BRIEF CHUNG CHO MỌI SUBAGENT — thiết kế lại UI/UX Ourney V2
 
-Repo: D:\DuAnMa\JourneyShared, nhánh design/v2-spec. KHÔNG được đổi hướng thiết kế ở mục C.
-File đích Figma: https://www.figma.com/design/nyvBJzr7XYlg7ZzhsJGoZx/Ourney-V2
+Repo: thư mục gốc của repo Ourney đang mở (dùng đường dẫn tương đối, không cố định ổ đĩa hay nhánh). KHÔNG được đổi hướng thiết kế ở mục C.
+File đích Figma Make: https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System
 Bản V1 (ví dụ những gì KHÔNG nên làm): https://www.figma.com/make/z3B1WO8e7SUNG83jvaPotn/Ourney-V1.0
 
 # QUYẾT ĐỊNH MỚI CỦA NGƯỜI DÙNG (ưu tiên hơn mục C khi khác nhau)

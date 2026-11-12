@@ -15,12 +15,12 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 ---
 
 ## 2. Synchronized Navigation & Button Standards
-1. **Unified 5-Tab Bottom Dock** (V2, approved 2026-11-11; see `docs/design-v2/feedback-2026-11-11.md`):
+1. **Unified 5-Tab Bottom Dock** (V2, approved 2026-11-11; see `docs/design-v2/feedback-2026-11-11.md`). This is the target state: the Flutter dock (`app_dock.dart`, `ui/components/dock.dart`) and `ourney_dock_test.dart` still have 3 tabs and will be updated when the V2 prototype is ported to code:
    - Every primary screen shares the same 5-tab dock, in this order:
      - `Journeys` (Map/Timeline vector icon) · `Squad` (Group/People vector icon)
      - **Center**: `Snap Shutter` (`76x76pt` Hero Shutter on Camera screen; `56x40pt` quick-snap pill on Hub/Timeline/Squad screens, colored with `pTheme.primaryAccent`; long-press opens the journey wheel)
      - `Activity` (Bell vector icon) · `Profile` (UserCircle vector icon)
-   - Liquid glass is allowed only on the floating navigation layer (dock, floating camera buttons, top bar once content scrolls under it, journey-wheel backdrop, sheet top edge), never on cards, timelines, share cards or primary buttons; keep the 2px border + hard shadow and a solid fallback for Reduce Transparency. Exception (owner decision 2026-11-12): the Quiet Transformer skin uses a 1.5px border + 2px hard shadow on the dock and primary button, matching its calm, hairline look.
+   - Liquid glass is allowed only on the floating navigation layer (dock, floating camera buttons, top bar once content scrolls under it, journey-wheel backdrop, sheet top edge), never on cards, timelines, share cards or primary buttons (exception, owner decision 2026-11-12: the Aesthetic Flexer skin may use glass on its content cards such as metrics, summary and squad cards, as part of its material); keep the 2px border + hard shadow and a solid fallback for Reduce Transparency. Exception (owner decision 2026-11-12): the Quiet Transformer skin uses a 1.5px border + 2px hard shadow on the dock and primary button, matching its calm, hairline look.
 2. **Button Hierarchy & Touch Targets**:
    - Minimum touch target: **`48x48dp`** (`>= 44pt` iOS HIG) on all interactive controls.
    - Primary buttons: `52dp` height (or `44dp` compact), capsule/rounded corners matching `pTheme.cardRadius`, a "press-in" state (owner decision 2026-11-12, V2): the hard shadow drops to 0 and the button shifts 4px toward the shadow, 110ms; no scale-down, and physical bottom lip when `pTheme.bottomLipHeight > 0`.

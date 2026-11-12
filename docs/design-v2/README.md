@@ -29,7 +29,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
 - **Hoạt động:** thông báo, reaction, lời mời.
 - **Hồ sơ:** hồ sơ, cài đặt, tuỳ biến.
 - **Số hành trình:** không giới hạn (chủ dự án chốt 2026-11-12, SRS FR-B3). Server và app Flutter hiện vẫn chặn 3; việc bỏ chặn nằm trong migration/contract tiếp theo (`docs/contracts/schema.md`).
-- Liquid glass chỉ ở lớp điều hướng nổi (dock, nút camera nổi, thanh trên khi cuộn, nền vòng chọn), luôn giữ viền 2px + bóng cứng (riêng skin Quiet Transformer: viền 1.5px + bóng 2px, chủ dự án chốt 2026-11-12) và nền đặc khi bật Giảm trong suốt.
+- Liquid glass ở lớp điều hướng nổi (dock, nút camera nổi, thanh trên khi cuộn, nền vòng chọn, mép trên của sheet) ở mọi skin; riêng skin Aesthetic Flexer được dùng kính mờ cả trên thẻ nội dung (ô số liệu, thẻ tóm tắt, thẻ hội), chủ dự án chốt 2026-11-12. Mọi chỗ kính mờ luôn giữ viền 2px + bóng cứng (riêng skin Quiet Transformer: viền 1.5px + bóng 2px, chủ dự án chốt 2026-11-12) và nền đặc khi bật Giảm trong suốt.
 - Trong một hành trình, dock đổi chất liệu theo skin (kính mờ neon ở Aesthetic Flexer, giấy kraft ở Memory Collectors…), nhưng vị trí và hành vi không đổi.
 
 ## 2. Vỏ chung: Soft Neo-Brutalism
