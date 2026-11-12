@@ -146,7 +146,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
 | FR-G1 | Thông báo local theo giờ user chọn cho từng journey. Lên lịch cuốn chiếu 14 ngày, tổng ≤ 64 thông báo chờ (giới hạn của iOS) | P1 |
-| FR-G2 | 21:00 cảnh báo "streak sắp mất" nếu hôm nay chưa check-in | P1 |
+| FR-G2 | Cảnh báo "streak sắp mất" theo quy tắc At risk của SDS §7.1: Daily — sau giờ cảnh báo (mặc định 21:00) mà hôm nay chưa check-in; X lần/tuần — số ngày còn lại trong tuần vừa đủ để đạt; Weekly/Monthly — ngày cuối của kỳ mà kỳ chưa đạt | P1 |
 | FR-G3 | Nudge bạn bè, push thật (gồm push lời mời kết bạn, journey được chia sẻ, tin nhắn) | P2 (cần tài khoản Apple) |
 
 ### FR-H — Bạn bè & chia sẻ hành trình đã trải qua

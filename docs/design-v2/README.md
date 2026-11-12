@@ -25,7 +25,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
 ```
 - **Hành trình:** Hub, gồm tất cả hành trình và nút "+ Hành trình mới".
 - **Hội:** "Hôm nay" của mọi nhóm, mời bạn, nhập mã. UI luôn ghi "Hội"; "Squad" chỉ là tên nội bộ.
-- **Giữa, Chụp:** Hero Shutter **76×76pt** trên màn camera, viên chụp nhanh 56×40pt ở Hub/timeline/Hội; mang màu của hành trình đang chọn. Nhấn giữ để mở vòng chọn hành trình (tối đa 5 đĩa: đã ghim + chưa chụp hôm nay + "Tất cả" có tìm kiếm, xem `camera-journey-picker.md`).
+- **Giữa, Chụp:** Hero Shutter **76×76pt** trên màn camera, viên chụp nhanh hiển thị 56×40pt ở Hub/timeline/Hội nhưng vùng chạm tối thiểu 56×48dp (≥ 44pt); mang màu của hành trình đang chọn. Nhấn giữ để mở vòng chọn hành trình (tối đa 5 đĩa: đã ghim + chưa chụp hôm nay + "Tất cả" có tìm kiếm, xem `camera-journey-picker.md`).
 - **Hoạt động:** thông báo, reaction, lời mời.
 - **Hồ sơ:** hồ sơ, cài đặt, tuỳ biến.
 - **Số hành trình:** không giới hạn (chủ dự án chốt 2026-11-12, SRS FR-B3). Server và app Flutter hiện vẫn chặn 3; việc bỏ chặn nằm trong migration/contract tiếp theo (`docs/contracts/schema.md`).
@@ -45,7 +45,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
 
 - Pastel nhấn, mỗi persona sở hữu một màu ở vỏ chung (dùng cho badge, thẻ hành trình trên Hub):
   Quiet Transformer = mint `#7EE8A2` · Accountability Squad = yellow `#FFD84D` · Memory Collectors = peach `#FFB347` · Couple Rituals = coral `#FF7E7E` · Aesthetic Flexer = lilac `#CF9FFF` · Minimalist Habit = sky `#7EC8E3`.
-- Bo góc: chip 12 · card 16 · sheet 24 · nút capsule. Khi nhấn, bóng thu về 0 và phần tử dịch 4px.
+- Bo góc: chip 12 · card 16 · sheet 24 · nút capsule. Khi nhấn, bóng thu về 0 và phần tử dịch 4px về phía bóng ("bấm lún", 110ms, không thu nhỏ). Chủ dự án chốt 2026-11-12; `CLAUDE.md` §2 đã cập nhật.
 - **Font:** tiêu đề Space Grotesk Bold, chữ thường và có dấu chấm cuối ("hành trình.", "tạo hành trình."). Nội dung dùng **Be Vietnam Pro** (đã có trong repo). Lưu ý: không dùng Outfit vì Outfit không có bộ dấu tiếng Việt. Trước khi chốt cần kiểm tra Space Grotesk ở dấu chồng (ệ, ữ, ấ). Nếu lỗi thì thay bằng Bricolage Grotesque (đã có trong repo).
 - **Icon:** chỉ dùng bộ icon sticker của Ourney (`design/ourney-v2-app/src/app/icons.tsx`, thay Phosphor từ bản Make 39–40), luôn có màu. Không dùng emoji hay ký tự làm icon.
 - **Minh họa:** sticker vẽ tay, nét dày, tông ấm, dùng cho ảnh bìa, màn trống và onboarding.
@@ -110,7 +110,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
    - *Giảm cân:* mục tiêu (giảm / giữ / thay đổi vóc dáng), cân hiện tại (tuỳ chọn, ghi rõ "chỉ mình bạn thấy"), có chụp ảnh ngày 1 làm khung căn dáng không.
    - *Học tiếng Anh:* mục tiêu (IELTS band / giao tiếp / đọc sách), số phút mỗi ngày (15/30/45/60), tên chiếc cúp ở đích.
    - *Tập luyện:* môn (chạy / gym / pilates / yoga / khác), chỉ số (km / phút / buổi), kiểu HUD yêu thích.
-   - *Chuyến đi:* điểm đến (gợi ý ảnh bìa ngay), ngày đi–về, cuộn phim 24 hay 36 tấm.
+   - *Chuyến đi:* điểm đến (gợi ý ảnh bìa ngay), ngày đi và ngày về (ngày về tuỳ chọn: có "chưa hẹn ngày về", khi đó bước đặt nhịp không đếm ngày về đích), cuộn phim 24 hay 36 tấm.
    - *Cặp đôi:* nghi thức chung (nấu ăn / tiết kiệm / yêu xa / tự đặt), tên hai người, mỗi người chụp nửa nào.
    - *Tự đặt:* tên thói quen + 1 câu "vì sao". Không hỏi thêm.
 3. **Đi cùng ai:** một mình / rủ hội (tối đa 10) / chỉ hai đứa. Chọn "chỉ hai đứa" sẽ đổi sang skin Couple.

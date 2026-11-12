@@ -25,7 +25,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
   - Không giới hạn số hành trình (chốt 2026-11-12, SRS FR-B3).
   - KHÔNG xếp hạng theo kết quả cơ thể.
   - Giảm cân: mặc định ẩn kg và làm mờ ảnh khi chia sẻ.
-  - Hành trình nhóm không bao giờ có link công khai.
+  - Hành trình nhóm/cặp đôi đang chạy không có link công khai; khi đã kết thúc, chủ nhóm bật được link, chỉ gồm ảnh của thành viên đã đồng ý (SRS FR-E3).
   - Chạy offline trước, đồng bộ sau.
   - Đăng nhập email OTP 6 số.
   - Xin quyền đúng ngữ cảnh.
@@ -33,7 +33,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
 - V1 hỏng ở chỗ: mọi hành trình dùng chung một form dài và một lưới lịch, skin chỉ đổi màu.
   V2 phải "cá nhân hoá, hành trình hoá": mỗi hành trình được "đúc" từ chính nội dung của nó
   và là một thế giới giao diện riêng. Làm lại TẤT CẢ màn hình, không dùng lại giao diện cũ.
-  Không bắt buộc theo luật UI cũ trong CLAUDE.md. Ưu tiên hiện đại, bắt mắt nhất.
+  Chỉ những quyết định UX cũ đã được thay (ví dụ dock 3 tab) là không còn áp dụng; mọi quy tắc còn hiệu lực trong CLAUDE.md (light/dark, không icon mặc định, vùng chạm, Dynamic Type…) vẫn bắt buộc. Ưu tiên hiện đại, bắt mắt nhất.
 
 # C. HƯỚNG THIẾT KẾ ĐÃ CHỐT
 1. VỎ CHUNG "Soft Neo-Brutalism" cho Hub / tạo hành trình / onboarding / hồ sơ / squad / cài đặt.
@@ -45,7 +45,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
      coral #FF7E7E Cặp đôi · lilac #CF9FFF Tập luyện · sky #7EC8E3 Tự đặt.
    - Font: tiêu đề Space Grotesk Bold, chữ thường, có dấu chấm cuối ("hành trình.").
      Nội dung Be Vietnam Pro. KHÔNG dùng Outfit (thiếu dấu tiếng Việt). Line-height 1.3–1.45.
-   - Icon Phosphor Bold/Duotone 24px, không dùng emoji làm icon điều hướng.
+   - Chỉ dùng bộ icon sticker Ourney (`design/ourney-v2-app/src/app/icons.tsx`), luôn có màu; không dùng Phosphor, emoji hay ký tự làm icon.
    - Minh họa sticker vẽ tay, nét dày, tông ấm. Ảnh dùng khung Polaroid xoay -3°..3°.
 2. ĐIỀU HƯỚNG: floating dock capsule 5 tab (cập nhật 2026-11-11): Hành trình · Hội · Chụp · Hoạt động · Hồ sơ.
    - Giữa: nút Chụp 76pt trên camera (56×40 ở màn khác) màu của hành trình đang chọn,
