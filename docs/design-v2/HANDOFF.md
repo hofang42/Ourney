@@ -59,13 +59,14 @@ Việc cần làm:
 | Make version 36: nhiều ảnh mỗi ngày | ✅ Spec `multi-photo-day.md` (trả lời câu 10 `client-questions.md`). Đã thử: /j/ielts/day/21 có dải 3 ảnh + "Đặt làm ảnh đại diện", "Xoá ảnh này", "1 ảnh / Ghép 2–4 ảnh"; chụp thêm từ camera → ngày 21 thành 4 ảnh, HUD "Hôm nay · 4 ảnh", streak giữ 18, ngày giữ 21. Chưa thử: nhóm ảnh trên timeline 6 giao diện, Couple nhiều nửa, Memory hết cuộn, thiệp ghép, Hoạt động gộp |
 | Make version 37–40 | ✅ Bản 37: căn icon trong huy hiệu đúng tâm, tick góc thẻ 28×28 cách viền 10px, chip trên ảnh cách mép ≥ 8px. Bản 38: xoá ảnh duy nhất của ngày vẫn giữ ngày cho streak (SDS §7.1, Q11). Bản 39–40: bộ icon làm lại theo kiểu logo sticker (khối đặc, viền mực, bảng 6 màu logo, viền bế + nghiêng khi được chọn), icon luôn có màu kể cả khi chưa chọn; hộp "Sửa hồ sơ" và mọi sheet render trong khung điện thoại (`overlay.tsx`), đã thử mở/đóng 2 lần. Chưa đo lại căn tick sau khi đổi bộ icon |
 | Make version 41 | ✅ Dock ở các màn chung (Hub, Hội, Hoạt động, Hồ sơ) luôn dùng vỏ chung (kem 78% + viền mực), không theo hành trình chính; chỉ trong /j/:id mới theo giao diện hành trình (đo với Chạy sáng là hành trình chính). Tick chọn không đè chữ/icon: nút phân đoạn dùng tick đứng trước chữ, ô lưới đặt tick ở góc riêng; Cài đặt: 11 tick, 0 chồng lấn |
-| Make version 42: chọn hành trình trên camera | ✅ Theo `camera-journey-picker.md`: vòng xoay tối đa 5 đĩa (ghim tối đa 3 + tự điền hành trình chưa chụp hôm nay + "Tất cả (N)"), sheet "Tất cả" có ô tìm và nhóm, ghim/bỏ ghim, "Đăng thêm vào…" nhiều hành trình, dữ liệu mẫu 12 hành trình. Đã thử bằng cú bấm thật: sheet mở đúng. ⏳ Lỗi tên hành trình bị cắt "..." trên camera: xem `camera-hud-and-customization.md` (Make hết credit, chưa gửi) |
+| Make version 42: chọn hành trình trên camera | ✅ Theo `camera-journey-picker.md`: vòng xoay tối đa 5 đĩa (ghim tối đa 3 + tự điền hành trình chưa chụp hôm nay + "Tất cả (N)"), sheet "Tất cả" có ô tìm và nhóm, ghim/bỏ ghim, "Đăng thêm vào…" nhiều hành trình, dữ liệu mẫu 12 hành trình. Đã thử bằng cú bấm thật: sheet mở đúng. ⏳ Lỗi tên hành trình bị cắt "..." trên camera: xem `bugs.md` (A1–A3) (Make hết credit, chưa gửi) |
+| Danh sách lỗi | 📄 Gộp mọi lỗi vào `bugs.md`: đang mở A1 (tên hành trình trên camera bị cắt), A2 (hành trình nhập ảnh cũ kéo dài vô tận), A3 (tuỳ biến avatar/nền/sticker), kèm prompt Make chưa gửi; mục B là lỗi đã sửa bản 18–42 |
 | Code ở `design/ourney-v2-app` | ✅ Đã chép và commit nguồn version 42; version 33 thêm `icons.tsx`, `brand.tsx`, `index.css`); trước đó version 29 (routes, app.css, store, create, flow đọc lại qua Figma MCP). Typecheck đạt |
 | Phản hồi chủ dự án (onboarding mang sang Tạo hành trình, vòng xoay đổi hành trình, HUD Squad, nút đổi hành trình trên camera, rà lỗi bo elip/chữ cắt/đè/chiều cao/mép) | 🔄 Đã tái hiện đủ, ghi nguyên nhân trong `feedback-2026-11-11.md`; ✅ Đã sửa trên Make version 24–25 (xem dòng Make version 25) |
 | Lỗi "bấm Cài đặt ở màn hành trình" | ✅ Chủ dự án báo đã được sửa |
 | Đề xuất dock 5 nút + chỗ dùng liquid glass | ✅ Chủ dự án đã duyệt (2026-11-11); đã gửi Make (kèm màn /activity và công tắc "giảm trong suốt"); CLAUDE.md mục 2 đã đổi sang dock 5 nút |
 | Spec A (đổi bố cục trong hành trình), spec B (nhập hành trình đã qua) | 🔄 Đã viết (`feedback-2026-11-11.md` mục 2, 3; coi là câu trả lời câu 3 và 25 trong `docs/client-questions.md`), đã gửi Make trong cùng prompt FIX |
-| Prompt 0 → 10 và các lượt FIX trước | ✅ Xong tới version 22 (xem các mục bên dưới và `qa-make-v22.md`) |
+| Prompt 0 → 10 và các lượt FIX trước | ✅ Xong tới version 22 (xem các mục bên dưới và `bugs.md` (mục B)) |
 | Đọc context repo (CLAUDE.md, SRS, docs/03, docs/06, templates, 6 ảnh persona) | ✅ Xong |
 | Phân tích TripMate (nguồn cảm hứng neo-brutalism) | ✅ Xong |
 | Chốt hướng với chủ dự án (vỏ chung + skin, tự do điều hướng, làm lại tất cả màn hình) | ✅ Xong |
@@ -209,7 +210,7 @@ Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh v
 
 ## Make version 22 (2026-11-11)
 
-Đã chạy kiểm tra Q cho Prompt 4 → 10 và sửa thêm (v21 dock Flexer ở Sáng, dấu phẩy thập phân, nút /create/4; v22 thẻ nhóm truy cập được bằng bàn phím). Báo cáo: `qa-make-v22.md`.
+Đã chạy kiểm tra Q cho Prompt 4 → 10 và sửa thêm (v21 dock Flexer ở Sáng, dấu phẩy thập phân, nút /create/4; v22 thẻ nhóm truy cập được bằng bàn phím). Báo cáo: `bugs.md` (mục B).
 
 ## Dock 5 nút + liquid glass (Make version 27–28, 2026-11-11)
 
