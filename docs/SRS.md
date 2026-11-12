@@ -27,7 +27,7 @@ App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v
 | **Check-in** | Một ảnh (+ caption, metric tuỳ chọn) cho một journey trong một **ngày địa phương**. Một người đăng được **nhiều check-in trong cùng ngày/journey**; ảnh mới được thêm vào ngày đó, không thay ảnh cũ |
 | **Ảnh bìa ngày** | Ảnh đại diện của một ngày (mặc định là check-in đầu tiên, người dùng đổi được). Dùng cho lưới lịch, timeline, share card mặc định |
 | **local_date** | Ngày theo múi giờ của journey (không phải múi giờ của điện thoại) |
-| **Streak** | Số ngày liên tiếp có check-in. Vẫn giữ nếu hôm nay chưa check-in nhưng hôm qua có |
+| **Streak** | Số **kỳ đạt** liên tiếp theo nhịp của journey (ngày, X lần/tuần, tuần, tháng; SDS §7.1). Vẫn giữ nếu kỳ hiện tại chưa xong nhưng kỳ trước đã đạt |
 | **Member** | Thành viên journey nhóm, vai trò `owner` hoặc `member` |
 | **Share card** | Ảnh 1080×1920 / 1080×1350 render trên máy để chia sẻ ra ngoài |
 | **Local-only mode** | App chạy không cần server (khi chưa cấu hình Supabase): solo journey dùng được, nhóm thì không |
@@ -102,7 +102,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-C6 | **Offline-first**: lưu và hiện ngay trên máy, upload qua hàng đợi, tự thử lại | P1 |
 | FR-C7 | **Nhiều check-in/kỳ/journey/người** (quyết định 2026-11-11, trùng D5 của SDS). Đăng thêm là thêm ảnh, không thay thế. Tính chuỗi theo **kỳ** của nhịp (SDS §7.1): Daily — check-in đầu tiên của ngày làm kỳ đạt và streak +1; X lần/tuần — check-in đầu tiên của mỗi ngày chỉ cộng một ngày vào số ngày của tuần, streak +1 khi tuần đạt đủ X ngày; Weekly/Monthly — check-in đầu tiên của kỳ làm kỳ đạt và streak +1. Ảnh thứ 2 trở đi trong cùng ngày/kỳ không cộng, không ăn mừng lại. Mỗi ngày có một ảnh bìa (mặc định ảnh đầu tiên, đổi được); xoá ảnh bìa thì ảnh còn lại sớm nhất thành ảnh bìa; ô tuần/tháng dùng ảnh bìa của ngày có ảnh đầu tiên trong kỳ. Mỗi ảnh có caption, metric, reaction riêng và xoá được riêng; xoá ảnh duy nhất của một ngày vẫn giữ ngày đó cho streak (SDS §7.1, Q11). Lưới/timeline hiện ảnh bìa + số đếm (SDS §7.3). Contract dữ liệu cần bỏ `UNIQUE (journey_id, user_id, local_date)` trên `check_ins`, thêm ảnh bìa theo ngày và một bản ghi ngày đã đạt không mất khi xoá check-in, làm đầu vào cho `journey_streak` (xem §5 và `docs/contracts/schema.md`) | P1 |
 | FR-C8 | Check-in làm kỳ đạt (theo FR-C7): animation "đóng dấu" + haptic + streak +1, confetti ở mốc 7/30/về đích. Check-in khác trong ngày/kỳ: chỉ báo nhẹ "Đã thêm ảnh thứ N" | P1 |
-| FR-C9 | ~~Đăng 1 ảnh cho nhiều journey~~: **bỏ**. Một ảnh chỉ thuộc một journey (SDS R2-10, chủ dự án giữ lại ngày 2026-11-12, vì rủi ro ảnh riêng lọt sang journey nhóm). Sau khi chụp chỉ được đổi sang một journey khác | Bỏ |
+| FR-C9 | ~~Đăng 1 ảnh cho nhiều journey~~: **bỏ**. Một ảnh chỉ thuộc một journey (SDS R2-10, chủ dự án giữ lại ngày 2026-11-12, vì rủi ro ảnh riêng lọt sang journey nhóm). Trước khi bấm Đăng chỉ được đổi đích sang một journey khác; đã đăng thì ảnh không chuyển được sang journey khác (SDS SCR-12, SCR-25) | Bỏ |
 
 ### FR-D — Nhóm
 | ID | Yêu cầu | Ưu tiên |

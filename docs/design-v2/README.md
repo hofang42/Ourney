@@ -46,7 +46,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
 - Pastel nhấn, mỗi persona sở hữu một màu ở vỏ chung (dùng cho badge, thẻ hành trình trên Hub):
   Quiet Transformer = mint `#7EE8A2` · Accountability Squad = yellow `#FFD84D` · Memory Collectors = peach `#FFB347` · Couple Rituals = coral `#FF7E7E` · Aesthetic Flexer = lilac `#CF9FFF` · Minimalist Habit = sky `#7EC8E3`.
 - Bo góc: chip 12 · card 16 · sheet 24 · nút capsule. Khi nhấn, bóng thu về 0 và phần tử dịch 4px.
-- **Font:** tiêu đề Space Grotesk Bold, chữ thường và có dấu chấm cuối ("hành trình.", "tạo hành trình."). Nội dung dùng **Be Vietnam Pro** (đã có trong repo). ⚠️ Không dùng Outfit vì Outfit không có bộ dấu tiếng Việt. Trước khi chốt cần kiểm tra Space Grotesk ở dấu chồng (ệ, ữ, ấ). Nếu lỗi thì thay bằng Bricolage Grotesque (đã có trong repo).
+- **Font:** tiêu đề Space Grotesk Bold, chữ thường và có dấu chấm cuối ("hành trình.", "tạo hành trình."). Nội dung dùng **Be Vietnam Pro** (đã có trong repo). Lưu ý: không dùng Outfit vì Outfit không có bộ dấu tiếng Việt. Trước khi chốt cần kiểm tra Space Grotesk ở dấu chồng (ệ, ữ, ấ). Nếu lỗi thì thay bằng Bricolage Grotesque (đã có trong repo).
 - **Icon:** chỉ dùng bộ icon sticker của Ourney (`design/ourney-v2-app/src/app/icons.tsx`, thay Phosphor từ bản Make 39–40), luôn có màu. Không dùng emoji hay ký tự làm icon.
 - **Minh họa:** sticker vẽ tay, nét dày, tông ấm, dùng cho ảnh bìa, màn trống và onboarding.
 
@@ -67,7 +67,7 @@ Khi tạo, mỗi hành trình sinh ra một bộ DNA. Bộ này được lưu l�
 | **Thiệp tổng kết** | skin | contact sheet 35mm |
 
 **Vé khởi hành theo từng skin:**
-Quiet Transformer = thẻ hồ sơ riêng tư có khoá 🔒 · Accountability Squad = thẻ nhiệm vụ (quest card) có cúp · Memory Collectors = vé xe/vé máy bay · Couple Rituals = vé đôi xé đôi được · Aesthetic Flexer = số đeo áo (race bib) · Minimalist Habit = thẻ chỉ mục (index card) tối giản.
+Quiet Transformer = thẻ hồ sơ riêng tư có icon `lock` · Accountability Squad = thẻ nhiệm vụ (quest card) có cúp · Memory Collectors = vé xe/vé máy bay · Couple Rituals = vé đôi xé đôi được · Aesthetic Flexer = số đeo áo (race bib) · Minimalist Habit = thẻ chỉ mục (index card) tối giản.
 
 > **Ghi chú cho dev (ngoài contract hiện tại):** cần thêm `journey.dna` (jsonb: `variant`, `cover`, `milestoneNames`, `prompts`) và một số trường theo loại: `destination`, `startWeight`/`targetWeight` (riêng tư), `sport`, `dailyMinutes`, `partnerNames`. Thay đổi này phải đi qua PR contract riêng (SRS §5).
 
@@ -94,7 +94,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
 3. Đăng nhập email → OTP 6 số (giọng văn bình tĩnh, rõ ràng) → username + avatar
 4. Màn xin quyền đúng ngữ cảnh: camera (lần chụp đầu), thông báo (sau check-in đầu tiên). Mỗi màn có lý do cảm xúc và nút "để sau vậy."
 5. **Hub "hành trình."**:
-   - Hero "Hôm nay" là việc quan trọng nhất kế tiếp, ví dụ "Còn 3 tiếng để giữ chuỗi 🔥 12 của *IELTS 7.5*".
+   - Hero "Hôm nay" là việc quan trọng nhất kế tiếp, ví dụ "Còn 3 tiếng để giữ chuỗi 12 của *IELTS 7.5*" (kèm icon `flame`, không dùng emoji).
    - Mỗi hành trình là một thẻ mang DNA riêng (ảnh bìa sticker, màu biến thể, ngày N/M, streak, mặt hội).
    - Thẻ "+ hành trình mới".
    - Có trạng thái trống, skeleton, lỗi, và offline. Danh sách cuộn được, không giới hạn số hành trình (vòng chọn trên camera tối đa 5 đĩa, xem `camera-journey-picker.md`); dữ liệu mẫu có đủ 6 hành trình, mỗi skin một hành trình.
@@ -127,7 +127,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
 2. **Camera HUD** riêng của skin + chip hành trình
 3. **Sau khi chụp:** caption theo câu hỏi DNA, nhập chỉ số kiểu riêng của skin (thanh trượt kg / vòng phút / bàn phím km). Nút Đăng, tổng ≤ 3 chạm.
 4. **Ăn mừng check-in:** con dấu riêng của skin và streak +1. Ở mốc 7/30/về đích thì có confetti riêng của skin.
-5. **Xem một ngày** (day viewer): ảnh, caption, chỉ số, reaction 🔥 💪 👏 ❤️ 😂
+5. **Xem một ngày** (day viewer): ảnh, caption, chỉ số, reaction bằng icon Ourney `react-fire`, `react-flex`, `react-clap`, `react-heart`, `react-laugh` (không dùng emoji)
 6. **Hội hôm nay** (nếu là nhóm): kiểu riêng của skin (polaroid wall, bàn đôi, contact sheet…). Ai chưa check-in có nút nhắc.
 7. **Thiệp chia sẻ** story 9:16 và feed 4:5. Giảm cân mặc định ẩn kg và làm mờ ảnh.
 8. **Cập nhật hành trình:** sửa tên, bìa, biến thể, giờ nhắc, thành viên, mã mời (đổi mã), kết thúc hành trình
@@ -147,7 +147,7 @@ Nội dung hệ thống (OTP, xoá tài khoản, báo cáo) luôn rõ ràng và 
 
 ## 7. Accessibility (bắt buộc)
 - Chữ đạt contrast ≥ 4.5:1. Trên pastel thì dùng chữ ink.
-- Vùng chạm ≥ 44pt.
+- Vùng chạm ≥ 48dp (≥ 44pt trên iOS), theo `CLAUDE.md` §2.
 - Trạng thái luôn có nhãn hoặc hình dạng, không chỉ dựa vào màu.
 - Dynamic Type 1.35x không vỡ layout.
 - Reduce Motion thay animation dập dấu/confetti bằng fade.

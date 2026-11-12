@@ -15,7 +15,7 @@ Bản V1 (ví dụ những gì KHÔNG nên làm): https://www.figma.com/make/z3B
 
 # B. APP LÀ GÌ
 Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng Việt Nam, UI tiếng Việt.
-- Người dùng tạo "hành trình": Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi, Cặp đôi, Tự đặt.
+- Người dùng tạo "hành trình" từ 5 template: Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi, Tự đặt. "Cặp đôi" không phải template riêng: là persona Couple của Tự đặt (`custom`) khi chọn "chỉ hai đứa", vẫn hiện như một thẻ ở màn tạo.
 - Mỗi ngày chụp 1 ảnh check-in (caption ≤140 ký tự, chỉ số tuỳ chọn), tối đa 3 chạm.
   Mở app là vào thẳng camera.
 - Có streak, ngày N/M, % hoàn thành. Mốc 7 / 30 / về đích có confetti và thiệp chia sẻ (9:16 và 4:5).

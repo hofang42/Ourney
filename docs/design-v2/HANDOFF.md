@@ -27,7 +27,7 @@ Quyết định đã chốt với mình:
    đổi hẳn sang skin riêng như ảnh mẫu, nhưng vẫn giữ "xương" brutal (viền, bóng cứng ở dock và nút chính).
 2. Lúc tạo, mỗi hành trình phải ra một cá tính và phong cách riêng dựa trên nội dung của nó.
 3. Không bắt buộc theo luật cũ (3 tab trong CLAUDE.md…). Ưu tiên UI hiện đại, bắt mắt nhất.
-   Hiện đang đề xuất floating dock 3 mục.
+   (Lúc đầu đề xuất floating dock 3 mục; chủ dự án đã chốt dock 5 tab ngày 2026-11-11, xem `CLAUDE.md` §2.)
 4. Thiết kế lại TẤT CẢ màn hình, không dùng lại giao diện cũ.
 5. Font: Space Grotesk (tiêu đề) + Be Vietnam Pro (nội dung). Không dùng Outfit vì không có dấu tiếng Việt.
 

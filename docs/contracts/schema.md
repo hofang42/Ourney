@@ -246,7 +246,7 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 ## Rules (enforced server-side; client mirrors for UX)
 - Max **3 active journeys** per user (as owner or active member). **Pending change (decided 2026-11-12, not migrated yet):** no cap; the next migration drops the `_active_journey_count(...) >= 3` checks and the `limit` error, and the client drops its limit dialog.
 - Max **10 active members** per group journey.
-- Streak: daily cadence, strict. See `streak_vectors.json`.
+- Streak: daily cadence, strict. See `streak_vectors.json`. **Pending change:** SRS FR-C7 and SDS §7.1 add X-per-week, weekly and monthly cadences. `journeys` and the `Journey` model have no cadence field yet, and `computeStreak` / `journey_streak` only count consecutive days; the next contract version needs a `cadence` column (with the X for X-per-week), a period-based streak algorithm in both places, and new `streak_vectors.json` cases.
 - **Late joiners**: a member's streak/progress window starts at
   `effectiveStreakStart(journey.startDate, joinedLocalDate)` = the later of the journey start and the
   journey-local date of `memberships.joined_at`; check-ins before that date are ignored; the window still
