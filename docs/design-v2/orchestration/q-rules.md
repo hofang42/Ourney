@@ -7,5 +7,5 @@ SP = thư mục scratchpad của session điều phối hiện tại. Session đ
 Chỉ chấm những gì thuộc phạm vi lượt này (được nêu trong lời giao việc). Phần chưa làm tới không tính là lỗi; ghi "chưa áp dụng". Không đọc được từ ảnh thì ghi "chưa kiểm được", không đoán.
 
 Kết quả trả về (tối đa 8 dòng), không ghi file:
-- ĐẠT, KHÔNG ĐẠT hoặc CHƯA KIỂM ĐƯỢC.
+- ĐẠT, KHÔNG ĐẠT, CHƯA KIỂM ĐƯỢC hoặc CHƯA ÁP DỤNG.
 - Mỗi lỗi: tên ảnh, vị trí trên màn, lỗi là gì, mức độ (chặn/nhỏ), sửa cần đạt kết quả gì.

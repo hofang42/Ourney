@@ -101,8 +101,8 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-C5 | Nén trên máy: ảnh 1080px JPEG q70 + thumbnail | P1 |
 | FR-C6 | **Offline-first**: lưu và hiện ngay trên máy, upload qua hàng đợi, tự thử lại | P1 |
 | FR-C7 | **Nhiều check-in/kỳ/journey/người** (quyết định 2026-11-11, trùng D5 của SDS). Đăng thêm là thêm ảnh, không thay thế. Tính chuỗi theo **kỳ** của nhịp (SDS §7.1): Daily — check-in đầu tiên của ngày làm kỳ đạt và streak +1; X lần/tuần — check-in đầu tiên của mỗi ngày chỉ cộng một ngày vào số ngày của tuần, streak +1 khi tuần đạt đủ X ngày; Weekly/Monthly — check-in đầu tiên của kỳ làm kỳ đạt và streak +1. Ảnh thứ 2 trở đi trong cùng ngày/kỳ không cộng, không ăn mừng lại. Mỗi ngày có một ảnh bìa (mặc định ảnh đầu tiên, đổi được); xoá ảnh bìa thì ảnh còn lại sớm nhất thành ảnh bìa; ô tuần/tháng dùng ảnh bìa của ngày có ảnh đầu tiên trong kỳ. Mỗi ảnh có caption, metric, reaction riêng và xoá được riêng; xoá ảnh duy nhất của một ngày vẫn giữ ngày đó cho streak (SDS §7.1, Q11). Lưới/timeline hiện ảnh bìa + số đếm (SDS §7.3). Contract dữ liệu cần bỏ `UNIQUE (journey_id, user_id, local_date)` trên `check_ins`, thêm ảnh bìa theo ngày và một bản ghi ngày đã đạt không mất khi xoá check-in, làm đầu vào cho `journey_streak` (xem §5 và `docs/contracts/schema.md`) | P1 |
-| FR-C8 | Check-in làm kỳ đạt (theo FR-C7): animation "đóng dấu" + haptic + streak +1, confetti ở mốc 7/30/về đích. Check-in khác trong ngày/kỳ: chỉ báo nhẹ "Đã thêm ảnh thứ N hôm nay" | P1 |
-| FR-C9 | Khi đã ở ≥ 2 journey: đăng 1 ảnh cho nhiều journey | P2 (v0.2) |
+| FR-C8 | Check-in làm kỳ đạt (theo FR-C7): animation "đóng dấu" + haptic + streak +1, confetti ở mốc 7/30/về đích. Check-in khác trong ngày/kỳ: chỉ báo nhẹ "Đã thêm ảnh thứ N" | P1 |
+| FR-C9 | ~~Đăng 1 ảnh cho nhiều journey~~: **bỏ**. Một ảnh chỉ thuộc một journey (SDS R2-10, chủ dự án giữ lại ngày 2026-11-12, vì rủi ro ảnh riêng lọt sang journey nhóm). Sau khi chụp chỉ được đổi sang một journey khác | Bỏ |
 
 ### FR-D — Nhóm
 | ID | Yêu cầu | Ưu tiên |
@@ -250,7 +250,7 @@ supabase start && supabase test db
 ## 7. Ngoài phạm vi v1 → lộ trình
 | v0.2 (khi có tài khoản Apple $99) | v0.3+ |
 |---|---|
-| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge (gồm push tin nhắn, lời mời kết bạn), universal/App Links, Sign in with Apple, đăng 1 ảnh cho nhiều journey, comment, streak freeze | Discover / feed công khai (vẫn **không** làm ở v1, kể cả khi đã có bạn bè), thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
+| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge (gồm push tin nhắn, lời mời kết bạn), universal/App Links, Sign in with Apple, comment, streak freeze | Discover / feed công khai (vẫn **không** làm ở v1, kể cả khi đã có bạn bè), thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
 
 ## 8. Tiêu chí thành công v1
 - Beta `v0.1.0`: `.ipa` chưa ký + `.apk` trên GitHub Release.

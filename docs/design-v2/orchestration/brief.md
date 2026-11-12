@@ -11,7 +11,7 @@ Bản V1 (ví dụ những gì KHÔNG nên làm): https://www.figma.com/make/z3B
 - Chọn "chỉ hai đứa" ở bước 3 khi đang ở loại khác: đổi sang skin Couple, giữ câu trả lời và luật của loại cũ (ví dụ Giảm cân vẫn ẩn kg), hỏi thêm hai màn: tên hai người và ai chụp nửa nào.
 
 - BỎ luật "tối đa 3 hành trình đang chạy": không giới hạn số hành trình. Không có trạng thái "đủ 3", luôn tạo thêm được. Hub và vòng xoay phải dùng tốt khi có nhiều hành trình (ví dụ 8). Thay thế dòng tương ứng ở mục B.
-- Đối soát độ phủ chỉ dựa trên đặc tả V2 (docs/design-v2/README.md và brief này), bỏ qua SDS và V1.
+- Đối soát độ phủ dựa trên đặc tả V2 (docs/design-v2/README.md, brief này, bugs.md và các spec trong docs/design-v2/), cộng SRS FR-C7/C8 và SDS §7 cho nhiều ảnh mỗi ngày, ảnh bìa và streak. Bỏ qua V1.
 
 # B. APP LÀ GÌ
 Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng Việt Nam, UI tiếng Việt.
@@ -86,7 +86,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
    - Aesthetic Flexer (Tập luyện): ưu tiên nền tối, coral #FF4D6D, neon lime #3DE88C.
      Light #F3F4F6/#FFF/#090A0F, Dark #090A0F/#14161F/#F8FAFC.
      Kính mờ, số condensed, sparkline neon, sticker HUD km/pace, story kèm dải 21 ngày.
-   - Minimalist Habit (Tự đặt): cam Braun #EA580C, than #27272A.
+   - Minimalist Habit (Tự đặt): cam Braun #EA580C (chữ trên nút cam là ink #1C1C1E, không dùng chữ trắng), than #27272A.
      Light #F5F3EE/#FFF/#1C1C1E, Dark #0E0E10/#18181B/#F4F4F5. Lưới 1px, không trang trí.
      Lịch ảnh 7 cột nối bằng một đường cam, chụp 1 chạm không chữ, thẻ "24/30 NGÀY · 80% ĐỀU ĐẶN".
 6. MỖI SKIN CẦN ĐỦ: trang chủ hành trình, camera HUD, màn sau khi chụp (nhập chỉ số kiểu riêng),

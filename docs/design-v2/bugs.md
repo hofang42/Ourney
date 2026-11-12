@@ -9,6 +9,8 @@ File duy nhất ghi lỗi của prototype Figma Make (`design/ourney-v2-app`). L
 | A1 | Cao | Tên hành trình trên camera bị cắt "...", quá nhiều chữ | Có thiết kế + prompt, chưa gửi Make |
 | A2 | Cao | Hành trình nhập ảnh cũ kéo dài vô tận vì hiện mọi ngày trống | Có thiết kế + prompt, chưa gửi Make |
 | A3 | Tính năng | Tuỳ biến avatar, nền, tem/huy chương (có mở khoá) | SRS FR-B8–B11 + SDS 8.7 trên nhánh `docs/journey-customization`; prompt chưa gửi |
+| A4 | Trung bình | 20 lỗi logic/trợ năng trong code prototype do cubic review PR #34 chỉ ra (2026-11-12), đã kiểm lại trong code | Có prompt, chưa gửi Make |
+| A5 | Trung bình | Bỏ "Đăng thêm vào…" (R2-10); gợi ý ghim từ hành trình thứ 5 | Chủ dự án chốt 2026-11-12, có prompt, chưa gửi Make |
 
 ### A1. Tên hành trình trên camera bị cắt, rối mắt
 
@@ -119,6 +121,73 @@ FIX (imported past journey renders every day, endless scroll). ImportedJourneyHo
 7. Hub card, Wrapped, share card: "14 ngày có ảnh trong 2 năm" instead of "Ngày 730/730"; no completion % for imported journeys.
 8. Virtualise the list so 700-day spans scroll smoothly. Demo data: add an imported journey with 14 photo days spread over 2 years.
 Keep OIcon only, light/dark, 135% type. Run tsc and build.
+```
+
+### A4. Lỗi trong code prototype (cubic review PR #34, 2026-11-12)
+
+Đã đối chiếu từng lỗi với code bản 42 trong `design/ourney-v2-app`; cả 20 lỗi đều tái hiện được trong code. Prototype do Figma Make sinh ra nên sửa qua Make (prompt bên dưới), không sửa tay trong repo.
+
+| # | File | Lỗi | Cần đạt |
+|---|---|---|---|
+| 1 | `app/create.tsx` `InlineDateRange` | `start`/`end` hardcode 16 và 20, không đọc `value` | Mở lại lịch hiện đúng khoảng đã lưu |
+| 2 | `app/create.tsx` chọn "Ai cùng đi" | Chọn kiểu khác toast vẫn hiện; "Hoàn tác" đặt `skin` thành `undefined` | Ẩn toast khi chọn lại; hoàn tác về skin trước đó |
+| 3 | `app/flow.tsx` đăng nhập | Ô trống báo "Không tìm thấy tên người dùng" thay vì "Nhập email hoặc tên người dùng." | Ô trống báo đúng câu nhắc nhập |
+| 4 | `app/flow.tsx` đăng nhập offline | "Thử lại" chỉ xoá lỗi, banner offline và nút gửi vẫn bị chặn | "Thử lại" tắt offline như ở màn mã OTP |
+| 5 | `app/flow.tsx` OTP | Gửi mã mới khi mã hết hạn vẫn không nhập được (`otpMode` vẫn `expired`) | Gửi lại đưa về trạng thái bình thường |
+| 6 | `app/flow.tsx` OTP | Lỗi mã luôn ghi "trong email" kể cả đăng nhập bằng số điện thoại | "Kiểm tra lại 6 số vừa gửi" |
+| 7 | `app/flow.tsx` thiết lập hồ sơ | Màu avatar đã chọn không được lưu vào hồ sơ | Hồ sơ giữ màu avatar đã chọn |
+| 8 | `app/store.tsx` `setDraft` | Dùng `draft` của lần render, gọi nhiều lần trong một thao tác thì ghi đè nhau; nháp lưu vào localStorage có thể thiếu | Cập nhật theo kiểu hàm, lưu nháp trong cùng lần cập nhật |
+| 9 | `app/store.tsx` `deleteLatestCheckIn` | Không xoá ảnh khỏi `days`; giảm ngày/streak cả khi hôm nay chưa chụp | Xoá ảnh khỏi ngày; chỉ giảm khi hôm nay đã chụp; xoá ảnh duy nhất vẫn giữ ngày (Q11) |
+| 10 | `app/store.tsx` reaction trên ảnh | Đổi reaction không trừ reaction cũ, số đếm tăng dồn | Mỗi người một reaction mỗi ảnh |
+| 11 | `app/store.tsx` `resetAccount` | Sau khi xoá tài khoản `user` vẫn là "old", Splash tự mở camera | Xoá tài khoản xong về trạng thái người mới |
+| 12 | `app/store.tsx` tạo hành trình | Gọi `setCameraPinHint` bên trong updater của `setJourneys` | Tính điều kiện ngoài updater |
+| 13 | `app/icons.tsx` | `oIconNames` lặp lại union `OIconName`, thêm icon mà quên mảng thì góc nghiêng thành `undefineddeg` | Suy kiểu từ mảng `as const` |
+| 14 | `index.css` Giảm chuyển động | `.reduce-motion *` đặt `transform: none`, làm lệch nút chụp, nút đổi hành trình, toast | Chỉ tắt animation/transition, giữ transform bố cục |
+| 15 | `StyleGuide.tsx` sheet | `aria-modal` nhưng không đóng bằng Escape, không chuyển focus vào sheet | Escape đóng, focus vào sheet khi mở |
+| 16 | `StyleGuide.tsx` vé khởi hành | Luôn dùng màu Light dù đang ở Dark | Vé đổi theo chế độ màu |
+| 17 | `StyleGuide.tsx` proof icon | Class `icon-proof-*` không có CSS, phần hai theme và lưới cỡ không hiển thị | Thêm style cho phần proof icon |
+| 18 | `StyleGuide.tsx` dock mẫu | Chỉ có Hành trình, Hội, nút chụp; thiếu Hoạt động, Hồ sơ | Dock mẫu đủ 5 tab |
+| 19 | `StyleGuide.tsx` dock mẫu | Vòng chọn mở ngay khi chạm thay vì nhấn giữ 400ms | Nhấn giữ 400ms mới mở, chạm thường không mở |
+| 20 | `StyleGuide.tsx` toast | Timer cũ không bị huỷ, toast lần hai tắt sớm | Huỷ timer cũ trước khi đặt timer mới |
+
+Các comment về tài liệu trong cùng đợt review đã sửa trực tiếp trong docs.
+
+#### Prompt gửi Make cho A4
+
+```
+FIX (code review findings, no visual redesign). Keep OIcon only, light/dark, 135% type, 5-tab dock.
+1. create.tsx InlineDateRange: init start/end by parsing `value` ("a–b/10"), not hardcoded 16/20.
+2. create.tsx "who" step: hide the undo toast when another option is picked; undo restores `previousSkin ?? store.draft.skin`.
+3. flow.tsx login: empty input shows "Nhập email hoặc tên người dùng." (check empty before the username lookup).
+4. flow.tsx login offline banner: "Thử lại" calls store.setOffline(false) like OtpFlow.
+5. flow.tsx OTP resend: set store.setOtpMode("normal") so a new code can be entered after "expired".
+6. flow.tsx OTP error text: "Mã chưa đúng. Kiểm tra lại 6 số vừa gửi rồi nhập lại." (works for email and phone).
+7. flow.tsx profile setup: save the chosen avatar colour with setProfile.
+8. store.tsx setDraft: functional update (setDraftState(prev => ...)) and save createProgress from the same next value.
+9. store.tsx deleteLatestCheckIn: remove the latest photo from days[]; only decrement day/streak when todayDone; deleting the only photo of a day keeps the day (Q11).
+10. store.tsx photo reactions: one reaction per user per photo; switching subtracts the previous one.
+11. store.tsx resetAccount: also set user to "new" so Splash does not open the camera.
+12. store.tsx create journey: compute the camera pin hint outside the setJourneys updater.
+13. icons.tsx: `export const oIconNames = [...] as const; export type OIconName = typeof oIconNames[number]`.
+14. index.css .reduce-motion: drop `transform: none`; only disable animations and limit transitions.
+15. StyleGuide sheet: Escape closes it, focus moves into the dialog on open and back on close.
+16. StyleGuide tickets: use item[mode].surface / item[mode].ink.
+17. StyleGuide icon proof: add CSS for icon-proof-* (two themes side by side, size grid).
+18. StyleGuide dock preview: all 5 tabs (Hành trình, Hội, shutter, Hoạt động, Hồ sơ).
+19. StyleGuide dock preview: wheel opens after a 400ms hold, cancel on pointer up/cancel, plain tap does nothing.
+20. StyleGuide toast: keep the timer id in a ref and clear it before setting a new one.
+Run tsc and build.
+```
+
+### A5. Bỏ đăng nhiều hành trình, sửa mốc gợi ý ghim (chủ dự án chốt 2026-11-12)
+
+- **Bỏ "Đăng thêm vào…"**: màn đăng (`routes.tsx` ~dòng 1546–1565, nút `compose-add-more`) đang cho chọn thêm hành trình để đăng cùng một ảnh, dùng `crossPostJourneyIds` / `toggleCrossPostJourney` trong `store.tsx`. Trái SDS R2-10 ("một ảnh chỉ thuộc một hành trình", tránh ảnh riêng lọt sang hành trình nhóm). Giữ chip "Đăng vào" để **đổi** sang đúng một hành trình khác; bỏ nút "Đăng thêm vào…", danh sách chọn nhiều và state cross-post. SRS FR-C9 đã chuyển sang "Bỏ".
+- **Mốc gợi ý ghim**: vòng xoay có 5 đĩa gồm cả "Tất cả", nên chỉ có 4 chỗ cho hành trình. `store.tsx` đang bật `cameraPinHint` khi tạo hành trình thứ 6 (đếm 5 hành trình chưa lưu trữ trước khi thêm); phải bật khi tạo hành trình thứ **5**. Câu gợi ý: "Ghim tối đa 3 hành trình hay chụp lên camera."
+
+#### Prompt gửi Make cho A5
+
+```
+CHANGE (owner decision, no redesign). 1) Post screen: remove the "Đăng thêm vào…" button (compose-add-more), its journey checklist, and crossPostJourneyIds / toggleCrossPostJourney / clearCrossPostJourneys from the store. One photo belongs to exactly one journey: keep the "Đăng vào <journey>" chip, which only switches to ONE other journey. 2) Camera wheel keeps 5 discs = up to 4 journeys + "Tất cả (N)". Show the one-time pin hint ("Ghim tối đa 3 hành trình hay chụp lên camera.") when the user creates their 5th active journey (not the 6th); compute it outside the setJourneys updater. Keep OIcon only, light/dark, 135% type. Run tsc and build.
 ```
 
 ## B. Lỗi đã sửa

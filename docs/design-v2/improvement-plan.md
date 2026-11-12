@@ -64,7 +64,7 @@ Xong khi: spec trong `docs/`, cập nhật Make, test 5 người không ai thấ
 
 ### Giai đoạn 4: Hệ thống skin bền vững trong Flutter (ưu tiên cao, công vừa)
 
-1. **Token ba lớp**: primitive → semantic → component; mỗi skin là một `ThemeExtension` (có `copyWith`, `lerp` để chuyển mượt 320ms như CLAUDE.md mục 5). Đối chiếu với `OurneyPersonaTheme` hiện có, không tạo hệ song song.
+1. **Token ba lớp**: primitive → semantic → component; mỗi skin là một `ThemeExtension` (có `copyWith`, `lerp` để chuyển mượt 320ms như `docs/06-adaptive-persona-ui-system.md`). Đối chiếu với `OurneyPersonaTheme` hiện có, không tạo hệ song song.
 2. **Luật skin**: skin được đổi token, timeline, HUD, thiệp; không được đổi component, vị trí nút, số chạm. Học Duolingo: ít hình khối, ít màu, một ngôn ngữ hình dạng.
 3. **Ra mắt đủ 6 giao diện** như V2 và như CLAUDE.md mục 4. Chuyển từng giao diện từ Make (`design/ourney-v2-app`) sang Flutter theo thứ tự đánh bóng của GĐ1; giao diện nào chưa đạt cổng chất lượng (GĐ5) thì ẩn khỏi băng chuyền tạm thời bằng cờ cấu hình, không xoá.
 4. **Làm mềm vỏ**: bo tròn hơn, sticker, lớp grain nhẹ cho Memory; giữ viền 2px và bóng cứng nhưng giảm độ gắt.

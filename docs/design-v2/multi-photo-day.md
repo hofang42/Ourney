@@ -9,7 +9,7 @@ Trả lời câu 10 trong `docs/client-questions.md`: chọn **nhiều ảnh m�
 - **Streak và ngày**: chỉ ảnh đầu tiên trong ngày làm tăng ngày/streak; ảnh thứ 2 trở đi không cộng thêm, không ăn mừng lại.
 - **Hiển thị trên timeline/lưới**: ảnh đại diện + lớp ảnh chồng phía sau + nhãn số "+3" (nhãn + hình, không chỉ màu). Không đổi bố cục của 6 giao diện.
 - **Màn xem một ngày** (`/j/:id/day/:n`): ảnh đại diện lớn, dải ảnh vuốt ngang (hoặc lưới) cho mọi ảnh trong ngày, mỗi ảnh có giờ chụp, caption, reaction riêng; xoá từng ảnh; đổi ảnh đại diện. Xoá ảnh duy nhất của ngày **vẫn giữ** ngày đó cho streak (SDS §7.1, Q11). Make bản 36 đang huỷ check-in khi xoá hết ảnh, cần sửa.
-- **Tài liệu chính:** SRS FR-C7/FR-C8, SDS §7.3 và ghi chú contract `check_ins` đã cập nhật trên nhánh `docs/multi-photo-day` (tách từ `main`, vì SDS chỉ có trên `main`).
+- **Tài liệu chính:** SRS FR-C7/FR-C8, SDS §7.3 và ghi chú contract `check_ins` (đã cập nhật trong cùng PR; quy tắc "chụp lại là thay ảnh" cũ không còn hiệu lực). Server và app Flutter chưa làm theo; các việc cần làm ghi ở mục "Pending change" trong `docs/contracts/schema.md`.
 - **Camera**: sau khi đăng, nút chụp vẫn sẵn sàng; HUD có "Hôm nay: 3 ảnh"; ảnh vừa đăng hiện ở góc như Locket.
 - **Nhóm / cặp đôi**: "Hôm nay" của Hội hiện mọi ảnh của từng người (theo thứ tự thời gian); điểm danh vẫn tính theo người (đã có ảnh hay chưa), không theo số ảnh. Couple: mỗi người có thể có nhiều nửa; "cặp hôm nay" ghép ảnh đại diện của hai người.
 - **Memory (cuộn phim)**: mỗi ảnh là một khung trong cuộn ("CUỘN PHIM 14/24"); hết cuộn thì báo nhẹ, vẫn cho chụp và mở cuộn mới.

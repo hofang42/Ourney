@@ -115,7 +115,7 @@ on their own active row. Dart: `Membership` (`JourneyRepository.watchMyMembershi
 
 ### check_ins
 
-> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in, and follows the cadence rules of SDS §7.1 (an X-per-week day only counts toward the week). Deleting the only check-in of a day must keep that day for the streak (SDS Q11), so `journey_streak` needs an input that survives deletes, for example a `checkin_days(journey_id, user_id, local_date)` row written with the first check-in and never removed by a check-in delete. When the cover is deleted, the earliest remaining check-in of that day becomes the cover. Until that migration lands, the table below is still the live contract.
+> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in, and follows the cadence rules of SDS §7.1 (an X-per-week day only counts toward the week). Deleting the only check-in of a day must keep that day for the streak (SDS Q11), so `journey_streak` needs an input that survives deletes, for example a `checkin_days(journey_id, user_id, local_date)` row written with the first check-in and never removed by a check-in delete. When the cover is deleted, the earliest remaining check-in of that day becomes the cover. Check-ins of an imported past journey (photos dated before the journey was created in the app) never feed the streak, so the streak input must exclude them as well as `from_library` photos dated before today. `group_today` must return one row per member (cover photo + photo count) instead of one row per check-in. Until that migration lands, the table below is still the live contract.
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | client generated |
@@ -240,6 +240,8 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 | `invalid_captured_at` | `captured_at` > now + 10 min, or (**v1.2**) local date more than 3 days ago (22008) |
 | `method_not_allowed`, `storage_listing_failed`, `storage_cleanup_incomplete`, `storage_cleanup_failed`, `delete_failed`, `internal` | Edge Functions |
 | `offline`, `unknown` | client-side only |
+
+**Pending change (decided 2026-11-11, prototype only):** a journey keeps its own `skin` (default from the template, changeable by the owner; `docs/design-v2/feedback-2026-11-11.md` §2). Today `journeys` only has `template_id` and the client derives the skin, so the next contract version needs a `skin` column.
 
 ## Rules (enforced server-side; client mirrors for UX)
 - Max **3 active journeys** per user (as owner or active member). **Pending change (decided 2026-11-12, not migrated yet):** no cap; the next migration drops the `_active_journey_count(...) >= 3` checks and the `limit` error, and the client drops its limit dialog.

@@ -1,7 +1,7 @@
 # Prompt bàn giao sang session local (có Claude in Chrome)
 
 Dán toàn bộ khối dưới đây vào một session Claude Code / Claude desktop **trên máy của bạn**, mở trong repo Ourney. Session đó cần có extension Claude in Chrome đã kết nối và đã đăng nhập Figma.
-Trước khi dán, chép 3 file `docs/design-v2/README.md`, `figma-make-prompts.md` và `HANDOFF.md` từ cloud session vào cùng đường dẫn trong repo local (hoặc nhờ cloud session push lên một nhánh).
+Trước khi dán, chép **cả thư mục** `docs/design-v2/` (README, prompts, HANDOFF, `bugs.md`, các spec và `orchestration/`) cùng `docs/client-questions.md` vào cùng đường dẫn trong repo local, hoặc checkout nhánh `design/v2-spec`.
 
 ---
 
@@ -32,8 +32,8 @@ Quyết định đã chốt với mình:
 5. Font: Space Grotesk (tiêu đề) + Be Vietnam Pro (nội dung). Không dùng Outfit vì không có dấu tiếng Việt.
 
 Việc cần làm:
-1. Dùng Claude in Chrome mở Figma Make. File đích: https://www.figma.com/design/nyvBJzr7XYlg7ZzhsJGoZx/Ourney-V2
-   (nếu link /design không mở được Make, hãy tạo file Make mới tên "Ourney V2" rồi hỏi lại mình).
+1. Dùng Claude in Chrome mở Figma Make. File đích: https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System
+   (link `/design` cũ không mở được Make nên đã bỏ; không tạo file mới).
    Có thể mở bản V1 để tham khảo những gì KHÔNG nên làm:
    https://www.figma.com/make/z3B1WO8e7SUNG83jvaPotn/Ourney-V1.0
 2. Dán lần lượt 12 khối 0, 1, 2, 3, 4, 5A, 5B, 6, 7, 8, 9, 10 từ figma-make-prompts.md (không bỏ Prompt 10). Sau mỗi prompt: chụp màn hình kết quả,
@@ -74,7 +74,7 @@ Việc cần làm:
 | Bộ prompt Figma Make 0 → 9 | ✅ Xong |
 | File Make | 🔄 Dùng https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System (link `/design` không mở được Make nên đã tạo file mới; tên sẽ đổi thành "Ourney V2") |
 | Prompt 0 trên Figma Make | 🔄 Đã chạy, chuyển thành khung app chạy được (FIX-1, FIX-3, FIX-4, FIX-5); đang kiểm tra mục Q |
-| Prompt 1 → 9 trên Figma Make | ⏳ Chưa chạy |
+| Prompt 1 → 10 trên Figma Make | ✅ Đã chạy hết (xem các dòng "Make version" bên dưới) |
 | Quyết định mới: UI dùng nhãn "Hội" | ✅ Đã chốt |
 | Quyết định mới: thẻ Minimalist hiển thị "24/30 NGÀY · 80% ĐỀU ĐẶN" | ✅ Đã chốt |
 | Quyết định mới: nút chụp của Accountability Squad dùng `#FF9F1C` | ✅ Đã chốt |
@@ -218,4 +218,4 @@ Còn lại: chưa thử tay nhấn giữ 400ms ở nút chụp; chưa so ảnh v
 - Đo trên preview: dock 5 nút (Hành trình · Hội · Chụp 72×72 · Hoạt động · Hồ sơ, mỗi mục 68×56) ở Hub, Couple, Flexer, camera; dock kính `blur(20px) saturate(1.6)` giữ viền; công tắc "giảm trong suốt" tắt kính. Màn `/activity` có nhóm Hôm nay / Tuần này; mỗi dòng là nút ≥ 44pt và mở đúng chỗ (điểm danh → `/j/ielts/squad`). Tab Hồ sơ mở `/me`.
 - Đã bấm thử đủ 5 dòng ở `/activity` (version 29): điểm danh → `/j/ielts/squad`, reaction → `/j/ielts/day/21`, mốc → `/j/quiet`, lời mời → `/join/K7Q2M9XA`, nhắc giờ → `/j/minimal`.
 - `CLAUDE.md` mục 2 đã đổi sang dock 5 nút và quy tắc liquid glass.
-- Code ở `design/ourney-v2-app` đã chép tới version 29.
+- Code ở `design/ourney-v2-app` đã chép tới version 42 (xem dòng "Code ở `design/ourney-v2-app`" trong bảng trạng thái).

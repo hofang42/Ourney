@@ -16,8 +16,8 @@
 
 Mình giữ vòng lặp camera-first (≤ 3 chạm để check-in), nhưng làm lại thành **floating dock** cho hiện đại hơn:
 
-```
 Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 tab**, thay cho dock 3 mục của bản đầu (bản đầu còn trong `figma-make-prompts.md` để làm lịch sử).
+
 ```
 ┌────────────────────────────────────────────────────┐
 │ [Hành trình] [Hội] (  CHỤP  ) [Hoạt động] [Hồ sơ] │  ← dock nổi, capsule, viền 2px + bóng cứng
@@ -47,7 +47,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
   Quiet Transformer = mint `#7EE8A2` · Accountability Squad = yellow `#FFD84D` · Memory Collectors = peach `#FFB347` · Couple Rituals = coral `#FF7E7E` · Aesthetic Flexer = lilac `#CF9FFF` · Minimalist Habit = sky `#7EC8E3`.
 - Bo góc: chip 12 · card 16 · sheet 24 · nút capsule. Khi nhấn, bóng thu về 0 và phần tử dịch 4px.
 - **Font:** tiêu đề Space Grotesk Bold, chữ thường và có dấu chấm cuối ("hành trình.", "tạo hành trình."). Nội dung dùng **Be Vietnam Pro** (đã có trong repo). ⚠️ Không dùng Outfit vì Outfit không có bộ dấu tiếng Việt. Trước khi chốt cần kiểm tra Space Grotesk ở dấu chồng (ệ, ữ, ấ). Nếu lỗi thì thay bằng Bricolage Grotesque (đã có trong repo).
-- **Icon:** Phosphor Bold/Duotone 24px. Không dùng emoji làm icon điều hướng.
+- **Icon:** chỉ dùng bộ icon sticker của Ourney (`design/ourney-v2-app/src/app/icons.tsx`, thay Phosphor từ bản Make 39–40), luôn có màu. Không dùng emoji hay ký tự làm icon.
 - **Minh họa:** sticker vẽ tay, nét dày, tông ấm, dùng cho ảnh bìa, màn trống và onboarding.
 
 ## 3. Journey DNA: cá nhân hoá từ nội dung
@@ -97,7 +97,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
    - Hero "Hôm nay" là việc quan trọng nhất kế tiếp, ví dụ "Còn 3 tiếng để giữ chuỗi 🔥 12 của *IELTS 7.5*".
    - Mỗi hành trình là một thẻ mang DNA riêng (ảnh bìa sticker, màu biến thể, ngày N/M, streak, mặt hội).
    - Thẻ "+ hành trình mới".
-   - Có trạng thái trống, skeleton, lỗi, và offline. Danh sách cuộn được, không giới hạn số hành trình; dữ liệu mẫu có đủ 6 hành trình, mỗi skin một hành trình.
+   - Có trạng thái trống, skeleton, lỗi, và offline. Danh sách cuộn được, không giới hạn số hành trình (vòng chọn trên camera tối đa 5 đĩa, xem `camera-journey-picker.md`); dữ liệu mẫu có đủ 6 hành trình, mỗi skin một hành trình.
 6. Journey switcher (nhấn giữ nút chụp)
 7. Hội: "Hôm nay" của mọi nhóm, nhập mã 8 ký tự, lời mời đang chờ
 8. Hồ sơ: thống kê, huy hiệu đều đặn (không xếp hạng theo kết quả), kho hành trình đã xong
