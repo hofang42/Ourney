@@ -970,6 +970,18 @@ Mỗi phong cách có **4 phần**: token màu (light/dark), **dòng thời gian
 Nút đổi **Day / Week / Month** luôn có ở `Calendar`.
 
 ### 7.3 Nhiều ảnh trong một kỳ
+
+Quy tắc (D5, chốt lại 2026-11-11 cùng SRS FR-C7):
+- Đăng thêm trong cùng kỳ là **thêm** ảnh vào kỳ đó, không thay ảnh cũ; không giới hạn số ảnh ở v1 (giới hạn lưu trữ xem lại sau).
+- Chỉ ảnh đầu tiên làm kỳ đạt và chuỗi +1 (có "đóng dấu", confetti mốc). Ảnh tiếp theo: toast "Đã thêm ảnh thứ N", không ăn mừng lại.
+- Sau khi đăng, camera (SCR-10) vẫn sẵn sàng chụp tiếp; HUD có "Hôm nay · N ảnh" + ảnh vừa đăng thu nhỏ ở góc, chạm → SCR-25.
+- SCR-25: mỗi ảnh có giờ chụp, caption, chỉ số, reaction riêng; `Set as cover`, `Delete` từng ảnh. Xoá ảnh duy nhất vẫn giữ kỳ (7.1).
+- Nhóm/cặp đôi: kỳ của thành viên đạt khi người đó có ≥ 1 ảnh; điểm danh tính theo người, không theo số ảnh. Cặp đôi: mỗi bên có ảnh bìa và số riêng.
+- Memory (cuộn phim): mỗi ảnh là một khung; hết cuộn thì báo nhẹ và mở cuộn mới.
+- Riêng tư Quiet: chia sẻ chỉ dùng ảnh bìa, vẫn làm mờ và ẩn kg.
+- Share card một ngày: `1 photo` hoặc `Collage 2–4`; Wrapped đếm "N khoảnh khắc trong M ngày".
+- Prototype V2 (Figma Make bản 36) đã chạy luồng này: `design/ourney-v2-app` trên nhánh `design/v2-spec`, spec `docs/design-v2/multi-photo-day.md`.
+
 | Kiểu xem | Cách hiển thị |
 |---|---|
 | Ô lưới (CMP-06) | Ảnh bìa + **huy hiệu số** góc trên phải; clip có icon play |

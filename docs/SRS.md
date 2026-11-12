@@ -8,7 +8,7 @@
 ## 1. Giới thiệu
 
 ### 1.1 Ý tưởng trong một câu
-**Ourney = "Locket cho mục tiêu".** Bạn tạo một *hành trình* (giảm cân, học tiếng Anh, tập luyện, du lịch, hoặc tự đặt), mỗi ngày chụp **một ảnh check-in** để chứng minh mình vẫn đang đi tiếp, đi một mình hoặc **cùng bạn bè trong một nhóm**. Đến các mốc (7 ngày, 30 ngày, về đích) thì khoe bằng **share card** đẹp như Strava.
+**Ourney = "Locket cho mục tiêu".** Bạn tạo một *hành trình* (giảm cân, học tiếng Anh, tập luyện, du lịch, hoặc tự đặt), mỗi ngày chụp **ảnh check-in** (một hoặc nhiều tấm, như Locket) để chứng minh mình vẫn đang đi tiếp, đi một mình hoặc **cùng bạn bè trong một nhóm**. Đến các mốc (7 ngày, 30 ngày, về đích) thì khoe bằng **share card** đẹp như Strava.
 
 ### 1.2 Vì sao làm
 - App chuyên từng ngách (Strava, Duolingo, MyFitnessPal, Polarsteps) rất mạnh trong ngách của nó, nhưng **không có app nào gom "mọi loại hành trình + bằng chứng hằng ngày + nhóm bạn thân"**.
@@ -24,7 +24,8 @@ App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v
 |---|---|
 | **Journey** (hành trình) | Một mục tiêu có ngày bắt đầu, thời lượng (hoặc mở), loại `solo` hoặc `group` |
 | **Template** | Mẫu soạn sẵn tạo ra journey (metric, thời lượng, mặc định riêng tư). Journey **copy** template, không tham chiếu |
-| **Check-in** | Một ảnh (+ caption, metric tuỳ chọn) cho một journey trong một **ngày địa phương**. Mỗi người tối đa 1 check-in/ngày/journey, chụp lại thì thay thế |
+| **Check-in** | Một ảnh (+ caption, metric tuỳ chọn) cho một journey trong một **ngày địa phương**. Một người đăng được **nhiều check-in trong cùng ngày/journey**; ảnh mới được thêm vào ngày đó, không thay ảnh cũ |
+| **Ảnh bìa ngày** | Ảnh đại diện của một ngày (mặc định là check-in đầu tiên, người dùng đổi được). Dùng cho lưới lịch, timeline, share card mặc định |
 | **local_date** | Ngày theo múi giờ của journey (không phải múi giờ của điện thoại) |
 | **Streak** | Số ngày liên tiếp có check-in. Vẫn giữ nếu hôm nay chưa check-in nhưng hôm qua có |
 | **Member** | Thành viên journey nhóm, vai trò `owner` hoặc `member` |
@@ -99,8 +100,8 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-C4 | Sau khi chụp: caption ≤ 140 ký tự, giá trị metric (nếu có) → **Đăng**. Tổng ≤ 3 chạm | P1 |
 | FR-C5 | Nén trên máy: ảnh 1080px JPEG q70 + thumbnail | P1 |
 | FR-C6 | **Offline-first**: lưu và hiện ngay trên máy, upload qua hàng đợi, tự thử lại | P1 |
-| FR-C7 | 1 check-in/ngày/journey/người. Chụp lại thì thay thế | P1 |
-| FR-C8 | Animation "đóng dấu" + haptic + streak +1. Confetti ở mốc 7/30/về đích | P1 |
+| FR-C7 | **Nhiều check-in/ngày/journey/người** (quyết định 2026-11-11, trùng D5 của SDS). Đăng thêm là thêm ảnh, không thay thế. Chỉ check-in đầu tiên của ngày làm streak +1; ảnh thứ 2 trở đi không cộng, không ăn mừng lại. Ảnh đầu tiên là ảnh bìa ngày, đổi được. Mỗi ảnh có caption, metric, reaction riêng và xoá được riêng; xoá ảnh duy nhất của một ngày vẫn giữ ngày đó cho streak (SDS §7.1, Q11). Lưới/timeline hiện ảnh bìa + số đếm (SDS §7.3). Contract dữ liệu cần bỏ `UNIQUE (journey_id, user_id, local_date)` trên `check_ins` và thêm ảnh bìa theo ngày (xem §5 và `docs/contracts/schema.md`) | P1 |
+| FR-C8 | Check-in đầu tiên của ngày: animation "đóng dấu" + haptic + streak +1, confetti ở mốc 7/30/về đích. Check-in tiếp theo trong ngày: chỉ báo nhẹ "Đã thêm ảnh thứ N hôm nay" | P1 |
 | FR-C9 | Khi đã ở ≥ 2 journey: đăng 1 ảnh cho nhiều journey | P2 (v0.2) |
 
 ### FR-D — Nhóm
