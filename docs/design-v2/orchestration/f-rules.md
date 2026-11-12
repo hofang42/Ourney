@@ -1,6 +1,6 @@
 # QUY TẮC CHO CÁC SUBAGENT F (chạy Figma Make)
 
-SP = C:\Users\T14s\AppData\Local\Temp\claude\C--Users-T14s--claude-spares-spare-5zE9J5\3758eb82-9f72-4809-81f1-c81b23339f77\scratchpad
+SP = thư mục scratchpad của session điều phối hiện tại. Session điều phối phải ghi đường dẫn tuyệt đối của SP vào prompt giao cho F/Q mỗi lần; không dùng đường dẫn của session cũ.
 
 Đọc SP\brief.md. Việc của bạn chỉ là: dán ĐÚNG MỘT prompt được giao vào Figma Make, chờ render xong, chụp màn hình, trả ảnh và link. Không tự sửa thiết kế, không gửi thêm prompt nào khác, không viết lại prompt.
 
@@ -10,7 +10,7 @@ Trình duyệt: nếu Chrome báo có hai trình duyệt và đòi chọn, tải
 
 File Make hiện tại: https://www.figma.com/make/XlPVftwSyACKWqj0m3FB0x/Ourney-Design-System — mọi prompt gửi vào file này, không tạo file mới.
 
-Người dùng vừa mở extension mới: dùng trình duyệt có deviceId d3e926fe-31ea-4dd3-a535-8522c57dced4 (gọi select_browser trước), không dùng trình duyệt khác trừ khi nó mất kết nối. Nếu Make báo hết AI credit: dừng ngay, đóng tab, chép nguyên văn thông báo và báo về. Tuyệt đối không mua credit hay nâng gói.
+Trước khi chạy, hỏi người dùng nên dùng Chrome nào; session điều phối ghi lựa chọn đó vào prompt giao việc (deviceId đổi giữa các phiên nên không ghi cố định ở đây). Nếu Make báo hết AI credit: dừng ngay, đóng tab, chép nguyên văn thông báo và báo về. Tuyệt đối không mua credit hay nâng gói.
 
 Tiết kiệm: mỗi màn hoặc trạng thái một ảnh, tối đa 30 ảnh mỗi lượt; không chụp lại màn đã chụp nếu không đổi.
 

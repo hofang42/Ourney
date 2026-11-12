@@ -973,13 +973,16 @@ Nút đổi **Day / Week / Month** luôn có ở `Calendar`.
 
 Quy tắc (D5, chốt lại 2026-11-11 cùng SRS FR-C7):
 - Đăng thêm trong cùng kỳ là **thêm** ảnh vào kỳ đó, không thay ảnh cũ; không giới hạn số ảnh ở v1 (giới hạn lưu trữ xem lại sau).
-- Chỉ ảnh đầu tiên làm kỳ đạt và chuỗi +1 (có "đóng dấu", confetti mốc). Ảnh tiếp theo: toast "Đã thêm ảnh thứ N", không ăn mừng lại.
-- Sau khi đăng, camera (SCR-10) vẫn sẵn sàng chụp tiếp; HUD có "Hôm nay · N ảnh" + ảnh vừa đăng thu nhỏ ở góc, chạm → SCR-25.
-- SCR-25: mỗi ảnh có giờ chụp, caption, chỉ số, reaction riêng; `Set as cover`, `Delete` từng ảnh. Xoá ảnh duy nhất vẫn giữ kỳ (7.1).
+- Tính chuỗi theo nhịp (7.1), không theo số ảnh:
+  - Daily, Weekly, Monthly: ảnh đầu tiên của kỳ làm kỳ đạt và chuỗi +1 (có "đóng dấu", confetti mốc).
+  - X lần/tuần: ảnh đầu tiên của mỗi ngày cộng một ngày vào "2/3"; chuỗi +1 (và "đóng dấu") chỉ khi tuần đủ X ngày. Ngày chưa làm tuần đạt chỉ có toast "Tuần này 2/3".
+  - Ảnh khác trong cùng ngày/kỳ: toast "Đã thêm ảnh thứ N", không ăn mừng lại.
+- Sau khi đăng, camera (SCR-11) vẫn sẵn sàng chụp tiếp; HUD có "Hôm nay · N ảnh" + ảnh vừa đăng thu nhỏ ở góc, chạm → SCR-25.
+- SCR-25: mỗi ảnh có giờ chụp, caption, chỉ số, reaction riêng; `Set as cover`, `Delete` từng ảnh. Xoá ảnh duy nhất vẫn giữ kỳ (7.1). Xoá ảnh bìa khi ngày còn ảnh khác: ảnh còn lại sớm nhất (theo giờ chụp) thành ảnh bìa. Ô tuần/tháng dùng ảnh bìa của ngày có ảnh đầu tiên trong kỳ.
 - Nhóm/cặp đôi: kỳ của thành viên đạt khi người đó có ≥ 1 ảnh; điểm danh tính theo người, không theo số ảnh. Cặp đôi: mỗi bên có ảnh bìa và số riêng.
 - Memory (cuộn phim): mỗi ảnh là một khung; hết cuộn thì báo nhẹ và mở cuộn mới.
-- Riêng tư Quiet: chia sẻ chỉ dùng ảnh bìa, vẫn làm mờ và ẩn kg.
-- Share card một ngày: `1 photo` hoặc `Collage 2–4`; Wrapped đếm "N khoảnh khắc trong M ngày".
+- Riêng tư Quiet: thiệp mặc định dùng ảnh bìa; người dùng vẫn chọn thêm ảnh trong SCR-50 và SCR-83 như hiện tại. Mọi ảnh được chia sẻ vẫn làm mờ và ẩn kg theo §6.4.
+- Share card một ngày: `1 photo` ở v1; `Collage 2–4` là P2 (cùng FR-E4 recap collage). Wrapped/Year-in-review hoãn tới v0.3+ (SRS §7); khi làm sẽ đếm "N khoảnh khắc trong M ngày".
 - Prototype V2 (Figma Make bản 36) đã chạy luồng này: `design/ourney-v2-app` trên nhánh `design/v2-spec`, spec `docs/design-v2/multi-photo-day.md`.
 
 | Kiểu xem | Cách hiển thị |

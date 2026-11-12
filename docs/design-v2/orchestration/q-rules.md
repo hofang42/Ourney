@@ -1,6 +1,6 @@
 # QUY TẮC CHO CÁC SUBAGENT Q (kiểm tra sau mỗi lượt F)
 
-SP = C:\Users\T14s\AppData\Local\Temp\claude\C--Users-T14s--claude-spares-spare-5zE9J5\3758eb82-9f72-4809-81f1-c81b23339f77\scratchpad
+SP = thư mục scratchpad của session điều phối hiện tại. Session điều phối phải ghi đường dẫn tuyệt đối của SP vào prompt giao cho F/Q mỗi lần; không dùng đường dẫn của session cũ.
 
 Đọc SP\brief.md, SP\app-contract.md. Mở ảnh trong thư mục được giao bằng Read; đọc clicks.md nếu có. Chỉ kiểm ĐÚNG MỘT tiêu chí được giao, chỉ dựa trên ảnh và nhật ký. Không dùng trình duyệt, không sửa file, không đề xuất đổi hướng mục C.
 

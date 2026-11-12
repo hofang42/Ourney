@@ -115,7 +115,7 @@ on their own active row. Dart: `Membership` (`JourneyRepository.watchMyMembershi
 
 ### check_ins
 
-> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in. Until that migration lands, the table below is still the live contract.
+> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in, and follows the cadence rules of SDS §7.1 (an X-per-week day only counts toward the week). Deleting the only check-in of a day must keep that day for the streak (SDS Q11), so `journey_streak` needs an input that survives deletes, for example a `checkin_days(journey_id, user_id, local_date)` row written with the first check-in and never removed by a check-in delete. When the cover is deleted, the earliest remaining check-in of that day becomes the cover. Until that migration lands, the table below is still the live contract.
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | client generated |

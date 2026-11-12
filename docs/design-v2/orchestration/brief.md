@@ -22,7 +22,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
 - Nhóm tối đa 10 người, mời bằng mã 8 ký tự hoặc link. Màn "Hôm nay" cho thấy ai đã/chưa check-in.
   Có reaction 🔥 💪 👏 ❤️ 😂, không có comment.
 - Luật cứng:
-  - Tối đa 3 hành trình đang chạy mỗi người.
+  - Thiết kế không giới hạn số hành trình (contract hiện còn tối đa 3 hành trình đang chạy, sẽ mở trong PR contract riêng; xem README §1).
   - KHÔNG xếp hạng theo kết quả cơ thể.
   - Giảm cân: mặc định ẩn kg và làm mờ ảnh khi chia sẻ.
   - Hành trình nhóm không bao giờ có link công khai.
@@ -47,10 +47,9 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
      Nội dung Be Vietnam Pro. KHÔNG dùng Outfit (thiếu dấu tiếng Việt). Line-height 1.3–1.45.
    - Icon Phosphor Bold/Duotone 24px, không dùng emoji làm icon điều hướng.
    - Minh họa sticker vẽ tay, nét dày, tông ấm. Ảnh dùng khung Polaroid xoay -3°..3°.
-2. ĐIỀU HƯỚNG: floating dock capsule 3 mục.
-   - Trái: Hành trình. Giữa: nút Chụp 72pt màu của hành trình đang chọn,
-     nhấn giữ để mở vòng xoay đổi hành trình. Phải: Squad.
-   - Hồ sơ là avatar ở góc trên phải của Hub.
+2. ĐIỀU HƯỚNG: floating dock capsule 5 tab (cập nhật 2026-11-11): Hành trình · Hội · Chụp · Hoạt động · Hồ sơ.
+   - Giữa: nút Chụp 76pt trên camera (56×40 ở màn khác) màu của hành trình đang chọn,
+     nhấn giữ để mở vòng chọn hành trình. UI ghi "Hội"; "Squad" chỉ là tên nội bộ.
    - Trong hành trình, dock đổi chất liệu theo skin nhưng vị trí và hành vi giữ nguyên.
 3. JOURNEY DNA: lúc tạo, câu trả lời sinh ra skin, biến thể màu (3 lựa chọn mỗi skin),
    ảnh bìa sticker, motif, tên các mốc, câu hỏi caption, kiểu camera, VÉ KHỞI HÀNH và thiệp tổng kết.
@@ -89,7 +88,7 @@ Ourney = "Locket cho mục tiêu". App Flutter cho iOS + Android, người dùng
      Kính mờ, số condensed, sparkline neon, sticker HUD km/pace, story kèm dải 21 ngày.
    - Minimalist Habit (Tự đặt): cam Braun #EA580C, than #27272A.
      Light #F5F3EE/#FFF/#1C1C1E, Dark #0E0E10/#18181B/#F4F4F5. Lưới 1px, không trang trí.
-     Lịch ảnh 7 cột nối bằng một đường cam, chụp 1 chạm không chữ, thẻ "24/30 NGÀY · 96% ĐỀU ĐẶN".
+     Lịch ảnh 7 cột nối bằng một đường cam, chụp 1 chạm không chữ, thẻ "24/30 NGÀY · 80% ĐỀU ĐẶN".
 6. MỖI SKIN CẦN ĐỦ: trang chủ hành trình, camera HUD, màn sau khi chụp (nhập chỉ số kiểu riêng),
    ăn mừng check-in + mốc, xem một ngày, squad hôm nay, thiệp chia sẻ, cập nhật hành trình
    (sửa tên/bìa/biến thể/giờ nhắc/thành viên/đổi mã/kết thúc), về đích (Wrapped), ngày lỡ,

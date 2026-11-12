@@ -17,14 +17,19 @@
 Mình giữ vòng lặp camera-first (≤ 3 chạm để check-in), nhưng làm lại thành **floating dock** cho hiện đại hơn:
 
 ```
-┌──────────────────────────────────────┐
-│  [◉ Hành trình]   (  ◎ CHỤP  )   [☺ Hội  ] │  ← dock nổi, bo capsule, viền 2px + bóng cứng
-└──────────────────────────────────────┘
+Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 tab**, thay cho dock 3 mục của bản đầu (bản đầu còn trong `figma-make-prompts.md` để làm lịch sử).
 ```
-- **Trái, Hành trình:** Hub, gồm tất cả hành trình và nút "+ Hành trình mới".
-- **Giữa, Chụp:** nút chụp nổi 72pt, mang màu của hành trình đang chọn. Nhấn giữ để mở **journey switcher** dạng vòng xoay cuộn được: mỗi hành trình một "đĩa" màu và emoji, luôn có đĩa "+ mới" ở cuối; bấm một đĩa để chọn (không kéo thả). Không giới hạn số hành trình.
-- **Phải, Hội:** "Hôm nay" của mọi nhóm, mời bạn, nhập mã.
-- **Hồ sơ:** avatar ở góc phải trên của Hub (không chiếm tab).
+┌────────────────────────────────────────────────────┐
+│ [Hành trình] [Hội] (  CHỤP  ) [Hoạt động] [Hồ sơ] │  ← dock nổi, capsule, viền 2px + bóng cứng
+└────────────────────────────────────────────────────┘
+```
+- **Hành trình:** Hub, gồm tất cả hành trình và nút "+ Hành trình mới".
+- **Hội:** "Hôm nay" của mọi nhóm, mời bạn, nhập mã. UI luôn ghi "Hội"; "Squad" chỉ là tên nội bộ.
+- **Giữa, Chụp:** Hero Shutter **76×76pt** trên màn camera, viên chụp nhanh 56×40pt ở Hub/timeline/Hội; mang màu của hành trình đang chọn. Nhấn giữ để mở vòng chọn hành trình (tối đa 5 đĩa: đã ghim + chưa chụp hôm nay + "Tất cả" có tìm kiếm, xem `camera-journey-picker.md`).
+- **Hoạt động:** thông báo, reaction, lời mời.
+- **Hồ sơ:** hồ sơ, cài đặt, tuỳ biến.
+- **Số hành trình:** thiết kế V2 không giới hạn. Contract hiện tại chặn **tối đa 3 hành trình đang chạy** mỗi người; mở giới hạn cần PR contract/server riêng (HANDOFF, dòng "Đổi contract dữ liệu cho Journey DNA"). Trước khi PR đó merge, app thật vẫn giữ 3 hành trình đang chạy, danh sách đã kết thúc không giới hạn.
+- Liquid glass chỉ ở lớp điều hướng nổi (dock, nút camera nổi, thanh trên khi cuộn, nền vòng chọn), luôn giữ viền 2px + bóng cứng và nền đặc khi bật Giảm trong suốt.
 - Trong một hành trình, dock đổi chất liệu theo skin (kính mờ neon ở Aesthetic Flexer, giấy kraft ở Memory Collectors…), nhưng vị trí và hành vi không đổi.
 
 ## 2. Vỏ chung: Soft Neo-Brutalism
@@ -35,7 +40,7 @@ Mình giữ vòng lặp camera-first (≤ 3 chạm để check-in), nhưng làm 
 | surface | `#FFFFFF` | `#1C1B19` |
 | ink / border | `#1A1A1A` | `#F5F0E6` |
 | inkMuted | `#5A544C` | `#B8B0A4` |
-| primary | `#FF8A3D` (chữ trên nền này là ink) | `#FF8A3D` |
+| primary | `#FF8A3D` (chữ trên nền này là `#1A1A1A`) | `#FF8A3D` (chữ trên nền này là `#1A1A1A`, ~8:1; không dùng `#F5F0E6` vì chỉ ~2:1) |
 | shadow | `4px 4px 0 #1A1A1A` | `4px 4px 0 #000`, viền `#F5F0E6` |
 
 - Pastel nhấn, mỗi persona sở hữu một màu ở vỏ chung (dùng cho badge, thẻ hành trình trên Hub):
@@ -77,7 +82,7 @@ Màu lấy theo docs/06 (đã đạt AA). Thêm 3 biến thể màu và phần "
 | 3 Memory Collectors | giấy, băng keo, chỉ khâu, film | serif cổ điển (Fraunces) + mono stamp | nút "dán" bóng cứng | Sương thông · Biển muối · Phố đêm |
 | 4 Couple Rituals | hồng phấn, bo 24px, khung đôi | serif mềm | card đôi viền 2px | Rose · Berry · Peach |
 | 5 Aesthetic Flexer | tối, kính mờ, viền phát sáng, số liệu to | condensed bold (Barlow Condensed) | bóng cứng màu neon `4px 4px 0 #3DE88C` | Neon Lime · Electric Coral · Ice |
-| 6 Minimalist Habit | Braun, lưới 1px, không trang trí | Space Grotesk mảnh | chỉ còn nút chụp viền 2px | Braun Orange · Charcoal · Sky |
+| 6 Minimalist Habit | Braun, lưới 1px, không trang trí | Space Grotesk mảnh | dock, nút chính và chip viền 2px + bóng cứng 3px 3px 0; card và nội dung giữ lưới 1px, không bóng | Braun Orange · Charcoal · Sky |
 
 Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
 
@@ -100,7 +105,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
 10. Sheet báo cáo/chặn, toast, màn lỗi mất mạng ("đang lưu trên máy, sẽ tự gửi")
 
 ### B. Luồng tạo hành trình (5 bước, màn hình đổi skin ngay khi chọn)
-1. **Chọn loại:** 6 thẻ lớn vuốt ngang (swipe deck). Mỗi thẻ là bản xem trước sống của skin, chạm vào là nền và dock đổi theo. Có thêm "Tự đặt".
+1. **Chọn loại:** 6 thẻ lớn vuốt ngang (swipe deck). Contract chỉ có 5 template; thẻ Couple là nhánh xem trước của `custom` cho nhóm 2 người (`personaSkinForTemplate`, J2 trong `docs/TASKS.md`), không phải loại hành trình riêng. Mỗi thẻ là bản xem trước sống của skin, chạm vào là nền và dock đổi theo. Có thêm "Tự đặt".
 2. **Câu hỏi riêng của loại** (2–3 câu, mỗi câu một màn, thẻ đáp án to):
    - *Giảm cân:* mục tiêu (giảm / giữ / thay đổi vóc dáng), cân hiện tại (tuỳ chọn, ghi rõ "chỉ mình bạn thấy"), có chụp ảnh ngày 1 làm khung căn dáng không.
    - *Học tiếng Anh:* mục tiêu (IELTS band / giao tiếp / đọc sách), số phút mỗi ngày (15/30/45/60), tên chiếc cúp ở đích.
@@ -115,7 +120,7 @@ Cả 6 skin đều phải có light/dark. Màn camera luôn ở nền tối.
    - Hiện tấm vé khởi hành.
    - Cho đổi biến thể màu và ảnh bìa (3 lựa chọn).
    - Nút "Khởi hành" chuyển thẳng sang camera để chụp tấm Ngày 1.
-   - Nếu là nhóm thì hiện sheet mời: mã 8 ký tự, link, QR.
+   - Nếu là nhóm thì hiện sheet mời: mã 8 ký tự, link. QR để sau MVP (SRS hoãn), không nằm trong luồng bắt buộc.
 
 ### C. Bên trong mỗi hành trình (×6 skin)
 1. **Trang chủ hành trình:** timeline đặc trưng của skin, header DNA, streak, N/M, % hoàn thành, mốc kế tiếp có tên riêng

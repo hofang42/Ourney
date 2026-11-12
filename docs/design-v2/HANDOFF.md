@@ -16,9 +16,9 @@ và các hành trình chưa có cá tính riêng.
   (mỗi hành trình được đúc ra skin, biến thể màu, ảnh bìa sticker, motif, tên mốc, câu hỏi caption,
   kiểu camera và vé khởi hành riêng, dựa trên nội dung trả lời lúc tạo); 6 skin persona
   (Quiet Transformer / Accountability Squad / Memory Collectors / Couple Rituals / Aesthetic Flexer /
-  Minimalist Habit); floating dock 3 mục (Hành trình · Chụp · Squad, nhấn giữ nút chụp để đổi hành trình);
+  Minimalist Habit); floating dock 5 tab (Hành trình · Hội · Chụp · Hoạt động · Hồ sơ, UI ghi "Hội", nhấn giữ nút chụp để đổi hành trình; cập nhật 2026-11-11);
   danh sách toàn bộ màn hình.
-- docs/design-v2/figma-make-prompts.md: prompt 0 → 9 để chạy lần lượt trong Figma Make, kèm checklist.
+- docs/design-v2/figma-make-prompts.md: 12 khối prompt (0, 1, 2, 3, 4, 5A, 5B, 6, 7, 8, 9, 10) để chạy lần lượt trong Figma Make, kèm checklist.
 - Ảnh tham chiếu 6 persona: docs/assets/design_personas/persona_*.jpg (đọc để nắm chất liệu từng skin).
 - Ràng buộc gốc: docs/SRS.md, docs/06-adaptive-persona-ui-system.md (bảng màu persona đạt AA).
 
@@ -36,7 +36,7 @@ Việc cần làm:
    (nếu link /design không mở được Make, hãy tạo file Make mới tên "Ourney V2" rồi hỏi lại mình).
    Có thể mở bản V1 để tham khảo những gì KHÔNG nên làm:
    https://www.figma.com/make/z3B1WO8e7SUNG83jvaPotn/Ourney-V1.0
-2. Dán lần lượt Prompt 0 → 9 từ figma-make-prompts.md. Sau mỗi prompt: chụp màn hình kết quả,
+2. Dán lần lượt 12 khối 0, 1, 2, 3, 4, 5A, 5B, 6, 7, 8, 9, 10 từ figma-make-prompts.md (không bỏ Prompt 10). Sau mỗi prompt: chụp màn hình kết quả,
    kiểm tra theo checklist, nếu sai thì gửi prompt sửa ngắn rồi mới chạy prompt kế tiếp.
 3. Cập nhật mục "Trạng thái" bên dưới sau mỗi prompt (prompt nào xong, có vấn đề gì).
 4. Hỏi lại mình ngay nếu gặp chỗ chưa rõ hoặc Figma Make cho kết quả lệch hướng nhiều.
