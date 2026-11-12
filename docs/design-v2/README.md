@@ -29,7 +29,7 @@ Cập nhật 2026-11-11 (`feedback-2026-11-11.md`, `CLAUDE.md` §2): dock **5 ta
 - **Hoạt động:** thông báo, reaction, lời mời.
 - **Hồ sơ:** hồ sơ, cài đặt, tuỳ biến.
 - **Số hành trình:** không giới hạn (chủ dự án chốt 2026-11-12, SRS FR-B3). Server và app Flutter hiện vẫn chặn 3; việc bỏ chặn nằm trong migration/contract tiếp theo (`docs/contracts/schema.md`).
-- Liquid glass chỉ ở lớp điều hướng nổi (dock, nút camera nổi, thanh trên khi cuộn, nền vòng chọn), luôn giữ viền 2px + bóng cứng và nền đặc khi bật Giảm trong suốt.
+- Liquid glass chỉ ở lớp điều hướng nổi (dock, nút camera nổi, thanh trên khi cuộn, nền vòng chọn), luôn giữ viền 2px + bóng cứng (riêng skin Quiet Transformer: viền 1.5px + bóng 2px, chủ dự án chốt 2026-11-12) và nền đặc khi bật Giảm trong suốt.
 - Trong một hành trình, dock đổi chất liệu theo skin (kính mờ neon ở Aesthetic Flexer, giấy kraft ở Memory Collectors…), nhưng vị trí và hành vi không đổi.
 
 ## 2. Vỏ chung: Soft Neo-Brutalism
@@ -77,7 +77,7 @@ Màu lấy theo docs/06 (đã đạt AA). Thêm 3 biến thể màu và phần "
 
 | Skin | Chất liệu | Font tiêu đề | Xương brutal giữ lại | 3 biến thể |
 |---|---|---|---|---|
-| 1 Quiet Transformer | lâm sàng, êm, hairline, nhiều khoảng trắng | serif nhẹ (Fraunces/Newsreader) | dock + nút chính viền 1.5px, bóng 2px | Emerald · Sage · Mist |
+| 1 Quiet Transformer | lâm sàng, êm, hairline, nhiều khoảng trắng | serif nhẹ (Fraunces/Newsreader) | dock + nút chính viền 1.5px, bóng 2px (ngoại lệ có chủ ý so với viền 2px chung) | Emerald · Sage · Mist |
 | 2 Accountability Squad | sổ học kem, polaroid, nét mực | Space Grotesk | viền 2px + lip 3px ở mọi card | Flame Gold · Violet · Chalk Green |
 | 3 Memory Collectors | giấy, băng keo, chỉ khâu, film | serif cổ điển (Fraunces) + mono stamp | nút "dán" bóng cứng | Sương thông · Biển muối · Phố đêm |
 | 4 Couple Rituals | hồng phấn, bo 24px, khung đôi | serif mềm | card đôi viền 2px | Rose · Berry · Peach |

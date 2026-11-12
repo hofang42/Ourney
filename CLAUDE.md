@@ -20,7 +20,7 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
      - `Journeys` (Map/Timeline vector icon) · `Squad` (Group/People vector icon)
      - **Center**: `Snap Shutter` (`76x76pt` Hero Shutter on Camera screen; `56x40pt` quick-snap pill on Hub/Timeline/Squad screens, colored with `pTheme.primaryAccent`; long-press opens the journey wheel)
      - `Activity` (Bell vector icon) · `Profile` (UserCircle vector icon)
-   - Liquid glass is allowed only on the floating navigation layer (dock, floating camera buttons, top bar once content scrolls under it, journey-wheel backdrop, sheet top edge), never on cards, timelines, share cards or primary buttons; keep the 2px border + hard shadow and a solid fallback for Reduce Transparency.
+   - Liquid glass is allowed only on the floating navigation layer (dock, floating camera buttons, top bar once content scrolls under it, journey-wheel backdrop, sheet top edge), never on cards, timelines, share cards or primary buttons; keep the 2px border + hard shadow and a solid fallback for Reduce Transparency. Exception (owner decision 2026-11-12): the Quiet Transformer skin uses a 1.5px border + 2px hard shadow on the dock and primary button, matching its calm, hairline look.
 2. **Button Hierarchy & Touch Targets**:
    - Minimum touch target: **`48x48dp`** (`>= 44pt` iOS HIG) on all interactive controls.
    - Primary buttons: `52dp` height (or `44dp` compact), capsule/rounded corners matching `pTheme.cardRadius`, `0.96` press scale animation (`110ms`), and physical bottom lip when `pTheme.bottomLipHeight > 0`.
