@@ -1039,7 +1039,7 @@ Tối đa 3 mỗi hành trình. Kiểu nhập: số, thanh trượt (cân nặng
 
 ### 8.8 Chọn hành trình trên camera khi có nhiều hành trình
 - Vòng chọn tối đa 5 đĩa: ghim (≤ 3) → hành trình chưa chụp hôm nay → `All (N)` mở sheet có tìm kiếm. Chi tiết: `docs/design-v2/camera-journey-picker.md` (nhánh `design/v2-spec`).
-- **Đĩa chỉ là hình** (avatar hành trình, mục 8.7), không chữ bên dưới; trạng thái bằng hình nhỏ (ghim, đã chụp, vòng tiến độ nhóm). **Một khối tiêu đề duy nhất** phía trên dải đĩa cho đĩa đang chọn: tên đầy đủ tối đa 2 dòng, không cắt `...`, dòng phụ "Day 21/30 · 3/5 checked in". Chi tiết: `docs/design-v2/camera-hud-and-customization.md`.
+- **Đĩa chỉ là hình** (avatar hành trình, mục 8.7), không chữ bên dưới; trạng thái bằng hình nhỏ (ghim, đã chụp, vòng tiến độ nhóm). **Một khối tiêu đề duy nhất** phía trên dải đĩa cho đĩa đang chọn: tên đầy đủ tối đa 2 dòng, không cắt `...`, dòng phụ "Day 21/30 · 3/5 checked in". Chi tiết: `docs/design-v2/bugs.md (mục A1)`.
 
 ---
 
