@@ -27,16 +27,10 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           pr=$(gh pr list --repo "$REPO" --state open --search "$HEAD_SHA" \
-            --json number,isDraft,labels,headRefOid \
-            --jq "[.[] | select(.headRefOid == \"$HEAD_SHA\" and (.isDraft | not) and ([.labels[].name] | index(\"skip-review\") | not))][0].number // empty")
+            --json number,isDraft,labels \
+            --jq '[.[] | select((.isDraft | not) and ([.labels[].name] | index("skip-review") | not))][0].number // empty')
           if [ -z "$pr" ]; then
-            echo "No open, non-draft PR without skip-review whose head is $HEAD_SHA; skipping."
+            echo "No open, non-draft PR without skip-review for $HEAD_SHA; skipping."
             exit 0
           fi
-          # One request per head commit: a CI re-run on the same SHA must not ask again.
-          marker="<!-- cubic-review-request sha=$HEAD_SHA -->"
-          if gh api "repos/$REPO/issues/$pr/comments" --paginate --jq '.[].body' | grep -qF "$marker"; then
-            echo "Review already requested for $HEAD_SHA on #$pr; skipping."
-            exit 0
-          fi
-          gh pr comment "$pr" --repo "$REPO" --body "$(printf '@cubic-dev-ai review\n\n%s' "$marker")"
+          gh pr comment "$pr" --repo "$REPO" --body "@cubic-dev-ai review"
