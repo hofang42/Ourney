@@ -79,7 +79,7 @@ Chưa chốt mô hình kiếm tiền (câu 12 trong `docs/client-questions.md` v
 - **Riêng tư** (chủ dự án chốt 2026-11-12): trong Hội, avatar/nền dùng ảnh cơ thể của hành trình Giảm cân được phép, vì thành viên vốn đã thấy ảnh check-in của nhau. Khi chia sẻ ra ngoài (thiệp, link, story): mặc định không dùng ảnh cơ thể làm avatar/nền, thiệp dùng lại quy tắc làm mờ; và mỗi thành viên có cài đặt riêng "Ẩn ảnh của tôi khi chia sẻ ra ngoài" (ẩn hoặc làm mờ avatar/ảnh của mình) để bảo vệ riêng tư.
 - **Nhóm**: chỉ chủ nhóm đổi avatar/nền của hành trình nhóm; sticker cá nhân chỉ hiện trên ảnh của chính người đó.
 - **An toàn**: ảnh tải lên đi qua kiểm duyệt như ảnh check-in (báo cáo, ẩn khi bị báo cáo); giới hạn 2MB, PNG/JPEG/WebP, tối đa 20 sticker tải lên mỗi tài khoản.
-- **Không dùng emoji** làm sticker hệ thống (CLAUDE.md mục 1.3); sticker tải lên là nội dung người dùng.
+- **Không dùng emoji** làm sticker hệ thống (CLAUDE.md §1, mục 3 "Zero Hardcoded Text Icons"); sticker tải lên là nội dung người dùng.
 - Dark mode: lớp phủ nền tự đổi để giữ tương phản.
 
 
@@ -88,7 +88,7 @@ Chưa chốt mô hình kiếm tiền (câu 12 trong `docs/client-questions.md` v
 - SDS: thêm mục tuỳ biến và sửa SCR-10 (camera) theo mục 1.
 - Contract dữ liệu (đề xuất, chưa migrate): `journeys.avatar_path`, `journeys.background_kind` (`preset|photo|upload`) + `background_ref`; bảng `journey_stickers(id, journey_id, owner_id, target (card|day|photo|share), local_date null, checkin_id null, share_card_id null, corner, rotation, scale, asset_path, created_at)` với ràng buộc theo loại đích: `card` (thẻ hành trình) không cần khoá thêm; `day` bắt buộc `local_date`; `photo` bắt buộc `checkin_id`; `share` bắt buộc `share_card_id`; các khoá không thuộc loại đó phải null; bảng `user_unlocks(user_id, key, unlocked_at, source)`.
 - Quyền và kiểm duyệt cho `journey_stickers` (theo ràng buộc "An toàn" ở trên): RLS chỉ cho `owner_id = auth.uid()` thêm/sửa/xoá; ai đọc được đích (thẻ, ngày, ảnh, thiệp) thì đọc được sticker trên đó; sticker cá nhân chỉ gắn lên ảnh của chính mình. Thêm `moderation_state (visible|hidden|removed)`, sticker tải lên báo cáo được như ảnh check-in (bảng `reports` thêm loại đích `sticker`), bị báo cáo thì ẩn với người báo cáo. File ở storage `stickers/{owner_id}/{id}.{ext}`, chỉ chủ ghi. Cần pgTAP cho RLS, ràng buộc khoá đích và báo cáo trước khi dùng contract này.
-- Cài đặt riêng tư mới: `memberships.hide_my_media_external boolean default false` cho "Ẩn ảnh của tôi khi chia sẻ ra ngoài".
+- Cài đặt "Ẩn ảnh của tôi khi chia sẻ ra ngoài" **dùng lại cờ có sẵn** `memberships.blur_media` (contract đã có, mọi luồng chia sẻ, Edge `public-journey` và RLS đã đọc cờ này), không thêm cờ mới. Chỉ mở rộng phạm vi: khi `blur_media = true`, avatar và nền do thành viên đó đặt cũng bị làm mờ/ẩn trên mọi thứ chia sẻ ra ngoài.
 
 
 ### Prompt gửi Make cho A1 + A3
@@ -107,7 +107,7 @@ FIX + NEW. 1) Camera journey names are cut with "..." and the wheel shows too mu
 - Background: preset patterns per skin, a journey photo, or upload; auto overlay keeps text contrast ≥ 4.5:1 in light/dark.
 - Stickers: user-uploaded sticker (simulated, white die-cut border like the logo) or earned milestone medals; place on the 4 corners of the journey card, day photo, share card; max 4 per surface; drag to rotate ±15° and scale 0.6–1.4.
 - Locks: upload avatar/background/sticker show a lock with "Mở khoá khi đạt chuỗi 7 ngày" (store.unlocks flags; reviewer toggle "Mở khoá tất cả"). Milestone medals are free once earned.
-- Rules: group journeys only the owner changes avatar/background, personal stickers show only on the user's own photos; Quiet (weight loss): body photos may be the avatar/background inside the group, but never on anything shared outside; every member gets a setting "Ẩn ảnh của tôi khi chia sẻ ra ngoài" (hide or blur my avatar/photos on outside shares). uploaded items can be reported like check-ins.
+- Rules: group journeys only the owner changes avatar/background, personal stickers show only on the user's own photos; Quiet (weight loss): body photos may be the avatar/background inside the group, but never on anything shared outside; every member's existing "blur my photos when shared outside" setting (store/membership blurMedia) also blurs or hides their avatar/background on outside shares, label "Ẩn ảnh của tôi khi chia sẻ ra ngoài". uploaded items can be reported like check-ins.
 - No emoji; use OIcon. Light/dark, 135% type. Run tsc and build.
 ```
 
