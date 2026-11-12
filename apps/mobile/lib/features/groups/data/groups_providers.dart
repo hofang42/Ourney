@@ -1,7 +1,5 @@
-import 'package:clock/clock.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -10,9 +8,6 @@ import '../../../app/providers.dart';
 /// Repository streams must not retry on their own: the repositories already
 /// handle offline/sync, and retry timers would leak into widget tests.
 Duration? _noRetry(int _, Object _) => null;
-
-/// Wall clock for "today" (journey-local). Override in tests.
-final groupsClockProvider = Provider<Clock>((ref) => const Clock());
 
 /// Group journeys of the caller (Groups tab), from
 /// `JourneyRepository.watchActive` filtered to `kind == group`.
@@ -28,18 +23,6 @@ final groupJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
       ),
   retry: _noRetry,
 );
-
-final groupJourneyProvider = StreamProvider.autoDispose
-    .family<Journey?, String>(
-      (ref, id) => ref.watch(journeyRepositoryProvider).watch(id),
-      retry: _noRetry,
-    );
-
-final groupMembershipProvider = StreamProvider.autoDispose
-    .family<Membership?, String>(
-      (ref, id) => ref.watch(journeyRepositoryProvider).watchMyMembership(id),
-      retry: _noRetry,
-    );
 
 /// `group_today` rows (FR-D3).
 final groupTodayProvider = StreamProvider.autoDispose
@@ -76,14 +59,6 @@ final groupBlockedIdsProvider = StreamProvider.autoDispose<Set<String>>((ref) {
   return repo.watchBlockedIds().handleError((Object _) {});
 }, retry: _noRetry);
 
-/// Resolves a storage path to a local file (disk cache, `MediaStore`).
-final groupMediaFileProvider = FutureProvider.autoDispose
-    .family<String, String>(
-      (ref, storagePath) =>
-          ref.watch(mediaStoreProvider).localFileFor(storagePath),
-      retry: _noRetry,
-    );
-
 /// Opens the system share sheet with [text]. Override in tests.
 typedef GroupShareLauncher = Future<void> Function({
   required String text,
@@ -101,17 +76,3 @@ final groupClipboardProvider = Provider<Future<void> Function(String text)>(
   (ref) =>
       (text) => Clipboard.setData(ClipboardData(text: text)),
 );
-
-/// Unwraps Riverpod's [ProviderException] (a dependency in error state).
-Object groupRootError(Object error) {
-  var e = error;
-  while (e is ProviderException) {
-    e = e.exception;
-  }
-  return e;
-}
-
-/// True when the data layer is not wired yet (placeholder repositories
-/// throw [UnimplementedError] until B1 lands).
-bool groupIsNotWired(Object error) =>
-    groupRootError(error) is UnimplementedError;

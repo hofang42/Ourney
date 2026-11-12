@@ -19,7 +19,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_capture => 'Capture';
 
   @override
-  String get nav_groups => 'Groups';
+  String get nav_groups => 'Squad';
 
   @override
   String get nav_profile => 'Profile and settings';

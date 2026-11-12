@@ -5,10 +5,8 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
-import '../../../app/theme/tokens.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../shared/chunky_button.dart';
-import '../../../shared/ourney_card.dart';
+import '../../../ui/ui.dart';
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -57,78 +55,74 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = ShareCardL10n.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final uri = _uriFor(_currentToken);
 
-    return OurneyCard(
+    return UiCard(
       key: const ValueKey('share-card-link'),
-      child: KeyedSubtree(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.link_rounded, color: c.accent),
-                const SizedBox(width: OurneySpacing.sm),
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.share_card_linkTitle,
-                      style: text.titleMedium,
+      radius: UiRadius.card,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.link_rounded, color: ui.ink),
+              const SizedBox(width: UiSpace.sm),
+              Expanded(
+                child: Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.share_card_linkTitle,
+                    style: UiText.body(
+                      size: 16,
+                      weight: FontWeight.w700,
+                      height: 1.4,
+                      color: ui.ink,
                     ),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: OurneySpacing.sm),
-            Text(
-              uri == null
-                  ? l10n.share_card_linkDescription
-                  : l10n.share_card_linkActive,
-              style: text.bodyMedium,
-            ),
-            const SizedBox(height: OurneySpacing.md),
-            if (uri == null)
-              ChunkyButton(
-                key: const ValueKey('share-card-link-create'),
-                variant: ChunkyVariant.accent,
-                icon: Icons.add_link_rounded,
-                label: l10n.share_card_linkCreate,
-                onPressed: _busy ? null : _create,
-              )
-            else ...[
-              SelectableText(
-                uri.toString(),
-                key: const ValueKey('share-card-link-url'),
-                maxLines: 3,
-                style: text.bodySmall?.copyWith(color: c.inkMuted),
-              ),
-              const SizedBox(height: OurneySpacing.md),
-              ChunkyButton(
-                key: const ValueKey('share-card-link-copy'),
-                variant: ChunkyVariant.accent,
-                icon: Icons.copy_rounded,
-                label: l10n.share_card_linkCopy,
-                onPressed: _busy ? null : () => _copy(uri),
-              ),
-              const SizedBox(height: OurneySpacing.sm),
-              Align(
-                child: TextButton.icon(
-                  key: const ValueKey('share-card-link-revoke'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: c.danger,
-                    minimumSize: const Size(0, OurneySizes.minTap),
-                  ),
-                  icon: const Icon(Icons.link_off_rounded),
-                  label: Text(l10n.share_card_linkRevoke),
-                  onPressed: _busy ? null : _revoke,
-                ),
               ),
             ],
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            uri == null
+                ? l10n.share_card_linkDescription
+                : l10n.share_card_linkActive,
+            style: UiText.muted(color: ui.inkMuted, size: 14),
+          ),
+          const SizedBox(height: UiSpace.md),
+          if (uri == null)
+            UiButton(
+              key: const ValueKey('share-card-link-create'),
+              icon: Icons.add_link_rounded,
+              label: l10n.share_card_linkCreate,
+              loading: _busy,
+              onPressed: _busy ? null : _create,
+            )
+          else ...[
+            SelectableText(
+              uri.toString(),
+              key: const ValueKey('share-card-link-url'),
+              maxLines: 3,
+              style: UiText.body(size: 12, height: 1.45, color: ui.inkMuted),
+            ),
+            const SizedBox(height: UiSpace.md),
+            UiButton(
+              key: const ValueKey('share-card-link-copy'),
+              icon: Icons.copy_rounded,
+              label: l10n.share_card_linkCopy,
+              onPressed: _busy ? null : () => _copy(uri),
+            ),
+            const SizedBox(height: UiSpace.xs),
+            UiButton.ghost(
+              key: const ValueKey('share-card-link-revoke'),
+              icon: Icons.link_off_rounded,
+              label: l10n.share_card_linkRevoke,
+              onPressed: _busy ? null : _revoke,
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -166,25 +160,36 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
   Future<void> _revoke() async {
     final l10n = ShareCardL10n.of(context);
     final app = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showUiSheet<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.share_card_linkRevokeTitle),
-        content: SingleChildScrollView(
-          child: Text(l10n.share_card_linkRevokeMessage),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(app.common_cancel),
-          ),
-          TextButton(
-            key: const ValueKey('share-card-link-revoke-confirm'),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.share_card_linkRevokeTitle,
+              style: UiText.h2(color: context.ui.ink),
             ),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            l10n.share_card_linkRevokeMessage,
+            style: UiText.muted(color: context.ui.inkMuted, size: 14),
+          ),
+          const SizedBox(height: UiSpace.xl),
+          UiButton(
+            key: const ValueKey('share-card-link-revoke-confirm'),
+            label: l10n.share_card_linkRevoke,
+            accent: context.ui.danger,
+            onAccent: Colors.white,
             onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.share_card_linkRevoke),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.secondary(
+            label: app.common_cancel,
+            onPressed: () => Navigator.of(context).pop(false),
           ),
         ],
       ),
@@ -221,8 +226,6 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
   }
 
   void _snack(String message) {
-    ScaffoldMessenger.maybeOf(context)
-      ?..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showUiToast(context, message);
   }
 }

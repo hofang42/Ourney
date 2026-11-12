@@ -191,7 +191,11 @@ class Outbox {
           continue;
         }
         final attempts = head.attempts + 1;
-        if (error.error != OurneyErrorCode.offline && attempts >= maxAttempts) {
+        // Waiting for the network or a fresh sign-in never kills an item.
+        final waiting =
+            error.error == OurneyErrorCode.offline ||
+            error.error == OurneyErrorCode.unauthenticated;
+        if (!waiting && attempts >= maxAttempts) {
           await _markDead(head, error.toString());
           continue;
         }

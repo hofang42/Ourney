@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
+import 'package:ourney_core/ourney_core.dart' show LocalDate, localDateOf;
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -193,6 +194,12 @@ tz.Location guessTimeZoneForOffset(Duration offset, {DateTime? at}) {
 Duration timeZoneOffsetAt(String name, DateTime instant) {
   return resolveTimeZone(name).timeZone(instant.millisecondsSinceEpoch).offset;
 }
+
+/// Journey-local calendar date of [instant] in the IANA zone [timezone] (same
+/// rule as the server's `local_date`). Legacy and unknown zones are handled by
+/// [timeZoneOffsetAt], so a bad server value never crashes the UI.
+LocalDate journeyLocalDate(String timezone, DateTime instant) =>
+    localDateOf(instant, timeZoneOffsetAt(timezone, instant));
 
 @visibleForTesting
 void resetTimeZoneGuesses() => _guesses.clear();

@@ -2,20 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
-import 'package:ourney/app/theme/persona_theme.dart';
 import 'package:ourney/features/camera/camera_providers.dart';
 import 'package:ourney/features/camera/camera_session.dart';
 import 'package:ourney/features/camera/capture_services.dart';
 import 'package:ourney/features/camera/routes.dart';
-import 'package:ourney/personas/memory_collectors/camera_hud.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/test_helpers.dart';
 import '../checkin/fakes.dart';
 
-/// F3: the capture screen draws the HUD of the selected journey's persona
-/// over a preview that is never restarted by a persona switch.
+/// Switching journey recolours the camera chrome (shutter accent, theme)
+/// over a preview that is never restarted (CLAUDE.md section 5).
 void main() {
   late FakeCameraSession camera;
   late SharedPreferencesWithCache prefs;
@@ -56,22 +55,31 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  OurneyPersonaTheme persona(WidgetTester tester) => OurneyPersonaTheme.of(
-    tester.element(find.byKey(const ValueKey('placeholder-camera'))),
-  );
+  /// Fill of the shutter's inner disc.
+  Color? shutterAccent(WidgetTester tester) {
+    final inner = find.descendant(
+      of: find.byType(UiShutter),
+      matching: find.byType(Container),
+    );
+    for (final e in inner.evaluate()) {
+      final deco = (e.widget as Container).decoration;
+      if (deco is BoxDecoration && deco.color != null) return deco.color;
+    }
+    return null;
+  }
 
-  testWidgets('the first journey sets the persona of the screen', (
+  testWidgets('the first journey sets the shutter accent and day pill', (
     tester,
   ) async {
     await pump(tester);
-    expect(persona(tester).skinId, PersonaSkinId.aestheticFlexer);
-    expect(persona(tester).background.computeLuminance(), lessThan(0.1));
-    expect(find.byType(DisposableFilmStampHud), findsNothing);
+    expect(shutterAccent(tester), uiJourneyStyles[4].accent);
+    expect(find.byKey(const ValueKey('capture-day-hud')), findsOneWidget);
+    expect(find.byKey(const ValueKey('dock-hero-shutter')), findsOneWidget);
     expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
   });
 
-  testWidgets('picking another journey swaps the HUD and the colors but '
-      'never restarts the camera', (tester) async {
+  testWidgets('picking another journey recolours the chrome but never '
+      'restarts the camera', (tester) async {
     await pump(tester);
     expect(camera.starts, 1);
 
@@ -79,8 +87,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(persona(tester).skinId, PersonaSkinId.memoryCollectors);
-    expect(find.byType(DisposableFilmStampHud), findsOneWidget);
+    expect(shutterAccent(tester), uiJourneyStyles[2].accent);
     expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
     expect(camera.starts, 1, reason: 'switching journey must not restart');
     expect(camera.stops, 0);
@@ -88,10 +95,23 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('journey-chip-j1')));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
-    expect(persona(tester).skinId, PersonaSkinId.aestheticFlexer);
-    expect(find.byType(DisposableFilmStampHud), findsNothing);
+    expect(shutterAccent(tester), uiJourneyStyles[4].accent);
     expect(camera.starts, 1);
     expect(camera.stops, 0);
+  });
+
+  testWidgets('swiping the viewfinder moves to the next journey', (
+    tester,
+  ) async {
+    await pump(tester);
+    await tester.fling(
+      find.byKey(const ValueKey('capture-preview')),
+      const Offset(-300, 0),
+      1000,
+    );
+    await tester.pumpAndSettle();
+    expect(container.read(activeJourneyIdProvider), 'j2');
+    expect(camera.starts, 1);
   });
 
   testWidgets('the chip choice becomes the active journey and is remembered', (
@@ -112,7 +132,7 @@ void main() {
       await container.read(activeJourneyIdProvider.notifier).select('j2');
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
-      expect(persona(tester).skinId, PersonaSkinId.memoryCollectors);
+      expect(shutterAccent(tester), uiJourneyStyles[2].accent);
       expect(camera.starts, 1);
       expect(camera.stops, 0);
     },

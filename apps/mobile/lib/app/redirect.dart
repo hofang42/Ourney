@@ -21,7 +21,9 @@ String? normalizeDeepLink(Uri uri) {
   if (uri.scheme != kDeepLinkScheme) return null;
   final host = uri.host;
   final rest = uri.path; // "/<code>" or ""
-  var path = host.isEmpty ? rest : '/$host$rest';
+  // `ourney://friend/<token>` is the friend invite link (`/f/<token>`).
+  final segment = host == 'friend' ? 'f' : host;
+  var path = host.isEmpty ? rest : '/$segment$rest';
   if (path.isEmpty) path = AppRoutes.capture;
   final query = uri.hasQuery ? '?${uri.query}' : '';
   return '$path$query';

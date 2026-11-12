@@ -7,11 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/chunky_button.dart';
-import '../../../shared/empty_state.dart';
-import '../../../shared/ourney_card.dart';
-import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart';
 import '../data/notification_gateway.dart';
 import '../data/reminder_permission.dart';
 import '../data/reminder_scheduler.dart';
@@ -82,28 +78,18 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
     if (permission != NotificationPermission.notDetermined) return true;
     if (!mounted) return false;
     final l10n = RemindersL10n.of(context);
-    final proceed = await showDialog<bool>(
+    final proceed = await showUiPermissionSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        key: const ValueKey('reminders-permission-dialog'),
-        icon: const Icon(Icons.notifications_active_rounded),
-        title: Text(l10n.reminders_permissionTitle),
-        content: Text(l10n.reminders_permissionMessage),
-        actions: [
-          TextButton(
-            key: const ValueKey('reminders-permission-later'),
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.reminders_permissionNotNow),
-          ),
-          FilledButton(
-            key: const ValueKey('reminders-permission-continue'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.reminders_permissionContinue),
-          ),
-        ],
-      ),
+      sheetKey: const ValueKey('reminders-permission-dialog'),
+      primaryKey: const ValueKey('reminders-permission-continue'),
+      secondaryKey: const ValueKey('reminders-permission-later'),
+      icon: Icons.notifications_active_outlined,
+      title: l10n.reminders_permissionTitle,
+      body: l10n.reminders_permissionMessage,
+      primaryLabel: l10n.reminders_permissionContinue,
+      secondaryLabel: l10n.reminders_permissionNotNow,
     );
-    if (proceed != true) return false;
+    if (!proceed) return false;
     await requestReminderPermission(ref);
     return true;
   }
@@ -150,89 +136,83 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
     final streakAlerts = ref.watch(streakAlertsEnabledProvider);
     final permission = ref.watch(reminderPermissionProvider).value;
     final anyOn = streakAlerts || settings.values.any((s) => s.enabled);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
 
-    return Scaffold(
+    return KeyedSubtree(
       key: const ValueKey('reminders-screen'),
-      appBar: AppBar(
-        leading: BackButton(onPressed: _close),
-        title: Text(l10n.reminders_title),
-      ),
-      body: SafeArea(
-        child: journeys.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, _) => EmptyState(
-            key: const ValueKey('reminders-error'),
-            icon: Icons.cloud_off_rounded,
-            title: l10n.reminders_loadError,
-            actionLabel: l10n.reminders_retry,
-            onAction: () => ref.invalidate(reminderJourneysProvider),
-          ),
-          data: (list) => list.isEmpty
-              ? EmptyState(
-                  key: const ValueKey('reminders-empty'),
-                  icon: Icons.notifications_none_rounded,
-                  title: l10n.reminders_emptyTitle,
-                  message: l10n.reminders_emptyMessage,
-                )
-              : ListView(
-                  padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-                  children: [
-                    Text(
-                      l10n.reminders_intro,
-                      style: text.bodyMedium?.copyWith(color: c.inkMuted),
-                    ),
-                    if (permission == NotificationPermission.denied &&
-                        anyOn) ...[
-                      const SizedBox(height: OurneySpacing.lg),
-                      _DeniedBanner(
-                        onOpenSettings: () async {
-                          try {
-                            await ref
-                                .read(notificationGatewayProvider)
-                                .openSettings();
-                          } on Object {
-                            // Nothing else to offer on unsupported platforms.
-                          }
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: OurneySpacing.xl),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        l10n.reminders_journeysHeader,
-                        style: text.titleSmall?.copyWith(color: c.inkMuted),
-                      ),
-                    ),
-                    const SizedBox(height: OurneySpacing.sm),
-                    for (final j in list) ...[
-                      _JourneyReminderTile(
-                        journey: j,
-                        setting: settings[j.id] ?? ReminderSetting.off,
-                        onToggle: (on) => _toggle(j, on: on),
-                        onPickTime: () => _pickTime(j),
-                      ),
-                      const SizedBox(height: OurneySpacing.md),
-                    ],
-                    const SizedBox(height: OurneySpacing.md),
-                    OurneyCard(
-                      padding: EdgeInsets.zero,
-                      child: SwitchListTile(
-                        key: const ValueKey('reminders-streak-alert'),
-                        secondary: Icon(
-                          Icons.local_fire_department_rounded,
-                          color: c.streak,
-                        ),
-                        title: Text(l10n.reminders_streakAlertTitle),
-                        subtitle: Text(l10n.reminders_streakAlertSubtitle),
-                        value: streakAlerts,
-                        onChanged: _setStreakAlerts,
-                      ),
-                    ),
-                  ],
+      child: UiScaffold(
+        scroll: false,
+        padTop: 0,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            UiBackHeader(
+              onBack: _close,
+              backLabel: MaterialLocalizations.of(context).backButtonTooltip,
+              title: l10n.reminders_title,
+            ),
+            Expanded(
+              child: journeys.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (_, _) => UiEmptyState(
+                  key: const ValueKey('reminders-error'),
+                  icon: Icons.cloud_off_rounded,
+                  title: l10n.reminders_loadError,
+                  actionLabel: l10n.reminders_retry,
+                  onAction: () => ref.invalidate(reminderJourneysProvider),
                 ),
+                data: (list) => list.isEmpty
+                    ? UiEmptyState(
+                        key: const ValueKey('reminders-empty'),
+                        icon: Icons.notifications_none_rounded,
+                        title: l10n.reminders_emptyTitle,
+                        body: l10n.reminders_emptyMessage,
+                      )
+                    : ListView(
+                        padding: const EdgeInsets.only(top: UiSpace.sm),
+                        children: [
+                          Text(
+                            l10n.reminders_intro,
+                            style: UiText.muted(color: ui.inkMuted),
+                          ),
+                          if (permission == NotificationPermission.denied &&
+                              anyOn) ...[
+                            const SizedBox(height: UiSpace.lg),
+                            _DeniedBanner(
+                              onOpenSettings: () async {
+                                try {
+                                  await ref
+                                      .read(notificationGatewayProvider)
+                                      .openSettings();
+                                } on Object {
+                                  // Nothing else to offer on unsupported platforms.
+                                }
+                              },
+                            ),
+                          ],
+                          const SizedBox(height: UiSpace.xl),
+                          UiListHeading(title: l10n.reminders_journeysHeader),
+                          for (final j in list)
+                            _JourneyReminderTile(
+                              journey: j,
+                              setting: settings[j.id] ?? ReminderSetting.off,
+                              onToggle: (on) => _toggle(j, on: on),
+                              onPickTime: () => _pickTime(j),
+                            ),
+                          const SizedBox(height: UiSpace.lg),
+                          UiSwitchRow(
+                            key: const ValueKey('reminders-streak-alert'),
+                            label: l10n.reminders_streakAlertTitle,
+                            subtitle: l10n.reminders_streakAlertSubtitle,
+                            value: streakAlerts,
+                            divider: false,
+                            onChanged: _setStreakAlerts,
+                          ),
+                        ],
+                      ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -261,14 +241,13 @@ class _JourneyReminderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = RemindersL10n.of(context);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     final time = formatReminderTime(context, setting.time);
-    return OurneyCard(
+    return Container(
       key: ValueKey('reminders-journey-${journey.id}'),
-      padding: const EdgeInsets.symmetric(
-        horizontal: OurneySpacing.lg,
-        vertical: OurneySpacing.md,
+      padding: const EdgeInsets.symmetric(vertical: UiSpace.md),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: ui.divider)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,18 +256,22 @@ class _JourneyReminderTile extends StatelessWidget {
             children: [
               ExcludeSemantics(
                 child: Icon(
-                  journeyIcon(journey.emoji, journey.templateId),
-                  size: 28,
+                  uiJourneyIcon(journey.emoji, journey.templateId),
+                  size: 26,
+                  color: ui.ink,
                 ),
               ),
-              const SizedBox(width: OurneySpacing.md),
+              const SizedBox(width: UiSpace.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       journey.title,
-                      style: text.titleMedium,
+                      style: UiText.body(
+                        color: ui.ink,
+                        weight: FontWeight.w600,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -296,7 +279,7 @@ class _JourneyReminderTile extends StatelessWidget {
                       setting.enabled
                           ? l10n.reminders_timeOn(time)
                           : l10n.reminders_timeOff,
-                      style: text.bodySmall?.copyWith(color: c.inkMuted),
+                      style: UiText.muted(color: ui.inkMuted, size: 13),
                     ),
                   ],
                 ),
@@ -312,14 +295,16 @@ class _JourneyReminderTile extends StatelessWidget {
             ],
           ),
           if (setting.enabled) ...[
-            const SizedBox(height: OurneySpacing.sm),
+            const SizedBox(height: UiSpace.sm),
             Align(
               alignment: AlignmentDirectional.centerStart,
-              child: OutlinedButton.icon(
+              child: UiButton.secondary(
                 key: ValueKey('reminders-time-${journey.id}'),
+                label: l10n.reminders_changeTime(time),
+                icon: Icons.schedule_rounded,
+                compact: true,
+                expand: false,
                 onPressed: onPickTime,
-                icon: const Icon(Icons.schedule_rounded),
-                label: Text(l10n.reminders_changeTime(time)),
               ),
             ),
           ],
@@ -337,33 +322,36 @@ class _DeniedBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = RemindersL10n.of(context);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
-    return OurneyCard(
+    final ui = context.ui;
+    return UiCard(
       key: const ValueKey('reminders-denied'),
+      radius: UiRadius.card,
+      color: ui.fill,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.notifications_off_rounded, color: c.danger),
-              const SizedBox(width: OurneySpacing.sm),
+              Icon(Icons.notifications_off_rounded, color: ui.danger),
+              const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Text(
                   l10n.reminders_deniedTitle,
-                  style: text.titleMedium,
+                  style: UiText.body(color: ui.ink, weight: FontWeight.w700),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: OurneySpacing.sm),
-          Text(l10n.reminders_deniedMessage, style: text.bodyMedium),
-          const SizedBox(height: OurneySpacing.md),
-          ChunkyButton(
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            l10n.reminders_deniedMessage,
+            style: UiText.muted(color: ui.inkMuted),
+          ),
+          const SizedBox(height: UiSpace.md),
+          UiButton.secondary(
             key: const ValueKey('reminders-open-settings'),
             label: l10n.reminders_openSettings,
             icon: Icons.settings_rounded,
-            variant: ChunkyVariant.neutral,
             onPressed: onOpenSettings,
           ),
         ],

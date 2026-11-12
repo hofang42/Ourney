@@ -13,7 +13,8 @@
 ### 1.2 Vì sao làm
 - App chuyên từng ngách (Strava, Duolingo, MyFitnessPal, Polarsteps) rất mạnh trong ngách của nó, nhưng **không có app nào gom "mọi loại hành trình + bằng chứng hằng ngày + nhóm bạn thân"**.
 - Locket/BeReal đã chứng minh **chụp ảnh nhanh trong vòng bạn thân** tạo thói quen mạnh. Ourney gắn cơ chế đó vào **mục tiêu có thời hạn**, nên có lý do để quay lại mỗi ngày (streak, nhóm đang chờ mình).
-- Tăng trưởng không dựa vào feed công khai mà dựa vào **mời bạn vào nhóm** và **share card ra Instagram/Zalo/Facebook**.
+- Tăng trưởng không dựa vào feed công khai mà dựa vào **mời bạn vào nhóm**, **share card ra Instagram/Zalo/Facebook**, và **link hành trình đã xong có nút "Làm theo"** (FR-H).
+- Hành trình đã trải qua (đi xong trong app, hoặc đi từ trước khi có app) có **"đời sau"**: viết lời kể, chia sẻ cho bạn bè, nhận phản hồi, cho người khác làm theo, và biết câu chuyện công khai đã đến với bao nhiêu người (lượt xem, lượt thích, lượt làm theo) ([09-journey-sharing.md](09-journey-sharing.md)).
 
 ### 1.3 Phạm vi v1 (MVP)
 App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v1 chỉ có ảnh** (chưa có clip), chưa có push, widget, universal link vì chưa có tài khoản Apple Developer trả phí. Chi tiết ở §4 và §7.
@@ -29,6 +30,11 @@ App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v
 | **Member** | Thành viên journey nhóm, vai trò `owner` hoặc `member` |
 | **Share card** | Ảnh 1080×1920 / 1080×1350 render trên máy để chia sẻ ra ngoài |
 | **Local-only mode** | App chạy không cần server (khi chưa cấu hình Supabase): solo journey dùng được, nhóm thì không |
+| **Friend** (bạn bè) | Quan hệ **hai chiều**, phải được chấp nhận. Không có follow một chiều |
+| **Journey share** | Quyền xem một journey của chủ cấp cho từng người bạn; thu hồi được từng người |
+| **Retold journey** (kể lại) | Journey tạo từ ảnh cũ trong máy, nhãn `Imported` / `Kể lại`, không tính streak |
+| **Follow-along** (làm theo) | Tạo journey mới từ **khung lộ trình** của journey đã xong (template, thời lượng, nhịp, chỉ số). Không sao chép ảnh/số liệu |
+| **Inbox** (hộp thư) | Nơi gộp câu trả lời ảnh, lời mời xem journey, lời mời kết bạn; mở thành chat 1-1 |
 
 ## 2. Mô tả tổng quan
 
@@ -79,6 +85,10 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-B5 | Hiện streak hiện tại, streak dài nhất, % hoàn thành, ngày thứ N/M | P1 |
 | FR-B6 | Kết thúc / lưu trữ journey. Journey đã kết thúc thì chỉ đọc | P1 |
 | FR-B7 | Giảm cân: **mặc định ẩn số kg và làm mờ ảnh khi share ra ngoài** | P1 |
+| FR-B8 | **Avatar hành trình** (quyết định 2026-11-12): ảnh tròn đại diện, dùng ở chọn hành trình trên camera, thẻ Hub, đầu trang hành trình, Hội. Nguồn: biểu tượng loại hành trình (mặc định), ảnh trong hành trình, ảnh tải lên, sticker của app. Hành trình nhóm: chỉ chủ nhóm đổi | P2 |
+| FR-B9 | **Nền hành trình**: hoạ tiết theo phong cách (mặc định), ảnh trong hành trình hoặc ảnh tải lên, có lớp phủ tự động giữ tương phản chữ ≥ 4.5:1 ở sáng/tối. Giảm cân: không dùng ảnh cơ thể làm avatar/nền trên thứ được chia sẻ ra ngoài | P2 |
+| FR-B10 | **Tem/huy chương dán góc**: sticker tự tải lên (viền bế trắng) hoặc huy chương mốc đã đạt, dán ở 4 góc thẻ hành trình, ảnh ngày, share card; tối đa 4 mỗi chỗ, xoay ±15°, co giãn 0.6–1.4×. Sticker cá nhân trong nhóm chỉ hiện trên ảnh của chính người đó. Ảnh tải lên được báo cáo/kiểm duyệt như check-in (FR-F1), ≤ 2MB, ≤ 20 sticker/tài khoản | P2 |
+| FR-B11 | **Mở khoá tuỳ biến**: huy chương mốc miễn phí khi đạt; tải avatar/nền/sticker riêng và bộ hoạ tiết thêm là mục **có thể mở khoá** (theo mốc chuỗi hoặc gói trả phí, chưa chốt — câu 12 `docs/client-questions.md`). App lưu cờ mở khoá theo tài khoản | P2 |
 
 ### FR-C — Check-in (camera-first)
 | ID | Yêu cầu | Ưu tiên |
@@ -99,7 +109,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-D1 | Mời bằng mã 8 ký tự / link `ourney://join/<code>`. Có ô nhập mã thủ công | P1 |
 | FR-D2 | Tối đa **10 thành viên**. Vai trò owner/member | P1 |
 | FR-D3 | Màn **"Hôm nay"**: ai đã/chưa check-in, ảnh mới nhất của từng người, streak từng người | P1 |
-| FR-D4 | Reaction emoji (🔥 💪 👏 ❤️ 😂) trên check-in. **Không có comment ở v1** | P1 |
+| FR-D4 | Reaction emoji (🔥 💪 👏 ❤️ 😂) trên check-in. **Không có comment công khai ở v1** (trả lời riêng bằng ảnh trên journey được chia sẻ: FR-H6) | P1 |
 | FR-D5 | **Không xếp hạng theo kết quả** (kg…), chỉ hiện mức độ đều đặn | P1 |
 | FR-D6 | Owner: đổi mã mời, xoá thành viên, kết thúc journey | P1 |
 | FR-D7 | Vòng đời: xem bảng §3.1 | P1 |
@@ -119,14 +129,14 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-E1 | Share card 1 theme, 2 cỡ (story 1080×1920 có vùng an toàn cho IG; feed 1080×1350): số lớn + ảnh + logo | P1 |
 | FR-E2 | Chia sẻ qua share sheet hệ thống. Tự gợi ý ở các mốc | P1 |
-| FR-E3 | Link xem read-only cho **journey solo** có visibility `link` (token thu hồi được). **Journey nhóm không bao giờ có link công khai** | P1 |
+| FR-E3 | Link xem read-only cho **journey solo đã kết thúc** (hoặc journey kể lại đã lên kệ) có visibility `link` (token thu hồi được). Journey đang chạy chỉ chia sẻ cho bạn bè (FR-H3). **Journey nhóm/cặp đôi** có link công khai khi đã kết thúc, do owner bật, chỉ gồm ảnh của thành viên đã đồng ý (FR-H14) | P1 |
 | FR-E4 | Instagram Stories deep link, recap collage | P2 |
 
 ### FR-F — An toàn & tuân thủ
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
-| FR-F1 | Report check-in/người dùng (lý do: spam, khoả thân, quấy rối, tự hại, khác) → `moderation_queue` | P1 |
-| FR-F2 | Block / unblock. Nội dung đã report bị ẩn ngay với người report | P1 |
+| FR-F1 | Report check-in/người dùng/**tin nhắn** (lý do: spam, khoả thân, quấy rối, tự hại, an toàn trẻ em, khác) → `moderation_queue` | P1 |
+| FR-F2 | Block / unblock. Nội dung đã report bị ẩn ngay với người report. Block = hủy kết bạn + mất quyền xem journey đã chia sẻ cho nhau + ẩn cuộc trò chuyện | P1 |
 | FR-F3 | EULA (không dung thứ nội dung xấu), privacy policy, trang liên hệ | P1 |
 
 ### FR-G — Nhắc nhở
@@ -134,7 +144,29 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-G1 | Thông báo local theo giờ user chọn cho từng journey. Lên lịch cuốn chiếu 14 ngày, tổng ≤ 64 thông báo chờ (giới hạn của iOS) | P1 |
 | FR-G2 | 21:00 cảnh báo "streak sắp mất" nếu hôm nay chưa check-in | P1 |
-| FR-G3 | Nudge bạn bè, push thật | P2 (cần tài khoản Apple) |
+| FR-G3 | Nudge bạn bè, push thật (gồm push lời mời kết bạn, journey được chia sẻ, tin nhắn) | P2 (cần tài khoản Apple) |
+
+### FR-H — Bạn bè & chia sẻ hành trình đã trải qua
+Quyết định S1–S40, luồng và đề xuất dữ liệu: [09-journey-sharing.md](09-journey-sharing.md). Màn hình: [07-SDS-ui-design.md](07-SDS-ui-design.md) §5.9. v1 áp cho journey **solo** (gồm journey kể lại), **nhóm và cặp đôi** (FR-H14–H16).
+
+| ID | Yêu cầu | Ưu tiên |
+|---|---|---|
+| FR-H1 | Bạn bè **hai chiều**: gửi lời mời qua link/QR hoặc đúng @username, bên kia chấp nhận. Không đồng bộ danh bạ, không gợi ý. Số bạn chỉ chủ tài khoản thấy | P1 |
+| FR-H2 | **Kể lại** journey cũ từ ảnh trong máy, nhãn `Imported` hiện cả với người xem, không tính/không hiện streak. Lối vào ở màn journey đầu tiên, Hub `+`, đầu Kệ | P1 |
+| FR-H3 | Chia sẻ journey cho bạn bè: tick sẵn tất cả, bỏ tick được; **mẫu nhạy cảm không tick sẵn ai**. Journey đang chạy chia sẻ được, người xem thấy ảnh mới | P1 |
+| FR-H4 | Trước khi chia sẻ: ẩn kỳ/ảnh, ẩn số liệu, viết lời kể (tiêu đề, giới thiệu, điều rút ra, ảnh bìa) | P1 |
+| FR-H5 | Người được chia sẻ thấy journey trong segment `Shared with me` của Hub (nhóm `From friends`; journey công khai đã thích nằm ở nhóm `Saved`, FR-H12). **Không có feed** | P1 |
+| FR-H6 | Người xem là bạn bè: reaction + **trả lời bằng ảnh** trên từng ảnh. Journey **solo**: câu trả lời chỉ chủ thấy. Journey **nhóm/cặp đôi**: câu trả lời đi tới thành viên đã chia sẻ hoặc tác giả ảnh theo FR-H16, chỉ người nhận thấy. Không chia sẻ lại được. Trả lời bằng clip ≤ 5s đi cùng đợt có clip (v0.2, §7) | P1 |
+| FR-H7 | **Hộp thư** (icon trên header Hub): trả lời, reaction, lời mời xem journey, lời mời kết bạn, yêu cầu đồng ý chia sẻ của nhóm. Từ một câu trả lời mở **chat 1-1** (chữ ≤ 500, ảnh; clip ≤ 5s từ v0.2 cùng với clip ở §7), có `Seen`, chặn, báo cáo — chat chữ + ảnh **làm đủ ở v1**. v1 chưa có push: số chưa đọc cập nhật khi mở app. Không giới hạn số bạn; tin nhắn được giữ — xóa cuộc trò chuyện hay `Delete for me` chỉ áp cho **phía người xóa**, bên kia giữ nguyên lịch sử | P1 |
+| FR-H8 | **Làm theo**: từ journey đã xong (trong app hoặc link công khai) tạo journey mới với cùng template, thời lượng, nhịp, tên chỉ số, ghi "Based on {name}'s journey" (bỏ được). Không sao chép ảnh, caption, số liệu, thành viên. Nguồn là nhóm/cặp đôi → tạo journey cùng kiểu, người làm theo là owner rồi mời người của mình. Trang link có nút cài app rồi mở sẵn lộ trình | P1 |
+| FR-H9 | Thu hồi: dừng chia sẻ cho tất cả, gỡ từng người, `Reset link`. Hủy kết bạn = mất quyền xem; journey làm theo của người khác vẫn giữ | P1 |
+| FR-H10 | Journey có link công khai có **thống kê chỉ chủ thấy** (ngoại lệ: journey **nhóm/cặp đôi** thì **mọi thành viên** xem được số liệu tổng của Insights, nhưng tên người thích một ảnh chỉ tác giả ảnh đó thấy, FR-H15; người ngoài vẫn không bao giờ thấy): lượt xem (số người, mỗi người tính một lần trong toàn kỳ, chỉ là số, không bao giờ lộ ai đã xem; biểu đồ theo ngày tính riêng từng ngày), lượt thích (kèm tên người thích, tách bạn bè/người lạ), lượt làm theo. Xem theo từng journey (Insights) và tổng trong Hồ sơ (gồm journey solo của mình và journey nhóm/cặp đôi mình là thành viên) | P1 |
+| FR-H11 | Công tắc `Show counts` theo journey (mặc định tắt): người xem thấy lượt thích + lượt làm theo. Lượt xem không bao giờ công khai | P1 |
+| FR-H12 | Người lạ **có tài khoản** mở link trong app: thích (nếu `Let anyone react`), làm theo, gửi lời mời kết bạn (nếu `Allow friend requests from viewers`). Không trả lời ảnh, không chat. Thích → journey được lưu vào `Saved`. Web chưa đăng nhập không thích được | P1 |
+| FR-H13 | Lời mời kết bạn từ người lạ vào mục riêng, không tính chưa đọc, tối đa 20 lời mời / người gửi / ngày. `Let anyone react` mặc định bật với mẫu thường. Mẫu nhạy cảm: 3 công tắc công khai mặc định tắt + cảnh báo; em bé: người lạ không bao giờ thích/mời kết bạn | P1 |
+| FR-H14 | Journey **nhóm/cặp đôi** chia sẻ được ra ngoài: thành viên nào cũng đề nghị được, mỗi thành viên còn lại nhận yêu cầu đồng ý. Chia sẻ có hiệu lực ngay; **ảnh của người chưa đồng ý/từ chối không bao giờ hiện với người ngoài nhóm**; đồng ý sau thì hiện | P1 |
+| FR-H15 | Thành viên rút ảnh của mình khỏi chia sẻ bất cứ lúc nào; rời nhóm thì ảnh ẩn; thành viên mới nhận yêu cầu đồng ý. Mỗi thành viên chia sẻ cho bạn bè của mình; link công khai, `Show counts`, công tắc công khai và lời kể do owner quản lý; mọi thành viên xem số liệu tổng của Insights, **tên người thích chỉ tác giả ảnh thấy** (thành viên khác chỉ thấy số) | P1 |
+| FR-H16 | Trả lời bằng ảnh trên journey nhóm gửi tới thành viên đã chia sẻ cho người xem (hoặc tác giả ảnh nếu là bạn của người xem). Người xem chỉ thấy tên thành viên đã đồng ý; không thấy thống kê chuỗi từng người | P1 |
 
 ## 4. Yêu cầu phi chức năng
 
@@ -215,7 +247,7 @@ supabase start && supabase test db
 ## 7. Ngoài phạm vi v1 → lộ trình
 | v0.2 (khi có tài khoản Apple $99) | v0.3+ |
 |---|---|
-| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge, universal/App Links, Sign in with Apple, đăng 1 ảnh cho nhiều journey, comment, streak freeze | Journey công khai + discover, thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
+| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge (gồm push tin nhắn, lời mời kết bạn), universal/App Links, Sign in with Apple, đăng 1 ảnh cho nhiều journey, comment, streak freeze | Discover / feed công khai (vẫn **không** làm ở v1, kể cả khi đã có bạn bè), thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
 
 ## 8. Tiêu chí thành công v1
 - Beta `v0.1.0`: `.ipa` chưa ký + `.apk` trên GitHub Release.
@@ -230,4 +262,6 @@ supabase start && supabase test db
 | [03-design-system.md](03-design-system.md) | Màu, font, motion, share card |
 | [04-implementation-plan-v1.md](04-implementation-plan-v1.md) | Plan triển khai đa agent, các giai đoạn, wave |
 | [05-platform-plan-ios-android.md](05-platform-plan-ios-android.md) | Checklist iOS/Android, ưu tiên iOS |
+| [07-SDS-ui-design.md](07-SDS-ui-design.md) | Đặc tả giao diện: màn hình, luồng, trạng thái |
+| [09-journey-sharing.md](09-journey-sharing.md) | Bạn bè, chia sẻ hành trình đã trải qua, hộp thư, làm theo (FR-H) + đề xuất dữ liệu |
 | [contracts/](contracts/) | Hợp đồng dữ liệu |

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:ourney_core/ourney_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'error_mapping.dart';
@@ -19,7 +19,8 @@ class SupabaseRemoteApi implements RemoteApi {
   final SupabaseClient _client;
   final HttpClient _http;
 
-  StorageFileApi get _media => _client.storage.from(mediaBucket);
+  StorageFileApi _bucket(String path) =>
+      _client.storage.from(storageBucketFor(path));
 
   @override
   String? get currentUserId => _client.auth.currentUser?.id;
@@ -100,6 +101,12 @@ class SupabaseRemoteApi implements RemoteApi {
   });
 
   @override
+  Future<void> delete(String table, {required Map<String, Object> match}) =>
+      guardRemote(() async {
+        await _client.from(table).delete().match(match);
+      });
+
+  @override
   Future<List<RemoteRow>> update(
     String table,
     RemoteRow values, {
@@ -128,35 +135,116 @@ class SupabaseRemoteApi implements RemoteApi {
       });
 
   @override
-  Future<void> uploadFile(String path, File file) => guardRemote(() async {
-    await _media.upload(
-      path,
-      file,
-      fileOptions: const FileOptions(upsert: true, contentType: 'image/jpeg'),
+  Stream<RemoteRow> watchInserts(
+    String table, {
+    String? column,
+    String? value,
+  }) {
+    RealtimeChannel? channel;
+    late final StreamController<RemoteRow> controller;
+    controller = StreamController<RemoteRow>(
+      onListen: () {
+        final suffix = column == null ? '' : ':$column=$value';
+        channel = _client
+            .channel('ourney:$table$suffix:${_channelSeq++}')
+            .onPostgresChanges(
+              event: PostgresChangeEvent.insert,
+              schema: 'public',
+              table: table,
+              filter: column == null || value == null
+                  ? null
+                  : PostgresChangeFilter(
+                      type: PostgresChangeFilterType.eq,
+                      column: column,
+                      value: value,
+                    ),
+              callback: (payload) {
+                if (!controller.isClosed) controller.add(payload.newRecord);
+              },
+            )
+            .subscribe((status, error) {
+              final failed =
+                  status == RealtimeSubscribeStatus.channelError ||
+                  status == RealtimeSubscribeStatus.timedOut;
+              if ((failed || error != null) && !controller.isClosed) {
+                controller.addError(
+                  mapRemoteError(error ?? TimeoutException('realtime $status')),
+                );
+              }
+            });
+      },
+      onCancel: () async {
+        final c = channel;
+        channel = null;
+        if (c != null) {
+          try {
+            await _client.removeChannel(c);
+          } on Object {
+            // Already closed: nothing to release.
+          }
+        }
+      },
     );
+    return controller.stream;
+  }
+
+  static int _channelSeq = 0;
+
+  static const _jpeg = FileOptions(upsert: true, contentType: 'image/jpeg');
+
+  @override
+  Future<void> uploadFile(String path, File file) => guardRemote(() async {
+    await _bucket(path).upload(path, file, fileOptions: _jpeg);
   });
 
   @override
+  Future<void> uploadBytes(String path, List<int> bytes) =>
+      guardRemote(() async {
+        await _bucket(path)
+            .uploadBinary(path, Uint8List.fromList(bytes), fileOptions: _jpeg);
+      });
+
+  @override
   Future<List<String>> listFiles(String prefix) => guardRemote(() async {
-    final objects = await _media.list(path: prefix);
-    return [
-      for (final o in objects)
-        if (o.id != null) '$prefix/${o.name}',
-    ];
+    // Storage lists 100 objects per call by default: page until short.
+    const page = 100;
+    final names = <String>[];
+    for (var offset = 0; ; offset += page) {
+      final objects = await _bucket(prefix).list(
+        path: prefix,
+        searchOptions: SearchOptions(limit: page, offset: offset),
+      );
+      names.addAll([
+        for (final o in objects)
+          if (o.id != null) '$prefix/${o.name}',
+      ]);
+      if (objects.length < page) return names;
+    }
   });
 
   @override
   Future<void> removeFiles(List<String> paths) => guardRemote(() async {
     for (var i = 0; i < paths.length; i += 100) {
       final end = i + 100 > paths.length ? paths.length : i + 100;
-      await _media.remove(paths.sublist(i, end));
+      final chunk = paths.sublist(i, end);
+      // One request per bucket (checkins/avatars vs messages).
+      final byBucket = <String, List<String>>{};
+      for (final path in chunk) {
+        (byBucket[storageBucketFor(path)] ??= []).add(path);
+      }
+      for (final e in byBucket.entries) {
+        await _client.storage.from(e.key).remove(e.value);
+      }
     }
   });
 
   @override
   Future<void> downloadToFile(String path, File target) =>
       guardRemote(() async {
-        final url = await _media.createSignedUrl(path, signedUrlTtl.inSeconds);
+        // Readable when RLS allows it: own media, a group's media, a journey
+        // shared with the caller (0006) or a conversation's photos.
+        final url = await _bucket(path)
+            .createSignedUrl(path, signedUrlTtl.inSeconds);
         final request = await _http
             .getUrl(Uri.parse(url))
             .timeout(const Duration(seconds: 20));

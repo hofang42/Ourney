@@ -6,11 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart' show inviteCodeLength;
 
+import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/chunky_button.dart';
-import '../../../shared/needs_server_view.dart';
-import '../../../shared/ourney_card.dart';
+import '../../../ui/ui.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../domain/invite_code.dart';
 import '../groups_paths.dart';
@@ -73,109 +71,107 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
     }
   }
 
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.groups);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
+    final backHeader = UiBackHeader(
+      onBack: _back,
+      backLabel: MaterialLocalizations.of(context).backButtonTooltip,
+      title: l10n.groups_joinTitle,
+    );
     if (ref.watch(appConfigProvider).localOnly) {
-      return Scaffold(
+      return UiScaffold(
         key: const ValueKey('groups-join-screen'),
-        appBar: AppBar(title: Text(l10n.groups_joinTitle)),
-        body: const SafeArea(child: NeedsServerView()),
+        scroll: false,
+        padTop: 0,
+        child: Column(
+          children: [
+            backHeader,
+            const Expanded(child: UiFillScroll(child: GroupsNeedsServer())),
+          ],
+        ),
       );
     }
     final hasLinkCode = widget.initialCode != null;
-    return Scaffold(
+    return UiScaffold(
       key: const ValueKey('groups-join-screen'),
-      appBar: AppBar(title: Text(l10n.groups_joinTitle)),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-          children: [
-            if (hasLinkCode) ...[
-              Semantics(
-                header: true,
-                child: Text(
-                  l10n.groups_joinPreviewTitle,
-                  style: text.titleLarge,
-                ),
+      padTop: 0,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          backHeader,
+          const SizedBox(height: UiSpace.sm),
+          if (hasLinkCode) ...[
+            Semantics(
+              header: true,
+              child: Text(
+                l10n.groups_joinPreviewTitle,
+                style: UiText.h2(color: ui.ink),
               ),
-              const SizedBox(height: OurneySpacing.lg),
+            ),
+            const SizedBox(height: UiSpace.lg),
+          ],
+          UiTextField(
+            fieldKey: const ValueKey('groups-join-code'),
+            label: l10n.groups_joinCodeLabel,
+            hint: l10n.groups_joinCodeHint,
+            controller: _code,
+            enabled: !_busy,
+            textCapitalization: TextCapitalization.characters,
+            autocorrect: false,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
+              LengthLimitingTextInputFormatter(inviteCodeLength),
+              TextInputFormatter.withFunction(
+                (old, value) => value.copyWith(text: value.text.toUpperCase()),
+              ),
             ],
-            TextField(
-              key: const ValueKey('groups-join-code'),
-              controller: _code,
-              enabled: !_busy,
-              autofocus: !hasLinkCode,
-              textCapitalization: TextCapitalization.characters,
-              autocorrect: false,
-              enableSuggestions: false,
-              maxLength: inviteCodeLength,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp('[A-Za-z0-9]')),
-                TextInputFormatter.withFunction(
-                  (old, value) =>
-                      value.copyWith(text: value.text.toUpperCase()),
+            textInputAction: TextInputAction.done,
+            onChanged: (_) => setState(() => _error = null),
+            onSubmitted: (_) => _join(),
+          ),
+          const SizedBox(height: UiSpace.md),
+          UiCard(
+            radius: UiRadius.menu,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.groups_outlined, color: ui.ink),
+                const SizedBox(width: UiSpace.md),
+                Expanded(
+                  child: Text(
+                    l10n.groups_joinRules,
+                    style: UiText.body(size: 13, height: 1.5, color: ui.ink),
+                  ),
                 ),
               ],
-              style: text.headlineSmall?.copyWith(letterSpacing: 4),
-              decoration: InputDecoration(
-                labelText: l10n.groups_joinCodeLabel,
-                hintText: l10n.groups_joinCodeHint,
-              ),
-              onChanged: (_) => setState(() => _error = null),
-              onSubmitted: (_) => _join(),
             ),
-            const SizedBox(height: OurneySpacing.md),
-            OurneyCard(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.groups_rounded, color: c.accent),
-                  const SizedBox(width: OurneySpacing.md),
-                  Expanded(
-                    child: Text(l10n.groups_joinRules, style: text.bodyMedium),
-                  ),
-                ],
-              ),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: UiSpace.lg),
+            UiInlineError(
+              key: const ValueKey('groups-join-error'),
+              message: _error!,
             ),
-            if (_error != null) ...[
-              const SizedBox(height: OurneySpacing.lg),
-              Semantics(
-                liveRegion: true,
-                child: Row(
-                  key: const ValueKey('groups-join-error'),
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.error_outline_rounded, color: c.danger),
-                    const SizedBox(width: OurneySpacing.sm),
-                    Expanded(
-                      child: Text(
-                        _error!,
-                        style: text.bodyMedium?.copyWith(color: c.ink),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-            const SizedBox(height: OurneySpacing.xl),
-            ChunkyButton(
-              key: const ValueKey('groups-join-submit'),
-              label: l10n.groups_joinButton,
-              icon: Icons.login_rounded,
-              variant: ChunkyVariant.accent,
-              onPressed: _busy || !isValidInviteCode(_normalized)
-                  ? null
-                  : _join,
-            ),
-            if (_busy) ...[
-              const SizedBox(height: OurneySpacing.lg),
-              const Center(child: CircularProgressIndicator()),
-            ],
           ],
-        ),
+          const SizedBox(height: UiSpace.xl),
+          UiButton(
+            key: const ValueKey('groups-join-submit'),
+            label: l10n.groups_joinButton,
+            icon: Icons.login_rounded,
+            loading: _busy,
+            onPressed: _busy || !isValidInviteCode(_normalized) ? null : _join,
+          ),
+        ],
       ),
     );
   }

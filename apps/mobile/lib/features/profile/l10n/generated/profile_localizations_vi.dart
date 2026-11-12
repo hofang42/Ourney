@@ -13,7 +13,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_title => 'Hồ sơ';
 
   @override
-  String get profile_setupTitle => 'Tạo hồ sơ';
+  String get profile_setupTitle => 'Hồ sơ của bạn';
 
   @override
   String get profile_setupSubtitle =>

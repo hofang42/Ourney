@@ -195,6 +195,43 @@ class FakeRemoteApi implements RemoteApi {
   Future<void> insert(String table, RemoteRow row) =>
       _maybeFail('insert', table, row);
 
+  @override
+  Future<void> delete(String table, {required Map<String, Object> match}) =>
+      _maybeFail('delete', table, match);
+
+  /// Realtime channels opened through [watchInserts], by `table` or
+  /// `table:column=value`. Push rows with [emitInsert].
+  final realtime = <String, StreamController<RemoteRow>>{};
+
+  /// Number of realtime subscriptions currently open.
+  int get openChannels => realtime.length;
+
+  @override
+  Stream<RemoteRow> watchInserts(
+    String table, {
+    String? column,
+    String? value,
+  }) {
+    final key = column == null ? table : '$table:$column=$value';
+    late final StreamController<RemoteRow> c;
+    c = StreamController<RemoteRow>(
+      onListen: () => realtime[key] = c,
+      onCancel: () {
+        if (identical(realtime[key], c)) realtime.remove(key);
+      },
+    );
+    return c.stream;
+  }
+
+  /// Delivers [row] to the realtime channel [key] (see [realtime]).
+  void emitInsert(String key, RemoteRow row) => realtime[key]?.add(row);
+
+  @override
+  Future<void> uploadBytes(String path, List<int> bytes) async {
+    await _maybeFail('upload', path);
+    uploaded[path] = List.of(bytes);
+  }
+
   /// Rows `update` reports as changed (default: one echo row).
   List<RemoteRow>? updateResult;
 
@@ -267,6 +304,50 @@ class RecordingTimers {
   }
 }
 
+/// `Timer.periodic` stand-in: records periodic timers; [tick] fires every
+/// active one once.
+class FakePeriodicTimers {
+  final timers = <FakePeriodicTimer>[];
+
+  Timer call(Duration interval, void Function(Timer) tick) {
+    final t = FakePeriodicTimer(interval, tick);
+    timers.add(t);
+    return t;
+  }
+
+  List<FakePeriodicTimer> get active => [
+    for (final t in timers)
+      if (t.isActive) t,
+  ];
+
+  void tick() {
+    for (final t in active) {
+      t.fire();
+    }
+  }
+}
+
+class FakePeriodicTimer implements Timer {
+  FakePeriodicTimer(this.interval, this._tick);
+  final Duration interval;
+  final void Function(Timer) _tick;
+  bool _active = true;
+  int _ticks = 0;
+
+  void fire() {
+    if (!_active) return;
+    _ticks++;
+    _tick(this);
+  }
+
+  @override
+  void cancel() => _active = false;
+  @override
+  bool get isActive => _active;
+  @override
+  int get tick => _ticks;
+}
+
 class _NoopTimer implements Timer {
   bool _active = true;
   @override
@@ -283,6 +364,7 @@ DataLayer supabaseLayer({
   required TestClock clock,
   required FakeRemoteApi remote,
   RecordingTimers? timers,
+  FakePeriodicTimers? socialTimers,
 }) {
   final layer = DataLayer.supabase(
     db: db,
@@ -292,6 +374,7 @@ DataLayer supabaseLayer({
     newId: sequentialIds('1111'),
     timer: (timers ?? RecordingTimers()).call,
     autoSync: false,
+    socialPeriodic: (socialTimers ?? FakePeriodicTimers()).call,
   );
   addTearDown(layer.dispose);
   return layer;

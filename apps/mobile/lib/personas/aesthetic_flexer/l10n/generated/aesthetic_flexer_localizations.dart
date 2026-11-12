@@ -121,6 +121,78 @@ abstract class AestheticFlexerL10n {
   /// In vi, this message translates to:
   /// **'{count} lần check-in'**
   String aesthetic_flexer_checkInsLabel(int count);
+
+  /// Tiêu đề thông số khi hành trình có chỉ số
+  ///
+  /// In vi, this message translates to:
+  /// **'{total} TỔNG · {latest} GẦN NHẤT'**
+  String aesthetic_flexer_telemetryHeader(String total, String latest);
+
+  /// Tiêu đề khi hành trình không có chỉ số
+  ///
+  /// In vi, this message translates to:
+  /// **'{active}/{total} NGÀY TẬP · 🔥 {streak} CHUỖI'**
+  String aesthetic_flexer_activeDaysHeader(int active, int total, int streak);
+
+  /// Nhãn mốc ngày 1
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY 01 · KHỞI ĐỘNG'**
+  String get aesthetic_flexer_milestoneStart;
+
+  /// Nhãn mốc ngày 7, 14, 21...
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} ★ CỘT MỐC'**
+  String aesthetic_flexer_milestoneStar(String day);
+
+  /// Nhãn mốc hôm nay
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · HÔM NAY'**
+  String aesthetic_flexer_milestoneToday(String day);
+
+  /// Nhãn ngày thường
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String aesthetic_flexer_milestoneDay(String day);
+
+  /// Kiểu lớp phủ Bold HUD
+  ///
+  /// In vi, this message translates to:
+  /// **'Bold HUD'**
+  String get aesthetic_flexer_styleBoldHud;
+
+  /// Kiểu lớp phủ Minimal Stamp
+  ///
+  /// In vi, this message translates to:
+  /// **'Minimal Stamp'**
+  String get aesthetic_flexer_styleMinimalStamp;
+
+  /// Kiểu lớp phủ Film Strip
+  ///
+  /// In vi, this message translates to:
+  /// **'Film Strip'**
+  String get aesthetic_flexer_styleFilmStrip;
+
+  /// Nhãn số ngày đã tập trên thiệp Story
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} NGÀY ĐÃ TẬP'**
+  String aesthetic_flexer_daysActiveBadge(int count);
+
+  /// Nút chia sẻ thiệp Story
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ lên Story'**
+  String get aesthetic_flexer_shareStoryButton;
+
+  /// Ô chờ khi chưa có ảnh
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có ảnh tập'**
+  String get aesthetic_flexer_waitingPhoto;
 }
 
 class _AestheticFlexerL10nDelegate

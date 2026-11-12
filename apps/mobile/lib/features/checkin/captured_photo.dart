@@ -6,6 +6,7 @@ class CapturedPhoto {
     required this.path,
     required this.capturedAt,
     this.fromLibrary = false,
+    this.initialMetricValue,
   });
 
   /// Journey selected in the capture screen's chip row.
@@ -20,4 +21,7 @@ class CapturedPhoto {
   /// Picked from the photo library (FR-C3): labelled "from library" and
   /// stored as `CheckInDraft.fromLibrary`.
   final bool fromLibrary;
+
+  /// Optional metric value pre-selected on the camera HUD (e.g. Q2 slider).
+  final double? initialMetricValue;
 }

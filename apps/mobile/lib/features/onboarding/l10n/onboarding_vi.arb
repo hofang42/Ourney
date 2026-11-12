@@ -2,58 +2,99 @@
   "@@locale": "vi",
   "onboarding_title": "Chào mừng đến Ourney",
   "@onboarding_title": {
-    "description": "Eyebrow on the first onboarding page (also the feature title)."
-  },
-  "onboarding_start": "Bắt đầu",
-  "@onboarding_start": {
-    "description": "Button on the last onboarding page that finishes onboarding."
+    "description": "Feature title / app welcome (used in tests and accessibility)."
   },
   "onboarding_next": "Tiếp tục",
   "@onboarding_next": {
-    "description": "Button that moves to the next onboarding page."
+    "description": "Button that moves to the next onboarding page (and finishes on the last)."
   },
   "onboarding_skip": "Bỏ qua",
   "@onboarding_skip": {
     "description": "Top-right button that finishes onboarding immediately."
   },
-  "onboarding_valueTitle": "Mỗi ngày một tấm. Thấy rõ mình tiến bộ.",
-  "@onboarding_valueTitle": {
-    "description": "Page 1 (value proposition) headline."
+  "onboarding_languageSwitch": "English",
+  "@onboarding_languageSwitch": {
+    "description": "Chip on page 1 that switches the app language; shows the OTHER language's name."
   },
-  "onboarding_valueBody": "Ourney biến thói quen nhỏ thành một hành trình: giảm cân, học tiếng Anh, tập luyện hay một chuyến đi.",
-  "@onboarding_valueBody": {
+  "onboarding_languageSwitchHint": "Đổi ngôn ngữ",
+  "@onboarding_languageSwitchHint": {
+    "description": "Screen reader hint of the language chip."
+  },
+  "onboarding_page1Title": "Từng tấm ảnh. Cả một câu chuyện.",
+  "@onboarding_page1Title": {
+    "description": "Page 1 headline."
+  },
+  "onboarding_page1Body": "Ghi lại hôm nay để thấy câu chuyện lớn dần.",
+  "@onboarding_page1Body": {
     "description": "Page 1 body."
   },
-  "onboarding_howTitle": "Check-in chỉ mất 5 giây",
-  "@onboarding_howTitle": {
-    "description": "Page 2 (how check-in works) headline."
+  "onboarding_page2Title": "Hành trình nào cũng được. Một mình, cùng nhóm, hay cùng người thương.",
+  "@onboarding_page2Title": {
+    "description": "Page 2 headline."
   },
-  "onboarding_howStep1": "Mở app là chụp ngay",
-  "@onboarding_howStep1": {
-    "description": "Page 2, step 1."
+  "onboarding_page2Body": "Chọn cách đồng hành phù hợp với bạn.",
+  "@onboarding_page2Body": {
+    "description": "Page 2 body."
   },
-  "onboarding_howStep2": "Gắn ảnh vào hành trình, thêm ghi chú hoặc số đo",
-  "@onboarding_howStep2": {
-    "description": "Page 2, step 2."
-  },
-  "onboarding_howStep3": "Giữ chuỗi ngày và rủ bạn bè cùng làm",
-  "@onboarding_howStep3": {
-    "description": "Page 2, step 3."
-  },
-  "onboarding_readyTitle": "Sẵn sàng chưa?",
-  "@onboarding_readyTitle": {
+  "onboarding_page3Title": "Biến hành trình thành thứ đáng để chia sẻ.",
+  "@onboarding_page3Title": {
     "description": "Page 3 headline."
   },
-  "onboarding_readyBody": "Ourney chỉ xin quyền camera và thông báo đúng lúc cần, không làm phiền bạn ngay bây giờ.",
-  "@onboarding_readyBody": {
-    "description": "Page 3 body: permissions are asked in context (FR-A3)."
+  "onboarding_page3Body": "Tạo nên những bản tổng kết bạn muốn giữ mãi.",
+  "@onboarding_page3Body": {
+    "description": "Page 3 body."
+  },
+  "onboarding_recapTitle": "30 ngày yên tĩnh",
+  "@onboarding_recapTitle": {
+    "description": "Title on the sample recap card in the page 3 illustration."
+  },
+  "onboarding_recapSubtitle": "Đọc sách mỗi ngày · Tháng 10",
+  "@onboarding_recapSubtitle": {
+    "description": "Subtitle on the sample recap card."
+  },
+  "onboarding_recapShare": "Đáng để chia sẻ",
+  "@onboarding_recapShare": {
+    "description": "Label on the sample story sticker in the page 3 illustration."
   },
   "onboarding_pageSemantics": "Trang {current} trên {total}",
   "@onboarding_pageSemantics": {
     "description": "Screen reader label of the page indicator.",
     "placeholders": {
-      "current": {"type": "int"},
-      "total": {"type": "int"}
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
+  },
+  "onboarding_cameraTitle": "Cho phép dùng camera",
+  "@onboarding_cameraTitle": {
+    "description": "Title of the camera permission sheet."
+  },
+  "onboarding_cameraBody": "Ourney cần camera để chụp ảnh hôm nay.",
+  "@onboarding_cameraBody": {
+    "description": "Body of the camera permission sheet."
+  },
+  "onboarding_cameraAllow": "Cho phép camera",
+  "@onboarding_cameraAllow": {
+    "description": "Primary button of the camera permission sheet."
+  },
+  "onboarding_nudgeTitle": "Nhắc bạn lúc {time} ngày mai nhé?",
+  "@onboarding_nudgeTitle": {
+    "description": "Title of the notification permission sheet.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "onboarding_nudgeAllow": "Bật nhắc nhở",
+  "@onboarding_nudgeAllow": {
+    "description": "Primary button of the notification sheet."
+  },
+  "onboarding_notNow": "Để sau",
+  "@onboarding_notNow": {
+    "description": "Secondary button of the permission sheets."
   }
 }

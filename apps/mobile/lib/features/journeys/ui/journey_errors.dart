@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../l10n/generated/journeys_localizations.dart';
 
@@ -24,34 +25,57 @@ String journeyErrorMessage(BuildContext context, Object error) {
   };
 }
 
-void showJourneySnack(BuildContext context, String message) {
-  ScaffoldMessenger.maybeOf(context)
-    ?..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
-}
+/// Journey screens pin their primary button to the bottom: lift the toast
+/// above it so it never covers the action.
+void showJourneySnack(BuildContext context, String message) =>
+    showUiToast(context, message, bottomOffset: 110);
 
 /// FR-B3 friendly block shown before the create flow when 3 journeys run.
 Future<void> showJourneyLimitDialog(BuildContext context) {
   final l10n = JourneysL10n.of(context);
   final app = AppLocalizations.of(context);
-  return showDialog<void>(
+  return showUiSheet<void>(
     context: context,
-    builder: (context) => AlertDialog(
-      key: const ValueKey('journeys-limit-dialog'),
-      icon: const Icon(Icons.local_fire_department_rounded),
-      title: Text(l10n.journeys_limitTitle),
-      content: SingleChildScrollView(child: Text(l10n.journeys_limitMessage)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(app.common_ok),
-        ),
-      ],
-    ),
+    builder: (context) {
+      final ui = context.ui;
+      return Column(
+        key: const ValueKey('journeys-limit-dialog'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Icon(
+              Icons.local_fire_department_rounded,
+              size: 36,
+              color: ui.flame,
+            ),
+          ),
+          const SizedBox(height: UiSpace.md),
+          Semantics(
+            header: true,
+            child: Text(
+              l10n.journeys_limitTitle,
+              textAlign: TextAlign.center,
+              style: UiText.h2(color: ui.ink),
+            ),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Text(
+            l10n.journeys_limitMessage,
+            textAlign: TextAlign.center,
+            style: UiText.muted(color: ui.inkMuted),
+          ),
+          const SizedBox(height: UiSpace.xxl),
+          UiButton(
+            label: app.common_ok,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+    },
   );
 }
 
-/// Destructive confirmation (end / delete). Resolves to true on confirm.
+/// Confirmation (end / delete). Resolves to true on confirm.
 Future<bool> confirmJourneyAction(
   BuildContext context, {
   required String title,
@@ -60,28 +84,35 @@ Future<bool> confirmJourneyAction(
   bool destructive = false,
 }) async {
   final app = AppLocalizations.of(context);
-  final result = await showDialog<bool>(
+  final result = await showUiSheet<bool>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text(title),
-      content: SingleChildScrollView(child: Text(message)),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: Text(app.common_cancel),
-        ),
-        TextButton(
-          key: const ValueKey('journeys-confirm'),
-          style: destructive
-              ? TextButton.styleFrom(
-                  foregroundColor: Theme.of(context).colorScheme.error,
-                )
-              : null,
-          onPressed: () => Navigator.of(context).pop(true),
-          child: Text(confirmLabel),
-        ),
-      ],
-    ),
+    builder: (context) {
+      final ui = context.ui;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(title, style: UiText.h2(color: ui.ink)),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          Text(message, style: UiText.muted(color: ui.inkMuted)),
+          const SizedBox(height: UiSpace.xxl),
+          UiButton(
+            key: const ValueKey('journeys-confirm'),
+            label: confirmLabel,
+            accent: destructive ? ui.danger : null,
+            onAccent: destructive ? Colors.white : null,
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.secondary(
+            label: app.common_cancel,
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+        ],
+      );
+    },
   );
   return result ?? false;
 }

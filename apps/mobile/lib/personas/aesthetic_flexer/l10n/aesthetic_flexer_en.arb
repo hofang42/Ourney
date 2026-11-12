@@ -1,34 +1,19 @@
 {
   "@@locale": "en",
   "aesthetic_flexer_name": "Aesthetic Flexer",
-  "@aesthetic_flexer_name": {
-    "description": "Persona name shown in the screen label"
-  },
   "aesthetic_flexer_dayLabel": "Day {day}",
-  "@aesthetic_flexer_dayLabel": {
-    "description": "Ngày thứ N của hành trình",
-    "placeholders": {
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "aesthetic_flexer_streakLabel": "{streak}-day streak",
-  "@aesthetic_flexer_streakLabel": {
-    "description": "Chuỗi ngày liên tiếp",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
-  },
   "aesthetic_flexer_checkInsLabel": "{count} check-ins",
-  "@aesthetic_flexer_checkInsLabel": {
-    "description": "Số lần check-in",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  }
+  "aesthetic_flexer_telemetryHeader": "{total} TOTAL · {latest} LATEST",
+  "aesthetic_flexer_activeDaysHeader": "{active}/{total} DAYS ACTIVE · 🔥 {streak} STREAK",
+  "aesthetic_flexer_milestoneStart": "DAY 01 · START",
+  "aesthetic_flexer_milestoneStar": "DAY {day} ★ MILESTONE",
+  "aesthetic_flexer_milestoneToday": "DAY {day} · TODAY",
+  "aesthetic_flexer_milestoneDay": "DAY {day}",
+  "aesthetic_flexer_styleBoldHud": "Bold HUD",
+  "aesthetic_flexer_styleMinimalStamp": "Minimal Stamp",
+  "aesthetic_flexer_styleFilmStrip": "Film Strip",
+  "aesthetic_flexer_daysActiveBadge": "{count} DAYS ACTIVE",
+  "aesthetic_flexer_shareStoryButton": "Share to Story",
+  "aesthetic_flexer_waitingPhoto": "No workout photo"
 }

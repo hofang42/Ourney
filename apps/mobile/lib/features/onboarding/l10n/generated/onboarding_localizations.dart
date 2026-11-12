@@ -98,19 +98,13 @@ abstract class OnboardingL10n {
     Locale('vi'),
   ];
 
-  /// Eyebrow on the first onboarding page (also the feature title).
+  /// Feature title / app welcome (used in tests and accessibility).
   ///
   /// In vi, this message translates to:
   /// **'Chào mừng đến Ourney'**
   String get onboarding_title;
 
-  /// Button on the last onboarding page that finishes onboarding.
-  ///
-  /// In vi, this message translates to:
-  /// **'Bắt đầu'**
-  String get onboarding_start;
-
-  /// Button that moves to the next onboarding page.
+  /// Button that moves to the next onboarding page (and finishes on the last).
   ///
   /// In vi, this message translates to:
   /// **'Tiếp tục'**
@@ -122,59 +116,113 @@ abstract class OnboardingL10n {
   /// **'Bỏ qua'**
   String get onboarding_skip;
 
-  /// Page 1 (value proposition) headline.
+  /// Chip on page 1 that switches the app language; shows the OTHER language's name.
   ///
   /// In vi, this message translates to:
-  /// **'Mỗi ngày một tấm. Thấy rõ mình tiến bộ.'**
-  String get onboarding_valueTitle;
+  /// **'English'**
+  String get onboarding_languageSwitch;
+
+  /// Screen reader hint of the language chip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi ngôn ngữ'**
+  String get onboarding_languageSwitchHint;
+
+  /// Page 1 headline.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từng tấm ảnh. Cả một câu chuyện.'**
+  String get onboarding_page1Title;
 
   /// Page 1 body.
   ///
   /// In vi, this message translates to:
-  /// **'Ourney biến thói quen nhỏ thành một hành trình: giảm cân, học tiếng Anh, tập luyện hay một chuyến đi.'**
-  String get onboarding_valueBody;
+  /// **'Ghi lại hôm nay để thấy câu chuyện lớn dần.'**
+  String get onboarding_page1Body;
 
-  /// Page 2 (how check-in works) headline.
+  /// Page 2 headline.
   ///
   /// In vi, this message translates to:
-  /// **'Check-in chỉ mất 5 giây'**
-  String get onboarding_howTitle;
+  /// **'Hành trình nào cũng được. Một mình, cùng nhóm, hay cùng người thương.'**
+  String get onboarding_page2Title;
 
-  /// Page 2, step 1.
+  /// Page 2 body.
   ///
   /// In vi, this message translates to:
-  /// **'Mở app là chụp ngay'**
-  String get onboarding_howStep1;
-
-  /// Page 2, step 2.
-  ///
-  /// In vi, this message translates to:
-  /// **'Gắn ảnh vào hành trình, thêm ghi chú hoặc số đo'**
-  String get onboarding_howStep2;
-
-  /// Page 2, step 3.
-  ///
-  /// In vi, this message translates to:
-  /// **'Giữ chuỗi ngày và rủ bạn bè cùng làm'**
-  String get onboarding_howStep3;
+  /// **'Chọn cách đồng hành phù hợp với bạn.'**
+  String get onboarding_page2Body;
 
   /// Page 3 headline.
   ///
   /// In vi, this message translates to:
-  /// **'Sẵn sàng chưa?'**
-  String get onboarding_readyTitle;
+  /// **'Biến hành trình thành thứ đáng để chia sẻ.'**
+  String get onboarding_page3Title;
 
-  /// Page 3 body: permissions are asked in context (FR-A3).
+  /// Page 3 body.
   ///
   /// In vi, this message translates to:
-  /// **'Ourney chỉ xin quyền camera và thông báo đúng lúc cần, không làm phiền bạn ngay bây giờ.'**
-  String get onboarding_readyBody;
+  /// **'Tạo nên những bản tổng kết bạn muốn giữ mãi.'**
+  String get onboarding_page3Body;
+
+  /// Title on the sample recap card in the page 3 illustration.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày yên tĩnh'**
+  String get onboarding_recapTitle;
+
+  /// Subtitle on the sample recap card.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đọc sách mỗi ngày · Tháng 10'**
+  String get onboarding_recapSubtitle;
+
+  /// Label on the sample story sticker in the page 3 illustration.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đáng để chia sẻ'**
+  String get onboarding_recapShare;
 
   /// Screen reader label of the page indicator.
   ///
   /// In vi, this message translates to:
   /// **'Trang {current} trên {total}'**
   String onboarding_pageSemantics(int current, int total);
+
+  /// Title of the camera permission sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cho phép dùng camera'**
+  String get onboarding_cameraTitle;
+
+  /// Body of the camera permission sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney cần camera để chụp ảnh hôm nay.'**
+  String get onboarding_cameraBody;
+
+  /// Primary button of the camera permission sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cho phép camera'**
+  String get onboarding_cameraAllow;
+
+  /// Title of the notification permission sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc bạn lúc {time} ngày mai nhé?'**
+  String onboarding_nudgeTitle(String time);
+
+  /// Primary button of the notification sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật nhắc nhở'**
+  String get onboarding_nudgeAllow;
+
+  /// Secondary button of the permission sheets.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau'**
+  String get onboarding_notNow;
 }
 
 class _OnboardingL10nDelegate extends LocalizationsDelegate<OnboardingL10n> {

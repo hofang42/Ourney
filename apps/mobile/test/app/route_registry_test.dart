@@ -43,6 +43,8 @@ void main() {
     'share_card',
     'safety',
     'reminders',
+    'social',
+    'sharing',
   ];
 
   test('every feature folder is registered with route prefixes', () {

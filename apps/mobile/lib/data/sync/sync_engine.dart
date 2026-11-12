@@ -355,14 +355,17 @@ class SyncEngine {
         await store.applyMembership(m, me: me);
       }
       final live = ids.toSet();
-      final stale =
-          await (db.select(db.checkIns)..where(
-                (t) =>
-                    t.journeyId.equals(journeyId) &
-                    t.uploaded.equals(true) &
-                    t.id.isNotIn(live),
-              ))
-              .get();
+      // PostgREST caps a response at 1000 rows: a capped list is not the
+      // whole journey, so it must not decide what was deleted remotely.
+      final stale = checkIns.length >= pullPageSize
+          ? const <CheckInRow>[]
+          : await (db.select(db.checkIns)..where(
+                  (t) =>
+                      t.journeyId.equals(journeyId) &
+                      t.uploaded.equals(true) &
+                      t.id.isNotIn(live),
+                ))
+                .get();
       await store.deleteCheckIns(stale);
       for (final c in checkIns) {
         await store.applyCheckIn(c, pending);

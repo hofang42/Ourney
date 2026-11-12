@@ -97,4 +97,43 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_done => 'Done';
+
+  @override
+  String get checkin_posted => 'Moment posted';
+
+  @override
+  String get checkin_chainKept => 'Chain kept.';
+
+  @override
+  String checkin_daysUnit(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days',
+      one: 'day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get checkin_retake => 'Retake';
+
+  @override
+  String get checkin_privacyPrivate => 'Only you';
+
+  @override
+  String get checkin_privacyCouple => 'Couple';
+
+  @override
+  String get checkin_privacySquad => 'Squad';
+
+  @override
+  String checkin_dayStamp(int day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String checkin_calendarSemantics(int days) {
+    return 'Calendar of the last $days days, today has a photo';
+  }
 }

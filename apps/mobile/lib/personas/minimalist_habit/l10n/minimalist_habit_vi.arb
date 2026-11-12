@@ -30,5 +30,71 @@
         "type": "int"
       }
     }
+  },
+  "minimalist_habit_monthStreakHeader": "THÁNG {month} · CHUỖI {streak} NGÀY",
+  "@minimalist_habit_monthStreakHeader": {
+    "description": "Tiêu đề lịch chuỗi ngày của phong cách 6",
+    "placeholders": {
+      "month": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_cameraPill": "{title} · NGÀY {day}",
+  "@minimalist_habit_cameraPill": {
+    "description": "Nhãn duy nhất trên màn chụp phong cách 6",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_quickSnapHint": "1 chạm · Không cần gõ chữ",
+  "@minimalist_habit_quickSnapHint": {
+    "description": "Nhãn phụ tối giản dưới khung ngắm"
+  },
+  "minimalist_habit_summaryCompleted": "{done} / {total} NGÀY HOÀN THÀNH",
+  "@minimalist_habit_summaryCompleted": {
+    "description": "Dòng tổng kết khi hành trình có thời hạn",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_summaryOpen": "{done} NGÀY HOÀN THÀNH",
+  "@minimalist_habit_summaryOpen": {
+    "description": "Dòng tổng kết khi hành trình không giới hạn ngày",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_summaryConsistency": "{percent}% ĐỀU ĐẶN",
+  "@minimalist_habit_summaryConsistency": {
+    "description": "Phần trăm đều đặn trên thiệp tối giản",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "minimalist_habit_exportCardButton": "Xuất thiệp tối giản",
+  "@minimalist_habit_exportCardButton": {
+    "description": "Nút xuất thiệp tối giản"
+  },
+  "minimalist_habit_noPhotoYet": "Chưa có ảnh",
+  "@minimalist_habit_noPhotoYet": {
+    "description": "Ô chờ khi chưa có ảnh"
   }
 }

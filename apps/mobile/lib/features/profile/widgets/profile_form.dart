@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,16 +7,13 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/chunky_button.dart';
+import '../../../ui/ui.dart';
 import '../avatar_picker.dart';
 import '../l10n/generated/profile_localizations.dart';
 import '../profile_providers.dart';
-import 'inline_error.dart';
-import 'profile_avatar.dart';
 
-/// Username + display name + optional avatar (FR-A2). Used by profile setup
-/// (after the first sign-in) and by "edit profile".
+/// Username + display name + optional avatar (FR-A2) for "edit profile".
+/// (First-sign-in setup has its own screen, `ProfileSetupScreen`.)
 ///
 /// Saving calls `ProfileRepository.upsertMe` and then, if a new photo was
 /// picked, `ProfileRepository.setAvatar` (JPEG bytes). The username format is
@@ -104,27 +103,27 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
 
   Future<void> _pickAvatar() async {
     final l10n = ProfileL10n.of(context);
-    final source = await showModalBottomSheet<AvatarSource>(
+    final source = await showUiSheet<AvatarSource>(
       context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const ValueKey('profile-avatar-gallery'),
-              leading: const Icon(Icons.photo_library_rounded),
-              title: Text(l10n.profile_avatarFromGallery),
-              onTap: () => Navigator.of(context).pop(AvatarSource.gallery),
-            ),
-            ListTile(
-              key: const ValueKey('profile-avatar-camera'),
-              leading: const Icon(Icons.photo_camera_rounded),
-              title: Text(l10n.profile_avatarFromCamera),
-              onTap: () => Navigator.of(context).pop(AvatarSource.camera),
-            ),
-          ],
-        ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          UiRow(
+            key: const ValueKey('profile-avatar-gallery'),
+            leading: const Icon(Icons.photo_library_outlined),
+            title: l10n.profile_avatarFromGallery,
+            showChevron: false,
+            onPressed: () => Navigator.of(context).pop(AvatarSource.gallery),
+          ),
+          UiRow(
+            key: const ValueKey('profile-avatar-camera'),
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: l10n.profile_avatarFromCamera,
+            showChevron: false,
+            divider: false,
+            onPressed: () => Navigator.of(context).pop(AvatarSource.camera),
+          ),
+        ],
       ),
     );
     if (source == null || !mounted) return;
@@ -216,12 +215,20 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = ProfileL10n.of(context);
-    final c = OurneyColors.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final name = _displayName.text.trim().isEmpty
         ? (_username.text.isEmpty ? '?' : _username.text)
         : _displayName.text.trim();
     final hasAvatar = _picked != null || widget.initial?.avatarPath != null;
+    final storagePath = widget.initial?.avatarPath;
+    final storedFile = _picked == null && storagePath != null
+        ? ref.watch(avatarFileProvider(storagePath)).value
+        : null;
+    final ImageProvider? image = _picked != null
+        ? MemoryImage(_picked!)
+        : storedFile != null
+        ? FileImage(File(storedFile))
+        : null;
     final errorText = switch (_error) {
       _FormError.save => l10n.profile_saveError,
       _FormError.offline => l10n.profile_offlineError,
@@ -234,110 +241,69 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
-            child: Column(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    ProfileAvatar(
-                      name: name,
-                      storagePath: widget.initial?.avatarPath,
-                      bytes: _picked,
-                      size: 112,
-                    ),
-                    Positioned(
-                      right: -4,
-                      bottom: -4,
-                      child: ExcludeSemantics(
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: c.accent,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: c.bg, width: 3),
-                          ),
-                          child: const Icon(
-                            Icons.photo_camera_rounded,
-                            size: 20,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: OurneySpacing.sm),
-                TextButton(
-                  key: const ValueKey('profile-avatar-pick'),
-                  onPressed: _saving ? null : _pickAvatar,
-                  child: Text(
-                    hasAvatar
-                        ? l10n.profile_avatarChange
-                        : l10n.profile_avatarAdd,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                if (!hasAvatar)
-                  Text(
-                    l10n.profile_avatarOptional,
-                    style: text.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-              ],
+            child: UiAvatarPicker(
+              key: const ValueKey('profile-avatar-pick'),
+              name: name,
+              label: hasAvatar
+                  ? l10n.profile_avatarChange
+                  : l10n.profile_avatarAdd,
+              image: image,
+              colorIndex: UiAvatar.indexFor(name),
+              onPressed: _saving ? null : _pickAvatar,
             ),
           ),
-          const SizedBox(height: OurneySpacing.xl),
-          TextField(
-            key: const ValueKey('profile-username'),
+          if (!hasAvatar)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                l10n.profile_avatarOptional,
+                textAlign: TextAlign.center,
+                style: UiText.body(size: 12, color: ui.inkMuted),
+              ),
+            ),
+          const SizedBox(height: UiSpace.xxl),
+          UiTextField(
+            fieldKey: const ValueKey('profile-display-name'),
+            label: l10n.profile_displayNameLabel,
+            controller: _displayName,
+            enabled: !_saving,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.name],
+            error: _displayNameError(l10n),
+            onChanged: (_) => setState(() => _edited = true),
+          ),
+          const SizedBox(height: 18),
+          UiTextField(
+            fieldKey: const ValueKey('profile-username'),
+            label: l10n.profile_usernameLabel,
             controller: _username,
             enabled: !_saving,
             autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.next,
+            prefixText: '@',
+            textInputAction: TextInputAction.done,
             autofillHints: const [AutofillHints.newUsername],
             inputFormatters: [
               _LowerCaseFormatter(),
               LengthLimitingTextInputFormatter(usernameMax + 5),
             ],
-            onChanged: (_) => setState(() => _edited = true),
-            decoration: InputDecoration(
-              labelText: l10n.profile_usernameLabel,
-              prefixText: '@',
-              helperText: l10n.profile_usernameHelper,
-              helperMaxLines: 3,
-              errorText: _usernameError(l10n),
-              errorMaxLines: 3,
-            ),
-          ),
-          const SizedBox(height: OurneySpacing.lg),
-          TextField(
-            key: const ValueKey('profile-display-name'),
-            controller: _displayName,
-            enabled: !_saving,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.done,
-            autofillHints: const [AutofillHints.name],
+            helper: l10n.profile_usernameHelper,
+            error: _usernameError(l10n),
             onChanged: (_) => setState(() => _edited = true),
             onSubmitted: (_) => _saving ? null : _save(),
-            decoration: InputDecoration(
-              labelText: l10n.profile_displayNameLabel,
-              errorText: _displayNameError(l10n),
-              errorMaxLines: 3,
-            ),
           ),
           if (errorText != null) ...[
-            const SizedBox(height: OurneySpacing.lg),
-            InlineError(
+            const SizedBox(height: UiSpace.lg),
+            UiInlineError(
               key: const ValueKey('profile-form-error'),
               message: errorText,
             ),
           ],
-          const SizedBox(height: OurneySpacing.xl),
-          ChunkyButton(
+          const SizedBox(height: UiSpace.xxl),
+          UiButton(
             key: const ValueKey('profile-save'),
             label: _saving ? l10n.profile_saving : widget.submitLabel,
-            icon: _saving ? null : Icons.check_rounded,
+            loading: _saving,
             onPressed: _saving ? null : _save,
           ),
         ],

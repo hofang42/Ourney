@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/journey_clock.dart' as data;
-import 'package:ourney/features/checkin/journey_clock.dart';
-import 'package:ourney/features/groups/domain/group_today.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/journeys/domain/journey_time.dart';
 import 'package:ourney/features/reminders/domain/reminder_plan.dart';
 import 'package:ourney/shared/time_zones.dart';
@@ -85,11 +84,11 @@ void main() {
     });
 
     test('check-in clock', () {
-      expect(TzJourneyClock().localDate(t, 'Asia/Saigon'), next);
+      expect(TzCheckinClock().localDate(t, 'Asia/Saigon'), next);
     });
 
     test('groups', () {
-      expect(groupLocalDate('Asia/Saigon', t), next);
+      expect(journeyLocalDate('Asia/Saigon', t), next);
     });
 
     test('reminders', () {

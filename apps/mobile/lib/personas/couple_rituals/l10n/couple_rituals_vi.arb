@@ -30,5 +30,69 @@
         "type": "int"
       }
     }
+  },
+  "couple_rituals_meDefault": "Bạn",
+  "@couple_rituals_meDefault": {
+    "description": "Tên mặc định của người dùng hiện tại"
+  },
+  "couple_rituals_partnerDefault": "Người đồng hành",
+  "@couple_rituals_partnerDefault": {
+    "description": "Tên mặc định của thành viên còn lại"
+  },
+  "couple_rituals_waitingPartner": "Đang chờ {name}",
+  "@couple_rituals_waitingPartner": {
+    "description": "Ô chờ khi người kia chưa chụp hôm nay",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "couple_rituals_completePairHint": "Chụp nửa của bạn · Ghép trọn đôi",
+  "@couple_rituals_completePairHint": {
+    "description": "Nhãn hướng dẫn trên nửa khung ngắm của màn chụp đôi"
+  },
+  "couple_rituals_partnerDoneBadge": "{name} · Đã chụp",
+  "@couple_rituals_partnerDoneBadge": {
+    "description": "Nhãn trên nửa ảnh đã chụp của người kia",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "couple_rituals_mosaicTitle": "{days} NGÀY · {moments} KHOẢNH KHẮC",
+  "@couple_rituals_mosaicTitle": {
+    "description": "Tiêu đề tấm poster ghép ảnh của hai người",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "moments": {
+        "type": "int"
+      }
+    }
+  },
+  "couple_rituals_shareStoryButton": "Chia sẻ câu chuyện của hai đứa",
+  "@couple_rituals_shareStoryButton": {
+    "description": "Nút chia sẻ thiệp cặp đôi"
+  },
+  "couple_rituals_dayHeader": "NGÀY {day}",
+  "@couple_rituals_dayHeader": {
+    "description": "Nhãn ngày trên trục đôi",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "couple_rituals_todayHeader": "NGÀY {day} · HÔM NAY",
+  "@couple_rituals_todayHeader": {
+    "description": "Nhãn ngày hôm nay trên trục đôi",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
   }
 }

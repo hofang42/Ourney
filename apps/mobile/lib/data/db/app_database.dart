@@ -66,6 +66,9 @@ class Journeys extends Table {
   IntColumn get maxMembers => integer().withDefault(const Constant(10))();
   TextColumn get publicToken => text().nullable()();
 
+  /// `journeys.origin` wire value (v1.3, schema version 2).
+  TextColumn get origin => text().withDefault(const Constant('live'))();
+
   /// Client-only "archive" (JourneyRepository.archive): hidden from the list.
   BoolColumn get localArchived =>
       boolean().withDefault(const Constant(false))();
@@ -186,7 +189,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -195,6 +198,12 @@ class AppDatabase extends _$AppDatabase {
       await customStatement(
         'CREATE INDEX check_ins_journey_idx ON check_ins (journey_id, local_date)',
       );
+    },
+    onUpgrade: (m, from, to) async {
+      if (from < 2) {
+        // v1.3: journeys.origin. Rows cached before it are all lived.
+        await m.addColumn(journeys, journeys.origin);
+      }
     },
   );
 

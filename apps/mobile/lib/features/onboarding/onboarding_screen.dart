@@ -3,18 +3,21 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/locale_override.dart';
 import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
-import '../../app/theme/tokens.dart';
-import '../../shared/chunky_button.dart';
+import '../../ui/ui.dart';
 import 'l10n/generated/onboarding_localizations.dart';
+import 'onboarding_art.dart';
 
-/// FR-A3 onboarding: three pages (value prop, how check-in works, ready).
+/// First-run onboarding (App.tsx `Onboarding`): three pages with an
+/// illustration, headline, body, page dots and one "Continue" button.
+/// Page 1 carries the language chip; every page has "Skip".
 ///
 /// No permission prompts here: camera and notification access are requested
 /// in context by the camera and reminders features. Finishing (or skipping)
-/// calls `onboardingCompleteProvider.notifier.complete()`; the router redirect
-/// then moves on by itself.
+/// calls `onboardingCompleteProvider.notifier.complete()`; the router
+/// redirect then moves on by itself.
 class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -51,139 +54,124 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } else {
       _controller.animateToPage(
         target,
-        duration: OurneyDurations.navigation,
+        duration: const Duration(milliseconds: 360),
         curve: Curves.easeOutCubic,
       );
     }
   }
 
+  void _switchLanguage() {
+    final current = Localizations.localeOf(context).languageCode;
+    unawaited(
+      ref
+          .read(localeOverrideProvider.notifier)
+          .set(Locale(current == 'vi' ? 'en' : 'vi')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = OnboardingL10n.of(context);
-    final c = OurneyColors.of(context);
-    final pages = [
-      _OnboardingPage(
-        key: const ValueKey('onboarding-page-0'),
-        eyebrow: l10n.onboarding_title,
-        icon: Icons.photo_camera_rounded,
-        gradient: OurneyColors.heroGradient,
-        title: l10n.onboarding_valueTitle,
-        body: Text(
-          l10n.onboarding_valueBody,
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: c.inkMuted),
-        ),
-      ),
-      _OnboardingPage(
-        key: const ValueKey('onboarding-page-1'),
-        icon: Icons.bolt_rounded,
-        gradient: OurneyColors.warmGradient,
-        title: l10n.onboarding_howTitle,
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Step(
-              index: 1,
-              icon: Icons.photo_camera_outlined,
-              text: l10n.onboarding_howStep1,
-            ),
-            _Step(
-              index: 2,
-              icon: Icons.edit_note_rounded,
-              text: l10n.onboarding_howStep2,
-            ),
-            _Step(
-              index: 3,
-              icon: Icons.local_fire_department_rounded,
-              text: l10n.onboarding_howStep3,
-            ),
-          ],
-        ),
-      ),
-      _OnboardingPage(
-        key: const ValueKey('onboarding-page-2'),
-        icon: Icons.rocket_launch_rounded,
-        gradient: OurneyColors.heroGradient,
-        title: l10n.onboarding_readyTitle,
-        body: Text(
-          l10n.onboarding_readyBody,
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: c.inkMuted),
-        ),
+    final ui = context.ui;
+    final width = MediaQuery.sizeOf(context).width;
+    final gutter = UiSpace.gutter(width);
+
+    final titles = [
+      l10n.onboarding_page1Title,
+      l10n.onboarding_page2Title,
+      l10n.onboarding_page3Title,
+    ];
+    final bodies = [
+      l10n.onboarding_page1Body,
+      l10n.onboarding_page2Body,
+      l10n.onboarding_page3Body,
+    ];
+    final arts = <Widget>[
+      const OnboardingArtMemories(),
+      const OnboardingArtStyles(),
+      OnboardingArtRecap(
+        title: l10n.onboarding_recapTitle,
+        subtitle: l10n.onboarding_recapSubtitle,
+        shareLabel: l10n.onboarding_recapShare,
       ),
     ];
 
     return Scaffold(
       key: const ValueKey('onboarding-screen'),
-      backgroundColor: c.bg,
+      backgroundColor: ui.bg,
       body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(
-              height: OurneySizes.minTap + OurneySpacing.sm,
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: AnimatedOpacity(
-                  opacity: _isLast ? 0 : 1,
-                  duration: OurneyMotion.duration(context, OurneyDurations.tap),
-                  child: _isLast
-                      ? const SizedBox.shrink()
-                      : Padding(
-                          padding: const EdgeInsets.only(
-                            right: OurneySpacing.sm,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: UiSpace.maxContent(width)),
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: gutter),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (_page == 0)
+                        Flexible(
+                          child: UiChip(
+                            key: const ValueKey('onboarding-language'),
+                            icon: Icons.translate_rounded,
+                            label: l10n.onboarding_languageSwitch,
+                            semanticHint: l10n.onboarding_languageSwitchHint,
+                            onPressed: _switchLanguage,
                           ),
-                          child: TextButton(
-                            key: const ValueKey('onboarding-skip'),
-                            onPressed: _complete,
-                            child: Text(l10n.onboarding_skip),
-                          ),
-                        ),
+                        )
+                      else
+                        const SizedBox(height: UiSize.tap),
+                      UiTextAction(
+                        key: const ValueKey('onboarding-skip'),
+                        label: l10n.onboarding_skip,
+                        onPressed: _complete,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: PageView(
-                controller: _controller,
-                onPageChanged: (p) {
-                  OurneyHaptics.selection();
-                  setState(() => _page = p);
-                },
-                children: pages,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                OurneySpacing.screenMargin,
-                OurneySpacing.md,
-                OurneySpacing.screenMargin,
-                OurneySpacing.xl,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _Dots(
-                    count: OnboardingScreen.pageCount,
-                    current: _page,
-                    label: l10n.onboarding_pageSemantics(
-                      _page + 1,
-                      OnboardingScreen.pageCount,
+                Expanded(
+                  child: PageView.builder(
+                    controller: _controller,
+                    itemCount: OnboardingScreen.pageCount,
+                    onPageChanged: (p) {
+                      OurneyHaptics.selection();
+                      setState(() => _page = p);
+                    },
+                    itemBuilder: (context, i) => _OnboardingPage(
+                      key: ValueKey('onboarding-page-$i'),
+                      art: arts[i],
+                      title: titles[i],
+                      body: bodies[i],
+                      gutter: gutter,
                     ),
                   ),
-                  const SizedBox(height: OurneySpacing.xl),
-                  ChunkyButton(
-                    key: const ValueKey('onboarding-next'),
-                    label: _isLast
-                        ? l10n.onboarding_start
-                        : l10n.onboarding_next,
-                    icon: _isLast
-                        ? Icons.photo_camera_rounded
-                        : Icons.arrow_forward_rounded,
-                    onPressed: _next,
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(gutter, 6, gutter, 28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _Dots(
+                        count: OnboardingScreen.pageCount,
+                        current: _page,
+                        label: l10n.onboarding_pageSemantics(
+                          _page + 1,
+                          OnboardingScreen.pageCount,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      UiButton(
+                        key: const ValueKey('onboarding-next'),
+                        label: l10n.onboarding_next,
+                        onPressed: _next,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -192,149 +180,76 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
 class _OnboardingPage extends StatelessWidget {
   const _OnboardingPage({
-    required this.icon,
-    required this.gradient,
+    required this.art,
     required this.title,
     required this.body,
-    this.eyebrow,
+    required this.gutter,
     super.key,
   });
 
-  final IconData icon;
-  final Gradient gradient;
+  final Widget art;
   final String title;
-  final Widget body;
-  final String? eyebrow;
+  final String body;
+  final double gutter;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final c = OurneyColors.of(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: OurneySpacing.screenMargin,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ExcludeSemantics(
-            child: AspectRatio(
-              aspectRatio: 1.25,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: gradient,
-                  borderRadius: BorderRadius.circular(OurneyRadii.media),
+    final ui = context.ui;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final artHeight = (box.maxHeight * 0.5).clamp(170.0, 420.0);
+        return SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: box.maxHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  height: artHeight,
+                  width: double.infinity,
+                  child: ClipRect(
+                    // Illustrations are pictures, not text: keep them fixed
+                    // when the system text size grows.
+                    child: MediaQuery.withNoTextScaling(
+                      child: Center(child: art),
+                    ),
+                  ),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      right: -24,
-                      top: -24,
-                      child: _Blob(size: 120, color: c.sun),
-                    ),
-                    Positioned(
-                      left: -30,
-                      bottom: -30,
-                      child: _Blob(
-                        size: 140,
-                        color: Colors.white.withValues(alpha: 0.18),
-                      ),
-                    ),
-                    Center(
-                      child: Container(
-                        width: 112,
-                        height: 112,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.22),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 3),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: gutter,
+                    vertical: 8,
+                  ),
+                  child: Column(
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          title,
+                          textAlign: TextAlign.center,
+                          style: UiText.h1(size: 28, color: ui.ink),
                         ),
-                        child: Icon(icon, size: 56, color: Colors.white),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        body,
+                        textAlign: TextAlign.center,
+                        style: UiText.muted(color: ui.inkMuted, size: 14),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
-          const SizedBox(height: OurneySpacing.xl),
-          if (eyebrow != null) ...[
-            Text(
-              eyebrow!,
-              style: text.labelLarge?.copyWith(color: c.primaryDeep),
-            ),
-            const SizedBox(height: OurneySpacing.xs),
-          ],
-          Semantics(
-            header: true,
-            child: Text(title, style: text.displayMedium),
-          ),
-          const SizedBox(height: OurneySpacing.md),
-          body,
-          const SizedBox(height: OurneySpacing.lg),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _Blob extends StatelessWidget {
-  const _Blob({required this.size, required this.color});
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-  );
-}
-
-class _Step extends StatelessWidget {
-  const _Step({required this.index, required this.icon, required this.text});
-
-  final int index;
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: OurneySpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ExcludeSemantics(
-            child: Container(
-              width: OurneySizes.minTap,
-              height: OurneySizes.minTap,
-              decoration: BoxDecoration(
-                color: c.primary.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(OurneyRadii.chip),
-              ),
-              child: Icon(icon, color: c.primaryDeep),
-            ),
-          ),
-          const SizedBox(width: OurneySpacing.md),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: OurneySpacing.sm),
-              child: Text(
-                '$index. $text',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Page indicator; the active page is longer (not color-only).
+/// `.page-dots.onboarding-dots`: 5dp dots, the active one stretches to 16dp.
 class _Dots extends StatelessWidget {
   const _Dots({
     required this.count,
@@ -348,27 +263,25 @@ class _Dots extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
+    final duration = UiMotion.of(context, const Duration(milliseconds: 200));
     return Semantics(
       label: label,
-      liveRegion: true,
-      child: ExcludeSemantics(
+      excludeSemantics: true,
+      child: SizedBox(
+        height: 12,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             for (var i = 0; i < count; i++)
               AnimatedContainer(
-                duration: OurneyMotion.movement(context, OurneyDurations.tap),
-                margin: const EdgeInsets.symmetric(
-                  horizontal: OurneySpacing.xs,
-                ),
-                width: i == current ? 28 : 10,
-                height: 10,
+                duration: duration,
+                margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                width: i == current ? 16 : 5,
+                height: 5,
                 decoration: BoxDecoration(
-                  color: i == current
-                      ? c.primary
-                      : c.inkMuted.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(OurneyRadii.capsule),
+                  color: i == current ? ui.ink : ui.ink.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
           ],

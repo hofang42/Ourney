@@ -30,7 +30,7 @@ void main() {
     expect(camera.stops, greaterThanOrEqualTo(1));
     expect(camera.isReady, isFalse);
 
-    await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+    await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
     await tester.pumpAndSettle();
     expect(camera.starts, 2);
     expect(camera.isReady, isTrue);

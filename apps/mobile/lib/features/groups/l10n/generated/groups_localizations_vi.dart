@@ -269,4 +269,7 @@ class GroupsL10nVi extends GroupsL10n {
   @override
   String get groups_inviteClosed =>
       'Hành trình đã kết thúc nên không mời thêm được.';
+
+  @override
+  String get groups_eyebrow => 'Những người đồng hành';
 }

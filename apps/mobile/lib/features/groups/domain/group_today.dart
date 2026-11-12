@@ -2,12 +2,6 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../shared/time_zones.dart';
 
-/// Journey-local calendar date of [instant] in the IANA zone [timezone]
-/// (same rule as the server's `local_date`). Legacy and unknown zones are
-/// handled by [timeZoneOffsetAt], so a bad server value never crashes the UI.
-LocalDate groupLocalDate(String timezone, DateTime instant) =>
-    localDateOf(instant, timeZoneOffsetAt(timezone, instant));
-
 /// One member row of the group "Today" screen (FR-D3).
 class GroupMemberEntry {
   const GroupMemberEntry({
@@ -67,7 +61,7 @@ class GroupTodayView {
     Iterable<CheckIn> checkIns = const [],
     Membership? myMembership,
   }) {
-    final today = groupLocalDate(journey.timezone, now);
+    final today = journeyLocalDate(journey.timezone, now);
     final latest = <String, CheckIn>{};
     final myDates = <LocalDate>{};
     for (final c in checkIns) {
@@ -106,7 +100,7 @@ class GroupTodayView {
         streak = computeMemberStreak(
           journeyStart: journey.startDate,
           durationDays: journey.durationDays,
-          joinedLocalDate: groupLocalDate(
+          joinedLocalDate: journeyLocalDate(
             journey.timezone,
             myMembership.joinedAt,
           ),

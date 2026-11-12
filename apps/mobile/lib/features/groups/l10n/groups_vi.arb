@@ -202,5 +202,9 @@
   },
   "groups_qrSemantics": "Mã QR của link mời",
   "groups_noInviteCode": "Nhóm chưa có mã mời.",
-  "groups_inviteClosed": "Hành trình đã kết thúc nên không mời thêm được."
+  "groups_inviteClosed": "Hành trình đã kết thúc nên không mời thêm được.",
+  "groups_eyebrow": "Những người đồng hành",
+  "@groups_eyebrow": {
+    "description": "Eyebrow above the Squad tab title."
+  }
 }

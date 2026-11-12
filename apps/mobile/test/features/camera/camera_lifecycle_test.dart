@@ -131,7 +131,7 @@ void main() {
     expect(camera.stops, greaterThanOrEqualTo(1));
 
     // Coming back opens it again.
-    await tester.tap(find.byIcon(Icons.photo_camera_rounded));
+    await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
     await tester.pump();
     camera.gates.last.complete();
     await tester.pumpAndSettle();

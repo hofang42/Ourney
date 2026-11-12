@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../../app/theme/tokens.dart';
-import '../data/groups_providers.dart';
+import '../../../app/providers.dart';
+import '../../../ui/ui.dart';
 
 /// A member's check-in photo, resolved through `MediaStore.localFileFor`
 /// (thumbnail by default). Uses the on-device file while the caller's own
@@ -32,7 +32,7 @@ class GroupPhoto extends ConsumerWidget {
       path = local;
     } else {
       final storagePath = thumbnail ? checkIn.thumbPath : checkIn.photoPath;
-      final resolved = ref.watch(groupMediaFileProvider(storagePath));
+      final resolved = ref.watch(mediaFileProvider(storagePath));
       path = resolved.value ?? (resolved.hasError ? local : null);
     }
     final Widget image = path == null
@@ -53,10 +53,10 @@ class _PhotoFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = OurneyColors.of(context);
+    final ui = context.ui;
     return ColoredBox(
-      color: c.accent.withValues(alpha: 0.14),
-      child: Center(child: Icon(Icons.photo_rounded, color: c.inkMuted)),
+      color: ui.fill,
+      child: Center(child: Icon(Icons.photo_outlined, color: ui.inkMuted)),
     );
   }
 }
@@ -64,6 +64,6 @@ class _PhotoFallback extends StatelessWidget {
 /// Avatar image from a storage path (null while loading / missing).
 ImageProvider? groupAvatarImage(WidgetRef ref, String? avatarPath) {
   if (avatarPath == null) return null;
-  final file = ref.watch(groupMediaFileProvider(avatarPath)).value;
+  final file = ref.watch(mediaFileProvider(avatarPath)).value;
   return file == null ? null : FileImage(File(file));
 }

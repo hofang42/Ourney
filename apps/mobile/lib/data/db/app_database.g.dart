@@ -563,6 +563,16 @@ class $JourneysTable extends Journeys
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _originMeta = const VerificationMeta('origin');
+  @override
+  late final GeneratedColumn<String> origin = GeneratedColumn<String>(
+    'origin',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('live'),
+  );
   static const VerificationMeta _localArchivedMeta = const VerificationMeta(
     'localArchived',
   );
@@ -608,6 +618,7 @@ class $JourneysTable extends Journeys
     inviteCode,
     maxMembers,
     publicToken,
+    origin,
     localArchived,
     updatedAt,
   ];
@@ -743,6 +754,12 @@ class $JourneysTable extends Journeys
         ),
       );
     }
+    if (data.containsKey('origin')) {
+      context.handle(
+        _originMeta,
+        origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
+      );
+    }
     if (data.containsKey('local_archived')) {
       context.handle(
         _localArchivedMeta,
@@ -837,6 +854,10 @@ class $JourneysTable extends Journeys
         DriftSqlType.string,
         data['${effectivePrefix}public_token'],
       ),
+      origin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}origin'],
+      )!,
       localArchived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}local_archived'],
@@ -876,6 +897,9 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
   final int maxMembers;
   final String? publicToken;
 
+  /// `journeys.origin` wire value (v1.3, schema version 2).
+  final String origin;
+
   /// Client-only "archive" (JourneyRepository.archive): hidden from the list.
   final bool localArchived;
   final String? updatedAt;
@@ -897,6 +921,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     this.inviteCode,
     required this.maxMembers,
     this.publicToken,
+    required this.origin,
     required this.localArchived,
     this.updatedAt,
   });
@@ -934,6 +959,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     if (!nullToAbsent || publicToken != null) {
       map['public_token'] = Variable<String>(publicToken);
     }
+    map['origin'] = Variable<String>(origin);
     map['local_archived'] = Variable<bool>(localArchived);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<String>(updatedAt);
@@ -970,6 +996,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       publicToken: publicToken == null && nullToAbsent
           ? const Value.absent()
           : Value(publicToken),
+      origin: Value(origin),
       localArchived: Value(localArchived),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1000,6 +1027,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       inviteCode: serializer.fromJson<String?>(json['inviteCode']),
       maxMembers: serializer.fromJson<int>(json['maxMembers']),
       publicToken: serializer.fromJson<String?>(json['publicToken']),
+      origin: serializer.fromJson<String>(json['origin']),
       localArchived: serializer.fromJson<bool>(json['localArchived']),
       updatedAt: serializer.fromJson<String?>(json['updatedAt']),
     );
@@ -1025,6 +1053,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       'inviteCode': serializer.toJson<String?>(inviteCode),
       'maxMembers': serializer.toJson<int>(maxMembers),
       'publicToken': serializer.toJson<String?>(publicToken),
+      'origin': serializer.toJson<String>(origin),
       'localArchived': serializer.toJson<bool>(localArchived),
       'updatedAt': serializer.toJson<String?>(updatedAt),
     };
@@ -1048,6 +1077,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     Value<String?> inviteCode = const Value.absent(),
     int? maxMembers,
     Value<String?> publicToken = const Value.absent(),
+    String? origin,
     bool? localArchived,
     Value<String?> updatedAt = const Value.absent(),
   }) => JourneyRow(
@@ -1068,6 +1098,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     inviteCode: inviteCode.present ? inviteCode.value : this.inviteCode,
     maxMembers: maxMembers ?? this.maxMembers,
     publicToken: publicToken.present ? publicToken.value : this.publicToken,
+    origin: origin ?? this.origin,
     localArchived: localArchived ?? this.localArchived,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
@@ -1108,6 +1139,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       publicToken: data.publicToken.present
           ? data.publicToken.value
           : this.publicToken,
+      origin: data.origin.present ? data.origin.value : this.origin,
       localArchived: data.localArchived.present
           ? data.localArchived.value
           : this.localArchived,
@@ -1135,6 +1167,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           ..write('inviteCode: $inviteCode, ')
           ..write('maxMembers: $maxMembers, ')
           ..write('publicToken: $publicToken, ')
+          ..write('origin: $origin, ')
           ..write('localArchived: $localArchived, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1160,6 +1193,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     inviteCode,
     maxMembers,
     publicToken,
+    origin,
     localArchived,
     updatedAt,
   );
@@ -1184,6 +1218,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           other.inviteCode == this.inviteCode &&
           other.maxMembers == this.maxMembers &&
           other.publicToken == this.publicToken &&
+          other.origin == this.origin &&
           other.localArchived == this.localArchived &&
           other.updatedAt == this.updatedAt);
 }
@@ -1206,6 +1241,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
   final Value<String?> inviteCode;
   final Value<int> maxMembers;
   final Value<String?> publicToken;
+  final Value<String> origin;
   final Value<bool> localArchived;
   final Value<String?> updatedAt;
   final Value<int> rowid;
@@ -1227,6 +1263,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     this.inviteCode = const Value.absent(),
     this.maxMembers = const Value.absent(),
     this.publicToken = const Value.absent(),
+    this.origin = const Value.absent(),
     this.localArchived = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1249,6 +1286,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     this.inviteCode = const Value.absent(),
     this.maxMembers = const Value.absent(),
     this.publicToken = const Value.absent(),
+    this.origin = const Value.absent(),
     this.localArchived = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1280,6 +1318,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     Expression<String>? inviteCode,
     Expression<int>? maxMembers,
     Expression<String>? publicToken,
+    Expression<String>? origin,
     Expression<bool>? localArchived,
     Expression<String>? updatedAt,
     Expression<int>? rowid,
@@ -1302,6 +1341,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
       if (inviteCode != null) 'invite_code': inviteCode,
       if (maxMembers != null) 'max_members': maxMembers,
       if (publicToken != null) 'public_token': publicToken,
+      if (origin != null) 'origin': origin,
       if (localArchived != null) 'local_archived': localArchived,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1326,6 +1366,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     Value<String?>? inviteCode,
     Value<int>? maxMembers,
     Value<String?>? publicToken,
+    Value<String>? origin,
     Value<bool>? localArchived,
     Value<String?>? updatedAt,
     Value<int>? rowid,
@@ -1348,6 +1389,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
       inviteCode: inviteCode ?? this.inviteCode,
       maxMembers: maxMembers ?? this.maxMembers,
       publicToken: publicToken ?? this.publicToken,
+      origin: origin ?? this.origin,
       localArchived: localArchived ?? this.localArchived,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1410,6 +1452,9 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     if (publicToken.present) {
       map['public_token'] = Variable<String>(publicToken.value);
     }
+    if (origin.present) {
+      map['origin'] = Variable<String>(origin.value);
+    }
     if (localArchived.present) {
       map['local_archived'] = Variable<bool>(localArchived.value);
     }
@@ -1442,6 +1487,7 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
           ..write('inviteCode: $inviteCode, ')
           ..write('maxMembers: $maxMembers, ')
           ..write('publicToken: $publicToken, ')
+          ..write('origin: $origin, ')
           ..write('localArchived: $localArchived, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4304,6 +4350,7 @@ typedef $$JourneysTableCreateCompanionBuilder = JourneysCompanion Function({
   Value<String?> inviteCode,
   Value<int> maxMembers,
   Value<String?> publicToken,
+  Value<String> origin,
   Value<bool> localArchived,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -4326,6 +4373,7 @@ typedef $$JourneysTableUpdateCompanionBuilder = JourneysCompanion Function({
   Value<String?> inviteCode,
   Value<int> maxMembers,
   Value<String?> publicToken,
+  Value<String> origin,
   Value<bool> localArchived,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -4423,6 +4471,11 @@ class $$JourneysTableFilterComposer
 
   ColumnFilters<String> get publicToken => $composableBuilder(
     column: $table.publicToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get origin => $composableBuilder(
+    column: $table.origin,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4531,6 +4584,11 @@ class $$JourneysTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get origin => $composableBuilder(
+    column: $table.origin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get localArchived => $composableBuilder(
     column: $table.localArchived,
     builder: (column) => ColumnOrderings(column),
@@ -4620,6 +4678,9 @@ class $$JourneysTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get origin =>
+      $composableBuilder(column: $table.origin, builder: (column) => column);
+
   GeneratedColumn<bool> get localArchived => $composableBuilder(
     column: $table.localArchived,
     builder: (column) => column,
@@ -4677,6 +4738,7 @@ class $$JourneysTableTableManager
                 Value<String?> inviteCode = const Value.absent(),
                 Value<int> maxMembers = const Value.absent(),
                 Value<String?> publicToken = const Value.absent(),
+                Value<String> origin = const Value.absent(),
                 Value<bool> localArchived = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4698,6 +4760,7 @@ class $$JourneysTableTableManager
                 inviteCode: inviteCode,
                 maxMembers: maxMembers,
                 publicToken: publicToken,
+                origin: origin,
                 localArchived: localArchived,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -4721,6 +4784,7 @@ class $$JourneysTableTableManager
                 Value<String?> inviteCode = const Value.absent(),
                 Value<int> maxMembers = const Value.absent(),
                 Value<String?> publicToken = const Value.absent(),
+                Value<String> origin = const Value.absent(),
                 Value<bool> localArchived = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4742,6 +4806,7 @@ class $$JourneysTableTableManager
                 inviteCode: inviteCode,
                 maxMembers: maxMembers,
                 publicToken: publicToken,
+                origin: origin,
                 localArchived: localArchived,
                 updatedAt: updatedAt,
                 rowid: rowid,

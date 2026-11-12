@@ -18,7 +18,7 @@
 
 ### Ngày release
 1. [ ] Tăng version trong `apps/mobile/pubspec.yaml`: `version: X.Y.Z+N` (phần trước dấu `+` **phải khớp tag**, `N` là build number tăng dần). Làm qua PR `chore/release-vX.Y.Z`, review, squash merge vào `main`.
-2. [ ] Chờ CI trên `main` (commit vừa merge) xanh. Workflow iOS/Android trên `main` cũng nên xanh để biết build không hỏng.
+2. [ ] Chờ CI trên `main` (commit vừa merge) xanh.
 3. [ ] Trên máy admin, `git checkout main && git pull --ff-only`, rồi chạy preflight (chỉ đọc, cần `gh auth login`):
    ```bash
    bash scripts/release/preflight.sh vX.Y.Z

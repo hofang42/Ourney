@@ -17,6 +17,22 @@ upsert() {
   fi
 }
 
+# 0. Remove legacy 'main: only from develop' ruleset and legacy 'Protect main and develop' if present,
+#    and ensure 'main' is the default branch.
+gh api -X PATCH "repos/$REPO" \
+  -F default_branch=main \
+  -F delete_branch_on_merge=true -F allow_rebase_merge=false \
+  -F allow_squash_merge=true -F allow_merge_commit=true \
+  --jq '"settings: default_branch=\(.default_branch) delete_branch_on_merge=\(.delete_branch_on_merge)"'
+
+for legacy_name in "main: only from develop" "Protect main and develop"; do
+  legacy_id=$(gh api "repos/$REPO/rulesets" --jq ".[] | select(.name == \"$legacy_name\") | .id")
+  if [ -n "$legacy_id" ]; then
+    gh api -X DELETE "repos/$REPO/rulesets/$legacy_id"
+    echo "deleted legacy ruleset: $legacy_name (#$legacy_id)"
+  fi
+done
+
 # 1. main: PR + green CI (no approval required; anyone with write access can merge), no force-push, no deletion.
 upsert "Protect main" "$(cat <<EOF
 {
@@ -76,10 +92,5 @@ upsert "Protect release tags" "$(cat <<EOF
 EOF
 )"
 
-# Repo settings: delete merged branches, no rebase merges (matches allowed_merge_methods).
-gh api -X PATCH "repos/$REPO" \
-  -F delete_branch_on_merge=true -F allow_rebase_merge=false \
-  -F allow_squash_merge=true -F allow_merge_commit=true \
-  --jq '"settings: delete_branch_on_merge=\(.delete_branch_on_merge)"'
-
 gh api "repos/$REPO/rulesets" --jq '.[] | "\(.id)\t\(.target)\t\(.enforcement)\t\(.name)"'
+

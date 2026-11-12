@@ -19,6 +19,7 @@ void main() {
         'ended',
         'not_alone',
         'rate_limited',
+        'consent_required',
       ]) {
         expect(
           codeOf(PostgrestException(message: c, code: 'P0001')),
