@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/groups/ui/group_safety_hooks.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
-import 'package:ourney/shared/streak_flame.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'groups_fakes.dart';
@@ -64,22 +64,34 @@ void main() {
       expect(find.text('You · Owner'), findsOneWidget);
 
       // Ann first (done), then the others in join order: no ranking.
-      final y = {
+      final at = {
         for (final id in [me, 'u2', 'u3', 'u4'])
-          id: tester.getTopLeft(find.byKey(ValueKey('group-member-$id'))).dy,
+          id: tester.getCenter(find.byKey(ValueKey('group-member-$id'))),
       };
-      expect(y['u2']! < y[me]!, isTrue);
-      expect(y[me]! < y['u3']!, isTrue);
-      expect(y['u3']! < y['u4']!, isTrue);
+      // Reading order of the two-column wall (tiles in a row may differ by a
+      // few dp because of their tilt).
+      bool before(String a, String b) =>
+          at[a]!.dy < at[b]!.dy - 20 ||
+          ((at[a]!.dy - at[b]!.dy).abs() <= 20 && at[a]!.dx < at[b]!.dx);
+      expect(before('u2', me), isTrue);
+      expect(before(me, 'u3'), isTrue);
+      expect(before('u3', 'u4'), isTrue);
 
-      StreakFlame flame(String id) => tester.widget<StreakFlame>(
-        find.byKey(ValueKey('group-member-streak-$id')),
+      int streakOf(String id) => int.parse(
+        tester
+            .widget<Text>(
+              find.descendant(
+                of: find.byKey(ValueKey('group-member-streak-$id')),
+                matching: find.byType(Text),
+              ),
+            )
+            .data!,
       );
-      expect(flame('u2').days, 5);
+      expect(streakOf('u2'), 5);
       // Caller: computed locally from own check-ins (14th + 15th), late-join
       // aware, even though the server row says 0.
-      expect(flame(me).days, 2);
-      expect(flame('u4').days, 2);
+      expect(streakOf(me), 2);
+      expect(streakOf('u4'), 2);
 
       // Latest (older) photos for members not done today.
       expect(find.byKey(const ValueKey('group-member-photo-u3')), findsOne);
@@ -156,15 +168,15 @@ void main() {
         const ValueKey('groups-reactions-c-g1-2026-10-16'),
       );
       expect(
-        find.descendant(of: bar, matching: find.byType(InkWell)),
+        find.descendant(of: bar, matching: find.byType(UiPressable)),
         findsOneWidget,
       );
       expect(
         tester
-            .widget<InkWell>(
-              find.descendant(of: bar, matching: find.byType(InkWell)),
+            .widget<UiPressable>(
+              find.descendant(of: bar, matching: find.byType(UiPressable)),
             )
-            .onTap,
+            .onPressed,
         isNull,
       );
     });

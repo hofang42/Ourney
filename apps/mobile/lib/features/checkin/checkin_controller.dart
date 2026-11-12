@@ -5,8 +5,8 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/providers.dart';
 import 'captured_photo.dart';
+import 'checkin_clock.dart';
 import 'checkin_progress.dart';
-import 'journey_clock.dart';
 import 'photo_compressor.dart';
 
 Duration? _noRetry(int _, Object _) => null;
@@ -68,7 +68,7 @@ class CheckInPoster {
 
   final CheckInRepository repository;
   final PhotoCompressor compressor;
-  final JourneyClock clock;
+  final CheckinClock clock;
 
   /// Cleans up draft files after a submit; null keeps them (tests).
   final DraftFiles? drafts;
@@ -176,7 +176,7 @@ final checkInPosterProvider = Provider.autoDispose<CheckInPoster>(
   (ref) => CheckInPoster(
     repository: ref.watch(checkInRepositoryProvider),
     compressor: ref.watch(photoCompressorProvider),
-    clock: ref.watch(journeyClockProvider),
+    clock: ref.watch(checkinClockProvider),
     drafts: ref.watch(draftFilesProvider),
   ),
 );

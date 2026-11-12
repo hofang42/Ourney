@@ -1,4 +1,5 @@
 import 'package:clock/clock.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -21,6 +22,15 @@ Duration? _noRetry(int _, Object _) => null;
 
 /// Wall clock for "today" computations. Override in tests.
 final journeysClockProvider = Provider<Clock>((ref) => const Clock());
+
+/// "Now" for "today" computations. Recomputed when the app resumes and by
+/// `DayTicker` on every quarter hour while a journeys screen is open.
+final journeysNowProvider = Provider<DateTime>((ref) {
+  final now = ref.watch(journeysClockProvider).now();
+  final lifecycle = AppLifecycleListener(onResume: ref.invalidateSelf);
+  ref.onDispose(lifecycle.dispose);
+  return now;
+});
 
 /// IANA name of the device time zone: the default for new journeys.
 /// Override in tests (it uses a platform channel).

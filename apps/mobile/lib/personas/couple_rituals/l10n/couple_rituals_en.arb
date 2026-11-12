@@ -1,34 +1,16 @@
 {
   "@@locale": "en",
   "couple_rituals_name": "Couple Rituals",
-  "@couple_rituals_name": {
-    "description": "Persona name shown in the screen label"
-  },
   "couple_rituals_dayLabel": "Day {day}",
-  "@couple_rituals_dayLabel": {
-    "description": "Ngày thứ N của hành trình",
-    "placeholders": {
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "couple_rituals_streakLabel": "{streak}-day streak",
-  "@couple_rituals_streakLabel": {
-    "description": "Chuỗi ngày liên tiếp",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
-  },
   "couple_rituals_checkInsLabel": "{count} check-ins",
-  "@couple_rituals_checkInsLabel": {
-    "description": "Số lần check-in",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  }
+  "couple_rituals_meDefault": "You",
+  "couple_rituals_partnerDefault": "Partner",
+  "couple_rituals_waitingPartner": "Waiting for {name}",
+  "couple_rituals_completePairHint": "Snap your half · Complete pair",
+  "couple_rituals_partnerDoneBadge": "{name} · Snapped",
+  "couple_rituals_mosaicTitle": "{days} DAYS · {moments} MOMENTS",
+  "couple_rituals_shareStoryButton": "Share Our Story",
+  "couple_rituals_dayHeader": "DAY {day}",
+  "couple_rituals_todayHeader": "DAY {day} · TODAY"
 }

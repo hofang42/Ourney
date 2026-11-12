@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/camera/camera_session.dart';
-import 'package:ourney/features/checkin/journey_clock.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 
@@ -39,7 +39,7 @@ void main() {
           checkInRepositoryProvider.overrideWithValue(checkIns),
           cameraSessionFactoryProvider.overrideWithValue(() => camera),
           photoCompressorProvider.overrideWithValue(FakePhotoCompressor()),
-          journeyClockProvider.overrideWithValue(FakeJourneyClock()),
+          checkinClockProvider.overrideWithValue(FakeCheckinClock()),
           draftFilesProvider.overrideWithValue(drafts),
           notificationGatewayProvider.overrideWithValue(
             FakeNotificationGateway(),
@@ -96,7 +96,7 @@ void main() {
         journeyRepositoryProvider.overrideWithValue(FakeJourneyRepository()),
         checkInRepositoryProvider.overrideWithValue(FakeCheckInRepository()),
         cameraSessionFactoryProvider.overrideWithValue(FakeCameraSession.new),
-        journeyClockProvider.overrideWithValue(FakeJourneyClock()),
+        checkinClockProvider.overrideWithValue(FakeCheckinClock()),
         draftFilesProvider.overrideWithValue(drafts),
         notificationGatewayProvider.overrideWithValue(
           FakeNotificationGateway(),
@@ -107,7 +107,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('capture-shutter')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(CloseButton));
+    await tester.tap(find.byKey(const ValueKey('checkin-retake')));
     await tester.pumpAndSettle();
     expect(c.read(routerProvider).state.uri.path, AppRoutes.capture);
     expect(drafts.discarded, ['/tmp/shot1.jpg']);

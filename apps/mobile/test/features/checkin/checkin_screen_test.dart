@@ -1,15 +1,13 @@
-import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
+import 'package:ourney/features/checkin/checkin_clock.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
-import 'package:ourney/features/checkin/journey_clock.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
-import 'package:ourney/shared/stamp_animation.dart';
-import 'package:ourney/shared/streak_flame.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -39,13 +37,14 @@ void main() {
     CapturedPhoto? extra,
     bool noPhoto = false,
     Map<String, Object> prefsValues = const {},
+    Brightness brightness = Brightness.light,
   }) async {
     final prefs = await testPrefs(prefsValues);
     final container = ProviderContainer(
       overrides: [
         ...baseOverrides(prefs: prefs, journeys: journeys, checkIns: checkIns),
         photoCompressorProvider.overrideWithValue(compressor),
-        journeyClockProvider.overrideWithValue(FakeJourneyClock()),
+        checkinClockProvider.overrideWithValue(FakeCheckinClock()),
       ],
     );
     addTearDown(container.dispose);
@@ -56,6 +55,7 @@ void main() {
         initialLocation: '/checkin',
         initialExtra: noPhoto ? null : (extra ?? photo),
         log: log,
+        brightness: brightness,
       ),
     );
     await tester.pumpAndSettle();
@@ -68,9 +68,7 @@ void main() {
     await tester.pump();
   }
 
-  /// Lets the stamp and the auto-close timer run out. Not for milestones:
-  /// confetti moves particles with wall-clock time, so it never settles
-  /// under the test's fake clock.
+  /// Lets the auto-close timer run out (not for milestones, which stay).
   Future<void> finishSuccess(WidgetTester tester) async {
     await tester.pump(CheckinSuccessView.autoCloseDelay);
     await tester.pumpAndSettle();
@@ -98,7 +96,7 @@ void main() {
     expect(draft.metricValue, isNull);
 
     expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
-    expect(find.text('Đã check-in!'), findsOneWidget);
+    expect(find.text('Giữ được chuỗi.'), findsOneWidget);
     expect(find.text('+1 ngày'), findsOneWidget);
     expect(find.byKey(const ValueKey('checkin-milestone')), findsNothing);
 
@@ -114,12 +112,13 @@ void main() {
     ]);
     await pump(tester);
     await tapPost(tester);
-    final stamp = tester.widget<StampAnimation>(find.byType(StampAnimation));
-    expect(stamp.haptic, isTrue);
-    final flame = tester.widget<StreakFlame>(
-      find.byKey(const ValueKey('checkin-streak')),
+    final view = tester.widget<CheckinSuccessView>(
+      find.byType(CheckinSuccessView),
     );
-    expect(flame.days, 3);
+    expect(view.haptics, isTrue);
+    final streak = tester.widget<UiStreakNumber>(find.byType(UiStreakNumber));
+    expect(streak.value, 3);
+    expect(find.byKey(const ValueKey('checkin-streak')), findsOneWidget);
     await finishSuccess(tester);
   });
 
@@ -297,7 +296,9 @@ void main() {
   });
 
   group('milestones (FR-C8)', () {
-    testWidgets('7-day streak: confetti and share offer', (tester) async {
+    testWidgets('7-day streak: milestone title and share offer', (
+      tester,
+    ) async {
       checkIns.existing.addAll([
         for (var i = 1; i <= 6; i++) testCheckIn(testToday.addDays(-i)),
       ]);
@@ -305,22 +306,13 @@ void main() {
       await tapPost(tester);
 
       expect(find.text('7 ngày liên tục!'), findsOneWidget);
-      final confetti = tester.widget<ConfettiWidget>(
-        find.byType(ConfettiWidget),
-      );
-      expect(
-        confetti.confettiController.state,
-        ConfettiControllerState.playing,
-      );
 
       await tester.pump(CheckinSuccessView.autoCloseDelay);
       // A milestone does not auto-close.
       expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
       await tester.ensureVisible(find.byKey(const ValueKey('checkin-share')));
       await tester.tap(find.byKey(const ValueKey('checkin-share')));
-      // The success view (and its confetti) is replaced by /share.
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      // The success view is replaced by /share.
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('stub-share')), findsOneWidget);
       expect(log.locations.last, '/share/j1');
@@ -337,11 +329,9 @@ void main() {
       await tapPost(tester);
       expect(find.text('Về đích rồi!'), findsOneWidget);
       expect(find.byKey(const ValueKey('checkin-share')), findsOneWidget);
-      // Let the confetti controller's emission timer expire.
-      await tester.pump(const Duration(seconds: 2));
     });
 
-    testWidgets('reduce motion: no confetti', (tester) async {
+    testWidgets('reduce motion: the milestone still shows', (tester) async {
       tester.platformDispatcher.accessibilityFeaturesTestValue =
           const FakeAccessibilityFeatures(disableAnimations: true);
       addTearDown(
@@ -353,22 +343,20 @@ void main() {
       await pump(tester);
       await tapPost(tester);
       expect(find.text('7 ngày liên tục!'), findsOneWidget);
-      final confetti = tester.widget<ConfettiWidget>(
-        find.byType(ConfettiWidget),
-      );
-      expect(
-        confetti.confettiController.state,
-        ConfettiControllerState.stopped,
-      );
+      expect(find.byKey(const ValueKey('checkin-share')), findsOneWidget);
       await tester.pumpAndSettle();
     });
   });
 
-  testWidgets('haptics toggle off: the stamp has no haptic', (tester) async {
+  testWidgets('haptics toggle off: the success view gets no haptic', (
+    tester,
+  ) async {
     await pump(tester, prefsValues: {HapticsEnabled.prefsKey: false});
     await tapPost(tester);
-    final stamp = tester.widget<StampAnimation>(find.byType(StampAnimation));
-    expect(stamp.haptic, isFalse);
+    final view = tester.widget<CheckinSuccessView>(
+      find.byType(CheckinSuccessView),
+    );
+    expect(view.haptics, isFalse);
     await finishSuccess(tester);
   });
 
@@ -408,6 +396,57 @@ void main() {
       journeys.journeys.clear();
       await pump(tester);
       expect(find.byKey(const ValueKey('checkin-missing-journey')), findsOne);
+    });
+  });
+
+  group('compose + posted (kit UI)', () {
+    for (final brightness in Brightness.values) {
+      testWidgets('${brightness.name}: compose fits 320dp at 1.35x text', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 640);
+        addTearDown(tester.view.reset);
+        tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await pump(tester, brightness: brightness);
+        expect(tester.takeException(), isNull);
+        expect(find.byKey(const ValueKey('checkin-retake')), findsOneWidget);
+        expect(find.byKey(const ValueKey('checkin-post')), findsOneWidget);
+        expect(find.text('Chỉ mình bạn'), findsOneWidget);
+        for (final key in [
+          'checkin-retake',
+          'checkin-post',
+          'checkin-post-link',
+        ]) {
+          final size = tester.getSize(find.byKey(ValueKey(key)));
+          expect(size.height, greaterThanOrEqualTo(44), reason: key);
+        }
+      });
+
+      testWidgets('${brightness.name}: posted fits 320dp at 1.35x text', (
+        tester,
+      ) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 640);
+        addTearDown(tester.view.reset);
+        tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        await pump(tester, brightness: brightness);
+        await tapPost(tester);
+        expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
+        expect(find.textContaining('NGÀY '), findsOneWidget);
+        expect(find.byType(UiSuccessMark), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await finishSuccess(tester);
+      });
+    }
+
+    testWidgets('Retake closes back to the camera', (tester) async {
+      await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('checkin-retake')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
     });
   });
 }

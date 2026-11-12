@@ -100,7 +100,7 @@ abstract class AuthL10n {
   /// Title of the sign-in screen (email step).
   ///
   /// In vi, this message translates to:
-  /// **'Đăng nhập'**
+  /// **'Lưu giữ hành trình của bạn'**
   String get auth_title;
 
   /// Explains email OTP sign-in (FR-A1).
@@ -138,12 +138,6 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Đang gửi…'**
   String get auth_sending;
-
-  /// Title of the OTP step.
-  ///
-  /// In vi, this message translates to:
-  /// **'Nhập mã'**
-  String get auth_codeTitle;
 
   /// Below the OTP title.
   ///
@@ -199,18 +193,6 @@ abstract class AuthL10n {
   /// **'Đổi email'**
   String get auth_changeEmail;
 
-  /// Legal note under the sign-in form.
-  ///
-  /// In vi, this message translates to:
-  /// **'Khi tiếp tục, bạn đồng ý với điều khoản sử dụng và chính sách quyền riêng tư của Ourney.'**
-  String get auth_termsNote;
-
-  /// Opens the EULA/privacy pages.
-  ///
-  /// In vi, this message translates to:
-  /// **'Xem điều khoản'**
-  String get auth_termsLink;
-
   /// OTP rejected (invalid / expired).
   ///
   /// In vi, this message translates to:
@@ -234,6 +216,36 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Có lỗi xảy ra. Thử lại nhé.'**
   String get auth_errorGeneric;
+
+  /// Small label above the sign-in headline.
+  ///
+  /// In vi, this message translates to:
+  /// **'OURNEY'**
+  String get auth_eyebrow;
+
+  /// Small label above the headline on the code step.
+  ///
+  /// In vi, this message translates to:
+  /// **'KIỂM TRA EMAIL'**
+  String get auth_eyebrowCheck;
+
+  /// Footer link to the terms.
+  ///
+  /// In vi, this message translates to:
+  /// **'Điều khoản'**
+  String get auth_terms;
+
+  /// Footer link to the privacy policy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quyền riêng tư'**
+  String get auth_privacy;
+
+  /// Screen reader label of one OTP digit box.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chữ số {n} trên 6'**
+  String auth_digitSemantics(int n);
 }
 
 class _AuthL10nDelegate extends LocalizationsDelegate<AuthL10n> {

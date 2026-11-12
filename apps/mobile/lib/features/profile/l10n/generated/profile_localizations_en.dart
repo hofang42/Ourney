@@ -13,7 +13,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_title => 'Profile';
 
   @override
-  String get profile_setupTitle => 'Create your profile';
+  String get profile_setupTitle => 'Your profile';
 
   @override
   String get profile_setupSubtitle =>

@@ -121,6 +121,60 @@ abstract class CoupleRitualsL10n {
   /// In vi, this message translates to:
   /// **'{count} lần check-in'**
   String couple_rituals_checkInsLabel(int count);
+
+  /// Tên mặc định của người dùng hiện tại
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn'**
+  String get couple_rituals_meDefault;
+
+  /// Tên mặc định của thành viên còn lại
+  ///
+  /// In vi, this message translates to:
+  /// **'Người đồng hành'**
+  String get couple_rituals_partnerDefault;
+
+  /// Ô chờ khi người kia chưa chụp hôm nay
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang chờ {name}'**
+  String couple_rituals_waitingPartner(String name);
+
+  /// Nhãn hướng dẫn trên nửa khung ngắm của màn chụp đôi
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp nửa của bạn · Ghép trọn đôi'**
+  String get couple_rituals_completePairHint;
+
+  /// Nhãn trên nửa ảnh đã chụp của người kia
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · Đã chụp'**
+  String couple_rituals_partnerDoneBadge(String name);
+
+  /// Tiêu đề tấm poster ghép ảnh của hai người
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} NGÀY · {moments} KHOẢNH KHẮC'**
+  String couple_rituals_mosaicTitle(int days, int moments);
+
+  /// Nút chia sẻ thiệp cặp đôi
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ câu chuyện của hai đứa'**
+  String get couple_rituals_shareStoryButton;
+
+  /// Nhãn ngày trên trục đôi
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String couple_rituals_dayHeader(String day);
+
+  /// Nhãn ngày hôm nay trên trục đôi
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · HÔM NAY'**
+  String couple_rituals_todayHeader(String day);
 }
 
 class _CoupleRitualsL10nDelegate

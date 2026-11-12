@@ -1,34 +1,26 @@
 {
   "@@locale": "en",
   "quiet_transformer_name": "Quiet Transformer",
-  "@quiet_transformer_name": {
-    "description": "Persona name shown in the screen label"
-  },
   "quiet_transformer_dayLabel": "Day {day}",
-  "@quiet_transformer_dayLabel": {
-    "description": "Ngày thứ N của hành trình",
-    "placeholders": {
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "quiet_transformer_streakLabel": "{streak}-day streak",
-  "@quiet_transformer_streakLabel": {
-    "description": "Chuỗi ngày liên tiếp",
-    "placeholders": {
-      "streak": {
-        "type": "int"
-      }
-    }
-  },
   "quiet_transformer_checkInsLabel": "{count} check-ins",
-  "@quiet_transformer_checkInsLabel": {
-    "description": "Số lần check-in",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  }
+  "quiet_transformer_vaultPill": "Private Vault · Day {day}",
+  "quiet_transformer_ghostOn": "Ghost Align: ON (30%)",
+  "quiet_transformer_ghostOff": "Ghost Align: OFF",
+  "quiet_transformer_metricSliderLabel": "Today's {name}",
+  "quiet_transformer_trendTitle": "{name} Trend",
+  "quiet_transformer_trendEmpty": "Log a metric on check-in to plot your curve",
+  "quiet_transformer_trendSingle": "First point logged · Add another day to connect the curve",
+  "quiet_transformer_metricHiddenBadge": "Metric hidden for privacy",
+  "quiet_transformer_milestoneStart": "DAY 01 · START",
+  "quiet_transformer_milestoneWeek": "DAY {day} · MILESTONE",
+  "quiet_transformer_milestoneToday": "DAY {day} · TODAY",
+  "quiet_transformer_milestoneDay": "DAY {day}",
+  "quiet_transformer_compareDayStart": "DAY 01",
+  "quiet_transformer_compareDayNow": "DAY {day}",
+  "quiet_transformer_hideExactWeight": "Hide Exact Weight",
+  "quiet_transformer_hideExactWeightSub": "Only show transformation delta or streak when sharing",
+  "quiet_transformer_transformationBadge": "{delta} Transformation",
+  "quiet_transformer_exportCard": "Export Progress Card",
+  "quiet_transformer_waitingPhoto": "No photo yet"
 }

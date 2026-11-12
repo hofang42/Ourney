@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/theme/app_theme.dart';
-import 'package:ourney/shared/chunky_button.dart';
-import 'package:ourney/shared/empty_state.dart';
 import 'package:ourney/shared/needs_server_view.dart';
-import 'package:ourney/shared/ourney_chip.dart';
-import 'package:ourney/shared/streak_flame.dart';
+import 'package:ourney/ui/ui.dart';
 
 import 'test_helpers.dart';
 
@@ -58,19 +55,24 @@ void main() {
               SingleChildScrollView(
                 child: Column(
                   children: [
-                    ChunkyButton(
+                    UiButton(
                       label: 'Đăng check-in hôm nay',
                       onPressed: () {},
                       icon: Icons.check_rounded,
                     ),
-                    const OurneyChip(label: 'Giảm cân 30 ngày', selected: true),
-                    const StreakFlame(days: 128, atRisk: true),
-                    const SizedBox(height: 400, child: NeedsServerView()),
+                    UiChip(
+                      label: 'Giảm cân 30 ngày',
+                      selected: true,
+                      onPressed: () {},
+                    ),
+                    const UiStreakNumber(value: 128, unit: 'ngày'),
+                    const SizedBox(height: 1400, child: NeedsServerView()),
                     const SizedBox(
-                      height: 400,
-                      child: EmptyState(
+                      height: 1400,
+                      child: UiEmptyState(
+                        icon: Icons.map_outlined,
                         title: 'Chưa có hành trình nào',
-                        message: 'Tạo hành trình đầu tiên để bắt đầu.',
+                        body: 'Tạo hành trình đầu tiên để bắt đầu.',
                       ),
                     ),
                   ],

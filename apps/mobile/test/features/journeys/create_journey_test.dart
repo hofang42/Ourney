@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
@@ -10,13 +11,20 @@ import 'journeys_fakes.dart';
 Finder _key(String k) => find.byKey(ValueKey(k));
 
 bool _switchValue(WidgetTester tester, String key) =>
-    tester.widget<SwitchListTile>(_key(key)).value;
+    tester.widget<UiSwitchRow>(_key(key)).value;
 
 Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.ensureVisible(f);
   await tester.pumpAndSettle();
   await tester.tap(f);
   await tester.pumpAndSettle();
+}
+
+/// Opens "More options" unless the template preset already opened it.
+Future<void> _openMore(WidgetTester tester) async {
+  if (_key('journey-blur').evaluate().isEmpty) {
+    await _tap(tester, _key('journey-more-options'));
+  }
 }
 
 void main() {
@@ -88,6 +96,9 @@ void main() {
         tester.widget<TextField>(_key('journey-title')).controller!.text,
         travel.titleEn,
       );
+      // Nothing privacy-related is preset: the options start collapsed.
+      expect(_key('journey-blur'), findsNothing);
+      await _openMore(tester);
       expect(_switchValue(tester, 'journey-blur'), isFalse);
       expect(_switchValue(tester, 'journey-metric'), isFalse);
       expect(_key('journey-duration-open'), findsOneWidget);
@@ -137,6 +148,7 @@ void main() {
       );
 
       await tester.enterText(_key('journey-duration'), '21');
+      await _openMore(tester);
       await _tap(tester, _key('journey-metric'));
       await _tap(tester, _key('journey-create'));
       expect(find.text('Enter a metric name.'), findsOneWidget);
@@ -167,6 +179,7 @@ void main() {
         findsOneWidget,
       );
       await _tap(tester, _key('journey-kind-group'));
+      await _openMore(tester);
       await _tap(tester, _key('journey-visibility-link'));
       await _tap(tester, _key('journey-create'));
       final draft = h.journeys.created.single;
@@ -184,6 +197,7 @@ void main() {
         location: JourneysPaths.newFromTemplate(TemplateId.workout30),
         locale: const Locale('en'),
       );
+      await _openMore(tester);
       await _tap(tester, _key('journey-visibility-link'));
       await _tap(tester, _key('journey-kind-group'));
       expect(_key('journey-visibility-link'), findsNothing);
@@ -201,6 +215,7 @@ void main() {
         userId: 'u1',
         location: JourneysPaths.newFromTemplate(TemplateId.englishDaily),
       );
+      await _openMore(tester);
       await _tap(tester, _key('journey-visibility-link'));
       await _tap(tester, _key('journey-create'));
       expect(h.journeys.created.single.visibility, JourneyVisibility.link);

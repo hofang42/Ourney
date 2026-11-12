@@ -6,7 +6,7 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 
 ## 1. Mandatory Quality Gates & Anti-AI-Slop Policy
 1. **Lint Check First**: Always run `dart analyze` (in `packages/ourney_core`) and `flutter analyze` (in `apps/mobile`) after creating or modifying any file. Fix all errors and warnings before finishing.
-2. **Dark & Light Theme Mandatory**: Every screen, sheet, dialog, timeline, camera HUD, and widget MUST support both **Light Mode** and **Dark Mode** via `OurneyPersonaTheme.of(context)`. Never hardcode static light-only or dark-only colors inside widgets.
+2. **Dark & Light Theme Mandatory**: Every screen, sheet, dialog, timeline, camera HUD, and widget MUST support both **Light Mode** and **Dark Mode** via the V1.0 UI kit tokens (`context.ui`, `apps/mobile/lib/ui/`, see its README; design source `design/figma-v1/`). Build UI only from `lib/ui` components. Never hardcode static light-only or dark-only colors inside widgets.
 3. **Zero Hardcoded Text Icons / Zero AI Slop**:
    - Never use placeholder text (`"..."`, `"3-tab"`, `"icon"`, `"[+]"`) in place of icons. Always use vector `Icons`, `CupertinoIcons`, or `CustomPainter` / SVG paths.
    - No system/default icons anywhere in the app (owner decision 2026-11-11): no emoji and no Unicode symbol glyphs (`●`, `★`, `♥`, `✓`…) as icons, including journey type badges, streak (`flame` icon), reactions and HUD text. Use only the Ourney designed icon set (prototype: `design/ourney-v2-app/src/app/icons.tsx`) or custom SVG/`CustomPainter` illustrations. Emoji typed by users in captions stay as user content.
@@ -57,6 +57,6 @@ Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board 
 
 ## 5. Seamless Multi-Journey Switching (Zero App Reset)
 - **Never reset the app or re-initialize the camera** when switching journeys.
-- Updating `activePersonaSkinProvider` triggers `MaterialApp.router`'s `AnimatedTheme` (`320ms`, `Curves.easeOutCubic`) via `OurneyPersonaTheme.lerp()`, while screen sub-layouts morph in `260ms` via `AnimatedSwitcher`.
-- **Global Hub (`JourneysScreen`)**: Uses `OurneyPersonaTheme.editorialNeutralBase(brightness)`, while each `JourneyCard` displays its own persona accent badge.
+- The app theme is the single V1.0 kit theme (`OurneyTheme`); a journey's persona only changes its accent, taken from `uiStyleForSkin` / `lib/ui/journey_styles.dart`.
+- **Global Hub (`JourneysScreen`)**: neutral kit theme; each journey row shows its own persona accent.
 - **Create Journey (`CreateJourneyScreen`)**: Morphs live into whichever template card the user selects, displaying its preview board from `assets/design_personas/`.

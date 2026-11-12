@@ -17,18 +17,26 @@ class _FailingJourneyRepository extends FakeJourneyRepository {
       Stream.error(const OurneyException(OurneyErrorCode.offline));
 }
 
+/// The hub's + opens the add menu; "New journey" starts the create flow.
+Future<void> _addJourney(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('journeys-new')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const ValueKey('journeys-menu-new')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('Journeys tab (FR-B3/B6)', () {
-    testWidgets('empty state offers creating the first journey', (
+    testWidgets('day-zero hub offers creating the first journey', (
       tester,
     ) async {
       final h = await pumpJourneys(tester, locale: const Locale('en'));
 
       expect(find.byKey(const ValueKey('journeys-empty')), findsOneWidget);
-      expect(find.text('No journeys yet'), findsOneWidget);
+      expect(find.text('Start your first journey'), findsOneWidget);
       expect(find.byKey(const ValueKey('journeys-new')), findsNothing);
 
-      await tester.tap(find.text('New journey'));
+      await tester.tap(find.text('Start your first journey'));
       await tester.pumpAndSettle();
       expect(h.location, AppRoutes.journeyNew);
       expect(
@@ -37,7 +45,7 @@ void main() {
       );
     });
 
-    testWidgets('cards show day N/M, today status, streak; finished section', (
+    testWidgets('rows show day N/M and today status; Today card; shelf', (
       tester,
     ) async {
       final active = testJourney();
@@ -67,15 +75,24 @@ void main() {
         ]),
       );
 
-      expect(find.text('Running · 2/3'), findsOneWidget);
-      expect(find.text('Finished'), findsOneWidget);
+      expect(find.text('Active · 2/3'), findsOneWidget);
+      expect(find.text('Shelf'), findsOneWidget);
       expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
-      expect(find.text('Day 7 of 14'), findsNWidgets(2)); // j1 + ended j3
-      expect(find.text('Day 7'), findsOneWidget); // open-ended
-      expect(find.text('Checked in today'), findsOneWidget);
-      expect(find.text('Not checked in today'), findsOneWidget);
-      expect(find.text('Ended'), findsOneWidget);
+      expect(find.textContaining('Day 7 of 14'), findsOneWidget); // j1
+      expect(find.textContaining('· Day 7'), findsNWidgets(2)); // + open j2
+      expect(find.text('Done'), findsOneWidget);
+      expect(find.text('Not yet'), findsOneWidget);
+      // j2 has no photo today: it leads the Today card.
+      expect(find.byKey(const ValueKey('journeys-today-j2')), findsOneWidget);
+      expect(find.text("1 journey still needs today's photo."), findsOneWidget);
       expect(find.byKey(const ValueKey('journeys-new')), findsOneWidget);
+
+      // Ended journeys live on the shelf.
+      expect(find.byKey(const ValueKey('journey-card-j3')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('hub-segment-shelf')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journey-card-j3')), findsOneWidget);
+      expect(find.text('Ended'), findsOneWidget);
     });
 
     testWidgets('tapping a card opens the journey', (tester) async {
@@ -105,11 +122,12 @@ void main() {
         locale: const Locale('en'),
         journeys: FakeJourneyRepository(journeys: journeys),
       );
-      expect(find.text('Running · 3/3'), findsOneWidget);
+      expect(find.text('Active · 3/3'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('hub-segment-shelf')));
+      await tester.pumpAndSettle();
       expect(find.text('Archived'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('journeys-new')));
-      await tester.pumpAndSettle();
+      await _addJourney(tester);
 
       expect(
         find.byKey(const ValueKey('journeys-limit-dialog')),
@@ -132,8 +150,7 @@ void main() {
         tester,
         journeys: FakeJourneyRepository(journeys: journeys),
       );
-      await tester.tap(find.byKey(const ValueKey('journeys-new')));
-      await tester.pumpAndSettle();
+      await _addJourney(tester);
       expect(h.location, AppRoutes.journeyNew);
     });
 

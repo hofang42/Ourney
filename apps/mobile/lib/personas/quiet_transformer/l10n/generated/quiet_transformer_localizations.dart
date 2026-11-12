@@ -124,6 +124,120 @@ abstract class QuietTransformerL10n {
   /// In vi, this message translates to:
   /// **'{count} lần check-in'**
   String quiet_transformer_checkInsLabel(int count);
+
+  /// Nhãn đầu màn chụp của phong cách 1
+  ///
+  /// In vi, this message translates to:
+  /// **'Kho riêng tư · Ngày {day}'**
+  String quiet_transformer_vaultPill(int day);
+
+  /// Nút bật bóng mờ ngày 1 trên màn chụp
+  ///
+  /// In vi, this message translates to:
+  /// **'Bóng mờ căn dáng: BẬT (30%)'**
+  String get quiet_transformer_ghostOn;
+
+  /// Nút tắt bóng mờ ngày 1 trên màn chụp
+  ///
+  /// In vi, this message translates to:
+  /// **'Bóng mờ căn dáng: TẮT'**
+  String get quiet_transformer_ghostOff;
+
+  /// Nhãn thanh trượt chỉ số trên màn chụp
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} hôm nay'**
+  String quiet_transformer_metricSliderLabel(String name);
+
+  /// Tiêu đề thẻ biểu đồ đường cong chỉ số
+  ///
+  /// In vi, this message translates to:
+  /// **'Xu hướng {name}'**
+  String quiet_transformer_trendTitle(String name);
+
+  /// Hiện khi chưa có điểm số liệu nào
+  ///
+  /// In vi, this message translates to:
+  /// **'Ghi chỉ số khi check-in để vẽ đường biến đổi'**
+  String get quiet_transformer_trendEmpty;
+
+  /// Hiện khi mới có 1 điểm số liệu
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã ghi mốc đầu tiên · Thêm ngày tiếp theo để nối đường cong'**
+  String get quiet_transformer_trendSingle;
+
+  /// Hiện khi người dùng bật ẩn chỉ số
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã ẩn số liệu riêng tư'**
+  String get quiet_transformer_metricHiddenBadge;
+
+  /// Nhãn mốc ngày 1
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY 01 · KHỞI ĐẦU'**
+  String get quiet_transformer_milestoneStart;
+
+  /// Nhãn mốc ngày 7, 14, 21...
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · CỘT MỐC'**
+  String quiet_transformer_milestoneWeek(String day);
+
+  /// Nhãn mốc hôm nay
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · HÔM NAY'**
+  String quiet_transformer_milestoneToday(String day);
+
+  /// Nhãn ngày thường trên trục dọc
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String quiet_transformer_milestoneDay(String day);
+
+  /// Nhãn khung ảnh bên trái trên thiệp so sánh
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY 01'**
+  String get quiet_transformer_compareDayStart;
+
+  /// Nhãn khung ảnh bên phải trên thiệp so sánh
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String quiet_transformer_compareDayNow(String day);
+
+  /// Công tắc ẩn số cân trên thiệp chia sẻ
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn số cân chính xác'**
+  String get quiet_transformer_hideExactWeight;
+
+  /// Mô tả phụ của công tắc ẩn số cân
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ hiện độ chênh lệch hoặc chuỗi ngày khi chia sẻ'**
+  String get quiet_transformer_hideExactWeightSub;
+
+  /// Nhãn chênh lệch trên thiệp so sánh
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuyển đổi {delta}'**
+  String quiet_transformer_transformationBadge(String delta);
+
+  /// Nút chia sẻ thiệp tiến độ
+  ///
+  /// In vi, this message translates to:
+  /// **'Xuất thiệp tiến độ'**
+  String get quiet_transformer_exportCard;
+
+  /// Ô chờ khi chưa có ảnh
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có ảnh'**
+  String get quiet_transformer_waitingPhoto;
 }
 
 class _QuietTransformerL10nDelegate

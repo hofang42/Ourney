@@ -145,23 +145,15 @@ work fully; any group/invite/reaction screen must show `NeedsServerView`
 
 ## 4. UI building blocks
 
-- Tokens: `OurneyColors.of(context)`, `OurneySpacing`, `OurneyRadii`,
-  `OurneySizes`, `OurneyDurations` (`lib/app/theme/tokens.dart`); text styles
-  from `Theme.of(context).textTheme`, big numbers `bigNumberStyle()`
-  (`lib/app/theme/app_theme.dart`). Camera surfaces use
-  `OurneyColors.cameraBg` and dark colors regardless of theme.
+- Tokens: `context.ui` (`OurneyUi`), `UiSpace`, `UiRadius`, `UiSize` and
+  `UiText` from `lib/ui/ui.dart`; `OurneyDurations` (`lib/app/theme/tokens.dart`)
+  for motion. Camera surfaces use the dark `UiCamera` colors regardless of theme.
 - Motion: `OurneyMotion.duration/movement/allowsDecoration(context)` — under
   Reduce Motion use a 0.2s fade and no confetti/looping. Haptics only via
   `OurneyHaptics.*` (respects the user toggle).
-- Widgets (`lib/shared/`): `ChunkyButton`, `OurneyCard`, `OurneyChip`,
-  `Avatar`, `EmptyState`, `NeedsServerView`, `StreakFlame`, `StampAnimation`.
-- Persona widgets (`lib/shared/`, read `OurneyPersonaTheme.of(context)`, work in
-  all six skins and both themes): `OurneyPrimaryButton` (52/44dp, 0.96 press,
-  bottom lip), `OurneyPillButton` (56x40 capsule), `PersonaPill` (screen
-  label), `PolaroidFrame` (tilted, taped), `DashedPlaceholder` (waiting slot),
-  `OurneyDock` (3-tab dock). `layout.dart` has `OurneyLayout` (16/20/24dp
-  margins, 480/520dp column) and `OurneyResponsiveBody`; `color_utils.dart`
-  has `readableOn` and `contrastRatio`.
+- Widgets: only the kit in `lib/ui/` (see `lib/ui/README.md`); `NeedsServerView`
+  (`lib/shared/`) is built on it. `layout.dart` has `OurneyLayout` and
+  `OurneyResponsiveBody`; `color_utils.dart` has `readableOn` and `contrastRatio`.
 - Text scale is clamped to 2x app-wide; layouts must not overflow at 2x
   (wrap long content in scroll views, use `maxLines` + ellipsis for chips).
   Icon-only buttons need a `Semantics`/`tooltip` label; state never relies on
@@ -206,7 +198,6 @@ lib/personas/
 - **The squad wall** (`PersonaStyle.group`) sits above the member list, which
   carries the report, block and remove actions. A wall tile that offers them
   would let that list go.
-- **Tests:** `pumpPersona(tester, widget, skin:, brightness:, width:, textScale:)`
-  in `test/personas/pump_persona.dart`. Check light and dark, 320, 390 and
-  430dp, and 1.35x text. Colors come from `OurneyPersonaTheme`; contrast of
-  every token pair is held to AA by `test/app/theme_contrast_test.dart`.
+- **Tests:** check light and dark, 320, 390 and 430dp, and 1.35x text. Colors
+  come from `OurneyUi`; contrast of every token pair is held to AA by
+  `test/app/theme_contrast_test.dart`.

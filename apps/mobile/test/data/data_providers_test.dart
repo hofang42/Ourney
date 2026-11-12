@@ -73,4 +73,35 @@ void main() {
     expect(auth.isLocalOnly, isFalse);
     expect(auth.currentUserId, 'u1');
   });
+
+  test('social providers: wired with a server, unwired local-only', () async {
+    final server = await make(remote: FakeRemoteApi(userId: 'u1'));
+    expect(server.read(friendRepositoryProvider), isA<FriendRepository>());
+    expect(server.read(sharingRepositoryProvider), isA<SharingRepository>());
+    expect(
+      server.read(shareConsentRepositoryProvider),
+      isA<ShareConsentRepository>(),
+    );
+    expect(server.read(chatRepositoryProvider), isA<ChatRepository>());
+    expect(server.read(insightsRepositoryProvider), isA<InsightsRepository>());
+
+    final local = await make();
+    for (final Object Function() read in [
+      () => local.read(friendRepositoryProvider),
+      () => local.read(sharingRepositoryProvider),
+      () => local.read(shareConsentRepositoryProvider),
+      () => local.read(chatRepositoryProvider),
+      () => local.read(insightsRepositoryProvider),
+    ]) {
+      expect(
+        read,
+        throwsA(
+          anyOf(
+            isA<UnimplementedError>(),
+            predicate((e) => '$e'.contains('UnimplementedError')),
+          ),
+        ),
+      );
+    }
+  });
 }

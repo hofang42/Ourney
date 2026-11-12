@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../../app/theme/app_theme.dart';
-import '../../../app/theme/tokens.dart';
-import '../../../shared/template_icons.dart';
+import '../../../ui/ui.dart';
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -57,6 +55,20 @@ const _textShadows = [
   ),
 };
 
+TextStyle _displayStyle({
+  required double size,
+  required Color color,
+  required double height,
+}) => UiText.display(size: size, weight: 800, height: height, color: color);
+
+/// Brand coral to violet, the card's one fixed theme (an exported image, so
+/// it does not follow light / dark).
+const LinearGradient _heroGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [Color(0xFFFF3B5C), Color(0xFF6D4BF0)],
+);
+
 /// The share card (FR-E1): one theme (coral -> violet hero gradient), laid
 /// out at [ShareCardFormat.logicalSize] and meant to be wrapped in a
 /// [RepaintBoundary] and rendered at [ShareCardFormat.pixelRatio].
@@ -93,14 +105,14 @@ class ShareCard extends StatelessWidget {
         key: ValueKey('share-card-${format.name}'),
         size: size,
         child: DecoratedBox(
-          decoration: const BoxDecoration(gradient: OurneyColors.heroGradient),
+          decoration: const BoxDecoration(gradient: _heroGradient),
           child: Padding(
             padding: format.contentPadding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _Header(content: content, maxLines: story ? 2 : 1),
-                const SizedBox(height: OurneySpacing.md),
+                const SizedBox(height: UiSpace.md),
                 Expanded(
                   child: _PhotoPanel(
                     content: content,
@@ -112,7 +124,7 @@ class ShareCard extends StatelessWidget {
                     milestone: _milestoneText(l10n),
                   ),
                 ),
-                const SizedBox(height: OurneySpacing.md),
+                const SizedBox(height: UiSpace.md),
                 _Footer(metric: metric),
               ],
             ),
@@ -154,18 +166,18 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
-          journeyIcon(content.emoji, content.templateId),
+          uiJourneyIcon(content.emoji, content.templateId),
           size: 30,
           color: _white,
         ),
-        const SizedBox(width: OurneySpacing.sm),
+        const SizedBox(width: UiSpace.sm),
         Expanded(
           child: Text(
             content.title,
             key: const ValueKey('share-card-title'),
             maxLines: maxLines,
             overflow: TextOverflow.ellipsis,
-            style: displayStyle(
+            style: _displayStyle(
               size: 24,
               color: _white,
               height: shareCardDiacriticHeight,
@@ -199,7 +211,7 @@ class _PhotoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = _Illustration(
-      icon: journeyIcon(content.emoji, content.templateId),
+      icon: uiJourneyIcon(content.emoji, content.templateId),
     );
     Widget image = photo == null
         ? fallback
@@ -224,7 +236,7 @@ class _PhotoPanel extends StatelessWidget {
     }
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(OurneyRadii.card + 4),
+      borderRadius: BorderRadius.circular(UiRadius.card + 4),
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -247,18 +259,18 @@ class _PhotoPanel extends StatelessWidget {
           ),
           if (milestone != null)
             Positioned(
-              top: OurneySpacing.lg,
-              left: OurneySpacing.lg,
-              right: OurneySpacing.lg,
+              top: UiSpace.lg,
+              left: UiSpace.lg,
+              right: UiSpace.lg,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: _Badge(text: milestone!),
               ),
             ),
           Positioned(
-            left: OurneySpacing.lg,
-            right: OurneySpacing.lg,
-            bottom: OurneySpacing.lg,
+            left: UiSpace.lg,
+            right: UiSpace.lg,
+            bottom: UiSpace.lg,
             child: _Stats(
               kicker: kicker,
               number: content.number,
@@ -287,7 +299,7 @@ class _Stats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = displayStyle(
+    final label = _displayStyle(
       size: 24,
       color: _white,
       height: shareCardDiacriticHeight,
@@ -310,7 +322,7 @@ class _Stats extends StatelessWidget {
             key: const ValueKey('share-card-number'),
             maxLines: 1,
             // Digits only: no diacritics, so a tight line height is safe.
-            style: displayStyle(
+            style: _displayStyle(
               size: numberSize,
               color: _white,
               height: 1.08,
@@ -334,12 +346,12 @@ class _Badge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: _white,
-        borderRadius: BorderRadius.circular(OurneyRadii.capsule),
+        borderRadius: BorderRadius.circular(UiRadius.capsule),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: OurneySpacing.md,
-          vertical: OurneySpacing.xs,
+          horizontal: UiSpace.md,
+          vertical: UiSpace.xs,
         ),
         child: Text(
           text,
@@ -347,7 +359,7 @@ class _Badge extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           // primaryDeep on white: >= 4.5:1.
-          style: displayStyle(
+          style: _displayStyle(
             size: 16,
             color: _primaryDeep,
             height: shareCardDiacriticHeight,
@@ -401,14 +413,14 @@ class _Footer extends StatelessWidget {
           ),
           child: Text(
             'O',
-            style: displayStyle(size: 16, color: _ink, height: 1),
+            style: _displayStyle(size: 16, color: _ink, height: 1),
           ),
         ),
-        const SizedBox(width: OurneySpacing.sm),
+        const SizedBox(width: UiSpace.sm),
         Text(
           shareCardLogo,
           key: const ValueKey('share-card-logo'),
-          style: displayStyle(size: 22, color: _white, height: 1.2),
+          style: _displayStyle(size: 22, color: _white, height: 1.2),
         ),
         const Spacer(),
         if (metric != null)
@@ -420,7 +432,7 @@ class _Footer extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.end,
               style: const TextStyle(
-                fontFamily: kBodyFont,
+                fontFamily: UiFonts.body,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: _white,

@@ -13,43 +13,70 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_title => 'Chào mừng đến Ourney';
 
   @override
-  String get onboarding_start => 'Bắt đầu';
-
-  @override
   String get onboarding_next => 'Tiếp tục';
 
   @override
   String get onboarding_skip => 'Bỏ qua';
 
   @override
-  String get onboarding_valueTitle => 'Mỗi ngày một tấm. Thấy rõ mình tiến bộ.';
+  String get onboarding_languageSwitch => 'English';
 
   @override
-  String get onboarding_valueBody =>
-      'Ourney biến thói quen nhỏ thành một hành trình: giảm cân, học tiếng Anh, tập luyện hay một chuyến đi.';
+  String get onboarding_languageSwitchHint => 'Đổi ngôn ngữ';
 
   @override
-  String get onboarding_howTitle => 'Check-in chỉ mất 5 giây';
+  String get onboarding_page1Title => 'Từng tấm ảnh. Cả một câu chuyện.';
 
   @override
-  String get onboarding_howStep1 => 'Mở app là chụp ngay';
+  String get onboarding_page1Body =>
+      'Ghi lại hôm nay để thấy câu chuyện lớn dần.';
 
   @override
-  String get onboarding_howStep2 =>
-      'Gắn ảnh vào hành trình, thêm ghi chú hoặc số đo';
+  String get onboarding_page2Title =>
+      'Hành trình nào cũng được. Một mình, cùng nhóm, hay cùng người thương.';
 
   @override
-  String get onboarding_howStep3 => 'Giữ chuỗi ngày và rủ bạn bè cùng làm';
+  String get onboarding_page2Body => 'Chọn cách đồng hành phù hợp với bạn.';
 
   @override
-  String get onboarding_readyTitle => 'Sẵn sàng chưa?';
+  String get onboarding_page3Title =>
+      'Biến hành trình thành thứ đáng để chia sẻ.';
 
   @override
-  String get onboarding_readyBody =>
-      'Ourney chỉ xin quyền camera và thông báo đúng lúc cần, không làm phiền bạn ngay bây giờ.';
+  String get onboarding_page3Body =>
+      'Tạo nên những bản tổng kết bạn muốn giữ mãi.';
+
+  @override
+  String get onboarding_recapTitle => '30 ngày yên tĩnh';
+
+  @override
+  String get onboarding_recapSubtitle => 'Đọc sách mỗi ngày · Tháng 10';
+
+  @override
+  String get onboarding_recapShare => 'Đáng để chia sẻ';
 
   @override
   String onboarding_pageSemantics(int current, int total) {
     return 'Trang $current trên $total';
   }
+
+  @override
+  String get onboarding_cameraTitle => 'Cho phép dùng camera';
+
+  @override
+  String get onboarding_cameraBody => 'Ourney cần camera để chụp ảnh hôm nay.';
+
+  @override
+  String get onboarding_cameraAllow => 'Cho phép camera';
+
+  @override
+  String onboarding_nudgeTitle(String time) {
+    return 'Nhắc bạn lúc $time ngày mai nhé?';
+  }
+
+  @override
+  String get onboarding_nudgeAllow => 'Bật nhắc nhở';
+
+  @override
+  String get onboarding_notNow => 'Để sau';
 }

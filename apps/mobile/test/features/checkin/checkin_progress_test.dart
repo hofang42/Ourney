@@ -7,7 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'fakes.dart';
 
 void main() {
-  final clock = FakeJourneyClock();
+  final clock = FakeCheckinClock();
 
   StreakSummary streak(Journey j, Iterable<LocalDate> dates, {Membership? m}) =>
       memberStreak(

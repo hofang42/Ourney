@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../shared/ourney_dock.dart';
+import '../ui/ui.dart';
+import 'app_dock.dart';
 import 'theme/motion.dart';
 
-/// Bottom shell: Journeys · [Capture] · Squad, drawn by [OurneyDock]. Branch
+/// Bottom shell: Journeys · [Capture] · Squad, drawn by [AppDock]. Branch
 /// order = tab order, so branch 1 (Capture) is the center button and the
-/// app's start tab.
+/// app's start tab. On the Capture tab the camera screen draws its own
+/// dark dock around the hero shutter, so the shell shows none.
 class AppShell extends StatelessWidget {
   const AppShell({required this.navigationShell, super.key});
 
   final StatefulNavigationShell navigationShell;
 
-  static const int journeysIndex = OurneyDock.journeysIndex;
-  static const int captureIndex = OurneyDock.captureIndex;
-  static const int groupsIndex = OurneyDock.groupsIndex;
+  static const int journeysIndex = AppDock.journeysIndex;
+  static const int captureIndex = AppDock.captureIndex;
+  static const int groupsIndex = AppDock.groupsIndex;
 
   void _go(int index) {
     if (index == navigationShell.currentIndex) {
@@ -27,13 +29,14 @@ class AppShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final onCamera = navigationShell.currentIndex == captureIndex;
     return Scaffold(
+      backgroundColor: context.ui.bg,
       extendBody: false,
       body: navigationShell,
-      bottomNavigationBar: OurneyDock(
-        currentIndex: navigationShell.currentIndex,
-        onSelect: _go,
-      ),
+      bottomNavigationBar: onCamera
+          ? null
+          : AppDock(currentIndex: navigationShell.currentIndex, onSelect: _go),
     );
   }
 }

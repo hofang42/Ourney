@@ -4,18 +4,18 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../shared/avatar.dart';
+import '../../../ui/ui.dart';
 import '../l10n/generated/profile_localizations.dart';
 import '../profile_providers.dart';
 
-/// [Avatar] for a profile: freshly picked [bytes] win over the stored
+/// [UiAvatar] for a profile: freshly picked [bytes] win over the stored
 /// [storagePath] (resolved through MediaStore); initials otherwise.
 class ProfileAvatar extends ConsumerWidget {
   const ProfileAvatar({
     required this.name,
     this.storagePath,
     this.bytes,
-    this.size = 96,
+    this.size = UiSize.avatarXL,
     super.key,
   });
 
@@ -37,7 +37,12 @@ class ProfileAvatar extends ConsumerWidget {
       label: ProfileL10n.of(context).profile_avatarSemantics(name),
       image: true,
       excludeSemantics: true,
-      child: Avatar(name: name, image: image, size: size),
+      child: UiAvatar(
+        name: name,
+        colorIndex: UiAvatar.indexFor(name),
+        image: image,
+        size: size,
+      ),
     );
   }
 }

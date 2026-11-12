@@ -30,5 +30,121 @@
         "type": "int"
       }
     }
+  },
+  "quiet_transformer_vaultPill": "Kho riêng tư · Ngày {day}",
+  "@quiet_transformer_vaultPill": {
+    "description": "Nhãn đầu màn chụp của phong cách 1",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "quiet_transformer_ghostOn": "Bóng mờ căn dáng: BẬT (30%)",
+  "@quiet_transformer_ghostOn": {
+    "description": "Nút bật bóng mờ ngày 1 trên màn chụp"
+  },
+  "quiet_transformer_ghostOff": "Bóng mờ căn dáng: TẮT",
+  "@quiet_transformer_ghostOff": {
+    "description": "Nút tắt bóng mờ ngày 1 trên màn chụp"
+  },
+  "quiet_transformer_metricSliderLabel": "{name} hôm nay",
+  "@quiet_transformer_metricSliderLabel": {
+    "description": "Nhãn thanh trượt chỉ số trên màn chụp",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_trendTitle": "Xu hướng {name}",
+  "@quiet_transformer_trendTitle": {
+    "description": "Tiêu đề thẻ biểu đồ đường cong chỉ số",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_trendEmpty": "Ghi chỉ số khi check-in để vẽ đường biến đổi",
+  "@quiet_transformer_trendEmpty": {
+    "description": "Hiện khi chưa có điểm số liệu nào"
+  },
+  "quiet_transformer_trendSingle": "Đã ghi mốc đầu tiên · Thêm ngày tiếp theo để nối đường cong",
+  "@quiet_transformer_trendSingle": {
+    "description": "Hiện khi mới có 1 điểm số liệu"
+  },
+  "quiet_transformer_metricHiddenBadge": "Đã ẩn số liệu riêng tư",
+  "@quiet_transformer_metricHiddenBadge": {
+    "description": "Hiện khi người dùng bật ẩn chỉ số"
+  },
+  "quiet_transformer_milestoneStart": "NGÀY 01 · KHỞI ĐẦU",
+  "@quiet_transformer_milestoneStart": {
+    "description": "Nhãn mốc ngày 1"
+  },
+  "quiet_transformer_milestoneWeek": "NGÀY {day} · CỘT MỐC",
+  "@quiet_transformer_milestoneWeek": {
+    "description": "Nhãn mốc ngày 7, 14, 21...",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_milestoneToday": "NGÀY {day} · HÔM NAY",
+  "@quiet_transformer_milestoneToday": {
+    "description": "Nhãn mốc hôm nay",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_milestoneDay": "NGÀY {day}",
+  "@quiet_transformer_milestoneDay": {
+    "description": "Nhãn ngày thường trên trục dọc",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_compareDayStart": "NGÀY 01",
+  "@quiet_transformer_compareDayStart": {
+    "description": "Nhãn khung ảnh bên trái trên thiệp so sánh"
+  },
+  "quiet_transformer_compareDayNow": "NGÀY {day}",
+  "@quiet_transformer_compareDayNow": {
+    "description": "Nhãn khung ảnh bên phải trên thiệp so sánh",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_hideExactWeight": "Ẩn số cân chính xác",
+  "@quiet_transformer_hideExactWeight": {
+    "description": "Công tắc ẩn số cân trên thiệp chia sẻ"
+  },
+  "quiet_transformer_hideExactWeightSub": "Chỉ hiện độ chênh lệch hoặc chuỗi ngày khi chia sẻ",
+  "@quiet_transformer_hideExactWeightSub": {
+    "description": "Mô tả phụ của công tắc ẩn số cân"
+  },
+  "quiet_transformer_transformationBadge": "Chuyển đổi {delta}",
+  "@quiet_transformer_transformationBadge": {
+    "description": "Nhãn chênh lệch trên thiệp so sánh",
+    "placeholders": {
+      "delta": {
+        "type": "String"
+      }
+    }
+  },
+  "quiet_transformer_exportCard": "Xuất thiệp tiến độ",
+  "@quiet_transformer_exportCard": {
+    "description": "Nút chia sẻ thiệp tiến độ"
+  },
+  "quiet_transformer_waitingPhoto": "Chưa có ảnh",
+  "@quiet_transformer_waitingPhoto": {
+    "description": "Ô chờ khi chưa có ảnh"
   }
 }

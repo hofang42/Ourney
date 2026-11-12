@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
-import 'package:ourney/app/theme/tokens.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
 import 'package:ourney/features/share_card/ui/share_card.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
 import 'share_card_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
+
+/// A label inside one of the kit segmented controls.
+Finder _seg(String group, String label) =>
+    find.descendant(of: _key(group), matching: find.text(label));
 
 Future<void> _tap(WidgetTester tester, Finder f) async {
   await tester.ensureVisible(f);
@@ -46,7 +50,7 @@ void main() {
         lessThanOrEqualTo(420),
       );
 
-      await _tap(tester, _key('share-card-format-feed'));
+      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
       expect(_key('share-card-story'), findsNothing);
       expect(tester.getSize(_key('share-card-feed')), const Size(360, 450));
       expect(tester.takeException(), isNull);
@@ -77,7 +81,7 @@ void main() {
         checkIns: streakCheckIns(j.id),
         locale: const Locale('en'),
       );
-      await _tap(tester, _key('share-card-number-day'));
+      await _tap(tester, _seg('share-card-number-mode', 'Day N'));
       expect(_text(tester, 'share-card-kicker'), 'Day');
       expect(_text(tester, 'share-card-number'), '7');
       expect(_text(tester, 'share-card-caption'), 'of 14');
@@ -127,7 +131,7 @@ void main() {
       expect(tester.takeException(), isNull);
       // The card itself is an image: fixed size whatever the text scale.
       expect(tester.getSize(_key('share-card-story')), const Size(360, 640));
-      await _tap(tester, _key('share-card-format-feed'));
+      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
       expect(tester.takeException(), isNull);
       await tester.scrollUntilVisible(
         _key('share-card-blur'),
@@ -146,7 +150,7 @@ void main() {
       final switcher = tester.widget<AnimatedSwitcher>(
         find.byType(AnimatedSwitcher).first,
       );
-      expect(switcher.duration, OurneyDurations.reducedFade);
+      expect(switcher.duration, Duration.zero);
     });
 
     testWidgets('unknown journey -> not found state', (tester) async {
@@ -189,7 +193,7 @@ void main() {
         find.descendant(of: blurred, matching: _key('share-card-photo')),
         findsOneWidget,
       );
-      final switchTile = tester.widget<SwitchListTile>(_key('share-card-blur'));
+      final switchTile = tester.widget<UiSwitchRow>(_key('share-card-blur'));
       expect(switchTile.value, isTrue);
     });
 
@@ -201,7 +205,7 @@ void main() {
         photos: true,
         checkIns: streakCheckIns(j.id),
       );
-      await _tap(tester, _key('share-card-format-feed'));
+      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
       expect(
         find.descendant(
           of: _key('share-card-feed'),
@@ -280,7 +284,7 @@ void main() {
       expect(shared.text, '💪 Tập mỗi ngày trên Ourney');
       expect(shared.origin, isNotNull);
 
-      await _tap(tester, _key('share-card-format-feed'));
+      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
       await _tap(tester, _key('share-card-share'));
       expect(h.exporter.exports.last.format, ShareCardFormat.feed);
       expect(h.exporter.exports.last.boundarySize, const Size(360, 450));

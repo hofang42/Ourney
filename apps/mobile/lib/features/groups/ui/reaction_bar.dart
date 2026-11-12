@@ -4,7 +4,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
-import '../../../app/theme/tokens.dart';
+import '../../../ui/ui.dart';
 import '../data/groups_providers.dart';
 import '../domain/group_today.dart';
 import '../l10n/generated/groups_localizations.dart';
@@ -50,7 +50,6 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
-    final c = OurneyColors.of(context);
     final myId = ref.watch(currentUserIdProvider);
     final blocked = ref.watch(groupBlockedIdsProvider).value ?? const {};
     final reactions =
@@ -72,8 +71,8 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
 
     return Wrap(
       key: ValueKey('groups-reactions-${widget.checkInId}'),
-      spacing: OurneySpacing.xs,
-      runSpacing: OurneySpacing.xs,
+      spacing: UiSpace.xs,
+      runSpacing: UiSpace.xs,
       children: [
         for (final emoji in reactionEmojis)
           if (widget.enabled || counts[emoji]! > 0)
@@ -83,7 +82,6 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
               count: counts[emoji]!,
               selected: mine == emoji,
               semanticLabel: l10n.groups_reactSemantics(emoji, counts[emoji]!),
-              color: c,
               onTap: widget.enabled && _pending == null
                   ? () => _toggle(emoji, mine)
                   : null,
@@ -93,13 +91,13 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
   }
 }
 
+/// `.reactions button`: 48dp bordered emoji button; selected = ink border.
 class _ReactionChip extends StatelessWidget {
   const _ReactionChip({
     required this.emoji,
     required this.count,
     required this.selected,
     required this.semanticLabel,
-    required this.color,
     required this.onTap,
     super.key,
   });
@@ -108,54 +106,51 @@ class _ReactionChip extends StatelessWidget {
   final int count;
   final bool selected;
   final String semanticLabel;
-  final OurneyColors color;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final radius = BorderRadius.circular(OurneyRadii.capsule);
-    return Semantics(
-      button: onTap != null,
+    final ui = context.ui;
+    return UiPressable(
+      onPressed: onTap,
       selected: selected,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: Material(
-        color: selected ? color.accent.withValues(alpha: 0.18) : color.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: radius,
-          side: BorderSide(
-            color: selected ? color.accent : color.border,
+      semanticLabel: semanticLabel,
+      excludeChildSemantics: true,
+      centerChild: true,
+      borderRadius: BorderRadius.circular(UiRadius.input),
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 36),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          color: selected ? ui.fill : ui.surface,
+          borderRadius: BorderRadius.circular(UiRadius.input),
+          border: Border.all(
+            color: selected ? ui.ink : ui.border,
             width: selected ? 2 : 1,
           ),
         ),
-        child: InkWell(
-          borderRadius: radius,
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: OurneySizes.minTap,
-              minWidth: OurneySizes.minTap,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              emoji,
+              textScaler: TextScaler.noScaling,
+              style: const TextStyle(fontSize: 16),
             ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: OurneySpacing.sm),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    emoji,
-                    textScaler: TextScaler.noScaling,
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  if (count > 0) ...[
-                    const SizedBox(width: 2),
-                    Text('$count', style: text.labelLarge),
-                  ],
-                ],
+            if (count > 0) ...[
+              const SizedBox(width: 3),
+              Text(
+                '$count',
+                style: UiText.body(
+                  size: 12,
+                  weight: FontWeight.w700,
+                  height: 1.3,
+                  color: ui.ink,
+                ),
               ),
-            ),
-          ),
+            ],
+          ],
         ),
       ),
     );

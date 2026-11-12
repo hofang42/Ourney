@@ -3,6 +3,7 @@
 library;
 
 export 'src/contracts/repositories.dart';
+export 'src/contracts/social.dart';
 export 'src/local_date.dart';
 export 'src/models.dart';
 export 'src/paths.dart';

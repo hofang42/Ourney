@@ -270,4 +270,7 @@ class GroupsL10nEn extends GroupsL10n {
   @override
   String get groups_inviteClosed =>
       'The journey has ended, so no one else can join.';
+
+  @override
+  String get groups_eyebrow => 'Your people';
 }

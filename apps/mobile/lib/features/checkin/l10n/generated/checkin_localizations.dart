@@ -259,6 +259,60 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Xong'**
   String get checkin_done;
+
+  /// Eyebrow of the success screen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đăng khoảnh khắc'**
+  String get checkin_posted;
+
+  /// Headline of the success screen without a milestone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ được chuỗi.'**
+  String get checkin_chainKept;
+
+  /// Unit after the big streak number.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{ngày}}'**
+  String checkin_daysUnit(int count);
+
+  /// Left action of the compose header: close and go back to the camera.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp lại'**
+  String get checkin_retake;
+
+  /// Privacy tag under the journey name on the compose screen: solo journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ mình bạn'**
+  String get checkin_privacyPrivate;
+
+  /// Privacy tag on the compose screen: journey shared with one partner.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cặp đôi'**
+  String get checkin_privacyCouple;
+
+  /// Privacy tag on the compose screen: group journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhóm'**
+  String get checkin_privacySquad;
+
+  /// Rubber stamp on the Moment posted calendar with the day number of the journey.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String checkin_dayStamp(int day);
+
+  /// Semantics label of the mini calendar on the success screen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lịch {days} ngày gần nhất, hôm nay có ảnh'**
+  String checkin_calendarSemantics(int days);
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {

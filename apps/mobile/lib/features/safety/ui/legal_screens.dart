@@ -5,8 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/redirect.dart' show safeFrom;
-import '../../../app/theme/tokens.dart';
-import '../../../shared/chunky_button.dart';
+import '../../../ui/ui.dart';
 import '../data/safety_providers.dart';
 import '../l10n/generated/safety_localizations.dart';
 import '../safety_paths.dart';
@@ -49,31 +48,25 @@ class LegalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = SafetyL10n.of(context);
-    final text = Theme.of(context).textTheme;
+    final ui = context.ui;
     final (title, sections) = switch (document) {
       LegalDocument.eula => (l10n.safety_hubEula, eulaSections(l10n)),
       LegalDocument.privacy => (l10n.safety_hubPrivacy, privacySections(l10n)),
     };
-    return Scaffold(
-      key: ValueKey('safety-${document.name}'),
-      appBar: AppBar(
-        leading: BackButton(onPressed: () => closeOr(context, SafetyPaths.hub)),
-        title: Text(title),
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-          children: [
-            Text(
-              _lastUpdated(context, l10n),
-              style: text.bodySmall?.copyWith(
-                color: OurneyColors.of(context).inkMuted,
-              ),
-            ),
-            const SizedBox(height: OurneySpacing.lg),
-            for (final (t, b) in sections) LegalSection(title: t, body: b),
-          ],
-        ),
+    return SafetyPage(
+      pageKey: ValueKey('safety-${document.name}'),
+      title: title,
+      onBack: () => closeOr(context, SafetyPaths.hub),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _lastUpdated(context, l10n),
+            style: UiText.muted(color: ui.inkMuted, size: 13),
+          ),
+          const SizedBox(height: UiSpace.lg),
+          for (final (t, b) in sections) LegalSection(title: t, body: b),
+        ],
       ),
     );
   }
@@ -106,60 +99,47 @@ class _EulaAcceptScreenState extends ConsumerState<EulaAcceptScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = SafetyL10n.of(context);
-    final text = Theme.of(context).textTheme;
-    return Scaffold(
-      key: const ValueKey('safety-eula-accept'),
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Text(l10n.safety_eulaAcceptTitle),
+    final ui = context.ui;
+    return SafetyPage(
+      pageKey: const ValueKey('safety-eula-accept'),
+      title: l10n.safety_eulaAcceptTitle,
+      onBack: null,
+      bottom: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiSwitchRow(
+            key: const ValueKey('safety-eula-checkbox'),
+            label: l10n.safety_eulaAcceptCheckbox,
+            value: _checked,
+            divider: false,
+            onChanged: (v) => setState(() => _checked = v),
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton(
+            key: const ValueKey('safety-eula-accept-button'),
+            label: l10n.safety_eulaAcceptButton,
+            onPressed: _checked ? _accept : null,
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(OurneySpacing.screenMargin),
-                children: [
-                  Text(l10n.safety_eulaAcceptIntro, style: text.bodyLarge),
-                  const SizedBox(height: OurneySpacing.xl),
-                  for (final (t, b) in eulaSections(l10n))
-                    LegalSection(title: t, body: b),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: TextButton.icon(
-                      key: const ValueKey('safety-eula-accept-privacy'),
-                      onPressed: () => context.push(SafetyPaths.privacy),
-                      icon: const Icon(Icons.privacy_tip_outlined),
-                      label: Text(l10n.safety_hubPrivacy),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(OurneySpacing.lg),
-              child: Column(
-                children: [
-                  CheckboxListTile(
-                    key: const ValueKey('safety-eula-checkbox'),
-                    value: _checked,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: Text(l10n.safety_eulaAcceptCheckbox),
-                    onChanged: (v) => setState(() => _checked = v ?? false),
-                  ),
-                  const SizedBox(height: OurneySpacing.sm),
-                  ChunkyButton(
-                    key: const ValueKey('safety-eula-accept-button'),
-                    label: l10n.safety_eulaAcceptButton,
-                    onPressed: _checked ? _accept : null,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.safety_eulaAcceptIntro,
+            style: UiText.muted(color: ui.inkMuted),
+          ),
+          const SizedBox(height: UiSpace.xl),
+          for (final (t, b) in eulaSections(l10n))
+            LegalSection(title: t, body: b),
+          UiTextAction(
+            key: const ValueKey('safety-eula-accept-privacy'),
+            label: l10n.safety_hubPrivacy,
+            alignment: Alignment.centerLeft,
+            onPressed: () => context.push(SafetyPaths.privacy),
+          ),
+        ],
       ),
     );
   }
