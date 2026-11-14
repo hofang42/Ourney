@@ -15,6 +15,7 @@ export 'components/dock.dart';
 export 'components/feedback.dart';
 export 'components/glass.dart';
 export 'components/inputs.dart';
+export 'components/journey_widgets.dart';
 export 'components/layout.dart';
 export 'components/memory_widgets.dart';
 export 'components/ourney_icons.dart';

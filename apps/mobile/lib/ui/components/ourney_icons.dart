@@ -18,6 +18,16 @@ class _Prim {
       : (Path()..addOval(Rect.fromCircle(center: Offset(cx, cy), radius: r)));
 }
 
+/// Inner "core" fills drawn over the main shape (V2 `.o-flame-inner`).
+final Map<String, (Path, Color)> _cores = {
+  'flame': (
+    parseSvgPath(
+      'M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z',
+    ),
+    const Color(0xFFFF9F1C),
+  ),
+};
+
 /// Path data of the icons used by the dock and reaction bar, copied from
 /// V2 `design/ourney-v2-app/src/app/icons.tsx` (`drawing()`).
 const Map<String, List<_Prim>> _drawings = {
@@ -74,6 +84,106 @@ const Map<String, List<_Prim>> _drawings = {
       'M6 13V7a2 2 0 0 1 4 0v4-6a2 2 0 0 1 4 0v6-5a2 2 0 0 1 4 0v6-3a2 2 0 0 1 4 0v6c0 4-3 7-7 7h-2c-4 0-6-2-8-5l-2-3c-1-2 2-3 3-1l2 2',
     ),
   ],
+  'settings': [
+    _Prim.circle(12, 12, 3),
+    _Prim.path(
+      'm12 3 1 2.2 2.5.8 2.1-1 1.5 1.5-1 2.2.8 2.5L21 12l-2.2 1 .2 2.6 1 2-1.7 1.5-2-1-2.5.8L12 21l-1-2.2-2.6-.8-2.1 1-1.5-1.6 1-2.1L3 12l2.2-1L5 8.5l-1-2 1.7-1.6 2 1 2.5-.8Z',
+    ),
+  ],
+  'back': [_Prim.path('m10 5-7 7 7 7'), _Prim.path('M4 12h17')],
+  'close': [_Prim.path('m5 5 14 14M19 5 5 19')],
+  'plus': [_Prim.path('M12 4v16M4 12h16')],
+  'share': [
+    _Prim.circle(18, 5, 2.5),
+    _Prim.circle(6, 12, 2.5),
+    _Prim.circle(18, 19, 2.5),
+    _Prim.path('m8.2 10.8 7.5-4.5M8.2 13.2l7.5 4.5'),
+  ],
+  'lock': [
+    _Prim.path('M6 10h12v10H6Z'),
+    _Prim.path('M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10'),
+    _Prim.path('M12 14v2.5'),
+  ],
+  'heart': [
+    _Prim.path(
+      'M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z',
+    ),
+  ],
+  'star': [
+    _Prim.path(
+      'm12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z',
+    ),
+  ],
+  'flame': [
+    _Prim.path(
+      'M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z',
+    ),
+  ],
+  'trophy': [
+    _Prim.path('M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z'),
+    _Prim.path(
+      'M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8',
+    ),
+  ],
+  'clock': [_Prim.circle(12, 12, 8), _Prim.path('M12 7v5l3.5 2M9 2h6')],
+  'timer': [_Prim.circle(12, 12, 8), _Prim.path('M12 7v5l3.5 2M9 2h6')],
+  'image': [
+    _Prim.path('M3 5h18v14H3Z'),
+    _Prim.circle(8, 9, 1.5),
+    _Prim.path('m4 17 5-5 3 3 2-2 6 5'),
+  ],
+  'check': [_Prim.path('m6 12.5 4 4 8-9')],
+  'warning': [_Prim.path('m12 3 9 17H3Z'), _Prim.path('M12 8v5M12 17h.01')],
+  'wifi-off': [
+    _Prim.path(
+      'M3 8c4.8-3.8 10.3-4.2 15.5-1.2M6 12c2.8-2.2 5.7-2.7 8.8-1.4M9.5 16c1.5-1 3.2-.9 4.5.2M3 3l18 18',
+    ),
+  ],
+  'cloud-off': [
+    _Prim.path(
+      'M5.5 17H5a3 3 0 0 1-.8-5.9A6.5 6.5 0 0 1 15 6.5a4.5 4.5 0 0 1 4.2 6.1M3 3l18 18',
+    ),
+  ],
+  'calendar': [
+    _Prim.path('M4 6h16v15H4Z'),
+    _Prim.path('M8 3v6M16 3v6M4 10h16'),
+  ],
+  'switch-camera': [
+    _Prim.path('M5 8h3l1.5-2h5L16 8h3v10H5Z'),
+    _Prim.path('m9 12 2-2M9 12l2 2M15 14l-2 2M15 14l-2-2'),
+  ],
+  'lightning': [_Prim.path('m13 2-8 12h6l-1 8 9-13h-6Z')],
+  'type-weight': [
+    _Prim.path(
+      'M12 3.2c5.5 0 9 3.5 9 8.8s-3.5 8.8-9 8.8S3 17.3 3 12s3.5-8.8 9-8.8Zm0 5C9.6 8.2 8.1 9.7 8.1 12s1.5 3.8 3.9 3.8 3.9-1.5 3.9-3.8-1.5-3.8-3.9-3.8Z',
+    ),
+  ],
+  'type-study': [
+    _Prim.path(
+      'M3.5 3.5h5.7v10.2c0 1.7.9 2.6 2.8 2.6s2.8-.9 2.8-2.6V3.5h5.7v10.8c0 4.4-3.2 7-8.5 7s-8.5-2.6-8.5-7Z',
+    ),
+  ],
+  'type-trip': [
+    _Prim.path('M2.5 3h19v18h-19Z'),
+    _Prim.path(
+      'M4 4h5.2v2.4C10.5 4.6 12.4 3.6 15 3.6c.8 0 1.6.1 2.2.3l-.6 5.2c-.8-.3-1.6-.5-2.5-.5-3 0-4.5 1.6-4.5 4.9V21H4Z',
+    ),
+  ],
+  'type-couple': [
+    _Prim.path('M2.2 4.3h19.6v15.4H2.2Z'),
+    _Prim.path(
+      'M18.3 14.9c-1.7 1.2-3.8 1.8-6.2 1.8-4.5 0-7.4-2.4-7.4-6.3 0-4 3-6.5 7.3-6.5 4.5 0 7.1 2.6 7.1 7.2v1.3H10c.4 1 1.4 1.5 3 1.5 1.5 0 2.8-.4 4.1-1.2ZM10 9.4h3.8c-.1-1.1-.8-1.7-1.9-1.7-1 0-1.7.6-1.9 1.7Z',
+    ),
+  ],
+  'type-workout': [
+    _Prim.path('M3.5 20.5v-17h5.2l6.6 9.1V3.5h5.2v17h-5.2l-6.6-9v9Z'),
+    _Prim.circle(6.2, 6.2, 1.15),
+    _Prim.circle(17.8, 17.8, 1.15),
+    _Prim.circle(17.8, 6.2, 0.85),
+  ],
+  'type-custom': [
+    _Prim.path('M2.8 3.5h6l3.3 7.1 3.2-7.1h5.9L14.8 16v5H9.2v-5Z'),
+  ],
 };
 
 /// Sticker fill of each icon (V2 icons.tsx `palette`).
@@ -89,6 +199,32 @@ const Map<String, Color> _palette = {
   'react-laugh': Color(0xFFFF9F1C),
   'react-fire': Color(0xFFC2452B),
   'react-wave': Color(0xFF2AA7E0),
+  'settings': Color(0xFF2AA7E0),
+  'back': Color(0xFF2AA7E0),
+  'close': Color(0xFFC2452B),
+  'plus': Color(0xFF10B981),
+  'share': Color(0xFF2AA7E0),
+  'lock': Color(0xFF2AA7E0),
+  'heart': Color(0xFFFF4D6D),
+  'star': Color(0xFFFF9F1C),
+  'flame': Color(0xFFC2452B),
+  'trophy': Color(0xFFFF9F1C),
+  'clock': Color(0xFF2AA7E0),
+  'timer': Color(0xFFFF9F1C),
+  'image': Color(0xFF10B981),
+  'check': Color(0xFF10B981),
+  'warning': Color(0xFFFF9F1C),
+  'wifi-off': Color(0xFFC2452B),
+  'cloud-off': Color(0xFF2AA7E0),
+  'calendar': Color(0xFFFF4D6D),
+  'switch-camera': Color(0xFF10B981),
+  'lightning': Color(0xFFFF9F1C),
+  'type-weight': Color(0xFF10B981),
+  'type-study': Color(0xFFFF9F1C),
+  'type-trip': Color(0xFFC2452B),
+  'type-couple': Color(0xFFFF4D6D),
+  'type-workout': Color(0xFF2AA7E0),
+  'type-custom': Color(0xFFA13CC9),
 };
 
 /// Names [OurneyIcon] can draw.
@@ -293,6 +429,15 @@ class OurneyIconPainter extends CustomPainter {
     }
     if (!tiny) layer(path, ink, full ? 6 : 5);
     layer(path, color, tiny ? 3.5 : 2);
+    final core = _cores[name];
+    if (core != null && !tiny && color == ourneyIconColor(name)) {
+      canvas.drawPath(
+        core.$1,
+        Paint()
+          ..color = core.$2
+          ..style = PaintingStyle.fill,
+      );
+    }
     canvas.restore();
   }
 

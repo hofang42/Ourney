@@ -107,7 +107,7 @@ abstract class AppLocalizations {
   /// Bottom bar tab: list of journeys (docs/03: Journeys · Chụp · Nhóm).
   ///
   /// In vi, this message translates to:
-  /// **'Journeys'**
+  /// **'Hành trình'**
   String get nav_journeys;
 
   /// Bottom bar center button: open the camera.
@@ -119,8 +119,20 @@ abstract class AppLocalizations {
   /// Bottom bar tab: groups.
   ///
   /// In vi, this message translates to:
-  /// **'Nhóm'**
+  /// **'Hội'**
   String get nav_groups;
+
+  /// Bottom bar tab: notifications and activity feed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoạt động'**
+  String get nav_activity;
+
+  /// Bottom bar tab: profile.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hồ sơ'**
+  String get nav_profileTab;
 
   /// Tooltip of the app-bar button that opens the profile (settings, reminders, safety).
   ///

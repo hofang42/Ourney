@@ -13,13 +13,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get app_name => 'Ourney';
 
   @override
-  String get nav_journeys => 'Journeys';
+  String get nav_journeys => 'Hành trình';
 
   @override
   String get nav_capture => 'Chụp';
 
   @override
-  String get nav_groups => 'Nhóm';
+  String get nav_groups => 'Hội';
+
+  @override
+  String get nav_activity => 'Hoạt động';
+
+  @override
+  String get nav_profileTab => 'Hồ sơ';
 
   @override
   String get nav_profile => 'Hồ sơ và cài đặt';

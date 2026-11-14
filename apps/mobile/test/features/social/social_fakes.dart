@@ -387,6 +387,7 @@ Future<GoRouter> pumpSocial(
     initialLocation: location,
     routes: [
       ...socialRoutes,
+      ...activityRoutes,
       GoRoute(
         path: '/journeys',
         builder: (_, _) => const Scaffold(body: Text('hub-journeys')),

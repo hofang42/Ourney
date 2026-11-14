@@ -19,7 +19,8 @@ import '../features/social/routes.dart';
 ///
 /// * Tab routes render inside the bottom-bar shell (state kept per tab):
 ///   Journeys = `journeysRoutes`, Capture = `cameraRoutes`,
-///   Groups = `groupsRoutes`.
+///   Groups = `groupsRoutes`, Activity = `activityRoutes` (the inbox) and
+///   Profile = `profileRoutes`.
 /// * Standalone routes are full-screen on the root navigator.
 /// * A tab-owned route that must cover the bottom bar sets
 ///   `parentNavigatorKey: rootNavigatorKey` (lib/app/navigator_keys.dart).
@@ -27,11 +28,12 @@ abstract final class FeatureRoutes {
   static List<RouteBase> get journeysTab => journeysRoutes;
   static List<RouteBase> get captureTab => cameraRoutes;
   static List<RouteBase> get groupsTab => groupsRoutes;
+  static List<RouteBase> get activityTab => activityRoutes;
+  static List<RouteBase> get profileTab => profileRoutes;
 
   static List<RouteBase> get standalone => [
     ...onboardingRoutes,
     ...authRoutes,
-    ...profileRoutes,
     ...checkinRoutes,
     ...shareCardRoutes,
     ...safetyRoutes,
@@ -53,7 +55,7 @@ abstract final class FeatureRoutes {
     'share_card': shareCardRoutes,
     'safety': safetyRoutes,
     'reminders': remindersRoutes,
-    'social': socialRoutes,
+    'social': [...socialRoutes, ...activityRoutes],
     'sharing': sharingRoutes,
   };
 }

@@ -126,7 +126,7 @@ void main() {
     expect(camera.gates, hasLength(1), reason: 'start is in flight');
 
     // Leave before the camera finished opening.
-    await tester.tap(find.text('Journeys'));
+    await tester.tap(find.text('Hành trình'));
     await tester.pump();
     camera.gates.single.complete();
     await tester.pumpAndSettle();
