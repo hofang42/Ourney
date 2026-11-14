@@ -80,7 +80,7 @@ join (`features/groups/ui`), Profile + edit (`features/profile`), Share card scr
 (`features/share_card/ui`). The shell dock is `lib/app/app_dock.dart` (a `UiDock` wrapper with the
 active journey accent); the camera screen draws its own camera-mode dock.
 
-## V2 sticker language (design source `design/figma-v2/`, Figma Make "Ourney V2")
+## V2 sticker language (design source `design/ourney-v2-app/`, Figma Make "Ourney V2")
 PR 1 adds the foundation; screens migrate in later PRs.
 
 | File | Contents |

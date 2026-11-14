@@ -1,5 +1,5 @@
 /// Ourney UI kit: V1.0 foundation moving to the V2 sticker language
-/// (`design/figma-v2/`).
+/// (`design/ourney-v2-app/`).
 ///
 /// Import this barrel from screens: `import '../../ui/ui.dart';`.
 library;
