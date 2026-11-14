@@ -57,6 +57,8 @@ class SocialScaffold extends ConsumerWidget {
         : UiBackHeader(
             key: const ValueKey('social-back'),
             backLabel: back,
+            // The wrapping DecoratedBox below already draws the divider.
+            bordered: false,
             onBack: () => socialBack(context),
             title: title,
             subtitle: localOnly ? null : subtitle,

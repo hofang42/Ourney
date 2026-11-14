@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../tokens.dart';
 import '../typography.dart';
 import 'pressable.dart';
+import 'skin_scope.dart';
 
 enum UiButtonVariant {
   /// `.brand-primary` / `.primary-wide`: coral fill, ink label.
@@ -90,11 +91,16 @@ class UiButton extends StatelessWidget {
       case UiButtonVariant.primary:
         bg = enabled ? (accent ?? ui.brand) : ui.surface;
         fg = enabled ? (onAccent ?? ui.onBrand) : ui.inkMuted;
+        // Quiet skin: hairline 1.5 border and a 2dp shadow, like the dock.
+        final skinBorder =
+            UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
         side = BorderSide(
           color: enabled ? ui.outline : ui.inkMuted,
-          width: UiBorder.standard,
+          width: skinBorder,
         );
-        shadow = enabled ? UiShadow.large : 0;
+        shadow = !enabled
+            ? 0
+            : (skinBorder < UiBorder.standard ? UiShadow.tiny : UiShadow.large);
       case UiButtonVariant.secondary:
         bg = ui.surface;
         fg = enabled ? ui.ink : ui.inkMuted;
@@ -126,7 +132,7 @@ class UiButton extends StatelessWidget {
             child: CircularProgressIndicator(strokeWidth: 2, color: fg),
           )
         else if (glyph != null)
-          glyph!
+          enabled ? glyph! : Opacity(opacity: 0.4, child: glyph!)
         else if (icon != null)
           Icon(icon, size: 18, color: fg),
         if (loading || icon != null || glyph != null)

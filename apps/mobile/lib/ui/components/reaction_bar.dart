@@ -15,29 +15,22 @@ const List<String> uiReactionIds = [
   'wave',
 ];
 
-/// Vietnamese semantics label of each reaction.
-const Map<String, String> uiReactionLabels = {
-  'clap': 'Vỗ tay',
-  'flex': 'Cố lên',
-  'heart': 'Thương',
-  'laugh': 'Haha',
-  'fire': 'Cháy',
-  'wave': 'Vẫy tay',
-};
-
 /// A pill of the six V2 reactions drawn with Ourney sticker icons (never
 /// emoji). Each reaction is a 38dp sticker disc inside a 48dp hit target.
 /// [selected] is the reaction the viewer already gave; [counts] adds a small
-/// count badge.
+/// count badge. [labels] maps each id in [uiReactionIds] to its localized
+/// semantics label (supplied by the caller from l10n).
 class UiReactionBar extends StatelessWidget {
   const UiReactionBar({
     required this.onReact,
+    required this.labels,
     this.selected,
     this.counts,
     super.key,
   });
 
   final ValueChanged<String> onReact;
+  final Map<String, String> labels;
   final String? selected;
   final Map<String, int>? counts;
 
@@ -46,8 +39,11 @@ class UiReactionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return FittedBox(
-      fit: BoxFit.scaleDown,
+    // Scrolls horizontally instead of shrinking: hit targets stay 48dp.
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      // Room for the 2dp hard shadow, which the scroll view would clip.
+      clipBehavior: Clip.none,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: ui.surface,
@@ -65,6 +61,7 @@ class UiReactionBar extends StatelessWidget {
                   id: id,
                   selected: selected == id,
                   count: counts?[id] ?? 0,
+                  label: labels[id] ?? id,
                   onReact: onReact,
                 ),
             ],
@@ -80,18 +77,19 @@ class _ReactionButton extends StatelessWidget {
     required this.id,
     required this.selected,
     required this.count,
+    required this.label,
     required this.onReact,
   });
 
   final String id;
   final bool selected;
   final int count;
+  final String label;
   final ValueChanged<String> onReact;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final label = uiReactionLabels[id]!;
     final semantic = count > 0 ? '$label, $count' : label;
     return UiPressable(
       onPressed: () => onReact(id),
@@ -118,7 +116,7 @@ class _ReactionButton extends StatelessWidget {
                       ? Border.all(color: ui.outline, width: UiBorder.thin)
                       : null,
                 ),
-                child: OurneyIcon(name: 'react-$id', size: 24),
+                child: OurneyIcon(name: 'react-$id', size: 24, active: true),
               ),
               if (count > 0)
                 Positioned(
@@ -136,7 +134,7 @@ class _ReactionButton extends StatelessWidget {
                       ),
                     ),
                     child: MediaQuery.withClampedTextScaling(
-                      maxScaleFactor: 1.2,
+                      maxScaleFactor: 1.35,
                       child: Text(
                         '$count',
                         textAlign: TextAlign.center,

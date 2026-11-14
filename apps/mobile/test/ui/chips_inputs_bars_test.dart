@@ -387,6 +387,9 @@ void main() {
       });
 
       testWidgets('no overflow at 1.35x text on 320dp', (t) async {
+        t.view.physicalSize = const Size(320, 640);
+        t.view.devicePixelRatio = 1;
+        addTearDown(t.view.reset);
         final c = TextEditingController();
         final f = FocusNode();
         await t.pumpWidget(

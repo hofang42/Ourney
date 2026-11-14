@@ -69,6 +69,7 @@ class _BarFrame extends StatelessWidget {
     required this.glass,
     required this.bordered,
     required this.minHeight,
+    this.reduceTransparency = false,
   });
 
   final Widget child;
@@ -76,10 +77,15 @@ class _BarFrame extends StatelessWidget {
   final bool bordered;
   final double minHeight;
 
+  /// App-level "reduce transparency": solid fill, no blur (like UiGlass).
+  final bool reduceTransparency;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final solid = MediaQuery.maybeOf(context)?.highContrast ?? false;
+    final solid =
+        reduceTransparency ||
+        (MediaQuery.maybeOf(context)?.highContrast ?? false);
     Widget bar = Container(
       constraints: BoxConstraints(minHeight: minHeight),
       decoration: BoxDecoration(
@@ -120,6 +126,7 @@ class UiTopBar extends StatelessWidget {
     this.titleSize = 27,
     this.glass = false,
     this.bordered = true,
+    this.reduceTransparency = false,
     super.key,
   });
 
@@ -131,12 +138,16 @@ class UiTopBar extends StatelessWidget {
   final bool glass;
   final bool bordered;
 
+  /// Solid fill instead of the frosted [glass] blur.
+  final bool reduceTransparency;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     return _BarFrame(
       glass: glass,
       bordered: bordered,
+      reduceTransparency: reduceTransparency,
       minHeight: UiSize.tap,
       child: Row(
         children: [
@@ -185,6 +196,7 @@ class UiBackHeader extends StatelessWidget {
     this.trailing,
     this.bordered = true,
     this.glass = false,
+    this.reduceTransparency = false,
     super.key,
   });
 
@@ -196,12 +208,16 @@ class UiBackHeader extends StatelessWidget {
   final bool bordered;
   final bool glass;
 
+  /// Solid fill instead of the frosted [glass] blur.
+  final bool reduceTransparency;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     return _BarFrame(
       glass: glass,
       bordered: bordered,
+      reduceTransparency: reduceTransparency,
       minHeight: 56,
       child: Row(
         children: [
@@ -222,7 +238,13 @@ class UiBackHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: UiText.h1(size: 27, color: ui.ink),
+                      style: UiText.heading(
+                        font: 'Space Grotesk',
+                        size: 27,
+                        weight: 700,
+                        tracking: -0.02,
+                        color: ui.ink,
+                      ),
                     ),
                   ),
                 if (subtitle != null)

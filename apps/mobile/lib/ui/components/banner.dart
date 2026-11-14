@@ -8,20 +8,22 @@ enum UiBannerKind { offline, readOnly, archived }
 
 /// V2 status banner (`.flow-offline`, read-only and archived notices):
 /// 2dp outline, surface fill, drawn leading glyph, status semantics and an
-/// optional "Thử lại" action with a 48dp target.
+/// optional localized retry action with a 48dp target.
 class UiBanner extends StatelessWidget {
   const UiBanner({
     required this.message,
     this.kind = UiBannerKind.offline,
     this.onRetry,
-    this.retryLabel = 'Thử lại',
+    this.retryLabel,
     super.key,
   });
 
   final String message;
   final UiBannerKind kind;
   final VoidCallback? onRetry;
-  final String retryLabel;
+
+  /// Localized label of the retry action; the action is hidden when null.
+  final String? retryLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -64,10 +66,10 @@ class UiBanner extends StatelessWidget {
                 ),
               ),
             ),
-            if (onRetry != null) ...[
+            if (onRetry != null && retryLabel != null) ...[
               const SizedBox(width: UiSpace.xs),
               UiButton.ghost(
-                label: retryLabel,
+                label: retryLabel!,
                 onPressed: onRetry,
                 compact: true,
                 expand: false,

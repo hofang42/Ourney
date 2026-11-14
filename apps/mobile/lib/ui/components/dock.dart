@@ -106,8 +106,10 @@ class UiDock extends StatelessWidget {
         UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
     final quiet = skinBorder < UiBorder.standard;
     final stroke = skinBorder;
-    final shadowOffset = quiet ? UiShadow.tiny : UiShadow.large;
-    final outline = camera ? UiCamera.ink : ui.outline;
+    // Camera dock: cream outline + black 2dp hard shadow (`.camera-dock`).
+    final shadowOffset = (quiet || camera) ? UiShadow.tiny : UiShadow.large;
+    final outline = camera ? UiCamera.outline : ui.outline;
+    final shadowColor = camera ? UiCamera.shadow : ui.outline;
 
     final leftItems = [left, ...extraLeft];
     final rightItems = [...extraRight, right];
@@ -127,6 +129,7 @@ class UiDock extends StatelessWidget {
           outlineColor: outline,
           outlineWidth: stroke,
           shadowOffset: shadowOffset,
+          shadowColor: shadowColor,
           onLongPress: onShutterLongPress,
         );
 
@@ -143,7 +146,7 @@ class UiDock extends StatelessWidget {
             : leftItems.length * slotW +
                   _centerSlot +
                   (i - leftItems.length) * slotW;
-        final pillFill = accent ?? ui.brand;
+        final pillFill = accent ?? ui.accent;
         return Stack(
           alignment: Alignment.center,
           children: [
@@ -162,7 +165,7 @@ class UiDock extends StatelessWidget {
                       color: pillFill,
                       borderRadius: BorderRadius.circular(UiRadius.menu),
                       border: Border.all(color: outline, width: UiBorder.thin),
-                      boxShadow: UiShadow.hard(outline, UiShadow.tiny),
+                      boxShadow: UiShadow.hard(shadowColor, UiShadow.tiny),
                     ),
                   ),
                 ),
@@ -171,7 +174,7 @@ class UiDock extends StatelessWidget {
               children: [
                 for (final item in leftItems)
                   Expanded(
-                    child: _Tab(item: item, camera: camera, pillOn: pillFill),
+                    child: _Tab(item: item, camera: camera, onAccent: onAccent),
                   ),
                 SizedBox(
                   width: _centerSlot,
@@ -179,7 +182,7 @@ class UiDock extends StatelessWidget {
                 ),
                 for (final item in rightItems)
                   Expanded(
-                    child: _Tab(item: item, camera: camera, pillOn: pillFill),
+                    child: _Tab(item: item, camera: camera, onAccent: onAccent),
                   ),
               ],
             ),
@@ -207,7 +210,7 @@ class UiDock extends StatelessWidget {
       borderColor: outline,
       borderWidth: stroke,
       hardShadow: shadowOffset,
-      hardShadowColor: outline,
+      hardShadowColor: shadowColor,
       reduceTransparency: reduceTransparency,
       child: surface,
     );
@@ -256,18 +259,22 @@ class _LongPress extends StatelessWidget {
 }
 
 class _Tab extends StatelessWidget {
-  const _Tab({required this.item, required this.camera, required this.pillOn});
+  const _Tab({required this.item, required this.camera, this.onAccent});
 
   final UiDockItem item;
   final bool camera;
-  final Color pillOn;
+
+  /// Journey accent's foreground for the active tab (falls back to onBrand).
+  final Color? onAccent;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final active = item.active;
     // Active tabs sit on the brand pill: solid dark ink glyph and label.
-    final Color color = active ? ui.onBrand : (camera ? UiCamera.ink : ui.ink);
+    final Color color = active
+        ? (onAccent ?? ui.onBrand)
+        : (camera ? UiCamera.ink : ui.ink);
     final Widget glyph = item.glyph != null
         ? OurneyIcon(
             name: item.glyph!,
@@ -326,6 +333,7 @@ class UiSnapPill extends StatelessWidget {
     this.outlineColor,
     this.outlineWidth = UiBorder.standard,
     this.shadowOffset = UiShadow.small,
+    this.shadowColor,
     this.onLongPress,
     super.key,
   });
@@ -337,6 +345,9 @@ class UiSnapPill extends StatelessWidget {
   final Color? outlineColor;
   final double outlineWidth;
   final double shadowOffset;
+
+  /// Hard shadow color; defaults to [outlineColor].
+  final Color? shadowColor;
 
   /// 400ms press (journey wheel).
   final VoidCallback? onLongPress;
@@ -352,15 +363,16 @@ class UiSnapPill extends StatelessWidget {
       excludeChildSemantics: true,
       minSize: const Size(UiSize.snapPillW, UiSize.tap),
       centerChild: true,
+      shadowOffset: shadowOffset,
+      shadowColor: shadowColor ?? line,
       child: Container(
         width: UiSize.snapPillW,
         height: UiSize.snapPillH,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: accent ?? ui.brand,
+          color: accent ?? ui.accent,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
           border: Border.all(color: line, width: outlineWidth),
-          boxShadow: UiShadow.hard(line, shadowOffset),
         ),
         child: OurneyIcon(name: 'camera', size: 24, color: fg, inkColor: fg),
       ),
@@ -380,6 +392,7 @@ class UiShutter extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.accent,
+    this.onAccent,
     this.onLongPress,
     this.outlineColor,
     super.key,
@@ -388,12 +401,17 @@ class UiShutter extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final Color? accent;
+
+  /// Foreground of the camera icon on [accent] (falls back to onBrand).
+  final Color? onAccent;
   final VoidCallback? onLongPress;
   final Color? outlineColor;
 
   @override
   Widget build(BuildContext context) {
-    final line = outlineColor ?? UiCamera.ink;
+    final line = outlineColor ?? UiCamera.outline;
+    final shadow = outlineColor ?? UiCamera.shadow;
+    final fg = onAccent ?? context.ui.onBrand;
     final width =
         UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
     Widget shutter = UiPressable(
@@ -401,24 +419,18 @@ class UiShutter extends StatelessWidget {
       semanticLabel: label,
       excludeChildSemantics: true,
       minSize: const Size.square(UiSize.shutter),
+      shadowOffset: UiShadow.small,
+      shadowColor: shadow,
       child: Container(
         width: UiSize.shutter,
         height: UiSize.shutter,
         decoration: BoxDecoration(
-          color: accent ?? context.ui.brand,
+          color: accent ?? context.ui.accent,
           shape: BoxShape.circle,
           border: Border.all(color: line, width: width + 0.5),
-          boxShadow: onPressed == null
-              ? const []
-              : UiShadow.hard(line, UiShadow.small),
         ),
         child: Center(
-          child: OurneyIcon(
-            name: 'camera',
-            size: 30,
-            color: context.ui.onBrand,
-            inkColor: context.ui.onBrand,
-          ),
+          child: OurneyIcon(name: 'camera', size: 30, color: fg, inkColor: fg),
         ),
       ),
     );
