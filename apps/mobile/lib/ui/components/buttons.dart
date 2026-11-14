@@ -73,17 +73,29 @@ class UiButton extends StatelessWidget {
     final enabled = onPressed != null && !loading;
     final height = compact ? UiSize.buttonCompact : UiSize.button;
 
+    // V2 sticker language: 2dp ink outline + hard offset shadow (4 primary,
+    // 3 secondary). Disabled drops the shadow and falls back to the surface.
     Color bg;
     Color fg;
     BorderSide? side;
+    double shadow = 0;
     switch (variant) {
       case UiButtonVariant.primary:
-        bg = enabled ? (accent ?? ui.brand) : ui.fill;
+        bg = enabled ? (accent ?? ui.brand) : ui.surface;
         fg = enabled ? (onAccent ?? ui.onBrand) : ui.inkMuted;
+        side = BorderSide(
+          color: enabled ? ui.outline : ui.inkMuted,
+          width: UiBorder.standard,
+        );
+        shadow = enabled ? UiShadow.large : 0;
       case UiButtonVariant.secondary:
         bg = ui.surface;
         fg = enabled ? ui.ink : ui.inkMuted;
-        side = BorderSide(color: ui.border);
+        side = BorderSide(
+          color: enabled ? ui.outline : ui.inkMuted,
+          width: UiBorder.standard,
+        );
+        shadow = enabled ? UiShadow.small : 0;
       case UiButtonVariant.ghost:
         bg = Colors.transparent;
         fg = enabled ? ui.inkSoft : ui.inkMuted;
@@ -119,6 +131,7 @@ class UiButton extends StatelessWidget {
       excludeChildSemantics: true,
       minSize: Size(UiSize.tap, height < UiSize.tap ? UiSize.tap : height),
       centerChild: compact,
+      shadowOffset: shadow,
       child: Container(
         width: expand ? double.infinity : null,
         constraints: BoxConstraints(minHeight: height),

@@ -17,6 +17,8 @@ class UiPressable extends StatefulWidget {
     this.excludeChildSemantics = false,
     this.selected,
     this.centerChild = false,
+    this.shadowColor,
+    this.shadowOffset = 0,
     super.key,
   });
 
@@ -31,6 +33,13 @@ class UiPressable extends StatefulWidget {
   /// Center [child] inside the (>= 48dp) hit area instead of stretching it
   /// to fill it: a 44dp button or 40dp pill keeps its visual size.
   final bool centerChild;
+
+  /// V2 sticker press: a hard offset shadow of [shadowOffset] dp in
+  /// [shadowColor]. On press the child translates by the offset and the
+  /// shadow disappears (`translate(4px,4px); box-shadow: none`) instead of
+  /// scaling. Leave [shadowOffset] at 0 for the plain 0.96 scale press.
+  final Color? shadowColor;
+  final double shadowOffset;
 
   @override
   State<UiPressable> createState() => _UiPressableState();
@@ -49,8 +58,10 @@ class _UiPressableState extends State<UiPressable> {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final sticker = widget.shadowOffset > 0;
+    final pressed = _down && _enabled;
     Widget content = AnimatedScale(
-      scale: _down && _enabled ? UiMotion.pressScale : 1,
+      scale: pressed && !sticker ? UiMotion.pressScale : 1,
       duration: UiMotion.of(context, UiMotion.press),
       curve: Curves.easeOut,
       child: DecoratedBox(
@@ -64,6 +75,25 @@ class _UiPressableState extends State<UiPressable> {
         child: widget.child,
       ),
     );
+    if (sticker) {
+      final offset = widget.shadowOffset;
+      content = AnimatedContainer(
+        duration: UiMotion.of(context, UiMotion.press),
+        curve: Curves.easeOut,
+        transform: Matrix4.translationValues(
+          pressed ? offset : 0,
+          pressed ? offset : 0,
+          0,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: widget.borderRadius,
+          boxShadow: pressed || !_enabled
+              ? const []
+              : UiShadow.hard(widget.shadowColor ?? ui.outline, offset),
+        ),
+        child: content,
+      );
+    }
     content = ConstrainedBox(
       constraints: BoxConstraints(
         minWidth: widget.minSize.width,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart' show PersonaSkinId;
 
 Widget host(
   Widget child, {
@@ -25,18 +26,51 @@ Widget host(
 
 void main() {
   group('tokens (index.css)', () {
-    test('light and dark values match the prototype', () {
-      expect(OurneyUi.light.bg, const Color(0xFFFAFAF7));
-      expect(OurneyUi.light.ink, const Color(0xFF111114));
-      expect(OurneyUi.light.inkMuted, const Color(0xFF5E5E66));
-      expect(OurneyUi.light.brand, const Color(0xFFFF3B5C));
-      expect(OurneyUi.light.border, const Color(0xFFD9D9D3));
-      expect(OurneyUi.light.fill, const Color(0xFFF1F1EC));
-      expect(OurneyUi.dark.bg, const Color(0xFF0B0B0E));
-      expect(OurneyUi.dark.ink, const Color(0xFFF4F4F6));
-      expect(OurneyUi.dark.surface, const Color(0xFF16161B));
-      expect(OurneyUi.dark.border, const Color(0xFF34343A));
-      expect(OurneyUi.dark.inkMuted, const Color(0xFFA1A1AA));
+    test('light and dark values match the V2 shell', () {
+      expect(OurneyUi.light.bg, const Color(0xFFFFF8EE));
+      expect(OurneyUi.light.ink, const Color(0xFF1A1A1A));
+      expect(OurneyUi.light.inkMuted, const Color(0xFF5A544C));
+      expect(OurneyUi.light.brand, const Color(0xFFFF8A3D));
+      expect(OurneyUi.light.danger, const Color(0xFFB3261E));
+      expect(OurneyUi.dark.bg, const Color(0xFF121212));
+      expect(OurneyUi.dark.ink, const Color(0xFFF5F0E6));
+      expect(OurneyUi.dark.surface, const Color(0xFF1C1B19));
+      expect(OurneyUi.dark.inkMuted, const Color(0xFFB8B0A4));
+      expect(OurneyUi.dark.brand, const Color(0xFFFF8A3D));
+    });
+
+    test('skins recolor the shell per skin, variant and brightness', () {
+      expect(uiSkins.map((s) => s.id), [
+        'quiet',
+        'squad',
+        'memory',
+        'couple',
+        'flexer',
+        'minimal',
+      ]);
+      expect(uiSkins.every((s) => s.variants.length == 3), isTrue);
+      final quiet = uiSkinById('quiet').apply(OurneyUi.light);
+      expect(quiet.bg, const Color(0xFFEFF3F0));
+      expect(quiet.brand, const Color(0xFFFF4D6D));
+      // The variant accent is its own token; brand stays the button fill.
+      expect(quiet.accent, const Color(0xFF10B981));
+      expect(OurneyUi.light.accent, const Color(0xFFFF8A3D));
+      expect(OurneyUi.light.onDanger, const Color(0xFFFFFFFF));
+      expect(uiSkinIdFor(PersonaSkinId.coupleRituals), 'couple');
+      expect(
+        PersonaSkinId.values.map(uiSkinIdFor).toSet(),
+        uiSkins.map((s) => s.id).toSet(),
+      );
+      final dark = uiSkinById('squad').apply(OurneyUi.dark, variantIndex: 1);
+      expect(dark.bg, const Color(0xFF12131A));
+      expect(dark.ink, const Color(0xFFF8FAFC));
+      // V2 override: minimal variant 1 in dark mode uses a light button.
+      final minimal = uiSkinById('minimal')
+          .apply(OurneyUi.dark, variantIndex: 1);
+      expect(minimal.brand, const Color(0xFFF4F4F5));
+      expect(minimal.onBrand, const Color(0xFF0E0E10));
+      expect(uiSkinById('quiet').borderWidth, UiBorder.thin);
+      expect(uiSkinById('nope').id, 'minimal');
     });
 
     test('responsive gutters follow CLAUDE.md', () {
@@ -120,13 +154,99 @@ void main() {
       expect(taps, 11);
     });
 
-    testWidgets('press scales to 0.96', (tester) async {
-      await tester.pumpWidget(host(UiButton(label: 'Go', onPressed: () {})));
+    testWidgets('plain controls press-scale to 0.96', (tester) async {
+      await tester.pumpWidget(
+        host(UiButton.ghost(label: 'Go', onPressed: () {})),
+      );
       final g = await tester.startGesture(tester.getCenter(find.text('Go')));
       await tester.pump(const Duration(milliseconds: 200));
       final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
       expect(scale.scale, UiMotion.pressScale);
       await g.up();
+    });
+
+    testWidgets('primary button uses the sticker press', (tester) async {
+      await tester.pumpWidget(host(UiButton(label: 'Go', onPressed: () {})));
+      AnimatedContainer sticker() => tester.widget<AnimatedContainer>(
+        find.byType(AnimatedContainer).first,
+      );
+      expect(sticker().decoration, isA<BoxDecoration>());
+      expect((sticker().decoration! as BoxDecoration).boxShadow, hasLength(1));
+      final g = await tester.startGesture(tester.getCenter(find.text('Go')));
+      await tester.pump(const Duration(milliseconds: 200));
+      // Pressed: no scale, shadow gone, translated by the 4dp offset.
+      expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
+      expect((sticker().decoration! as BoxDecoration).boxShadow, isEmpty);
+      expect(sticker().transform!.getTranslation().x, UiShadow.large);
+      await g.up();
+    });
+
+    testWidgets(
+      'UiGlass keeps the 2dp outline and an outside-only hard shadow',
+      (tester) async {
+        await tester.pumpWidget(host(const UiGlass(child: Text('glass'))));
+        BoxDecoration deco() => tester
+            .widgetList<DecoratedBox>(
+              find.descendant(
+                of: find.byType(UiGlass),
+                matching: find.byType(DecoratedBox),
+              ),
+            )
+            .map((d) => d.decoration)
+            .whereType<BoxDecoration>()
+            .firstWhere((d) => d.border != null);
+        expect((deco().border! as Border).top.width, UiBorder.standard);
+        expect(find.byType(ClipPath), findsOneWidget);
+
+        await tester.pumpWidget(
+          host(const UiGlass(hardShadow: 0, child: Text('glass'))),
+        );
+        expect(find.byType(ClipPath), findsNothing);
+
+        // Camera chip: 2px cream outline, 2px black hard shadow.
+        await tester.pumpWidget(
+          host(const UiGlass.camera(child: Text('chip'))),
+        );
+        expect((deco().border! as Border).top.color, UiCamera.outline);
+        expect(find.byType(ClipPath), findsOneWidget);
+      },
+    );
+
+    testWidgets('UiGlass blurs, then goes opaque and stays clipped', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(const UiGlass(child: Text('glass'))));
+      expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(ClipRRect), findsWidgets);
+
+      // App-level Reduce Transparency setting.
+      await tester.pumpWidget(
+        host(const UiGlass(reduceTransparency: true, child: Text('glass'))),
+      );
+      expect(find.byType(BackdropFilter), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(UiGlass),
+          matching: find.byType(ClipRRect),
+        ),
+        findsOneWidget,
+        reason: 'the opaque fallback still clips to the rounded corners',
+      );
+
+      // Platform high-contrast flag (set inside host(), which owns the
+      // outer MediaQuery).
+      await tester.pumpWidget(
+        host(
+          Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(highContrast: true),
+              child: const UiGlass(child: Text('glass')),
+            ),
+          ),
+        ),
+      );
+      expect(find.byType(BackdropFilter), findsNothing);
+      expect(UiGlass.saturationMatrix(1)[0], closeTo(1, 1e-9));
     });
 
     testWidgets('UiSegmented switches value', (tester) async {
