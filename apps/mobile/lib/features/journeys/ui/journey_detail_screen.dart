@@ -239,6 +239,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         skinId: uiSkinIdFor(skinOfJourney(journey)),
                         days: progress.timeline(),
                         pal: pal,
+                        selfName: journey.coupleSelfName,
+                        partnerName: journey.couplePartnerName,
                         onTapDay: (d) =>
                             context.push(JourneysPaths.day(journey.id, d.date)),
                       ),

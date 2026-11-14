@@ -3,7 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/onboarding/onboarding_providers.dart';
 import 'package:ourney/features/onboarding/permission_sheets.dart';
+import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
 import '../profile/fakes.dart';
@@ -35,10 +38,51 @@ void main() {
       );
       expect(c.read(onboardingCompleteProvider), isFalse);
 
+      // After the intro: the 3-question quiz, which can be skipped.
       await tester.tap(byKey('onboarding-next'));
       await tester.pumpAndSettle();
+      expect(byKey('onboarding-quiz-0'), findsOneWidget);
+      expect(c.read(onboardingCompleteProvider), isFalse);
+      await tester.tap(byKey('onboarding-quiz-skip'));
+      await tester.pumpAndSettle();
       expect(c.read(onboardingCompleteProvider), isTrue);
+      expect(c.read(onboardingQuizProvider), isNull);
       expect(location(c), AppRoutes.capture);
+    });
+
+    testWidgets('quiz answers are stored and suggest a template', (
+      tester,
+    ) async {
+      final c = await pumpOurneyApp(tester, onboarded: false);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(byKey('onboarding-next'));
+        await tester.pumpAndSettle();
+      }
+      UiButton next() => tester.widget<UiButton>(byKey('onboarding-quiz-next'));
+      expect(next().onPressed, isNull);
+      await tester.tap(byKey('onboarding-goal-english'));
+      await tester.pump();
+      await tester.tap(byKey('onboarding-quiz-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('onboarding-who-group'));
+      await tester.pump();
+      await tester.tap(byKey('onboarding-quiz-next'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('onboarding-reminder-21:30'));
+      await tester.pump();
+      expect(byKey('onboarding-quiz-result'), findsOneWidget);
+      await tester.tap(byKey('onboarding-quiz-next'));
+      await tester.pumpAndSettle();
+
+      expect(c.read(onboardingCompleteProvider), isTrue);
+      final quiz = c.read(onboardingQuizProvider)!;
+      expect(quiz.goal, QuizGoal.english);
+      expect(quiz.company, QuizCompany.group);
+      expect(quiz.reminder, '21:30');
+      final s = c.read(journeySuggestionProvider)!;
+      expect(s.templateId, TemplateId.englishDaily);
+      expect(s.kind, JourneyKind.group);
+      expect(s.reminder, '21:30');
     });
 
     testWidgets('step segments: done, current and pending look different', (

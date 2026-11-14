@@ -4,6 +4,8 @@ import 'package:ourney_core/ourney_core.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/providers.dart';
+import '../../../data/data_providers.dart' show dataLayerProvider;
+import 'group_invite_repository.dart';
 
 /// Repository streams must not retry on their own: the repositories already
 /// handle offline/sync, and retry timers would leak into widget tests.
@@ -76,3 +78,35 @@ final groupClipboardProvider = Provider<Future<void> Function(String text)>(
   (ref) =>
       (text) => Clipboard.setData(ClipboardData(text: text)),
 );
+
+/// Join-code preview and group invitations (migration 0008). Built on the
+/// data layer; falls back to an always-offline repository when the data layer
+/// is not wired (tests, local-only), so screens degrade instead of crashing.
+/// Override in tests.
+final groupInviteRepositoryProvider = Provider<GroupInviteRepository>((ref) {
+  try {
+    final ctx = ref.watch(dataLayerProvider).ctx;
+    return ctx.remote == null
+        ? const UnavailableGroupInviteRepository()
+        : DataGroupInviteRepository(ctx);
+  } on Object {
+    return const UnavailableGroupInviteRepository();
+  }
+});
+
+/// Preview of an invite code (null while the code is not 8 characters yet).
+/// Errors are [GroupException]s; the join screen treats `offline` and
+/// unknown failures as "no preview" and keeps the plain join flow.
+final groupPreviewProvider = FutureProvider.autoDispose
+    .family<GroupPreview, String>(
+      (ref, code) =>
+          ref.watch(groupInviteRepositoryProvider).previewByCode(code),
+      retry: _noRetry,
+    );
+
+/// Pending invitations of the caller (Activity feed).
+final groupInvitationsProvider =
+    FutureProvider.autoDispose<List<GroupInvitation>>(
+      (ref) => ref.watch(groupInviteRepositoryProvider).pending(),
+      retry: _noRetry,
+    );

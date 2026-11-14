@@ -69,6 +69,10 @@ class Journeys extends Table {
   /// `journeys.origin` wire value (v1.3, schema version 2).
   TextColumn get origin => text().withDefault(const Constant('live'))();
 
+  /// Couple names (`journeys.couple_*_name`, 0007; schema version 3).
+  TextColumn get coupleSelfName => text().nullable()();
+  TextColumn get couplePartnerName => text().nullable()();
+
   /// Client-only "archive" (JourneyRepository.archive): hidden from the list.
   BoolColumn get localArchived =>
       boolean().withDefault(const Constant(false))();
@@ -105,6 +109,12 @@ class CheckIns extends Table {
   BoolColumn get fromLibrary => boolean().withDefault(const Constant(false))();
   TextColumn get caption => text().nullable()();
   RealColumn get metricValue => real().nullable()();
+
+  /// `check_ins.extras` as JSON text (0007; schema version 3).
+  TextColumn get extras => text().withDefault(const Constant('{}'))();
+
+  /// `check_ins.partner_photo_path` (couple journeys).
+  TextColumn get partnerPhotoPath => text().nullable()();
 
   /// True once the server confirmed the row (and its media).
   BoolColumn get uploaded => boolean().withDefault(const Constant(false))();
@@ -189,7 +199,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -203,6 +213,13 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         // v1.3: journeys.origin. Rows cached before it are all lived.
         await m.addColumn(journeys, journeys.origin);
+      }
+      if (from < 3) {
+        // 0007: per-skin Post extras, partner photo, couple names.
+        await m.addColumn(checkIns, checkIns.extras);
+        await m.addColumn(checkIns, checkIns.partnerPhotoPath);
+        await m.addColumn(journeys, journeys.coupleSelfName);
+        await m.addColumn(journeys, journeys.couplePartnerName);
       }
     },
   );

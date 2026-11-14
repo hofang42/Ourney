@@ -80,4 +80,88 @@ class OnboardingL10nEn extends OnboardingL10n {
 
   @override
   String get onboarding_notNow => 'maybe later.';
+
+  @override
+  String onboarding_quizStep(int n) {
+    return 'Question $n/3';
+  }
+
+  @override
+  String get onboarding_quizBack => 'Previous question';
+
+  @override
+  String get onboarding_quizQ1 => 'what do you want to stick with?';
+
+  @override
+  String get onboarding_quizQ2 => 'on your own or with company?';
+
+  @override
+  String get onboarding_quizQ3 => 'when do you usually forget?';
+
+  @override
+  String get onboarding_goalWeight => 'Lose weight';
+
+  @override
+  String get onboarding_goalEnglish => 'Learn English';
+
+  @override
+  String get onboarding_goalWorkout => 'Work out';
+
+  @override
+  String get onboarding_goalTrip => 'A trip';
+
+  @override
+  String get onboarding_goalCouple => 'A ritual for two';
+
+  @override
+  String get onboarding_goalHabit => 'A small habit';
+
+  @override
+  String get onboarding_whoSolo => 'On my own';
+
+  @override
+  String get onboarding_whoSoloHint => 'only you see it';
+
+  @override
+  String get onboarding_whoGroup => 'With friends';
+
+  @override
+  String get onboarding_whoGroupHint => 'up to 10 people';
+
+  @override
+  String get onboarding_whoCouple => 'Just the two of us';
+
+  @override
+  String get onboarding_whoCoupleHint => 'paired, two people only';
+
+  @override
+  String get onboarding_coupleStyleHint => 'we will use the Two of us style';
+
+  @override
+  String get onboarding_remMorning => 'Early morning';
+
+  @override
+  String get onboarding_remNoon => 'Midday';
+
+  @override
+  String get onboarding_remNight => 'Late evening';
+
+  @override
+  String onboarding_remHint(String time) {
+    return 'suggested reminder at $time';
+  }
+
+  @override
+  String get onboarding_quizResultTitle => 'your first journey.';
+
+  @override
+  String onboarding_quizRemind(String time) {
+    return 'Remind $time';
+  }
+
+  @override
+  String get onboarding_quizContinue => 'Continue';
+
+  @override
+  String get onboarding_quizStart => 'Let us start';
 }

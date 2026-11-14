@@ -207,5 +207,26 @@
   "groups_eyebrow": "Những người đồng hành",
   "@groups_eyebrow": {
     "description": "Eyebrow above the Squad tab title."
-  }
+  },
+  "groups_joinCodeBoxesSemantics": "Mã mời, đã nhập {count} trên 8 ký tự",
+  "@groups_joinCodeBoxesSemantics": {"description": "Screen reader label of the 8-box code input.", "placeholders": {"count": {"type": "int"}}},
+  "groups_previewOwner": "Chủ nhóm: {name}",
+  "@groups_previewOwner": {"description": "Join preview: owner line.", "placeholders": {"name": {"type": "String"}}},
+  "groups_previewMembers": "Thành viên",
+  "groups_previewMembersValue": "{count}/{max} người",
+  "@groups_previewMembersValue": {"description": "Join preview: headcount.", "placeholders": {"count": {"type": "int"}, "max": {"type": "int"}}},
+  "groups_previewDuration": "Thời lượng",
+  "groups_previewDurationValue": "{days} ngày",
+  "@groups_previewDurationValue": {"description": "Join preview: journey length.", "placeholders": {"days": {"type": "int"}}},
+  "groups_previewDurationOpen": "Không giới hạn",
+  "groups_previewProgress": "Tiến độ",
+  "groups_previewProgressValue": "Ngày {day}/{total}",
+  "@groups_previewProgressValue": {"description": "Join preview: current day.", "placeholders": {"day": {"type": "int"}, "total": {"type": "int"}}},
+  "groups_previewProgressOpen": "Ngày {day}",
+  "@groups_previewProgressOpen": {"description": "Join preview: current day, open-ended.", "placeholders": {"day": {"type": "int"}}},
+  "groups_previewPrivate": "Nhóm này không có link công khai. Chỉ người có mã mới vào được.",
+  "groups_previewAlreadyMember": "Bạn đã ở trong nhóm này.",
+  "groups_previewOpenGroup": "Mở nhóm",
+  "groups_previewLoading": "Đang tìm nhóm…",
+  "groups_errorRateLimited": "Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé."
 }

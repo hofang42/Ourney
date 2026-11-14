@@ -223,6 +223,162 @@ abstract class OnboardingL10n {
   /// In vi, this message translates to:
   /// **'để sau vậy.'**
   String get onboarding_notNow;
+
+  /// Quiz progress label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Câu {n}/3'**
+  String onboarding_quizStep(int n);
+
+  /// Back button semantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'Câu trước'**
+  String get onboarding_quizBack;
+
+  /// Quiz question 1.
+  ///
+  /// In vi, this message translates to:
+  /// **'bạn đang muốn kiên trì điều gì?'**
+  String get onboarding_quizQ1;
+
+  /// Quiz question 2.
+  ///
+  /// In vi, this message translates to:
+  /// **'đi một mình hay có hội?'**
+  String get onboarding_quizQ2;
+
+  /// Quiz question 3.
+  ///
+  /// In vi, this message translates to:
+  /// **'bạn hay quên vào lúc nào?'**
+  String get onboarding_quizQ3;
+
+  /// Goal option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giảm cân'**
+  String get onboarding_goalWeight;
+
+  /// Goal option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Học tiếng Anh'**
+  String get onboarding_goalEnglish;
+
+  /// Goal option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tập luyện'**
+  String get onboarding_goalWorkout;
+
+  /// Goal option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một chuyến đi'**
+  String get onboarding_goalTrip;
+
+  /// Goal option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nghi thức của hai đứa'**
+  String get onboarding_goalCouple;
+
+  /// Goal option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một thói quen nhỏ'**
+  String get onboarding_goalHabit;
+
+  /// Company option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một mình'**
+  String get onboarding_whoSolo;
+
+  /// Company hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'chỉ mình bạn thấy'**
+  String get onboarding_whoSoloHint;
+
+  /// Company option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rủ hội bạn'**
+  String get onboarding_whoGroup;
+
+  /// Company hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'tối đa 10 người'**
+  String get onboarding_whoGroupHint;
+
+  /// Company option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ hai đứa'**
+  String get onboarding_whoCouple;
+
+  /// Company hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'ghép đôi, chỉ hai người'**
+  String get onboarding_whoCoupleHint;
+
+  /// Shown when the couple option is chosen.
+  ///
+  /// In vi, this message translates to:
+  /// **'mình sẽ dùng phong cách Hai đứa mình'**
+  String get onboarding_coupleStyleHint;
+
+  /// Reminder option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sáng sớm'**
+  String get onboarding_remMorning;
+
+  /// Reminder option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trưa'**
+  String get onboarding_remNoon;
+
+  /// Reminder option.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tối muộn'**
+  String get onboarding_remNight;
+
+  /// Reminder hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'gợi ý nhắc lúc {time}'**
+  String onboarding_remHint(String time);
+
+  /// Result card heading.
+  ///
+  /// In vi, this message translates to:
+  /// **'hành trình đầu tiên của bạn.'**
+  String get onboarding_quizResultTitle;
+
+  /// Result card chip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc {time}'**
+  String onboarding_quizRemind(String time);
+
+  /// Quiz continue button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get onboarding_quizContinue;
+
+  /// Quiz final button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu thôi'**
+  String get onboarding_quizStart;
 }
 
 class _OnboardingL10nDelegate extends LocalizationsDelegate<OnboardingL10n> {

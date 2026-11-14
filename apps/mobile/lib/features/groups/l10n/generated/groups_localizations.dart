@@ -565,6 +565,96 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'Những người đồng hành'**
   String get groups_eyebrow;
+
+  /// Screen reader label of the 8-box code input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã mời, đã nhập {count} trên 8 ký tự'**
+  String groups_joinCodeBoxesSemantics(int count);
+
+  /// Join preview: owner line.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chủ nhóm: {name}'**
+  String groups_previewOwner(String name);
+
+  /// No description provided for @groups_previewMembers.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thành viên'**
+  String get groups_previewMembers;
+
+  /// Join preview: headcount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count}/{max} người'**
+  String groups_previewMembersValue(int count, int max);
+
+  /// No description provided for @groups_previewDuration.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thời lượng'**
+  String get groups_previewDuration;
+
+  /// Join preview: journey length.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} ngày'**
+  String groups_previewDurationValue(int days);
+
+  /// No description provided for @groups_previewDurationOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không giới hạn'**
+  String get groups_previewDurationOpen;
+
+  /// No description provided for @groups_previewProgress.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiến độ'**
+  String get groups_previewProgress;
+
+  /// Join preview: current day.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}/{total}'**
+  String groups_previewProgressValue(int day, int total);
+
+  /// Join preview: current day, open-ended.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}'**
+  String groups_previewProgressOpen(int day);
+
+  /// No description provided for @groups_previewPrivate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhóm này không có link công khai. Chỉ người có mã mới vào được.'**
+  String get groups_previewPrivate;
+
+  /// No description provided for @groups_previewAlreadyMember.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đã ở trong nhóm này.'**
+  String get groups_previewAlreadyMember;
+
+  /// No description provided for @groups_previewOpenGroup.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở nhóm'**
+  String get groups_previewOpenGroup;
+
+  /// No description provided for @groups_previewLoading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tìm nhóm…'**
+  String get groups_previewLoading;
+
+  /// No description provided for @groups_errorRateLimited.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé.'**
+  String get groups_errorRateLimited;
 }
 
 class _GroupsL10nDelegate extends LocalizationsDelegate<GroupsL10n> {

@@ -99,4 +99,101 @@ class AuthL10nEn extends AuthL10n {
   String auth_digitSemantics(int n) {
     return 'Digit $n of 6';
   }
+
+  @override
+  String get auth_tabEmail => 'Email';
+
+  @override
+  String get auth_tabPhone => 'Phone';
+
+  @override
+  String get auth_phoneLabel => 'Phone number';
+
+  @override
+  String get auth_phoneHint => '912 345 678';
+
+  @override
+  String get auth_phonePrefix => '+84';
+
+  @override
+  String get auth_phoneInvalid =>
+      'A Vietnamese number has 9–10 digits after 0 or +84.';
+
+  @override
+  String get auth_phoneSubtitle =>
+      'Enter your phone number and Ourney texts you a 6-digit code.';
+
+  @override
+  String get auth_sendSms => 'Text me a code';
+
+  @override
+  String auth_smsSentTo(String phone) {
+    return 'We texted a 6-digit code to $phone.';
+  }
+
+  @override
+  String get auth_changePhone => 'Change phone number';
+
+  @override
+  String get auth_passwordLabel => 'Password';
+
+  @override
+  String get auth_newPasswordLabel => 'New password';
+
+  @override
+  String get auth_passwordShort => 'Use at least 8 characters.';
+
+  @override
+  String get auth_showPassword => 'Show password';
+
+  @override
+  String get auth_hidePassword => 'Hide password';
+
+  @override
+  String get auth_signIn => 'Sign in';
+
+  @override
+  String get auth_usePassword => 'Use a password';
+
+  @override
+  String get auth_useCode => 'Use a sign-in code';
+
+  @override
+  String get auth_forgot => 'Forgot password?';
+
+  @override
+  String get auth_createAccount => 'Create an account with a password';
+
+  @override
+  String get auth_haveAccount => 'Have an account? Sign in';
+
+  @override
+  String get auth_signUpTitle => 'create account.';
+
+  @override
+  String get auth_signUpSubtitle =>
+      'Use your email and a password. We may email you a code to confirm.';
+
+  @override
+  String get auth_signUpButton => 'Create account';
+
+  @override
+  String get auth_resetTitle => 'reset password.';
+
+  @override
+  String get auth_resetSubtitle =>
+      'Enter your email and Ourney sends a 6-digit code to set a new password.';
+
+  @override
+  String get auth_resetConfirm => 'Set password';
+
+  @override
+  String get auth_backToSignIn => 'Back to sign in';
+
+  @override
+  String get auth_errorWrongPassword => 'Wrong email or password.';
+
+  @override
+  String get auth_errorEmailTaken =>
+      'That email already has an account. Sign in instead.';
 }

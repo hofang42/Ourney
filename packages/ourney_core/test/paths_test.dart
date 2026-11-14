@@ -12,12 +12,15 @@ void main() {
   });
 
   test('avatar path matches the SQL CHECK', () {
-    expect(RegExp('^avatars/$u/[0-9a-f-]{36}\\.jpg\$').hasMatch(avatarPath(u, c)), isTrue);
+    expect(
+        RegExp('^avatars/$u/[0-9a-f-]{36}\\.jpg\$').hasMatch(avatarPath(u, c)),
+        isTrue);
   });
 
   test('public token format', () {
     expect(isValidPublicToken('a' * 40), isTrue);
-    expect(isValidPublicToken('0123456789abcdefghij0123456789abcdefghij'), isTrue);
+    expect(
+        isValidPublicToken('0123456789abcdefghij0123456789abcdefghij'), isTrue);
     expect(isValidPublicToken('A' * 40), isFalse);
     expect(isValidPublicToken('a' * 39), isFalse);
   });

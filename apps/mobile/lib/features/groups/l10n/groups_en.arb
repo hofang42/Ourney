@@ -77,5 +77,20 @@
   "groups_qrSemantics": "QR code of the invite link",
   "groups_noInviteCode": "This group has no invite code yet.",
   "groups_inviteClosed": "The journey has ended, so no one else can join.",
-  "groups_eyebrow": "Your people"
+  "groups_eyebrow": "Your people",
+  "groups_joinCodeBoxesSemantics": "Invite code, {count} of 8 characters entered",
+  "groups_previewOwner": "Owner: {name}",
+  "groups_previewMembers": "Members",
+  "groups_previewMembersValue": "{count} of {max} people",
+  "groups_previewDuration": "Length",
+  "groups_previewDurationValue": "{days} days",
+  "groups_previewDurationOpen": "No end date",
+  "groups_previewProgress": "Progress",
+  "groups_previewProgressValue": "Day {day} of {total}",
+  "groups_previewProgressOpen": "Day {day}",
+  "groups_previewPrivate": "This group has no public link. Only people with the code can join.",
+  "groups_previewAlreadyMember": "You are already in this group.",
+  "groups_previewOpenGroup": "Open group",
+  "groups_previewLoading": "Looking up the code…",
+  "groups_errorRateLimited": "Too many tries. Wait a little, then try again."
 }

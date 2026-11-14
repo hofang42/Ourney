@@ -130,6 +130,17 @@ class SyncEngine {
     // Media first so nobody sees a row without its photo.
     await remote.uploadFile(row.photoPath, photo);
     await remote.uploadFile(row.thumbPath, thumb);
+    final partnerPath = row.partnerPhotoPath;
+    if (partnerPath != null) {
+      final partner = store.files.fileFor(partnerPath);
+      if (!partner.existsSync()) {
+        throw OurneyException(
+          OurneyErrorCode.invalid,
+          'missing partner media for $id',
+        );
+      }
+      await remote.uploadFile(partnerPath, partner);
+    }
     await remote.upsert(
       'check_ins',
       checkInToRemote(row),

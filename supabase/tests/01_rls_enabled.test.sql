@@ -7,7 +7,7 @@ select tables_are(
   'public',
   array['profiles', 'journeys', 'memberships', 'check_ins', 'reactions', 'blocks', 'reports', 'moderation_queue', 'check_in_metrics',
         'friendships', 'friend_invites', 'journey_shares', 'journey_share_consents', 'saved_journeys',
-        'journey_views', 'conversations', 'messages', 'message_hides'],
+        'journey_views', 'conversations', 'messages', 'message_hides', 'group_invitations'],
   'public schema contains exactly the contract tables'
 );
 

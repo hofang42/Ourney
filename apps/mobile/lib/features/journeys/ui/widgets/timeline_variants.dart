@@ -1,10 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../ui/ui.dart';
 import '../../domain/journey_progress.dart';
 import '../../l10n/generated/journeys_localizations.dart';
+import '../journey_photo.dart';
 import 'timeline_common.dart';
 
 String _dayText(BuildContext context, TimelineDay d) =>
@@ -413,25 +415,50 @@ class _ScrapRow extends StatelessWidget {
 /// Couple rituals: your photo left, heart node on the spine, the day on the
 /// partner's side.
 class CoupleTimeline extends StatelessWidget {
-  const CoupleTimeline({required this.days, required this.onTapDay, super.key});
+  const CoupleTimeline({
+    required this.days,
+    required this.onTapDay,
+    this.selfName,
+    this.partnerName,
+    super.key,
+  });
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
+
+  /// Persisted couple names; null falls back to You / Partner.
+  final String? selfName;
+  final String? partnerName;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       key: const ValueKey('journey-timeline'),
-      children: [for (final d in days) _CouplePair(day: d, onTap: onTapDay)],
+      children: [
+        for (final d in days)
+          _CouplePair(
+            day: d,
+            onTap: onTapDay,
+            selfName: selfName,
+            partnerName: partnerName,
+          ),
+      ],
     );
   }
 }
 
 class _CouplePair extends StatelessWidget {
-  const _CouplePair({required this.day, required this.onTap});
+  const _CouplePair({
+    required this.day,
+    required this.onTap,
+    this.selfName,
+    this.partnerName,
+  });
 
   final TimelineDay day;
   final ValueChanged<TimelineDay> onTap;
+  final String? selfName;
+  final String? partnerName;
 
   static const double _spine = 44;
 
@@ -441,6 +468,9 @@ class _CouplePair extends StatelessWidget {
     final l10n = JourneysL10n.of(context);
     final accent = timelineAccent(context);
     final done = day.state == DayState.checkedIn;
+    final partnerPhoto = day.checkIn?.partnerPhotoPath == null
+        ? null
+        : day.checkIn;
     final waiting =
         day.state == DayState.checkedIn || day.state == DayState.today;
     final header = [
@@ -482,7 +512,7 @@ class _CouplePair extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _CoupleHalf(
-                            label: l10n.journeys_coupleYou,
+                            label: selfName ?? l10n.journeys_coupleYou,
                             child: TimelineTile(day: day, size: s),
                           ),
                         ),
@@ -511,35 +541,40 @@ class _CouplePair extends StatelessWidget {
                         ),
                         Expanded(
                           child: _CoupleHalf(
-                            label: l10n.journeys_ticketPartner,
-                            child: CustomPaint(
-                              key: const ValueKey('couple-partner-slot'),
-                              foregroundPainter: DashedOutlinePainter(
-                                color: ui.border,
-                                width: 1.5,
-                                radius: UiRadius.otp,
-                              ),
-                              child: SizedBox.square(
-                                dimension: s,
-                                child: waiting
-                                    ? Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(6),
-                                          child: Text(
-                                            l10n.journeys_coupleWaiting,
-                                            maxLines: 3,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: TextAlign.center,
-                                            style: UiText.muted(
-                                              color: ui.inkMuted,
-                                              size: 11,
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    : null,
-                              ),
-                            ),
+                            label: partnerName ?? l10n.journeys_ticketPartner,
+                            child: partnerPhoto != null
+                                ? _PartnerTile(checkIn: partnerPhoto, size: s)
+                                : CustomPaint(
+                                    key: const ValueKey('couple-partner-slot'),
+                                    foregroundPainter: DashedOutlinePainter(
+                                      color: ui.border,
+                                      width: 1.5,
+                                      radius: UiRadius.otp,
+                                    ),
+                                    child: SizedBox.square(
+                                      dimension: s,
+                                      child: waiting
+                                          ? Center(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
+                                                child: Text(
+                                                  l10n.journeys_coupleWaiting,
+                                                  maxLines: 3,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  textAlign: TextAlign.center,
+                                                  style: UiText.muted(
+                                                    color: ui.inkMuted,
+                                                    size: 11,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : null,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -549,6 +584,31 @@ class _CouplePair extends StatelessWidget {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// The partner's photo in the pair row (replaces the waiting slot).
+class _PartnerTile extends StatelessWidget {
+  const _PartnerTile({required this.checkIn, required this.size});
+
+  final CheckIn checkIn;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    return Semantics(
+      image: true,
+      label: l10n.journeys_partnerPhotoSemantics,
+      child: ClipRRect(
+        key: const ValueKey('couple-partner-photo'),
+        borderRadius: BorderRadius.circular(UiRadius.otp),
+        child: SizedBox.square(
+          dimension: size,
+          child: JourneyPhoto(checkIn: checkIn, partner: true, cacheWidth: 320),
         ),
       ),
     );

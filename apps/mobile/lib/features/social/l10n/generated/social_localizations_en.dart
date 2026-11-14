@@ -383,4 +383,20 @@ class SocialL10nEn extends SocialL10n {
 
   @override
   String get social_inviteCardAction => 'Add friends';
+
+  @override
+  String social_groupInviteFrom(String name, String group) {
+    return '$name invited you to $group';
+  }
+
+  @override
+  String social_groupInviteMembers(int count, int max) {
+    return '$count of $max members';
+  }
+
+  @override
+  String get social_groupInviteJoin => 'Join';
+
+  @override
+  String get social_groupInviteSkip => 'Skip';
 }

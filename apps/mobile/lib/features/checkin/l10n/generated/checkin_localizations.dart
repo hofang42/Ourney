@@ -463,6 +463,168 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Lịch {days} ngày gần nhất, hôm nay có ảnh'**
   String checkin_calendarSemantics(int days);
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay bạn cảm thấy thế nào?'**
+  String get checkin_extraMoodLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhẹ nhõm'**
+  String get checkin_extraMoodLight;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bình thường'**
+  String get checkin_extraMoodNormal;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hơi mệt'**
+  String get checkin_extraMoodTired;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay học bao lâu?'**
+  String get checkin_extraMinutesLabel;
+
+  /// No description provided for @checkin_extraMinutesValue.
+  ///
+  /// In vi, this message translates to:
+  /// **'{minutes} phút'**
+  String checkin_extraMinutesValue(int minutes);
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khác'**
+  String get checkin_extraMinutesOther;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giảm năm phút'**
+  String get checkin_extraMinutesLess;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tăng năm phút'**
+  String get checkin_extraMinutesMore;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đang ở đâu?'**
+  String get checkin_extraPlaceLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm một nơi...'**
+  String get checkin_extraPlaceHint;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Món hôm nay'**
+  String get checkin_extraDishLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để trống cũng được'**
+  String get checkin_extraDishHint;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ai nấu?'**
+  String get checkin_extraCookLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn'**
+  String get checkin_extraYou;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Người ấy'**
+  String get checkin_extraPartner;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bữa này mấy tim?'**
+  String get checkin_extraHeartsLabel;
+
+  /// No description provided for @checkin_extraHeartsValue.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} tim'**
+  String checkin_extraHeartsValue(int count);
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm ảnh của người ấy'**
+  String get checkin_extraPartnerPhoto;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi ảnh của người ấy'**
+  String get checkin_extraPartnerPhotoChange;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ ảnh của người ấy'**
+  String get checkin_extraPartnerPhotoRemove;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh của người ấy'**
+  String get checkin_extraPartnerPhotoSemantics;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhịp chạy (phút/km)'**
+  String get checkin_extraPaceLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhịp không hợp lệ, giây phải dưới 60'**
+  String get checkin_extraPaceInvalid;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xoá một số'**
+  String get checkin_extraBackspace;
+
+  /// No description provided for @checkin_extraCountdown.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tự đăng sau {seconds} giây'**
+  String checkin_extraCountdown(int seconds);
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm bất kỳ đâu để dừng'**
+  String get checkin_extraCountdownStop;
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {

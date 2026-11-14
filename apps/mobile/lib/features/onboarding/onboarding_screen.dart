@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ourney_core/ourney_core.dart' show OnboardingQuiz;
 
 import '../../app/locale_override.dart';
 import '../../app/providers.dart';
@@ -9,6 +10,8 @@ import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import 'l10n/generated/onboarding_localizations.dart';
 import 'onboarding_art.dart';
+import 'onboarding_providers.dart';
+import 'onboarding_quiz.dart';
 
 /// First-run onboarding (App.tsx `Onboarding`): three pages with an
 /// illustration, headline, body, page dots and one "Continue" button.
@@ -31,6 +34,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _page = 0;
 
+  /// After the intro pages: the 3-question quiz (Figma `OnboardingFlow`).
+  bool _quiz = false;
+
   bool get _isLast => _page == OnboardingScreen.pageCount - 1;
 
   @override
@@ -44,8 +50,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   void _next() {
     if (_isLast) {
-      OurneyHaptics.success();
-      unawaited(_complete());
+      OurneyHaptics.selection();
+      setState(() => _quiz = true);
       return;
     }
     final target = _page + 1;
@@ -58,6 +64,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         curve: Curves.easeOutCubic,
       );
     }
+  }
+
+  Future<void> _finishQuiz(OnboardingQuiz? quiz) async {
+    OurneyHaptics.success();
+    if (quiz != null) {
+      // Local save is immediate; the server copy is best effort.
+      unawaited(ref.read(onboardingQuizProvider.notifier).save(quiz));
+    }
+    await _complete();
   }
 
   void _switchLanguage() {
@@ -103,77 +118,80 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: UiSpace.maxContent(width)),
-            child: Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: gutter),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: _quiz
+                ? OnboardingQuizStage(onDone: _finishQuiz, gutter: gutter)
+                : Column(
                     children: [
-                      if (_page == 0)
-                        Flexible(
-                          child: UiChip(
-                            key: const ValueKey('onboarding-language'),
-                            glyph: const OurneyIcon(
-                              name: 'translate',
-                              flat: true,
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: gutter),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            if (_page == 0)
+                              Flexible(
+                                child: UiChip(
+                                  key: const ValueKey('onboarding-language'),
+                                  glyph: const OurneyIcon(
+                                    name: 'translate',
+                                    flat: true,
+                                  ),
+                                  label: l10n.onboarding_languageSwitch,
+                                  semanticHint:
+                                      l10n.onboarding_languageSwitchHint,
+                                  onPressed: _switchLanguage,
+                                ),
+                              )
+                            else
+                              const SizedBox(height: UiSize.tap),
+                            UiTextAction(
+                              key: const ValueKey('onboarding-skip'),
+                              label: l10n.onboarding_skip,
+                              onPressed: _complete,
                             ),
-                            label: l10n.onboarding_languageSwitch,
-                            semanticHint: l10n.onboarding_languageSwitchHint,
-                            onPressed: _switchLanguage,
-                          ),
-                        )
-                      else
-                        const SizedBox(height: UiSize.tap),
-                      UiTextAction(
-                        key: const ValueKey('onboarding-skip'),
-                        label: l10n.onboarding_skip,
-                        onPressed: _complete,
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _controller,
-                    itemCount: OnboardingScreen.pageCount,
-                    onPageChanged: (p) {
-                      OurneyHaptics.selection();
-                      setState(() => _page = p);
-                    },
-                    itemBuilder: (context, i) => _OnboardingPage(
-                      key: ValueKey('onboarding-page-$i'),
-                      art: arts[i],
-                      title: titles[i],
-                      body: bodies[i],
-                      gutter: gutter,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(gutter, 6, gutter, 28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _Dots(
-                        count: OnboardingScreen.pageCount,
-                        current: _page,
-                        label: l10n.onboarding_pageSemantics(
-                          _page + 1,
-                          OnboardingScreen.pageCount,
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      UiButton(
-                        key: const ValueKey('onboarding-next'),
-                        label: l10n.onboarding_next,
-                        onPressed: _next,
+                      Expanded(
+                        child: PageView.builder(
+                          controller: _controller,
+                          itemCount: OnboardingScreen.pageCount,
+                          onPageChanged: (p) {
+                            OurneyHaptics.selection();
+                            setState(() => _page = p);
+                          },
+                          itemBuilder: (context, i) => _OnboardingPage(
+                            key: ValueKey('onboarding-page-$i'),
+                            art: arts[i],
+                            title: titles[i],
+                            body: bodies[i],
+                            gutter: gutter,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(gutter, 6, gutter, 28),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _Dots(
+                              count: OnboardingScreen.pageCount,
+                              current: _page,
+                              label: l10n.onboarding_pageSemantics(
+                                _page + 1,
+                                OnboardingScreen.pageCount,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            UiButton(
+                              key: const ValueKey('onboarding-next'),
+                              label: l10n.onboarding_next,
+                              onPressed: _next,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),

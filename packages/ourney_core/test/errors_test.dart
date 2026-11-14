@@ -48,20 +48,35 @@ void main() {
 
   group('fromServer', () {
     test('message wins over sqlstate', () {
-      expect(OurneyErrorCode.fromServer(message: 'forbidden', sqlstate: '42501'), OurneyErrorCode.forbidden);
-      expect(OurneyErrorCode.fromServer(message: 'not_alone', sqlstate: 'P0001'), OurneyErrorCode.notAlone);
       expect(
-          OurneyErrorCode.fromServer(message: 'immutable_column', sqlstate: '23514'), OurneyErrorCode.immutableColumn);
+          OurneyErrorCode.fromServer(message: 'forbidden', sqlstate: '42501'),
+          OurneyErrorCode.forbidden);
+      expect(
+          OurneyErrorCode.fromServer(message: 'not_alone', sqlstate: 'P0001'),
+          OurneyErrorCode.notAlone);
+      expect(
+          OurneyErrorCode.fromServer(
+              message: 'immutable_column', sqlstate: '23514'),
+          OurneyErrorCode.immutableColumn);
     });
     test('sqlstate fallback', () {
-      expect(OurneyErrorCode.fromServer(message: 'new row violates row-level security policy', sqlstate: '42501'),
+      expect(
+          OurneyErrorCode.fromServer(
+              message: 'new row violates row-level security policy',
+              sqlstate: '42501'),
           OurneyErrorCode.forbidden);
-      expect(OurneyErrorCode.fromServer(sqlstate: '28000'), OurneyErrorCode.unauthenticated);
-      expect(OurneyErrorCode.fromServer(sqlstate: '22008'), OurneyErrorCode.invalidCapturedAt);
-      expect(OurneyErrorCode.fromServer(message: 'time zone "X" not recognized', sqlstate: '22023'),
+      expect(OurneyErrorCode.fromServer(sqlstate: '28000'),
+          OurneyErrorCode.unauthenticated);
+      expect(OurneyErrorCode.fromServer(sqlstate: '22008'),
+          OurneyErrorCode.invalidCapturedAt);
+      expect(
+          OurneyErrorCode.fromServer(
+              message: 'time zone "X" not recognized', sqlstate: '22023'),
           OurneyErrorCode.invalid);
-      expect(OurneyErrorCode.fromServer(sqlstate: '23514'), OurneyErrorCode.invalid);
-      expect(OurneyErrorCode.fromServer(sqlstate: 'XX000'), OurneyErrorCode.unknown);
+      expect(OurneyErrorCode.fromServer(sqlstate: '23514'),
+          OurneyErrorCode.invalid);
+      expect(OurneyErrorCode.fromServer(sqlstate: 'XX000'),
+          OurneyErrorCode.unknown);
       expect(OurneyErrorCode.fromServer(), OurneyErrorCode.unknown);
     });
   });

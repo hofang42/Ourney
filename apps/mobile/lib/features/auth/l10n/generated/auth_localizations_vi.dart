@@ -99,4 +99,101 @@ class AuthL10nVi extends AuthL10n {
   String auth_digitSemantics(int n) {
     return 'Chữ số $n trên 6';
   }
+
+  @override
+  String get auth_tabEmail => 'Email';
+
+  @override
+  String get auth_tabPhone => 'Số điện thoại';
+
+  @override
+  String get auth_phoneLabel => 'Số điện thoại';
+
+  @override
+  String get auth_phoneHint => '912 345 678';
+
+  @override
+  String get auth_phonePrefix => '+84';
+
+  @override
+  String get auth_phoneInvalid =>
+      'Số điện thoại Việt Nam cần 9–10 số sau 0 hoặc +84.';
+
+  @override
+  String get auth_phoneSubtitle =>
+      'Nhập số điện thoại, Ourney gửi mã 6 số qua SMS.';
+
+  @override
+  String get auth_sendSms => 'Gửi mã SMS';
+
+  @override
+  String auth_smsSentTo(String phone) {
+    return 'Mã 6 số đã gửi qua SMS tới $phone.';
+  }
+
+  @override
+  String get auth_changePhone => 'Đổi số điện thoại';
+
+  @override
+  String get auth_passwordLabel => 'Mật khẩu';
+
+  @override
+  String get auth_newPasswordLabel => 'Mật khẩu mới';
+
+  @override
+  String get auth_passwordShort => 'Mật khẩu cần ít nhất 8 ký tự.';
+
+  @override
+  String get auth_showPassword => 'Hiện mật khẩu';
+
+  @override
+  String get auth_hidePassword => 'Ẩn mật khẩu';
+
+  @override
+  String get auth_signIn => 'Đăng nhập';
+
+  @override
+  String get auth_usePassword => 'Dùng mật khẩu';
+
+  @override
+  String get auth_useCode => 'Dùng mã đăng nhập';
+
+  @override
+  String get auth_forgot => 'Quên mật khẩu?';
+
+  @override
+  String get auth_createAccount => 'Tạo tài khoản bằng mật khẩu';
+
+  @override
+  String get auth_haveAccount => 'Đã có tài khoản? Đăng nhập';
+
+  @override
+  String get auth_signUpTitle => 'tạo tài khoản.';
+
+  @override
+  String get auth_signUpSubtitle =>
+      'Dùng email và mật khẩu của bạn. Có thể cần xác nhận bằng mã gửi qua email.';
+
+  @override
+  String get auth_signUpButton => 'Tạo tài khoản';
+
+  @override
+  String get auth_resetTitle => 'đặt lại mật khẩu.';
+
+  @override
+  String get auth_resetSubtitle =>
+      'Nhập email, Ourney gửi mã 6 số để đặt mật khẩu mới.';
+
+  @override
+  String get auth_resetConfirm => 'Đặt mật khẩu';
+
+  @override
+  String get auth_backToSignIn => 'Quay lại đăng nhập';
+
+  @override
+  String get auth_errorWrongPassword => 'Email hoặc mật khẩu chưa đúng.';
+
+  @override
+  String get auth_errorEmailTaken =>
+      'Email này đã có tài khoản. Hãy đăng nhập.';
 }

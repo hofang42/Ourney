@@ -24,19 +24,22 @@ List<DateTime> rollingReminderTimes({
   int days = rollingReminderDays,
   Set<LocalDate> skipDates = const {},
 }) {
-  final todayAt = DateTime(nowLocal.year, nowLocal.month, nowLocal.day, hour, minute);
+  final todayAt =
+      DateTime(nowLocal.year, nowLocal.month, nowLocal.day, hour, minute);
   final firstOffset = todayAt.isAfter(nowLocal) ? 0 : 1;
   final result = <DateTime>[];
   for (var i = 0; i < days; i++) {
-    final t = DateTime(nowLocal.year, nowLocal.month, nowLocal.day + firstOffset + i, hour, minute);
+    final t = DateTime(nowLocal.year, nowLocal.month,
+        nowLocal.day + firstOffset + i, hour, minute);
     if (skipDates.contains(LocalDate(t.year, t.month, t.day))) continue;
     result.add(t);
   }
   return result;
 }
 
-int _perJourneyShare(int activeJourneys) =>
-    activeJourneys <= 0 ? 0 : (iosPendingNotificationLimit - _safetyMargin) ~/ activeJourneys;
+int _perJourneyShare(int activeJourneys) => activeJourneys <= 0
+    ? 0
+    : (iosPendingNotificationLimit - _safetyMargin) ~/ activeJourneys;
 
 /// Daily-reminder slots a journey may use. Half of each journey's share of the
 /// iOS 64 cap is reserved for the 21:00 "streak at risk" alerts.
@@ -46,4 +49,5 @@ int maxReminderSlotsPerJourney(int activeJourneys) {
 }
 
 /// Slots reserved per journey for the 21:00 "streak at risk" alert.
-int maxAtRiskSlotsPerJourney(int activeJourneys) => maxReminderSlotsPerJourney(activeJourneys);
+int maxAtRiskSlotsPerJourney(int activeJourneys) =>
+    maxReminderSlotsPerJourney(activeJourneys);

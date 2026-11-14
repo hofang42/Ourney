@@ -77,5 +77,35 @@
         "type": "int"
       }
     }
-  }
+  },
+  "checkin_extraMoodLabel": "How are you feeling today?",
+  "checkin_extraMoodLight": "Light",
+  "checkin_extraMoodNormal": "Okay",
+  "checkin_extraMoodTired": "A bit tired",
+  "checkin_extraMinutesLabel": "How long did you study today?",
+  "checkin_extraMinutesValue": "{minutes} min",
+  "@checkin_extraMinutesValue": {"placeholders": {"minutes": {"type": "int"}}},
+  "checkin_extraMinutesOther": "Other",
+  "checkin_extraMinutesLess": "Five minutes less",
+  "checkin_extraMinutesMore": "Five minutes more",
+  "checkin_extraPlaceLabel": "Where are you?",
+  "checkin_extraPlaceHint": "Search for a place...",
+  "checkin_extraDishLabel": "Today's dish",
+  "checkin_extraDishHint": "Leave empty if you like",
+  "checkin_extraCookLabel": "Who cooked?",
+  "checkin_extraYou": "You",
+  "checkin_extraPartner": "Partner",
+  "checkin_extraHeartsLabel": "How many hearts for this meal?",
+  "checkin_extraHeartsValue": "{count} hearts",
+  "@checkin_extraHeartsValue": {"placeholders": {"count": {"type": "int"}}},
+  "checkin_extraPartnerPhoto": "Add your partner's photo",
+  "checkin_extraPartnerPhotoChange": "Change partner's photo",
+  "checkin_extraPartnerPhotoRemove": "Remove partner's photo",
+  "checkin_extraPartnerPhotoSemantics": "Your partner's photo",
+  "checkin_extraPaceLabel": "Pace (min/km)",
+  "checkin_extraPaceInvalid": "Invalid pace, seconds must be under 60",
+  "checkin_extraBackspace": "Delete one digit",
+  "checkin_extraCountdown": "Posting in {seconds} s",
+  "@checkin_extraCountdown": {"placeholders": {"seconds": {"type": "int"}}},
+  "checkin_extraCountdownStop": "Tap anywhere to stop"
 }

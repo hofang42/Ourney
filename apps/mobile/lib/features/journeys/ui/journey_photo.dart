@@ -13,6 +13,7 @@ class JourneyPhoto extends ConsumerWidget {
   const JourneyPhoto({
     required this.checkIn,
     this.thumbnail = true,
+    this.partner = false,
     this.fit = BoxFit.cover,
     this.cacheWidth,
     this.fallback,
@@ -21,6 +22,9 @@ class JourneyPhoto extends ConsumerWidget {
 
   final CheckIn checkIn;
   final bool thumbnail;
+
+  /// Shows the partner's photo of a couple check-in instead of the author's.
+  final bool partner;
   final BoxFit fit;
   final int? cacheWidth;
   final Widget? fallback;
@@ -28,12 +32,21 @@ class JourneyPhoto extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final placeholder = fallback ?? const _PhotoFallback();
-    final local = checkIn.localPhotoFile;
+    final partnerPath = checkIn.partnerPhotoPath;
+    if (partner && partnerPath == null) return placeholder;
+    final local = partner
+        ? checkIn.localPartnerPhotoFile
+        : checkIn.localPhotoFile;
     final String? path;
-    if (local != null && (!thumbnail || !checkIn.uploaded)) {
+    if (local != null && (partner || !thumbnail || !checkIn.uploaded)) {
       path = local;
     } else {
-      final storagePath = thumbnail ? checkIn.thumbPath : checkIn.photoPath;
+      // The partner photo has no thumbnail: the full image serves both.
+      final storagePath = partner
+          ? partnerPath!
+          : thumbnail
+          ? checkIn.thumbPath
+          : checkIn.photoPath;
       final resolved = ref.watch(mediaFileProvider(storagePath));
       path = resolved.value ?? (resolved.hasError ? local : null);
     }

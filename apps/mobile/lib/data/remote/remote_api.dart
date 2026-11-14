@@ -24,6 +24,17 @@ abstract interface class RemoteApi {
   Stream<String?> watchUserId();
   Future<void> sendOtp(String email);
   Future<void> verifyOtp(String email, String code);
+  Future<void> sendPhoneOtp(String e164Phone);
+  Future<void> verifyPhoneOtp(String e164Phone, String code);
+
+  /// True when the server wants the emailed code before a session exists.
+  Future<bool> signUpWithPassword(String email, String password);
+  Future<void> confirmSignUp(String email, String code);
+  Future<void> signInWithPassword(String email, String password);
+  Future<void> sendPasswordReset(String email);
+
+  /// Verifies the recovery code (signs in) then sets [newPassword].
+  Future<void> resetPassword(String email, String code, String newPassword);
 
   /// Signs out. [global] also revokes the refresh tokens of every device
   /// (falls back to a local sign-out when the server is unreachable). Never

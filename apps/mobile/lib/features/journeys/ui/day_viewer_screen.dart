@@ -9,6 +9,7 @@ import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
+import 'journey_extras.dart';
 import 'journey_photo.dart';
 
 /// `/journey/:id/day/:date`: full photo of the caller's check-in for that
@@ -174,6 +175,15 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
                 checkIn.caption!,
                 key: const ValueKey('journey-day-caption'),
                 style: UiText.body(size: 16, height: 1.5, color: UiCamera.ink),
+              ),
+            ],
+            if (journeyExtrasParts(context, checkIn.extras) case final parts
+                when parts.isNotEmpty) ...[
+              const SizedBox(height: UiSpace.sm),
+              Text(
+                parts.join(' · '),
+                key: const ValueKey('journey-day-extras'),
+                style: UiText.body(size: 14, height: 1.45, color: _muted),
               ),
             ],
             if (checkIn.metricValue != null) ...[

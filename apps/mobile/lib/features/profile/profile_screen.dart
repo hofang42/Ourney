@@ -15,6 +15,7 @@ import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
 import 'widgets/delete_account_dialog.dart';
 import 'widgets/profile_avatar.dart';
+import 'widgets/profile_stats_section.dart';
 
 /// Route of the profile setup screen (sub-path of `/profile`).
 const String profileSetupPath = '${AppRoutes.profile}/setup';
@@ -63,12 +64,14 @@ class ProfileScreen extends ConsumerWidget {
             const FriendsProfileTile(),
           ],
           const SizedBox(height: UiSpace.xl),
+          const ProfileStatsSection(),
+          const SizedBox(height: UiSpace.xl),
           UiListHeading(title: l10n.profile_sectionSettings),
           const _SettingsSection(),
           if (!localOnly) ...[
             const SizedBox(height: UiSpace.xl),
             UiListHeading(title: l10n.profile_sectionAccount),
-            _AccountSection(username: profile?.value?.username),
+            _AccountSection(),
           ],
         ],
       ),
@@ -319,9 +322,7 @@ class _SettingsSection extends ConsumerWidget {
 }
 
 class _AccountSection extends ConsumerWidget {
-  const _AccountSection({required this.username});
-
-  final String? username;
+  const _AccountSection();
 
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     final l10n = ProfileL10n.of(context);
@@ -372,14 +373,8 @@ class _AccountSection extends ConsumerWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
-    final l10n = ProfileL10n.of(context);
     OurneyHaptics.warning();
-    final name = username;
-    await DeleteAccountDialog.show(
-      context,
-      phrase: name ?? l10n.profile_deleteConfirmWord,
-      caseSensitive: name != null,
-    );
+    await DeleteAccountDialog.show(context);
   }
 
   @override

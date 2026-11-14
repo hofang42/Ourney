@@ -107,6 +107,72 @@ void main() {
     expect(await layer.checkIns.watchPendingUploads().first, 0);
   });
 
+  test('local-only stores extras, partner photo and couple names', () async {
+    final layer = localLayer(db: db, media: media, clock: clock);
+    final journey = await layer.journeys.create(
+      JourneyDraft(
+        kind: JourneyKind.solo,
+        templateId: TemplateId.custom,
+        title: 'Hai đứa',
+        emoji: '💞',
+        startDate: const LocalDate(2026, 10, 10),
+        timezone: 'Asia/Ho_Chi_Minh',
+        coupleSelfName: 'An',
+        couplePartnerName: 'Bình',
+      ),
+    );
+    expect(journey.coupleSelfName, 'An');
+    expect(journey.couplePartnerName, 'Bình');
+    await expectLater(
+      layer.journeys.create(
+        JourneyDraft(
+          kind: JourneyKind.solo,
+          templateId: TemplateId.custom,
+          title: 'Lẻ',
+          emoji: '💞',
+          startDate: const LocalDate(2026, 10, 10),
+          timezone: 'Asia/Ho_Chi_Minh',
+          coupleSelfName: 'An',
+        ),
+      ),
+      throwsA(isA<OurneyException>()),
+      reason: 'names come as a pair',
+    );
+
+    final shot = fakeCapture(camera, 'c');
+    final partner = fakeCapture(camera, 'p');
+    final saved = await layer.checkIns.submit(
+      CheckInDraft(
+        journeyId: journey.id,
+        capturedAt: clock.value,
+        photoFile: shot.photo,
+        thumbFile: shot.thumb,
+        extras: const CheckInExtras(dish: ' Phở ', hearts: 4),
+        partnerPhotoFile: partner.photo,
+      ),
+    );
+    expect(saved.extras, const CheckInExtras(dish: 'Phở', hearts: 4));
+    expect(
+      saved.partnerPhotoPath,
+      checkInPartnerPhotoPath(journey.id, saved.userId, saved.id),
+    );
+    expect(File(saved.localPartnerPhotoFile!).existsSync(), isTrue);
+
+    await expectLater(
+      layer.checkIns.submit(
+        CheckInDraft(
+          journeyId: journey.id,
+          capturedAt: clock.value,
+          photoFile: shot.photo,
+          thumbFile: shot.thumb,
+          extras: const CheckInExtras(hearts: 9),
+        ),
+      ),
+      throwsA(isA<OurneyException>()),
+      reason: 'invalid extras never reach the database',
+    );
+  });
+
   test('local-only auth: no signed-in user, sign-in needs a server', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
     expect(layer.auth.isLocalOnly, isTrue);

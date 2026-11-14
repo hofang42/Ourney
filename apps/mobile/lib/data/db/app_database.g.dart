@@ -573,6 +573,29 @@ class $JourneysTable extends Journeys
     requiredDuringInsert: false,
     defaultValue: const Constant('live'),
   );
+  static const VerificationMeta _coupleSelfNameMeta = const VerificationMeta(
+    'coupleSelfName',
+  );
+  @override
+  late final GeneratedColumn<String> coupleSelfName = GeneratedColumn<String>(
+    'couple_self_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _couplePartnerNameMeta = const VerificationMeta(
+    'couplePartnerName',
+  );
+  @override
+  late final GeneratedColumn<String> couplePartnerName =
+      GeneratedColumn<String>(
+        'couple_partner_name',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _localArchivedMeta = const VerificationMeta(
     'localArchived',
   );
@@ -619,6 +642,8 @@ class $JourneysTable extends Journeys
     maxMembers,
     publicToken,
     origin,
+    coupleSelfName,
+    couplePartnerName,
     localArchived,
     updatedAt,
   ];
@@ -760,6 +785,24 @@ class $JourneysTable extends Journeys
         origin.isAcceptableOrUnknown(data['origin']!, _originMeta),
       );
     }
+    if (data.containsKey('couple_self_name')) {
+      context.handle(
+        _coupleSelfNameMeta,
+        coupleSelfName.isAcceptableOrUnknown(
+          data['couple_self_name']!,
+          _coupleSelfNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('couple_partner_name')) {
+      context.handle(
+        _couplePartnerNameMeta,
+        couplePartnerName.isAcceptableOrUnknown(
+          data['couple_partner_name']!,
+          _couplePartnerNameMeta,
+        ),
+      );
+    }
     if (data.containsKey('local_archived')) {
       context.handle(
         _localArchivedMeta,
@@ -858,6 +901,14 @@ class $JourneysTable extends Journeys
         DriftSqlType.string,
         data['${effectivePrefix}origin'],
       )!,
+      coupleSelfName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}couple_self_name'],
+      ),
+      couplePartnerName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}couple_partner_name'],
+      ),
       localArchived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}local_archived'],
@@ -900,6 +951,10 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
   /// `journeys.origin` wire value (v1.3, schema version 2).
   final String origin;
 
+  /// Couple names (`journeys.couple_*_name`, 0007; schema version 3).
+  final String? coupleSelfName;
+  final String? couplePartnerName;
+
   /// Client-only "archive" (JourneyRepository.archive): hidden from the list.
   final bool localArchived;
   final String? updatedAt;
@@ -922,6 +977,8 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     required this.maxMembers,
     this.publicToken,
     required this.origin,
+    this.coupleSelfName,
+    this.couplePartnerName,
     required this.localArchived,
     this.updatedAt,
   });
@@ -960,6 +1017,12 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       map['public_token'] = Variable<String>(publicToken);
     }
     map['origin'] = Variable<String>(origin);
+    if (!nullToAbsent || coupleSelfName != null) {
+      map['couple_self_name'] = Variable<String>(coupleSelfName);
+    }
+    if (!nullToAbsent || couplePartnerName != null) {
+      map['couple_partner_name'] = Variable<String>(couplePartnerName);
+    }
     map['local_archived'] = Variable<bool>(localArchived);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<String>(updatedAt);
@@ -997,6 +1060,12 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           ? const Value.absent()
           : Value(publicToken),
       origin: Value(origin),
+      coupleSelfName: coupleSelfName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coupleSelfName),
+      couplePartnerName: couplePartnerName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(couplePartnerName),
       localArchived: Value(localArchived),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1028,6 +1097,10 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       maxMembers: serializer.fromJson<int>(json['maxMembers']),
       publicToken: serializer.fromJson<String?>(json['publicToken']),
       origin: serializer.fromJson<String>(json['origin']),
+      coupleSelfName: serializer.fromJson<String?>(json['coupleSelfName']),
+      couplePartnerName: serializer.fromJson<String?>(
+        json['couplePartnerName'],
+      ),
       localArchived: serializer.fromJson<bool>(json['localArchived']),
       updatedAt: serializer.fromJson<String?>(json['updatedAt']),
     );
@@ -1054,6 +1127,8 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       'maxMembers': serializer.toJson<int>(maxMembers),
       'publicToken': serializer.toJson<String?>(publicToken),
       'origin': serializer.toJson<String>(origin),
+      'coupleSelfName': serializer.toJson<String?>(coupleSelfName),
+      'couplePartnerName': serializer.toJson<String?>(couplePartnerName),
       'localArchived': serializer.toJson<bool>(localArchived),
       'updatedAt': serializer.toJson<String?>(updatedAt),
     };
@@ -1078,6 +1153,8 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     int? maxMembers,
     Value<String?> publicToken = const Value.absent(),
     String? origin,
+    Value<String?> coupleSelfName = const Value.absent(),
+    Value<String?> couplePartnerName = const Value.absent(),
     bool? localArchived,
     Value<String?> updatedAt = const Value.absent(),
   }) => JourneyRow(
@@ -1099,6 +1176,12 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     maxMembers: maxMembers ?? this.maxMembers,
     publicToken: publicToken.present ? publicToken.value : this.publicToken,
     origin: origin ?? this.origin,
+    coupleSelfName: coupleSelfName.present
+        ? coupleSelfName.value
+        : this.coupleSelfName,
+    couplePartnerName: couplePartnerName.present
+        ? couplePartnerName.value
+        : this.couplePartnerName,
     localArchived: localArchived ?? this.localArchived,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
@@ -1140,6 +1223,12 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           ? data.publicToken.value
           : this.publicToken,
       origin: data.origin.present ? data.origin.value : this.origin,
+      coupleSelfName: data.coupleSelfName.present
+          ? data.coupleSelfName.value
+          : this.coupleSelfName,
+      couplePartnerName: data.couplePartnerName.present
+          ? data.couplePartnerName.value
+          : this.couplePartnerName,
       localArchived: data.localArchived.present
           ? data.localArchived.value
           : this.localArchived,
@@ -1168,6 +1257,8 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           ..write('maxMembers: $maxMembers, ')
           ..write('publicToken: $publicToken, ')
           ..write('origin: $origin, ')
+          ..write('coupleSelfName: $coupleSelfName, ')
+          ..write('couplePartnerName: $couplePartnerName, ')
           ..write('localArchived: $localArchived, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1175,7 +1266,7 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     ownerId,
     kind,
@@ -1194,9 +1285,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     maxMembers,
     publicToken,
     origin,
+    coupleSelfName,
+    couplePartnerName,
     localArchived,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1219,6 +1312,8 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           other.maxMembers == this.maxMembers &&
           other.publicToken == this.publicToken &&
           other.origin == this.origin &&
+          other.coupleSelfName == this.coupleSelfName &&
+          other.couplePartnerName == this.couplePartnerName &&
           other.localArchived == this.localArchived &&
           other.updatedAt == this.updatedAt);
 }
@@ -1242,6 +1337,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
   final Value<int> maxMembers;
   final Value<String?> publicToken;
   final Value<String> origin;
+  final Value<String?> coupleSelfName;
+  final Value<String?> couplePartnerName;
   final Value<bool> localArchived;
   final Value<String?> updatedAt;
   final Value<int> rowid;
@@ -1264,6 +1361,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     this.maxMembers = const Value.absent(),
     this.publicToken = const Value.absent(),
     this.origin = const Value.absent(),
+    this.coupleSelfName = const Value.absent(),
+    this.couplePartnerName = const Value.absent(),
     this.localArchived = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1287,6 +1386,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     this.maxMembers = const Value.absent(),
     this.publicToken = const Value.absent(),
     this.origin = const Value.absent(),
+    this.coupleSelfName = const Value.absent(),
+    this.couplePartnerName = const Value.absent(),
     this.localArchived = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1319,6 +1420,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     Expression<int>? maxMembers,
     Expression<String>? publicToken,
     Expression<String>? origin,
+    Expression<String>? coupleSelfName,
+    Expression<String>? couplePartnerName,
     Expression<bool>? localArchived,
     Expression<String>? updatedAt,
     Expression<int>? rowid,
@@ -1342,6 +1445,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
       if (maxMembers != null) 'max_members': maxMembers,
       if (publicToken != null) 'public_token': publicToken,
       if (origin != null) 'origin': origin,
+      if (coupleSelfName != null) 'couple_self_name': coupleSelfName,
+      if (couplePartnerName != null) 'couple_partner_name': couplePartnerName,
       if (localArchived != null) 'local_archived': localArchived,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1367,6 +1472,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     Value<int>? maxMembers,
     Value<String?>? publicToken,
     Value<String>? origin,
+    Value<String?>? coupleSelfName,
+    Value<String?>? couplePartnerName,
     Value<bool>? localArchived,
     Value<String?>? updatedAt,
     Value<int>? rowid,
@@ -1390,6 +1497,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
       maxMembers: maxMembers ?? this.maxMembers,
       publicToken: publicToken ?? this.publicToken,
       origin: origin ?? this.origin,
+      coupleSelfName: coupleSelfName ?? this.coupleSelfName,
+      couplePartnerName: couplePartnerName ?? this.couplePartnerName,
       localArchived: localArchived ?? this.localArchived,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1455,6 +1564,12 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     if (origin.present) {
       map['origin'] = Variable<String>(origin.value);
     }
+    if (coupleSelfName.present) {
+      map['couple_self_name'] = Variable<String>(coupleSelfName.value);
+    }
+    if (couplePartnerName.present) {
+      map['couple_partner_name'] = Variable<String>(couplePartnerName.value);
+    }
     if (localArchived.present) {
       map['local_archived'] = Variable<bool>(localArchived.value);
     }
@@ -1488,6 +1603,8 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
           ..write('maxMembers: $maxMembers, ')
           ..write('publicToken: $publicToken, ')
           ..write('origin: $origin, ')
+          ..write('coupleSelfName: $coupleSelfName, ')
+          ..write('couplePartnerName: $couplePartnerName, ')
           ..write('localArchived: $localArchived, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -2125,6 +2242,27 @@ class $CheckInsTable extends CheckIns
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _extrasMeta = const VerificationMeta('extras');
+  @override
+  late final GeneratedColumn<String> extras = GeneratedColumn<String>(
+    'extras',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _partnerPhotoPathMeta = const VerificationMeta(
+    'partnerPhotoPath',
+  );
+  @override
+  late final GeneratedColumn<String> partnerPhotoPath = GeneratedColumn<String>(
+    'partner_photo_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _uploadedMeta = const VerificationMeta(
     'uploaded',
   );
@@ -2163,6 +2301,8 @@ class $CheckInsTable extends CheckIns
     fromLibrary,
     caption,
     metricValue,
+    extras,
+    partnerPhotoPath,
     uploaded,
     updatedAt,
   ];
@@ -2239,6 +2379,21 @@ class $CheckInsTable extends CheckIns
         ),
       );
     }
+    if (data.containsKey('extras')) {
+      context.handle(
+        _extrasMeta,
+        extras.isAcceptableOrUnknown(data['extras']!, _extrasMeta),
+      );
+    }
+    if (data.containsKey('partner_photo_path')) {
+      context.handle(
+        _partnerPhotoPathMeta,
+        partnerPhotoPath.isAcceptableOrUnknown(
+          data['partner_photo_path']!,
+          _partnerPhotoPathMeta,
+        ),
+      );
+    }
     if (data.containsKey('uploaded')) {
       context.handle(
         _uploadedMeta,
@@ -2308,6 +2463,14 @@ class $CheckInsTable extends CheckIns
         DriftSqlType.double,
         data['${effectivePrefix}metric_value'],
       ),
+      extras: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}extras'],
+      )!,
+      partnerPhotoPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}partner_photo_path'],
+      ),
       uploaded: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}uploaded'],
@@ -2342,6 +2505,12 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
   final String? caption;
   final double? metricValue;
 
+  /// `check_ins.extras` as JSON text (0007; schema version 3).
+  final String extras;
+
+  /// `check_ins.partner_photo_path` (couple journeys).
+  final String? partnerPhotoPath;
+
   /// True once the server confirmed the row (and its media).
   final bool uploaded;
   final String? updatedAt;
@@ -2356,6 +2525,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     required this.fromLibrary,
     this.caption,
     this.metricValue,
+    required this.extras,
+    this.partnerPhotoPath,
     required this.uploaded,
     this.updatedAt,
   });
@@ -2384,6 +2555,10 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     if (!nullToAbsent || metricValue != null) {
       map['metric_value'] = Variable<double>(metricValue);
     }
+    map['extras'] = Variable<String>(extras);
+    if (!nullToAbsent || partnerPhotoPath != null) {
+      map['partner_photo_path'] = Variable<String>(partnerPhotoPath);
+    }
     map['uploaded'] = Variable<bool>(uploaded);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<String>(updatedAt);
@@ -2407,6 +2582,10 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       metricValue: metricValue == null && nullToAbsent
           ? const Value.absent()
           : Value(metricValue),
+      extras: Value(extras),
+      partnerPhotoPath: partnerPhotoPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partnerPhotoPath),
       uploaded: Value(uploaded),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -2430,6 +2609,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       fromLibrary: serializer.fromJson<bool>(json['fromLibrary']),
       caption: serializer.fromJson<String?>(json['caption']),
       metricValue: serializer.fromJson<double?>(json['metricValue']),
+      extras: serializer.fromJson<String>(json['extras']),
+      partnerPhotoPath: serializer.fromJson<String?>(json['partnerPhotoPath']),
       uploaded: serializer.fromJson<bool>(json['uploaded']),
       updatedAt: serializer.fromJson<String?>(json['updatedAt']),
     );
@@ -2448,6 +2629,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       'fromLibrary': serializer.toJson<bool>(fromLibrary),
       'caption': serializer.toJson<String?>(caption),
       'metricValue': serializer.toJson<double?>(metricValue),
+      'extras': serializer.toJson<String>(extras),
+      'partnerPhotoPath': serializer.toJson<String?>(partnerPhotoPath),
       'uploaded': serializer.toJson<bool>(uploaded),
       'updatedAt': serializer.toJson<String?>(updatedAt),
     };
@@ -2464,6 +2647,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     bool? fromLibrary,
     Value<String?> caption = const Value.absent(),
     Value<double?> metricValue = const Value.absent(),
+    String? extras,
+    Value<String?> partnerPhotoPath = const Value.absent(),
     bool? uploaded,
     Value<String?> updatedAt = const Value.absent(),
   }) => CheckInRow(
@@ -2477,6 +2662,10 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     fromLibrary: fromLibrary ?? this.fromLibrary,
     caption: caption.present ? caption.value : this.caption,
     metricValue: metricValue.present ? metricValue.value : this.metricValue,
+    extras: extras ?? this.extras,
+    partnerPhotoPath: partnerPhotoPath.present
+        ? partnerPhotoPath.value
+        : this.partnerPhotoPath,
     uploaded: uploaded ?? this.uploaded,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
@@ -2498,6 +2687,10 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
       metricValue: data.metricValue.present
           ? data.metricValue.value
           : this.metricValue,
+      extras: data.extras.present ? data.extras.value : this.extras,
+      partnerPhotoPath: data.partnerPhotoPath.present
+          ? data.partnerPhotoPath.value
+          : this.partnerPhotoPath,
       uploaded: data.uploaded.present ? data.uploaded.value : this.uploaded,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -2516,6 +2709,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
           ..write('fromLibrary: $fromLibrary, ')
           ..write('caption: $caption, ')
           ..write('metricValue: $metricValue, ')
+          ..write('extras: $extras, ')
+          ..write('partnerPhotoPath: $partnerPhotoPath, ')
           ..write('uploaded: $uploaded, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -2534,6 +2729,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
     fromLibrary,
     caption,
     metricValue,
+    extras,
+    partnerPhotoPath,
     uploaded,
     updatedAt,
   );
@@ -2551,6 +2748,8 @@ class CheckInRow extends DataClass implements Insertable<CheckInRow> {
           other.fromLibrary == this.fromLibrary &&
           other.caption == this.caption &&
           other.metricValue == this.metricValue &&
+          other.extras == this.extras &&
+          other.partnerPhotoPath == this.partnerPhotoPath &&
           other.uploaded == this.uploaded &&
           other.updatedAt == this.updatedAt);
 }
@@ -2566,6 +2765,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
   final Value<bool> fromLibrary;
   final Value<String?> caption;
   final Value<double?> metricValue;
+  final Value<String> extras;
+  final Value<String?> partnerPhotoPath;
   final Value<bool> uploaded;
   final Value<String?> updatedAt;
   final Value<int> rowid;
@@ -2580,6 +2781,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     this.fromLibrary = const Value.absent(),
     this.caption = const Value.absent(),
     this.metricValue = const Value.absent(),
+    this.extras = const Value.absent(),
+    this.partnerPhotoPath = const Value.absent(),
     this.uploaded = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2595,6 +2798,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     this.fromLibrary = const Value.absent(),
     this.caption = const Value.absent(),
     this.metricValue = const Value.absent(),
+    this.extras = const Value.absent(),
+    this.partnerPhotoPath = const Value.absent(),
     this.uploaded = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2616,6 +2821,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     Expression<bool>? fromLibrary,
     Expression<String>? caption,
     Expression<double>? metricValue,
+    Expression<String>? extras,
+    Expression<String>? partnerPhotoPath,
     Expression<bool>? uploaded,
     Expression<String>? updatedAt,
     Expression<int>? rowid,
@@ -2631,6 +2838,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
       if (fromLibrary != null) 'from_library': fromLibrary,
       if (caption != null) 'caption': caption,
       if (metricValue != null) 'metric_value': metricValue,
+      if (extras != null) 'extras': extras,
+      if (partnerPhotoPath != null) 'partner_photo_path': partnerPhotoPath,
       if (uploaded != null) 'uploaded': uploaded,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -2648,6 +2857,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     Value<bool>? fromLibrary,
     Value<String?>? caption,
     Value<double?>? metricValue,
+    Value<String>? extras,
+    Value<String?>? partnerPhotoPath,
     Value<bool>? uploaded,
     Value<String?>? updatedAt,
     Value<int>? rowid,
@@ -2663,6 +2874,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
       fromLibrary: fromLibrary ?? this.fromLibrary,
       caption: caption ?? this.caption,
       metricValue: metricValue ?? this.metricValue,
+      extras: extras ?? this.extras,
+      partnerPhotoPath: partnerPhotoPath ?? this.partnerPhotoPath,
       uploaded: uploaded ?? this.uploaded,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -2706,6 +2919,12 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
     if (metricValue.present) {
       map['metric_value'] = Variable<double>(metricValue.value);
     }
+    if (extras.present) {
+      map['extras'] = Variable<String>(extras.value);
+    }
+    if (partnerPhotoPath.present) {
+      map['partner_photo_path'] = Variable<String>(partnerPhotoPath.value);
+    }
     if (uploaded.present) {
       map['uploaded'] = Variable<bool>(uploaded.value);
     }
@@ -2731,6 +2950,8 @@ class CheckInsCompanion extends UpdateCompanion<CheckInRow> {
           ..write('fromLibrary: $fromLibrary, ')
           ..write('caption: $caption, ')
           ..write('metricValue: $metricValue, ')
+          ..write('extras: $extras, ')
+          ..write('partnerPhotoPath: $partnerPhotoPath, ')
           ..write('uploaded: $uploaded, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4351,6 +4572,8 @@ typedef $$JourneysTableCreateCompanionBuilder = JourneysCompanion Function({
   Value<int> maxMembers,
   Value<String?> publicToken,
   Value<String> origin,
+  Value<String?> coupleSelfName,
+  Value<String?> couplePartnerName,
   Value<bool> localArchived,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -4374,6 +4597,8 @@ typedef $$JourneysTableUpdateCompanionBuilder = JourneysCompanion Function({
   Value<int> maxMembers,
   Value<String?> publicToken,
   Value<String> origin,
+  Value<String?> coupleSelfName,
+  Value<String?> couplePartnerName,
   Value<bool> localArchived,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -4476,6 +4701,16 @@ class $$JourneysTableFilterComposer
 
   ColumnFilters<String> get origin => $composableBuilder(
     column: $table.origin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get coupleSelfName => $composableBuilder(
+    column: $table.coupleSelfName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get couplePartnerName => $composableBuilder(
+    column: $table.couplePartnerName,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4589,6 +4824,16 @@ class $$JourneysTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get coupleSelfName => $composableBuilder(
+    column: $table.coupleSelfName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get couplePartnerName => $composableBuilder(
+    column: $table.couplePartnerName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get localArchived => $composableBuilder(
     column: $table.localArchived,
     builder: (column) => ColumnOrderings(column),
@@ -4681,6 +4926,16 @@ class $$JourneysTableAnnotationComposer
   GeneratedColumn<String> get origin =>
       $composableBuilder(column: $table.origin, builder: (column) => column);
 
+  GeneratedColumn<String> get coupleSelfName => $composableBuilder(
+    column: $table.coupleSelfName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get couplePartnerName => $composableBuilder(
+    column: $table.couplePartnerName,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get localArchived => $composableBuilder(
     column: $table.localArchived,
     builder: (column) => column,
@@ -4739,6 +4994,8 @@ class $$JourneysTableTableManager
                 Value<int> maxMembers = const Value.absent(),
                 Value<String?> publicToken = const Value.absent(),
                 Value<String> origin = const Value.absent(),
+                Value<String?> coupleSelfName = const Value.absent(),
+                Value<String?> couplePartnerName = const Value.absent(),
                 Value<bool> localArchived = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4761,6 +5018,8 @@ class $$JourneysTableTableManager
                 maxMembers: maxMembers,
                 publicToken: publicToken,
                 origin: origin,
+                coupleSelfName: coupleSelfName,
+                couplePartnerName: couplePartnerName,
                 localArchived: localArchived,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -4785,6 +5044,8 @@ class $$JourneysTableTableManager
                 Value<int> maxMembers = const Value.absent(),
                 Value<String?> publicToken = const Value.absent(),
                 Value<String> origin = const Value.absent(),
+                Value<String?> coupleSelfName = const Value.absent(),
+                Value<String?> couplePartnerName = const Value.absent(),
                 Value<bool> localArchived = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4807,6 +5068,8 @@ class $$JourneysTableTableManager
                 maxMembers: maxMembers,
                 publicToken: publicToken,
                 origin: origin,
+                coupleSelfName: coupleSelfName,
+                couplePartnerName: couplePartnerName,
                 localArchived: localArchived,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -5122,6 +5385,8 @@ typedef $$CheckInsTableCreateCompanionBuilder = CheckInsCompanion Function({
   Value<bool> fromLibrary,
   Value<String?> caption,
   Value<double?> metricValue,
+  Value<String> extras,
+  Value<String?> partnerPhotoPath,
   Value<bool> uploaded,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -5137,6 +5402,8 @@ typedef $$CheckInsTableUpdateCompanionBuilder = CheckInsCompanion Function({
   Value<bool> fromLibrary,
   Value<String?> caption,
   Value<double?> metricValue,
+  Value<String> extras,
+  Value<String?> partnerPhotoPath,
   Value<bool> uploaded,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -5200,6 +5467,16 @@ class $$CheckInsTableFilterComposer
 
   ColumnFilters<double> get metricValue => $composableBuilder(
     column: $table.metricValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get extras => $composableBuilder(
+    column: $table.extras,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partnerPhotoPath => $composableBuilder(
+    column: $table.partnerPhotoPath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5273,6 +5550,16 @@ class $$CheckInsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get extras => $composableBuilder(
+    column: $table.extras,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partnerPhotoPath => $composableBuilder(
+    column: $table.partnerPhotoPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get uploaded => $composableBuilder(
     column: $table.uploaded,
     builder: (column) => ColumnOrderings(column),
@@ -5330,6 +5617,14 @@ class $$CheckInsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get extras =>
+      $composableBuilder(column: $table.extras, builder: (column) => column);
+
+  GeneratedColumn<String> get partnerPhotoPath => $composableBuilder(
+    column: $table.partnerPhotoPath,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<bool> get uploaded =>
       $composableBuilder(column: $table.uploaded, builder: (column) => column);
 
@@ -5378,6 +5673,8 @@ class $$CheckInsTableTableManager
                 Value<bool> fromLibrary = const Value.absent(),
                 Value<String?> caption = const Value.absent(),
                 Value<double?> metricValue = const Value.absent(),
+                Value<String> extras = const Value.absent(),
+                Value<String?> partnerPhotoPath = const Value.absent(),
                 Value<bool> uploaded = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5392,6 +5689,8 @@ class $$CheckInsTableTableManager
                 fromLibrary: fromLibrary,
                 caption: caption,
                 metricValue: metricValue,
+                extras: extras,
+                partnerPhotoPath: partnerPhotoPath,
                 uploaded: uploaded,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -5408,6 +5707,8 @@ class $$CheckInsTableTableManager
                 Value<bool> fromLibrary = const Value.absent(),
                 Value<String?> caption = const Value.absent(),
                 Value<double?> metricValue = const Value.absent(),
+                Value<String> extras = const Value.absent(),
+                Value<String?> partnerPhotoPath = const Value.absent(),
                 Value<bool> uploaded = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5422,6 +5723,8 @@ class $$CheckInsTableTableManager
                 fromLibrary: fromLibrary,
                 caption: caption,
                 metricValue: metricValue,
+                extras: extras,
+                partnerPhotoPath: partnerPhotoPath,
                 uploaded: uploaded,
                 updatedAt: updatedAt,
                 rowid: rowid,

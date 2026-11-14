@@ -433,6 +433,186 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Quay lại'**
   String get profile_back;
+
+  /// Stat label.
+  ///
+  /// In vi, this message translates to:
+  /// **'tổng ngày check-in'**
+  String get profile_statSnaps;
+
+  /// Stat label.
+  ///
+  /// In vi, this message translates to:
+  /// **'chuỗi dài nhất'**
+  String get profile_statLongest;
+
+  /// Stat label.
+  ///
+  /// In vi, this message translates to:
+  /// **'hành trình đã xong'**
+  String get profile_statDone;
+
+  /// Badge shelf heading.
+  ///
+  /// In vi, this message translates to:
+  /// **'huy hiệu đều đặn.'**
+  String get profile_badgesTitle;
+
+  /// Badge name.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đều 7 ngày'**
+  String get profile_badge7;
+
+  /// Badge name.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đều 30 ngày'**
+  String get profile_badge30;
+
+  /// Badge name.
+  ///
+  /// In vi, this message translates to:
+  /// **'Về đích đầu tiên'**
+  String get profile_badgeFinish;
+
+  /// Badge name.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đủ 100 ngày'**
+  String get profile_badge100;
+
+  /// Badge rule.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có mặt đủ 7 ngày liên tiếp.'**
+  String get profile_badge7Rule;
+
+  /// Badge rule.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có mặt đủ 30 ngày liên tiếp.'**
+  String get profile_badge30Rule;
+
+  /// Badge rule.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn thành hành trình đầu tiên.'**
+  String get profile_badgeFinishRule;
+
+  /// Badge rule.
+  ///
+  /// In vi, this message translates to:
+  /// **'Check-in đủ 100 ngày.'**
+  String get profile_badge100Rule;
+
+  /// Badge semantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'đã mở khoá'**
+  String get profile_badgeUnlocked;
+
+  /// Badge semantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa mở khoá'**
+  String get profile_badgeLocked;
+
+  /// Delete step 1 checkbox.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tôi hiểu việc này không thể hoàn tác.'**
+  String get profile_deleteUnderstand;
+
+  /// Delete step 1 note.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nếu bạn là chủ nhóm, quyền chủ nhóm chuyển cho người vào sớm nhất.'**
+  String get profile_deleteOwnerNote;
+
+  /// Delete step 1 cancel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ tài khoản'**
+  String get profile_deleteKeep;
+
+  /// Delete step 1 continue.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get profile_deleteContinue;
+
+  /// Delete step 2 title.
+  ///
+  /// In vi, this message translates to:
+  /// **'xác nhận bằng mã.'**
+  String get profile_deleteOtpTitle;
+
+  /// Delete step 2 lead.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã gồm 6 số vừa gửi tới email hoặc số điện thoại của tài khoản này.'**
+  String get profile_deleteOtpLead;
+
+  /// OTP semantics.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã xác nhận xoá tài khoản gồm 6 số'**
+  String get profile_deleteOtpLabel;
+
+  /// Delete OTP error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã chưa đúng. Kiểm tra lại nhé.'**
+  String get profile_deleteOtpWrong;
+
+  /// Resend.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại mã'**
+  String get profile_deleteResend;
+
+  /// Resend cooldown.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại sau {seconds}s'**
+  String profile_deleteResendIn(int seconds);
+
+  /// Resend info.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi mã mới.'**
+  String get profile_deleteCodeSent;
+
+  /// Delete step 3 done title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã xoá tài khoản.'**
+  String get profile_deleteDoneTitle;
+
+  /// Delete step 3 done body.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cảm ơn bạn đã dùng Ourney.'**
+  String get profile_deleteDoneBody;
+
+  /// Delete step 3 done button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Về màn đầu'**
+  String get profile_deleteDoneButton;
+
+  /// Delete step 3 error button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Về cài đặt'**
+  String get profile_deleteBackToSettings;
+
+  /// Delete steps.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bước {current} trên {total}'**
+  String profile_deleteStepSemantics(int current, int total);
 }
 
 class _ProfileL10nDelegate extends LocalizationsDelegate<ProfileL10n> {

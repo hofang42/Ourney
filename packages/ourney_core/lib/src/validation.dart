@@ -94,7 +94,8 @@ DurationError? validateDurationDays(int? days) {
 /// Mirrors `create_journey`, which raises `invalid` for group+link and
 /// solo+group. Group+private is accepted (the server normalises it to
 /// `group`), but `JourneyDraft` now defaults groups to `group` anyway.
-VisibilityError? validateJourneyVisibility(JourneyKind kind, JourneyVisibility visibility) {
+VisibilityError? validateJourneyVisibility(
+    JourneyKind kind, JourneyVisibility visibility) {
   if (kind == JourneyKind.group && visibility == JourneyVisibility.link) {
     return VisibilityError.linkNotAllowedForGroup;
   }
@@ -106,5 +107,6 @@ VisibilityError? validateJourneyVisibility(JourneyKind kind, JourneyVisibility v
 
 /// The visibility the server will store for [kind]/[requested]
 /// (group → `group`; solo keeps `private`/`link`). Assumes it is valid.
-JourneyVisibility normalizedVisibility(JourneyKind kind, JourneyVisibility requested) =>
+JourneyVisibility normalizedVisibility(
+        JourneyKind kind, JourneyVisibility requested) =>
     kind == JourneyKind.group ? JourneyVisibility.group : requested;

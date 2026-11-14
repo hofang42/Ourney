@@ -50,6 +50,23 @@ abstract interface class AuthRepository {
   Stream<String?> watchUserId();
   Future<void> sendOtp(String email);
   Future<void> verifyOtp(String email, String code);
+
+  /// Phone OTP (SMS). [e164Phone] is `+84912345678`. Needs an SMS provider
+  /// configured in the Supabase dashboard (docs/runbooks/hosted-supabase.md).
+  Future<void> sendPhoneOtp(String e164Phone);
+  Future<void> verifyPhoneOtp(String e164Phone, String code);
+
+  /// Email + password sign-up. Returns true when the server wants the emailed
+  /// code first (then call [confirmSignUp]); false when the user is signed in.
+  Future<bool> signUpWithPassword(String email, String password);
+  Future<void> confirmSignUp(String email, String code);
+  Future<void> signInWithPassword(String email, String password);
+
+  /// Forgot password: emails a 6-digit code; [resetPassword] verifies it and
+  /// sets [newPassword] (the user ends up signed in).
+  Future<void> sendPasswordReset(String email);
+  Future<void> resetPassword(String email, String code, String newPassword);
+
   Future<void> signOut();
 
   /// Deletes the account and all media server-side (Edge Function
@@ -57,12 +74,21 @@ abstract interface class AuthRepository {
   /// Groups the user is in are handed over to the earliest member.
   /// Throws [OurneyException] with `unauthenticated` or one of the
   /// `storage*` / `deleteFailed` codes (safe to retry).
-  Future<void> deleteAccount();
+  ///
+  /// Server-side the call is gated by a one-time [code] (3-step delete:
+  /// confirm, OTP, final). Get one with [requestDeleteCode]; a wrong or
+  /// missing code throws `invalid`, too many requests `rateLimited`.
+  Future<void> deleteAccount({String? code});
+
+  /// Sends the delete-confirmation code to the account's own email (or phone
+  /// when it has no email). Edge Function `delete-account` `{action: send}`.
+  Future<void> requestDeleteCode();
 }
 
 abstract interface class ProfileRepository {
   Stream<Profile?> watchMe();
-  Future<void> upsertMe({required String username, required String displayName});
+  Future<void> upsertMe(
+      {required String username, required String displayName});
   Future<void> setAvatar(List<int> jpegBytes);
 }
 
@@ -104,7 +130,8 @@ abstract interface class JourneyRepository {
   Stream<Membership?> watchMyMembership(String journeyId);
 
   /// Updates the caller's `hide_metric` / `blur_media` (null = unchanged).
-  Future<void> updateMyMembership(String journeyId, {bool? hideMetric, bool? blurMedia});
+  Future<void> updateMyMembership(String journeyId,
+      {bool? hideMetric, bool? blurMedia});
 }
 
 abstract interface class CheckInRepository {
@@ -161,7 +188,11 @@ abstract interface class SafetyRepository {
   /// `report_content`: at least one of [checkInId] / [userId]. The reported
   /// check-in is hidden from the reporter at once. Throws `invalid`,
   /// `notFound`, `rateLimited` (20 reports / 24 h).
-  Future<void> report({String? checkInId, String? userId, required ReportReason reason, String? note});
+  Future<void> report(
+      {String? checkInId,
+      String? userId,
+      required ReportReason reason,
+      String? note});
 
   /// `block_user` (idempotent). Throws `invalid` (self), `notFound`.
   Future<void> block(String userId);
@@ -233,7 +264,8 @@ enum OurneyErrorCode {
       case '22008':
         return invalidCapturedAt;
     }
-    if (sqlstate != null && (sqlstate.startsWith('22') || sqlstate.startsWith('23'))) {
+    if (sqlstate != null &&
+        (sqlstate.startsWith('22') || sqlstate.startsWith('23'))) {
       return invalid;
     }
     return unknown;
@@ -253,11 +285,13 @@ class OurneyException implements Exception {
   String get code => error.wireName;
 
   @override
-  String toString() => 'OurneyException($code${detail == null ? '' : ': $detail'})';
+  String toString() =>
+      'OurneyException($code${detail == null ? '' : ': $detail'})';
 }
 
 class JourneyLimitException extends OurneyException {
-  const JourneyLimitException([String? detail]) : super(OurneyErrorCode.limit, detail);
+  const JourneyLimitException([String? detail])
+      : super(OurneyErrorCode.limit, detail);
 }
 
 class GroupException extends OurneyException {

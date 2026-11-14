@@ -57,7 +57,8 @@ const List<JourneyTemplate> allTemplates = [
   JourneyTemplate(
     id: TemplateId.englishDaily,
     personaSkinId: PersonaSkinId.accountabilitySquad,
-    designAssetPath: 'assets/design_personas/persona_2_accountability_squad.jpg',
+    designAssetPath:
+        'assets/design_personas/persona_2_accountability_squad.jpg',
     titleVi: 'Học tiếng Anh mỗi ngày',
     titleEn: 'Daily English',
     emoji: '📚',
@@ -104,7 +105,8 @@ const List<JourneyTemplate> allTemplates = [
   ),
 ];
 
-JourneyTemplate templateFor(TemplateId id) => allTemplates.firstWhere((t) => t.id == id);
+JourneyTemplate templateFor(TemplateId id) =>
+    allTemplates.firstWhere((t) => t.id == id);
 
 /// Resolves the [PersonaSkinId] for a [TemplateId] (and promotes 2-member
 /// couple/custom rituals to [PersonaSkinId.coupleRituals] when applicable).
@@ -115,7 +117,9 @@ PersonaSkinId personaSkinForTemplate(
   String? emoji,
 }) {
   if (id == TemplateId.custom &&
-      (emoji == '💞' || emoji == '❤️' || (kind == JourneyKind.group && maxMembers == 2))) {
+      (emoji == '💞' ||
+          emoji == '❤️' ||
+          (kind == JourneyKind.group && maxMembers == 2))) {
     return PersonaSkinId.coupleRituals;
   }
   return templateFor(id).personaSkinId;
@@ -138,4 +142,3 @@ String designAssetForPersona(PersonaSkinId skin) {
       return 'assets/design_personas/persona_6_minimalist_habit.jpg';
   }
 }
-

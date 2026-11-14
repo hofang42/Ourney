@@ -37,7 +37,8 @@ void main() {
 
   group('progress', () {
     test('completed / duration', () {
-      final s = run(duration: 30, dates: ['2026-10-01', '2026-10-02', '2026-10-03']);
+      final s =
+          run(duration: 30, dates: ['2026-10-01', '2026-10-02', '2026-10-03']);
       expect(s.progress, closeTo(0.1, 1e-9));
     });
     test('open-ended journey yields 0.0', () {
@@ -52,7 +53,8 @@ void main() {
   group('dayIndex', () {
     test('first day is 1', () => expect(run(today: '2026-10-01').dayIndex, 1));
     test('fifth day', () => expect(run().dayIndex, 5));
-    test('before start clamps to 1', () => expect(run(today: '2026-09-20').dayIndex, 1));
+    test('before start clamps to 1',
+        () => expect(run(today: '2026-09-20').dayIndex, 1));
     test('after end clamps to duration', () {
       expect(run(duration: 3, today: '2026-11-20').dayIndex, 3);
     });
@@ -97,24 +99,34 @@ void main() {
   // Mirrors SQL journey_streak: dates >= joined, window [max(start, joined), journey end].
   group('late joiners', () {
     test('effectiveStreakStart is the later date', () {
-      expect(effectiveStreakStart(d('2026-10-01'), d('2026-10-10')), d('2026-10-10'));
-      expect(effectiveStreakStart(d('2026-10-01'), d('2026-09-28')), d('2026-10-01'));
-      expect(effectiveStreakStart(d('2026-10-01'), d('2026-10-01')), d('2026-10-01'));
+      expect(effectiveStreakStart(d('2026-10-01'), d('2026-10-10')),
+          d('2026-10-10'));
+      expect(effectiveStreakStart(d('2026-10-01'), d('2026-09-28')),
+          d('2026-10-01'));
+      expect(effectiveStreakStart(d('2026-10-01'), d('2026-10-01')),
+          d('2026-10-01'));
     });
 
-    test('joined mid-journey: counts from join date, journey end unchanged', () {
+    test('joined mid-journey: counts from join date, journey end unchanged',
+        () {
       final s = computeMemberStreak(
         journeyStart: d('2026-10-01'),
         durationDays: 30,
         joinedLocalDate: d('2026-10-10'),
         today: d('2026-10-12'),
-        dates: [d('2026-10-05'), d('2026-10-10'), d('2026-10-11'), d('2026-10-12')],
+        dates: [
+          d('2026-10-05'),
+          d('2026-10-10'),
+          d('2026-10-11'),
+          d('2026-10-12')
+        ],
       );
       expect(s.current, 3);
       expect(s.best, 3, reason: 'pre-join dates ignored for best too');
       expect(s.completed, 3);
       expect(s.dayIndex, 3);
-      expect(s.progress, closeTo(3 / 21, 1e-9), reason: 'window 10-10..10-30 = 21 days');
+      expect(s.progress, closeTo(3 / 21, 1e-9),
+          reason: 'window 10-10..10-30 = 21 days');
     });
 
     test('window still closes at the journey end', () {
@@ -138,13 +150,20 @@ void main() {
         today: d('2026-10-02'),
         dates: dates,
       );
-      final j = computeStreak(start: d('2026-10-01'), today: d('2026-10-02'), dates: dates);
-      expect([m.current, m.best, m.completed], [j.current, j.best, j.completed]);
+      final j = computeStreak(
+          start: d('2026-10-01'), today: d('2026-10-02'), dates: dates);
+      expect(
+          [m.current, m.best, m.completed], [j.current, j.best, j.completed]);
       expect([m.current, m.best, m.completed], [2, 2, 2]);
     });
 
     test('solo owner (joined == start) is identical to computeStreak', () {
-      final dates = [d('2026-10-01'), d('2026-10-02'), d('2026-10-04'), d('2026-10-05')];
+      final dates = [
+        d('2026-10-01'),
+        d('2026-10-02'),
+        d('2026-10-04'),
+        d('2026-10-05')
+      ];
       final m = computeMemberStreak(
         journeyStart: d('2026-10-01'),
         durationDays: 30,
@@ -152,8 +171,13 @@ void main() {
         today: d('2026-10-05'),
         dates: dates,
       );
-      final j = computeStreak(start: d('2026-10-01'), durationDays: 30, today: d('2026-10-05'), dates: dates);
-      expect([m.current, m.best, m.completed, m.dayIndex], [j.current, j.best, j.completed, j.dayIndex]);
+      final j = computeStreak(
+          start: d('2026-10-01'),
+          durationDays: 30,
+          today: d('2026-10-05'),
+          dates: dates);
+      expect([m.current, m.best, m.completed, m.dayIndex],
+          [j.current, j.best, j.completed, j.dayIndex]);
     });
   });
 }

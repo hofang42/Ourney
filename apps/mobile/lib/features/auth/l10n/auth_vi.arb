@@ -122,5 +122,130 @@
         "type": "int"
       }
     }
+  },
+  "auth_tabEmail": "Email",
+  "@auth_tabEmail": {
+    "description": "Sign-in method tab."
+  },
+  "auth_tabPhone": "Số điện thoại",
+  "@auth_tabPhone": {
+    "description": "Sign-in method tab."
+  },
+  "auth_phoneLabel": "Số điện thoại",
+  "@auth_phoneLabel": {
+    "description": "Phone field label."
+  },
+  "auth_phoneHint": "912 345 678",
+  "@auth_phoneHint": {
+    "description": "Phone field hint (Vietnamese mobile without the leading 0)."
+  },
+  "auth_phonePrefix": "+84",
+  "@auth_phonePrefix": {
+    "description": "Country prefix inside the phone field."
+  },
+  "auth_phoneInvalid": "Số điện thoại Việt Nam cần 9–10 số sau 0 hoặc +84.",
+  "@auth_phoneInvalid": {
+    "description": "Phone validation error."
+  },
+  "auth_phoneSubtitle": "Nhập số điện thoại, Ourney gửi mã 6 số qua SMS.",
+  "@auth_phoneSubtitle": {
+    "description": "Subtitle of the phone form."
+  },
+  "auth_sendSms": "Gửi mã SMS",
+  "@auth_sendSms": {
+    "description": "Button: send an SMS code."
+  },
+  "auth_smsSentTo": "Mã 6 số đã gửi qua SMS tới {phone}.",
+  "@auth_smsSentTo": {
+    "description": "Below the OTP title for phone.",
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "auth_changePhone": "Đổi số điện thoại",
+  "@auth_changePhone": {
+    "description": "Back to the phone form."
+  },
+  "auth_passwordLabel": "Mật khẩu",
+  "@auth_passwordLabel": {
+    "description": "Password field label."
+  },
+  "auth_newPasswordLabel": "Mật khẩu mới",
+  "@auth_newPasswordLabel": {
+    "description": "New password field label."
+  },
+  "auth_passwordShort": "Mật khẩu cần ít nhất 8 ký tự.",
+  "@auth_passwordShort": {
+    "description": "Password validation error."
+  },
+  "auth_showPassword": "Hiện mật khẩu",
+  "@auth_showPassword": {
+    "description": "Semantics of the reveal toggle."
+  },
+  "auth_hidePassword": "Ẩn mật khẩu",
+  "@auth_hidePassword": {
+    "description": "Semantics of the reveal toggle."
+  },
+  "auth_signIn": "Đăng nhập",
+  "@auth_signIn": {
+    "description": "Button: sign in with a password."
+  },
+  "auth_usePassword": "Dùng mật khẩu",
+  "@auth_usePassword": {
+    "description": "Link to switch to password mode."
+  },
+  "auth_useCode": "Dùng mã đăng nhập",
+  "@auth_useCode": {
+    "description": "Link to switch to emailed-code mode."
+  },
+  "auth_forgot": "Quên mật khẩu?",
+  "@auth_forgot": {
+    "description": "Link to the reset flow."
+  },
+  "auth_createAccount": "Tạo tài khoản bằng mật khẩu",
+  "@auth_createAccount": {
+    "description": "Link to sign-up."
+  },
+  "auth_haveAccount": "Đã có tài khoản? Đăng nhập",
+  "@auth_haveAccount": {
+    "description": "Link back to sign-in."
+  },
+  "auth_signUpTitle": "tạo tài khoản.",
+  "@auth_signUpTitle": {
+    "description": "Sign-up title."
+  },
+  "auth_signUpSubtitle": "Dùng email và mật khẩu của bạn. Có thể cần xác nhận bằng mã gửi qua email.",
+  "@auth_signUpSubtitle": {
+    "description": "Sign-up subtitle."
+  },
+  "auth_signUpButton": "Tạo tài khoản",
+  "@auth_signUpButton": {
+    "description": "Sign-up button."
+  },
+  "auth_resetTitle": "đặt lại mật khẩu.",
+  "@auth_resetTitle": {
+    "description": "Reset title."
+  },
+  "auth_resetSubtitle": "Nhập email, Ourney gửi mã 6 số để đặt mật khẩu mới.",
+  "@auth_resetSubtitle": {
+    "description": "Reset subtitle."
+  },
+  "auth_resetConfirm": "Đặt mật khẩu",
+  "@auth_resetConfirm": {
+    "description": "Button: confirm code + new password."
+  },
+  "auth_backToSignIn": "Quay lại đăng nhập",
+  "@auth_backToSignIn": {
+    "description": "Link back to sign-in."
+  },
+  "auth_errorWrongPassword": "Email hoặc mật khẩu chưa đúng.",
+  "@auth_errorWrongPassword": {
+    "description": "Password sign-in error."
+  },
+  "auth_errorEmailTaken": "Email này đã có tài khoản. Hãy đăng nhập.",
+  "@auth_errorEmailTaken": {
+    "description": "Sign-up error."
   }
 }

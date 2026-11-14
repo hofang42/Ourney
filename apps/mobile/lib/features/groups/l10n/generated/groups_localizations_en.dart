@@ -276,4 +276,63 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_eyebrow => 'Your people';
+
+  @override
+  String groups_joinCodeBoxesSemantics(int count) {
+    return 'Invite code, $count of 8 characters entered';
+  }
+
+  @override
+  String groups_previewOwner(String name) {
+    return 'Owner: $name';
+  }
+
+  @override
+  String get groups_previewMembers => 'Members';
+
+  @override
+  String groups_previewMembersValue(int count, int max) {
+    return '$count of $max people';
+  }
+
+  @override
+  String get groups_previewDuration => 'Length';
+
+  @override
+  String groups_previewDurationValue(int days) {
+    return '$days days';
+  }
+
+  @override
+  String get groups_previewDurationOpen => 'No end date';
+
+  @override
+  String get groups_previewProgress => 'Progress';
+
+  @override
+  String groups_previewProgressValue(int day, int total) {
+    return 'Day $day of $total';
+  }
+
+  @override
+  String groups_previewProgressOpen(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get groups_previewPrivate =>
+      'This group has no public link. Only people with the code can join.';
+
+  @override
+  String get groups_previewAlreadyMember => 'You are already in this group.';
+
+  @override
+  String get groups_previewOpenGroup => 'Open group';
+
+  @override
+  String get groups_previewLoading => 'Looking up the code…';
+
+  @override
+  String get groups_errorRateLimited =>
+      'Too many tries. Wait a little, then try again.';
 }

@@ -64,7 +64,9 @@ class DataJourneyRepository implements JourneyRepository {
   Future<Journey> create(JourneyDraft draft) async {
     if (validateJourneyTitle(draft.title) != null ||
         validateDurationDays(draft.durationDays) != null ||
-        validateJourneyVisibility(draft.kind, draft.visibility) != null) {
+        validateJourneyVisibility(draft.kind, draft.visibility) != null ||
+        validateCoupleNames(draft.coupleSelfName, draft.couplePartnerName) !=
+            null) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
     final me = ctx.requireUserId();
@@ -134,6 +136,8 @@ class DataJourneyRepository implements JourneyRepository {
               metricName: Value(d.metricName),
               metricUnit: Value(d.metricUnit),
               hideMetricDefault: Value(d.hideMetricDefault),
+              coupleSelfName: Value(d.coupleSelfName?.trim()),
+              couplePartnerName: Value(d.couplePartnerName?.trim()),
               startDate: d.startDate,
               durationDays: Value(d.durationDays),
               timezone: d.timezone,
@@ -233,7 +237,11 @@ class DataJourneyRepository implements JourneyRepository {
     await outbox.enqueue(OutboxKind.deleteMedia, journeyKey(journeyId), {
       'prefixes': ['checkins/$journeyId/$me'],
       'paths': [
-        for (final c in own) ...[c.photoPath, c.thumbPath],
+        for (final c in own) ...[
+          c.photoPath,
+          c.thumbPath,
+          if (c.partnerPhotoPath != null) c.partnerPhotoPath!,
+        ],
       ],
     });
     unawaited(outbox.flush());

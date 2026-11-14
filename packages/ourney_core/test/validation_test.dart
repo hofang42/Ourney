@@ -8,14 +8,18 @@ void main() {
         expect(validateUsername(u), isNull, reason: u);
       }
     });
-    test('too short', () => expect(validateUsername('ab'), UsernameError.tooShort));
-    test('too long', () => expect(validateUsername('a' * 21), UsernameError.tooLong));
-    test('uppercase rejected', () => expect(validateUsername('Abc'), UsernameError.invalidChars));
+    test('too short',
+        () => expect(validateUsername('ab'), UsernameError.tooShort));
+    test('too long',
+        () => expect(validateUsername('a' * 21), UsernameError.tooLong));
+    test('uppercase rejected',
+        () => expect(validateUsername('Abc'), UsernameError.invalidChars));
     test('space and dash rejected', () {
       expect(validateUsername('a b'), UsernameError.invalidChars);
       expect(validateUsername('a-b'), UsernameError.invalidChars);
     });
-    test('empty is too short', () => expect(validateUsername(''), UsernameError.tooShort));
+    test('empty is too short',
+        () => expect(validateUsername(''), UsernameError.tooShort));
   });
 
   group('displayName', () {
@@ -34,7 +38,8 @@ void main() {
   });
 
   group('journey title', () {
-    test('empty', () => expect(validateJourneyTitle(' '), JourneyTitleError.empty));
+    test('empty',
+        () => expect(validateJourneyTitle(' '), JourneyTitleError.empty));
     test('60 ok, 61 too long', () {
       expect(validateJourneyTitle('a' * 60), isNull);
       expect(validateJourneyTitle('a' * 61), JourneyTitleError.tooLong);
@@ -58,7 +63,10 @@ void main() {
       expect(validateInviteCode('AB12CD3'), InviteCodeError.wrongLength);
       expect(validateInviteCode('AB12CD345'), InviteCodeError.wrongLength);
     });
-    test('lowercase rejected', () => expect(validateInviteCode('ab12cd34'), InviteCodeError.invalidChars));
+    test(
+        'lowercase rejected',
+        () => expect(
+            validateInviteCode('ab12cd34'), InviteCodeError.invalidChars));
     test('normalize trims and uppercases', () {
       expect(normalizeInviteCode('  ab12cd34\n'), 'AB12CD34');
       expect(validateInviteCode(normalizeInviteCode(' ab12cd34 ')), isNull);
@@ -70,8 +78,10 @@ void main() {
       expect(validateMetricValue(72.5), isNull);
       expect(validateMetricValue(0), isNull);
     });
-    test('negative', () => expect(validateMetricValue(-1), MetricValueError.outOfRange));
-    test('huge', () => expect(validateMetricValue(1e9), MetricValueError.outOfRange));
+    test('negative',
+        () => expect(validateMetricValue(-1), MetricValueError.outOfRange));
+    test('huge',
+        () => expect(validateMetricValue(1e9), MetricValueError.outOfRange));
     test('nan and infinity', () {
       expect(validateMetricValue(double.nan), MetricValueError.notFinite);
       expect(validateMetricValue(double.infinity), MetricValueError.notFinite);
@@ -81,24 +91,39 @@ void main() {
 
   group('journey visibility (mirrors create_journey)', () {
     test('allowed combinations', () {
-      expect(validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.private), isNull);
-      expect(validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.link), isNull);
-      expect(validateJourneyVisibility(JourneyKind.group, JourneyVisibility.group), isNull);
-      expect(validateJourneyVisibility(JourneyKind.group, JourneyVisibility.private), isNull,
+      expect(
+          validateJourneyVisibility(
+              JourneyKind.solo, JourneyVisibility.private),
+          isNull);
+      expect(
+          validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.link),
+          isNull);
+      expect(
+          validateJourneyVisibility(JourneyKind.group, JourneyVisibility.group),
+          isNull);
+      expect(
+          validateJourneyVisibility(
+              JourneyKind.group, JourneyVisibility.private),
+          isNull,
           reason: 'server accepts and normalises to group');
     });
     test('group + link rejected', () {
       expect(
-          validateJourneyVisibility(JourneyKind.group, JourneyVisibility.link), VisibilityError.linkNotAllowedForGroup);
+          validateJourneyVisibility(JourneyKind.group, JourneyVisibility.link),
+          VisibilityError.linkNotAllowedForGroup);
     });
     test('solo + group rejected', () {
       expect(
-          validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.group), VisibilityError.groupVisibilityForSolo);
+          validateJourneyVisibility(JourneyKind.solo, JourneyVisibility.group),
+          VisibilityError.groupVisibilityForSolo);
     });
     test('normalizedVisibility', () {
-      expect(normalizedVisibility(JourneyKind.group, JourneyVisibility.private), JourneyVisibility.group);
-      expect(normalizedVisibility(JourneyKind.solo, JourneyVisibility.link), JourneyVisibility.link);
-      expect(normalizedVisibility(JourneyKind.solo, JourneyVisibility.private), JourneyVisibility.private);
+      expect(normalizedVisibility(JourneyKind.group, JourneyVisibility.private),
+          JourneyVisibility.group);
+      expect(normalizedVisibility(JourneyKind.solo, JourneyVisibility.link),
+          JourneyVisibility.link);
+      expect(normalizedVisibility(JourneyKind.solo, JourneyVisibility.private),
+          JourneyVisibility.private);
     });
   });
 

@@ -96,5 +96,124 @@
   "onboarding_notNow": "để sau vậy.",
   "@onboarding_notNow": {
     "description": "Secondary button of the permission sheets."
+  },
+  "onboarding_quizStep": "Câu {n}/3",
+  "@onboarding_quizStep": {
+    "description": "Quiz progress label.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "onboarding_quizBack": "Câu trước",
+  "@onboarding_quizBack": {
+    "description": "Back button semantics."
+  },
+  "onboarding_quizQ1": "bạn đang muốn kiên trì điều gì?",
+  "@onboarding_quizQ1": {
+    "description": "Quiz question 1."
+  },
+  "onboarding_quizQ2": "đi một mình hay có hội?",
+  "@onboarding_quizQ2": {
+    "description": "Quiz question 2."
+  },
+  "onboarding_quizQ3": "bạn hay quên vào lúc nào?",
+  "@onboarding_quizQ3": {
+    "description": "Quiz question 3."
+  },
+  "onboarding_goalWeight": "Giảm cân",
+  "@onboarding_goalWeight": {
+    "description": "Goal option."
+  },
+  "onboarding_goalEnglish": "Học tiếng Anh",
+  "@onboarding_goalEnglish": {
+    "description": "Goal option."
+  },
+  "onboarding_goalWorkout": "Tập luyện",
+  "@onboarding_goalWorkout": {
+    "description": "Goal option."
+  },
+  "onboarding_goalTrip": "Một chuyến đi",
+  "@onboarding_goalTrip": {
+    "description": "Goal option."
+  },
+  "onboarding_goalCouple": "Nghi thức của hai đứa",
+  "@onboarding_goalCouple": {
+    "description": "Goal option."
+  },
+  "onboarding_goalHabit": "Một thói quen nhỏ",
+  "@onboarding_goalHabit": {
+    "description": "Goal option."
+  },
+  "onboarding_whoSolo": "Một mình",
+  "@onboarding_whoSolo": {
+    "description": "Company option."
+  },
+  "onboarding_whoSoloHint": "chỉ mình bạn thấy",
+  "@onboarding_whoSoloHint": {
+    "description": "Company hint."
+  },
+  "onboarding_whoGroup": "Rủ hội bạn",
+  "@onboarding_whoGroup": {
+    "description": "Company option."
+  },
+  "onboarding_whoGroupHint": "tối đa 10 người",
+  "@onboarding_whoGroupHint": {
+    "description": "Company hint."
+  },
+  "onboarding_whoCouple": "Chỉ hai đứa",
+  "@onboarding_whoCouple": {
+    "description": "Company option."
+  },
+  "onboarding_whoCoupleHint": "ghép đôi, chỉ hai người",
+  "@onboarding_whoCoupleHint": {
+    "description": "Company hint."
+  },
+  "onboarding_coupleStyleHint": "mình sẽ dùng phong cách Hai đứa mình",
+  "@onboarding_coupleStyleHint": {
+    "description": "Shown when the couple option is chosen."
+  },
+  "onboarding_remMorning": "Sáng sớm",
+  "@onboarding_remMorning": {
+    "description": "Reminder option."
+  },
+  "onboarding_remNoon": "Trưa",
+  "@onboarding_remNoon": {
+    "description": "Reminder option."
+  },
+  "onboarding_remNight": "Tối muộn",
+  "@onboarding_remNight": {
+    "description": "Reminder option."
+  },
+  "onboarding_remHint": "gợi ý nhắc lúc {time}",
+  "@onboarding_remHint": {
+    "description": "Reminder hint.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "onboarding_quizResultTitle": "hành trình đầu tiên của bạn.",
+  "@onboarding_quizResultTitle": {
+    "description": "Result card heading."
+  },
+  "onboarding_quizRemind": "Nhắc {time}",
+  "@onboarding_quizRemind": {
+    "description": "Result card chip.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "onboarding_quizContinue": "Tiếp tục",
+  "@onboarding_quizContinue": {
+    "description": "Quiz continue button."
+  },
+  "onboarding_quizStart": "Bắt đầu thôi",
+  "@onboarding_quizStart": {
+    "description": "Quiz final button."
   }
 }

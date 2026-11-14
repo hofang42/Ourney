@@ -111,10 +111,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Steps whose Next was pressed: only then show their errors.
   final Set<int> _attempted = {};
 
-  /// Title seeded by the template; a couple's names replace it only while the
-  /// user has not typed a title of their own.
-  String _seedTitle = '';
-
   /// One id per flow: a retry after a lost response returns the same journey.
   final String _clientId = const Uuid().v4();
 
@@ -152,7 +148,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _form = form;
       _who = option.isCouple ? CreateWho.couple : CreateWho.solo;
       _applyWho(form);
-      _seedTitle = form.title;
       _title.text = form.title;
       _duration.text = form.durationDays?.toString() ?? '';
       _metricName.text = form.metricName;
@@ -238,16 +233,15 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     }
   }
 
-  String _finalTitle(JourneyForm form) {
-    final typed = form.title.trim();
-    if (_who == CreateWho.couple && (typed.isEmpty || typed == _seedTitle)) {
-      final names = '${_nameLeft.text.trim()} & ${_nameRight.text.trim()}';
-      return names.length > journeyTitleMax
-          ? names.substring(0, journeyTitleMax)
-          : names;
-    }
-    return typed;
-  }
+  /// The title is exactly what the user typed; a couple's names are stored
+  /// in their own fields (`journeys.couple_*_name`), not folded into it.
+  String _finalTitle(JourneyForm form) => form.title.trim();
+
+  String? get _selfName =>
+      _who == CreateWho.couple ? _nameLeft.text.trim() : null;
+
+  String? get _partnerName =>
+      _who == CreateWho.couple ? _nameRight.text.trim() : null;
 
   Future<void> _submit() async {
     final form = _form;
@@ -286,6 +280,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           hideMetricDefault: form.trackMetric && form.hideMetric,
           visibility: form.visibility,
           id: _clientId,
+          coupleSelfName: _selfName,
+          couplePartnerName: _partnerName,
         ),
       );
       unawaited(reminders.reschedule());

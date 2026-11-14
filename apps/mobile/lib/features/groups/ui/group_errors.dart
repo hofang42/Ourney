@@ -22,6 +22,7 @@ String groupErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.forbidden => l10n.groups_errorForbidden,
     OurneyErrorCode.notAlone => l10n.groups_errorNotAlone,
     OurneyErrorCode.invalid => l10n.groups_errorInvalid,
+    OurneyErrorCode.rateLimited => l10n.groups_errorRateLimited,
     OurneyErrorCode.offline => app.common_offline,
     _ => app.common_errorGeneric,
   };

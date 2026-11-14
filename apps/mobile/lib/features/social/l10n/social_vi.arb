@@ -232,5 +232,11 @@
   "@social_weekdayShort": {"description": "Short weekday for an activity row this week; day is DateTime.weekday 1-7.", "placeholders": {"day": {"type": "String"}}},
   "social_inviteCardTitle": "Mời một người bạn",
   "social_inviteCardBody": "Đi cùng nhau dễ hơn. Gửi liên kết hoặc tìm bạn bè.",
-  "social_inviteCardAction": "Thêm bạn"
+  "social_inviteCardAction": "Thêm bạn",
+  "social_groupInviteFrom": "{name} mời bạn vào {group}",
+  "@social_groupInviteFrom": {"description": "Activity row: pending group invitation.", "placeholders": {"name": {"type": "String"}, "group": {"type": "String"}}},
+  "social_groupInviteMembers": "{count}/{max} thành viên",
+  "@social_groupInviteMembers": {"description": "Group invitation subtitle.", "placeholders": {"count": {"type": "int"}, "max": {"type": "int"}}},
+  "social_groupInviteJoin": "Tham gia",
+  "social_groupInviteSkip": "Bỏ qua"
 }

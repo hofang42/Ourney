@@ -68,7 +68,10 @@ StreakSummary computeStreak({
   }
 
   bool inWindow(int i) => i >= 0 && i <= lastIdx;
-  final windowed = {for (final i in all) if (inWindow(i)) i};
+  final windowed = {
+    for (final i in all)
+      if (inWindow(i)) i
+  };
 
   var cursor = windowed.contains(todayIdx) ? todayIdx : todayIdx - 1;
   var current = 0;
@@ -102,7 +105,8 @@ StreakSummary computeStreak({
 /// of the journey start and the journey-local date of `memberships.joined_at`
 /// (server: `journey_streak`, docs/02 §9.1). Late joiners are never penalised
 /// for days before they joined.
-LocalDate effectiveStreakStart(LocalDate journeyStart, LocalDate joinedLocalDate) =>
+LocalDate effectiveStreakStart(
+        LocalDate journeyStart, LocalDate joinedLocalDate) =>
     joinedLocalDate.isAfter(journeyStart) ? joinedLocalDate : journeyStart;
 
 /// Per-member streak matching SQL `journey_streak(journey, member)`. Use this

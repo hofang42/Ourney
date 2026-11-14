@@ -650,4 +650,36 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_createReviewEdit => 'Edit';
+
+  @override
+  String journeys_extraMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String journeys_extraHearts(int count) {
+    return '$count/5 hearts';
+  }
+
+  @override
+  String journeys_extraPace(String pace) {
+    return '$pace /km';
+  }
+
+  @override
+  String journeys_extraCook(String name) {
+    return '$name cooked';
+  }
+
+  @override
+  String get journeys_extraMoodLight => 'Light';
+
+  @override
+  String get journeys_extraMoodNormal => 'Okay';
+
+  @override
+  String get journeys_extraMoodTired => 'A bit tired';
+
+  @override
+  String get journeys_partnerPhotoSemantics => 'Your partner\'s photo';
 }

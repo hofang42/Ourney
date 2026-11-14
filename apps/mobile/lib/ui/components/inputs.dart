@@ -35,11 +35,15 @@ class UiTextField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.readOnly = false,
+    this.obscureText = false,
     super.key,
   });
 
   final String label;
   final TextEditingController controller;
+
+  /// Password field: hides the text (also disables suggestions/autocorrect).
+  final bool obscureText;
 
   /// Key for the inner [TextField] (tests and focus).
   final Key? fieldKey;
@@ -104,8 +108,9 @@ class _UiTextFieldState extends State<UiTextField> {
               autofillHints: widget.autofillHints,
               inputFormatters: widget.inputFormatters,
               textCapitalization: widget.textCapitalization,
-              autocorrect: widget.autocorrect,
-              enableSuggestions: widget.autocorrect,
+              obscureText: widget.obscureText,
+              autocorrect: widget.autocorrect && !widget.obscureText,
+              enableSuggestions: widget.autocorrect && !widget.obscureText,
               onChanged: widget.onChanged,
               onSubmitted: widget.onSubmitted,
               cursorColor: ui.ink,

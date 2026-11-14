@@ -211,5 +211,17 @@
   "journeys_createReviewTitle": "Your departure ticket.",
   "@journeys_createReviewTitle": {"description": "Create journey flow."},
   "journeys_createReviewEdit": "Edit",
-  "@journeys_createReviewEdit": {"description": "Create journey flow."}
+  "@journeys_createReviewEdit": {"description": "Create journey flow."},
+  "journeys_extraMinutes": "{minutes} min",
+  "@journeys_extraMinutes": {"placeholders": {"minutes": {"type": "int"}}},
+  "journeys_extraHearts": "{count}/5 hearts",
+  "@journeys_extraHearts": {"placeholders": {"count": {"type": "int"}}},
+  "journeys_extraPace": "{pace} /km",
+  "@journeys_extraPace": {"placeholders": {"pace": {"type": "String"}}},
+  "journeys_extraCook": "{name} cooked",
+  "@journeys_extraCook": {"placeholders": {"name": {"type": "String"}}},
+  "journeys_extraMoodLight": "Light",
+  "journeys_extraMoodNormal": "Okay",
+  "journeys_extraMoodTired": "A bit tired",
+  "journeys_partnerPhotoSemantics": "Your partner's photo"
 }

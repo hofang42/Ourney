@@ -14,8 +14,14 @@ class JourneyTimeline extends StatelessWidget {
     required this.days,
     required this.pal,
     required this.onTapDay,
+    this.selfName,
+    this.partnerName,
     super.key,
   });
+
+  /// Couple names of the journey (couple skin only).
+  final String? selfName;
+  final String? partnerName;
 
   final String skinId;
   final List<TimelineDay> days;
@@ -29,7 +35,12 @@ class JourneyTimeline extends StatelessWidget {
       'quiet' => QuietTimeline(days: days, onTapDay: onTapDay),
       'squad' => SquadTimeline(days: days, onTapDay: onTapDay),
       'memory' => MemoryTimeline(days: days, onTapDay: onTapDay),
-      'couple' => CoupleTimeline(days: days, onTapDay: onTapDay),
+      'couple' => CoupleTimeline(
+        days: days,
+        onTapDay: onTapDay,
+        selfName: selfName,
+        partnerName: partnerName,
+      ),
       'flexer' => FlexerTimeline(days: days, onTapDay: onTapDay),
       _ => MinimalTimeline(days: days, onTapDay: onTapDay),
     };

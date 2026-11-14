@@ -258,6 +258,186 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Chữ số {n} trên 6'**
   String auth_digitSemantics(int n);
+
+  /// Sign-in method tab.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email'**
+  String get auth_tabEmail;
+
+  /// Sign-in method tab.
+  ///
+  /// In vi, this message translates to:
+  /// **'Số điện thoại'**
+  String get auth_tabPhone;
+
+  /// Phone field label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Số điện thoại'**
+  String get auth_phoneLabel;
+
+  /// Phone field hint (Vietnamese mobile without the leading 0).
+  ///
+  /// In vi, this message translates to:
+  /// **'912 345 678'**
+  String get auth_phoneHint;
+
+  /// Country prefix inside the phone field.
+  ///
+  /// In vi, this message translates to:
+  /// **'+84'**
+  String get auth_phonePrefix;
+
+  /// Phone validation error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Số điện thoại Việt Nam cần 9–10 số sau 0 hoặc +84.'**
+  String get auth_phoneInvalid;
+
+  /// Subtitle of the phone form.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập số điện thoại, Ourney gửi mã 6 số qua SMS.'**
+  String get auth_phoneSubtitle;
+
+  /// Button: send an SMS code.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi mã SMS'**
+  String get auth_sendSms;
+
+  /// Below the OTP title for phone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã 6 số đã gửi qua SMS tới {phone}.'**
+  String auth_smsSentTo(String phone);
+
+  /// Back to the phone form.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi số điện thoại'**
+  String get auth_changePhone;
+
+  /// Password field label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu'**
+  String get auth_passwordLabel;
+
+  /// New password field label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới'**
+  String get auth_newPasswordLabel;
+
+  /// Password validation error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu cần ít nhất 8 ký tự.'**
+  String get auth_passwordShort;
+
+  /// Semantics of the reveal toggle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện mật khẩu'**
+  String get auth_showPassword;
+
+  /// Semantics of the reveal toggle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn mật khẩu'**
+  String get auth_hidePassword;
+
+  /// Button: sign in with a password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng nhập'**
+  String get auth_signIn;
+
+  /// Link to switch to password mode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng mật khẩu'**
+  String get auth_usePassword;
+
+  /// Link to switch to emailed-code mode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng mã đăng nhập'**
+  String get auth_useCode;
+
+  /// Link to the reset flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quên mật khẩu?'**
+  String get auth_forgot;
+
+  /// Link to sign-up.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo tài khoản bằng mật khẩu'**
+  String get auth_createAccount;
+
+  /// Link back to sign-in.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã có tài khoản? Đăng nhập'**
+  String get auth_haveAccount;
+
+  /// Sign-up title.
+  ///
+  /// In vi, this message translates to:
+  /// **'tạo tài khoản.'**
+  String get auth_signUpTitle;
+
+  /// Sign-up subtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng email và mật khẩu của bạn. Có thể cần xác nhận bằng mã gửi qua email.'**
+  String get auth_signUpSubtitle;
+
+  /// Sign-up button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo tài khoản'**
+  String get auth_signUpButton;
+
+  /// Reset title.
+  ///
+  /// In vi, this message translates to:
+  /// **'đặt lại mật khẩu.'**
+  String get auth_resetTitle;
+
+  /// Reset subtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập email, Ourney gửi mã 6 số để đặt mật khẩu mới.'**
+  String get auth_resetSubtitle;
+
+  /// Button: confirm code + new password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt mật khẩu'**
+  String get auth_resetConfirm;
+
+  /// Link back to sign-in.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại đăng nhập'**
+  String get auth_backToSignIn;
+
+  /// Password sign-in error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email hoặc mật khẩu chưa đúng.'**
+  String get auth_errorWrongPassword;
+
+  /// Sign-up error.
+  ///
+  /// In vi, this message translates to:
+  /// **'Email này đã có tài khoản. Hãy đăng nhập.'**
+  String get auth_errorEmailTaken;
 }
 
 class _AuthL10nDelegate extends LocalizationsDelegate<AuthL10n> {
