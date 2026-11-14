@@ -332,9 +332,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       path = await s.takePicture();
     } on CameraStartException {
       if (mounted) {
-        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-          SnackBar(content: Text(CameraL10n.of(context).camera_captureFailed)),
-        );
+        showUiToast(context, CameraL10n.of(context).camera_captureFailed);
       }
       return;
     } finally {
@@ -635,7 +633,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          ColoredBox(color: const Color(0xFF17171B), child: content),
+          ColoredBox(color: UiCamera.bg, child: content),
           if (_grid && _phase == _Phase.ready)
             const IgnorePointer(child: CustomPaint(painter: _GridPainter())),
           if (_phase == _Phase.ready)
@@ -699,7 +697,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
             child: AnimatedOpacity(
               opacity: _flashOverlay ? 1 : 0,
               duration: UiMotion.of(context, const Duration(milliseconds: 160)),
-              child: const ColoredBox(color: Colors.white),
+              child: const ColoredBox(color: UiCamera.ink),
             ),
           ),
         ],
@@ -744,7 +742,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0x66FFFFFF)
+      ..color = UiCamera.ink.withValues(alpha: 0.4)
       ..strokeWidth = 1;
     for (var i = 1; i < 3; i++) {
       final x = size.width * i / 3;
@@ -854,33 +852,30 @@ class _JourneyChip extends StatelessWidget {
       semanticLabel: label,
       excludeChildSemantics: true,
       centerChild: true,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 40, maxWidth: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 13),
-        decoration: BoxDecoration(
-          color: const Color(0x24FFFFFF),
-          borderRadius: BorderRadius.circular(UiRadius.capsule),
-          border: Border.all(color: const Color(0x2EFFFFFF)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: UiCamera.ink),
-            const SizedBox(width: 7),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: UiText.body(
-                  size: 14,
-                  weight: FontWeight.w600,
-                  height: 1.3,
-                  color: UiCamera.ink,
+      child: UiGlass.camera(
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 200),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: UiCamera.ink),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: UiText.body(
+                    size: 14,
+                    weight: FontWeight.w600,
+                    height: 1.3,
+                    color: UiCamera.ink,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -898,7 +893,7 @@ class _Panel extends StatelessWidget {
     this.panelKey,
   });
 
-  final IconData icon;
+  final Widget icon;
   final String title;
   final String message;
   final List<Widget> actions;
@@ -922,7 +917,7 @@ class _Panel extends StatelessWidget {
                   color: ui.permissionIconBg,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 28, color: ui.ink),
+                child: Center(child: icon),
               ),
             ),
             const SizedBox(height: UiSpace.lg),
@@ -958,7 +953,7 @@ class _PrePrompt extends StatelessWidget {
     final l10n = CameraL10n.of(context);
     return _Panel(
       panelKey: const ValueKey('capture-pre-prompt'),
-      icon: Icons.photo_camera_outlined,
+      icon: const OurneyIcon(name: 'camera', size: 28),
       title: l10n.camera_prePromptTitle,
       message: l10n.camera_prePromptMessage,
       actions: [
@@ -1011,7 +1006,11 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.permissionDeniedPermanently:
         return _Panel(
           panelKey: const ValueKey('capture-denied'),
-          icon: Icons.no_photography_outlined,
+          icon: Icon(
+            Icons.no_photography_outlined,
+            size: 28,
+            color: context.ui.ink,
+          ),
           title: l10n.camera_deniedTitle,
           message: l10n.camera_deniedMessage,
           actions: [
@@ -1023,7 +1022,11 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.restricted:
         return _Panel(
           panelKey: const ValueKey('capture-restricted'),
-          icon: Icons.no_photography_outlined,
+          icon: Icon(
+            Icons.no_photography_outlined,
+            size: 28,
+            color: context.ui.ink,
+          ),
           title: l10n.camera_deniedTitle,
           message: l10n.camera_restrictedMessage,
           actions: const [],
@@ -1031,7 +1034,11 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.unavailable:
         return _Panel(
           panelKey: const ValueKey('capture-unavailable'),
-          icon: Icons.videocam_off_outlined,
+          icon: Icon(
+            Icons.videocam_off_outlined,
+            size: 28,
+            color: context.ui.ink,
+          ),
           title: l10n.camera_unavailableTitle,
           message: l10n.camera_unavailableMessage,
           actions: const [],
@@ -1039,7 +1046,11 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.failed:
         return _Panel(
           panelKey: const ValueKey('capture-failed'),
-          icon: Icons.videocam_off_outlined,
+          icon: Icon(
+            Icons.videocam_off_outlined,
+            size: 28,
+            color: context.ui.ink,
+          ),
           title: l10n.camera_failedTitle,
           message: common.common_errorGeneric,
           actions: [retry],

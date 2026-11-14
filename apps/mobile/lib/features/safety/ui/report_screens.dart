@@ -62,6 +62,7 @@ class _BlockUserScreenState extends ConsumerState<BlockUserScreen> {
       SafetyL10n.of(context),
       userId: widget.userId,
       name: widget.name,
+      toastContext: context,
     );
     if (!mounted) return;
     setState(() => _busy = false);

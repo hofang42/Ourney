@@ -91,6 +91,16 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
   }
 }
 
+/// Stored emoji -> Ourney sticker icon id (`react-<id>`); the emoji itself is
+/// only the persisted value, never drawn in the UI.
+const Map<String, String> _reactionIconId = {
+  '🔥': 'fire',
+  '💪': 'flex',
+  '👏': 'clap',
+  '❤️': 'heart',
+  '😂': 'laugh',
+};
+
 /// `.reactions button`: 48dp bordered emoji button; selected = ink border.
 class _ReactionChip extends StatelessWidget {
   const _ReactionChip({
@@ -125,18 +135,17 @@ class _ReactionChip extends StatelessWidget {
           color: selected ? ui.fill : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: selected ? ui.ink : ui.border,
-            width: selected ? 2 : 1,
+            color: selected ? ui.outline : ui.border,
+            width: selected ? UiBorder.standard : UiBorder.hairline,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              emoji,
-              textScaler: TextScaler.noScaling,
-              style: const TextStyle(fontSize: 16),
+            OurneyIcon(
+              name: 'react-${_reactionIconId[emoji] ?? 'heart'}',
+              size: 20,
             ),
             if (count > 0) ...[
               const SizedBox(width: 3),

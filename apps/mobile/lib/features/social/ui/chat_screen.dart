@@ -496,31 +496,17 @@ class _ReadOnlyBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Container(
+    return Padding(
       key: const ValueKey('chat-read-only'),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: ui.fill,
-        border: Border(top: BorderSide(color: ui.divider)),
-      ),
       padding: EdgeInsets.fromLTRB(
         UiSpace.lg,
-        UiSpace.lg,
+        UiSpace.sm,
         UiSpace.lg,
         UiSpace.lg + MediaQuery.paddingOf(context).bottom,
       ),
-      child: Row(
-        children: [
-          Icon(Icons.lock_outline_rounded, size: 18, color: ui.inkMuted),
-          const SizedBox(width: UiSpace.sm),
-          Expanded(
-            child: Text(
-              SocialL10n.of(context).social_readOnly,
-              style: UiText.body(size: 14, height: 1.4, color: ui.inkMuted),
-            ),
-          ),
-        ],
+      child: UiBanner(
+        kind: UiBannerKind.readOnly,
+        message: SocialL10n.of(context).social_readOnly,
       ),
     );
   }
@@ -577,7 +563,7 @@ class _Bubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: mine ? ui.brand : ui.surface,
                 borderRadius: radius,
-                border: mine ? null : Border.all(color: ui.border),
+                border: ui.stickerBorder(UiBorder.thin),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

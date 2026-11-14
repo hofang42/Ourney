@@ -11,6 +11,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/active_journey_sync.dart';
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
+import '../../checkin/checkin_screen.dart' show checkinSkinId;
 import '../../journeys/data/journeys_providers.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
@@ -167,63 +168,91 @@ class GroupTodayScreen extends ConsumerWidget {
       isAlone: view.isAlone,
     );
     final style = uiStyleForSkin(personaSkinOf(journey));
-    final ui = context.ui;
 
     return ActiveJourneySync(
       journeyId: journey.id,
-      child: UiScaffold(
-        key: const ValueKey('group-today'),
-        background: ui.isDark ? ui.bg : style.paper,
-        padTop: 0,
-        gutter: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
-              child: UiBackHeader(
-                onBack: () => _back(context),
-                backLabel: backLabel,
-                title: journey.title,
-                bordered: true,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (perms.canInvite)
-                      UiIconButton(
-                        key: const ValueKey('group-invite'),
-                        icon: Icons.person_add_alt_1_outlined,
-                        label: l10n.groups_invite,
-                        onPressed: () =>
-                            context.push(GroupsPaths.invite(journeyId)),
-                      ),
-                    _GroupMenu(perms: perms),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                UiSpace.xl,
-                UiSpace.xl,
-                UiSpace.xl,
-                UiSpace.sm,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: UiSkinScope(
+        skinId: checkinSkinId(journey),
+        child: Builder(
+          builder: (context) => _wall(
+            context,
+            journey: journey,
+            view: view,
+            perms: perms,
+            style: style,
+            backLabel: backLabel,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _wall(
+    BuildContext context, {
+    required Journey journey,
+    required GroupTodayView view,
+    required GroupPermissions perms,
+    required UiJourneyStyle style,
+    required String backLabel,
+  }) {
+    final l10n = GroupsL10n.of(context);
+    final ui = context.ui;
+    return UiScaffold(
+      key: const ValueKey('group-today'),
+      background: ui.bg,
+      padTop: 0,
+      gutter: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
+            child: UiBackHeader(
+              onBack: () => _back(context),
+              backLabel: backLabel,
+              title: journey.title,
+              bordered: true,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!perms.isActive) ...[
-                    _EndedBanner(text: l10n.groups_endedBanner),
-                    const SizedBox(height: UiSpace.md),
-                  ],
-                  _SharedStreak(view: view, accent: style.accent),
-                  const SizedBox(height: UiSpace.lg),
-                  _MemberWall(view: view, perms: perms),
+                  if (perms.canInvite)
+                    UiIconButton(
+                      key: const ValueKey('group-invite'),
+                      icon: Icons.person_add_alt_1_outlined,
+                      label: l10n.groups_invite,
+                      onPressed: () =>
+                          context.push(GroupsPaths.invite(journeyId)),
+                    ),
+                  _GroupMenu(perms: perms),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              UiSpace.xl,
+              UiSpace.xl,
+              UiSpace.xl,
+              UiSpace.sm,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (!perms.isActive) ...[
+                  UiBanner(
+                    key: const ValueKey('group-ended-banner'),
+                    kind: UiBannerKind.archived,
+                    message: l10n.groups_endedBanner,
+                  ),
+                  const SizedBox(height: UiSpace.md),
+                ],
+                _SharedStreak(view: view, accent: style.accent),
+                const SizedBox(height: UiSpace.lg),
+                _MemberWall(view: view, perms: perms),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -524,38 +553,6 @@ Future<void> _guard(BuildContext context, Future<void> Function() body) async {
   }
 }
 
-class _EndedBanner extends StatelessWidget {
-  const _EndedBanner({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Container(
-      key: const ValueKey('group-ended-banner'),
-      padding: const EdgeInsets.all(UiSpace.md),
-      decoration: BoxDecoration(
-        color: ui.fill,
-        borderRadius: BorderRadius.circular(UiRadius.input),
-        border: Border.all(color: ui.border),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.flag_outlined, color: ui.ink),
-          const SizedBox(width: UiSpace.sm),
-          Expanded(
-            child: Text(
-              text,
-              style: UiText.body(size: 13, height: 1.45, color: ui.ink),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// One member on the wall: a polaroid when there is a photo, a waiting tile
 /// otherwise (`.waiting-tile`). Carries the report, block and remove actions.
 class _MemberTile extends ConsumerWidget {
@@ -666,7 +663,7 @@ class _MemberTile extends ConsumerWidget {
         padding: const EdgeInsets.all(UiSpace.md),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(UiRadius.menu),
-          border: Border.all(color: ui.border, width: 2),
+          border: ui.stickerBorder(UiBorder.thin),
         ),
         child: Column(
           children: [
@@ -713,15 +710,15 @@ class _MemberTile extends ConsumerWidget {
                   child: Container(
                     width: 24,
                     height: 24,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF15803D),
+                    decoration: BoxDecoration(
+                      color: ui.success,
                       shape: BoxShape.circle,
+                      border: Border.all(
+                        color: ui.outline,
+                        width: UiBorder.hairline,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.check_rounded, size: 14, color: ui.bg),
                   ),
                 ),
             ],

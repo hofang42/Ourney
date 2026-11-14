@@ -13,6 +13,16 @@ import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 
+/// V2 skin id of a persona skin, for `UiSkinScope` (journey "world" screens).
+String sharingSkinId(PersonaSkinId skin) => switch (skin) {
+  PersonaSkinId.quietTransformer => 'quiet',
+  PersonaSkinId.accountabilitySquad => 'squad',
+  PersonaSkinId.memoryCollectors => 'memory',
+  PersonaSkinId.coupleRituals => 'couple',
+  PersonaSkinId.aestheticFlexer => 'flexer',
+  PersonaSkinId.minimalistHabit => 'minimal',
+};
+
 /// Unwraps Riverpod's [ProviderException] (a dependency in error state).
 Object sharingRootError(Object error) {
   var e = error;
@@ -234,7 +244,7 @@ class PhotoPlaceholder extends StatelessWidget {
     return ColoredBox(
       color: ui.fill,
       child: Center(
-        child: Icon(Icons.image_outlined, color: ui.inkMuted, size: 22),
+        child: OurneyIcon(name: 'camera', size: 22, color: ui.fillSelected),
       ),
     );
   }
@@ -277,8 +287,11 @@ class SharingCheckSquare extends StatelessWidget {
       width: 24,
       height: 24,
       decoration: BoxDecoration(
-        color: checked ? ui.ink : Colors.transparent,
-        border: Border.all(color: checked ? ui.ink : ui.inkMuted, width: 1.5),
+        color: checked ? ui.ink : ui.surface,
+        border: Border.all(
+          color: checked ? ui.outline : ui.inkMuted,
+          width: UiBorder.thin,
+        ),
         borderRadius: BorderRadius.circular(6),
       ),
       child: checked ? Icon(Icons.check_rounded, size: 16, color: ui.bg) : null,
@@ -313,7 +326,7 @@ Future<bool> confirmSharingAction(
             key: const ValueKey('sharing-confirm'),
             label: confirmLabel,
             accent: destructive ? ui.danger : null,
-            onAccent: destructive ? Colors.white : null,
+            onAccent: destructive ? ui.bg : null,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: UiSpace.sm),
@@ -353,33 +366,11 @@ class SharingErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = AppLocalizations.of(context);
-    final ui = context.ui;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(UiSpace.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded, size: 40, color: ui.inkMuted),
-            const SizedBox(height: UiSpace.md),
-            Text(
-              sharingErrorMessage(context, error),
-              textAlign: TextAlign.center,
-              style: UiText.muted(color: ui.ink),
-            ),
-            if (onRetry != null) ...[
-              const SizedBox(height: UiSpace.lg),
-              UiButton.secondary(
-                key: const ValueKey('sharing-retry'),
-                label: app.common_retry,
-                icon: Icons.refresh_rounded,
-                expand: false,
-                onPressed: onRetry,
-              ),
-            ],
-          ],
-        ),
-      ),
+    return UiEmptyState(
+      icon: Icons.error_outline_rounded,
+      title: sharingErrorMessage(context, error),
+      actionLabel: onRetry == null ? null : app.common_retry,
+      onAction: onRetry,
     );
   }
 }

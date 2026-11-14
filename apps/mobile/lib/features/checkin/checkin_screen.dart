@@ -20,6 +20,17 @@ import 'checkin_success.dart';
 import 'l10n/generated/checkin_localizations.dart';
 import 'photo_compressor.dart';
 
+/// V2 skin id of a journey's persona (quiet, squad, memory, couple, flexer,
+/// minimal) for [UiSkinScope].
+String checkinSkinId(Journey journey) => switch (personaSkinOf(journey)) {
+  PersonaSkinId.quietTransformer => 'quiet',
+  PersonaSkinId.accountabilitySquad => 'squad',
+  PersonaSkinId.memoryCollectors => 'memory',
+  PersonaSkinId.coupleRituals => 'couple',
+  PersonaSkinId.aestheticFlexer => 'flexer',
+  PersonaSkinId.minimalistHabit => 'minimal',
+};
+
 /// `/checkin`: photo preview, caption (<= 140 code points), metric when the
 /// journey has one, then Post (FR-C4). Shutter + Post = 2 taps; a retake on
 /// the same day adds the "replace today's photo" confirmation (FR-C7).
@@ -244,7 +255,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final journey = ref.watch(checkinJourneyProvider(photo.journeyId));
 
     return switch (journey) {
-      AsyncData(value: final j?) => _compose(context, j, photo),
+      AsyncData(value: final j?) => UiSkinScope(
+        skinId: checkinSkinId(j),
+        child: Builder(builder: (context) => _compose(context, j, photo)),
+      ),
       AsyncData() || AsyncError() => _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-journey'),

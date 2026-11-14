@@ -182,18 +182,25 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = SharingL10n.of(context);
-    final ui = context.ui;
     final v = _view;
     final skin = personaSkinForTemplate(
       v.templateId,
       kind: v.kind,
       emoji: v.emoji,
     );
+    return UiSkinScope(
+      skinId: sharingSkinId(skin),
+      child: Builder(builder: (context) => _body(context, skin)),
+    );
+  }
+
+  Widget _body(BuildContext context, PersonaSkinId skin) {
+    final l10n = SharingL10n.of(context);
+    final ui = context.ui;
+    final v = _view;
     final style = uiStyleForSkin(skin);
-    final dark = ui.brightness == Brightness.dark;
-    final paper = dark ? ui.bg : style.paper;
-    final rule = dark ? ui.divider : style.ink.withValues(alpha: 0.16);
+    final paper = ui.bg;
+    final rule = ui.border;
     final imported = v.origin == JourneyOrigin.imported;
     final photos = v.photos;
     final cover =
@@ -348,7 +355,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                         ),
                         child: Theme(
                           data: Theme.of(context)
-                              .copyWith(dividerColor: Colors.transparent),
+                              .copyWith(dividerColor: ui.surface.withAlpha(0)),
                           child: ExpansionTile(
                             key: const ValueKey('shared-lessons'),
                             tilePadding: EdgeInsets.zero,
@@ -481,7 +488,7 @@ class _ProgressBox extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        border: Border.all(color: rule),
+        border: ui.stickerBorder(UiBorder.thin),
         borderRadius: BorderRadius.circular(UiRadius.menu),
       ),
       child: Row(
@@ -559,9 +566,16 @@ class _Moment extends StatelessWidget {
             constraints: const BoxConstraints(maxHeight: 430),
             child: AspectRatio(
               aspectRatio: 4 / 5,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(UiRadius.menu),
-                child: _Photo(photo: photo),
+              child: DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  border: ui.stickerBorder(),
+                  borderRadius: BorderRadius.circular(UiRadius.menu),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(UiRadius.menu),
+                  child: _Photo(photo: photo),
+                ),
               ),
             ),
           ),
@@ -607,7 +621,7 @@ class _Moment extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 14),
                           decoration: BoxDecoration(
                             color: ui.surface,
-                            border: Border.all(color: rule),
+                            border: ui.stickerBorder(UiBorder.thin),
                             borderRadius: BorderRadius.circular(
                               UiRadius.capsule,
                             ),
@@ -615,12 +629,10 @@ class _Moment extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                like.liked
-                                    ? Icons.favorite_rounded
-                                    : Icons.favorite_border_rounded,
-                                size: 20,
-                                color: like.liked ? ui.danger : ui.ink,
+                              OurneyIcon(
+                                name: 'react-heart',
+                                size: 22,
+                                active: like.liked,
                               ),
                               if (showCount && like.count > 0) ...[
                                 const SizedBox(width: 5),

@@ -42,13 +42,7 @@ Future<void> showJourneyLimitDialog(BuildContext context) {
         key: const ValueKey('journeys-limit-dialog'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: Icon(
-              Icons.local_fire_department_rounded,
-              size: 36,
-              color: ui.flame,
-            ),
-          ),
+          Center(child: const OurneyIcon(name: 'react-fire', size: 36)),
           const SizedBox(height: UiSpace.md),
           Semantics(
             header: true,
@@ -102,7 +96,7 @@ Future<bool> confirmJourneyAction(
             key: const ValueKey('journeys-confirm'),
             label: confirmLabel,
             accent: destructive ? ui.danger : null,
-            onAccent: destructive ? Colors.white : null,
+            onAccent: destructive ? UiCamera.ink : null,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: UiSpace.sm),

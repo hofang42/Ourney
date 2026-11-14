@@ -35,8 +35,8 @@ class JourneyPalette {
   factory JourneyPalette.of(BuildContext context, UiJourneyStyle style) {
     final dark = context.ui.isDark;
     return JourneyPalette(
-      paper: dark ? const Color(0xFF0E0E10) : style.paper,
-      ink: dark ? const Color(0xFFF4F4F5) : style.ink,
+      paper: dark ? context.ui.bg : style.paper,
+      ink: dark ? context.ui.ink : style.ink,
       accent: style.accent,
       onAccent: style.onAccent,
       name: style.name,
@@ -51,3 +51,13 @@ class JourneyPalette {
 
   Color inkAt(double opacity) => ink.withValues(alpha: opacity);
 }
+
+/// V2 skin id (`UiSkinScope.skinId`) of a persona skin.
+String uiSkinIdOf(PersonaSkinId skin) => switch (skin) {
+  PersonaSkinId.quietTransformer => 'quiet',
+  PersonaSkinId.accountabilitySquad => 'squad',
+  PersonaSkinId.memoryCollectors => 'memory',
+  PersonaSkinId.coupleRituals => 'couple',
+  PersonaSkinId.aestheticFlexer => 'flexer',
+  PersonaSkinId.minimalistHabit => 'minimal',
+};

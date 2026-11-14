@@ -460,8 +460,8 @@ class _PhotoStrip extends StatelessWidget {
                 color: ui.surface,
                 borderRadius: BorderRadius.circular(UiRadius.thumb),
                 border: Border.all(
-                  color: selected ? ui.ink : ui.border,
-                  width: selected ? 3 : 1,
+                  color: selected ? ui.outline : ui.border,
+                  width: selected ? UiBorder.standard : UiBorder.hairline,
                 ),
               ),
               child: Stack(

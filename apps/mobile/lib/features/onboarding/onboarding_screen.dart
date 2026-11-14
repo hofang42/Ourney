@@ -249,7 +249,7 @@ class _OnboardingPage extends StatelessWidget {
   }
 }
 
-/// `.page-dots.onboarding-dots`: 5dp dots, the active one stretches to 16dp.
+/// V2 onboarding step segments: one pill per question, filled up to the current one.
 class _Dots extends StatelessWidget {
   const _Dots({
     required this.count,
@@ -270,18 +270,23 @@ class _Dots extends StatelessWidget {
       excludeSemantics: true,
       child: SizedBox(
         height: 12,
+        width: 56.0 * count,
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             for (var i = 0; i < count; i++)
-              AnimatedContainer(
-                duration: duration,
-                margin: const EdgeInsets.symmetric(horizontal: 2.5),
-                width: i == current ? 16 : 5,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: i == current ? ui.ink : ui.ink.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(10),
+              Expanded(
+                child: AnimatedContainer(
+                  duration: duration,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: i <= current ? ui.brand : ui.fill,
+                    border: Border.all(
+                      color: i <= current ? ui.outline : ui.border,
+                      width: UiBorder.hairline,
+                    ),
+                    borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  ),
                 ),
               ),
           ],
