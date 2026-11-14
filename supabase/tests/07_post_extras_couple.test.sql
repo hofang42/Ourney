@@ -41,7 +41,7 @@ select lives_ok($$ select public.create_journey(tests.j(1), 'solo', 'custom', 'U
 select is((select couple_self_name || '/' || couple_partner_name from public.journeys where id = tests.j(1)),
   'An/Bình', 'names are trimmed and persisted');
 select throws_ok($$ select public.create_journey(tests.j(2), 'solo', 'custom', 'Us', 'x', null, null, false,
-  current_date, 30, 'UTC', 1, 'private', 'Only one', null) $$, 'invalid', null, 'names must come as a pair');
+  current_date, 30, 'UTC', 1, 'private', 'Only one', null) $$, 'P0001', 'invalid', 'names must come as a pair');
 
 -- check-in: extras + partner photo path
 select lives_ok($$ insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path, partner_photo_path, extras)

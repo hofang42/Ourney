@@ -44,6 +44,10 @@ $$;
 alter table public.check_ins
   add column if not exists extras jsonb not null default '{}'::jsonb;
 
+-- No anon access to public functions (01_rls_enabled); CHECK runs as the writing role.
+revoke execute on function public.check_in_extras_valid(jsonb) from public, anon;
+grant execute on function public.check_in_extras_valid(jsonb) to authenticated, service_role;
+
 alter table public.check_ins drop constraint if exists check_ins_extras_valid;
 alter table public.check_ins
   add constraint check_ins_extras_valid check (public.check_in_extras_valid(extras));
@@ -78,7 +82,12 @@ as $$
     select 1 from public.check_ins c
      where c.id = public.try_uuid(substring(p_name from '/([0-9a-f-]{36})(?:_[tp])?\.jpg$'))
        and (c.photo_path = p_name or c.thumb_path = p_name or c.partner_photo_path = p_name)
-       and private.can_view_checkin(c.id)
+       and (private.can_view_checkin(c.id)
+            or (private.viewer_can_see_checkin(c.id)
+                -- blur_media: viewers never get the original object (FR-B7).
+                and not exists (select 1 from public.memberships m
+                                 where m.journey_id = c.journey_id and m.user_id = c.user_id
+                                   and m.blur_media)))
   );
 $$;
 
