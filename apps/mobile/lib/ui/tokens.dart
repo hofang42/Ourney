@@ -25,6 +25,8 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     required this.chevron,
     required this.brand,
     required this.onBrand,
+    required this.accent,
+    required this.onDanger,
     required this.focus,
     required this.success,
     required this.successSoft,
@@ -71,6 +73,14 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   final Color brand;
   final Color onBrand;
 
+  /// Journey accent (V2 `--skin-accent`): sheet top shadow, progress, nodes.
+  /// The neutral shell uses the brand orange; `UiSkin.apply` swaps in the
+  /// skin variant's accent while `brand` stays the button fill.
+  final Color accent;
+
+  /// Label/icon color on a [danger] fill (destructive buttons).
+  final Color onDanger;
+
   /// Keyboard focus ring (`outline: 3px solid #0284c7`).
   final Color focus;
 
@@ -115,6 +125,8 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
     onBrand: Color(0xFF1A1A1A),
+    accent: Color(0xFFFF8A3D),
+    onDanger: Color(0xFFFFFFFF),
     focus: Color(0xFF0284C7),
     success: Color(0xFF287747),
     successSoft: Color(0xFFDCFCE7),
@@ -145,6 +157,8 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
     onBrand: Color(0xFF1A1A1A),
+    accent: Color(0xFFFF8A3D),
+    onDanger: Color(0xFF1A1A1A),
     focus: Color(0xFF38BDF8),
     success: Color(0xFF4ADE80),
     successSoft: Color(0xFF14532D),
@@ -182,6 +196,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     Color? dockBg,
     Color? dockBorder,
     Color? permissionIconBg,
+    Color? accent,
   }) => OurneyUi(
     brightness: brightness,
     bg: bg ?? this.bg,
@@ -198,6 +213,8 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: chevron,
     brand: brand ?? this.brand,
     onBrand: onBrand ?? this.onBrand,
+    accent: accent ?? this.accent,
+    onDanger: onDanger,
     focus: focus,
     success: success,
     successSoft: successSoft,
@@ -232,6 +249,8 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
       chevron: l(chevron, other.chevron),
       brand: l(brand, other.brand),
       onBrand: l(onBrand, other.onBrand),
+      accent: l(accent, other.accent),
+      onDanger: l(onDanger, other.onDanger),
       focus: l(focus, other.focus),
       success: l(success, other.success),
       successSoft: l(successSoft, other.successSoft),
@@ -259,6 +278,13 @@ abstract final class UiCamera {
   static const dock = Color(0xEB111114);
   static const dockBorder = Color(0x29FFFFFF);
   static const ink = Color(0xFFFFFFFF);
+
+  /// Disabled / secondary camera glyphs (white at 64%).
+  static const muted = Color(0xA3FFFFFF);
+
+  /// V2 camera chip outline (`2px #F5F0E6`) and its hard shadow (`2px 2px 0 #000`).
+  static const outline = Color(0xFFF5F0E6);
+  static const shadow = Color(0xFF000000);
 }
 
 /// Radii used across index.css.

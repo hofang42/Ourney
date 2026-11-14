@@ -12,6 +12,7 @@ class UiChip extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.glyph,
     this.selected = false,
     this.semanticHint,
     super.key,
@@ -20,6 +21,10 @@ class UiChip extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
   final bool selected;
   final String? semanticHint;
 
@@ -46,8 +51,8 @@ class UiChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 16, color: fg),
+            if (icon != null || glyph != null) ...[
+              glyph ?? Icon(icon, size: 16, color: fg),
               const SizedBox(width: 6),
             ],
             Flexible(
@@ -76,6 +81,7 @@ class UiTag extends StatelessWidget {
   const UiTag({
     required this.label,
     this.icon,
+    this.glyph,
     this.background,
     this.foreground,
     this.bordered = true,
@@ -84,6 +90,10 @@ class UiTag extends StatelessWidget {
 
   final String label;
   final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
   final Color? background;
   final Color? foreground;
   final bool bordered;
@@ -103,8 +113,8 @@ class UiTag extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 12, color: fg),
+          if (icon != null || glyph != null) ...[
+            glyph ?? Icon(icon, size: 12, color: fg),
             const SizedBox(width: 4),
           ],
           Flexible(

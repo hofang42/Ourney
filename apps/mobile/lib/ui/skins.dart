@@ -119,6 +119,7 @@ class UiSkin {
       dockBg: p.surface.withValues(alpha: 0.92),
       dockBorder: p.ink,
       permissionIconBg: tint(p.ink, p.bg, 0.06),
+      accent: v.accent,
     );
   }
 }
