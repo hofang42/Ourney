@@ -580,4 +580,71 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_coupleWaiting => 'Đang chờ người ấy';
+
+  @override
+  String journeys_createStepOf(int step, int total) {
+    return 'Bước $step/$total';
+  }
+
+  @override
+  String get journeys_createNext => 'Tiếp tục';
+
+  @override
+  String get journeys_createExit => 'Thoát tạo hành trình';
+
+  @override
+  String get journeys_createPickSubtitle => 'Chạm một kiểu để bắt đầu.';
+
+  @override
+  String get journeys_createChosen => 'Đã chọn';
+
+  @override
+  String get journeys_createDetailTitle => 'Đặt tên và mục tiêu.';
+
+  @override
+  String get journeys_createWhoTitle => 'Đi cùng ai?';
+
+  @override
+  String get journeys_kindCouple => 'Chỉ hai đứa';
+
+  @override
+  String get journeys_kindSoloBody => 'Chỉ bạn và chiếc máy ảnh.';
+
+  @override
+  String get journeys_kindGroupBody => 'Tối đa 10 người, mời bằng mã.';
+
+  @override
+  String get journeys_kindCoupleBody => 'Một cặp, một nhịp.';
+
+  @override
+  String get journeys_coupleNameYou => 'Tên bạn';
+
+  @override
+  String get journeys_coupleNameOther => 'Tên người ấy';
+
+  @override
+  String get journeys_errorCoupleNames => 'Nhập tên cả hai người.';
+
+  @override
+  String get journeys_createRhythmTitle => 'Đặt nhịp.';
+
+  @override
+  String get journeys_fieldStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get journeys_calendarPrev => 'Tháng trước';
+
+  @override
+  String get journeys_calendarNext => 'Tháng sau';
+
+  @override
+  String journeys_calendarRange(String start, String end) {
+    return 'Từ $start đến $end';
+  }
+
+  @override
+  String get journeys_createReviewTitle => 'Vé khởi hành của bạn.';
+
+  @override
+  String get journeys_createReviewEdit => 'Sửa lại';
 }

@@ -1081,6 +1081,132 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Đang chờ người ấy'**
   String get journeys_coupleWaiting;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bước {step}/{total}'**
+  String journeys_createStepOf(int step, int total);
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục'**
+  String get journeys_createNext;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thoát tạo hành trình'**
+  String get journeys_createExit;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm một kiểu để bắt đầu.'**
+  String get journeys_createPickSubtitle;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chọn'**
+  String get journeys_createChosen;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt tên và mục tiêu.'**
+  String get journeys_createDetailTitle;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đi cùng ai?'**
+  String get journeys_createWhoTitle;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ hai đứa'**
+  String get journeys_kindCouple;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ bạn và chiếc máy ảnh.'**
+  String get journeys_kindSoloBody;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tối đa 10 người, mời bằng mã.'**
+  String get journeys_kindGroupBody;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một cặp, một nhịp.'**
+  String get journeys_kindCoupleBody;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên bạn'**
+  String get journeys_coupleNameYou;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên người ấy'**
+  String get journeys_coupleNameOther;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập tên cả hai người.'**
+  String get journeys_errorCoupleNames;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đặt nhịp.'**
+  String get journeys_createRhythmTitle;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày bắt đầu'**
+  String get journeys_fieldStartDate;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tháng trước'**
+  String get journeys_calendarPrev;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tháng sau'**
+  String get journeys_calendarNext;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ {start} đến {end}'**
+  String journeys_calendarRange(String start, String end);
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vé khởi hành của bạn.'**
+  String get journeys_createReviewTitle;
+
+  /// Create journey flow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa lại'**
+  String get journeys_createReviewEdit;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {
