@@ -583,4 +583,71 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_coupleWaiting => 'Waiting for your partner';
+
+  @override
+  String journeys_createStepOf(int step, int total) {
+    return 'Step $step/$total';
+  }
+
+  @override
+  String get journeys_createNext => 'Continue';
+
+  @override
+  String get journeys_createExit => 'Leave journey setup';
+
+  @override
+  String get journeys_createPickSubtitle => 'Tap a type to begin.';
+
+  @override
+  String get journeys_createChosen => 'Selected';
+
+  @override
+  String get journeys_createDetailTitle => 'Name it and set the goal.';
+
+  @override
+  String get journeys_createWhoTitle => 'Who is coming along?';
+
+  @override
+  String get journeys_kindCouple => 'Just the two of us';
+
+  @override
+  String get journeys_kindSoloBody => 'Just you and the camera.';
+
+  @override
+  String get journeys_kindGroupBody => 'Up to 10 people, invite by code.';
+
+  @override
+  String get journeys_kindCoupleBody => 'One pair, one rhythm.';
+
+  @override
+  String get journeys_coupleNameYou => 'Your name';
+
+  @override
+  String get journeys_coupleNameOther => 'Their name';
+
+  @override
+  String get journeys_errorCoupleNames => 'Enter both names.';
+
+  @override
+  String get journeys_createRhythmTitle => 'Set the rhythm.';
+
+  @override
+  String get journeys_fieldStartDate => 'Start date';
+
+  @override
+  String get journeys_calendarPrev => 'Previous month';
+
+  @override
+  String get journeys_calendarNext => 'Next month';
+
+  @override
+  String journeys_calendarRange(String start, String end) {
+    return 'From $start to $end';
+  }
+
+  @override
+  String get journeys_createReviewTitle => 'Your departure ticket.';
+
+  @override
+  String get journeys_createReviewEdit => 'Edit';
 }

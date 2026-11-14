@@ -1,0 +1,309 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/config.dart';
+import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
+import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
+import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart';
+
+import '../../app/test_helpers.dart';
+import 'journeys_fakes.dart';
+
+Finder _key(String k) => find.byKey(ValueKey(k));
+
+Future<void> _tap(WidgetTester tester, String key) async {
+  final f = _key(key);
+  await tester.ensureVisible(f);
+  await tester.pumpAndSettle();
+  await tester.tap(f);
+  await tester.pumpAndSettle();
+}
+
+Future<JourneysHarness> _open(
+  WidgetTester tester, {
+  AppConfig config = const AppConfig.localOnly(),
+  String? userId,
+  FakeJourneyRepository? journeys,
+}) => pumpJourneys(
+  tester,
+  location: AppRoutes.journeyNew,
+  locale: const Locale('en'),
+  config: config,
+  userId: userId,
+  journeys: journeys,
+);
+
+String _stepLabel(WidgetTester tester) =>
+    tester.widget<Text>(_key('create-step-label')).data!;
+
+bool _switch(WidgetTester tester, String key) =>
+    tester.widget<UiSwitchRow>(_key(key)).value;
+
+void main() {
+  group('Create flow (V2, 5 steps)', () {
+    testWidgets('step 1 lists the six types; choosing moves to step 2', (
+      tester,
+    ) async {
+      await _open(tester);
+      expect(_key('journeys-template-picker'), findsOneWidget);
+      expect(_stepLabel(tester), 'Step 1/5');
+      for (final t in TemplateId.values) {
+        expect(_key('template-${t.wireName}'), findsWidgets);
+      }
+      expect(_key('template-couple'), findsOneWidget);
+      await _tap(tester, 'template-travel');
+      expect(_stepLabel(tester), 'Step 2/5');
+      expect(
+        tester.widget<TextField>(_key('journey-title')).controller!.text,
+        templateFor(TemplateId.travel).titleEn,
+      );
+    });
+
+    testWidgets('back keeps what you typed and the chosen type', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _tap(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Uống nước');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-kind-couple');
+      await _tap(tester, 'create-back');
+      await _tap(tester, 'create-back');
+      expect(_stepLabel(tester), 'Step 1/5');
+      // Same type again keeps the form; a new one would reseed it.
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 2/5');
+      expect(
+        tester.widget<TextField>(_key('journey-title')).controller!.text,
+        'Uống nước',
+      );
+      await _tap(tester, 'create-next');
+      expect(_key('journey-kind-couple'), findsOneWidget);
+    });
+
+    testWidgets('validation: empty title, metric name, couple names', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _tap(tester, 'template-custom');
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 2/5');
+      expect(find.text('Give your journey a name.'), findsOneWidget);
+
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await _tap(tester, 'journey-metric');
+      await _tap(tester, 'create-next');
+      expect(find.text('Enter a metric name.'), findsOneWidget);
+      expect(_stepLabel(tester), 'Step 2/5');
+      await tester.enterText(_key('journey-metric-name'), 'Trang');
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 3/5');
+
+      await _tap(tester, 'journey-kind-couple');
+      await _tap(tester, 'create-next');
+      expect(find.text('Enter both names.'), findsNWidgets(2));
+      expect(_stepLabel(tester), 'Step 3/5');
+      await tester.enterText(_key('journey-couple-left'), 'An');
+      await tester.enterText(_key('journey-couple-right'), 'Bình');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 4/5');
+
+      await tester.enterText(_key('journey-duration'), '${durationMax + 1}');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      expect(
+        find.text('Duration must be $durationMin to $durationMax days.'),
+        findsOneWidget,
+      );
+      expect(h.journeys.created, isEmpty);
+    });
+
+    testWidgets('weight loss: hideWeight default and real duration saved', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _tap(tester, 'template-weight_loss');
+      expect(_switch(tester, 'journey-hide-metric'), isTrue);
+      expect(_switch(tester, 'journey-blur'), isTrue);
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      // Not hard-coded to 30: pick 14 days and a start date.
+      await _tap(tester, 'journey-duration-14');
+      await _tap(tester, 'create-day-2026-10-20');
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 5/5');
+      expect(_key('journey-create-design-preview'), findsOneWidget);
+      expect(find.byType(DepartureTicket), findsOneWidget);
+      expect(find.text('14 days'), findsWidgets);
+
+      await _tap(tester, 'journey-create');
+      final draft = h.journeys.created.single;
+      expect(draft.templateId, TemplateId.weightLoss);
+      expect(draft.durationDays, 14);
+      expect(draft.startDate, const LocalDate(2026, 10, 20));
+      expect(draft.metricUnit, 'kg');
+      expect(draft.hideMetricDefault, isTrue);
+      expect(draft.kind, JourneyKind.solo);
+      expect(draft.visibility, JourneyVisibility.private);
+      expect(h.journeys.prefUpdates.single, (
+        id: 'new-1',
+        hideMetric: true,
+        blurMedia: true,
+      ));
+      expect(h.location, AppRoutes.journey('new-1'));
+    });
+
+    testWidgets('turning hideWeight off is saved too', (tester) async {
+      final h = await _open(tester);
+      await _tap(tester, 'template-weight_loss');
+      await _tap(tester, 'journey-hide-metric');
+      await _tap(tester, 'journey-blur');
+      for (var i = 0; i < 3; i++) {
+        await _tap(tester, 'create-next');
+      }
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created.single.hideMetricDefault, isFalse);
+      expect(h.journeys.prefUpdates, isEmpty);
+    });
+
+    testWidgets('calendar keeps the chosen start when paging months', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _tap(tester, 'template-english_daily');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-day-2026-10-20');
+      await _tap(tester, 'create-calendar-next');
+      await _tap(tester, 'create-calendar-prev');
+      expect(_key('create-day-2026-10-20'), findsOneWidget);
+      expect(
+        tester.widget<UiPressable>(_key('create-day-2026-10-20')).selected,
+        isTrue,
+      );
+      // Past days cannot start a journey.
+      expect(
+        tester.widget<UiPressable>(_key('create-day-2026-10-15')).onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets(
+      'couple: names are saved in the title and shown on the ticket',
+      (tester) async {
+        final h = await _open(tester);
+        await _tap(tester, 'template-couple');
+        await _tap(tester, 'create-next');
+        expect(
+          tester.widget<CreateChoiceCard>(_key('journey-kind-couple')).selected,
+          isTrue,
+        );
+        await tester.enterText(_key('journey-couple-left'), 'An');
+        await tester.enterText(_key('journey-couple-right'), 'Bình');
+        await tester.pumpAndSettle();
+        await _tap(tester, 'create-next');
+        await _tap(tester, 'create-next');
+        final ticket = tester.widget<DepartureTicket>(
+          find.byType(DepartureTicket),
+        );
+        expect(ticket.leftName, 'An');
+        expect(ticket.rightName, 'Bình');
+        await _tap(tester, 'journey-create');
+        final draft = h.journeys.created.single;
+        expect(draft.title, 'An & Bình');
+        expect(draft.emoji, '💞');
+      },
+    );
+
+    testWidgets('local-only: group is disabled', (tester) async {
+      final h = await _open(tester);
+      await _tap(tester, 'template-workout_30');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-kind-group');
+      expect(
+        tester.widget<CreateChoiceCard>(_key('journey-kind-group')).selected,
+        isFalse,
+      );
+      expect(
+        find.text(
+          'Group journeys need a server. This build runs on this device only.',
+        ),
+        findsOneWidget,
+      );
+      for (var i = 0; i < 2; i++) {
+        await _tap(tester, 'create-next');
+      }
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created.single.kind, JourneyKind.solo);
+    });
+
+    testWidgets('with a server: group uses group visibility', (tester) async {
+      final h = await _open(tester, config: testBackendConfig, userId: 'u1');
+      await _tap(tester, 'template-workout_30');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-kind-group');
+      await _tap(tester, 'create-next');
+      expect(_key('journey-visibility-link'), findsNothing);
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-create');
+      final draft = h.journeys.created.single;
+      expect(draft.kind, JourneyKind.group);
+      expect(draft.visibility, JourneyVisibility.group);
+    });
+
+    testWidgets('a failed create can be retried with the same client id', (
+      tester,
+    ) async {
+      final repo = FakeJourneyRepository()
+        ..createError = const OurneyException(OurneyErrorCode.offline);
+      final h = await _open(tester, journeys: repo);
+      await _tap(tester, 'template-workout_30');
+      for (var i = 0; i < 3; i++) {
+        await _tap(tester, 'create-next');
+      }
+      await _tap(tester, 'journey-create');
+      repo.createError = null;
+      await _tap(tester, 'journey-create');
+      expect(repo.attempts, hasLength(2));
+      expect(repo.attempts.last.id, repo.attempts.first.id);
+      expect(h.journeys.created, hasLength(1));
+    });
+
+    for (final dark in [false, true]) {
+      testWidgets(
+        'every step fits 320dp at 1.35x text (${dark ? 'dark' : 'light'})',
+        (tester) async {
+          tester.platformDispatcher.platformBrightnessTestValue = dark
+              ? Brightness.dark
+              : Brightness.light;
+          addTearDown(
+            tester.platformDispatcher.clearPlatformBrightnessTestValue,
+          );
+          tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+          addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+          await _open(tester);
+          tester.view.physicalSize = const Size(320, 640);
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          expect(tester.element(_key('journeys-create-flow')).ui.isDark, dark);
+          await _tap(tester, 'template-couple');
+          expect(tester.takeException(), isNull);
+          await _tap(tester, 'create-next');
+          expect(tester.takeException(), isNull);
+          await tester.enterText(_key('journey-couple-left'), 'An');
+          await tester.enterText(_key('journey-couple-right'), 'Bình');
+          await tester.pumpAndSettle();
+          for (var i = 0; i < 2; i++) {
+            await _tap(tester, 'create-next');
+            expect(tester.takeException(), isNull);
+          }
+          expect(_stepLabel(tester), 'Step 5/5');
+          expect(_key('journey-create'), findsOneWidget);
+        },
+      );
+    }
+  });
+}

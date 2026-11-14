@@ -41,16 +41,14 @@ void main() {
       expect(find.text('Weight loss'), findsOneWidget);
     });
 
-    testWidgets('weight loss: hides kg and blurs shares by default', (
+    testWidgets('quick setup (weight loss): hides kg and blurs shares', (
       tester,
     ) async {
       final h = await pumpJourneys(
         tester,
-        location: AppRoutes.journeyNew,
+        location: JourneysPaths.newFromTemplate(TemplateId.weightLoss),
         locale: const Locale('en'),
       );
-      await _tap(tester, _key('template-weight_loss'));
-      expect(h.location, JourneysPaths.newFromTemplate(TemplateId.weightLoss));
 
       final title = tester.widget<TextField>(_key('journey-title'));
       expect(title.controller!.text, 'Weight loss');

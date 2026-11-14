@@ -128,7 +128,11 @@ void main() {
     expect(key('journeys-template-picker'), findsOneWidget);
 
     await tap('template-${TemplateId.workout30.wireName}');
-    expect(key('journeys-create'), findsOneWidget);
+    // V2 five-step flow: name (2), who (3), rhythm (4), review (5).
+    expect(key('journeys-create-flow'), findsOneWidget);
+    for (var i = 0; i < 3; i++) {
+      await tap('create-next');
+    }
     await tap('journey-create');
     expect(path(), startsWith('/journey/'));
     final journeyId = path().split('/').last;
