@@ -36,6 +36,7 @@ returns table (
 )
 language plpgsql
 stable
+security definer
 set search_path = ''
 as $$
 declare

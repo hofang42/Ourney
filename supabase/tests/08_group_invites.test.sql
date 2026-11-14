@@ -52,8 +52,8 @@ select ok(not ((public.preview_group_by_code(tests.code())::jsonb) ?| array['id'
   'preview leaks no ids or code');
 select is((select count(*)::int from public.memberships where journey_id = tests.jid() and user_id = tests.u(3)), 0,
   'previewing does not join');
-select is(public.preview_group_by_code('ZZZZZZZZ'), null, 'unknown code previews as null');
-select is(public.preview_group_by_code('bad'), null, 'malformed code previews as null');
+select ok(public.preview_group_by_code('ZZZZZZZZ') is null, 'unknown code previews as null');
+select ok(public.preview_group_by_code('bad') is null, 'malformed code previews as null');
 
 -- failed previews share the join throttle (10 failures / hour)
 do $$ begin perform tests.as_user(tests.u(5)); end $$;
@@ -66,7 +66,7 @@ select throws_ok($$ select public.join_by_code(tests.code()) $$, 'P0001', 'rate_
 -- blocked user sees nothing
 do $$ begin perform tests.as_user(tests.u(1)); perform public.block_user(tests.u(4)); end $$;
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
-select is(public.preview_group_by_code(tests.code()), null, 'a user blocked by a member previews as null');
+select ok(public.preview_group_by_code(tests.code()) is null, 'a user blocked by a member previews as null');
 
 -- ===== invitations ===========================================================
 do $$ begin perform tests.as_user(tests.u(3)); end $$;
