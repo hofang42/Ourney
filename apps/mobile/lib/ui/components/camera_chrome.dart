@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 /// `.glass-chip`: frosted paper capsule with ink text, used over the always
@@ -12,8 +13,10 @@ import 'pressable.dart';
 class UiGlassChip extends StatelessWidget {
   const UiGlassChip({
     required this.label,
-    this.leading,
-    this.trailing,
+    @Deprecated('Use leadingGlyph (an OurneyIcon name)') this.leading,
+    @Deprecated('Use trailingGlyph (an OurneyIcon name)') this.trailing,
+    this.leadingGlyph,
+    this.trailingGlyph,
     this.onPressed,
     this.semanticLabel,
     super.key,
@@ -22,6 +25,10 @@ class UiGlassChip extends StatelessWidget {
   final String label;
   final IconData? leading;
   final IconData? trailing;
+
+  /// [OurneyIcon] names drawn flat in ink.
+  final String? leadingGlyph;
+  final String? trailingGlyph;
   final VoidCallback? onPressed;
   final String? semanticLabel;
 
@@ -48,8 +55,15 @@ class UiGlassChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (leading != null) ...[
-                Icon(leading, size: 17, color: _ink),
+              if (leading != null || leadingGlyph != null) ...[
+                leadingGlyph != null
+                    ? OurneyIcon(
+                        name: leadingGlyph!,
+                        size: 18,
+                        flat: true,
+                        color: _ink,
+                      )
+                    : Icon(leading, size: 17, color: _ink),
                 const SizedBox(width: 7),
               ],
               Flexible(
@@ -65,9 +79,16 @@ class UiGlassChip extends StatelessWidget {
                   ),
                 ),
               ),
-              if (trailing != null) ...[
+              if (trailing != null || trailingGlyph != null) ...[
                 const SizedBox(width: 7),
-                Icon(trailing, size: 17, color: _ink),
+                trailingGlyph != null
+                    ? OurneyIcon(
+                        name: trailingGlyph!,
+                        size: 18,
+                        flat: true,
+                        color: _ink,
+                      )
+                    : Icon(trailing, size: 17, color: _ink),
               ],
             ],
           ),
@@ -123,13 +144,17 @@ class UiDayHud extends StatelessWidget {
 /// white glyph button on the dark camera (flash, grid, flip).
 class UiCameraTool extends StatelessWidget {
   const UiCameraTool({
-    required this.icon,
+    @Deprecated('Use glyph (an OurneyIcon name)') this.icon,
+    this.glyph,
     required this.label,
     required this.onPressed,
     super.key,
-  });
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// [OurneyIcon] name, drawn flat in white (64% when disabled).
+  final String? glyph;
   final String label;
   final VoidCallback? onPressed;
 
@@ -140,11 +165,18 @@ class UiCameraTool extends StatelessWidget {
       semanticLabel: label,
       excludeChildSemantics: true,
       centerChild: true,
-      child: Icon(
-        icon,
-        size: 22,
-        color: onPressed == null ? const Color(0x66FFFFFF) : UiCamera.ink,
-      ),
+      child: glyph != null
+          ? OurneyIcon(
+              name: glyph!,
+              size: 22,
+              flat: true,
+              color: onPressed == null ? const Color(0x66FFFFFF) : UiCamera.ink,
+            )
+          : Icon(
+              icon,
+              size: 22,
+              color: onPressed == null ? const Color(0x66FFFFFF) : UiCamera.ink,
+            ),
     );
   }
 }
@@ -182,9 +214,10 @@ class UiLibraryThumb extends StatelessWidget {
               : const ColoredBox(
                   color: Color(0x22FFFFFF),
                   child: Center(
-                    child: Icon(
-                      Icons.photo_library_outlined,
+                    child: OurneyIcon(
+                      name: 'gallery',
                       size: 20,
+                      flat: true,
                       color: UiCamera.ink,
                     ),
                   ),

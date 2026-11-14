@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 /// `.create-extra-chip` / `.language-chip`: sticker capsule. 44dp visual
@@ -11,7 +12,7 @@ class UiChip extends StatelessWidget {
   const UiChip({
     required this.label,
     required this.onPressed,
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     this.selected = false,
     this.semanticHint,
@@ -80,7 +81,7 @@ class UiChip extends StatelessWidget {
 class UiTag extends StatelessWidget {
   const UiTag({
     required this.label,
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     this.background,
     this.foreground,
@@ -158,11 +159,12 @@ class UiPrivacyTag extends StatelessWidget {
   final String label;
   final Color? color;
 
-  static IconData iconFor(UiPrivacy type) => switch (type) {
-    UiPrivacy.private => Icons.lock_outline_rounded,
-    UiPrivacy.link => Icons.link_rounded,
-    UiPrivacy.couple => Icons.favorite_border_rounded,
-    UiPrivacy.squad => Icons.group_outlined,
+  /// [OurneyIcon] name of a privacy level.
+  static String glyphFor(UiPrivacy type) => switch (type) {
+    UiPrivacy.private => 'lock',
+    UiPrivacy.link => 'link',
+    UiPrivacy.couple => 'heart',
+    UiPrivacy.squad => 'squad',
   };
 
   @override
@@ -171,7 +173,7 @@ class UiPrivacyTag extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(iconFor(type), size: 13, color: c),
+        OurneyIcon(name: glyphFor(type), size: 13, flat: true, color: c),
         const SizedBox(width: 3),
         Flexible(
           child: Text(

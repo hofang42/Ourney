@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import 'avatar.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 /// Top-bar entry to the profile: the user's initials avatar, or a neutral
@@ -39,9 +40,10 @@ class UiProfileEntry extends StatelessWidget {
                 color: onDark ? UiCamera.dockBorder : ui.border,
               ),
             ),
-            child: Icon(
-              Icons.person_outline_rounded,
+            child: OurneyIcon(
+              name: 'profile',
               size: size * 0.55,
+              flat: true,
               color: onDark ? UiCamera.ink : ui.ink,
             ),
           )

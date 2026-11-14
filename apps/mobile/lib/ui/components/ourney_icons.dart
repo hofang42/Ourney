@@ -184,6 +184,164 @@ const Map<String, List<_Prim>> _drawings = {
   'type-custom': [
     _Prim.path('M2.8 3.5h6l3.3 7.1 3.2-7.1h5.9L14.8 16v5H9.2v-5Z'),
   ],
+  'chevron-right': [_Prim.path('m9 5 7 7-7 7')],
+  'chevron-left': [_Prim.path('m15 5-7 7 7 7')],
+  'chevron-down': [_Prim.path('m5 9 7 7 7-7')],
+  'chevron-up': [_Prim.path('m5 15 7-7 7 7')],
+  'arrow-right': [_Prim.path('m14 5 7 7-7 7M20 12H3')],
+  'more': [
+    _Prim.circle(5, 12, 1.6),
+    _Prim.circle(12, 12, 1.6),
+    _Prim.circle(19, 12, 1.6),
+  ],
+  'search': [_Prim.circle(10.5, 10.5, 6.5), _Prim.path('m15.5 15.5 5 5')],
+  'send': [_Prim.path('M3 11 21 3l-7 18-3-7Z'), _Prim.path('m11 14 10-11')],
+  'download': [_Prim.path('M12 4v11M7 11l5 5 5-5M5 20h14')],
+  'copy': [_Prim.path('M9 9h11v11H9Z'), _Prim.path('M15 9V4H4v11h5')],
+  'edit': [_Prim.path('m4 20 1-5L16 4l4 4L9 19Z'), _Prim.path('m14 6 4 4')],
+  'trash': [_Prim.path('M5 7h14l-1 13H6Z'), _Prim.path('M3 7h18M9 7V4h6v3')],
+  'info': [_Prim.circle(12, 12, 9), _Prim.path('M12 11v6M12 7.5h.01')],
+  'error': [_Prim.circle(12, 12, 9), _Prim.path('M12 7v6M12 16.5h.01')],
+  'check-circle': [_Prim.circle(12, 12, 9), _Prim.path('m8 12.5 3 3 5-6')],
+  'logout': [_Prim.path('M10 4H4v16h6'), _Prim.path('M9 12h12M17 8l4 4-4 4')],
+  'login': [_Prim.path('M14 4h6v16h-6'), _Prim.path('M3 12h12M11 8l4 4-4 4')],
+  'bell': [
+    _Prim.path(
+      'M6.5 17.5h11l-1.5-2V11c0-2.7-1.5-4.6-4-4.8C9.5 6.4 8 8.3 8 11v4.5Z',
+    ),
+    _Prim.path('M10 19.5c.8 1 3.2 1 4 0M10 4.5h4'),
+  ],
+  'bell-off': [
+    _Prim.path(
+      'M6.5 17.5h11l-1.5-2V11c0-2.7-1.5-4.6-4-4.8C9.5 6.4 8 8.3 8 11v4.5Z',
+    ),
+    _Prim.path('M10 19.5c.8 1 3.2 1 4 0M10 4.5h4M3 3l18 18'),
+  ],
+  'mail': [_Prim.path('M3 5h18v14H3Z'), _Prim.path('m3 6 9 7 9-7')],
+  'link': [
+    _Prim.path(
+      'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1',
+    ),
+  ],
+  'link-off': [
+    _Prim.path(
+      'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1M3 3l18 18',
+    ),
+  ],
+  'flag': [_Prim.path('M5 21V4M5 4h12l-2 4 2 4H5')],
+  'block': [_Prim.circle(12, 12, 9), _Prim.path('m5.6 5.6 12.8 12.8')],
+  'eye': [
+    _Prim.path('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z'),
+    _Prim.circle(12, 12, 3),
+  ],
+  'eye-off': [
+    _Prim.path('M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z'),
+    _Prim.circle(12, 12, 3),
+    _Prim.path('M3 3l18 18'),
+  ],
+  'refresh': [_Prim.path('M19 12a7 7 0 1 1-2.05-4.95M19 4v5h-5')],
+  'undo': [_Prim.path('M9 14 4 9l5-5M4 9h10a6 6 0 0 1 0 12h-3')],
+  'shield': [_Prim.path('m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z')],
+  'user-plus': [
+    _Prim.circle(9, 8, 3.5),
+    _Prim.path('M3 20c.5-4.6 2.6-7 6-7s5.5 2.4 6 7M18 8v6M15 11h6'),
+  ],
+  'user-minus': [
+    _Prim.circle(9, 8, 3.5),
+    _Prim.path('M3 20c.5-4.6 2.6-7 6-7s5.5 2.4 6 7M15 11h6'),
+  ],
+  'mic': [
+    _Prim.path('M9 3h6v10a3 3 0 0 1-6 0Z'),
+    _Prim.path('M5 11a7 7 0 0 0 14 0M12 18v3'),
+  ],
+  'camera-off': [
+    _Prim.path('M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z'),
+    _Prim.circle(12, 13, 3.5),
+    _Prim.path('M3 3l18 18'),
+  ],
+  'gallery': [
+    _Prim.path('M7 3h14v14H7Z'),
+    _Prim.path('M3 7v14h14'),
+    _Prim.path('m8 14 3-3 3 3 2-2 3 3'),
+  ],
+  'image-off': [
+    _Prim.path('M3 5h18v14H3Z'),
+    _Prim.circle(8, 9, 1.5),
+    _Prim.path('m4 17 5-5 3 3 2-2 6 5M3 3l18 18'),
+  ],
+  'image-plus': [
+    _Prim.path('M3 5h18v14H3Z'),
+    _Prim.circle(8, 9, 1.5),
+    _Prim.path('m4 17 5-5 3 3 2-2 6 5M19 1v6M16 4h6'),
+  ],
+  'grid': [
+    _Prim.path('M3 3h18v18H3Z'),
+    _Prim.path('M9 3v18M15 3v18M3 9h18M3 15h18'),
+  ],
+  'flash-off': [
+    _Prim.path('m13 2-8 12h6l-1 8 9-13h-6Z'),
+    _Prim.path('M3 3l18 18'),
+  ],
+  'flash-auto': [
+    _Prim.path('m11 4-7 11h5l-1 7 8-11h-5Z'),
+    _Prim.path('M18 2v5M15.5 4.5h5'),
+  ],
+  'translate': [
+    _Prim.path(
+      'M4 5h10M9 3v2M6 5c.5 4 3 7 6 8M12 5c-.5 4-3 7-7 9M13 20l4-10 4 10M14.5 17h5',
+    ),
+  ],
+  'radio-off': [_Prim.circle(12, 12, 8)],
+  'radio-on': [_Prim.circle(12, 12, 8), _Prim.circle(12, 12, 3.5)],
+  'gavel': [
+    _Prim.path('m13 3 7 7-3 3-7-7Z'),
+    _Prim.path('m11 11-7 7 2 2 7-7M3 21h9'),
+  ],
+  'chat': [_Prim.path('M4 5h16v11H10l-5 4v-4H4Z')],
+  'chat-off': [
+    _Prim.path('M4 5h16v11H10l-5 4v-4H4Z'),
+    _Prim.path('M3 3l18 18'),
+  ],
+  'sparkle': [
+    _Prim.path('m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z'),
+    _Prim.path('m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z'),
+  ],
+  'inbox': [
+    _Prim.path('m3 13 3-8h12l3 8v6H3Z'),
+    _Prim.path('M3 13h5l1 3h6l1-3h5'),
+  ],
+  'home': [_Prim.path('m3 11 9-7 9 7M5 10v10h14V10M10 20v-5h4v5')],
+  'qr': [
+    _Prim.path('M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3Z'),
+    _Prim.path('M14 14h3v3h-3M20 14v1M14 20h1M18 18h3v3'),
+  ],
+  'phone': [_Prim.path('M7 2h10v20H7Z'), _Prim.path('M11 19h2')],
+  'restaurant': [
+    _Prim.path('M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-3 5-3 8h3v10'),
+  ],
+  'palette': [
+    _Prim.path(
+      'M12 3a9 9 0 0 0 0 18c1.5 0 2-1 1.5-2s0-2 1.5-2h2a4 4 0 0 0 4-4c0-5-4-10-9-10Z',
+    ),
+    _Prim.circle(7.5, 11, 1),
+    _Prim.circle(10, 7, 1),
+    _Prim.circle(15, 7, 1),
+  ],
+  'music': [
+    _Prim.path('M9 18V5l11-2v13'),
+    _Prim.path(
+      'M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+    ),
+  ],
+  'leaf': [
+    _Prim.path('M5 19C5 10 10 5 20 4c0 10-5 15-14 15Z'),
+    _Prim.path('m5 19 8-8'),
+  ],
+  'drop': [_Prim.path('M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z')],
+  'lotus': [
+    _Prim.path('M12 4c2 2.5 2 6 0 9-2-3-2-6.5 0-9Z'),
+    _Prim.path('M4 9c4 0 7 2 8 6M20 9c-4 0-7 2-8 6M5 19h14'),
+  ],
 };
 
 /// Sticker fill of each icon (V2 icons.tsx `palette`).
@@ -225,6 +383,75 @@ const Map<String, Color> _palette = {
   'type-couple': Color(0xFFFF4D6D),
   'type-workout': Color(0xFF2AA7E0),
   'type-custom': Color(0xFFA13CC9),
+  'chevron-right': Color(0xFF2AA7E0),
+  'chevron-left': Color(0xFF2AA7E0),
+  'chevron-down': Color(0xFF2AA7E0),
+  'chevron-up': Color(0xFF2AA7E0),
+  'arrow-right': Color(0xFF2AA7E0),
+  'more': Color(0xFF2AA7E0),
+  'search': Color(0xFF2AA7E0),
+  'send': Color(0xFF2AA7E0),
+  'download': Color(0xFF10B981),
+  'copy': Color(0xFF2AA7E0),
+  'edit': Color(0xFFFF9F1C),
+  'trash': Color(0xFFC2452B),
+  'info': Color(0xFF2AA7E0),
+  'error': Color(0xFFC2452B),
+  'check-circle': Color(0xFF10B981),
+  'logout': Color(0xFFC2452B),
+  'login': Color(0xFF10B981),
+  'bell': Color(0xFFFF4D6D),
+  'bell-off': Color(0xFFC2452B),
+  'mail': Color(0xFF2AA7E0),
+  'link': Color(0xFF2AA7E0),
+  'link-off': Color(0xFFC2452B),
+  'flag': Color(0xFFFF9F1C),
+  'block': Color(0xFFC2452B),
+  'eye': Color(0xFF2AA7E0),
+  'eye-off': Color(0xFF2AA7E0),
+  'refresh': Color(0xFF2AA7E0),
+  'undo': Color(0xFF2AA7E0),
+  'shield': Color(0xFF2AA7E0),
+  'user-plus': Color(0xFF10B981),
+  'user-minus': Color(0xFFC2452B),
+  'mic': Color(0xFFFF4D6D),
+  'camera-off': Color(0xFFC2452B),
+  'gallery': Color(0xFF10B981),
+  'image-off': Color(0xFFC2452B),
+  'image-plus': Color(0xFF10B981),
+  'grid': Color(0xFF2AA7E0),
+  'flash-off': Color(0xFFC2452B),
+  'flash-auto': Color(0xFFFF9F1C),
+  'translate': Color(0xFF2AA7E0),
+  'radio-off': Color(0xFF2AA7E0),
+  'radio-on': Color(0xFF10B981),
+  'gavel': Color(0xFFC2452B),
+  'chat': Color(0xFF2AA7E0),
+  'chat-off': Color(0xFFC2452B),
+  'sparkle': Color(0xFFFF9F1C),
+  'inbox': Color(0xFF2AA7E0),
+  'home': Color(0xFFFF9F1C),
+  'qr': Color(0xFF2AA7E0),
+  'phone': Color(0xFF2AA7E0),
+  'restaurant': Color(0xFF10B981),
+  'palette': Color(0xFFA13CC9),
+  'music': Color(0xFFFF4D6D),
+  'leaf': Color(0xFF10B981),
+  'drop': Color(0xFF2AA7E0),
+  'lotus': Color(0xFFA13CC9),
+};
+
+/// Icons that are open strokes: their path is never filled.
+const Set<String> _openIcons = {
+  'chevron-right',
+  'chevron-left',
+  'chevron-down',
+  'chevron-up',
+  'arrow-right',
+  'download',
+  'refresh',
+  'undo',
+  'translate',
 };
 
 /// Names [OurneyIcon] can draw.
@@ -379,7 +606,12 @@ class OurneyIconPainter extends CustomPainter {
     this.active = false,
     this.shadow,
     this.dieCut = const Color(0xFFFFFFFF),
+    this.flat = false,
   });
+
+  /// Single [color] line, no fill / ink halo / shadow (chevrons on plain rows,
+  /// monochrome glyphs on the camera chrome).
+  final bool flat;
 
   final String name;
 
@@ -406,11 +638,12 @@ class OurneyIconPainter extends CustomPainter {
     canvas.save();
     canvas.scale(scale);
 
+    final open = _openIcons.contains(name);
     void layer(Path p, Color c, double strokePx) {
       final paint = Paint()
         ..color = c
         ..style = PaintingStyle.fill;
-      canvas.drawPath(p, paint);
+      if (!open && (!flat || name == 'more')) canvas.drawPath(p, paint);
       canvas.drawPath(
         p,
         paint
@@ -421,6 +654,11 @@ class OurneyIconPainter extends CustomPainter {
       );
     }
 
+    if (flat) {
+      layer(path, color, size.width < 16 ? 1.6 : 2);
+      canvas.restore();
+      return;
+    }
     if (active && full) {
       if (shadow != null) {
         layer(path.shift(Offset(2 / scale, 2 / scale)), shadow!, 12);
@@ -447,11 +685,17 @@ class OurneyIconPainter extends CustomPainter {
       old.color != color ||
       old.ink != ink ||
       old.active != active ||
+      old.flat != flat ||
       old.shadow != shadow ||
       old.dieCut != dieCut;
 }
 
 /// A drawn Ourney sticker icon (`OIcon` in V2). Never a Material icon.
+///
+/// Usage: `OurneyIcon(name: 'chevron-right', size: 20, flat: true, color:
+/// ui.chevron)` for a quiet line glyph, or `OurneyIcon(name: 'flag')` for the
+/// sticker. Pass it as the `glyph:` of kit widgets (`UiButton`, `UiChip`,
+/// `UiMenuItem`, `UiEmptyState`...). Names: see [ourneyIconNames].
 ///
 /// [color] overrides the sticker fill (e.g. a solid ink glyph) and [inkColor]
 /// the outline; they default to the V2 palette and `context.ui.ink`.
@@ -463,9 +707,14 @@ class OurneyIcon extends StatelessWidget {
     this.active = false,
     this.color,
     this.inkColor,
+    this.flat = false,
     this.semanticLabel,
     super.key,
   });
+
+  /// Draws a single [color] line (default `context.ui.ink`) without the
+  /// sticker fill, outline and shadow.
+  final bool flat;
 
   final String name;
   final double size;
@@ -482,9 +731,10 @@ class OurneyIcon extends StatelessWidget {
       child: CustomPaint(
         painter: OurneyIconPainter(
           name: name,
-          color: color ?? ourneyIconColor(name),
+          color: color ?? (flat ? ui.ink : ourneyIconColor(name)),
           ink: inkColor ?? ui.ink,
           active: active,
+          flat: flat,
           shadow: ui.isDark ? const Color(0xFF000000) : ui.ink,
         ),
       ),

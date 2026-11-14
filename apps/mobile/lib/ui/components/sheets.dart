@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
@@ -24,6 +26,12 @@ class UiSheet extends StatelessWidget {
 
   static const double radius = 24;
 
+  /// V2 `.app-sheet` `min-height` (capped by the available height).
+  static const double minHeight = 292;
+
+  /// V2 `.app-sheet` top padding in total: 2dp outline + 41dp inside.
+  static const double topPadding = 43;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
@@ -38,6 +46,7 @@ class UiSheet extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: UiSpace.maxContent(width) + 40,
+          minHeight: math.min(minHeight, mq.size.height * 0.92),
           maxHeight: mq.size.height * 0.92,
         ),
         // A non-uniform border cannot follow a radius, so the 2dp outline is
@@ -66,7 +75,8 @@ class UiSheet extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   UiSpace.xl,
-                  12,
+                  // Grabber (12 + 5 + 24) or plain 41: 43dp with the outline.
+                  showGrabber ? 12 : topPadding - UiBorder.standard,
                   UiSpace.xl,
                   28 + mq.viewPadding.bottom + mq.viewInsets.bottom,
                 ),
@@ -87,7 +97,9 @@ class UiSheet extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: UiSpace.lg),
+                      const SizedBox(
+                        height: topPadding - UiBorder.standard - 12 - 5,
+                      ),
                     ],
                     Flexible(child: SingleChildScrollView(child: child)),
                   ],
@@ -135,7 +147,8 @@ Future<T?> showUiSheet<T>({
 /// Pops `true` for the primary action and `false` for the secondary one.
 class UiPermissionSheetContent extends StatelessWidget {
   const UiPermissionSheetContent({
-    required this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
+    this.glyph,
     required this.title,
     required this.primaryLabel,
     required this.secondaryLabel,
@@ -143,9 +156,12 @@ class UiPermissionSheetContent extends StatelessWidget {
     this.primaryKey,
     this.secondaryKey,
     super.key,
-  });
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// Drawn glyph (27dp, e.g. `OurneyIcon(name: 'camera', size: 27)`).
+  final Widget? glyph;
   final String title;
   final String? body;
   final String primaryLabel;
@@ -170,7 +186,7 @@ class UiPermissionSheetContent extends StatelessWidget {
               shape: BoxShape.circle,
               border: ui.stickerBorder(),
             ),
-            child: Icon(icon, size: 27, color: ui.ink),
+            child: glyph ?? Icon(icon, size: 27, color: ui.ink),
           ),
         ),
         Semantics(
@@ -211,7 +227,8 @@ class UiPermissionSheetContent extends StatelessWidget {
 /// takes the primary action, `false` for "Not now" or a dismissal.
 Future<bool> showUiPermissionSheet({
   required BuildContext context,
-  required IconData icon,
+  @Deprecated('Use glyph: OurneyIcon(...)') IconData? icon,
+  Widget? glyph,
   required String title,
   required String primaryLabel,
   required String secondaryLabel,
@@ -227,6 +244,7 @@ Future<bool> showUiPermissionSheet({
     builder: (context) => UiPermissionSheetContent(
       key: sheetKey,
       icon: icon,
+      glyph: glyph,
       title: title,
       body: body,
       primaryLabel: primaryLabel,

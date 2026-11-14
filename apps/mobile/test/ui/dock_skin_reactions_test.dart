@@ -121,6 +121,67 @@ void main() {
         expect(b.right, lessThanOrEqualTo(24), reason: name);
         expect(b.bottom, lessThanOrEqualTo(24), reason: name);
       }
+      expect(
+        ourneyIconNames,
+        containsAll([
+          'chevron-right',
+          'chevron-left',
+          'chevron-down',
+          'chevron-up',
+          'arrow-right',
+          'more',
+          'search',
+          'send',
+          'download',
+          'copy',
+          'edit',
+          'trash',
+          'info',
+          'error',
+          'check-circle',
+          'logout',
+          'login',
+          'bell',
+          'bell-off',
+          'mail',
+          'link',
+          'link-off',
+          'flag',
+          'block',
+          'eye',
+          'eye-off',
+          'refresh',
+          'undo',
+          'shield',
+          'user-plus',
+          'user-minus',
+          'mic',
+          'camera-off',
+          'gallery',
+          'image-off',
+          'image-plus',
+          'grid',
+          'flash-off',
+          'flash-auto',
+          'translate',
+          'radio-off',
+          'radio-on',
+          'gavel',
+          'chat',
+          'chat-off',
+          'sparkle',
+          'inbox',
+          'home',
+          'qr',
+          'phone',
+          'restaurant',
+          'palette',
+          'music',
+          'leaf',
+          'drop',
+          'lotus',
+        ]),
+      );
       expect(ourneyIconPath('nope'), isNull);
     });
   });
@@ -363,7 +424,7 @@ void main() {
         expect(tester.takeException(), isNull);
         for (final i in [0, 1, 3, 4]) {
           final s = tester.getSize(find.byKey(ValueKey('tab-$i')));
-          expect(s.width, greaterThanOrEqualTo(44), reason: 'tab $i');
+          expect(s.width, greaterThanOrEqualTo(48), reason: 'tab $i');
           expect(s.height, greaterThanOrEqualTo(48), reason: 'tab $i');
         }
       });
