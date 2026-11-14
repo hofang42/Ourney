@@ -46,7 +46,7 @@ class AppConfig {
 
   /// Placeholder mailbox used until the owner sets `SUPPORT_EMAIL`
   /// (docs/adr/0002-support-email-and-legal-text.md).
-  static const defaultSupportEmail = 'support@ourney.app';
+  static const defaultSupportEmail = 'support@ourney.tech';
 
   /// Trims [raw]; a blank value (e.g. `SUPPORT_EMAIL=` in a define file)
   /// falls back to [defaultSupportEmail].

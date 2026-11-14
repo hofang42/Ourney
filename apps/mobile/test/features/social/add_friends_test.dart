@@ -94,13 +94,13 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('invite-share')));
     await tester.pumpAndSettle();
-    expect(fakes.shared.single, contains('https://ourney.app/f/tok1'));
+    expect(fakes.shared.single, contains('https://ourney.tech/f/tok1'));
 
     await tester.tap(find.byKey(const ValueKey('invite-copy')));
     await tester.pumpAndSettle();
-    expect(fakes.copied.single, 'https://ourney.app/f/tok1');
+    expect(fakes.copied.single, 'https://ourney.tech/f/tok1');
     expect(fakes.friends.invitesCreated, 1);
-    expect(find.text('https://ourney.app/f/tok1'), findsOneWidget);
+    expect(find.text('https://ourney.tech/f/tok1'), findsOneWidget);
     // The QR code appears once the link exists.
     expect(find.byType(QrImageView), findsOneWidget);
   });

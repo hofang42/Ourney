@@ -11,7 +11,7 @@ import '../l10n/generated/social_localizations.dart';
 import '../social_paths.dart';
 import 'social_common.dart';
 
-/// `/f/:token` (`ourney://friend/<token>`, `https://ourney.app/f/<token>`):
+/// `/f/:token` (`ourney://friend/<token>`, `https://ourney.tech/f/<token>`):
 /// accepts the invite once and shows the new friend. Errors: `not_found`
 /// (unknown / rotated token), `invalid` (own token), `blocked`.
 class InviteAcceptScreen extends ConsumerStatefulWidget {

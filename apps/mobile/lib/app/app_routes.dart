@@ -48,7 +48,7 @@ abstract final class AppRoutes {
       '/chat/${Uri.encodeComponent(conversationId)}';
 
   /// Friend invite link. Target of `ourney://friend/<token>` and
-  /// `https://ourney.app/f/<token>`.
+  /// `https://ourney.tech/f/<token>`.
   static String friendInvite(String token) =>
       '/f/${Uri.encodeComponent(token)}';
   // sharing — journey sharing (SCR-28, SCR-82..84, 87, 88), full screen.
