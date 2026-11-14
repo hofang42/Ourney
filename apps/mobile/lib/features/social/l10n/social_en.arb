@@ -88,5 +88,12 @@
   "social_photoSemantics": "Photo message",
   "social_sent": "Sent",
   "social_profileFriends": "Friends · {count}",
-  "social_profileRequests": "{count, plural, =1{1 request waiting} other{{count} requests waiting}}"
+  "social_profileRequests": "{count, plural, =1{1 request waiting} other{{count} requests waiting}}",
+  "social_activityTitle": "Activity",
+  "social_groupToday": "Today",
+  "social_groupEarlier": "Earlier",
+  "social_markAllRead": "Mark all read",
+  "social_inviteCardTitle": "Invite a friend",
+  "social_inviteCardBody": "Journeys are easier together. Send a link or find friends.",
+  "social_inviteCardAction": "Add friends"
 }

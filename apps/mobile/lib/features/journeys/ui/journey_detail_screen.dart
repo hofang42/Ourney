@@ -19,10 +19,10 @@ import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'day_ticker.dart';
 import 'journey_actions.dart';
-import 'journey_chain.dart';
 import 'journey_errors.dart';
 import 'journey_row.dart';
 import 'journey_style.dart';
+import 'widgets/journey_timeline.dart';
 
 enum _Action { end, archive, delete }
 
@@ -228,7 +228,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         child: Center(child: CircularProgressIndicator()),
                       )
                     else
-                      JourneyChain(
+                      JourneyTimeline(
+                        skinId: uiSkinIdFor(skinOfJourney(journey)),
                         days: progress.timeline(),
                         pal: pal,
                         onTapDay: (d) =>

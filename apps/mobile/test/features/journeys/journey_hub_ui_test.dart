@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/providers.dart';
-import 'package:ourney/features/journeys/ui/journey_chain.dart';
 import 'package:ourney/features/journeys/ui/today_sheet.dart';
+import 'package:ourney/features/journeys/ui/widgets/journey_timeline.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -172,7 +172,7 @@ void main() {
             memberships: {j.id: testMembership(j)},
           ),
         );
-        expect(find.byType(JourneyChain), findsOneWidget);
+        expect(find.byType(JourneyTimeline), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }

@@ -9,7 +9,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../profile/profile_providers.dart';
 import '../../sharing/sharing.dart';
-import '../../social/social.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../l10n/generated/journeys_localizations.dart';
@@ -57,8 +56,8 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
       // Data layer (B1) not wired yet.
       return UiScaffold(
         key: const ValueKey('placeholder-journeys'),
-        child: UiEmptyState(
-          icon: Icons.route_rounded,
+        child: UiStateCard(
+          kind: UiStateCardKind.empty,
           title: l10n.journeys_title,
         ),
       );
@@ -81,12 +80,16 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
         onCloseMenu: () => setState(() => _menuOpen = false),
       );
     } else if (journeys.hasError) {
+      final offline =
+          rootError(journeys.error!) is OurneyException &&
+          (rootError(journeys.error!) as OurneyException).error ==
+              OurneyErrorCode.offline;
       body = Column(
         children: [
           const _HubHeader(),
-          UiEmptyState(
+          UiStateCard(
             key: const ValueKey('journeys-error'),
-            icon: Icons.error_outline_rounded,
+            kind: offline ? UiStateCardKind.offline : UiStateCardKind.error,
             title: l10n.journeys_loadError,
             body: journeyErrorMessage(context, journeys.error!),
             actionLabel: AppLocalizations.of(context).common_retry,
@@ -98,11 +101,10 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
       body = Column(
         children: [
           const _HubHeader(),
-          const SizedBox(height: 80),
-          Center(
-            child: CircularProgressIndicator(
-              semanticsLabel: AppLocalizations.of(context).common_loading,
-            ),
+          UiStateCard(
+            key: const ValueKey('journeys-loading'),
+            kind: UiStateCardKind.loading,
+            title: AppLocalizations.of(context).common_loading,
           ),
         ],
       );
@@ -118,7 +120,8 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   }
 }
 
-/// Greeting row: "Good evening, Linh" + add + inbox + profile avatar.
+/// V2 greeting row: "Good evening, Linh" + add button. Profile and activity
+/// are dock tabs now, so the Hub header carries neither.
 class _HubHeader extends ConsumerWidget {
   const _HubHeader({this.onAdd, this.hello = false});
 
@@ -152,55 +155,11 @@ class _HubHeader extends ConsumerWidget {
         if (onAdd != null)
           UiIconButton(
             key: const ValueKey('journeys-new'),
-            icon: Icons.add_rounded,
+            glyph: const OurneyIcon(name: 'plus', size: 24),
             label: l10n.journeys_addJourney,
             onPressed: onAdd,
           ),
-        const InboxButton(),
-        _ProfileEntry(name: name),
       ],
-    );
-  }
-}
-
-/// Avatar button to `/profile` (settings, reminders, safety).
-class _ProfileEntry extends StatelessWidget {
-  const _ProfileEntry({required this.name});
-
-  final String? name;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final label = AppLocalizations.of(context).nav_profile;
-    final hasName = name != null && name!.isNotEmpty;
-    return UiPressable(
-      key: const ValueKey('profile-entry'),
-      onPressed: () => context.push(AppRoutes.profile),
-      semanticLabel: label,
-      excludeChildSemantics: true,
-      child: Center(
-        child: hasName
-            ? UiAvatar(
-                name: name!,
-                size: UiSize.avatarLarge,
-                colorIndex: UiAvatar.indexFor(name!),
-              )
-            : Container(
-                width: UiSize.avatarLarge,
-                height: UiSize.avatarLarge,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: ui.fill,
-                  border: Border.all(color: ui.border),
-                ),
-                child: Icon(
-                  Icons.person_outline_rounded,
-                  size: 22,
-                  color: ui.ink,
-                ),
-              ),
-      ),
     );
   }
 }
@@ -240,6 +199,9 @@ class _DayZero extends StatelessWidget {
     );
   }
 }
+
+/// Streak lengths that swap the hero's flame for the trophy.
+const _milestones = {7, 14, 21, 30, 50, 100, 200, 365};
 
 /// Progress of every running journey, watched together so the hub can
 /// count what is left for today and pick the Today card.
@@ -292,6 +254,17 @@ class _HubBody extends ConsumerWidget {
           );
     final allDone = known && buckets.active.isNotEmpty && pending.isEmpty;
     final online = !ref.watch(appConfigProvider).localOnly;
+    final bestStreak = progress.values.fold<int>(
+      0,
+      (m, p) => p.summary.current > m ? p.summary.current : m,
+    );
+    final heroState = allDone && _milestones.contains(bestStreak)
+        ? UiStreakHeroState.milestone
+        : allDone
+        ? UiStreakHeroState.done
+        : next?.journey.visibility == JourneyVisibility.group
+        ? UiStreakHeroState.group
+        : UiStreakHeroState.normal;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -305,7 +278,6 @@ class _HubBody extends ConsumerWidget {
               children: [
                 UiMenuItem(
                   key: const ValueKey('journeys-menu-new'),
-                  icon: Icons.add_rounded,
                   label: l10n.journeys_newJourney,
                   onPressed: () {
                     onCloseMenu();
@@ -315,7 +287,6 @@ class _HubBody extends ConsumerWidget {
                 if (online)
                   UiMenuItem(
                     key: const ValueKey('journeys-menu-retell'),
-                    icon: Icons.image_outlined,
                     label: l10n.journeys_retell,
                     onPressed: () {
                       onCloseMenu();
@@ -325,16 +296,16 @@ class _HubBody extends ConsumerWidget {
               ],
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.only(top: 2, bottom: 18),
-          child: Text(
-            key: const ValueKey('journeys-hub-prompt'),
-            allDone
-                ? l10n.journeys_allDonePrompt
-                : l10n.journeys_remainingToday(pending.length),
-            style: UiText.muted(size: 14, color: ui.inkMuted),
-          ),
+        const SizedBox(height: UiSpace.sm),
+        UiStreakHero(
+          key: const ValueKey('journeys-hub-hero'),
+          streak: bestStreak,
+          title: allDone
+              ? l10n.journeys_allDonePrompt
+              : l10n.journeys_remainingToday(pending.length),
+          state: heroState,
         ),
+        const SizedBox(height: UiSpace.lg),
         if (next != null)
           TodayCard(progress: next)
         else if (allDone)
@@ -387,19 +358,10 @@ class _HubBody extends ConsumerWidget {
                       style: UiText.muted(color: ui.inkMuted),
                     ),
                   )
-                : DecoratedBox(
-                    decoration: BoxDecoration(
-                      border: Border(top: BorderSide(color: ui.divider)),
-                    ),
-                    child: Column(
-                      children: [
-                        for (final j in buckets.active)
-                          JourneyRow(
-                            journey: j,
-                            hideStreak: next?.journey.id == j.id,
-                          ),
-                      ],
-                    ),
+                : Column(
+                    children: [
+                      for (final j in buckets.active) JourneyRow(journey: j),
+                    ],
                   ),
         },
       ],
@@ -424,7 +386,16 @@ class _AllDoneRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const UiCheckBadge(),
+          Container(
+            width: 34,
+            height: 34,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: ui.successSoft,
+              shape: BoxShape.circle,
+            ),
+            child: const OurneyIcon(name: 'check', size: 20),
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
