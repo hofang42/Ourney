@@ -65,7 +65,6 @@ class DepartureTicket extends StatelessWidget {
   final String changeVariantLabel;
 
   static const double _angle = -0.8 * math.pi / 180;
-  static const _lime = Color(0xFF3DE88C);
 
   static const _taglines = {
     'quiet': 'Chỉ mình mình thấy. Từng chút một.',
@@ -172,7 +171,12 @@ class DepartureTicket extends StatelessWidget {
                 const SizedBox(height: 12),
                 _eyebrow(s, privateLabel),
                 const SizedBox(height: 8),
-                Text(title, style: s.h(25)),
+                Text(
+                  title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: s.h(25),
+                ),
                 const SizedBox(height: 4),
                 Text(durationLabel, style: s.body(14, w: FontWeight.w700)),
                 if (datesLabel != null) Text(datesLabel!, style: s.body(13)),
@@ -227,7 +231,12 @@ class DepartureTicket extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: s.h(25)),
+                Text(
+                  title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: s.h(25),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -270,7 +279,7 @@ class DepartureTicket extends StatelessWidget {
   }
 
   Widget _memory(_Style s, String line) {
-    final paper = s.isDark ? s.ui.surface : const Color(0xFFEFE1C4);
+    final paper = s.isDark ? s.ui.surface : s.ui.bg;
     return _Tear(
       s: s,
       radius: 4,
@@ -284,7 +293,12 @@ class DepartureTicket extends StatelessWidget {
           children: [
             _eyebrow(s, memoryLabel, f: UiFonts.mono),
             const SizedBox(height: 10),
-            Text(title, style: s.h(24)),
+            Text(
+              title,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: s.h(24),
+            ),
             const SizedBox(height: 8),
             if (datesLabel != null)
               Text(datesLabel!, style: s.body(14, f: UiFonts.mono)),
@@ -310,9 +324,11 @@ class DepartureTicket extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ExcludeSemantics(
-            child: Text(
-              '|||| ||| || |||| |',
-              style: s.body(22, f: UiFonts.mono, t: -0.12),
+            child: SizedBox(
+              key: const ValueKey('ticket-film-roll'),
+              height: 22,
+              width: 120,
+              child: CustomPaint(painter: _FilmRollPainter(s.ink)),
             ),
           ),
           if (line.isNotEmpty) Text(line, style: s.body(13, h: 1.45)),
@@ -373,7 +389,13 @@ class DepartureTicket extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        Text(title, textAlign: TextAlign.center, style: s.h(22)),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+          style: s.h(22),
+        ),
         const SizedBox(height: 4),
         Text(
           durationLabel,
@@ -408,8 +430,8 @@ class DepartureTicket extends StatelessWidget {
       s: s,
       radius: 0,
       seam: _Seam.none,
-      borderColor: _lime,
-      shadowColor: _lime,
+      borderColor: s.accent,
+      shadowColor: s.accent,
       borderWidth: 3,
       shadow: 4,
       top: Stack(
@@ -435,16 +457,25 @@ class DepartureTicket extends StatelessWidget {
                 ExcludeSemantics(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(
-                      digits ?? '∞',
-                      style: UiText.heading(
-                        font: s.font,
-                        size: 112,
-                        weight: 900,
-                        height: 0.9,
-                        color: s.ink,
-                      ),
-                    ),
+                    child: digits == null
+                        ? SizedBox(
+                            key: const ValueKey('ticket-infinity'),
+                            width: 150,
+                            height: 90,
+                            child: CustomPaint(
+                              painter: _InfinityPainter(s.ink),
+                            ),
+                          )
+                        : Text(
+                            digits,
+                            style: UiText.heading(
+                              font: s.font,
+                              size: 112,
+                              weight: 900,
+                              height: 1.3,
+                              color: s.ink,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -454,7 +485,13 @@ class DepartureTicket extends StatelessWidget {
                   style: s.body(14, w: FontWeight.w800, t: 0.06),
                 ),
                 const SizedBox(height: 8),
-                Text(title, textAlign: TextAlign.center, style: s.h(24)),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: s.h(24),
+                ),
                 const SizedBox(height: 6),
                 Text(goalLine, textAlign: TextAlign.center, style: s.body(14)),
                 if (datesLabel != null)
@@ -492,7 +529,12 @@ class DepartureTicket extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(title, style: s.h(25)),
+            Text(
+              title,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: s.h(25),
+            ),
             const SizedBox(height: 10),
             Text(goalLine, style: s.body(14, f: UiFonts.mono)),
             const SizedBox(height: 14),
@@ -546,7 +588,7 @@ class _Style {
     font: font,
     size: size,
     weight: w,
-    height: 1.2,
+    height: 1.3,
     color: ink,
   );
 
@@ -781,4 +823,79 @@ class _PiecePainter extends CustomPainter {
       old.dash != dash ||
       old.grid != grid ||
       old.topBar != topBar;
+}
+
+/// Open-ended bib mark: a drawn lemniscate (no Unicode glyph).
+class _InfinityPainter extends CustomPainter {
+  const _InfinityPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final cx = w / 2;
+    final cy = h / 2;
+    final a = w / 2 - 6;
+    final path = Path();
+    for (var i = 0; i <= 80; i++) {
+      final t = i / 80 * 2 * math.pi;
+      final d = 1 + math.sin(t) * math.sin(t);
+      final x = cx + a * math.cos(t) / d;
+      final y = cy + a * math.sin(t) * math.cos(t) / d * 1.5;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 12
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_InfinityPainter old) => old.color != color;
+}
+
+/// Film-roll strip: sprocket holes along a ruled band.
+class _FilmRollPainter extends CustomPainter {
+  const _FilmRollPainter(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()..color = color;
+    const hole = 5.0;
+    const gap = 4.0;
+    var x = 0.0;
+    while (x + hole <= size.width) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, 0, hole, 5),
+          const Radius.circular(1),
+        ),
+        p,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, size.height - 5, hole, 5),
+          const Radius.circular(1),
+        ),
+        p,
+      );
+      x += hole + gap;
+    }
+    canvas.drawRect(Rect.fromLTWH(0, size.height / 2 - 1, size.width, 2), p);
+  }
+
+  @override
+  bool shouldRepaint(_FilmRollPainter old) => old.color != color;
 }

@@ -56,7 +56,14 @@ class _PhotoFallback extends StatelessWidget {
     final ui = context.ui;
     return ColoredBox(
       color: ui.fill,
-      child: Center(child: Icon(Icons.photo_outlined, color: ui.inkMuted)),
+      child: Center(
+        child: OurneyIcon(
+          name: 'image',
+          size: 24,
+          flat: true,
+          color: ui.inkMuted,
+        ),
+      ),
     );
   }
 }

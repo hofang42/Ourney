@@ -35,7 +35,7 @@ class InboxButton extends ConsumerWidget {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 24, color: ui.ink),
+            OurneyIcon(name: 'inbox', size: 24, color: ui.ink, flat: true),
             if (dot)
               Positioned(
                 right: -1,

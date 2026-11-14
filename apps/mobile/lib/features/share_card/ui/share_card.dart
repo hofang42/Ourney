@@ -165,8 +165,9 @@ class _Header extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          uiJourneyIcon(content.emoji, content.templateId),
+        uiJourneyGlyph(
+          content.emoji,
+          content.templateId,
           size: 30,
           color: _white,
         ),
@@ -211,7 +212,12 @@ class _PhotoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fallback = _Illustration(
-      icon: uiJourneyIcon(content.emoji, content.templateId),
+      icon: uiJourneyGlyph(
+        content.emoji,
+        content.templateId,
+        size: 96,
+        color: _white,
+      ),
     );
     Widget image = photo == null
         ? fallback
@@ -373,7 +379,7 @@ class _Badge extends StatelessWidget {
 class _Illustration extends StatelessWidget {
   const _Illustration({required this.icon});
 
-  final IconData icon;
+  final Widget icon;
 
   @override
   Widget build(BuildContext context) {
@@ -386,10 +392,7 @@ class _Illustration extends StatelessWidget {
           colors: [Color(0x40FFFFFF), Color(0x14FFFFFF)],
         ),
       ),
-      child: Align(
-        alignment: const Alignment(0, -0.35),
-        child: Icon(icon, size: 96, color: _white),
-      ),
+      child: Align(alignment: const Alignment(0, -0.35), child: icon),
     );
   }
 }

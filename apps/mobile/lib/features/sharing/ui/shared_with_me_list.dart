@@ -49,7 +49,7 @@ class SharedWithMeList extends ConsumerWidget {
     if (items.isEmpty) {
       return UiEmptyState(
         key: const ValueKey('shared-with-me-empty'),
-        icon: Icons.people_outline_rounded,
+        glyph: const OurneyIcon(name: 'squad', flat: true),
         title: l10n.sharing_emptyTitle,
         body: l10n.sharing_emptyMessage,
       );
@@ -175,8 +175,9 @@ class _SharedJourneyRowState extends ConsumerState<SharedJourneyRow> {
                   ? StoragePhoto(path: s.coverThumbPath!, cacheWidth: 200)
                   : ColoredBox(
                       color: style.accent,
-                      child: Icon(
-                        uiJourneyIcon(s.emoji, s.templateId),
+                      child: uiJourneyGlyph(
+                        s.emoji,
+                        s.templateId,
                         color: style.onAccent,
                       ),
                     ),
@@ -245,7 +246,8 @@ class _SharedJourneyRowState extends ConsumerState<SharedJourneyRow> {
               ],
             ),
           ),
-          if (!s.saved) Icon(Icons.chevron_right_rounded, color: ui.chevron),
+          if (!s.saved)
+            OurneyIcon(name: 'chevron-right', color: ui.chevron, flat: true),
         ],
       ),
     );

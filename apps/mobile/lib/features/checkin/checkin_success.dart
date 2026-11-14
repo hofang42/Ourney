@@ -115,7 +115,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
                   UiButton(
                     key: const ValueKey('checkin-share'),
                     label: l10n.checkin_share,
-                    icon: Icons.ios_share_rounded,
+                    glyph: const OurneyIcon(name: 'share', size: 20),
                     onPressed: widget.onShare,
                   ),
                   const SizedBox(height: UiSpace.sm),
@@ -296,8 +296,9 @@ class _MiniCalendar extends StatelessWidget {
         borderRadius: BorderRadius.circular(5),
       ),
       child: filled
-          ? Icon(
-              Icons.check_rounded,
+          ? OurneyIcon(
+              name: 'check',
+              flat: true,
               size: 11,
               color: ui.isDark ? ui.success : ui.warn,
             )

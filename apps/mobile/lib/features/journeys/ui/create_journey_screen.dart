@@ -736,7 +736,7 @@ class _EmojiChoice extends StatelessWidget {
             width: selected ? 2 : 1,
           ),
         ),
-        child: Icon(uiJourneyIcon(emoji, template), size: 26, color: ui.ink),
+        child: uiJourneyGlyph(emoji, template, size: 26, color: ui.ink),
       ),
     );
   }

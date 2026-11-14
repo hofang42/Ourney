@@ -78,14 +78,14 @@ class ContactScreen extends ConsumerWidget {
                 UiButton(
                   key: const ValueKey('safety-contact-send'),
                   label: l10n.safety_contactSend,
-                  icon: Icons.mail_rounded,
+                  glyph: const OurneyIcon(name: 'mail', flat: true),
                   onPressed: () => _send(context, ref),
                 ),
                 const SizedBox(height: UiSpace.sm),
                 UiButton.secondary(
                   key: const ValueKey('safety-contact-copy'),
                   label: l10n.safety_contactCopy,
-                  icon: Icons.copy_rounded,
+                  glyph: const OurneyIcon(name: 'copy', flat: true),
                   onPressed: () => _copy(context, ref),
                 ),
               ],

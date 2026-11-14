@@ -55,7 +55,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
       return UiScaffold(
         key: const ValueKey('placeholder-journey'),
         child: UiEmptyState(
-          icon: Icons.route_rounded,
+          glyph: const OurneyIcon(name: 'journeys', size: 40),
           title: l10n.journeys_title,
         ),
       );
@@ -79,7 +79,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               )
             else
               UiEmptyState(
-                icon: Icons.search_off_rounded,
+                glyph: const OurneyIcon(name: 'search', size: 40),
                 title: journeyAsync.hasError
                     ? journeyErrorMessage(context, journeyAsync.error!)
                     : l10n.journeys_errorNotFound,
@@ -145,7 +145,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                             label: progress?.checkedInToday ?? false
                                 ? l10n.journeys_addMore
                                 : l10n.journeys_checkInNow,
-                            icon: Icons.photo_camera_outlined,
+                            glyph: const OurneyIcon(
+                              name: 'camera',
+                              size: 20,
+                              flat: true,
+                            ),
                             accent: pal.accent,
                             onAccent: pal.onAccent,
                             expand: false,
@@ -173,11 +177,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                             for (final a in actions)
                               UiMenuItem(
                                 key: ValueKey('journey-action-${a.name}'),
-                                icon: switch (a) {
-                                  _Action.end => Icons.flag_outlined,
-                                  _Action.archive => Icons.inventory_2_outlined,
-                                  _Action.delete =>
-                                    Icons.delete_outline_rounded,
+                                glyph: switch (a) {
+                                  _Action.end => 'flag',
+                                  _Action.archive => 'inbox',
+                                  _Action.delete => 'trash',
                                 },
                                 destructive: a == _Action.delete,
                                 label: switch (a) {
@@ -211,7 +214,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       const SizedBox(height: UiSpace.lg),
                       UiButton.secondary(
                         key: const ValueKey('journey-open-group'),
-                        icon: Icons.people_outline_rounded,
+                        glyph: const OurneyIcon(
+                          name: 'squad',
+                          size: 20,
+                          flat: true,
+                        ),
                         label: l10n.journeys_openGroup,
                         onPressed: () => context.go(AppRoutes.groups),
                       ),
@@ -270,14 +277,14 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         children: [
           _ShareOption(
             key: const ValueKey('journey-share-card'),
-            icon: Icons.image_outlined,
+            icon: 'image',
             title: l10n.journeys_shareMakeCard,
             hint: l10n.journeys_shareMakeCardHint,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           _ShareOption(
             key: const ValueKey('journey-share-friends'),
-            icon: Icons.ios_share_rounded,
+            icon: 'share',
             title: l10n.journeys_shareJourney,
             hint: l10n.journeys_shareJourneyHint,
             onPressed: () => Navigator.of(context).pop(false),
@@ -389,7 +396,7 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           UiIconButton(
-            icon: Icons.arrow_back_rounded,
+            glyph: const OurneyIcon(name: 'back', size: 21, flat: true),
             label: l10n.journeys_back,
             onPressed: onBack,
           ),
@@ -415,14 +422,14 @@ class _Header extends StatelessWidget {
           ),
           UiIconButton(
             key: const ValueKey('journey-share'),
-            icon: Icons.ios_share_rounded,
+            glyph: const OurneyIcon(name: 'share', size: 21, flat: true),
             label: l10n.journeys_share,
             onPressed: onShare,
           ),
           if (canMore)
             UiIconButton(
               key: const ValueKey('journey-more'),
-              icon: Icons.more_horiz_rounded,
+              glyph: const OurneyIcon(name: 'more', size: 21, flat: true),
               label: l10n.journeys_moreActions,
               onPressed: onMore,
             )
@@ -443,7 +450,7 @@ class _ShareOption extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final String icon;
   final String title;
   final String hint;
   final VoidCallback onPressed;
@@ -454,7 +461,7 @@ class _ShareOption extends StatelessWidget {
     return UiRow(
       title: title,
       minHeight: 70,
-      leading: Icon(icon, size: 22, color: ui.ink),
+      leading: OurneyIcon(name: icon, size: 22, flat: true, color: ui.ink),
       subtitle: Text(
         hint,
         maxLines: 2,
@@ -480,7 +487,7 @@ class _ReadOnlyBanner extends StatelessWidget {
         padding: const EdgeInsets.all(UiSpace.md),
         child: Row(
           children: [
-            Icon(Icons.flag_rounded, color: ui.ink),
+            OurneyIcon(name: 'flag', size: 24, flat: true, color: ui.ink),
             const SizedBox(width: UiSpace.sm),
             Expanded(
               child: Text(
@@ -596,7 +603,7 @@ class _Stats extends StatelessWidget {
                 label: l10n.journeys_statCurrent,
                 shortLabel: l10n.journeys_statCurrentShort,
                 semantics: app.streak_semantics(s.current),
-                icon: Icons.local_fire_department_rounded,
+                icon: 'flame',
                 value: '${s.current}',
                 unit: l10n.journeys_daysUnit,
                 divider: true,
@@ -652,7 +659,7 @@ class _StatCell extends StatelessWidget {
   final String semantics;
   final String value;
   final bool divider;
-  final IconData? icon;
+  final String? icon;
   final String? unit;
 
   @override
@@ -676,7 +683,12 @@ class _StatCell extends StatelessWidget {
               Row(
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 11, color: ui.flame),
+                    OurneyIcon(
+                      name: icon!,
+                      size: 11,
+                      flat: true,
+                      color: ui.flame,
+                    ),
                     const SizedBox(width: 2),
                   ],
                   Flexible(

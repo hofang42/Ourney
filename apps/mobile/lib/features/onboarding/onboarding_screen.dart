@@ -114,7 +114,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                         Flexible(
                           child: UiChip(
                             key: const ValueKey('onboarding-language'),
-                            icon: Icons.translate_rounded,
+                            glyph: const OurneyIcon(
+                              name: 'translate',
+                              flat: true,
+                            ),
                             label: l10n.onboarding_languageSwitch,
                             semanticHint: l10n.onboarding_languageSwitchHint,
                             onPressed: _switchLanguage,

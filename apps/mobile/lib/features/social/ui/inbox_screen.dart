@@ -86,7 +86,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             leading: context.canPop()
                 ? UiIconButton(
                     key: const ValueKey('social-back'),
-                    icon: Icons.arrow_back_rounded,
+                    glyph: const OurneyIcon(name: 'back', flat: true),
                     label: MaterialLocalizations.of(context).backButtonTooltip,
                     onPressed: () => socialBack(context),
                   )
@@ -403,9 +403,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         onTap: () => setState(() {
           if (!_expanded.remove(journeyId)) _expanded.add(journeyId);
         }),
-        trailing: Icon(
-          open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+        trailing: OurneyIcon(
+          name: open ? 'chevron-up' : 'chevron-down',
           color: ui.inkMuted,
+          flat: true,
         ),
       ),
       if (open)
@@ -462,7 +463,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ],
       trailing: [
         UiIconButton(
-          icon: Icons.more_horiz_rounded,
+          glyph: const OurneyIcon(name: 'more', flat: true),
           label: l10n.social_more,
           onPressed: () => showUiSheet<void>(
             context: context,
@@ -471,7 +472,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               children: [
                 UiMenuItem(
                   label: l10n.social_block,
-                  icon: Icons.block_rounded,
+                  glyph: 'block',
                   onPressed: () {
                     Navigator.of(sheet).pop();
                     confirmBlock(context, userId: p.userId, name: name);
@@ -479,7 +480,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                 ),
                 UiMenuItem(
                   label: l10n.social_report,
-                  icon: Icons.flag_outlined,
+                  glyph: 'flag',
                   onPressed: () {
                     Navigator.of(sheet).pop();
                     showReportSheet(context, userId: p.userId, name: name);

@@ -148,7 +148,7 @@ class TodayCard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const OurneyIcon(name: 'react-fire', size: 17),
+                const OurneyIcon(name: 'flame', size: 17),
                 const SizedBox(width: 5),
                 Text(
                   '${progress.summary.current}',

@@ -70,7 +70,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     } else if (async.hasError) {
       body = UiEmptyState(
         key: const ValueKey('friends-error'),
-        icon: Icons.error_outline_rounded,
+        glyph: const OurneyIcon(name: 'error', flat: true),
         title: socialErrorMessage(context, async.error!),
         actionLabel: AppLocalizations.of(context).common_retry,
         onAction: () => ref.invalidate(friendshipsProvider),
@@ -87,7 +87,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
           : l10n.social_friendsSubtitle(friends.length),
       action: SocialHeaderAction(
         key: const ValueKey('friends-add'),
-        icon: Icons.person_add_alt_1_outlined,
+        icon: 'user-plus',
         label: l10n.social_add,
         onPressed: () => context.push(SocialPaths.friendsAdd),
       ),
@@ -109,7 +109,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     if (all.isEmpty) {
       return UiEmptyState(
         key: const ValueKey('friends-empty'),
-        icon: Icons.people_outline_rounded,
+        glyph: const OurneyIcon(name: 'squad', flat: true),
         title: l10n.social_emptyFriendsTitle,
         actionLabel: l10n.social_addFriends,
         onAction: () => context.push(SocialPaths.friendsAdd),
@@ -156,7 +156,12 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               person: f.person,
               onTap: () => showFriendSheet(context, f.person),
               trailing: [
-                Icon(Icons.chevron_right_rounded, size: 20, color: ui.chevron),
+                OurneyIcon(
+                  name: 'chevron-right',
+                  size: 20,
+                  color: ui.chevron,
+                  flat: true,
+                ),
               ],
             ),
         ],
@@ -284,7 +289,7 @@ class _FriendSheet extends ConsumerWidget {
         if (conversation != null)
           UiMenuItem(
             key: const ValueKey('friend-message'),
-            icon: Icons.chat_bubble_outline_rounded,
+            glyph: 'chat',
             label: l10n.social_message,
             onPressed: () {
               Navigator.of(context).pop();
@@ -293,7 +298,7 @@ class _FriendSheet extends ConsumerWidget {
           ),
         UiMenuItem(
           key: const ValueKey('friend-remove'),
-          icon: Icons.person_remove_outlined,
+          glyph: 'user-minus',
           label: l10n.social_removeFriend,
           destructive: true,
           onPressed: () async {
@@ -319,7 +324,7 @@ class _FriendSheet extends ConsumerWidget {
         ),
         UiMenuItem(
           key: const ValueKey('friend-block'),
-          icon: Icons.block_rounded,
+          glyph: 'block',
           label: l10n.social_block,
           onPressed: () {
             Navigator.of(context).pop();
@@ -328,7 +333,7 @@ class _FriendSheet extends ConsumerWidget {
         ),
         UiMenuItem(
           key: const ValueKey('friend-report'),
-          icon: Icons.flag_outlined,
+          glyph: 'flag',
           label: l10n.social_report,
           onPressed: () {
             Navigator.of(context).pop();

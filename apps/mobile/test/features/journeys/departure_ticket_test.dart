@@ -62,6 +62,9 @@ void main() {
     }
 
     testWidgets('$skin has no overflow at 1.35x / 320dp', (tester) async {
+      tester.view.physicalSize = const Size(320, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
       await tester.pumpWidget(
         _host(
           _ticket(skin, duration: 'không hẹn ngày về'),
@@ -103,7 +106,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('không hẹn ngày về'), findsOneWidget);
-    expect(find.text('∞'), findsOneWidget);
+    expect(find.byKey(const ValueKey('ticket-infinity')), findsOneWidget);
   });
 
   testWidgets('flexer bib shows the caller number', (tester) async {

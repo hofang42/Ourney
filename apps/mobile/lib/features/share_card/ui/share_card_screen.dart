@@ -71,7 +71,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
         scroll: false,
         child: UiFillScroll(
           child: UiEmptyState(
-            icon: Icons.construction_rounded,
+            glyph: const OurneyIcon(name: 'warning', size: 30),
             title: l10n.share_card_title,
             body: app.placeholder_comingSoon,
           ),
@@ -100,7 +100,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                         ),
                       )
                     : UiEmptyState(
-                        icon: Icons.search_off_rounded,
+                        glyph: const OurneyIcon(name: 'search', size: 30),
                         title: l10n.share_card_notFound,
                         actionLabel: app.common_close,
                         onAction: _back,
@@ -232,7 +232,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               label: _busy
                   ? l10n.share_card_preparing
                   : l10n.share_card_shareButton,
-              icon: Icons.ios_share_rounded,
+              glyph: const OurneyIcon(name: 'share', size: 20),
               loading: _busy,
               onPressed: _busy
                   ? null
@@ -295,7 +295,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.visibility_off_outlined, size: 20, color: ui.ink),
+                  OurneyIcon(name: 'lock', flat: true, size: 20, color: ui.ink),
                   const SizedBox(width: UiSpace.sm),
                   Expanded(
                     child: Text(
@@ -468,14 +468,17 @@ class _PhotoStrip extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   if (provider == null)
-                    Icon(Icons.photo_outlined, color: ui.inkMuted)
+                    OurneyIcon(name: 'image', flat: true, color: ui.inkMuted)
                   else
                     Image(
                       image: provider,
                       fit: BoxFit.cover,
                       gaplessPlayback: true,
-                      errorBuilder: (context, error, stack) =>
-                          Icon(Icons.photo_outlined, color: ui.inkMuted),
+                      errorBuilder: (context, error, stack) => OurneyIcon(
+                        name: 'image',
+                        flat: true,
+                        color: ui.inkMuted,
+                      ),
                     ),
                   // Selection is not shown by color alone.
                   if (selected)
@@ -487,8 +490,9 @@ class _PhotoStrip extends StatelessWidget {
                           color: ui.ink,
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          Icons.check_rounded,
+                        child: OurneyIcon(
+                          name: 'check',
+                          flat: true,
                           size: 16,
                           color: ui.bg,
                         ),

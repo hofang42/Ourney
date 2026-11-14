@@ -308,7 +308,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               liveRegion: true,
               child: Row(
                 children: [
-                  Icon(Icons.mark_email_read_outlined, color: ui.success),
+                  OurneyIcon(name: 'mail', flat: true, color: ui.success),
                   const SizedBox(width: UiSpace.sm),
                   Expanded(
                     child: Text(_info!, style: UiText.body(color: ui.ink)),

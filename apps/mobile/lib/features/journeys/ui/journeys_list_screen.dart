@@ -278,6 +278,7 @@ class _HubBody extends ConsumerWidget {
               children: [
                 UiMenuItem(
                   key: const ValueKey('journeys-menu-new'),
+                  glyph: 'plus',
                   label: l10n.journeys_newJourney,
                   onPressed: () {
                     onCloseMenu();
@@ -287,6 +288,7 @@ class _HubBody extends ConsumerWidget {
                 if (online)
                   UiMenuItem(
                     key: const ValueKey('journeys-menu-retell'),
+                    glyph: 'sparkle',
                     label: l10n.journeys_retell,
                     onPressed: () {
                       onCloseMenu();
