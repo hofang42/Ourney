@@ -6,23 +6,32 @@ import '../tokens.dart';
 import '../typography.dart';
 import 'buttons.dart';
 
-/// Empty / error state: round glyph, h2 title, muted body and an optional
-/// action. Always tells the person what to do next.
+/// Empty / error state: sticker icon slot, Space Grotesk h2 title, muted body
+/// and an optional pill action. Always tells the person what to do next.
 class UiEmptyState extends StatelessWidget {
   const UiEmptyState({
-    required this.icon,
+    this.icon,
+    this.glyph,
     required this.title,
     this.body,
     this.actionLabel,
     this.onAction,
+    this.actionKey,
     super.key,
-  });
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
   final String title;
   final String? body;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// Key of the action button.
+  final Key? actionKey;
 
   @override
   Widget build(BuildContext context) {
@@ -36,21 +45,29 @@ class UiEmptyState extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
+                key: const ValueKey('ui-empty-icon'),
                 width: 72,
                 height: 72,
                 decoration: BoxDecoration(
                   color: ui.fill,
                   shape: BoxShape.circle,
+                  border: ui.stickerBorder(),
+                  boxShadow: ui.hardShadow(UiShadow.small),
                 ),
-                child: Icon(icon, size: 30, color: ui.ink),
+                child: glyph ?? Icon(icon, size: 30, color: ui.ink),
               ),
-              const SizedBox(height: UiSpace.lg),
+              const SizedBox(height: UiSpace.xl),
               Semantics(
                 header: true,
                 child: Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: UiText.h2(color: ui.ink),
+                  style: UiText.heading(
+                    font: 'Space Grotesk',
+                    size: 22,
+                    height: 1.3,
+                    color: ui.ink,
+                  ),
                 ),
               ),
               if (body != null) ...[
@@ -63,7 +80,8 @@ class UiEmptyState extends StatelessWidget {
               ],
               if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: UiSpace.xxl),
-                UiButton(
+                UiButton.secondary(
+                  key: actionKey,
                   label: actionLabel!,
                   onPressed: onAction,
                   expand: false,
@@ -72,6 +90,96 @@ class UiEmptyState extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// `.skeleton-piece` placeholder: 2dp outline at 45% ink, shimmer sweep every
+/// 1.35s. Static (no animation) when `MediaQuery.disableAnimations` is on.
+class UiSkeleton extends StatefulWidget {
+  const UiSkeleton({
+    this.width,
+    this.height = 16,
+    this.radius = UiRadius.input,
+    this.circle = false,
+    super.key,
+  });
+
+  final double? width;
+  final double height;
+  final double radius;
+  final bool circle;
+
+  static const shimmer = Duration(milliseconds: 1350);
+
+  @override
+  State<UiSkeleton> createState() => _UiSkeletonState();
+}
+
+class _UiSkeletonState extends State<UiSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: UiSkeleton.shimmer,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (still) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final shape = widget.circle ? BoxShape.circle : BoxShape.rectangle;
+    final radius = widget.circle ? null : BorderRadius.circular(widget.radius);
+    // Base surface with a moving ink band at 9% alpha blended over it.
+    final base = ui.surface;
+    final band = Color.alphaBlend(ui.ink.withValues(alpha: 0.09), base);
+    return ExcludeSemantics(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Without an explicit width the skeleton fills its parent.
+          final width =
+              widget.width ??
+              (constraints.maxWidth.isFinite ? constraints.maxWidth : null);
+          return AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final t = _c.value;
+              return Container(
+                width: width,
+                height: widget.height,
+                decoration: BoxDecoration(
+                  shape: shape,
+                  borderRadius: radius,
+                  border: Border.all(
+                    color: ui.ink.withValues(alpha: 0.45),
+                    width: UiBorder.standard,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment(-1.5 + 3 * t, 0),
+                    end: Alignment(-0.5 + 3 * t, 0),
+                    colors: [base, band, base],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -102,7 +210,7 @@ class UiProgressBar extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: FractionallySizedBox(
           widthFactor: value.clamp(0, 1).toDouble(),
-          child: Container(color: color ?? ui.brand),
+          child: Container(color: color ?? ui.accent),
         ),
       ),
     );
@@ -138,7 +246,7 @@ class UiProgressRing extends StatelessWidget {
           painter: _RingPainter(
             value: value.clamp(0, 1).toDouble(),
             track: ui.divider,
-            color: color ?? ui.brand,
+            color: color ?? ui.accent,
           ),
           child: Center(
             child: ExcludeSemantics(
@@ -226,7 +334,7 @@ class UiInlineError extends StatelessWidget {
               ? ui.danger.withValues(alpha: 0.14)
               : const Color(0xFFFEF3F2),
           borderRadius: BorderRadius.circular(UiRadius.input),
-          border: Border.all(color: ui.danger.withValues(alpha: 0.5)),
+          border: Border.all(color: ui.danger, width: UiBorder.standard),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,9 +354,11 @@ class UiInlineError extends StatelessWidget {
   }
 }
 
-/// `.toast`: ink pill with paper text. Fixed behavior so it never covers the
-/// primary action.
-/// [bottomOffset] lifts it above a pinned bottom button.
+/// V2 `.system-toast`: ink pill with paper text, 3dp brand hard shadow,
+/// 150ms in/out. [bottomOffset] is the gap above whatever the Scaffold already
+/// reserves: a floating SnackBar is lifted above `bottomNavigationBar` by
+/// the Scaffold itself, so it must stay small (adding the dock height here
+/// double-counted it and covered controls).
 void showUiToast(
   BuildContext context,
   String message, {
@@ -256,23 +366,42 @@ void showUiToast(
 }) {
   final ui = context.ui;
   final messenger = ScaffoldMessenger.maybeOf(context);
+  final d = UiMotion.of(context, const Duration(milliseconds: 150));
   messenger?.hideCurrentSnackBar();
   messenger?.showSnackBar(
     SnackBar(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: ui.ink,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      padding: EdgeInsets.zero,
       shape: const StadiumBorder(),
+      // Let the hard shadow paint outside the snackbar's own bounds.
+      clipBehavior: Clip.none,
       margin: EdgeInsets.fromLTRB(24, 0, 24, bottomOffset),
-      content: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: UiText.body(
-          size: 13,
-          weight: FontWeight.w700,
-          height: 1.4,
-          color: ui.bg,
+      content: Center(
+        child: Container(
+          key: const ValueKey('ui-toast'),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: BoxDecoration(
+            color: ui.ink,
+            borderRadius: BorderRadius.circular(UiRadius.capsule),
+            boxShadow: UiShadow.hard(ui.brand, UiShadow.small),
+          ),
+          child: Text(
+            message,
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 13,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.bg,
+            ),
+          ),
         ),
       ),
     ),
+    snackBarAnimationStyle: AnimationStyle(duration: d, reverseDuration: d),
   );
 }

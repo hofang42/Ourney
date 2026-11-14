@@ -11,8 +11,13 @@ import 'typography.dart';
 /// [OurneyUi]; the persona skin never recolors the shell (journey accents come
 /// from `uiStyleForSkin`). Extension installed: [OurneyUi].
 abstract final class OurneyTheme {
-  static ThemeData build(Brightness brightness, [PersonaSkinId? skin]) {
-    final ui = brightness == Brightness.dark ? OurneyUi.dark : OurneyUi.light;
+  static ThemeData build(Brightness brightness, [PersonaSkinId? skin]) =>
+      fromUi(brightness == Brightness.dark ? OurneyUi.dark : OurneyUi.light);
+
+  /// The [ThemeData] for an arbitrary [OurneyUi] palette (e.g. a recolored
+  /// skin), so the Material colorScheme and sub-themes follow the palette.
+  static ThemeData fromUi(OurneyUi ui) {
+    final brightness = ui.brightness;
     final scheme = ColorScheme(
       brightness: brightness,
       primary: ui.brand,

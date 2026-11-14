@@ -20,6 +20,9 @@ void main() {
       ],
     );
     // First launch: the in-context pre-prompt comes before the OS prompt.
+    // The panel scrolls; bring the button above the camera tools first.
+    await tester.ensureVisible(find.text('Cho phép camera'));
+    await tester.pump();
     await tester.tap(find.text('Cho phép camera'));
     await tester.pumpAndSettle();
     expect(camera.starts, 1);

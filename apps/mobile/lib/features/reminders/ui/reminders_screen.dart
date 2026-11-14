@@ -263,32 +263,15 @@ class _JourneyReminderTile extends StatelessWidget {
               ),
               const SizedBox(width: UiSpace.md),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      journey.title,
-                      style: UiText.body(
-                        color: ui.ink,
-                        weight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      setting.enabled
-                          ? l10n.reminders_timeOn(time)
-                          : l10n.reminders_timeOff,
-                      style: UiText.muted(color: ui.inkMuted, size: 13),
-                    ),
-                  ],
-                ),
-              ),
-              Semantics(
-                label: l10n.reminders_toggleLabel(journey.title),
-                child: Switch(
+                child: UiSwitchRow(
                   key: ValueKey('reminders-toggle-${journey.id}'),
+                  label: journey.title,
+                  semanticsLabel: l10n.reminders_toggleLabel(journey.title),
+                  subtitle: setting.enabled
+                      ? l10n.reminders_timeOn(time)
+                      : l10n.reminders_timeOff,
                   value: setting.enabled,
+                  divider: false,
                   onChanged: onToggle,
                 ),
               ),

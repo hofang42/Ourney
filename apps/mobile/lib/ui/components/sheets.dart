@@ -4,20 +4,35 @@ import '../tokens.dart';
 import '../typography.dart';
 import 'buttons.dart';
 
-/// `.bottom-sheet`: 28dp top radius, paper background, grabber, 280ms
-/// slide-in (supplied by [showUiSheet]). Content scrolls when it is taller
-/// than the available height, so large text never overflows.
+/// V2 `.app-sheet`: 24dp top radius, 2dp outline on top/left/right only,
+/// hard `0 -4px 0` top shadow in [accent], grabber, solid `ui.bg` body.
+/// Enter motion (190ms ease-out) is supplied by [showUiSheet]. Content scrolls
+/// when taller than the available height, so large text never overflows.
 class UiSheet extends StatelessWidget {
-  const UiSheet({required this.child, this.showGrabber = true, super.key});
+  const UiSheet({
+    required this.child,
+    this.showGrabber = true,
+    this.accent,
+    super.key,
+  });
 
   final Widget child;
   final bool showGrabber;
+
+  /// Top hard-shadow color (`--accent`). Defaults to `context.ui.accent`.
+  final Color? accent;
+
+  static const double radius = 24;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final mq = MediaQuery.of(context);
     final width = mq.size.width;
+    const outer = BorderRadius.vertical(top: Radius.circular(radius));
+    const inner = BorderRadius.vertical(
+      top: Radius.circular(radius - UiBorder.standard),
+    );
     return Align(
       alignment: Alignment.bottomCenter,
       child: ConstrainedBox(
@@ -25,45 +40,60 @@ class UiSheet extends StatelessWidget {
           maxWidth: UiSpace.maxContent(width) + 40,
           maxHeight: mq.size.height * 0.92,
         ),
-        child: Container(
+        // A non-uniform border cannot follow a radius, so the 2dp outline is
+        // the ink-colored outer shape and the solid body is inset on top/sides.
+        child: DecoratedBox(
+          key: const ValueKey('ui-sheet-outline'),
           decoration: BoxDecoration(
-            color: ui.bg,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(UiRadius.sheet),
-            ),
-            boxShadow: const [
+            color: ui.outline,
+            borderRadius: outer,
+            boxShadow: [
               BoxShadow(
-                color: Color(0x33000000),
-                blurRadius: 40,
-                offset: Offset(0, -12),
+                color: accent ?? ui.accent,
+                offset: const Offset(0, -UiShadow.large),
               ),
             ],
           ),
-          padding: EdgeInsets.fromLTRB(
-            UiSpace.xl,
-            12,
-            UiSpace.xl,
-            28 + mq.viewPadding.bottom + mq.viewInsets.bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (showGrabber) ...[
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: ui.grabber,
-                      borderRadius: BorderRadius.circular(UiRadius.capsule),
-                    ),
-                  ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              UiBorder.standard,
+              UiBorder.standard,
+              UiBorder.standard,
+              0,
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: ui.bg, borderRadius: inner),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  UiSpace.xl,
+                  12,
+                  UiSpace.xl,
+                  28 + mq.viewPadding.bottom + mq.viewInsets.bottom,
                 ),
-                const SizedBox(height: UiSpace.lg),
-              ],
-              Flexible(child: SingleChildScrollView(child: child)),
-            ],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (showGrabber) ...[
+                      Center(
+                        child: Container(
+                          width: 42,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: ui.grabber,
+                            borderRadius: BorderRadius.circular(
+                              UiRadius.capsule,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: UiSpace.lg),
+                    ],
+                    Flexible(child: SingleChildScrollView(child: child)),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -71,14 +101,16 @@ class UiSheet extends StatelessWidget {
   }
 }
 
-/// Opens [builder] in a [UiSheet] over the `.modal-layer` scrim.
+/// Opens [builder] in a [UiSheet] over the `.app-sheet-scrim` scrim.
 Future<T?> showUiSheet<T>({
   required BuildContext context,
   required WidgetBuilder builder,
   bool dismissible = true,
   bool useRootNavigator = true,
+  Color? accent,
 }) {
   final ui = context.ui;
+  final duration = UiMotion.of(context, const Duration(milliseconds: 190));
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -91,11 +123,11 @@ Future<T?> showUiSheet<T>({
     barrierColor: ui.scrim,
     constraints: const BoxConstraints(maxWidth: double.infinity),
     sheetAnimationStyle: AnimationStyle(
-      duration: UiMotion.sheet,
-      reverseDuration: UiMotion.sheet,
+      duration: duration,
+      reverseDuration: duration,
       curve: Curves.easeOut,
     ),
-    builder: (context) => UiSheet(child: builder(context)),
+    builder: (context) => UiSheet(accent: accent, child: builder(context)),
   );
 }
 
@@ -136,6 +168,7 @@ class UiPermissionSheetContent extends StatelessWidget {
             decoration: BoxDecoration(
               color: ui.permissionIconBg,
               shape: BoxShape.circle,
+              border: ui.stickerBorder(),
             ),
             child: Icon(icon, size: 27, color: ui.ink),
           ),
@@ -186,9 +219,11 @@ Future<bool> showUiPermissionSheet({
   Key? sheetKey,
   Key? primaryKey,
   Key? secondaryKey,
+  Color? accent,
 }) async {
   final result = await showUiSheet<bool>(
     context: context,
+    accent: accent,
     builder: (context) => UiPermissionSheetContent(
       key: sheetKey,
       icon: icon,

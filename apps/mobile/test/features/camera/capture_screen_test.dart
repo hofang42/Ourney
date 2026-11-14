@@ -175,6 +175,12 @@ void main() {
       expect(find.byKey(const ValueKey('capture-pre-prompt')), findsOneWidget);
       expect(camera.starts, 0);
 
+      // The panel scrolls; bring the button above the camera tools first.
+
+      await tester.ensureVisible(find.text('Cho phép camera'));
+
+      await tester.pump();
+
       await tester.tap(find.text('Cho phép camera'));
       await tester.pumpAndSettle();
       expect(camera.starts, 1);

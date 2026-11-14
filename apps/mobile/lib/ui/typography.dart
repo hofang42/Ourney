@@ -12,14 +12,19 @@ abstract final class UiFonts {
   static const barlowCondensed = 'BarlowCondensed';
   static const mono = 'SpaceMono';
 
-  /// Bundled family for a V2 skin `headingFont` name (StyleGuide spelling).
-  static String forHeading(String headingFont) => switch (headingFont) {
-    'Fraunces' => fraunces,
-    'Playfair Display' => playfair,
-    'Barlow Condensed' => barlowCondensed,
-    'Space Grotesk' => spaceGrotesk,
-    _ => spaceGrotesk,
-  };
+  /// Bundled family for a V2 skin heading. Accepts the StyleGuide spelling
+  /// ('Playfair Display'), the bundled family name ('PlayfairDisplay', what
+  /// `UiSkinScopeData.headingFont` returns) and the skin ids ('couple').
+  /// Unknown names fall back to Space Grotesk.
+  static String forHeading(String headingFont) {
+    final key = headingFont.toLowerCase().replaceAll(RegExp(r'[\s_-]'), '');
+    return switch (key) {
+      'fraunces' || 'quiet' || 'memory' => fraunces,
+      'playfairdisplay' || 'playfair' || 'couple' => playfair,
+      'barlowcondensed' || 'barlow' || 'flexer' => barlowCondensed,
+      _ => spaceGrotesk,
+    };
+  }
 }
 
 /// Type styles from index.css. Vietnamese needs generous leading, so every

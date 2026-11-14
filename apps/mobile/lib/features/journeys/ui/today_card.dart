@@ -99,7 +99,7 @@ class TodayCard extends ConsumerWidget {
                       stops: const [0.45, 1],
                       colors: [
                         Colors.transparent,
-                        Colors.black.withValues(alpha: 0.8),
+                        UiCamera.bg.withValues(alpha: 0.8),
                       ],
                     ),
                   ),
@@ -146,11 +146,7 @@ class TodayCard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.local_fire_department_rounded,
-                  size: 17,
-                  color: ui.flame,
-                ),
+                const OurneyIcon(name: 'react-fire', size: 17),
                 const SizedBox(width: 5),
                 Text(
                   '${progress.summary.current}',

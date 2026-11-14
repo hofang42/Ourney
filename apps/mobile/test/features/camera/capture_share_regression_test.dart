@@ -47,6 +47,9 @@ void main() {
         ],
       );
       final router = c.read(routerProvider);
+      // The panel scrolls; bring the button above the camera tools first.
+      await tester.ensureVisible(find.text('Cho phép camera'));
+      await tester.pump();
       await tester.tap(find.text('Cho phép camera'));
       await tester.pumpAndSettle();
 
@@ -103,6 +106,9 @@ void main() {
         ),
       ],
     );
+    // The panel scrolls; bring the button above the camera tools first.
+    await tester.ensureVisible(find.text('Cho phép camera'));
+    await tester.pump();
     await tester.tap(find.text('Cho phép camera'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('capture-shutter')));

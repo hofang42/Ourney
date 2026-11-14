@@ -1,18 +1,132 @@
+import 'dart:ui' as ui_;
+
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
-import 'buttons.dart';
+import 'pressable.dart';
+
+/// `.screen-header > button`: 44dp circular icon button, 1.5dp ink outline,
+/// surface fill, inside a 48dp hit area. Use it in [UiTopBar.actions] /
+/// [UiTopBar.leading] so every header control matches.
+class UiBarIconButton extends StatelessWidget {
+  const UiBarIconButton({
+    this.icon,
+    this.glyph,
+    required this.label,
+    required this.onPressed,
+    this.iconSize = 21,
+    super.key,
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
+
+  final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
+
+  /// Required: icon-only controls must be announced.
+  final String label;
+  final VoidCallback? onPressed;
+  final double iconSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return UiPressable(
+      onPressed: onPressed,
+      semanticLabel: label,
+      excludeChildSemantics: true,
+      centerChild: true,
+      borderRadius: BorderRadius.circular(UiRadius.capsule),
+      child: Container(
+        key: const ValueKey('ui-bar-icon-button'),
+        width: 44,
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: ui.surface,
+          shape: BoxShape.circle,
+          border: ui.stickerBorder(UiBorder.thin),
+        ),
+        child:
+            glyph ??
+            Icon(
+              icon,
+              size: iconSize,
+              color: onPressed == null ? ui.inkMuted : ui.ink,
+            ),
+      ),
+    );
+  }
+}
+
+/// Header chrome: 1dp bottom border at 12% ink, optional frosted fill for a
+/// header that content scrolls under (`.screen-header`, bg at 92%).
+class _BarFrame extends StatelessWidget {
+  const _BarFrame({
+    required this.child,
+    required this.glass,
+    required this.bordered,
+    required this.minHeight,
+    this.reduceTransparency = false,
+  });
+
+  final Widget child;
+  final bool glass;
+  final bool bordered;
+  final double minHeight;
+
+  /// App-level "reduce transparency": solid fill, no blur (like UiGlass).
+  final bool reduceTransparency;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final solid =
+        reduceTransparency ||
+        (MediaQuery.maybeOf(context)?.highContrast ?? false);
+    Widget bar = Container(
+      constraints: BoxConstraints(minHeight: minHeight),
+      decoration: BoxDecoration(
+        color: glass ? ui.bg.withValues(alpha: solid ? 1 : 0.92) : null,
+        border: bordered
+            ? Border(
+                bottom: BorderSide(
+                  color: ui.ink.withValues(alpha: 0.12),
+                  width: UiBorder.hairline,
+                ),
+              )
+            : null,
+      ),
+      child: child,
+    );
+    if (glass && !solid) {
+      bar = ClipRect(
+        child: BackdropFilter(
+          filter: ui_.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: bar,
+        ),
+      );
+    }
+    return bar;
+  }
+}
 
 /// `.topbar`: leading title block + trailing actions (`.top-actions`),
-/// min 48dp tall. The title is a bold h1/h2 and ellipsizes.
+/// min 48dp tall, 1dp bottom border. The title is a bold h1 (27) and
+/// ellipsizes. [glass] is for a bar that content scrolls under; default is a
+/// solid, transparent-fill bar.
 class UiTopBar extends StatelessWidget {
   const UiTopBar({
     this.title,
     this.eyebrow,
     this.leading,
     this.actions = const [],
-    this.titleSize = 22,
+    this.titleSize = 27,
+    this.glass = false,
+    this.bordered = true,
+    this.reduceTransparency = false,
     super.key,
   });
 
@@ -21,12 +135,20 @@ class UiTopBar extends StatelessWidget {
   final Widget? leading;
   final List<Widget> actions;
   final double titleSize;
+  final bool glass;
+  final bool bordered;
+
+  /// Solid fill instead of the frosted [glass] blur.
+  final bool reduceTransparency;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: UiSize.tap),
+    return _BarFrame(
+      glass: glass,
+      bordered: bordered,
+      reduceTransparency: reduceTransparency,
+      minHeight: UiSize.tap,
       child: Row(
         children: [
           ?leading,
@@ -62,8 +184,9 @@ class UiTopBar extends StatelessWidget {
   }
 }
 
-/// `.detail-nav`: back button, centered title (+ optional subtitle) and an
-/// optional trailing action, with an optional hairline below.
+/// `.screen-header`: 44dp outlined back button, centered h1 title (27)
+/// with an optional subtitle, and an optional trailing action. 1dp bottom
+/// border at 12% ink; [glass] only when content scrolls under it.
 class UiBackHeader extends StatelessWidget {
   const UiBackHeader({
     required this.onBack,
@@ -71,7 +194,9 @@ class UiBackHeader extends StatelessWidget {
     this.title,
     this.subtitle,
     this.trailing,
-    this.bordered = false,
+    this.bordered = true,
+    this.glass = false,
+    this.reduceTransparency = false,
     super.key,
   });
 
@@ -81,18 +206,22 @@ class UiBackHeader extends StatelessWidget {
   final String? subtitle;
   final Widget? trailing;
   final bool bordered;
+  final bool glass;
+
+  /// Solid fill instead of the frosted [glass] blur.
+  final bool reduceTransparency;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      decoration: BoxDecoration(
-        border: bordered ? Border(bottom: BorderSide(color: ui.divider)) : null,
-      ),
+    return _BarFrame(
+      glass: glass,
+      bordered: bordered,
+      reduceTransparency: reduceTransparency,
+      minHeight: 56,
       child: Row(
         children: [
-          UiIconButton(
+          UiBarIconButton(
             icon: Icons.arrow_back_rounded,
             label: backLabel,
             onPressed: onBack,
@@ -102,16 +231,20 @@ class UiBackHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (title != null)
-                  Text(
-                    title!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: UiText.body(
-                      size: 14,
-                      weight: FontWeight.w700,
-                      height: 1.4,
-                      color: ui.ink,
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      title!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: UiText.heading(
+                        font: 'Space Grotesk',
+                        size: 27,
+                        weight: 700,
+                        tracking: -0.02,
+                        color: ui.ink,
+                      ),
                     ),
                   ),
                 if (subtitle != null)

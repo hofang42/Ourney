@@ -92,17 +92,33 @@ class UiSkin {
     return v;
   }
 
-  /// The shell palette recolored for this skin and variant.
+  /// The shell palette recolored for this skin and variant. Neutral roles that
+  /// the skin does not define (fills, hairlines, grabber, dock) are derived
+  /// from the skin's own bg/surface/ink so a cool skin never shows warm-beige
+  /// leftovers from the shell.
   OurneyUi apply(OurneyUi base, {int variantIndex = 0}) {
     final p = palette(base.brightness);
     final v = resolvedVariant(variantIndex, base.brightness);
+    Color tint(Color over, Color on, double a) =>
+        Color.alphaBlend(over.withValues(alpha: a), on);
     return base.copyWith(
       bg: p.bg,
       surface: p.surface,
+      surfaceInput: p.surface,
+      fill: tint(p.ink, p.bg, 0.06),
+      fillSelected: p.surface,
       ink: p.ink,
       inkMuted: p.muted,
+      inkSoft: Color.lerp(p.ink, p.muted, 0.35),
+      border: tint(p.ink, p.bg, 0.16),
+      inputBorder: p.ink,
+      divider: tint(p.ink, p.bg, 0.10),
       brand: v.button,
       onBrand: v.buttonLabel,
+      grabber: tint(p.muted, p.bg, 0.5),
+      dockBg: p.surface.withValues(alpha: 0.92),
+      dockBorder: p.ink,
+      permissionIconBg: tint(p.ink, p.bg, 0.06),
       accent: v.accent,
     );
   }

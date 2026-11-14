@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../tokens.dart';
 import '../typography.dart';
 import 'pressable.dart';
+import 'skin_scope.dart';
 
 enum UiButtonVariant {
   /// `.brand-primary` / `.primary-wide`: coral fill, ink label.
@@ -23,6 +24,7 @@ class UiButton extends StatelessWidget {
     required this.onPressed,
     this.variant = UiButtonVariant.primary,
     this.icon,
+    this.glyph,
     this.compact = false,
     this.expand = true,
     this.loading = false,
@@ -35,6 +37,7 @@ class UiButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.glyph,
     this.compact = false,
     this.expand = true,
     this.loading = false,
@@ -47,6 +50,7 @@ class UiButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.icon,
+    this.glyph,
     this.compact = false,
     this.expand = true,
     this.loading = false,
@@ -59,6 +63,10 @@ class UiButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final UiButtonVariant variant;
   final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
   final bool compact;
   final bool expand;
   final bool loading;
@@ -83,11 +91,16 @@ class UiButton extends StatelessWidget {
       case UiButtonVariant.primary:
         bg = enabled ? (accent ?? ui.brand) : ui.surface;
         fg = enabled ? (onAccent ?? ui.onBrand) : ui.inkMuted;
+        // Quiet skin: hairline 1.5 border and a 2dp shadow, like the dock.
+        final skinBorder =
+            UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
         side = BorderSide(
           color: enabled ? ui.outline : ui.inkMuted,
-          width: UiBorder.standard,
+          width: skinBorder,
         );
-        shadow = enabled ? UiShadow.large : 0;
+        shadow = !enabled
+            ? 0
+            : (skinBorder < UiBorder.standard ? UiShadow.tiny : UiShadow.large);
       case UiButtonVariant.secondary:
         bg = ui.surface;
         fg = enabled ? ui.ink : ui.inkMuted;
@@ -118,9 +131,12 @@ class UiButton extends StatelessWidget {
             height: 18,
             child: CircularProgressIndicator(strokeWidth: 2, color: fg),
           )
+        else if (glyph != null)
+          enabled ? glyph! : Opacity(opacity: 0.4, child: glyph!)
         else if (icon != null)
           Icon(icon, size: 18, color: fg),
-        if (loading || icon != null) const SizedBox(width: UiSpace.sm),
+        if (loading || icon != null || glyph != null)
+          const SizedBox(width: UiSpace.sm),
         Flexible(child: text),
       ],
     );
@@ -153,7 +169,8 @@ class UiButton extends StatelessWidget {
 /// `.icon-button`: 48x48 circle target, 21dp glyph, stroke 1.8.
 class UiIconButton extends StatelessWidget {
   const UiIconButton({
-    required this.icon,
+    this.icon,
+    this.glyph,
     required this.label,
     required this.onPressed,
     this.color,
@@ -161,9 +178,13 @@ class UiIconButton extends StatelessWidget {
     this.size = UiSize.tap,
     this.iconSize = 21,
     super.key,
-  });
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
 
   /// Required: icon-only controls must be announced.
   final String label;
@@ -186,11 +207,13 @@ class UiIconButton extends StatelessWidget {
         height: size < UiSize.tap ? UiSize.tap : size,
         alignment: Alignment.center,
         decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-        child: Icon(
-          icon,
-          size: iconSize,
-          color: onPressed == null ? ui.inkMuted : (color ?? ui.ink),
-        ),
+        child:
+            glyph ??
+            Icon(
+              icon,
+              size: iconSize,
+              color: onPressed == null ? ui.inkMuted : (color ?? ui.ink),
+            ),
       ),
     );
   }

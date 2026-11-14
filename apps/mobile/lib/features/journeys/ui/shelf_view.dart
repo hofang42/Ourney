@@ -222,6 +222,7 @@ class _AlbumCard extends ConsumerWidget {
                       label: l10n.journeys_imported,
                       background: UiCamera.bg,
                       foreground: UiCamera.ink,
+                      borderColor: UiCamera.outline,
                     ),
                   ),
               ],

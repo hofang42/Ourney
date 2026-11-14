@@ -69,6 +69,11 @@ void main() {
           .apply(OurneyUi.dark, variantIndex: 1);
       expect(minimal.brand, const Color(0xFFF4F4F5));
       expect(minimal.onBrand, const Color(0xFF0E0E10));
+      // Derived neutrals follow the skin, not the warm shell.
+      expect(quiet.surfaceInput, quiet.surface);
+      expect(quiet.inputBorder, quiet.ink);
+      expect(quiet.fill, isNot(OurneyUi.light.fill));
+      expect(quiet.divider, isNot(OurneyUi.light.divider));
       expect(uiSkinById('quiet').borderWidth, UiBorder.thin);
       expect(uiSkinById('nope').id, 'minimal');
     });
@@ -198,6 +203,31 @@ void main() {
         expect((deco().border! as Border).top.width, UiBorder.standard);
         expect(find.byType(ClipPath), findsOneWidget);
 
+        // The painted shadow: 4dp offset in the palette outline (ink).
+        ({double dx, double dy, Color color}) shadow() {
+          final clip = find.descendant(
+            of: find.byType(UiGlass),
+            matching: find.byType(ClipPath),
+          );
+          final t = tester.widget<Transform>(
+            find.descendant(of: clip, matching: find.byType(Transform)),
+          );
+          final box = tester.widget<DecoratedBox>(
+            find.descendant(of: clip, matching: find.byType(DecoratedBox)),
+          );
+          final v = t.transform.getTranslation();
+          return (
+            dx: v.x,
+            dy: v.y,
+            color: (box.decoration as BoxDecoration).color!,
+          );
+        }
+
+        final hard = shadow();
+        expect(hard.dx, UiShadow.large);
+        expect(hard.dy, UiShadow.large);
+        expect(hard.color, OurneyUi.light.outline);
+
         await tester.pumpWidget(
           host(const UiGlass(hardShadow: 0, child: Text('glass'))),
         );
@@ -209,6 +239,10 @@ void main() {
         );
         expect((deco().border! as Border).top.color, UiCamera.outline);
         expect(find.byType(ClipPath), findsOneWidget);
+        final cam = shadow();
+        expect(cam.dx, UiShadow.tiny);
+        expect(cam.dy, UiShadow.tiny);
+        expect(cam.color, UiCamera.shadow);
       },
     );
 
@@ -372,8 +406,8 @@ void main() {
       expect(
         tester.getSize(
           find
-              .ancestor(
-                of: find.byIcon(Icons.photo_camera_outlined),
+              .descendant(
+                of: find.byType(UiSnapPill),
                 matching: find.byType(Container),
               )
               .first,

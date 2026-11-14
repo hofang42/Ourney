@@ -31,18 +31,20 @@ class UiDivider extends StatelessWidget {
       Container(height: 1, color: context.ui.divider);
 }
 
-/// Bordered surface (`.shared-compact-list > button`, `.hub-all-done`,
-/// `.template-choice`, `.mini-calendar`). Square-cornered by default like the
-/// journey/today cards; pass [radius] for the rounded variants (16 / 20).
+/// Sticker surface (`.create-deck-card`, `.settings-card`, `.hub-all-done`):
+/// 2dp outline, 16dp radius, 4dp hard shadow, never glass. Interactive cards
+/// use the sticker press (translate by the offset, shadow drops). Pass
+/// [shadowOffset] 0 for a flat outlined card.
 class UiCard extends StatelessWidget {
   const UiCard({
     required this.child,
     this.padding = const EdgeInsets.all(UiSpace.lg),
-    this.radius = 0,
+    this.radius = UiRadius.menu,
     this.color,
     this.borderColor,
     this.onPressed,
     this.semanticLabel,
+    this.shadowOffset = UiShadow.large,
     super.key,
   });
 
@@ -53,16 +55,24 @@ class UiCard extends StatelessWidget {
   final Color? borderColor;
   final VoidCallback? onPressed;
   final String? semanticLabel;
+  final double shadowOffset;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final shape = BorderRadius.circular(radius);
     final box = Container(
       padding: padding,
       decoration: BoxDecoration(
         color: color ?? ui.surface,
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: borderColor ?? ui.border),
+        borderRadius: shape,
+        border: Border.all(
+          color: borderColor ?? ui.outline,
+          width: UiBorder.standard,
+        ),
+        boxShadow: onPressed == null && shadowOffset > 0
+            ? ui.hardShadow(shadowOffset)
+            : null,
       ),
       child: child,
     );
@@ -70,13 +80,16 @@ class UiCard extends StatelessWidget {
     return UiPressable(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
-      borderRadius: BorderRadius.circular(radius),
+      borderRadius: shape,
+      shadowOffset: shadowOffset,
       child: box,
     );
   }
 }
 
-/// `.journey-row`: leading thumb, two lines of copy, chevron, hairline below.
+/// `.journey-row`: leading thumb, two lines of copy, chevron, hairline below
+/// (12% ink). Pass [sticker] to render it as an outlined 16dp card with the
+/// 4dp hard shadow instead of a divider row.
 class UiRow extends StatelessWidget {
   const UiRow({
     required this.title,
@@ -88,6 +101,7 @@ class UiRow extends StatelessWidget {
     this.showChevron = true,
     this.minHeight = 64,
     this.divider = true,
+    this.sticker = false,
     super.key,
   });
 
@@ -100,16 +114,32 @@ class UiRow extends StatelessWidget {
   final bool showChevron;
   final double minHeight;
   final bool divider;
+  final bool sticker;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final shape = BorderRadius.circular(UiRadius.menu);
     final row = Container(
       constraints: BoxConstraints(minHeight: minHeight),
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      decoration: BoxDecoration(
-        border: divider ? Border(bottom: BorderSide(color: ui.divider)) : null,
+      padding: EdgeInsets.symmetric(
+        vertical: sticker ? 10 : 13,
+        horizontal: sticker ? 14 : 0,
       ),
+      decoration: sticker
+          ? BoxDecoration(
+              color: ui.surface,
+              borderRadius: shape,
+              border: ui.stickerBorder(),
+              boxShadow: onPressed == null ? ui.hardShadow() : null,
+            )
+          : BoxDecoration(
+              border: divider
+                  ? Border(
+                      bottom: BorderSide(color: ui.ink.withValues(alpha: 0.12)),
+                    )
+                  : null,
+            ),
       child: Row(
         children: [
           if (leading != null) ...[leading!, const SizedBox(width: 12)],
@@ -137,7 +167,7 @@ class UiRow extends StatelessWidget {
           if (trailing != null) ...[const SizedBox(width: 8), trailing!],
           if (onPressed != null && showChevron) ...[
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded, size: 20, color: ui.chevron),
+            Icon(Icons.chevron_right_rounded, size: 20, color: ui.ink),
           ],
         ],
       ),
@@ -146,7 +176,8 @@ class UiRow extends StatelessWidget {
     return UiPressable(
       onPressed: onPressed,
       semanticLabel: title,
-      borderRadius: BorderRadius.zero,
+      borderRadius: sticker ? shape : BorderRadius.zero,
+      shadowOffset: sticker ? UiShadow.large : 0,
       minSize: const Size(UiSize.tap, 64),
       child: row,
     );
@@ -232,14 +263,8 @@ class UiMenuSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: ui.surface,
         borderRadius: BorderRadius.circular(UiRadius.menu),
-        border: Border.all(color: ui.border),
-        boxShadow: [
-          BoxShadow(
-            color: ui.shadow,
-            blurRadius: 34,
-            offset: const Offset(0, 14),
-          ),
-        ],
+        border: ui.stickerBorder(),
+        boxShadow: ui.hardShadow(),
       ),
       child: Column(mainAxisSize: MainAxisSize.min, children: children),
     );

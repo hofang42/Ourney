@@ -244,7 +244,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final journey = ref.watch(checkinJourneyProvider(photo.journeyId));
 
     return switch (journey) {
-      AsyncData(value: final j?) => _compose(context, j, photo),
+      AsyncData(value: final j?) => UiSkinScope(
+        skinId: uiSkinIdFor(personaSkinOf(j)),
+        child: Builder(builder: (context) => _compose(context, j, photo)),
+      ),
       AsyncData() || AsyncError() => _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-journey'),
@@ -505,6 +508,7 @@ class _PhotoPreview extends StatelessWidget {
                       icon: Icons.photo_library_outlined,
                       background: const Color(0xB3000000),
                       foreground: UiCamera.ink,
+                      borderColor: UiCamera.outline,
                     ),
                   ),
               ],
