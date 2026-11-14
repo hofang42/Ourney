@@ -392,9 +392,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     if (shell != null) {
       shell.goBranch(index);
     } else {
-      context.go(
-        index == AppDock.journeysIndex ? AppRoutes.journeys : AppRoutes.groups,
-      );
+      context.go(switch (index) {
+        AppDock.journeysIndex => AppRoutes.journeys,
+        AppDock.activityIndex => AppRoutes.inbox,
+        AppDock.profileIndex => AppRoutes.profile,
+        _ => AppRoutes.groups,
+      });
     }
   }
 

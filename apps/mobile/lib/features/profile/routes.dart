@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
+import '../../app/navigator_keys.dart';
 import '../../app/providers.dart';
 import '../../app/redirect.dart' show safeFrom;
 import 'profile_edit_screen.dart';
@@ -19,7 +20,8 @@ export 'profile_screen.dart' show profileEditPath, profileSetupPath;
 ///   flow; continues to `from` (or `/capture`) when saved.
 ///
 /// Contract (lib/features/README.md): keep exporting
-/// `List<RouteBase> profileRoutes`. Full-screen (outside the tab shell).
+/// `List<RouteBase> profileRoutes`. The root `/profile` is the Profile tab of the bottom-bar shell; `edit` and
+/// `setup` cover it full-screen.
 final List<RouteBase> profileRoutes = [
   GoRoute(
     path: AppRoutes.profile,
@@ -27,10 +29,12 @@ final List<RouteBase> profileRoutes = [
     routes: [
       GoRoute(
         path: 'edit',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const _BackendOnly(ProfileEditScreen()),
       ),
       GoRoute(
         path: 'setup',
+        parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) =>
             _BackendOnly(ProfileSetupScreen(from: safeFrom(state.uri))),
       ),

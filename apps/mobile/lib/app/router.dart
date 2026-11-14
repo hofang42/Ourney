@@ -38,12 +38,20 @@ GoRouter createRouter({
             routes: FeatureRoutes.journeysTab,
           ),
           StatefulShellBranch(
+            initialLocation: AppRoutes.groups,
+            routes: FeatureRoutes.groupsTab,
+          ),
+          StatefulShellBranch(
             initialLocation: AppRoutes.capture,
             routes: FeatureRoutes.captureTab,
           ),
           StatefulShellBranch(
-            initialLocation: AppRoutes.groups,
-            routes: FeatureRoutes.groupsTab,
+            initialLocation: AppRoutes.inbox,
+            routes: FeatureRoutes.activityTab,
+          ),
+          StatefulShellBranch(
+            initialLocation: AppRoutes.profile,
+            routes: FeatureRoutes.profileTab,
           ),
         ],
       ),

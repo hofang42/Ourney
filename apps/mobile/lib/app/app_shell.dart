@@ -5,8 +5,8 @@ import '../ui/ui.dart';
 import 'app_dock.dart';
 import 'theme/motion.dart';
 
-/// Bottom shell: Journeys · [Capture] · Squad, drawn by [AppDock]. Branch
-/// order = tab order, so branch 1 (Capture) is the center button and the
+/// Bottom shell: Journeys · Squad · [Capture] · Activity · Profile, drawn by [AppDock]. Branch
+/// order = tab order, so branch 2 (Capture) is the center button and the
 /// app's start tab. On the Capture tab the camera screen draws its own
 /// dark dock around the hero shutter, so the shell shows none.
 class AppShell extends StatelessWidget {
@@ -17,6 +17,8 @@ class AppShell extends StatelessWidget {
   static const int journeysIndex = AppDock.journeysIndex;
   static const int captureIndex = AppDock.captureIndex;
   static const int groupsIndex = AppDock.groupsIndex;
+  static const int activityIndex = AppDock.activityIndex;
+  static const int profileIndex = AppDock.profileIndex;
 
   void _go(int index) {
     if (index == navigationShell.currentIndex) {

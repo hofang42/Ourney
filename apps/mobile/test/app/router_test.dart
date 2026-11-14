@@ -23,15 +23,15 @@ void main() {
       expect(location(c), AppRoutes.capture);
       expect(find.byKey(const ValueKey('placeholder-camera')), findsOneWidget);
       expect(find.byKey(const ValueKey('dock-hero-shutter')), findsOneWidget);
-      expect(find.text('Nhóm'), findsOneWidget);
-      expect(find.text('Journeys'), findsOneWidget);
+      expect(find.text('Hội'), findsOneWidget);
+      expect(find.text('Hành trình'), findsOneWidget);
     });
 
     testWidgets('falls back to Vietnamese for unsupported locales', (
       tester,
     ) async {
       await pumpOurneyApp(tester, locale: const Locale('fr'));
-      expect(find.text('Nhóm'), findsOneWidget);
+      expect(find.text('Hội'), findsOneWidget);
     });
 
     testWidgets('English when the device is English', (tester) async {
@@ -48,12 +48,12 @@ void main() {
         auth: FakeAuthRepository(userId: 'u1'),
       );
 
-      await tester.tap(find.text('Nhóm'));
+      await tester.tap(find.text('Hội'));
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.groups);
       expect(find.byKey(const ValueKey('placeholder-groups')), findsOneWidget);
 
-      await tester.tap(find.text('Journeys'));
+      await tester.tap(find.text('Hành trình'));
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.journeys);
       expect(
@@ -66,11 +66,26 @@ void main() {
       expect(location(c), AppRoutes.capture);
     });
 
+    testWidgets('activity and profile are dock tabs', (tester) async {
+      final c = await pumpOurneyApp(
+        tester,
+        config: testBackendConfig,
+        auth: FakeAuthRepository(userId: 'u1'),
+      );
+      await tester.tap(find.byKey(const ValueKey('dock-activity')));
+      await tester.pumpAndSettle();
+      expect(location(c), AppRoutes.inbox);
+      await tester.tap(find.byKey(const ValueKey('dock-profile')));
+      await tester.pumpAndSettle();
+      expect(location(c), AppRoutes.profile);
+      expect(find.byKey(const ValueKey('dock-journeys')), findsOneWidget);
+    });
+
     testWidgets('local-only: groups tab shows the needs-server state', (
       tester,
     ) async {
       await pumpOurneyApp(tester);
-      await tester.tap(find.text('Nhóm'));
+      await tester.tap(find.text('Hội'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('needs-server')), findsOneWidget);
       expect(find.text('Cần kết nối máy chủ'), findsOneWidget);
@@ -245,7 +260,7 @@ void main() {
       expect(location(c.container), AppRoutes.journeys);
 
       // Groups tab (local-only: needs-server state still has the button).
-      await tester.tap(find.text('Nhóm'));
+      await tester.tap(find.text('Hội'));
       await tester.pumpAndSettle();
       await tapProfile(tester);
       expect(
