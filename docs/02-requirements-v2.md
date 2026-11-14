@@ -94,7 +94,7 @@ Quyết định quan trọng:
 - B4. Lưu trữ (archive) hoặc kết thúc journey. Journey kết thúc tạo **recap** (collage + số liệu).
 
 ### C. Nhóm & bạn bè
-- C1. Mời bằng **link/QR** (`ourney.app/i/<code>`). Người chưa cài app mở link thấy trang web xem trước, bấm thì sang App Store.
+- C1. Mời bằng **link/QR** (`ourney.tech/i/<code>`). Người chưa cài app mở link thấy trang web xem trước, bấm thì sang App Store.
 - C2. Vai trò: owner và member, tối đa 20 người. Owner có thể xoá thành viên và chuyển quyền owner.
 - C3. Màn nhóm hôm nay: avatar ai đã/chưa check-in, ảnh mới nhất của từng người.
 - C4. Reaction bằng emoji (không có comment trong MVP, giảm gánh moderation).

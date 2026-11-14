@@ -362,7 +362,7 @@ export function AddFriendsScreen({
         </span>
         <div>
           <h2>{l ? "Chia sẻ liên kết mời" : "Share my invite link"}</h2>
-          <p>ourney.app/invite/linh-tran</p>
+          <p>ourney.tech/invite/linh-tran</p>
         </div>
         <button
           onClick={() => onToast(l ? "Đã sao chép liên kết" : "Link copied")}
@@ -639,7 +639,7 @@ export function ShareJourneySheet({
                 <span>
                   <strong>{l ? "Bật liên kết" : "Link on"}</strong>
                   <small>
-                    ourney.app/j/
+                    ourney.tech/j/
                     {journeyName
                       .toLowerCase()
                       .replaceAll(/[^a-z0-9]+/g, "-")

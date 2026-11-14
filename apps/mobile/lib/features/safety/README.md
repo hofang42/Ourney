@@ -68,7 +68,7 @@ Groups: `groupSafetyHooksProvider` defaults to `safetyGroupHooks`
 
 - Support mailbox: `supportEmailProvider` reads `AppConfig.supportEmail`
   (`--dart-define=SUPPORT_EMAIL=...`, CI secret `SUPPORT_EMAIL`) and falls back
-  to the placeholder `support@ourney.app`. Confirm the real mailbox before
+  to the placeholder `support@ourney.tech`. Confirm the real mailbox before
   release (see docs/adr/0002-support-email-and-legal-text.md).
 - Legal texts are in `l10n/safety_{vi,en}.arb` (`safety_eula*`,
   `safety_privacy*`); bump `kLegalLastUpdated` when they change. They need

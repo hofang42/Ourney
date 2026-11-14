@@ -67,7 +67,7 @@ Mấu chốt: **type chỉ là template** (metric mặc định, biểu đồ, l
 2. Check-in: số liệu, ảnh, ghi chú, vị trí (tùy chọn).
 3. Màn tiến độ: biểu đồ (Swift Charts), streak, % mục tiêu.
 4. **Share card**: render ảnh 1080×1920 / 1080×1080 trên máy → share sheet / Instagram Stories.
-5. **Link công khai** `journey.app/j/<slug>`: trang web read-only có OG image → ai bấm link cũng xem được, không cần cài app.
+5. **Link công khai** `journey.tech/j/<slug>`: trang web read-only có OG image → ai bấm link cũng xem được, không cần cài app.
 6. Đăng nhập email OTP; dữ liệu đồng bộ cloud.
 
 ### v0.2+
