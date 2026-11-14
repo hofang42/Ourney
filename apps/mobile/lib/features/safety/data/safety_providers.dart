@@ -8,7 +8,7 @@ import '../../../app/providers.dart';
 
 /// Support address shown on the contact page. Comes from
 /// `--dart-define=SUPPORT_EMAIL` (see `AppConfig`) and defaults to the
-/// placeholder `support@ourney.app` until the owner confirms the real mailbox
+/// placeholder `support@ourney.tech` until the owner confirms the real mailbox
 /// (docs/adr/0002-support-email-and-legal-text.md).
 final supportEmailProvider = Provider<String>(
   (ref) => ref.watch(appConfigProvider).supportEmail,
