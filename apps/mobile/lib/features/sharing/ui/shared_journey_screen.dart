@@ -189,7 +189,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
       emoji: v.emoji,
     );
     return UiSkinScope(
-      skinId: sharingSkinId(skin),
+      skinId: uiSkinIdFor(skin),
       child: Builder(builder: (context) => _body(context, skin)),
     );
   }

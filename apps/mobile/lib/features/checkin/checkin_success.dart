@@ -6,10 +6,10 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../groups/ui/group_photo.dart';
 import 'checkin_progress.dart';
-import 'checkin_screen.dart' show checkinSkinId;
 import 'l10n/generated/checkin_localizations.dart';
 
 /// Success state after posting (FR-C8, App.tsx `Posted`): green success
@@ -76,7 +76,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
     return journey == null
         ? _content(context)
         : UiSkinScope(
-            skinId: checkinSkinId(journey),
+            skinId: uiSkinIdFor(personaSkinOf(journey)),
             child: Builder(builder: _content),
           );
   }

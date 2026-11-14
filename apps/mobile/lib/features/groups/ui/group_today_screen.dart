@@ -11,7 +11,6 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../personas/active_journey_sync.dart';
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
-import '../../checkin/checkin_screen.dart' show checkinSkinId;
 import '../../journeys/data/journeys_providers.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
@@ -172,7 +171,7 @@ class GroupTodayScreen extends ConsumerWidget {
     return ActiveJourneySync(
       journeyId: journey.id,
       child: UiSkinScope(
-        skinId: checkinSkinId(journey),
+        skinId: uiSkinIdFor(personaSkinOf(journey)),
         child: Builder(
           builder: (context) => _wall(
             context,

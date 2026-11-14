@@ -13,16 +13,6 @@ import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 
-/// V2 skin id of a persona skin, for `UiSkinScope` (journey "world" screens).
-String sharingSkinId(PersonaSkinId skin) => switch (skin) {
-  PersonaSkinId.quietTransformer => 'quiet',
-  PersonaSkinId.accountabilitySquad => 'squad',
-  PersonaSkinId.memoryCollectors => 'memory',
-  PersonaSkinId.coupleRituals => 'couple',
-  PersonaSkinId.aestheticFlexer => 'flexer',
-  PersonaSkinId.minimalistHabit => 'minimal',
-};
-
 /// Unwraps Riverpod's [ProviderException] (a dependency in error state).
 Object sharingRootError(Object error) {
   var e = error;

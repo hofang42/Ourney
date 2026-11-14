@@ -62,7 +62,7 @@ class _ConfirmSheet extends StatelessWidget {
           key: confirmKey,
           label: confirmLabel,
           accent: destructive ? ui.danger : null,
-          onAccent: destructive ? Colors.white : null,
+          onAccent: destructive ? ui.onDanger : null,
           onPressed: () => Navigator.of(context).pop(true),
         ),
         const SizedBox(height: UiSpace.sm),

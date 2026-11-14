@@ -41,7 +41,7 @@ class DayViewerScreen extends ConsumerStatefulWidget {
 class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
   bool _revealMetric = false;
 
-  static final _muted = UiCamera.ink.withValues(alpha: 0.64);
+  static const _muted = UiCamera.muted;
 
   @override
   Widget build(BuildContext context) {
@@ -220,11 +220,7 @@ class _MetricRow extends StatelessWidget {
         if (name != null)
           Text(
             '$name:',
-            style: UiText.body(
-              size: 14,
-              height: 1.4,
-              color: UiCamera.ink.withValues(alpha: 0.64),
-            ),
+            style: UiText.body(size: 14, height: 1.4, color: UiCamera.muted),
           ),
         if (hidden) ...[
           Row(

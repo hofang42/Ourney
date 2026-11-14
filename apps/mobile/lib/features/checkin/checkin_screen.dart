@@ -256,7 +256,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
 
     return switch (journey) {
       AsyncData(value: final j?) => UiSkinScope(
-        skinId: checkinSkinId(j),
+        skinId: uiSkinIdFor(personaSkinOf(j)),
         child: Builder(builder: (context) => _compose(context, j, photo)),
       ),
       AsyncData() || AsyncError() => _frame(

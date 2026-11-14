@@ -118,7 +118,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
 
     return UiSkinScope(
-      skinId: uiSkinIdOf(skinOfJourney(journey)),
+      skinId: uiSkinIdFor(skinOfJourney(journey)),
       child: DayTicker(
         child: ActiveJourneyScope(
           journeyId: journey.id,

@@ -153,7 +153,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
             icon: Icons.delete_outline_rounded,
             loading: _deleting,
             accent: ui.danger,
-            onAccent: Colors.white,
+            onAccent: ui.onDanger,
             onPressed: _matches && !_deleting ? _delete : null,
           ),
           const SizedBox(height: UiSpace.sm),

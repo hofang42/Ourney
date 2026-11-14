@@ -51,13 +51,3 @@ class JourneyPalette {
 
   Color inkAt(double opacity) => ink.withValues(alpha: opacity);
 }
-
-/// V2 skin id (`UiSkinScope.skinId`) of a persona skin.
-String uiSkinIdOf(PersonaSkinId skin) => switch (skin) {
-  PersonaSkinId.quietTransformer => 'quiet',
-  PersonaSkinId.accountabilitySquad => 'squad',
-  PersonaSkinId.memoryCollectors => 'memory',
-  PersonaSkinId.coupleRituals => 'couple',
-  PersonaSkinId.aestheticFlexer => 'flexer',
-  PersonaSkinId.minimalistHabit => 'minimal',
-};
