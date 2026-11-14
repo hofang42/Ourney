@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
-import 'package:ourney/features/profile/profile_entry_button.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 
 import '../features/journeys/journeys_fakes.dart';
@@ -216,16 +215,11 @@ void main() {
 
   group('profile entry point (local-only guest too)', () {
     Future<void> tapProfile(WidgetTester tester) async {
-      await tester.tap(find.byKey(ProfileEntryButton.buttonKey));
+      await tester.tap(find.byKey(const ValueKey('dock-profile')));
       await tester.pumpAndSettle();
     }
 
-    Future<void> back(WidgetTester tester) async {
-      await tester.tap(find.byIcon(Icons.arrow_back_rounded).first);
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets('journeys, groups and capture open /profile; reminders and '
+    testWidgets('the dock opens /profile from every tab; reminders and '
         'safety are reachable from there', (tester) async {
       final c = await pumpJourneys(tester);
 
@@ -256,20 +250,19 @@ void main() {
       expect(c.container.read(routerProvider).state.uri.path, AppRoutes.safety);
       c.container.read(routerProvider).pop();
       await tester.pumpAndSettle();
-      await back(tester);
-      expect(location(c.container), AppRoutes.journeys);
+      expect(location(c.container), AppRoutes.profile);
 
-      // Groups tab (local-only: needs-server state still has the button).
+      // Groups tab, then back to the Profile tab from the dock.
       await tester.tap(find.text('Hội'));
       await tester.pumpAndSettle();
+      expect(location(c.container), AppRoutes.groups);
       await tapProfile(tester);
       expect(
         c.container.read(routerProvider).state.uri.path,
         AppRoutes.profile,
       );
-      await back(tester);
 
-      // Capture screen (no journeys yet: the empty state keeps the button).
+      // Capture screen draws its own dock with the same Profile tab.
       await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
       await tester.pumpAndSettle();
       expect(location(c.container), AppRoutes.capture);

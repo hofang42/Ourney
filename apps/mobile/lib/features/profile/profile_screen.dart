@@ -111,7 +111,7 @@ class _GuestHeader extends StatelessWidget {
           const SizedBox(height: UiSpace.lg),
           Row(
             children: [
-              Icon(Icons.phone_iphone_rounded, color: ui.ink, size: 20),
+              OurneyIcon(name: 'phone', flat: true, color: ui.ink, size: 20),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Text(
@@ -166,7 +166,7 @@ class _ProfileHeader extends ConsumerWidget {
             UiButton(
               key: const ValueKey('profile-complete'),
               label: l10n.profile_completeTitle,
-              icon: Icons.person_add_alt_1_outlined,
+              glyph: const OurneyIcon(name: 'user-plus', flat: true),
               onPressed: () => context.push(profileSetupPath),
             ),
           ],
@@ -181,7 +181,7 @@ class _ProfileHeader extends ConsumerWidget {
           UiButton.secondary(
             key: const ValueKey('profile-retry'),
             label: AppLocalizations.of(context).common_retry,
-            icon: Icons.refresh_rounded,
+            glyph: const OurneyIcon(name: 'refresh', flat: true),
             onPressed: () => ref.invalidate(myProfileProvider),
           ),
         ],
@@ -245,7 +245,7 @@ class _ProfileCard extends StatelessWidget {
         UiButton.secondary(
           key: const ValueKey('profile-edit'),
           label: l10n.profile_editTitle,
-          icon: Icons.edit_outlined,
+          glyph: const OurneyIcon(name: 'edit', flat: true),
           compact: true,
           onPressed: () => context.push(profileEditPath),
         ),
@@ -265,7 +265,7 @@ class _SettingsSection extends ConsumerWidget {
       children: [
         UiRow(
           key: const ValueKey('profile-reminders'),
-          leading: const Icon(Icons.notifications_none_rounded),
+          leading: const OurneyIcon(name: 'bell', flat: true),
           title: l10n.profile_reminders,
           subtitle: _sub(context, l10n.profile_remindersSubtitle),
           onPressed: () => context.push(AppRoutes.reminders),
@@ -283,14 +283,14 @@ class _SettingsSection extends ConsumerWidget {
         ),
         UiRow(
           key: const ValueKey('profile-language'),
-          leading: const Icon(Icons.translate_rounded),
+          leading: const OurneyIcon(name: 'translate', flat: true),
           title: l10n.profile_language,
           subtitle: _sub(context, l10n.profile_languageNote),
           showChevron: false,
         ),
         UiRow(
           key: const ValueKey('profile-safety'),
-          leading: const Icon(Icons.shield_outlined),
+          leading: const OurneyIcon(name: 'shield', flat: true),
           title: l10n.profile_safety,
           divider: false,
           onPressed: () => context.push(AppRoutes.safety),
@@ -379,13 +379,13 @@ class _AccountSection extends ConsumerWidget {
       children: [
         UiRow(
           key: const ValueKey('profile-signout'),
-          leading: const Icon(Icons.logout_rounded),
+          leading: const OurneyIcon(name: 'logout', flat: true),
           title: l10n.profile_signOut,
           onPressed: () => _signOut(context, ref),
         ),
         UiRow(
           key: const ValueKey('profile-delete'),
-          leading: Icon(Icons.delete_outline_rounded, color: ui.danger),
+          leading: OurneyIcon(name: 'trash', flat: true, color: ui.danger),
           title: l10n.profile_deleteAccount,
           divider: false,
           showChevron: false,

@@ -154,7 +154,9 @@ class _TemplateCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(shape: BoxShape.circle, color: ui.fill),
-            child: Icon(Icons.add_rounded, color: ink),
+            child: Center(
+              child: OurneyIcon(name: 'plus', size: 24, inkColor: ink),
+            ),
           ),
           const SizedBox(height: 10),
           Text(

@@ -151,7 +151,7 @@ class SharingNeedsServer extends StatelessWidget {
     final app = AppLocalizations.of(context);
     return UiEmptyState(
       key: const ValueKey('needs-server'),
-      icon: Icons.cloud_off_rounded,
+      glyph: const OurneyIcon(name: 'cloud-off', flat: true),
       title: app.needsServer_title,
       body: app.needsServer_message,
     );
@@ -168,13 +168,13 @@ class SharingPillButton extends StatelessWidget {
   });
 
   final String label;
-  final IconData? icon;
+  final String? icon;
   final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) => UiButton.secondary(
     label: label,
-    icon: icon,
+    glyph: icon == null ? null : OurneyIcon(name: icon!, size: 18, flat: true),
     onPressed: onPressed,
     compact: true,
     expand: false,
@@ -284,7 +284,9 @@ class SharingCheckSquare extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: checked ? Icon(Icons.check_rounded, size: 16, color: ui.bg) : null,
+      child: checked
+          ? OurneyIcon(name: 'check', size: 16, color: ui.bg, flat: true)
+          : null,
     );
   }
 }
@@ -357,7 +359,7 @@ class SharingErrorView extends StatelessWidget {
   Widget build(BuildContext context) {
     final app = AppLocalizations.of(context);
     return UiEmptyState(
-      icon: Icons.error_outline_rounded,
+      glyph: const OurneyIcon(name: 'error', flat: true),
       title: sharingErrorMessage(context, error),
       actionLabel: onRetry == null ? null : app.common_retry,
       onAction: onRetry,

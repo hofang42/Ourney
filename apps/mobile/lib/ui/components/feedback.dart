@@ -5,12 +5,13 @@ import 'package:flutter/material.dart';
 import '../tokens.dart';
 import '../typography.dart';
 import 'buttons.dart';
+import 'ourney_icons.dart';
 
 /// Empty / error state: sticker icon slot, Space Grotesk h2 title, muted body
 /// and an optional pill action. Always tells the person what to do next.
 class UiEmptyState extends StatelessWidget {
   const UiEmptyState({
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     required this.title,
     this.body,
@@ -311,7 +312,12 @@ class UiCheckBadge extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(color: ui.successSoft, shape: BoxShape.circle),
-      child: Icon(Icons.check_rounded, size: size * 0.52, color: ui.success),
+      child: OurneyIcon(
+        name: 'check',
+        size: size * 0.52,
+        flat: true,
+        color: ui.success,
+      ),
     );
   }
 }
@@ -339,7 +345,7 @@ class UiInlineError extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.error_outline_rounded, size: 18, color: ui.danger),
+            OurneyIcon(name: 'error', size: 18, flat: true, color: ui.danger),
             const SizedBox(width: UiSpace.sm),
             Expanded(
               child: Text(

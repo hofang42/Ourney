@@ -979,6 +979,96 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'ngày liên tiếp'**
   String get journeys_streakDaysLabel;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'HỒ SƠ RIÊNG TƯ'**
+  String get journeys_ticketPrivate;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'VÉ KÝ ỨC'**
+  String get journeys_ticketMemory;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi màu'**
+  String get journeys_ticketChangeColor;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn'**
+  String get journeys_ticketYou;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Người ấy'**
+  String get journeys_ticketPartner;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'không hẹn ngày về'**
+  String get journeys_ticketOpenEnded;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}'**
+  String journeys_ticketMilestone(String day);
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'{start} – {end}'**
+  String journeys_ticketDates(String start, String end);
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Từ {start}'**
+  String journeys_ticketDatesOpen(String start);
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ mình mình thấy. Từng chút một.'**
+  String get journeys_ticketTagQuiet;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Điểm danh mỗi ngày, cả hội cùng lên!'**
+  String get journeys_ticketTagSquad;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mang về thật nhiều khung hình.'**
+  String get journeys_ticketTagMemory;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mỗi ngày một nửa, ghép lại thành một.'**
+  String get journeys_ticketTagCouple;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ra khỏi giường. Chạy tiếp.'**
+  String get journeys_ticketTagFlexer;
+
+  /// Departure ticket preview text.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem trước vé khởi hành'**
+  String get journeys_ticketPreview;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

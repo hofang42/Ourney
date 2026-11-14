@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 /// `avatarColors` from App.tsx.
@@ -130,9 +131,10 @@ class UiAvatarPicker extends StatelessWidget {
                   color: ui.ink,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.photo_camera_outlined,
+                child: OurneyIcon(
+                  name: 'camera',
                   size: 16,
+                  flat: true,
                   color: ui.bg,
                 ),
               ),

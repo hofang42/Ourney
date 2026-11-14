@@ -77,7 +77,7 @@ class _FollowBody extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 40),
       child: Row(
         children: [
-          Icon(Icons.check_rounded, size: 18, color: ui.success),
+          OurneyIcon(name: 'check', size: 18, color: ui.success, flat: true),
           const SizedBox(width: UiSpace.sm),
           Expanded(
             child: Text(s, style: UiText.body(size: 14, color: ui.ink)),
@@ -146,8 +146,9 @@ class _FollowBody extends StatelessWidget {
                   color: style.accent,
                   borderRadius: BorderRadius.circular(UiRadius.thumb),
                 ),
-                child: Icon(
-                  uiJourneyIcon(frame.emoji, frame.templateId),
+                child: uiJourneyGlyph(
+                  frame.emoji,
+                  frame.templateId,
                   color: style.onAccent,
                 ),
               ),

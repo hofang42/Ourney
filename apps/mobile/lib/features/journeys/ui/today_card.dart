@@ -14,6 +14,7 @@ import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_actions.dart';
 import 'journey_photo.dart';
+import 'journey_row.dart' show journeyTypeId;
 import 'journey_style.dart';
 
 /// The hub's hero (V1.0 `.hub-today-card`): the next journey still waiting
@@ -85,10 +86,11 @@ class TodayCard extends ConsumerWidget {
                 else
                   ColoredBox(
                     color: pal.accent.withValues(alpha: 0.32),
-                    child: Icon(
-                      uiJourneyIcon(journey.emoji, journey.templateId),
-                      size: 44,
-                      color: UiCamera.ink.withValues(alpha: 0.85),
+                    child: Center(
+                      child: UiTypeBadge(
+                        type: journeyTypeId(journey),
+                        size: 56,
+                      ),
                     ),
                   ),
                 DecoratedBox(
@@ -146,7 +148,7 @@ class TodayCard extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const OurneyIcon(name: 'react-fire', size: 17),
+                const OurneyIcon(name: 'flame', size: 17),
                 const SizedBox(width: 5),
                 Text(
                   '${progress.summary.current}',
@@ -176,7 +178,7 @@ class TodayCard extends ConsumerWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.schedule_rounded, size: 15, color: ui.warn),
+                      const OurneyIcon(name: 'clock', size: 16),
                       const SizedBox(width: 5),
                       Flexible(
                         child: Text(
@@ -201,7 +203,12 @@ class TodayCard extends ConsumerWidget {
           UiButton(
             key: const ValueKey('journeys-snap-today'),
             label: l10n.journeys_snapToday,
-            icon: Icons.photo_camera_outlined,
+            glyph: OurneyIcon(
+              name: 'camera',
+              size: 22,
+              color: pal.onAccent,
+              inkColor: pal.onAccent,
+            ),
             accent: pal.accent,
             onAccent: pal.onAccent,
             onPressed: () {
@@ -296,7 +303,12 @@ class _DayCell extends StatelessWidget {
                 width: 12,
                 height: 12,
                 color: ink,
-                child: Icon(Icons.check_rounded, size: 9, color: pal.paper),
+                child: OurneyIcon(
+                  name: 'check',
+                  size: 10,
+                  color: pal.paper,
+                  inkColor: pal.paper,
+                ),
               ),
             ),
           ],
@@ -306,7 +318,7 @@ class _DayCell extends StatelessWidget {
       cell = CustomPaint(
         painter: _DashedBorderPainter(color: ink),
         child: Center(
-          child: Icon(Icons.photo_camera_outlined, size: 14, color: ink),
+          child: OurneyIcon(name: 'camera', size: 16, inkColor: ink),
         ),
       );
     } else if (beforeStart) {

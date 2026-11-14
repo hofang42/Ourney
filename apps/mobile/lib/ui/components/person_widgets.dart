@@ -139,9 +139,18 @@ class UiPersonRow extends StatelessWidget {
 
 /// Round 40dp glyph tile used as a row leading (consents, shares).
 class UiIconCircle extends StatelessWidget {
-  const UiIconCircle(this.icon, {this.size = 40, super.key});
+  const UiIconCircle(
+    @Deprecated('Use UiIconCircle.glyph(OurneyIcon(...))') IconData this.icon, {
+    this.size = 40,
+    super.key,
+  }) : glyph = null;
 
-  final IconData icon;
+  /// Drawn glyph (e.g. `OurneyIcon(name: 'lock', size: 20)`).
+  const UiIconCircle.glyph(Widget this.glyph, {this.size = 40, super.key})
+    : icon = null;
+
+  final IconData? icon;
+  final Widget? glyph;
   final double size;
 
   @override
@@ -151,17 +160,25 @@ class UiIconCircle extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(color: ui.fill, shape: BoxShape.circle),
-      child: Icon(icon, size: size * 0.5, color: ui.ink),
+      child: glyph ?? Icon(icon, size: size * 0.5, color: ui.ink),
     );
   }
 }
 
 /// Muted state label in place of a button ("Requested", "Friends").
 class UiStateLabel extends StatelessWidget {
-  const UiStateLabel(this.text, {this.icon, super.key});
+  const UiStateLabel(
+    this.text, {
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
+    this.glyph,
+    super.key,
+  });
 
   final String text;
   final IconData? icon;
+
+  /// Drawn glyph (16dp, e.g. `OurneyIcon(name: 'check', size: 16)`).
+  final Widget? glyph;
 
   @override
   Widget build(BuildContext context) {
@@ -171,8 +188,8 @@ class UiStateLabel extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 16, color: ui.inkMuted),
+          if (icon != null || glyph != null) ...[
+            glyph ?? Icon(icon, size: 16, color: ui.inkMuted),
             const SizedBox(width: 4),
           ],
           Text(

@@ -45,6 +45,17 @@ SocialFakes fullInbox() => SocialFakes(
   ),
 );
 
+/// The feed is a lazy list: scroll the row at [key] into view.
+Future<void> reveal(WidgetTester tester, String key) async {
+  final f = find.byKey(ValueKey(key));
+  await tester.scrollUntilVisible(
+    f,
+    200,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('shows every section; public requests have no dot', (
     tester,
@@ -58,6 +69,9 @@ void main() {
       findsOneWidget,
     );
     expect(find.byKey(const ValueKey('inbox-conversation-c1')), findsOneWidget);
+    expect(dotsIn('inbox-request-khoa'), findsOneWidget);
+    expect(dotsIn('inbox-consent-dalat'), findsOneWidget);
+    expect(dotsIn('inbox-conversation-c1'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.text('Run Club'),
       200,
@@ -74,17 +88,34 @@ void main() {
       findsOneWidget,
     );
 
-    expect(dotsIn('inbox-request-khoa'), findsOneWidget);
-    expect(dotsIn('inbox-consent-dalat'), findsOneWidget);
-    expect(dotsIn('inbox-conversation-c1'), findsOneWidget);
     expect(dotsIn('inbox-conversation-c2'), findsNothing);
     expect(dotsIn('inbox-public-hoi-an'), findsNothing);
     expect(find.byKey(const ValueKey('unread-badge')), findsOneWidget);
   });
 
+  testWidgets('V2 header, grouped feed, no back button as a tab', (
+    tester,
+  ) async {
+    await pumpSocial(tester, location: SocialPaths.inbox, fakes: fullInbox());
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Today'), findsOneWidget);
+    expect(find.byKey(const ValueKey('social-back')), findsNothing);
+    expect(find.byKey(const ValueKey('inbox-filter-all')), findsOneWidget);
+  });
+
+  testWidgets('mark all read clears the unread dots', (tester) async {
+    await pumpSocial(tester, location: SocialPaths.inbox, fakes: fullInbox());
+    expect(dotsIn('inbox-new-shares'), findsOneWidget);
+    await tester.tap(find.text('Mark all read'));
+    await tester.pumpAndSettle();
+    expect(dotsIn('inbox-new-shares'), findsNothing);
+    expect(find.text('Mark all read'), findsNothing);
+  });
+
   testWidgets('accept a friend request inline', (tester) async {
     final fakes = fullInbox();
     await pumpSocial(tester, location: SocialPaths.inbox, fakes: fakes);
+    await reveal(tester, 'inbox-accept-khoa');
     await tester.tap(find.byKey(const ValueKey('inbox-accept-khoa')));
     await tester.pumpAndSettle();
     expect(fakes.friends.calls, ['accept:khoa']);
@@ -94,6 +125,7 @@ void main() {
   testWidgets('agree / decline a share consent', (tester) async {
     final fakes = fullInbox();
     await pumpSocial(tester, location: SocialPaths.inbox, fakes: fakes);
+    await reveal(tester, 'consent-agree-dalat');
     await tester.tap(find.byKey(const ValueKey('consent-agree-dalat')));
     await tester.pumpAndSettle();
     expect(fakes.consents.calls, ['agree:dalat']);

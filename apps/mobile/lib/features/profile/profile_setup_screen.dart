@@ -101,13 +101,13 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         children: [
           UiRow(
             key: const ValueKey('profile-avatar-gallery'),
-            leading: const Icon(Icons.photo_library_outlined),
+            leading: const OurneyIcon(name: 'gallery', flat: true),
             title: l10n.profile_avatarFromGallery,
             onPressed: () => Navigator.of(context).pop(AvatarSource.gallery),
           ),
           UiRow(
             key: const ValueKey('profile-avatar-camera'),
-            leading: const Icon(Icons.photo_camera_outlined),
+            leading: const OurneyIcon(name: 'camera', flat: true),
             title: l10n.profile_avatarFromCamera,
             divider: false,
             onPressed: () => Navigator.of(context).pop(AvatarSource.camera),
@@ -291,7 +291,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               helper: l10n.profile_usernameHelper,
               error: usernameError,
               trailing: usernameOk
-                  ? Icon(Icons.check_rounded, size: 19, color: ui.success)
+                  ? OurneyIcon(
+                      name: 'check',
+                      flat: true,
+                      size: 19,
+                      color: ui.success,
+                    )
                   : null,
               onChanged: (_) => setState(() => _edited = true),
               onSubmitted: (_) => _saving ? null : _save(),

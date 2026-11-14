@@ -21,9 +21,9 @@ class SafetyHubScreen extends ConsumerWidget {
     final ui = context.ui;
     final signedIn = ref.watch(authStatusProvider) == AuthStatus.signedIn;
 
-    Widget tile(String key, IconData icon, String title, String path) => UiRow(
+    Widget tile(String key, String icon, String title, String path) => UiRow(
       key: ValueKey(key),
-      leading: Icon(icon, color: ui.ink),
+      leading: OurneyIcon(name: icon, color: ui.ink, flat: true),
       title: title,
       onPressed: () => context.push(path),
     );
@@ -39,19 +39,19 @@ class SafetyHubScreen extends ConsumerWidget {
           const SizedBox(height: UiSpace.xl),
           tile(
             'safety-hub-eula',
-            Icons.gavel_rounded,
+            'gavel',
             l10n.safety_hubEula,
             SafetyPaths.eula,
           ),
           tile(
             'safety-hub-privacy',
-            Icons.privacy_tip_outlined,
+            'shield',
             l10n.safety_hubPrivacy,
             SafetyPaths.privacy,
           ),
           tile(
             'safety-hub-contact',
-            Icons.mail_outline_rounded,
+            'mail',
             l10n.safety_hubContact,
             SafetyPaths.contact,
           ),
@@ -59,7 +59,7 @@ class SafetyHubScreen extends ConsumerWidget {
           if (signedIn)
             tile(
               'safety-hub-blocked',
-              Icons.block_rounded,
+              'block',
               l10n.safety_hubBlocked,
               SafetyPaths.blocked,
             ),
@@ -70,7 +70,7 @@ class SafetyHubScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.flag_outlined, color: ui.ink),
+                OurneyIcon(name: 'flag', color: ui.ink, flat: true),
                 const SizedBox(width: UiSpace.md),
                 Expanded(
                   child: Column(

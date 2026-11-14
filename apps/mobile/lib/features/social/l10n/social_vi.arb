@@ -219,5 +219,12 @@
   "@social_profileRequests": {
     "description": "Profile row sub-line: pending incoming requests.",
     "placeholders": {"count": {"type": "int"}}
-  }
+  },
+  "social_activityTitle": "Hoạt động",
+  "social_groupToday": "Hôm nay",
+  "social_groupEarlier": "Trước đó",
+  "social_markAllRead": "Đã đọc hết",
+  "social_inviteCardTitle": "Mời một người bạn",
+  "social_inviteCardBody": "Đi cùng nhau dễ hơn. Gửi liên kết hoặc tìm bạn bè.",
+  "social_inviteCardAction": "Thêm bạn"
 }

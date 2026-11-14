@@ -41,6 +41,7 @@ class UiBanner extends StatelessWidget {
           border: ui.stickerBorder(),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ExcludeSemantics(
               child: SizedBox.square(

@@ -14,7 +14,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `typography.dart` | `UiText.h1/h2/eyebrow/muted/button/fieldLabel/wordmark/body/display`, `UiFonts` |
 | `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs the `OurneyUi` extension |
 | `journey_styles.dart` | `uiJourneyStyles` (10 styles: accent, paper, ink, onAccent) |
-| `journey_icons.dart` | `uiJourneyIcon(emoji, template)`, `uiTemplateIcon(template)`: vector icon of a journey (no emoji in system UI) |
+| `journey_icons.dart` | `uiJourneyGlyph(emoji, template)`, `uiTemplateGlyph(template)`: drawn OurneyIcon of a journey (no emoji in system UI) |
 
 ## CSS class -> Flutter widget
 | CSS / TSX | Widget |
@@ -39,6 +39,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.avatar`, `Avatar` | `UiAvatar`; `.avatar-picker` -> `UiAvatarPicker` |
 | `.dock` | `UiDock`, `UiDockItem`, `UiSnapPill` (`.camera-capsule`) |
 | `.camera-dock`, `.shutter` | `UiDock(camera: true, center: UiShutter(...))`, `UiShutter` |
+| Journey wheel (long-press the Snap button, 400ms) | `showUiJourneyWheel(context, items:, activeId:, onSelect:, anchor:)` (`UiJourneyWheel`, `UiJourneyWheelItem`): blurred dim backdrop + `UiTypeBadge`s fanned in an arc above `anchor`; tap selects and closes, backdrop / close button / back dismisses; never navigates. Reduce Motion: no animation; Reduce Transparency / high contrast: solid scrim, no blur. Wired in `AppDock` (shell and camera dock) |
 | `.glass-chip` | `UiGlassChip` (camera journey / streak chips) |
 | `.day-hud` | `UiDayHud` |
 | `.camera-tools .icon-button`, `.camera-secondary-controls` | `UiCameraTool`, `UiLibraryThumb` |

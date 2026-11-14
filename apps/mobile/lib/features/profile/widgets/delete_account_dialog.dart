@@ -104,7 +104,12 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: ui.danger, size: 28),
+              OurneyIcon(
+                name: 'warning',
+                flat: true,
+                color: ui.danger,
+                size: 28,
+              ),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Semantics(
@@ -150,7 +155,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
           UiButton(
             key: const ValueKey('profile-delete-confirm'),
             label: l10n.profile_deleteConfirmButton,
-            icon: Icons.delete_outline_rounded,
+            glyph: const OurneyIcon(name: 'trash', flat: true),
             loading: _deleting,
             accent: ui.danger,
             onAccent: ui.onDanger,

@@ -23,7 +23,7 @@ const double _centerSlot = 86;
 /// Material [icon].
 class UiDockItem {
   const UiDockItem({
-    this.icon,
+    @Deprecated('Use glyph: an OurneyIcon name') this.icon,
     this.glyph,
     required this.label,
     required this.onPressed,
@@ -279,7 +279,8 @@ class _Tab extends StatelessWidget {
         ? OurneyIcon(
             name: item.glyph!,
             size: 22,
-            color: active ? color : null,
+            // Camera dock: one flat UiCamera.ink colour, no sticker fill.
+            color: (active || camera) ? color : null,
             inkColor: active ? color : (camera ? UiCamera.ink : null),
           )
         : Icon(item.icon, size: 22, color: color);
@@ -427,7 +428,7 @@ class UiShutter extends StatelessWidget {
         decoration: BoxDecoration(
           color: accent ?? context.ui.accent,
           shape: BoxShape.circle,
-          border: Border.all(color: line, width: width + 0.5),
+          border: Border.all(color: line, width: width),
         ),
         child: Center(
           child: OurneyIcon(name: 'camera', size: 30, color: fg, inkColor: fg),

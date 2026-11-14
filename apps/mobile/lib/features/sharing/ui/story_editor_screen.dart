@@ -311,7 +311,7 @@ class _CoverPicker extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: UiSpace.md),
                     child: UiGlassChip(
-                      leading: Icons.image_outlined,
+                      leadingGlyph: 'gallery',
                       label: l10n.sharing_pickCover,
                     ),
                   ),
@@ -368,10 +368,11 @@ class _HideCell extends StatelessWidget {
                       color: ui.bg.withValues(alpha: 0.85),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.visibility_off_rounded,
+                    child: OurneyIcon(
+                      name: 'eye-off',
                       size: 20,
                       color: ui.ink,
+                      flat: true,
                     ),
                   ),
                 ),

@@ -62,7 +62,7 @@ class GroupsListScreen extends ConsumerWidget {
         return frame(
           UiEmptyState(
             key: const ValueKey('groups-empty'),
-            icon: Icons.groups_rounded,
+            glyph: const OurneyIcon(name: 'squad', size: 30),
             title: l10n.groups_emptyTitle,
             body: l10n.groups_emptyMessage,
             actionLabel: l10n.groups_joinWithCode,
@@ -77,7 +77,7 @@ class GroupsListScreen extends ConsumerWidget {
       return frame(
         UiEmptyState(
           key: const ValueKey('groups-error'),
-          icon: Icons.error_outline_rounded,
+          glyph: const OurneyIcon(name: 'error', size: 30),
           title: l10n.groups_loadError,
           body: groupErrorMessage(context, groups.error!),
           actionLabel: app.common_retry,
@@ -123,7 +123,7 @@ class _GroupList extends StatelessWidget {
                 flex: 4,
                 child: _ActionTile(
                   key: const ValueKey('groups-join'),
-                  icon: Icons.link_rounded,
+                  glyph: 'link',
                   label: l10n.groups_joinWithCode,
                   onTap: () => context.push(GroupsPaths.joinEntry),
                 ),
@@ -133,7 +133,7 @@ class _GroupList extends StatelessWidget {
                 flex: 5,
                 child: _ActionTile(
                   key: const ValueKey('groups-create'),
-                  icon: Icons.add_rounded,
+                  glyph: 'plus',
                   label: l10n.groups_createGroup,
                   onTap: () => context.push(AppRoutes.journeyNew),
                 ),
@@ -219,8 +219,9 @@ class GroupCard extends ConsumerWidget {
                           : style.paper,
                       borderRadius: BorderRadius.circular(UiRadius.input),
                     ),
-                    child: Icon(
-                      uiJourneyIcon(journey.emoji, journey.templateId),
+                    child: uiJourneyGlyph(
+                      journey.emoji,
+                      journey.templateId,
                       size: 30,
                       color: ui.isDark ? style.accent : style.ink,
                     ),
@@ -272,9 +273,10 @@ class GroupCard extends ConsumerWidget {
                 ),
                 Padding(
                   padding: const EdgeInsets.only(right: 10, left: 4),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
+                  child: OurneyIcon(
+                    name: 'chevron-right',
                     size: 18,
+                    flat: true,
                     color: ui.chevron,
                   ),
                 ),
@@ -290,13 +292,13 @@ class GroupCard extends ConsumerWidget {
 /// `.group-actions button`: outlined tile with a glyph and a label.
 class _ActionTile extends StatelessWidget {
   const _ActionTile({
-    required this.icon,
+    required this.glyph,
     required this.label,
     required this.onTap,
     super.key,
   });
 
-  final IconData icon;
+  final String glyph;
   final String label;
   final VoidCallback onTap;
 
@@ -321,7 +323,7 @@ class _ActionTile extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 17, color: ui.ink),
+            OurneyIcon(name: glyph, size: 17, flat: true, color: ui.ink),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
