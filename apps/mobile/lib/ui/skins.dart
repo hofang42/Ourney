@@ -103,6 +103,7 @@ class UiSkin {
       inkMuted: p.muted,
       brand: v.button,
       onBrand: v.buttonLabel,
+      accent: v.accent,
     );
   }
 }

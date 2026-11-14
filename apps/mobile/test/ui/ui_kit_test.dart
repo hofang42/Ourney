@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart' show PersonaSkinId;
 
 Widget host(
   Widget child, {
@@ -51,6 +52,15 @@ void main() {
       final quiet = uiSkinById('quiet').apply(OurneyUi.light);
       expect(quiet.bg, const Color(0xFFEFF3F0));
       expect(quiet.brand, const Color(0xFFFF4D6D));
+      // The variant accent is its own token; brand stays the button fill.
+      expect(quiet.accent, const Color(0xFF10B981));
+      expect(OurneyUi.light.accent, const Color(0xFFFF8A3D));
+      expect(OurneyUi.light.onDanger, const Color(0xFFFFFFFF));
+      expect(uiSkinIdFor(PersonaSkinId.coupleRituals), 'couple');
+      expect(
+        PersonaSkinId.values.map(uiSkinIdFor).toSet(),
+        uiSkins.map((s) => s.id).toSet(),
+      );
       final dark = uiSkinById('squad').apply(OurneyUi.dark, variantIndex: 1);
       expect(dark.bg, const Color(0xFF12131A));
       expect(dark.ink, const Color(0xFFF8FAFC));
@@ -170,6 +180,37 @@ void main() {
       expect(sticker().transform!.getTranslation().x, UiShadow.large);
       await g.up();
     });
+
+    testWidgets(
+      'UiGlass keeps the 2dp outline and an outside-only hard shadow',
+      (tester) async {
+        await tester.pumpWidget(host(const UiGlass(child: Text('glass'))));
+        BoxDecoration deco() => tester
+            .widgetList<DecoratedBox>(
+              find.descendant(
+                of: find.byType(UiGlass),
+                matching: find.byType(DecoratedBox),
+              ),
+            )
+            .map((d) => d.decoration)
+            .whereType<BoxDecoration>()
+            .firstWhere((d) => d.border != null);
+        expect((deco().border! as Border).top.width, UiBorder.standard);
+        expect(find.byType(ClipPath), findsOneWidget);
+
+        await tester.pumpWidget(
+          host(const UiGlass(hardShadow: 0, child: Text('glass'))),
+        );
+        expect(find.byType(ClipPath), findsNothing);
+
+        // Camera chip: 2px cream outline, 2px black hard shadow.
+        await tester.pumpWidget(
+          host(const UiGlass.camera(child: Text('chip'))),
+        );
+        expect((deco().border! as Border).top.color, UiCamera.outline);
+        expect(find.byType(ClipPath), findsOneWidget);
+      },
+    );
 
     testWidgets('UiGlass blurs, then goes opaque and stays clipped', (
       tester,
