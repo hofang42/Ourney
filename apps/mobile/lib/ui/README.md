@@ -94,3 +94,15 @@ PR 1 adds the foundation; screens migrate in later PRs.
 
 Glass rules: blur 10-20dp, tint 15-30% over photos, clip tightly, keep text at 4.5:1, never one live blur per scrolling row.
 Known gap: V2 disabled buttons use a dashed border; Flutter has no dashed `Border`, so a solid muted outline is used.
+
+## V2 journey widgets
+`components/journey_widgets.dart` (exported from `ui.dart`); all light + dark, tokens only, sticker cards.
+
+| Widget | Contents |
+| --- | --- |
+| `UiTypeBadge(type:, size:)` | Pastel rounded sticker with the type icon. Ids `weight study trip couple workout custom`; `UiTypeBadge.idFor('Giảm cân')` maps the V2 labels |
+| `UiStreakHero(streak:, title:, subtitle:, onTap:, state:)` | Hub hero: big Space Grotesk streak number (FittedBox, safe at 1.35x) + flame (trophy at `milestone`); states `normal done milestone group` |
+| `UiJourneyCard(title:, type:, day:, totalDays:, streak:, todayDone:, members:, onTap:, onSnap:)` | Type badge, `Ngày N/M` + streak chips, progress bar, 3 avatars + `+N`, 48dp snap button until done today |
+| `UiStateCard(kind:, title:, body:, actionLabel:, onAction:)` | Kinds `empty offline error loading` (plus / cloud-off / warning icons, `UiSkeleton` for loading) |
+
+New drawn icons in `ourney_icons.dart`: type-weight/study/trip/couple/workout/custom, flame, trophy, lock, check, warning, wifi-off, cloud-off, clock, timer, image, plus, back, close, settings, share, switch-camera, lightning, calendar, heart, star.
