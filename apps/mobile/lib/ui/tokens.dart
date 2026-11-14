@@ -98,62 +98,62 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
 
   static const light = OurneyUi(
     brightness: Brightness.light,
-    bg: Color(0xFFFAFAF7),
+    bg: Color(0xFFFFF8EE),
     surface: Color(0xFFFFFFFF),
     surfaceInput: Color(0xFFFFFFFF),
-    fill: Color(0xFFF1F1EC),
+    fill: Color(0xFFF6EEDF),
     fillSelected: Color(0xFFFFFFFF),
-    ink: Color(0xFF111114),
-    inkMuted: Color(0xFF5E5E66),
-    inkSoft: Color(0xFF45454C),
-    border: Color(0xFFD9D9D3),
-    inputBorder: Color(0xFFCFCFC9),
-    divider: Color(0xFFE6E6E0),
-    chevron: Color(0xFF8C8C94),
-    brand: Color(0xFFFF3B5C),
-    onBrand: Color(0xFF111114),
+    ink: Color(0xFF1A1A1A),
+    inkMuted: Color(0xFF5A544C),
+    inkSoft: Color(0xFF3F3A34),
+    border: Color(0xFFDCD2C2),
+    inputBorder: Color(0xFF1A1A1A),
+    divider: Color(0xFFEADFCC),
+    chevron: Color(0xFF8A8378),
+    brand: Color(0xFFFF8A3D),
+    onBrand: Color(0xFF1A1A1A),
     focus: Color(0xFF0284C7),
-    success: Color(0xFF166534),
+    success: Color(0xFF287747),
     successSoft: Color(0xFFDCFCE7),
     warn: Color(0xFFB33A0A),
-    danger: Color(0xFFD92D20),
+    danger: Color(0xFFB3261E),
     flame: Color(0xFFD97706),
-    grabber: Color(0xFFD1D1CC),
+    grabber: Color(0xFFD6CCBB),
     scrim: Color(0x88000000),
     dockBg: Color(0xEBFFFFFF),
-    dockBorder: Color(0xFFE6E6E0),
-    permissionIconBg: Color(0xFFF1F1EC),
-    shadow: Color(0x26101014),
+    dockBorder: Color(0xFF1A1A1A),
+    permissionIconBg: Color(0xFFF6EEDF),
+    shadow: Color(0xFF1A1A1A),
   );
 
   static const dark = OurneyUi(
     brightness: Brightness.dark,
-    bg: Color(0xFF0B0B0E),
-    surface: Color(0xFF16161B),
-    surfaceInput: Color(0xFF18181B),
-    fill: Color(0xFF101014),
-    fillSelected: Color(0xFF26262D),
-    ink: Color(0xFFF4F4F6),
-    inkMuted: Color(0xFFA1A1AA),
-    inkSoft: Color(0xFFD4D4D8),
-    border: Color(0xFF34343A),
-    inputBorder: Color(0xFF34343A),
-    divider: Color(0xFF26262D),
-    chevron: Color(0xFF8C8C94),
-    brand: Color(0xFFFF3B5C),
-    onBrand: Color(0xFF111114),
+    bg: Color(0xFF121212),
+    surface: Color(0xFF1C1B19),
+    surfaceInput: Color(0xFF1C1B19),
+    fill: Color(0xFF262420),
+    fillSelected: Color(0xFF2E2B27),
+    ink: Color(0xFFF5F0E6),
+    inkMuted: Color(0xFFB8B0A4),
+    inkSoft: Color(0xFFD6CFC3),
+    border: Color(0xFF3A3733),
+    inputBorder: Color(0xFFF5F0E6),
+    divider: Color(0xFF2A2825),
+    chevron: Color(0xFF8A8378),
+    brand: Color(0xFFFF8A3D),
+    onBrand: Color(0xFF1A1A1A),
     focus: Color(0xFF38BDF8),
     success: Color(0xFF4ADE80),
     successSoft: Color(0xFF14532D),
     warn: Color(0xFFFF9A62),
-    danger: Color(0xFFFF6B5E),
+    danger: Color(0xFFFF9C94),
     flame: Color(0xFFF59E0B),
-    grabber: Color(0xFF45454C),
+    grabber: Color(0xFF45413B),
     scrim: Color(0x88000000),
-    dockBg: Color(0xEB16161B),
-    dockBorder: Color(0xFF26262D),
-    permissionIconBg: Color(0xFF26262D),
-    shadow: Color(0x66000000),
+    dockBg: Color(0xEB1C1B19),
+    dockBorder: Color(0xFFF5F0E6),
+    permissionIconBg: Color(0xFF2E2B27),
+    shadow: Color(0xFF000000),
   );
 
   static OurneyUi of(BuildContext context) =>
@@ -161,15 +161,22 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
       (Theme.of(context).brightness == Brightness.dark ? dark : light);
 
   @override
-  OurneyUi copyWith({Color? brand, Color? onBrand}) => OurneyUi(
+  OurneyUi copyWith({
+    Color? bg,
+    Color? surface,
+    Color? ink,
+    Color? inkMuted,
+    Color? brand,
+    Color? onBrand,
+  }) => OurneyUi(
     brightness: brightness,
-    bg: bg,
-    surface: surface,
+    bg: bg ?? this.bg,
+    surface: surface ?? this.surface,
     surfaceInput: surfaceInput,
     fill: fill,
     fillSelected: fillSelected,
-    ink: ink,
-    inkMuted: inkMuted,
+    ink: ink ?? this.ink,
+    inkMuted: inkMuted ?? this.inkMuted,
     inkSoft: inkSoft,
     border: border,
     inputBorder: inputBorder,
@@ -307,4 +314,41 @@ abstract final class UiMotion {
       (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
       ? Duration.zero
       : d;
+}
+
+/// V2 "sticker" outline widths (`2px solid var(--ink)`; quiet skin 1.5px).
+abstract final class UiBorder {
+  static const double standard = 2;
+  static const double thin = 1.5;
+  static const double hairline = 1;
+}
+
+/// V2 hard-offset shadows (`4px 4px 0 ink`). No blur, ever.
+abstract final class UiShadow {
+  /// Primary button, cards, answer cards.
+  static const double large = 4;
+
+  /// Secondary button, chips, shutter, disc.
+  static const double small = 3;
+
+  /// Toast, tiny stickers.
+  static const double tiny = 2;
+
+  static List<BoxShadow> hard(Color color, [double offset = large]) => [
+    BoxShadow(color: color, offset: Offset(offset, offset)),
+  ];
+}
+
+/// Sticker-language helpers on the active palette.
+extension OurneyUiSticker on OurneyUi {
+  /// Outline color of buttons, cards and docks (V2 `var(--ink)`).
+  Color get outline => ink;
+
+  /// `Border.all(2, ink)`, optionally thinner for the quiet skin.
+  Border stickerBorder([double width = UiBorder.standard]) =>
+      Border.all(color: outline, width: width);
+
+  /// Hard offset shadow in the ink color (`4px 4px 0 ink`).
+  List<BoxShadow> hardShadow([double offset = UiShadow.large]) =>
+      UiShadow.hard(outline, offset);
 }

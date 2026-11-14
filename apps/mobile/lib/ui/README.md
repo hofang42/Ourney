@@ -1,4 +1,4 @@
-# Ourney UI kit (V1.0)
+# Ourney UI kit (V1.0 foundation, migrating to V2)
 
 Built from `design/figma-v1/index.css` + `App.tsx`. Import `package:ourney/ui/ui.dart`.
 Screens in `lib/features/**` must use only this folder for UI (never `lib/shared/` widgets).
@@ -79,3 +79,18 @@ in `AppDock(shutter: ...)`), Compose + Posted (`features/checkin`), Squad tab, S
 join (`features/groups/ui`), Profile + edit (`features/profile`), Share card screen
 (`features/share_card/ui`). The shell dock is `lib/app/app_dock.dart` (a `UiDock` wrapper with the
 active journey accent); the camera screen draws its own camera-mode dock.
+
+## V2 sticker language (design source `design/figma-v2/`, Figma Make "Ourney V2")
+PR 1 adds the foundation; screens migrate in later PRs.
+
+| File | Contents |
+| --- | --- |
+| `tokens.dart` | Shell palette is now the V2 shell (`#FFF8EE`/`#121212`, brand `#FF8A3D`). New `UiBorder` (2 / 1.5 / 1), `UiShadow.hard(color, offset)` (no blur), `ctx.ui.outline`, `stickerBorder()`, `hardShadow()` |
+| `skins.dart` | `uiSkins` (quiet, squad, memory, couple, flexer, minimal) x 3 variants x light/dark; `UiSkin.apply(OurneyUi, variantIndex:)` recolors the shell for a journey; `UiTypePastel` journey-type colors |
+| `typography.dart` | `UiText.heading(font:, size:)` for per-skin heading fonts (Space Grotesk, Fraunces, Playfair Display, Barlow Condensed; Space Mono for labels), all OFL, bundled in `assets/fonts` |
+| `components/pressable.dart` | `shadowOffset`: sticker press (translate by the offset, shadow disappears). Without it, the 0.96 scale press |
+| `components/buttons.dart` | `UiButton` primary/secondary: 2dp outline + 4/3dp hard shadow |
+| `components/glass.dart` | `UiGlass` liquid-glass surface: blur + saturation + tint + specular edge; opaque fallback for high contrast / `reduceTransparency`. `UiGlass.camera` for dark camera chrome |
+
+Glass rules: blur 10-20dp, tint 15-30% over photos, clip tightly, keep text at 4.5:1, never one live blur per scrolling row.
+Known gap: V2 disabled buttons use a dashed border; Flutter has no dashed `Border`, so a solid muted outline is used.

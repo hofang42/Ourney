@@ -4,6 +4,22 @@ import 'package:flutter/material.dart';
 abstract final class UiFonts {
   static const body = 'BeVietnamPro';
   static const display = 'BricolageGrotesque';
+
+  // V2 skin heading fonts (bundled, OFL).
+  static const spaceGrotesk = 'SpaceGrotesk';
+  static const fraunces = 'Fraunces';
+  static const playfair = 'PlayfairDisplay';
+  static const barlowCondensed = 'BarlowCondensed';
+  static const mono = 'SpaceMono';
+
+  /// Bundled family for a V2 skin `headingFont` name (StyleGuide spelling).
+  static String forHeading(String headingFont) => switch (headingFont) {
+    'Fraunces' => fraunces,
+    'Playfair Display' => playfair,
+    'Barlow Condensed' => barlowCondensed,
+    'Space Grotesk' => spaceGrotesk,
+    _ => spaceGrotesk,
+  };
 }
 
 /// Type styles from index.css. Vietnamese needs generous leading, so every
@@ -25,6 +41,32 @@ abstract final class UiText {
     letterSpacing: size * tracking,
     color: color,
   );
+
+  /// A V2 skin heading (`--heading-font`): the skin's family with Be Vietnam
+  /// Pro as the diacritics fallback, variable weight where the font has one.
+  static TextStyle heading({
+    required String font,
+    required double size,
+    int weight = 600,
+    double height = 1.3,
+    double tracking = 0,
+    Color? color,
+  }) {
+    final family = UiFonts.forHeading(font);
+    final variable = family != UiFonts.barlowCondensed;
+    return TextStyle(
+      fontFamily: family,
+      fontFamilyFallback: const [UiFonts.body],
+      fontSize: size,
+      fontWeight: FontWeight.values[((weight ~/ 100) - 1).clamp(0, 8)],
+      fontVariations: variable
+          ? [FontVariation('wght', weight.toDouble())]
+          : null,
+      height: height,
+      letterSpacing: size * tracking,
+      color: color,
+    );
+  }
 
   static TextStyle body({
     double size = 15,
