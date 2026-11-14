@@ -118,6 +118,9 @@ void main() {
         ),
       ],
     );
+    // The panel scrolls; bring the button above the camera tools first.
+    await tester.ensureVisible(find.text('Cho phép camera'));
+    await tester.pump();
     await tester.tap(find.text('Cho phép camera'));
     await tester.pump();
     expect(camera.gates, hasLength(1), reason: 'start is in flight');

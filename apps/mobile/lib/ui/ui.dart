@@ -5,6 +5,7 @@
 library;
 
 export 'components/avatar.dart';
+export 'components/banner.dart';
 export 'components/bars.dart';
 export 'components/brand.dart';
 export 'components/buttons.dart';
@@ -16,11 +17,14 @@ export 'components/glass.dart';
 export 'components/inputs.dart';
 export 'components/layout.dart';
 export 'components/memory_widgets.dart';
+export 'components/ourney_icons.dart';
 export 'components/person_widgets.dart';
 export 'components/pressable.dart';
 export 'components/profile_entry.dart';
+export 'components/reaction_bar.dart';
 export 'components/segmented.dart';
 export 'components/sheets.dart';
+export 'components/skin_scope.dart';
 export 'components/surfaces.dart';
 export 'components/text_area.dart';
 export 'journey_icons.dart';

@@ -1,22 +1,40 @@
-import 'dart:ui' show ImageFilter;
-
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'glass.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
+import 'skin_scope.dart';
 
-/// One side tab of the [UiDock].
+/// V2 selection pill easing (`cubic-bezier(.2,.9,.3,1.2)`, slight overshoot).
+const Curve _pillCurve = Cubic(0.2, 0.9, 0.3, 1.2);
+const Duration _pillDuration = Duration(milliseconds: 280);
+const Duration _longPress = Duration(milliseconds: 400);
+const double _pillW = 68;
+const double _pillH = 52;
+const double _dockH = 64;
+const double _cameraDockH = 92;
+const double _centerSlot = 86;
+
+/// One tab of the [UiDock]. Give it a drawn [glyph] (an [OurneyIcon] name such
+/// as `journeys`, `squad`, `activity`, `profile`) or, for older callers, a
+/// Material [icon].
 class UiDockItem {
   const UiDockItem({
-    required this.icon,
+    this.icon,
+    this.glyph,
     required this.label,
     required this.onPressed,
     this.active = false,
     this.itemKey,
-  });
+  }) : assert(icon != null || glyph != null, 'Give an icon or a glyph');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// [OurneyIcon] name; wins over [icon].
+  final String? glyph;
   final String label;
   final VoidCallback onPressed;
   final bool active;
@@ -25,21 +43,31 @@ class UiDockItem {
   final Key? itemKey;
 }
 
-/// `.dock`: the shared 3-tab bar. Left tab, center quick-snap pill
-/// (56x40, filled with [accent]) and right tab, on a blurred paper bar with
-/// a hairline on top. Set [camera] for `.camera-dock` (dark bar, white
-/// glyphs) and pass a [UiShutter] as [center].
+/// The V2 floating dock: a glass sticker bar (blur 20, saturation 1.6, solid
+/// when transparency is reduced) with a sliding selection pill.
+///
+/// 3-slot form: [left], the center snap pill, [right]. 5-tab form (V2):
+/// pass [extraLeft] / [extraRight] so the order is
+/// `left, ...extraLeft, [center], ...extraRight, right`; e.g. Hành trình ·
+/// Hội · [Chụp] · Hoạt động · Hồ sơ.
+///
+/// Set [camera] for the dark camera dock and pass a [UiShutter] as [center].
+/// [onShutterLongPress] (400ms) opens the journey wheel from the center.
 class UiDock extends StatelessWidget {
   const UiDock({
     required this.left,
     required this.right,
     required this.snapLabel,
     required this.onSnap,
+    this.extraLeft = const [],
+    this.extraRight = const [],
     this.accent,
     this.onAccent,
     this.center,
     this.camera = false,
     this.snapKey,
+    this.onShutterLongPress,
+    this.reduceTransparency = false,
     super.key,
   });
 
@@ -48,6 +76,12 @@ class UiDock extends StatelessWidget {
 
   final UiDockItem left;
   final UiDockItem right;
+
+  /// Tabs between [left] and the center (left side).
+  final List<UiDockItem> extraLeft;
+
+  /// Tabs between the center and [right].
+  final List<UiDockItem> extraRight;
   final String snapLabel;
   final VoidCallback onSnap;
   final Color? accent;
@@ -57,55 +91,156 @@ class UiDock extends StatelessWidget {
   final Widget? center;
   final bool camera;
 
+  /// Fired after a 400ms press on the center (journey wheel).
+  final VoidCallback? onShutterLongPress;
+
+  /// App-level "reduce transparency": solid fill, no blur.
+  final bool reduceTransparency;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final bottom = MediaQuery.viewPaddingOf(context).bottom;
-    final bg = camera ? UiCamera.dock : ui.dockBg;
-    final line = camera ? UiCamera.dockBorder : ui.dockBorder;
-    final centerWidth = camera ? 92.0 : UiSize.shutter;
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          constraints: BoxConstraints(
-            minHeight: (camera ? 92 : UiSize.dockMin) + bottom,
-          ),
-          padding: EdgeInsets.fromLTRB(
-            UiSpace.huge + 2,
-            UiSpace.sm,
-            UiSpace.huge + 2,
-            bottom < UiSpace.sm ? UiSpace.sm : bottom,
-          ),
-          decoration: BoxDecoration(
-            color: bg,
-            border: Border(top: BorderSide(color: line)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _Tab(key: left.itemKey, item: left, camera: camera),
+    final media = MediaQuery.of(context);
+    final bottom = media.viewPadding.bottom;
+    final skinBorder =
+        UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
+    final quiet = skinBorder < UiBorder.standard;
+    final stroke = skinBorder;
+    final shadowOffset = quiet ? UiShadow.tiny : UiShadow.large;
+    final outline = camera ? UiCamera.ink : ui.outline;
+
+    final leftItems = [left, ...extraLeft];
+    final rightItems = [...extraRight, right];
+    final items = [...leftItems, ...rightItems];
+    final activeIndex = items.indexWhere((e) => e.active);
+    final height = camera ? _cameraDockH : _dockH;
+    const radius = BorderRadius.all(Radius.circular(32));
+
+    final Widget centerChild =
+        center ??
+        UiSnapPill(
+          key: snapKey,
+          label: snapLabel,
+          onPressed: onSnap,
+          accent: accent,
+          onAccent: onAccent,
+          outlineColor: outline,
+          outlineWidth: stroke,
+          shadowOffset: shadowOffset,
+          onLongPress: onShutterLongPress,
+        );
+
+    final Widget centerSlot = center != null && onShutterLongPress != null
+        ? _LongPress(onLongPress: onShutterLongPress!, child: centerChild)
+        : centerChild;
+
+    final bar = LayoutBuilder(
+      builder: (context, c) {
+        final slotW = (c.maxWidth - _centerSlot) / items.length;
+        final pillW = _pillW < slotW ? _pillW : slotW;
+        double slotX(int i) => i < leftItems.length
+            ? i * slotW
+            : leftItems.length * slotW +
+                  _centerSlot +
+                  (i - leftItems.length) * slotW;
+        final pillFill = accent ?? ui.brand;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            if (activeIndex >= 0)
+              AnimatedPositioned(
+                duration: UiMotion.of(context, _pillDuration),
+                curve: _pillCurve,
+                left: slotX(activeIndex) + (slotW - pillW) / 2,
+                top: (c.maxHeight - _pillH) / 2,
+                width: pillW,
+                height: _pillH,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    key: const ValueKey('dock-selection-pill'),
+                    decoration: BoxDecoration(
+                      color: pillFill,
+                      borderRadius: BorderRadius.circular(UiRadius.menu),
+                      border: Border.all(color: outline, width: UiBorder.thin),
+                      boxShadow: UiShadow.hard(outline, UiShadow.tiny),
+                    ),
+                  ),
+                ),
               ),
-              SizedBox(
-                width: centerWidth,
-                child:
-                    center ??
-                    Align(
-                      alignment: Alignment.topCenter,
-                      heightFactor: 1,
-                      child: UiSnapPill(
-                        key: snapKey,
-                        label: snapLabel,
-                        onPressed: onSnap,
-                        accent: accent,
-                        onAccent: onAccent,
+            Row(
+              children: [
+                for (final item in leftItems)
+                  Expanded(
+                    child: _Tab(item: item, camera: camera, pillOn: pillFill),
+                  ),
+                SizedBox(
+                  width: _centerSlot,
+                  child: Center(child: centerSlot),
+                ),
+                for (final item in rightItems)
+                  Expanded(
+                    child: _Tab(item: item, camera: camera, pillOn: pillFill),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+
+    // Fixed height: the Center in the shutter slot would otherwise expand to
+    // the full available height (the dock filled the whole screen).
+    final surface = Container(
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: UiSpace.xs, vertical: 6),
+      // Camera: the dark dock tint lives here so glass stays neutral.
+      decoration: camera ? const BoxDecoration(color: UiCamera.dock) : null,
+      child: bar,
+    );
+
+    final glass = UiGlass(
+      borderRadius: radius,
+      blur: 20,
+      saturation: 1.6,
+      tint: camera ? Colors.transparent : ui.surface.withValues(alpha: 0.82),
+      fallback: camera ? UiCamera.dock : ui.surface,
+      borderColor: outline,
+      borderWidth: stroke,
+      reduceTransparency: reduceTransparency,
+      child: surface,
+    );
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        UiSpace.sm,
+        UiSpace.xs,
+        UiSpace.sm + shadowOffset,
+        (bottom < UiSpace.sm ? UiSpace.sm : bottom) + shadowOffset,
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 358 + 16),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // Hard shadow drawn only outside the bar so it never shows
+              // through the translucent glass.
+              Positioned.fill(
+                child: ClipPath(
+                  clipper: _OutsideRRect(radius, shadowOffset + 2),
+                  child: Transform.translate(
+                    offset: Offset(shadowOffset, shadowOffset),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: outline,
+                        borderRadius: radius,
                       ),
                     ),
+                  ),
+                ),
               ),
-              Expanded(
-                child: _Tab(key: right.itemKey, item: right, camera: camera),
-              ),
+              glass,
             ],
           ),
         ),
@@ -114,24 +249,79 @@ class UiDock extends StatelessWidget {
   }
 }
 
+/// Clips to everything outside the rounded rect of the widget's own size.
+class _OutsideRRect extends CustomClipper<Path> {
+  const _OutsideRRect(this.radius, this.inflate);
+
+  final BorderRadius radius;
+  final double inflate;
+
+  @override
+  Path getClip(Size size) {
+    final rect = Offset.zero & size;
+    return Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(rect.inflate(inflate * 2))
+      ..addRRect(radius.toRRect(rect));
+  }
+
+  @override
+  bool shouldReclip(_OutsideRRect old) =>
+      old.radius != radius || old.inflate != inflate;
+}
+
+/// Fires [onLongPress] after 400ms (the journey wheel gesture) without
+/// stealing taps from the child.
+class _LongPress extends StatelessWidget {
+  const _LongPress({required this.onLongPress, required this.child});
+
+  final VoidCallback onLongPress;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawGestureDetector(
+      behavior: HitTestBehavior.translucent,
+      gestures: {
+        LongPressGestureRecognizer:
+            GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+              () => LongPressGestureRecognizer(duration: _longPress),
+              (r) => r.onLongPress = onLongPress,
+            ),
+      },
+      child: child,
+    );
+  }
+}
+
 class _Tab extends StatelessWidget {
-  const _Tab({required this.item, required this.camera, super.key});
+  const _Tab({required this.item, required this.camera, required this.pillOn});
 
   final UiDockItem item;
   final bool camera;
+  final Color pillOn;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final Color color = camera
-        ? UiCamera.ink
-        : (item.active ? ui.ink : ui.inkMuted);
+    final active = item.active;
+    // Active tabs sit on the brand pill: solid dark ink glyph and label.
+    final Color color = active ? ui.onBrand : (camera ? UiCamera.ink : ui.ink);
+    final Widget glyph = item.glyph != null
+        ? OurneyIcon(
+            name: item.glyph!,
+            size: 22,
+            color: active ? color : null,
+            inkColor: active ? color : (camera ? UiCamera.ink : null),
+          )
+        : Icon(item.icon, size: 22, color: color);
     return UiPressable(
+      key: item.itemKey,
       onPressed: item.onPressed,
-      selected: item.active,
+      selected: active,
       semanticLabel: item.label,
       excludeChildSemantics: true,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(UiRadius.menu),
       minSize: const Size(UiSize.tap, 56),
       child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 56),
@@ -142,15 +332,16 @@ class _Tab extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(item.icon, size: 22, color: color),
-              const SizedBox(height: 3),
+              glyph,
+              const SizedBox(height: 2),
               Text(
                 item.label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: UiText.body(
-                  size: 11,
-                  weight: FontWeight.w600,
+                  size: 10.5,
+                  weight: active ? FontWeight.w700 : FontWeight.w600,
                   height: 1.35,
                   color: color,
                 ),
@@ -163,13 +354,18 @@ class _Tab extends StatelessWidget {
   }
 }
 
-/// `.camera-capsule`: 56x40 quick-snap pill on Hub / Timeline / Squad.
+/// `.camera-capsule`: 56x40 quick-snap pill on Hub / Timeline / Squad, in the
+/// brand (or [accent]) fill with a sticker outline and hard shadow.
 class UiSnapPill extends StatelessWidget {
   const UiSnapPill({
     required this.label,
     required this.onPressed,
     this.accent,
     this.onAccent,
+    this.outlineColor,
+    this.outlineWidth = UiBorder.standard,
+    this.shadowOffset = UiShadow.small,
+    this.onLongPress,
     super.key,
   });
 
@@ -177,11 +373,19 @@ class UiSnapPill extends StatelessWidget {
   final VoidCallback onPressed;
   final Color? accent;
   final Color? onAccent;
+  final Color? outlineColor;
+  final double outlineWidth;
+  final double shadowOffset;
+
+  /// 400ms press (journey wheel).
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return UiPressable(
+    final line = outlineColor ?? ui.outline;
+    final fg = onAccent ?? ui.onBrand;
+    Widget pill = UiPressable(
       onPressed: onPressed,
       semanticLabel: label,
       excludeChildSemantics: true,
@@ -190,37 +394,48 @@ class UiSnapPill extends StatelessWidget {
       child: Container(
         width: UiSize.snapPillW,
         height: UiSize.snapPillH,
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: accent ?? ui.brand,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
+          border: Border.all(color: line, width: outlineWidth),
+          boxShadow: UiShadow.hard(line, shadowOffset),
         ),
-        child: Icon(
-          Icons.photo_camera_outlined,
-          size: 25,
-          color: onAccent ?? ui.onBrand,
-        ),
+        child: OurneyIcon(name: 'camera', size: 24, color: fg, inkColor: fg),
       ),
     );
+    if (onLongPress != null) {
+      pill = _LongPress(onLongPress: onLongPress!, child: pill);
+    }
+    return pill;
   }
 }
 
-/// `.shutter`: 76dp white ring around a 64dp [accent] disc (Hero Shutter on
-/// the camera screen).
+/// `.shutter`: 76dp [accent] (brand) disc with a sticker outline and hard
+/// shadow (Hero Shutter on the camera screen). [onLongPress] (400ms) opens the
+/// journey wheel.
 class UiShutter extends StatelessWidget {
   const UiShutter({
     required this.label,
     required this.onPressed,
     this.accent,
+    this.onLongPress,
+    this.outlineColor,
     super.key,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final Color? accent;
+  final VoidCallback? onLongPress;
+  final Color? outlineColor;
 
   @override
   Widget build(BuildContext context) {
-    return UiPressable(
+    final line = outlineColor ?? UiCamera.ink;
+    final width =
+        UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
+    Widget shutter = UiPressable(
       onPressed: onPressed,
       semanticLabel: label,
       excludeChildSemantics: true,
@@ -228,20 +443,27 @@ class UiShutter extends StatelessWidget {
       child: Container(
         width: UiSize.shutter,
         height: UiSize.shutter,
-        alignment: Alignment.center,
         decoration: BoxDecoration(
+          color: accent ?? context.ui.brand,
           shape: BoxShape.circle,
-          border: Border.all(color: UiCamera.ink, width: 3),
+          border: Border.all(color: line, width: width + 0.5),
+          boxShadow: onPressed == null
+              ? const []
+              : UiShadow.hard(line, UiShadow.small),
         ),
-        child: Container(
-          width: UiSize.shutterInner,
-          height: UiSize.shutterInner,
-          decoration: BoxDecoration(
-            color: accent ?? context.ui.brand,
-            shape: BoxShape.circle,
+        child: Center(
+          child: OurneyIcon(
+            name: 'camera',
+            size: 30,
+            color: context.ui.onBrand,
+            inkColor: context.ui.onBrand,
           ),
         ),
       ),
     );
+    if (onLongPress != null) {
+      shutter = _LongPress(onLongPress: onLongPress!, child: shutter);
+    }
+    return shutter;
   }
 }

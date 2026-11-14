@@ -142,6 +142,9 @@ void main() {
     // "Check in now" -> capture: the camera opens after the pre-prompt.
     await tap('journey-checkin');
     expect(path(), AppRoutes.capture);
+    // The panel scrolls; bring the button above the camera tools first.
+    await tester.ensureVisible(find.text('Cho phép camera'));
+    await tester.pump();
     await tester.tap(find.text('Cho phép camera'));
     await settle();
     expect(camera.isReady, isTrue);

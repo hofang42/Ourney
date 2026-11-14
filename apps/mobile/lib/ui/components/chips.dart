@@ -4,8 +4,9 @@ import '../tokens.dart';
 import '../typography.dart';
 import 'pressable.dart';
 
-/// `.language-chip` / `.inbox-filters button`: bordered capsule, 48dp tall,
-/// optional leading glyph. Selected chips invert (ink fill, paper label).
+/// `.create-extra-chip` / `.language-chip`: sticker capsule. 44dp visual
+/// inside a 48dp hit area, 1.5dp outline, surface fill, 3dp hard shadow.
+/// Selected chips fill with the brand color and an ink label.
 class UiChip extends StatelessWidget {
   const UiChip({
     required this.label,
@@ -25,19 +26,22 @@ class UiChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final fg = selected ? ui.bg : ui.ink;
+    final fg = selected ? ui.onBrand : ui.ink;
     return UiPressable(
       onPressed: onPressed,
       selected: selected,
       semanticLabel: semanticHint == null ? label : '$label, $semanticHint',
       excludeChildSemantics: true,
+      centerChild: true,
+      shadowOffset: UiShadow.small,
+      borderRadius: BorderRadius.circular(UiRadius.capsule),
       child: Container(
-        constraints: const BoxConstraints(minHeight: UiSize.tap),
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? ui.ink : ui.surfaceInput,
+          color: selected ? ui.brand : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
-          border: Border.all(color: selected ? ui.ink : ui.border),
+          border: ui.stickerBorder(UiBorder.thin),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -52,7 +56,7 @@ class UiChip extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: UiText.body(
-                  size: 12,
+                  size: 13,
                   weight: FontWeight.w700,
                   height: 1.4,
                   color: fg,
@@ -66,14 +70,15 @@ class UiChip extends StatelessWidget {
   }
 }
 
-/// Non-interactive small pill (`.imported-badge`, `.add-more-label`).
+/// Non-interactive small pill (`.imported-badge`, `.add-more-label`) with the
+/// 1.5dp sticker outline. No shadow: it is not selectable.
 class UiTag extends StatelessWidget {
   const UiTag({
     required this.label,
     this.icon,
     this.background,
     this.foreground,
-    this.bordered = false,
+    this.bordered = true,
     super.key,
   });
 
@@ -89,11 +94,11 @@ class UiTag extends StatelessWidget {
     final fg = foreground ?? ui.ink;
     return Container(
       constraints: const BoxConstraints(minHeight: 26),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         color: background ?? ui.surface,
         borderRadius: BorderRadius.circular(UiRadius.capsule),
-        border: bordered ? Border.all(color: ui.border) : null,
+        border: bordered ? ui.stickerBorder(UiBorder.thin) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

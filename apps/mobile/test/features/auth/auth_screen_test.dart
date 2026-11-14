@@ -66,6 +66,8 @@ void main() {
       expect(byKey('auth-step-code'), findsOneWidget);
       expect(resend().onPressed, isNull);
 
+      await tester.ensureVisible(byKey('auth-change-email'));
+      await tester.pump();
       await tester.tap(byKey('auth-change-email'));
       await tester.pumpAndSettle();
       expect(byKey('auth-step-email'), findsOneWidget);

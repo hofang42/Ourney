@@ -116,13 +116,7 @@ void main() {
         journeys: _journeys(),
         insights: FakeInsightsRepository(testInsights()),
       );
-      await _tap(
-        tester,
-        find.descendant(
-          of: _key('share-link-switch'),
-          matching: find.byType(Switch),
-        ),
-      );
+      await _tap(tester, _key('share-link-switch'));
       expect(sharing.calls, contains('link:true:false'));
       expect(_key('share-copy-link'), findsOneWidget);
       expect(_key('share-show-counts'), findsOneWidget);
@@ -138,23 +132,10 @@ void main() {
         sharing: sharing,
         journeys: _journeys(),
       );
-      await _tap(
-        tester,
-        find.descendant(
-          of: _key('share-link-switch'),
-          matching: find.byType(Switch),
-        ),
-      );
+      await _tap(tester, _key('share-link-switch'));
       expect(_key('share-under18'), findsOneWidget);
       expect(
-        tester
-            .widget<Switch>(
-              find.descendant(
-                of: _key('share-link-switch'),
-                matching: find.byType(Switch),
-              ),
-            )
-            .onChanged,
+        tester.widget<UiSwitchRow>(_key('share-link-switch')).onChanged,
         isNull,
       );
     });
@@ -167,13 +148,7 @@ void main() {
         sharing: sharing,
         journeys: _journeys(template: TemplateId.weightLoss),
       );
-      await _tap(
-        tester,
-        find.descendant(
-          of: _key('share-link-switch'),
-          matching: find.byType(Switch),
-        ),
-      );
+      await _tap(tester, _key('share-link-switch'));
       expect(_key('share-sensitive-warning'), findsOneWidget);
       expect(sharing.calls.where((c) => c.startsWith('link')), isEmpty);
       await _tap(tester, _key('share-warning-confirm'));

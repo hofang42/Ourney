@@ -59,6 +59,11 @@ void main() {
           .apply(OurneyUi.dark, variantIndex: 1);
       expect(minimal.brand, const Color(0xFFF4F4F5));
       expect(minimal.onBrand, const Color(0xFF0E0E10));
+      // Derived neutrals follow the skin, not the warm shell.
+      expect(quiet.surfaceInput, quiet.surface);
+      expect(quiet.inputBorder, quiet.ink);
+      expect(quiet.fill, isNot(OurneyUi.light.fill));
+      expect(quiet.divider, isNot(OurneyUi.light.divider));
       expect(uiSkinById('quiet').borderWidth, UiBorder.thin);
       expect(uiSkinById('nope').id, 'minimal');
     });
@@ -331,8 +336,8 @@ void main() {
       expect(
         tester.getSize(
           find
-              .ancestor(
-                of: find.byIcon(Icons.photo_camera_outlined),
+              .descendant(
+                of: find.byType(UiSnapPill),
                 matching: find.byType(Container),
               )
               .first,
