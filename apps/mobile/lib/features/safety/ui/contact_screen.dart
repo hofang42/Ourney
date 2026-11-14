@@ -44,7 +44,7 @@ class ContactScreen extends ConsumerWidget {
     final ui = context.ui;
     return SafetyPage(
       pageKey: const ValueKey('safety-contact'),
-      title: l10n.safety_hubContact,
+      title: l10n.safety_contactPageTitle,
       onBack: () => closeOr(context, SafetyPaths.hub),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -528,6 +528,27 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                   onRetry: () => ref.invalidate(captureJourneysProvider),
                 ),
               ),
+              if (hasFlash)
+                KeyedSubtree(
+                  key: const ValueKey('capture-flash'),
+                  child: Tooltip(
+                    message: flashLabel,
+                    child: UiCameraTool(
+                      glyph: flashIcon,
+                      label: flashLabel,
+                      onPressed: _toggleFlash,
+                    ),
+                  ),
+                ),
+              Tooltip(
+                message: l10n.camera_switchLens,
+                child: UiCameraTool(
+                  key: const ValueKey('capture-switch'),
+                  glyph: 'switch-camera',
+                  label: l10n.camera_switchLens,
+                  onPressed: canSwitch ? _switchLens : null,
+                ),
+              ),
               const ProfileEntryButton(onDark: true),
             ],
           ),
@@ -538,32 +559,6 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
             padding: EdgeInsets.symmetric(horizontal: gutter),
             child: _buildViewfinder(context, list, selected),
           ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (hasFlash)
-              KeyedSubtree(
-                key: const ValueKey('capture-flash'),
-                child: Tooltip(
-                  message: flashLabel,
-                  child: UiCameraTool(
-                    glyph: flashIcon,
-                    label: flashLabel,
-                    onPressed: _toggleFlash,
-                  ),
-                ),
-              ),
-            Tooltip(
-              message: l10n.camera_grid,
-              child: UiCameraTool(
-                key: const ValueKey('capture-grid'),
-                glyph: 'grid',
-                label: l10n.camera_grid,
-                onPressed: () => setState(() => _grid = !_grid),
-              ),
-            ),
-          ],
         ),
         if (list.length > 1)
           UiPageDots(count: list.length, index: index < 0 ? 0 : index)
@@ -585,12 +580,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 ),
               ),
               Tooltip(
-                message: l10n.camera_switchLens,
+                message: l10n.camera_grid,
                 child: UiCameraTool(
-                  key: const ValueKey('capture-switch'),
-                  glyph: 'switch-camera',
-                  label: l10n.camera_switchLens,
-                  onPressed: canSwitch ? _switchLens : null,
+                  key: const ValueKey('capture-grid'),
+                  glyph: 'grid',
+                  label: l10n.camera_grid,
+                  onPressed: () => setState(() => _grid = !_grid),
                 ),
               ),
             ],

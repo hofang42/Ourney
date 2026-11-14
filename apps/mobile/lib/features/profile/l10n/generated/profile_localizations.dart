@@ -98,16 +98,40 @@ abstract class ProfileL10n {
     Locale('vi'),
   ];
 
+  /// Delete dialog list item.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hồ sơ của bạn'**
+  String get profile_deleteItemProfile;
+
+  /// Delete dialog list item.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mọi hành trình và ảnh'**
+  String get profile_deleteItemJourneys;
+
+  /// Delete dialog list item.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tư cách thành viên trong các nhóm'**
+  String get profile_deleteItemGroups;
+
+  /// Title of the edit profile screen.
+  ///
+  /// In vi, this message translates to:
+  /// **'sửa hồ sơ.'**
+  String get profile_editScreenTitle;
+
   /// Title of the profile screen.
   ///
   /// In vi, this message translates to:
-  /// **'Hồ sơ'**
+  /// **'hồ sơ.'**
   String get profile_title;
 
   /// Title of the profile setup screen shown after the first sign-in.
   ///
   /// In vi, this message translates to:
-  /// **'Hồ sơ của bạn'**
+  /// **'hồ sơ của bạn.'**
   String get profile_setupTitle;
 
   /// Subtitle of the profile setup screen.
@@ -227,7 +251,7 @@ abstract class ProfileL10n {
   /// Save button on the setup screen.
   ///
   /// In vi, this message translates to:
-  /// **'Tiếp tục'**
+  /// **'Xong'**
   String get profile_continue;
 
   /// Save button label while saving.
@@ -287,7 +311,7 @@ abstract class ProfileL10n {
   /// Settings section header.
   ///
   /// In vi, this message translates to:
-  /// **'Cài đặt'**
+  /// **'cài đặt'**
   String get profile_sectionSettings;
 
   /// Link to the reminders screen.
@@ -329,7 +353,7 @@ abstract class ProfileL10n {
   /// Account section header.
   ///
   /// In vi, this message translates to:
-  /// **'Tài khoản'**
+  /// **'tài khoản'**
   String get profile_sectionAccount;
 
   /// Sign-out button and dialog action.

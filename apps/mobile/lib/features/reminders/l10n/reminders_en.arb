@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "reminders_title": "Reminders",
+  "reminders_title": "reminders.",
   "reminders_intro": "Pick a reminder time for each journey. Ourney only reminds you on days you haven't checked in yet.",
   "reminders_journeysHeader": "Journeys",
   "reminders_toggleLabel": "Reminder for {journey}",

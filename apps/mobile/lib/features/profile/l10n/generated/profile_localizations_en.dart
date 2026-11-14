@@ -10,10 +10,22 @@ class ProfileL10nEn extends ProfileL10n {
   ProfileL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get profile_title => 'Profile';
+  String get profile_deleteItemProfile => 'Your profile';
 
   @override
-  String get profile_setupTitle => 'Your profile';
+  String get profile_deleteItemJourneys => 'All journeys and photos';
+
+  @override
+  String get profile_deleteItemGroups => 'Your membership in groups';
+
+  @override
+  String get profile_editScreenTitle => 'edit profile.';
+
+  @override
+  String get profile_title => 'profile.';
+
+  @override
+  String get profile_setupTitle => 'your profile.';
 
   @override
   String get profile_setupSubtitle =>
@@ -86,7 +98,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_save => 'Save';
 
   @override
-  String get profile_continue => 'Continue';
+  String get profile_continue => 'Done';
 
   @override
   String get profile_saving => 'Saving…';
@@ -120,7 +132,7 @@ class ProfileL10nEn extends ProfileL10n {
       'Your data stays on this device. Solo journeys work fully; sign-in and groups need a server.';
 
   @override
-  String get profile_sectionSettings => 'Settings';
+  String get profile_sectionSettings => 'settings';
 
   @override
   String get profile_reminders => 'Reminders';
@@ -142,7 +154,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_safety => 'Terms, privacy & contact';
 
   @override
-  String get profile_sectionAccount => 'Account';
+  String get profile_sectionAccount => 'account';
 
   @override
   String get profile_signOut => 'Sign out';

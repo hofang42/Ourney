@@ -34,7 +34,7 @@ class ProfileEditScreen extends ConsumerWidget {
           UiBackHeader(
             onBack: () => _close(context),
             backLabel: MaterialLocalizations.of(context).backButtonTooltip,
-            title: l10n.profile_editTitle,
+            title: l10n.profile_editScreenTitle,
           ),
           const SizedBox(height: UiSpace.lg),
           switch (profile) {

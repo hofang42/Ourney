@@ -20,7 +20,7 @@ void main() {
       await goTo(tester, c, profileSetupPath);
       expect(byKey('profile-setup-screen'), findsOneWidget);
       expect(find.byType(UiAvatarPicker), findsOneWidget);
-      expect(find.text('Hồ sơ của bạn'), findsOneWidget);
+      expect(find.text('hồ sơ của bạn.'), findsOneWidget);
 
       await tester.enterText(byKey('profile-display-name'), 'Linh Tran');
       await tester.enterText(byKey('profile-username'), 'linh.tran');

@@ -101,7 +101,7 @@ abstract class RemindersL10n {
   /// Title of the reminders feature's main screen.
   ///
   /// In vi, this message translates to:
-  /// **'Nhắc nhở'**
+  /// **'nhắc nhở.'**
   String get reminders_title;
 
   /// Short explanation at the top of the reminders screen.
@@ -113,7 +113,7 @@ abstract class RemindersL10n {
   /// Section header above the per-journey reminder list.
   ///
   /// In vi, this message translates to:
-  /// **'Hành trình'**
+  /// **'hành trình'**
   String get reminders_journeysHeader;
 
   /// Accessibility label of the on/off switch of one journey's reminder.

@@ -256,6 +256,8 @@ void main() {
       expect(c.read(onboardingCompleteProvider), isTrue);
 
       auth.deleteError = null;
+      await tester.ensureVisible(byKey('profile-delete-confirm'));
+      await tester.pump();
       await tester.tap(byKey('profile-delete-confirm'));
       await tester.pumpAndSettle();
       expect(auth.calls, ['deleteAccount', 'deleteAccount']);

@@ -10,10 +10,22 @@ class ProfileL10nVi extends ProfileL10n {
   ProfileL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get profile_title => 'Hồ sơ';
+  String get profile_deleteItemProfile => 'Hồ sơ của bạn';
 
   @override
-  String get profile_setupTitle => 'Hồ sơ của bạn';
+  String get profile_deleteItemJourneys => 'Mọi hành trình và ảnh';
+
+  @override
+  String get profile_deleteItemGroups => 'Tư cách thành viên trong các nhóm';
+
+  @override
+  String get profile_editScreenTitle => 'sửa hồ sơ.';
+
+  @override
+  String get profile_title => 'hồ sơ.';
+
+  @override
+  String get profile_setupTitle => 'hồ sơ của bạn.';
 
   @override
   String get profile_setupSubtitle =>
@@ -86,7 +98,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_save => 'Lưu';
 
   @override
-  String get profile_continue => 'Tiếp tục';
+  String get profile_continue => 'Xong';
 
   @override
   String get profile_saving => 'Đang lưu…';
@@ -118,7 +130,7 @@ class ProfileL10nVi extends ProfileL10n {
       'Dữ liệu của bạn chỉ nằm trên máy này. Hành trình một mình dùng đầy đủ; đăng nhập và nhóm cần máy chủ.';
 
   @override
-  String get profile_sectionSettings => 'Cài đặt';
+  String get profile_sectionSettings => 'cài đặt';
 
   @override
   String get profile_reminders => 'Nhắc nhở';
@@ -140,7 +152,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_safety => 'Điều khoản, quyền riêng tư & liên hệ';
 
   @override
-  String get profile_sectionAccount => 'Tài khoản';
+  String get profile_sectionAccount => 'tài khoản';
 
   @override
   String get profile_signOut => 'Đăng xuất';

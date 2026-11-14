@@ -73,6 +73,9 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_joinButton => 'Tham gia';
 
   @override
+  String get groups_joinLater => 'Để sau';
+
+  @override
   String get groups_errorNotFound =>
       'Không có nhóm nào dùng mã này. Có thể chủ nhóm đã đổi mã, hãy xin mã mới nhé.';
 

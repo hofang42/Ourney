@@ -10,14 +10,14 @@ class RemindersL10nVi extends RemindersL10n {
   RemindersL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get reminders_title => 'Nhắc nhở';
+  String get reminders_title => 'nhắc nhở.';
 
   @override
   String get reminders_intro =>
       'Chọn giờ nhắc cho từng hành trình. Ourney chỉ nhắc vào những ngày bạn chưa check-in.';
 
   @override
-  String get reminders_journeysHeader => 'Hành trình';
+  String get reminders_journeysHeader => 'hành trình';
 
   @override
   String reminders_toggleLabel(String journey) {

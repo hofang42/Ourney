@@ -1,6 +1,14 @@
 {
   "@@locale": "vi",
-  "auth_title": "Lưu giữ hành trình của bạn",
+  "auth_codeTitle": "nhập mã.",
+  "@auth_codeTitle": {
+    "description": "Title of the code step."
+  },
+  "auth_otpHelper": "Không thấy thư? Xem mục thư rác hoặc quảng cáo.",
+  "@auth_otpHelper": {
+    "description": "Helper under the code step."
+  },
+  "auth_title": "đăng nhập.",
   "@auth_title": {
     "description": "Title of the sign-in screen (email step)."
   },

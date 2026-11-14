@@ -214,11 +214,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               key: ValueKey(isEmail ? 'auth-step-email' : 'auth-step-code'),
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                UiEyebrow(isEmail ? l10n.auth_eyebrow : l10n.auth_eyebrowCheck),
-                const SizedBox(height: 5),
                 Semantics(
                   header: true,
-                  child: Text(l10n.auth_title, style: UiText.h1(color: ui.ink)),
+                  child: Text(
+                    isEmail ? l10n.auth_title : l10n.auth_codeTitle,
+                    style: UiText.h1(color: ui.ink),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -293,6 +294,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     key: const ValueKey('auth-change-email'),
                     label: l10n.auth_changeEmail,
                     onPressed: _busy ? null : _changeEmail,
+                  ),
+                  const SizedBox(height: UiSpace.sm),
+                  Text(
+                    l10n.auth_otpHelper,
+                    textAlign: TextAlign.center,
+                    style: UiText.muted(color: ui.inkMuted, size: 13),
                   ),
                 ],
               ],

@@ -212,6 +212,12 @@ abstract class GroupsL10n {
   /// **'Tham gia'**
   String get groups_joinButton;
 
+  /// No description provided for @groups_joinLater.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau'**
+  String get groups_joinLater;
+
   /// No description provided for @groups_errorNotFound.
   ///
   /// In vi, this message translates to:

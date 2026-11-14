@@ -74,6 +74,9 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_joinButton => 'Join group';
 
   @override
+  String get groups_joinLater => 'Later';
+
+  @override
   String get groups_errorNotFound =>
       'No group uses this code. The owner may have changed it, so ask for a new one.';
 

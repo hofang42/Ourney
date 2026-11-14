@@ -69,6 +69,20 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
         null => null,
       };
 
+  /// Figma Done screens name the milestone share action per skin.
+  String _shareLabel(CheckinL10n l10n) {
+    final j = widget.journey;
+    if (j == null) return l10n.checkin_share;
+    return switch (uiSkinIdFor(personaSkinOf(j))) {
+      'memory' => l10n.checkin_shareSkinMemory,
+      'couple' => l10n.checkin_shareSkinCouple,
+      'flexer' => l10n.checkin_shareSkinFlexer,
+      'minimal' => l10n.checkin_shareSkinMinimal,
+      'quiet' => l10n.checkin_shareSkinQuiet,
+      _ => l10n.checkin_share,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final journey = widget.journey;
@@ -92,6 +106,18 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
     final day = journey == null
         ? null
         : (journey.startDate.daysUntil(date) + 1).clamp(1, 100000);
+    final skin = journey == null ? null : uiSkinIdFor(personaSkinOf(journey));
+    final milestone = outcome.milestone;
+    // Figma Done screens: a per-skin hero, the streak, one calm line.
+    final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
+    final message = outcome.replaced
+        ? l10n.checkin_replaced
+        : milestoneTitle != null
+        ? l10n.checkin_milestoneMessage
+        : skin == 'couple'
+        ? l10n.checkin_done_coupleSent
+        : l10n.checkin_done_savedPrivate;
+    final shout = skin == 'flexer' || skin == 'minimal';
 
     return UiScaffold(
       key: const ValueKey('checkin-success-screen'),
@@ -114,7 +140,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
                 if (milestoneTitle != null) ...[
                   UiButton(
                     key: const ValueKey('checkin-share'),
-                    label: l10n.checkin_share,
+                    label: _shareLabel(l10n),
                     glyph: const OurneyIcon(name: 'share', size: 20),
                     onPressed: widget.onShare,
                   ),
@@ -132,37 +158,22 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
       ),
       child: Column(
         children: [
-          const UiSuccessMark(),
-          const SizedBox(height: UiSpace.md),
-          Text(
-            l10n.checkin_posted,
-            textAlign: TextAlign.center,
-            style: UiText.body(
-              size: 13,
-              weight: FontWeight.w700,
-              height: 1.4,
-              color: ui.success,
-            ),
-          ),
-          const SizedBox(height: UiSpace.xs),
+          _hero(context, l10n, skin, day, milestone),
+          const SizedBox(height: UiSpace.lg),
           Semantics(
             header: true,
             child: Text(
-              milestoneTitle ?? l10n.checkin_chainKept,
+              headline,
               key: milestoneTitle == null
                   ? null
                   : const ValueKey('checkin-milestone'),
               textAlign: TextAlign.center,
-              style: UiText.h1(color: ui.ink),
+              style: skin == 'squad' || shout
+                  ? UiText.h2(color: ui.ink)
+                  : UiText.h1(color: ui.ink),
             ),
           ),
-          const SizedBox(height: UiSpace.xl),
-          _MiniCalendar(
-            checkIn: outcome.checkIn,
-            streak: outcome.streakAfter,
-            stamp: day == null ? null : l10n.checkin_dayStamp(day),
-          ),
-          const SizedBox(height: UiSpace.lg),
+          const SizedBox(height: UiSpace.md),
           KeyedSubtree(
             key: const ValueKey('checkin-streak'),
             child: UiStreakNumber(
@@ -175,18 +186,213 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: UiSpace.xl),
             child: Text(
-              outcome.replaced
-                  ? l10n.checkin_replaced
-                  : milestoneTitle != null
-                  ? l10n.checkin_milestoneMessage
-                  : l10n.checkin_streakPlusOne,
+              message,
               textAlign: TextAlign.center,
               style: UiText.muted(color: ui.inkMuted, size: 16),
             ),
           ),
+          if (skin == null) ...[
+            const SizedBox(height: UiSpace.lg),
+            _MiniCalendar(
+              checkIn: outcome.checkIn,
+              streak: outcome.streakAfter,
+              stamp: null,
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  String _headline(CheckinL10n l10n, String? skin, int day, int streak) {
+    final m = widget.outcome.milestone;
+    final title = _milestoneTitle(l10n);
+    if (m == Milestone.completed) return title!;
+    switch (skin) {
+      case 'couple':
+        return m == null
+            ? l10n.checkin_done_coupleDay(day)
+            : (m == Milestone.sevenDays
+                  ? l10n.checkin_done_coupleWeek
+                  : l10n.checkin_done_coupleFull30);
+      case 'flexer':
+        return m == null
+            ? l10n.checkin_done_flexerDay(day, streak)
+            : m == Milestone.sevenDays
+            ? l10n.checkin_done_flexerWeek
+            : l10n.checkin_done_flexerFinish;
+      case 'minimal':
+        return m == null
+            ? l10n.checkin_done_minimalDone
+            : m == Milestone.sevenDays
+            ? l10n.checkin_done_minimalWeek
+            : l10n.checkin_done_minimalFull;
+      default:
+        return title ?? l10n.checkin_chainKept;
+    }
+  }
+
+  /// Per-skin hero (Figma QuietDone seal, SquadDone stamp, MemoryDone
+  /// developing photo, CoupleDone photo + heart seal, FlexerDone pulse ring,
+  /// MinimalDone dot). Milestones add the skin's confetti row.
+  Widget _hero(
+    BuildContext context,
+    CheckinL10n l10n,
+    String? skin,
+    int? day,
+    Milestone? milestone,
+  ) {
+    final ui = context.ui;
+    final d = day ?? 1;
+    final confetti = milestone == null
+        ? const <Widget>[]
+        : <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < 5; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    child: OurneyIcon(
+                      name: skin == 'couple' ? 'heart' : 'star',
+                      active: true,
+                      size: 18,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: UiSpace.sm),
+          ];
+
+    Widget ring(Widget child, double size) => Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: ui.surface,
+        border: Border.all(color: ui.accent, width: 6),
+      ),
+      child: child,
+    );
+
+    switch (skin) {
+      case 'quiet':
+        return Column(
+          children: [
+            ...confetti,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: ui.surface,
+                borderRadius: BorderRadius.circular(UiRadius.sheet),
+                border: ui.stickerBorder(),
+                boxShadow: ui.hardShadow(),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      l10n.checkin_dayStamp(d),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 14,
+                        weight: FontWeight.w800,
+                        height: 1.4,
+                        color: ui.ink,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  OurneyIcon(name: 'check', size: 18, color: ui.ink),
+                ],
+              ),
+            ),
+          ],
+        );
+      case 'squad':
+        final text = milestone == null
+            ? l10n.checkin_done_stampChecked
+            : milestone == Milestone.sevenDays
+            ? l10n.checkin_done_stampWeek1
+            : l10n.checkin_done_stampCup;
+        final cup = milestone != null && milestone != Milestone.sevenDays;
+        return Column(
+          children: [
+            if (cup) ...[
+              const OurneyIcon(name: 'trophy', active: true, size: 72),
+              const SizedBox(height: UiSpace.sm),
+            ] else
+              ...confetti,
+            UiStamp(text, color: ui.accent),
+          ],
+        );
+      case 'memory':
+        return Column(
+          children: [
+            ...confetti,
+            SizedBox(
+              width: 168,
+              height: 190,
+              child: UiPolaroid(
+                photo: GroupPhoto(checkIn: widget.outcome.checkIn),
+                footer: const SizedBox.shrink(),
+                tilt: -3,
+              ),
+            ),
+            const SizedBox(height: UiSpace.md),
+            UiStamp(l10n.checkin_done_memoryStamp(d)),
+          ],
+        );
+      case 'couple':
+        return Column(
+          children: [
+            ...confetti,
+            SizedBox(
+              width: 120,
+              height: 120,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(UiRadius.card),
+                child: GroupPhoto(checkIn: widget.outcome.checkIn),
+              ),
+            ),
+            const SizedBox(height: UiSpace.sm),
+            ring(const OurneyIcon(name: 'heart', active: true, size: 36), 72),
+          ],
+        );
+      case 'flexer':
+        return Column(
+          children: [
+            ...confetti,
+            ring(
+              Text(
+                '$d',
+                maxLines: 1,
+                style: UiText.h1(color: ui.ink, size: 44),
+              ),
+              112,
+            ),
+          ],
+        );
+      case 'minimal':
+        return Column(
+          children: [
+            ...confetti,
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: ui.accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        );
+      default:
+        return const UiSuccessMark();
+    }
   }
 }
 

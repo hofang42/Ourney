@@ -10,7 +10,7 @@ class RemindersL10nEn extends RemindersL10n {
   RemindersL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get reminders_title => 'Reminders';
+  String get reminders_title => 'reminders.';
 
   @override
   String get reminders_intro =>

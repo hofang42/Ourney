@@ -53,7 +53,7 @@ class ProfileScreen extends ConsumerWidget {
             backLabel: MaterialLocalizations.of(context).backButtonTooltip,
             title: l10n.profile_title,
           ),
-          const SizedBox(height: UiSpace.sm),
+          const SizedBox(height: UiSpace.lg),
           if (profile == null)
             const _GuestHeader()
           else
@@ -210,36 +210,27 @@ class _ProfileCard extends StatelessWidget {
     final ui = context.ui;
     return Column(
       key: const ValueKey('profile-card'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Row(
-          children: [
-            ProfileAvatar(
-              name: profile.displayName,
-              storagePath: profile.avatarPath,
-              size: 64,
-            ),
-            const SizedBox(width: UiSpace.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.displayName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.h2(color: ui.ink),
-                  ),
-                  Text(
-                    '@${profile.username}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.body(size: 13, color: ui.inkMuted),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        ProfileAvatar(
+          name: profile.displayName,
+          storagePath: profile.avatarPath,
+          size: 88,
+        ),
+        const SizedBox(height: UiSpace.md),
+        Text(
+          profile.displayName,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: UiText.h1(size: 26, color: ui.ink),
+        ),
+        const SizedBox(height: UiSpace.xs),
+        Text(
+          '@${profile.username}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: UiText.body(size: 14, color: ui.inkMuted),
         ),
         const SizedBox(height: UiSpace.lg),
         UiButton.secondary(
@@ -247,11 +238,29 @@ class _ProfileCard extends StatelessWidget {
           label: l10n.profile_editTitle,
           glyph: const OurneyIcon(name: 'edit', flat: true),
           compact: true,
+          expand: false,
           onPressed: () => context.push(profileEditPath),
         ),
       ],
     );
   }
+}
+
+/// `.settings-card`: grouped rows in one sticker card.
+class _GroupCard extends StatelessWidget {
+  const _GroupCard({required this.child, this.borderColor});
+
+  final Widget child;
+  final Color? borderColor;
+
+  @override
+  Widget build(BuildContext context) => UiCard(
+    radius: UiRadius.card,
+    borderColor: borderColor,
+    shadowOffset: UiShadow.small,
+    padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
+    child: child,
+  );
 }
 
 class _SettingsSection extends ConsumerWidget {
@@ -261,41 +270,43 @@ class _SettingsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
     final haptics = ref.watch(hapticsEnabledProvider);
-    return Column(
-      children: [
-        UiRow(
-          key: const ValueKey('profile-reminders'),
-          leading: const OurneyIcon(name: 'bell', flat: true),
-          title: l10n.profile_reminders,
-          subtitle: _sub(context, l10n.profile_remindersSubtitle),
-          onPressed: () => context.push(AppRoutes.reminders),
-        ),
-        UiSwitchRow(
-          key: const ValueKey('profile-haptics'),
-          label: l10n.profile_haptics,
-          value: haptics,
-          onChanged: (v) {
-            unawaited(
-              ref.read(hapticsEnabledProvider.notifier).set(enabled: v),
-            );
-            if (v) OurneyHaptics.selection();
-          },
-        ),
-        UiRow(
-          key: const ValueKey('profile-language'),
-          leading: const OurneyIcon(name: 'translate', flat: true),
-          title: l10n.profile_language,
-          subtitle: _sub(context, l10n.profile_languageNote),
-          showChevron: false,
-        ),
-        UiRow(
-          key: const ValueKey('profile-safety'),
-          leading: const OurneyIcon(name: 'shield', flat: true),
-          title: l10n.profile_safety,
-          divider: false,
-          onPressed: () => context.push(AppRoutes.safety),
-        ),
-      ],
+    return _GroupCard(
+      child: Column(
+        children: [
+          UiRow(
+            key: const ValueKey('profile-reminders'),
+            leading: const OurneyIcon(name: 'bell', flat: true),
+            title: l10n.profile_reminders,
+            subtitle: _sub(context, l10n.profile_remindersSubtitle),
+            onPressed: () => context.push(AppRoutes.reminders),
+          ),
+          UiSwitchRow(
+            key: const ValueKey('profile-haptics'),
+            label: l10n.profile_haptics,
+            value: haptics,
+            onChanged: (v) {
+              unawaited(
+                ref.read(hapticsEnabledProvider.notifier).set(enabled: v),
+              );
+              if (v) OurneyHaptics.selection();
+            },
+          ),
+          UiRow(
+            key: const ValueKey('profile-language'),
+            leading: const OurneyIcon(name: 'translate', flat: true),
+            title: l10n.profile_language,
+            subtitle: _sub(context, l10n.profile_languageNote),
+            showChevron: false,
+          ),
+          UiRow(
+            key: const ValueKey('profile-safety'),
+            leading: const OurneyIcon(name: 'shield', flat: true),
+            title: l10n.profile_safety,
+            divider: false,
+            onPressed: () => context.push(AppRoutes.safety),
+          ),
+        ],
+      ),
     );
   }
 
@@ -377,19 +388,26 @@ class _AccountSection extends ConsumerWidget {
     final ui = context.ui;
     return Column(
       children: [
-        UiRow(
-          key: const ValueKey('profile-signout'),
-          leading: const OurneyIcon(name: 'logout', flat: true),
-          title: l10n.profile_signOut,
-          onPressed: () => _signOut(context, ref),
+        _GroupCard(
+          child: UiRow(
+            key: const ValueKey('profile-signout'),
+            leading: const OurneyIcon(name: 'logout', flat: true),
+            title: l10n.profile_signOut,
+            divider: false,
+            onPressed: () => _signOut(context, ref),
+          ),
         ),
-        UiRow(
-          key: const ValueKey('profile-delete'),
-          leading: OurneyIcon(name: 'trash', flat: true, color: ui.danger),
-          title: l10n.profile_deleteAccount,
-          divider: false,
-          showChevron: false,
-          onPressed: () => _delete(context),
+        const SizedBox(height: UiSpace.lg),
+        _GroupCard(
+          borderColor: ui.danger,
+          child: UiRow(
+            key: const ValueKey('profile-delete'),
+            leading: OurneyIcon(name: 'trash', flat: true, color: ui.danger),
+            title: l10n.profile_deleteAccount,
+            divider: false,
+            showChevron: false,
+            onPressed: () => _delete(context),
+          ),
         ),
       ],
     );

@@ -10,7 +10,19 @@ class SafetyL10nVi extends SafetyL10n {
   SafetyL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get safety_title => 'An toàn & hỗ trợ';
+  String get safety_eulaPageTitle => 'điều khoản sử dụng.';
+
+  @override
+  String get safety_privacyPageTitle => 'chính sách riêng tư.';
+
+  @override
+  String get safety_contactPageTitle => 'liên hệ.';
+
+  @override
+  String get safety_blockedPageTitle => 'người đã chặn.';
+
+  @override
+  String get safety_title => 'an toàn & hỗ trợ.';
 
   @override
   String get safety_hubIntro =>

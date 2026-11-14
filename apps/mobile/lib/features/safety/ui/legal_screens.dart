@@ -50,8 +50,11 @@ class LegalScreen extends StatelessWidget {
     final l10n = SafetyL10n.of(context);
     final ui = context.ui;
     final (title, sections) = switch (document) {
-      LegalDocument.eula => (l10n.safety_hubEula, eulaSections(l10n)),
-      LegalDocument.privacy => (l10n.safety_hubPrivacy, privacySections(l10n)),
+      LegalDocument.eula => (l10n.safety_eulaPageTitle, eulaSections(l10n)),
+      LegalDocument.privacy => (
+        l10n.safety_privacyPageTitle,
+        privacySections(l10n),
+      ),
     };
     return SafetyPage(
       pageKey: ValueKey('safety-${document.name}'),

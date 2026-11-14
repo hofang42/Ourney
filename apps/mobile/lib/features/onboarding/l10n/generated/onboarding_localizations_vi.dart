@@ -61,7 +61,7 @@ class OnboardingL10nVi extends OnboardingL10n {
   }
 
   @override
-  String get onboarding_cameraTitle => 'Cho phép dùng camera';
+  String get onboarding_cameraTitle => 'cho Ourney dùng camera.';
 
   @override
   String get onboarding_cameraBody => 'Ourney cần camera để chụp ảnh hôm nay.';
@@ -78,5 +78,5 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_nudgeAllow => 'Bật nhắc nhở';
 
   @override
-  String get onboarding_notNow => 'Để sau';
+  String get onboarding_notNow => 'để sau vậy.';
 }

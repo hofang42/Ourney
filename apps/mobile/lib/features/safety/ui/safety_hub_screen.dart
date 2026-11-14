@@ -21,8 +21,15 @@ class SafetyHubScreen extends ConsumerWidget {
     final ui = context.ui;
     final signedIn = ref.watch(authStatusProvider) == AuthStatus.signedIn;
 
-    Widget tile(String key, String icon, String title, String path) => UiRow(
+    Widget tile(
+      String key,
+      String icon,
+      String title,
+      String path, {
+      bool divider = true,
+    }) => UiRow(
       key: ValueKey(key),
+      divider: divider,
       leading: OurneyIcon(name: icon, color: ui.ink, flat: true),
       title: title,
       onPressed: () => context.push(path),
@@ -37,32 +44,43 @@ class SafetyHubScreen extends ConsumerWidget {
         children: [
           Text(l10n.safety_hubIntro, style: UiText.muted(color: ui.inkMuted)),
           const SizedBox(height: UiSpace.xl),
-          tile(
-            'safety-hub-eula',
-            'gavel',
-            l10n.safety_hubEula,
-            SafetyPaths.eula,
-          ),
-          tile(
-            'safety-hub-privacy',
-            'shield',
-            l10n.safety_hubPrivacy,
-            SafetyPaths.privacy,
-          ),
-          tile(
-            'safety-hub-contact',
-            'mail',
-            l10n.safety_hubContact,
-            SafetyPaths.contact,
-          ),
-          // Blocking needs an account (no other users otherwise).
-          if (signedIn)
-            tile(
-              'safety-hub-blocked',
-              'block',
-              l10n.safety_hubBlocked,
-              SafetyPaths.blocked,
+          UiCard(
+            radius: UiRadius.card,
+            shadowOffset: UiShadow.small,
+            padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
+            child: Column(
+              children: [
+                tile(
+                  'safety-hub-eula',
+                  'gavel',
+                  l10n.safety_hubEula,
+                  SafetyPaths.eula,
+                ),
+                tile(
+                  'safety-hub-privacy',
+                  'shield',
+                  l10n.safety_hubPrivacy,
+                  SafetyPaths.privacy,
+                ),
+                tile(
+                  'safety-hub-contact',
+                  'mail',
+                  l10n.safety_hubContact,
+                  SafetyPaths.contact,
+                  divider: signedIn,
+                ),
+                // Blocking needs an account (no other users otherwise).
+                if (signedIn)
+                  tile(
+                    'safety-hub-blocked',
+                    'block',
+                    l10n.safety_hubBlocked,
+                    SafetyPaths.blocked,
+                    divider: false,
+                  ),
+              ],
             ),
+          ),
           const SizedBox(height: UiSpace.xl),
           UiCard(
             radius: UiRadius.card,

@@ -15,10 +15,10 @@
   "onboarding_recapSubtitle": "Daily Reading · October",
   "onboarding_recapShare": "Worth sharing",
   "onboarding_pageSemantics": "Page {current} of {total}",
-  "onboarding_cameraTitle": "Camera access",
+  "onboarding_cameraTitle": "let Ourney use the camera.",
   "onboarding_cameraBody": "Ourney needs your camera to take today's photo.",
   "onboarding_cameraAllow": "Allow camera",
   "onboarding_nudgeTitle": "Want a nudge tomorrow at {time}?",
   "onboarding_nudgeAllow": "Turn on",
-  "onboarding_notNow": "Not now"
+  "onboarding_notNow": "maybe later."
 }

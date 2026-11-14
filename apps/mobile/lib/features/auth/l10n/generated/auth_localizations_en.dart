@@ -10,7 +10,14 @@ class AuthL10nEn extends AuthL10n {
   AuthL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get auth_title => 'Save your journeys';
+  String get auth_codeTitle => 'enter the code.';
+
+  @override
+  String get auth_otpHelper =>
+      'Can\'t find the email? Check spam or promotions.';
+
+  @override
+  String get auth_title => 'sign in.';
 
   @override
   String get auth_subtitle =>
