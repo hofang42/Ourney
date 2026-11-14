@@ -171,13 +171,38 @@ void main() {
       await g.up();
     });
 
-    testWidgets('UiGlass blurs, and goes opaque for high contrast', (
+    testWidgets('UiGlass blurs, then goes opaque and stays clipped', (
       tester,
     ) async {
       await tester.pumpWidget(host(const UiGlass(child: Text('glass'))));
       expect(find.byType(BackdropFilter), findsOneWidget);
+      expect(find.byType(ClipRRect), findsWidgets);
+
+      // App-level Reduce Transparency setting.
       await tester.pumpWidget(
         host(const UiGlass(reduceTransparency: true, child: Text('glass'))),
+      );
+      expect(find.byType(BackdropFilter), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(UiGlass),
+          matching: find.byType(ClipRRect),
+        ),
+        findsOneWidget,
+        reason: 'the opaque fallback still clips to the rounded corners',
+      );
+
+      // Platform high-contrast flag (set inside host(), which owns the
+      // outer MediaQuery).
+      await tester.pumpWidget(
+        host(
+          Builder(
+            builder: (context) => MediaQuery(
+              data: MediaQuery.of(context).copyWith(highContrast: true),
+              child: const UiGlass(child: Text('glass')),
+            ),
+          ),
+        ),
       );
       expect(find.byType(BackdropFilter), findsNothing);
       expect(UiGlass.saturationMatrix(1)[0], closeTo(1, 1e-9));

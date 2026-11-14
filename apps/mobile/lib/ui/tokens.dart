@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Ourney V1.0 design tokens, transcribed from the Figma Make prototype
-/// (`design/figma-v1/index.css`). The CSS has no custom properties for the
-/// shell: light values are the literals in the base rules and dark values are
-/// the `.appearance-dark` overrides. Both are named here once.
+/// Ourney design tokens. The shell palette is the V2 shell from the Figma
+/// Make prototype (`design/ourney-v2-app/src/app/app.css`, light `.system`
+/// values and `.mode-dark` overrides); structure and names come from V1.0
+/// (`design/figma-v1/`). Journey skins recolor it via `UiSkin.apply`.
 ///
 /// Read colors with `context.ui` (see [OurneyUiContext]); never hardcode a
 /// light-only or dark-only color in a widget.
@@ -44,22 +44,22 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   /// `.shell-screen` / `.bottom-sheet` background.
   final Color bg;
 
-  /// Cards, rows, menus, secondary buttons (`white` / `#16161b`).
+  /// Cards, rows, menus, secondary buttons (`#FFFFFF` / `#1C1B19`).
   final Color surface;
 
-  /// Text inputs and language chip (`white` / `#18181b`).
+  /// Text inputs and language chip (`#FFFFFF` / `#1C1B19`).
   final Color surfaceInput;
 
-  /// `.segments`, muted tiles, permission icon (`#f1f1ec` / `#101014`).
+  /// `.segments`, muted tiles, permission icon (`#F6EEDF` / `#262420`).
   final Color fill;
 
-  /// Selected segment (`white` / `#26262d`).
+  /// Selected segment (`#FFFFFF` / `#2E2B27`).
   final Color fillSelected;
 
   final Color ink;
   final Color inkMuted;
 
-  /// `.text-action` (`#45454c` / `#d4d4d8`).
+  /// `.text-action` (`#3F3A34` / `#D6CFC3`).
   final Color inkSoft;
 
   final Color border;
@@ -67,24 +67,24 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   final Color divider;
   final Color chevron;
 
-  /// Brand coral. Same in both modes; text on it is [onBrand] ink.
+  /// Brand orange `#FF8A3D` (V2). Same in both modes; text on it is [onBrand] ink.
   final Color brand;
   final Color onBrand;
 
   /// Keyboard focus ring (`outline: 3px solid #0284c7`).
   final Color focus;
 
-  /// Green text/icon (`#166534` / `#4ade80`) and its tinted badge fill.
+  /// Green text/icon (`#287747` / `#4ADE80`) and its tinted badge fill.
   final Color success;
   final Color successSoft;
 
-  /// Deadline / locked text (`#b33a0a` / `#ff9a62`).
+  /// Deadline / locked text (`#B33A0A` / `#FF9A62`).
   final Color warn;
 
-  /// Unread dot, destructive (`#d92d20`).
+  /// Unread dot, destructive (`#B3261E` / `#FF9C94`).
   final Color danger;
 
-  /// Streak flame (`#d97706`).
+  /// Streak flame (`#D97706` / `#F59E0B`).
   final Color flame;
 
   final Color grabber;
@@ -92,6 +92,9 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   final Color dockBg;
   final Color dockBorder;
   final Color permissionIconBg;
+
+  /// Soft translucent shadow for blurred `BoxShadow`s (menus, artwork, share
+  /// preview). V2 hard shadows are opaque ink: use `hardShadow()` instead.
   final Color shadow;
 
   bool get isDark => brightness == Brightness.dark;
@@ -123,7 +126,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     dockBg: Color(0xEBFFFFFF),
     dockBorder: Color(0xFF1A1A1A),
     permissionIconBg: Color(0xFFF6EEDF),
-    shadow: Color(0xFF1A1A1A),
+    shadow: Color(0x261A1A1A),
   );
 
   static const dark = OurneyUi(
@@ -153,7 +156,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     dockBg: Color(0xEB1C1B19),
     dockBorder: Color(0xFFF5F0E6),
     permissionIconBg: Color(0xFF2E2B27),
-    shadow: Color(0xFF000000),
+    shadow: Color(0x66000000),
   );
 
   static OurneyUi of(BuildContext context) =>

@@ -12,9 +12,11 @@ import '../tokens.dart';
 /// blur 10-20dp, tint 15-30% on photos, subtle light border, text contrast
 /// 4.5:1 stays the caller's job (put [UiGlass] over a known background).
 ///
-/// Falls back to an opaque [fallback] fill, no blur, when the platform asks
-/// for reduced transparency / high contrast, so text never sits on a blurred
-/// photo for people who need clarity.
+/// Falls back to an opaque [fallback] fill, no blur, when
+/// `MediaQuery.highContrast` is on or the caller passes [reduceTransparency].
+/// Flutter exposes no OS-level "Reduce Transparency" flag, so the app wires
+/// its own Reduce Transparency setting into [reduceTransparency]. Either way
+/// text never sits on a blurred photo for people who need clarity.
 class UiGlass extends StatelessWidget {
   const UiGlass({
     required this.child,
@@ -103,7 +105,11 @@ class UiGlass extends StatelessWidget {
       child: padding == null ? child : Padding(padding: padding!, child: child),
     );
 
-    if (!solid && blur > 0) {
+    // Clip both branches so content (photos) never spills past the rounded
+    // corners, blurred or opaque.
+    if (solid || blur <= 0) {
+      content = ClipRRect(borderRadius: borderRadius, child: content);
+    } else {
       content = ClipRRect(
         borderRadius: borderRadius,
         child: BackdropFilter(

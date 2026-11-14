@@ -57,6 +57,6 @@ Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board 
 
 ## 5. Seamless Multi-Journey Switching (Zero App Reset)
 - **Never reset the app or re-initialize the camera** when switching journeys.
-- The app theme is the single V1.0 kit theme (`OurneyTheme`); a journey's persona only changes its accent, taken from `uiStyleForSkin` / `lib/ui/journey_styles.dart`.
-- **Global Hub (`JourneysScreen`)**: neutral kit theme; each journey row shows its own persona accent.
+- The app theme is the single kit theme (`OurneyTheme`) with the V2 shell palette. Inside a journey the persona is a full "world" (V2 spec, `docs/design-v2/orchestration/brief.md` section C.5): `UiSkin.apply` (`lib/ui/skins.dart`) recolors bg, surface, ink, muted, accent and button for that journey's skin, variant and brightness; screens outside a journey stay on the neutral shell. Legacy `uiStyleForSkin` / `lib/ui/journey_styles.dart` remain only until the screens that use them migrate.
+- **Global Hub (`JourneysScreen`)**: neutral shell theme; each journey row shows its own persona accent.
 - **Create Journey (`CreateJourneyScreen`)**: Morphs live into whichever template card the user selects, displaying its preview board from `assets/design_personas/`.
