@@ -19,7 +19,7 @@ class UiSheet extends StatelessWidget {
   final Widget child;
   final bool showGrabber;
 
-  /// Top hard-shadow color (`--accent`). Defaults to `context.ui.brand`.
+  /// Top hard-shadow color (`--accent`). Defaults to `context.ui.accent`.
   final Color? accent;
 
   static const double radius = 24;
@@ -49,7 +49,7 @@ class UiSheet extends StatelessWidget {
             borderRadius: outer,
             boxShadow: [
               BoxShadow(
-                color: accent ?? ui.brand,
+                color: accent ?? ui.accent,
                 offset: const Offset(0, -UiShadow.large),
               ),
             ],

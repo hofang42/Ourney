@@ -16,6 +16,7 @@ class UiEmptyState extends StatelessWidget {
     this.body,
     this.actionLabel,
     this.onAction,
+    this.actionKey,
     super.key,
   }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
@@ -28,6 +29,9 @@ class UiEmptyState extends StatelessWidget {
   final String? body;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// Key of the action button.
+  final Key? actionKey;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +81,7 @@ class UiEmptyState extends StatelessWidget {
               if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: UiSpace.xxl),
                 UiButton.secondary(
+                  key: actionKey,
                   label: actionLabel!,
                   onPressed: onAction,
                   expand: false,
@@ -141,27 +146,38 @@ class _UiSkeletonState extends State<UiSkeleton>
     final ui = context.ui;
     final shape = widget.circle ? BoxShape.circle : BoxShape.rectangle;
     final radius = widget.circle ? null : BorderRadius.circular(widget.radius);
+    // Base surface with a moving ink band at 9% alpha blended over it.
+    final base = ui.surface;
+    final band = Color.alphaBlend(ui.ink.withValues(alpha: 0.09), base);
     return ExcludeSemantics(
-      child: AnimatedBuilder(
-        animation: _c,
-        builder: (context, _) {
-          final t = _c.value;
-          return Container(
-            width: widget.width,
-            height: widget.height,
-            decoration: BoxDecoration(
-              shape: shape,
-              borderRadius: radius,
-              border: Border.all(
-                color: ui.ink.withValues(alpha: 0.45),
-                width: UiBorder.standard,
-              ),
-              gradient: LinearGradient(
-                begin: Alignment(-1.5 + 3 * t, 0),
-                end: Alignment(-0.5 + 3 * t, 0),
-                colors: [ui.fill, ui.fillSelected, ui.fill],
-              ),
-            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Without an explicit width the skeleton fills its parent.
+          final width =
+              widget.width ??
+              (constraints.maxWidth.isFinite ? constraints.maxWidth : null);
+          return AnimatedBuilder(
+            animation: _c,
+            builder: (context, _) {
+              final t = _c.value;
+              return Container(
+                width: width,
+                height: widget.height,
+                decoration: BoxDecoration(
+                  shape: shape,
+                  borderRadius: radius,
+                  border: Border.all(
+                    color: ui.ink.withValues(alpha: 0.45),
+                    width: UiBorder.standard,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment(-1.5 + 3 * t, 0),
+                    end: Alignment(-0.5 + 3 * t, 0),
+                    colors: [base, band, base],
+                  ),
+                ),
+              );
+            },
           );
         },
       ),
@@ -194,7 +210,7 @@ class UiProgressBar extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: FractionallySizedBox(
           widthFactor: value.clamp(0, 1).toDouble(),
-          child: Container(color: color ?? ui.brand),
+          child: Container(color: color ?? ui.accent),
         ),
       ),
     );
@@ -230,7 +246,7 @@ class UiProgressRing extends StatelessWidget {
           painter: _RingPainter(
             value: value.clamp(0, 1).toDouble(),
             track: ui.divider,
-            color: color ?? ui.brand,
+            color: color ?? ui.accent,
           ),
           child: Center(
             child: ExcludeSemantics(
@@ -359,6 +375,8 @@ void showUiToast(
       elevation: 0,
       padding: EdgeInsets.zero,
       shape: const StadiumBorder(),
+      // Let the hard shadow paint outside the snackbar's own bounds.
+      clipBehavior: Clip.none,
       margin: EdgeInsets.fromLTRB(24, 0, 24, bottomOffset),
       content: Center(
         child: Container(

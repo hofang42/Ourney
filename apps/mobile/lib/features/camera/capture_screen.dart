@@ -485,6 +485,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               ? l10n.camera_shutter
               : l10n.camera_shutterFor(journey.title),
           accent: style?.accent,
+          onAccent: style?.onAccent,
           onPressed: ready ? () => _capture(journey) : null,
         ),
       ),

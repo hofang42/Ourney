@@ -249,7 +249,7 @@ class _OnboardingPage extends StatelessWidget {
   }
 }
 
-/// V2 onboarding step segments: one pill per question, filled up to the current one.
+/// V2 onboarding step segments: one pill per question, filled before the current one, current taller and outlined.
 class _Dots extends StatelessWidget {
   const _Dots({
     required this.count,
@@ -275,17 +275,26 @@ class _Dots extends StatelessWidget {
           children: [
             for (var i = 0; i < count; i++)
               Expanded(
-                child: AnimatedContainer(
-                  duration: duration,
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: i <= current ? ui.brand : ui.fill,
-                    border: Border.all(
-                      color: i <= current ? ui.outline : ui.border,
-                      width: UiBorder.hairline,
+                child: Center(
+                  child: AnimatedContainer(
+                    key: ValueKey('onboarding-step-$i'),
+                    duration: duration,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    // Done: filled. Current: taller with a 2dp outline.
+                    // Pending: empty.
+                    height: i == current ? 10 : 6,
+                    decoration: BoxDecoration(
+                      color: i < current
+                          ? ui.brand
+                          : (i == current ? ui.surface : ui.fill),
+                      border: Border.all(
+                        color: i <= current ? ui.outline : ui.border,
+                        width: i == current
+                            ? UiBorder.standard
+                            : UiBorder.hairline,
+                      ),
+                      borderRadius: BorderRadius.circular(UiRadius.capsule),
                     ),
-                    borderRadius: BorderRadius.circular(UiRadius.capsule),
                   ),
                 ),
               ),

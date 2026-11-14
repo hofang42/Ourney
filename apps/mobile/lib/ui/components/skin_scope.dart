@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../skins.dart';
+import '../theme.dart' show OurneyTheme;
 import '../tokens.dart';
 import '../typography.dart';
 
@@ -48,7 +49,7 @@ class _SkinInherited extends InheritedWidget {
 /// for the current brightness, cross-fading over 320ms (instant under
 /// reduce-motion). Descendants read it through `context.ui`, and the skin
 /// itself through [UiSkinScope.of].
-class UiSkinScope extends StatelessWidget {
+class UiSkinScope extends StatefulWidget {
   const UiSkinScope({
     required this.skinId,
     required this.child,
@@ -71,33 +72,78 @@ class UiSkinScope extends StatelessWidget {
       context.dependOnInheritedWidgetOfExactType<_SkinInherited>()?.data;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final skin = uiSkinById(skinId);
-    final base = theme.brightness == Brightness.dark
-        ? OurneyUi.dark
-        : OurneyUi.light;
-    final target = skin.apply(base, variantIndex: variant);
-    final data = UiSkinScopeData(
+  State<UiSkinScope> createState() => _UiSkinScopeState();
+}
+
+class _UiSkinScopeState extends State<UiSkinScope> {
+  // Cached so unrelated rebuilds hand the TweenAnimationBuilder an equal end
+  // value and do not restart the 320ms cross-fade.
+  Brightness? _brightness;
+  String? _skinId;
+  int? _variant;
+  late OurneyUi _target;
+  late UiSkinScopeData _data;
+
+  void _resolve(Brightness brightness) {
+    if (_brightness == brightness &&
+        _skinId == widget.skinId &&
+        _variant == widget.variant) {
+      return;
+    }
+    final skin = uiSkinById(widget.skinId);
+    final base = brightness == Brightness.dark ? OurneyUi.dark : OurneyUi.light;
+    _brightness = brightness;
+    _skinId = widget.skinId;
+    _variant = widget.variant;
+    _target = skin.apply(base, variantIndex: widget.variant);
+    _data = UiSkinScopeData(
       skin: skin,
-      variantIndex: variant,
-      variant: skin.resolvedVariant(variant, base.brightness),
+      variantIndex: widget.variant,
+      variant: skin.resolvedVariant(widget.variant, base.brightness),
       headingFont: UiFonts.forHeading(skin.headingFont),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    _resolve(theme.brightness);
     return TweenAnimationBuilder<OurneyUi>(
-      tween: _UiSkinTween(end: target),
+      tween: _UiSkinTween(end: _target),
       duration: UiMotion.of(context, UiMotion.theme),
       builder: (context, ui, child) {
+        // Rebuild the palette-dependent Material parts from the scoped ui.
+        final themed = OurneyTheme.fromUi(ui);
         final others = theme.extensions.values.where((e) => e is! OurneyUi);
         return Theme(
           data: theme.copyWith(
             scaffoldBackgroundColor: ui.bg,
+            canvasColor: ui.bg,
+            colorScheme: themed.colorScheme,
+            textTheme: themed.textTheme,
+            focusColor: themed.focusColor,
+            appBarTheme: themed.appBarTheme,
+            cardTheme: themed.cardTheme,
+            popupMenuTheme: themed.popupMenuTheme,
+            snackBarTheme: themed.snackBarTheme,
+            segmentedButtonTheme: themed.segmentedButtonTheme,
+            bottomSheetTheme: themed.bottomSheetTheme,
+            dialogTheme: themed.dialogTheme,
+            filledButtonTheme: themed.filledButtonTheme,
+            outlinedButtonTheme: themed.outlinedButtonTheme,
+            textButtonTheme: themed.textButtonTheme,
+            iconButtonTheme: themed.iconButtonTheme,
+            floatingActionButtonTheme: themed.floatingActionButtonTheme,
+            switchTheme: themed.switchTheme,
+            listTileTheme: themed.listTileTheme,
+            inputDecorationTheme: themed.inputDecorationTheme,
+            dividerTheme: themed.dividerTheme,
             extensions: [...others, ui],
           ),
           child: child!,
         );
       },
-      child: _SkinInherited(data: data, child: child),
+      child: _SkinInherited(data: _data, child: widget.child),
     );
   }
 }

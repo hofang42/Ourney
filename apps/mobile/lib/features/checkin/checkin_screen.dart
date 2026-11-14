@@ -20,17 +20,6 @@ import 'checkin_success.dart';
 import 'l10n/generated/checkin_localizations.dart';
 import 'photo_compressor.dart';
 
-/// V2 skin id of a journey's persona (quiet, squad, memory, couple, flexer,
-/// minimal) for [UiSkinScope].
-String checkinSkinId(Journey journey) => switch (personaSkinOf(journey)) {
-  PersonaSkinId.quietTransformer => 'quiet',
-  PersonaSkinId.accountabilitySquad => 'squad',
-  PersonaSkinId.memoryCollectors => 'memory',
-  PersonaSkinId.coupleRituals => 'couple',
-  PersonaSkinId.aestheticFlexer => 'flexer',
-  PersonaSkinId.minimalistHabit => 'minimal',
-};
-
 /// `/checkin`: photo preview, caption (<= 140 code points), metric when the
 /// journey has one, then Post (FR-C4). Shutter + Post = 2 taps; a retake on
 /// the same day adds the "replace today's photo" confirmation (FR-C7).
@@ -519,6 +508,7 @@ class _PhotoPreview extends StatelessWidget {
                       icon: Icons.photo_library_outlined,
                       background: const Color(0xB3000000),
                       foreground: UiCamera.ink,
+                      borderColor: UiCamera.outline,
                     ),
                   ),
               ],

@@ -245,7 +245,7 @@ class GroupTodayScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: UiSpace.md),
                 ],
-                _SharedStreak(view: view, accent: style.accent),
+                _SharedStreak(view: view),
                 const SizedBox(height: UiSpace.lg),
                 _MemberWall(view: view, perms: perms),
               ],
@@ -259,10 +259,9 @@ class GroupTodayScreen extends ConsumerWidget {
 
 /// `.shared-streak`: day, "done of members" and a progress bar.
 class _SharedStreak extends StatelessWidget {
-  const _SharedStreak({required this.view, required this.accent});
+  const _SharedStreak({required this.view});
 
   final GroupTodayView view;
-  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -312,7 +311,7 @@ class _SharedStreak extends StatelessWidget {
         const SizedBox(height: UiSpace.sm),
         UiProgressBar(
           value: value,
-          color: accent,
+          color: ui.accent,
           semanticLabel: l10n.groups_todayHeader(view.doneCount, total),
         ),
         const SizedBox(height: 6),
@@ -662,7 +661,7 @@ class _MemberTile extends ConsumerWidget {
         padding: const EdgeInsets.all(UiSpace.md),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(UiRadius.menu),
-          border: ui.stickerBorder(UiBorder.thin),
+          border: ui.stickerBorder(),
         ),
         child: Column(
           children: [

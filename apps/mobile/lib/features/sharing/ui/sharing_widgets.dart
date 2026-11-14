@@ -316,7 +316,7 @@ Future<bool> confirmSharingAction(
             key: const ValueKey('sharing-confirm'),
             label: confirmLabel,
             accent: destructive ? ui.danger : null,
-            onAccent: destructive ? ui.bg : null,
+            onAccent: destructive ? ui.onDanger : null,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: UiSpace.sm),
@@ -361,6 +361,7 @@ class SharingErrorView extends StatelessWidget {
       title: sharingErrorMessage(context, error),
       actionLabel: onRetry == null ? null : app.common_retry,
       onAction: onRetry,
+      actionKey: const ValueKey('sharing-retry'),
     );
   }
 }

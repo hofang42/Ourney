@@ -266,6 +266,7 @@ class _JourneyReminderTile extends StatelessWidget {
                 child: UiSwitchRow(
                   key: ValueKey('reminders-toggle-${journey.id}'),
                   label: journey.title,
+                  semanticsLabel: l10n.reminders_toggleLabel(journey.title),
                   subtitle: setting.enabled
                       ? l10n.reminders_timeOn(time)
                       : l10n.reminders_timeOff,
