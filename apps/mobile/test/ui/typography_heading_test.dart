@@ -29,6 +29,25 @@ void main() {
       expect(UiFonts.forHeading('nonsense'), UiFonts.spaceGrotesk);
     });
 
+    test('each skin headingFont maps to its bundled family', () {
+      const expected = {
+        'quiet': UiFonts.fraunces,
+        'squad': UiFonts.spaceGrotesk,
+        'memory': UiFonts.fraunces,
+        'couple': UiFonts.playfair,
+        'flexer': UiFonts.barlowCondensed,
+        'minimal': UiFonts.spaceGrotesk,
+      };
+      expect(uiSkins.map((s) => s.id).toSet(), expected.keys.toSet());
+      for (final skin in uiSkins) {
+        expect(
+          UiFonts.forHeading(skin.headingFont),
+          expected[skin.id],
+          reason: '${skin.id} (${skin.headingFont})',
+        );
+      }
+    });
+
     test('every skin round-trips through the family name', () {
       for (final skin in uiSkins) {
         final family = UiFonts.forHeading(skin.headingFont);

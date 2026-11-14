@@ -91,7 +91,7 @@ class _RetellTile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.add_rounded, size: 28, color: ui.ink),
+                OurneyIcon(name: 'plus', size: 28, flat: true, color: ui.ink),
                 const SizedBox(height: 10),
                 Text(
                   label,
@@ -173,10 +173,13 @@ class _AlbumCard extends ConsumerWidget {
                       ? JourneyPhoto(checkIn: latest, cacheWidth: 400)
                       : ColoredBox(
                           color: pal.paper,
-                          child: Icon(
-                            uiJourneyIcon(journey.emoji, journey.templateId),
-                            size: 40,
-                            color: pal.ink,
+                          child: Center(
+                            child: uiJourneyGlyph(
+                              journey.emoji,
+                              journey.templateId,
+                              size: 40,
+                              color: pal.ink,
+                            ),
                           ),
                         ),
                 ),

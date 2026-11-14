@@ -46,7 +46,7 @@ class SocialScaffold extends ConsumerWidget {
             children: [
               UiIconButton(
                 key: const ValueKey('social-back'),
-                icon: Icons.arrow_back_rounded,
+                glyph: const OurneyIcon(name: 'back', flat: true),
                 label: back,
                 onPressed: () => socialBack(context),
               ),
@@ -81,7 +81,7 @@ class SocialScaffold extends ConsumerWidget {
             child: localOnly
                 ? UiEmptyState(
                     key: const ValueKey('needs-server'),
-                    icon: Icons.cloud_off_rounded,
+                    glyph: const OurneyIcon(name: 'cloud-off', flat: true),
                     title: l10n.needsServer_title,
                     body: l10n.needsServer_message,
                   )
@@ -115,7 +115,7 @@ class SocialHeaderAction extends StatelessWidget {
     super.key,
   });
 
-  final IconData icon;
+  final String icon;
   final String label;
   final VoidCallback onPressed;
 
@@ -131,7 +131,7 @@ class SocialHeaderAction extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 19, color: ui.ink),
+            OurneyIcon(name: icon, size: 19, color: ui.ink, flat: true),
             const SizedBox(width: 4),
             Text(
               label,

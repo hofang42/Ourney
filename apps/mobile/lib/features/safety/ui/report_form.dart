@@ -173,7 +173,7 @@ class _ReportFormState extends ConsumerState<ReportForm> {
             UiButton.secondary(
               key: const ValueKey('safety-report-also-block'),
               label: l10n.safety_reportAlsoBlock,
-              icon: Icons.block_rounded,
+              glyph: const OurneyIcon(name: 'block', flat: true),
               onPressed: _alsoBlock,
             ),
             const SizedBox(height: UiSpace.md),
@@ -207,10 +207,9 @@ class _ReportFormState extends ConsumerState<ReportForm> {
             title: _label(l10n, r),
             showChevron: false,
             minHeight: 52,
-            trailing: Icon(
-              _reason == r
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_unchecked_rounded,
+            trailing: OurneyIcon(
+              name: _reason == r ? 'radio-on' : 'radio-off',
+              flat: true,
               color: _reason == r ? ui.brand : ui.inkMuted,
             ),
             onPressed: () => setState(() {
@@ -246,7 +245,7 @@ class _ReportFormState extends ConsumerState<ReportForm> {
         UiButton(
           key: const ValueKey('safety-report-submit'),
           label: l10n.safety_reportSubmit,
-          icon: Icons.flag_rounded,
+          glyph: const OurneyIcon(name: 'flag', flat: true),
           loading: _sending,
           onPressed: _reason == null || _sending ? null : _submit,
         ),

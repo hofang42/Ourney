@@ -28,7 +28,7 @@ void main() {
     expect(camera.starts, 1);
     expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
 
-    await tester.tap(find.text('Journeys'));
+    await tester.tap(find.text('Hành trình'));
     await tester.pumpAndSettle();
     expect(camera.stops, greaterThanOrEqualTo(1));
     expect(camera.isReady, isFalse);

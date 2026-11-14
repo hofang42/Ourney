@@ -113,7 +113,7 @@ class SelfHarmSupportCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.favorite_rounded, color: ui.danger),
+          OurneyIcon(name: 'heart', color: ui.danger, flat: true),
           const SizedBox(width: UiSpace.md),
           Expanded(
             child: Column(

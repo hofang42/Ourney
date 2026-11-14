@@ -631,6 +631,48 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'{count, plural, other{{count} lời mời đang chờ}}'**
   String social_profileRequests(int count);
+
+  /// No description provided for @social_activityTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoạt động'**
+  String get social_activityTitle;
+
+  /// No description provided for @social_groupToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay'**
+  String get social_groupToday;
+
+  /// No description provided for @social_groupEarlier.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trước đó'**
+  String get social_groupEarlier;
+
+  /// No description provided for @social_markAllRead.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đọc hết'**
+  String get social_markAllRead;
+
+  /// No description provided for @social_inviteCardTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mời một người bạn'**
+  String get social_inviteCardTitle;
+
+  /// No description provided for @social_inviteCardBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đi cùng nhau dễ hơn. Gửi liên kết hoặc tìm bạn bè.'**
+  String get social_inviteCardBody;
+
+  /// No description provided for @social_inviteCardAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm bạn'**
+  String get social_inviteCardAction;
 }
 
 class _SocialL10nDelegate extends LocalizationsDelegate<SocialL10n> {

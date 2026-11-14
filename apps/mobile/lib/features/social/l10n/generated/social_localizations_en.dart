@@ -335,4 +335,26 @@ class SocialL10nEn extends SocialL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get social_activityTitle => 'Activity';
+
+  @override
+  String get social_groupToday => 'Today';
+
+  @override
+  String get social_groupEarlier => 'Earlier';
+
+  @override
+  String get social_markAllRead => 'Mark all read';
+
+  @override
+  String get social_inviteCardTitle => 'Invite a friend';
+
+  @override
+  String get social_inviteCardBody =>
+      'Journeys are easier together. Send a link or find friends.';
+
+  @override
+  String get social_inviteCardAction => 'Add friends';
 }

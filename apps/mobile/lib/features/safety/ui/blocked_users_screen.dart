@@ -42,7 +42,7 @@ class _BlockedList extends ConsumerWidget {
       ),
       error: (_, _) => UiEmptyState(
         key: const ValueKey('safety-blocked-error'),
-        icon: Icons.cloud_off_rounded,
+        glyph: const OurneyIcon(name: 'cloud-off', flat: true),
         title: l10n.safety_loadError,
         actionLabel: l10n.safety_retry,
         onAction: () => ref.invalidate(blockedUserIdsProvider),
@@ -51,7 +51,7 @@ class _BlockedList extends ConsumerWidget {
         if (ids.isEmpty) {
           return UiEmptyState(
             key: const ValueKey('safety-blocked-empty'),
-            icon: Icons.shield_outlined,
+            glyph: const OurneyIcon(name: 'shield', flat: true),
             title: l10n.safety_blockedEmptyTitle,
             body: l10n.safety_blockedEmptyMessage,
           );

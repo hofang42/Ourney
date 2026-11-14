@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'journeys_fakes.dart';
@@ -78,10 +79,14 @@ void main() {
       expect(find.text('Active · 2/3'), findsOneWidget);
       expect(find.text('Shelf'), findsOneWidget);
       expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
-      expect(find.textContaining('Day 7 of 14'), findsOneWidget); // j1
-      expect(find.textContaining('· Day 7'), findsNWidgets(2)); // + open j2
-      expect(find.text('Done'), findsOneWidget);
+      // j1 (14 days) is a V2 journey card; the open-ended one a compact row.
+      expect(find.byType(UiJourneyCard), findsOneWidget);
+      expect(find.text('Ngày 7/14'), findsOneWidget);
+      expect(find.textContaining('· Day 7'), findsOneWidget); // open j2
       expect(find.text('Not yet'), findsOneWidget);
+      expect(find.byType(UiStreakHero), findsOneWidget);
+      // Profile and inbox moved to dock tabs.
+      expect(find.byKey(const ValueKey('profile-entry')), findsNothing);
       // j2 has no photo today: it leads the Today card.
       expect(find.byKey(const ValueKey('journeys-today-j2')), findsOneWidget);
       expect(find.text("1 journey still needs today's photo."), findsOneWidget);
@@ -172,6 +177,31 @@ void main() {
       );
       expect(find.byKey(const ValueKey('journeys-error')), findsOneWidget);
       expect(find.text("Couldn't load journeys."), findsOneWidget);
+      // An offline failure uses the offline state card.
+      final card = tester.widget<UiStateCard>(
+        find.byKey(const ValueKey('journeys-error')),
+      );
+      expect(card.kind, UiStateCardKind.offline);
+    });
+
+    testWidgets('hero is done once every journey has a photo today', (
+      tester,
+    ) async {
+      final j = testJourney();
+      await pumpJourneys(
+        tester,
+        locale: const Locale('en'),
+        journeys: FakeJourneyRepository(
+          journeys: [j],
+          memberships: {j.id: testMembership(j)},
+        ),
+        checkIns: FakeCheckInRepository([testCheckIn(j.id, testToday)]),
+      );
+      final hero = tester.widget<UiStreakHero>(find.byType(UiStreakHero));
+      expect(hero.state, UiStreakHeroState.done);
+      expect(find.byKey(const ValueKey('journeys-all-done')), findsOneWidget);
+      final card = tester.widget<UiJourneyCard>(find.byType(UiJourneyCard));
+      expect(card.todayDone, isTrue);
     });
   });
 }

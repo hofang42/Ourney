@@ -522,4 +522,56 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_streakDaysLabel => 'ngày liên tiếp';
+
+  @override
+  String get journeys_ticketPrivate => 'HỒ SƠ RIÊNG TƯ';
+
+  @override
+  String get journeys_ticketMemory => 'VÉ KÝ ỨC';
+
+  @override
+  String get journeys_ticketChangeColor => 'Đổi màu';
+
+  @override
+  String get journeys_ticketYou => 'Bạn';
+
+  @override
+  String get journeys_ticketPartner => 'Người ấy';
+
+  @override
+  String get journeys_ticketOpenEnded => 'không hẹn ngày về';
+
+  @override
+  String journeys_ticketMilestone(String day) {
+    return 'Ngày $day';
+  }
+
+  @override
+  String journeys_ticketDates(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String journeys_ticketDatesOpen(String start) {
+    return 'Từ $start';
+  }
+
+  @override
+  String get journeys_ticketTagQuiet => 'Chỉ mình mình thấy. Từng chút một.';
+
+  @override
+  String get journeys_ticketTagSquad => 'Điểm danh mỗi ngày, cả hội cùng lên!';
+
+  @override
+  String get journeys_ticketTagMemory => 'Mang về thật nhiều khung hình.';
+
+  @override
+  String get journeys_ticketTagCouple =>
+      'Mỗi ngày một nửa, ghép lại thành một.';
+
+  @override
+  String get journeys_ticketTagFlexer => 'Ra khỏi giường. Chạy tiếp.';
+
+  @override
+  String get journeys_ticketPreview => 'Xem trước vé khởi hành';
 }

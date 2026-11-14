@@ -116,14 +116,14 @@ class _InviteAcceptState extends ConsumerState<InviteAcceptScreen> {
     return switch (code) {
       OurneyErrorCode.notFound => UiEmptyState(
         key: const ValueKey('invite-not-found'),
-        icon: Icons.link_off_rounded,
+        glyph: const OurneyIcon(name: 'link-off', flat: true),
         title: l10n.social_inviteNotFound,
         actionLabel: l10n.social_addFriends,
         onAction: () => context.go(SocialPaths.friendsAdd),
       ),
       OurneyErrorCode.invalid => UiEmptyState(
         key: const ValueKey('invite-own'),
-        icon: Icons.person_outline_rounded,
+        glyph: const OurneyIcon(name: 'profile', flat: true),
         title: l10n.social_inviteOwn,
         body: l10n.social_inviteOwnHint,
         actionLabel: l10n.social_addFriends,
@@ -131,12 +131,12 @@ class _InviteAcceptState extends ConsumerState<InviteAcceptScreen> {
       ),
       OurneyErrorCode.blocked => UiEmptyState(
         key: const ValueKey('invite-blocked'),
-        icon: Icons.block_rounded,
+        glyph: const OurneyIcon(name: 'block', flat: true),
         title: l10n.social_errorBlocked,
       ),
       _ => UiEmptyState(
         key: const ValueKey('invite-error'),
-        icon: Icons.error_outline_rounded,
+        glyph: const OurneyIcon(name: 'error', flat: true),
         title: socialErrorMessage(context, error),
         actionLabel: AppLocalizations.of(context).common_retry,
         onAction: () => setState(_start),

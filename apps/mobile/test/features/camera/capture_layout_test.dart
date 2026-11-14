@@ -114,10 +114,15 @@ void main() {
 
   testWidgets('the grid button toggles the framing grid', (tester) async {
     await pump(tester);
-    expect(find.byIcon(Icons.grid_3x3_rounded), findsOneWidget);
+    final grid = find.byWidgetPredicate(
+      (w) =>
+          w is CustomPaint &&
+          w.painter.runtimeType.toString() == '_GridPainter',
+    );
+    expect(grid, findsNothing);
     await tester.tap(find.byKey(const ValueKey('capture-grid')));
     await tester.pump();
-    expect(find.byIcon(Icons.grid_on_rounded), findsOneWidget);
+    expect(grid, findsOneWidget);
   });
 
   testWidgets('the camera dock has Journeys, the hero shutter and Squad', (

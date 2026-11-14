@@ -331,4 +331,26 @@ class SocialL10nVi extends SocialL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get social_activityTitle => 'Hoạt động';
+
+  @override
+  String get social_groupToday => 'Hôm nay';
+
+  @override
+  String get social_groupEarlier => 'Trước đó';
+
+  @override
+  String get social_markAllRead => 'Đã đọc hết';
+
+  @override
+  String get social_inviteCardTitle => 'Mời một người bạn';
+
+  @override
+  String get social_inviteCardBody =>
+      'Đi cùng nhau dễ hơn. Gửi liên kết hoặc tìm bạn bè.';
+
+  @override
+  String get social_inviteCardAction => 'Thêm bạn';
 }

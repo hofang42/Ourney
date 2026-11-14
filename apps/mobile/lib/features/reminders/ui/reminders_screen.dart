@@ -83,7 +83,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
       sheetKey: const ValueKey('reminders-permission-dialog'),
       primaryKey: const ValueKey('reminders-permission-continue'),
       secondaryKey: const ValueKey('reminders-permission-later'),
-      icon: Icons.notifications_active_outlined,
+      glyph: const OurneyIcon(name: 'bell', flat: true),
       title: l10n.reminders_permissionTitle,
       body: l10n.reminders_permissionMessage,
       primaryLabel: l10n.reminders_permissionContinue,
@@ -156,7 +156,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, _) => UiEmptyState(
                   key: const ValueKey('reminders-error'),
-                  icon: Icons.cloud_off_rounded,
+                  glyph: const OurneyIcon(name: 'cloud-off', flat: true),
                   title: l10n.reminders_loadError,
                   actionLabel: l10n.reminders_retry,
                   onAction: () => ref.invalidate(reminderJourneysProvider),
@@ -164,7 +164,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                 data: (list) => list.isEmpty
                     ? UiEmptyState(
                         key: const ValueKey('reminders-empty'),
-                        icon: Icons.notifications_none_rounded,
+                        glyph: const OurneyIcon(name: 'bell', flat: true),
                         title: l10n.reminders_emptyTitle,
                         body: l10n.reminders_emptyMessage,
                       )
@@ -255,8 +255,9 @@ class _JourneyReminderTile extends StatelessWidget {
           Row(
             children: [
               ExcludeSemantics(
-                child: Icon(
-                  uiJourneyIcon(journey.emoji, journey.templateId),
+                child: uiJourneyGlyph(
+                  journey.emoji,
+                  journey.templateId,
                   size: 26,
                   color: ui.ink,
                 ),
@@ -284,7 +285,7 @@ class _JourneyReminderTile extends StatelessWidget {
               child: UiButton.secondary(
                 key: ValueKey('reminders-time-${journey.id}'),
                 label: l10n.reminders_changeTime(time),
-                icon: Icons.schedule_rounded,
+                glyph: const OurneyIcon(name: 'clock', flat: true),
                 compact: true,
                 expand: false,
                 onPressed: onPickTime,
@@ -315,7 +316,7 @@ class _DeniedBanner extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.notifications_off_rounded, color: ui.danger),
+              OurneyIcon(name: 'bell-off', flat: true, color: ui.danger),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Text(
@@ -334,7 +335,7 @@ class _DeniedBanner extends StatelessWidget {
           UiButton.secondary(
             key: const ValueKey('reminders-open-settings'),
             label: l10n.reminders_openSettings,
-            icon: Icons.settings_rounded,
+            glyph: const OurneyIcon(name: 'settings', flat: true),
             onPressed: onOpenSettings,
           ),
         ],

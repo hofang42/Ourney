@@ -37,7 +37,7 @@ void main() {
           config: testBackendConfig,
           auth: FakeAuthRepository(userId: 'u'),
         );
-        await tester.tap(find.text('Nhóm'));
+        await tester.tap(find.text('Hội'));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       });

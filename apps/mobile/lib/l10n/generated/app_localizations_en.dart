@@ -22,6 +22,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_groups => 'Squad';
 
   @override
+  String get nav_activity => 'Activity';
+
+  @override
+  String get nav_profileTab => 'Profile';
+
+  @override
   String get nav_profile => 'Profile and settings';
 
   @override

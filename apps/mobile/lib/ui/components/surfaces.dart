@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 /// `.eyebrow`: 12px bold, 0.12em tracking, muted.
@@ -167,7 +168,12 @@ class UiRow extends StatelessWidget {
           if (trailing != null) ...[const SizedBox(width: 8), trailing!],
           if (onPressed != null && showChevron) ...[
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right_rounded, size: 20, color: ui.ink),
+            OurneyIcon(
+              name: 'chevron-right',
+              size: 20,
+              flat: true,
+              color: sticker ? ui.ink : ui.chevron,
+            ),
           ],
         ],
       ),
@@ -233,10 +239,11 @@ class UiListHeading extends StatelessWidget {
                       color: ui.inkMuted,
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right_rounded,
+                  OurneyIcon(
+                    name: 'chevron-right',
                     size: 16,
-                    color: ui.inkMuted,
+                    flat: true,
+                    color: ui.chevron,
                   ),
                 ],
               ),
@@ -276,13 +283,17 @@ class UiMenuItem extends StatelessWidget {
   const UiMenuItem({
     required this.label,
     required this.onPressed,
-    this.icon,
+    @Deprecated('Use glyph: an OurneyIcon name') this.icon,
+    this.glyph,
     this.destructive = false,
     super.key,
   });
 
   final String label;
   final IconData? icon;
+
+  /// [OurneyIcon] name drawn flat in the label color (e.g. `'trash'`).
+  final String? glyph;
   final VoidCallback onPressed;
   final bool destructive;
 
@@ -300,8 +311,10 @@ class UiMenuItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           children: [
-            if (icon != null) ...[
-              Icon(icon, size: 17, color: color),
+            if (icon != null || glyph != null) ...[
+              glyph != null
+                  ? OurneyIcon(name: glyph!, size: 18, flat: true, color: color)
+                  : Icon(icon, size: 17, color: color),
               const SizedBox(width: 9),
             ],
             Expanded(

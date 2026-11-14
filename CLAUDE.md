@@ -15,7 +15,7 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 ---
 
 ## 2. Synchronized Navigation & Button Standards
-1. **Unified 5-Tab Bottom Dock** (V2, approved 2026-11-11; see `docs/design-v2/feedback-2026-11-11.md`). This is the target state: the Flutter dock (`app_dock.dart`, `ui/components/dock.dart`) and `ourney_dock_test.dart` still have 3 tabs and will be updated when the V2 prototype is ported to code:
+1. **Unified 5-Tab Bottom Dock** (V2, approved 2026-11-11; see `docs/design-v2/feedback-2026-11-11.md`). The Flutter dock (`app_dock.dart`, `ui/components/dock.dart`) implements it.
    - Every primary screen shares the same 5-tab dock, in this order:
      - `Journeys` (Map/Timeline vector icon) · `Squad` (Group/People vector icon)
      - **Center**: `Snap Shutter` (`76x76pt` Hero Shutter on Camera screen; `56x40pt` quick-snap pill on Hub/Timeline/Squad screens, colored with `pTheme.primaryAccent`; long-press opens the journey wheel)

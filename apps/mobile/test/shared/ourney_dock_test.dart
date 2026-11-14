@@ -46,7 +46,7 @@ void main() {
   }
 
   for (final brightness in Brightness.values) {
-    testWidgets('${brightness.name}: same 3 tabs, snap pill 56x40 in the '
+    testWidgets('${brightness.name}: same 5 tabs, snap pill 56x40 in the '
         'journey accent, no overflow at 320dp / 1.35x', (tester) async {
       await pump(
         tester,
@@ -56,10 +56,10 @@ void main() {
       );
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.takeException(), isNull);
-      expect(find.text('Journeys'), findsOneWidget);
-      expect(find.text('Nhóm'), findsOneWidget);
-      expect(find.byIcon(Icons.map_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.people_outline_rounded), findsOneWidget);
+      expect(find.text('Hành trình'), findsOneWidget);
+      expect(find.text('Hoạt động'), findsOneWidget);
+      expect(find.text('Hồ sơ'), findsOneWidget);
+      expect(find.text('Hội'), findsOneWidget);
       final pill = find.descendant(
         of: find.byKey(const ValueKey('dock-snap-pill')),
         matching: find.byType(Container),
@@ -124,6 +124,8 @@ void main() {
       'dock-journeys',
       'dock-snap-pill',
       'dock-groups',
+      'dock-activity',
+      'dock-profile',
     ]) {
       final size = tester.getSize(find.byKey(ValueKey(key)));
       expect(size.width, greaterThanOrEqualTo(48), reason: key);
@@ -132,10 +134,14 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('dock-journeys')));
     await tester.tap(find.byKey(const ValueKey('dock-snap-pill')));
     await tester.tap(find.byKey(const ValueKey('dock-groups')));
+    await tester.tap(find.byKey(const ValueKey('dock-activity')));
+    await tester.tap(find.byKey(const ValueKey('dock-profile')));
     expect(picked, [
       AppDock.journeysIndex,
       AppDock.captureIndex,
       AppDock.groupsIndex,
+      AppDock.activityIndex,
+      AppDock.profileIndex,
     ]);
   });
 
@@ -148,7 +154,7 @@ void main() {
     expect(
       tester.getSemantics(find.byKey(const ValueKey('dock-journeys'))),
       matchesSemantics(
-        label: 'Journeys',
+        label: 'Hành trình',
         isButton: true,
         isSelected: true,
         isEnabled: true,

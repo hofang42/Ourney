@@ -532,5 +532,83 @@
   "journeys_streakDaysLabel": "ngày liên tiếp",
   "@journeys_streakDaysLabel": {
     "description": "Unit after a streak number on the Today sheet rows."
+  },
+  "journeys_ticketPrivate": "HỒ SƠ RIÊNG TƯ",
+  "@journeys_ticketPrivate": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketMemory": "VÉ KÝ ỨC",
+  "@journeys_ticketMemory": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketChangeColor": "Đổi màu",
+  "@journeys_ticketChangeColor": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketYou": "Bạn",
+  "@journeys_ticketYou": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketPartner": "Người ấy",
+  "@journeys_ticketPartner": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketOpenEnded": "không hẹn ngày về",
+  "@journeys_ticketOpenEnded": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketMilestone": "Ngày {day}",
+  "@journeys_ticketMilestone": {
+    "description": "Departure ticket preview text.",
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_ticketDates": "{start} – {end}",
+  "@journeys_ticketDates": {
+    "description": "Departure ticket preview text.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_ticketDatesOpen": "Từ {start}",
+  "@journeys_ticketDatesOpen": {
+    "description": "Departure ticket preview text.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_ticketTagQuiet": "Chỉ mình mình thấy. Từng chút một.",
+  "@journeys_ticketTagQuiet": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketTagSquad": "Điểm danh mỗi ngày, cả hội cùng lên!",
+  "@journeys_ticketTagSquad": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketTagMemory": "Mang về thật nhiều khung hình.",
+  "@journeys_ticketTagMemory": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketTagCouple": "Mỗi ngày một nửa, ghép lại thành một.",
+  "@journeys_ticketTagCouple": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketTagFlexer": "Ra khỏi giường. Chạy tiếp.",
+  "@journeys_ticketTagFlexer": {
+    "description": "Departure ticket preview text."
+  },
+  "journeys_ticketPreview": "Xem trước vé khởi hành",
+  "@journeys_ticketPreview": {
+    "description": "Departure ticket preview text."
   }
 }

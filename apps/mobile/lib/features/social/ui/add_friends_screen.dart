@@ -137,7 +137,10 @@ class _InviteLinkBlockState extends ConsumerState<_InviteLinkBlock> {
     final token = ref.watch(myInviteTokenProvider);
     final link = token == null ? null : SocialPaths.inviteUrl(token);
     return _Block(
-      leading: const UiIconCircle(Icons.link_rounded, size: 48),
+      leading: const UiIconCircle.glyph(
+        OurneyIcon(name: 'link', size: 24, flat: true),
+        size: 48,
+      ),
       title: l10n.social_inviteLinkTitle,
       subtitle: link ?? l10n.social_inviteLinkHint,
       actions: [
@@ -241,7 +244,7 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
                 padding: const EdgeInsets.all(18),
                 child: CircularProgressIndicator(strokeWidth: 2, color: ui.ink),
               )
-            : Icon(Icons.qr_code_2_rounded, size: 54, color: ui.ink),
+            : OurneyIcon(name: 'qr', size: 54, color: ui.ink, flat: true),
       );
     }
     return Semantics(
@@ -412,7 +415,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
           },
           trailing: UiIconButton(
             key: const ValueKey('username-search'),
-            icon: Icons.arrow_forward_rounded,
+            glyph: const OurneyIcon(name: 'arrow-right', flat: true),
             label: l10n.social_search,
             onPressed: _search,
           ),
@@ -480,7 +483,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
     if (link != null && link.isFriend) {
       return UiStateLabel(
         l10n.social_alreadyFriends,
-        icon: Icons.check_rounded,
+        glyph: const OurneyIcon(name: 'check', flat: true),
         key: const ValueKey('username-friends'),
       );
     }

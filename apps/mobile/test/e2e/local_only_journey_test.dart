@@ -178,7 +178,7 @@ void main() {
     );
 
     // Journeys tab: the timeline shows the day as checked in.
-    await tester.tap(find.text('Journeys'));
+    await tester.tap(find.text('Hành trình'));
     await settle();
     expect(path(), AppRoutes.journey(journeyId));
     expect(key('journey-timeline'), findsOneWidget);

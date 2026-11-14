@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 
 /// `.success-mark`: 44dp green disc with a white check (Posted screen).
 class UiSuccessMark extends StatelessWidget {
@@ -21,9 +22,10 @@ class UiSuccessMark extends StatelessWidget {
           color: Color(0xFF15803D),
           shape: BoxShape.circle,
         ),
-        child: Icon(
-          Icons.check_rounded,
+        child: OurneyIcon(
+          name: 'check',
           size: size * 0.55,
+          flat: true,
           color: Colors.white,
         ),
       ),
@@ -93,11 +95,7 @@ class UiStreakNumber extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Icon(
-              Icons.local_fire_department_rounded,
-              size: size * 0.38,
-              color: ui.flame,
-            ),
+            OurneyIcon(name: 'flame', size: size * 0.38, color: ui.flame),
             Text(
               '$value',
               style: UiText.display(

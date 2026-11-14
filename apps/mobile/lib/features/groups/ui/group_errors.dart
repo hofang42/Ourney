@@ -39,7 +39,7 @@ class GroupsNeedsServer extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return UiEmptyState(
       key: const ValueKey('needs-server'),
-      icon: Icons.cloud_off_rounded,
+      glyph: const OurneyIcon(name: 'cloud-off', size: 30),
       title: l10n.needsServer_title,
       body: l10n.needsServer_message,
     );
@@ -79,7 +79,7 @@ class GroupsNotWired extends StatelessWidget {
       scroll: false,
       child: UiFillScroll(
         child: UiEmptyState(
-          icon: Icons.construction_rounded,
+          glyph: const OurneyIcon(name: 'warning', size: 30),
           title: title,
           body: AppLocalizations.of(context).placeholder_comingSoon,
         ),

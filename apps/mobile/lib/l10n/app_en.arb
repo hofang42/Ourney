@@ -5,6 +5,8 @@
   "nav_capture": "Capture",
   "nav_groups": "Squad",
   "nav_profile": "Profile and settings",
+  "nav_activity": "Activity",
+  "nav_profileTab": "Profile",
   "common_retry": "Retry",
   "common_cancel": "Cancel",
   "common_ok": "OK",

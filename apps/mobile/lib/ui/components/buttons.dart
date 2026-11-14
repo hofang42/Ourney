@@ -23,7 +23,7 @@ class UiButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.variant = UiButtonVariant.primary,
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     this.compact = false,
     this.expand = true,
@@ -36,7 +36,7 @@ class UiButton extends StatelessWidget {
   const UiButton.secondary({
     required this.label,
     required this.onPressed,
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     this.compact = false,
     this.expand = true,
@@ -49,7 +49,7 @@ class UiButton extends StatelessWidget {
   const UiButton.ghost({
     required this.label,
     required this.onPressed,
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     this.compact = false,
     this.expand = true,
@@ -169,7 +169,7 @@ class UiButton extends StatelessWidget {
 /// `.icon-button`: 48x48 circle target, 21dp glyph, stroke 1.8.
 class UiIconButton extends StatelessWidget {
   const UiIconButton({
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     required this.label,
     required this.onPressed,

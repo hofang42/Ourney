@@ -167,7 +167,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           UiButton(
             key: const ValueKey('groups-join-submit'),
             label: l10n.groups_joinButton,
-            icon: Icons.login_rounded,
+            glyph: const OurneyIcon(name: 'login', size: 20),
             loading: _busy,
             onPressed: _busy || !isValidInviteCode(_normalized) ? null : _join,
           ),

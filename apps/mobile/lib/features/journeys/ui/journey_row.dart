@@ -42,16 +42,27 @@ class JourneyPrivacy extends StatelessWidget {
   }
 }
 
-/// One journey row on the hub (V1.0 `.journey-row`): 66dp thumbnail (latest
+/// V2 type id (`UiTypeBadge`) of a journey.
+String journeyTypeId(Journey journey) {
+  if (skinOfJourney(journey) == PersonaSkinId.coupleRituals) return 'couple';
+  return switch (journey.templateId) {
+    TemplateId.weightLoss => 'weight',
+    TemplateId.englishDaily => 'study',
+    TemplateId.travel => 'trip',
+    TemplateId.workout30 => 'workout',
+    _ => 'custom',
+  };
+}
+
+/// One journey row on the hub. Running journeys with a fixed length are a V2
+/// [UiJourneyCard] (type badge, day x/total, streak, snap button); open-ended,
+/// ended and archived ones keep the compact V1.0 `.journey-row`): 66dp thumbnail (latest
 /// photo, or the journey icon on its style paper), title, style dot + name,
 /// then streak, today status (icon + word, not color only) and visibility.
 class JourneyRow extends ConsumerWidget {
-  const JourneyRow({required this.journey, this.hideStreak = false, super.key});
+  const JourneyRow({required this.journey, super.key});
 
   final Journey journey;
-
-  /// The Today card already shows this journey's streak.
-  final bool hideStreak;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -83,6 +94,37 @@ class JourneyRow extends ConsumerWidget {
       JourneyStatus.archived => l10n.journeys_statusArchived,
     };
 
+    void open() {
+      if (active) {
+        unawaited(
+          ref.read(activeJourneyIdProvider.notifier).select(journey.id),
+        );
+      }
+      context.push(AppRoutes.journey(journey.id));
+    }
+
+    if (active && progress != null && progress.totalDays != null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: UiSpace.md),
+        child: UiJourneyCard(
+          key: ValueKey('journey-card-${journey.id}'),
+          title: journey.title,
+          type: journeyTypeId(journey),
+          day: progress.dayNumber,
+          totalDays: progress.totalDays!,
+          streak: progress.summary.current,
+          todayDone: done,
+          onTap: open,
+          onSnap: () {
+            unawaited(
+              ref.read(activeJourneyIdProvider.notifier).select(journey.id),
+            );
+            unawaited(checkInNow(context, ref, journey.id));
+          },
+        ),
+      );
+    }
+
     final meta = UiText.body(
       size: 11,
       weight: FontWeight.w500,
@@ -103,10 +145,8 @@ class JourneyRow extends ConsumerWidget {
               ? JourneyPhoto(checkIn: latest, cacheWidth: 200)
               : ColoredBox(
                   color: pal.paper,
-                  child: Icon(
-                    uiJourneyIcon(journey.emoji, journey.templateId),
-                    size: 28,
-                    color: pal.ink,
+                  child: Center(
+                    child: UiTypeBadge(type: journeyTypeId(journey), size: 44),
                   ),
                 ),
         ),
@@ -124,10 +164,9 @@ class JourneyRow extends ConsumerWidget {
         runSpacing: 2,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          if (progress != null && active && !hideStreak)
+          if (progress != null && active)
             _Meta(
-              icon: Icons.local_fire_department_rounded,
-              iconColor: ui.flame,
+              icon: 'flame',
               text: '${progress.summary.current}',
               style: meta,
             ),
@@ -135,25 +174,17 @@ class JourneyRow extends ConsumerWidget {
             _Meta(
               key: ValueKey('journey-status-${journey.id}'),
               icon: !active
-                  ? Icons.flag_outlined
+                  ? 'trophy'
                   : done
-                  ? Icons.check_rounded
-                  : Icons.circle_outlined,
-              iconColor: done ? ui.success : ui.inkMuted,
+                  ? 'check'
+                  : 'clock',
               text: statusText,
               style: done ? meta.copyWith(color: ui.success) : meta,
             ),
           JourneyPrivacy(journey: journey),
         ],
       ),
-      onPressed: () {
-        if (active) {
-          unawaited(
-            ref.read(activeJourneyIdProvider.notifier).select(journey.id),
-          );
-        }
-        context.push(AppRoutes.journey(journey.id));
-      },
+      onPressed: open,
     );
   }
 }
@@ -161,14 +192,12 @@ class JourneyRow extends ConsumerWidget {
 class _Meta extends StatelessWidget {
   const _Meta({
     required this.icon,
-    required this.iconColor,
     required this.text,
     required this.style,
     super.key,
   });
 
-  final IconData icon;
-  final Color iconColor;
+  final String icon;
   final String text;
   final TextStyle style;
 
@@ -177,7 +206,7 @@ class _Meta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: iconColor),
+        OurneyIcon(name: icon, size: 14),
         const SizedBox(width: 3),
         Text(text, style: style),
       ],

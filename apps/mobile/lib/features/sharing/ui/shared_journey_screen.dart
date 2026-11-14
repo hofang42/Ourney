@@ -66,7 +66,7 @@ class _PrivateNow extends StatelessWidget {
       onBack: () => sharingBack(context),
       children: [
         UiEmptyState(
-          icon: Icons.lock_outline_rounded,
+          glyph: const OurneyIcon(name: 'lock', flat: true),
           title: l10n.sharing_privateNow,
           actionLabel: l10n.sharing_goBack,
           onAction: () =>
@@ -294,9 +294,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                         Flexible(
                           child: SharingPillButton(
                             key: const ValueKey('shared-add-friend'),
-                            icon: _requested
-                                ? Icons.check_rounded
-                                : Icons.person_add_alt_1_rounded,
+                            icon: _requested ? 'check' : 'user-plus',
                             label: _requested
                                 ? l10n.sharing_requested
                                 : l10n.sharing_addFriend,
@@ -500,11 +498,7 @@ class _ProgressBox extends StatelessWidget {
             ),
           ),
           if (streak != null && streak > 0) ...[
-            Icon(
-              Icons.local_fire_department_rounded,
-              size: 18,
-              color: ui.flame,
-            ),
+            OurneyIcon(name: 'flame', size: 18, color: ui.flame, flat: true),
             const SizedBox(width: 2),
             Text(
               '$streak',
@@ -650,7 +644,7 @@ class _Moment extends StatelessWidget {
                     UiButton.secondary(
                       key: ValueKey('shared-reply-${photo.checkInId}'),
                       label: l10n.sharing_reply,
-                      icon: Icons.photo_camera_outlined,
+                      glyph: const OurneyIcon(name: 'camera', flat: true),
                       compact: true,
                       expand: false,
                       onPressed: onReply,

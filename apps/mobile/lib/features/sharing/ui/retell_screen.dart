@@ -292,7 +292,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
                       UiChip(
                         key: ValueKey('retell-style-${t.id.wireName}'),
                         label: vi ? t.titleVi : t.titleEn,
-                        icon: uiTemplateIcon(t.id),
+                        glyph: uiTemplateGlyph(t.id, size: 16),
                         selected: t.id == _template,
                         onPressed: () => setState(() => _template = t.id),
                       ),
@@ -335,7 +335,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
                     Flexible(
                       child: SharingPillButton(
                         key: const ValueKey('retell-pick'),
-                        icon: Icons.add_photo_alternate_outlined,
+                        icon: 'image-plus',
                         label: _picks.isEmpty
                             ? l10n.sharing_pickPhotos
                             : l10n.sharing_addPhotos,
@@ -450,9 +450,10 @@ class _PickCell extends StatelessWidget {
                     alignment: Alignment.topLeft,
                     child: Padding(
                       padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        Icons.check_circle_rounded,
+                      child: OurneyIcon(
+                        name: 'check-circle',
                         color: ui.success,
+                        flat: true,
                       ),
                     ),
                   ),
@@ -460,7 +461,7 @@ class _PickCell extends StatelessWidget {
                   alignment: Alignment.topRight,
                   child: UiIconButton(
                     key: ValueKey('retell-remove-$index'),
-                    icon: Icons.close_rounded,
+                    glyph: const OurneyIcon(name: 'close', flat: true),
                     label: l10n.sharing_removePhoto,
                     background: ui.bg.withValues(alpha: 0.8),
                     iconSize: 18,
@@ -483,10 +484,9 @@ class _PickCell extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: UiSize.tap),
               child: Row(
                 children: [
-                  Icon(
-                    duplicate
-                        ? Icons.warning_amber_rounded
-                        : Icons.event_rounded,
+                  OurneyIcon(
+                    name: duplicate ? 'warning' : 'calendar',
+                    flat: true,
                     size: 14,
                     color: duplicate ? ui.warn : ui.inkMuted,
                   ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 /// `.screen-header > button`: 44dp circular icon button, 1.5dp ink outline,
@@ -11,7 +12,7 @@ import 'pressable.dart';
 /// [UiTopBar.leading] so every header control matches.
 class UiBarIconButton extends StatelessWidget {
   const UiBarIconButton({
-    this.icon,
+    @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
     required this.label,
     required this.onPressed,
@@ -222,7 +223,7 @@ class UiBackHeader extends StatelessWidget {
       child: Row(
         children: [
           UiBarIconButton(
-            icon: Icons.arrow_back_rounded,
+            glyph: const OurneyIcon(name: 'back', size: 21),
             label: backLabel,
             onPressed: onBack,
           ),
