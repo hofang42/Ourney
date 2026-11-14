@@ -206,6 +206,8 @@ class UiDock extends StatelessWidget {
       fallback: camera ? UiCamera.dock : ui.surface,
       borderColor: outline,
       borderWidth: stroke,
+      hardShadow: shadowOffset,
+      hardShadowColor: outline,
       reduceTransparency: reduceTransparency,
       child: surface,
     );
@@ -221,53 +223,12 @@ class UiDock extends StatelessWidget {
         heightFactor: 1,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 358 + 16),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Hard shadow drawn only outside the bar so it never shows
-              // through the translucent glass.
-              Positioned.fill(
-                child: ClipPath(
-                  clipper: _OutsideRRect(radius, shadowOffset + 2),
-                  child: Transform.translate(
-                    offset: Offset(shadowOffset, shadowOffset),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: outline,
-                        borderRadius: radius,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              glass,
-            ],
-          ),
+          // UiGlass draws the outside-only hard shadow itself.
+          child: glass,
         ),
       ),
     );
   }
-}
-
-/// Clips to everything outside the rounded rect of the widget's own size.
-class _OutsideRRect extends CustomClipper<Path> {
-  const _OutsideRRect(this.radius, this.inflate);
-
-  final BorderRadius radius;
-  final double inflate;
-
-  @override
-  Path getClip(Size size) {
-    final rect = Offset.zero & size;
-    return Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(rect.inflate(inflate * 2))
-      ..addRRect(radius.toRRect(rect));
-  }
-
-  @override
-  bool shouldReclip(_OutsideRRect old) =>
-      old.radius != radius || old.inflate != inflate;
 }
 
 /// Fires [onLongPress] after 400ms (the journey wheel gesture) without

@@ -10,15 +10,20 @@ import 'buttons.dart';
 /// and an optional pill action. Always tells the person what to do next.
 class UiEmptyState extends StatelessWidget {
   const UiEmptyState({
-    required this.icon,
+    this.icon,
+    this.glyph,
     required this.title,
     this.body,
     this.actionLabel,
     this.onAction,
     super.key,
-  });
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
   final String title;
   final String? body;
   final String? actionLabel;
@@ -45,7 +50,7 @@ class UiEmptyState extends StatelessWidget {
                   border: ui.stickerBorder(),
                   boxShadow: ui.hardShadow(UiShadow.small),
                 ),
-                child: Icon(icon, size: 30, color: ui.ink),
+                child: glyph ?? Icon(icon, size: 30, color: ui.ink),
               ),
               const SizedBox(height: UiSpace.xl),
               Semantics(

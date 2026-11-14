@@ -11,14 +11,19 @@ import 'pressable.dart';
 /// [UiTopBar.leading] so every header control matches.
 class UiBarIconButton extends StatelessWidget {
   const UiBarIconButton({
-    required this.icon,
+    this.icon,
+    this.glyph,
     required this.label,
     required this.onPressed,
     this.iconSize = 21,
     super.key,
-  });
+  }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
-  final IconData icon;
+  final IconData? icon;
+
+  /// A drawn glyph (e.g. `OurneyIcon`) shown instead of [icon]. Lets screens
+  /// use the Ourney sticker icon set where a matching icon exists.
+  final Widget? glyph;
 
   /// Required: icon-only controls must be announced.
   final String label;
@@ -44,11 +49,13 @@ class UiBarIconButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: ui.stickerBorder(UiBorder.thin),
         ),
-        child: Icon(
-          icon,
-          size: iconSize,
-          color: onPressed == null ? ui.inkMuted : ui.ink,
-        ),
+        child:
+            glyph ??
+            Icon(
+              icon,
+              size: iconSize,
+              color: onPressed == null ? ui.inkMuted : ui.ink,
+            ),
       ),
     );
   }
