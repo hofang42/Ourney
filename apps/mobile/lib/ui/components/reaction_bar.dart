@@ -5,17 +5,10 @@ import '../typography.dart';
 import 'ourney_icons.dart';
 import 'pressable.dart';
 
-/// The six reaction ids, in display order.
-const List<String> uiReactionIds = [
-  'clap',
-  'flex',
-  'heart',
-  'laugh',
-  'fire',
-  'wave',
-];
+/// The five reaction ids (match the `reactions.emoji` CHECK), in display order.
+const List<String> uiReactionIds = ['clap', 'flex', 'heart', 'laugh', 'fire'];
 
-/// A pill of the six V2 reactions drawn with Ourney sticker icons (never
+/// A pill of the five V2 reactions drawn with Ourney sticker icons (never
 /// emoji). Each reaction is a 38dp sticker disc inside a 48dp hit target.
 /// [selected] is the reaction the viewer already gave; [counts] adds a small
 /// count badge. [labels] maps each id in [uiReactionIds] to its localized

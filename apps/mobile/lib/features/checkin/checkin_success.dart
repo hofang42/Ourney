@@ -212,7 +212,7 @@ class _MiniCalendar extends StatelessWidget {
     final d = checkIn.localDate;
     final weekday = DateTime(d.year, d.month, d.day).weekday; // 1 = Monday
     final todayIndex = 21 + weekday - 1;
-    final warm = ui.brand.withValues(alpha: 0.22);
+    final warm = ui.accent.withValues(alpha: 0.22);
     return Semantics(
       label: l10n.checkin_calendarSemantics(28),
       child: ExcludeSemantics(
@@ -277,7 +277,7 @@ class _MiniCalendar extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(5),
-          border: Border.all(color: ui.brand, width: 3),
+          border: Border.all(color: ui.accent, width: 3),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(3),

@@ -96,7 +96,7 @@ Future<bool> confirmJourneyAction(
             key: const ValueKey('journeys-confirm'),
             label: confirmLabel,
             accent: destructive ? ui.danger : null,
-            onAccent: destructive ? UiCamera.ink : null,
+            onAccent: destructive ? ui.onDanger : null,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: UiSpace.sm),

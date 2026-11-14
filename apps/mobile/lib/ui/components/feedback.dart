@@ -16,6 +16,7 @@ class UiEmptyState extends StatelessWidget {
     this.body,
     this.actionLabel,
     this.onAction,
+    this.actionKey,
     super.key,
   }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
@@ -28,6 +29,9 @@ class UiEmptyState extends StatelessWidget {
   final String? body;
   final String? actionLabel;
   final VoidCallback? onAction;
+
+  /// Key of the action button.
+  final Key? actionKey;
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +81,7 @@ class UiEmptyState extends StatelessWidget {
               if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: UiSpace.xxl),
                 UiButton.secondary(
+                  key: actionKey,
                   label: actionLabel!,
                   onPressed: onAction,
                   expand: false,

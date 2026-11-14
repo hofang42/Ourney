@@ -454,6 +454,26 @@ void main() {
       });
     });
   }
+
+  testWidgets('UiOtpField with 8 cells fits a 288dp-wide area', (t) async {
+    t.view.physicalSize = const Size(320, 640);
+    t.view.devicePixelRatio = 1;
+    addTearDown(t.view.reset);
+    final c = TextEditingController();
+    final f = FocusNode();
+    addTearDown(c.dispose);
+    addTearDown(f.dispose);
+    await t.pumpWidget(
+      host(
+        UiOtpField(controller: c, focusNode: f, digitLabel: 'code', length: 8),
+        size: const Size(320, 640),
+      ),
+    );
+    expect(t.takeException(), isNull);
+    final last = t.getTopRight(find.byKey(const ValueKey('ui-otp-box-7')));
+    expect(last.dx, lessThanOrEqualTo(320 - 16));
+    expect(t.getTopLeft(find.byKey(const ValueKey('ui-otp-box-0'))).dx, 16);
+  });
 }
 
 void _noop() {}

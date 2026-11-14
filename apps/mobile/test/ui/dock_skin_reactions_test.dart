@@ -39,7 +39,6 @@ const reactionLabels = {
   'heart': 'Thương',
   'laugh': 'Haha',
   'fire': 'Cháy',
-  'wave': 'Vẫy tay',
 };
 
 UiDock fiveTab(List<String> taps, {int active = 0, VoidCallback? onLong}) {
@@ -481,7 +480,7 @@ void main() {
   });
 
   group('UiReactionBar', () {
-    testWidgets('six Vietnamese-labelled 48dp targets with 38dp visuals', (
+    testWidgets('five Vietnamese-labelled 48dp targets with 38dp visuals', (
       tester,
     ) async {
       final handle = tester.ensureSemantics();
@@ -496,14 +495,7 @@ void main() {
           ),
         ),
       );
-      const labels = [
-        'Vỗ tay',
-        'Cố lên',
-        'Thương',
-        'Haha',
-        'Cháy, 3',
-        'Vẫy tay',
-      ];
+      const labels = ['Vỗ tay', 'Cố lên', 'Thương', 'Haha', 'Cháy, 3'];
       for (final l in labels) {
         expect(find.bySemanticsLabel(l), findsOneWidget, reason: l);
       }
@@ -514,7 +506,7 @@ void main() {
         );
       }
       final targets = find.byType(UiPressable);
-      expect(targets, findsNWidgets(6));
+      expect(targets, findsNWidgets(5));
       for (final e in targets.evaluate()) {
         final s = tester.getSize(find.byWidget(e.widget));
         expect(s.width, greaterThanOrEqualTo(48));
@@ -533,8 +525,8 @@ void main() {
         ),
       );
       await tester.tap(find.bySemanticsLabel('Cháy, 3'));
-      await tester.tap(find.bySemanticsLabel('Vẫy tay'));
-      expect(got, ['fire', 'wave']);
+      expect(got, ['fire']);
+      expect(uiReactionIds, ['clap', 'flex', 'heart', 'laugh', 'fire']);
       handle.dispose();
     });
 
@@ -549,7 +541,7 @@ void main() {
               labels: reactionLabels,
               onReact: (_) {},
               selected: 'clap',
-              counts: const {'clap': 128, 'wave': 7},
+              counts: const {'clap': 128, 'fire': 7},
             ),
             brightness: b,
             textScale: 1.35,

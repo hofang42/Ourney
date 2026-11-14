@@ -183,7 +183,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
             key: const ValueKey('share-card-link-revoke-confirm'),
             label: l10n.share_card_linkRevoke,
             accent: context.ui.danger,
-            onAccent: context.ui.bg,
+            onAccent: context.ui.onDanger,
             onPressed: () => Navigator.of(context).pop(true),
           ),
           const SizedBox(height: UiSpace.sm),
