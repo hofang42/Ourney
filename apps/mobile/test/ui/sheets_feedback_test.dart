@@ -167,6 +167,7 @@ void main() {
         UiBanner(
           message: 'Mất kết nối mạng',
           kind: UiBannerKind.readOnly,
+          retryLabel: 'Thử lại',
           onRetry: () => n++,
         ),
       ),
@@ -179,6 +180,9 @@ void main() {
   });
 
   testWidgets('no overflow at 1.35x text and 320dp', (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       app(
         const SingleChildScrollView(
@@ -186,6 +190,7 @@ void main() {
             children: [
               UiBanner(
                 message: 'Bạn đang ngoại tuyến, thay đổi sẽ được đồng bộ khi có mạng trở lại.',
+                retryLabel: 'Thử lại',
                 onRetry: _noop,
               ),
               UiBanner(

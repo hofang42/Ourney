@@ -112,5 +112,17 @@ void main() {
       find.descendant(of: find.byType(UiDock), matching: find.byType(ClipPath)),
       findsOneWidget,
     );
+    // The single shadow is the glass's own: 4dp offset in the palette outline.
+    final glass = tester.widget<UiGlass>(find.byType(UiGlass));
+    expect(glass.hardShadow, UiShadow.large);
+    expect(glass.hardShadowColor, OurneyUi.light.outline);
+    final clip = find.descendant(
+      of: find.byType(UiDock),
+      matching: find.byType(ClipPath),
+    );
+    final t = tester.widget<Transform>(
+      find.descendant(of: clip, matching: find.byType(Transform)),
+    );
+    expect(t.transform.getTranslation().x, UiShadow.large);
   });
 }

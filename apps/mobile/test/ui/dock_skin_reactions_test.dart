@@ -33,6 +33,15 @@ Widget host(
   );
 }
 
+const reactionLabels = {
+  'clap': 'Vỗ tay',
+  'flex': 'Cố lên',
+  'heart': 'Thương',
+  'laugh': 'Haha',
+  'fire': 'Cháy',
+  'wave': 'Vẫy tay',
+};
+
 UiDock fiveTab(List<String> taps, {int active = 0, VoidCallback? onLong}) {
   UiDockItem item(String glyph, String label, int i) => UiDockItem(
     glyph: glyph,
@@ -110,8 +119,8 @@ void main() {
         expect(b.isEmpty, isFalse, reason: name);
         expect(b.left, greaterThanOrEqualTo(0), reason: name);
         expect(b.top, greaterThanOrEqualTo(0), reason: name);
-        expect(b.right, lessThanOrEqualTo(26), reason: name);
-        expect(b.bottom, lessThanOrEqualTo(26), reason: name);
+        expect(b.right, lessThanOrEqualTo(24), reason: name);
+        expect(b.bottom, lessThanOrEqualTo(24), reason: name);
       }
       expect(ourneyIconPath('nope'), isNull);
     });
@@ -175,8 +184,10 @@ void main() {
       final x0 = tester.getCenter(pill).dx;
       set(() => active = 4);
       await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pumpAndSettle();
+      // Bounded: the 280ms slide must be finished by the 320ms mark.
+      await tester.pump(const Duration(milliseconds: 160));
+      await tester.pump(const Duration(milliseconds: 160));
+      expect(tester.hasRunningAnimations, isFalse);
       expect(tester.getCenter(pill).dx, greaterThan(x0 + 100));
       expect(
         tester.getCenter(pill).dx,
@@ -442,7 +453,8 @@ void main() {
       final mid = tester.widget<ColoredBox>(find.byKey(const ValueKey('bg')));
       expect(mid.color, isNot(uiSkinById('couple').light.bg));
       expect(mid.color, isNot(uiSkinById('quiet').light.bg));
-      await tester.pumpAndSettle();
+      // Bounded: 160ms + 160ms reaches the 320ms mark, no open-ended settle.
+      await tester.pump(const Duration(milliseconds: 160));
       expect(
         tester.widget<ColoredBox>(find.byKey(const ValueKey('bg'))).color,
         uiSkinById('couple').light.bg,
@@ -477,6 +489,7 @@ void main() {
       await tester.pumpWidget(
         host(
           UiReactionBar(
+            labels: reactionLabels,
             onReact: got.add,
             selected: 'heart',
             counts: const {'fire': 3},
@@ -533,6 +546,7 @@ void main() {
         await tester.pumpWidget(
           host(
             UiReactionBar(
+              labels: reactionLabels,
               onReact: (_) {},
               selected: 'clap',
               counts: const {'clap': 128, 'wave': 7},

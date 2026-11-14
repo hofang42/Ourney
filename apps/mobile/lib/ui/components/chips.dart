@@ -44,7 +44,7 @@ class UiChip extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 44),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? ui.brand : ui.surface,
+          color: selected ? ui.accent : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
           border: ui.stickerBorder(UiBorder.thin),
         ),
@@ -85,6 +85,7 @@ class UiTag extends StatelessWidget {
     this.background,
     this.foreground,
     this.bordered = true,
+    this.borderColor,
     super.key,
   });
 
@@ -98,6 +99,10 @@ class UiTag extends StatelessWidget {
   final Color? foreground;
   final bool bordered;
 
+  /// Outline color; defaults to ink. Pass `UiCamera.outline` for tags drawn
+  /// over the dark camera preview.
+  final Color? borderColor;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
@@ -108,7 +113,9 @@ class UiTag extends StatelessWidget {
       decoration: BoxDecoration(
         color: background ?? ui.surface,
         borderRadius: BorderRadius.circular(UiRadius.capsule),
-        border: bordered ? ui.stickerBorder(UiBorder.thin) : null,
+        border: bordered
+            ? Border.all(color: borderColor ?? ui.outline, width: UiBorder.thin)
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -66,7 +66,11 @@ void main() {
       );
       final face = tester
           .widgetList<Container>(pill)
-          .firstWhere((c) => c.decoration is BoxDecoration);
+          .firstWhere(
+            (c) =>
+                c.decoration is BoxDecoration &&
+                (c.decoration! as BoxDecoration).color != null,
+          );
       expect(
         tester.getSize(find.byWidget(face)),
         const Size(UiSize.snapPillW, UiSize.snapPillH),

@@ -505,6 +505,7 @@ class _PhotoPreview extends StatelessWidget {
                       icon: Icons.photo_library_outlined,
                       background: const Color(0xB3000000),
                       foreground: UiCamera.ink,
+                      borderColor: UiCamera.outline,
                     ),
                   ),
               ],
