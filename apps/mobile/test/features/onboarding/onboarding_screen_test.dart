@@ -175,7 +175,7 @@ void main() {
     testWidgets('camera sheet resolves true on Allow', (tester) async {
       bool? result;
       await open(tester, showCameraPermissionSheet, (v) => result = v);
-      expect(find.text('Cho phép dùng camera'), findsOneWidget);
+      expect(find.text('cho Ourney dùng camera.'), findsOneWidget);
       await tester.tap(byKey('camera-permission-allow'));
       await tester.pumpAndSettle();
       expect(result, isTrue);

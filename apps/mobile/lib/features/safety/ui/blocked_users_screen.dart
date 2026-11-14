@@ -20,7 +20,7 @@ class BlockedUsersScreen extends ConsumerWidget {
     final localOnly = ref.watch(appConfigProvider).localOnly;
     return SafetyPage(
       pageKey: const ValueKey('safety-blocked'),
-      title: l10n.safety_hubBlocked,
+      title: l10n.safety_blockedPageTitle,
       onBack: () => closeOr(context, SafetyPaths.hub),
       child: localOnly ? const NeedsServerView() : const _BlockedList(),
     );

@@ -1,6 +1,8 @@
 {
   "@@locale": "en",
-  "auth_title": "Save your journeys",
+  "auth_codeTitle": "enter the code.",
+  "auth_otpHelper": "Can't find the email? Check spam or promotions.",
+  "auth_title": "sign in.",
   "auth_subtitle": "Enter your email and Ourney sends you a 6-digit code. No password needed.",
   "auth_emailLabel": "Email",
   "auth_emailHint": "you@example.com",

@@ -98,10 +98,34 @@ abstract class SafetyL10n {
     Locale('vi'),
   ];
 
+  /// Page title of the terms of use.
+  ///
+  /// In vi, this message translates to:
+  /// **'điều khoản sử dụng.'**
+  String get safety_eulaPageTitle;
+
+  /// Page title of the privacy policy.
+  ///
+  /// In vi, this message translates to:
+  /// **'chính sách riêng tư.'**
+  String get safety_privacyPageTitle;
+
+  /// Page title of the contact page.
+  ///
+  /// In vi, this message translates to:
+  /// **'liên hệ.'**
+  String get safety_contactPageTitle;
+
+  /// Page title of the blocked users list.
+  ///
+  /// In vi, this message translates to:
+  /// **'người đã chặn.'**
+  String get safety_blockedPageTitle;
+
   /// Title of the safety feature's main screen.
   ///
   /// In vi, this message translates to:
-  /// **'An toàn & hỗ trợ'**
+  /// **'an toàn & hỗ trợ.'**
   String get safety_title;
 
   /// Intro text on the safety hub.

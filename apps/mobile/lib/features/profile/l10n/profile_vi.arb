@@ -1,10 +1,26 @@
 {
   "@@locale": "vi",
-  "profile_title": "Hồ sơ",
+  "profile_deleteItemProfile": "Hồ sơ của bạn",
+  "@profile_deleteItemProfile": {
+    "description": "Delete dialog list item."
+  },
+  "profile_deleteItemJourneys": "Mọi hành trình và ảnh",
+  "@profile_deleteItemJourneys": {
+    "description": "Delete dialog list item."
+  },
+  "profile_deleteItemGroups": "Tư cách thành viên trong các nhóm",
+  "@profile_deleteItemGroups": {
+    "description": "Delete dialog list item."
+  },
+  "profile_editScreenTitle": "sửa hồ sơ.",
+  "@profile_editScreenTitle": {
+    "description": "Title of the edit profile screen."
+  },
+  "profile_title": "hồ sơ.",
   "@profile_title": {
     "description": "Title of the profile screen."
   },
-  "profile_setupTitle": "Hồ sơ của bạn",
+  "profile_setupTitle": "hồ sơ của bạn.",
   "@profile_setupTitle": {
     "description": "Title of the profile setup screen shown after the first sign-in."
   },
@@ -104,7 +120,7 @@
   "@profile_save": {
     "description": "Save button on the edit screen."
   },
-  "profile_continue": "Tiếp tục",
+  "profile_continue": "Xong",
   "@profile_continue": {
     "description": "Save button on the setup screen."
   },
@@ -144,7 +160,7 @@
   "@profile_guestMessage": {
     "description": "Local-only mode explanation."
   },
-  "profile_sectionSettings": "Cài đặt",
+  "profile_sectionSettings": "cài đặt",
   "@profile_sectionSettings": {
     "description": "Settings section header."
   },
@@ -172,7 +188,7 @@
   "@profile_safety": {
     "description": "Link to the safety pages (EULA, privacy, contact)."
   },
-  "profile_sectionAccount": "Tài khoản",
+  "profile_sectionAccount": "tài khoản",
   "@profile_sectionAccount": {
     "description": "Account section header."
   },

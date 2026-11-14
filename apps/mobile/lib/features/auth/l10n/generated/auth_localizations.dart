@@ -97,10 +97,22 @@ abstract class AuthL10n {
     Locale('vi'),
   ];
 
+  /// Title of the code step.
+  ///
+  /// In vi, this message translates to:
+  /// **'nhập mã.'**
+  String get auth_codeTitle;
+
+  /// Helper under the code step.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không thấy thư? Xem mục thư rác hoặc quảng cáo.'**
+  String get auth_otpHelper;
+
   /// Title of the sign-in screen (email step).
   ///
   /// In vi, this message translates to:
-  /// **'Lưu giữ hành trình của bạn'**
+  /// **'đăng nhập.'**
   String get auth_title;
 
   /// Explains email OTP sign-in (FR-A1).

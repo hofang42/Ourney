@@ -44,6 +44,18 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_post => 'Đăng';
 
   @override
+  String get checkin_postMemory => 'Dán vào sổ';
+
+  @override
+  String get checkin_postMinimal => 'Đăng ngay';
+
+  @override
+  String get checkin_captionLabelMemory => 'Ghi lại một dòng';
+
+  @override
+  String get checkin_captionLabelFlexer => 'Hôm nay chạy thế nào?';
+
+  @override
   String get checkin_posting => 'Đang đăng…';
 
   @override
@@ -94,6 +106,75 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_share => 'Chia sẻ';
+
+  @override
+  String get checkin_shareSkinMemory => 'Chia sẻ poster chuyến đi';
+
+  @override
+  String get checkin_shareSkinCouple => 'Chia sẻ câu chuyện';
+
+  @override
+  String get checkin_shareSkinFlexer => 'Chia sẻ lên Story';
+
+  @override
+  String get checkin_shareSkinMinimal => 'Xuất thẻ';
+
+  @override
+  String get checkin_shareSkinQuiet => 'Tạo thiệp';
+
+  @override
+  String get checkin_done_savedPrivate => 'Đã lưu. Chỉ mình bạn thấy.';
+
+  @override
+  String get checkin_done_stampChecked => 'ĐÃ ĐIỂM DANH';
+
+  @override
+  String get checkin_done_stampWeek1 => 'TUẦN 1 XONG';
+
+  @override
+  String get checkin_done_stampCup => 'CÚP VỀ TAY';
+
+  @override
+  String checkin_done_memoryStamp(int day) {
+    return 'ĐÃ DÁN · NGÀY $day';
+  }
+
+  @override
+  String checkin_done_coupleDay(int day) {
+    return 'Ngày $day';
+  }
+
+  @override
+  String get checkin_done_coupleSent => 'Nửa của bạn đã được gửi.';
+
+  @override
+  String get checkin_done_coupleWeek => 'Tuần đầu bên nhau';
+
+  @override
+  String get checkin_done_coupleFull30 => 'Tròn 30 ngày';
+
+  @override
+  String checkin_done_flexerDay(int day, int streak) {
+    return 'NGÀY $day. $streak NGÀY LIỀN.';
+  }
+
+  @override
+  String get checkin_done_flexerWeek => 'TUẦN ĐẦU XONG';
+
+  @override
+  String get checkin_done_flexerFinish => 'VỀ ĐÍCH';
+
+  @override
+  String get checkin_done_minimalDone => 'XONG.';
+
+  @override
+  String get checkin_done_minimalWeek => '7 NGÀY LIỀN';
+
+  @override
+  String get checkin_done_minimalFull => 'ĐỦ 30 NGÀY';
+
+  @override
+  String get checkin_done_chainLabel => 'Chuỗi';
 
   @override
   String get checkin_done => 'Xong';

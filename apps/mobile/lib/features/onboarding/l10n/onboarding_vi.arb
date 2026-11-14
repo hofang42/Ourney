@@ -68,7 +68,7 @@
       }
     }
   },
-  "onboarding_cameraTitle": "Cho phép dùng camera",
+  "onboarding_cameraTitle": "cho Ourney dùng camera.",
   "@onboarding_cameraTitle": {
     "description": "Title of the camera permission sheet."
   },
@@ -93,7 +93,7 @@
   "@onboarding_nudgeAllow": {
     "description": "Primary button of the notification sheet."
   },
-  "onboarding_notNow": "Để sau",
+  "onboarding_notNow": "để sau vậy.",
   "@onboarding_notNow": {
     "description": "Secondary button of the permission sheets."
   }

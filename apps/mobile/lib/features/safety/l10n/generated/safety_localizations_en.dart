@@ -10,7 +10,19 @@ class SafetyL10nEn extends SafetyL10n {
   SafetyL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get safety_title => 'Safety & support';
+  String get safety_eulaPageTitle => 'terms of use.';
+
+  @override
+  String get safety_privacyPageTitle => 'privacy policy.';
+
+  @override
+  String get safety_contactPageTitle => 'contact.';
+
+  @override
+  String get safety_blockedPageTitle => 'blocked people.';
+
+  @override
+  String get safety_title => 'safety & support.';
 
   @override
   String get safety_hubIntro =>

@@ -305,6 +305,18 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         : journey.maxMembers == 2
         ? (UiPrivacy.couple, l10n.checkin_privacyCouple)
         : (UiPrivacy.squad, l10n.checkin_privacySquad);
+    // Per-skin copy of the Figma Post screens (primary label, caption label).
+    final skin = personaSkinOf(journey);
+    final postLabel = switch (skin) {
+      PersonaSkinId.memoryCollectors => l10n.checkin_postMemory,
+      PersonaSkinId.minimalistHabit => l10n.checkin_postMinimal,
+      _ => l10n.checkin_post,
+    };
+    final captionLabel = switch (skin) {
+      PersonaSkinId.memoryCollectors => l10n.checkin_captionLabelMemory,
+      PersonaSkinId.aestheticFlexer => l10n.checkin_captionLabelFlexer,
+      _ => l10n.checkin_captionLabel,
+    };
     final width = MediaQuery.sizeOf(context).width;
     final gutter = UiSpace.gutter(width);
 
@@ -319,7 +331,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             top: false,
             child: UiButton(
               key: const ValueKey('checkin-post'),
-              label: _posting ? l10n.checkin_posting : l10n.checkin_post,
+              label: _posting ? l10n.checkin_posting : postLabel,
               glyph: const OurneyIcon(name: 'send', size: 20),
               accent: style.accent,
               onAccent: style.onAccent,
@@ -381,10 +393,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
           _PhotoPreview(photo: photo),
           const SizedBox(height: UiSpace.lg),
           // `.caption-field`: label + underlined textarea.
-          Text(
-            l10n.checkin_captionLabel,
-            style: UiText.fieldLabel(color: ui.inkMuted),
-          ),
+          Text(captionLabel, style: UiText.fieldLabel(color: ui.inkMuted)),
           TextField(
             key: const ValueKey('checkin-caption'),
             controller: _caption,

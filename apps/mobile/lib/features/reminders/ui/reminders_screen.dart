@@ -192,21 +192,33 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
                           ],
                           const SizedBox(height: UiSpace.xl),
                           UiListHeading(title: l10n.reminders_journeysHeader),
-                          for (final j in list)
-                            _JourneyReminderTile(
-                              journey: j,
-                              setting: settings[j.id] ?? ReminderSetting.off,
-                              onToggle: (on) => _toggle(j, on: on),
-                              onPickTime: () => _pickTime(j),
+                          const SizedBox(height: UiSpace.xs),
+                          UiCard(
+                            radius: UiRadius.card,
+                            shadowOffset: UiShadow.small,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: UiSpace.md,
                             ),
-                          const SizedBox(height: UiSpace.lg),
-                          UiSwitchRow(
-                            key: const ValueKey('reminders-streak-alert'),
-                            label: l10n.reminders_streakAlertTitle,
-                            subtitle: l10n.reminders_streakAlertSubtitle,
-                            value: streakAlerts,
-                            divider: false,
-                            onChanged: _setStreakAlerts,
+                            child: Column(
+                              children: [
+                                for (final j in list)
+                                  _JourneyReminderTile(
+                                    journey: j,
+                                    setting:
+                                        settings[j.id] ?? ReminderSetting.off,
+                                    onToggle: (on) => _toggle(j, on: on),
+                                    onPickTime: () => _pickTime(j),
+                                  ),
+                                UiSwitchRow(
+                                  key: const ValueKey('reminders-streak-alert'),
+                                  label: l10n.reminders_streakAlertTitle,
+                                  subtitle: l10n.reminders_streakAlertSubtitle,
+                                  value: streakAlerts,
+                                  divider: false,
+                                  onChanged: _setStreakAlerts,
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),

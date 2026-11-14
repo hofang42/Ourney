@@ -61,7 +61,7 @@ class OnboardingL10nEn extends OnboardingL10n {
   }
 
   @override
-  String get onboarding_cameraTitle => 'Camera access';
+  String get onboarding_cameraTitle => 'let Ourney use the camera.';
 
   @override
   String get onboarding_cameraBody =>
@@ -79,5 +79,5 @@ class OnboardingL10nEn extends OnboardingL10n {
   String get onboarding_nudgeAllow => 'Turn on';
 
   @override
-  String get onboarding_notNow => 'Not now';
+  String get onboarding_notNow => 'maybe later.';
 }

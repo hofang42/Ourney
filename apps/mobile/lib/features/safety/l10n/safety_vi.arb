@@ -1,6 +1,22 @@
 {
   "@@locale": "vi",
-  "safety_title": "An toàn & hỗ trợ",
+  "safety_eulaPageTitle": "điều khoản sử dụng.",
+  "@safety_eulaPageTitle": {
+    "description": "Page title of the terms of use."
+  },
+  "safety_privacyPageTitle": "chính sách riêng tư.",
+  "@safety_privacyPageTitle": {
+    "description": "Page title of the privacy policy."
+  },
+  "safety_contactPageTitle": "liên hệ.",
+  "@safety_contactPageTitle": {
+    "description": "Page title of the contact page."
+  },
+  "safety_blockedPageTitle": "người đã chặn.",
+  "@safety_blockedPageTitle": {
+    "description": "Page title of the blocked users list."
+  },
+  "safety_title": "an toàn & hỗ trợ.",
   "@safety_title": {
     "description": "Title of the safety feature's main screen."
   },

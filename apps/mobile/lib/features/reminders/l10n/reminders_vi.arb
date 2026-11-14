@@ -1,6 +1,6 @@
 {
   "@@locale": "vi",
-  "reminders_title": "Nhắc nhở",
+  "reminders_title": "nhắc nhở.",
   "@reminders_title": {
     "description": "Title of the reminders feature's main screen."
   },
@@ -8,7 +8,7 @@
   "@reminders_intro": {
     "description": "Short explanation at the top of the reminders screen."
   },
-  "reminders_journeysHeader": "Hành trình",
+  "reminders_journeysHeader": "hành trình",
   "@reminders_journeysHeader": {
     "description": "Section header above the per-journey reminder list."
   },

@@ -19,6 +19,7 @@
   "groups_joinPreviewTitle": "You're invited to a group journey",
   "groups_joinRules": "Groups have up to 10 members. Your progress counts from the day you join, and you can still see the group's history.",
   "groups_joinButton": "Join group",
+  "groups_joinLater": "Later",
   "groups_errorNotFound": "No group uses this code. The owner may have changed it, so ask for a new one.",
   "groups_errorFull": "This group is full (10 members).",
   "groups_errorBlocked": "You can't join this group.",

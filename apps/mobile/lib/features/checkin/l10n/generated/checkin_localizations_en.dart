@@ -44,6 +44,18 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_post => 'Post';
 
   @override
+  String get checkin_postMemory => 'Stick in the book';
+
+  @override
+  String get checkin_postMinimal => 'Post now';
+
+  @override
+  String get checkin_captionLabelMemory => 'Write one line';
+
+  @override
+  String get checkin_captionLabelFlexer => 'How was today\'s run?';
+
+  @override
   String get checkin_posting => 'Posting…';
 
   @override
@@ -94,6 +106,75 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_share => 'Share';
+
+  @override
+  String get checkin_shareSkinMemory => 'Share trip poster';
+
+  @override
+  String get checkin_shareSkinCouple => 'Share your story';
+
+  @override
+  String get checkin_shareSkinFlexer => 'Share to Story';
+
+  @override
+  String get checkin_shareSkinMinimal => 'Export card';
+
+  @override
+  String get checkin_shareSkinQuiet => 'Make a card';
+
+  @override
+  String get checkin_done_savedPrivate => 'Saved. Only you can see it.';
+
+  @override
+  String get checkin_done_stampChecked => 'CHECKED IN';
+
+  @override
+  String get checkin_done_stampWeek1 => 'WEEK 1 DONE';
+
+  @override
+  String get checkin_done_stampCup => 'CUP WON';
+
+  @override
+  String checkin_done_memoryStamp(int day) {
+    return 'PASTED · DAY $day';
+  }
+
+  @override
+  String checkin_done_coupleDay(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String get checkin_done_coupleSent => 'Your half is sent.';
+
+  @override
+  String get checkin_done_coupleWeek => 'First week together';
+
+  @override
+  String get checkin_done_coupleFull30 => 'A full 30 days';
+
+  @override
+  String checkin_done_flexerDay(int day, int streak) {
+    return 'DAY $day. $streak DAYS STRAIGHT.';
+  }
+
+  @override
+  String get checkin_done_flexerWeek => 'WEEK ONE DONE';
+
+  @override
+  String get checkin_done_flexerFinish => 'FINISHED';
+
+  @override
+  String get checkin_done_minimalDone => 'DONE.';
+
+  @override
+  String get checkin_done_minimalWeek => '7 DAYS STRAIGHT';
+
+  @override
+  String get checkin_done_minimalFull => 'ALL 30 DAYS';
+
+  @override
+  String get checkin_done_chainLabel => 'Streak';
 
   @override
   String get checkin_done => 'Done';

@@ -191,7 +191,7 @@ abstract class OnboardingL10n {
   /// Title of the camera permission sheet.
   ///
   /// In vi, this message translates to:
-  /// **'Cho phép dùng camera'**
+  /// **'cho Ourney dùng camera.'**
   String get onboarding_cameraTitle;
 
   /// Body of the camera permission sheet.
@@ -221,7 +221,7 @@ abstract class OnboardingL10n {
   /// Secondary button of the permission sheets.
   ///
   /// In vi, this message translates to:
-  /// **'Để sau'**
+  /// **'để sau vậy.'**
   String get onboarding_notNow;
 }
 

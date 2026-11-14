@@ -127,6 +127,27 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
             l10n.profile_deleteMessage,
             style: UiText.muted(color: ui.inkMuted, size: 14),
           ),
+          const SizedBox(height: UiSpace.md),
+          for (final (icon, text) in [
+            ('profile', l10n.profile_deleteItemProfile),
+            ('image', l10n.profile_deleteItemJourneys),
+            ('squad', l10n.profile_deleteItemGroups),
+          ])
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: UiSpace.xs),
+              child: Row(
+                children: [
+                  OurneyIcon(name: icon, flat: true, color: ui.ink, size: 20),
+                  const SizedBox(width: UiSpace.md),
+                  Expanded(
+                    child: Text(
+                      text,
+                      style: UiText.body(size: 14, color: ui.ink),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           const SizedBox(height: UiSpace.lg),
           UiTextField(
             fieldKey: const ValueKey('profile-delete-confirm-field'),

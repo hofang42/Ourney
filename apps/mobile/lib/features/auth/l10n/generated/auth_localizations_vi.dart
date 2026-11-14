@@ -10,7 +10,14 @@ class AuthL10nVi extends AuthL10n {
   AuthL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get auth_title => 'Lưu giữ hành trình của bạn';
+  String get auth_codeTitle => 'nhập mã.';
+
+  @override
+  String get auth_otpHelper =>
+      'Không thấy thư? Xem mục thư rác hoặc quảng cáo.';
+
+  @override
+  String get auth_title => 'đăng nhập.';
 
   @override
   String get auth_subtitle =>

@@ -26,7 +26,9 @@ void main() {
   );
 
   setUp(() {
-    journeys = FakeJourneyRepository();
+    journeys = FakeJourneyRepository(
+      journeys: [testJourney(templateId: TemplateId.weightLoss)],
+    );
     checkIns = FakeCheckInRepository();
     compressor = FakePhotoCompressor();
     log = RouteLog();
@@ -97,7 +99,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
     expect(find.text('Giữ được chuỗi.'), findsOneWidget);
-    expect(find.text('+1 ngày'), findsOneWidget);
+    expect(find.text('Đã lưu. Chỉ mình bạn thấy.'), findsOneWidget);
     expect(find.byKey(const ValueKey('checkin-milestone')), findsNothing);
 
     // No milestone: closes by itself back to the camera.
@@ -435,8 +437,8 @@ void main() {
         await pump(tester, brightness: brightness);
         await tapPost(tester);
         expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
+        expect(find.byKey(const ValueKey('checkin-streak')), findsOneWidget);
         expect(find.textContaining('NGÀY '), findsOneWidget);
-        expect(find.byType(UiSuccessMark), findsOneWidget);
         expect(tester.takeException(), isNull);
         await finishSuccess(tester);
       });

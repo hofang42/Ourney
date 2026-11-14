@@ -171,6 +171,13 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
             loading: _busy,
             onPressed: _busy || !isValidInviteCode(_normalized) ? null : _join,
           ),
+          const SizedBox(height: UiSpace.sm),
+          // `.join-later`: leave without joining.
+          UiButton.ghost(
+            key: const ValueKey('groups-join-later'),
+            label: l10n.groups_joinLater,
+            onPressed: _busy ? null : _back,
+          ),
         ],
       ),
     );

@@ -1,6 +1,10 @@
 {
   "@@locale": "en",
-  "safety_title": "Safety & support",
+  "safety_eulaPageTitle": "terms of use.",
+  "safety_privacyPageTitle": "privacy policy.",
+  "safety_contactPageTitle": "contact.",
+  "safety_blockedPageTitle": "blocked people.",
+  "safety_title": "safety & support.",
   "safety_hubIntro": "Ourney is a place to keep habits together. Here you can report bad content, block people and read our terms.",
   "safety_hubEula": "Terms of use",
   "safety_hubPrivacy": "Privacy policy",

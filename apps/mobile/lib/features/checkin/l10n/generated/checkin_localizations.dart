@@ -158,6 +158,30 @@ abstract class CheckinL10n {
   /// **'Đăng'**
   String get checkin_post;
 
+  /// No description provided for @checkin_postMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dán vào sổ'**
+  String get checkin_postMemory;
+
+  /// No description provided for @checkin_postMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng ngay'**
+  String get checkin_postMinimal;
+
+  /// No description provided for @checkin_captionLabelMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ghi lại một dòng'**
+  String get checkin_captionLabelMemory;
+
+  /// No description provided for @checkin_captionLabelFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay chạy thế nào?'**
+  String get checkin_captionLabelFlexer;
+
   /// No description provided for @checkin_posting.
   ///
   /// In vi, this message translates to:
@@ -253,6 +277,132 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Chia sẻ'**
   String get checkin_share;
+
+  /// No description provided for @checkin_shareSkinMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ poster chuyến đi'**
+  String get checkin_shareSkinMemory;
+
+  /// No description provided for @checkin_shareSkinCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ câu chuyện'**
+  String get checkin_shareSkinCouple;
+
+  /// No description provided for @checkin_shareSkinFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ lên Story'**
+  String get checkin_shareSkinFlexer;
+
+  /// No description provided for @checkin_shareSkinMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xuất thẻ'**
+  String get checkin_shareSkinMinimal;
+
+  /// No description provided for @checkin_shareSkinQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thiệp'**
+  String get checkin_shareSkinQuiet;
+
+  /// No description provided for @checkin_done_savedPrivate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu. Chỉ mình bạn thấy.'**
+  String get checkin_done_savedPrivate;
+
+  /// No description provided for @checkin_done_stampChecked.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐÃ ĐIỂM DANH'**
+  String get checkin_done_stampChecked;
+
+  /// No description provided for @checkin_done_stampWeek1.
+  ///
+  /// In vi, this message translates to:
+  /// **'TUẦN 1 XONG'**
+  String get checkin_done_stampWeek1;
+
+  /// No description provided for @checkin_done_stampCup.
+  ///
+  /// In vi, this message translates to:
+  /// **'CÚP VỀ TAY'**
+  String get checkin_done_stampCup;
+
+  /// No description provided for @checkin_done_memoryStamp.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐÃ DÁN · NGÀY {day}'**
+  String checkin_done_memoryStamp(int day);
+
+  /// No description provided for @checkin_done_coupleDay.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}'**
+  String checkin_done_coupleDay(int day);
+
+  /// No description provided for @checkin_done_coupleSent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nửa của bạn đã được gửi.'**
+  String get checkin_done_coupleSent;
+
+  /// No description provided for @checkin_done_coupleWeek.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tuần đầu bên nhau'**
+  String get checkin_done_coupleWeek;
+
+  /// No description provided for @checkin_done_coupleFull30.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tròn 30 ngày'**
+  String get checkin_done_coupleFull30;
+
+  /// No description provided for @checkin_done_flexerDay.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}. {streak} NGÀY LIỀN.'**
+  String checkin_done_flexerDay(int day, int streak);
+
+  /// No description provided for @checkin_done_flexerWeek.
+  ///
+  /// In vi, this message translates to:
+  /// **'TUẦN ĐẦU XONG'**
+  String get checkin_done_flexerWeek;
+
+  /// No description provided for @checkin_done_flexerFinish.
+  ///
+  /// In vi, this message translates to:
+  /// **'VỀ ĐÍCH'**
+  String get checkin_done_flexerFinish;
+
+  /// No description provided for @checkin_done_minimalDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'XONG.'**
+  String get checkin_done_minimalDone;
+
+  /// No description provided for @checkin_done_minimalWeek.
+  ///
+  /// In vi, this message translates to:
+  /// **'7 NGÀY LIỀN'**
+  String get checkin_done_minimalWeek;
+
+  /// No description provided for @checkin_done_minimalFull.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐỦ 30 NGÀY'**
+  String get checkin_done_minimalFull;
+
+  /// No description provided for @checkin_done_chainLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi'**
+  String get checkin_done_chainLabel;
 
   /// No description provided for @checkin_done.
   ///
