@@ -83,7 +83,7 @@ constraint (`23505` → `invalid`) — there is no lookup RPC.
 | metric_unit | text null | ≤ 16, e.g. "kg" |
 | hide_metric_default | bool | true for weight_loss; copied to `memberships.hide_metric` on join |
 | start_date | date | local date in `timezone`; immutable |
-| duration_days | int null | 7..365, null = open; **v1.3** 1..366 for `origin = imported` |
+| duration_days | int null | 7..365, null = open; **v1.3** 1..366 for `origin = imported`. **Pending change (decided 2026-11-12):** imported journeys (album of past photos) have no length cap, so the next version drops the 366 upper bound for `origin = imported` (docs/design-v2/bugs.md A2) |
 | timezone | text | IANA, e.g. `Asia/Ho_Chi_Minh`; immutable |
 | visibility | journey_visibility | see rules above |
 | status | journey_status | default `active` |
@@ -114,6 +114,8 @@ on their own active row. Dart: `Membership` (`JourneyRepository.watchMyMembershi
 `updateMyMembership`).
 
 ### check_ins
+
+> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in, and follows the cadence rules of SDS §7.1 (an X-per-week day only counts toward the week). Deleting the only check-in of a day must keep that day for the streak (SDS Q11), so `journey_streak` needs an input that survives deletes, for example a `checkin_days(journey_id, user_id, local_date)` row written with the first check-in and never removed by a check-in delete. When the cover is deleted, the earliest remaining check-in of that day becomes the cover. Check-ins of an imported past journey (photos dated before the journey was created in the app) never feed the streak, so the streak input must exclude them as well as `from_library` photos dated before today. `group_today` must return one row per member (cover photo + photo count) instead of one row per check-in. Until that migration lands, the table below is still the live contract.
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | client generated |
@@ -230,7 +232,7 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 | `not_found` | unknown id/code/token, invisible target; public-journey 404 |
 | `full` | group has 10 active members |
 | `blocked` | block in either direction with an active member |
-| `limit` | 3 active journeys |
+| `limit` | 3 active journeys (**to be removed**: owner dropped the cap on 2026-11-12, SRS FR-B3) |
 | `ended` | journey not active / past last day |
 | `not_alone` | `delete_journey` with other active members (end it instead) |
 | `rate_limited` | > 20 reports in 24 h; **v1.2** ≥ 10 failed invite codes in 1 h (`join_by_code`) |
@@ -239,10 +241,12 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 | `method_not_allowed`, `storage_listing_failed`, `storage_cleanup_incomplete`, `storage_cleanup_failed`, `delete_failed`, `internal` | Edge Functions |
 | `offline`, `unknown` | client-side only |
 
+**Pending change (decided 2026-11-11, prototype only):** a journey keeps its own `skin` (default from the template, changeable by the owner; `docs/design-v2/feedback-2026-11-11.md` §2). Today `journeys` only has `template_id` and the client derives the skin, so the next contract version needs a `skin` column.
+
 ## Rules (enforced server-side; client mirrors for UX)
-- Max **3 active journeys** per user (as owner or active member).
+- Max **3 active journeys** per user (as owner or active member). **Pending change (decided 2026-11-12, not migrated yet):** no cap; the next migration drops the `_active_journey_count(...) >= 3` checks and the `limit` error, and the client drops its limit dialog.
 - Max **10 active members** per group journey.
-- Streak: daily cadence, strict. See `streak_vectors.json`.
+- Streak: daily cadence, strict. See `streak_vectors.json`. **Pending change:** SRS FR-C7 and SDS §7.1 add X-per-week, weekly and monthly cadences. `journeys` and the `Journey` model have no cadence field yet, and `computeStreak` / `journey_streak` only count consecutive days; the next contract version needs a `cadence` column (with the X for X-per-week), a period-based streak algorithm in both places, and new `streak_vectors.json` cases.
 - **Late joiners**: a member's streak/progress window starts at
   `effectiveStreakStart(journey.startDate, joinedLocalDate)` = the later of the journey start and the
   journey-local date of `memberships.joined_at`; check-ins before that date are ignored; the window still

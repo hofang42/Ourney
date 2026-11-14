@@ -8,7 +8,7 @@
 ## 1. Giới thiệu
 
 ### 1.1 Ý tưởng trong một câu
-**Ourney = "Locket cho mục tiêu".** Bạn tạo một *hành trình* (giảm cân, học tiếng Anh, tập luyện, du lịch, hoặc tự đặt), mỗi ngày chụp **một ảnh check-in** để chứng minh mình vẫn đang đi tiếp, đi một mình hoặc **cùng bạn bè trong một nhóm**. Đến các mốc (7 ngày, 30 ngày, về đích) thì khoe bằng **share card** đẹp như Strava.
+**Ourney = "Locket cho mục tiêu".** Bạn tạo một *hành trình* (giảm cân, học tiếng Anh, tập luyện, du lịch, hoặc tự đặt), mỗi ngày chụp **ảnh check-in** (một hoặc nhiều tấm, như Locket) để chứng minh mình vẫn đang đi tiếp, đi một mình hoặc **cùng bạn bè trong một nhóm**. Đến các mốc (7 ngày, 30 ngày, về đích) thì khoe bằng **share card** đẹp như Strava.
 
 ### 1.2 Vì sao làm
 - App chuyên từng ngách (Strava, Duolingo, MyFitnessPal, Polarsteps) rất mạnh trong ngách của nó, nhưng **không có app nào gom "mọi loại hành trình + bằng chứng hằng ngày + nhóm bạn thân"**.
@@ -24,9 +24,10 @@ App **iOS (ưu tiên) + Android**, một codebase Flutter, backend Supabase. **v
 |---|---|
 | **Journey** (hành trình) | Một mục tiêu có ngày bắt đầu, thời lượng (hoặc mở), loại `solo` hoặc `group` |
 | **Template** | Mẫu soạn sẵn tạo ra journey (metric, thời lượng, mặc định riêng tư). Journey **copy** template, không tham chiếu |
-| **Check-in** | Một ảnh (+ caption, metric tuỳ chọn) cho một journey trong một **ngày địa phương**. Mỗi người tối đa 1 check-in/ngày/journey, chụp lại thì thay thế |
+| **Check-in** | Một ảnh (+ caption, metric tuỳ chọn) cho một journey trong một **ngày địa phương**. Một người đăng được **nhiều check-in trong cùng ngày/journey**; ảnh mới được thêm vào ngày đó, không thay ảnh cũ |
+| **Ảnh bìa ngày** | Ảnh đại diện của một ngày (mặc định là check-in đầu tiên, người dùng đổi được). Dùng cho lưới lịch, timeline, share card mặc định |
 | **local_date** | Ngày theo múi giờ của journey (không phải múi giờ của điện thoại) |
-| **Streak** | Số ngày liên tiếp có check-in. Vẫn giữ nếu hôm nay chưa check-in nhưng hôm qua có |
+| **Streak** | Số **kỳ đạt** liên tiếp theo nhịp của journey (ngày, X lần/tuần, tuần, tháng; SDS §7.1). Vẫn giữ nếu kỳ hiện tại chưa xong nhưng kỳ trước đã đạt |
 | **Member** | Thành viên journey nhóm, vai trò `owner` hoặc `member` |
 | **Share card** | Ảnh 1080×1920 / 1080×1350 render trên máy để chia sẻ ra ngoài |
 | **Local-only mode** | App chạy không cần server (khi chưa cấu hình Supabase): solo journey dùng được, nhóm thì không |
@@ -80,7 +81,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-B1 | Tạo journey từ 4 template (Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi) hoặc Custom | P1 |
 | FR-B2 | Chọn solo/nhóm, thời lượng, metric tuỳ chọn, emoji, tiêu đề | P1 |
-| FR-B3 | Tối đa **3 journey đang chạy** mỗi người (server chặn, client báo trước) | P1 |
+| FR-B3 | **Không giới hạn** số journey đang chạy mỗi người (chủ dự án chốt 2026-11-12, bỏ luật tối đa 3). Camera dùng vòng chọn tối đa 5 đĩa + "Tất cả" có tìm kiếm (SDS §8.8). Server và client hiện vẫn chặn 3: cần migration bỏ `_active_journey_count(...) >= 3`, bỏ mã lỗi `limit` và hộp thoại giới hạn (xem `docs/contracts/schema.md`) | P1 |
 | FR-B4 | Timeline dạng **lưới lịch**: mỗi ô là ảnh của ngày, ngày lỡ hiện ô trống nét đứt | P1 |
 | FR-B5 | Hiện streak hiện tại, streak dài nhất, % hoàn thành, ngày thứ N/M | P1 |
 | FR-B6 | Kết thúc / lưu trữ journey. Journey đã kết thúc thì chỉ đọc | P1 |
@@ -99,9 +100,9 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-C4 | Sau khi chụp: caption ≤ 140 ký tự, giá trị metric (nếu có) → **Đăng**. Tổng ≤ 3 chạm | P1 |
 | FR-C5 | Nén trên máy: ảnh 1080px JPEG q70 + thumbnail | P1 |
 | FR-C6 | **Offline-first**: lưu và hiện ngay trên máy, upload qua hàng đợi, tự thử lại | P1 |
-| FR-C7 | 1 check-in/ngày/journey/người. Chụp lại thì thay thế | P1 |
-| FR-C8 | Animation "đóng dấu" + haptic + streak +1. Confetti ở mốc 7/30/về đích | P1 |
-| FR-C9 | Khi đã ở ≥ 2 journey: đăng 1 ảnh cho nhiều journey | P2 (v0.2) |
+| FR-C7 | **Nhiều check-in/kỳ/journey/người** (quyết định 2026-11-11, trùng D5 của SDS). Đăng thêm là thêm ảnh, không thay thế. Tính chuỗi theo **kỳ** của nhịp (SDS §7.1): Daily — check-in đầu tiên của ngày làm kỳ đạt và streak +1; X lần/tuần — check-in đầu tiên của mỗi ngày chỉ cộng một ngày vào số ngày của tuần, streak +1 khi tuần đạt đủ X ngày; Weekly/Monthly — check-in đầu tiên của kỳ làm kỳ đạt và streak +1. Ảnh thứ 2 trở đi trong cùng ngày/kỳ không cộng, không ăn mừng lại. Mỗi ngày có một ảnh bìa (mặc định ảnh đầu tiên, đổi được); xoá ảnh bìa thì ảnh còn lại sớm nhất thành ảnh bìa; ô tuần/tháng dùng ảnh bìa của ngày có ảnh đầu tiên trong kỳ. Mỗi ảnh có caption, metric, reaction riêng và xoá được riêng; xoá ảnh duy nhất của một ngày vẫn giữ ngày đó cho streak (SDS §7.1, Q11). Lưới/timeline hiện ảnh bìa + số đếm (SDS §7.3). Contract dữ liệu cần bỏ `UNIQUE (journey_id, user_id, local_date)` trên `check_ins`, thêm ảnh bìa theo ngày và một bản ghi ngày đã đạt không mất khi xoá check-in, làm đầu vào cho `journey_streak` (xem §5 và `docs/contracts/schema.md`) | P1 |
+| FR-C8 | Check-in làm kỳ đạt (theo FR-C7): animation "đóng dấu" + haptic + streak +1, confetti ở mốc 7/30/về đích. Check-in khác trong ngày/kỳ: chỉ báo nhẹ "Đã thêm ảnh thứ N" | P1 |
+| FR-C9 | ~~Đăng 1 ảnh cho nhiều journey~~: **bỏ**. Một ảnh chỉ thuộc một journey (SDS R2-10, chủ dự án giữ lại ngày 2026-11-12, vì rủi ro ảnh riêng lọt sang journey nhóm). Trước khi bấm Đăng chỉ được đổi đích sang một journey khác; đã đăng thì ảnh không chuyển được sang journey khác (SDS SCR-12, SCR-25) | Bỏ |
 
 ### FR-D — Nhóm
 | ID | Yêu cầu | Ưu tiên |
@@ -130,7 +131,9 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | FR-E1 | Share card 1 theme, 2 cỡ (story 1080×1920 có vùng an toàn cho IG; feed 1080×1350): số lớn + ảnh + logo | P1 |
 | FR-E2 | Chia sẻ qua share sheet hệ thống. Tự gợi ý ở các mốc | P1 |
 | FR-E3 | Link xem read-only cho **journey solo đã kết thúc** (hoặc journey kể lại đã lên kệ) có visibility `link` (token thu hồi được). Journey đang chạy chỉ chia sẻ cho bạn bè (FR-H3). **Journey nhóm/cặp đôi** có link công khai khi đã kết thúc, do owner bật, chỉ gồm ảnh của thành viên đã đồng ý (FR-H14) | P1 |
-| FR-E4 | Instagram Stories deep link, recap collage | P2 |
+| FR-E4 | Instagram Stories deep link | P2 |
+| FR-E5 | Thiệp một ngày chọn `1 ảnh` hoặc **ghép 2–4 ảnh** trong ngày (chủ dự án chốt 2026-11-12, đưa vào v1) | P1 |
+| FR-E6 | **Wrapped của hành trình** khi về đích hoặc kết thúc: tóm tắt "N khoảnh khắc trong M ngày", ảnh nổi bật, chuỗi dài nhất, thiệp chia sẻ (chủ dự án chốt 2026-11-12, đưa vào v1). Khác Year-in-review tổng kết cả năm, vẫn ở v0.3+ | P1 |
 
 ### FR-F — An toàn & tuân thủ
 | ID | Yêu cầu | Ưu tiên |
@@ -143,7 +146,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
 | FR-G1 | Thông báo local theo giờ user chọn cho từng journey. Lên lịch cuốn chiếu 14 ngày, tổng ≤ 64 thông báo chờ (giới hạn của iOS) | P1 |
-| FR-G2 | 21:00 cảnh báo "streak sắp mất" nếu hôm nay chưa check-in | P1 |
+| FR-G2 | Cảnh báo "streak sắp mất" theo quy tắc At risk của SDS §7.1: Daily — sau giờ cảnh báo (mặc định 21:00) mà hôm nay chưa check-in; X lần/tuần — số ngày còn lại trong tuần vừa đủ để đạt; Weekly/Monthly — ngày cuối của kỳ mà kỳ chưa đạt | P1 |
 | FR-G3 | Nudge bạn bè, push thật (gồm push lời mời kết bạn, journey được chia sẻ, tin nhắn) | P2 (cần tài khoản Apple) |
 
 ### FR-H — Bạn bè & chia sẻ hành trình đã trải qua
@@ -247,7 +250,7 @@ supabase start && supabase test db
 ## 7. Ngoài phạm vi v1 → lộ trình
 | v0.2 (khi có tài khoản Apple $99) | v0.3+ |
 |---|---|
-| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge (gồm push tin nhắn, lời mời kết bạn), universal/App Links, Sign in with Apple, đăng 1 ảnh cho nhiều journey, comment, streak freeze | Discover / feed công khai (vẫn **không** làm ở v1, kể cả khi đã có bạn bè), thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
+| Clip ≤ 5s, widget màn hình chính (ảnh mới nhất của nhóm), push + nudge (gồm push tin nhắn, lời mời kết bạn), universal/App Links, Sign in with Apple, comment, streak freeze | Discover / feed công khai (vẫn **không** làm ở v1, kể cả khi đã có bạn bè), thử thách tuần, leaderboard opt-in, Year-in-review, HealthKit, bản đồ chuyến đi, gói trả phí |
 
 ## 8. Tiêu chí thành công v1
 - Beta `v0.1.0`: `.ipa` chưa ký + `.apk` trên GitHub Release.

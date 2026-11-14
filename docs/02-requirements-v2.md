@@ -123,9 +123,9 @@ Quyết định quan trọng:
 |---|---|
 | **Widget màn hình chính** hiện ảnh mới nhất của nhóm (WidgetKit push trên iOS 26, fallback silent push). Cần App Group + APNs, nên phải có tài khoản trả phí | Journey công khai + discover |
 | Push thật (nudge, bạn vừa check-in) | Thử thách nhóm theo tuần, bảng xếp hạng opt-in |
-| Comment, danh sách bạn bè | Year-in-review / Wrapped |
+| Comment, danh sách bạn bè | Year-in-review (Wrapped của từng hành trình đã đưa vào v1: SRS FR-E6, chốt 2026-11-12) |
 | Streak freeze token, admin role | HealthKit (cân nặng), bản đồ chuyến đi nhiều điểm |
-| Đăng 1 check-in vào nhiều journey | Android / Web app, gói trả phí (clip dài hơn, theme share card) |
+| ~~Đăng 1 check-in vào nhiều journey~~ (bỏ: SDS R2-10, chốt 2026-11-12) | Android / Web app, gói trả phí (clip dài hơn, theme share card) |
 | Moderation ảnh tự động (Edge Function) | Chuyển video sang Cloudflare R2 khi > ~5k DAU |
 
 ## 6. Yêu cầu phi chức năng
