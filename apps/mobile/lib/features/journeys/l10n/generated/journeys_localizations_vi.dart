@@ -574,4 +574,10 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_ticketPreview => 'Xem trước vé khởi hành';
+
+  @override
+  String get journeys_coupleYou => 'Bạn';
+
+  @override
+  String get journeys_coupleWaiting => 'Đang chờ người ấy';
 }

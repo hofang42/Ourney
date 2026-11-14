@@ -577,4 +577,10 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_ticketPreview => 'Departure ticket preview';
+
+  @override
+  String get journeys_coupleYou => 'You';
+
+  @override
+  String get journeys_coupleWaiting => 'Waiting for your partner';
 }

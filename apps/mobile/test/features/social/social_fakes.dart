@@ -376,6 +376,8 @@ Future<GoRouter> pumpSocial(
   double width = 390,
   double textScale = 1,
   Locale locale = const Locale('en'),
+  List<Override> overrides = const [],
+  bool settle = true,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = Size(width, 760);
@@ -415,6 +417,7 @@ Future<GoRouter> pumpSocial(
           FakeAuthRepository(userId: me),
         ),
         ...f.overrides,
+        ...overrides,
       ],
       child: MaterialApp.router(
         theme: buildAppTheme(brightness),
@@ -430,6 +433,10 @@ Future<GoRouter> pumpSocial(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
   return router;
 }

@@ -420,83 +420,324 @@ class CoupleTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = context.ui;
-    final accent = timelineAccent(context);
     return Column(
       key: const ValueKey('journey-timeline'),
-      children: [
-        for (final d in days)
-          TimelineDayTap(
-            day: d,
-            onTap: onTapDay,
-            child: IntrinsicHeight(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [for (final d in days) _CouplePair(day: d, onTap: onTapDay)],
+    );
+  }
+}
+
+class _CouplePair extends StatelessWidget {
+  const _CouplePair({required this.day, required this.onTap});
+
+  final TimelineDay day;
+  final ValueChanged<TimelineDay> onTap;
+
+  static const double _spine = 44;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final l10n = JourneysL10n.of(context);
+    final accent = timelineAccent(context);
+    final done = day.state == DayState.checkedIn;
+    final waiting =
+        day.state == DayState.checkedIn || day.state == DayState.today;
+    final header = [
+      _dayText(context, day),
+      _dateText(context, day),
+      if (day.isToday) l10n.journeys_todayLabel,
+    ].join(' · ');
+    return TimelineDayTap(
+      day: day,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final s = math.min((c.maxWidth - _spine) / 2, 120.0);
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  header.toUpperCase(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: UiText.muted(color: ui.inkMuted, size: 11),
+                ),
+                const SizedBox(height: 6),
+                Stack(
+                  alignment: Alignment.topCenter,
                   children: [
-                    Expanded(
-                      child: Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: TimelineTile(day: d, size: 64),
+                    Positioned.fill(
+                      child: ExcludeSemantics(
+                        child: CustomPaint(
+                          painter: RailPainter(color: ui.border),
+                        ),
                       ),
                     ),
-                    SizedBox(
-                      width: 44,
-                      child: CustomPaint(
-                        painter: RailPainter(color: ui.border),
-                        child: Center(
-                          child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: d.state == DayState.checkedIn
-                                  ? accent.withValues(alpha: 0.25)
-                                  : ui.bg,
-                            ),
-                            child: Center(
-                              child: OurneyIcon(
-                                name: 'heart',
-                                size: 22,
-                                color: d.state == DayState.checkedIn
-                                    ? accent
-                                    : ui.fill,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: _CoupleHalf(
+                            label: l10n.journeys_coupleYou,
+                            child: TimelineTile(day: day, size: s),
+                          ),
+                        ),
+                        SizedBox(
+                          width: _spine,
+                          height: s,
+                          child: Center(
+                            child: Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: done
+                                    ? accent.withValues(alpha: 0.25)
+                                    : ui.bg,
+                              ),
+                              child: Center(
+                                child: OurneyIcon(
+                                  name: 'heart',
+                                  size: 22,
+                                  color: done ? accent : ui.fill,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _dayText(context, d),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: timelineHeading(context, size: 14),
+                        Expanded(
+                          child: _CoupleHalf(
+                            label: l10n.journeys_ticketPartner,
+                            child: CustomPaint(
+                              key: const ValueKey('couple-partner-slot'),
+                              foregroundPainter: DashedOutlinePainter(
+                                color: ui.border,
+                                width: 1.5,
+                                radius: UiRadius.otp,
+                              ),
+                              child: SizedBox.square(
+                                dimension: s,
+                                child: waiting
+                                    ? Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(6),
+                                          child: Text(
+                                            l10n.journeys_coupleWaiting,
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.center,
+                                            style: UiText.muted(
+                                              color: ui.inkMuted,
+                                              size: 11,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : null,
+                              ),
                             ),
-                            Text(
-                              _dateText(context, d),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: UiText.muted(color: ui.inkMuted, size: 12),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CoupleHalf extends StatelessWidget {
+  const _CoupleHalf({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        child,
+        const SizedBox(height: 4),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: timelineHeading(context, size: 13),
+        ),
+      ],
+    );
+  }
+}
+
+/// Minimal habit: 7-column photo calendar aligned to the locale's first
+/// weekday, with one continuous accent line through consecutive checked-in
+/// days that wraps from the end of a week to the start of the next.
+class MinimalTimeline extends StatelessWidget {
+  const MinimalTimeline({
+    required this.days,
+    required this.onTapDay,
+    super.key,
+  });
+
+  final List<TimelineDay> days;
+  final ValueChanged<TimelineDay> onTapDay;
+
+  static const double _gap = 3;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final accent = timelineAccent(context);
+    final material = MaterialLocalizations.of(context);
+    final first = material.firstDayOfWeekIndex; // 0 = Sunday
+    final leading = (displayDateOf(days.first).weekday % 7 - first + 7) % 7;
+    final cells = <TimelineDay?>[
+      for (var i = 0; i < leading; i++) null,
+      ...days,
+    ];
+    while (cells.length % 7 != 0) {
+      cells.add(null);
+    }
+    final rows = cells.length ~/ 7;
+    return Column(
+      key: const ValueKey('journey-timeline'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ExcludeSemantics(
+          child: Row(
+            children: [
+              for (var i = 0; i < 7; i++)
+                Expanded(
+                  child: Text(
+                    material.narrowWeekdays[(first + i) % 7],
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    style: UiText.body(
+                      size: 10,
+                      height: 1.3,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 7),
+        LayoutBuilder(
+          builder: (context, c) {
+            final cell = (c.maxWidth - _gap * 6) / 7;
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: ExcludeSemantics(
+                    child: CustomPaint(
+                      key: const ValueKey('timeline-chain-line'),
+                      painter: ChainLinePainter(
+                        runs: chainRuns(cells),
+                        cell: cell,
+                        gap: _gap,
+                        color: accent,
+                      ),
+                    ),
+                  ),
+                ),
+                Column(
+                  children: [
+                    for (var r = 0; r < rows; r++)
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: r == rows - 1 ? 0 : _gap,
+                        ),
+                        child: Row(
+                          children: [
+                            for (var i = 0; i < 7; i++) ...[
+                              SizedBox.square(
+                                dimension: cell,
+                                child: cells[r * 7 + i] == null
+                                    ? null
+                                    : _MinimalCell(
+                                        day: cells[r * 7 + i]!,
+                                        size: cell,
+                                        onTap: onTapDay,
+                                      ),
+                              ),
+                              if (i < 6) const SizedBox(width: _gap),
+                            ],
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _MinimalCell extends StatelessWidget {
+  const _MinimalCell({
+    required this.day,
+    required this.size,
+    required this.onTap,
+  });
+
+  final TimelineDay day;
+  final double size;
+  final ValueChanged<TimelineDay> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final photo = day.state == DayState.checkedIn;
+    final color = photo
+        ? UiCamera.ink
+        : day.state == DayState.today
+        ? timelineAccent(context)
+        : day.state == DayState.missed
+        ? ui.ink
+        : ui.inkMuted;
+    return TimelineDayTap(
+      day: day,
+      onTap: onTap,
+      minSize: 0,
+      child: Stack(
+        children: [
+          TimelineTile(day: day, size: size),
+          Positioned(
+            left: 3,
+            top: 2,
+            child: ExcludeSemantics(
+              child: Text(
+                '${day.date.day}',
+                textScaler: TextScaler.noScaling,
+                style:
+                    UiText.body(
+                      size: 9,
+                      weight: FontWeight.w700,
+                      height: 1.2,
+                      color: color,
+                    ).copyWith(
+                      shadows: photo ? const [Shadow(blurRadius: 3)] : null,
+                    ),
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

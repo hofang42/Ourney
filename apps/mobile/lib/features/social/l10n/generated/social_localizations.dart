@@ -635,7 +635,7 @@ abstract class SocialL10n {
   /// No description provided for @social_activityTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Hoạt động'**
+  /// **'hoạt động.'**
   String get social_activityTitle;
 
   /// No description provided for @social_groupToday.
@@ -644,17 +644,41 @@ abstract class SocialL10n {
   /// **'Hôm nay'**
   String get social_groupToday;
 
-  /// No description provided for @social_groupEarlier.
+  /// No description provided for @social_groupWeek.
   ///
   /// In vi, this message translates to:
-  /// **'Trước đó'**
-  String get social_groupEarlier;
+  /// **'Tuần này'**
+  String get social_groupWeek;
 
-  /// No description provided for @social_markAllRead.
+  /// No description provided for @social_offlineStrip.
   ///
   /// In vi, this message translates to:
-  /// **'Đã đọc hết'**
-  String get social_markAllRead;
+  /// **'Đang xem bản đã lưu.'**
+  String get social_offlineStrip;
+
+  /// No description provided for @social_activityEmptyTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa có gì mới.'**
+  String get social_activityEmptyTitle;
+
+  /// No description provided for @social_activityEmptyBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những cập nhật từ hành trình sẽ xuất hiện ở đây.'**
+  String get social_activityEmptyBody;
+
+  /// Full-sentence label of an activity row.
+  ///
+  /// In vi, this message translates to:
+  /// **'{text} · {context} · {time}'**
+  String social_activityRowSemantics(String text, String context, String time);
+
+  /// Short weekday for an activity row this week; day is DateTime.weekday 1-7.
+  ///
+  /// In vi, this message translates to:
+  /// **'{day, select, 1{T2} 2{T3} 3{T4} 4{T5} 5{T6} 6{T7} other{CN}}'**
+  String social_weekdayShort(String day);
 
   /// No description provided for @social_inviteCardTitle.
   ///

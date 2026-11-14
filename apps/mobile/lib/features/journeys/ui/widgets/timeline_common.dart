@@ -373,3 +373,81 @@ class RailPainter extends CustomPainter {
   bool shouldRepaint(RailPainter old) =>
       old.color != color || old.width != width;
 }
+
+/// Runs of consecutive checked-in grid indexes (a run needs 2+ days). [cells]
+/// is the 7-column grid, `null` for the blanks around the journey.
+List<List<int>> chainRuns(List<TimelineDay?> cells) {
+  final runs = <List<int>>[];
+  List<int>? run;
+  for (var i = 0; i < cells.length; i++) {
+    if (cells[i]?.state == DayState.checkedIn) {
+      if (run == null) {
+        run = [i];
+        runs.add(run);
+      } else {
+        run.add(i);
+      }
+    } else {
+      run = null;
+    }
+  }
+  return [
+    for (final r in runs)
+      if (r.length > 1) r,
+  ];
+}
+
+/// The continuous accent line of the minimal chain calendar: through the
+/// centre of every consecutive checked-in day, leaving the right edge and
+/// re-entering from the left where a run wraps to the next week.
+class ChainLinePainter extends CustomPainter {
+  const ChainLinePainter({
+    required this.runs,
+    required this.cell,
+    required this.gap,
+    required this.color,
+  });
+
+  final List<List<int>> runs;
+  final double cell;
+  final double gap;
+  final Color color;
+
+  Offset _at(int i) => Offset(
+    (i % 7) * (cell + gap) + cell / 2,
+    (i ~/ 7) * (cell + gap) + cell / 2,
+  );
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeJoin = StrokeJoin.round;
+    for (final run in runs) {
+      final path = Path()..moveTo(_at(run.first).dx, _at(run.first).dy);
+      for (var k = 1; k < run.length; k++) {
+        final a = _at(run[k - 1]);
+        final b = _at(run[k]);
+        if ((a.dy - b.dy).abs() > 1) {
+          final mid = (a.dy + b.dy) / 2;
+          path
+            ..lineTo(size.width + 5, a.dy)
+            ..lineTo(size.width + 5, mid)
+            ..lineTo(-5, mid)
+            ..lineTo(-5, b.dy);
+        }
+        path.lineTo(b.dx, b.dy);
+      }
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(ChainLinePainter old) =>
+      old.runs != runs ||
+      old.cell != cell ||
+      old.gap != gap ||
+      old.color != color;
+}
