@@ -217,7 +217,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       return _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-photo'),
-          icon: Icons.no_photography_outlined,
+          glyph: const OurneyIcon(name: 'camera-off', size: 30),
           title: l10n.checkin_missingPhoto,
           actionLabel: AppLocalizations.of(context).common_close,
           onAction: _close,
@@ -251,7 +251,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       AsyncData() || AsyncError() => _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-journey'),
-          icon: Icons.flag_outlined,
+          glyph: const OurneyIcon(name: 'flag', size: 30),
           title: l10n.checkin_missingJourney,
           actionLabel: AppLocalizations.of(context).common_close,
           onAction: _close,
@@ -271,7 +271,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: UiIconButton(
-              icon: Icons.close_rounded,
+              glyph: const OurneyIcon(name: 'close', size: 20),
               label: AppLocalizations.of(context).common_close,
               onPressed: _close,
             ),
@@ -320,7 +320,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             child: UiButton(
               key: const ValueKey('checkin-post'),
               label: _posting ? l10n.checkin_posting : l10n.checkin_post,
-              icon: Icons.send_rounded,
+              glyph: const OurneyIcon(name: 'send', size: 20),
               accent: style.accent,
               onAccent: style.onAccent,
               onPressed: _posting ? null : () => _post(journey, photo),
@@ -447,8 +447,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
               error: _metricError ? l10n.checkin_metricInvalid : null,
               helper: hideMetric ? l10n.checkin_metricPrivate : null,
               trailing: hideMetric
-                  ? Icon(
-                      Icons.lock_outline_rounded,
+                  ? OurneyIcon(
+                      name: 'lock',
+                      flat: true,
                       size: 18,
                       color: ui.inkMuted,
                     )
@@ -490,8 +491,9 @@ class _PhotoPreview extends StatelessWidget {
                       File(photo.path),
                       fit: BoxFit.cover,
                       cacheWidth: 1080,
-                      errorBuilder: (_, _, _) => const Icon(
-                        Icons.image_not_supported_outlined,
+                      errorBuilder: (_, _, _) => const OurneyIcon(
+                        name: 'image',
+                        flat: true,
                         color: UiCamera.ink,
                         size: 48,
                       ),
@@ -505,7 +507,7 @@ class _PhotoPreview extends StatelessWidget {
                     child: UiTag(
                       key: const ValueKey('checkin-from-library'),
                       label: l10n.checkin_fromLibrary,
-                      icon: Icons.photo_library_outlined,
+                      glyph: const OurneyIcon(name: 'gallery', size: 20),
                       background: const Color(0xB3000000),
                       foreground: UiCamera.ink,
                       borderColor: UiCamera.outline,

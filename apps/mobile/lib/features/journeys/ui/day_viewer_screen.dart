@@ -78,7 +78,12 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
           Row(
             children: [
               UiIconButton(
-                icon: Icons.arrow_back_rounded,
+                glyph: const OurneyIcon(
+                  name: 'back',
+                  size: 21,
+                  flat: true,
+                  color: UiCamera.ink,
+                ),
                 label: l10n.journeys_back,
                 color: UiCamera.ink,
                 onPressed: () => context.canPop()
@@ -148,7 +153,12 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
             if (checkIn.fromLibrary)
               Row(
                 children: [
-                  Icon(Icons.photo_library_rounded, size: 18, color: _muted),
+                  OurneyIcon(
+                    name: 'gallery',
+                    size: 18,
+                    flat: true,
+                    color: _muted,
+                  ),
                   const SizedBox(width: UiSpace.xs),
                   Flexible(
                     child: Text(
@@ -226,9 +236,10 @@ class _MetricRow extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.visibility_off_rounded,
+              const OurneyIcon(
+                name: 'eye-off',
                 size: 18,
+                flat: true,
                 color: UiCamera.ink,
               ),
               const SizedBox(width: UiSpace.xs),

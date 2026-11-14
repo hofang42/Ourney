@@ -110,14 +110,14 @@ class _ProfileFormState extends ConsumerState<ProfileForm> {
         children: [
           UiRow(
             key: const ValueKey('profile-avatar-gallery'),
-            leading: const Icon(Icons.photo_library_outlined),
+            leading: const OurneyIcon(name: 'gallery', flat: true),
             title: l10n.profile_avatarFromGallery,
             showChevron: false,
             onPressed: () => Navigator.of(context).pop(AvatarSource.gallery),
           ),
           UiRow(
             key: const ValueKey('profile-avatar-camera'),
-            leading: const Icon(Icons.photo_camera_outlined),
+            leading: const OurneyIcon(name: 'camera', flat: true),
             title: l10n.profile_avatarFromCamera,
             showChevron: false,
             divider: false,

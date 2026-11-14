@@ -13,12 +13,12 @@ class OnboardingArtMemories extends StatelessWidget {
   const OnboardingArtMemories({super.key});
 
   static const _tiles = [
-    (Icons.menu_book_outlined, 5),
-    (Icons.edit_note_rounded, 1),
-    (Icons.map_outlined, 2),
-    (Icons.restaurant_outlined, 3),
-    (Icons.directions_run_rounded, 4),
-    (Icons.home_outlined, 7),
+    ('type-study', 5),
+    ('edit', 1),
+    ('journeys', 2),
+    ('restaurant', 3),
+    ('type-workout', 4),
+    ('home', 7),
   ];
 
   @override
@@ -67,8 +67,9 @@ class OnboardingArtMemories extends StatelessWidget {
                           ),
                         ),
                         child: Center(
-                          child: Icon(
-                            _tiles[i].$1,
+                          child: OurneyIcon(
+                            name: _tiles[i].$1,
+                            flat: true,
                             size: 34,
                             color: uiJourneyStyles[_tiles[i].$2].ink,
                           ),
@@ -212,8 +213,9 @@ class OnboardingArtRecap extends StatelessWidget {
                             ),
                           ),
                           child: Center(
-                            child: Icon(
-                              Icons.menu_book_outlined,
+                            child: OurneyIcon(
+                              name: 'type-study',
+                              flat: true,
                               size: 54,
                               color: uiJourneyStyles[5].ink,
                             ),
@@ -268,8 +270,9 @@ class OnboardingArtRecap extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.ios_share_rounded,
+                        OurneyIcon(
+                          name: 'share',
+                          flat: true,
                           size: 22,
                           color: ui.onBrand,
                         ),

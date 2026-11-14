@@ -130,20 +130,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (m.kind == MessageKind.text && (m.body ?? '').isNotEmpty)
             UiMenuItem(
               key: const ValueKey('message-copy'),
-              icon: Icons.copy_rounded,
+              glyph: 'copy',
               label: l10n.social_copy,
               onPressed: () => Navigator.of(sheet).pop('copy'),
             ),
           UiMenuItem(
             key: const ValueKey('message-delete'),
-            icon: Icons.delete_outline_rounded,
+            glyph: 'trash',
             label: l10n.social_deleteForMe,
             onPressed: () => Navigator.of(sheet).pop('delete'),
           ),
           if (!mine)
             UiMenuItem(
               key: const ValueKey('message-report'),
-              icon: Icons.flag_outlined,
+              glyph: 'flag',
               label: l10n.social_report,
               onPressed: () => Navigator.of(sheet).pop('report'),
             ),
@@ -217,14 +217,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body = messages.isEmpty
           ? UiEmptyState(
               key: const ValueKey('chat-empty'),
-              icon: Icons.chat_bubble_outline_rounded,
+              glyph: const OurneyIcon(name: 'chat', flat: true),
               title: l10n.social_chatEmpty,
             )
           : _thread(context, messages, myId, conv);
     } else if (error != null) {
       body = UiEmptyState(
         key: const ValueKey('chat-error'),
-        icon: gone ? Icons.speaker_notes_off_outlined : Icons.error_outline,
+        glyph: OurneyIcon(name: gone ? 'chat-off' : 'error', flat: true),
         title: gone
             ? l10n.social_conversationGone
             : socialErrorMessage(context, error),
@@ -247,7 +247,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       header: conv == null ? null : _ChatTitle(conversation: conv),
       action: UiIconButton(
         key: const ValueKey('chat-menu'),
-        icon: Icons.more_horiz_rounded,
+        glyph: const OurneyIcon(name: 'more', flat: true),
         label: l10n.social_more,
         onPressed: () => _openMenu(context, conv),
       ),
@@ -263,7 +263,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           UiMenuItem(
             key: const ValueKey('chat-menu-delete'),
-            icon: Icons.delete_outline_rounded,
+            glyph: 'trash',
             label: l10n.social_deleteConversation,
             destructive: true,
             onPressed: () => Navigator.of(sheet).pop('delete'),
@@ -271,13 +271,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           if (conv != null) ...[
             UiMenuItem(
               key: const ValueKey('chat-menu-report'),
-              icon: Icons.flag_outlined,
+              glyph: 'flag',
               label: l10n.social_report,
               onPressed: () => Navigator.of(sheet).pop('report'),
             ),
             UiMenuItem(
               key: const ValueKey('chat-menu-block'),
-              icon: Icons.block_rounded,
+              glyph: 'block',
               label: l10n.social_block,
               onPressed: () => Navigator.of(sheet).pop('block'),
             ),
@@ -363,13 +363,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         children: [
           UiIconButton(
             key: const ValueKey('chat-camera'),
-            icon: Icons.photo_camera_outlined,
+            glyph: const OurneyIcon(name: 'camera', flat: true),
             label: l10n.social_camera,
             onPressed: _sending ? null : () => _sendPhoto(camera: true),
           ),
           UiIconButton(
             key: const ValueKey('chat-library'),
-            icon: Icons.image_outlined,
+            glyph: const OurneyIcon(name: 'gallery', flat: true),
             label: l10n.social_library,
             onPressed: _sending ? null : () => _sendPhoto(camera: false),
           ),
@@ -429,7 +429,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           else
             UiIconButton(
               key: const ValueKey('chat-send'),
-              icon: Icons.send_rounded,
+              glyph: const OurneyIcon(name: 'send', flat: true),
               label: l10n.social_send,
               background: ui.brand,
               color: ui.onBrand,
@@ -653,7 +653,12 @@ class _MediaImage extends ConsumerWidget {
     final placeholder = ColoredBox(
       color: ui.fill,
       child: Center(
-        child: Icon(Icons.image_outlined, color: ui.inkMuted, size: 22),
+        child: OurneyIcon(
+          name: 'gallery',
+          color: ui.inkMuted,
+          size: 22,
+          flat: true,
+        ),
       ),
     );
     return ClipRRect(

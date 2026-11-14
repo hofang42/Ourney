@@ -66,7 +66,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
         children: [
           Row(
             children: [
-              Icon(Icons.link_rounded, color: ui.ink),
+              OurneyIcon(name: 'link', flat: true, color: ui.ink),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Semantics(
@@ -95,7 +95,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
           if (uri == null)
             UiButton(
               key: const ValueKey('share-card-link-create'),
-              icon: Icons.add_link_rounded,
+              glyph: const OurneyIcon(name: 'link', size: 20),
               label: l10n.share_card_linkCreate,
               loading: _busy,
               onPressed: _busy ? null : _create,
@@ -110,14 +110,14 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
             const SizedBox(height: UiSpace.md),
             UiButton(
               key: const ValueKey('share-card-link-copy'),
-              icon: Icons.copy_rounded,
+              glyph: const OurneyIcon(name: 'copy', size: 20),
               label: l10n.share_card_linkCopy,
               onPressed: _busy ? null : () => _copy(uri),
             ),
             const SizedBox(height: UiSpace.xs),
             UiButton.ghost(
               key: const ValueKey('share-card-link-revoke'),
-              icon: Icons.link_off_rounded,
+              glyph: const OurneyIcon(name: 'link-off', size: 20),
               label: l10n.share_card_linkRevoke,
               onPressed: _busy ? null : _revoke,
             ),

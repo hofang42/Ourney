@@ -525,4 +525,56 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_streakDaysLabel => 'streak';
+
+  @override
+  String get journeys_ticketPrivate => 'PRIVATE PROFILE';
+
+  @override
+  String get journeys_ticketMemory => 'MEMORY TICKET';
+
+  @override
+  String get journeys_ticketChangeColor => 'Change color';
+
+  @override
+  String get journeys_ticketYou => 'You';
+
+  @override
+  String get journeys_ticketPartner => 'Partner';
+
+  @override
+  String get journeys_ticketOpenEnded => 'no return date';
+
+  @override
+  String journeys_ticketMilestone(String day) {
+    return 'Day $day';
+  }
+
+  @override
+  String journeys_ticketDates(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String journeys_ticketDatesOpen(String start) {
+    return 'From $start';
+  }
+
+  @override
+  String get journeys_ticketTagQuiet => 'Only you see it. A little at a time.';
+
+  @override
+  String get journeys_ticketTagSquad =>
+      'Check in every day, the whole crew levels up!';
+
+  @override
+  String get journeys_ticketTagMemory => 'Bring home plenty of frames.';
+
+  @override
+  String get journeys_ticketTagCouple => 'One half each day, together a whole.';
+
+  @override
+  String get journeys_ticketTagFlexer => 'Get out of bed. Keep running.';
+
+  @override
+  String get journeys_ticketPreview => 'Departure ticket preview';
 }

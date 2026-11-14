@@ -146,5 +146,20 @@
   "journeys_shareJourneyHint": "Choose friends who can follow along",
   "journeys_albumDays": "{done}/{total} days",
   "journeys_albumMoments": "{count} moments",
-  "journeys_streakDaysLabel": "streak"
+  "journeys_streakDaysLabel": "streak",
+  "journeys_ticketPrivate": "PRIVATE PROFILE",
+  "journeys_ticketMemory": "MEMORY TICKET",
+  "journeys_ticketChangeColor": "Change color",
+  "journeys_ticketYou": "You",
+  "journeys_ticketPartner": "Partner",
+  "journeys_ticketOpenEnded": "no return date",
+  "journeys_ticketMilestone": "Day {day}",
+  "journeys_ticketDates": "{start} – {end}",
+  "journeys_ticketDatesOpen": "From {start}",
+  "journeys_ticketTagQuiet": "Only you see it. A little at a time.",
+  "journeys_ticketTagSquad": "Check in every day, the whole crew levels up!",
+  "journeys_ticketTagMemory": "Bring home plenty of frames.",
+  "journeys_ticketTagCouple": "One half each day, together a whole.",
+  "journeys_ticketTagFlexer": "Get out of bed. Keep running.",
+  "journeys_ticketPreview": "Departure ticket preview"
 }

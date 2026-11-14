@@ -116,7 +116,7 @@ class GroupTodayScreen extends ConsumerWidget {
     if (journeyAsync.hasValue && journey == null) {
       state = UiEmptyState(
         key: const ValueKey('group-not-found'),
-        icon: Icons.search_off_rounded,
+        glyph: const OurneyIcon(name: 'search', size: 30),
         title: l10n.groups_notFoundTitle,
         actionLabel: l10n.groups_title,
         onAction: () => context.go(AppRoutes.groups),
@@ -127,7 +127,7 @@ class GroupTodayScreen extends ConsumerWidget {
           e is OurneyException && e.error == OurneyErrorCode.forbidden;
       state = UiEmptyState(
         key: ValueKey(forbidden ? 'group-not-member' : 'group-error'),
-        icon: forbidden ? Icons.lock_outline_rounded : Icons.error_outline,
+        glyph: OurneyIcon(name: forbidden ? 'lock' : 'error', size: 30),
         title: forbidden ? l10n.groups_notMember : l10n.groups_todayLoadError,
         body: forbidden ? null : groupErrorMessage(context, e),
         actionLabel: forbidden ? l10n.groups_title : app.common_retry,
@@ -217,7 +217,7 @@ class GroupTodayScreen extends ConsumerWidget {
                   if (perms.canInvite)
                     UiIconButton(
                       key: const ValueKey('group-invite'),
-                      icon: Icons.person_add_alt_1_outlined,
+                      glyph: const OurneyIcon(name: 'user-plus', size: 20),
                       label: l10n.groups_invite,
                       onPressed: () =>
                           context.push(GroupsPaths.invite(journeyId)),
@@ -275,11 +275,7 @@ class _SharedStreak extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(
-              Icons.local_fire_department_rounded,
-              size: 16,
-              color: ui.flame,
-            ),
+            const OurneyIcon(name: 'flame', size: 16),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
@@ -403,7 +399,7 @@ class _GroupMenu extends ConsumerWidget {
             UiRow(
               key: const ValueKey('group-action-timeline'),
               title: l10n.groups_openTimeline,
-              leading: const Icon(Icons.timeline_rounded),
+              leading: const OurneyIcon(name: 'journeys', size: 22, flat: true),
               showChevron: false,
               onPressed: () => Navigator.of(context).pop(GroupAction.timeline),
             ),
@@ -411,7 +407,11 @@ class _GroupMenu extends ConsumerWidget {
               UiRow(
                 key: const ValueKey('group-action-rotate'),
                 title: l10n.groups_actionRotate,
-                leading: const Icon(Icons.autorenew_rounded),
+                leading: const OurneyIcon(
+                  name: 'refresh',
+                  size: 22,
+                  flat: true,
+                ),
                 showChevron: false,
                 onPressed: () => Navigator.of(context).pop(GroupAction.rotate),
               ),
@@ -419,7 +419,7 @@ class _GroupMenu extends ConsumerWidget {
               UiRow(
                 key: const ValueKey('group-action-end'),
                 title: l10n.groups_actionEnd,
-                leading: const Icon(Icons.flag_outlined),
+                leading: const OurneyIcon(name: 'flag', size: 22, flat: true),
                 showChevron: false,
                 onPressed: () => Navigator.of(context).pop(GroupAction.end),
               ),
@@ -427,7 +427,7 @@ class _GroupMenu extends ConsumerWidget {
               UiRow(
                 key: const ValueKey('group-action-delete'),
                 title: l10n.groups_actionDelete,
-                leading: const Icon(Icons.delete_outline_rounded),
+                leading: const OurneyIcon(name: 'trash', size: 22, flat: true),
                 showChevron: false,
                 onPressed: () => Navigator.of(context).pop(GroupAction.delete),
               ),
@@ -435,7 +435,7 @@ class _GroupMenu extends ConsumerWidget {
               UiRow(
                 key: const ValueKey('group-action-leave'),
                 title: l10n.groups_actionLeave,
-                leading: const Icon(Icons.logout_rounded),
+                leading: const OurneyIcon(name: 'logout', size: 22, flat: true),
                 showChevron: false,
                 divider: false,
                 onPressed: () => Navigator.of(context).pop(GroupAction.leave),
@@ -450,7 +450,7 @@ class _GroupMenu extends ConsumerWidget {
 
     return UiIconButton(
       key: const ValueKey('group-menu'),
-      icon: Icons.more_horiz_rounded,
+      glyph: const OurneyIcon(name: 'more', size: 20),
       label: l10n.groups_moreActions,
       onPressed: open,
     );
@@ -600,7 +600,7 @@ class _MemberTile extends ConsumerWidget {
         if (memberActions.isNotEmpty)
           UiIconButton(
             key: ValueKey('group-member-menu-${m.userId}'),
-            icon: Icons.more_horiz_rounded,
+            glyph: const OurneyIcon(name: 'more', size: 20),
             label: l10n.groups_memberActions(m.displayName),
             size: UiSize.tap,
             iconSize: 18,
@@ -611,11 +611,10 @@ class _MemberTile extends ConsumerWidget {
     final status = Row(
       key: ValueKey('group-member-status-${m.userId}'),
       children: [
-        Icon(
-          entry.checkedInToday
-              ? Icons.check_circle_rounded
-              : Icons.radio_button_unchecked_rounded,
+        OurneyIcon(
+          name: entry.checkedInToday ? 'check-circle' : 'radio-off',
           size: 14,
+          flat: true,
           color: entry.checkedInToday ? ui.success : ui.inkMuted,
         ),
         const SizedBox(width: 4),
@@ -637,7 +636,7 @@ class _MemberTile extends ConsumerWidget {
       child: Row(
         key: ValueKey('group-member-streak-${m.userId}'),
         children: [
-          Icon(Icons.local_fire_department_rounded, size: 12, color: ui.flame),
+          const OurneyIcon(name: 'flame', size: 12),
           const SizedBox(width: 2),
           Text(
             '${entry.streak}',
@@ -716,7 +715,12 @@ class _MemberTile extends ConsumerWidget {
                         width: UiBorder.hairline,
                       ),
                     ),
-                    child: Icon(Icons.check_rounded, size: 14, color: ui.bg),
+                    child: OurneyIcon(
+                      name: 'check',
+                      size: 14,
+                      flat: true,
+                      color: ui.bg,
+                    ),
                   ),
                 ),
             ],
@@ -786,11 +790,15 @@ class _MemberTile extends ConsumerWidget {
                 _MemberAction.block => l10n.groups_actionBlock,
                 _MemberAction.remove => l10n.groups_actionRemove,
               },
-              leading: Icon(switch (a) {
-                _MemberAction.report => Icons.flag_outlined,
-                _MemberAction.block => Icons.block_rounded,
-                _MemberAction.remove => Icons.person_remove_outlined,
-              }),
+              leading: OurneyIcon(
+                name: switch (a) {
+                  _MemberAction.report => 'flag',
+                  _MemberAction.block => 'block',
+                  _MemberAction.remove => 'user-minus',
+                },
+                size: 22,
+                flat: true,
+              ),
               showChevron: false,
               divider: i < actions.length - 1,
               onPressed: () => Navigator.of(context).pop(a),

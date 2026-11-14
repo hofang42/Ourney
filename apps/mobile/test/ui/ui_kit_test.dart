@@ -228,6 +228,20 @@ void main() {
         expect(hard.dy, UiShadow.large);
         expect(hard.color, OurneyUi.light.outline);
 
+        // Quiet skin override: 1.5dp outline and the tiny (2dp) shadow.
+        await tester.pumpWidget(
+          host(
+            const UiGlass(
+              borderWidth: UiBorder.thin,
+              hardShadow: UiShadow.tiny,
+              child: Text('glass'),
+            ),
+          ),
+        );
+        expect((deco().border! as Border).top.width, UiBorder.thin);
+        expect(shadow().dx, UiShadow.tiny);
+        expect(shadow().dy, UiShadow.tiny);
+
         await tester.pumpWidget(
           host(const UiGlass(hardShadow: 0, child: Text('glass'))),
         );

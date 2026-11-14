@@ -25,10 +25,11 @@ class FriendsProfileTile extends ConsumerWidget {
     final requests = list?.where((f) => f.isIncomingRequest).length ?? 0;
     return UiRow(
       key: tileKey,
-      leading: Icon(
-        Icons.people_outline_rounded,
+      leading: OurneyIcon(
+        name: 'squad',
         size: 22,
         color: context.ui.ink,
+        flat: true,
       ),
       title: friends == null
           ? l10n.social_friendsTitle

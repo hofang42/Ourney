@@ -31,11 +31,6 @@ final List<RouteBase> socialRoutes = [
     ],
   ),
   GoRoute(
-    path: AppRoutes.inbox,
-    parentNavigatorKey: rootNavigatorKey,
-    builder: (context, state) => const InboxScreen(),
-  ),
-  GoRoute(
     path: '/chat/:id',
     parentNavigatorKey: rootNavigatorKey,
     builder: (context, state) =>
@@ -46,5 +41,13 @@ final List<RouteBase> socialRoutes = [
     parentNavigatorKey: rootNavigatorKey,
     builder: (context, state) =>
         InviteAcceptScreen(token: state.pathParameters['token']!),
+  ),
+];
+
+/// Activity tab (V2 `ActivityScreen`): `/inbox` inside the bottom-bar shell.
+final List<RouteBase> activityRoutes = [
+  GoRoute(
+    path: AppRoutes.inbox,
+    builder: (context, state) => const InboxScreen(),
   ),
 ];

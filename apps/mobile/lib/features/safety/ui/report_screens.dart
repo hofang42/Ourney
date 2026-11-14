@@ -86,7 +86,12 @@ class _BlockUserScreenState extends ConsumerState<BlockUserScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: UiSpace.lg),
-                Icon(Icons.block_rounded, size: 56, color: ui.danger),
+                OurneyIcon(
+                  name: 'block',
+                  size: 56,
+                  color: ui.danger,
+                  flat: true,
+                ),
                 const SizedBox(height: UiSpace.lg),
                 Semantics(
                   header: true,
@@ -106,7 +111,7 @@ class _BlockUserScreenState extends ConsumerState<BlockUserScreen> {
                 UiButton(
                   key: const ValueKey('safety-block-page-confirm'),
                   label: l10n.safety_blockConfirm,
-                  icon: Icons.block_rounded,
+                  glyph: const OurneyIcon(name: 'block', flat: true),
                   loading: _busy,
                   onPressed: _busy ? null : _block,
                 ),

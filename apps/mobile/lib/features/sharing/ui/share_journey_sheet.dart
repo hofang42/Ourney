@@ -418,8 +418,9 @@ class _PreviewRow extends ConsumerWidget {
                   ? StoragePhoto(path: cover.thumbPath, cacheWidth: 160)
                   : ColoredBox(
                       color: style.accent,
-                      child: Icon(
-                        uiJourneyIcon(journey.emoji, journey.templateId),
+                      child: uiJourneyGlyph(
+                        journey.emoji,
+                        journey.templateId,
                         color: style.onAccent,
                       ),
                     ),
@@ -490,13 +491,14 @@ class _ConsentBlock extends StatelessWidget {
                     style: sharingLabel(context, size: 13),
                   ),
                 ),
-                Icon(
-                  switch (s.status) {
-                    ShareConsentStatus.accepted => Icons.check_rounded,
-                    ShareConsentStatus.pending => Icons.schedule_rounded,
-                    ShareConsentStatus.declined => Icons.block_rounded,
-                    ShareConsentStatus.withdrawn => Icons.undo_rounded,
+                OurneyIcon(
+                  name: switch (s.status) {
+                    ShareConsentStatus.accepted => 'check',
+                    ShareConsentStatus.pending => 'clock',
+                    ShareConsentStatus.declined => 'block',
+                    ShareConsentStatus.withdrawn => 'undo',
                   },
+                  flat: true,
                   size: 16,
                   color: s.status == ShareConsentStatus.accepted
                       ? ui.success
@@ -529,7 +531,7 @@ class _ConsentBlock extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: SharingPillButton(
               key: const ValueKey('share-ask-group'),
-              icon: Icons.groups_rounded,
+              icon: 'squad',
               label: l10n.sharing_askGroup,
               onPressed: onAsk,
             ),
@@ -647,7 +649,7 @@ class _FriendsBlock extends StatelessWidget {
               onChanged: onQuery,
               style: UiText.body(size: 15, color: ui.ink),
               decoration: InputDecoration(
-                prefixIcon: const Icon(Icons.search_rounded),
+                prefixIcon: OurneyIcon(name: 'search', flat: true),
                 hintText: l10n.sharing_searchFriends,
                 filled: true,
                 fillColor: ui.surfaceInput,
@@ -788,7 +790,7 @@ class _LinkBlock extends ConsumerWidget {
       child: UiRow(
         key: const ValueKey('share-link-locked'),
         title: title,
-        leading: Icon(Icons.lock_outline_rounded, color: ui.ink),
+        leading: OurneyIcon(name: 'lock', color: ui.ink, flat: true),
         subtitle: Text(sub, style: UiText.body(size: 12, color: ui.inkMuted)),
         showChevron: false,
         divider: false,
@@ -834,7 +836,12 @@ class _LinkBlock extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 10),
               child: Row(
                 children: [
-                  Icon(Icons.blur_on_rounded, size: 18, color: ui.inkMuted),
+                  OurneyIcon(
+                    name: 'eye-off',
+                    size: 18,
+                    color: ui.inkMuted,
+                    flat: true,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
@@ -853,7 +860,7 @@ class _LinkBlock extends ConsumerWidget {
               children: [
                 SharingPillButton(
                   key: const ValueKey('share-copy-link'),
-                  icon: Icons.copy_rounded,
+                  icon: 'copy',
                   label: l10n.sharing_copyLink,
                   onPressed: linkUri == null
                       ? null
@@ -868,7 +875,7 @@ class _LinkBlock extends ConsumerWidget {
                 ),
                 SharingPillButton(
                   key: const ValueKey('share-reset-link'),
-                  icon: Icons.refresh_rounded,
+                  icon: 'refresh',
                   label: l10n.sharing_resetLink,
                   onPressed: busy ? null : onReset,
                 ),
@@ -956,7 +963,7 @@ class _LinkBlock extends ConsumerWidget {
                       style: sharingLabel(context, size: 13),
                     ),
                   ),
-                  Icon(Icons.chevron_right_rounded, color: ui.ink),
+                  OurneyIcon(name: 'chevron-right', color: ui.ink, flat: true),
                 ],
               ),
             ),
@@ -980,12 +987,12 @@ Future<bool> showSensitiveLinkWarning(BuildContext context) async {
     context: context,
     builder: (context) {
       final ui = context.ui;
-      Widget bullet(IconData icon, String s) => Padding(
+      Widget bullet(String icon, String s) => Padding(
         padding: const EdgeInsets.only(bottom: UiSpace.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: ui.ink),
+            OurneyIcon(name: icon, size: 20, color: ui.ink, flat: true),
             const SizedBox(width: 10),
             Expanded(
               child: Text(s, style: UiText.body(size: 14, color: ui.ink)),
@@ -999,9 +1006,9 @@ Future<bool> showSensitiveLinkWarning(BuildContext context) async {
         children: [
           Text(l10n.sharing_warnTitle, style: UiText.h2(color: ui.ink)),
           const SizedBox(height: UiSpace.lg),
-          bullet(Icons.groups_rounded, l10n.sharing_warnAnyone),
-          bullet(Icons.visibility_outlined, l10n.sharing_warnSelected),
-          bullet(Icons.undo_rounded, l10n.sharing_warnUndo),
+          bullet('squad', l10n.sharing_warnAnyone),
+          bullet('eye', l10n.sharing_warnSelected),
+          bullet('undo', l10n.sharing_warnUndo),
           const SizedBox(height: UiSpace.sm),
           UiButton(
             key: const ValueKey('share-warning-confirm'),

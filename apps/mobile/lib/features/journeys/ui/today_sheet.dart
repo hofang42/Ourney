@@ -115,7 +115,11 @@ class TodaySheetContent extends ConsumerWidget {
           const SizedBox(height: UiSpace.lg),
           UiButton.secondary(
             label: l10n.journeys_openJourneys,
-            icon: Icons.chevron_right_rounded,
+            glyph: const OurneyIcon(
+              name: 'chevron-right',
+              size: 20,
+              flat: true,
+            ),
             onPressed: () {
               Navigator.of(context).pop();
               context.go(AppRoutes.journeys);
@@ -199,8 +203,9 @@ class _TodayRow extends StatelessWidget {
           color: style.accent,
           borderRadius: BorderRadius.circular(UiRadius.thumb),
         ),
-        child: Icon(
-          uiJourneyIcon(journey.emoji, journey.templateId),
+        child: uiJourneyGlyph(
+          journey.emoji,
+          journey.templateId,
           size: 20,
           color: style.onAccent,
         ),
@@ -216,11 +221,10 @@ class _TodayRow extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                warn
-                    ? Icons.schedule_rounded
-                    : Icons.local_fire_department_rounded,
+              OurneyIcon(
+                name: warn ? 'clock' : 'flame',
                 size: 15,
+                flat: true,
                 color: warn ? ui.warn : ui.flame,
               ),
               const SizedBox(width: 3),

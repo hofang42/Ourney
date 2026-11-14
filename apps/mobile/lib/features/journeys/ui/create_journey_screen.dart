@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:uuid/uuid.dart';
 
@@ -19,6 +20,7 @@ import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_errors.dart';
 import 'journey_style.dart';
+import 'widgets/departure_ticket.dart';
 
 /// Step 2 of the create flow (`/journeys/new/:template`), V1.0
 /// `QuickSetup`: the whole screen takes the chosen style (paper, ink,
@@ -71,6 +73,9 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
   final _metricUnit = TextEditingController();
   bool _submitted = false;
   bool _busy = false;
+
+  /// Color variant (0-2) of the skin, changed from the ticket.
+  int _variant = 0;
 
   /// Null until the form exists: then opened when the template preset
   /// touches privacy (weight loss hides kg and blurs shares).
@@ -213,39 +218,119 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final pal = JourneyPalette.of(context, journeyStyleFor(skin));
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
 
-    return UiScaffold(
-      key: const ValueKey('journeys-create'),
-      background: pal.paper,
-      padTop: 0,
-      bottom: form == null
-          ? null
-          : Padding(
-              padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
-              child: UiButton(
-                key: const ValueKey('journey-create'),
-                label: l10n.journeys_createButton,
-                accent: pal.accent,
-                onAccent: pal.onAccent,
-                loading: _busy,
-                onPressed: _submit,
+    return UiSkinScope(
+      skinId: uiSkinIdFor(skin),
+      variant: _variant,
+      child: UiScaffold(
+        key: const ValueKey('journeys-create'),
+        background: pal.paper,
+        padTop: 0,
+        bottom: form == null
+            ? null
+            : Padding(
+                padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
+                child: UiButton(
+                  key: const ValueKey('journey-create'),
+                  label: l10n.journeys_createButton,
+                  accent: pal.accent,
+                  onAccent: pal.onAccent,
+                  loading: _busy,
+                  onPressed: _submit,
+                ),
               ),
-            ),
-      child: form == null
-          ? Column(
-              children: [
-                UiBackHeader(
-                  onBack: () => context.pop(),
-                  backLabel: l10n.journeys_back,
-                ),
-                const SizedBox(height: 120),
-                Center(
-                  child: CircularProgressIndicator(
-                    semanticsLabel: app.common_loading,
+        child: form == null
+            ? Column(
+                children: [
+                  UiBackHeader(
+                    onBack: () => context.pop(),
+                    backLabel: l10n.journeys_back,
                   ),
-                ),
-              ],
-            )
-          : _buildForm(context, form, pal),
+                  const SizedBox(height: 120),
+                  Center(
+                    child: CircularProgressIndicator(
+                      semanticsLabel: app.common_loading,
+                    ),
+                  ),
+                ],
+              )
+            : _buildForm(context, form, pal, skin),
+      ),
+    );
+  }
+
+  /// Live "departure ticket" preview built from the form state.
+  Widget _ticket(BuildContext context, JourneyForm form, PersonaSkinId skin) {
+    final l10n = JourneysL10n.of(context);
+    final locale = Localizations.localeOf(context).toString();
+    final days = form.durationDays;
+    final hasDays = days != null && days > 0;
+    final skinId = uiSkinIdFor(skin);
+    final metric = form.trackMetric ? form.metricName.trim() : '';
+    final goalLine = metric.isNotEmpty
+        ? (form.metricUnit.trim().isEmpty
+              ? metric
+              : '$metric (${form.metricUnit.trim()})')
+        : switch (form.template.id) {
+            _ when widget.isCouplePreset => l10n.journeys_tagCouple,
+            TemplateId.weightLoss => l10n.journeys_tagWeightLoss,
+            TemplateId.englishDaily => l10n.journeys_tagEnglish,
+            TemplateId.travel => l10n.journeys_tagTravel,
+            TemplateId.workout30 => l10n.journeys_tagWorkout,
+            _ => l10n.journeys_tagCustom,
+          };
+    final tz = ref.read(deviceTimezoneProvider).value ?? form.timezone;
+    final start = journeyLocalDate(tz, ref.read(journeysClockProvider).now());
+    final fmt = DateFormat.MMMd(locale);
+    String d(LocalDate x) => fmt.format(DateTime(x.year, x.month, x.day));
+    final datesLabel = hasDays
+        ? l10n.journeys_ticketDates(d(start), d(start.addDays(days - 1)))
+        : l10n.journeys_ticketDatesOpen(d(start));
+    final milestones = !hasDays || days < 3
+        ? const <String>[]
+        : {
+            for (final n in [7, days ~/ 2, days])
+              if (n >= 1 && n <= days) l10n.journeys_ticketMilestone('$n'),
+          }.toList();
+    return KeyedSubtree(
+      key: const ValueKey('journey-create-design-preview'),
+      child: Semantics(
+        container: true,
+        label: l10n.journeys_ticketPreview,
+        child: AnimatedSwitcher(
+          duration: UiMotion.of(context, UiMotion.theme),
+          child: DepartureTicket(
+            key: ValueKey('ticket-$skinId'),
+            skinId: skinId,
+            variant: _variant,
+            title: form.title.trim().isEmpty
+                ? (Localizations.localeOf(context).languageCode == 'vi'
+                      ? form.template.titleVi
+                      : form.template.titleEn)
+                : form.title.trim(),
+            goalLine: goalLine,
+            durationLabel: hasDays
+                ? l10n.journeys_templateDays(days)
+                : l10n.journeys_ticketOpenEnded,
+            datesLabel: datesLabel,
+            milestones: milestones,
+            leftName: l10n.journeys_ticketYou,
+            rightName: l10n.journeys_ticketPartner,
+            privateLabel: l10n.journeys_ticketPrivate,
+            memoryLabel: l10n.journeys_ticketMemory,
+            tagline: switch (skinId) {
+              'quiet' => l10n.journeys_ticketTagQuiet,
+              'squad' => l10n.journeys_ticketTagSquad,
+              'memory' => l10n.journeys_ticketTagMemory,
+              'couple' => l10n.journeys_ticketTagCouple,
+              'flexer' => l10n.journeys_ticketTagFlexer,
+              _ => '',
+            },
+            changeVariantLabel: l10n.journeys_ticketChangeColor,
+            onChangeVariant: () =>
+                setState(() => _variant = (_variant + 1) % 3),
+          ),
+        ),
+      ),
     );
   }
 
@@ -253,6 +338,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     BuildContext context,
     JourneyForm form,
     JourneyPalette pal,
+    PersonaSkinId skin,
   ) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
@@ -280,12 +366,12 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       ),
     );
 
-    Widget note(IconData icon, String s) => Padding(
+    Widget note(String icon, String s) => Padding(
       padding: const EdgeInsets.only(top: UiSpace.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: pal.inkAt(0.72)),
+          OurneyIcon(name: icon, size: 16, color: pal.inkAt(0.72)),
           const SizedBox(width: UiSpace.xs),
           Expanded(
             child: Text(
@@ -325,24 +411,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           ),
         ),
         const SizedBox(height: UiSpace.xl),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Container(
-            key: const ValueKey('journey-create-design-preview'),
-            width: 68,
-            height: 68,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: pal.accent,
-              border: Border.all(color: pal.ink),
-            ),
-            child: Icon(
-              uiJourneyIcon(form.emoji, form.template.id),
-              size: 28,
-              color: pal.onAccent,
-            ),
-          ),
-        ),
+        _ticket(context, form, skin),
         const SizedBox(height: UiSpace.lg),
         Semantics(
           header: true,
@@ -376,7 +445,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                 ),
                 UiIconButton(
                   key: const ValueKey('journey-based-on-remove'),
-                  icon: Icons.close_rounded,
+                  glyph: OurneyIcon(name: 'close', size: 18, color: pal.ink),
                   iconSize: 18,
                   color: pal.ink,
                   label: SharingL10n.of(context).sharing_removeBasedOn,
@@ -404,14 +473,14 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             UiChip(
               key: const ValueKey('journey-kind-solo'),
               label: l10n.journeys_kindSolo,
-              icon: Icons.person_rounded,
+              glyph: const OurneyIcon(name: 'profile', size: 16),
               selected: form.kind == JourneyKind.solo,
               onPressed: () => _update((f) => f.kind = JourneyKind.solo),
             ),
             UiChip(
               key: const ValueKey('journey-kind-group'),
               label: l10n.journeys_kindGroup,
-              icon: Icons.groups_rounded,
+              glyph: const OurneyIcon(name: 'squad', size: 16),
               selected: form.kind == JourneyKind.group,
               onPressed: localOnly
                   ? null
@@ -419,8 +488,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             ),
           ],
         ),
-        if (localOnly)
-          note(Icons.cloud_off_rounded, l10n.journeys_groupNeedsServer),
+        if (localOnly) note('cloud-off', l10n.journeys_groupNeedsServer),
         label(l10n.journeys_fieldDuration),
         Wrap(
           spacing: UiSpace.sm,
@@ -440,7 +508,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
               UiChip(
                 key: const ValueKey('journey-duration-open'),
                 label: l10n.journeys_openEnded,
-                icon: Icons.all_inclusive_rounded,
+                glyph: const OurneyIcon(name: 'calendar', size: 16),
                 selected: form.durationDays == null,
                 onPressed: () => _update((f) {
                   f.durationDays = null;
@@ -464,7 +532,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           }),
         ),
         const SizedBox(height: UiSpace.lg),
-        note(Icons.lock_outline_rounded, l10n.journeys_styleLocked),
+        note('lock', l10n.journeys_styleLocked),
         const SizedBox(height: UiSpace.sm),
         _MoreOptionsToggle(
           key: const ValueKey('journey-more-options'),
@@ -531,7 +599,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           ),
           label(l10n.journeys_fieldVisibility),
           if (form.kind == JourneyKind.group)
-            note(Icons.lock_rounded, l10n.journeys_visibilityGroup)
+            note('lock', l10n.journeys_visibilityGroup)
           else ...[
             Wrap(
               spacing: UiSpace.sm,
@@ -540,7 +608,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                 UiChip(
                   key: const ValueKey('journey-visibility-private'),
                   label: l10n.journeys_visibilityPrivate,
-                  icon: Icons.lock_rounded,
+                  glyph: const OurneyIcon(name: 'lock', size: 16),
                   selected: form.soloVisibility == JourneyVisibility.private,
                   onPressed: () => _update(
                     (f) => f.soloVisibility = JourneyVisibility.private,
@@ -549,7 +617,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                 UiChip(
                   key: const ValueKey('journey-visibility-link'),
                   label: l10n.journeys_visibilityLink,
-                  icon: Icons.link_rounded,
+                  glyph: const OurneyIcon(name: 'share', size: 16),
                   selected: form.soloVisibility == JourneyVisibility.link,
                   onPressed: localOnly
                       ? null
@@ -559,13 +627,12 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                 ),
               ],
             ),
-            if (localOnly)
-              note(Icons.cloud_off_rounded, l10n.journeys_linkNeedsServer),
+            if (localOnly) note('cloud-off', l10n.journeys_linkNeedsServer),
           ],
           label(l10n.journeys_fieldTimezone),
           Row(
             children: [
-              Icon(Icons.public_rounded, color: ui.inkMuted),
+              OurneyIcon(name: 'clock', size: 22, color: ui.inkMuted),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Text(
@@ -620,9 +687,9 @@ class _MoreOptionsToggle extends StatelessWidget {
                 child: Text(label, style: UiText.button(color: color)),
               ),
               AnimatedRotation(
-                turns: open ? 0.5 : 0,
+                turns: open ? 0.25 : -0.25,
                 duration: UiMotion.of(context, UiMotion.press),
-                child: Icon(Icons.expand_more_rounded, size: 22, color: color),
+                child: OurneyIcon(name: 'back', size: 20, color: color),
               ),
             ],
           ),
@@ -669,7 +736,7 @@ class _EmojiChoice extends StatelessWidget {
             width: selected ? 2 : 1,
           ),
         ),
-        child: Icon(uiJourneyIcon(emoji, template), size: 26, color: ui.ink),
+        child: uiJourneyGlyph(emoji, template, size: 26, color: ui.ink),
       ),
     );
   }

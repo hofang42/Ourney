@@ -26,7 +26,10 @@ void main() {
       await tester.enterText(byKey('profile-username'), 'linh.tran');
       await tester.pumpAndSettle();
       // Valid username gets the green check.
-      expect(find.byIcon(Icons.check_rounded), findsWidgets);
+      expect(
+        find.byWidgetPredicate((w) => w is OurneyIcon && w.name == 'check'),
+        findsWidgets,
+      );
 
       await tester.ensureVisible(byKey('profile-save'));
       await tester.pumpAndSettle();

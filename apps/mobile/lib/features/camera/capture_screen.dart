@@ -392,9 +392,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     if (shell != null) {
       shell.goBranch(index);
     } else {
-      context.go(
-        index == AppDock.journeysIndex ? AppRoutes.journeys : AppRoutes.groups,
-      );
+      context.go(switch (index) {
+        AppDock.journeysIndex => AppRoutes.journeys,
+        AppDock.activityIndex => AppRoutes.inbox,
+        AppDock.profileIndex => AppRoutes.profile,
+        _ => AppRoutes.groups,
+      });
     }
   }
 
@@ -455,7 +458,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           child: UiFillScroll(
             child: UiEmptyState(
               key: const ValueKey('capture-no-journeys'),
-              icon: Icons.flag_rounded,
+              glyph: const OurneyIcon(name: 'flag', size: 30),
               title: l10n.camera_noJourneyTitle,
               body: l10n.camera_noJourneyMessage,
               actionLabel: l10n.camera_noJourneyAction,
@@ -506,9 +509,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         !_busy;
     final hasFlash = _phase == _Phase.ready && (session?.hasFlash ?? false);
     final (flashIcon, flashLabel) = switch (_flash) {
-      FlashSetting.off => (Icons.flash_off_rounded, l10n.camera_flashOff),
-      FlashSetting.auto => (Icons.flash_auto_rounded, l10n.camera_flashAuto),
-      FlashSetting.on => (Icons.flash_on_rounded, l10n.camera_flashOn),
+      FlashSetting.off => ('lightning', l10n.camera_flashOff),
+      FlashSetting.auto => ('lightning', l10n.camera_flashAuto),
+      FlashSetting.on => ('lightning', l10n.camera_flashOn),
     };
     final index = list.indexWhere((j) => j.id == selected?.id);
     return Column(
@@ -545,7 +548,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 child: Tooltip(
                   message: flashLabel,
                   child: UiCameraTool(
-                    icon: flashIcon,
+                    glyph: flashIcon,
                     label: flashLabel,
                     onPressed: _toggleFlash,
                   ),
@@ -555,7 +558,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               message: l10n.camera_grid,
               child: UiCameraTool(
                 key: const ValueKey('capture-grid'),
-                icon: _grid ? Icons.grid_on_rounded : Icons.grid_3x3_rounded,
+                glyph: 'grid',
                 label: l10n.camera_grid,
                 onPressed: () => setState(() => _grid = !_grid),
               ),
@@ -585,7 +588,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 message: l10n.camera_switchLens,
                 child: UiCameraTool(
                   key: const ValueKey('capture-switch'),
-                  icon: Icons.cameraswitch_outlined,
+                  glyph: 'switch-camera',
                   label: l10n.camera_switchLens,
                   onPressed: canSwitch ? _switchLens : null,
                 ),
@@ -669,7 +672,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                     excludeSemantics: true,
                     child: UiGlassChip(
                       label: '${hud.summary.current}',
-                      leading: Icons.local_fire_department_rounded,
+                      leadingGlyph: 'flame',
                     ),
                   ),
                 ],
@@ -777,7 +780,7 @@ class _JourneyBar extends StatelessWidget {
     if (journeys.hasError && !journeys.hasValue) {
       return Row(
         children: [
-          Icon(Icons.error_outline_rounded, color: ui.danger, size: 20),
+          OurneyIcon(name: 'error', flat: true, color: ui.danger, size: 20),
           const SizedBox(width: UiSpace.sm),
           Flexible(
             child: Text(
@@ -810,7 +813,12 @@ class _JourneyBar extends StatelessWidget {
                 child: _JourneyChip(
                   key: ValueKey('journey-chip-${j.id}'),
                   label: j.title,
-                  icon: uiJourneyIcon(j.emoji, j.templateId),
+                  icon: uiJourneyGlyph(
+                    j.emoji,
+                    j.templateId,
+                    size: 16,
+                    color: UiCamera.ink,
+                  ),
                   selected: j.id == selected?.id,
                   onTap: () => onSelect(j.id),
                 ),
@@ -834,7 +842,7 @@ class _JourneyChip extends StatelessWidget {
   });
 
   final String label;
-  final IconData icon;
+  final Widget icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -843,8 +851,8 @@ class _JourneyChip extends StatelessWidget {
     if (selected) {
       return UiGlassChip(
         label: label,
-        leading: Icons.check_rounded,
-        trailing: Icons.expand_more_rounded,
+        leadingGlyph: 'check',
+        trailingGlyph: 'chevron-down',
         onPressed: onTap,
       );
     }
@@ -860,7 +868,7 @@ class _JourneyChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: UiCamera.ink),
+              icon,
               const SizedBox(width: 7),
               Flexible(
                 child: Text(
@@ -1007,8 +1015,9 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.permissionDeniedPermanently:
         return _Panel(
           panelKey: const ValueKey('capture-denied'),
-          icon: Icon(
-            Icons.no_photography_outlined,
+          icon: OurneyIcon(
+            name: 'camera',
+            flat: true,
             size: 28,
             color: context.ui.ink,
           ),
@@ -1023,8 +1032,9 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.restricted:
         return _Panel(
           panelKey: const ValueKey('capture-restricted'),
-          icon: Icon(
-            Icons.no_photography_outlined,
+          icon: OurneyIcon(
+            name: 'camera',
+            flat: true,
             size: 28,
             color: context.ui.ink,
           ),
@@ -1035,8 +1045,9 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.unavailable:
         return _Panel(
           panelKey: const ValueKey('capture-unavailable'),
-          icon: Icon(
-            Icons.videocam_off_outlined,
+          icon: OurneyIcon(
+            name: 'warning',
+            flat: true,
             size: 28,
             color: context.ui.ink,
           ),
@@ -1047,8 +1058,9 @@ class _FailurePanel extends StatelessWidget {
       case CameraFailure.failed:
         return _Panel(
           panelKey: const ValueKey('capture-failed'),
-          icon: Icon(
-            Icons.videocam_off_outlined,
+          icon: OurneyIcon(
+            name: 'warning',
+            flat: true,
             size: 28,
             color: context.ui.ink,
           ),

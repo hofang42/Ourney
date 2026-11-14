@@ -5,6 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
@@ -15,9 +16,11 @@ import 'social_common.dart';
 
 enum InboxFilter { all, replies, invites }
 
-/// SCR-85 `/inbox`: friend requests (Accept / Decline inline), group share
-/// consent requests (Agree / Decline), new shares (→ Hub), conversations
-/// and, last and without a red dot, "From your public journeys" (S27).
+/// V2 ActivityScreen (SCR-85 `/inbox`, the "Hoạt động" dock tab): a feed
+/// grouped "Hôm nay" / "Trước đó" of friend requests (Accept / Decline
+/// inline), group share consent requests (Agree / Decline), new shares
+/// (→ Hub), conversations and, without a red dot, "From your public
+/// journeys" (S27). Shows a back button only when pushed standalone.
 class InboxScreen extends ConsumerStatefulWidget {
   const InboxScreen({super.key});
 
@@ -29,6 +32,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   InboxFilter _filter = InboxFilter.all;
   final Set<String> _busy = {};
   final Set<String> _expanded = {};
+
+  /// Ids of unread items marked as read with "mark all read" (this session).
+  final Set<String> _seen = {};
 
   Future<void> _act(String key, Future<void> Function() action) async {
     setState(() => _busy.add(key));
@@ -55,19 +61,55 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     }
   });
 
+  void _retry() {
+    ref
+      ..invalidate(friendshipsProvider)
+      ..invalidate(pendingConsentsProvider)
+      ..invalidate(conversationsProvider)
+      ..invalidate(inboxCountsProvider);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
+    final app = AppLocalizations.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
-    return SocialScaffold(
+    return UiScaffold(
       key: const ValueKey('inbox-screen'),
-      title: l10n.social_inboxTitle,
-      body: localOnly ? const SizedBox.shrink() : _body(context),
+      scroll: false,
+      padTop: 0,
+      padBottom: 0,
+      child: Column(
+        children: [
+          UiTopBar(
+            title: l10n.social_activityTitle,
+            leading: context.canPop()
+                ? UiIconButton(
+                    key: const ValueKey('social-back'),
+                    glyph: const OurneyIcon(name: 'back', flat: true),
+                    label: MaterialLocalizations.of(context).backButtonTooltip,
+                    onPressed: () => socialBack(context),
+                  )
+                : null,
+          ),
+          Expanded(
+            child: localOnly
+                ? UiEmptyState(
+                    key: const ValueKey('needs-server'),
+                    glyph: const OurneyIcon(name: 'cloud-off', size: 40),
+                    title: app.needsServer_title,
+                    body: app.needsServer_message,
+                  )
+                : _body(context),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _body(BuildContext context) {
     final l10n = SocialL10n.of(context);
+    final app = AppLocalizations.of(context);
     final friendsAsync = ref.watch(friendshipsProvider);
     final consentsAsync = ref.watch(pendingConsentsProvider);
     final convAsync = ref.watch(conversationsProvider);
@@ -78,7 +120,25 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         !friendsAsync.hasError &&
         !convAsync.hasValue &&
         !convAsync.hasError;
-    if (loading) return const SocialLoading();
+    if (loading) return _Skeleton(label: app.common_loading);
+    if (!friendsAsync.hasValue &&
+        !convAsync.hasValue &&
+        (friendsAsync.hasError || convAsync.hasError)) {
+      final error = friendsAsync.error ?? convAsync.error!;
+      final offline = socialErrorCode(error) == OurneyErrorCode.offline;
+      return ListView(
+        padding: const EdgeInsets.only(top: UiSpace.lg),
+        children: [
+          UiStateCard(
+            key: const ValueKey('inbox-error'),
+            kind: offline ? UiStateCardKind.offline : UiStateCardKind.error,
+            title: socialErrorMessage(context, error),
+            actionLabel: app.common_retry,
+            onAction: _retry,
+          ),
+        ],
+      );
+    }
 
     final friendships = friendsAsync.value ?? const <Friendship>[];
     final requests = [
@@ -99,115 +159,228 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final showInvites = _filter != InboxFilter.replies;
     final showReplies = _filter != InboxFilter.invites;
 
-    final children = <Widget>[];
+    final items = <_FeedItem>[];
     if (showInvites && newShares > 0) {
-      children
-        ..add(SocialSectionLabel(l10n.social_sectionNewShares))
-        ..add(_NewSharesRow(count: newShares));
+      items.add(
+        _FeedItem(
+          id: 'shares',
+          unread: true,
+          build: (unread) => _newSharesCard(newShares, unread),
+        ),
+      );
     }
-    if (showInvites && requests.isNotEmpty) {
-      children.add(SocialSectionLabel(l10n.social_sectionFriendRequests));
+    if (showInvites) {
       for (final r in requests) {
-        final p = r.person;
-        final busy = _busy.contains('f:${p.userId}');
-        children.add(
-          PersonRow(
-            key: ValueKey('inbox-request-${p.userId}'),
-            person: p,
+        items.add(
+          _FeedItem(
+            id: 'f:${r.person.userId}',
+            at: r.createdAt,
             unread: true,
-            title: l10n.social_friendRequestFrom(displayNameOf(p)),
-            subtitle: '@${p.username} · ${socialTime(context, r.createdAt)}',
-            actions: [
-              UiButton(
-                key: ValueKey('inbox-accept-${p.userId}'),
-                label: l10n.social_accept,
-                compact: true,
-                expand: false,
-                onPressed: busy ? null : () => _respondFriend(p, accept: true),
-              ),
-              UiButton.secondary(
-                key: ValueKey('inbox-decline-${p.userId}'),
-                label: l10n.social_decline,
-                compact: true,
-                expand: false,
-                onPressed: busy ? null : () => _respondFriend(p, accept: false),
-              ),
-            ],
+            build: (unread) => _requestCard(r, unread),
           ),
         );
       }
-    }
-    if (showInvites && consents.isNotEmpty) {
-      children.add(SocialSectionLabel(l10n.social_sectionConsents));
       for (final s in consents) {
-        final busy = _busy.contains('c:${s.journeyId}');
-        children.add(
-          PersonRow(
-            key: ValueKey('inbox-consent-${s.journeyId}'),
-            person: s.requestedBy,
+        items.add(
+          _FeedItem(
+            id: 'c:${s.journeyId}',
             unread: true,
-            leading: const UiIconCircle(Icons.groups_outlined),
-            title: l10n.social_consentRequest(
-              displayNameOf(s.requestedBy),
-              s.journeyTitle,
-            ),
-            actions: [
-              UiButton(
-                key: ValueKey('consent-agree-${s.journeyId}'),
-                label: l10n.social_agree,
-                compact: true,
-                expand: false,
-                onPressed: busy ? null : () => _respondConsent(s, accept: true),
-              ),
-              UiButton.secondary(
-                key: ValueKey('consent-decline-${s.journeyId}'),
-                label: l10n.social_decline,
-                compact: true,
-                expand: false,
-                onPressed: busy
-                    ? null
-                    : () => _respondConsent(s, accept: false),
-              ),
-            ],
+            build: (unread) => _consentCard(s, unread),
           ),
         );
       }
     }
-    if (showReplies && conversations.isNotEmpty) {
-      children.add(SocialSectionLabel(l10n.social_sectionConversations));
+    if (showReplies) {
       for (final conv in conversations) {
-        children.add(_ConversationRow(conversation: conv));
+        items.add(
+          _FeedItem(
+            id: 'm:${conv.id}',
+            at: conv.lastMessageAt,
+            unread: conv.unreadCount > 0,
+            build: (unread) =>
+                _ConversationRow(conversation: conv, showUnread: unread),
+          ),
+        );
       }
     }
-    if (showInvites && publicRequests.isNotEmpty) {
-      children.add(SocialSectionLabel(l10n.social_sectionPublic));
+    if (showInvites) {
       final groups = <String, List<Friendship>>{};
       for (final r in publicRequests) {
         groups.putIfAbsent(r.sourceJourneyId ?? '', () => []).add(r);
       }
       for (final entry in groups.entries) {
-        children.addAll(_publicGroup(context, entry.key, entry.value));
+        items.add(
+          _FeedItem(
+            id: 'p:${entry.key}',
+            at: entry.value
+                .map((r) => r.createdAt)
+                .reduce((a, b) => a.isAfter(b) ? a : b),
+            unread: false,
+            build: (_) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _publicGroup(context, entry.key, entry.value),
+            ),
+          ),
+        );
       }
     }
+
+    final now = DateTime.now();
+    bool isToday(DateTime? at) {
+      if (at == null) return true;
+      final l = at.toLocal();
+      return l.year == now.year && l.month == now.month && l.day == now.day;
+    }
+
+    final today = [
+      for (final i in items)
+        if (isToday(i.at)) i,
+    ];
+    final earlier = [
+      for (final i in items)
+        if (!isToday(i.at)) i,
+    ]..sort((a, b) => b.at!.compareTo(a.at!));
+    final hasUnread = items.any((i) => i.unread && !_seen.contains(i.id));
+
+    final children = <Widget>[];
+    void group(String title, List<_FeedItem> list, {required bool first}) {
+      if (list.isEmpty) return;
+      final showMark = first && hasUnread;
+      children.add(
+        Padding(
+          padding: const EdgeInsets.only(top: UiSpace.lg, bottom: UiSpace.sm),
+          child: UiListHeading(
+            title: title,
+            actionLabel: showMark ? l10n.social_markAllRead : null,
+            onAction: showMark
+                ? () => setState(() {
+                    _seen.addAll([
+                      for (final i in items)
+                        if (i.unread) i.id,
+                    ]);
+                  })
+                : null,
+          ),
+        ),
+      );
+      for (final i in list) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(bottom: UiSpace.md),
+            child: i.build(i.unread && !_seen.contains(i.id)),
+          ),
+        );
+      }
+    }
+
+    group(l10n.social_groupToday, today, first: true);
+    group(l10n.social_groupEarlier, earlier, first: today.isEmpty);
 
     if (children.isEmpty) {
       return Column(
         children: [
           _filters(context),
           Expanded(
-            child: UiEmptyState(
-              key: const ValueKey('inbox-empty'),
-              icon: Icons.inbox_outlined,
-              title: l10n.social_inboxEmpty,
+            child: ListView(
+              padding: const EdgeInsets.only(top: UiSpace.lg),
+              children: [
+                UiStateCard(
+                  key: const ValueKey('inbox-empty'),
+                  kind: UiStateCardKind.empty,
+                  title: l10n.social_inboxEmpty,
+                ),
+                const SizedBox(height: UiSpace.lg),
+                const _InviteCard(),
+              ],
             ),
           ),
         ],
       );
     }
+    children.add(const _InviteCard());
     return Column(
       children: [
         _filters(context),
         Expanded(child: SocialListBody(children: children)),
+      ],
+    );
+  }
+
+  Widget _newSharesCard(int count, bool unread) {
+    final l10n = SocialL10n.of(context);
+    void open() => context.go(AppRoutes.journeys);
+    return _ActivityCard(
+      key: const ValueKey('inbox-new-shares'),
+      badge: const _Badge('journeys', UiTypePastel.weightLoss),
+      title: l10n.social_newShares(count),
+      unread: unread,
+      onTap: open,
+      actions: [
+        UiButton.secondary(
+          label: l10n.social_view,
+          compact: true,
+          expand: false,
+          onPressed: open,
+        ),
+      ],
+    );
+  }
+
+  Widget _requestCard(Friendship r, bool unread) {
+    final l10n = SocialL10n.of(context);
+    final p = r.person;
+    final busy = _busy.contains('f:${p.userId}');
+    return _ActivityCard(
+      key: ValueKey('inbox-request-${p.userId}'),
+      badge: _PersonBadge(p),
+      title: l10n.social_friendRequestFrom(displayNameOf(p)),
+      subtitle: '@${p.username} · ${socialTime(context, r.createdAt)}',
+      unread: unread,
+      actions: [
+        UiButton(
+          key: ValueKey('inbox-accept-${p.userId}'),
+          label: l10n.social_accept,
+          compact: true,
+          expand: false,
+          onPressed: busy ? null : () => _respondFriend(p, accept: true),
+        ),
+        UiButton.secondary(
+          key: ValueKey('inbox-decline-${p.userId}'),
+          label: l10n.social_decline,
+          compact: true,
+          expand: false,
+          onPressed: busy ? null : () => _respondFriend(p, accept: false),
+        ),
+      ],
+    );
+  }
+
+  Widget _consentCard(ShareConsent s, bool unread) {
+    final l10n = SocialL10n.of(context);
+    final busy = _busy.contains('c:${s.journeyId}');
+    return _ActivityCard(
+      key: ValueKey('inbox-consent-${s.journeyId}'),
+      badge: const _Badge('share', UiTypePastel.workout),
+      title: l10n.social_consentRequest(
+        displayNameOf(s.requestedBy),
+        s.journeyTitle,
+      ),
+      unread: unread,
+      actions: [
+        UiButton(
+          key: ValueKey('consent-agree-${s.journeyId}'),
+          label: l10n.social_agree,
+          compact: true,
+          expand: false,
+          onPressed: busy ? null : () => _respondConsent(s, accept: true),
+        ),
+        UiButton.secondary(
+          key: ValueKey('consent-decline-${s.journeyId}'),
+          label: l10n.social_decline,
+          compact: true,
+          expand: false,
+          onPressed: busy ? null : () => _respondConsent(s, accept: false),
+        ),
       ],
     );
   }
@@ -223,45 +396,22 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         requests.first.sourceJourneyTitle ?? l10n.social_publicJourneyFallback;
     final open = _expanded.contains(journeyId);
     return [
-      UiPressable(
+      _ActivityCard(
         key: ValueKey('inbox-public-$journeyId'),
-        onPressed: () => setState(() {
+        badge: const _Badge('squad', UiTypePastel.custom),
+        title: l10n.social_publicSummary(requests.length, title),
+        onTap: () => setState(() {
           if (!_expanded.remove(journeyId)) _expanded.add(journeyId);
         }),
-        borderRadius: BorderRadius.circular(UiRadius.input),
-        minSize: const Size(UiSize.tap, 68),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 68),
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: ui.divider)),
-          ),
-          child: Row(
-            children: [
-              const UiIconCircle(Icons.person_add_alt_outlined),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  l10n.social_publicSummary(requests.length, title),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body(
-                    size: 15,
-                    weight: FontWeight.w700,
-                    height: 1.35,
-                    color: ui.ink,
-                  ),
-                ),
-              ),
-              Icon(
-                open ? Icons.expand_less_rounded : Icons.expand_more_rounded,
-                color: ui.inkMuted,
-              ),
-            ],
-          ),
+        trailing: OurneyIcon(
+          name: open ? 'chevron-up' : 'chevron-down',
+          color: ui.inkMuted,
+          flat: true,
         ),
       ),
       if (open)
         Container(
+          margin: const EdgeInsets.only(top: UiSpace.sm),
           padding: const EdgeInsets.only(left: 14),
           decoration: BoxDecoration(
             border: Border(left: BorderSide(color: ui.divider, width: 2)),
@@ -313,7 +463,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ],
       trailing: [
         UiIconButton(
-          icon: Icons.more_horiz_rounded,
+          glyph: const OurneyIcon(name: 'more', flat: true),
           label: l10n.social_more,
           onPressed: () => showUiSheet<void>(
             context: context,
@@ -322,7 +472,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
               children: [
                 UiMenuItem(
                   label: l10n.social_block,
-                  icon: Icons.block_rounded,
+                  glyph: 'block',
                   onPressed: () {
                     Navigator.of(sheet).pop();
                     confirmBlock(context, userId: p.userId, name: name);
@@ -330,7 +480,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                 ),
                 UiMenuItem(
                   label: l10n.social_report,
-                  icon: Icons.flag_outlined,
+                  glyph: 'flag',
                   onPressed: () {
                     Navigator.of(sheet).pop();
                     showReportSheet(context, userId: p.userId, name: name);
@@ -352,7 +502,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       InboxFilter.invites: l10n.social_filterInvites,
     };
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
+      padding: const EdgeInsets.only(top: UiSpace.sm),
       child: SizedBox(
         height: UiSize.tap,
         child: ListView(
@@ -375,38 +525,244 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   }
 }
 
-class _NewSharesRow extends StatelessWidget {
-  const _NewSharesRow({required this.count});
+class _FeedItem {
+  const _FeedItem({
+    required this.id,
+    required this.unread,
+    required this.build,
+    this.at,
+  });
 
-  final int count;
+  final String id;
+  final DateTime? at;
+  final bool unread;
+  final Widget Function(bool unread) build;
+}
+
+/// Pastel sticker tile with an Ourney icon (type badge of a feed row).
+class _Badge extends StatelessWidget {
+  const _Badge(this.icon, this.pastel);
+
+  final String icon;
+  final Color pastel;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Container(
+      width: 44,
+      height: 44,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: pastel,
+        borderRadius: BorderRadius.circular(UiRadius.input),
+        border: context.ui.stickerBorder(),
+      ),
+      child: OurneyIcon(name: icon, size: 26, active: true),
+    ),
+  );
+}
+
+class _PersonBadge extends StatelessWidget {
+  const _PersonBadge(this.person);
+
+  final PersonSummary person;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = SocialL10n.of(context);
-    void open() => context.go(AppRoutes.journeys);
-    return UiPersonRow(
-      key: const ValueKey('inbox-new-shares'),
-      name: '',
-      title: l10n.social_newShares(count),
-      unread: true,
-      leading: const UiIconCircle(Icons.auto_stories_outlined),
-      onPressed: open,
-      trailing: [
-        UiButton.secondary(
-          label: l10n.social_view,
-          compact: true,
-          expand: false,
-          onPressed: open,
-        ),
-      ],
+    final name = displayNameOf(person);
+    return ExcludeSemantics(
+      child: UiAvatar(
+        name: name,
+        colorIndex: UiAvatar.indexFor(name),
+        size: 44,
+        ring: false,
+      ),
     );
   }
 }
 
+/// V2 activity row: sticker card with a badge, text lines, optional unread
+/// dot and inline actions.
+class _ActivityCard extends StatelessWidget {
+  const _ActivityCard({
+    required this.badge,
+    required this.title,
+    this.subtitle,
+    this.extra,
+    this.unread = false,
+    this.onTap,
+    this.actions = const [],
+    this.trailing,
+    super.key,
+  });
+
+  final Widget badge;
+  final String title;
+  final String? subtitle;
+  final String? extra;
+  final bool unread;
+  final VoidCallback? onTap;
+  final List<Widget> actions;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    Widget line(String text) => Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+    );
+    return UiCard(
+      padding: const EdgeInsets.all(UiSpace.md),
+      shadowOffset: UiShadow.small,
+      onPressed: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              badge,
+              const SizedBox(width: UiSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 15,
+                        height: 1.35,
+                        weight: unread ? FontWeight.w800 : FontWeight.w700,
+                        color: ui.ink,
+                      ),
+                    ),
+                    if (subtitle != null) line(subtitle!),
+                    if (extra != null) line(extra!),
+                  ],
+                ),
+              ),
+              if (unread) ...[
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Container(
+                    key: const ValueKey('unread-dot'),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: ui.danger,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+            ],
+          ),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: UiSpace.sm),
+            Wrap(spacing: 8, runSpacing: 8, children: actions),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InviteCard extends StatelessWidget {
+  const _InviteCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = SocialL10n.of(context);
+    final ui = context.ui;
+    return UiCard(
+      key: const ValueKey('inbox-invite-card'),
+      padding: const EdgeInsets.all(UiSpace.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.social_inviteCardTitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.h2(size: 18, color: ui.ink),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.social_inviteCardBody,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
+          ),
+          const SizedBox(height: UiSpace.md),
+          UiButton.secondary(
+            key: const ValueKey('inbox-invite-action'),
+            label: l10n.social_inviteCardAction,
+            compact: true,
+            expand: false,
+            onPressed: () => context.push(SocialPaths.friendsAdd),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Skeleton extends StatelessWidget {
+  const _Skeleton({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    container: true,
+    label: label,
+    child: ExcludeSemantics(
+      child: ListView(
+        key: const ValueKey('inbox-loading'),
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(top: UiSpace.lg),
+        children: [
+          for (var i = 0; i < 4; i++)
+            const Padding(
+              padding: EdgeInsets.only(bottom: UiSpace.md),
+              child: UiCard(
+                padding: EdgeInsets.all(UiSpace.md),
+                child: Row(
+                  children: [
+                    UiSkeleton(width: 44, height: 44, radius: UiRadius.input),
+                    SizedBox(width: UiSpace.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          UiSkeleton(height: 14),
+                          SizedBox(height: 8),
+                          UiSkeleton(width: 120, height: 12),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _ConversationRow extends StatelessWidget {
-  const _ConversationRow({required this.conversation});
+  const _ConversationRow({required this.conversation, this.showUnread = true});
 
   final Conversation conversation;
+  final bool showUnread;
 
   @override
   Widget build(BuildContext context) {
@@ -418,57 +774,51 @@ class _ConversationRow extends StatelessWidget {
     final preview = conv.lastMessageKind == MessageKind.photo
         ? l10n.social_photoMessage
         : conv.lastMessagePreview;
-    return UiPersonRow(
+    return _ActivityCard(
       key: ValueKey('inbox-conversation-${conv.id}'),
-      name: name,
+      badge: _PersonBadge(conv.other),
       title: name,
       subtitle: conv.journeyTitle,
-      extraLine: preview == null || preview.isEmpty ? null : preview,
-      unread: unread,
-      minHeight: 82,
-      onPressed: () => context.push(SocialPaths.chat(conv.id)),
-      trailing: [
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            if (conv.lastMessageAt != null)
-              Text(
-                socialTime(context, conv.lastMessageAt!),
-                style: UiText.body(size: 11, height: 1.3, color: ui.inkMuted),
-              ),
-            if (unread) ...[
-              const SizedBox(height: 4),
-              Semantics(
-                label: l10n.social_unread(conv.unreadCount),
-                excludeSemantics: true,
-                child: Container(
-                  key: const ValueKey('unread-badge'),
-                  constraints: const BoxConstraints(minWidth: 22),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: ui.brand,
-                    borderRadius: BorderRadius.circular(UiRadius.capsule),
-                  ),
-                  child: Text(
-                    conv.unreadCount > 99 ? '99+' : '${conv.unreadCount}',
-                    textAlign: TextAlign.center,
-                    style: UiText.body(
-                      size: 11,
-                      weight: FontWeight.w800,
-                      height: 1.3,
-                      color: ui.onBrand,
-                    ),
+      extra: preview == null || preview.isEmpty ? null : preview,
+      unread: unread && showUnread,
+      onTap: () => context.push(SocialPaths.chat(conv.id)),
+      trailing: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (conv.lastMessageAt != null)
+            Text(
+              socialTime(context, conv.lastMessageAt!),
+              style: UiText.body(size: 11, height: 1.3, color: ui.inkMuted),
+            ),
+          if (unread) ...[
+            const SizedBox(height: 4),
+            Semantics(
+              label: l10n.social_unread(conv.unreadCount),
+              excludeSemantics: true,
+              child: Container(
+                key: const ValueKey('unread-badge'),
+                constraints: const BoxConstraints(minWidth: 22),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: ui.brand,
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                ),
+                child: Text(
+                  conv.unreadCount > 99 ? '99+' : '${conv.unreadCount}',
+                  textAlign: TextAlign.center,
+                  style: UiText.body(
+                    size: 11,
+                    weight: FontWeight.w800,
+                    height: 1.3,
+                    color: ui.onBrand,
                   ),
                 ),
               ),
-            ],
+            ),
           ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

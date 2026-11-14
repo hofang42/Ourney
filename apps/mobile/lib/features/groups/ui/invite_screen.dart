@@ -97,7 +97,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
       }
       return scaffold(
         UiEmptyState(
-          icon: Icons.error_outline_rounded,
+          glyph: const OurneyIcon(name: 'error', size: 30),
           title: groupErrorMessage(context, journeyAsync.error!),
         ),
       );
@@ -113,7 +113,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     if (journey == null) {
       return scaffold(
         UiEmptyState(
-          icon: Icons.search_off_rounded,
+          glyph: const OurneyIcon(name: 'search', size: 30),
           title: l10n.groups_notFoundTitle,
         ),
       );
@@ -130,7 +130,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
       return scaffold(
         UiEmptyState(
           key: const ValueKey('group-invite-closed'),
-          icon: Icons.flag_outlined,
+          glyph: const OurneyIcon(name: 'flag', size: 30),
           title: l10n.groups_inviteClosed,
         ),
       );
@@ -196,7 +196,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             UiButton(
               key: const ValueKey('group-invite-share'),
               label: l10n.groups_shareLink,
-              icon: Icons.ios_share_rounded,
+              glyph: const OurneyIcon(name: 'share', size: 20),
               onPressed: () => ref.read(groupShareLauncherProvider)(
                 text: l10n.groups_shareText(journey.title, link, code),
                 subject: journey.title,
@@ -206,7 +206,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             UiButton.secondary(
               key: const ValueKey('group-invite-copy'),
               label: l10n.groups_copyCode,
-              icon: Icons.copy_rounded,
+              glyph: const OurneyIcon(name: 'copy', size: 20),
               onPressed: () async {
                 await ref.read(groupClipboardProvider)(code);
                 if (context.mounted) {
@@ -220,7 +220,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
             UiButton.ghost(
               key: const ValueKey('group-invite-rotate'),
               label: l10n.groups_actionRotate,
-              icon: Icons.autorenew_rounded,
+              glyph: const OurneyIcon(name: 'refresh', size: 20),
               onPressed: _busy ? null : _rotate,
             ),
           ],

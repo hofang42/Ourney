@@ -222,7 +222,12 @@ class _Cell extends StatelessWidget {
             children: [
               Positioned(left: 4, top: 3, child: number),
               Center(
-                child: Icon(Icons.add_rounded, size: 18, color: pal.accent),
+                child: OurneyIcon(
+                  name: 'plus',
+                  size: 18,
+                  flat: true,
+                  color: pal.accent,
+                ),
               ),
             ],
           ),
