@@ -198,4 +198,101 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_back => 'Quay lại';
+
+  @override
+  String get profile_statSnaps => 'tổng ngày check-in';
+
+  @override
+  String get profile_statLongest => 'chuỗi dài nhất';
+
+  @override
+  String get profile_statDone => 'hành trình đã xong';
+
+  @override
+  String get profile_badgesTitle => 'huy hiệu đều đặn.';
+
+  @override
+  String get profile_badge7 => 'Đều 7 ngày';
+
+  @override
+  String get profile_badge30 => 'Đều 30 ngày';
+
+  @override
+  String get profile_badgeFinish => 'Về đích đầu tiên';
+
+  @override
+  String get profile_badge100 => 'Đủ 100 ngày';
+
+  @override
+  String get profile_badge7Rule => 'Có mặt đủ 7 ngày liên tiếp.';
+
+  @override
+  String get profile_badge30Rule => 'Có mặt đủ 30 ngày liên tiếp.';
+
+  @override
+  String get profile_badgeFinishRule => 'Hoàn thành hành trình đầu tiên.';
+
+  @override
+  String get profile_badge100Rule => 'Check-in đủ 100 ngày.';
+
+  @override
+  String get profile_badgeUnlocked => 'đã mở khoá';
+
+  @override
+  String get profile_badgeLocked => 'chưa mở khoá';
+
+  @override
+  String get profile_deleteUnderstand =>
+      'Tôi hiểu việc này không thể hoàn tác.';
+
+  @override
+  String get profile_deleteOwnerNote =>
+      'Nếu bạn là chủ nhóm, quyền chủ nhóm chuyển cho người vào sớm nhất.';
+
+  @override
+  String get profile_deleteKeep => 'Giữ tài khoản';
+
+  @override
+  String get profile_deleteContinue => 'Tiếp tục';
+
+  @override
+  String get profile_deleteOtpTitle => 'xác nhận bằng mã.';
+
+  @override
+  String get profile_deleteOtpLead =>
+      'Mã gồm 6 số vừa gửi tới email hoặc số điện thoại của tài khoản này.';
+
+  @override
+  String get profile_deleteOtpLabel => 'Mã xác nhận xoá tài khoản gồm 6 số';
+
+  @override
+  String get profile_deleteOtpWrong => 'Mã chưa đúng. Kiểm tra lại nhé.';
+
+  @override
+  String get profile_deleteResend => 'Gửi lại mã';
+
+  @override
+  String profile_deleteResendIn(int seconds) {
+    return 'Gửi lại sau ${seconds}s';
+  }
+
+  @override
+  String get profile_deleteCodeSent => 'Đã gửi mã mới.';
+
+  @override
+  String get profile_deleteDoneTitle => 'Đã xoá tài khoản.';
+
+  @override
+  String get profile_deleteDoneBody => 'Cảm ơn bạn đã dùng Ourney.';
+
+  @override
+  String get profile_deleteDoneButton => 'Về màn đầu';
+
+  @override
+  String get profile_deleteBackToSettings => 'Về cài đặt';
+
+  @override
+  String profile_deleteStepSemantics(int current, int total) {
+    return 'Bước $current trên $total';
+  }
 }

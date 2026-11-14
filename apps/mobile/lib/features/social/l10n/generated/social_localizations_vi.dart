@@ -379,4 +379,20 @@ class SocialL10nVi extends SocialL10n {
 
   @override
   String get social_inviteCardAction => 'Thêm bạn';
+
+  @override
+  String social_groupInviteFrom(String name, String group) {
+    return '$name mời bạn vào $group';
+  }
+
+  @override
+  String social_groupInviteMembers(int count, int max) {
+    return '$count/$max thành viên';
+  }
+
+  @override
+  String get social_groupInviteJoin => 'Tham gia';
+
+  @override
+  String get social_groupInviteSkip => 'Bỏ qua';
 }

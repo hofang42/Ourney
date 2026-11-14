@@ -40,6 +40,9 @@ Widget _host(
   required Brightness brightness,
   required double scale,
   required ValueChanged<TimelineDay> onTap,
+  List<TimelineDay>? days,
+  String? selfName,
+  String? partnerName,
 }) {
   return ProviderScope(
     child: MaterialApp(
@@ -60,7 +63,9 @@ Widget _host(
                 padding: const EdgeInsets.all(16),
                 child: JourneyTimeline(
                   skinId: skin,
-                  days: _days(),
+                  days: days ?? _days(),
+                  selfName: selfName,
+                  partnerName: partnerName,
                   pal: JourneyPalette.of(
                     context,
                     styleOfJourney(testJourney()),
@@ -113,6 +118,55 @@ void main() {
     );
     expect(find.text('You'), findsNWidgets(14));
     expect(find.text('Partner'), findsNWidgets(14));
+  });
+
+  testWidgets('couple shows persisted names and the partner photo', (
+    tester,
+  ) async {
+    final j = testJourney();
+    final base = testCheckIn(j.id, const LocalDate(2026, 10, 10));
+    final withPartner = CheckIn(
+      id: base.id,
+      journeyId: base.journeyId,
+      userId: base.userId,
+      localDate: base.localDate,
+      capturedAt: base.capturedAt,
+      photoPath: base.photoPath,
+      thumbPath: base.thumbPath,
+      partnerPhotoPath: 'checkins/j/u/c_p.jpg',
+    );
+    final days = [
+      TimelineDay(
+        date: const LocalDate(2026, 10, 10),
+        dayNumber: 1,
+        isToday: false,
+        state: DayState.checkedIn,
+        checkIn: withPartner,
+      ),
+      TimelineDay(
+        date: const LocalDate(2026, 10, 11),
+        dayNumber: 2,
+        isToday: false,
+        state: DayState.checkedIn,
+        checkIn: testCheckIn(j.id, const LocalDate(2026, 10, 11)),
+      ),
+    ];
+    await tester.pumpWidget(
+      _host(
+        'couple',
+        brightness: Brightness.light,
+        scale: 1,
+        onTap: (_) {},
+        days: days,
+        selfName: 'An',
+        partnerName: 'Bình',
+      ),
+    );
+    expect(find.text('An'), findsNWidgets(2));
+    expect(find.text('Bình'), findsNWidgets(2));
+    expect(find.byKey(const ValueKey('couple-partner-photo')), findsOneWidget);
+    // the day without a partner photo keeps its waiting slot
+    expect(find.byKey(const ValueKey('couple-partner-slot')), findsOneWidget);
   });
 
   testWidgets('minimal draws the chain line', (tester) async {

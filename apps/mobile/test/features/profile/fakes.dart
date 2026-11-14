@@ -42,9 +42,72 @@ class RecordingAuthRepository extends FakeAuthRepository {
     emit(null);
   }
 
+  Object? requestDeleteCodeError;
+  Object? signInError;
+  Object? phoneError;
+  bool signUpNeedsCode = false;
+
   @override
-  Future<void> deleteAccount() async {
-    calls.add('deleteAccount');
+  Future<void> requestDeleteCode() async {
+    calls.add('requestDeleteCode');
+    if (requestDeleteCodeError case final e?) throw e;
+  }
+
+  @override
+  Future<void> sendPhoneOtp(String e164Phone) async {
+    calls.add('sendPhoneOtp:$e164Phone');
+    if (phoneError case final e?) throw e;
+  }
+
+  @override
+  Future<void> verifyPhoneOtp(String e164Phone, String code) async {
+    calls.add('verifyPhoneOtp:$e164Phone:$code');
+    if (phoneError case final e?) throw e;
+    emit('u1');
+  }
+
+  @override
+  Future<bool> signUpWithPassword(String email, String password) async {
+    calls.add('signUp:$email');
+    if (signInError case final e?) throw e;
+    if (!signUpNeedsCode) emit('u1');
+    return signUpNeedsCode;
+  }
+
+  @override
+  Future<void> confirmSignUp(String email, String code) async {
+    calls.add('confirmSignUp:$email:$code');
+    if (verifyOtpError case final e?) throw e;
+    emit('u1');
+  }
+
+  @override
+  Future<void> signInWithPassword(String email, String password) async {
+    calls.add('signIn:$email');
+    if (signInError case final e?) throw e;
+    emit('u1');
+  }
+
+  @override
+  Future<void> sendPasswordReset(String email) async {
+    calls.add('sendReset:$email');
+    if (sendOtpError case final e?) throw e;
+  }
+
+  @override
+  Future<void> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async {
+    calls.add('reset:$email:$code');
+    if (verifyOtpError case final e?) throw e;
+    emit('u1');
+  }
+
+  @override
+  Future<void> deleteAccount({String? code}) async {
+    calls.add('deleteAccount:${code ?? ''}');
     if (deleteError case final e?) throw e;
     emit(null);
   }

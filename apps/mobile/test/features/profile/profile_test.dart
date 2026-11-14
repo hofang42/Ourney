@@ -223,8 +223,54 @@ void main() {
     });
   });
 
-  group('delete account (FR-A4)', () {
-    testWidgets('needs the username typed; retryable error; then resets', (
+  group('delete account (FR-A4, 3 steps: confirm, code, final)', () {
+    Future<void> toCodeStep(WidgetTester tester) async {
+      await tapVisible(tester, 'profile-delete');
+      expect(byKey('profile-delete-dialog'), findsOneWidget);
+      UiButton next() =>
+          tester.widget<UiButton>(byKey('profile-delete-continue'));
+      expect(next().onPressed, isNull);
+      await tapVisible(tester, 'profile-delete-understand');
+      await tester.pump();
+      expect(next().onPressed, isNotNull);
+      await tapVisible(tester, 'profile-delete-continue');
+      await tester.pumpAndSettle();
+      expect(byKey('profile-delete-otp'), findsOneWidget);
+    }
+
+    testWidgets('needs the code; wrong code retries; then resets', (
+      tester,
+    ) async {
+      final auth = RecordingAuthRepository(userId: 'u1')
+        ..deleteError = const OurneyException(OurneyErrorCode.invalid);
+      final c = await signedIn(tester, auth: auth);
+      await toCodeStep(tester);
+      expect(auth.calls, ['requestDeleteCode']);
+
+      UiButton confirm() =>
+          tester.widget<UiButton>(byKey('profile-delete-confirm'));
+      expect(confirm().onPressed, isNull);
+      await tester.enterText(byKey('profile-delete-otp'), '123456');
+      await tester.pump();
+      expect(confirm().onPressed, isNotNull);
+      await tapVisible(tester, 'profile-delete-confirm');
+      await tester.pumpAndSettle();
+      expect(auth.calls.last, 'deleteAccount:123456');
+      // Wrong code: back on the code step with an error, nothing reset.
+      expect(find.text('Mã chưa đúng. Kiểm tra lại nhé.'), findsOneWidget);
+      expect(c.read(onboardingCompleteProvider), isTrue);
+
+      auth.deleteError = null;
+      await tester.enterText(byKey('profile-delete-otp'), '654321');
+      await tester.pump();
+      await tapVisible(tester, 'profile-delete-confirm');
+      await tester.pumpAndSettle();
+      expect(auth.calls.last, 'deleteAccount:654321');
+      expect(c.read(onboardingCompleteProvider), isFalse);
+      expect(c.read(eulaAcceptedProvider), isFalse);
+    });
+
+    testWidgets('retryable server error shows the final step error', (
       tester,
     ) async {
       final auth = RecordingAuthRepository(userId: 'u1')
@@ -232,64 +278,55 @@ void main() {
           OurneyErrorCode.storageCleanupIncomplete,
         );
       final c = await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-delete');
-      expect(byKey('profile-delete-dialog'), findsOneWidget);
-      expect(find.text('Gõ alice để xác nhận'), findsOneWidget);
-
-      UiButton confirm() =>
-          tester.widget<UiButton>(byKey('profile-delete-confirm'));
-      expect(confirm().onPressed, isNull);
-      await tester.enterText(byKey('profile-delete-confirm-field'), 'Alice');
+      await toCodeStep(tester);
+      await tester.enterText(byKey('profile-delete-otp'), '123456');
       await tester.pump();
-      expect(confirm().onPressed, isNull);
-      await tester.enterText(byKey('profile-delete-confirm-field'), 'alice');
-      await tester.pump();
-      expect(confirm().onPressed, isNotNull);
-
-      await tester.tap(byKey('profile-delete-confirm'));
+      await tapVisible(tester, 'profile-delete-confirm');
       await tester.pumpAndSettle();
-      expect(auth.calls, ['deleteAccount']);
       expect(
         find.text('Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.'),
         findsOneWidget,
       );
+      expect(byKey('profile-delete-retry'), findsOneWidget);
       expect(c.read(onboardingCompleteProvider), isTrue);
-
-      auth.deleteError = null;
-      await tester.ensureVisible(byKey('profile-delete-confirm'));
-      await tester.pump();
-      await tester.tap(byKey('profile-delete-confirm'));
-      await tester.pumpAndSettle();
-      expect(auth.calls, ['deleteAccount', 'deleteAccount']);
-      expect(c.read(onboardingCompleteProvider), isFalse);
-      expect(c.read(eulaAcceptedProvider), isFalse);
-      expect(byKey('profile-delete-dialog'), findsNothing);
-      expect(location(c), startsWith(AppRoutes.onboarding));
     });
 
     testWidgets('cancel does nothing', (tester) async {
       final auth = RecordingAuthRepository(userId: 'u1');
       await signedIn(tester, auth: auth);
       await tapVisible(tester, 'profile-delete');
-      await tester.tap(byKey('profile-delete-cancel'));
+      await tapVisible(tester, 'profile-delete-cancel');
       await tester.pumpAndSettle();
       expect(byKey('profile-delete-dialog'), findsNothing);
       expect(auth.calls, isEmpty);
     });
 
-    testWidgets('expired session asks to sign in again', (tester) async {
+    testWidgets('code request failure stays on step 1', (tester) async {
       final auth = RecordingAuthRepository(userId: 'u1')
-        ..deleteError = const OurneyException(OurneyErrorCode.unauthenticated);
+        ..requestDeleteCodeError = const OurneyException(
+          OurneyErrorCode.unauthenticated,
+        );
       await signedIn(tester, auth: auth);
       await tapVisible(tester, 'profile-delete');
-      await tester.enterText(byKey('profile-delete-confirm-field'), 'alice');
+      await tapVisible(tester, 'profile-delete-understand');
       await tester.pump();
-      await tester.tap(byKey('profile-delete-confirm'));
+      await tapVisible(tester, 'profile-delete-continue');
       await tester.pumpAndSettle();
       expect(
         find.text('Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.'),
         findsOneWidget,
       );
+      expect(byKey('profile-delete-otp'), findsNothing);
+    });
+  });
+
+  group('profile stats and badges', () {
+    testWidgets('shows the stat cards and a badge rule on tap', (tester) async {
+      await signedIn(tester);
+      expect(byKey('profile-stats'), findsOneWidget);
+      expect(byKey('profile-stat-snaps'), findsOneWidget);
+      await tapVisible(tester, 'profile-badge-streak7');
+      expect(find.text('Có mặt đủ 7 ngày liên tiếp.'), findsOneWidget);
     });
   });
 }

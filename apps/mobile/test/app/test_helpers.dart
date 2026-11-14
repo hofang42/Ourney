@@ -109,8 +109,38 @@ class FakeAuthRepository implements AuthRepository {
   Future<void> verifyOtp(String email, String code) async => emit('u1');
 
   @override
+  Future<void> sendPhoneOtp(String e164Phone) async {}
+
+  @override
+  Future<void> verifyPhoneOtp(String e164Phone, String code) async =>
+      emit('u1');
+
+  @override
+  Future<bool> signUpWithPassword(String email, String password) async => false;
+
+  @override
+  Future<void> confirmSignUp(String email, String code) async => emit('u1');
+
+  @override
+  Future<void> signInWithPassword(String email, String password) async =>
+      emit('u1');
+
+  @override
+  Future<void> sendPasswordReset(String email) async {}
+
+  @override
+  Future<void> resetPassword(
+    String email,
+    String code,
+    String newPassword,
+  ) async => emit('u1');
+
+  @override
+  Future<void> requestDeleteCode() async {}
+
+  @override
   Future<void> signOut() async => emit(null);
 
   @override
-  Future<void> deleteAccount() async => emit(null);
+  Future<void> deleteAccount({String? code}) async => emit(null);
 }

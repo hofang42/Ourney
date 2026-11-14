@@ -216,4 +216,91 @@ class CheckinL10nVi extends CheckinL10n {
   String checkin_calendarSemantics(int days) {
     return 'Lịch $days ngày gần nhất, hôm nay có ảnh';
   }
+
+  @override
+  String get checkin_extraMoodLabel => 'Hôm nay bạn cảm thấy thế nào?';
+
+  @override
+  String get checkin_extraMoodLight => 'Nhẹ nhõm';
+
+  @override
+  String get checkin_extraMoodNormal => 'Bình thường';
+
+  @override
+  String get checkin_extraMoodTired => 'Hơi mệt';
+
+  @override
+  String get checkin_extraMinutesLabel => 'Hôm nay học bao lâu?';
+
+  @override
+  String checkin_extraMinutesValue(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
+  String get checkin_extraMinutesOther => 'Khác';
+
+  @override
+  String get checkin_extraMinutesLess => 'Giảm năm phút';
+
+  @override
+  String get checkin_extraMinutesMore => 'Tăng năm phút';
+
+  @override
+  String get checkin_extraPlaceLabel => 'Bạn đang ở đâu?';
+
+  @override
+  String get checkin_extraPlaceHint => 'Tìm một nơi...';
+
+  @override
+  String get checkin_extraDishLabel => 'Món hôm nay';
+
+  @override
+  String get checkin_extraDishHint => 'Để trống cũng được';
+
+  @override
+  String get checkin_extraCookLabel => 'Ai nấu?';
+
+  @override
+  String get checkin_extraYou => 'Bạn';
+
+  @override
+  String get checkin_extraPartner => 'Người ấy';
+
+  @override
+  String get checkin_extraHeartsLabel => 'Bữa này mấy tim?';
+
+  @override
+  String checkin_extraHeartsValue(int count) {
+    return '$count tim';
+  }
+
+  @override
+  String get checkin_extraPartnerPhoto => 'Thêm ảnh của người ấy';
+
+  @override
+  String get checkin_extraPartnerPhotoChange => 'Đổi ảnh của người ấy';
+
+  @override
+  String get checkin_extraPartnerPhotoRemove => 'Bỏ ảnh của người ấy';
+
+  @override
+  String get checkin_extraPartnerPhotoSemantics => 'Ảnh của người ấy';
+
+  @override
+  String get checkin_extraPaceLabel => 'Nhịp chạy (phút/km)';
+
+  @override
+  String get checkin_extraPaceInvalid => 'Nhịp không hợp lệ, giây phải dưới 60';
+
+  @override
+  String get checkin_extraBackspace => 'Xoá một số';
+
+  @override
+  String checkin_extraCountdown(int seconds) {
+    return 'Tự đăng sau $seconds giây';
+  }
+
+  @override
+  String get checkin_extraCountdownStop => 'Chạm bất kỳ đâu để dừng';
 }

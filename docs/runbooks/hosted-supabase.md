@@ -135,6 +135,15 @@ Quy trình:
 
 Đạt khi: 10/10 mail có độ trễ < 30 s, cả 10 nằm ở *Hộp thư đến*, và SPF/DKIM/DMARC đều PASS. Nếu rớt: kiểm tra DNS đã verify, dùng domain riêng thay vì domain chung, nâng DMARC dần, giảm nội dung mẫu mail có link rút gọn.
 
+## 6b. Phương thức đăng nhập v2 (số điện thoại, email + mật khẩu, xoá tài khoản bằng mã)
+Migration `0009_profile_onboarding_stats.sql` (cột `profiles.onboarding_quiz`, RPC `profile_stats()`) được workflow deploy áp dụng như các migration khác. Việc **bạn phải làm tay trên dashboard** (không có secret nào nằm trong repo):
+
+1. **Đăng nhập bằng số điện thoại** (*Authentication → Providers → Phone*): bật *Enable Phone provider* và *Enable phone signup*; chọn nhà cung cấp SMS (ví dụ Twilio hoặc Twilio Verify) rồi nhập Account SID, Auth Token, Message Service SID ngay trên dashboard. Không có SMS provider thì app báo lỗi chung khi gửi mã SMS. Chạy local: export `SUPABASE_AUTH_SMS_TWILIO_ACCOUNT_SID`, `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN`, `SUPABASE_AUTH_SMS_TWILIO_MESSAGE_SERVICE_SID` rồi đặt `[auth.sms.twilio] enabled = true`; hoặc dùng `[auth.sms.test_otp]` để thử không tốn SMS.
+2. **Email + mật khẩu** (*Providers → Email*): giữ *Enable Email provider* bật; *Minimum password length* = 8 (khớp app). *Confirm email* tắt thì đăng ký vào thẳng app; nếu bật, app tự chuyển sang bước nhập mã (cần template *Confirm signup* dạng mã 6 số, đã có `confirmation.html`).
+3. **Quên mật khẩu**: *Authentication → Emails → Reset Password*: dán nội dung `supabase/templates/recovery.html` (chỉ hiện `{{ .Token }}`) và đặt tiêu đề như trong `supabase/config.toml`. Script deploy hiện chưa tự đẩy template `recovery`, nên bước này làm tay (hoặc mở rộng script deploy sau). Chưa đổi thì email đặt lại mật khẩu vẫn là link mặc định và app sẽ không dùng được mã.
+4. **Xoá tài khoản bằng mã (3 bước)**: không cần cấu hình thêm. Edge Function `delete-account` gửi mã bằng chính Supabase Auth (email của tài khoản, hoặc SMS nếu tài khoản chỉ có số điện thoại) rồi xác thực mã ở server trước khi xoá. Cần deploy lại hàm `delete-account` (workflow Deploy Supabase) và SMTP/SMS hoạt động như các mục trên. Giới hạn gửi mã chung với *Authentication → Rate Limits*.
+5. Chưa hỗ trợ đăng nhập bằng tên người dùng (Figma có, Supabase Auth không hỗ trợ trực tiếp): app dùng email.
+
 ## 7. Xoay khoá
 - Lộ `SUPABASE_ACCESS_TOKEN`: thu hồi ở trang token rồi tạo cái mới, cập nhật environment secret.
 - Lộ Resend API key: xoá key trên Resend, tạo key mới, cập nhật `SMTP_PASS`, chạy lại deploy (không cần `dry_run`).

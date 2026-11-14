@@ -152,6 +152,36 @@ class FakeRemoteApi implements RemoteApi {
   }
 
   @override
+  Future<void> sendPhoneOtp(String e164Phone) =>
+      _maybeFail('sendPhoneOtp', e164Phone);
+
+  @override
+  Future<void> verifyPhoneOtp(String e164Phone, String code) =>
+      _maybeFail('verifyPhoneOtp', e164Phone, code);
+
+  @override
+  Future<bool> signUpWithPassword(String email, String password) async {
+    await _maybeFail('signUp', email);
+    return false;
+  }
+
+  @override
+  Future<void> confirmSignUp(String email, String code) =>
+      _maybeFail('confirmSignUp', email, code);
+
+  @override
+  Future<void> signInWithPassword(String email, String password) =>
+      _maybeFail('signIn', email);
+
+  @override
+  Future<void> sendPasswordReset(String email) =>
+      _maybeFail('sendPasswordReset', email);
+
+  @override
+  Future<void> resetPassword(String email, String code, String newPassword) =>
+      _maybeFail('resetPassword', email, code);
+
+  @override
   Future<void> signOut({bool global = false}) async {
     calls.add(RemoteCall('signOut', global ? 'global' : 'local'));
     emitUser(null);

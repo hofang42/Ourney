@@ -251,6 +251,7 @@ Future<GroupsHarness> pumpGroups(
   FakeJourneyRepository? journeys,
   FakeCheckInRepository? checkIns,
   FakeSafetyRepository? safety,
+  GroupInviteRepository? invites,
   GroupSafetyHooks hooks = const GroupSafetyHooks(),
   AppConfig config = testBackendConfig,
   Locale locale = const Locale('en'),
@@ -273,6 +274,8 @@ Future<GroupsHarness> pumpGroups(
     auth: FakeAuthRepository(userId: me),
     overrides: [
       groupRepositoryProvider.overrideWithValue(g),
+      if (invites != null)
+        groupInviteRepositoryProvider.overrideWithValue(invites),
       journeyRepositoryProvider.overrideWithValue(j),
       checkInRepositoryProvider.overrideWithValue(
         checkIns ?? FakeCheckInRepository(),
@@ -296,3 +299,83 @@ Future<GroupsHarness> pumpGroups(
   await h.go(tester, location);
   return h;
 }
+
+/// Scriptable [GroupInviteRepository] (join preview + invitations).
+class FakeGroupInviteRepository implements GroupInviteRepository {
+  FakeGroupInviteRepository({this.preview, this.invitations = const []});
+
+  GroupPreview? preview;
+  Object? previewError;
+  Object? acceptError;
+  List<GroupInvitation> invitations;
+  String acceptResult = 'g1';
+  final List<String> calls = [];
+
+  @override
+  Future<GroupPreview> previewByCode(String code) async {
+    calls.add('preview:$code');
+    if (previewError case final e?) throw e;
+    return preview ?? (throw const GroupException.of(OurneyErrorCode.notFound));
+  }
+
+  @override
+  Future<List<GroupInvitation>> pending() async {
+    calls.add('pending');
+    return invitations;
+  }
+
+  @override
+  Future<void> send(String journeyId, {String? userId, String? handle}) async {
+    calls.add('send:$journeyId');
+  }
+
+  @override
+  Future<String> accept(String invitationId) async {
+    calls.add('accept:$invitationId');
+    if (acceptError case final e?) throw e;
+    invitations = [
+      for (final i in invitations)
+        if (i.id != invitationId) i,
+    ];
+    return acceptResult;
+  }
+
+  @override
+  Future<void> decline(String invitationId) async {
+    calls.add('decline:$invitationId');
+    invitations = [
+      for (final i in invitations)
+        if (i.id != invitationId) i,
+    ];
+  }
+}
+
+GroupPreview groupPreview({GroupPreviewState state = GroupPreviewState.open}) =>
+    GroupPreview(
+      state: state,
+      title: 'Hoi IELTS',
+      emoji: 'x',
+      templateId: 'english_daily',
+      ownerName: 'Ha',
+      memberCount: 5,
+      maxMembers: 10,
+      durationDays: 30,
+      dayNumber: 21,
+      members: const [
+        GroupPreviewMember(displayName: 'Ha'),
+        GroupPreviewMember(displayName: 'Lan'),
+      ],
+    );
+
+GroupInvitation groupInvitation(String id) => GroupInvitation(
+  id: id,
+  journeyId: 'g1',
+  title: 'Hoi IELTS',
+  emoji: 'x',
+  templateId: 'english_daily',
+  inviter: const PersonSummary(userId: 'ha', username: 'ha', displayName: 'Ha'),
+  memberCount: 5,
+  maxMembers: 10,
+  createdAt: DateTime.now(),
+  expiresAt: DateTime.now().add(const Duration(days: 7)),
+);

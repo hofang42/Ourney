@@ -200,4 +200,101 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_back => 'Back';
+
+  @override
+  String get profile_statSnaps => 'total check-ins';
+
+  @override
+  String get profile_statLongest => 'longest streak';
+
+  @override
+  String get profile_statDone => 'journeys finished';
+
+  @override
+  String get profile_badgesTitle => 'steady-habit badges.';
+
+  @override
+  String get profile_badge7 => 'Steady 7 days';
+
+  @override
+  String get profile_badge30 => 'Steady 30 days';
+
+  @override
+  String get profile_badgeFinish => 'First finish';
+
+  @override
+  String get profile_badge100 => '100 days in';
+
+  @override
+  String get profile_badge7Rule => 'Show up 7 days in a row.';
+
+  @override
+  String get profile_badge30Rule => 'Show up 30 days in a row.';
+
+  @override
+  String get profile_badgeFinishRule => 'Finish your first journey.';
+
+  @override
+  String get profile_badge100Rule => 'Check in on 100 days.';
+
+  @override
+  String get profile_badgeUnlocked => 'unlocked';
+
+  @override
+  String get profile_badgeLocked => 'locked';
+
+  @override
+  String get profile_deleteUnderstand => 'I understand this cannot be undone.';
+
+  @override
+  String get profile_deleteOwnerNote =>
+      'If you own a group, ownership passes to the earliest member.';
+
+  @override
+  String get profile_deleteKeep => 'Keep my account';
+
+  @override
+  String get profile_deleteContinue => 'Continue';
+
+  @override
+  String get profile_deleteOtpTitle => 'confirm with a code.';
+
+  @override
+  String get profile_deleteOtpLead =>
+      'We sent a 6-digit code to the email or phone number of this account.';
+
+  @override
+  String get profile_deleteOtpLabel => '6-digit code to delete the account';
+
+  @override
+  String get profile_deleteOtpWrong =>
+      'That code is not right. Check it and try again.';
+
+  @override
+  String get profile_deleteResend => 'Resend code';
+
+  @override
+  String profile_deleteResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get profile_deleteCodeSent => 'New code sent.';
+
+  @override
+  String get profile_deleteDoneTitle => 'Account deleted.';
+
+  @override
+  String get profile_deleteDoneBody => 'Thanks for using Ourney.';
+
+  @override
+  String get profile_deleteDoneButton => 'Back to start';
+
+  @override
+  String get profile_deleteBackToSettings => 'Back to settings';
+
+  @override
+  String profile_deleteStepSemantics(int current, int total) {
+    return 'Step $current of $total';
+  }
 }

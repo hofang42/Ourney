@@ -217,4 +217,92 @@ class CheckinL10nEn extends CheckinL10n {
   String checkin_calendarSemantics(int days) {
     return 'Calendar of the last $days days, today has a photo';
   }
+
+  @override
+  String get checkin_extraMoodLabel => 'How are you feeling today?';
+
+  @override
+  String get checkin_extraMoodLight => 'Light';
+
+  @override
+  String get checkin_extraMoodNormal => 'Okay';
+
+  @override
+  String get checkin_extraMoodTired => 'A bit tired';
+
+  @override
+  String get checkin_extraMinutesLabel => 'How long did you study today?';
+
+  @override
+  String checkin_extraMinutesValue(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get checkin_extraMinutesOther => 'Other';
+
+  @override
+  String get checkin_extraMinutesLess => 'Five minutes less';
+
+  @override
+  String get checkin_extraMinutesMore => 'Five minutes more';
+
+  @override
+  String get checkin_extraPlaceLabel => 'Where are you?';
+
+  @override
+  String get checkin_extraPlaceHint => 'Search for a place...';
+
+  @override
+  String get checkin_extraDishLabel => 'Today\'s dish';
+
+  @override
+  String get checkin_extraDishHint => 'Leave empty if you like';
+
+  @override
+  String get checkin_extraCookLabel => 'Who cooked?';
+
+  @override
+  String get checkin_extraYou => 'You';
+
+  @override
+  String get checkin_extraPartner => 'Partner';
+
+  @override
+  String get checkin_extraHeartsLabel => 'How many hearts for this meal?';
+
+  @override
+  String checkin_extraHeartsValue(int count) {
+    return '$count hearts';
+  }
+
+  @override
+  String get checkin_extraPartnerPhoto => 'Add your partner\'s photo';
+
+  @override
+  String get checkin_extraPartnerPhotoChange => 'Change partner\'s photo';
+
+  @override
+  String get checkin_extraPartnerPhotoRemove => 'Remove partner\'s photo';
+
+  @override
+  String get checkin_extraPartnerPhotoSemantics => 'Your partner\'s photo';
+
+  @override
+  String get checkin_extraPaceLabel => 'Pace (min/km)';
+
+  @override
+  String get checkin_extraPaceInvalid =>
+      'Invalid pace, seconds must be under 60';
+
+  @override
+  String get checkin_extraBackspace => 'Delete one digit';
+
+  @override
+  String checkin_extraCountdown(int seconds) {
+    return 'Posting in $seconds s';
+  }
+
+  @override
+  String get checkin_extraCountdownStop => 'Tap anywhere to stop';
 }

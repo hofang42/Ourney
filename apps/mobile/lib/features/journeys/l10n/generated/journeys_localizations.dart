@@ -1207,6 +1207,54 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Sửa lại'**
   String get journeys_createReviewEdit;
+
+  /// No description provided for @journeys_extraMinutes.
+  ///
+  /// In vi, this message translates to:
+  /// **'{minutes} phút'**
+  String journeys_extraMinutes(int minutes);
+
+  /// No description provided for @journeys_extraHearts.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count}/5 tim'**
+  String journeys_extraHearts(int count);
+
+  /// No description provided for @journeys_extraPace.
+  ///
+  /// In vi, this message translates to:
+  /// **'{pace} /km'**
+  String journeys_extraPace(String pace);
+
+  /// No description provided for @journeys_extraCook.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} nấu'**
+  String journeys_extraCook(String name);
+
+  /// Check-in extras on the journey screens.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhẹ nhõm'**
+  String get journeys_extraMoodLight;
+
+  /// Check-in extras on the journey screens.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bình thường'**
+  String get journeys_extraMoodNormal;
+
+  /// Check-in extras on the journey screens.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hơi mệt'**
+  String get journeys_extraMoodTired;
+
+  /// Check-in extras on the journey screens.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh của người ấy'**
+  String get journeys_partnerPhotoSemantics;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

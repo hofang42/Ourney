@@ -248,5 +248,138 @@
   "profile_back": "Quay lại",
   "@profile_back": {
     "description": "Back button tooltip."
+  },
+  "profile_statSnaps": "tổng ngày check-in",
+  "@profile_statSnaps": {
+    "description": "Stat label."
+  },
+  "profile_statLongest": "chuỗi dài nhất",
+  "@profile_statLongest": {
+    "description": "Stat label."
+  },
+  "profile_statDone": "hành trình đã xong",
+  "@profile_statDone": {
+    "description": "Stat label."
+  },
+  "profile_badgesTitle": "huy hiệu đều đặn.",
+  "@profile_badgesTitle": {
+    "description": "Badge shelf heading."
+  },
+  "profile_badge7": "Đều 7 ngày",
+  "@profile_badge7": {
+    "description": "Badge name."
+  },
+  "profile_badge30": "Đều 30 ngày",
+  "@profile_badge30": {
+    "description": "Badge name."
+  },
+  "profile_badgeFinish": "Về đích đầu tiên",
+  "@profile_badgeFinish": {
+    "description": "Badge name."
+  },
+  "profile_badge100": "Đủ 100 ngày",
+  "@profile_badge100": {
+    "description": "Badge name."
+  },
+  "profile_badge7Rule": "Có mặt đủ 7 ngày liên tiếp.",
+  "@profile_badge7Rule": {
+    "description": "Badge rule."
+  },
+  "profile_badge30Rule": "Có mặt đủ 30 ngày liên tiếp.",
+  "@profile_badge30Rule": {
+    "description": "Badge rule."
+  },
+  "profile_badgeFinishRule": "Hoàn thành hành trình đầu tiên.",
+  "@profile_badgeFinishRule": {
+    "description": "Badge rule."
+  },
+  "profile_badge100Rule": "Check-in đủ 100 ngày.",
+  "@profile_badge100Rule": {
+    "description": "Badge rule."
+  },
+  "profile_badgeUnlocked": "đã mở khoá",
+  "@profile_badgeUnlocked": {
+    "description": "Badge semantics."
+  },
+  "profile_badgeLocked": "chưa mở khoá",
+  "@profile_badgeLocked": {
+    "description": "Badge semantics."
+  },
+  "profile_deleteUnderstand": "Tôi hiểu việc này không thể hoàn tác.",
+  "@profile_deleteUnderstand": {
+    "description": "Delete step 1 checkbox."
+  },
+  "profile_deleteOwnerNote": "Nếu bạn là chủ nhóm, quyền chủ nhóm chuyển cho người vào sớm nhất.",
+  "@profile_deleteOwnerNote": {
+    "description": "Delete step 1 note."
+  },
+  "profile_deleteKeep": "Giữ tài khoản",
+  "@profile_deleteKeep": {
+    "description": "Delete step 1 cancel."
+  },
+  "profile_deleteContinue": "Tiếp tục",
+  "@profile_deleteContinue": {
+    "description": "Delete step 1 continue."
+  },
+  "profile_deleteOtpTitle": "xác nhận bằng mã.",
+  "@profile_deleteOtpTitle": {
+    "description": "Delete step 2 title."
+  },
+  "profile_deleteOtpLead": "Mã gồm 6 số vừa gửi tới email hoặc số điện thoại của tài khoản này.",
+  "@profile_deleteOtpLead": {
+    "description": "Delete step 2 lead."
+  },
+  "profile_deleteOtpLabel": "Mã xác nhận xoá tài khoản gồm 6 số",
+  "@profile_deleteOtpLabel": {
+    "description": "OTP semantics."
+  },
+  "profile_deleteOtpWrong": "Mã chưa đúng. Kiểm tra lại nhé.",
+  "@profile_deleteOtpWrong": {
+    "description": "Delete OTP error."
+  },
+  "profile_deleteResend": "Gửi lại mã",
+  "@profile_deleteResend": {
+    "description": "Resend."
+  },
+  "profile_deleteResendIn": "Gửi lại sau {seconds}s",
+  "@profile_deleteResendIn": {
+    "description": "Resend cooldown.",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "profile_deleteCodeSent": "Đã gửi mã mới.",
+  "@profile_deleteCodeSent": {
+    "description": "Resend info."
+  },
+  "profile_deleteDoneTitle": "Đã xoá tài khoản.",
+  "@profile_deleteDoneTitle": {
+    "description": "Delete step 3 done title."
+  },
+  "profile_deleteDoneBody": "Cảm ơn bạn đã dùng Ourney.",
+  "@profile_deleteDoneBody": {
+    "description": "Delete step 3 done body."
+  },
+  "profile_deleteDoneButton": "Về màn đầu",
+  "@profile_deleteDoneButton": {
+    "description": "Delete step 3 done button."
+  },
+  "profile_deleteBackToSettings": "Về cài đặt",
+  "@profile_deleteBackToSettings": {
+    "description": "Delete step 3 error button."
+  },
+  "profile_deleteStepSemantics": "Bước {current} trên {total}",
+  "@profile_deleteStepSemantics": {
+    "description": "Delete steps.",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   }
 }

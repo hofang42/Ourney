@@ -647,4 +647,36 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createReviewEdit => 'Sửa lại';
+
+  @override
+  String journeys_extraMinutes(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
+  String journeys_extraHearts(int count) {
+    return '$count/5 tim';
+  }
+
+  @override
+  String journeys_extraPace(String pace) {
+    return '$pace /km';
+  }
+
+  @override
+  String journeys_extraCook(String name) {
+    return '$name nấu';
+  }
+
+  @override
+  String get journeys_extraMoodLight => 'Nhẹ nhõm';
+
+  @override
+  String get journeys_extraMoodNormal => 'Bình thường';
+
+  @override
+  String get journeys_extraMoodTired => 'Hơi mệt';
+
+  @override
+  String get journeys_partnerPhotoSemantics => 'Ảnh của người ấy';
 }

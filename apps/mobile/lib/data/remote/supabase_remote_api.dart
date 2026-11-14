@@ -45,6 +45,65 @@ class SupabaseRemoteApi implements RemoteApi {
   });
 
   @override
+  Future<void> sendPhoneOtp(String e164Phone) => guardRemote(
+    () => _client.auth.signInWithOtp(phone: e164Phone, shouldCreateUser: true),
+  );
+
+  @override
+  Future<void> verifyPhoneOtp(String e164Phone, String code) =>
+      guardRemote(() async {
+        await _client.auth.verifyOTP(
+          phone: e164Phone,
+          token: code.trim(),
+          type: OtpType.sms,
+        );
+      });
+
+  @override
+  Future<bool> signUpWithPassword(String email, String password) =>
+      guardRemote(() async {
+        final res = await _client.auth.signUp(
+          email: email.trim(),
+          password: password,
+        );
+        return res.session == null;
+      });
+
+  @override
+  Future<void> confirmSignUp(String email, String code) =>
+      guardRemote(() async {
+        await _client.auth.verifyOTP(
+          email: email.trim(),
+          token: code.trim(),
+          type: OtpType.signup,
+        );
+      });
+
+  @override
+  Future<void> signInWithPassword(String email, String password) =>
+      guardRemote(() async {
+        await _client.auth.signInWithPassword(
+          email: email.trim(),
+          password: password,
+        );
+      });
+
+  @override
+  Future<void> sendPasswordReset(String email) =>
+      guardRemote(() => _client.auth.resetPasswordForEmail(email.trim()));
+
+  @override
+  Future<void> resetPassword(String email, String code, String newPassword) =>
+      guardRemote(() async {
+        await _client.auth.verifyOTP(
+          email: email.trim(),
+          token: code.trim(),
+          type: OtpType.recovery,
+        );
+        await _client.auth.updateUser(UserAttributes(password: newPassword));
+      });
+
+  @override
   Future<void> signOut({bool global = false}) async {
     if (global) {
       try {

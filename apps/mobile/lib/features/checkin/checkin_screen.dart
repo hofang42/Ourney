@@ -12,6 +12,7 @@ import '../../app/providers.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
+import '../camera/capture_services.dart' show galleryPickerProvider;
 import '../reminders/data/reminder_scheduler.dart';
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
@@ -19,6 +20,7 @@ import 'checkin_progress.dart';
 import 'checkin_success.dart';
 import 'l10n/generated/checkin_localizations.dart';
 import 'photo_compressor.dart';
+import 'post_extras.dart';
 
 /// `/checkin`: photo preview, caption (<= 140 code points), metric when the
 /// journey has one, then Post (FR-C4). Shutter + Post = 2 taps; a retake on
@@ -37,7 +39,15 @@ class CheckinScreen extends ConsumerStatefulWidget {
 class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   final _caption = TextEditingController();
   final _metric = TextEditingController();
+  final _extras = PostExtrasController();
   bool _posting = false;
+
+  /// Minimal skin: posts by itself after 3 s unless touched (Figma).
+  static const int _countdownFrom = 3;
+  Timer? _countdown;
+  int _secondsLeft = _countdownFrom;
+  bool _countdownStarted = false;
+  bool _countdownStopped = false;
   late final DraftFiles _drafts;
   bool _metricError = false;
   CheckInOutcome? _outcome;
@@ -61,6 +71,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       ..removeListener(_onCaptionChanged)
       ..dispose();
     _metric.dispose();
+    _extras.dispose();
+    _countdown?.cancel();
     // Left without posting (close, back gesture): the raw camera/picker
     // file is not needed. After a post the poster already cleaned up.
     final photo = widget.photo;
@@ -71,6 +83,39 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   }
 
   void _onCaptionChanged() => setState(() {});
+
+  void _stopCountdown() {
+    _countdown?.cancel();
+    _countdown = null;
+    if (!_countdownStopped) setState(() => _countdownStopped = true);
+  }
+
+  /// Starts the optional 3 s auto-post of the minimal skin. Skipped under
+  /// reduce motion (the screen then shows a static hint) and once touched.
+  void _startCountdown(Journey journey, CapturedPhoto photo) {
+    if (_countdownStarted) return;
+    _countdownStarted = true;
+    if (MediaQuery.disableAnimationsOf(context)) return;
+    _countdown = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted || _posting) {
+        t.cancel();
+        return;
+      }
+      if (_secondsLeft <= 1) {
+        t.cancel();
+        _countdown = null;
+        setState(() => _secondsLeft = 0);
+        unawaited(_post(journey, photo));
+      } else {
+        setState(() => _secondsLeft -= 1);
+      }
+    });
+  }
+
+  Future<void> _pickPartnerPhoto() async {
+    final path = await ref.read(galleryPickerProvider).pickPhoto();
+    if (path != null && mounted) _extras.setPartnerPhoto(path);
+  }
 
   /// Pops this screen and opens the share card on top of the camera:
   /// a `pushReplacement` would leave the capture screen's push future
@@ -120,6 +165,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final l10n = CheckinL10n.of(context);
     final caption = _caption.text.trim();
     if (validateCaption(caption) != null) return;
+    final skin = personaSkinOf(journey);
+    if (skin == PersonaSkinId.aestheticFlexer && _extras.paceInvalid) return;
+    final extras = _extras.extrasFor(skin);
+    if (extras.validate() != null) return;
 
     double? metric;
     if (journey.metricName != null) {
@@ -182,6 +231,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         mine: mine,
         caption: caption.isEmpty ? null : caption,
         metricValue: metric,
+        extras: extras,
+        partnerPhotoPath: skin == PersonaSkinId.coupleRituals
+            ? _extras.partnerPhotoPath
+            : null,
       );
       if (!mounted) return;
       setState(() => _outcome = outcome);
@@ -319,152 +372,225 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     };
     final width = MediaQuery.sizeOf(context).width;
     final gutter = UiSpace.gutter(width);
+    if (skin == PersonaSkinId.minimalistHabit && !_countdownStopped) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _startCountdown(journey, photo);
+      });
+    }
 
-    return UiScaffold(
-      key: const ValueKey('checkin-screen'),
-      padTop: 0,
-      padBottom: UiSpace.lg,
-      bottom: Center(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
-          child: SafeArea(
-            top: false,
-            child: UiButton(
-              key: const ValueKey('checkin-post'),
-              label: _posting ? l10n.checkin_posting : postLabel,
-              glyph: const OurneyIcon(name: 'send', size: 20),
-              accent: style.accent,
-              onAccent: style.onAccent,
-              onPressed: _posting ? null : () => _post(journey, photo),
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) {
+        if (_countdown != null) _stopCountdown();
+      },
+      child: UiScaffold(
+        key: const ValueKey('checkin-screen'),
+        padTop: 0,
+        padBottom: UiSpace.lg,
+        bottom: Center(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              gutter,
+              UiSpace.sm,
+              gutter,
+              UiSpace.lg,
+            ),
+            child: SafeArea(
+              top: false,
+              child: UiButton(
+                key: const ValueKey('checkin-post'),
+                label: _posting ? l10n.checkin_posting : postLabel,
+                glyph: const OurneyIcon(name: 'send', size: 20),
+                accent: style.accent,
+                onAccent: style.onAccent,
+                onPressed: _posting ? null : () => _post(journey, photo),
+              ),
             ),
           ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // `.compose-header`: Retake | journey + privacy | Post.
-          Row(
-            children: [
-              Expanded(
-                child: UiTextAction(
-                  key: const ValueKey('checkin-retake'),
-                  label: l10n.checkin_retake,
-                  onPressed: _posting ? null : _close,
-                  alignment: AlignmentDirectional.centerStart,
-                  size: 14,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // `.compose-header`: Retake | journey + privacy | Post.
+            Row(
+              children: [
+                Expanded(
+                  child: UiTextAction(
+                    key: const ValueKey('checkin-retake'),
+                    label: l10n.checkin_retake,
+                    onPressed: _posting ? null : _close,
+                    alignment: AlignmentDirectional.centerStart,
+                    size: 14,
+                  ),
                 ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      journey.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: UiText.body(
-                        size: 13,
-                        weight: FontWeight.w700,
-                        height: 1.4,
-                        color: ui.ink,
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        journey.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: UiText.body(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          height: 1.4,
+                          color: ui.ink,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    UiPrivacyTag(type: privacy.$1, label: privacy.$2),
-                  ],
+                      const SizedBox(height: 2),
+                      UiPrivacyTag(type: privacy.$1, label: privacy.$2),
+                    ],
+                  ),
                 ),
-              ),
-              Expanded(
-                child: UiTextAction(
-                  key: const ValueKey('checkin-post-link'),
-                  label: l10n.checkin_post,
-                  onPressed: _posting ? null : () => _post(journey, photo),
-                  alignment: AlignmentDirectional.centerEnd,
-                  color: accentInk,
-                  size: 14,
+                Expanded(
+                  child: UiTextAction(
+                    key: const ValueKey('checkin-post-link'),
+                    label: l10n.checkin_post,
+                    onPressed: _posting ? null : () => _post(journey, photo),
+                    alignment: AlignmentDirectional.centerEnd,
+                    color: accentInk,
+                    size: 14,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: UiSpace.sm),
-          _PhotoPreview(photo: photo),
-          const SizedBox(height: UiSpace.lg),
-          // `.caption-field`: label + underlined textarea.
-          Text(captionLabel, style: UiText.fieldLabel(color: ui.inkMuted)),
-          TextField(
-            key: const ValueKey('checkin-caption'),
-            controller: _caption,
-            minLines: 1,
-            maxLines: 4,
-            textCapitalization: TextCapitalization.sentences,
-            inputFormatters: [_CodePointLimit(captionMax)],
-            cursorColor: ui.ink,
-            style: UiText.body(size: 16, height: 1.45, color: ui.ink),
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: vi
-                  ? template.captionPromptVi
-                  : template.captionPromptEn,
-              hintStyle: UiText.body(
-                size: 16,
-                height: 1.45,
-                color: ui.inkMuted,
-              ),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: ui.border),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: ui.ink, width: 2),
+              ],
+            ),
+            const SizedBox(height: UiSpace.sm),
+            _PhotoPreview(photo: photo),
+            const SizedBox(height: UiSpace.lg),
+            // `.caption-field`: label + underlined textarea.
+            Text(captionLabel, style: UiText.fieldLabel(color: ui.inkMuted)),
+            TextField(
+              key: const ValueKey('checkin-caption'),
+              controller: _caption,
+              minLines: 1,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              inputFormatters: [_CodePointLimit(captionMax)],
+              cursorColor: ui.ink,
+              style: UiText.body(size: 16, height: 1.45, color: ui.ink),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: vi
+                    ? template.captionPromptVi
+                    : template.captionPromptEn,
+                hintStyle: UiText.body(
+                  size: 16,
+                  height: 1.45,
+                  color: ui.inkMuted,
+                ),
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                enabledBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: ui.border),
+                ),
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: ui.ink, width: 2),
+                ),
               ),
             ),
-          ),
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: Semantics(
-              label: l10n.checkin_captionCounterSemantics(count, captionMax),
-              child: ExcludeSemantics(
-                child: Text(
-                  l10n.checkin_captionCounter(count, captionMax),
-                  key: const ValueKey('checkin-caption-counter'),
-                  style: UiText.body(
-                    size: 12,
-                    color: count >= captionMax ? ui.danger : ui.inkMuted,
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: Semantics(
+                label: l10n.checkin_captionCounterSemantics(count, captionMax),
+                child: ExcludeSemantics(
+                  child: Text(
+                    l10n.checkin_captionCounter(count, captionMax),
+                    key: const ValueKey('checkin-caption-counter'),
+                    style: UiText.body(
+                      size: 12,
+                      color: count >= captionMax ? ui.danger : ui.inkMuted,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          if (metricLabel != null) ...[
-            const SizedBox(height: UiSpace.md),
-            UiTextField(
-              fieldKey: const ValueKey('checkin-metric'),
-              label: metricLabel,
-              controller: _metric,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
+            if (metricLabel != null) ...[
+              const SizedBox(height: UiSpace.md),
+              UiTextField(
+                fieldKey: const ValueKey('checkin-metric'),
+                label: metricLabel,
+                controller: _metric,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+                ],
+                onChanged: (_) {
+                  if (_metricError) setState(() => _metricError = false);
+                },
+                error: _metricError ? l10n.checkin_metricInvalid : null,
+                helper: hideMetric ? l10n.checkin_metricPrivate : null,
+                trailing: hideMetric
+                    ? OurneyIcon(
+                        name: 'lock',
+                        flat: true,
+                        size: 18,
+                        color: ui.inkMuted,
+                      )
+                    : null,
               ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
-              ],
-              onChanged: (_) {
-                if (_metricError) setState(() => _metricError = false);
-              },
-              error: _metricError ? l10n.checkin_metricInvalid : null,
-              helper: hideMetric ? l10n.checkin_metricPrivate : null,
-              trailing: hideMetric
-                  ? OurneyIcon(
-                      name: 'lock',
-                      flat: true,
-                      size: 18,
-                      color: ui.inkMuted,
-                    )
-                  : null,
+            ],
+            PostExtrasSection(
+              skin: skin,
+              controller: _extras,
+              selfName: journey.coupleSelfName,
+              partnerName: journey.couplePartnerName,
+              onPickPartnerPhoto: _pickPartnerPhoto,
             ),
+            if (skin == PersonaSkinId.minimalistHabit) ...[
+              const SizedBox(height: UiSpace.md),
+              _CountdownHint(
+                seconds: _secondsLeft,
+                active: _countdown != null,
+                reduced: MediaQuery.disableAnimationsOf(context),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Minimal skin: the 3 s auto-post hint (static text under reduce motion).
+class _CountdownHint extends StatelessWidget {
+  const _CountdownHint({
+    required this.seconds,
+    required this.active,
+    required this.reduced,
+  });
+
+  final int seconds;
+  final bool active;
+  final bool reduced;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = CheckinL10n.of(context);
+    final ui = context.ui;
+    if (!active && !reduced) return const SizedBox.shrink();
+    return Semantics(
+      liveRegion: true,
+      child: Column(
+        children: [
+          if (!reduced)
+            Text(
+              '$seconds',
+              key: const ValueKey('checkin-countdown'),
+              style: UiText.h2(color: ui.ink, size: 40),
+            ),
+          Text(
+            reduced
+                ? l10n.checkin_extraCountdown(
+                    _CheckinScreenState._countdownFrom,
+                  )
+                : l10n.checkin_extraCountdownStop,
+            textAlign: TextAlign.center,
+            style: UiText.muted(color: ui.inkMuted, size: 13),
+          ),
         ],
       ),
     );

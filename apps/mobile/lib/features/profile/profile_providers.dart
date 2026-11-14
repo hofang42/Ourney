@@ -1,7 +1,10 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show FutureProvider, Provider;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/providers.dart';
+import '../../shared/time_zones.dart';
 import 'avatar_picker.dart';
 
 part 'profile_providers.g.dart';
@@ -26,3 +29,38 @@ Future<String> avatarFile(Ref ref, String storagePath) =>
 /// Picks and compresses an avatar to JPEG. Overridden in tests.
 @Riverpod(keepAlive: true)
 AvatarPicker avatarPicker(Ref ref) => const ImagePickerAvatarPicker();
+
+/// Server-backed account extras (stats RPC, onboarding quiz column). Null in
+/// local-only mode; wired by `dataOverrides` when a backend is configured.
+final accountInsightsRepositoryProvider = Provider<AccountInsightsRepository?>(
+  (ref) => null,
+);
+
+/// Streak / snaps / journeys for the profile screen. Signed in: server RPC
+/// `profile_stats` (falls back to local data when it fails, e.g. offline).
+/// Signed out or local-only: computed from the journeys and check-ins on this
+/// device.
+final profileStatsProvider = FutureProvider.autoDispose<ProfileStats>((
+  ref,
+) async {
+  final repo = ref.watch(accountInsightsRepositoryProvider);
+  if (repo != null && ref.watch(currentUserIdProvider) != null) {
+    try {
+      return await repo.fetchStats();
+    } on Object {
+      // Offline: show what this device knows.
+    }
+  }
+  final journeyRepo = ref.watch(journeyRepositoryProvider);
+  final checkIns = ref.watch(checkInRepositoryProvider);
+  final journeys = await journeyRepo.watchActive().first;
+  final byJourney = <String, List<CheckIn>>{
+    for (final j in journeys) j.id: await checkIns.watchForJourney(j.id).first,
+  };
+  final now = DateTime.now().toUtc();
+  return computeLocalProfileStats(
+    journeys: journeys,
+    checkInsByJourney: byJourney,
+    today: (tz) => localDateOf(now, timeZoneOffsetAt(tz, now)),
+  );
+});

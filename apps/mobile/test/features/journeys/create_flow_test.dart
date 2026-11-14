@@ -192,7 +192,7 @@ void main() {
     });
 
     testWidgets(
-      'couple: names are saved in the title and shown on the ticket',
+      'couple: names are stored in their own fields, not in the title',
       (tester) async {
         final h = await _open(tester);
         await _tap(tester, 'template-couple');
@@ -213,7 +213,9 @@ void main() {
         expect(ticket.rightName, 'Bình');
         await _tap(tester, 'journey-create');
         final draft = h.journeys.created.single;
-        expect(draft.title, 'An & Bình');
+        expect(draft.coupleSelfName, 'An');
+        expect(draft.couplePartnerName, 'Bình');
+        expect(draft.title, isNot(contains('&')));
         expect(draft.emoji, '💞');
       },
     );

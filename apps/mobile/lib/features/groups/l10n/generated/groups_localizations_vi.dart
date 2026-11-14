@@ -275,4 +275,63 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String get groups_eyebrow => 'Những người đồng hành';
+
+  @override
+  String groups_joinCodeBoxesSemantics(int count) {
+    return 'Mã mời, đã nhập $count trên 8 ký tự';
+  }
+
+  @override
+  String groups_previewOwner(String name) {
+    return 'Chủ nhóm: $name';
+  }
+
+  @override
+  String get groups_previewMembers => 'Thành viên';
+
+  @override
+  String groups_previewMembersValue(int count, int max) {
+    return '$count/$max người';
+  }
+
+  @override
+  String get groups_previewDuration => 'Thời lượng';
+
+  @override
+  String groups_previewDurationValue(int days) {
+    return '$days ngày';
+  }
+
+  @override
+  String get groups_previewDurationOpen => 'Không giới hạn';
+
+  @override
+  String get groups_previewProgress => 'Tiến độ';
+
+  @override
+  String groups_previewProgressValue(int day, int total) {
+    return 'Ngày $day/$total';
+  }
+
+  @override
+  String groups_previewProgressOpen(int day) {
+    return 'Ngày $day';
+  }
+
+  @override
+  String get groups_previewPrivate =>
+      'Nhóm này không có link công khai. Chỉ người có mã mới vào được.';
+
+  @override
+  String get groups_previewAlreadyMember => 'Bạn đã ở trong nhóm này.';
+
+  @override
+  String get groups_previewOpenGroup => 'Mở nhóm';
+
+  @override
+  String get groups_previewLoading => 'Đang tìm nhóm…';
+
+  @override
+  String get groups_errorRateLimited =>
+      'Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé.';
 }

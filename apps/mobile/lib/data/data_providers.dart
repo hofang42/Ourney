@@ -10,10 +10,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../app/providers.dart';
+import '../features/profile/profile_providers.dart'
+    show accountInsightsRepositoryProvider;
 import 'data_layer.dart';
 import 'db/app_database.dart';
 import 'remote/remote_api.dart';
 import 'remote/supabase_remote_api.dart';
+import 'repositories/account_insights_repository.dart';
 
 part 'data_providers.g.dart';
 
@@ -175,5 +178,9 @@ List<Override> dataOverrides(DataEnvironment env, {bool? social}) => [
     (ref) => ref.watch(dataLayerProvider).safety,
   ),
   mediaStoreProvider.overrideWith((ref) => ref.watch(dataLayerProvider).media),
+  accountInsightsRepositoryProvider.overrideWith((ref) {
+    final remote = ref.watch(dataLayerProvider).ctx.remote;
+    return remote == null ? null : SupabaseAccountInsightsRepository(remote);
+  }),
   if (social ?? env.remote != null) ...socialOverrides(),
 ];

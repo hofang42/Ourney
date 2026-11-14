@@ -1,6 +1,7 @@
 // Contract (A0): plain immutable domain models mirroring docs/contracts/schema.md.
 
 import 'contracts/social.dart' show JourneyOrigin;
+import 'extras.dart' show CheckInExtras;
 
 /// A calendar date without time or timezone (journey-local).
 class LocalDate implements Comparable<LocalDate> {
@@ -10,7 +11,8 @@ class LocalDate implements Comparable<LocalDate> {
   factory LocalDate.parse(String iso) {
     final parts = iso.split('-');
     if (parts.length != 3) throw FormatException('Invalid date', iso);
-    return LocalDate(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+    return LocalDate(
+        int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
   }
 
   final int year;
@@ -34,7 +36,10 @@ class LocalDate implements Comparable<LocalDate> {
 
   @override
   bool operator ==(Object other) =>
-      other is LocalDate && other.year == year && other.month == month && other.day == day;
+      other is LocalDate &&
+      other.year == year &&
+      other.month == month &&
+      other.day == day;
 
   @override
   int get hashCode => Object.hash(year, month, day);
@@ -48,7 +53,8 @@ class LocalDate implements Comparable<LocalDate> {
 // `Enum.name` (e.g. `TemplateId.weightLoss.name == 'weightLoss'` but the
 // server expects `weight_loss`). Use `wireName` / `fromWire`.
 
-T _fromWire<T extends Enum>(List<T> values, String wire, String Function(T) nameOf) {
+T _fromWire<T extends Enum>(
+    List<T> values, String wire, String Function(T) nameOf) {
   for (final v in values) {
     if (nameOf(v) == wire) return v;
   }
@@ -62,7 +68,8 @@ enum JourneyKind {
 
   const JourneyKind(this.wireName);
   final String wireName;
-  static JourneyKind fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static JourneyKind fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// SQL `journey_visibility`. Allowed combinations (server CHECKs):
@@ -74,13 +81,16 @@ enum JourneyVisibility {
 
   const JourneyVisibility(this.wireName);
   final String wireName;
-  static JourneyVisibility fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static JourneyVisibility fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// Visibility a new journey of [kind] gets when none is chosen: `group` for
 /// group journeys (the only value the server stores for them), else `private`.
 JourneyVisibility defaultVisibilityFor(JourneyKind kind) =>
-    kind == JourneyKind.group ? JourneyVisibility.group : JourneyVisibility.private;
+    kind == JourneyKind.group
+        ? JourneyVisibility.group
+        : JourneyVisibility.private;
 
 /// SQL `journey_status`.
 enum JourneyStatus {
@@ -90,7 +100,8 @@ enum JourneyStatus {
 
   const JourneyStatus(this.wireName);
   final String wireName;
-  static JourneyStatus fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static JourneyStatus fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// SQL `member_role`.
@@ -100,7 +111,8 @@ enum MemberRole {
 
   const MemberRole(this.wireName);
   final String wireName;
-  static MemberRole fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static MemberRole fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// SQL `member_status`. `left` rows are kept so a rejoin restores progress.
@@ -110,7 +122,8 @@ enum MemberStatus {
 
   const MemberStatus(this.wireName);
   final String wireName;
-  static MemberStatus fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static MemberStatus fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// SQL `template_id`.
@@ -123,7 +136,8 @@ enum TemplateId {
 
   const TemplateId(this.wireName);
   final String wireName;
-  static TemplateId fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static TemplateId fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// The 6 distinct UI persona skins that adapt timeline, camera HUD, and share card.
@@ -151,7 +165,8 @@ enum ReportReason {
 
   const ReportReason(this.wireName);
   final String wireName;
-  static ReportReason fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static ReportReason fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// `reports.status` (text + CHECK on the server, readable by the reporter).
@@ -162,14 +177,19 @@ enum ReportStatus {
 
   const ReportStatus(this.wireName);
   final String wireName;
-  static ReportStatus fromWire(String wire) => _fromWire(values, wire, (v) => v.wireName);
+  static ReportStatus fromWire(String wire) =>
+      _fromWire(values, wire, (v) => v.wireName);
 }
 
 /// The only emojis `reactions.emoji` accepts (server CHECK).
 const List<String> reactionEmojis = ['🔥', '💪', '👏', '❤️', '😂'];
 
 class Profile {
-  const Profile({required this.id, required this.username, required this.displayName, this.avatarPath});
+  const Profile(
+      {required this.id,
+      required this.username,
+      required this.displayName,
+      this.avatarPath});
 
   final String id;
   final String username;
@@ -197,6 +217,8 @@ class Journey {
     this.maxMembers = 10,
     this.publicToken,
     this.origin = JourneyOrigin.live,
+    this.coupleSelfName,
+    this.couplePartnerName,
   });
 
   final String id;
@@ -224,7 +246,12 @@ class Journey {
   /// `journeys.origin` (v1.3): lived in the app, or retold from old photos.
   final JourneyOrigin origin;
 
-  LocalDate? get endDate => durationDays == null ? null : startDate.addDays(durationDays! - 1);
+  /// `journeys.couple_self_name` / `couple_partner_name` (0007): both or none.
+  final String? coupleSelfName;
+  final String? couplePartnerName;
+
+  LocalDate? get endDate =>
+      durationDays == null ? null : startDate.addDays(durationDays! - 1);
 }
 
 class JourneyDraft {
@@ -241,7 +268,12 @@ class JourneyDraft {
     this.hideMetricDefault = false,
     JourneyVisibility? visibility,
     this.id,
-  }) : visibility = visibility ?? (kind == JourneyKind.group ? JourneyVisibility.group : JourneyVisibility.private);
+    this.coupleSelfName,
+    this.couplePartnerName,
+  }) : visibility = visibility ??
+            (kind == JourneyKind.group
+                ? JourneyVisibility.group
+                : JourneyVisibility.private);
 
   final JourneyKind kind;
   final TemplateId templateId;
@@ -262,6 +294,10 @@ class JourneyDraft {
   /// Generate it once per create form so a retry after a lost response
   /// cannot create a second journey. Null: the repository generates one.
   final String? id;
+
+  /// Couple names (both or none, 1..24 chars; see `validateCoupleNames`).
+  final String? coupleSelfName;
+  final String? couplePartnerName;
 }
 
 /// A `memberships` row. Every journey (solo too) has one for its owner.
@@ -296,7 +332,11 @@ class Membership {
 
 /// A `reactions` row: one emoji per (checkInId, userId); see [reactionEmojis].
 class Reaction {
-  const Reaction({required this.checkInId, required this.userId, required this.emoji, required this.createdAt});
+  const Reaction(
+      {required this.checkInId,
+      required this.userId,
+      required this.emoji,
+      required this.createdAt});
 
   final String checkInId;
   final String userId;
@@ -316,7 +356,10 @@ class CheckIn {
     this.fromLibrary = false,
     this.caption,
     this.metricValue,
+    this.extras = CheckInExtras.empty,
+    this.partnerPhotoPath,
     this.localPhotoFile,
+    this.localPartnerPhotoFile,
     this.uploaded = false,
   });
 
@@ -331,8 +374,15 @@ class CheckIn {
   final String? caption;
   final double? metricValue;
 
+  /// Per-skin Post inputs (`check_ins.extras`).
+  final CheckInExtras extras;
+
+  /// Couple journeys: the partner's photo path, when one was attached.
+  final String? partnerPhotoPath;
+
   /// Set while the photo still lives only on this device.
   final String? localPhotoFile;
+  final String? localPartnerPhotoFile;
   final bool uploaded;
 }
 
@@ -345,6 +395,8 @@ class CheckInDraft {
     this.fromLibrary = false,
     this.caption,
     this.metricValue,
+    this.extras = CheckInExtras.empty,
+    this.partnerPhotoFile,
   });
 
   final String journeyId;
@@ -356,6 +408,10 @@ class CheckInDraft {
   final bool fromLibrary;
   final String? caption;
   final double? metricValue;
+  final CheckInExtras extras;
+
+  /// Optional already compressed JPEG of the partner (couple journeys).
+  final String? partnerPhotoFile;
 }
 
 /// One row of RPC `group_today(journey)` (active, non-blocked members ordered

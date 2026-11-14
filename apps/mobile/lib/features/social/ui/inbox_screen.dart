@@ -7,6 +7,8 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../groups/data/groups_providers.dart';
+import '../../groups/groups_paths.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -56,6 +58,20 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         .respond(s.journeyId, accept: accept),
   );
 
+  /// Accept joins the group and opens it (Figma "Tham gia"); skip declines.
+  void _respondGroupInvite(GroupInvitation inv, {required bool accept}) =>
+      _act('g:${inv.id}', () async {
+        final repo = ref.read(groupInviteRepositoryProvider);
+        if (accept) {
+          final journeyId = await repo.accept(inv.id);
+          ref.invalidate(groupInvitationsProvider);
+          if (mounted) context.go(GroupsPaths.today(journeyId));
+        } else {
+          await repo.decline(inv.id);
+          ref.invalidate(groupInvitationsProvider);
+        }
+      });
+
   void _declineAll(List<Friendship> requests) => _act('all', () async {
     final repo = ref.read(friendRepositoryProvider);
     for (final r in requests) {
@@ -67,6 +83,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     ref
       ..invalidate(friendshipsProvider)
       ..invalidate(pendingConsentsProvider)
+      ..invalidate(groupInvitationsProvider)
       ..invalidate(conversationsProvider)
       ..invalidate(inboxCountsProvider);
   }
@@ -174,6 +191,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       for (final s in consentsAsync.value ?? const <ShareConsent>[])
         if (s.status == ShareConsentStatus.pending) s,
     ];
+    // Group invitations are optional: a failing or unwired lookup shows none.
+    final groupInvites =
+        ref.watch(groupInvitationsProvider).asData?.value ??
+        const <GroupInvitation>[];
     final conversations = convAsync.value ?? const <Conversation>[];
     final newShares = countsAsync.value?.newShares ?? 0;
 
@@ -198,6 +219,16 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
             at: r.createdAt,
             unread: true,
             build: (unread) => _requestCard(r, unread),
+          ),
+        );
+      }
+      for (final inv in groupInvites) {
+        items.add(
+          _FeedItem(
+            id: 'g:${inv.id}',
+            at: inv.createdAt,
+            unread: true,
+            build: (unread) => _groupInviteCard(inv, unread),
           ),
         );
       }
@@ -366,6 +397,39 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           compact: true,
           expand: false,
           onPressed: busy ? null : () => _respondFriend(p, accept: false),
+        ),
+      ],
+    );
+  }
+
+  /// Figma `.pending-invites`: "{inviter} mời bạn vào {group}" with
+  /// "Tham gia" / "Bỏ qua".
+  Widget _groupInviteCard(GroupInvitation inv, bool unread) {
+    final l10n = SocialL10n.of(context);
+    final busy = _busy.contains('g:${inv.id}');
+    return _ActivityCard(
+      key: ValueKey('inbox-group-invite-${inv.id}'),
+      badge: _PersonBadge(inv.inviter),
+      title: l10n.social_groupInviteFrom(displayNameOf(inv.inviter), inv.title),
+      subtitle: l10n.social_groupInviteMembers(inv.memberCount, inv.maxMembers),
+      time: feedTime(context, inv.createdAt),
+      unread: unread,
+      actions: [
+        UiButton(
+          key: ValueKey('inbox-group-invite-join-${inv.id}'),
+          label: l10n.social_groupInviteJoin,
+          compact: true,
+          expand: false,
+          onPressed: busy ? null : () => _respondGroupInvite(inv, accept: true),
+        ),
+        UiButton.secondary(
+          key: ValueKey('inbox-group-invite-skip-${inv.id}'),
+          label: l10n.social_groupInviteSkip,
+          compact: true,
+          expand: false,
+          onPressed: busy
+              ? null
+              : () => _respondGroupInvite(inv, accept: false),
         ),
       ],
     );

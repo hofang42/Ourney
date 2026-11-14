@@ -99,5 +99,9 @@
   "social_weekdayShort": "{day, select, 1{Mon} 2{Tue} 3{Wed} 4{Thu} 5{Fri} 6{Sat} other{Sun}}",
   "social_inviteCardTitle": "Invite a friend",
   "social_inviteCardBody": "Journeys are easier together. Send a link or find friends.",
-  "social_inviteCardAction": "Add friends"
+  "social_inviteCardAction": "Add friends",
+  "social_groupInviteFrom": "{name} invited you to {group}",
+  "social_groupInviteMembers": "{count} of {max} members",
+  "social_groupInviteJoin": "Join",
+  "social_groupInviteSkip": "Skip"
 }

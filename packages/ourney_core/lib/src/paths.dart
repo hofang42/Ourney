@@ -12,8 +12,18 @@ String checkInPhotoPath(String journeyId, String userId, String checkInId) =>
 String checkInThumbPath(String journeyId, String userId, String checkInId) =>
     'checkins/$journeyId/$userId/${checkInId}_t.jpg';
 
+/// `check_ins.partner_photo_path` = `checkins/{journey_id}/{user_id}/{id}_p.jpg`
+/// (couple journeys; lives in the author's folder like the photo).
+String checkInPartnerPhotoPath(
+  String journeyId,
+  String userId,
+  String checkInId,
+) =>
+    'checkins/$journeyId/$userId/${checkInId}_p.jpg';
+
 /// `profiles.avatar_path` = `avatars/{user_id}/{uuid}.jpg` (new uuid per upload).
-String avatarPath(String userId, String fileId) => 'avatars/$userId/$fileId.jpg';
+String avatarPath(String userId, String fileId) =>
+    'avatars/$userId/$fileId.jpg';
 
 /// Edge Function names (`/functions/v1/<name>`).
 const String deleteAccountFunction = 'delete-account';
@@ -29,8 +39,9 @@ bool isValidPublicToken(String token) => _publicToken.hasMatch(token);
 /// `{"error":"not_found"}` for unknown/revoked tokens). The human-facing share
 /// link is a static page that calls this endpoint.
 Uri publicJourneyUri(Uri supabaseUrl, String token) {
-  final base =
-      supabaseUrl.path.endsWith('/') ? supabaseUrl.path.substring(0, supabaseUrl.path.length - 1) : supabaseUrl.path;
+  final base = supabaseUrl.path.endsWith('/')
+      ? supabaseUrl.path.substring(0, supabaseUrl.path.length - 1)
+      : supabaseUrl.path;
   return supabaseUrl.replace(
     path: '$base/functions/v1/$publicJourneyFunction',
     queryParameters: {'token': token},

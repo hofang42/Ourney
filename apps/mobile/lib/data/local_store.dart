@@ -51,7 +51,11 @@ class LocalStore {
       await (db.delete(db.checkIns)..where((t) => t.id.isIn(ids))).go();
     });
     await files.delete([
-      for (final r in rows) ...[r.photoPath, r.thumbPath],
+      for (final r in rows) ...[
+        r.photoPath,
+        r.thumbPath,
+        if (r.partnerPhotoPath != null) r.partnerPhotoPath!,
+      ],
     ]);
   }
 

@@ -38,8 +38,16 @@ class DataCheckInRepository implements CheckInRepository {
     return q.watch().map((rows) => [for (final r in rows) _toModel(r)]);
   }
 
-  CheckIn _toModel(CheckInRow r) =>
-      checkInFromRow(r, localPhotoFile: ctx.files.fileFor(r.photoPath).path);
+  CheckIn _toModel(CheckInRow r) {
+    final partner = r.partnerPhotoPath;
+    return checkInFromRow(
+      r,
+      localPhotoFile: ctx.files.fileFor(r.photoPath).path,
+      localPartnerPhotoFile: partner == null
+          ? null
+          : ctx.files.fileFor(partner).path,
+    );
+  }
 
   @override
   Future<CheckIn> submit(CheckInDraft draft) async {
@@ -52,7 +60,8 @@ class DataCheckInRepository implements CheckInRepository {
       throw const OurneyException(OurneyErrorCode.ended);
     }
     if (validateCaption(draft.caption) != null ||
-        validateMetricValue(draft.metricValue) != null) {
+        validateMetricValue(draft.metricValue) != null ||
+        draft.extras.normalized().validate() != null) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
     if (draft.capturedAt.isAfter(ctx.now().add(capturedAtTolerance))) {
@@ -70,6 +79,13 @@ class DataCheckInRepository implements CheckInRepository {
     final thumbPath = checkInThumbPath(journey.id, me, id);
     await ctx.files.importFile(draft.photoFile, photoPath);
     await ctx.files.importFile(draft.thumbFile, thumbPath);
+    final partnerFile = draft.partnerPhotoFile;
+    final partnerPath = partnerFile == null
+        ? null
+        : checkInPartnerPhotoPath(journey.id, me, id);
+    if (partnerFile != null) {
+      await ctx.files.importFile(partnerFile, partnerPath!);
+    }
 
     final old = await _db.transaction(() async {
       final previous =
@@ -102,11 +118,19 @@ class DataCheckInRepository implements CheckInRepository {
               fromLibrary: Value(draft.fromLibrary),
               caption: Value(draft.caption),
               metricValue: Value(draft.metricValue),
+              extras: Value(draft.extras.normalized().toJsonString()),
+              partnerPhotoPath: Value(partnerPath),
             ),
           );
       return previous;
     });
-    if (old != null) await ctx.files.delete([old.photoPath, old.thumbPath]);
+    if (old != null) {
+      await ctx.files.delete([
+        old.photoPath,
+        old.thumbPath,
+        if (old.partnerPhotoPath != null) old.partnerPhotoPath!,
+      ]);
+    }
 
     final outbox = ctx.outbox;
     if (outbox != null) {
@@ -117,7 +141,11 @@ class DataCheckInRepository implements CheckInRepository {
       await outbox.enqueue(OutboxKind.upsertCheckIn, key, {'id': id});
       if (old != null) {
         await outbox.enqueue(OutboxKind.deleteMedia, 'media:${old.id}', {
-          'paths': [old.photoPath, old.thumbPath],
+          'paths': [
+            old.photoPath,
+            old.thumbPath,
+            if (old.partnerPhotoPath != null) old.partnerPhotoPath!,
+          ],
         });
       }
       unawaited(outbox.flush());

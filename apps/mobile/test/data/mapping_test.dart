@@ -120,9 +120,17 @@ void main() {
       thumbPath: checkInThumbPath('j1', 'u1', 'c1'),
       fromLibrary: false,
       metricValue: 1,
+      extras: '{"dish":"Phở","hearts":4}',
+      partnerPhotoPath: checkInPartnerPhotoPath('j1', 'u1', 'c1'),
       uploaded: false,
     );
     final body = checkInToRemote(row);
+    expect(body['extras'], {'dish': 'Phở', 'hearts': 4});
+    expect(body['partner_photo_path'], 'checkins/j1/u1/c1_p.jpg');
+    expect(
+      checkInFromRow(row).extras,
+      const CheckInExtras(dish: 'Phở', hearts: 4),
+    );
     expect(body['captured_at'], '2026-10-16T02:00:00.000Z');
     expect(body['local_date'], '2026-10-16');
     expect(

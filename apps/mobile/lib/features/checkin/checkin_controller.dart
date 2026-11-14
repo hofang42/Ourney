@@ -102,6 +102,8 @@ class CheckInPoster {
     required List<CheckIn> mine,
     String? caption,
     double? metricValue,
+    CheckInExtras extras = CheckInExtras.empty,
+    String? partnerPhotoPath,
   }) async {
     final CompressedPhoto files;
     try {
@@ -109,6 +111,19 @@ class CheckInPoster {
     } on Object catch (e) {
       throw CheckInPostException(CheckInFailure.photo, e);
     }
+    // Couple journeys: the partner's photo goes through the same pipeline.
+    CompressedPhoto? partner;
+    if (partnerPhotoPath != null) {
+      try {
+        partner = await compressor.compress(partnerPhotoPath);
+      } on Object catch (e) {
+        _discard([files.photoFile, files.thumbFile]);
+        throw CheckInPostException(CheckInFailure.photo, e);
+      }
+    }
+    final partnerFiles = [
+      if (partner != null) ...[partner.photoFile, partner.thumbFile],
+    ];
 
     final day = dayOf(journey, photo);
     final today = clock.today(journey.timezone);
@@ -133,10 +148,12 @@ class CheckInPoster {
           fromLibrary: photo.fromLibrary,
           caption: caption,
           metricValue: metricValue,
+          extras: extras,
+          partnerPhotoFile: partner?.photoFile,
         ),
       );
     } on OurneyException catch (e) {
-      _discard([files.photoFile, files.thumbFile]);
+      _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
       throw CheckInPostException(
         e.error == OurneyErrorCode.ended
             ? CheckInFailure.ended
@@ -144,11 +161,17 @@ class CheckInPoster {
         e,
       );
     } on Object catch (e) {
-      _discard([files.photoFile, files.thumbFile]);
+      _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
       throw CheckInPostException(CheckInFailure.generic, e);
     }
     // The repository copied the files into the media store.
-    _discard([files.photoFile, files.thumbFile, photo.path]);
+    _discard([
+      files.photoFile,
+      files.thumbFile,
+      ...partnerFiles,
+      photo.path,
+      ?partnerPhotoPath,
+    ]);
 
     final after = memberStreak(
       journey: journey,

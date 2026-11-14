@@ -36,7 +36,8 @@ void main() {
   });
 
   test('only weight loss hides metric by default', () {
-    final hidden = allTemplates.where((t) => t.hideMetricDefault).map((t) => t.id);
+    final hidden =
+        allTemplates.where((t) => t.hideMetricDefault).map((t) => t.id);
     expect(hidden, [TemplateId.weightLoss]);
   });
 
@@ -52,7 +53,8 @@ void main() {
   test('defaults pass journey validation', () {
     for (final t in allTemplates) {
       expect(validateJourneyTitle(t.titleVi), isNull, reason: t.id.name);
-      expect(validateDurationDays(t.defaultDurationDays), isNull, reason: t.id.name);
+      expect(validateDurationDays(t.defaultDurationDays), isNull,
+          reason: t.id.name);
     }
   });
 
@@ -70,7 +72,8 @@ void main() {
       PersonaSkinId.coupleRituals,
     );
     for (final skin in PersonaSkinId.values) {
-      expect(designAssetForPersona(skin), startsWith('assets/design_personas/persona_'));
+      expect(designAssetForPersona(skin),
+          startsWith('assets/design_personas/persona_'));
     }
   });
 }

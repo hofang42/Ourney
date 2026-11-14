@@ -44,6 +44,8 @@ JourneysCompanion journeyFromRemote(RemoteRow r) => JourneysCompanion(
   origin: Value(
     JourneyOrigin.fromWire(r['origin'] as String? ?? 'live').wireName,
   ),
+  coupleSelfName: Value(r['couple_self_name'] as String?),
+  couplePartnerName: Value(r['couple_partner_name'] as String?),
   updatedAt: Value(r['updated_at'] as String?),
 );
 
@@ -66,6 +68,8 @@ Journey journeyFromRow(JourneyRow r) => Journey(
   maxMembers: r.maxMembers,
   publicToken: r.publicToken,
   origin: JourneyOrigin.fromWire(r.origin),
+  coupleSelfName: r.coupleSelfName,
+  couplePartnerName: r.couplePartnerName,
 );
 
 /// `create_journey` arguments (names from 0004_rpc.sql).
@@ -83,6 +87,8 @@ Map<String, dynamic> createJourneyParams(String id, JourneyDraft d) => {
   'p_timezone': d.timezone,
   'p_max_members': d.kind == JourneyKind.solo ? 1 : maxGroupMembers,
   'p_visibility': normalizedVisibility(d.kind, d.visibility).wireName,
+  'p_couple_self_name': d.coupleSelfName?.trim(),
+  'p_couple_partner_name': d.couplePartnerName?.trim(),
 };
 
 // --- memberships ------------------------------------------------------------
@@ -124,6 +130,8 @@ CheckInsCompanion checkInFromRemote(RemoteRow r) => CheckInsCompanion(
   thumbPath: Value(r['thumb_path'] as String),
   fromLibrary: Value(r['from_library'] as bool? ?? false),
   caption: Value(r['caption'] as String?),
+  extras: Value(CheckInExtras.fromJson(r['extras']).toJsonString()),
+  partnerPhotoPath: Value(r['partner_photo_path'] as String?),
   // Since 0005 the server never returns a metric in `check_ins` (always
   // null): metrics arrive from `check_in_metrics` (see [metricFromRemote]).
   // Left absent so applying a pulled row keeps the cached value.
@@ -142,6 +150,8 @@ RemoteRow checkInToRemote(CheckInRow r) => {
   'thumb_path': r.thumbPath,
   'from_library': r.fromLibrary,
   'caption': r.caption,
+  'extras': CheckInExtras.fromJson(r.extras).toJson(),
+  'partner_photo_path': r.partnerPhotoPath,
 };
 
 /// Upsert body for `check_in_metrics` (on `checkin_id`; the server copies
@@ -159,7 +169,11 @@ RemoteRow checkInMetricToRemote(CheckInRow r) => {
 ({String checkInId, double? value}) metricFromRemote(RemoteRow r) =>
     (checkInId: r['checkin_id'] as String, value: _toDouble(r['metric_value']));
 
-CheckIn checkInFromRow(CheckInRow r, {String? localPhotoFile}) => CheckIn(
+CheckIn checkInFromRow(
+  CheckInRow r, {
+  String? localPhotoFile,
+  String? localPartnerPhotoFile,
+}) => CheckIn(
   id: r.id,
   journeyId: r.journeyId,
   userId: r.userId,
@@ -170,7 +184,10 @@ CheckIn checkInFromRow(CheckInRow r, {String? localPhotoFile}) => CheckIn(
   fromLibrary: r.fromLibrary,
   caption: r.caption,
   metricValue: r.metricValue,
+  extras: CheckInExtras.fromJson(r.extras),
+  partnerPhotoPath: r.partnerPhotoPath,
   localPhotoFile: r.uploaded ? null : localPhotoFile,
+  localPartnerPhotoFile: r.uploaded ? null : localPartnerPhotoFile,
   uploaded: r.uploaded,
 );
 

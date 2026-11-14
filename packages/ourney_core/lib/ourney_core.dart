@@ -2,8 +2,11 @@
 /// validation, templates). Runs on the Dart VM so it is testable on Linux.
 library;
 
+export 'src/contracts/group_invites.dart';
+export 'src/account.dart';
 export 'src/contracts/repositories.dart';
 export 'src/contracts/social.dart';
+export 'src/extras.dart';
 export 'src/local_date.dart';
 export 'src/models.dart';
 export 'src/paths.dart';

@@ -660,5 +660,21 @@
   "journeys_createReviewTitle": "Vé khởi hành của bạn.",
   "@journeys_createReviewTitle": {"description": "Create journey flow."},
   "journeys_createReviewEdit": "Sửa lại",
-  "@journeys_createReviewEdit": {"description": "Create journey flow."}
+  "@journeys_createReviewEdit": {"description": "Create journey flow."},
+  "journeys_extraMinutes": "{minutes} phút",
+  "@journeys_extraMinutes": {"placeholders": {"minutes": {"type": "int"}}},
+  "journeys_extraHearts": "{count}/5 tim",
+  "@journeys_extraHearts": {"placeholders": {"count": {"type": "int"}}},
+  "journeys_extraPace": "{pace} /km",
+  "@journeys_extraPace": {"placeholders": {"pace": {"type": "String"}}},
+  "journeys_extraCook": "{name} nấu",
+  "@journeys_extraCook": {"placeholders": {"name": {"type": "String"}}},
+  "journeys_extraMoodLight": "Nhẹ nhõm",
+  "@journeys_extraMoodLight": {"description": "Check-in extras on the journey screens."},
+  "journeys_extraMoodNormal": "Bình thường",
+  "@journeys_extraMoodNormal": {"description": "Check-in extras on the journey screens."},
+  "journeys_extraMoodTired": "Hơi mệt",
+  "@journeys_extraMoodTired": {"description": "Check-in extras on the journey screens."},
+  "journeys_partnerPhotoSemantics": "Ảnh của người ấy",
+  "@journeys_partnerPhotoSemantics": {"description": "Check-in extras on the journey screens."}
 }

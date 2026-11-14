@@ -7,7 +7,13 @@ const sqlJourneyVisibility = ['private', 'group', 'link'];
 const sqlJourneyStatus = ['active', 'ended', 'archived'];
 const sqlMemberRole = ['owner', 'member'];
 const sqlMemberStatus = ['active', 'left'];
-const sqlTemplateId = ['weight_loss', 'english_daily', 'workout_30', 'travel', 'custom'];
+const sqlTemplateId = [
+  'weight_loss',
+  'english_daily',
+  'workout_30',
+  'travel',
+  'custom'
+];
 const sqlReportReason = ['spam', 'nudity', 'harassment', 'self_harm', 'other'];
 const sqlReportStatus = ['open', 'actioned', 'dismissed'];
 const sqlReactionEmojis = ['🔥', '💪', '👏', '❤️', '😂'];
@@ -35,15 +41,22 @@ void roundTrip<T extends Enum>(
 }
 
 void main() {
-  roundTrip('JourneyKind', sqlJourneyKind, JourneyKind.values, (v) => v.wireName, JourneyKind.fromWire);
-  roundTrip('JourneyVisibility', sqlJourneyVisibility, JourneyVisibility.values, (v) => v.wireName,
-      JourneyVisibility.fromWire);
-  roundTrip('JourneyStatus', sqlJourneyStatus, JourneyStatus.values, (v) => v.wireName, JourneyStatus.fromWire);
-  roundTrip('MemberRole', sqlMemberRole, MemberRole.values, (v) => v.wireName, MemberRole.fromWire);
-  roundTrip('MemberStatus', sqlMemberStatus, MemberStatus.values, (v) => v.wireName, MemberStatus.fromWire);
-  roundTrip('TemplateId', sqlTemplateId, TemplateId.values, (v) => v.wireName, TemplateId.fromWire);
-  roundTrip('ReportReason', sqlReportReason, ReportReason.values, (v) => v.wireName, ReportReason.fromWire);
-  roundTrip('ReportStatus', sqlReportStatus, ReportStatus.values, (v) => v.wireName, ReportStatus.fromWire);
+  roundTrip('JourneyKind', sqlJourneyKind, JourneyKind.values,
+      (v) => v.wireName, JourneyKind.fromWire);
+  roundTrip('JourneyVisibility', sqlJourneyVisibility, JourneyVisibility.values,
+      (v) => v.wireName, JourneyVisibility.fromWire);
+  roundTrip('JourneyStatus', sqlJourneyStatus, JourneyStatus.values,
+      (v) => v.wireName, JourneyStatus.fromWire);
+  roundTrip('MemberRole', sqlMemberRole, MemberRole.values, (v) => v.wireName,
+      MemberRole.fromWire);
+  roundTrip('MemberStatus', sqlMemberStatus, MemberStatus.values,
+      (v) => v.wireName, MemberStatus.fromWire);
+  roundTrip('TemplateId', sqlTemplateId, TemplateId.values, (v) => v.wireName,
+      TemplateId.fromWire);
+  roundTrip('ReportReason', sqlReportReason, ReportReason.values,
+      (v) => v.wireName, ReportReason.fromWire);
+  roundTrip('ReportStatus', sqlReportStatus, ReportStatus.values,
+      (v) => v.wireName, ReportStatus.fromWire);
 
   test('snake_case wire names differ from Dart names', () {
     expect(TemplateId.weightLoss.wireName, 'weight_loss');
@@ -51,10 +64,12 @@ void main() {
     expect(ReportReason.selfHarm.wireName, 'self_harm');
   });
 
-  test('reaction emojis match the SQL CHECK', () => expect(reactionEmojis, sqlReactionEmojis));
+  test('reaction emojis match the SQL CHECK',
+      () => expect(reactionEmojis, sqlReactionEmojis));
 
   group('JourneyDraft visibility default', () {
-    JourneyDraft draft(JourneyKind kind, [JourneyVisibility? v]) => JourneyDraft(
+    JourneyDraft draft(JourneyKind kind, [JourneyVisibility? v]) =>
+        JourneyDraft(
           kind: kind,
           templateId: TemplateId.custom,
           title: 't',
@@ -63,10 +78,17 @@ void main() {
           timezone: 'Asia/Ho_Chi_Minh',
           visibility: v,
         );
-    test('group defaults to group', () => expect(draft(JourneyKind.group).visibility, JourneyVisibility.group));
-    test('solo defaults to private', () => expect(draft(JourneyKind.solo).visibility, JourneyVisibility.private));
+    test(
+        'group defaults to group',
+        () => expect(
+            draft(JourneyKind.group).visibility, JourneyVisibility.group));
+    test(
+        'solo defaults to private',
+        () => expect(
+            draft(JourneyKind.solo).visibility, JourneyVisibility.private));
     test('explicit value kept', () {
-      expect(draft(JourneyKind.solo, JourneyVisibility.link).visibility, JourneyVisibility.link);
+      expect(draft(JourneyKind.solo, JourneyVisibility.link).visibility,
+          JourneyVisibility.link);
     });
     test('defaultVisibilityFor agrees', () {
       for (final k in JourneyKind.values) {

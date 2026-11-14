@@ -697,6 +697,30 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'Thêm bạn'**
   String get social_inviteCardAction;
+
+  /// Activity row: pending group invitation.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} mời bạn vào {group}'**
+  String social_groupInviteFrom(String name, String group);
+
+  /// Group invitation subtitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count}/{max} thành viên'**
+  String social_groupInviteMembers(int count, int max);
+
+  /// No description provided for @social_groupInviteJoin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tham gia'**
+  String get social_groupInviteJoin;
+
+  /// No description provided for @social_groupInviteSkip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ qua'**
+  String get social_groupInviteSkip;
 }
 
 class _SocialL10nDelegate extends LocalizationsDelegate<SocialL10n> {

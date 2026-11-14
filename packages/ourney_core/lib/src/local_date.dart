@@ -10,4 +10,5 @@ LocalDate localDateOf(DateTime instant, Duration utcOffset) {
 }
 
 /// Today's local date given the current time and the zone's offset.
-LocalDate localToday(DateTime nowUtc, Duration utcOffset) => localDateOf(nowUtc, utcOffset);
+LocalDate localToday(DateTime nowUtc, Duration utcOffset) =>
+    localDateOf(nowUtc, utcOffset);
