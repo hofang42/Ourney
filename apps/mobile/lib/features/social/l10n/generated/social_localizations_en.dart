@@ -337,16 +337,42 @@ class SocialL10nEn extends SocialL10n {
   }
 
   @override
-  String get social_activityTitle => 'Activity';
+  String get social_activityTitle => 'activity.';
 
   @override
   String get social_groupToday => 'Today';
 
   @override
-  String get social_groupEarlier => 'Earlier';
+  String get social_groupWeek => 'This week';
 
   @override
-  String get social_markAllRead => 'Mark all read';
+  String get social_offlineStrip => 'Viewing the saved version.';
+
+  @override
+  String get social_activityEmptyTitle => 'nothing new yet.';
+
+  @override
+  String get social_activityEmptyBody =>
+      'Updates from your journeys will show up here.';
+
+  @override
+  String social_activityRowSemantics(String text, String context, String time) {
+    return '$text · $context · $time';
+  }
+
+  @override
+  String social_weekdayShort(String day) {
+    String _temp0 = intl.Intl.selectLogic(day, {
+      '1': 'Mon',
+      '2': 'Tue',
+      '3': 'Wed',
+      '4': 'Thu',
+      '5': 'Fri',
+      '6': 'Sat',
+      'other': 'Sun',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get social_inviteCardTitle => 'Invite a friend';

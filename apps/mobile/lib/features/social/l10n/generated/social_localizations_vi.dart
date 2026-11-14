@@ -333,16 +333,42 @@ class SocialL10nVi extends SocialL10n {
   }
 
   @override
-  String get social_activityTitle => 'Hoạt động';
+  String get social_activityTitle => 'hoạt động.';
 
   @override
   String get social_groupToday => 'Hôm nay';
 
   @override
-  String get social_groupEarlier => 'Trước đó';
+  String get social_groupWeek => 'Tuần này';
 
   @override
-  String get social_markAllRead => 'Đã đọc hết';
+  String get social_offlineStrip => 'Đang xem bản đã lưu.';
+
+  @override
+  String get social_activityEmptyTitle => 'chưa có gì mới.';
+
+  @override
+  String get social_activityEmptyBody =>
+      'Những cập nhật từ hành trình sẽ xuất hiện ở đây.';
+
+  @override
+  String social_activityRowSemantics(String text, String context, String time) {
+    return '$text · $context · $time';
+  }
+
+  @override
+  String social_weekdayShort(String day) {
+    String _temp0 = intl.Intl.selectLogic(day, {
+      '1': 'T2',
+      '2': 'T3',
+      '3': 'T4',
+      '4': 'T5',
+      '5': 'T6',
+      '6': 'T7',
+      'other': 'CN',
+    });
+    return '$_temp0';
+  }
 
   @override
   String get social_inviteCardTitle => 'Mời một người bạn';

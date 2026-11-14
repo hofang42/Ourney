@@ -1069,6 +1069,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Xem trước vé khởi hành'**
   String get journeys_ticketPreview;
+
+  /// Couple timeline: label under your own half of a day.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn'**
+  String get journeys_coupleYou;
+
+  /// Couple timeline: placeholder where the partner photo goes.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang chờ người ấy'**
+  String get journeys_coupleWaiting;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

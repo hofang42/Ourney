@@ -17,7 +17,7 @@ import 'social_common.dart';
 enum InboxFilter { all, replies, invites }
 
 /// V2 ActivityScreen (SCR-85 `/inbox`, the "Hoạt động" dock tab): a feed
-/// grouped "Hôm nay" / "Trước đó" of friend requests (Accept / Decline
+/// grouped "Hôm nay" / "Tuần này" of friend requests (Accept / Decline
 /// inline), group share consent requests (Agree / Decline), new shares
 /// (→ Hub), conversations and, without a red dot, "From your public
 /// journeys" (S27). Shows a back button only when pushed standalone.
@@ -33,8 +33,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   final Set<String> _busy = {};
   final Set<String> _expanded = {};
 
-  /// Ids of unread items marked as read with "mark all read" (this session).
+  /// Ids of unread items marked read when the tab opened (Figma
+  /// `markActivityRead`: opening Activity clears every unread dot).
   final Set<String> _seen = {};
+  bool _autoRead = false;
 
   Future<void> _act(String key, Future<void> Function() action) async {
     setState(() => _busy.add(key));
@@ -108,6 +110,25 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   }
 
   Widget _body(BuildContext context) {
+    final friendsAsync = ref.watch(friendshipsProvider);
+    final convAsync = ref.watch(conversationsProvider);
+    final cached = friendsAsync.hasValue || convAsync.hasValue;
+    final err = friendsAsync.error ?? convAsync.error;
+    final offline =
+        cached &&
+        err != null &&
+        socialErrorCode(err) == OurneyErrorCode.offline;
+    final feed = _feed(context);
+    if (!offline) return feed;
+    return Column(
+      children: [
+        const _OfflineStrip(),
+        Expanded(child: feed),
+      ],
+    );
+  }
+
+  Widget _feed(BuildContext context) {
     final l10n = SocialL10n.of(context);
     final app = AppLocalizations.of(context);
     final friendsAsync = ref.watch(friendshipsProvider);
@@ -240,29 +261,25 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       for (final i in items)
         if (!isToday(i.at)) i,
     ]..sort((a, b) => b.at!.compareTo(a.at!));
-    final hasUnread = items.any((i) => i.unread && !_seen.contains(i.id));
+    if (!_autoRead && items.isNotEmpty) {
+      _autoRead = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _seen.addAll([for (final i in items) i.id]));
+      });
+    }
 
     final children = <Widget>[];
-    void group(String title, List<_FeedItem> list, {required bool first}) {
-      if (list.isEmpty) return;
-      final showMark = first && hasUnread;
+    void group(String title) {
       children.add(
         Padding(
           padding: const EdgeInsets.only(top: UiSpace.lg, bottom: UiSpace.sm),
-          child: UiListHeading(
-            title: title,
-            actionLabel: showMark ? l10n.social_markAllRead : null,
-            onAction: showMark
-                ? () => setState(() {
-                    _seen.addAll([
-                      for (final i in items)
-                        if (i.unread) i.id,
-                    ]);
-                  })
-                : null,
-          ),
+          child: UiListHeading(title: title),
         ),
       );
+    }
+
+    void rows(List<_FeedItem> list) {
       for (final i in list) {
         children.add(
           Padding(
@@ -273,8 +290,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       }
     }
 
-    group(l10n.social_groupToday, today, first: true);
-    group(l10n.social_groupEarlier, earlier, first: today.isEmpty);
+    if (today.isNotEmpty) {
+      group(l10n.social_groupToday);
+      rows(today);
+    }
+    if (earlier.isNotEmpty) {
+      group(l10n.social_groupWeek);
+      rows(earlier);
+    }
 
     if (children.isEmpty) {
       return Column(
@@ -283,15 +306,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.only(top: UiSpace.lg),
-              children: [
-                UiStateCard(
-                  key: const ValueKey('inbox-empty'),
-                  kind: UiStateCardKind.empty,
-                  title: l10n.social_inboxEmpty,
-                ),
-                const SizedBox(height: UiSpace.lg),
-                const _InviteCard(),
-              ],
+              children: [const _ActivityEmpty()],
             ),
           ),
         ],
@@ -334,7 +349,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       key: ValueKey('inbox-request-${p.userId}'),
       badge: _PersonBadge(p),
       title: l10n.social_friendRequestFrom(displayNameOf(p)),
-      subtitle: '@${p.username} · ${socialTime(context, r.createdAt)}',
+      subtitle: '@${p.username}',
+      time: feedTime(context, r.createdAt),
       unread: unread,
       actions: [
         UiButton(
@@ -589,6 +605,7 @@ class _ActivityCard extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.extra,
+    this.time,
     this.unread = false,
     this.onTap,
     this.actions = const [],
@@ -600,6 +617,7 @@ class _ActivityCard extends StatelessWidget {
   final String title;
   final String? subtitle;
   final String? extra;
+  final String? time;
   final bool unread;
   final VoidCallback? onTap;
   final List<Widget> actions;
@@ -621,48 +639,68 @@ class _ActivityCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              badge,
-              const SizedBox(width: UiSpace.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: UiText.body(
-                        size: 15,
-                        height: 1.35,
-                        weight: unread ? FontWeight.w800 : FontWeight.w700,
-                        color: ui.ink,
+          Semantics(
+            label: SocialL10n.of(context).social_activityRowSemantics(
+              title,
+              [?subtitle, ?extra].join(' · '),
+              time ?? '',
+            ),
+            excludeSemantics: true,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                badge,
+                const SizedBox(width: UiSpace.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 15,
+                          height: 1.35,
+                          weight: unread ? FontWeight.w800 : FontWeight.w700,
+                          color: ui.ink,
+                        ),
                       ),
-                    ),
-                    if (subtitle != null) line(subtitle!),
-                    if (extra != null) line(extra!),
-                  ],
-                ),
-              ),
-              if (unread) ...[
-                const SizedBox(width: 8),
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Container(
-                    key: const ValueKey('unread-dot'),
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: ui.danger,
-                      shape: BoxShape.circle,
-                    ),
+                      if (subtitle != null) line(subtitle!),
+                      if (extra != null) line(extra!),
+                    ],
                   ),
                 ),
+                if (unread) ...[
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Container(
+                      key: const ValueKey('unread-dot'),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: ui.danger,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                ],
+                if (time != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    time!,
+                    key: const ValueKey('activity-time'),
+                    style: UiText.body(
+                      size: 12,
+                      height: 1.4,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                ],
+                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
               ],
-              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-            ],
+            ),
           ),
           if (actions.isNotEmpty) ...[
             const SizedBox(height: UiSpace.sm),
@@ -729,28 +767,10 @@ class _Skeleton extends StatelessWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: const EdgeInsets.only(top: UiSpace.lg),
         children: [
-          for (var i = 0; i < 4; i++)
+          for (var i = 0; i < 5; i++)
             const Padding(
               padding: EdgeInsets.only(bottom: UiSpace.md),
-              child: UiCard(
-                padding: EdgeInsets.all(UiSpace.md),
-                child: Row(
-                  children: [
-                    UiSkeleton(width: 44, height: 44, radius: UiRadius.input),
-                    SizedBox(width: UiSpace.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          UiSkeleton(height: 14),
-                          SizedBox(height: 8),
-                          UiSkeleton(width: 120, height: 12),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: UiSkeleton(height: 64, radius: UiRadius.card),
             ),
         ],
       ),
@@ -781,19 +801,13 @@ class _ConversationRow extends StatelessWidget {
       subtitle: conv.journeyTitle,
       extra: preview == null || preview.isEmpty ? null : preview,
       unread: unread && showUnread,
+      time: conv.lastMessageAt == null
+          ? null
+          : feedTime(context, conv.lastMessageAt!),
       onTap: () => context.push(SocialPaths.chat(conv.id)),
-      trailing: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          if (conv.lastMessageAt != null)
-            Text(
-              socialTime(context, conv.lastMessageAt!),
-              style: UiText.body(size: 11, height: 1.3, color: ui.inkMuted),
-            ),
-          if (unread) ...[
-            const SizedBox(height: 4),
-            Semantics(
+      trailing: !unread
+          ? null
+          : Semantics(
               label: l10n.social_unread(conv.unreadCount),
               excludeSemantics: true,
               child: Container(
@@ -816,7 +830,88 @@ class _ConversationRow extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+    );
+  }
+}
+
+/// "07:12" for today, weekday abbreviation (T2, T3 ... / Mon ...) otherwise.
+String feedTime(BuildContext context, DateTime at, {DateTime? now}) {
+  final local = at.toLocal();
+  final today = (now ?? DateTime.now()).toLocal();
+  if (local.year == today.year &&
+      local.month == today.month &&
+      local.day == today.day) {
+    return socialTime(context, at, now: now);
+  }
+  return SocialL10n.of(context).social_weekdayShort('${local.weekday}');
+}
+
+/// Figma `.activity-offline`: strip above the feed while showing cached data.
+class _OfflineStrip extends StatelessWidget {
+  const _OfflineStrip();
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return Container(
+      key: const ValueKey('inbox-offline'),
+      margin: const EdgeInsets.only(top: UiSpace.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: UiSpace.md,
+        vertical: UiSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: ui.surface,
+        borderRadius: BorderRadius.circular(UiRadius.input),
+        border: Border.all(color: ui.divider),
+      ),
+      child: Row(
+        children: [
+          OurneyIcon(
+            name: 'wifi-off',
+            size: 17,
+            color: ui.inkMuted,
+            flat: true,
+          ),
+          const SizedBox(width: UiSpace.sm),
+          Expanded(
+            child: Text(
+              SocialL10n.of(context).social_offlineStrip,
+              style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Figma `.activity-empty`.
+class _ActivityEmpty extends StatelessWidget {
+  const _ActivityEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = SocialL10n.of(context);
+    final ui = context.ui;
+    return Padding(
+      key: const ValueKey('inbox-empty'),
+      padding: const EdgeInsets.symmetric(vertical: UiSpace.xl),
+      child: Column(
+        children: [
+          const ExcludeSemantics(child: OurneyIcon(name: 'activity', size: 38)),
+          const SizedBox(height: UiSpace.md),
+          Text(
+            l10n.social_activityEmptyTitle,
+            textAlign: TextAlign.center,
+            style: UiText.h2(size: 20, color: ui.ink),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            l10n.social_activityEmptyBody,
+            textAlign: TextAlign.center,
+            style: UiText.body(size: 14, height: 1.4, color: ui.inkMuted),
+          ),
         ],
       ),
     );

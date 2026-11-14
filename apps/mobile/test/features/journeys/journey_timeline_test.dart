@@ -5,6 +5,7 @@ import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/journey_style.dart';
 import 'package:ourney/features/journeys/ui/widgets/journey_timeline.dart';
+import 'package:ourney/features/journeys/ui/widgets/timeline_common.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -76,6 +77,51 @@ Widget _host(
 }
 
 void main() {
+  test('chainRuns joins consecutive checked-in days across week breaks', () {
+    TimelineDay d(int i, DayState s) => TimelineDay(
+      date: LocalDate(2026, 10, 1 + i),
+      dayNumber: i + 1,
+      isToday: false,
+      state: s,
+    );
+    const c = DayState.checkedIn;
+    final cells = <TimelineDay?>[
+      null,
+      d(0, c),
+      d(1, c),
+      d(2, DayState.missed),
+      d(3, c),
+      d(4, c),
+      d(5, c),
+      d(6, c),
+      d(7, c),
+      d(8, DayState.future),
+    ];
+    expect(chainRuns(cells), [
+      [1, 2],
+      [4, 5, 6, 7, 8],
+    ]);
+  });
+
+  testWidgets('couple shows a waiting partner slot per day', (tester) async {
+    await tester.pumpWidget(
+      _host('couple', brightness: Brightness.light, scale: 1, onTap: (_) {}),
+    );
+    expect(
+      find.byKey(const ValueKey('couple-partner-slot')),
+      findsNWidgets(14),
+    );
+    expect(find.text('You'), findsNWidgets(14));
+    expect(find.text('Partner'), findsNWidgets(14));
+  });
+
+  testWidgets('minimal draws the chain line', (tester) async {
+    await tester.pumpWidget(
+      _host('minimal', brightness: Brightness.light, scale: 1, onTap: (_) {}),
+    );
+    expect(find.byKey(const ValueKey('timeline-chain-line')), findsOneWidget);
+  });
+
   for (final skin in _skins) {
     for (final dark in [false, true]) {
       testWidgets('$skin timeline ${dark ? 'dark' : 'light'} 320dp 1.35x', (

@@ -161,5 +161,13 @@
   "journeys_ticketTagMemory": "Bring home plenty of frames.",
   "journeys_ticketTagCouple": "One half each day, together a whole.",
   "journeys_ticketTagFlexer": "Get out of bed. Keep running.",
-  "journeys_ticketPreview": "Departure ticket preview"
+  "journeys_ticketPreview": "Departure ticket preview",
+  "journeys_coupleYou": "You",
+  "@journeys_coupleYou": {
+    "description": "Couple timeline: label under your own half of a day."
+  },
+  "journeys_coupleWaiting": "Waiting for your partner",
+  "@journeys_coupleWaiting": {
+    "description": "Couple timeline: placeholder where the partner photo goes."
+  }
 }

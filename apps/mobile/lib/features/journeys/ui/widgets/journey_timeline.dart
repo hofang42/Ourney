@@ -1,7 +1,6 @@
 import 'package:flutter/widgets.dart';
 
 import '../../domain/journey_progress.dart';
-import '../journey_chain.dart';
 import '../journey_style.dart';
 import 'timeline_variants.dart';
 
@@ -32,7 +31,7 @@ class JourneyTimeline extends StatelessWidget {
       'memory' => MemoryTimeline(days: days, onTapDay: onTapDay),
       'couple' => CoupleTimeline(days: days, onTapDay: onTapDay),
       'flexer' => FlexerTimeline(days: days, onTapDay: onTapDay),
-      _ => JourneyChain(days: days, pal: pal, onTapDay: onTapDay),
+      _ => MinimalTimeline(days: days, onTapDay: onTapDay),
     };
   }
 }

@@ -610,5 +610,13 @@
   "journeys_ticketPreview": "Xem trước vé khởi hành",
   "@journeys_ticketPreview": {
     "description": "Departure ticket preview text."
+  },
+  "journeys_coupleYou": "Bạn",
+  "@journeys_coupleYou": {
+    "description": "Couple timeline: label under your own half of a day."
+  },
+  "journeys_coupleWaiting": "Đang chờ người ấy",
+  "@journeys_coupleWaiting": {
+    "description": "Couple timeline: placeholder where the partner photo goes."
   }
 }
