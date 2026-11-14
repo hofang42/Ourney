@@ -6,11 +6,11 @@
 
 ## Bối cảnh
 
-Apple Guideline 1.2 yêu cầu có điều khoản chặn nội dung phản cảm và kênh liên hệ hoạt động. Màn Liên hệ hiện hiển thị địa chỉ cứng `support@ourney.app` (placeholder của C3, chưa chắc tồn tại). Văn bản EULA/privacy là **bản nháp** do dev viết, chưa ai duyệt. TASKS §4 đặt mặc định: email hỗ trợ là email của @hofang42 cho tới khi có domain; EULA/privacy dùng bản nháp, duyệt trước H5.
+Apple Guideline 1.2 yêu cầu có điều khoản chặn nội dung phản cảm và kênh liên hệ hoạt động. Màn Liên hệ hiện hiển thị địa chỉ cứng `support@ourney.tech` (placeholder của C3, chưa chắc tồn tại). Văn bản EULA/privacy là **bản nháp** do dev viết, chưa ai duyệt. TASKS §4 đặt mặc định: email hỗ trợ là email của @hofang42 cho tới khi có domain; EULA/privacy dùng bản nháp, duyệt trước H5.
 
 ## Thay đổi kỹ thuật đã làm (không cần duyệt để merge)
 
-- Địa chỉ lấy từ `--dart-define=SUPPORT_EMAIL=...` qua `AppConfig.supportEmail` (cùng cách với `SUPABASE_URL`). Không đặt hoặc đặt rỗng thì dùng `support@ourney.app`. Một nơi duy nhất: `supportEmailProvider` (`lib/features/safety/data/safety_providers.dart`), màn Liên hệ (hiển thị, mailto, sao chép) đều đọc từ đó.
+- Địa chỉ lấy từ `--dart-define=SUPPORT_EMAIL=...` qua `AppConfig.supportEmail` (cùng cách với `SUPABASE_URL`). Không đặt hoặc đặt rỗng thì dùng `support@ourney.tech`. Một nơi duy nhất: `supportEmailProvider` (`lib/features/safety/data/safety_providers.dart`), màn Liên hệ (hiển thị, mailto, sao chép) đều đọc từ đó.
 - `ios.yml` / `android.yml` ghi `SUPPORT_EMAIL` vào file dart-define khi repo secret `SUPPORT_EMAIL` có giá trị; không có thì không thêm khoá.
 - Test: `test/app/providers_test.dart` (fallback, trim/blank, provider), `test/features/safety/safety_pages_test.dart` (màn Liên hệ dùng giá trị cấu hình).
 

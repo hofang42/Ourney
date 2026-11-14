@@ -43,9 +43,9 @@ void main() {
   group('AppConfig support email (H4)', () {
     test('falls back to the placeholder when SUPPORT_EMAIL is blank', () {
       // Independent of any --dart-define passed to the test run.
-      expect(AppConfig.resolveSupportEmail(''), 'support@ourney.app');
-      expect(AppConfig.defaultSupportEmail, 'support@ourney.app');
-      expect(const AppConfig.localOnly().supportEmail, 'support@ourney.app');
+      expect(AppConfig.resolveSupportEmail(''), 'support@ourney.tech');
+      expect(AppConfig.defaultSupportEmail, 'support@ourney.tech');
+      expect(const AppConfig.localOnly().supportEmail, 'support@ourney.tech');
       expect(testBackendConfig.supportEmail, AppConfig.defaultSupportEmail);
     });
 
@@ -79,7 +79,7 @@ void main() {
       );
       expect(c.read(supportEmailProvider), 'help@example.com');
       final d = await container();
-      expect(d.read(supportEmailProvider), 'support@ourney.app');
+      expect(d.read(supportEmailProvider), 'support@ourney.tech');
     });
   });
 

@@ -12,5 +12,5 @@ abstract final class SocialPaths {
 
   /// Public URL of an invite token (opens WEB-05 / the app at `/f/<token>`).
   static String inviteUrl(String token) =>
-      'https://ourney.app/f/${Uri.encodeComponent(token)}';
+      'https://ourney.tech/f/${Uri.encodeComponent(token)}';
 }
