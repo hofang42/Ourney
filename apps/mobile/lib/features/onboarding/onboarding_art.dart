@@ -43,8 +43,8 @@ class OnboardingArtMemories extends StatelessWidget {
                       width: 104,
                       height: 136,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        border: Border.all(color: Colors.white, width: 6),
+                        color: ui.surface,
+                        border: Border.all(color: ui.surface, width: 6),
                         boxShadow: [
                           BoxShadow(
                             color: ui.shadow,
@@ -91,6 +91,7 @@ class OnboardingArtStyles extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ui = context.ui;
     return ExcludeSemantics(
       child: FittedBox(
         fit: BoxFit.scaleDown,
@@ -117,13 +118,13 @@ class OnboardingArtStyles extends StatelessWidget {
                             color: uiJourneyStyles[i].accent,
                             width: 10,
                           ),
-                          left: const BorderSide(color: Color(0xFF111114)),
-                          right: const BorderSide(color: Color(0xFF111114)),
-                          bottom: const BorderSide(color: Color(0xFF111114)),
+                          left: BorderSide(color: uiJourneyStyles[i].ink),
+                          right: BorderSide(color: uiJourneyStyles[i].ink),
+                          bottom: BorderSide(color: uiJourneyStyles[i].ink),
                         ),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x1A111114),
+                            color: ui.shadow,
                             blurRadius: 24,
                             offset: Offset(0, 10),
                           ),
@@ -136,7 +137,7 @@ class OnboardingArtStyles extends StatelessWidget {
                         style: UiText.display(
                           size: 15,
                           height: 1.3,
-                          color: const Color(0xFF111114),
+                          color: uiJourneyStyles[i].ink,
                         ),
                       ),
                     ),

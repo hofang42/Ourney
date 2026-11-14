@@ -6,6 +6,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../groups/ui/group_photo.dart';
 import 'checkin_progress.dart';
@@ -70,6 +71,17 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
 
   @override
   Widget build(BuildContext context) {
+    final journey = widget.journey;
+    // Inside a journey the screen wears its V2 skin ("world").
+    return journey == null
+        ? _content(context)
+        : UiSkinScope(
+            skinId: uiSkinIdFor(personaSkinOf(journey)),
+            child: Builder(builder: _content),
+          );
+  }
+
+  Widget _content(BuildContext context) {
     final l10n = CheckinL10n.of(context);
     final common = AppLocalizations.of(context);
     final ui = context.ui;
@@ -83,7 +95,6 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
 
     return UiScaffold(
       key: const ValueKey('checkin-success-screen'),
-      background: ui.isDark ? ui.bg : const Color(0xFFF5F3EE),
       padTop: 40,
       bottom: Center(
         child: ConstrainedBox(
@@ -201,7 +212,7 @@ class _MiniCalendar extends StatelessWidget {
     final d = checkIn.localDate;
     final weekday = DateTime(d.year, d.month, d.day).weekday; // 1 = Monday
     final todayIndex = 21 + weekday - 1;
-    const warm = Color(0xFFFBDCCA);
+    final warm = ui.accent.withValues(alpha: 0.22);
     return Semantics(
       label: l10n.checkin_calendarSemantics(28),
       child: ExcludeSemantics(
@@ -266,7 +277,7 @@ class _MiniCalendar extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(5),
-          border: Border.all(color: const Color(0xFFEA580C), width: 3),
+          border: Border.all(color: ui.accent, width: 3),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(3),

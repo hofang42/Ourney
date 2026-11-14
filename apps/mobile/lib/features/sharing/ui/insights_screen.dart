@@ -291,6 +291,7 @@ class _InsightsBody extends ConsumerWidget {
           decoration: BoxDecoration(
             color: ui.fill,
             borderRadius: BorderRadius.circular(UiRadius.menu),
+            border: ui.stickerBorder(UiBorder.hairline),
           ),
           child: Text(
             l10n.sharing_privacyNote,

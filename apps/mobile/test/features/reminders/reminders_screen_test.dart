@@ -8,6 +8,16 @@ import 'reminders_fakes.dart';
 Finder byKey(String key) => find.byKey(ValueKey(key));
 
 void main() {
+  testWidgets('toggle row reads the localized toggle label', (tester) async {
+    final handle = tester.ensureSemantics();
+    final h = await reminderHarness();
+    addTearDown(h.container.dispose);
+    await tester.pumpWidget(remindersApp(h));
+    await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Nhắc cho Tập mỗi ngày'), findsOneWidget);
+    handle.dispose();
+  });
+
   testWidgets('first reminder: rationale, OS prompt, saved and scheduled', (
     tester,
   ) async {

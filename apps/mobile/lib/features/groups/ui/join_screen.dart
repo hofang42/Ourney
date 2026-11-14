@@ -145,7 +145,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.groups_outlined, color: ui.ink),
+                const OurneyIcon(name: 'squad', size: 26),
                 const SizedBox(width: UiSpace.md),
                 Expanded(
                   child: Text(

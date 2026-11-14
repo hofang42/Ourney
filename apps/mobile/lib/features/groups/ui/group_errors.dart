@@ -53,42 +53,16 @@ Future<bool> confirmGroupAction(
   required String message,
   required String confirmLabel,
   bool destructive = false,
-}) async {
-  final app = AppLocalizations.of(context);
-  final result = await showUiSheet<bool>(
-    context: context,
-    builder: (context) {
-      final ui = context.ui;
-      return Column(
-        key: const ValueKey('groups-confirm-dialog'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Semantics(
-            header: true,
-            child: Text(title, style: UiText.h2(color: ui.ink)),
-          ),
-          const SizedBox(height: UiSpace.sm),
-          Text(message, style: UiText.muted(color: ui.inkMuted, size: 14)),
-          const SizedBox(height: UiSpace.xl),
-          UiButton(
-            key: const ValueKey('groups-confirm'),
-            label: confirmLabel,
-            accent: destructive ? ui.danger : null,
-            onAccent: destructive ? Colors.white : null,
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-          const SizedBox(height: UiSpace.sm),
-          UiButton.secondary(
-            label: app.common_cancel,
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-        ],
-      );
-    },
-  );
-  return result ?? false;
-}
+}) => showUiConfirmSheet(
+  context: context,
+  title: title,
+  message: message,
+  confirmLabel: confirmLabel,
+  cancelLabel: AppLocalizations.of(context).common_cancel,
+  destructive: destructive,
+  sheetKey: const ValueKey('groups-confirm-dialog'),
+  confirmKey: const ValueKey('groups-confirm'),
+);
 
 /// Fallback while the data layer is not wired (`isNotWired`): a plain page
 /// keyed `placeholder-<id>` like the router tests expect.

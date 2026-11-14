@@ -132,7 +132,8 @@ class _FollowBody extends StatelessWidget {
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(UiRadius.card),
-            border: Border.all(color: ui.border),
+            border: ui.stickerBorder(),
+            boxShadow: ui.hardShadow(UiShadow.large),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

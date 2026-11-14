@@ -41,6 +41,29 @@ void main() {
       expect(location(c), AppRoutes.capture);
     });
 
+    testWidgets('step segments: done, current and pending look different', (
+      tester,
+    ) async {
+      await pumpOurneyApp(tester, onboarded: false);
+      await tester.tap(byKey('onboarding-next'));
+      await tester.pumpAndSettle();
+      BoxDecoration deco(int i) =>
+          (tester.widget<AnimatedContainer>(byKey('onboarding-step-$i')))
+                  .decoration!
+              as BoxDecoration;
+      double h(int i) => tester.getSize(byKey('onboarding-step-$i')).height;
+      final done = deco(0), current = deco(1), pending = deco(2);
+      expect(current.color, isNot(done.color));
+      expect(current.color, isNot(pending.color));
+      expect(done.color, isNot(pending.color));
+      expect(h(1), greaterThan(h(0)));
+      expect(h(0), h(2));
+      expect(
+        (current.border! as Border).top.width,
+        greaterThan((done.border! as Border).top.width),
+      );
+    });
+
     testWidgets('language chip switches the app to English and persists', (
       tester,
     ) async {

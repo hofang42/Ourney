@@ -253,7 +253,7 @@ class OurneyIconPainter extends CustomPainter {
   /// Outline color.
   final Color ink;
 
-  /// Adds the die-cut edge (and the hard shadow from 24dp up).
+  /// Adds the die-cut edge and hard shadow (full tier, 24dp up, only).
   final bool active;
 
   /// Hard shadow of the full tier; null skips it.
@@ -285,11 +285,11 @@ class OurneyIconPainter extends CustomPainter {
       );
     }
 
-    if (active && !tiny) {
-      if (shadow != null && full) {
+    if (active && full) {
+      if (shadow != null) {
         layer(path.shift(Offset(2 / scale, 2 / scale)), shadow!, 12);
       }
-      layer(path, dieCut, full ? 12 : 9);
+      layer(path, dieCut, 12);
     }
     if (!tiny) layer(path, ink, full ? 6 : 5);
     layer(path, color, tiny ? 3.5 : 2);

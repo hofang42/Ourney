@@ -241,7 +241,7 @@ class _UiOtpFieldState extends State<UiOtpField> {
           final gaps = _otpGap * (widget.length - 1);
           // Leave room for the 4dp active shadow on the last box.
           final fit = (c.maxWidth - gaps - 4) / widget.length;
-          final w = fit.isFinite ? fit.clamp(30.0, _otpW) : _otpW;
+          final w = fit.isFinite ? fit.clamp(22.0, _otpW) : _otpW;
           return Stack(
             children: [
               ExcludeSemantics(
@@ -339,10 +339,14 @@ class UiSwitchRow extends StatelessWidget {
     required this.onChanged,
     this.subtitle,
     this.divider = true,
+    this.semanticsLabel,
     super.key,
   });
 
   final String label;
+
+  /// Screen-reader label; defaults to [label].
+  final String? semanticsLabel;
   final String? subtitle;
   final bool value;
   final ValueChanged<bool>? onChanged;
@@ -353,7 +357,7 @@ class UiSwitchRow extends StatelessWidget {
     final ui = context.ui;
     return UiPressable(
       onPressed: onChanged == null ? null : () => onChanged!(!value),
-      semanticLabel: label,
+      semanticLabel: semanticsLabel ?? label,
       selected: value,
       excludeChildSemantics: true,
       borderRadius: BorderRadius.zero,

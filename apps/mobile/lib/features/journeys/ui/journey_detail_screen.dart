@@ -113,117 +113,135 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
       if (perms.canDelete) _Action.delete,
     ];
 
-    final ui = context.ui;
-    final pal = JourneyPalette.of(context, styleOfJourney(journey));
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
 
-    return DayTicker(
-      child: ActiveJourneyScope(
-        journeyId: journey.id,
-        child: UiScaffold(
-          key: const ValueKey('journey-detail'),
-          background: pal.paper,
-          padTop: 0,
-          padBottom: 24,
-          bottom: perms.canCheckIn
-              ? Padding(
-                  padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: UiButton(
-                      key: const ValueKey('journey-checkin'),
-                      label: progress?.checkedInToday ?? false
-                          ? l10n.journeys_addMore
-                          : l10n.journeys_checkInNow,
-                      icon: Icons.photo_camera_outlined,
-                      accent: pal.accent,
-                      onAccent: pal.onAccent,
-                      expand: false,
-                      onPressed: () => checkInNow(context, ref, journey.id),
-                    ),
-                  ),
-                )
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(
-                journey: journey,
-                canMore: actions.isNotEmpty,
-                onBack: _back,
-                onShare: () => _share(context, journey),
-                onMore: () => setState(() => _menuOpen = !_menuOpen),
-              ),
-              if (_menuOpen && actions.isNotEmpty)
-                Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: UiMenuSurface(
-                    children: [
-                      for (final a in actions)
-                        UiMenuItem(
-                          key: ValueKey('journey-action-${a.name}'),
-                          icon: switch (a) {
-                            _Action.end => Icons.flag_outlined,
-                            _Action.archive => Icons.inventory_2_outlined,
-                            _Action.delete => Icons.delete_outline_rounded,
-                          },
-                          destructive: a == _Action.delete,
-                          label: switch (a) {
-                            _Action.end => l10n.journeys_endJourney,
-                            _Action.archive => l10n.journeys_archive,
-                            _Action.delete => l10n.journeys_delete,
-                          },
-                          onPressed: () {
-                            setState(() => _menuOpen = false);
-                            unawaited(_run(context, journey, a));
-                          },
+    return UiSkinScope(
+      skinId: uiSkinIdFor(skinOfJourney(journey)),
+      // Read tokens from inside the scope so the skin applies.
+      child: Builder(
+        builder: (context) {
+          final ui = context.ui;
+          final pal = JourneyPalette.of(context, styleOfJourney(journey));
+          return DayTicker(
+            child: ActiveJourneyScope(
+              journeyId: journey.id,
+              child: UiScaffold(
+                key: const ValueKey('journey-detail'),
+                background: pal.paper,
+                padTop: 0,
+                padBottom: 24,
+                bottom: perms.canCheckIn
+                    ? Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          gutter,
+                          UiSpace.sm,
+                          gutter,
+                          20,
                         ),
+                        child: Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: UiButton(
+                            key: const ValueKey('journey-checkin'),
+                            label: progress?.checkedInToday ?? false
+                                ? l10n.journeys_addMore
+                                : l10n.journeys_checkInNow,
+                            icon: Icons.photo_camera_outlined,
+                            accent: pal.accent,
+                            onAccent: pal.onAccent,
+                            expand: false,
+                            onPressed: () =>
+                                checkInNow(context, ref, journey.id),
+                          ),
+                        ),
+                      )
+                    : null,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _Header(
+                      journey: journey,
+                      canMore: actions.isNotEmpty,
+                      onBack: _back,
+                      onShare: () => _share(context, journey),
+                      onMore: () => setState(() => _menuOpen = !_menuOpen),
+                    ),
+                    if (_menuOpen && actions.isNotEmpty)
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: UiMenuSurface(
+                          children: [
+                            for (final a in actions)
+                              UiMenuItem(
+                                key: ValueKey('journey-action-${a.name}'),
+                                icon: switch (a) {
+                                  _Action.end => Icons.flag_outlined,
+                                  _Action.archive => Icons.inventory_2_outlined,
+                                  _Action.delete =>
+                                    Icons.delete_outline_rounded,
+                                },
+                                destructive: a == _Action.delete,
+                                label: switch (a) {
+                                  _Action.end => l10n.journeys_endJourney,
+                                  _Action.archive => l10n.journeys_archive,
+                                  _Action.delete => l10n.journeys_delete,
+                                },
+                                onPressed: () {
+                                  setState(() => _menuOpen = false);
+                                  unawaited(_run(context, journey, a));
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    Divider(height: 1, color: ui.border),
+                    const SizedBox(height: 22),
+                    if (!perms.isActive) const _ReadOnlyBanner(),
+                    UiEyebrow(_dateRange(context, journey).toUpperCase()),
+                    const SizedBox(height: 4),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        journey.title,
+                        style: UiText.h1(color: ui.ink),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    if (progress != null) _Stats(progress: progress, pal: pal),
+                    if (journey.kind == JourneyKind.group) ...[
+                      const SizedBox(height: UiSpace.lg),
+                      UiButton.secondary(
+                        key: const ValueKey('journey-open-group'),
+                        icon: Icons.people_outline_rounded,
+                        label: l10n.journeys_openGroup,
+                        onPressed: () => context.go(AppRoutes.groups),
+                      ),
                     ],
-                  ),
+                    const SizedBox(height: 18),
+                    _SectionTab(
+                      title: l10n.journeys_timelineTitle,
+                      accent: pal.accent,
+                    ),
+                    const SizedBox(height: UiSpace.xl),
+                    if (progress == null)
+                      const Padding(
+                        padding: EdgeInsets.all(UiSpace.xl),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    else
+                      JourneyChain(
+                        days: progress.timeline(),
+                        pal: pal,
+                        onTapDay: (d) =>
+                            context.push(JourneysPaths.day(journey.id, d.date)),
+                      ),
+                    if (membership != null && perms.isActive)
+                      _PrivacySection(journey: journey, membership: membership),
+                  ],
                 ),
-              Divider(height: 1, color: ui.border),
-              const SizedBox(height: 22),
-              if (!perms.isActive) const _ReadOnlyBanner(),
-              UiEyebrow(_dateRange(context, journey).toUpperCase()),
-              const SizedBox(height: 4),
-              Semantics(
-                header: true,
-                child: Text(journey.title, style: UiText.h1(color: ui.ink)),
               ),
-              const SizedBox(height: 22),
-              if (progress != null) _Stats(progress: progress, pal: pal),
-              if (journey.kind == JourneyKind.group) ...[
-                const SizedBox(height: UiSpace.lg),
-                UiButton.secondary(
-                  key: const ValueKey('journey-open-group'),
-                  icon: Icons.people_outline_rounded,
-                  label: l10n.journeys_openGroup,
-                  onPressed: () => context.go(AppRoutes.groups),
-                ),
-              ],
-              const SizedBox(height: 18),
-              _SectionTab(
-                title: l10n.journeys_timelineTitle,
-                accent: pal.accent,
-              ),
-              const SizedBox(height: UiSpace.xl),
-              if (progress == null)
-                const Padding(
-                  padding: EdgeInsets.all(UiSpace.xl),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else
-                JourneyChain(
-                  days: progress.timeline(),
-                  pal: pal,
-                  onTapDay: (d) =>
-                      context.push(JourneysPaths.day(journey.id, d.date)),
-                ),
-              if (membership != null && perms.isActive)
-                _PrivacySection(journey: journey, membership: membership),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

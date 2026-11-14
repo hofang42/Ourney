@@ -193,20 +193,15 @@ class GroupCard extends ConsumerWidget {
         semanticLabel: '${journey.title}, ${style.name}, $subtitle',
         excludeChildSemantics: true,
         borderRadius: radius,
+        shadowOffset: UiShadow.small,
+        shadowColor: ui.outline,
         minSize: const Size(UiSize.tap, 118),
         child: Container(
           constraints: const BoxConstraints(minHeight: 118),
           decoration: BoxDecoration(
             color: ui.surface,
             borderRadius: radius,
-            border: Border.all(color: ui.divider),
-            boxShadow: [
-              BoxShadow(
-                color: ui.shadow.withValues(alpha: 0.05),
-                blurRadius: 16,
-                offset: const Offset(0, 5),
-              ),
-            ],
+            border: ui.stickerBorder(),
           ),
           child: ClipRRect(
             borderRadius: radius,
@@ -222,7 +217,7 @@ class GroupCard extends ConsumerWidget {
                       color: ui.isDark
                           ? style.accent.withValues(alpha: 0.18)
                           : style.paper,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(UiRadius.input),
                     ),
                     child: Icon(
                       uiJourneyIcon(journey.emoji, journey.templateId),
@@ -321,7 +316,7 @@ class _ActionTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: ui.surface,
           borderRadius: radius,
-          border: Border.all(color: ui.border),
+          border: ui.stickerBorder(UiBorder.thin),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

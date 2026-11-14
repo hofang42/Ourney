@@ -179,7 +179,8 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
                   // The QR stays dark-on-white in dark mode too (scanners).
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(UiRadius.card),
-                  border: Border.all(color: ui.border),
+                  border: ui.stickerBorder(),
+                  boxShadow: ui.hardShadow(UiShadow.small),
                 ),
                 padding: const EdgeInsets.all(UiSpace.md),
                 child: QrImageView(
