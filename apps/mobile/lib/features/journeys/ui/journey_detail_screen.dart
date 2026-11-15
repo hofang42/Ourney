@@ -254,6 +254,9 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         pal: pal,
                         selfName: journey.coupleSelfName,
                         partnerName: journey.couplePartnerName,
+                        showOfflineStamps: !ref
+                            .watch(appConfigProvider)
+                            .localOnly,
                         onTapDay: (d) =>
                             context.push(JourneysPaths.day(journey.id, d.date)),
                       ),

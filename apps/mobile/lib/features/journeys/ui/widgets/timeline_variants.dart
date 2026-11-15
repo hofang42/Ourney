@@ -446,15 +446,46 @@ class _Stone extends StatelessWidget {
 
 /// Memory collectors: a stitched thread with taped polaroids either side.
 class MemoryTimeline extends StatelessWidget {
-  const MemoryTimeline({required this.days, required this.onTapDay, super.key});
+  const MemoryTimeline({
+    required this.days,
+    required this.onTapDay,
+    this.showOfflineStamps = false,
+    super.key,
+  });
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
 
+  /// Only with a backend: local-only check-ins are never uploaded.
+  final bool showOfflineStamps;
+
   @override
   Widget build(BuildContext context) {
     final accent = timelineAccent(context);
-    return Stack(
+    final frames = days
+        .where(
+          (d) => d.state == DayState.checkedIn || d.state == DayState.today,
+        )
+        .where((d) => d.checkIn != null)
+        .length;
+    final roll = Padding(
+      padding: const EdgeInsets.only(bottom: UiSpace.sm),
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: UiTag(
+          key: const ValueKey('timeline-film-roll'),
+          label: JourneysL10n.of(context).journeys_memoryFilmRoll(frames),
+          glyph: OurneyIcon(
+            name: 'camera',
+            size: 12,
+            flat: true,
+            color: accent,
+          ),
+          foreground: accent,
+        ),
+      ),
+    );
+    final thread = Stack(
       key: const ValueKey('journey-timeline'),
       children: [
         Positioned.fill(
@@ -511,10 +542,19 @@ class MemoryTimeline extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (var i = 0; i < days.length; i++)
-              _ScrapRow(day: days[i], index: i, onTap: onTapDay),
+              _ScrapRow(
+                day: days[i],
+                index: i,
+                onTap: onTapDay,
+                showOfflineStamp: showOfflineStamps,
+              ),
           ],
         ),
       ],
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [roll, thread],
     );
   }
 }
@@ -524,11 +564,13 @@ class _ScrapRow extends StatelessWidget {
     required this.day,
     required this.index,
     required this.onTap,
+    required this.showOfflineStamp,
   });
 
   final TimelineDay day;
   final int index;
   final ValueChanged<TimelineDay> onTap;
+  final bool showOfflineStamp;
 
   @override
   Widget build(BuildContext context) {
@@ -578,14 +620,31 @@ class _ScrapRow extends StatelessWidget {
               ),
               footer: Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  day.state == DayState.today
-                      ? JourneysL10n.of(context).journeys_memoryToday
-                      : _dayText(context, day),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: timelineHeading(context, size: 13),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      day.state == DayState.today
+                          ? JourneysL10n.of(context).journeys_memoryToday
+                          : _dayText(context, day),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: timelineHeading(context, size: 13),
+                    ),
+                    if (showOfflineStamp &&
+                        day.checkIn != null &&
+                        !day.checkIn!.uploaded)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: UiTag(
+                          key: ValueKey('timeline-offline-${day.dayNumber}'),
+                          label: JourneysL10n.of(context)
+                              .journeys_memoryOffline,
+                          foreground: ui.inkMuted,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

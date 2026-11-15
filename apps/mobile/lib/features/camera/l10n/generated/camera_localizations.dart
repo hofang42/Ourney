@@ -367,6 +367,42 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Đóng'**
   String get camera_pickerClose;
+
+  /// No description provided for @camera_pickerNotShot.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa chụp hôm nay'**
+  String get camera_pickerNotShot;
+
+  /// No description provided for @camera_pickerShot.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chụp hôm nay'**
+  String get camera_pickerShot;
+
+  /// No description provided for @camera_pickerEnded.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã kết thúc'**
+  String get camera_pickerEnded;
+
+  /// No description provided for @camera_studyElapsed.
+  ///
+  /// In vi, this message translates to:
+  /// **'HỌC {time} · {days} LIỀN'**
+  String camera_studyElapsed(String time, int days);
+
+  /// No description provided for @camera_lastPace.
+  ///
+  /// In vi, this message translates to:
+  /// **'NHỊP GẦN NHẤT {pace}'**
+  String camera_lastPace(String pace);
+
+  /// No description provided for @camera_lastWeight.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lần cân gần nhất {value}'**
+  String camera_lastWeight(String value);
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

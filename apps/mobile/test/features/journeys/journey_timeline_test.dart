@@ -43,6 +43,7 @@ Widget _host(
   List<TimelineDay>? days,
   String? selfName,
   String? partnerName,
+  bool showOfflineStamps = false,
 }) {
   return ProviderScope(
     child: MaterialApp(
@@ -66,6 +67,7 @@ Widget _host(
                   days: days ?? _days(),
                   selfName: selfName,
                   partnerName: partnerName,
+                  showOfflineStamps: showOfflineStamps,
                   pal: JourneyPalette.of(
                     context,
                     styleOfJourney(testJourney()),
@@ -204,6 +206,57 @@ void main() {
     expect(find.byKey(const ValueKey('timeline-knot-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('timeline-knot-4')), findsOneWidget);
     expect(find.textContaining('tap to snap'), findsOneWidget);
+  });
+
+  testWidgets('memory shows the film roll chip and offline stamps', (
+    tester,
+  ) async {
+    final j = testJourney();
+    final days = _days();
+    days[0] = TimelineDay(
+      date: days[0].date,
+      dayNumber: 1,
+      isToday: false,
+      state: DayState.checkedIn,
+      checkIn: testCheckIn(j.id, days[0].date, uploaded: false),
+    );
+    await tester.pumpWidget(
+      _host(
+        'memory',
+        brightness: Brightness.dark,
+        scale: 1.35,
+        onTap: (_) {},
+        days: days,
+        showOfflineStamps: true,
+      ),
+    );
+    expect(find.byKey(const ValueKey('timeline-film-roll')), findsOneWidget);
+    expect(find.textContaining('FILM ROLL'), findsOneWidget);
+    expect(find.byKey(const ValueKey('timeline-offline-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('timeline-offline-2')), findsNothing);
+  });
+
+  testWidgets('memory: local-only shows no offline stamp', (tester) async {
+    final j = testJourney();
+    final d = LocalDate(2026, 10, 10);
+    await tester.pumpWidget(
+      _host(
+        'memory',
+        brightness: Brightness.light,
+        scale: 1,
+        onTap: (_) {},
+        days: [
+          TimelineDay(
+            date: d,
+            dayNumber: 1,
+            isToday: false,
+            state: DayState.checkedIn,
+            checkIn: testCheckIn(j.id, d, uploaded: false),
+          ),
+        ],
+      ),
+    );
+    expect(find.byKey(const ValueKey('timeline-offline-1')), findsNothing);
   });
 
   for (final skin in _skins) {

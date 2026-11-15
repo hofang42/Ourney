@@ -118,5 +118,35 @@
         "type": "int"
       }
     }
+  },
+  "camera_pickerNotShot": "Chưa chụp hôm nay",
+  "camera_pickerShot": "Đã chụp hôm nay",
+  "camera_pickerEnded": "Đã kết thúc",
+  "camera_studyElapsed": "HỌC {time} · {days} LIỀN",
+  "@camera_studyElapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_lastPace": "NHỊP GẦN NHẤT {pace}",
+  "@camera_lastPace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "camera_lastWeight": "Lần cân gần nhất {value}",
+  "@camera_lastWeight": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   }
 }

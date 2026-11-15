@@ -1,8 +1,10 @@
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
+import '../journeys/data/journeys_providers.dart';
 
 /// Repository errors surface in the UI with a retry button; never retry on
 /// a timer (no hidden work on the camera screen, NFR-1).
@@ -49,3 +51,25 @@ Journey? pickInitialJourney(List<Journey> journeys, String? lastId) {
   }
   return journeys.first;
 }
+
+/// Every journey (active and ended) for the picker sheet sections.
+final capturePickerJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
+  (ref) => ref.watch(journeyRepositoryProvider).watchActive(),
+  retry: _noRetry,
+);
+
+/// Ids of the journeys already shot today, by the device-local calendar day
+/// (the journey timezone database is never loaded on the camera, NFR-1).
+final captureShotTodayProvider = FutureProvider.autoDispose<Set<String>>((
+  ref,
+) async {
+  final journeys = await ref.watch(capturePickerJourneysProvider.future);
+  final n = clock.now();
+  final today = LocalDate(n.year, n.month, n.day);
+  final shot = <String>{};
+  for (final j in journeys) {
+    final list = await ref.watch(myCheckInsProvider(j.id).future);
+    if (list.any((c) => c.localDate == today)) shot.add(j.id);
+  }
+  return shot;
+});

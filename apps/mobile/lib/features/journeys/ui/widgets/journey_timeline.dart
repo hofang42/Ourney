@@ -16,8 +16,12 @@ class JourneyTimeline extends StatelessWidget {
     required this.onTapDay,
     this.selfName,
     this.partnerName,
+    this.showOfflineStamps = false,
     super.key,
   });
+
+  /// Offline stamps need a server to sync to; local-only never shows them.
+  final bool showOfflineStamps;
 
   /// Couple names of the journey (couple skin only).
   final String? selfName;
@@ -34,7 +38,11 @@ class JourneyTimeline extends StatelessWidget {
     return switch (skinId) {
       'quiet' => QuietTimeline(days: days, onTapDay: onTapDay),
       'squad' => SquadTimeline(days: days, onTapDay: onTapDay),
-      'memory' => MemoryTimeline(days: days, onTapDay: onTapDay),
+      'memory' => MemoryTimeline(
+        days: days,
+        onTapDay: onTapDay,
+        showOfflineStamps: showOfflineStamps,
+      ),
       'couple' => CoupleTimeline(
         days: days,
         onTapDay: onTapDay,

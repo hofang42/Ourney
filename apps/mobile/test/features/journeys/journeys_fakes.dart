@@ -93,6 +93,7 @@ CheckIn testCheckIn(
   String userId = 'u1',
   String? caption,
   double? metricValue,
+  bool uploaded = true,
 }) => CheckIn(
   id: 'c-$journeyId-$date',
   journeyId: journeyId,
@@ -103,7 +104,7 @@ CheckIn testCheckIn(
   thumbPath: checkInThumbPath(journeyId, userId, 'c-$date'),
   caption: caption,
   metricValue: metricValue,
-  uploaded: true,
+  uploaded: uploaded,
 );
 
 class FakeJourneyRepository implements JourneyRepository {

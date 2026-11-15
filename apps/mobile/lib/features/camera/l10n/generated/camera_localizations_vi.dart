@@ -160,4 +160,28 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_pickerClose => 'Đóng';
+
+  @override
+  String get camera_pickerNotShot => 'Chưa chụp hôm nay';
+
+  @override
+  String get camera_pickerShot => 'Đã chụp hôm nay';
+
+  @override
+  String get camera_pickerEnded => 'Đã kết thúc';
+
+  @override
+  String camera_studyElapsed(String time, int days) {
+    return 'HỌC $time · $days LIỀN';
+  }
+
+  @override
+  String camera_lastPace(String pace) {
+    return 'NHỊP GẦN NHẤT $pace';
+  }
+
+  @override
+  String camera_lastWeight(String value) {
+    return 'Lần cân gần nhất $value';
+  }
 }

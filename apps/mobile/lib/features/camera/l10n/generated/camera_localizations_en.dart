@@ -161,4 +161,28 @@ class CameraL10nEn extends CameraL10n {
 
   @override
   String get camera_pickerClose => 'Close';
+
+  @override
+  String get camera_pickerNotShot => 'Not shot today';
+
+  @override
+  String get camera_pickerShot => 'Shot today';
+
+  @override
+  String get camera_pickerEnded => 'Ended';
+
+  @override
+  String camera_studyElapsed(String time, int days) {
+    return 'STUDY $time · $days STREAK';
+  }
+
+  @override
+  String camera_lastPace(String pace) {
+    return 'LAST PACE $pace';
+  }
+
+  @override
+  String camera_lastWeight(String value) {
+    return 'Last weigh-in $value';
+  }
 }
