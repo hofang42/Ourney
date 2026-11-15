@@ -20,6 +20,9 @@ class CaptureSkinOverlay extends StatefulWidget {
     required this.streak,
     this.lastPace,
     this.lastWeight,
+    this.lastWeightKg,
+    this.onWeightChanged,
+    this.lastKm,
     this.partnerPhotoFile,
     super.key,
   });
@@ -35,6 +38,15 @@ class CaptureSkinOverlay extends StatefulWidget {
   /// saving a weight stays in the check-in flow.
   final String? lastWeight;
 
+  /// Quiet: last weigh-in as a number; the slider starts from it.
+  final double? lastWeightKg;
+
+  /// Quiet: called with the slider value (0.1 step). Null hides the slider.
+  final ValueChanged<double>? onWeightChanged;
+
+  /// Flexer: distance (km) of the last check-in that logged one.
+  final double? lastKm;
+
   /// Couple: local file of the partner's latest photo, when there is one.
   final String? partnerPhotoFile;
 
@@ -47,6 +59,10 @@ enum _FlexHud { bold, stamp, strip }
 class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
   bool _ghost = true;
   _FlexHud _hud = _FlexHud.bold;
+  late double _kg = _clampKg(widget.lastWeightKg ?? 60);
+
+  static double _clampKg(double v) =>
+      ((v.clamp(30.0, 200.0)) * 10).round() / 10;
 
   // Squad: real elapsed time since the camera (this overlay) opened.
   final DateTime _openedAt = clock.now();
@@ -139,16 +155,67 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             ],
           ),
         ),
-        if (widget.lastWeight != null)
+        if (widget.lastWeight != null || widget.onWeightChanged != null)
           Positioned(
             left: 16,
             right: 16,
-            bottom: 96,
-            child: _Mono(
-              l10n.camera_lastWeight(widget.lastWeight!),
-              keyName: 'overlay-weight',
+            bottom: 92,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (widget.onWeightChanged != null)
+                  _weightSlider(context, l10n),
+                if (widget.lastWeight != null)
+                  _Mono(
+                    l10n.camera_lastWeight(widget.lastWeight!),
+                    keyName: 'overlay-weight',
+                  ),
+              ],
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _weightSlider(BuildContext context, CameraL10n l10n) {
+    final value = '${_kg.toStringAsFixed(1)} kg';
+    return Row(
+      key: const ValueKey('overlay-weight-slider-row'),
+      children: [
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: UiCamera.ink,
+              inactiveTrackColor: UiCamera.outline,
+              thumbColor: UiCamera.ink,
+              overlayColor: UiCamera.ink.withValues(alpha: 0.2),
+            ),
+            child: Semantics(
+              label: l10n.camera_weightSliderLabel,
+              value: value,
+              child: SizedBox(
+                height: 48,
+                child: Slider(
+                  key: const ValueKey('overlay-weight-slider'),
+                  min: 30,
+                  max: 200,
+                  divisions: 1700,
+                  value: _kg,
+                  semanticFormatterCallback: (v) =>
+                      '${v.toStringAsFixed(1)} kg',
+                  onChanged: (v) {
+                    final kg = _clampKg(v);
+                    setState(() => _kg = kg);
+                    widget.onWeightChanged?.call(kg);
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        ExcludeSemantics(child: _Mono(value, keyName: 'overlay-weight-value')),
       ],
     );
   }
@@ -312,7 +379,12 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             right: 16,
             bottom: 124,
             child: _Mono(
-              l10n.camera_lastPace(widget.lastPace!),
+              widget.lastKm == null
+                  ? l10n.camera_lastPace(widget.lastPace!)
+                  : l10n.camera_lastPaceKm(
+                      widget.lastPace!,
+                      widget.lastKm!.toStringAsFixed(1),
+                    ),
               keyName: 'overlay-pace',
             ),
           ),

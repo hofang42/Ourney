@@ -126,6 +126,26 @@ void main() {
     expect(find.byKey(const ValueKey('checkin-pace-error')), findsNothing);
   });
 
+  testWidgets('flexer posts the typed distance with the pace', (tester) async {
+    await pump(tester, testJourney(templateId: TemplateId.workout30));
+    await tester.enterText(find.byKey(const ValueKey('checkin-km')), '5,3');
+    await tapKey(tester, 'checkin-pace-key-5');
+    await post(tester);
+    expect(
+      checkIns.submitted.single.extras,
+      const CheckInExtras(km: 5.3, pace: '0:05'),
+    );
+  });
+
+  testWidgets('flexer distance over 500 km blocks Post', (tester) async {
+    await pump(tester, testJourney(templateId: TemplateId.workout30));
+    await tester.enterText(find.byKey(const ValueKey('checkin-km')), '501');
+    await tester.pump();
+    await post(tester);
+    expect(checkIns.submitted, isEmpty);
+    expect(find.textContaining('500'), findsWidgets);
+  });
+
   testWidgets('couple skin posts dish, cook, hearts and the partner photo', (
     tester,
   ) async {

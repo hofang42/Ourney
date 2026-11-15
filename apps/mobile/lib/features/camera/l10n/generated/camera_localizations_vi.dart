@@ -184,4 +184,15 @@ class CameraL10nVi extends CameraL10n {
   String camera_lastWeight(String value) {
     return 'Lần cân gần nhất $value';
   }
+
+  @override
+  String get camera_weightSliderLabel => 'Cân nặng (kg)';
+
+  @override
+  String camera_lastPaceKm(String pace, String km) {
+    return 'NHỊP GẦN NHẤT $pace · km $km';
+  }
+
+  @override
+  String get camera_pickerPinned => 'Đã ghim';
 }

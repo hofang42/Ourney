@@ -22,6 +22,33 @@ void main() {
     clock = TestClock(DateTime.utc(2026, 10, 16, 2));
   });
 
+  test('pin works local-only and lists pinned journeys first', () async {
+    final layer = localLayer(db: db, media: media, clock: clock);
+    final a = await layer.journeys.create(
+      soloDraft(start: const LocalDate(2026, 10, 16)),
+    );
+    final b = await layer.journeys.create(
+      soloDraft(start: const LocalDate(2026, 10, 10)),
+    );
+    expect((await layer.journeys.watchActive().first).first.id, a.id);
+    expect(await layer.journeys.watchPinnedJourneyIds().first, isEmpty);
+
+    await layer.journeys.updateMyMembership(b.id, pinned: true);
+    expect(await layer.journeys.watchPinnedJourneyIds().first, {b.id});
+    expect((await layer.journeys.watchActive().first).first.id, b.id);
+    expect(
+      (await layer.journeys.watchMyMembership(b.id).first)!.pinned,
+      isTrue,
+    );
+
+    await layer.journeys.updateMyMembership(b.id, hideExtras: true);
+    final m = await layer.journeys.watchMyMembership(b.id).first;
+    expect(m!.hideExtras, isTrue);
+    expect(m.pinned, isTrue, reason: 'other prefs are left alone');
+    await layer.journeys.updateMyMembership(b.id, pinned: false);
+    expect(await layer.journeys.watchPinnedJourneyIds().first, isEmpty);
+  });
+
   test('create journey -> check-in -> retake replaces -> streak', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
     const guest = 'aaaaaaaa-0000-4000-8000-000000000001';

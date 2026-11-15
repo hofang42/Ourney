@@ -143,6 +143,16 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_hideMetric => 'Hide the number from others';
 
   @override
+  String get journeys_hideExtras =>
+      'Hide my mood, minutes and details from others';
+
+  @override
+  String get journeys_pin => 'Pin to top';
+
+  @override
+  String get journeys_unpin => 'Unpin';
+
+  @override
   String get journeys_blurOnShare => 'Blur photos when sharing outside';
 
   @override
@@ -659,6 +669,11 @@ class JourneysL10nEn extends JourneysL10n {
   @override
   String journeys_extraHearts(int count) {
     return '$count/5 hearts';
+  }
+
+  @override
+  String journeys_extraKm(String km) {
+    return '$km km';
   }
 
   @override

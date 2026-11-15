@@ -87,6 +87,9 @@
   "journeys_metricName": "Tên chỉ số",
   "journeys_metricUnit": "Đơn vị",
   "journeys_hideMetric": "Ẩn con số với người khác",
+  "journeys_hideExtras": "Ẩn tâm trạng, số phút và chi tiết với người khác",
+  "journeys_pin": "Ghim lên đầu",
+  "journeys_unpin": "Bỏ ghim",
   "journeys_blurOnShare": "Làm mờ ảnh khi chia sẻ ra ngoài",
   "journeys_fieldVisibility": "Ai xem được?",
   "journeys_visibilityPrivate": "Chỉ mình tôi",
@@ -735,6 +738,8 @@
       }
     }
   },
+  "journeys_extraKm": "{km} km",
+  "@journeys_extraKm": {"placeholders": {"km": {"type": "String"}}},
   "journeys_extraPace": "{pace} /km",
   "@journeys_extraPace": {
     "placeholders": {

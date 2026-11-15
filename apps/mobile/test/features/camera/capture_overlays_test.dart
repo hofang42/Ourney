@@ -234,4 +234,76 @@ void main() {
     }
     expect(tester.takeException(), isNull);
   });
+
+  for (final dark in [false, true]) {
+    testWidgets(
+      'weight slider, km pace and pinned ${dark ? 'dark' : 'light'}',
+      (tester) async {
+        double? got;
+        await tester.pumpWidget(
+          _host(
+            CaptureSkinOverlay(
+              skin: PersonaSkinId.quietTransformer,
+              dayNumber: 3,
+              streak: 2,
+              lastWeight: '72.4 kg',
+              lastWeightKg: 72.4,
+              onWeightChanged: (v) => got = v,
+            ),
+            dark: dark,
+          ),
+        );
+        await tester.pump();
+        final slider = find.byKey(const ValueKey('overlay-weight-slider'));
+        expect(slider, findsOneWidget);
+        expect(tester.getSize(slider).height, greaterThanOrEqualTo(48));
+        expect(find.textContaining('72.4 kg'), findsWidgets);
+        await tester.drag(slider, const Offset(30, 0));
+        await tester.pump();
+        expect(got, isNotNull);
+        expect(got, greaterThan(72.4));
+        expect(((got! * 10).round() / 10 - got!).abs(), lessThan(1e-9));
+        expect(tester.takeException(), isNull);
+
+        await tester.pumpWidget(
+          _host(
+            const CaptureSkinOverlay(
+              skin: PersonaSkinId.aestheticFlexer,
+              dayNumber: 3,
+              streak: 2,
+              lastPace: '5:30',
+              lastKm: 8.5,
+            ),
+            dark: dark,
+          ),
+        );
+        await tester.pump();
+        expect(find.textContaining('5:30'), findsOneWidget);
+        expect(find.textContaining('8.5'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        final list = [
+          testJourney(title: 'Alpha'),
+          testJourney(id: 'j2', title: 'Beta'),
+        ];
+        await tester.pumpWidget(
+          _host(
+            JourneyPickerSheet(
+              journeys: list,
+              selectedId: null,
+              pinnedIds: const {'j2'},
+            ),
+            dark: dark,
+          ),
+        );
+        await tester.pump();
+        expect(
+          find.byKey(const ValueKey('journey-picker-section-pinned')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('journey-picker-j2')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
 }

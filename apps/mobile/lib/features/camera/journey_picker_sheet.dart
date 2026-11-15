@@ -12,6 +12,7 @@ Future<String?> showJourneyPickerSheet(
   required List<Journey> journeys,
   required String? selectedId,
   Set<String> shotTodayIds = const {},
+  Set<String> pinnedIds = const {},
 }) {
   return showUiSheet<String>(
     context: context,
@@ -19,6 +20,7 @@ Future<String?> showJourneyPickerSheet(
       journeys: journeys,
       selectedId: selectedId,
       shotTodayIds: shotTodayIds,
+      pinnedIds: pinnedIds,
     ),
   );
 }
@@ -30,15 +32,18 @@ class JourneyPickerSheet extends StatefulWidget {
     required this.journeys,
     required this.selectedId,
     this.shotTodayIds = const {},
+    this.pinnedIds = const {},
     super.key,
   });
 
   final List<Journey> journeys;
   final String? selectedId;
 
-  /// Journeys with a check-in today (device-local day). There is no local
-  /// "pinned" concept, so that section is intentionally absent.
+  /// Journeys with a check-in today (device-local day).
   final Set<String> shotTodayIds;
+
+  /// Pinned journeys: listed first, and not repeated in the other sections.
+  final Set<String> pinnedIds;
 
   @override
   State<JourneyPickerSheet> createState() => _JourneyPickerSheetState();
@@ -62,23 +67,32 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
       for (final j in widget.journeys)
         if (q.isEmpty || j.title.toLowerCase().contains(q)) j,
     ];
-    final notShot = [
+    final pinned = [
       for (final j in shown)
+        if (widget.pinnedIds.contains(j.id)) j,
+    ];
+    final rest = [
+      for (final j in shown)
+        if (!widget.pinnedIds.contains(j.id)) j,
+    ];
+    final notShot = [
+      for (final j in rest)
         if (j.status == JourneyStatus.active &&
             !widget.shotTodayIds.contains(j.id))
           j,
     ];
     final shot = [
-      for (final j in shown)
+      for (final j in rest)
         if (j.status == JourneyStatus.active &&
             widget.shotTodayIds.contains(j.id))
           j,
     ];
     final ended = [
-      for (final j in shown)
+      for (final j in rest)
         if (j.status != JourneyStatus.active) j,
     ];
     final sections = [
+      (l10n.camera_pickerPinned, 'pinned', pinned),
       (l10n.camera_pickerNotShot, 'not-shot', notShot),
       (l10n.camera_pickerShot, 'shot', shot),
       (l10n.camera_pickerEnded, 'ended', ended),

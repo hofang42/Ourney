@@ -403,6 +403,24 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Lần cân gần nhất {value}'**
   String camera_lastWeight(String value);
+
+  /// No description provided for @camera_weightSliderLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cân nặng (kg)'**
+  String get camera_weightSliderLabel;
+
+  /// No description provided for @camera_lastPaceKm.
+  ///
+  /// In vi, this message translates to:
+  /// **'NHỊP GẦN NHẤT {pace} · km {km}'**
+  String camera_lastPaceKm(String pace, String km);
+
+  /// No description provided for @camera_pickerPinned.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã ghim'**
+  String get camera_pickerPinned;
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

@@ -31,6 +31,19 @@ void main() {
       expect(const CheckInExtras(mood: '').validate(), 'mood');
     });
 
+    test('km: 0.1..500 with one decimal', () {
+      expect(const CheckInExtras(km: 5.3).validate(), isNull);
+      expect(const CheckInExtras(km: 0.1).validate(), isNull);
+      expect(const CheckInExtras(km: 500).validate(), isNull);
+      expect(const CheckInExtras(km: 0).validate(), 'km');
+      expect(const CheckInExtras(km: 500.1).validate(), 'km');
+      expect(const CheckInExtras(km: 5.25).validate(), 'km');
+      expect(const CheckInExtras(km: 5.25).normalized().km, 5.3);
+      const e = CheckInExtras(km: 10.5);
+      expect(CheckInExtras.fromJson(e.toJsonString()), e);
+      expect(e.isEmpty, isFalse);
+    });
+
     test('normalized drops blanks', () {
       const e = CheckInExtras(dish: '  ', place: ' Đà Lạt ');
       expect(e.normalized(), const CheckInExtras(place: 'Đà Lạt'));

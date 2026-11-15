@@ -185,4 +185,15 @@ class CameraL10nEn extends CameraL10n {
   String camera_lastWeight(String value) {
     return 'Last weigh-in $value';
   }
+
+  @override
+  String get camera_weightSliderLabel => 'Weight (kg)';
+
+  @override
+  String camera_lastPaceKm(String pace, String km) {
+    return 'LAST PACE $pace · km $km';
+  }
+
+  @override
+  String get camera_pickerPinned => 'Pinned';
 }

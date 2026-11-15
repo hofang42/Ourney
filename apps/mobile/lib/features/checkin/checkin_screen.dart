@@ -58,10 +58,18 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     _drafts = ref.read(draftFilesProvider);
     _caption.addListener(_onCaptionChanged);
     final initialMetric = widget.photo?.initialMetricValue;
-    if (initialMetric != null) {
-      _metric.text = initialMetric == initialMetric.roundToDouble()
-          ? initialMetric.toInt().toString()
-          : initialMetric.toStringAsFixed(1);
+    // The camera slider writes the weight through the check-in flow
+    // (pendingWeightProvider); a value carried by the photo wins.
+    final photo = widget.photo;
+    final prefill =
+        initialMetric ??
+        (photo == null
+            ? null
+            : ref.read(pendingWeightProvider(photo.journeyId)));
+    if (prefill != null) {
+      _metric.text = prefill == prefill.roundToDouble()
+          ? prefill.toInt().toString()
+          : prefill.toStringAsFixed(1);
     }
   }
 
@@ -166,7 +174,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final caption = _caption.text.trim();
     if (validateCaption(caption) != null) return;
     final skin = personaSkinOf(journey);
-    if (skin == PersonaSkinId.aestheticFlexer && _extras.paceInvalid) return;
+    if (skin == PersonaSkinId.aestheticFlexer &&
+        (_extras.paceInvalid || _extras.kmInvalid)) {
+      return;
+    }
     final extras = _extras.extrasFor(skin);
     if (extras.validate() != null) return;
 
@@ -237,6 +248,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             : null,
       );
       if (!mounted) return;
+      ref.read(pendingWeightProvider(journey.id).notifier).clear();
       setState(() => _outcome = outcome);
       // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
       unawaited(rescheduleReminders(ref));

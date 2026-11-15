@@ -38,6 +38,9 @@
   "journeys_metricName": "Metric name",
   "journeys_metricUnit": "Unit",
   "journeys_hideMetric": "Hide the number from others",
+  "journeys_hideExtras": "Hide my mood, minutes and details from others",
+  "journeys_pin": "Pin to top",
+  "journeys_unpin": "Unpin",
   "journeys_blurOnShare": "Blur photos when sharing outside",
   "journeys_fieldVisibility": "Who can see it?",
   "journeys_visibilityPrivate": "Only me",
@@ -286,6 +289,8 @@
       }
     }
   },
+  "journeys_extraKm": "{km} km",
+  "@journeys_extraKm": {"placeholders": {"km": {"type": "String"}}},
   "journeys_extraPace": "{pace} /km",
   "@journeys_extraPace": {
     "placeholders": {

@@ -50,8 +50,10 @@ select lives_ok($$ insert into public.check_ins (id, journey_id, user_id, local_
     format('checkins/%s/%s/%s_t.jpg', tests.j(1), auth.uid(), tests.c(1)),
     format('checkins/%s/%s/%s_p.jpg', tests.j(1), auth.uid(), tests.c(1)),
     '{"dish":"Phở","hearts":5}') $$, 'check-in with extras and partner photo');
-select throws_ok($$ update public.check_ins set extras = '{"evil":true}' where id = tests.c(1) $$,
-  '23514', null, 'invalid extras rejected on update');
+-- since 0011 extras are stored in check_in_extras (check_ins.extras is blanked by a trigger)
+select throws_ok($$ insert into public.check_in_extras (checkin_id, journey_id, user_id, extras)
+  values (tests.c(1), tests.j(1), auth.uid(), '{"evil":true}') $$,
+  '23514', null, 'invalid extras rejected');
 
 -- RLS: an outsider sees neither the row nor its extras
 select tests.as_user(tests.u(2));

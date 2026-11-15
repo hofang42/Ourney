@@ -26,7 +26,7 @@ import 'journey_row.dart';
 import 'journey_style.dart';
 import 'widgets/journey_timeline.dart';
 
-enum _Action { invite, renameCouple, end, archive, delete }
+enum _Action { pin, invite, renameCouple, end, archive, delete }
 
 /// `/journey/:id`, V1.0 `Detail`: back / title / share / more header, the
 /// hero (date range, name, day N / M, progress and four stats), the journey
@@ -110,6 +110,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         : null;
 
     final actions = [
+      if (membership?.isActive ?? false) _Action.pin,
       if (perms.isActive &&
           journey.kind == JourneyKind.group &&
           (membership?.isActive ?? false) &&
@@ -186,6 +187,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                               UiMenuItem(
                                 key: ValueKey('journey-action-${a.name}'),
                                 glyph: switch (a) {
+                                  _Action.pin => 'star',
                                   _Action.invite => 'squad',
                                   _Action.renameCouple => 'edit',
                                   _Action.end => 'flag',
@@ -194,6 +196,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                                 },
                                 destructive: a == _Action.delete,
                                 label: switch (a) {
+                                  _Action.pin =>
+                                    (membership?.pinned ?? false)
+                                        ? l10n.journeys_unpin
+                                        : l10n.journeys_pin,
                                   _Action.invite => l10n.journeys_inviteAction,
                                   _Action.renameCouple =>
                                     l10n.journeys_renameCouple,
@@ -343,6 +349,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     // Ended, archived and deleted journeys lose their reminders (FR-G1).
     final reminders = ref.read(reminderSchedulerProvider);
     switch (action) {
+      case _Action.pin:
+        final pinned =
+            ref.read(myMembershipProvider(journey.id)).value?.pinned ?? false;
+        await _guard(
+          context,
+          () => repo.updateMyMembership(journey.id, pinned: !pinned),
+        );
       case _Action.invite:
         await showGroupInviteSheet(context, journey.id);
       case _Action.renameCouple:
@@ -772,12 +785,17 @@ class _PrivacySection extends ConsumerWidget {
     final l10n = JourneysL10n.of(context);
     final repo = ref.read(journeyRepositoryProvider);
 
-    Future<void> update({bool? hideMetric, bool? blurMedia}) async {
+    Future<void> update({
+      bool? hideMetric,
+      bool? blurMedia,
+      bool? hideExtras,
+    }) async {
       try {
         await repo.updateMyMembership(
           journey.id,
           hideMetric: hideMetric,
           blurMedia: blurMedia,
+          hideExtras: hideExtras,
         );
       } on Object catch (e) {
         if (context.mounted) {
@@ -798,6 +816,13 @@ class _PrivacySection extends ConsumerWidget {
             label: l10n.journeys_hideMetric,
             value: membership.hideMetric,
             onChanged: (v) => update(hideMetric: v),
+          ),
+        if (journey.kind != JourneyKind.solo)
+          UiSwitchRow(
+            key: const ValueKey('journey-pref-hide-extras'),
+            label: l10n.journeys_hideExtras,
+            value: membership.hideExtras,
+            onChanged: (v) => update(hideExtras: v),
           ),
         UiSwitchRow(
           key: const ValueKey('journey-pref-blur'),

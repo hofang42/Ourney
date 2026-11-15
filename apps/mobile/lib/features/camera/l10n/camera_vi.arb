@@ -148,5 +148,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "camera_weightSliderLabel": "Cân nặng (kg)",
+  "camera_lastPaceKm": "NHỊP GẦN NHẤT {pace} · km {km}",
+  "@camera_lastPaceKm": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "camera_pickerPinned": "Đã ghim"
 }

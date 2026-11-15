@@ -10,8 +10,19 @@ const int extrasCookMax = 24;
 const int extrasMinutesMax = 1440;
 const int extrasHeartsMax = 5;
 const int partnerNameMax = 24;
+const double extrasKmMin = 0.1;
+const double extrasKmMax = 500;
 
 final RegExp _paceFormat = RegExp(r'^[0-9]{1,2}:[0-5][0-9]$');
+
+/// Rounds a distance to one decimal (the stored precision).
+double roundKm(double v) => (v * 10).roundToDouble() / 10;
+
+bool _kmValid(double v) =>
+    v.isFinite &&
+    v >= extrasKmMin &&
+    v <= extrasKmMax &&
+    (v * 10 - (v * 10).roundToDouble()).abs() < 1e-6;
 
 int _len(String s) => s.runes.length;
 
@@ -26,6 +37,7 @@ class CheckInExtras {
     this.cook,
     this.hearts,
     this.pace,
+    this.km,
   });
 
   static const CheckInExtras empty = CheckInExtras();
@@ -52,6 +64,7 @@ class CheckInExtras {
       cook: s('cook'),
       hearts: i('hearts'),
       pace: s('pace'),
+      km: json['km'] is num ? (json['km'] as num).toDouble() : null,
     );
   }
 
@@ -72,6 +85,9 @@ class CheckInExtras {
   /// Aesthetic flexer: pace as `m:ss` per km (distance is the metric value).
   final String? pace;
 
+  /// Aesthetic flexer: distance in km (0.1..500, one decimal).
+  final double? km;
+
   bool get isEmpty =>
       mood == null &&
       minutes == null &&
@@ -79,7 +95,8 @@ class CheckInExtras {
       dish == null &&
       cook == null &&
       hearts == null &&
-      pace == null;
+      pace == null &&
+      km == null;
 
   /// Null when valid, otherwise the offending key.
   String? validate() {
@@ -95,6 +112,7 @@ class CheckInExtras {
       return 'hearts';
     }
     if (pace != null && !_paceFormat.hasMatch(pace!)) return 'pace';
+    if (km != null && !_kmValid(km!)) return 'km';
     return null;
   }
 
@@ -113,6 +131,7 @@ class CheckInExtras {
       cook: t(cook),
       hearts: hearts,
       pace: t(pace),
+      km: km == null ? null : roundKm(km!),
     );
   }
 
@@ -124,6 +143,7 @@ class CheckInExtras {
         if (cook != null) 'cook': cook,
         if (hearts != null) 'hearts': hearts,
         if (pace != null) 'pace': pace,
+        if (km != null) 'km': km,
       };
 
   String toJsonString() => jsonEncode(toJson());

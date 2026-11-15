@@ -37,6 +37,8 @@ class DataJourneyRepository implements JourneyRepository {
             _db.journeys.localArchived.equals(false),
       )
       ..orderBy([
+        // Pinned journeys (my own preference) come first.
+        OrderingTerm.desc(_db.memberships.pinned),
         OrderingTerm.desc(_db.journeys.startDate),
         OrderingTerm.asc(_db.journeys.id),
       ]);
@@ -45,6 +47,16 @@ class DataJourneyRepository implements JourneyRepository {
         for (final r in rows) journeyFromRow(r.readTable(_db.journeys)),
       ],
     );
+  }
+
+  @override
+  Stream<Set<String>> watchPinnedJourneyIds() {
+    final me = ctx.userId;
+    if (me == null) return Stream.value(const <String>{});
+    return (_db.select(_db.memberships)
+          ..where((t) => t.userId.equals(me) & t.pinned.equals(true)))
+        .watch()
+        .map((rows) => {for (final r in rows) r.journeyId});
   }
 
   @override
@@ -297,8 +309,15 @@ class DataJourneyRepository implements JourneyRepository {
     String journeyId, {
     bool? hideMetric,
     bool? blurMedia,
+    bool? hideExtras,
+    bool? pinned,
   }) async {
-    if (hideMetric == null && blurMedia == null) return;
+    if (hideMetric == null &&
+        blurMedia == null &&
+        hideExtras == null &&
+        pinned == null) {
+      return;
+    }
     final me = ctx.requireUserId();
     final updated =
         await (_db.update(_db.memberships)..where(
@@ -312,6 +331,10 @@ class DataJourneyRepository implements JourneyRepository {
                 blurMedia: blurMedia == null
                     ? const Value.absent()
                     : Value(blurMedia),
+                hideExtras: hideExtras == null
+                    ? const Value.absent()
+                    : Value(hideExtras),
+                pinned: pinned == null ? const Value.absent() : Value(pinned),
               ),
             );
     if (updated == 0) throw const OurneyException(OurneyErrorCode.notFound);
@@ -325,6 +348,8 @@ class DataJourneyRepository implements JourneyRepository {
         'user_id': me,
         'hide_metric': ?hideMetric,
         'blur_media': ?blurMedia,
+        'hide_extras': ?hideExtras,
+        'pinned': ?pinned,
       },
     );
     unawaited(outbox.flush());

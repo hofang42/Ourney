@@ -36,6 +36,48 @@ final myCheckInsProvider = StreamProvider.autoDispose
           );
     }, retry: _noRetry);
 
+/// The other members' check-ins of [journeyId], newest first (their photos
+/// feed the couple "half frame" camera HUD: take `.first` for the latest).
+/// The server already filters blocked / reported / hidden rows (RLS); the
+/// local-only mode has no partner, so it is empty there. Display a photo with
+/// `mediaFileProvider(checkIn.thumbPath)` (or `photoPath`).
+final partnerCheckInPhotosProvider = StreamProvider.autoDispose
+    .family<List<CheckIn>, String>((ref, id) {
+      final uid = ref.watch(currentUserIdProvider);
+      if (uid == null) return Stream.value(const <CheckIn>[]);
+      return ref
+          .watch(checkInRepositoryProvider)
+          .watchForJourney(id)
+          .map(
+            (all) => [
+              for (final c in all)
+                if (c.userId != uid && c.uploaded) c,
+            ]..sort((a, b) => b.capturedAt.compareTo(a.capturedAt)),
+          );
+    }, retry: _noRetry);
+
+/// A weight (metric value) chosen on the camera screen, waiting to be posted
+/// with the next check-in of that journey. The camera slider calls
+/// `ref.read(pendingWeightProvider(id).notifier).setPendingWeight(v)`; the
+/// post screen prefills its metric field from it and clears it after posting.
+class PendingWeight extends Notifier<double?> {
+  PendingWeight(this.journeyId);
+
+  final String journeyId;
+
+  @override
+  double? build() => null;
+
+  /// [kg] is the metric value (validated like the typed one at post time).
+  void setPendingWeight(double kg) => state = kg;
+
+  void clear() => state = null;
+}
+
+/// Not auto-disposed: the value must survive the camera -> post navigation.
+final pendingWeightProvider =
+    NotifierProvider.family<PendingWeight, double?, String>(PendingWeight.new);
+
 /// The caller's membership (join date for streaks, metric privacy).
 final myMembershipProvider = StreamProvider.autoDispose
     .family<Membership?, String>(

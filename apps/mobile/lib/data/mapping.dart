@@ -105,6 +105,8 @@ MembershipsCompanion membershipFromRemote(RemoteRow r) => MembershipsCompanion(
   joinedAt: Value(parseInstant(r['joined_at'])),
   hideMetric: Value(r['hide_metric'] as bool? ?? false),
   blurMedia: Value(r['blur_media'] as bool? ?? false),
+  hideExtras: Value(r['hide_extras'] as bool? ?? false),
+  pinned: Value(r['pinned'] as bool? ?? false),
   updatedAt: Value(r['updated_at'] as String?),
 );
 
@@ -116,6 +118,8 @@ Membership membershipFromRow(MembershipRow r) => Membership(
   joinedAt: r.joinedAt,
   hideMetric: r.hideMetric,
   blurMedia: r.blurMedia,
+  hideExtras: r.hideExtras,
+  pinned: r.pinned,
 );
 
 // --- check_ins --------------------------------------------------------------
@@ -130,7 +134,9 @@ CheckInsCompanion checkInFromRemote(RemoteRow r) => CheckInsCompanion(
   thumbPath: Value(r['thumb_path'] as String),
   fromLibrary: Value(r['from_library'] as bool? ?? false),
   caption: Value(r['caption'] as String?),
-  extras: Value(CheckInExtras.fromJson(r['extras']).toJsonString()),
+  // Since 0011 `check_ins.extras` is always blank: extras arrive from
+  // `check_in_extras` (see [extrasFromRemote]) so applying a pulled row
+  // keeps the cached value.
   partnerPhotoPath: Value(r['partner_photo_path'] as String?),
   // Since 0005 the server never returns a metric in `check_ins` (always
   // null): metrics arrive from `check_in_metrics` (see [metricFromRemote]).
@@ -150,7 +156,6 @@ RemoteRow checkInToRemote(CheckInRow r) => {
   'thumb_path': r.thumbPath,
   'from_library': r.fromLibrary,
   'caption': r.caption,
-  'extras': CheckInExtras.fromJson(r.extras).toJson(),
   'partner_photo_path': r.partnerPhotoPath,
 };
 
@@ -163,6 +168,23 @@ RemoteRow checkInMetricToRemote(CheckInRow r) => {
   'user_id': r.userId,
   'metric_value': r.metricValue,
 };
+
+/// Upsert body for `check_in_extras` (on `checkin_id`; the server copies
+/// journey_id/user_id from the check-in). Always sent, also when empty, so a
+/// retake without extras clears the old ones.
+RemoteRow checkInExtrasToRemote(CheckInRow r) => {
+  'checkin_id': r.id,
+  'journey_id': r.journeyId,
+  'user_id': r.userId,
+  'extras': CheckInExtras.fromJson(r.extras).toJson(),
+};
+
+/// `check_in_extras` row → (check-in id, extras JSON text). RLS only returns
+/// rows the caller may see (own, or the author does not hide their extras).
+({String checkInId, String extras}) extrasFromRemote(RemoteRow r) => (
+  checkInId: r['checkin_id'] as String,
+  extras: CheckInExtras.fromJson(r['extras']).toJsonString(),
+);
 
 /// `check_in_metrics` row → (check-in id, value). RLS only returns rows the
 /// caller may see (own, or the author does not hide metrics).

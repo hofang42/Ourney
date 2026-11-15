@@ -164,6 +164,9 @@ class FakeJourneyRepository implements JourneyRepository {
   );
 
   @override
+  Stream<Set<String>> watchPinnedJourneyIds() => Stream.value(const {});
+
+  @override
   Stream<Membership?> watchMyMembership(String journeyId) =>
       _memberships.putIfAbsent(journeyId, () => _Live(null)).watch();
 
@@ -224,6 +227,8 @@ class FakeJourneyRepository implements JourneyRepository {
     String journeyId, {
     bool? hideMetric,
     bool? blurMedia,
+    bool? hideExtras,
+    bool? pinned,
   }) => throw UnimplementedError();
 }
 

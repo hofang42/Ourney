@@ -294,6 +294,16 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_extraPaceInvalid => 'Nhịp không hợp lệ, giây phải dưới 60';
 
   @override
+  String get checkin_extraKmLabel => 'Quãng đường (km)';
+
+  @override
+  String get checkin_extraKmHint => 'VD: 5,3';
+
+  @override
+  String get checkin_extraKmInvalid =>
+      'Quãng đường từ 0,1 đến 500 km, một chữ số thập phân';
+
+  @override
   String get checkin_extraBackspace => 'Xoá một số';
 
   @override

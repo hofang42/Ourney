@@ -14,6 +14,8 @@ import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
+import '../checkin/checkin_controller.dart'
+    show partnerCheckInPhotosProvider, pendingWeightProvider;
 import '../journeys/data/journeys_providers.dart';
 import '../journeys/domain/journey_progress.dart';
 import '../profile/profile_entry_button.dart';
@@ -658,6 +660,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 streak: hud?.summary.current ?? 0,
                 lastPace: _lastWith(journey, (c) => c.extras.pace),
                 lastWeight: _lastWeight(journey),
+                lastWeightKg: _lastWeightKg(journey),
+                lastKm: _lastKm(journey),
+                onWeightChanged: (kg) => ref
+                    .read(pendingWeightProvider(journey.id).notifier)
+                    .setPendingWeight(kg),
                 partnerPhotoFile: _partnerPhoto(journey),
               ),
             ),
@@ -749,6 +756,21 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     return null;
   }
 
+  double? _lastWeightKg(Journey journey) {
+    for (final c in _recent(journey)) {
+      if (c.metricValue != null) return c.metricValue;
+    }
+    return null;
+  }
+
+  double? _lastKm(Journey journey) {
+    for (final c in _recent(journey)) {
+      final p = c.extras.pace?.trim();
+      if (p != null && p.isNotEmpty) return c.extras.km;
+    }
+    return null;
+  }
+
   String? _lastWeight(Journey journey) {
     for (final c in _recent(journey)) {
       final v = c.metricValue;
@@ -763,6 +785,13 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   /// Latest partner photo of a couple journey: the local file when the
   /// check-in still has it, else the downloaded copy of the storage path.
   String? _partnerPhoto(Journey journey) {
+    final partner =
+        ref.watch(partnerCheckInPhotosProvider(journey.id)).value ??
+        const <CheckIn>[];
+    if (partner.isNotEmpty) {
+      final f = ref.watch(mediaFileProvider(partner.first.thumbPath)).value;
+      if (f != null && f.isNotEmpty) return f;
+    }
     for (final c in _recent(journey)) {
       final local = c.localPartnerPhotoFile;
       if (local != null && local.isNotEmpty) return local;
@@ -896,6 +925,9 @@ class _JourneyBar extends StatelessWidget {
                     journeys: all,
                     selectedId: selected?.id,
                     shotTodayIds: shot,
+                    pinnedIds:
+                        container.read(pinnedJourneyIdsProvider).value ??
+                        const <String>{},
                   );
                   // Ended journeys cannot take a check-in: not selectable.
                   final active = journeys.requireValue;

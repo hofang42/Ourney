@@ -141,6 +141,16 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_hideMetric => 'Ẩn con số với người khác';
 
   @override
+  String get journeys_hideExtras =>
+      'Ẩn tâm trạng, số phút và chi tiết với người khác';
+
+  @override
+  String get journeys_pin => 'Ghim lên đầu';
+
+  @override
+  String get journeys_unpin => 'Bỏ ghim';
+
+  @override
   String get journeys_blurOnShare => 'Làm mờ ảnh khi chia sẻ ra ngoài';
 
   @override
@@ -656,6 +666,11 @@ class JourneysL10nVi extends JourneysL10n {
   @override
   String journeys_extraHearts(int count) {
     return '$count/5 tim';
+  }
+
+  @override
+  String journeys_extraKm(String km) {
+    return '$km km';
   }
 
   @override

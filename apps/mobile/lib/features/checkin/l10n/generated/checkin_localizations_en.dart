@@ -296,6 +296,16 @@ class CheckinL10nEn extends CheckinL10n {
       'Invalid pace, seconds must be under 60';
 
   @override
+  String get checkin_extraKmLabel => 'Distance (km)';
+
+  @override
+  String get checkin_extraKmHint => 'e.g. 5.3';
+
+  @override
+  String get checkin_extraKmInvalid =>
+      'Distance must be 0.1 to 500 km, one decimal';
+
+  @override
   String get checkin_extraBackspace => 'Delete one digit';
 
   @override

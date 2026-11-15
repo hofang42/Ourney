@@ -126,6 +126,10 @@ class FakeJourneyRepository implements JourneyRepository {
   final List<String> calls = [];
   final List<({String id, bool? hideMetric, bool? blurMedia})> prefUpdates = [];
 
+  /// `hideExtras` / `pinned` updates (0011).
+  final List<({String id, bool? hideExtras, bool? pinned})> extraPrefUpdates =
+      [];
+
   /// When set, the next matching call throws it.
   Object? createError;
   Object? endError;
@@ -143,6 +147,9 @@ class FakeJourneyRepository implements JourneyRepository {
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(
     (list) => list.where((j) => j.id == journeyId).firstOrNull,
   );
+
+  @override
+  Stream<Set<String>> watchPinnedJourneyIds() => Stream.value(const {});
 
   @override
   Stream<Membership?> watchMyMembership(String journeyId) =>
@@ -206,8 +213,18 @@ class FakeJourneyRepository implements JourneyRepository {
     String journeyId, {
     bool? hideMetric,
     bool? blurMedia,
+    bool? hideExtras,
+    bool? pinned,
   }) async {
     calls.add('updateMyMembership:$journeyId');
+    if (hideExtras != null || pinned != null) {
+      extraPrefUpdates.add((
+        id: journeyId,
+        hideExtras: hideExtras,
+        pinned: pinned,
+      ));
+    }
+    if (hideMetric == null && blurMedia == null) return;
     prefUpdates.add((
       id: journeyId,
       hideMetric: hideMetric,

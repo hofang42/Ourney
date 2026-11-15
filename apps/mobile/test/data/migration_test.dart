@@ -10,7 +10,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'data_test_helpers.dart';
 
 void main() {
-  test('v1 → v3 adds journeys.origin (existing rows are live)', () async {
+  test('v1 → v4 adds journeys.origin (existing rows are live)', () async {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     final file = File('${tempDir().path}/ourney.sqlite');
 
@@ -33,7 +33,7 @@ void main() {
     expect(row.origin, 'live');
     expect(journeyFromRow(row).origin, JourneyOrigin.live);
     final version = await db.customSelect('pragma user_version').getSingle();
-    expect(version.data.values.single, 3);
+    expect(version.data.values.single, 4);
   });
 
   test('v2 → v3 adds extras, partner photo and couple names', () async {
@@ -63,10 +63,33 @@ void main() {
     expect(journey.coupleSelfName, isNull);
     expect(journey.couplePartnerName, isNull);
   });
+
+  test('v3 → v4 adds membership pin and hide_extras (default off)', () async {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final file = File('${tempDir().path}/ourney_v3.sqlite');
+    final v4 = AppDatabase(NativeDatabase(file));
+    await v4.customSelect('select 1').get();
+    await v4.customStatement(
+      'insert into memberships (journey_id, user_id, role, status, joined_at) '
+      "values ('j1', 'u1', 'owner', 'active', 0)",
+    );
+    await v4.customStatement('alter table memberships drop column hide_extras');
+    await v4.customStatement('alter table memberships drop column pinned');
+    await v4.customStatement('pragma user_version = 3');
+    await v4.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+    final m = await db.select(db.memberships).getSingle();
+    expect(m.hideExtras, isFalse);
+    expect(m.pinned, isFalse);
+  });
 }
 
 /// Turns a current database back into the pre-0007 shape.
 Future<void> _dropV3Columns(AppDatabase db) async {
+  await db.customStatement('alter table memberships drop column hide_extras');
+  await db.customStatement('alter table memberships drop column pinned');
   await db.customStatement('alter table check_ins drop column extras');
   await db.customStatement(
     'alter table check_ins drop column partner_photo_path',
