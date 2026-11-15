@@ -326,6 +326,24 @@ abstract class JourneysL10n {
   /// **'Ẩn con số với người khác'**
   String get journeys_hideMetric;
 
+  /// No description provided for @journeys_hideExtras.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn tâm trạng, số phút và chi tiết với người khác'**
+  String get journeys_hideExtras;
+
+  /// No description provided for @journeys_pin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ghim lên đầu'**
+  String get journeys_pin;
+
+  /// No description provided for @journeys_unpin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ ghim'**
+  String get journeys_unpin;
+
   /// No description provided for @journeys_blurOnShare.
   ///
   /// In vi, this message translates to:
@@ -1219,6 +1237,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'{count}/5 tim'**
   String journeys_extraHearts(int count);
+
+  /// No description provided for @journeys_extraKm.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} km'**
+  String journeys_extraKm(String km);
 
   /// No description provided for @journeys_extraPace.
   ///

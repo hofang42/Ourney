@@ -105,5 +105,18 @@
         "type": "String"
       }
     }
-  }
+  },
+  "camera_weightSliderLabel": "Weight (kg)",
+  "camera_lastPaceKm": "LAST PACE {pace} · km {km}",
+  "@camera_lastPaceKm": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "camera_pickerPinned": "Pinned"
 }

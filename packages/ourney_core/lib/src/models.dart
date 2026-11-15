@@ -310,6 +310,8 @@ class Membership {
     required this.joinedAt,
     this.hideMetric = false,
     this.blurMedia = false,
+    this.hideExtras = false,
+    this.pinned = false,
   });
 
   final String journeyId;
@@ -326,6 +328,13 @@ class Membership {
 
   /// Blur my photos when shared outside (share card, public link) (FR-B7).
   final bool blurMedia;
+
+  /// Hide my mood / minutes / place / dish / cook / hearts / pace / km from
+  /// other members (0011). I always see my own.
+  final bool hideExtras;
+
+  /// Per-user pin: this journey is listed first for me (0011).
+  final bool pinned;
 
   bool get isActive => status == MemberStatus.active;
 }

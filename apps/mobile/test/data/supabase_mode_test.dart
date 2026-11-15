@@ -143,6 +143,7 @@ void main() {
         'upload:${c.thumbPath}',
         'upsert:check_ins',
         'upsert:check_in_metrics',
+        'upsert:check_in_extras',
       ]);
       expect(await layer.checkIns.watchPendingUploads().first, 0);
     },
@@ -419,6 +420,56 @@ void main() {
       remote.tables['check_in_metrics'] = []; // RLS hides it now
       await layer.syncNow();
       expect((await cached())!.metricValue, isNull);
+    });
+
+    test(
+      'extras are pulled from check_in_extras and survive a re-pull',
+      () async {
+        seedGroup();
+        remote.tables['check_ins'] = [otherCheckIn()];
+        remote.tables['check_in_extras'] = [
+          {
+            'checkin_id': cid,
+            'journey_id': jid,
+            'user_id': other,
+            'extras': {'mood': 'light', 'km': 5.3},
+            'updated_at': '2026-10-16T01:31:00+00:00',
+          },
+        ];
+        expect(await layer.syncNow(), isA<SyncOk>());
+        expect(
+          (await cached())!.extras,
+          const CheckInExtras(mood: 'light', km: 5.3),
+        );
+        remote.tables['check_ins'] = [
+          otherCheckIn(updatedAt: '2026-10-16T02:00:00+00:00'),
+        ];
+        await layer.syncNow();
+        expect((await cached())!.extras.km, 5.3);
+      },
+    );
+
+    test('hide_extras on a co-member drops cached extras', () async {
+      seedGroup();
+      remote.tables['check_ins'] = [otherCheckIn()];
+      remote.tables['check_in_extras'] = [
+        {
+          'checkin_id': cid,
+          'journey_id': jid,
+          'user_id': other,
+          'extras': {'mood': 'tired'},
+          'updated_at': '2026-10-16T01:31:00+00:00',
+        },
+      ];
+      await layer.syncNow();
+      remote.tables['memberships'] = [
+        membershipRow(jid, other, updatedAt: '2026-10-16T03:00:00+00:00')
+          ..['hide_extras'] = true,
+        membershipRow(jid, me, role: 'member'),
+      ];
+      remote.tables['check_in_extras'] = []; // RLS hides it now
+      await layer.syncNow();
+      expect((await cached())!.extras.isEmpty, isTrue);
     });
 
     test('checkin_tombstones removes deleted check-ins of others', () async {

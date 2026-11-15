@@ -107,6 +107,8 @@ class SyncEngine {
           {
             if (p.containsKey('hide_metric')) 'hide_metric': p['hide_metric'],
             if (p.containsKey('blur_media')) 'blur_media': p['blur_media'],
+            if (p.containsKey('hide_extras')) 'hide_extras': p['hide_extras'],
+            if (p.containsKey('pinned')) 'pinned': p['pinned'],
           },
           match: {
             'journey_id': p['journey_id'] as String,
@@ -152,6 +154,12 @@ class SyncEngine {
       checkInMetricToRemote(row),
       onConflict: 'checkin_id',
     );
+    // Extras too (RLS honours hide_extras, 0011).
+    await remote.upsert(
+      'check_in_extras',
+      checkInExtrasToRemote(row),
+      onConflict: 'checkin_id',
+    );
     await (db.update(db.checkIns)..where((t) => t.id.equals(id))).write(
       const CheckInsCompanion(uploaded: Value(true)),
     );
@@ -190,6 +198,7 @@ class SyncEngine {
       await _pullTable('check_ins', (r) => store.applyCheckIn(r, pending));
       await _pullTombstones();
       await _pullMetrics(pending);
+      await _pullExtras(pending, me);
       await _pullTable(
         'reactions',
         (r) => store.applyReaction(r, pending, me: me),
@@ -257,14 +266,32 @@ class SyncEngine {
       updatedSince: since,
       limit: pullPageSize,
     ),
-    (rows) => _applyMetrics(rows, pending),
+    (rows) => _applyCompanions(rows, pending, store.applyMetric),
   );
 
-  Future<void> _applyMetrics(List<RemoteRow> rows, Set<String> pending) async {
+  /// `check_in_extras` (own extras, and others' unless they hide them).
+  Future<void> _pullExtras(Set<String> pending, String me) => _pullPaged(
+    'check_in_extras',
+    (since) => remote.select(
+      'check_in_extras',
+      updatedSince: since,
+      limit: pullPageSize,
+    ),
+    (rows) =>
+        _applyCompanions(rows, pending, (r) => store.applyExtras(r, me: me)),
+  );
+
+  /// Applies per-check-in companion rows ([apply] returns false when the
+  /// check-in is not cached), fetching the missing check-ins first.
+  Future<void> _applyCompanions(
+    List<RemoteRow> rows,
+    Set<String> pending,
+    Future<bool> Function(RemoteRow) apply,
+  ) async {
     final missing = <String>{};
     await db.transaction(() async {
       for (final r in rows) {
-        if (!await store.applyMetric(r)) missing.add(r['checkin_id'] as String);
+        if (!await apply(r)) missing.add(r['checkin_id'] as String);
       }
     });
     if (missing.isEmpty) return;
@@ -286,7 +313,7 @@ class SyncEngine {
         await store.applyCheckIn(c, pending);
       }
       for (final r in rows) {
-        if (missing.contains(r['checkin_id'])) await store.applyMetric(r);
+        if (missing.contains(r['checkin_id'])) await apply(r);
       }
     });
   }
@@ -348,6 +375,10 @@ class SyncEngine {
       'check_in_metrics',
       eq: {'journey_id': journeyId},
     );
+    final extras = await remote.select(
+      'check_in_extras',
+      eq: {'journey_id': journeyId},
+    );
     final reactions = <RemoteRow>[];
     for (var i = 0; i < ids.length; i += 100) {
       final chunk = ids.sublist(i, i + 100 > ids.length ? ids.length : i + 100);
@@ -383,6 +414,9 @@ class SyncEngine {
       }
       for (final m in metrics) {
         await store.applyMetric(m);
+      }
+      for (final e in extras) {
+        await store.applyExtras(e, me: me);
       }
       final liveReactions = {
         for (final r in reactions) '${r['checkin_id']}|${r['user_id']}',

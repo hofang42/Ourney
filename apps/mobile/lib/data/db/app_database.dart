@@ -91,6 +91,10 @@ class Memberships extends Table {
   IntColumn get joinedAt => integer().map(const UtcMicrosConverter())();
   BoolColumn get hideMetric => boolean().withDefault(const Constant(false))();
   BoolColumn get blurMedia => boolean().withDefault(const Constant(false))();
+
+  /// `memberships.hide_extras` / `pinned` (0011; schema version 4).
+  BoolColumn get hideExtras => boolean().withDefault(const Constant(false))();
+  BoolColumn get pinned => boolean().withDefault(const Constant(false))();
   TextColumn get updatedAt => text().nullable()();
 
   @override
@@ -199,7 +203,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -220,6 +224,11 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(checkIns, checkIns.partnerPhotoPath);
         await m.addColumn(journeys, journeys.coupleSelfName);
         await m.addColumn(journeys, journeys.couplePartnerName);
+      }
+      if (from < 4) {
+        // 0011: per-user pin and "hide my extras" preference.
+        await m.addColumn(memberships, memberships.hideExtras);
+        await m.addColumn(memberships, memberships.pinned);
       }
     },
   );

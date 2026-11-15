@@ -55,6 +55,13 @@ final journeysListProvider = StreamProvider.autoDispose<List<Journey>>(
   retry: _noRetry,
 );
 
+/// Ids of the journeys the caller pinned (per-user, also local-only). The
+/// list provider already orders pinned journeys first.
+final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>(
+  (ref) => ref.watch(journeyRepositoryProvider).watchPinnedJourneyIds(),
+  retry: _noRetry,
+);
+
 final journeyByIdProvider = StreamProvider.autoDispose.family<Journey?, String>(
   (ref, id) => ref.watch(journeyRepositoryProvider).watch(id),
   retry: _noRetry,

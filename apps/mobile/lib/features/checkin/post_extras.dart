@@ -34,6 +34,9 @@ class PostExtrasController extends ChangeNotifier {
   final TextEditingController place = TextEditingController();
   final TextEditingController dish = TextEditingController();
 
+  /// Flexer distance as typed (`5.3` or `5,3`).
+  final TextEditingController km = TextEditingController();
+
   String? mood;
   int? minutes;
   bool customMinutes = false;
@@ -50,6 +53,19 @@ class PostExtrasController extends ChangeNotifier {
   bool get paceInvalid =>
       _paceDigits.isNotEmpty &&
       CheckInExtras(pace: paceText).validate() != null;
+
+  /// Parsed distance, null when empty or not a number.
+  double? get kmValue {
+    final t = km.text.trim().replaceAll(',', '.');
+    return t.isEmpty ? null : double.tryParse(t);
+  }
+
+  /// Something is typed but it is not a valid distance (0.1..500, one decimal).
+  bool get kmInvalid {
+    if (km.text.trim().isEmpty) return false;
+    final v = kmValue;
+    return v == null || CheckInExtras(km: v).validate() != null;
+  }
 
   void pickMood(String? value) {
     mood = mood == value ? null : value;
@@ -102,6 +118,7 @@ class PostExtrasController extends ChangeNotifier {
     ),
     PersonaSkinId.aestheticFlexer => CheckInExtras(
       pace: _paceDigits.isEmpty ? null : paceText,
+      km: kmValue,
     ),
     PersonaSkinId.minimalistHabit => CheckInExtras.empty,
   }.normalized();
@@ -110,6 +127,7 @@ class PostExtrasController extends ChangeNotifier {
   void dispose() {
     place.dispose();
     dish.dispose();
+    km.dispose();
     super.dispose();
   }
 }
@@ -148,7 +166,7 @@ class PostExtrasSection extends StatelessWidget {
             partnerName: partnerName,
             onPickPartnerPhoto: onPickPartnerPhoto,
           ),
-          PersonaSkinId.aestheticFlexer => _PaceKeypad(controller),
+          PersonaSkinId.aestheticFlexer => _FlexerInputs(controller),
           PersonaSkinId.minimalistHabit => null,
         };
         if (child == null) return const SizedBox.shrink();
@@ -435,6 +453,40 @@ class _CoupleInputs extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+/// Flexer inputs: distance field above the pace keypad.
+class _FlexerInputs extends StatelessWidget {
+  const _FlexerInputs(this.c);
+
+  final PostExtrasController c;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = CheckinL10n.of(context);
+    return ListenableBuilder(
+      listenable: c.km,
+      builder: (context, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          UiTextField(
+            fieldKey: const ValueKey('checkin-km'),
+            label: l10n.checkin_extraKmLabel,
+            hint: l10n.checkin_extraKmHint,
+            controller: c.km,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[0-9.,]')),
+              LengthLimitingTextInputFormatter(5),
+            ],
+            error: c.kmInvalid ? l10n.checkin_extraKmInvalid : null,
+          ),
+          const SizedBox(height: UiSpace.md),
+          _PaceKeypad(c),
+        ],
+      ),
     );
   }
 }

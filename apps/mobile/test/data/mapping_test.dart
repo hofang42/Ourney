@@ -125,7 +125,21 @@ void main() {
       uploaded: false,
     );
     final body = checkInToRemote(row);
-    expect(body['extras'], {'dish': 'Phở', 'hearts': 4});
+    expect(body.containsKey('extras'), isFalse, reason: 'own table (0011)');
+    expect(checkInExtrasToRemote(row), {
+      'checkin_id': 'c1',
+      'journey_id': 'j1',
+      'user_id': 'u1',
+      'extras': {'dish': 'Phở', 'hearts': 4},
+    });
+    expect(
+      extrasFromRemote({
+        'checkin_id': 'c1',
+        'extras': {'km': 5.3},
+      }),
+      (checkInId: 'c1', extras: '{"km":5.3}'),
+    );
+    expect(checkInFromRemote(remote).extras, const Value<String>.absent());
     expect(body['partner_photo_path'], 'checkins/j1/u1/c1_p.jpg');
     expect(
       checkInFromRow(row).extras,

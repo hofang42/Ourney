@@ -105,6 +105,41 @@ class LocalStore {
           ))
           .write(const CheckInsCompanion(metricValue: Value(null)));
     }
+    if (m.userId.value != me && m.hideExtras.value) {
+      // Same for the extras (mood, minutes, km ...) of a member who hides them.
+      await (db.update(db.checkIns)..where(
+            (t) =>
+                t.journeyId.equals(m.journeyId.value) &
+                t.userId.equals(m.userId.value),
+          ))
+          .write(const CheckInsCompanion(extras: Value('{}')));
+    }
+  }
+
+  /// Applies a `check_in_extras` row; same contract as [applyMetric].
+  Future<bool> applyExtras(RemoteRow r, {required String me}) async {
+    final e = extrasFromRemote(r);
+    final row = await (db.select(
+      db.checkIns,
+    )..where((t) => t.id.equals(e.checkInId))).getSingleOrNull();
+    if (row == null) return false;
+    // Defence in depth (RLS already withholds them): never cache another
+    // member's extras while they hide them.
+    final hidden =
+        row.userId != me &&
+        await (db.select(db.memberships)..where(
+                  (t) =>
+                      t.journeyId.equals(row.journeyId) &
+                      t.userId.equals(row.userId) &
+                      t.hideExtras.equals(true),
+                ))
+                .getSingleOrNull() !=
+            null;
+    if (row.uploaded && !hidden) {
+      await (db.update(db.checkIns)..where((t) => t.id.equals(e.checkInId)))
+          .write(CheckInsCompanion(extras: Value(e.extras)));
+    }
+    return true;
   }
 
   /// Applies a `check_in_metrics` row. Returns false when the check-in is

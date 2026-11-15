@@ -291,6 +291,32 @@ void main() {
       ]);
     });
 
+    testWidgets('pin action toggles my pin', (tester) async {
+      final h = await _pumpDetail(tester);
+      await _tap(tester, _key('journey-more'));
+      expect(find.text('Pin to top'), findsOneWidget);
+      await _tap(tester, _key('journey-action-pin'));
+      expect(h.journeys.extraPrefUpdates, [
+        (id: 'j1', hideExtras: null, pinned: true),
+      ]);
+    });
+
+    testWidgets('hide-extras switch is hidden on solo journeys', (
+      tester,
+    ) async {
+      await _pumpDetail(tester);
+      expect(_key('journey-pref-hide-extras'), findsNothing);
+    });
+
+    testWidgets('hide-extras switch updates my membership', (tester) async {
+      final j = testJourney(kind: JourneyKind.group);
+      final h = await _pumpDetail(tester, journey: j);
+      await _tap(tester, _key('journey-pref-hide-extras'));
+      expect(h.journeys.extraPrefUpdates, [
+        (id: 'j1', hideExtras: true, pinned: null),
+      ]);
+    });
+
     testWidgets('unknown journey shows not found', (tester) async {
       await pumpJourneys(
         tester,

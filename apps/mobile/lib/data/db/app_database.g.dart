@@ -1696,6 +1696,34 @@ class $MembershipsTable extends Memberships
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _hideExtrasMeta = const VerificationMeta(
+    'hideExtras',
+  );
+  @override
+  late final GeneratedColumn<bool> hideExtras = GeneratedColumn<bool>(
+    'hide_extras',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hide_extras" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _pinnedMeta = const VerificationMeta('pinned');
+  @override
+  late final GeneratedColumn<bool> pinned = GeneratedColumn<bool>(
+    'pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -1716,6 +1744,8 @@ class $MembershipsTable extends Memberships
     joinedAt,
     hideMetric,
     blurMedia,
+    hideExtras,
+    pinned,
     updatedAt,
   ];
   @override
@@ -1774,6 +1804,18 @@ class $MembershipsTable extends Memberships
         blurMedia.isAcceptableOrUnknown(data['blur_media']!, _blurMediaMeta),
       );
     }
+    if (data.containsKey('hide_extras')) {
+      context.handle(
+        _hideExtrasMeta,
+        hideExtras.isAcceptableOrUnknown(data['hide_extras']!, _hideExtrasMeta),
+      );
+    }
+    if (data.containsKey('pinned')) {
+      context.handle(
+        _pinnedMeta,
+        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -1819,6 +1861,14 @@ class $MembershipsTable extends Memberships
         DriftSqlType.bool,
         data['${effectivePrefix}blur_media'],
       )!,
+      hideExtras: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hide_extras'],
+      )!,
+      pinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pinned'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}updated_at'],
@@ -1843,6 +1893,10 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
   final DateTime joinedAt;
   final bool hideMetric;
   final bool blurMedia;
+
+  /// `memberships.hide_extras` / `pinned` (0011; schema version 4).
+  final bool hideExtras;
+  final bool pinned;
   final String? updatedAt;
   const MembershipRow({
     required this.journeyId,
@@ -1852,6 +1906,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
     required this.joinedAt,
     required this.hideMetric,
     required this.blurMedia,
+    required this.hideExtras,
+    required this.pinned,
     this.updatedAt,
   });
   @override
@@ -1868,6 +1924,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
     }
     map['hide_metric'] = Variable<bool>(hideMetric);
     map['blur_media'] = Variable<bool>(blurMedia);
+    map['hide_extras'] = Variable<bool>(hideExtras);
+    map['pinned'] = Variable<bool>(pinned);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<String>(updatedAt);
     }
@@ -1883,6 +1941,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
       joinedAt: Value(joinedAt),
       hideMetric: Value(hideMetric),
       blurMedia: Value(blurMedia),
+      hideExtras: Value(hideExtras),
+      pinned: Value(pinned),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
@@ -1902,6 +1962,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
       joinedAt: serializer.fromJson<DateTime>(json['joinedAt']),
       hideMetric: serializer.fromJson<bool>(json['hideMetric']),
       blurMedia: serializer.fromJson<bool>(json['blurMedia']),
+      hideExtras: serializer.fromJson<bool>(json['hideExtras']),
+      pinned: serializer.fromJson<bool>(json['pinned']),
       updatedAt: serializer.fromJson<String?>(json['updatedAt']),
     );
   }
@@ -1916,6 +1978,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
       'joinedAt': serializer.toJson<DateTime>(joinedAt),
       'hideMetric': serializer.toJson<bool>(hideMetric),
       'blurMedia': serializer.toJson<bool>(blurMedia),
+      'hideExtras': serializer.toJson<bool>(hideExtras),
+      'pinned': serializer.toJson<bool>(pinned),
       'updatedAt': serializer.toJson<String?>(updatedAt),
     };
   }
@@ -1928,6 +1992,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
     DateTime? joinedAt,
     bool? hideMetric,
     bool? blurMedia,
+    bool? hideExtras,
+    bool? pinned,
     Value<String?> updatedAt = const Value.absent(),
   }) => MembershipRow(
     journeyId: journeyId ?? this.journeyId,
@@ -1937,6 +2003,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
     joinedAt: joinedAt ?? this.joinedAt,
     hideMetric: hideMetric ?? this.hideMetric,
     blurMedia: blurMedia ?? this.blurMedia,
+    hideExtras: hideExtras ?? this.hideExtras,
+    pinned: pinned ?? this.pinned,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
   MembershipRow copyWithCompanion(MembershipsCompanion data) {
@@ -1950,6 +2018,10 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
           ? data.hideMetric.value
           : this.hideMetric,
       blurMedia: data.blurMedia.present ? data.blurMedia.value : this.blurMedia,
+      hideExtras: data.hideExtras.present
+          ? data.hideExtras.value
+          : this.hideExtras,
+      pinned: data.pinned.present ? data.pinned.value : this.pinned,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -1964,6 +2036,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
           ..write('joinedAt: $joinedAt, ')
           ..write('hideMetric: $hideMetric, ')
           ..write('blurMedia: $blurMedia, ')
+          ..write('hideExtras: $hideExtras, ')
+          ..write('pinned: $pinned, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
@@ -1978,6 +2052,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
     joinedAt,
     hideMetric,
     blurMedia,
+    hideExtras,
+    pinned,
     updatedAt,
   );
   @override
@@ -1991,6 +2067,8 @@ class MembershipRow extends DataClass implements Insertable<MembershipRow> {
           other.joinedAt == this.joinedAt &&
           other.hideMetric == this.hideMetric &&
           other.blurMedia == this.blurMedia &&
+          other.hideExtras == this.hideExtras &&
+          other.pinned == this.pinned &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -2002,6 +2080,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
   final Value<DateTime> joinedAt;
   final Value<bool> hideMetric;
   final Value<bool> blurMedia;
+  final Value<bool> hideExtras;
+  final Value<bool> pinned;
   final Value<String?> updatedAt;
   final Value<int> rowid;
   const MembershipsCompanion({
@@ -2012,6 +2092,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
     this.joinedAt = const Value.absent(),
     this.hideMetric = const Value.absent(),
     this.blurMedia = const Value.absent(),
+    this.hideExtras = const Value.absent(),
+    this.pinned = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2023,6 +2105,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
     required DateTime joinedAt,
     this.hideMetric = const Value.absent(),
     this.blurMedia = const Value.absent(),
+    this.hideExtras = const Value.absent(),
+    this.pinned = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : journeyId = Value(journeyId),
@@ -2038,6 +2122,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
     Expression<int>? joinedAt,
     Expression<bool>? hideMetric,
     Expression<bool>? blurMedia,
+    Expression<bool>? hideExtras,
+    Expression<bool>? pinned,
     Expression<String>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -2049,6 +2135,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
       if (joinedAt != null) 'joined_at': joinedAt,
       if (hideMetric != null) 'hide_metric': hideMetric,
       if (blurMedia != null) 'blur_media': blurMedia,
+      if (hideExtras != null) 'hide_extras': hideExtras,
+      if (pinned != null) 'pinned': pinned,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2062,6 +2150,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
     Value<DateTime>? joinedAt,
     Value<bool>? hideMetric,
     Value<bool>? blurMedia,
+    Value<bool>? hideExtras,
+    Value<bool>? pinned,
     Value<String?>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -2073,6 +2163,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
       joinedAt: joinedAt ?? this.joinedAt,
       hideMetric: hideMetric ?? this.hideMetric,
       blurMedia: blurMedia ?? this.blurMedia,
+      hideExtras: hideExtras ?? this.hideExtras,
+      pinned: pinned ?? this.pinned,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -2104,6 +2196,12 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
     if (blurMedia.present) {
       map['blur_media'] = Variable<bool>(blurMedia.value);
     }
+    if (hideExtras.present) {
+      map['hide_extras'] = Variable<bool>(hideExtras.value);
+    }
+    if (pinned.present) {
+      map['pinned'] = Variable<bool>(pinned.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<String>(updatedAt.value);
     }
@@ -2123,6 +2221,8 @@ class MembershipsCompanion extends UpdateCompanion<MembershipRow> {
           ..write('joinedAt: $joinedAt, ')
           ..write('hideMetric: $hideMetric, ')
           ..write('blurMedia: $blurMedia, ')
+          ..write('hideExtras: $hideExtras, ')
+          ..write('pinned: $pinned, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -5114,6 +5214,8 @@ typedef $$MembershipsTableCreateCompanionBuilder =
       required DateTime joinedAt,
       Value<bool> hideMetric,
       Value<bool> blurMedia,
+      Value<bool> hideExtras,
+      Value<bool> pinned,
       Value<String?> updatedAt,
       Value<int> rowid,
     });
@@ -5126,6 +5228,8 @@ typedef $$MembershipsTableUpdateCompanionBuilder =
       Value<DateTime> joinedAt,
       Value<bool> hideMetric,
       Value<bool> blurMedia,
+      Value<bool> hideExtras,
+      Value<bool> pinned,
       Value<String?> updatedAt,
       Value<int> rowid,
     });
@@ -5172,6 +5276,16 @@ class $$MembershipsTableFilterComposer
 
   ColumnFilters<bool> get blurMedia => $composableBuilder(
     column: $table.blurMedia,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hideExtras => $composableBuilder(
+    column: $table.hideExtras,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -5225,6 +5339,16 @@ class $$MembershipsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hideExtras => $composableBuilder(
+    column: $table.hideExtras,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -5262,6 +5386,14 @@ class $$MembershipsTableAnnotationComposer
 
   GeneratedColumn<bool> get blurMedia =>
       $composableBuilder(column: $table.blurMedia, builder: (column) => column);
+
+  GeneratedColumn<bool> get hideExtras => $composableBuilder(
+    column: $table.hideExtras,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get pinned =>
+      $composableBuilder(column: $table.pinned, builder: (column) => column);
 
   GeneratedColumn<String> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -5305,6 +5437,8 @@ class $$MembershipsTableTableManager
                 Value<DateTime> joinedAt = const Value.absent(),
                 Value<bool> hideMetric = const Value.absent(),
                 Value<bool> blurMedia = const Value.absent(),
+                Value<bool> hideExtras = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MembershipsCompanion(
@@ -5315,6 +5449,8 @@ class $$MembershipsTableTableManager
                 joinedAt: joinedAt,
                 hideMetric: hideMetric,
                 blurMedia: blurMedia,
+                hideExtras: hideExtras,
+                pinned: pinned,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -5327,6 +5463,8 @@ class $$MembershipsTableTableManager
                 required DateTime joinedAt,
                 Value<bool> hideMetric = const Value.absent(),
                 Value<bool> blurMedia = const Value.absent(),
+                Value<bool> hideExtras = const Value.absent(),
+                Value<bool> pinned = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MembershipsCompanion.insert(
@@ -5337,6 +5475,8 @@ class $$MembershipsTableTableManager
                 joinedAt: joinedAt,
                 hideMetric: hideMetric,
                 blurMedia: blurMedia,
+                hideExtras: hideExtras,
+                pinned: pinned,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

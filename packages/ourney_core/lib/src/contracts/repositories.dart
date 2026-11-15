@@ -129,9 +129,14 @@ abstract interface class JourneyRepository {
   /// Use `joinedAt` with `computeMemberStreak` / `effectiveStreakStart`.
   Stream<Membership?> watchMyMembership(String journeyId);
 
-  /// Updates the caller's `hide_metric` / `blur_media` (null = unchanged).
+  /// Ids of the journeys the caller pinned (`memberships.pinned`); also
+  /// works local-only. [watchActive] lists pinned journeys first.
+  Stream<Set<String>> watchPinnedJourneyIds();
+
+  /// Updates the caller's `hide_metric` / `blur_media` / `hide_extras` /
+  /// `pinned` (null = unchanged).
   Future<void> updateMyMembership(String journeyId,
-      {bool? hideMetric, bool? blurMedia});
+      {bool? hideMetric, bool? blurMedia, bool? hideExtras, bool? pinned});
 }
 
 abstract interface class CheckInRepository {

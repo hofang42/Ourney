@@ -611,6 +611,24 @@ abstract class CheckinL10n {
   /// Post screen per-skin input.
   ///
   /// In vi, this message translates to:
+  /// **'Quãng đường (km)'**
+  String get checkin_extraKmLabel;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'VD: 5,3'**
+  String get checkin_extraKmHint;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quãng đường từ 0,1 đến 500 km, một chữ số thập phân'**
+  String get checkin_extraKmInvalid;
+
+  /// Post screen per-skin input.
+  ///
+  /// In vi, this message translates to:
   /// **'Xoá một số'**
   String get checkin_extraBackspace;
 
