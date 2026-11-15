@@ -101,6 +101,12 @@ class SyncEngine {
             },
           );
         }
+      case OutboxKind.updateJourney:
+        final row = await remote.rpc(
+          'update_journey',
+          p.cast<String, dynamic>(),
+        );
+        if (row is Map) await store.applyJourney(row.cast<String, dynamic>());
       case OutboxKind.updateMembership:
         await remote.update(
           'memberships',

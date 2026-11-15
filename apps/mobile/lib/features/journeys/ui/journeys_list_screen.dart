@@ -9,10 +9,12 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../profile/profile_providers.dart';
 import '../../sharing/sharing.dart';
+import '../data/create_progress.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'day_ticker.dart';
+import 'home/journey_home_intro.dart' show journeyHomeOfflineProvider;
 import 'journey_errors.dart';
 import 'journey_row.dart';
 import 'shelf_view.dart';
@@ -85,28 +87,23 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
           (rootError(journeys.error!) as OurneyException).error ==
               OurneyErrorCode.offline;
       body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _HubHeader(),
+          const _HubNotices(),
           UiStateCard(
             key: const ValueKey('journeys-error'),
             kind: offline ? UiStateCardKind.offline : UiStateCardKind.error,
-            title: l10n.journeys_loadError,
-            body: journeyErrorMessage(context, journeys.error!),
+            title: l10n.journeys_hubErrorTitle,
             actionLabel: AppLocalizations.of(context).common_retry,
             onAction: () => ref.invalidate(journeysListProvider),
           ),
         ],
       );
     } else {
-      body = Column(
-        children: [
-          const _HubHeader(),
-          UiStateCard(
-            key: const ValueKey('journeys-loading'),
-            kind: UiStateCardKind.loading,
-            title: AppLocalizations.of(context).common_loading,
-          ),
-        ],
+      body = const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
       );
     }
 
@@ -120,51 +117,163 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   }
 }
 
-/// V2 greeting row: "Good evening, Linh" + add button. Profile and activity
-/// are dock tabs now, so the Hub header carries neither.
+/// Figma Hub header: the "hành trình." title, an add button and the
+/// "chào {name}." greeting underneath. Profile and activity are dock tabs.
 class _HubHeader extends ConsumerWidget {
-  const _HubHeader({this.onAdd, this.hello = false});
+  const _HubHeader({this.onAdd});
 
   /// Null hides the add button (the empty hub offers its own start button).
   final VoidCallback? onAdd;
 
-  /// Day-zero greeting ("Hi, Linh") instead of the time-of-day one.
-  final bool hello;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
-    final now = ref.watch(journeysNowProvider);
+    final ui = context.ui;
     final name = ref.watch(myProfileProvider).value?.displayName.trim();
     final first = name == null || name.isEmpty
         ? null
         : name.split(RegExp(r'\s+')).last;
-    final greeting = now.hour < 12
-        ? l10n.journeys_greetingMorning
-        : now.hour < 18
-        ? l10n.journeys_greetingAfternoon
-        : l10n.journeys_greetingEvening;
-    final title = first == null
-        ? (hello ? l10n.journeys_title : greeting)
-        : (hello
-              ? l10n.journeys_greetingHi(first)
-              : l10n.journeys_greetingNamed(greeting, first));
-    return UiTopBar(
-      title: title,
-      actions: [
-        if (onAdd != null)
-          UiIconButton(
-            key: const ValueKey('journeys-new'),
-            glyph: const OurneyIcon(name: 'plus', size: 24),
-            label: l10n.journeys_addJourney,
-            onPressed: onAdd,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        UiTopBar(
+          title: l10n.journeys_hubTitle,
+          actions: [
+            if (onAdd != null)
+              UiIconButton(
+                key: const ValueKey('journeys-new'),
+                glyph: const OurneyIcon(name: 'plus', size: 24),
+                label: l10n.journeys_addJourney,
+                onPressed: onAdd,
+              ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: UiSpace.md),
+          child: Semantics(
+            header: true,
+            child: Text(
+              first == null
+                  ? l10n.journeys_hubGreetingNoName
+                  : l10n.journeys_hubGreeting(first),
+              key: const ValueKey('hub-greeting'),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.h1(color: ui.ink, size: 28).copyWith(height: 1.3),
+            ),
           ),
+        ),
       ],
     );
   }
 }
 
-/// `DayZeroHub`: nothing to track yet, one clear way to start.
+/// Offline banner ("đang lưu trên máy, có mạng sẽ tự gửi") and the resume
+/// card of an unfinished create flow, shared by every Hub state.
+class _HubNotices extends ConsumerWidget {
+  const _HubNotices();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = JourneysL10n.of(context);
+    final ui = context.ui;
+    final offline = ref.watch(journeyHomeOfflineProvider).value ?? false;
+    final resume = ref.watch(createProgressProvider);
+    if (!offline && resume == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: UiSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (offline)
+            UiBanner(
+              key: const ValueKey('hub-offline-banner'),
+              message: l10n.journeys_hubOffline,
+            ),
+          if (offline && resume != null) const SizedBox(height: UiSpace.sm),
+          if (resume != null)
+            UiCard(
+              key: const ValueKey('hub-create-progress'),
+              onPressed: () => context.push(AppRoutes.journeyNew),
+              semanticLabel:
+                  '${l10n.journeys_hubResumeTitle}, ${l10n.journeys_hubResumeStep(resume)}',
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.journeys_hubResumeTitle,
+                          style: UiText.body(
+                            size: 15,
+                            weight: FontWeight.w800,
+                            height: 1.35,
+                            color: ui.ink,
+                          ),
+                        ),
+                        Text(
+                          l10n.journeys_hubResumeStep(resume),
+                          style: UiText.muted(
+                            color: ui.inkMuted,
+                            size: 13,
+                          ).copyWith(height: 1.4),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const OurneyIcon(name: 'chevron-right', size: 20, flat: true),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Figma `HubSkeleton`: hero block and three card placeholders.
+class _HubSkeleton extends StatelessWidget {
+  const _HubSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: UiSpace.lg),
+      child: Semantics(
+        label: JourneysL10n.of(context).journeys_hubLoading,
+        child: Column(
+          key: const ValueKey('journeys-loading'),
+          children: [
+            const UiSkeleton(height: 132, radius: UiRadius.card),
+            for (var i = 0; i < 3; i++) ...[
+              const SizedBox(height: UiSpace.md),
+              const Row(
+                children: [
+                  UiSkeleton(width: 64, height: 64, circle: true),
+                  SizedBox(width: UiSpace.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        UiSkeleton(height: 18),
+                        SizedBox(height: 8),
+                        UiSkeleton(width: 120, height: 12),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Figma empty Hub state: camera sticker, "chưa có hành trình nào.", a
+/// one-line promise and the start button.
 class _DayZero extends StatelessWidget {
   const _DayZero({required this.onStart});
 
@@ -174,25 +283,45 @@ class _DayZero extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
-    final height = MediaQuery.sizeOf(context).height;
     return Column(
       key: const ValueKey('journeys-empty'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _HubHeader(hello: true),
-        SizedBox(height: height * 0.18),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: Text(
-            l10n.journeys_dayZeroBody,
-            textAlign: TextAlign.center,
-            style: UiText.body(size: 17, height: 1.6, color: ui.ink),
+        const _HubHeader(),
+        const _HubNotices(),
+        const SizedBox(height: UiSpace.xxl),
+        Center(
+          child: Container(
+            width: 88,
+            height: 88,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: UiTypePastel.weightLoss,
+              shape: BoxShape.circle,
+              border: Border.all(color: ui.ink, width: 2),
+            ),
+            child: const OurneyIcon(name: 'camera', size: 40, active: true),
           ),
         ),
-        const SizedBox(height: UiSpace.xxl),
+        const SizedBox(height: UiSpace.lg),
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.journeys_hubEmptyTitle,
+            textAlign: TextAlign.center,
+            style: UiText.h2(color: ui.ink).copyWith(height: 1.3),
+          ),
+        ),
+        const SizedBox(height: UiSpace.sm),
+        Text(
+          l10n.journeys_hubEmptyBody,
+          textAlign: TextAlign.center,
+          style: UiText.body(size: 16, height: 1.5, color: ui.inkMuted),
+        ),
+        const SizedBox(height: UiSpace.xl),
         UiButton(
           key: const ValueKey('journeys-start-first'),
           label: l10n.journeys_dayZeroStart,
-          expand: false,
           onPressed: onStart,
         ),
       ],
@@ -270,6 +399,7 @@ class _HubBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _HubHeader(onAdd: onMenu),
+        const _HubNotices(),
         if (menuOpen)
           Align(
             alignment: AlignmentDirectional.centerEnd,
@@ -313,7 +443,26 @@ class _HubBody extends ConsumerWidget {
         else if (allDone)
           _AllDoneRow(count: buckets.active.length),
         const SizedBox(height: UiSpace.xl),
-        UiListHeading(title: l10n.journeys_yourJourneys),
+        Row(
+          key: const ValueKey('hub-section-heading'),
+          children: [
+            Expanded(
+              child: Semantics(
+                header: true,
+                child: Text(
+                  l10n.journeys_hubSection,
+                  style: UiText.h2(color: ui.ink, size: 20),
+                ),
+              ),
+            ),
+            const OurneyIcon(name: 'journeys', size: 17, flat: true),
+            const SizedBox(width: 4),
+            Text(
+              l10n.journeys_hubRunning(buckets.activeCount),
+              style: UiText.eyebrow(color: ui.inkMuted),
+            ),
+          ],
+        ),
         const SizedBox(height: UiSpace.sm),
         UiSegmented<HubSegment>(
           scrollable: true,
@@ -363,6 +512,10 @@ class _HubBody extends ConsumerWidget {
                 : Column(
                     children: [
                       for (final j in buckets.active) JourneyRow(journey: j),
+                      _NewJourneyCard(
+                        onTap: () =>
+                            JourneysListScreen.startCreate(context, buckets),
+                      ),
                     ],
                   ),
         },
@@ -418,6 +571,59 @@ class _AllDoneRow extends StatelessWidget {
               weight: FontWeight.w700,
               height: 1.3,
               color: ui.inkMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// `.new-journey-card`: "hành trình mới." at the end of the list.
+class _NewJourneyCard extends StatelessWidget {
+  const _NewJourneyCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    final ui = context.ui;
+    return UiCard(
+      key: const ValueKey('journeys-new-card'),
+      onPressed: onTap,
+      semanticLabel:
+          '${l10n.journeys_hubNewTitle}, ${l10n.journeys_hubNewHint}',
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: UiTypePastel.english,
+              shape: BoxShape.circle,
+              border: Border.all(color: ui.ink, width: 2),
+            ),
+            child: const OurneyIcon(name: 'send', size: 32, active: true),
+          ),
+          const SizedBox(width: UiSpace.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.journeys_hubNewTitle,
+                  style: UiText.h2(color: ui.ink, size: 18),
+                ),
+                Text(
+                  l10n.journeys_hubNewHint,
+                  style: UiText.muted(
+                    color: ui.inkMuted,
+                    size: 13,
+                  ).copyWith(height: 1.4),
+                ),
+              ],
             ),
           ),
         ],

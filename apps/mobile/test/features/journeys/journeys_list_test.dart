@@ -176,7 +176,7 @@ void main() {
         journeys: _FailingJourneyRepository(),
       );
       expect(find.byKey(const ValueKey('journeys-error')), findsOneWidget);
-      expect(find.text("Couldn't load journeys."), findsOneWidget);
+      expect(find.text('could not load. try again?'), findsOneWidget);
       // An offline failure uses the offline state card.
       final card = tester.widget<UiStateCard>(
         find.byKey(const ValueKey('journeys-error')),

@@ -596,6 +596,53 @@ class $JourneysTable extends Journeys
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _layoutMeta = const VerificationMeta('layout');
+  @override
+  late final GeneratedColumn<String> layout = GeneratedColumn<String>(
+    'layout',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _coverMeta = const VerificationMeta('cover');
+  @override
+  late final GeneratedColumn<int> cover = GeneratedColumn<int>(
+    'cover',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _colorMeta = const VerificationMeta('color');
+  @override
+  late final GeneratedColumn<int> color = GeneratedColumn<int>(
+    'color',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reminderTimeMeta = const VerificationMeta(
+    'reminderTime',
+  );
+  @override
+  late final GeneratedColumn<String> reminderTime = GeneratedColumn<String>(
+    'reminder_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dnaMeta = const VerificationMeta('dna');
+  @override
+  late final GeneratedColumn<String> dna = GeneratedColumn<String>(
+    'dna',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _localArchivedMeta = const VerificationMeta(
     'localArchived',
   );
@@ -644,6 +691,11 @@ class $JourneysTable extends Journeys
     origin,
     coupleSelfName,
     couplePartnerName,
+    layout,
+    cover,
+    color,
+    reminderTime,
+    dna,
     localArchived,
     updatedAt,
   ];
@@ -803,6 +855,39 @@ class $JourneysTable extends Journeys
         ),
       );
     }
+    if (data.containsKey('layout')) {
+      context.handle(
+        _layoutMeta,
+        layout.isAcceptableOrUnknown(data['layout']!, _layoutMeta),
+      );
+    }
+    if (data.containsKey('cover')) {
+      context.handle(
+        _coverMeta,
+        cover.isAcceptableOrUnknown(data['cover']!, _coverMeta),
+      );
+    }
+    if (data.containsKey('color')) {
+      context.handle(
+        _colorMeta,
+        color.isAcceptableOrUnknown(data['color']!, _colorMeta),
+      );
+    }
+    if (data.containsKey('reminder_time')) {
+      context.handle(
+        _reminderTimeMeta,
+        reminderTime.isAcceptableOrUnknown(
+          data['reminder_time']!,
+          _reminderTimeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('dna')) {
+      context.handle(
+        _dnaMeta,
+        dna.isAcceptableOrUnknown(data['dna']!, _dnaMeta),
+      );
+    }
     if (data.containsKey('local_archived')) {
       context.handle(
         _localArchivedMeta,
@@ -909,6 +994,26 @@ class $JourneysTable extends Journeys
         DriftSqlType.string,
         data['${effectivePrefix}couple_partner_name'],
       ),
+      layout: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}layout'],
+      ),
+      cover: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cover'],
+      ),
+      color: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}color'],
+      ),
+      reminderTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reminder_time'],
+      ),
+      dna: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dna'],
+      ),
       localArchived: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}local_archived'],
@@ -955,6 +1060,13 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
   final String? coupleSelfName;
   final String? couplePartnerName;
 
+  /// Edit-journey fields (0012; schema version 5). `dna` is a JSON object.
+  final String? layout;
+  final int? cover;
+  final int? color;
+  final String? reminderTime;
+  final String? dna;
+
   /// Client-only "archive" (JourneyRepository.archive): hidden from the list.
   final bool localArchived;
   final String? updatedAt;
@@ -979,6 +1091,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     required this.origin,
     this.coupleSelfName,
     this.couplePartnerName,
+    this.layout,
+    this.cover,
+    this.color,
+    this.reminderTime,
+    this.dna,
     required this.localArchived,
     this.updatedAt,
   });
@@ -1023,6 +1140,21 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     if (!nullToAbsent || couplePartnerName != null) {
       map['couple_partner_name'] = Variable<String>(couplePartnerName);
     }
+    if (!nullToAbsent || layout != null) {
+      map['layout'] = Variable<String>(layout);
+    }
+    if (!nullToAbsent || cover != null) {
+      map['cover'] = Variable<int>(cover);
+    }
+    if (!nullToAbsent || color != null) {
+      map['color'] = Variable<int>(color);
+    }
+    if (!nullToAbsent || reminderTime != null) {
+      map['reminder_time'] = Variable<String>(reminderTime);
+    }
+    if (!nullToAbsent || dna != null) {
+      map['dna'] = Variable<String>(dna);
+    }
     map['local_archived'] = Variable<bool>(localArchived);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<String>(updatedAt);
@@ -1066,6 +1198,19 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       couplePartnerName: couplePartnerName == null && nullToAbsent
           ? const Value.absent()
           : Value(couplePartnerName),
+      layout: layout == null && nullToAbsent
+          ? const Value.absent()
+          : Value(layout),
+      cover: cover == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cover),
+      color: color == null && nullToAbsent
+          ? const Value.absent()
+          : Value(color),
+      reminderTime: reminderTime == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reminderTime),
+      dna: dna == null && nullToAbsent ? const Value.absent() : Value(dna),
       localArchived: Value(localArchived),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
@@ -1101,6 +1246,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       couplePartnerName: serializer.fromJson<String?>(
         json['couplePartnerName'],
       ),
+      layout: serializer.fromJson<String?>(json['layout']),
+      cover: serializer.fromJson<int?>(json['cover']),
+      color: serializer.fromJson<int?>(json['color']),
+      reminderTime: serializer.fromJson<String?>(json['reminderTime']),
+      dna: serializer.fromJson<String?>(json['dna']),
       localArchived: serializer.fromJson<bool>(json['localArchived']),
       updatedAt: serializer.fromJson<String?>(json['updatedAt']),
     );
@@ -1129,6 +1279,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       'origin': serializer.toJson<String>(origin),
       'coupleSelfName': serializer.toJson<String?>(coupleSelfName),
       'couplePartnerName': serializer.toJson<String?>(couplePartnerName),
+      'layout': serializer.toJson<String?>(layout),
+      'cover': serializer.toJson<int?>(cover),
+      'color': serializer.toJson<int?>(color),
+      'reminderTime': serializer.toJson<String?>(reminderTime),
+      'dna': serializer.toJson<String?>(dna),
       'localArchived': serializer.toJson<bool>(localArchived),
       'updatedAt': serializer.toJson<String?>(updatedAt),
     };
@@ -1155,6 +1310,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     String? origin,
     Value<String?> coupleSelfName = const Value.absent(),
     Value<String?> couplePartnerName = const Value.absent(),
+    Value<String?> layout = const Value.absent(),
+    Value<int?> cover = const Value.absent(),
+    Value<int?> color = const Value.absent(),
+    Value<String?> reminderTime = const Value.absent(),
+    Value<String?> dna = const Value.absent(),
     bool? localArchived,
     Value<String?> updatedAt = const Value.absent(),
   }) => JourneyRow(
@@ -1182,6 +1342,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     couplePartnerName: couplePartnerName.present
         ? couplePartnerName.value
         : this.couplePartnerName,
+    layout: layout.present ? layout.value : this.layout,
+    cover: cover.present ? cover.value : this.cover,
+    color: color.present ? color.value : this.color,
+    reminderTime: reminderTime.present ? reminderTime.value : this.reminderTime,
+    dna: dna.present ? dna.value : this.dna,
     localArchived: localArchived ?? this.localArchived,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
@@ -1229,6 +1394,13 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
       couplePartnerName: data.couplePartnerName.present
           ? data.couplePartnerName.value
           : this.couplePartnerName,
+      layout: data.layout.present ? data.layout.value : this.layout,
+      cover: data.cover.present ? data.cover.value : this.cover,
+      color: data.color.present ? data.color.value : this.color,
+      reminderTime: data.reminderTime.present
+          ? data.reminderTime.value
+          : this.reminderTime,
+      dna: data.dna.present ? data.dna.value : this.dna,
       localArchived: data.localArchived.present
           ? data.localArchived.value
           : this.localArchived,
@@ -1259,6 +1431,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           ..write('origin: $origin, ')
           ..write('coupleSelfName: $coupleSelfName, ')
           ..write('couplePartnerName: $couplePartnerName, ')
+          ..write('layout: $layout, ')
+          ..write('cover: $cover, ')
+          ..write('color: $color, ')
+          ..write('reminderTime: $reminderTime, ')
+          ..write('dna: $dna, ')
           ..write('localArchived: $localArchived, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1287,6 +1464,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
     origin,
     coupleSelfName,
     couplePartnerName,
+    layout,
+    cover,
+    color,
+    reminderTime,
+    dna,
     localArchived,
     updatedAt,
   ]);
@@ -1314,6 +1496,11 @@ class JourneyRow extends DataClass implements Insertable<JourneyRow> {
           other.origin == this.origin &&
           other.coupleSelfName == this.coupleSelfName &&
           other.couplePartnerName == this.couplePartnerName &&
+          other.layout == this.layout &&
+          other.cover == this.cover &&
+          other.color == this.color &&
+          other.reminderTime == this.reminderTime &&
+          other.dna == this.dna &&
           other.localArchived == this.localArchived &&
           other.updatedAt == this.updatedAt);
 }
@@ -1339,6 +1526,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
   final Value<String> origin;
   final Value<String?> coupleSelfName;
   final Value<String?> couplePartnerName;
+  final Value<String?> layout;
+  final Value<int?> cover;
+  final Value<int?> color;
+  final Value<String?> reminderTime;
+  final Value<String?> dna;
   final Value<bool> localArchived;
   final Value<String?> updatedAt;
   final Value<int> rowid;
@@ -1363,6 +1555,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     this.origin = const Value.absent(),
     this.coupleSelfName = const Value.absent(),
     this.couplePartnerName = const Value.absent(),
+    this.layout = const Value.absent(),
+    this.cover = const Value.absent(),
+    this.color = const Value.absent(),
+    this.reminderTime = const Value.absent(),
+    this.dna = const Value.absent(),
     this.localArchived = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1388,6 +1585,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     this.origin = const Value.absent(),
     this.coupleSelfName = const Value.absent(),
     this.couplePartnerName = const Value.absent(),
+    this.layout = const Value.absent(),
+    this.cover = const Value.absent(),
+    this.color = const Value.absent(),
+    this.reminderTime = const Value.absent(),
+    this.dna = const Value.absent(),
     this.localArchived = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1422,6 +1624,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     Expression<String>? origin,
     Expression<String>? coupleSelfName,
     Expression<String>? couplePartnerName,
+    Expression<String>? layout,
+    Expression<int>? cover,
+    Expression<int>? color,
+    Expression<String>? reminderTime,
+    Expression<String>? dna,
     Expression<bool>? localArchived,
     Expression<String>? updatedAt,
     Expression<int>? rowid,
@@ -1447,6 +1654,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
       if (origin != null) 'origin': origin,
       if (coupleSelfName != null) 'couple_self_name': coupleSelfName,
       if (couplePartnerName != null) 'couple_partner_name': couplePartnerName,
+      if (layout != null) 'layout': layout,
+      if (cover != null) 'cover': cover,
+      if (color != null) 'color': color,
+      if (reminderTime != null) 'reminder_time': reminderTime,
+      if (dna != null) 'dna': dna,
       if (localArchived != null) 'local_archived': localArchived,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1474,6 +1686,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     Value<String>? origin,
     Value<String?>? coupleSelfName,
     Value<String?>? couplePartnerName,
+    Value<String?>? layout,
+    Value<int?>? cover,
+    Value<int?>? color,
+    Value<String?>? reminderTime,
+    Value<String?>? dna,
     Value<bool>? localArchived,
     Value<String?>? updatedAt,
     Value<int>? rowid,
@@ -1499,6 +1716,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
       origin: origin ?? this.origin,
       coupleSelfName: coupleSelfName ?? this.coupleSelfName,
       couplePartnerName: couplePartnerName ?? this.couplePartnerName,
+      layout: layout ?? this.layout,
+      cover: cover ?? this.cover,
+      color: color ?? this.color,
+      reminderTime: reminderTime ?? this.reminderTime,
+      dna: dna ?? this.dna,
       localArchived: localArchived ?? this.localArchived,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1570,6 +1792,21 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
     if (couplePartnerName.present) {
       map['couple_partner_name'] = Variable<String>(couplePartnerName.value);
     }
+    if (layout.present) {
+      map['layout'] = Variable<String>(layout.value);
+    }
+    if (cover.present) {
+      map['cover'] = Variable<int>(cover.value);
+    }
+    if (color.present) {
+      map['color'] = Variable<int>(color.value);
+    }
+    if (reminderTime.present) {
+      map['reminder_time'] = Variable<String>(reminderTime.value);
+    }
+    if (dna.present) {
+      map['dna'] = Variable<String>(dna.value);
+    }
     if (localArchived.present) {
       map['local_archived'] = Variable<bool>(localArchived.value);
     }
@@ -1605,6 +1842,11 @@ class JourneysCompanion extends UpdateCompanion<JourneyRow> {
           ..write('origin: $origin, ')
           ..write('coupleSelfName: $coupleSelfName, ')
           ..write('couplePartnerName: $couplePartnerName, ')
+          ..write('layout: $layout, ')
+          ..write('cover: $cover, ')
+          ..write('color: $color, ')
+          ..write('reminderTime: $reminderTime, ')
+          ..write('dna: $dna, ')
           ..write('localArchived: $localArchived, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -4674,6 +4916,11 @@ typedef $$JourneysTableCreateCompanionBuilder = JourneysCompanion Function({
   Value<String> origin,
   Value<String?> coupleSelfName,
   Value<String?> couplePartnerName,
+  Value<String?> layout,
+  Value<int?> cover,
+  Value<int?> color,
+  Value<String?> reminderTime,
+  Value<String?> dna,
   Value<bool> localArchived,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -4699,6 +4946,11 @@ typedef $$JourneysTableUpdateCompanionBuilder = JourneysCompanion Function({
   Value<String> origin,
   Value<String?> coupleSelfName,
   Value<String?> couplePartnerName,
+  Value<String?> layout,
+  Value<int?> cover,
+  Value<int?> color,
+  Value<String?> reminderTime,
+  Value<String?> dna,
   Value<bool> localArchived,
   Value<String?> updatedAt,
   Value<int> rowid,
@@ -4811,6 +5063,31 @@ class $$JourneysTableFilterComposer
 
   ColumnFilters<String> get couplePartnerName => $composableBuilder(
     column: $table.couplePartnerName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get layout => $composableBuilder(
+    column: $table.layout,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cover => $composableBuilder(
+    column: $table.cover,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reminderTime => $composableBuilder(
+    column: $table.reminderTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dna => $composableBuilder(
+    column: $table.dna,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4934,6 +5211,31 @@ class $$JourneysTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get layout => $composableBuilder(
+    column: $table.layout,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cover => $composableBuilder(
+    column: $table.cover,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get color => $composableBuilder(
+    column: $table.color,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reminderTime => $composableBuilder(
+    column: $table.reminderTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dna => $composableBuilder(
+    column: $table.dna,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get localArchived => $composableBuilder(
     column: $table.localArchived,
     builder: (column) => ColumnOrderings(column),
@@ -5036,6 +5338,23 @@ class $$JourneysTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get layout =>
+      $composableBuilder(column: $table.layout, builder: (column) => column);
+
+  GeneratedColumn<int> get cover =>
+      $composableBuilder(column: $table.cover, builder: (column) => column);
+
+  GeneratedColumn<int> get color =>
+      $composableBuilder(column: $table.color, builder: (column) => column);
+
+  GeneratedColumn<String> get reminderTime => $composableBuilder(
+    column: $table.reminderTime,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dna =>
+      $composableBuilder(column: $table.dna, builder: (column) => column);
+
   GeneratedColumn<bool> get localArchived => $composableBuilder(
     column: $table.localArchived,
     builder: (column) => column,
@@ -5096,6 +5415,11 @@ class $$JourneysTableTableManager
                 Value<String> origin = const Value.absent(),
                 Value<String?> coupleSelfName = const Value.absent(),
                 Value<String?> couplePartnerName = const Value.absent(),
+                Value<String?> layout = const Value.absent(),
+                Value<int?> cover = const Value.absent(),
+                Value<int?> color = const Value.absent(),
+                Value<String?> reminderTime = const Value.absent(),
+                Value<String?> dna = const Value.absent(),
                 Value<bool> localArchived = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5120,6 +5444,11 @@ class $$JourneysTableTableManager
                 origin: origin,
                 coupleSelfName: coupleSelfName,
                 couplePartnerName: couplePartnerName,
+                layout: layout,
+                cover: cover,
+                color: color,
+                reminderTime: reminderTime,
+                dna: dna,
                 localArchived: localArchived,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -5146,6 +5475,11 @@ class $$JourneysTableTableManager
                 Value<String> origin = const Value.absent(),
                 Value<String?> coupleSelfName = const Value.absent(),
                 Value<String?> couplePartnerName = const Value.absent(),
+                Value<String?> layout = const Value.absent(),
+                Value<int?> cover = const Value.absent(),
+                Value<int?> color = const Value.absent(),
+                Value<String?> reminderTime = const Value.absent(),
+                Value<String?> dna = const Value.absent(),
                 Value<bool> localArchived = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -5170,6 +5504,11 @@ class $$JourneysTableTableManager
                 origin: origin,
                 coupleSelfName: coupleSelfName,
                 couplePartnerName: couplePartnerName,
+                layout: layout,
+                cover: cover,
+                color: color,
+                reminderTime: reminderTime,
+                dna: dna,
                 localArchived: localArchived,
                 updatedAt: updatedAt,
                 rowid: rowid,

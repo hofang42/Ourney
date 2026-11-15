@@ -15,12 +15,14 @@ import '../../../onboarding/onboarding_providers.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
 import '../../../reminders/data/reminder_settings.dart';
 import '../../../reminders/domain/reminder_plan.dart';
+import '../../data/create_progress.dart';
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_form.dart';
 import '../../domain/journey_time.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_errors.dart';
 import '../widgets/departure_ticket.dart';
+import 'create_deck.dart';
 import 'create_widgets.dart';
 import 'dna_pages.dart';
 import 'dna_questions.dart';
@@ -112,6 +114,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   int _step = 0;
 
+  /// Focused card of the step-1 type deck.
+  int _deckFocus = 0;
+
   /// Step-2 "DNA" question page; equal to the question count = the form.
   int _dnaPage = 0;
   final Map<String, Object> _dna = {};
@@ -193,6 +198,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         form.title = l10n.journeys_templateCoupleTitle;
       }
       _option = option;
+      _deckFocus = _options
+          .indexWhere((o) => o.keyName == option.keyName)
+          .clamp(0, _options.length - 1);
       _form = form;
       _who = option.isCouple ? CreateWho.couple : CreateWho.solo;
       _applyWho(form);
@@ -311,6 +319,34 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   String? get _partnerName =>
       _who == CreateWho.couple ? _nameRight.text.trim() : null;
 
+  String? _reminderHHmm() {
+    final rt = ReminderTime.tryParse(_suggestion?.reminder);
+    if (rt == null) return null;
+    return '${rt.hour.toString().padLeft(2, '0')}:'
+        '${rt.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// DNA answers the server stores (`journeys.dna`); weight and the ghost
+  /// photo request stay on the device.
+  Map<String, Object?>? _storableDna() {
+    String iso(DateTime d) =>
+        '${d.year.toString().padLeft(4, '0')}-'
+        '${d.month.toString().padLeft(2, '0')}-'
+        '${d.day.toString().padLeft(2, '0')}';
+    final raw = <String, Object?>{
+      for (final e in _dna.entries)
+        if (e.value is DnaDates)
+          e.key: {
+            'start': iso((e.value as DnaDates).start),
+            if ((e.value as DnaDates).end case final end?) 'end': iso(end),
+          }
+        else
+          e.key: e.value,
+    };
+    if (raw['minutes'] is int) raw['minutes'] = '${raw['minutes']}';
+    return sanitizeJourneyDna(raw);
+  }
+
   Future<void> _submit() async {
     final form = _form;
     if (form == null || _busy) return;
@@ -350,6 +386,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           id: _clientId,
           coupleSelfName: _selfName,
           couplePartnerName: _partnerName,
+          reminderTime: _reminderHHmm(),
+          dna: _storableDna(),
         ),
       );
       final rt = ReminderTime.tryParse(_suggestion?.reminder);
@@ -374,6 +412,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         }
       }
       if (!mounted) return;
+      unawaited(ref.read(createProgressProvider.notifier).clear());
       unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
@@ -394,8 +433,23 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     // Keeps the timezone provider alive and rebuilds when it resolves.
     ref.watch(deviceTimezoneProvider);
 
-    final Widget? bottom = switch (_step) {
-      0 when _option == null => null,
+    final Widget bottom = switch (_step) {
+      0 => Padding(
+        padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
+        // Same type as already chosen (back from step 2, quiz suggestion):
+        // "Next" keeps the form; another card is chosen with this button.
+        child: _option?.keyName == _options[_deckFocus].keyName
+            ? UiButton(
+                key: const ValueKey('create-next'),
+                label: l10n.journeys_createNext,
+                onPressed: _next,
+              )
+            : UiButton(
+                key: const ValueKey('create-choose'),
+                label: l10n.journeys_createDeckChoose,
+                onPressed: () => _select(_options[_deckFocus]),
+              ),
+      ),
       _ => Padding(
         padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
         child: UiButton(
@@ -497,7 +551,13 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           iconSize: 22,
           color: ui.ink,
           label: l10n.journeys_createExit,
-          onPressed: () => context.pop(),
+          onPressed: () {
+            // Leave a "continue creating" card on the Hub (steps 2..5).
+            unawaited(
+              ref.read(createProgressProvider.notifier).save(_step + 1),
+            );
+            context.pop();
+          },
         ),
       ],
     );
@@ -569,11 +629,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
             label: l10n.journeys_dna_import_link,
             onPressed: () => context.push(AppRoutes.importJourney),
           ),
-          for (final o in _options)
-            Padding(
-              padding: const EdgeInsets.only(bottom: UiSpace.sm),
-              child: Builder(
-                builder: (context) {
+          CreateTypeDeck(
+            items: [
+              for (final o in _options)
+                () {
                   final tpl = templateFor(o.templateId);
                   final title = o.isCouple
                       ? l10n.journeys_templateCoupleTitle
@@ -594,20 +653,22 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                   final days = o.isCustom
                       ? null
                       : l10n.journeys_templateDays(tpl.defaultDurationDays);
-                  return CreateChoiceCard(
-                    key: ValueKey('template-${o.keyName}'),
+                  return CreateDeckItem(
+                    keyName: o.keyName,
                     title: title,
-                    body: [
-                      tagline,
-                      [mode, ?days].join(' · '),
-                    ].join('\n'),
-                    glyph: UiTypeBadge(type: o.badge, size: 44),
-                    selected: _option?.keyName == o.keyName,
-                    onPressed: () => _select(o),
+                    tagline: tagline,
+                    meta: [mode, ?days].join(' · '),
+                    badge: o.badge,
                   );
-                },
-              ),
-            ),
+                }(),
+            ],
+            initial: _deckFocus,
+            onFocus: (i) => setState(() => _deckFocus = i),
+            onChoose: (i) {
+              _deckFocus = i;
+              _select(_options[i]);
+            },
+          ),
         ],
       ),
     );

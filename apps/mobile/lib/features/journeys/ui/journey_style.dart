@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../personas/persona_contract.dart';
 import '../../../ui/ui.dart';
 
 /// The V1.0 journey style (paper, ink, accent) of a persona skin. The six
@@ -9,12 +10,7 @@ UiJourneyStyle journeyStyleFor(PersonaSkinId skin) =>
     uiJourneyStyles[skin.index];
 
 /// Skin of [journey] (Couple Rituals is `custom` + heart / 2-person group).
-PersonaSkinId skinOfJourney(Journey journey) => personaSkinForTemplate(
-  journey.templateId,
-  kind: journey.kind,
-  maxMembers: journey.maxMembers,
-  emoji: journey.emoji,
-);
+PersonaSkinId skinOfJourney(Journey journey) => personaSkinOf(journey);
 
 UiJourneyStyle styleOfJourney(Journey journey) =>
     journeyStyleFor(skinOfJourney(journey));

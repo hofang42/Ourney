@@ -49,6 +49,43 @@ void main() {
     expect(await layer.journeys.watchPinnedJourneyIds().first, isEmpty);
   });
 
+  test('update journey persists layout, cover, colour, reminder, dna', () async {
+    final layer = localLayer(db: db, media: media, clock: clock);
+    final j = await layer.journeys.create(
+      soloDraft(start: const LocalDate(2026, 10, 16)),
+    );
+    final u = await layer.journeys.update(
+      j.id,
+      const JourneyUpdate(
+        title: ' Renamed ',
+        layout: PersonaSkinId.minimalistHabit,
+        cover: 2,
+        color: 1,
+        reminderTime: '07:30',
+        dna: {'goal': 'ielts'},
+      ),
+    );
+    expect(u.title, 'Renamed');
+    expect(u.layout, PersonaSkinId.minimalistHabit);
+    expect((u.cover, u.color, u.reminderTime), (2, 1, '07:30'));
+    expect(u.dna, {'goal': 'ielts'});
+    final cleared = await layer.journeys.update(
+      j.id,
+      const JourneyUpdate(clear: {'layout', 'dna'}),
+    );
+    expect(cleared.layout, isNull);
+    expect(cleared.dna, isNull);
+    expect(cleared.cover, 2, reason: 'untouched fields are kept');
+    await expectLater(
+      layer.journeys.update(j.id, const JourneyUpdate(cover: 3)),
+      throwsA(isA<OurneyException>()),
+    );
+    await expectLater(
+      layer.journeys.update(j.id, const JourneyUpdate(reminderTime: '25:00')),
+      throwsA(isA<OurneyException>()),
+    );
+  });
+
   test('create journey -> check-in -> retake replaces -> streak', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
     const guest = 'aaaaaaaa-0000-4000-8000-000000000001';

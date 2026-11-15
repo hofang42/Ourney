@@ -457,7 +457,7 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_addMore => 'Add more';
+  String get journeys_addMore => 'Take another photo today';
 
   @override
   String get journeys_statCurrentShort => 'Current';
@@ -1172,4 +1172,453 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_home_timelineLabel => 'Timeline';
+
+  @override
+  String get journeys_edit_title => 'update journey.';
+
+  @override
+  String get journeys_edit_save => 'Save';
+
+  @override
+  String get journeys_edit_name => 'Name';
+
+  @override
+  String get journeys_edit_cover => 'Cover';
+
+  @override
+  String journeys_edit_coverOption(int n) {
+    return 'Cover $n';
+  }
+
+  @override
+  String get journeys_edit_layout => 'Layout';
+
+  @override
+  String get journeys_edit_layoutNote =>
+      'Some layouts need more data, so they are hidden.';
+
+  @override
+  String get journeys_edit_layoutInUse => 'In use';
+
+  @override
+  String journeys_edit_layoutPreviewLabel(String name) {
+    return 'Preview the $name layout';
+  }
+
+  @override
+  String get journeys_edit_previewTag => 'PREVIEW';
+
+  @override
+  String get journeys_edit_hudPreview => 'Camera HUD';
+
+  @override
+  String journeys_edit_dayOf(int day, int total) {
+    return 'DAY $day/$total';
+  }
+
+  @override
+  String journeys_edit_dayOpen(int day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String get journeys_edit_useLayout => 'Use this layout';
+
+  @override
+  String get journeys_edit_cancel => 'Not now';
+
+  @override
+  String get journeys_edit_layoutApplied => 'Layout changed for this journey.';
+
+  @override
+  String get journeys_edit_layoutOwnerOnly =>
+      'The group owner picks the layout for everyone.';
+
+  @override
+  String get journeys_edit_color => 'Colour';
+
+  @override
+  String get journeys_edit_trophy => 'Trophy name';
+
+  @override
+  String get journeys_edit_film => 'Film roll';
+
+  @override
+  String journeys_edit_filmReadonly(int n) {
+    return '$n · view only';
+  }
+
+  @override
+  String get journeys_edit_couple => 'The two of us';
+
+  @override
+  String get journeys_edit_hud => 'HUD style';
+
+  @override
+  String get journeys_edit_hudBold => 'Bold';
+
+  @override
+  String get journeys_edit_hudStamp => 'Minimal stamp';
+
+  @override
+  String get journeys_edit_hudStrip => 'Film strip';
+
+  @override
+  String get journeys_edit_reminder => 'Reminder time';
+
+  @override
+  String get journeys_edit_reminderHour => 'Hour';
+
+  @override
+  String get journeys_edit_reminderMinute => 'Minute';
+
+  @override
+  String get journeys_edit_visibility => 'Who can view';
+
+  @override
+  String get journeys_edit_visPrivate => 'Only me';
+
+  @override
+  String get journeys_edit_visLink => 'View link (revocable)';
+
+  @override
+  String get journeys_edit_visQuietNote =>
+      'The view page always hides kg and blurs photos by default.';
+
+  @override
+  String get journeys_edit_membersOnly => 'Members only';
+
+  @override
+  String get journeys_edit_membersOnlyHint =>
+      'group journeys have no public link';
+
+  @override
+  String get journeys_edit_quietLock => 'Private';
+
+  @override
+  String get journeys_edit_endTitle => 'End this journey?';
+
+  @override
+  String get journeys_edit_endBody =>
+      'You can still look back, but not add photos.';
+
+  @override
+  String get journeys_edit_endConfirm => 'End';
+
+  @override
+  String get journeys_edit_saved => 'Saved.';
+
+  @override
+  String get journeys_edit_ownerOnly => 'Only the journey owner can edit.';
+
+  @override
+  String get journeys_edit_menu => 'Edit journey';
+
+  @override
+  String get journeys_wrapped_title => 'Journey complete';
+
+  @override
+  String get journeys_wrapped_close => 'Close';
+
+  @override
+  String journeys_wrapped_step(int n) {
+    return 'Step $n';
+  }
+
+  @override
+  String journeys_wrapped_moments(int moments, int days) {
+    return '$moments moments over $days days';
+  }
+
+  @override
+  String journeys_wrapped_streak(int n) {
+    return '$n-day streak';
+  }
+
+  @override
+  String get journeys_wrapped_quietEnd => 'You made it.';
+
+  @override
+  String journeys_wrapped_checkIns(int n) {
+    return '$n check-ins';
+  }
+
+  @override
+  String get journeys_wrapped_squadEnd => 'Finished, everyone!';
+
+  @override
+  String journeys_wrapped_frames(int n) {
+    return '$n frames';
+  }
+
+  @override
+  String journeys_wrapped_daysTogether(int n) {
+    return '$n days together';
+  }
+
+  @override
+  String get journeys_wrapped_coupleFallback => 'The moment we will remember';
+
+  @override
+  String journeys_wrapped_km(String km) {
+    return '$km KM';
+  }
+
+  @override
+  String journeys_wrapped_pace(String pace) {
+    return 'PACE $pace';
+  }
+
+  @override
+  String journeys_wrapped_flexStreak(int n) {
+    return 'STREAK $n.';
+  }
+
+  @override
+  String journeys_wrapped_minimalLine(int done, int total, String name) {
+    return '$done/$total DAYS · $name';
+  }
+
+  @override
+  String get journeys_wrapped_memoryEnd =>
+      'The roll is finished. Time to print it.';
+
+  @override
+  String journeys_wrapped_sumQuiet(int total) {
+    return 'DAY 01 vs DAY $total';
+  }
+
+  @override
+  String journeys_wrapped_sumSquad(int done, int total) {
+    return '$done/$total FINISHED';
+  }
+
+  @override
+  String journeys_wrapped_sumMemory(int total, String name) {
+    return '$total DAYS · $name';
+  }
+
+  @override
+  String journeys_wrapped_sumCouple(int total, int moments) {
+    return '$total DAYS TOGETHER · $moments MOMENTS';
+  }
+
+  @override
+  String journeys_wrapped_sumFlexer(int total, String km) {
+    return '$total DAYS · $km KM';
+  }
+
+  @override
+  String journeys_wrapped_sumMinimal(int done, int total, int pct) {
+    return '$done/$total DAYS · $pct% CONSISTENT';
+  }
+
+  @override
+  String get journeys_wrapped_hideKg => 'Hide kg';
+
+  @override
+  String get journeys_wrapped_blur => 'Blur photos';
+
+  @override
+  String get journeys_wrapped_on => 'On';
+
+  @override
+  String get journeys_wrapped_off => 'Off';
+
+  @override
+  String get journeys_wrapped_ctaPoster => 'Share the trip poster';
+
+  @override
+  String get journeys_wrapped_ctaStory => 'Share our story';
+
+  @override
+  String get journeys_wrapped_ctaFlexer => 'Share to Story';
+
+  @override
+  String get journeys_wrapped_ctaMinimal => 'Export card';
+
+  @override
+  String get journeys_wrapped_ctaCard => 'Make a card';
+
+  @override
+  String get journeys_wrapped_share => 'Share';
+
+  @override
+  String get journeys_wrapped_save => 'Save image';
+
+  @override
+  String get journeys_wrapped_sheetTitle => 'share the card.';
+
+  @override
+  String get journeys_wrapped_hideBrand => 'Hide the ourney wordmark';
+
+  @override
+  String get journeys_wrapped_messages => 'Messages';
+
+  @override
+  String get journeys_wrapped_otherApps => 'Other apps';
+
+  @override
+  String get journeys_wrapped_open => 'See the finished journey';
+
+  @override
+  String get journeys_wrapped_menu => 'Finish story';
+
+  @override
+  String journeys_home_squadChip(String title, int days) {
+    return '$title · $days DAYS';
+  }
+
+  @override
+  String journeys_home_squadToday(int done, int total) {
+    return '$done/$total TODAY';
+  }
+
+  @override
+  String get journeys_home_trophyDefault => 'TROPHY';
+
+  @override
+  String journeys_home_trophyDay(int day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String journeys_home_filmRoll(int frames, int total) {
+    return 'FILM ROLL $frames/$total';
+  }
+
+  @override
+  String journeys_home_rollNote(int total) {
+    return 'Roll of $total used · open a new roll';
+  }
+
+  @override
+  String journeys_home_coupleLine(int total, String ritual) {
+    return '$total DAYS $ritual';
+  }
+
+  @override
+  String get journeys_home_ritualCook => 'COOKING FOR EACH OTHER';
+
+  @override
+  String get journeys_home_ritualSave => 'SAVING TOGETHER';
+
+  @override
+  String get journeys_home_ritualLdr => 'CLOSE FROM FAR';
+
+  @override
+  String get journeys_home_ritualOther => 'TOGETHER';
+
+  @override
+  String journeys_home_pairWaiting(String name) {
+    return 'waiting for $name';
+  }
+
+  @override
+  String get journeys_home_pairBoth => 'both shot today';
+
+  @override
+  String get journeys_home_pairNeither => 'nobody has shot today yet';
+
+  @override
+  String journeys_home_flexSummary(String km, String pace) {
+    return '$km KM TOTAL · $pace /KM AVG PACE';
+  }
+
+  @override
+  String journeys_home_flexKmOnly(String km) {
+    return '$km KM TOTAL';
+  }
+
+  @override
+  String journeys_home_flexRan(int done, int total) {
+    return '$done/$total RAN';
+  }
+
+  @override
+  String journeys_home_minimalMonth(String month, int streak) {
+    return '$month · STREAK $streak DAYS';
+  }
+
+  @override
+  String journeys_home_minimalDone(int done, int total) {
+    return '$done/$total DONE';
+  }
+
+  @override
+  String get journeys_home_viewWrapped => 'See the wrap-up';
+
+  @override
+  String get journeys_addMoreTag => 'Add more';
+
+  @override
+  String get journeys_hubTitle => 'journeys.';
+
+  @override
+  String journeys_hubGreeting(String name) {
+    return 'hi $name.';
+  }
+
+  @override
+  String get journeys_hubGreetingNoName => 'hi there.';
+
+  @override
+  String get journeys_hubOffline =>
+      'saved on this phone, will send when you are online';
+
+  @override
+  String get journeys_hubResumeTitle => 'Continue creating a journey';
+
+  @override
+  String journeys_hubResumeStep(int n) {
+    return 'step $n/5';
+  }
+
+  @override
+  String get journeys_hubSection => 'your journeys.';
+
+  @override
+  String journeys_hubRunning(int n) {
+    return '$n running';
+  }
+
+  @override
+  String get journeys_hubNewTitle => 'new journey.';
+
+  @override
+  String get journeys_hubNewHint => 'pick a world to start';
+
+  @override
+  String get journeys_hubEmptyTitle => 'no journeys yet.';
+
+  @override
+  String get journeys_hubEmptyBody => 'one photo a day keeps the whole road.';
+
+  @override
+  String get journeys_hubErrorTitle => 'could not load. try again?';
+
+  @override
+  String get journeys_hubLoading => 'Loading';
+
+  @override
+  String journeys_createDeckCard(int n, int total, String name) {
+    return 'Card $n of $total, $name';
+  }
+
+  @override
+  String get journeys_createDeckChosen => 'Chosen';
+
+  @override
+  String get journeys_createDeckPrev => 'Previous card';
+
+  @override
+  String get journeys_createDeckNext => 'Next card';
+
+  @override
+  String journeys_createDeckCounter(int n, int total) {
+    return '$n/$total';
+  }
+
+  @override
+  String get journeys_createDeckChoose => 'Choose this type';
 }

@@ -269,6 +269,36 @@ void main() {
       },
     );
 
+    testWidgets('the DNA answers are saved with the journey (validated keys)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-create');
+      final draft = h.journeys.created.single;
+      expect(draft.dna, {'habit': 'Read', 'reason': 'Sleep'});
+      expect(draft.dna!.keys.every(journeyDnaKeys.contains), isTrue);
+    });
+
+    testWidgets('closing from step 3 leaves a resume card step on the hub', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 3/5');
+      await _tap(tester, 'create-close');
+      expect(_key('hub-create-progress'), findsOneWidget);
+      expect(find.text('step 3/5'), findsOneWidget);
+    });
+
     testWidgets('local-only: group is disabled', (tester) async {
       final h = await _open(tester);
       await _pick(tester, 'template-workout_30');

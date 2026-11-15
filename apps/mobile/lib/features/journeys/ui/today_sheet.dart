@@ -84,7 +84,7 @@ class TodaySheetContent extends ConsumerWidget {
           for (final p in progress)
             _TodayRow(
               progress: p,
-              trailing: UiTag(label: l10n.journeys_addMore, bordered: true),
+              trailing: UiTag(label: l10n.journeys_addMoreTag, bordered: true),
               onPressed: () => open(p.journey.id),
             ),
         ] else ...[

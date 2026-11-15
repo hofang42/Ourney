@@ -10,7 +10,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'data_test_helpers.dart';
 
 void main() {
-  test('v1 → v4 adds journeys.origin (existing rows are live)', () async {
+  test('v1 → v5 adds journeys.origin (existing rows are live)', () async {
     driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
     final file = File('${tempDir().path}/ourney.sqlite');
 
@@ -33,7 +33,7 @@ void main() {
     expect(row.origin, 'live');
     expect(journeyFromRow(row).origin, JourneyOrigin.live);
     final version = await db.customSelect('pragma user_version').getSingle();
-    expect(version.data.values.single, 4);
+    expect(version.data.values.single, 5);
   });
 
   test('v2 → v3 adds extras, partner photo and couple names', () async {
@@ -75,6 +75,7 @@ void main() {
     );
     await v4.customStatement('alter table memberships drop column hide_extras');
     await v4.customStatement('alter table memberships drop column pinned');
+    await _dropV5Columns(v4);
     await v4.customStatement('pragma user_version = 3');
     await v4.close();
 
@@ -83,6 +84,28 @@ void main() {
     final m = await db.select(db.memberships).getSingle();
     expect(m.hideExtras, isFalse);
     expect(m.pinned, isFalse);
+  });
+
+  test('v4 to v5 adds journey layout, cover, colour, reminder, dna', () async {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final file = File('${tempDir().path}/ourney_v4.sqlite');
+    final v5 = AppDatabase(NativeDatabase(file));
+    await v5.customSelect('select 1').get();
+    await v5.customStatement(
+      'insert into journeys (id, owner_id, kind, template_id, title, emoji, '
+      'start_date, timezone, visibility, status) values '
+      "('j1', 'u1', 'solo', 'custom', 'T', 'x', '2026-01-01', 'UTC', "
+      "'private', 'active')",
+    );
+    await _dropV5Columns(v5);
+    await v5.customStatement('pragma user_version = 4');
+    await v5.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+    final j = await db.select(db.journeys).getSingle();
+    expect(j.layout, isNull);
+    expect(j.dna, isNull);
   });
 }
 
@@ -94,8 +117,16 @@ Future<void> _dropV3Columns(AppDatabase db) async {
   await db.customStatement(
     'alter table check_ins drop column partner_photo_path',
   );
+  await _dropV5Columns(db);
   await db.customStatement('alter table journeys drop column couple_self_name');
   await db.customStatement(
     'alter table journeys drop column couple_partner_name',
   );
+}
+
+/// Turns a current database back into the pre-0012 shape.
+Future<void> _dropV5Columns(AppDatabase db) async {
+  for (final c in ['layout', 'cover', 'color', 'reminder_time', 'dna']) {
+    await db.customStatement('alter table journeys drop column $c');
+  }
 }
