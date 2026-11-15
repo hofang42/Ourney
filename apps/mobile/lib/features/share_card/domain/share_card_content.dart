@@ -77,6 +77,11 @@ class ShareCardContent {
     this.milestone,
     this.metricValue,
     this.metricUnit,
+    this.dayNumber = 1,
+    this.completedDays = 0,
+    this.streakDays = 0,
+    this.photoCount = 0,
+    this.activity = const [],
   });
 
   factory ShareCardContent.from({
@@ -116,7 +121,20 @@ class ShareCardContent {
       metric = latest?.metricValue;
     }
 
+    final days = <LocalDate>{for (final c in checkIns) c.localDate};
+    final last = dayNumber.clamp(0, journey.durationDays ?? dayNumber);
+    final first = (last - shareCardActivityDays).clamp(0, last);
+    final activity = [
+      for (var i = first; i < last; i++)
+        days.contains(journey.startDate.addDays(i)),
+    ];
+
     return ShareCardContent(
+      dayNumber: dayNumber,
+      completedDays: streak.completed,
+      streakDays: streak.current,
+      photoCount: checkIns.where((c) => c.photoPath.isNotEmpty).length,
+      activity: activity,
       title: core.title,
       emoji: core.emoji,
       templateId: journey.templateId,
@@ -155,7 +173,26 @@ class ShareCardContent {
   /// Latest metric value to print, null when hidden or absent.
   final double? metricValue;
   final String? metricUnit;
+
+  /// Today's day N of the journey (the "NGÀY N" label on skin cards).
+  final int dayNumber;
+
+  /// Distinct check-in days inside the journey window.
+  final int completedDays;
+
+  /// Current streak (can be 0 while the number shows the day).
+  final int streakDays;
+
+  /// Check-ins that carry a photo.
+  final int photoCount;
+
+  /// One flag per day (oldest first, at most [shareCardActivityDays]) for the
+  /// flexer bars: true when the day has a check-in.
+  final List<bool> activity;
 }
+
+/// Bars on the flexer card (`FlexerShare` draws 21).
+const int shareCardActivityDays = 21;
 
 /// FR-B7: weight-loss journeys never show kg outside the app; other
 /// journeys follow `hideMetricDefault` and the caller's `hideMetric`.

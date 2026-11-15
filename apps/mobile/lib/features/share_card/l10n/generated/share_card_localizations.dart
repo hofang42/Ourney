@@ -337,6 +337,240 @@ abstract class ShareCardL10n {
   /// In vi, this message translates to:
   /// **'Chỉ chủ hành trình mới quản lý được link.'**
   String get share_card_linkErrorForbidden;
+
+  /// Quiet skin share screen heading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thiệp.'**
+  String get share_card_quietTitle;
+
+  /// Squad skin share screen heading (lowercase).
+  ///
+  /// In vi, this message translates to:
+  /// **'tạo thiệp.'**
+  String get share_card_squadTitle;
+
+  /// Pill beside the quiet skin top bar title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Riêng tư'**
+  String get share_card_quietPrivate;
+
+  /// Uppercase day label printed on cards.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {n}'**
+  String share_card_dayLabel(int n);
+
+  /// Quiet card caption.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} ngày đều đặn'**
+  String share_card_steadyDays(int n);
+
+  /// Squad poster heading.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ ĐIỂM DANH · NGÀY {day}'**
+  String share_card_attended(int done, int total, int day);
+
+  /// Squad trophy stamp.
+  ///
+  /// In vi, this message translates to:
+  /// **'CÚP {n}'**
+  String share_card_cup(int n);
+
+  /// Memory poster title (name is uppercased by the caller).
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} NGÀY · {name}'**
+  String share_card_tripPosterTitle(int days, String name);
+
+  /// Couple card heading.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} NGÀY BÊN NHAU · {moments} KHOẢNH KHẮC'**
+  String share_card_coupleTitle(int days, int moments);
+
+  /// Flexer card caption.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} NGÀY HOẠT ĐỘNG'**
+  String share_card_activeDays(int n);
+
+  /// Minimal card line 1 (fixed-length journey).
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} NGÀY'**
+  String share_card_minimalDays(int done, int total);
+
+  /// Minimal card line 1 (open-ended journey).
+  ///
+  /// In vi, this message translates to:
+  /// **'{done} NGÀY'**
+  String share_card_minimalDaysOpen(int done);
+
+  /// Minimal card line 2.
+  ///
+  /// In vi, this message translates to:
+  /// **'{pct}% ĐỀU ĐẶN'**
+  String share_card_minimalRate(int pct);
+
+  /// Quiet privacy note.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh đại diện được làm mờ · số kg luôn ẩn'**
+  String get share_card_noteBoth;
+
+  /// Quiet privacy note, photo only.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh đại diện được làm mờ'**
+  String get share_card_noteBlur;
+
+  /// Quiet privacy note, metric only.
+  ///
+  /// In vi, this message translates to:
+  /// **'Số kg luôn ẩn'**
+  String get share_card_noteMetric;
+
+  /// Switch: hide the brand wordmark on the card.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn chữ ourney'**
+  String get share_card_hideBrand;
+
+  /// Brand toggle state on.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật'**
+  String get share_card_brandOn;
+
+  /// Brand toggle state off.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tắt'**
+  String get share_card_brandOff;
+
+  /// Quiet skin primary button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xuất thẻ'**
+  String get share_card_export;
+
+  /// Toast after exporting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu thẻ.'**
+  String get share_card_exportSaved;
+
+  /// Squad share button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ'**
+  String get share_card_squadShare;
+
+  /// Memory share button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ poster chuyến đi'**
+  String get share_card_memoryShare;
+
+  /// Couple share button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ câu chuyện của mình'**
+  String get share_card_coupleShare;
+
+  /// Flexer share button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ lên Story'**
+  String get share_card_flexerShare;
+
+  /// Minimal export button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xuất thẻ tối giản'**
+  String get share_card_minimalExport;
+
+  /// Squad share sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'chia sẻ tấm thiệp.'**
+  String get share_card_squadSheetTitle;
+
+  /// Memory share sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'chia sẻ poster chuyến đi.'**
+  String get share_card_memorySheetTitle;
+
+  /// Couple share sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'chia sẻ câu chuyện.'**
+  String get share_card_coupleSheetTitle;
+
+  /// Flexer share sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'chia sẻ thành tích.'**
+  String get share_card_flexerSheetTitle;
+
+  /// Minimal share sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'xuất thẻ tối giản.'**
+  String get share_card_minimalSheetTitle;
+
+  /// Share sheet action.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tin nhắn'**
+  String get share_card_sheetMessages;
+
+  /// Share sheet action.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ứng dụng khác'**
+  String get share_card_sheetOther;
+
+  /// Share sheet action.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu ảnh'**
+  String get share_card_sheetSave;
+
+  /// Quiet privacy sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hiện số kg trên thẻ?'**
+  String get share_card_privacyTitle;
+
+  /// Quiet privacy sheet body.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ai xem thẻ đều thấy số này.'**
+  String get share_card_privacyBody;
+
+  /// Quiet privacy sheet primary.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ ẩn'**
+  String get share_card_privacyKeep;
+
+  /// Quiet privacy sheet secondary.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vẫn hiện'**
+  String get share_card_privacyShow;
+
+  /// Heading above the photo / number / link options.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tùy chỉnh thẻ'**
+  String get share_card_moreOptions;
 }
 
 class _ShareCardL10nDelegate extends LocalizationsDelegate<ShareCardL10n> {

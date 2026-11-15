@@ -27,21 +27,16 @@ class AuthL10nVi extends AuthL10n {
   String get auth_emailLabel => 'Email';
 
   @override
-  String get auth_emailHint => 'ban@vidu.com';
+  String get auth_emailHint => 'ten@email.com';
 
   @override
-  String get auth_emailInvalid => 'Email này chưa đúng định dạng.';
+  String get auth_emailInvalid => 'Email chưa đúng dạng. Ví dụ: ten@gmail.com';
 
   @override
   String get auth_sendCode => 'Gửi mã';
 
   @override
   String get auth_sending => 'Đang gửi…';
-
-  @override
-  String auth_codeSentTo(String email) {
-    return 'Mã 6 số đã được gửi tới $email.';
-  }
 
   @override
   String get auth_codeLabel => 'Mã 6 số';
@@ -64,14 +59,14 @@ class AuthL10nVi extends AuthL10n {
   }
 
   @override
-  String get auth_codeResent => 'Đã gửi mã mới. Kiểm tra hộp thư nhé.';
+  String get auth_codeResent => 'Đã gửi mã mới. Mã cũ không dùng được nữa.';
 
   @override
   String get auth_changeEmail => 'Đổi email';
 
   @override
   String get auth_errorWrongCode =>
-      'Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.';
+      'Mã chưa đúng. Kiểm tra lại 6 số trong email rồi nhập lại.';
 
   @override
   String get auth_errorRateLimited =>
@@ -90,10 +85,10 @@ class AuthL10nVi extends AuthL10n {
   String get auth_eyebrowCheck => 'KIỂM TRA EMAIL';
 
   @override
-  String get auth_terms => 'Điều khoản';
+  String get auth_terms => 'Điều khoản sử dụng';
 
   @override
-  String get auth_privacy => 'Quyền riêng tư';
+  String get auth_privacy => 'Chính sách quyền riêng tư.';
 
   @override
   String auth_digitSemantics(int n) {
@@ -125,11 +120,6 @@ class AuthL10nVi extends AuthL10n {
 
   @override
   String get auth_sendSms => 'Gửi mã SMS';
-
-  @override
-  String auth_smsSentTo(String phone) {
-    return 'Mã 6 số đã gửi qua SMS tới $phone.';
-  }
 
   @override
   String get auth_changePhone => 'Đổi số điện thoại';
@@ -191,9 +181,35 @@ class AuthL10nVi extends AuthL10n {
   String get auth_backToSignIn => 'Quay lại đăng nhập';
 
   @override
-  String get auth_errorWrongPassword => 'Email hoặc mật khẩu chưa đúng.';
+  String get auth_errorWrongPassword =>
+      'Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.';
 
   @override
   String get auth_errorEmailTaken =>
       'Email này đã có tài khoản. Hãy đăng nhập.';
+
+  @override
+  String get auth_errorSendFailed => 'Chưa gửi được mã. Thử lại sau ít phút.';
+
+  @override
+  String get auth_codeSentPrefix => 'Mã gồm 6 số vừa gửi tới';
+
+  @override
+  String get auth_offlineBanner =>
+      'Chưa có mạng nên chưa gửi được mã. Bật mạng rồi thử lại.';
+
+  @override
+  String get auth_retry => 'Thử lại';
+
+  @override
+  String get auth_success => 'Xong rồi. Chào bạn.';
+
+  @override
+  String get auth_legalIntro => 'Tiếp tục nghĩa là bạn đồng ý';
+
+  @override
+  String get auth_legalAnd => 'và';
+
+  @override
+  String get auth_back => 'Quay lại';
 }

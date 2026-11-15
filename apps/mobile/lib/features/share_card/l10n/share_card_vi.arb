@@ -206,5 +206,226 @@
   "share_card_linkErrorForbidden": "Chỉ chủ hành trình mới quản lý được link.",
   "@share_card_linkErrorForbidden": {
     "description": "set_public_link answered `forbidden`."
+  },
+  "share_card_quietTitle": "Tạo thiệp.",
+  "@share_card_quietTitle": {
+    "description": "Quiet skin share screen heading."
+  },
+  "share_card_squadTitle": "tạo thiệp.",
+  "@share_card_squadTitle": {
+    "description": "Squad skin share screen heading (lowercase)."
+  },
+  "share_card_quietPrivate": "Riêng tư",
+  "@share_card_quietPrivate": {
+    "description": "Pill beside the quiet skin top bar title."
+  },
+  "share_card_dayLabel": "NGÀY {n}",
+  "@share_card_dayLabel": {
+    "description": "Uppercase day label printed on cards.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_steadyDays": "{n} ngày đều đặn",
+  "@share_card_steadyDays": {
+    "description": "Quiet card caption.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_attended": "{done}/{total} ĐÃ ĐIỂM DANH · NGÀY {day}",
+  "@share_card_attended": {
+    "description": "Squad poster heading.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_cup": "CÚP {n}",
+  "@share_card_cup": {
+    "description": "Squad trophy stamp.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_tripPosterTitle": "{days} NGÀY · {name}",
+  "@share_card_tripPosterTitle": {
+    "description": "Memory poster title (name is uppercased by the caller).",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "share_card_coupleTitle": "{days} NGÀY BÊN NHAU · {moments} KHOẢNH KHẮC",
+  "@share_card_coupleTitle": {
+    "description": "Couple card heading.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "moments": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_activeDays": "{n} NGÀY HOẠT ĐỘNG",
+  "@share_card_activeDays": {
+    "description": "Flexer card caption.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_minimalDays": "{done}/{total} NGÀY",
+  "@share_card_minimalDays": {
+    "description": "Minimal card line 1 (fixed-length journey).",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_minimalDaysOpen": "{done} NGÀY",
+  "@share_card_minimalDaysOpen": {
+    "description": "Minimal card line 1 (open-ended journey).",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_minimalRate": "{pct}% ĐỀU ĐẶN",
+  "@share_card_minimalRate": {
+    "description": "Minimal card line 2.",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "share_card_noteBoth": "Ảnh đại diện được làm mờ · số kg luôn ẩn",
+  "@share_card_noteBoth": {
+    "description": "Quiet privacy note."
+  },
+  "share_card_noteBlur": "Ảnh đại diện được làm mờ",
+  "@share_card_noteBlur": {
+    "description": "Quiet privacy note, photo only."
+  },
+  "share_card_noteMetric": "Số kg luôn ẩn",
+  "@share_card_noteMetric": {
+    "description": "Quiet privacy note, metric only."
+  },
+  "share_card_hideBrand": "Ẩn chữ ourney",
+  "@share_card_hideBrand": {
+    "description": "Switch: hide the brand wordmark on the card."
+  },
+  "share_card_brandOn": "Bật",
+  "@share_card_brandOn": {
+    "description": "Brand toggle state on."
+  },
+  "share_card_brandOff": "Tắt",
+  "@share_card_brandOff": {
+    "description": "Brand toggle state off."
+  },
+  "share_card_export": "Xuất thẻ",
+  "@share_card_export": {
+    "description": "Quiet skin primary button."
+  },
+  "share_card_exportSaved": "Đã lưu thẻ.",
+  "@share_card_exportSaved": {
+    "description": "Toast after exporting."
+  },
+  "share_card_squadShare": "Chia sẻ",
+  "@share_card_squadShare": {
+    "description": "Squad share button."
+  },
+  "share_card_memoryShare": "Chia sẻ poster chuyến đi",
+  "@share_card_memoryShare": {
+    "description": "Memory share button."
+  },
+  "share_card_coupleShare": "Chia sẻ câu chuyện của mình",
+  "@share_card_coupleShare": {
+    "description": "Couple share button."
+  },
+  "share_card_flexerShare": "Chia sẻ lên Story",
+  "@share_card_flexerShare": {
+    "description": "Flexer share button."
+  },
+  "share_card_minimalExport": "Xuất thẻ tối giản",
+  "@share_card_minimalExport": {
+    "description": "Minimal export button."
+  },
+  "share_card_squadSheetTitle": "chia sẻ tấm thiệp.",
+  "@share_card_squadSheetTitle": {
+    "description": "Squad share sheet title."
+  },
+  "share_card_memorySheetTitle": "chia sẻ poster chuyến đi.",
+  "@share_card_memorySheetTitle": {
+    "description": "Memory share sheet title."
+  },
+  "share_card_coupleSheetTitle": "chia sẻ câu chuyện.",
+  "@share_card_coupleSheetTitle": {
+    "description": "Couple share sheet title."
+  },
+  "share_card_flexerSheetTitle": "chia sẻ thành tích.",
+  "@share_card_flexerSheetTitle": {
+    "description": "Flexer share sheet title."
+  },
+  "share_card_minimalSheetTitle": "xuất thẻ tối giản.",
+  "@share_card_minimalSheetTitle": {
+    "description": "Minimal share sheet title."
+  },
+  "share_card_sheetMessages": "Tin nhắn",
+  "@share_card_sheetMessages": {
+    "description": "Share sheet action."
+  },
+  "share_card_sheetOther": "Ứng dụng khác",
+  "@share_card_sheetOther": {
+    "description": "Share sheet action."
+  },
+  "share_card_sheetSave": "Lưu ảnh",
+  "@share_card_sheetSave": {
+    "description": "Share sheet action."
+  },
+  "share_card_privacyTitle": "Hiện số kg trên thẻ?",
+  "@share_card_privacyTitle": {
+    "description": "Quiet privacy sheet title."
+  },
+  "share_card_privacyBody": "Ai xem thẻ đều thấy số này.",
+  "@share_card_privacyBody": {
+    "description": "Quiet privacy sheet body."
+  },
+  "share_card_privacyKeep": "Giữ ẩn",
+  "@share_card_privacyKeep": {
+    "description": "Quiet privacy sheet primary."
+  },
+  "share_card_privacyShow": "Vẫn hiện",
+  "@share_card_privacyShow": {
+    "description": "Quiet privacy sheet secondary."
+  },
+  "share_card_moreOptions": "Tùy chỉnh thẻ",
+  "@share_card_moreOptions": {
+    "description": "Heading above the photo / number / link options."
   }
 }

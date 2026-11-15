@@ -38,8 +38,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_usernameLabel => 'Tên người dùng';
 
   @override
-  String get profile_usernameHelper =>
-      '3–20 ký tự: chữ thường, số, dấu _ và dấu chấm';
+  String get profile_usernameHelper => '3–20 ký tự: a–z, 0–9, _ .';
 
   @override
   String profile_usernameTooShort(int min) {
@@ -52,12 +51,10 @@ class ProfileL10nVi extends ProfileL10n {
   }
 
   @override
-  String get profile_usernameInvalidChars =>
-      'Chỉ dùng chữ thường a–z, số, dấu _ và dấu chấm.';
+  String get profile_usernameInvalidChars => 'Chỉ dùng a–z, 0–9, _ .';
 
   @override
-  String get profile_usernameTaken =>
-      'Tên này đã có người dùng. Chọn tên khác nhé.';
+  String get profile_usernameTaken => 'Tên này đã có người dùng';
 
   @override
   String get profile_displayNameLabel => 'Tên hiển thị';
@@ -295,4 +292,15 @@ class ProfileL10nVi extends ProfileL10n {
   String profile_deleteStepSemantics(int current, int total) {
     return 'Bước $current trên $total';
   }
+
+  @override
+  String get profile_usernameAvailable => 'Dùng được';
+
+  @override
+  String profile_avatarColorN(int n) {
+    return 'Màu đại diện $n';
+  }
+
+  @override
+  String get profile_avatarColors => 'Chọn màu ảnh đại diện';
 }

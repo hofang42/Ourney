@@ -20,11 +20,11 @@
   "@auth_emailLabel": {
     "description": "Email field label."
   },
-  "auth_emailHint": "ban@vidu.com",
+  "auth_emailHint": "ten@email.com",
   "@auth_emailHint": {
     "description": "Email field placeholder."
   },
-  "auth_emailInvalid": "Email này chưa đúng định dạng.",
+  "auth_emailInvalid": "Email chưa đúng dạng. Ví dụ: ten@gmail.com",
   "@auth_emailInvalid": {
     "description": "Validation error for the email field."
   },
@@ -35,15 +35,6 @@
   "auth_sending": "Đang gửi…",
   "@auth_sending": {
     "description": "Button label while the OTP is being sent."
-  },
-  "auth_codeSentTo": "Mã 6 số đã được gửi tới {email}.",
-  "@auth_codeSentTo": {
-    "description": "Below the OTP title.",
-    "placeholders": {
-      "email": {
-        "type": "String"
-      }
-    }
   },
   "auth_codeLabel": "Mã 6 số",
   "@auth_codeLabel": {
@@ -74,7 +65,7 @@
       }
     }
   },
-  "auth_codeResent": "Đã gửi mã mới. Kiểm tra hộp thư nhé.",
+  "auth_codeResent": "Đã gửi mã mới. Mã cũ không dùng được nữa.",
   "@auth_codeResent": {
     "description": "Confirmation after resending the OTP."
   },
@@ -82,7 +73,7 @@
   "@auth_changeEmail": {
     "description": "Go back to the email step."
   },
-  "auth_errorWrongCode": "Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.",
+  "auth_errorWrongCode": "Mã chưa đúng. Kiểm tra lại 6 số trong email rồi nhập lại.",
   "@auth_errorWrongCode": {
     "description": "OTP rejected (invalid / expired)."
   },
@@ -106,11 +97,11 @@
   "@auth_eyebrowCheck": {
     "description": "Small label above the headline on the code step."
   },
-  "auth_terms": "Điều khoản",
+  "auth_terms": "Điều khoản sử dụng",
   "@auth_terms": {
     "description": "Footer link to the terms."
   },
-  "auth_privacy": "Quyền riêng tư",
+  "auth_privacy": "Chính sách quyền riêng tư.",
   "@auth_privacy": {
     "description": "Footer link to the privacy policy."
   },
@@ -154,15 +145,6 @@
   "auth_sendSms": "Gửi mã SMS",
   "@auth_sendSms": {
     "description": "Button: send an SMS code."
-  },
-  "auth_smsSentTo": "Mã 6 số đã gửi qua SMS tới {phone}.",
-  "@auth_smsSentTo": {
-    "description": "Below the OTP title for phone.",
-    "placeholders": {
-      "phone": {
-        "type": "String"
-      }
-    }
   },
   "auth_changePhone": "Đổi số điện thoại",
   "@auth_changePhone": {
@@ -240,12 +222,44 @@
   "@auth_backToSignIn": {
     "description": "Link back to sign-in."
   },
-  "auth_errorWrongPassword": "Email hoặc mật khẩu chưa đúng.",
+  "auth_errorWrongPassword": "Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.",
   "@auth_errorWrongPassword": {
     "description": "Password sign-in error."
   },
   "auth_errorEmailTaken": "Email này đã có tài khoản. Hãy đăng nhập.",
   "@auth_errorEmailTaken": {
     "description": "Sign-up error."
+  },
+  "auth_errorSendFailed": "Chưa gửi được mã. Thử lại sau ít phút.",
+  "@auth_errorSendFailed": {
+    "description": "Sending a code failed (not offline, not rate limited)."
+  },
+  "auth_codeSentPrefix": "Mã gồm 6 số vừa gửi tới",
+  "@auth_codeSentPrefix": {
+    "description": "Before the (bold) email or phone the code went to."
+  },
+  "auth_offlineBanner": "Chưa có mạng nên chưa gửi được mã. Bật mạng rồi thử lại.",
+  "@auth_offlineBanner": {
+    "description": "Offline banner (.flow-offline)."
+  },
+  "auth_retry": "Thử lại",
+  "@auth_retry": {
+    "description": "Retry action of the offline banner."
+  },
+  "auth_success": "Xong rồi. Chào bạn.",
+  "@auth_success": {
+    "description": "Shown after the code was accepted."
+  },
+  "auth_legalIntro": "Tiếp tục nghĩa là bạn đồng ý",
+  "@auth_legalIntro": {
+    "description": "Start of the legal line under the sign-in form."
+  },
+  "auth_legalAnd": "và",
+  "@auth_legalAnd": {
+    "description": "Between Terms and Privacy in the legal line."
+  },
+  "auth_back": "Quay lại",
+  "@auth_back": {
+    "description": "Back button semantics on the code step."
   }
 }

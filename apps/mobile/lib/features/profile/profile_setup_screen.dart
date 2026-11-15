@@ -11,6 +11,7 @@ import '../../ui/ui.dart';
 import 'avatar_picker.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
+import 'widgets/profile_face_avatar.dart';
 
 /// Profile setup after the first sign-in (FR-A2, App.tsx `ProfileSetup`), at
 /// `/profile/setup`.
@@ -46,6 +47,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   bool _usernameTaken = false;
   String? _takenUsername;
   _FormError? _error;
+
+  /// Index into [profileAvatarColors] (local look of the picker only).
+  int _color = 0;
 
   @override
   void initState() {
@@ -205,15 +209,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     final l10n = ProfileL10n.of(context);
     final ui = context.ui;
-    final name = _displayName.text.trim().isEmpty
-        ? (_username.text.isEmpty ? '?' : _username.text)
-        : _displayName.text.trim();
     final hasAvatar = _picked != null;
     final usernameError = _usernameError(l10n);
     final usernameOk =
         _username.text.isNotEmpty &&
         validateUsername(_username.text) == null &&
-        !_usernameTaken;
+        !(_usernameTaken && _username.text == _takenUsername);
     final errorText = switch (_error) {
       _FormError.save => l10n.profile_saveError,
       _FormError.offline => l10n.profile_offlineError,
@@ -223,7 +224,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
     return UiScaffold(
       key: const ValueKey('profile-setup-screen'),
-      padTop: 24,
+      padTop: 64,
       child: AutofillGroup(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -232,37 +233,43 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               header: true,
               child: Text(
                 l10n.profile_setupTitle,
-                style: UiText.h1(color: ui.ink),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.profile_setupSubtitle,
-              style: UiText.muted(color: ui.inkMuted, size: 14),
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: UiAvatarPicker(
-                key: const ValueKey('profile-avatar-pick'),
-                name: name,
-                label: hasAvatar
-                    ? l10n.profile_avatarChange
-                    : l10n.profile_avatarAdd,
-                image: _picked == null ? null : MemoryImage(_picked!),
-                colorIndex: UiAvatar.indexFor(name),
-                onPressed: _saving ? null : _pickAvatar,
-              ),
-            ),
-            if (!hasAvatar)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  l10n.profile_avatarOptional,
-                  textAlign: TextAlign.center,
-                  style: UiText.body(size: 12, color: ui.inkMuted),
+                style: UiText.heading(
+                  font: 'Space Grotesk',
+                  size: 32,
+                  weight: 700,
+                  height: 1.25,
+                  tracking: -0.045,
+                  color: ui.ink,
                 ),
               ),
-            const SizedBox(height: 24),
+            ),
+            const SizedBox(height: 26),
+            // `.profile-avatar-large`; tapping it picks a photo (kept from
+            // the data layer: the avatar can be a real picture).
+            Center(
+              child: UiPressable(
+                key: const ValueKey('profile-avatar-pick'),
+                onPressed: _saving ? null : _pickAvatar,
+                semanticLabel: hasAvatar
+                    ? l10n.profile_avatarChange
+                    : l10n.profile_avatarAdd,
+                excludeChildSemantics: true,
+                borderRadius: BorderRadius.circular(UiRadius.card),
+                minSize: const Size.square(ProfileFaceAvatar.size),
+                child: ProfileFaceAvatar(
+                  color: profileAvatarColors[_color],
+                  image: _picked == null ? null : MemoryImage(_picked!),
+                ),
+              ),
+            ),
+            const SizedBox(height: 18),
+            ProfileAvatarSwatches(
+              selected: _color,
+              onSelected: (i) => setState(() => _color = i),
+              label: l10n.profile_avatarColors,
+              itemLabel: l10n.profile_avatarColorN,
+            ),
+            const SizedBox(height: 22),
             UiTextField(
               fieldKey: const ValueKey('profile-display-name'),
               label: l10n.profile_displayNameLabel,
@@ -274,14 +281,21 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               error: _displayNameError(l10n),
               onChanged: (_) => setState(() => _edited = true),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 12),
             UiTextField(
               fieldKey: const ValueKey('profile-username'),
               label: l10n.profile_usernameLabel,
               controller: _username,
               enabled: !_saving,
               autocorrect: false,
-              prefixText: '@',
+              leading: Text(
+                '@',
+                style: UiText.body(
+                  size: 16,
+                  weight: FontWeight.w700,
+                  color: ui.ink,
+                ),
+              ),
               textInputAction: TextInputAction.done,
               autofillHints: const [AutofillHints.newUsername],
               inputFormatters: [
@@ -289,31 +303,32 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 LengthLimitingTextInputFormatter(usernameMax + 5),
               ],
               helper: l10n.profile_usernameHelper,
-              error: usernameError,
-              trailing: usernameOk
-                  ? OurneyIcon(
-                      name: 'check',
-                      flat: true,
-                      size: 19,
-                      color: ui.success,
-                    )
-                  : null,
+              invalid: usernameError != null,
               onChanged: (_) => setState(() => _edited = true),
               onSubmitted: (_) => _saving ? null : _save(),
             ),
-            if (errorText != null) ...[
-              const SizedBox(height: 16),
-              UiInlineError(
+            // `.username-status`: error or "Dùng được".
+            if (usernameError != null)
+              UiFlowError(
+                key: const ValueKey('profile-username-status'),
+                message: usernameError,
+              )
+            else if (usernameOk)
+              UiFlowError(
+                key: const ValueKey('profile-username-status'),
+                message: l10n.profile_usernameAvailable,
+                success: true,
+              ),
+            if (errorText != null)
+              UiFlowError(
                 key: const ValueKey('profile-form-error'),
                 message: errorText,
               ),
-            ],
-            const SizedBox(height: 24),
-            UiButton(
+            const SizedBox(height: 14),
+            UiFlowButton(
               key: const ValueKey('profile-save'),
               label: _saving ? l10n.profile_saving : l10n.profile_continue,
-              loading: _saving,
-              onPressed: _saving ? null : _save,
+              onPressed: _saving || !usernameOk ? null : _save,
             ),
           ],
         ),

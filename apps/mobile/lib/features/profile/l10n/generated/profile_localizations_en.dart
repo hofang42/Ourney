@@ -38,8 +38,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_usernameLabel => 'Username';
 
   @override
-  String get profile_usernameHelper =>
-      '3–20 characters: lowercase letters, digits, _ and .';
+  String get profile_usernameHelper => '3–20 characters: a–z, 0–9, _ .';
 
   @override
   String profile_usernameTooShort(int min) {
@@ -52,12 +51,10 @@ class ProfileL10nEn extends ProfileL10n {
   }
 
   @override
-  String get profile_usernameInvalidChars =>
-      'Use only lowercase a–z, digits, _ and dots.';
+  String get profile_usernameInvalidChars => 'Use only a–z, 0–9, _ .';
 
   @override
-  String get profile_usernameTaken =>
-      'That username is taken. Try another one.';
+  String get profile_usernameTaken => 'That username is already taken';
 
   @override
   String get profile_displayNameLabel => 'Display name';
@@ -297,4 +294,15 @@ class ProfileL10nEn extends ProfileL10n {
   String profile_deleteStepSemantics(int current, int total) {
     return 'Step $current of $total';
   }
+
+  @override
+  String get profile_usernameAvailable => 'Available';
+
+  @override
+  String profile_avatarColorN(int n) {
+    return 'Avatar color $n';
+  }
+
+  @override
+  String get profile_avatarColors => 'Choose an avatar color';
 }

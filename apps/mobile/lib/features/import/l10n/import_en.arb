@@ -1,0 +1,265 @@
+{
+  "@@locale": "en",
+  "import_headerTitle": "import a past journey.",
+  "@import_headerTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_back": "Back",
+  "@import_back": {
+    "description": "Import past journey flow."
+  },
+  "import_setupTitle": "Pick a type and layout.",
+  "@import_setupTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_type_weight": "Weight loss",
+  "@import_type_weight": {
+    "description": "Import past journey flow."
+  },
+  "import_type_study": "English",
+  "@import_type_study": {
+    "description": "Import past journey flow."
+  },
+  "import_type_trip": "Trip",
+  "@import_type_trip": {
+    "description": "Import past journey flow."
+  },
+  "import_type_couple": "Couple",
+  "@import_type_couple": {
+    "description": "Import past journey flow."
+  },
+  "import_type_workout": "Workout",
+  "@import_type_workout": {
+    "description": "Import past journey flow."
+  },
+  "import_type_custom": "Custom",
+  "@import_type_custom": {
+    "description": "Import past journey flow."
+  },
+  "import_placeLabel": "Name or place",
+  "@import_placeLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_placeHint": "A past journey",
+  "@import_placeHint": {
+    "description": "Import past journey flow."
+  },
+  "import_layoutHeading": "Layout",
+  "@import_layoutHeading": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_quiet": "Quiet",
+  "@import_layout_quiet": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_memory": "Memory",
+  "@import_layout_memory": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_flexer": "Flexer",
+  "@import_layout_flexer": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_minimal": "Minimalist",
+  "@import_layout_minimal": {
+    "description": "Import past journey flow."
+  },
+  "import_layoutNote": "Some layouts need more data, so they are hidden.",
+  "@import_layoutNote": {
+    "description": "Import past journey flow."
+  },
+  "import_previewLabel": "PREVIEW",
+  "@import_previewLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_previewHud": "Camera HUD",
+  "@import_previewHud": {
+    "description": "Import past journey flow."
+  },
+  "import_pickOld": "Choose old photos",
+  "@import_pickOld": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryTitle": "Choose old photos.",
+  "@import_libraryTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryIntro": "Pick several photos. Ourney reads the date taken to place them in the journey.",
+  "@import_libraryIntro": {
+    "description": "Import past journey flow."
+  },
+  "import_openLibrary": "Open photo library",
+  "@import_openLibrary": {
+    "description": "Import past journey flow."
+  },
+  "import_addMore": "Add photos",
+  "@import_addMore": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryEmptyTitle": "No photos yet",
+  "@import_libraryEmptyTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryEmptyBody": "Pick old photos from your library to rebuild the journey.",
+  "@import_libraryEmptyBody": {
+    "description": "Import past journey flow."
+  },
+  "import_noDate": "No date",
+  "@import_noDate": {
+    "description": "Import past journey flow."
+  },
+  "import_selectPhoto": "Select photo {date}",
+  "@import_selectPhoto": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "import_deselectPhoto": "Deselect photo {date}",
+  "@import_deselectPhoto": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "import_reviewButton": "Review {count, plural, =1{1 photo} other{{count} photos}}",
+  "@import_reviewButton": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_reviewTitle": "Review on the timeline.",
+  "@import_reviewTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_dayLabel": "Day {day}",
+  "@import_dayLabel": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "import_noPhotos": "No photo yet",
+  "@import_noPhotos": {
+    "description": "Import past journey flow."
+  },
+  "import_fromLibrary": "{date} · from library",
+  "@import_fromLibrary": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "import_extraInDay": "extra photo that day",
+  "@import_extraInDay": {
+    "description": "Import past journey flow."
+  },
+  "import_undatedTitle": "No date yet",
+  "@import_undatedTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_assignDate": "Set date",
+  "@import_assignDate": {
+    "description": "Import past journey flow."
+  },
+  "import_drop": "Remove",
+  "@import_drop": {
+    "description": "Import past journey flow."
+  },
+  "import_startLabel": "Start",
+  "@import_startLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_endLabel": "End",
+  "@import_endLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_continueTitle": "Keep shooting",
+  "@import_continueTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_continueBody": "The streak starts from the first real photo; imported photos do not count.",
+  "@import_continueBody": {
+    "description": "Import past journey flow."
+  },
+  "import_privateNote": "Weight stays hidden and photos stay blurred when shared.",
+  "@import_privateNote": {
+    "description": "Import past journey flow."
+  },
+  "import_save": "Save journey",
+  "@import_save": {
+    "description": "Import past journey flow."
+  },
+  "import_saving": "Saving {done}/{total} photos…",
+  "@import_saving": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "import_failed": "{count, plural, =1{1 photo could not be saved} other{{count} photos could not be saved}}",
+  "@import_failed": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_retry": "Try again",
+  "@import_retry": {
+    "description": "Import past journey flow."
+  },
+  "import_openJourney": "Open journey",
+  "@import_openJourney": {
+    "description": "Import past journey flow."
+  },
+  "import_errorNoPhotos": "Pick at least one photo with a date.",
+  "@import_errorNoPhotos": {
+    "description": "Import past journey flow."
+  },
+  "import_errorUndated": "Set a date for, or remove, the undated photos.",
+  "@import_errorUndated": {
+    "description": "Import past journey flow."
+  },
+  "import_errorTitle": "Enter a name or place.",
+  "@import_errorTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_errorOutside": "Some photos fall outside the chosen dates.",
+  "@import_errorOutside": {
+    "description": "Import past journey flow."
+  },
+  "import_errorFuture": "The end date cannot be in the future.",
+  "@import_errorFuture": {
+    "description": "Import past journey flow."
+  },
+  "import_errorRange": "A journey can last at most 366 days.",
+  "@import_errorRange": {
+    "description": "Import past journey flow."
+  },
+  "import_errorGeneric": "Could not save the journey. Try again.",
+  "@import_errorGeneric": {
+    "description": "Import past journey flow."
+  },
+  "import_pickFailed": "Could not open the photo library.",
+  "@import_pickFailed": {
+    "description": "Import past journey flow."
+  }
+}

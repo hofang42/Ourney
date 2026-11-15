@@ -64,27 +64,34 @@ void main() {
       await signedIn(tester, profiles: profiles, path: profileSetupPath);
       expect(byKey('profile-setup-screen'), findsOneWidget);
 
-      await tester.tap(byKey('profile-save'));
-      await tester.pumpAndSettle();
-      expect(find.text('Nhập tên hiển thị.'), findsOneWidget);
-      expect(find.text('Tối thiểu 3 ký tự.'), findsOneWidget);
-      expect(profiles.calls, isEmpty);
+      // Figma: "Xong" stays disabled until the username is usable.
+      expect(
+        tester.widget<UiFlowButton>(byKey('profile-save')).onPressed,
+        isNull,
+      );
 
       // Upper case is lowered as you type; "!" is rejected.
       await tester.enterText(byKey('profile-username'), 'Bob!');
-      await tester.enterText(byKey('profile-display-name'), 'Bob');
-      await tester.tap(byKey('profile-save'));
       await tester.pumpAndSettle();
       expect(find.text('bob!'), findsOneWidget);
+      expect(find.text('Chỉ dùng a–z, 0–9, _ .'), findsOneWidget);
       expect(
-        find.text('Chỉ dùng chữ thường a–z, số, dấu _ và dấu chấm.'),
-        findsOneWidget,
+        tester.widget<UiFlowButton>(byKey('profile-save')).onPressed,
+        isNull,
       );
-      expect(profiles.calls, isEmpty);
 
       await tester.enterText(byKey('profile-username'), 'bo');
       await tester.pumpAndSettle();
       expect(find.text('Tối thiểu 3 ký tự.'), findsOneWidget);
+      expect(profiles.calls, isEmpty);
+
+      // A usable username enables the button; a blank name is still caught.
+      await tester.enterText(byKey('profile-username'), 'bob');
+      await tester.pumpAndSettle();
+      expect(find.text('Dùng được'), findsOneWidget);
+      await tapVisible(tester, 'profile-save');
+      await tester.pumpAndSettle();
+      expect(find.text('Nhập tên hiển thị.'), findsOneWidget);
       expect(profiles.calls, isEmpty);
     });
 
@@ -104,10 +111,7 @@ void main() {
       await tester.enterText(byKey('profile-display-name'), '  Bob Tran ');
       await tapVisible(tester, 'profile-save');
       expect(profiles.calls, ['upsertMe:bob:Bob Tran']);
-      expect(
-        find.text('Tên này đã có người dùng. Chọn tên khác nhé.'),
-        findsOneWidget,
-      );
+      expect(find.text('Tên này đã có người dùng'), findsOneWidget);
       expect(location(c), startsWith(profileSetupPath));
 
       await tapVisible(tester, 'profile-avatar-pick');

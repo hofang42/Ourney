@@ -155,7 +155,7 @@ abstract class ProfileL10n {
   /// Helper text under the username field.
   ///
   /// In vi, this message translates to:
-  /// **'3–20 ký tự: chữ thường, số, dấu _ và dấu chấm'**
+  /// **'3–20 ký tự: a–z, 0–9, _ .'**
   String get profile_usernameHelper;
 
   /// Username validation error.
@@ -173,13 +173,13 @@ abstract class ProfileL10n {
   /// Username validation error.
   ///
   /// In vi, this message translates to:
-  /// **'Chỉ dùng chữ thường a–z, số, dấu _ và dấu chấm.'**
+  /// **'Chỉ dùng a–z, 0–9, _ .'**
   String get profile_usernameInvalidChars;
 
   /// Server rejected the username because it is not unique.
   ///
   /// In vi, this message translates to:
-  /// **'Tên này đã có người dùng. Chọn tên khác nhé.'**
+  /// **'Tên này đã có người dùng'**
   String get profile_usernameTaken;
 
   /// Display name field label.
@@ -613,6 +613,24 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Bước {current} trên {total}'**
   String profile_deleteStepSemantics(int current, int total);
+
+  /// Status under the username field when it can be used.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng được'**
+  String get profile_usernameAvailable;
+
+  /// Semantics of one avatar color swatch.
+  ///
+  /// In vi, this message translates to:
+  /// **'Màu đại diện {n}'**
+  String profile_avatarColorN(int n);
+
+  /// Semantics of the avatar color row.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn màu ảnh đại diện'**
+  String get profile_avatarColors;
 }
 
 class _ProfileL10nDelegate extends LocalizationsDelegate<ProfileL10n> {

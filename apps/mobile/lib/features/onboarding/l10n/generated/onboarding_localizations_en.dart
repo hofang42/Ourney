@@ -13,70 +13,24 @@ class OnboardingL10nEn extends OnboardingL10n {
   String get onboarding_title => 'Welcome to Ourney';
 
   @override
-  String get onboarding_next => 'Continue';
-
-  @override
   String get onboarding_skip => 'Skip';
 
   @override
-  String get onboarding_languageSwitch => 'Tiếng Việt';
-
-  @override
-  String get onboarding_languageSwitchHint => 'Change language';
-
-  @override
-  String get onboarding_page1Title => 'One photo at a time. A whole story.';
-
-  @override
-  String get onboarding_page1Body =>
-      'Keep today, then watch the bigger story take shape.';
-
-  @override
-  String get onboarding_page2Title =>
-      'Any journey. Alone, with others, or with your person.';
-
-  @override
-  String get onboarding_page2Body =>
-      'Choose the kind of company that fits your journey.';
-
-  @override
-  String get onboarding_page3Title => 'Turn it into something worth sharing.';
-
-  @override
-  String get onboarding_page3Body =>
-      'Make recaps you will want to keep and share.';
-
-  @override
-  String get onboarding_recapTitle => '30 quiet days';
-
-  @override
-  String get onboarding_recapSubtitle => 'Daily Reading · October';
-
-  @override
-  String get onboarding_recapShare => 'Worth sharing';
-
-  @override
-  String onboarding_pageSemantics(int current, int total) {
-    return 'Page $current of $total';
-  }
-
-  @override
-  String get onboarding_cameraTitle => 'let Ourney use the camera.';
+  String get onboarding_cameraTitle => 'let ourney use the camera.';
 
   @override
   String get onboarding_cameraBody =>
-      'Ourney needs your camera to take today\'s photo.';
+      'To take the first photo of your journey. Photos only show to people in that journey.';
 
   @override
-  String get onboarding_cameraAllow => 'Allow camera';
+  String get onboarding_cameraAllow => 'Allow';
 
   @override
-  String onboarding_nudgeTitle(String time) {
-    return 'Want a nudge tomorrow at $time?';
-  }
+  String get onboarding_nudgeTitle =>
+      'let us nudge you before the streak breaks.';
 
   @override
-  String get onboarding_nudgeAllow => 'Turn on';
+  String get onboarding_nudgeAllow => 'Allow';
 
   @override
   String get onboarding_notNow => 'maybe later.';
@@ -164,4 +118,30 @@ class OnboardingL10nEn extends OnboardingL10n {
 
   @override
   String get onboarding_quizStart => 'Let us start';
+
+  @override
+  String get onboarding_splashTagline1 => 'snap one.';
+
+  @override
+  String get onboarding_splashTagline2 => 'keep a streak.';
+
+  @override
+  String get onboarding_splashTagline3 => 'go together.';
+
+  @override
+  String get onboarding_splashStart => 'Start';
+
+  @override
+  String get onboarding_splashOpening => 'Opening';
+
+  @override
+  String get onboarding_resultCouple => 'the two of us.';
+
+  @override
+  String get onboarding_permissionClose => 'Close';
+
+  @override
+  String onboarding_nudgeBody(String time) {
+    return 'Turn on reminders and we will nudge you at $time. It may run late on some phones.';
+  }
 }

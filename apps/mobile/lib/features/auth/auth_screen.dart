@@ -60,10 +60,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _codeStep = false;
   bool _busy = false;
   bool _submitted = false;
-  bool _codeSubmitted = false;
   bool _showPassword = false;
   String? _error;
-  String? _info;
+  bool _offline = false;
+  bool _success = false;
   int _cooldown = 0;
   Timer? _timer;
 
@@ -85,6 +85,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.dispose();
   }
 
+  static bool _isOffline(Object e) =>
+      e is OurneyException && e.error == OurneyErrorCode.offline;
+
   void _startCooldown() {
     _timer?.cancel();
     setState(() => _cooldown = AuthScreen.resendCooldown);
@@ -101,9 +104,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _flow = flow;
       _codeStep = false;
       _submitted = false;
-      _codeSubmitted = false;
       _error = null;
-      _info = null;
+      _offline = false;
       _cooldown = 0;
       _code.clear();
       _password.clear();
@@ -127,7 +129,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _submitted = true;
       _error = null;
-      _info = null;
+      _offline = false;
     });
     if (!_formValid) return;
     final auth = ref.read(authRepositoryProvider);
@@ -166,7 +168,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = authErrorMessage(l10n, e, step);
+        _offline = _isOffline(e);
+        _error = _offline ? null : authErrorMessage(l10n, e, step);
       });
       return;
     }
@@ -174,22 +177,21 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _busy = false;
       _codeStep = true;
-      _codeSubmitted = false;
-      if (resend) {
-        _info = l10n.auth_codeResent;
-        _code.clear();
-      }
+      if (resend) _code.clear();
     });
     _startCooldown();
     _codeFocus.requestFocus();
+    if (resend) showUiToast(context, l10n.auth_codeResent);
   }
 
   Future<void> _verify() async {
     final l10n = AuthL10n.of(context);
     setState(() {
-      _codeSubmitted = true;
       _error = null;
-      _info = null;
+    });
+    setState(() {
+      _error = null;
+      _offline = false;
     });
     final code = _code.text.trim();
     if (!_codePattern.hasMatch(code)) return;
@@ -226,10 +228,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _error = authErrorMessage(l10n, e, step);
+        _offline = _isOffline(e);
+        _error = _offline ? null : authErrorMessage(l10n, e, step);
       });
       return;
     }
+    if (mounted) setState(() => _success = true);
     await _finishSignIn(router, profiles, from);
   }
 
@@ -278,7 +282,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       _codeStep = false;
       _code.clear();
       _error = null;
-      _info = null;
       _cooldown = 0;
     });
   }
@@ -292,11 +295,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         };
 
   String _subtitle(AuthL10n l10n) {
-    if (_codeStep) {
-      return _isPhone
-          ? l10n.auth_smsSentTo(formatPhoneForDisplay(_e164 ?? _phone.text))
-          : l10n.auth_codeSentTo(_normalizedEmail);
-    }
     return switch (_flow) {
       _Flow.phoneCode => l10n.auth_phoneSubtitle,
       _Flow.signUp => l10n.auth_signUpSubtitle,
@@ -319,34 +317,42 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Widget build(BuildContext context) {
     final l10n = AuthL10n.of(context);
     final ui = context.ui;
-    final codeError =
-        _codeSubmitted && !_codePattern.hasMatch(_code.text.trim())
-        ? l10n.auth_codeInvalidFormat
-        : null;
+    final codeStep = _codeStep;
+    final noSubtitle = _flow == _Flow.emailCode || _flow == _Flow.phoneCode;
 
     return UiScaffold(
       key: const ValueKey('auth-screen'),
-      padTop: 0,
-      bottom: _Footer(
-        terms: l10n.auth_terms,
-        privacy: l10n.auth_privacy,
-        onOpen: () => context.push(AppRoutes.safety),
-      ),
+      // `.login-flow .flow-scroll`: 42dp; the code step starts under a back
+      // header (`.simple-flow-header`).
+      padTop: codeStep ? 4 : 42,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // `.auth-screen header`: wordmark, 110dp tall.
-          Container(
-            constraints: const BoxConstraints(minHeight: 110),
-            alignment: Alignment.centerLeft,
-            child: const UiWordmark(size: 36),
-          ),
-          const SizedBox(height: 40),
+          if (codeStep)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: UiIconButton(
+                key: const ValueKey('auth-back'),
+                glyph: OurneyIcon(name: 'back', flat: true, color: ui.ink),
+                label: l10n.auth_back,
+                onPressed: _busy ? null : _backToForm,
+              ),
+            )
+          else
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: UiRansomWordmark(size: _wordmarkSize),
+              ),
+            ),
+          SizedBox(height: codeStep ? 12 : 10),
           AnimatedSwitcher(
             duration: UiMotion.of(context, const Duration(milliseconds: 240)),
             child: Column(
               key: ValueKey(
-                _codeStep
+                codeStep
                     ? 'auth-step-code'
                     : (_flow == _Flow.emailCode
                           ? 'auth-step-email'
@@ -356,41 +362,90 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               children: [
                 Semantics(
                   header: true,
-                  child: Text(_title(l10n), style: UiText.h1(color: ui.ink)),
+                  child: Text(_title(l10n), style: _h1Style(ui.ink)),
                 ),
-                const SizedBox(height: 8),
-                Text(_subtitle(l10n), style: UiText.muted(color: ui.inkMuted)),
-                const SizedBox(height: 28),
-                if (_codeStep)
-                  ..._codeChildren(l10n, ui, codeError)
+                if (codeStep) ...[
+                  const SizedBox(height: 10),
+                  Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(text: '${l10n.auth_codeSentPrefix} '),
+                        TextSpan(
+                          text: _destination,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+                    style: UiText.body(
+                      size: 16,
+                      height: 1.4,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                  UiTextAction(
+                    key: const ValueKey('auth-change-email'),
+                    label: _isPhone
+                        ? l10n.auth_changePhone
+                        : l10n.auth_changeEmail,
+                    size: 14,
+                    underline: true,
+                    color: ui.ink,
+                    alignment: Alignment.centerLeft,
+                    onPressed: _busy ? null : _backToForm,
+                  ),
+                ] else if (!noSubtitle) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    _subtitle(l10n),
+                    style: UiText.muted(color: ui.inkMuted),
+                  ),
+                ],
+                if (_offline) ...[
+                  const SizedBox(height: 12),
+                  UiBanner(
+                    key: const ValueKey('auth-offline'),
+                    message: l10n.auth_offlineBanner,
+                    retryLabel: l10n.auth_retry,
+                    onRetry: () => setState(() => _offline = false),
+                  ),
+                ],
+                SizedBox(height: codeStep ? 14 : 18),
+                if (codeStep)
+                  ..._codeChildren(l10n, ui)
                 else
                   ..._formChildren(l10n, ui),
               ],
             ),
           ),
-          if (_error != null) ...[
-            const SizedBox(height: UiSpace.lg),
-            UiInlineError(key: const ValueKey('auth-error'), message: _error!),
-          ],
-          if (_info != null) ...[
-            const SizedBox(height: UiSpace.lg),
-            Semantics(
-              liveRegion: true,
-              child: Row(
-                children: [
-                  OurneyIcon(name: 'mail', flat: true, color: ui.success),
-                  const SizedBox(width: UiSpace.sm),
-                  Expanded(
-                    child: Text(_info!, style: UiText.body(color: ui.ink)),
-                  ),
-                ],
-              ),
+          if (!codeStep) ...[
+            const SizedBox(height: 22),
+            _Legal(
+              intro: l10n.auth_legalIntro,
+              and: l10n.auth_legalAnd,
+              terms: l10n.auth_terms,
+              privacy: l10n.auth_privacy,
+              onOpen: () => context.push(AppRoutes.safety),
             ),
           ],
         ],
       ),
     );
   }
+
+  double get _wordmarkSize => 116;
+
+  /// `.flow-screen h1`: Space Grotesk 32 / 700 / -0.045em, lowercase copy.
+  TextStyle _h1Style(Color color) => UiText.heading(
+    font: 'Space Grotesk',
+    size: 32,
+    weight: 700,
+    height: 1.25,
+    tracking: -0.045,
+    color: color,
+  );
+
+  String get _destination =>
+      _isPhone ? formatPhoneForDisplay(_e164 ?? _phone.text) : _normalizedEmail;
 
   List<Widget> _formChildren(AuthL10n l10n, OurneyUi ui) {
     final emailError =
@@ -412,15 +467,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         _flow == _Flow.password;
     return [
       if (showTabs) ...[
-        UiSegmented<_Tab>(
+        UiFlowTabs<_Tab>(
           value: _tab,
-          segments: [
-            UiSegment(
+          tabs: [
+            UiFlowTab(
               key: const ValueKey('auth-tab-email'),
               value: _Tab.email,
               label: l10n.auth_tabEmail,
             ),
-            UiSegment(
+            UiFlowTab(
               key: const ValueKey('auth-tab-phone'),
               value: _Tab.phone,
               label: l10n.auth_tabPhone,
@@ -432,14 +487,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   t == _Tab.phone ? _Flow.phoneCode : _Flow.emailCode,
                 ),
         ),
-        const SizedBox(height: UiSpace.lg),
+        const SizedBox(height: 14),
       ],
       if (_isPhone)
         UiTextField(
           fieldKey: const ValueKey('auth-phone'),
           label: l10n.auth_phoneLabel,
           hint: l10n.auth_phoneHint,
-          prefixText: '${l10n.auth_phonePrefix} ',
+          leading: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OurneyIcon(name: 'phone', size: 22, flat: true, color: ui.ink),
+              const SizedBox(width: 10),
+              Text(
+                l10n.auth_phonePrefix,
+                style: UiText.body(
+                  size: 16,
+                  weight: FontWeight.w700,
+                  color: ui.ink,
+                ),
+              ),
+            ],
+          ),
           controller: _phone,
           enabled: !_busy,
           keyboardType: TextInputType.phone,
@@ -454,6 +523,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           fieldKey: const ValueKey('auth-email'),
           label: l10n.auth_emailLabel,
           hint: l10n.auth_emailHint,
+          leading: OurneyIcon(
+            name: 'mail',
+            size: 22,
+            flat: true,
+            color: ui.ink,
+          ),
           controller: _email,
           enabled: !_busy,
           keyboardType: TextInputType.emailAddress,
@@ -475,15 +550,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           signUp: _flow == _Flow.signUp,
         ),
       ],
-      const SizedBox(height: 18),
-      UiButton(
+      if (_error != null)
+        UiFlowError(key: const ValueKey('auth-error'), message: _error!),
+      const SizedBox(height: 20),
+      UiFlowButton(
         key: const ValueKey('auth-send'),
         label: _primaryLabel(l10n),
-        loading: _busy,
         onPressed: _busy ? null : _submitForm,
       ),
-      const SizedBox(height: UiSpace.sm),
-      ..._links(l10n),
+      const SizedBox(height: 4),
+      _links(l10n),
     ];
   }
 
@@ -514,20 +590,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       onPressed: () => setState(() => _showPassword = !_showPassword),
       icon: OurneyIcon(
         name: _showPassword ? 'eye-off' : 'eye',
+        size: 20,
         flat: true,
-        color: context.ui.inkMuted,
+        color: context.ui.ink,
       ),
     ),
   );
 
-  List<Widget> _links(AuthL10n l10n) {
+  /// `.login-method-links`: 12dp bold underlined actions, space-between.
+  Widget _links(AuthL10n l10n) {
+    final ink = context.ui.ink;
     UiTextAction link(String key, String label, VoidCallback onPressed) =>
         UiTextAction(
           key: ValueKey(key),
           label: label,
+          size: 12,
+          underline: true,
+          color: ink,
           onPressed: _busy ? null : onPressed,
         );
-    return switch (_flow) {
+    final links = switch (_flow) {
       _Flow.emailCode => [
         link(
           'auth-use-password',
@@ -562,33 +644,62 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           () => _goFlow(_Flow.password),
         ),
       ],
-      _Flow.phoneCode => const [],
+      _Flow.phoneCode => <Widget>[],
     };
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: links,
+    );
   }
 
-  List<Widget> _codeChildren(AuthL10n l10n, OurneyUi ui, String? codeError) {
+  List<Widget> _codeChildren(AuthL10n l10n, OurneyUi ui) {
     final reset = _flow == _Flow.reset;
+    final hasError = _error != null;
+    final complete = _codePattern.hasMatch(_code.text.trim());
     return [
-      UiOtpField(
-        key: const ValueKey('auth-code'),
-        controller: _code,
-        focusNode: _codeFocus,
-        digitLabel: l10n.auth_codeLabel,
-        enabled: !_busy,
-        hasError: codeError != null || _error != null,
-        onChanged: (value) {
-          if (value.length == 6 && !_busy && !reset) _verify();
-        },
-        onSubmitted: (_) => _busy ? null : _verify(),
+      Opacity(
+        opacity: _busy ? 0.48 : 1,
+        child: UiOtpField(
+          key: const ValueKey('auth-code'),
+          controller: _code,
+          focusNode: _codeFocus,
+          digitLabel: l10n.auth_codeLabel,
+          enabled: !_busy,
+          hasError: hasError,
+          onChanged: (value) {
+            setState(() {
+              if (_error != null) _error = null;
+            });
+            if (value.length == 6 && !_busy && !reset) _verify();
+          },
+          onSubmitted: (_) => _busy ? null : _verify(),
+        ),
       ),
-      if (codeError != null)
+      const SizedBox(height: 16),
+      if (_busy)
         Padding(
-          padding: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.only(bottom: 10),
           child: Text(
-            codeError,
-            style: UiText.body(size: 12, color: ui.danger),
+            l10n.auth_verifying,
+            style: UiText.body(size: 13, height: 1.4, color: ui.inkMuted),
           ),
         ),
+      if (_success)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            l10n.auth_success,
+            style: UiText.body(
+              size: 13,
+              weight: FontWeight.w700,
+              height: 1.4,
+              color: ui.success,
+            ),
+          ),
+        ),
+      if (_error != null)
+        UiFlowError(key: const ValueKey('auth-error'), message: _error!),
       if (reset) ...[
         const SizedBox(height: UiSpace.md),
         _passwordField(
@@ -601,29 +712,41 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               : null,
         ),
       ],
-      const SizedBox(height: 18),
-      UiButton(
+      const SizedBox(height: 4),
+      UiFlowButton(
         key: const ValueKey('auth-verify'),
-        label: _busy
-            ? l10n.auth_verifying
-            : (reset ? l10n.auth_resetConfirm : l10n.auth_verify),
-        loading: _busy,
-        onPressed: _busy ? null : _verify,
+        label: reset ? l10n.auth_resetConfirm : l10n.auth_verify,
+        onPressed: _busy || !complete ? null : _verify,
       ),
-      const SizedBox(height: 8),
-      UiTextAction(
-        key: const ValueKey('auth-resend'),
-        size: 13,
-        color: _cooldown > 0 ? ui.inkMuted : null,
-        label: _cooldown > 0 ? l10n.auth_resendIn(_cooldown) : l10n.auth_resend,
-        onPressed: _busy || _cooldown > 0
-            ? null
-            : () => _submitForm(resend: true),
-      ),
-      UiTextAction(
-        key: const ValueKey('auth-change-email'),
-        label: _isPhone ? l10n.auth_changePhone : l10n.auth_changeEmail,
-        onPressed: _busy ? null : _backToForm,
+      // `.resend-row`: 52dp, ring + countdown, then an outlined capsule.
+      Container(
+        constraints: const BoxConstraints(minHeight: 52),
+        margin: const EdgeInsets.only(top: 18),
+        alignment: Alignment.center,
+        child: _cooldown > 0
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  UiTimerRing(fraction: _cooldown / AuthScreen.resendCooldown),
+                  const SizedBox(width: 9),
+                  Flexible(
+                    child: UiTextAction(
+                      key: const ValueKey('auth-resend'),
+                      size: 13,
+                      color: ui.inkMuted,
+                      label: l10n.auth_resendIn(_cooldown),
+                      onPressed: null,
+                    ),
+                  ),
+                ],
+              )
+            : UiButton.secondary(
+                key: const ValueKey('auth-resend'),
+                label: l10n.auth_resend,
+                compact: true,
+                expand: false,
+                onPressed: _busy ? null : () => _submitForm(resend: true),
+              ),
       ),
       const SizedBox(height: UiSpace.sm),
       Text(
@@ -635,14 +758,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 }
 
-/// `.auth-screen footer`: "Terms · Privacy", both open the safety pages.
-class _Footer extends StatelessWidget {
-  const _Footer({
+/// `.legal-copy`: "By continuing you agree to the Terms and Privacy Policy",
+/// 13dp muted with bold ink links (48dp targets).
+class _Legal extends StatelessWidget {
+  const _Legal({
+    required this.intro,
+    required this.and,
     required this.terms,
     required this.privacy,
     required this.onOpen,
   });
 
+  final String intro;
+  final String and;
   final String terms;
   final String privacy;
   final VoidCallback onOpen;
@@ -650,37 +778,28 @@ class _Footer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: UiTextAction(
-                key: const ValueKey('auth-terms'),
-                label: terms,
-                size: 11,
-                underline: true,
-                color: ui.inkMuted,
-                onPressed: onOpen,
-              ),
-            ),
-            Text('·', style: UiText.body(size: 11, color: ui.inkMuted)),
-            Flexible(
-              child: UiTextAction(
-                key: const ValueKey('auth-privacy'),
-                label: privacy,
-                size: 11,
-                underline: true,
-                color: ui.inkMuted,
-                onPressed: onOpen,
-              ),
-            ),
-          ],
+    final muted = UiText.body(size: 13, height: 1.4, color: ui.inkMuted);
+    return Wrap(
+      alignment: WrapAlignment.start,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Text(intro, style: muted),
+        UiTextAction(
+          key: const ValueKey('auth-terms'),
+          label: terms,
+          size: 13,
+          color: ui.ink,
+          onPressed: onOpen,
         ),
-      ),
+        Text(and, style: muted),
+        UiTextAction(
+          key: const ValueKey('auth-privacy'),
+          label: privacy,
+          size: 13,
+          color: ui.ink,
+          onPressed: onOpen,
+        ),
+      ],
     );
   }
 }

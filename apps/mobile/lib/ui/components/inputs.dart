@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'ourney_icons.dart';
 import 'pressable.dart';
 
 const double _fieldHeight = 56;
@@ -22,7 +23,9 @@ class UiTextField extends StatefulWidget {
     this.hint,
     this.helper,
     this.error,
+    this.invalid = false,
     this.prefixText,
+    this.leading,
     this.trailing,
     this.enabled = true,
     this.keyboardType,
@@ -50,7 +53,13 @@ class UiTextField extends StatefulWidget {
   final String? hint;
   final String? helper;
   final String? error;
+
+  /// Danger outline without a message (the screen prints its own status row).
+  final bool invalid;
   final String? prefixText;
+
+  /// Widget before the text inside the field (icon, bold prefix).
+  final Widget? leading;
   final Widget? trailing;
   final bool enabled;
   final bool readOnly;
@@ -78,12 +87,20 @@ class _UiTextFieldState extends State<UiTextField> {
       borderRadius: BorderRadius.circular(UiRadius.input),
       borderSide: BorderSide(color: c, width: UiBorder.standard),
     );
-    final hasError = widget.error != null;
+    final hasError = widget.error != null || widget.invalid;
     final edge = hasError ? ui.danger : ui.outline;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(widget.label, style: UiText.fieldLabel(color: ui.ink)),
+        Text(
+          widget.label,
+          style: UiText.body(
+            size: 14,
+            weight: FontWeight.w700,
+            height: 1.4,
+            color: ui.ink,
+          ),
+        ),
         const SizedBox(height: 8),
         Focus(
           canRequestFocus: false,
@@ -126,7 +143,14 @@ class _UiTextFieldState extends State<UiTextField> {
                 fillColor: ui.surfaceInput,
                 hintText: widget.hint,
                 hintStyle: UiText.body(size: 16, color: ui.inkMuted),
-                prefixText: widget.prefixText,
+                prefixText: widget.leading == null ? widget.prefixText : null,
+                prefixIcon: widget.leading == null
+                    ? null
+                    : Padding(
+                        padding: const EdgeInsets.only(left: 14, right: 10),
+                        child: widget.leading,
+                      ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 0),
                 prefixStyle: UiText.body(
                   size: 16,
                   weight: FontWeight.w500,
@@ -157,13 +181,28 @@ class _UiTextFieldState extends State<UiTextField> {
             padding: const EdgeInsets.only(top: 8),
             child: Semantics(
               liveRegion: true,
-              child: Text(
-                widget.error!,
-                style: UiText.body(
-                  size: 13,
-                  weight: FontWeight.w600,
-                  color: ui.danger,
-                ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  OurneyIcon(
+                    name: 'warning',
+                    size: 20,
+                    flat: true,
+                    color: ui.danger,
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: Text(
+                      widget.error!,
+                      style: UiText.body(
+                        size: 13,
+                        weight: FontWeight.w600,
+                        height: 1.4,
+                        color: ui.danger,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           )
@@ -251,7 +290,7 @@ class _UiOtpFieldState extends State<UiOtpField> {
             children: [
               ExcludeSemantics(
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.center,
                   child: Padding(
                     padding: const EdgeInsets.only(right: 4, bottom: 4),
                     child: Row(

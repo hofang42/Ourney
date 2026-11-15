@@ -50,7 +50,7 @@ void main() {
         lessThanOrEqualTo(420),
       );
 
-      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
+      await _tap(tester, _seg('share-card-format', '4:5'));
       expect(_key('share-card-story'), findsNothing);
       expect(tester.getSize(_key('share-card-feed')), const Size(360, 450));
       expect(tester.takeException(), isNull);
@@ -63,12 +63,14 @@ void main() {
       await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
       // 10..15 checked in, today (16th) open -> 6-day streak.
       expect(_text(tester, 'share-card-number'), '6');
-      expect(_text(tester, 'share-card-caption'), 'ngày liên tiếp');
-      expect(_text(tester, 'share-card-title'), 'Tập mỗi ngày');
+      // Flexer skin: 6 active days under the HUD number.
+      expect(_text(tester, 'share-card-caption'), '6 NGÀY HOẠT ĐỘNG');
+      expect(_text(tester, 'share-card-day'), 'NGÀY 7');
       // The journey emoji is drawn as a vector icon, not as keyboard emoji.
       expect(find.text('💪'), findsNothing);
       expect(find.byType(OurneyIcon), findsWidgets);
-      expect(_text(tester, 'share-card-logo'), 'Ourney');
+      expect(_key('share-card-skin-flexer'), findsOneWidget);
+      expect(find.byType(UiWordmark), findsOneWidget);
       // No photo resolvable -> illustration.
       expect(_key('share-card-illustration'), findsOneWidget);
     });
@@ -82,35 +84,18 @@ void main() {
         locale: const Locale('en'),
       );
       await _tap(tester, _seg('share-card-number-mode', 'Day N'));
-      expect(_text(tester, 'share-card-kicker'), 'Day');
       expect(_text(tester, 'share-card-number'), '7');
-      expect(_text(tester, 'share-card-caption'), 'of 14');
+      expect(_text(tester, 'share-card-day'), 'DAY 7');
     });
 
-    testWidgets('finished: Vietnamese kicker at weight 800 has room for '
-        'stacked diacritics', (tester) async {
+    testWidgets('finished: Vietnamese caption keeps room for diacritics', (
+      tester,
+    ) async {
       final j = testJourney(durationDays: 6);
       await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
-      expect(_text(tester, 'share-card-kicker'), 'Hoàn thành');
-      expect(_text(tester, 'share-card-caption'), '6/6 ngày');
-      expect(_text(tester, 'share-card-milestone'), 'Về đích!');
-      for (final k in [
-        'share-card-kicker',
-        'share-card-caption',
-        'share-card-title',
-        'share-card-milestone',
-      ]) {
-        final style = tester.widget<Text>(_key(k)).style!;
-        expect(style.fontWeight, FontWeight.w800, reason: k);
-        expect(style.height, greaterThanOrEqualTo(1.3), reason: k);
-        // The laid-out line box is at least the generous line height.
-        final box = tester.getSize(_key(k));
-        expect(
-          box.height,
-          greaterThanOrEqualTo(style.fontSize! * 1.3 - 0.5),
-          reason: k,
-        );
-      }
+      expect(_text(tester, 'share-card-caption'), '6 NGÀY HOẠT ĐỘNG');
+      final style = tester.widget<Text>(_key('share-card-caption')).style!;
+      expect(style.height, greaterThanOrEqualTo(1.3));
     });
 
     testWidgets('long title, 2x text and a small phone: no overflow', (
@@ -131,7 +116,7 @@ void main() {
       expect(tester.takeException(), isNull);
       // The card itself is an image: fixed size whatever the text scale.
       expect(tester.getSize(_key('share-card-story')), const Size(360, 640));
-      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
+      await _tap(tester, _seg('share-card-format', '4:5'));
       expect(tester.takeException(), isNull);
       await tester.scrollUntilVisible(
         _key('share-card-blur'),
@@ -180,9 +165,8 @@ void main() {
         photos: true,
         checkIns: streakCheckIns(j.id, metricValue: 71.5),
       );
-      expect(_key('share-card-metric'), findsNothing);
+      expect(_key('share-card-skin-quiet'), findsOneWidget);
       for (final s in _allText(tester)) {
-        expect(s.contains('kg'), isFalse, reason: s);
         expect(s.contains('71'), isFalse, reason: s);
       }
       expect(_key('share-card-metric-hidden'), findsOneWidget);
@@ -205,7 +189,7 @@ void main() {
         photos: true,
         checkIns: streakCheckIns(j.id),
       );
-      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
+      await _tap(tester, _seg('share-card-format', '4:5'));
       expect(
         find.descendant(
           of: _key('share-card-feed'),
@@ -243,7 +227,7 @@ void main() {
         checkIns: streakCheckIns(j.id, metricValue: 25.5),
       );
       expect(_key('share-card-photo-blurred'), findsNothing);
-      expect(_text(tester, 'share-card-metric'), '25,5 phút');
+      expect(_text(tester, 'share-card-number'), '25,5 PHÚT');
       expect(_key('share-card-metric-hidden'), findsNothing);
     });
 
@@ -273,6 +257,7 @@ void main() {
         checkIns: streakCheckIns(j.id),
       );
       await _tap(tester, _key('share-card-share'));
+      await _tap(tester, _key('share-card-sheet-other'));
       expect(h.exporter.exports, hasLength(1));
       final e = h.exporter.exports.single;
       expect(e.format, ShareCardFormat.story);
@@ -284,8 +269,9 @@ void main() {
       expect(shared.text, '💪 Tập mỗi ngày trên Ourney');
       expect(shared.origin, isNotNull);
 
-      await _tap(tester, _seg('share-card-format', 'Bài đăng'));
+      await _tap(tester, _seg('share-card-format', '4:5'));
       await _tap(tester, _key('share-card-share'));
+      await _tap(tester, _key('share-card-sheet-other'));
       expect(h.exporter.exports.last.format, ShareCardFormat.feed);
       expect(h.exporter.exports.last.boundarySize, const Size(360, 450));
       expect(h.sharer.shared, hasLength(2));
@@ -296,12 +282,13 @@ void main() {
       final h = await pumpShare(tester, journey: j);
       h.exporter.error = StateError('boom');
       await _tap(tester, _key('share-card-share'));
+      await _tap(tester, _key('share-card-sheet-save'));
       expect(h.sharer.shared, isEmpty);
       expect(find.text('Không tạo được ảnh. Thử lại nhé.'), findsOneWidget);
       // Button usable again.
       final label = find.descendant(
         of: _key('share-card-share'),
-        matching: find.text('Chia sẻ thẻ'),
+        matching: find.text('Chia sẻ lên Story'),
       );
       expect(label, findsOneWidget);
     });

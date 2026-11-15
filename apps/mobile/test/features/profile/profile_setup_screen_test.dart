@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/routes.dart';
+import 'package:ourney/features/profile/widgets/profile_face_avatar.dart';
 import 'package:ourney/ui/ui.dart';
 
 import 'fakes.dart';
@@ -19,7 +20,7 @@ void main() {
       );
       await goTo(tester, c, profileSetupPath);
       expect(byKey('profile-setup-screen'), findsOneWidget);
-      expect(find.byType(UiAvatarPicker), findsOneWidget);
+      expect(find.byType(ProfileFaceAvatar), findsOneWidget);
       expect(find.text('hồ sơ của bạn.'), findsOneWidget);
 
       await tester.enterText(byKey('profile-display-name'), 'Linh Tran');
