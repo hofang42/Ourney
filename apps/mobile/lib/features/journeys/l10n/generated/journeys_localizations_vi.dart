@@ -734,4 +734,12 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_memoryEmpty => 'KHUNG TRỐNG';
+
+  @override
+  String journeys_memoryFilmRoll(int count) {
+    return 'CUỘN PHIM · $count KHUNG';
+  }
+
+  @override
+  String get journeys_memoryOffline => 'NGOẠI TUYẾN · chờ đồng bộ';
 }

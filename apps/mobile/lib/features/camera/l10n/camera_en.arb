@@ -75,5 +75,35 @@
         "type": "int"
       }
     }
+  },
+  "camera_pickerNotShot": "Not shot today",
+  "camera_pickerShot": "Shot today",
+  "camera_pickerEnded": "Ended",
+  "camera_studyElapsed": "STUDY {time} · {days} STREAK",
+  "@camera_studyElapsed": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_lastPace": "LAST PACE {pace}",
+  "@camera_lastPace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "camera_lastWeight": "Last weigh-in {value}",
+  "@camera_lastWeight": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   }
 }

@@ -737,4 +737,12 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_memoryEmpty => 'EMPTY FRAME';
+
+  @override
+  String journeys_memoryFilmRoll(int count) {
+    return 'FILM ROLL · $count FRAMES';
+  }
+
+  @override
+  String get journeys_memoryOffline => 'OFFLINE · waiting to sync';
 }

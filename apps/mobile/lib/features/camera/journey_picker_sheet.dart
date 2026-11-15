@@ -11,11 +11,15 @@ Future<String?> showJourneyPickerSheet(
   BuildContext context, {
   required List<Journey> journeys,
   required String? selectedId,
+  Set<String> shotTodayIds = const {},
 }) {
   return showUiSheet<String>(
     context: context,
-    builder: (ctx) =>
-        JourneyPickerSheet(journeys: journeys, selectedId: selectedId),
+    builder: (ctx) => JourneyPickerSheet(
+      journeys: journeys,
+      selectedId: selectedId,
+      shotTodayIds: shotTodayIds,
+    ),
   );
 }
 
@@ -25,11 +29,16 @@ class JourneyPickerSheet extends StatefulWidget {
   const JourneyPickerSheet({
     required this.journeys,
     required this.selectedId,
+    this.shotTodayIds = const {},
     super.key,
   });
 
   final List<Journey> journeys;
   final String? selectedId;
+
+  /// Journeys with a check-in today (device-local day). There is no local
+  /// "pinned" concept, so that section is intentionally absent.
+  final Set<String> shotTodayIds;
 
   @override
   State<JourneyPickerSheet> createState() => _JourneyPickerSheetState();
@@ -52,6 +61,27 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
     final shown = [
       for (final j in widget.journeys)
         if (q.isEmpty || j.title.toLowerCase().contains(q)) j,
+    ];
+    final notShot = [
+      for (final j in shown)
+        if (j.status == JourneyStatus.active &&
+            !widget.shotTodayIds.contains(j.id))
+          j,
+    ];
+    final shot = [
+      for (final j in shown)
+        if (j.status == JourneyStatus.active &&
+            widget.shotTodayIds.contains(j.id))
+          j,
+    ];
+    final ended = [
+      for (final j in shown)
+        if (j.status != JourneyStatus.active) j,
+    ];
+    final sections = [
+      (l10n.camera_pickerNotShot, 'not-shot', notShot),
+      (l10n.camera_pickerShot, 'shot', shot),
+      (l10n.camera_pickerEnded, 'ended', ended),
     ];
     return UiSheet(
       child: Column(
@@ -86,47 +116,63 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
                 style: UiText.body(size: 14, height: 1.4, color: ui.inkMuted),
               ),
             ),
-          for (final j in shown)
-            UiPressable(
-              key: ValueKey('journey-picker-${j.id}'),
-              onPressed: () => Navigator.of(context).pop(j.id),
-              semanticLabel: j.title,
-              selected: j.id == widget.selectedId,
-              excludeChildSemantics: true,
-              borderRadius: BorderRadius.circular(UiRadius.menu),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: UiSpace.sm,
-                  horizontal: UiSpace.sm,
-                ),
-                child: Row(
-                  children: [
-                    uiJourneyGlyph(j.emoji, j.templateId, size: 28),
-                    const SizedBox(width: UiSpace.sm),
-                    Expanded(
-                      child: Text(
-                        j.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.body(
-                          size: 15,
-                          weight: FontWeight.w600,
-                          height: 1.4,
-                          color: ui.ink,
-                        ),
-                      ),
-                    ),
-                    if (j.id == widget.selectedId)
-                      OurneyIcon(
-                        name: 'check',
-                        size: 20,
-                        flat: true,
-                        color: ui.ink,
-                      ),
-                  ],
+          for (final sec in sections)
+            if (sec.$3.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.only(top: UiSpace.sm, bottom: 4),
+                child: Text(
+                  sec.$1,
+                  key: ValueKey('journey-picker-section-${sec.$2}'),
+                  style: UiText.body(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    height: 1.4,
+                    color: ui.inkMuted,
+                  ),
                 ),
               ),
-            ),
+              for (final j in sec.$3)
+                UiPressable(
+                  key: ValueKey('journey-picker-${j.id}'),
+                  onPressed: () => Navigator.of(context).pop(j.id),
+                  semanticLabel: j.title,
+                  selected: j.id == widget.selectedId,
+                  excludeChildSemantics: true,
+                  borderRadius: BorderRadius.circular(UiRadius.menu),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: UiSpace.sm,
+                      horizontal: UiSpace.sm,
+                    ),
+                    child: Row(
+                      children: [
+                        uiJourneyGlyph(j.emoji, j.templateId, size: 28),
+                        const SizedBox(width: UiSpace.sm),
+                        Expanded(
+                          child: Text(
+                            j.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: UiText.body(
+                              size: 15,
+                              weight: FontWeight.w600,
+                              height: 1.4,
+                              color: ui.ink,
+                            ),
+                          ),
+                        ),
+                        if (j.id == widget.selectedId)
+                          OurneyIcon(
+                            name: 'check',
+                            size: 20,
+                            flat: true,
+                            color: ui.ink,
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
         ],
       ),
     );

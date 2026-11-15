@@ -1357,6 +1357,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'KHUNG TRỐNG'**
   String get journeys_memoryEmpty;
+
+  /// No description provided for @journeys_memoryFilmRoll.
+  ///
+  /// In vi, this message translates to:
+  /// **'CUỘN PHIM · {count} KHUNG'**
+  String journeys_memoryFilmRoll(int count);
+
+  /// No description provided for @journeys_memoryOffline.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGOẠI TUYẾN · chờ đồng bộ'**
+  String get journeys_memoryOffline;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

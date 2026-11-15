@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -15,12 +18,25 @@ class CaptureSkinOverlay extends StatefulWidget {
     required this.skin,
     required this.dayNumber,
     required this.streak,
+    this.lastPace,
+    this.lastWeight,
+    this.partnerPhotoFile,
     super.key,
   });
 
   final PersonaSkinId skin;
   final int dayNumber;
   final int streak;
+
+  /// Flexer: pace of the last check-in that logged one (e.g. `5:30`).
+  final String? lastPace;
+
+  /// Quiet: last weigh-in, already formatted with its unit. Display only:
+  /// saving a weight stays in the check-in flow.
+  final String? lastWeight;
+
+  /// Couple: local file of the partner's latest photo, when there is one.
+  final String? partnerPhotoFile;
 
   @override
   State<CaptureSkinOverlay> createState() => _CaptureSkinOverlayState();
@@ -31,6 +47,35 @@ enum _FlexHud { bold, stamp, strip }
 class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
   bool _ghost = true;
   _FlexHud _hud = _FlexHud.bold;
+
+  // Squad: real elapsed time since the camera (this overlay) opened.
+  final DateTime _openedAt = clock.now();
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.skin == PersonaSkinId.accountabilitySquad) {
+      _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  String _elapsed() {
+    final d = clock.now().difference(_openedAt);
+    String two(int v) => v.toString().padLeft(2, '0');
+    final h = d.inHours;
+    final m = two(d.inMinutes % 60);
+    final sec = two(d.inSeconds % 60);
+    return h > 0 ? '$h:$m:$sec' : '$m:$sec';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +139,16 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             ],
           ),
         ),
+        if (widget.lastWeight != null)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 96,
+            child: _Mono(
+              l10n.camera_lastWeight(widget.lastWeight!),
+              keyName: 'overlay-weight',
+            ),
+          ),
       ],
     );
   }
@@ -114,7 +169,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             runSpacing: 4,
             children: [
               _Chip(
-                label: l10n.camera_studyStreak(widget.streak),
+                label: l10n.camera_studyElapsed(_elapsed(), widget.streak),
                 glyph: 'flame',
                 keyName: 'overlay-study',
               ),
@@ -172,22 +227,30 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             heightFactor: 1,
             child: ColoredBox(
               color: UiCamera.bg.withValues(alpha: 0.72),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Center(
-                  child: Text(
-                    l10n.camera_partnerWaiting,
-                    textAlign: TextAlign.center,
-                    maxLines: 5,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.body(
-                      size: 13,
-                      height: 1.4,
-                      color: UiCamera.ink,
+              child: widget.partnerPhotoFile != null
+                  ? Image.file(
+                      File(widget.partnerPhotoFile!),
+                      key: const ValueKey('overlay-partner-photo'),
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                      errorBuilder: (_, _, _) => const SizedBox.expand(),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Center(
+                        child: Text(
+                          l10n.camera_partnerWaiting,
+                          textAlign: TextAlign.center,
+                          maxLines: 5,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.body(
+                            size: 13,
+                            height: 1.4,
+                            color: UiCamera.ink,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
             ),
           ),
         ),
@@ -243,6 +306,16 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             ),
           },
         ),
+        if (widget.lastPace != null)
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 124,
+            child: _Mono(
+              l10n.camera_lastPace(widget.lastPace!),
+              keyName: 'overlay-pace',
+            ),
+          ),
         Positioned(
           left: 8,
           right: 8,

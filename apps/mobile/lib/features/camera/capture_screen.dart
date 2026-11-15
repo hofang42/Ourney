@@ -656,6 +656,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 skin: personaSkinOf(journey),
                 dayNumber: hud?.dayNumber ?? 1,
                 streak: hud?.summary.current ?? 0,
+                lastPace: _lastWith(journey, (c) => c.extras.pace),
+                lastWeight: _lastWeight(journey),
+                partnerPhotoFile: _partnerPhoto(journey),
               ),
             ),
           if (hud != null)
@@ -732,6 +735,45 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   /// Day number and streak of [journey] for the viewfinder pill; day 1 and
   /// streak 0 until the check-ins load.
+  List<CheckIn> _recent(Journey journey) {
+    final all =
+        ref.watch(myCheckInsProvider(journey.id)).value ?? const <CheckIn>[];
+    return [...all]..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
+  }
+
+  String? _lastWith(Journey journey, String? Function(CheckIn) pick) {
+    for (final c in _recent(journey)) {
+      final v = pick(c)?.trim();
+      if (v != null && v.isNotEmpty) return v;
+    }
+    return null;
+  }
+
+  String? _lastWeight(Journey journey) {
+    for (final c in _recent(journey)) {
+      final v = c.metricValue;
+      if (v == null) continue;
+      final text = v == v.roundToDouble() ? v.toStringAsFixed(0) : '$v';
+      final unit = journey.metricUnit;
+      return unit == null || unit.isEmpty ? text : '$text $unit';
+    }
+    return null;
+  }
+
+  /// Latest partner photo of a couple journey: the local file when the
+  /// check-in still has it, else the downloaded copy of the storage path.
+  String? _partnerPhoto(Journey journey) {
+    for (final c in _recent(journey)) {
+      final local = c.localPartnerPhotoFile;
+      if (local != null && local.isNotEmpty) return local;
+      final remote = c.partnerPhotoPath;
+      if (remote != null && remote.isNotEmpty) {
+        return ref.watch(mediaFileProvider(remote)).value;
+      }
+    }
+    return null;
+  }
+
   JourneyProgress _hudFor(Journey journey) {
     final membership = ref.watch(myMembershipProvider(journey.id)).value;
     final checkIns =
@@ -835,12 +877,31 @@ class _JourneyBar extends StatelessWidget {
                 label: l10n.camera_allJourneys,
                 leadingGlyph: 'search',
                 onPressed: () async {
+                  final container = ProviderScope.containerOf(context);
+                  var all = journeys.requireValue;
+                  var shot = const <String>{};
+                  try {
+                    all = await container.read(
+                      capturePickerJourneysProvider.future,
+                    );
+                    shot = await container.read(
+                      captureShotTodayProvider.future,
+                    );
+                  } on Object {
+                    // Sections are a nicety: fall back to the active list.
+                  }
+                  if (!context.mounted) return;
                   final id = await showJourneyPickerSheet(
                     context,
-                    journeys: journeys.requireValue,
+                    journeys: all,
                     selectedId: selected?.id,
+                    shotTodayIds: shot,
                   );
-                  if (id != null) onSelect(id);
+                  // Ended journeys cannot take a check-in: not selectable.
+                  final active = journeys.requireValue;
+                  if (id != null && active.any((j) => j.id == id)) {
+                    onSelect(id);
+                  }
                 },
               ),
           ],

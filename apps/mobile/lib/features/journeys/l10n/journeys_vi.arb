@@ -620,63 +620,153 @@
     "description": "Couple timeline: placeholder where the partner photo goes."
   },
   "journeys_createStepOf": "Bước {step}/{total}",
-  "@journeys_createStepOf": {"description": "Create journey flow.", "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}},
+  "@journeys_createStepOf": {
+    "description": "Create journey flow.",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_createNext": "Tiếp tục",
-  "@journeys_createNext": {"description": "Create journey flow."},
+  "@journeys_createNext": {
+    "description": "Create journey flow."
+  },
   "journeys_createExit": "Thoát tạo hành trình",
-  "@journeys_createExit": {"description": "Create journey flow."},
+  "@journeys_createExit": {
+    "description": "Create journey flow."
+  },
   "journeys_createPickSubtitle": "Chạm một kiểu để bắt đầu.",
-  "@journeys_createPickSubtitle": {"description": "Create journey flow."},
+  "@journeys_createPickSubtitle": {
+    "description": "Create journey flow."
+  },
   "journeys_createChosen": "Đã chọn",
-  "@journeys_createChosen": {"description": "Create journey flow."},
+  "@journeys_createChosen": {
+    "description": "Create journey flow."
+  },
   "journeys_createDetailTitle": "Đặt tên và mục tiêu.",
-  "@journeys_createDetailTitle": {"description": "Create journey flow."},
+  "@journeys_createDetailTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_createWhoTitle": "Đi cùng ai?",
-  "@journeys_createWhoTitle": {"description": "Create journey flow."},
+  "@journeys_createWhoTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_kindCouple": "Chỉ hai đứa",
-  "@journeys_kindCouple": {"description": "Create journey flow."},
+  "@journeys_kindCouple": {
+    "description": "Create journey flow."
+  },
   "journeys_kindSoloBody": "Chỉ bạn và chiếc máy ảnh.",
-  "@journeys_kindSoloBody": {"description": "Create journey flow."},
+  "@journeys_kindSoloBody": {
+    "description": "Create journey flow."
+  },
   "journeys_kindGroupBody": "Tối đa 10 người, mời bằng mã.",
-  "@journeys_kindGroupBody": {"description": "Create journey flow."},
+  "@journeys_kindGroupBody": {
+    "description": "Create journey flow."
+  },
   "journeys_kindCoupleBody": "Một cặp, một nhịp.",
-  "@journeys_kindCoupleBody": {"description": "Create journey flow."},
+  "@journeys_kindCoupleBody": {
+    "description": "Create journey flow."
+  },
   "journeys_coupleNameYou": "Tên bạn",
-  "@journeys_coupleNameYou": {"description": "Create journey flow."},
+  "@journeys_coupleNameYou": {
+    "description": "Create journey flow."
+  },
   "journeys_coupleNameOther": "Tên người ấy",
-  "@journeys_coupleNameOther": {"description": "Create journey flow."},
+  "@journeys_coupleNameOther": {
+    "description": "Create journey flow."
+  },
   "journeys_errorCoupleNames": "Nhập tên cả hai người.",
-  "@journeys_errorCoupleNames": {"description": "Create journey flow."},
+  "@journeys_errorCoupleNames": {
+    "description": "Create journey flow."
+  },
   "journeys_createRhythmTitle": "Đặt nhịp.",
-  "@journeys_createRhythmTitle": {"description": "Create journey flow."},
+  "@journeys_createRhythmTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_fieldStartDate": "Ngày bắt đầu",
-  "@journeys_fieldStartDate": {"description": "Create journey flow."},
+  "@journeys_fieldStartDate": {
+    "description": "Create journey flow."
+  },
   "journeys_calendarPrev": "Tháng trước",
-  "@journeys_calendarPrev": {"description": "Create journey flow."},
+  "@journeys_calendarPrev": {
+    "description": "Create journey flow."
+  },
   "journeys_calendarNext": "Tháng sau",
-  "@journeys_calendarNext": {"description": "Create journey flow."},
+  "@journeys_calendarNext": {
+    "description": "Create journey flow."
+  },
   "journeys_calendarRange": "Từ {start} đến {end}",
-  "@journeys_calendarRange": {"description": "Create journey flow.", "placeholders": {"start": {"type": "String"}, "end": {"type": "String"}}},
+  "@journeys_calendarRange": {
+    "description": "Create journey flow.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_createReviewTitle": "Vé khởi hành của bạn.",
-  "@journeys_createReviewTitle": {"description": "Create journey flow."},
+  "@journeys_createReviewTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_createReviewEdit": "Sửa lại",
-  "@journeys_createReviewEdit": {"description": "Create journey flow."},
+  "@journeys_createReviewEdit": {
+    "description": "Create journey flow."
+  },
   "journeys_extraMinutes": "{minutes} phút",
-  "@journeys_extraMinutes": {"placeholders": {"minutes": {"type": "int"}}},
+  "@journeys_extraMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_extraHearts": "{count}/5 tim",
-  "@journeys_extraHearts": {"placeholders": {"count": {"type": "int"}}},
+  "@journeys_extraHearts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_extraPace": "{pace} /km",
-  "@journeys_extraPace": {"placeholders": {"pace": {"type": "String"}}},
+  "@journeys_extraPace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_extraCook": "{name} nấu",
-  "@journeys_extraCook": {"placeholders": {"name": {"type": "String"}}},
+  "@journeys_extraCook": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_extraMoodLight": "Nhẹ nhõm",
-  "@journeys_extraMoodLight": {"description": "Check-in extras on the journey screens."},
+  "@journeys_extraMoodLight": {
+    "description": "Check-in extras on the journey screens."
+  },
   "journeys_extraMoodNormal": "Bình thường",
-  "@journeys_extraMoodNormal": {"description": "Check-in extras on the journey screens."},
+  "@journeys_extraMoodNormal": {
+    "description": "Check-in extras on the journey screens."
+  },
   "journeys_extraMoodTired": "Hơi mệt",
-  "@journeys_extraMoodTired": {"description": "Check-in extras on the journey screens."},
+  "@journeys_extraMoodTired": {
+    "description": "Check-in extras on the journey screens."
+  },
   "journeys_partnerPhotoSemantics": "Ảnh của người ấy",
-  "@journeys_partnerPhotoSemantics": {"description": "Check-in extras on the journey screens."},
+  "@journeys_partnerPhotoSemantics": {
+    "description": "Check-in extras on the journey screens."
+  },
   "journeys_inviteAction": "Mời bạn",
   "journeys_renameCouple": "Sửa tên",
   "journeys_renameCoupleTitle": "Sửa tên cặp đôi",
@@ -707,5 +797,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "journeys_memoryFilmRoll": "CUỘN PHIM · {count} KHUNG",
+  "@journeys_memoryFilmRoll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_memoryOffline": "NGOẠI TUYẾN · chờ đồng bộ"
 }

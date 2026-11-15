@@ -141,4 +141,97 @@ void main() {
     await tester.pumpAndSettle();
     expect(picked, 'j2');
   });
+
+  for (final dark in [false, true]) {
+    testWidgets('data-driven overlay lines ${dark ? 'dark' : 'light'}', (
+      tester,
+    ) async {
+      Future<void> show(CaptureSkinOverlay o) async {
+        await tester.pumpWidget(_host(o, dark: dark));
+        await tester.pump();
+      }
+
+      await show(
+        const CaptureSkinOverlay(
+          skin: PersonaSkinId.quietTransformer,
+          dayNumber: 3,
+          streak: 2,
+          lastWeight: '72.4 kg',
+        ),
+      );
+      expect(find.byKey(const ValueKey('overlay-weight')), findsOneWidget);
+      expect(find.textContaining('72.4 kg'), findsOneWidget);
+
+      await show(
+        const CaptureSkinOverlay(
+          skin: PersonaSkinId.aestheticFlexer,
+          dayNumber: 3,
+          streak: 2,
+          lastPace: '5:30',
+        ),
+      );
+      expect(find.textContaining('5:30'), findsOneWidget);
+
+      await show(
+        const CaptureSkinOverlay(
+          skin: PersonaSkinId.coupleRituals,
+          dayNumber: 3,
+          streak: 2,
+          partnerPhotoFile: 'missing-partner.jpg',
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey('overlay-partner-photo')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('squad timer counts real elapsed time', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        const CaptureSkinOverlay(
+          skin: PersonaSkinId.accountabilitySquad,
+          dayNumber: 1,
+          streak: 4,
+        ),
+        dark: true,
+        scale: 1,
+      ),
+    );
+    expect(find.textContaining('00:00'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.textContaining('00:03'), findsOneWidget);
+  });
+
+  testWidgets('picker groups not shot / shot / ended', (tester) async {
+    final list = [
+      testJourney(id: 'a', title: 'Alpha'),
+      testJourney(id: 'b', title: 'Beta'),
+      testJourney(id: 'c', title: 'Gamma', status: JourneyStatus.ended),
+    ];
+    await tester.pumpWidget(
+      _host(
+        Builder(
+          builder: (c) => TextButton(
+            onPressed: () => showJourneyPickerSheet(
+              c,
+              journeys: list,
+              selectedId: 'a',
+              shotTodayIds: {'b'},
+            ),
+            child: const Text('open'),
+          ),
+        ),
+        dark: false,
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    for (final k in ['not-shot', 'shot', 'ended']) {
+      expect(find.byKey(ValueKey('journey-picker-section-$k')), findsOneWidget);
+    }
+    expect(tester.takeException(), isNull);
+  });
 }

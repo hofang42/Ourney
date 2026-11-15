@@ -171,55 +171,137 @@
     "description": "Couple timeline: placeholder where the partner photo goes."
   },
   "journeys_createStepOf": "Step {step}/{total}",
-  "@journeys_createStepOf": {"description": "Create journey flow.", "placeholders": {"step": {"type": "int"}, "total": {"type": "int"}}},
+  "@journeys_createStepOf": {
+    "description": "Create journey flow.",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_createNext": "Continue",
-  "@journeys_createNext": {"description": "Create journey flow."},
+  "@journeys_createNext": {
+    "description": "Create journey flow."
+  },
   "journeys_createExit": "Leave journey setup",
-  "@journeys_createExit": {"description": "Create journey flow."},
+  "@journeys_createExit": {
+    "description": "Create journey flow."
+  },
   "journeys_createPickSubtitle": "Tap a type to begin.",
-  "@journeys_createPickSubtitle": {"description": "Create journey flow."},
+  "@journeys_createPickSubtitle": {
+    "description": "Create journey flow."
+  },
   "journeys_createChosen": "Selected",
-  "@journeys_createChosen": {"description": "Create journey flow."},
+  "@journeys_createChosen": {
+    "description": "Create journey flow."
+  },
   "journeys_createDetailTitle": "Name it and set the goal.",
-  "@journeys_createDetailTitle": {"description": "Create journey flow."},
+  "@journeys_createDetailTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_createWhoTitle": "Who is coming along?",
-  "@journeys_createWhoTitle": {"description": "Create journey flow."},
+  "@journeys_createWhoTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_kindCouple": "Just the two of us",
-  "@journeys_kindCouple": {"description": "Create journey flow."},
+  "@journeys_kindCouple": {
+    "description": "Create journey flow."
+  },
   "journeys_kindSoloBody": "Just you and the camera.",
-  "@journeys_kindSoloBody": {"description": "Create journey flow."},
+  "@journeys_kindSoloBody": {
+    "description": "Create journey flow."
+  },
   "journeys_kindGroupBody": "Up to 10 people, invite by code.",
-  "@journeys_kindGroupBody": {"description": "Create journey flow."},
+  "@journeys_kindGroupBody": {
+    "description": "Create journey flow."
+  },
   "journeys_kindCoupleBody": "One pair, one rhythm.",
-  "@journeys_kindCoupleBody": {"description": "Create journey flow."},
+  "@journeys_kindCoupleBody": {
+    "description": "Create journey flow."
+  },
   "journeys_coupleNameYou": "Your name",
-  "@journeys_coupleNameYou": {"description": "Create journey flow."},
+  "@journeys_coupleNameYou": {
+    "description": "Create journey flow."
+  },
   "journeys_coupleNameOther": "Their name",
-  "@journeys_coupleNameOther": {"description": "Create journey flow."},
+  "@journeys_coupleNameOther": {
+    "description": "Create journey flow."
+  },
   "journeys_errorCoupleNames": "Enter both names.",
-  "@journeys_errorCoupleNames": {"description": "Create journey flow."},
+  "@journeys_errorCoupleNames": {
+    "description": "Create journey flow."
+  },
   "journeys_createRhythmTitle": "Set the rhythm.",
-  "@journeys_createRhythmTitle": {"description": "Create journey flow."},
+  "@journeys_createRhythmTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_fieldStartDate": "Start date",
-  "@journeys_fieldStartDate": {"description": "Create journey flow."},
+  "@journeys_fieldStartDate": {
+    "description": "Create journey flow."
+  },
   "journeys_calendarPrev": "Previous month",
-  "@journeys_calendarPrev": {"description": "Create journey flow."},
+  "@journeys_calendarPrev": {
+    "description": "Create journey flow."
+  },
   "journeys_calendarNext": "Next month",
-  "@journeys_calendarNext": {"description": "Create journey flow."},
+  "@journeys_calendarNext": {
+    "description": "Create journey flow."
+  },
   "journeys_calendarRange": "From {start} to {end}",
-  "@journeys_calendarRange": {"description": "Create journey flow.", "placeholders": {"start": {"type": "String"}, "end": {"type": "String"}}},
+  "@journeys_calendarRange": {
+    "description": "Create journey flow.",
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_createReviewTitle": "Your departure ticket.",
-  "@journeys_createReviewTitle": {"description": "Create journey flow."},
+  "@journeys_createReviewTitle": {
+    "description": "Create journey flow."
+  },
   "journeys_createReviewEdit": "Edit",
-  "@journeys_createReviewEdit": {"description": "Create journey flow."},
+  "@journeys_createReviewEdit": {
+    "description": "Create journey flow."
+  },
   "journeys_extraMinutes": "{minutes} min",
-  "@journeys_extraMinutes": {"placeholders": {"minutes": {"type": "int"}}},
+  "@journeys_extraMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_extraHearts": "{count}/5 hearts",
-  "@journeys_extraHearts": {"placeholders": {"count": {"type": "int"}}},
+  "@journeys_extraHearts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_extraPace": "{pace} /km",
-  "@journeys_extraPace": {"placeholders": {"pace": {"type": "String"}}},
+  "@journeys_extraPace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_extraCook": "{name} cooked",
-  "@journeys_extraCook": {"placeholders": {"name": {"type": "String"}}},
+  "@journeys_extraCook": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_extraMoodLight": "Light",
   "journeys_extraMoodNormal": "Okay",
   "journeys_extraMoodTired": "A bit tired",
@@ -254,5 +336,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "journeys_memoryFilmRoll": "FILM ROLL · {count} FRAMES",
+  "@journeys_memoryFilmRoll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_memoryOffline": "OFFLINE · waiting to sync"
 }
