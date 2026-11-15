@@ -24,7 +24,7 @@ insert into auth.users (id, email) select tests.u(n), format('pk%s@example.test'
 insert into public.profiles (id, username, display_name) select tests.u(n), 'pkuser' || n, 'P' || n from generate_series(1, 3) n;
 
 do $$ begin perform tests.as_user(tests.u(1));
-  perform public.create_journey(tests.jid(), 'group', 'workout30', 'Run', 'x', 'km', 'km', false,
+  perform public.create_journey(tests.jid(), 'group', 'workout_30', 'Run', 'x', 'km', 'km', false,
                                 current_date, 30, 'UTC', 10, 'private'); end $$;
 do $$ begin perform tests.as_user(tests.u(2)); perform public.join_by_code(tests.code()); end $$;
 
