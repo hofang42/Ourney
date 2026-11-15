@@ -224,7 +224,25 @@ supabase functions deploy delete-account --project-ref "$SUPABASE_PROJECT_REF"
 echo "==> Deploying function public-journey (anonymous access)"
 supabase functions deploy public-journey --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
-# --- 6. Auth config: OTP code emails (always) --------------------------------------------------
+# --- 6. Optional SMTP (H2): must come BEFORE the email templates --------------------------------------------------------------------
+if [ "$APPLY_SMTP" -eq 1 ]; then
+  # shellcheck disable=SC2153  # SMTP_HOST is set: APPLY_SMTP=1 only when all four SMTP_* are non-empty
+  echo "==> Applying custom SMTP to Auth (host: $SMTP_HOST, port: $SMTP_PORT, sender: $SMTP_SENDER_EMAIL)"
+  # Values reach jq through the environment ($ENV), never as arguments, so no secret appears in a
+  # command line. smtp_port is a string in the Management API; rate_limit_email_sent is an integer.
+  export SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL SMTP_SENDER_NAME SMTP_RATE_LIMIT
+  jq -n \
+    '{smtp_host: $ENV.SMTP_HOST, smtp_port: $ENV.SMTP_PORT, smtp_user: $ENV.SMTP_USER,
+      smtp_pass: $ENV.SMTP_PASS, smtp_admin_email: $ENV.SMTP_SENDER_EMAIL,
+      smtp_sender_name: $ENV.SMTP_SENDER_NAME,
+      rate_limit_email_sent: ($ENV.SMTP_RATE_LIMIT | tonumber)}' |
+    patch_auth_config "SMTP"
+  echo "SMTP applied."
+else
+  echo "==> SMTP_* not set: leaving Auth SMTP settings untouched"
+fi
+
+# --- 7. Auth config: OTP code emails (always) --------------------------------------------------
 # Default hosted templates send a magic LINK built from the default Site URL (http://localhost:3000);
 # the app expects a 6-digit code. Templates are plain files in the repo (not secrets).
 echo "==> Applying Auth config (OTP code emails, site_url $AUTH_SITE_URL)"
@@ -252,23 +270,5 @@ if [ -z "$body" ]; then
 fi
 printf '%s' "$body" | patch_auth_config "Auth config"
 echo "Auth config applied."
-
-# --- 7. Optional SMTP (H2) --------------------------------------------------------------------
-if [ "$APPLY_SMTP" -eq 1 ]; then
-  # shellcheck disable=SC2153  # SMTP_HOST is set: APPLY_SMTP=1 only when all four SMTP_* are non-empty
-  echo "==> Applying custom SMTP to Auth (host: $SMTP_HOST, port: $SMTP_PORT, sender: $SMTP_SENDER_EMAIL)"
-  # Values reach jq through the environment ($ENV), never as arguments, so no secret appears in a
-  # command line. smtp_port is a string in the Management API; rate_limit_email_sent is an integer.
-  export SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_SENDER_EMAIL SMTP_SENDER_NAME SMTP_RATE_LIMIT
-  jq -n \
-    '{smtp_host: $ENV.SMTP_HOST, smtp_port: $ENV.SMTP_PORT, smtp_user: $ENV.SMTP_USER,
-      smtp_pass: $ENV.SMTP_PASS, smtp_admin_email: $ENV.SMTP_SENDER_EMAIL,
-      smtp_sender_name: $ENV.SMTP_SENDER_NAME,
-      rate_limit_email_sent: ($ENV.SMTP_RATE_LIMIT | tonumber)}' |
-    patch_auth_config "SMTP"
-  echo "SMTP applied."
-else
-  echo "==> SMTP_* not set: leaving Auth SMTP settings untouched"
-fi
 
 echo "Deploy finished."

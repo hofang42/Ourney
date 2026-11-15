@@ -57,7 +57,8 @@ EOF
 # curl stub: logs argv, saves the body (stdin) and the --config file (the Authorization header).
 # Each call's body is also kept as $STUB_BODY.<n> (n = call number).
 # STUB_CURL_FAIL=N simulates an API error whose body echoes a secret (curl exit 22) from the Nth
-# curl call on (1 = the Auth config PATCH, 2 = the SMTP PATCH).
+# curl call on (1 = the SMTP PATCH, 2 = the Auth config PATCH; SMTP goes first because Supabase
+# rejects template changes until a custom SMTP is set).
 cat > "$BIN/curl" << 'EOF'
 #!/usr/bin/env bash
 echo "curl $*" >> "$STUB_LOG"
@@ -299,8 +300,8 @@ calls="$(cat "$LOG")"
 check "SMTP: PATCHes the project auth config" $? "rc=$RC calls=$calls out=$OUT"
 jq -e '.smtp_host == "smtp.example.com" and .smtp_port == "465" and .smtp_user == "resend"
   and .smtp_pass == "p@ss\"word\\with$pecial" and .smtp_admin_email == "no-reply@example.com"
-  and .smtp_sender_name == "Ourney" and .rate_limit_email_sent == 30' "$BODY" > /dev/null
-check "SMTP: JSON body has fields and defaults (465, Ourney, 30)" $? "$(cat "$BODY" 2> /dev/null)"
+  and .smtp_sender_name == "Ourney" and .rate_limit_email_sent == 30' "$BODY.1" > /dev/null
+check "SMTP: JSON body has fields and defaults (465, Ourney, 30)" $? "$(cat "$BODY.1" 2> /dev/null)"
 ! contains "$OUT$calls" 'word\with' && ! contains "$OUT$calls" "p@ss" &&
   ! contains "$OUT$calls" "sbp_test_token_0000" && ! contains "$OUT$calls" "db-pass-for-tests"
 check "SMTP: no secret in output or in the argv of supabase, jq and curl" $? "$OUT $calls"
@@ -311,19 +312,19 @@ check "SMTP: Authorization Bearer header is sent via the curl config" $? "$(sed 
 
 export SMTP_RATE_LIMIT=030 SMTP_PORT=465 SMTP_SENDER_NAME=Ourney
 run bash "$DEPLOY"
-jq -e '.rate_limit_email_sent == 30' "$BODY" > /dev/null
-check "SMTP: leading zeros in SMTP_RATE_LIMIT are normalised" $? "rc=$RC $(cat "$BODY" 2> /dev/null)"
+jq -e '.rate_limit_email_sent == 30' "$BODY.1" > /dev/null
+check "SMTP: leading zeros in SMTP_RATE_LIMIT are normalised" $? "rc=$RC $(cat "$BODY.1" 2> /dev/null)"
 unset SMTP_RATE_LIMIT SMTP_PORT SMTP_SENDER_NAME
 
-jq -e '.mailer_otp_length == 6 and .mailer_autoconfirm == true and (has("smtp_host") | not)' "$BODY.1" > /dev/null &&
-  jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.2" > /dev/null
-check "SMTP: two PATCHes, Auth config first (no smtp_*) then SMTP" $? "$(ls "$BODY".* 2> /dev/null)"
+jq -e '.mailer_otp_length == 6 and .mailer_autoconfirm == true and (has("smtp_host") | not)' "$BODY.2" > /dev/null &&
+  jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.1" > /dev/null
+check "SMTP: two PATCHes, SMTP first then Auth config (no smtp_*)" $? "$(ls "$BODY".* 2> /dev/null)"
 auth_line="$(grep -n 'Applying Auth config' <<< "$OUT" | cut -d: -f1)"
 smtp_line="$(grep -n 'Applying custom SMTP' <<< "$OUT" | cut -d: -f1)"
-[ -n "$auth_line" ] && [ -n "$smtp_line" ] && [ "$auth_line" -lt "$smtp_line" ]
-check "SMTP: Auth config step is announced before the SMTP step" $? "$OUT"
+[ -n "$auth_line" ] && [ -n "$smtp_line" ] && [ "$smtp_line" -lt "$auth_line" ]
+check "SMTP: SMTP step is announced before the Auth config step" $? "$OUT"
 
-STUB_CURL_FAIL=2 run bash "$DEPLOY"
+STUB_CURL_FAIL=1 run bash "$DEPLOY"
 [ "$RC" -ne 0 ] && contains "$OUT" "SMTP update failed: x" && ! contains "$OUT" "leak"
 check "SMTP: API failure shows the message only, never the body" $? "rc=$RC $OUT"
 
@@ -339,8 +340,8 @@ check "SMTP: loopback http API URL is allowed" $? "rc=$RC $OUT"
 
 export SMTP_PORT=587 SMTP_SENDER_NAME="Ourney Team" SMTP_RATE_LIMIT=60
 run bash "$DEPLOY"
-jq -e '.smtp_port == "587" and .smtp_sender_name == "Ourney Team" and .rate_limit_email_sent == 60' "$BODY" > /dev/null
-check "SMTP: overrides for port, sender name and rate limit" $? "$(cat "$BODY" 2> /dev/null)"
+jq -e '.smtp_port == "587" and .smtp_sender_name == "Ourney Team" and .rate_limit_email_sent == 60' "$BODY.1" > /dev/null
+check "SMTP: overrides for port, sender name and rate limit" $? "$(cat "$BODY.1" 2> /dev/null)"
 
 export SMTP_PORT="46x5"
 run bash "$DEPLOY"
