@@ -1,5 +1,9 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
@@ -13,6 +17,7 @@ const Curve _pillCurve = Cubic(0.2, 0.9, 0.3, 1.2);
 const Duration _pillDuration = Duration(milliseconds: 280);
 const Duration _longPress = Duration(milliseconds: 400);
 const double _pillW = 68;
+const double _pillInset = 4; // clear gap between the pill and the dock edge
 const double _pillH = 52;
 const double _dockH = 64;
 const double _cameraDockH = 92;
@@ -68,8 +73,19 @@ class UiDock extends StatelessWidget {
     this.snapKey,
     this.onShutterLongPress,
     this.reduceTransparency = false,
+    this.liquid = true,
     super.key,
   });
+
+  /// Real shader Liquid Glass (ADR 0003) is skipped under `flutter test` and on
+  /// web; widget tests get the blurred-capsule fallback.
+  static bool get liquidSupported =>
+      !kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST');
+
+  /// Ask for the Liquid Glass capsule. It still falls back to the blurred
+  /// translucent capsule when unsupported, reduce-transparency or high
+  /// contrast is on.
+  final bool liquid;
 
   /// Key of the quick-snap pill.
   final Key? snapKey;
@@ -101,13 +117,18 @@ class UiDock extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final media = MediaQuery.of(context);
+    final useLiquid =
+        liquid && liquidSupported && !reduceTransparency && !media.highContrast;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final bottom = media.viewPadding.bottom;
     final skinBorder =
         UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;
     final quiet = skinBorder < UiBorder.standard;
     final stroke = skinBorder;
     // Camera dock: cream outline + black 2dp hard shadow (`.camera-dock`).
-    final shadowOffset = (quiet || camera) ? UiShadow.tiny : UiShadow.large;
+    final shadowOffset = useLiquid
+        ? 0.0
+        : ((quiet || camera) ? UiShadow.tiny : UiShadow.large);
     final outline = camera ? UiCamera.outline : ui.outline;
     final shadowColor = camera ? UiCamera.shadow : ui.outline;
 
@@ -140,7 +161,9 @@ class UiDock extends StatelessWidget {
     final bar = LayoutBuilder(
       builder: (context, c) {
         final slotW = (c.maxWidth - _centerSlot) / items.length;
-        final pillW = _pillW < slotW ? _pillW : slotW;
+        final pillW = _pillW < slotW - 2 * _pillInset
+            ? _pillW
+            : slotW - 2 * _pillInset;
         double slotX(int i) => i < leftItems.length
             ? i * slotW
             : leftItems.length * slotW +
@@ -161,12 +184,20 @@ class UiDock extends StatelessWidget {
                 child: IgnorePointer(
                   child: DecoratedBox(
                     key: const ValueKey('dock-selection-pill'),
-                    decoration: BoxDecoration(
-                      color: pillFill,
-                      borderRadius: BorderRadius.circular(UiRadius.menu),
-                      border: Border.all(color: outline, width: UiBorder.thin),
-                      boxShadow: UiShadow.hard(shadowColor, UiShadow.tiny),
-                    ),
+                    decoration: useLiquid
+                        ? _lensDecoration(pillFill, dark)
+                        : BoxDecoration(
+                            color: pillFill,
+                            borderRadius: BorderRadius.circular(UiRadius.menu),
+                            border: Border.all(
+                              color: outline,
+                              width: UiBorder.thin,
+                            ),
+                            boxShadow: UiShadow.hard(
+                              shadowColor,
+                              UiShadow.tiny,
+                            ),
+                          ),
                   ),
                 ),
               ),
@@ -195,25 +226,39 @@ class UiDock extends StatelessWidget {
     // the full available height (the dock filled the whole screen).
     final surface = Container(
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: UiSpace.xs, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: UiSpace.xs + _pillInset,
+        vertical: 6,
+      ),
       // Camera: the dark dock tint lives here so glass stays neutral.
-      decoration: camera ? const BoxDecoration(color: UiCamera.dock) : null,
+      decoration: camera && !useLiquid
+          ? const BoxDecoration(color: UiCamera.dock)
+          : null,
       child: bar,
     );
 
-    final glass = UiGlass(
-      borderRadius: radius,
-      blur: 20,
-      saturation: 1.6,
-      tint: camera ? Colors.transparent : ui.surface.withValues(alpha: 0.82),
-      fallback: camera ? UiCamera.dock : ui.surface,
-      borderColor: outline,
-      borderWidth: stroke,
-      hardShadow: shadowOffset,
-      hardShadowColor: shadowColor,
-      reduceTransparency: reduceTransparency,
-      child: surface,
-    );
+    final Widget glass = useLiquid
+        ? GlassContainer(
+            useOwnLayer: true,
+            shape: const LiquidRoundedSuperellipse(borderRadius: 32),
+            settings: _liquidSettings(camera: camera, dark: dark),
+            child: surface,
+          )
+        : UiGlass(
+            borderRadius: radius,
+            blur: 20,
+            saturation: 1.6,
+            tint: camera
+                ? Colors.transparent
+                : ui.surface.withValues(alpha: 0.82),
+            fallback: camera ? UiCamera.dock : ui.surface,
+            borderColor: outline,
+            borderWidth: stroke,
+            hardShadow: shadowOffset,
+            hardShadowColor: shadowColor,
+            reduceTransparency: reduceTransparency,
+            child: surface,
+          );
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -233,6 +278,48 @@ class UiDock extends StatelessWidget {
     );
   }
 }
+
+/// Apple-style Liquid Glass look for the dock capsule: strong refraction,
+/// chromatic edge, specular rim, adaptive tint (dark for the camera dock).
+LiquidGlassSettings _liquidSettings({
+  required bool camera,
+  required bool dark,
+}) {
+  final tint = camera
+      ? const Color(0x33111114)
+      : (dark ? const Color(0x22FFFFFF) : const Color(0x33FFFFFF));
+  return LiquidGlassSettings(
+    glassColor: tint,
+    thickness: 22,
+    blur: 6,
+    chromaticAberration: 0.012,
+    lightIntensity: 0.7,
+    refractiveIndex: 1.25,
+    saturation: 1.4,
+  );
+}
+
+/// The moving selection "lens": the skin accent as a translucent capsule with
+/// a specular top-left rim, so it reads as a glass bead sliding in the bar.
+BoxDecoration _lensDecoration(Color accent, bool dark) => BoxDecoration(
+  borderRadius: BorderRadius.circular(UiRadius.capsule),
+  gradient: LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [accent.withValues(alpha: 0.95), accent.withValues(alpha: 0.78)],
+  ),
+  border: Border.all(
+    color: Colors.white.withValues(alpha: dark ? 0.45 : 0.7),
+    width: 1,
+  ),
+  boxShadow: [
+    BoxShadow(
+      color: accent.withValues(alpha: 0.35),
+      blurRadius: 10,
+      offset: const Offset(0, 3),
+    ),
+  ],
+);
 
 /// Fires [onLongPress] after 400ms (the journey wheel gesture) without
 /// stealing taps from the child.
@@ -281,7 +368,7 @@ class _Tab extends StatelessWidget {
             size: 22,
             // Camera dock: one flat UiCamera.ink colour, no sticker fill.
             color: (active || camera) ? color : null,
-            inkColor: active ? color : (camera ? UiCamera.ink : null),
+            inkColor: color,
           )
         : Icon(item.icon, size: 22, color: color);
     return UiPressable(

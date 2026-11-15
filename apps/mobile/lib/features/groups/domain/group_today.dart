@@ -38,6 +38,7 @@ class GroupTodayView {
     required this.totalDays,
     required this.done,
     required this.pending,
+    required this.weekDays,
   });
 
   /// Builds the view from `group_today` rows.
@@ -63,12 +64,16 @@ class GroupTodayView {
   }) {
     final today = journeyLocalDate(journey.timezone, now);
     final latest = <String, CheckIn>{};
+    final weekDays = <String, Set<LocalDate>>{};
     final myDates = <LocalDate>{};
     for (final c in checkIns) {
       if (blockedIds.contains(c.userId) || c.localDate.isAfter(today)) {
         continue;
       }
       if (c.userId == myUserId) myDates.add(c.localDate);
+      if (today.daysUntil(c.localDate) > -7) {
+        (weekDays[c.userId] ??= <LocalDate>{}).add(c.localDate);
+      }
       if (hiddenCheckInIds.contains(c.id)) continue;
       final prev = latest[c.userId];
       if (prev == null ||
@@ -130,6 +135,7 @@ class GroupTodayView {
       totalDays: total,
       done: done,
       pending: pending,
+      weekDays: {for (final e in weekDays.entries) e.key: e.value.length},
     );
   }
 
@@ -138,6 +144,10 @@ class GroupTodayView {
   final int? totalDays;
   final List<GroupMemberEntry> done;
   final List<GroupMemberEntry> pending;
+
+  /// Distinct check-in days of each member in the last 7 days (today
+  /// included), from the check-ins the caller can see.
+  final Map<String, int> weekDays;
 
   int get memberCount => done.length + pending.length;
   int get doneCount => done.length;

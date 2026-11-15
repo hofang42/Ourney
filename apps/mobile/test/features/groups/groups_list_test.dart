@@ -29,42 +29,34 @@ void main() {
       expect(find.byKey(const ValueKey('needs-server')), findsOneWidget);
     });
 
-    testWidgets('empty state offers joining with a code', (tester) async {
-      final h = await pumpGroups(tester);
+    testWidgets('empty card focuses the code field', (tester) async {
+      await pumpGroups(tester);
       expect(find.byKey(const ValueKey('groups-empty')), findsOneWidget);
-      expect(find.text('No groups yet'), findsOneWidget);
-      await tester.tap(find.text('Join with code'));
-      await tester.pumpAndSettle();
-      expect(h.location, '/join');
-      expect(find.byKey(const ValueKey('groups-join-screen')), findsOneWidget);
+      expect(find.text('no squads yet.'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('groups-empty-enter-code')));
+      await tester.pump();
+      final field = tester.widget<TextField>(
+        find.byKey(const ValueKey('squad-join-field')),
+      );
+      expect(field.focusNode!.hasFocus, isTrue);
     });
 
-    testWidgets('lists only group journeys, running then finished', (
-      tester,
-    ) async {
+    testWidgets('each group shows once, solo journeys never', (tester) async {
       final h = await pumpGroups(
         tester,
         journeys: FakeJourneyRepository(
           journeys: [
             groupJourney(),
             groupJourney(id: 'solo', title: 'Solo one', kind: JourneyKind.solo),
-            groupJourney(
-              id: 'g2',
-              title: 'Old group',
-              status: JourneyStatus.ended,
-            ),
           ],
         ),
       );
-      expect(find.byKey(const ValueKey('group-card-g1')), findsOneWidget);
-      expect(find.byKey(const ValueKey('group-card-g2')), findsOneWidget);
+      expect(find.byKey(const ValueKey('squad-today-g1')), findsOneWidget);
+      expect(find.text('Chạy bộ cùng nhau'), findsOneWidget);
       expect(find.text('Solo one'), findsNothing);
-      expect(find.text('Running'), findsOneWidget);
-      expect(find.text('Finished'), findsOneWidget);
-      expect(find.text('Day 7 of 30'), findsOneWidget);
-      expect(find.text('Ended'), findsOneWidget);
+      expect(find.byKey(const ValueKey('groups-create')), findsNothing);
 
-      await tester.tap(find.byKey(const ValueKey('group-card-g1')));
+      await tester.tap(find.byKey(const ValueKey('squad-today-open-g1')));
       await tester.pumpAndSettle();
       expect(h.location, '/groups/g1');
       expect(find.byKey(const ValueKey('group-today')), findsOneWidget);

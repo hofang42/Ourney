@@ -209,21 +209,69 @@
     "description": "Eyebrow above the Squad tab title."
   },
   "groups_joinCodeBoxesSemantics": "Mã mời, đã nhập {count} trên 8 ký tự",
-  "@groups_joinCodeBoxesSemantics": {"description": "Screen reader label of the 8-box code input.", "placeholders": {"count": {"type": "int"}}},
+  "@groups_joinCodeBoxesSemantics": {
+    "description": "Screen reader label of the 8-box code input.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "groups_previewOwner": "Chủ nhóm: {name}",
-  "@groups_previewOwner": {"description": "Join preview: owner line.", "placeholders": {"name": {"type": "String"}}},
+  "@groups_previewOwner": {
+    "description": "Join preview: owner line.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_previewMembers": "Thành viên",
   "groups_previewMembersValue": "{count}/{max} người",
-  "@groups_previewMembersValue": {"description": "Join preview: headcount.", "placeholders": {"count": {"type": "int"}, "max": {"type": "int"}}},
+  "@groups_previewMembersValue": {
+    "description": "Join preview: headcount.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
   "groups_previewDuration": "Thời lượng",
   "groups_previewDurationValue": "{days} ngày",
-  "@groups_previewDurationValue": {"description": "Join preview: journey length.", "placeholders": {"days": {"type": "int"}}},
+  "@groups_previewDurationValue": {
+    "description": "Join preview: journey length.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "groups_previewDurationOpen": "Không giới hạn",
   "groups_previewProgress": "Tiến độ",
   "groups_previewProgressValue": "Ngày {day}/{total}",
-  "@groups_previewProgressValue": {"description": "Join preview: current day.", "placeholders": {"day": {"type": "int"}, "total": {"type": "int"}}},
+  "@groups_previewProgressValue": {
+    "description": "Join preview: current day.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "groups_previewProgressOpen": "Ngày {day}",
-  "@groups_previewProgressOpen": {"description": "Join preview: current day, open-ended.", "placeholders": {"day": {"type": "int"}}},
+  "@groups_previewProgressOpen": {
+    "description": "Join preview: current day, open-ended.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "groups_previewPrivate": "Nhóm này không có link công khai. Chỉ người có mã mới vào được.",
   "groups_previewAlreadyMember": "Bạn đã ở trong nhóm này.",
   "groups_previewOpenGroup": "Mở nhóm",
@@ -238,5 +286,195 @@
   "groups_inviteRevoke": "Thu hồi",
   "groups_inviteRevoked": "Đã thu hồi lời mời",
   "groups_inviteShareCode": "Chia sẻ mã mời",
-  "groups_inviteNeedsHandle": "Hãy nhập tên người dùng."
+  "groups_inviteNeedsHandle": "Hãy nhập tên người dùng.",
+  "groups_codeLabel": "nhập mã mời",
+  "groups_codeHint": "K7Q2-M9XA",
+  "groups_pasteCode": "Dán mã",
+  "groups_joinAction": "Tham gia",
+  "groups_todayHeading": "hôm nay",
+  "groups_checkedInCount": "{done}/{total} đã check-in",
+  "@groups_checkedInCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_memberWaiting": "chưa",
+  "groups_openTodayOf": "Mở hội hôm nay của {name}",
+  "@groups_openTodayOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_pendingInvitesHeading": "lời mời đang chờ",
+  "groups_inviteLine": "{inviter} mời bạn vào {title}",
+  "@groups_inviteLine": {
+    "placeholders": {
+      "inviter": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_inviteAccept": "Tham gia",
+  "groups_inviteSkip": "Bỏ qua",
+  "groups_memberReport": "Báo cáo người dùng",
+  "groups_memberBlock": "Chặn",
+  "groups_memberHandle": "@{username}",
+  "@groups_memberHandle": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_overflowMore": "+{count}",
+  "@groups_overflowMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_emptyCardTitle": "chưa có hội nào.",
+  "groups_emptyCardBody": "Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.",
+  "groups_wallAttendance": "{done}/{total} ĐÃ ĐIỂM DANH",
+  "@groups_wallAttendance": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_wallUpdated": "Cập nhật lúc {time}",
+  "@groups_wallUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_wallWaiting": "{name} · ĐANG CHỜ",
+  "@groups_wallWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_quietTitle": "Hội hôm nay.",
+  "groups_quietIntro": "Xếp theo tên, không theo kết quả.",
+  "groups_quietDone": "Đã chụp {time}",
+  "@groups_quietDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_quietNotYet": "Chưa chụp",
+  "groups_quietSteady": "đều đặn {count}/7",
+  "@groups_quietSteady": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_quietShow": "Xem ảnh",
+  "groups_quietHide": "Ẩn ảnh",
+  "groups_quietFooter": "Không ai bị so cân. Chỉ đếm sự đều đặn.",
+  "groups_memoryTitle": "HÔM NAY · {done}/{total} ĐÃ CÓ KHUNG",
+  "@groups_memoryTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_memoryFrame": "{name} · {time}",
+  "@groups_memoryFrame": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_memoryMissing": "{name} · CHƯA CÓ KHUNG",
+  "@groups_memoryMissing": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_coupleTitle": "Hôm nay của hai đứa",
+  "groups_coupleDone": "{name} · đã chụp {time}",
+  "@groups_coupleDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_coupleWaiting": "{name} · đang chờ",
+  "@groups_coupleWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerTitle": "{done}/{total} ĐÃ CHẠY",
+  "@groups_flexerTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_flexerDone": "Đã chạy · {time}",
+  "@groups_flexerDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerPending": "CHƯA CHẠY",
+  "groups_minimalTitle": "{done}/{total} ĐÃ XONG",
+  "@groups_minimalTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_minimalPending": "CHƯA"
 }

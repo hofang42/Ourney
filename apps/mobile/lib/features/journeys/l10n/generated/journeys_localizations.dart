@@ -1393,6 +1393,780 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'NGOẠI TUYẾN · chờ đồng bộ'**
   String get journeys_memoryOffline;
+
+  /// No description provided for @journeys_dna_goal_title_weight.
+  ///
+  /// In vi, this message translates to:
+  /// **'mục tiêu của bạn.'**
+  String get journeys_dna_goal_title_weight;
+
+  /// No description provided for @journeys_dna_weight_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'cân nặng hiện tại.'**
+  String get journeys_dna_weight_title;
+
+  /// No description provided for @journeys_dna_ghost_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'chụp ảnh ngày 1 làm khung căn dáng.'**
+  String get journeys_dna_ghost_title;
+
+  /// No description provided for @journeys_dna_goal_title_english.
+  ///
+  /// In vi, this message translates to:
+  /// **'mục tiêu.'**
+  String get journeys_dna_goal_title_english;
+
+  /// No description provided for @journeys_dna_minutes_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'mỗi ngày bao nhiêu phút.'**
+  String get journeys_dna_minutes_title;
+
+  /// No description provided for @journeys_dna_trophy_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'đặt tên chiếc cúp ở đích.'**
+  String get journeys_dna_trophy_title;
+
+  /// No description provided for @journeys_dna_sport_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'môn gì.'**
+  String get journeys_dna_sport_title;
+
+  /// No description provided for @journeys_dna_measure_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'đo bằng gì.'**
+  String get journeys_dna_measure_title;
+
+  /// No description provided for @journeys_dna_hud_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'kiểu HUD.'**
+  String get journeys_dna_hud_title;
+
+  /// No description provided for @journeys_dna_place_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'đi đâu.'**
+  String get journeys_dna_place_title;
+
+  /// No description provided for @journeys_dna_dates_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày đi – ngày về.'**
+  String get journeys_dna_dates_title;
+
+  /// No description provided for @journeys_dna_film_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'cuộn phim mấy tấm.'**
+  String get journeys_dna_film_title;
+
+  /// No description provided for @journeys_dna_ritual_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'nghi thức của hai đứa.'**
+  String get journeys_dna_ritual_title;
+
+  /// No description provided for @journeys_dna_names_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'tên hai người.'**
+  String get journeys_dna_names_title;
+
+  /// No description provided for @journeys_dna_side_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'ai chụp nửa nào.'**
+  String get journeys_dna_side_title;
+
+  /// No description provided for @journeys_dna_habit_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'thói quen của bạn.'**
+  String get journeys_dna_habit_title;
+
+  /// No description provided for @journeys_dna_c_goal_weight_lose.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giảm cân'**
+  String get journeys_dna_c_goal_weight_lose;
+
+  /// No description provided for @journeys_dna_c_goal_weight_lose_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'nhẹ đi, khỏe hơn mỗi ngày'**
+  String get journeys_dna_c_goal_weight_lose_hint;
+
+  /// No description provided for @journeys_dna_c_goal_weight_keep.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ dáng'**
+  String get journeys_dna_c_goal_weight_keep;
+
+  /// No description provided for @journeys_dna_c_goal_weight_keep_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'duy trì nhịp sống hiện tại'**
+  String get journeys_dna_c_goal_weight_keep_hint;
+
+  /// No description provided for @journeys_dna_c_goal_weight_shape.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thay đổi vóc dáng'**
+  String get journeys_dna_c_goal_weight_shape;
+
+  /// No description provided for @journeys_dna_c_goal_weight_shape_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'theo dõi một phiên bản mới'**
+  String get journeys_dna_c_goal_weight_shape_hint;
+
+  /// No description provided for @journeys_dna_c_goal_english_ielts.
+  ///
+  /// In vi, this message translates to:
+  /// **'IELTS'**
+  String get journeys_dna_c_goal_english_ielts;
+
+  /// No description provided for @journeys_dna_c_goal_english_ielts_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'cùng nhau chạm band mục tiêu'**
+  String get journeys_dna_c_goal_english_ielts_hint;
+
+  /// No description provided for @journeys_dna_c_goal_english_talk.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giao tiếp'**
+  String get journeys_dna_c_goal_english_talk;
+
+  /// No description provided for @journeys_dna_c_goal_english_talk_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'nói tự nhiên hơn mỗi ngày'**
+  String get journeys_dna_c_goal_english_talk_hint;
+
+  /// No description provided for @journeys_dna_c_goal_english_read.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đọc sách'**
+  String get journeys_dna_c_goal_english_read;
+
+  /// No description provided for @journeys_dna_c_goal_english_read_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'đọc trọn cuốn sách đầu tiên'**
+  String get journeys_dna_c_goal_english_read_hint;
+
+  /// No description provided for @journeys_dna_c_minutes_15.
+  ///
+  /// In vi, this message translates to:
+  /// **'15'**
+  String get journeys_dna_c_minutes_15;
+
+  /// No description provided for @journeys_dna_c_minutes_15_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'15 phút mỗi ngày'**
+  String get journeys_dna_c_minutes_15_hint;
+
+  /// No description provided for @journeys_dna_c_minutes_30.
+  ///
+  /// In vi, this message translates to:
+  /// **'30'**
+  String get journeys_dna_c_minutes_30;
+
+  /// No description provided for @journeys_dna_c_minutes_30_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 phút mỗi ngày'**
+  String get journeys_dna_c_minutes_30_hint;
+
+  /// No description provided for @journeys_dna_c_minutes_45.
+  ///
+  /// In vi, this message translates to:
+  /// **'45'**
+  String get journeys_dna_c_minutes_45;
+
+  /// No description provided for @journeys_dna_c_minutes_45_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'45 phút mỗi ngày'**
+  String get journeys_dna_c_minutes_45_hint;
+
+  /// No description provided for @journeys_dna_c_minutes_60.
+  ///
+  /// In vi, this message translates to:
+  /// **'60'**
+  String get journeys_dna_c_minutes_60;
+
+  /// No description provided for @journeys_dna_c_minutes_60_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'60 phút mỗi ngày'**
+  String get journeys_dna_c_minutes_60_hint;
+
+  /// No description provided for @journeys_dna_c_sport_run.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạy'**
+  String get journeys_dna_c_sport_run;
+
+  /// No description provided for @journeys_dna_c_sport_run_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày chạy'**
+  String get journeys_dna_c_sport_run_hint;
+
+  /// No description provided for @journeys_dna_c_sport_gym.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gym'**
+  String get journeys_dna_c_sport_gym;
+
+  /// No description provided for @journeys_dna_c_sport_gym_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày gym'**
+  String get journeys_dna_c_sport_gym_hint;
+
+  /// No description provided for @journeys_dna_c_sport_pilates.
+  ///
+  /// In vi, this message translates to:
+  /// **'Pilates'**
+  String get journeys_dna_c_sport_pilates;
+
+  /// No description provided for @journeys_dna_c_sport_pilates_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày pilates'**
+  String get journeys_dna_c_sport_pilates_hint;
+
+  /// No description provided for @journeys_dna_c_sport_yoga.
+  ///
+  /// In vi, this message translates to:
+  /// **'Yoga'**
+  String get journeys_dna_c_sport_yoga;
+
+  /// No description provided for @journeys_dna_c_sport_yoga_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày yoga'**
+  String get journeys_dna_c_sport_yoga_hint;
+
+  /// No description provided for @journeys_dna_c_sport_other.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khác'**
+  String get journeys_dna_c_sport_other;
+
+  /// No description provided for @journeys_dna_c_sport_other_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày khác'**
+  String get journeys_dna_c_sport_other_hint;
+
+  /// No description provided for @journeys_dna_c_measure_km.
+  ///
+  /// In vi, this message translates to:
+  /// **'km'**
+  String get journeys_dna_c_measure_km;
+
+  /// No description provided for @journeys_dna_c_measure_km_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'ghi lại theo km'**
+  String get journeys_dna_c_measure_km_hint;
+
+  /// No description provided for @journeys_dna_c_measure_min.
+  ///
+  /// In vi, this message translates to:
+  /// **'phút'**
+  String get journeys_dna_c_measure_min;
+
+  /// No description provided for @journeys_dna_c_measure_min_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'ghi lại theo phút'**
+  String get journeys_dna_c_measure_min_hint;
+
+  /// No description provided for @journeys_dna_c_measure_session.
+  ///
+  /// In vi, this message translates to:
+  /// **'buổi'**
+  String get journeys_dna_c_measure_session;
+
+  /// No description provided for @journeys_dna_c_measure_session_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'ghi lại theo buổi'**
+  String get journeys_dna_c_measure_session_hint;
+
+  /// No description provided for @journeys_dna_c_hud_bold.
+  ///
+  /// In vi, this message translates to:
+  /// **'HUD đậm'**
+  String get journeys_dna_c_hud_bold;
+
+  /// No description provided for @journeys_dna_c_hud_bold_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'số lớn, tương phản mạnh'**
+  String get journeys_dna_c_hud_bold_hint;
+
+  /// No description provided for @journeys_dna_c_hud_stamp.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tem tối giản'**
+  String get journeys_dna_c_hud_stamp;
+
+  /// No description provided for @journeys_dna_c_hud_stamp_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'gọn như một con tem'**
+  String get journeys_dna_c_hud_stamp_hint;
+
+  /// No description provided for @journeys_dna_c_hud_strip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dải phim'**
+  String get journeys_dna_c_hud_strip;
+
+  /// No description provided for @journeys_dna_c_hud_strip_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'khoảnh khắc nối tiếp nhau'**
+  String get journeys_dna_c_hud_strip_hint;
+
+  /// No description provided for @journeys_dna_c_film_24.
+  ///
+  /// In vi, this message translates to:
+  /// **'24 tấm'**
+  String get journeys_dna_c_film_24;
+
+  /// No description provided for @journeys_dna_c_film_24_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'mỗi tấm đều được cân nhắc'**
+  String get journeys_dna_c_film_24_hint;
+
+  /// No description provided for @journeys_dna_c_film_36.
+  ///
+  /// In vi, this message translates to:
+  /// **'36 tấm'**
+  String get journeys_dna_c_film_36;
+
+  /// No description provided for @journeys_dna_c_film_36_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'thêm chỗ cho điều bất ngờ'**
+  String get journeys_dna_c_film_36_hint;
+
+  /// No description provided for @journeys_dna_c_ritual_cook.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nấu ăn'**
+  String get journeys_dna_c_ritual_cook;
+
+  /// No description provided for @journeys_dna_c_ritual_cook_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'cùng nhau nấu ăn'**
+  String get journeys_dna_c_ritual_cook_hint;
+
+  /// No description provided for @journeys_dna_c_ritual_save.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiết kiệm'**
+  String get journeys_dna_c_ritual_save;
+
+  /// No description provided for @journeys_dna_c_ritual_save_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'cùng nhau tiết kiệm'**
+  String get journeys_dna_c_ritual_save_hint;
+
+  /// No description provided for @journeys_dna_c_ritual_ldr.
+  ///
+  /// In vi, this message translates to:
+  /// **'Yêu xa'**
+  String get journeys_dna_c_ritual_ldr;
+
+  /// No description provided for @journeys_dna_c_ritual_ldr_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'cùng nhau yêu xa'**
+  String get journeys_dna_c_ritual_ldr_hint;
+
+  /// No description provided for @journeys_dna_c_ritual_custom.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tự đặt'**
+  String get journeys_dna_c_ritual_custom;
+
+  /// No description provided for @journeys_dna_c_ritual_custom_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'cùng nhau tự đặt'**
+  String get journeys_dna_c_ritual_custom_hint;
+
+  /// No description provided for @journeys_dna_c_side_left.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mình bên trái'**
+  String get journeys_dna_c_side_left;
+
+  /// No description provided for @journeys_dna_c_side_right.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mình bên phải'**
+  String get journeys_dna_c_side_right;
+
+  /// No description provided for @journeys_dna_step_of_q.
+  ///
+  /// In vi, this message translates to:
+  /// **'Câu {n}/{total}'**
+  String journeys_dna_step_of_q(int n, int total);
+
+  /// No description provided for @journeys_dna_weight_unit.
+  ///
+  /// In vi, this message translates to:
+  /// **'kg'**
+  String get journeys_dna_weight_unit;
+
+  /// No description provided for @journeys_dna_weight_a11y.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cân nặng hiện tại'**
+  String get journeys_dna_weight_a11y;
+
+  /// No description provided for @journeys_dna_weight_private.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ mình bạn thấy'**
+  String get journeys_dna_weight_private;
+
+  /// No description provided for @journeys_dna_weight_hide.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn số kg khi chia sẻ'**
+  String get journeys_dna_weight_hide;
+
+  /// No description provided for @journeys_dna_weight_skip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ qua'**
+  String get journeys_dna_weight_skip;
+
+  /// No description provided for @journeys_dna_ghost_body.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh riêng tư này sẽ làm khung căn dáng ở những ngày tiếp theo.'**
+  String get journeys_dna_ghost_body;
+
+  /// No description provided for @journeys_dna_ghost_now.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp ngay'**
+  String get journeys_dna_ghost_now;
+
+  /// No description provided for @journeys_dna_ghost_later.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau vậy.'**
+  String get journeys_dna_ghost_later;
+
+  /// No description provided for @journeys_dna_trophy_label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên chiếc cúp'**
+  String get journeys_dna_trophy_label;
+
+  /// No description provided for @journeys_dna_trophy_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cúp 7.5'**
+  String get journeys_dna_trophy_hint;
+
+  /// No description provided for @journeys_dna_place_search.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm một nơi...'**
+  String get journeys_dna_place_search;
+
+  /// No description provided for @journeys_dna_place_country.
+  ///
+  /// In vi, this message translates to:
+  /// **'Việt Nam'**
+  String get journeys_dna_place_country;
+
+  /// No description provided for @journeys_dna_place_dalat.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đà Lạt'**
+  String get journeys_dna_place_dalat;
+
+  /// No description provided for @journeys_dna_place_hoian.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hội An'**
+  String get journeys_dna_place_hoian;
+
+  /// No description provided for @journeys_dna_place_phuquoc.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phú Quốc'**
+  String get journeys_dna_place_phuquoc;
+
+  /// No description provided for @journeys_dna_place_pine.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rừng thông và sương'**
+  String get journeys_dna_place_pine;
+
+  /// No description provided for @journeys_dna_dates_open.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa hẹn ngày về'**
+  String get journeys_dna_dates_open;
+
+  /// No description provided for @journeys_dna_dates_prompt.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn ngày đi và ngày về'**
+  String get journeys_dna_dates_prompt;
+
+  /// No description provided for @journeys_dna_dates_open_summary.
+  ///
+  /// In vi, this message translates to:
+  /// **'{start} · chưa hẹn ngày về'**
+  String journeys_dna_dates_open_summary(String start);
+
+  /// No description provided for @journeys_dna_dates_range_summary.
+  ///
+  /// In vi, this message translates to:
+  /// **'{start} – {end}'**
+  String journeys_dna_dates_range_summary(String start, String end);
+
+  /// No description provided for @journeys_dna_prev_month.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tháng trước'**
+  String get journeys_dna_prev_month;
+
+  /// No description provided for @journeys_dna_next_month.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tháng sau'**
+  String get journeys_dna_next_month;
+
+  /// No description provided for @journeys_dna_name_left.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên bạn'**
+  String get journeys_dna_name_left;
+
+  /// No description provided for @journeys_dna_name_right.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên người ấy'**
+  String get journeys_dna_name_right;
+
+  /// No description provided for @journeys_dna_habit_label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thói quen'**
+  String get journeys_dna_habit_label;
+
+  /// No description provided for @journeys_dna_habit_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đọc 10 trang'**
+  String get journeys_dna_habit_hint;
+
+  /// No description provided for @journeys_dna_reason_label.
+  ///
+  /// In vi, this message translates to:
+  /// **'vì sao.'**
+  String get journeys_dna_reason_label;
+
+  /// No description provided for @journeys_dna_reason_hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'để ngủ ngon hơn'**
+  String get journeys_dna_reason_hint;
+
+  /// No description provided for @journeys_dna_forge_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'đang đúc DNA…'**
+  String get journeys_dna_forge_title;
+
+  /// No description provided for @journeys_dna_forge_a11y.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tạo hành trình của bạn'**
+  String get journeys_dna_forge_a11y;
+
+  /// No description provided for @journeys_dna_import_link.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập hành trình đã qua'**
+  String get journeys_dna_import_link;
+
+  /// No description provided for @journeys_home_introQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhìn lại từng chút một.'**
+  String get journeys_home_introQuiet;
+
+  /// No description provided for @journeys_home_introSquad.
+  ///
+  /// In vi, this message translates to:
+  /// **'hôm nay học bao lâu.'**
+  String get journeys_home_introSquad;
+
+  /// No description provided for @journeys_home_introMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay cả bọn lạc ở đâu?'**
+  String get journeys_home_introMemory;
+
+  /// No description provided for @journeys_home_introCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay hai đứa nấu gì?'**
+  String get journeys_home_introCouple;
+
+  /// No description provided for @journeys_home_offlineQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang lưu trên máy · sẽ đồng bộ sau'**
+  String get journeys_home_offlineQuiet;
+
+  /// No description provided for @journeys_home_offlineSquad.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY'**
+  String get journeys_home_offlineSquad;
+
+  /// No description provided for @journeys_home_offlineMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang lưu trên máy. Có mạng sẽ tự gửi.'**
+  String get journeys_home_offlineMemory;
+
+  /// No description provided for @journeys_home_readOnlyQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình đã kết thúc · chỉ xem'**
+  String get journeys_home_readOnlyQuiet;
+
+  /// No description provided for @journeys_home_readOnlyFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐÃ VỀ ĐÍCH · CHỈ ĐỌC'**
+  String get journeys_home_readOnlyFlexer;
+
+  /// No description provided for @journeys_home_readOnlyMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐÃ KẾT THÚC · CHỈ ĐỌC'**
+  String get journeys_home_readOnlyMinimal;
+
+  /// No description provided for @journeys_home_dayStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}/{total} · chuỗi {streak}'**
+  String journeys_home_dayStreak(int day, int total, int streak);
+
+  /// No description provided for @journeys_home_dayStreakOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day} · chuỗi {streak}'**
+  String journeys_home_dayStreakOpen(int day, int streak);
+
+  /// No description provided for @journeys_home_monthStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'{month} · CHUỖI {streak} NGÀY'**
+  String journeys_home_monthStreak(int streak, String month);
+
+  /// No description provided for @journeys_home_holdReveal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ để xem'**
+  String get journeys_home_holdReveal;
+
+  /// No description provided for @journeys_home_viewing.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang xem'**
+  String get journeys_home_viewing;
+
+  /// No description provided for @journeys_home_chartA11y.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đường tiến trình'**
+  String get journeys_home_chartA11y;
+
+  /// No description provided for @journeys_home_msWeek.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tuần đầu'**
+  String get journeys_home_msWeek;
+
+  /// No description provided for @journeys_home_msHalf.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nửa chặng'**
+  String get journeys_home_msHalf;
+
+  /// No description provided for @journeys_home_msFinish.
+  ///
+  /// In vi, this message translates to:
+  /// **'Về đích'**
+  String get journeys_home_msFinish;
+
+  /// No description provided for @journeys_home_msDay.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String journeys_home_msDay(int day);
+
+  /// No description provided for @journeys_home_actionSquad.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hội hôm nay'**
+  String get journeys_home_actionSquad;
+
+  /// No description provided for @journeys_home_actionCard.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thiệp'**
+  String get journeys_home_actionCard;
+
+  /// No description provided for @journeys_home_attendance.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} NGÀY ĐÃ CHỤP'**
+  String journeys_home_attendance(int done, int total);
+
+  /// No description provided for @journeys_home_retake.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chụp thêm ảnh hôm nay'**
+  String get journeys_home_retake;
+
+  /// No description provided for @journeys_home_timelineLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dòng thời gian'**
+  String get journeys_home_timelineLabel;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

@@ -760,4 +760,416 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_memoryOffline => 'OFFLINE · waiting to sync';
+
+  @override
+  String get journeys_dna_goal_title_weight => 'your goal.';
+
+  @override
+  String get journeys_dna_weight_title => 'current weight.';
+
+  @override
+  String get journeys_dna_ghost_title =>
+      'take a day-1 photo as your alignment frame.';
+
+  @override
+  String get journeys_dna_goal_title_english => 'goal.';
+
+  @override
+  String get journeys_dna_minutes_title => 'minutes per day.';
+
+  @override
+  String get journeys_dna_trophy_title => 'name the trophy at the finish.';
+
+  @override
+  String get journeys_dna_sport_title => 'which sport.';
+
+  @override
+  String get journeys_dna_measure_title => 'measured in.';
+
+  @override
+  String get journeys_dna_hud_title => 'HUD style.';
+
+  @override
+  String get journeys_dna_place_title => 'where to.';
+
+  @override
+  String get journeys_dna_dates_title => 'depart – return.';
+
+  @override
+  String get journeys_dna_film_title => 'how many frames on the roll.';
+
+  @override
+  String get journeys_dna_ritual_title => 'your ritual together.';
+
+  @override
+  String get journeys_dna_names_title => 'your two names.';
+
+  @override
+  String get journeys_dna_side_title => 'who shoots which half.';
+
+  @override
+  String get journeys_dna_habit_title => 'your habit.';
+
+  @override
+  String get journeys_dna_c_goal_weight_lose => 'Lose weight';
+
+  @override
+  String get journeys_dna_c_goal_weight_lose_hint =>
+      'lighter and healthier every day';
+
+  @override
+  String get journeys_dna_c_goal_weight_keep => 'Stay in shape';
+
+  @override
+  String get journeys_dna_c_goal_weight_keep_hint => 'keep your current rhythm';
+
+  @override
+  String get journeys_dna_c_goal_weight_shape => 'Reshape';
+
+  @override
+  String get journeys_dna_c_goal_weight_shape_hint =>
+      'track a new version of you';
+
+  @override
+  String get journeys_dna_c_goal_english_ielts => 'IELTS';
+
+  @override
+  String get journeys_dna_c_goal_english_ielts_hint => 'reach your target band';
+
+  @override
+  String get journeys_dna_c_goal_english_talk => 'Conversation';
+
+  @override
+  String get journeys_dna_c_goal_english_talk_hint =>
+      'speak more naturally every day';
+
+  @override
+  String get journeys_dna_c_goal_english_read => 'Reading';
+
+  @override
+  String get journeys_dna_c_goal_english_read_hint =>
+      'finish your first whole book';
+
+  @override
+  String get journeys_dna_c_minutes_15 => '15';
+
+  @override
+  String get journeys_dna_c_minutes_15_hint => '15 minutes a day';
+
+  @override
+  String get journeys_dna_c_minutes_30 => '30';
+
+  @override
+  String get journeys_dna_c_minutes_30_hint => '30 minutes a day';
+
+  @override
+  String get journeys_dna_c_minutes_45 => '45';
+
+  @override
+  String get journeys_dna_c_minutes_45_hint => '45 minutes a day';
+
+  @override
+  String get journeys_dna_c_minutes_60 => '60';
+
+  @override
+  String get journeys_dna_c_minutes_60_hint => '60 minutes a day';
+
+  @override
+  String get journeys_dna_c_sport_run => 'Run';
+
+  @override
+  String get journeys_dna_c_sport_run_hint => '30 days of running';
+
+  @override
+  String get journeys_dna_c_sport_gym => 'Gym';
+
+  @override
+  String get journeys_dna_c_sport_gym_hint => '30 days of gym';
+
+  @override
+  String get journeys_dna_c_sport_pilates => 'Pilates';
+
+  @override
+  String get journeys_dna_c_sport_pilates_hint => '30 days of pilates';
+
+  @override
+  String get journeys_dna_c_sport_yoga => 'Yoga';
+
+  @override
+  String get journeys_dna_c_sport_yoga_hint => '30 days of yoga';
+
+  @override
+  String get journeys_dna_c_sport_other => 'Other';
+
+  @override
+  String get journeys_dna_c_sport_other_hint => '30 days of something else';
+
+  @override
+  String get journeys_dna_c_measure_km => 'km';
+
+  @override
+  String get journeys_dna_c_measure_km_hint => 'log it in km';
+
+  @override
+  String get journeys_dna_c_measure_min => 'minutes';
+
+  @override
+  String get journeys_dna_c_measure_min_hint => 'log it in minutes';
+
+  @override
+  String get journeys_dna_c_measure_session => 'sessions';
+
+  @override
+  String get journeys_dna_c_measure_session_hint => 'log it per session';
+
+  @override
+  String get journeys_dna_c_hud_bold => 'Bold HUD';
+
+  @override
+  String get journeys_dna_c_hud_bold_hint => 'big numbers, high contrast';
+
+  @override
+  String get journeys_dna_c_hud_stamp => 'Minimal stamp';
+
+  @override
+  String get journeys_dna_c_hud_stamp_hint => 'neat as a postage stamp';
+
+  @override
+  String get journeys_dna_c_hud_strip => 'Film strip';
+
+  @override
+  String get journeys_dna_c_hud_strip_hint => 'moments one after another';
+
+  @override
+  String get journeys_dna_c_film_24 => '24 frames';
+
+  @override
+  String get journeys_dna_c_film_24_hint => 'every frame is considered';
+
+  @override
+  String get journeys_dna_c_film_36 => '36 frames';
+
+  @override
+  String get journeys_dna_c_film_36_hint => 'room for surprises';
+
+  @override
+  String get journeys_dna_c_ritual_cook => 'Cooking';
+
+  @override
+  String get journeys_dna_c_ritual_cook_hint => 'cook together';
+
+  @override
+  String get journeys_dna_c_ritual_save => 'Saving';
+
+  @override
+  String get journeys_dna_c_ritual_save_hint => 'save together';
+
+  @override
+  String get journeys_dna_c_ritual_ldr => 'Long distance';
+
+  @override
+  String get journeys_dna_c_ritual_ldr_hint => 'do long distance together';
+
+  @override
+  String get journeys_dna_c_ritual_custom => 'Your own';
+
+  @override
+  String get journeys_dna_c_ritual_custom_hint => 'make your own ritual';
+
+  @override
+  String get journeys_dna_c_side_left => 'Me on the left';
+
+  @override
+  String get journeys_dna_c_side_right => 'Me on the right';
+
+  @override
+  String journeys_dna_step_of_q(int n, int total) {
+    return 'Question $n/$total';
+  }
+
+  @override
+  String get journeys_dna_weight_unit => 'kg';
+
+  @override
+  String get journeys_dna_weight_a11y => 'Current weight';
+
+  @override
+  String get journeys_dna_weight_private => 'Only you can see this';
+
+  @override
+  String get journeys_dna_weight_hide => 'Hide kg when sharing';
+
+  @override
+  String get journeys_dna_weight_skip => 'Skip';
+
+  @override
+  String get journeys_dna_ghost_body =>
+      'This private photo becomes your alignment frame on the following days.';
+
+  @override
+  String get journeys_dna_ghost_now => 'Take it now';
+
+  @override
+  String get journeys_dna_ghost_later => 'Maybe later.';
+
+  @override
+  String get journeys_dna_trophy_label => 'Trophy name';
+
+  @override
+  String get journeys_dna_trophy_hint => 'Trophy 7.5';
+
+  @override
+  String get journeys_dna_place_search => 'Search for a place...';
+
+  @override
+  String get journeys_dna_place_country => 'Vietnam';
+
+  @override
+  String get journeys_dna_place_dalat => 'Da Lat';
+
+  @override
+  String get journeys_dna_place_hoian => 'Hoi An';
+
+  @override
+  String get journeys_dna_place_phuquoc => 'Phu Quoc';
+
+  @override
+  String get journeys_dna_place_pine => 'Pine forest and mist';
+
+  @override
+  String get journeys_dna_dates_open => 'return date not set';
+
+  @override
+  String get journeys_dna_dates_prompt => 'Pick your departure and return days';
+
+  @override
+  String journeys_dna_dates_open_summary(String start) {
+    return '$start · return date not set';
+  }
+
+  @override
+  String journeys_dna_dates_range_summary(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String get journeys_dna_prev_month => 'Previous month';
+
+  @override
+  String get journeys_dna_next_month => 'Next month';
+
+  @override
+  String get journeys_dna_name_left => 'Your name';
+
+  @override
+  String get journeys_dna_name_right => 'Their name';
+
+  @override
+  String get journeys_dna_habit_label => 'Habit';
+
+  @override
+  String get journeys_dna_habit_hint => 'Read 10 pages';
+
+  @override
+  String get journeys_dna_reason_label => 'why.';
+
+  @override
+  String get journeys_dna_reason_hint => 'to sleep better';
+
+  @override
+  String get journeys_dna_forge_title => 'forging your DNA…';
+
+  @override
+  String get journeys_dna_forge_a11y => 'Creating your journey';
+
+  @override
+  String get journeys_dna_import_link => 'Import a past journey';
+
+  @override
+  String get journeys_home_introQuiet => 'Look back, a little at a time.';
+
+  @override
+  String get journeys_home_introSquad => 'how long did you study today.';
+
+  @override
+  String get journeys_home_introMemory => 'Where did the crew get lost today?';
+
+  @override
+  String get journeys_home_introCouple => 'What are you two cooking today?';
+
+  @override
+  String get journeys_home_offlineQuiet =>
+      'Saved on this phone · will sync later';
+
+  @override
+  String get journeys_home_offlineSquad =>
+      'WAITING TO SYNC · SAVED ON THIS PHONE';
+
+  @override
+  String get journeys_home_offlineMemory =>
+      'Saved on this phone. It sends itself once you are online.';
+
+  @override
+  String get journeys_home_readOnlyQuiet => 'Journey ended · view only';
+
+  @override
+  String get journeys_home_readOnlyFlexer => 'FINISHED · READ ONLY';
+
+  @override
+  String get journeys_home_readOnlyMinimal => 'ENDED · READ ONLY';
+
+  @override
+  String journeys_home_dayStreak(int day, int total, int streak) {
+    return 'Day $day/$total · streak $streak';
+  }
+
+  @override
+  String journeys_home_dayStreakOpen(int day, int streak) {
+    return 'Day $day · streak $streak';
+  }
+
+  @override
+  String journeys_home_monthStreak(int streak, String month) {
+    return '$month · $streak-DAY STREAK';
+  }
+
+  @override
+  String get journeys_home_holdReveal => 'Hold to reveal';
+
+  @override
+  String get journeys_home_viewing => 'Viewing';
+
+  @override
+  String get journeys_home_chartA11y => 'Progress line';
+
+  @override
+  String get journeys_home_msWeek => 'First week';
+
+  @override
+  String get journeys_home_msHalf => 'Halfway';
+
+  @override
+  String get journeys_home_msFinish => 'Finish line';
+
+  @override
+  String journeys_home_msDay(int day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String get journeys_home_actionSquad => 'Squad today';
+
+  @override
+  String get journeys_home_actionCard => 'Make a card';
+
+  @override
+  String journeys_home_attendance(int done, int total) {
+    return '$done/$total DAYS SHOT';
+  }
+
+  @override
+  String get journeys_home_retake => 'Take another photo today';
+
+  @override
+  String get journeys_home_timelineLabel => 'Timeline';
 }

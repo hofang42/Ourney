@@ -240,7 +240,13 @@ void main() {
       expect(taps, ['j', 'h', 'a', 'p', 'snap']);
 
       final pill = find.byKey(const ValueKey('dock-selection-pill'));
-      expect(tester.getSize(pill), const Size(68, 52));
+      expect(tester.getSize(pill).height, 52);
+      expect(tester.getSize(pill).width, inInclusiveRange(56, 68));
+      // Even the outermost tab keeps clear padding inside the dock border.
+      expect(
+        tester.getTopLeft(pill).dx - tester.getTopLeft(find.byType(UiDock)).dx,
+        greaterThanOrEqualTo(8),
+      );
       final x0 = tester.getCenter(pill).dx;
       set(() => active = 4);
       await tester.pump();

@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -10,6 +13,9 @@ import 'app/providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Pre-warm the Liquid Glass shaders (no first-frame flash on the dock). Not
+  // awaited: the camera must open fast, and the dock falls back to blur until ready.
+  unawaited(LiquidGlassWidgets.initialize(enablePerformanceMonitor: false));
 
   final config = AppConfig.fromEnvironment();
   // FR-A5: without SUPABASE_URL/SUPABASE_ANON_KEY run local-only and never

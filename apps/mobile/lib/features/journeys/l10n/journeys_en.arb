@@ -290,7 +290,13 @@
     }
   },
   "journeys_extraKm": "{km} km",
-  "@journeys_extraKm": {"placeholders": {"km": {"type": "String"}}},
+  "@journeys_extraKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_extraPace": "{pace} /km",
   "@journeys_extraPace": {
     "placeholders": {
@@ -350,5 +356,211 @@
       }
     }
   },
-  "journeys_memoryOffline": "OFFLINE · waiting to sync"
+  "journeys_memoryOffline": "OFFLINE · waiting to sync",
+  "journeys_dna_goal_title_weight": "your goal.",
+  "journeys_dna_weight_title": "current weight.",
+  "journeys_dna_ghost_title": "take a day-1 photo as your alignment frame.",
+  "journeys_dna_goal_title_english": "goal.",
+  "journeys_dna_minutes_title": "minutes per day.",
+  "journeys_dna_trophy_title": "name the trophy at the finish.",
+  "journeys_dna_sport_title": "which sport.",
+  "journeys_dna_measure_title": "measured in.",
+  "journeys_dna_hud_title": "HUD style.",
+  "journeys_dna_place_title": "where to.",
+  "journeys_dna_dates_title": "depart – return.",
+  "journeys_dna_film_title": "how many frames on the roll.",
+  "journeys_dna_ritual_title": "your ritual together.",
+  "journeys_dna_names_title": "your two names.",
+  "journeys_dna_side_title": "who shoots which half.",
+  "journeys_dna_habit_title": "your habit.",
+  "journeys_dna_c_goal_weight_lose": "Lose weight",
+  "journeys_dna_c_goal_weight_lose_hint": "lighter and healthier every day",
+  "journeys_dna_c_goal_weight_keep": "Stay in shape",
+  "journeys_dna_c_goal_weight_keep_hint": "keep your current rhythm",
+  "journeys_dna_c_goal_weight_shape": "Reshape",
+  "journeys_dna_c_goal_weight_shape_hint": "track a new version of you",
+  "journeys_dna_c_goal_english_ielts": "IELTS",
+  "journeys_dna_c_goal_english_ielts_hint": "reach your target band",
+  "journeys_dna_c_goal_english_talk": "Conversation",
+  "journeys_dna_c_goal_english_talk_hint": "speak more naturally every day",
+  "journeys_dna_c_goal_english_read": "Reading",
+  "journeys_dna_c_goal_english_read_hint": "finish your first whole book",
+  "journeys_dna_c_minutes_15": "15",
+  "journeys_dna_c_minutes_15_hint": "15 minutes a day",
+  "journeys_dna_c_minutes_30": "30",
+  "journeys_dna_c_minutes_30_hint": "30 minutes a day",
+  "journeys_dna_c_minutes_45": "45",
+  "journeys_dna_c_minutes_45_hint": "45 minutes a day",
+  "journeys_dna_c_minutes_60": "60",
+  "journeys_dna_c_minutes_60_hint": "60 minutes a day",
+  "journeys_dna_c_sport_run": "Run",
+  "journeys_dna_c_sport_run_hint": "30 days of running",
+  "journeys_dna_c_sport_gym": "Gym",
+  "journeys_dna_c_sport_gym_hint": "30 days of gym",
+  "journeys_dna_c_sport_pilates": "Pilates",
+  "journeys_dna_c_sport_pilates_hint": "30 days of pilates",
+  "journeys_dna_c_sport_yoga": "Yoga",
+  "journeys_dna_c_sport_yoga_hint": "30 days of yoga",
+  "journeys_dna_c_sport_other": "Other",
+  "journeys_dna_c_sport_other_hint": "30 days of something else",
+  "journeys_dna_c_measure_km": "km",
+  "journeys_dna_c_measure_km_hint": "log it in km",
+  "journeys_dna_c_measure_min": "minutes",
+  "journeys_dna_c_measure_min_hint": "log it in minutes",
+  "journeys_dna_c_measure_session": "sessions",
+  "journeys_dna_c_measure_session_hint": "log it per session",
+  "journeys_dna_c_hud_bold": "Bold HUD",
+  "journeys_dna_c_hud_bold_hint": "big numbers, high contrast",
+  "journeys_dna_c_hud_stamp": "Minimal stamp",
+  "journeys_dna_c_hud_stamp_hint": "neat as a postage stamp",
+  "journeys_dna_c_hud_strip": "Film strip",
+  "journeys_dna_c_hud_strip_hint": "moments one after another",
+  "journeys_dna_c_film_24": "24 frames",
+  "journeys_dna_c_film_24_hint": "every frame is considered",
+  "journeys_dna_c_film_36": "36 frames",
+  "journeys_dna_c_film_36_hint": "room for surprises",
+  "journeys_dna_c_ritual_cook": "Cooking",
+  "journeys_dna_c_ritual_cook_hint": "cook together",
+  "journeys_dna_c_ritual_save": "Saving",
+  "journeys_dna_c_ritual_save_hint": "save together",
+  "journeys_dna_c_ritual_ldr": "Long distance",
+  "journeys_dna_c_ritual_ldr_hint": "do long distance together",
+  "journeys_dna_c_ritual_custom": "Your own",
+  "journeys_dna_c_ritual_custom_hint": "make your own ritual",
+  "journeys_dna_c_side_left": "Me on the left",
+  "journeys_dna_c_side_right": "Me on the right",
+  "journeys_dna_step_of_q": "Question {n}/{total}",
+  "@journeys_dna_step_of_q": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dna_weight_unit": "kg",
+  "journeys_dna_weight_a11y": "Current weight",
+  "journeys_dna_weight_private": "Only you can see this",
+  "journeys_dna_weight_hide": "Hide kg when sharing",
+  "journeys_dna_weight_skip": "Skip",
+  "journeys_dna_ghost_body": "This private photo becomes your alignment frame on the following days.",
+  "journeys_dna_ghost_now": "Take it now",
+  "journeys_dna_ghost_later": "Maybe later.",
+  "journeys_dna_trophy_label": "Trophy name",
+  "journeys_dna_trophy_hint": "Trophy 7.5",
+  "journeys_dna_place_search": "Search for a place...",
+  "journeys_dna_place_country": "Vietnam",
+  "journeys_dna_place_dalat": "Da Lat",
+  "journeys_dna_place_hoian": "Hoi An",
+  "journeys_dna_place_phuquoc": "Phu Quoc",
+  "journeys_dna_place_pine": "Pine forest and mist",
+  "journeys_dna_dates_open": "return date not set",
+  "journeys_dna_dates_prompt": "Pick your departure and return days",
+  "journeys_dna_dates_open_summary": "{start} · return date not set",
+  "@journeys_dna_dates_open_summary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dna_dates_range_summary": "{start} – {end}",
+  "@journeys_dna_dates_range_summary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dna_prev_month": "Previous month",
+  "journeys_dna_next_month": "Next month",
+  "journeys_dna_name_left": "Your name",
+  "journeys_dna_name_right": "Their name",
+  "journeys_dna_habit_label": "Habit",
+  "journeys_dna_habit_hint": "Read 10 pages",
+  "journeys_dna_reason_label": "why.",
+  "journeys_dna_reason_hint": "to sleep better",
+  "journeys_dna_forge_title": "forging your DNA…",
+  "journeys_dna_forge_a11y": "Creating your journey",
+  "journeys_dna_import_link": "Import a past journey",
+  "journeys_home_introQuiet": "Look back, a little at a time.",
+  "journeys_home_introSquad": "how long did you study today.",
+  "journeys_home_introMemory": "Where did the crew get lost today?",
+  "journeys_home_introCouple": "What are you two cooking today?",
+  "journeys_home_offlineQuiet": "Saved on this phone · will sync later",
+  "journeys_home_offlineSquad": "WAITING TO SYNC · SAVED ON THIS PHONE",
+  "journeys_home_offlineMemory": "Saved on this phone. It sends itself once you are online.",
+  "journeys_home_readOnlyQuiet": "Journey ended · view only",
+  "journeys_home_readOnlyFlexer": "FINISHED · READ ONLY",
+  "journeys_home_readOnlyMinimal": "ENDED · READ ONLY",
+  "journeys_home_dayStreak": "Day {day}/{total} · streak {streak}",
+  "@journeys_home_dayStreak": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_dayStreakOpen": "Day {day} · streak {streak}",
+  "@journeys_home_dayStreakOpen": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_monthStreak": "{month} · {streak}-DAY STREAK",
+  "@journeys_home_monthStreak": {
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_holdReveal": "Hold to reveal",
+  "journeys_home_viewing": "Viewing",
+  "journeys_home_chartA11y": "Progress line",
+  "journeys_home_msWeek": "First week",
+  "journeys_home_msHalf": "Halfway",
+  "journeys_home_msFinish": "Finish line",
+  "journeys_home_msDay": "DAY {day}",
+  "@journeys_home_msDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_actionSquad": "Squad today",
+  "journeys_home_actionCard": "Make a card",
+  "journeys_home_attendance": "{done}/{total} DAYS SHOT",
+  "@journeys_home_attendance": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_retake": "Take another photo today",
+  "journeys_home_timelineLabel": "Timeline"
 }

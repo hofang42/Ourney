@@ -22,6 +22,9 @@ import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_errors.dart';
 import '../widgets/departure_ticket.dart';
 import 'create_widgets.dart';
+import 'dna_pages.dart';
+import 'dna_questions.dart';
+import 'dna_text.dart';
 
 /// Who the journey is with (V2 create step 3).
 enum CreateWho { solo, group, couple }
@@ -102,8 +105,17 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   final _metricUnit = TextEditingController();
   final _nameLeft = TextEditingController();
   final _nameRight = TextEditingController();
+  final _trophy = TextEditingController();
+  final _place = TextEditingController();
+  final _habit = TextEditingController();
+  final _reason = TextEditingController();
 
   int _step = 0;
+
+  /// Step-2 "DNA" question page; equal to the question count = the form.
+  int _dnaPage = 0;
+  final Map<String, Object> _dna = {};
+  bool _hideWeight = true;
   CreateTypeOption? _option;
   JourneyForm? _form;
   CreateWho _who = CreateWho.solo;
@@ -126,6 +138,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _metricUnit,
       _nameLeft,
       _nameRight,
+      _trophy,
+      _place,
+      _habit,
+      _reason,
     ]) {
       c.dispose();
     }
@@ -185,6 +201,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _metricName.text = form.metricName;
       _metricUnit.text = form.metricUnit;
       _start = null;
+      _dnaPage = 0;
+      _dna.clear();
+      _trophy.clear();
+      _place.clear();
+      _habit.clear();
+      _reason.clear();
       _attempted.clear();
     }
   }
@@ -244,9 +266,22 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     };
   }
 
+  List<DnaQuestion> get _questions {
+    final o = _option;
+    if (o == null) return const [];
+    return o.isCouple ? dnaCoupleQuestions : dnaQuestionsFor(o.templateId);
+  }
+
+  bool get _inDna => _step == 1 && _dnaPage < _questions.length;
+
   void _next() {
     if (_step == 0) {
       if (_option != null) setState(() => _step = 1);
+      return;
+    }
+    if (_inDna) {
+      if (!dnaAnswered(_questions[_dnaPage], _dna)) return;
+      _advanceDna();
       return;
     }
     if (!_valid(_step)) {
@@ -259,6 +294,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   void _back() {
     if (_step == 0) {
       context.pop();
+    } else if (_step == 1 && _questions.isNotEmpty && _dnaPage > 0) {
+      setState(() => _dnaPage -= 1);
     } else {
       setState(() => _step -= 1);
     }
@@ -365,6 +402,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           key: ValueKey(_step == _steps - 1 ? 'journey-create' : 'create-next'),
           label: _step == _steps - 1
               ? l10n.journeys_createButton
+              : _inDna && _questions[_dnaPage].kind == DnaKind.ghost
+              ? l10n.journeys_dna_ghost_now
               : l10n.journeys_createNext,
           loading: _busy,
           onPressed: _step == _steps - 1 ? _submit : _next,
@@ -381,27 +420,35 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         skinId: _skinId,
         variant: _variant,
         child: Builder(
-          builder: (context) => UiScaffold(
-            key: const ValueKey('journeys-create-flow'),
-            padTop: 0,
-            bottom: bottom,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _header(context),
-                const SizedBox(height: UiSpace.md),
-                KeyedSubtree(
-                  key: ValueKey('create-step-body-$_step'),
-                  child: switch (_step) {
-                    0 => _typeStep(context),
-                    1 => _detailStep(context, _form!),
-                    2 => _whoStep(context, _form!),
-                    3 => _rhythmStep(context, _form!),
-                    _ => _reviewStep(context, _form!),
-                  },
+          builder: (context) => Stack(
+            children: [
+              UiScaffold(
+                key: const ValueKey('journeys-create-flow'),
+                padTop: 0,
+                bottom: bottom,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _header(context),
+                    const SizedBox(height: UiSpace.md),
+                    KeyedSubtree(
+                      key: ValueKey('create-step-body-$_step'),
+                      child: switch (_step) {
+                        0 => _typeStep(context),
+                        1 =>
+                          _inDna
+                              ? _dnaStep(context, _questions[_dnaPage])
+                              : _detailStep(context, _form!),
+                        2 => _whoStep(context, _form!),
+                        3 => _rhythmStep(context, _form!),
+                        _ => _reviewStep(context, _form!),
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              if (_busy) const Positioned.fill(child: DnaForge()),
+            ],
           ),
         ),
       ),
@@ -517,6 +564,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
             l10n.journeys_pickTemplateTitle,
             l10n.journeys_createPickSubtitle,
           ),
+          UiButton.ghost(
+            key: const ValueKey('create-import-link'),
+            label: l10n.journeys_dna_import_link,
+            onPressed: () => context.push(AppRoutes.importJourney),
+          ),
           for (final o in _options)
             Padding(
               padding: const EdgeInsets.only(bottom: UiSpace.sm),
@@ -558,6 +610,149 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
             ),
         ],
       ),
+    );
+  }
+
+  // ---- Step 2: DNA questions (V2 `CreateStepTwo`) -------------------------
+
+  void _setDna(String key, Object value) => setState(() => _dna[key] = value);
+
+  void _advanceDna() {
+    final q = _questions[_dnaPage];
+    if (q.kind == DnaKind.weight) {
+      _dna.putIfAbsent('weight', () => dnaWeightDefault);
+    }
+    if (q.kind == DnaKind.ghost) _dna['ghostRequested'] = true;
+    setState(() => _dnaPage += 1);
+  }
+
+  void _applyDates(DnaDates d) {
+    _setDna('dates', d);
+    final today = _today(_form!);
+    _start = LocalDate(d.start.year, d.start.month, d.start.day);
+    if (_start!.isBefore(today)) _start = today;
+    final end = d.end;
+    if (end == null) return;
+    final n =
+        DateUtils.dateOnly(end).difference(DateUtils.dateOnly(d.start)).inDays +
+        1;
+    if (validateDurationDays(n) == null) {
+      _update((f) => f.durationDays = n);
+      _duration.text = '$n';
+    }
+  }
+
+  Widget _dnaStep(BuildContext context, DnaQuestion q) {
+    final ui = context.ui;
+    final l10n = JourneysL10n.of(context);
+    final locale = Localizations.localeOf(context).languageCode;
+    final Widget body = switch (q.kind) {
+      DnaKind.choice => DnaChoiceList(
+        question: q,
+        value: _dna[q.key] as String?,
+        onChanged: (v) => _setDna(q.key, v),
+      ),
+      DnaKind.weight => DnaWeightPicker(
+        weight: (_dna['weight'] as int?) ?? dnaWeightDefault,
+        hide: _hideWeight,
+        onWeight: (v) => _setDna('weight', v),
+        onHide: (v) => setState(() => _hideWeight = v),
+        onSkip: _advanceDna,
+      ),
+      DnaKind.ghost => DnaGhostPage(onLater: _advanceDna),
+      DnaKind.trophy => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: OurneyIcon(name: 'trophy', size: 76, color: ui.ink),
+          ),
+          const SizedBox(height: UiSpace.md),
+          UiTextField(
+            fieldKey: const ValueKey('dna-trophy'),
+            label: l10n.journeys_dna_trophy_label,
+            hint: l10n.journeys_dna_trophy_hint,
+            controller: _trophy,
+            inputFormatters: [LengthLimitingTextInputFormatter(dnaTrophyMax)],
+            helper: '${_trophy.text.length}/$dnaTrophyMax',
+            onChanged: (v) => _setDna('trophy', v),
+          ),
+        ],
+      ),
+      DnaKind.place => DnaPlacePicker(
+        controller: _place,
+        place: (_dna['place'] as String?) ?? '',
+        onChanged: (v) => _setDna('place', v),
+      ),
+      DnaKind.dates => DnaDateRange(
+        today: DateTime.now(),
+        value: _dna['dates'] as DnaDates?,
+        locale: locale,
+        onChanged: _applyDates,
+      ),
+      DnaKind.names => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiTextField(
+            fieldKey: const ValueKey('dna-name-left'),
+            label: l10n.journeys_dna_name_left,
+            hint: l10n.journeys_dna_name_left,
+            controller: _nameLeft,
+            inputFormatters: [LengthLimitingTextInputFormatter(dnaNameMax)],
+            onChanged: (v) => _setDna('nameLeft', v),
+          ),
+          const SizedBox(height: UiSpace.md),
+          UiTextField(
+            fieldKey: const ValueKey('dna-name-right'),
+            label: l10n.journeys_dna_name_right,
+            hint: l10n.journeys_dna_name_right,
+            controller: _nameRight,
+            inputFormatters: [LengthLimitingTextInputFormatter(dnaNameMax)],
+            onChanged: (v) => _setDna('nameRight', v),
+          ),
+        ],
+      ),
+      DnaKind.habit => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiTextField(
+            fieldKey: const ValueKey('dna-habit'),
+            label: l10n.journeys_dna_habit_label,
+            hint: l10n.journeys_dna_habit_hint,
+            controller: _habit,
+            inputFormatters: [LengthLimitingTextInputFormatter(dnaHabitMax)],
+            helper: '${_habit.text.length}/$dnaHabitMax',
+            onChanged: (v) => _setDna('habit', v),
+          ),
+          const SizedBox(height: UiSpace.md),
+          UiTextField(
+            fieldKey: const ValueKey('dna-reason'),
+            label: l10n.journeys_dna_reason_label,
+            hint: l10n.journeys_dna_reason_hint,
+            controller: _reason,
+            inputFormatters: [LengthLimitingTextInputFormatter(dnaReasonMax)],
+            helper: '${_reason.text.length}/$dnaReasonMax',
+            onChanged: (v) => _setDna('reason', v),
+          ),
+        ],
+      ),
+    };
+    final total = _questions.length;
+    return Column(
+      key: ValueKey('dna-page-${q.key}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (total > 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: UiSpace.xs),
+            child: Text(
+              l10n.journeys_dna_step_of_q(_dnaPage + 1, total),
+              key: const ValueKey('dna-question-count'),
+              style: UiText.fieldLabel(color: ui.inkMuted),
+            ),
+          ),
+        _heading(context, dnaText(l10n, q.titleId)),
+        body,
+      ],
     );
   }
 

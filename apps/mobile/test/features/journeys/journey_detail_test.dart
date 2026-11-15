@@ -63,19 +63,28 @@ Future<JourneysHarness> _pumpDetail(
 
 void main() {
   group('Journey detail (FR-B4/B5)', () {
-    testWidgets('stats: current/longest streak, % complete, day N/M', (
-      tester,
-    ) async {
+    testWidgets('home: day/streak line, milestones, actions', (tester) async {
       await _pumpDetail(tester);
       expect(_key('journey-detail'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel('Current streak: Streak of 3 days'),
-        findsOneWidget,
+      expect(find.text('Day 7/14 · streak 3'), findsOneWidget);
+      // Day 7 of 14: the first-week and finish cards; only week 1 reached.
+      expect(_key('journey-home-milestones'), findsOneWidget);
+      expect(_key('journey-milestone-7'), findsOneWidget);
+      expect(_key('journey-milestone-14'), findsOneWidget);
+      expect(_key('journey-home-card'), findsOneWidget);
+      // Solo journeys have no squad row; the V1 stat grid is gone.
+      expect(_key('journey-home-squad'), findsNothing);
+      expect(_key('stat-current'), findsNothing);
+    });
+
+    testWidgets('quiet home shows the missed-day chip from the Figma overlay', (
+      tester,
+    ) async {
+      await _pumpDetail(
+        tester,
+        journey: testJourney(templateId: TemplateId.weightLoss),
       );
-      expect(find.bySemanticsLabel('Longest: 3 days'), findsOneWidget);
-      // 5 of 14 days.
-      expect(find.bySemanticsLabel('Complete: 36%'), findsOneWidget);
-      expect(find.bySemanticsLabel('Progress: Day 7 of 14'), findsOneWidget);
+      expect(_key('missed-day-chip'), findsOneWidget);
     });
 
     testWidgets('journey chain: checked, missed, today, future', (
@@ -107,8 +116,9 @@ void main() {
         tester,
         journey: testJourney(templateId: TemplateId.custom, durationDays: null),
       );
-      expect(_key('stat-percent'), findsNothing);
-      expect(find.bySemanticsLabel('Progress: Day 7'), findsOneWidget);
+      // Custom = minimal skin: month + streak header, no "Day N/M".
+      expect(find.textContaining('STREAK'), findsOneWidget);
+      expect(find.textContaining('Day 7/'), findsNothing);
       // Start to today.
       expect(_allDays, findsNWidgets(7));
     });
@@ -175,7 +185,7 @@ void main() {
       tester,
     ) async {
       final h = await _pumpDetail(tester);
-      expect(_key('journey-read-only'), findsNothing);
+      expect(_key('journey-home-readonly'), findsNothing);
 
       await _tap(tester, _key('journey-more'));
       expect(_key('journey-action-archive'), findsNothing);
@@ -184,7 +194,7 @@ void main() {
       await _tap(tester, _key('journeys-confirm'));
 
       expect(h.journeys.calls, contains('end:j1'));
-      expect(_key('journey-read-only'), findsOneWidget);
+      expect(_key('journey-home-readonly'), findsOneWidget);
       expect(_key('journey-checkin'), findsNothing);
       expect(_key('journey-pref-blur'), findsNothing);
 
@@ -264,7 +274,7 @@ void main() {
       expect(_key('journey-share'), findsOneWidget);
       expect(_key('journey-checkin'), findsOneWidget);
       expect(_key('journey-timeline'), findsOneWidget);
-      await _tap(tester, _key('journey-open-group'));
+      await _tap(tester, _key('journey-home-squad'));
       expect(h.location, AppRoutes.groups);
     });
 

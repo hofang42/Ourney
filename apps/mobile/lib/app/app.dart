@@ -1,12 +1,15 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
+import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../ui/ui.dart';
 import 'locale_override.dart';
 import 'localization.dart';
+import 'overlays/reminder_banner.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart' show OurneyTextScaleClamp;
@@ -37,7 +40,7 @@ class OurneyApp extends ConsumerWidget {
       locale: locale,
       theme: OurneyTheme.build(Brightness.light, skin),
       darkTheme: OurneyTheme.build(Brightness.dark, skin),
-      themeMode: ThemeMode.system,
+      themeMode: ref.watch(themeModeProvider),
       themeAnimationDuration: reduceMotion
           ? OurneyDurations.reducedFade
           : OurneyDurations.personaTheme,
@@ -49,9 +52,14 @@ class OurneyApp extends ConsumerWidget {
       builder: (context, child) => ReminderLifecycleHook(
         onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
         child: OurneyTextScaleClamp(
-          child: _SplashGate(
-            returning: onboarded,
-            child: child ?? const SizedBox.shrink(),
+          // In-app reminder banner (V2 `ReminderNotification`): shown while
+          // `reminderBannerProvider` holds a value; a tap opens the camera.
+          child: ReminderBannerHost(
+            onOpenJourneyCamera: (_) => router.go(AppRoutes.capture),
+            child: _SplashGate(
+              returning: onboarded,
+              child: child ?? const SizedBox.shrink(),
+            ),
           ),
         ),
       ),

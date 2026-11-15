@@ -229,6 +229,138 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Sắp ra mắt'**
   String get placeholder_comingSoon;
+
+  /// Shown next to the app name on the in-app reminder banner.
+  ///
+  /// In vi, this message translates to:
+  /// **'bây giờ'**
+  String get reminderBanner_now;
+
+  /// Dismiss button label of the in-app reminder banner.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng'**
+  String get reminderBanner_close;
+
+  /// App name on the reminder banner.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney'**
+  String get reminderBanner_appName;
+
+  /// Daily reminder banner copy, quiet skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đến giờ của bạn rồi. Một tấm là đủ.'**
+  String get reminderBanner_daily_quiet;
+
+  /// Daily reminder banner copy, squad skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tới giờ điểm danh! Cả hội đang chờ.'**
+  String get reminderBanner_daily_squad;
+
+  /// Daily reminder banner copy, memory skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm một khung hình cho cuộn phim?'**
+  String get reminderBanner_daily_memory;
+
+  /// Daily reminder banner copy, couple skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hai đứa ơi, đến giờ rồi.'**
+  String get reminderBanner_daily_couple;
+
+  /// Daily reminder banner copy, flexer skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'ĐẾN GIỜ. CHẠY ĐI.'**
+  String get reminderBanner_daily_flexer;
+
+  /// Daily reminder banner copy, minimal skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}.'**
+  String reminderBanner_daily_minimal(int day);
+
+  /// Streak-at-risk reminder banner copy, quiet skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {streak} ngày còn đến {time}. Vẫn kịp.'**
+  String reminderBanner_streak_quiet(int streak, String time);
+
+  /// Streak-at-risk reminder banner copy, squad skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {streak} sắp đứt lúc {time}. Chụp ngay nào!'**
+  String reminderBanner_streak_squad(int streak, String time);
+
+  /// Streak-at-risk reminder banner copy, memory skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cuộn phim còn mở đến {time}.'**
+  String reminderBanner_streak_memory(String time);
+
+  /// Streak-at-risk reminder banner copy, couple skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {streak} ngày sắp đứt lúc {time}.'**
+  String reminderBanner_streak_couple(int streak, String time);
+
+  /// Streak-at-risk reminder banner copy, flexer skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHUỖI {streak}. CÒN ĐẾN {time}.'**
+  String reminderBanner_streak_flexer(int streak, String time);
+
+  /// Streak-at-risk reminder banner copy, minimal skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHUỖI {streak}. {time}.'**
+  String reminderBanner_streak_minimal(int streak, String time);
+
+  /// Missed-day chip, squad skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · LỠ'**
+  String missedDay_chipSquad(int day);
+
+  /// Missed-day chip, quiet skin.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · NGHỈ'**
+  String missedDay_chipQuiet(int day);
+
+  /// Sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày lỡ.'**
+  String get missedDay_titleSquad;
+
+  /// Sheet title.
+  ///
+  /// In vi, this message translates to:
+  /// **'ngày nghỉ.'**
+  String get missedDay_titleQuiet;
+
+  /// Sheet body.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lỡ một hôm thôi. Mai về lại đường nào!'**
+  String get missedDay_bodySquad;
+
+  /// Sheet body.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một ngày nghỉ không xóa hành trình.'**
+  String get missedDay_bodyQuiet;
+
+  /// Sheet button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã hiểu'**
+  String get missedDay_dismiss;
 }
 
 class _AppLocalizationsDelegate

@@ -305,4 +305,125 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_avatarColors => 'Choose an avatar color';
+
+  @override
+  String get profile_settings_title => 'settings.';
+
+  @override
+  String get profile_settings_back => 'Back';
+
+  @override
+  String get profile_settings_secAccount => 'account';
+
+  @override
+  String get profile_settings_editProfile => 'Edit profile';
+
+  @override
+  String get profile_settings_secReminders => 'reminders';
+
+  @override
+  String get profile_settings_remindersRow => 'Daily reminders';
+
+  @override
+  String get profile_settings_remindersSub =>
+      'Per-journey times and the streak-saver alert';
+
+  @override
+  String get profile_settings_secTheme => 'appearance';
+
+  @override
+  String get profile_settings_themeLight => 'Light';
+
+  @override
+  String get profile_settings_themeDark => 'Dark';
+
+  @override
+  String get profile_settings_themeSystem => 'System';
+
+  @override
+  String get profile_settings_themeLabel => 'Theme';
+
+  @override
+  String get profile_settings_language => 'Language';
+
+  @override
+  String get profile_settings_langVi => 'Việt';
+
+  @override
+  String get profile_settings_langEn => 'English';
+
+  @override
+  String get profile_settings_appIcon => 'App icon';
+
+  @override
+  String get profile_settings_appIconNote =>
+      'The home-screen icon switches in a later release; your choice is saved.';
+
+  @override
+  String get profile_settings_iconDefault => 'Default';
+
+  @override
+  String get profile_settings_iconQuiet => 'Weight loss';
+
+  @override
+  String get profile_settings_iconSquad => 'Squad';
+
+  @override
+  String get profile_settings_iconMemory => 'Memories';
+
+  @override
+  String get profile_settings_iconCouple => 'Couple';
+
+  @override
+  String get profile_settings_iconFlexer => 'Workout';
+
+  @override
+  String get profile_settings_iconMinimal => 'Minimal';
+
+  @override
+  String profile_settings_iconSemantic(String name) {
+    return 'App icon $name';
+  }
+
+  @override
+  String get profile_settings_secPrivacy => 'privacy';
+
+  @override
+  String get profile_settings_hideKg => 'Hide kg when sharing';
+
+  @override
+  String get profile_settings_blurPhotos => 'Blur photos when sharing';
+
+  @override
+  String get profile_settings_blocked => 'Blocked people';
+
+  @override
+  String get profile_settings_blockedSub => 'View and unblock';
+
+  @override
+  String get profile_settings_secInfo => 'info';
+
+  @override
+  String get profile_settings_eula => 'Terms of use (EULA)';
+
+  @override
+  String get profile_settings_privacyPolicy => 'Privacy policy';
+
+  @override
+  String get profile_settings_contact => 'Contact';
+
+  @override
+  String get profile_settings_version => 'Version';
+
+  @override
+  String get profile_settings_signOut => 'Sign out';
+
+  @override
+  String get profile_settings_delete => 'Delete account';
+
+  @override
+  String get profile_settingsEntry => 'Settings';
+
+  @override
+  String get profile_settingsEntrySub => 'Appearance, language, privacy, info';
 }

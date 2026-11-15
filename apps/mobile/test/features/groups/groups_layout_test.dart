@@ -47,7 +47,7 @@ void main() {
     testWidgets('$mode: squad tab', (tester) async {
       await pump(tester, '/groups');
       expect(tester.takeException(), isNull);
-      for (final key in ['groups-join', 'groups-create', 'group-card-g1']) {
+      for (final key in ['squad-join-submit', 'squad-today-open-g1']) {
         final size = tester.getSize(find.byKey(ValueKey(key)));
         expect(size.height, greaterThanOrEqualTo(48), reason: key);
         expect(size.width, greaterThanOrEqualTo(48), reason: key);

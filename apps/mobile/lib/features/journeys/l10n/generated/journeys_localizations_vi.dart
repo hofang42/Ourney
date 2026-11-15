@@ -757,4 +757,415 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_memoryOffline => 'NGOẠI TUYẾN · chờ đồng bộ';
+
+  @override
+  String get journeys_dna_goal_title_weight => 'mục tiêu của bạn.';
+
+  @override
+  String get journeys_dna_weight_title => 'cân nặng hiện tại.';
+
+  @override
+  String get journeys_dna_ghost_title => 'chụp ảnh ngày 1 làm khung căn dáng.';
+
+  @override
+  String get journeys_dna_goal_title_english => 'mục tiêu.';
+
+  @override
+  String get journeys_dna_minutes_title => 'mỗi ngày bao nhiêu phút.';
+
+  @override
+  String get journeys_dna_trophy_title => 'đặt tên chiếc cúp ở đích.';
+
+  @override
+  String get journeys_dna_sport_title => 'môn gì.';
+
+  @override
+  String get journeys_dna_measure_title => 'đo bằng gì.';
+
+  @override
+  String get journeys_dna_hud_title => 'kiểu HUD.';
+
+  @override
+  String get journeys_dna_place_title => 'đi đâu.';
+
+  @override
+  String get journeys_dna_dates_title => 'ngày đi – ngày về.';
+
+  @override
+  String get journeys_dna_film_title => 'cuộn phim mấy tấm.';
+
+  @override
+  String get journeys_dna_ritual_title => 'nghi thức của hai đứa.';
+
+  @override
+  String get journeys_dna_names_title => 'tên hai người.';
+
+  @override
+  String get journeys_dna_side_title => 'ai chụp nửa nào.';
+
+  @override
+  String get journeys_dna_habit_title => 'thói quen của bạn.';
+
+  @override
+  String get journeys_dna_c_goal_weight_lose => 'Giảm cân';
+
+  @override
+  String get journeys_dna_c_goal_weight_lose_hint =>
+      'nhẹ đi, khỏe hơn mỗi ngày';
+
+  @override
+  String get journeys_dna_c_goal_weight_keep => 'Giữ dáng';
+
+  @override
+  String get journeys_dna_c_goal_weight_keep_hint =>
+      'duy trì nhịp sống hiện tại';
+
+  @override
+  String get journeys_dna_c_goal_weight_shape => 'Thay đổi vóc dáng';
+
+  @override
+  String get journeys_dna_c_goal_weight_shape_hint =>
+      'theo dõi một phiên bản mới';
+
+  @override
+  String get journeys_dna_c_goal_english_ielts => 'IELTS';
+
+  @override
+  String get journeys_dna_c_goal_english_ielts_hint =>
+      'cùng nhau chạm band mục tiêu';
+
+  @override
+  String get journeys_dna_c_goal_english_talk => 'Giao tiếp';
+
+  @override
+  String get journeys_dna_c_goal_english_talk_hint =>
+      'nói tự nhiên hơn mỗi ngày';
+
+  @override
+  String get journeys_dna_c_goal_english_read => 'Đọc sách';
+
+  @override
+  String get journeys_dna_c_goal_english_read_hint =>
+      'đọc trọn cuốn sách đầu tiên';
+
+  @override
+  String get journeys_dna_c_minutes_15 => '15';
+
+  @override
+  String get journeys_dna_c_minutes_15_hint => '15 phút mỗi ngày';
+
+  @override
+  String get journeys_dna_c_minutes_30 => '30';
+
+  @override
+  String get journeys_dna_c_minutes_30_hint => '30 phút mỗi ngày';
+
+  @override
+  String get journeys_dna_c_minutes_45 => '45';
+
+  @override
+  String get journeys_dna_c_minutes_45_hint => '45 phút mỗi ngày';
+
+  @override
+  String get journeys_dna_c_minutes_60 => '60';
+
+  @override
+  String get journeys_dna_c_minutes_60_hint => '60 phút mỗi ngày';
+
+  @override
+  String get journeys_dna_c_sport_run => 'Chạy';
+
+  @override
+  String get journeys_dna_c_sport_run_hint => '30 ngày chạy';
+
+  @override
+  String get journeys_dna_c_sport_gym => 'Gym';
+
+  @override
+  String get journeys_dna_c_sport_gym_hint => '30 ngày gym';
+
+  @override
+  String get journeys_dna_c_sport_pilates => 'Pilates';
+
+  @override
+  String get journeys_dna_c_sport_pilates_hint => '30 ngày pilates';
+
+  @override
+  String get journeys_dna_c_sport_yoga => 'Yoga';
+
+  @override
+  String get journeys_dna_c_sport_yoga_hint => '30 ngày yoga';
+
+  @override
+  String get journeys_dna_c_sport_other => 'Khác';
+
+  @override
+  String get journeys_dna_c_sport_other_hint => '30 ngày khác';
+
+  @override
+  String get journeys_dna_c_measure_km => 'km';
+
+  @override
+  String get journeys_dna_c_measure_km_hint => 'ghi lại theo km';
+
+  @override
+  String get journeys_dna_c_measure_min => 'phút';
+
+  @override
+  String get journeys_dna_c_measure_min_hint => 'ghi lại theo phút';
+
+  @override
+  String get journeys_dna_c_measure_session => 'buổi';
+
+  @override
+  String get journeys_dna_c_measure_session_hint => 'ghi lại theo buổi';
+
+  @override
+  String get journeys_dna_c_hud_bold => 'HUD đậm';
+
+  @override
+  String get journeys_dna_c_hud_bold_hint => 'số lớn, tương phản mạnh';
+
+  @override
+  String get journeys_dna_c_hud_stamp => 'Tem tối giản';
+
+  @override
+  String get journeys_dna_c_hud_stamp_hint => 'gọn như một con tem';
+
+  @override
+  String get journeys_dna_c_hud_strip => 'Dải phim';
+
+  @override
+  String get journeys_dna_c_hud_strip_hint => 'khoảnh khắc nối tiếp nhau';
+
+  @override
+  String get journeys_dna_c_film_24 => '24 tấm';
+
+  @override
+  String get journeys_dna_c_film_24_hint => 'mỗi tấm đều được cân nhắc';
+
+  @override
+  String get journeys_dna_c_film_36 => '36 tấm';
+
+  @override
+  String get journeys_dna_c_film_36_hint => 'thêm chỗ cho điều bất ngờ';
+
+  @override
+  String get journeys_dna_c_ritual_cook => 'Nấu ăn';
+
+  @override
+  String get journeys_dna_c_ritual_cook_hint => 'cùng nhau nấu ăn';
+
+  @override
+  String get journeys_dna_c_ritual_save => 'Tiết kiệm';
+
+  @override
+  String get journeys_dna_c_ritual_save_hint => 'cùng nhau tiết kiệm';
+
+  @override
+  String get journeys_dna_c_ritual_ldr => 'Yêu xa';
+
+  @override
+  String get journeys_dna_c_ritual_ldr_hint => 'cùng nhau yêu xa';
+
+  @override
+  String get journeys_dna_c_ritual_custom => 'Tự đặt';
+
+  @override
+  String get journeys_dna_c_ritual_custom_hint => 'cùng nhau tự đặt';
+
+  @override
+  String get journeys_dna_c_side_left => 'Mình bên trái';
+
+  @override
+  String get journeys_dna_c_side_right => 'Mình bên phải';
+
+  @override
+  String journeys_dna_step_of_q(int n, int total) {
+    return 'Câu $n/$total';
+  }
+
+  @override
+  String get journeys_dna_weight_unit => 'kg';
+
+  @override
+  String get journeys_dna_weight_a11y => 'Cân nặng hiện tại';
+
+  @override
+  String get journeys_dna_weight_private => 'Chỉ mình bạn thấy';
+
+  @override
+  String get journeys_dna_weight_hide => 'Ẩn số kg khi chia sẻ';
+
+  @override
+  String get journeys_dna_weight_skip => 'Bỏ qua';
+
+  @override
+  String get journeys_dna_ghost_body =>
+      'Ảnh riêng tư này sẽ làm khung căn dáng ở những ngày tiếp theo.';
+
+  @override
+  String get journeys_dna_ghost_now => 'Chụp ngay';
+
+  @override
+  String get journeys_dna_ghost_later => 'Để sau vậy.';
+
+  @override
+  String get journeys_dna_trophy_label => 'Tên chiếc cúp';
+
+  @override
+  String get journeys_dna_trophy_hint => 'Cúp 7.5';
+
+  @override
+  String get journeys_dna_place_search => 'Tìm một nơi...';
+
+  @override
+  String get journeys_dna_place_country => 'Việt Nam';
+
+  @override
+  String get journeys_dna_place_dalat => 'Đà Lạt';
+
+  @override
+  String get journeys_dna_place_hoian => 'Hội An';
+
+  @override
+  String get journeys_dna_place_phuquoc => 'Phú Quốc';
+
+  @override
+  String get journeys_dna_place_pine => 'Rừng thông và sương';
+
+  @override
+  String get journeys_dna_dates_open => 'chưa hẹn ngày về';
+
+  @override
+  String get journeys_dna_dates_prompt => 'Chọn ngày đi và ngày về';
+
+  @override
+  String journeys_dna_dates_open_summary(String start) {
+    return '$start · chưa hẹn ngày về';
+  }
+
+  @override
+  String journeys_dna_dates_range_summary(String start, String end) {
+    return '$start – $end';
+  }
+
+  @override
+  String get journeys_dna_prev_month => 'Tháng trước';
+
+  @override
+  String get journeys_dna_next_month => 'Tháng sau';
+
+  @override
+  String get journeys_dna_name_left => 'Tên bạn';
+
+  @override
+  String get journeys_dna_name_right => 'Tên người ấy';
+
+  @override
+  String get journeys_dna_habit_label => 'Thói quen';
+
+  @override
+  String get journeys_dna_habit_hint => 'Đọc 10 trang';
+
+  @override
+  String get journeys_dna_reason_label => 'vì sao.';
+
+  @override
+  String get journeys_dna_reason_hint => 'để ngủ ngon hơn';
+
+  @override
+  String get journeys_dna_forge_title => 'đang đúc DNA…';
+
+  @override
+  String get journeys_dna_forge_a11y => 'Đang tạo hành trình của bạn';
+
+  @override
+  String get journeys_dna_import_link => 'Nhập hành trình đã qua';
+
+  @override
+  String get journeys_home_introQuiet => 'Nhìn lại từng chút một.';
+
+  @override
+  String get journeys_home_introSquad => 'hôm nay học bao lâu.';
+
+  @override
+  String get journeys_home_introMemory => 'Hôm nay cả bọn lạc ở đâu?';
+
+  @override
+  String get journeys_home_introCouple => 'Hôm nay hai đứa nấu gì?';
+
+  @override
+  String get journeys_home_offlineQuiet => 'Đang lưu trên máy · sẽ đồng bộ sau';
+
+  @override
+  String get journeys_home_offlineSquad => 'CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY';
+
+  @override
+  String get journeys_home_offlineMemory =>
+      'Đang lưu trên máy. Có mạng sẽ tự gửi.';
+
+  @override
+  String get journeys_home_readOnlyQuiet => 'Hành trình đã kết thúc · chỉ xem';
+
+  @override
+  String get journeys_home_readOnlyFlexer => 'ĐÃ VỀ ĐÍCH · CHỈ ĐỌC';
+
+  @override
+  String get journeys_home_readOnlyMinimal => 'ĐÃ KẾT THÚC · CHỈ ĐỌC';
+
+  @override
+  String journeys_home_dayStreak(int day, int total, int streak) {
+    return 'Ngày $day/$total · chuỗi $streak';
+  }
+
+  @override
+  String journeys_home_dayStreakOpen(int day, int streak) {
+    return 'Ngày $day · chuỗi $streak';
+  }
+
+  @override
+  String journeys_home_monthStreak(int streak, String month) {
+    return '$month · CHUỖI $streak NGÀY';
+  }
+
+  @override
+  String get journeys_home_holdReveal => 'Giữ để xem';
+
+  @override
+  String get journeys_home_viewing => 'Đang xem';
+
+  @override
+  String get journeys_home_chartA11y => 'Đường tiến trình';
+
+  @override
+  String get journeys_home_msWeek => 'Tuần đầu';
+
+  @override
+  String get journeys_home_msHalf => 'Nửa chặng';
+
+  @override
+  String get journeys_home_msFinish => 'Về đích';
+
+  @override
+  String journeys_home_msDay(int day) {
+    return 'NGÀY $day';
+  }
+
+  @override
+  String get journeys_home_actionSquad => 'Hội hôm nay';
+
+  @override
+  String get journeys_home_actionCard => 'Tạo thiệp';
+
+  @override
+  String journeys_home_attendance(int done, int total) {
+    return '$done/$total NGÀY ĐÃ CHỤP';
+  }
+
+  @override
+  String get journeys_home_retake => 'Chụp thêm ảnh hôm nay';
+
+  @override
+  String get journeys_home_timelineLabel => 'Dòng thời gian';
 }

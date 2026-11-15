@@ -7,6 +7,7 @@ import 'app_routes.dart';
 import 'app_shell.dart';
 import 'feature_routes.dart';
 import 'navigator_keys.dart';
+import 'overlays/not_found_screen.dart';
 import 'providers.dart';
 import 'redirect.dart';
 
@@ -27,6 +28,7 @@ GoRouter createRouter({
     navigatorKey: navigatorKey ?? rootNavigatorKey,
     initialLocation: initialLocation,
     observers: observers,
+    errorBuilder: (context, state) => const NotFoundRedirect(),
     refreshListenable: refreshListenable,
     redirect: redirect ?? (context, state) => normalizeDeepLink(state.uri),
     routes: [

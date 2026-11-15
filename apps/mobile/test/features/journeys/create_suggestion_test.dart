@@ -30,15 +30,18 @@ void main() {
     // Next is available straight away: the travel form is already seeded.
     await tester.tap(_key('create-next'));
     await tester.pumpAndSettle();
-    expect(
-      tester.widget<TextField>(_key('journey-title')).controller!.text,
-      templateFor(TemplateId.travel).titleEn,
-    );
+    // Travel starts with its DNA questions (place first).
+    expect(_key('dna-page-place'), findsOneWidget);
     // Going back and choosing another type reseeds the form.
     await tester.tap(_key('create-back'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(_key('template-custom'));
     await tester.tap(_key('template-custom'));
+    await tester.pumpAndSettle();
+    expect(_key('dna-page-habit'), findsOneWidget);
+    await tester.enterText(_key('dna-habit'), 'Read');
+    await tester.enterText(_key('dna-reason'), 'Sleep');
+    await tester.tap(_key('create-next'));
     await tester.pumpAndSettle();
     expect(
       tester.widget<TextField>(_key('journey-title')).controller!.text,

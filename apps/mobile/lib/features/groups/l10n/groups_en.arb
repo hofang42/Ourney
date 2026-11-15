@@ -102,5 +102,195 @@
   "groups_inviteRevoke": "Revoke",
   "groups_inviteRevoked": "Invitation revoked",
   "groups_inviteShareCode": "Share the code instead",
-  "groups_inviteNeedsHandle": "Enter a username first."
+  "groups_inviteNeedsHandle": "Enter a username first.",
+  "groups_codeLabel": "enter invite code",
+  "groups_codeHint": "K7Q2-M9XA",
+  "groups_pasteCode": "Paste code",
+  "groups_joinAction": "Join",
+  "groups_todayHeading": "today",
+  "groups_checkedInCount": "{done}/{total} checked in",
+  "@groups_checkedInCount": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_memberWaiting": "not yet",
+  "groups_openTodayOf": "Open today for {name}",
+  "@groups_openTodayOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_pendingInvitesHeading": "pending invites",
+  "groups_inviteLine": "{inviter} invited you to {title}",
+  "@groups_inviteLine": {
+    "placeholders": {
+      "inviter": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_inviteAccept": "Join",
+  "groups_inviteSkip": "Skip",
+  "groups_memberReport": "Report user",
+  "groups_memberBlock": "Block",
+  "groups_memberHandle": "@{username}",
+  "@groups_memberHandle": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_overflowMore": "+{count}",
+  "@groups_overflowMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_emptyCardTitle": "no squads yet.",
+  "groups_emptyCardBody": "Enter an invite code to join a group or start a group journey.",
+  "groups_wallAttendance": "{done}/{total} CHECKED IN",
+  "@groups_wallAttendance": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_wallUpdated": "Updated at {time}",
+  "@groups_wallUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_wallWaiting": "{name} · WAITING",
+  "@groups_wallWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_quietTitle": "Squad today.",
+  "groups_quietIntro": "Sorted by name, not by results.",
+  "groups_quietDone": "Snapped {time}",
+  "@groups_quietDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_quietNotYet": "Not snapped yet",
+  "groups_quietSteady": "steady {count}/7",
+  "@groups_quietSteady": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_quietShow": "Show photo",
+  "groups_quietHide": "Hide photo",
+  "groups_quietFooter": "Nobody gets compared. We only count steadiness.",
+  "groups_memoryTitle": "TODAY · {done}/{total} HAVE A FRAME",
+  "@groups_memoryTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_memoryFrame": "{name} · {time}",
+  "@groups_memoryFrame": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_memoryMissing": "{name} · NO FRAME YET",
+  "@groups_memoryMissing": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_coupleTitle": "Today, the two of you",
+  "groups_coupleDone": "{name} · snapped {time}",
+  "@groups_coupleDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_coupleWaiting": "{name} · waiting",
+  "@groups_coupleWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerTitle": "{done}/{total} DONE",
+  "@groups_flexerTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_flexerDone": "Done · {time}",
+  "@groups_flexerDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerPending": "NOT YET",
+  "groups_minimalTitle": "{done}/{total} DONE",
+  "@groups_minimalTitle": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_minimalPending": "NOT YET"
 }

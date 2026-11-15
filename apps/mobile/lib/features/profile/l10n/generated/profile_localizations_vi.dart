@@ -303,4 +303,126 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_avatarColors => 'Chọn màu ảnh đại diện';
+
+  @override
+  String get profile_settings_title => 'cài đặt.';
+
+  @override
+  String get profile_settings_back => 'Quay lại';
+
+  @override
+  String get profile_settings_secAccount => 'tài khoản';
+
+  @override
+  String get profile_settings_editProfile => 'Sửa hồ sơ';
+
+  @override
+  String get profile_settings_secReminders => 'nhắc nhở';
+
+  @override
+  String get profile_settings_remindersRow => 'Nhắc nhở hằng ngày';
+
+  @override
+  String get profile_settings_remindersSub =>
+      'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt';
+
+  @override
+  String get profile_settings_secTheme => 'giao diện';
+
+  @override
+  String get profile_settings_themeLight => 'Sáng';
+
+  @override
+  String get profile_settings_themeDark => 'Tối';
+
+  @override
+  String get profile_settings_themeSystem => 'Theo máy';
+
+  @override
+  String get profile_settings_themeLabel => 'Chế độ giao diện';
+
+  @override
+  String get profile_settings_language => 'Ngôn ngữ';
+
+  @override
+  String get profile_settings_langVi => 'Việt';
+
+  @override
+  String get profile_settings_langEn => 'English';
+
+  @override
+  String get profile_settings_appIcon => 'Icon ứng dụng';
+
+  @override
+  String get profile_settings_appIconNote =>
+      'Icon trên màn hình chính đổi được trong bản sau; lựa chọn của bạn được lưu.';
+
+  @override
+  String get profile_settings_iconDefault => 'Mặc định';
+
+  @override
+  String get profile_settings_iconQuiet => 'Giảm cân';
+
+  @override
+  String get profile_settings_iconSquad => 'Hội';
+
+  @override
+  String get profile_settings_iconMemory => 'Ký ức';
+
+  @override
+  String get profile_settings_iconCouple => 'Hai đứa';
+
+  @override
+  String get profile_settings_iconFlexer => 'Tập luyện';
+
+  @override
+  String get profile_settings_iconMinimal => 'Tối giản';
+
+  @override
+  String profile_settings_iconSemantic(String name) {
+    return 'Icon ứng dụng $name';
+  }
+
+  @override
+  String get profile_settings_secPrivacy => 'riêng tư';
+
+  @override
+  String get profile_settings_hideKg => 'Ẩn số kg khi chia sẻ';
+
+  @override
+  String get profile_settings_blurPhotos => 'Làm mờ ảnh khi chia sẻ';
+
+  @override
+  String get profile_settings_blocked => 'Người bị chặn';
+
+  @override
+  String get profile_settings_blockedSub => 'Xem và bỏ chặn';
+
+  @override
+  String get profile_settings_secInfo => 'thông tin';
+
+  @override
+  String get profile_settings_eula => 'Điều khoản sử dụng (EULA)';
+
+  @override
+  String get profile_settings_privacyPolicy => 'Chính sách riêng tư';
+
+  @override
+  String get profile_settings_contact => 'Liên hệ';
+
+  @override
+  String get profile_settings_version => 'Phiên bản';
+
+  @override
+  String get profile_settings_signOut => 'Đăng xuất';
+
+  @override
+  String get profile_settings_delete => 'Xoá tài khoản';
+
+  @override
+  String get profile_settingsEntry => 'Cài đặt';
+
+  @override
+  String get profile_settingsEntrySub =>
+      'Giao diện, ngôn ngữ, riêng tư, thông tin';
 }

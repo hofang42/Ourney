@@ -364,4 +364,161 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String get groups_inviteNeedsHandle => 'Hãy nhập tên người dùng.';
+
+  @override
+  String get groups_codeLabel => 'nhập mã mời';
+
+  @override
+  String get groups_codeHint => 'K7Q2-M9XA';
+
+  @override
+  String get groups_pasteCode => 'Dán mã';
+
+  @override
+  String get groups_joinAction => 'Tham gia';
+
+  @override
+  String get groups_todayHeading => 'hôm nay';
+
+  @override
+  String groups_checkedInCount(int done, int total) {
+    return '$done/$total đã check-in';
+  }
+
+  @override
+  String get groups_memberWaiting => 'chưa';
+
+  @override
+  String groups_openTodayOf(String name) {
+    return 'Mở hội hôm nay của $name';
+  }
+
+  @override
+  String get groups_pendingInvitesHeading => 'lời mời đang chờ';
+
+  @override
+  String groups_inviteLine(String inviter, String title) {
+    return '$inviter mời bạn vào $title';
+  }
+
+  @override
+  String get groups_inviteAccept => 'Tham gia';
+
+  @override
+  String get groups_inviteSkip => 'Bỏ qua';
+
+  @override
+  String get groups_memberReport => 'Báo cáo người dùng';
+
+  @override
+  String get groups_memberBlock => 'Chặn';
+
+  @override
+  String groups_memberHandle(String username) {
+    return '@$username';
+  }
+
+  @override
+  String groups_overflowMore(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get groups_emptyCardTitle => 'chưa có hội nào.';
+
+  @override
+  String get groups_emptyCardBody =>
+      'Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.';
+
+  @override
+  String groups_wallAttendance(int done, int total) {
+    return '$done/$total ĐÃ ĐIỂM DANH';
+  }
+
+  @override
+  String groups_wallUpdated(String time) {
+    return 'Cập nhật lúc $time';
+  }
+
+  @override
+  String groups_wallWaiting(String name) {
+    return '$name · ĐANG CHỜ';
+  }
+
+  @override
+  String get groups_quietTitle => 'Hội hôm nay.';
+
+  @override
+  String get groups_quietIntro => 'Xếp theo tên, không theo kết quả.';
+
+  @override
+  String groups_quietDone(String time) {
+    return 'Đã chụp $time';
+  }
+
+  @override
+  String get groups_quietNotYet => 'Chưa chụp';
+
+  @override
+  String groups_quietSteady(int count) {
+    return 'đều đặn $count/7';
+  }
+
+  @override
+  String get groups_quietShow => 'Xem ảnh';
+
+  @override
+  String get groups_quietHide => 'Ẩn ảnh';
+
+  @override
+  String get groups_quietFooter => 'Không ai bị so cân. Chỉ đếm sự đều đặn.';
+
+  @override
+  String groups_memoryTitle(int done, int total) {
+    return 'HÔM NAY · $done/$total ĐÃ CÓ KHUNG';
+  }
+
+  @override
+  String groups_memoryFrame(String name, String time) {
+    return '$name · $time';
+  }
+
+  @override
+  String groups_memoryMissing(String name) {
+    return '$name · CHƯA CÓ KHUNG';
+  }
+
+  @override
+  String get groups_coupleTitle => 'Hôm nay của hai đứa';
+
+  @override
+  String groups_coupleDone(String name, String time) {
+    return '$name · đã chụp $time';
+  }
+
+  @override
+  String groups_coupleWaiting(String name) {
+    return '$name · đang chờ';
+  }
+
+  @override
+  String groups_flexerTitle(int done, int total) {
+    return '$done/$total ĐÃ CHẠY';
+  }
+
+  @override
+  String groups_flexerDone(String time) {
+    return 'Đã chạy · $time';
+  }
+
+  @override
+  String get groups_flexerPending => 'CHƯA CHẠY';
+
+  @override
+  String groups_minimalTitle(int done, int total) {
+    return '$done/$total ĐÃ XONG';
+  }
+
+  @override
+  String get groups_minimalPending => 'CHƯA';
 }

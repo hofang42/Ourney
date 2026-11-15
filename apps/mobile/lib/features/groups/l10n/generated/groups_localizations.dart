@@ -715,6 +715,246 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'Hãy nhập tên người dùng.'**
   String get groups_inviteNeedsHandle;
+
+  /// No description provided for @groups_codeLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'nhập mã mời'**
+  String get groups_codeLabel;
+
+  /// No description provided for @groups_codeHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'K7Q2-M9XA'**
+  String get groups_codeHint;
+
+  /// No description provided for @groups_pasteCode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dán mã'**
+  String get groups_pasteCode;
+
+  /// No description provided for @groups_joinAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tham gia'**
+  String get groups_joinAction;
+
+  /// No description provided for @groups_todayHeading.
+  ///
+  /// In vi, this message translates to:
+  /// **'hôm nay'**
+  String get groups_todayHeading;
+
+  /// No description provided for @groups_checkedInCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} đã check-in'**
+  String groups_checkedInCount(int done, int total);
+
+  /// No description provided for @groups_memberWaiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa'**
+  String get groups_memberWaiting;
+
+  /// No description provided for @groups_openTodayOf.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở hội hôm nay của {name}'**
+  String groups_openTodayOf(String name);
+
+  /// No description provided for @groups_pendingInvitesHeading.
+  ///
+  /// In vi, this message translates to:
+  /// **'lời mời đang chờ'**
+  String get groups_pendingInvitesHeading;
+
+  /// No description provided for @groups_inviteLine.
+  ///
+  /// In vi, this message translates to:
+  /// **'{inviter} mời bạn vào {title}'**
+  String groups_inviteLine(String inviter, String title);
+
+  /// No description provided for @groups_inviteAccept.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tham gia'**
+  String get groups_inviteAccept;
+
+  /// No description provided for @groups_inviteSkip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ qua'**
+  String get groups_inviteSkip;
+
+  /// No description provided for @groups_memberReport.
+  ///
+  /// In vi, this message translates to:
+  /// **'Báo cáo người dùng'**
+  String get groups_memberReport;
+
+  /// No description provided for @groups_memberBlock.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chặn'**
+  String get groups_memberBlock;
+
+  /// No description provided for @groups_memberHandle.
+  ///
+  /// In vi, this message translates to:
+  /// **'@{username}'**
+  String groups_memberHandle(String username);
+
+  /// No description provided for @groups_overflowMore.
+  ///
+  /// In vi, this message translates to:
+  /// **'+{count}'**
+  String groups_overflowMore(int count);
+
+  /// No description provided for @groups_emptyCardTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa có hội nào.'**
+  String get groups_emptyCardTitle;
+
+  /// No description provided for @groups_emptyCardBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.'**
+  String get groups_emptyCardBody;
+
+  /// No description provided for @groups_wallAttendance.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ ĐIỂM DANH'**
+  String groups_wallAttendance(int done, int total);
+
+  /// No description provided for @groups_wallUpdated.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cập nhật lúc {time}'**
+  String groups_wallUpdated(String time);
+
+  /// No description provided for @groups_wallWaiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · ĐANG CHỜ'**
+  String groups_wallWaiting(String name);
+
+  /// No description provided for @groups_quietTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hội hôm nay.'**
+  String get groups_quietTitle;
+
+  /// No description provided for @groups_quietIntro.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xếp theo tên, không theo kết quả.'**
+  String get groups_quietIntro;
+
+  /// No description provided for @groups_quietDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chụp {time}'**
+  String groups_quietDone(String time);
+
+  /// No description provided for @groups_quietNotYet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa chụp'**
+  String get groups_quietNotYet;
+
+  /// No description provided for @groups_quietSteady.
+  ///
+  /// In vi, this message translates to:
+  /// **'đều đặn {count}/7'**
+  String groups_quietSteady(int count);
+
+  /// No description provided for @groups_quietShow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem ảnh'**
+  String get groups_quietShow;
+
+  /// No description provided for @groups_quietHide.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn ảnh'**
+  String get groups_quietHide;
+
+  /// No description provided for @groups_quietFooter.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không ai bị so cân. Chỉ đếm sự đều đặn.'**
+  String get groups_quietFooter;
+
+  /// No description provided for @groups_memoryTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'HÔM NAY · {done}/{total} ĐÃ CÓ KHUNG'**
+  String groups_memoryTitle(int done, int total);
+
+  /// No description provided for @groups_memoryFrame.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · {time}'**
+  String groups_memoryFrame(String name, String time);
+
+  /// No description provided for @groups_memoryMissing.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · CHƯA CÓ KHUNG'**
+  String groups_memoryMissing(String name);
+
+  /// No description provided for @groups_coupleTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay của hai đứa'**
+  String get groups_coupleTitle;
+
+  /// No description provided for @groups_coupleDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · đã chụp {time}'**
+  String groups_coupleDone(String name, String time);
+
+  /// No description provided for @groups_coupleWaiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · đang chờ'**
+  String groups_coupleWaiting(String name);
+
+  /// No description provided for @groups_flexerTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ CHẠY'**
+  String groups_flexerTitle(int done, int total);
+
+  /// No description provided for @groups_flexerDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chạy · {time}'**
+  String groups_flexerDone(String time);
+
+  /// No description provided for @groups_flexerPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHƯA CHẠY'**
+  String get groups_flexerPending;
+
+  /// No description provided for @groups_minimalTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ XONG'**
+  String groups_minimalTitle(int done, int total);
+
+  /// No description provided for @groups_minimalPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHƯA'**
+  String get groups_minimalPending;
 }
 
 class _GroupsL10nDelegate extends LocalizationsDelegate<GroupsL10n> {

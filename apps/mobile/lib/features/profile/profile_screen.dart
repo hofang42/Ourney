@@ -13,6 +13,7 @@ import '../../ui/ui.dart';
 import '../social/social.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
+import 'settings_screen.dart' show profileSettingsPath;
 import 'widgets/delete_account_dialog.dart';
 import 'widgets/profile_avatar.dart';
 import 'widgets/profile_stats_section.dart';
@@ -276,6 +277,13 @@ class _SettingsSection extends ConsumerWidget {
     return _GroupCard(
       child: Column(
         children: [
+          UiRow(
+            key: const ValueKey('profile-settings'),
+            leading: const OurneyIcon(name: 'settings', flat: true),
+            title: l10n.profile_settingsEntry,
+            subtitle: _sub(context, l10n.profile_settingsEntrySub),
+            onPressed: () => context.push(profileSettingsPath),
+          ),
           UiRow(
             key: const ValueKey('profile-reminders'),
             leading: const OurneyIcon(name: 'bell', flat: true),
