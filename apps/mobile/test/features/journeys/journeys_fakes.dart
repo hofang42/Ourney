@@ -181,6 +181,29 @@ class FakeJourneyRepository implements JourneyRepository {
     return j;
   }
 
+  final List<JourneyUpdate> updates = [];
+  Object? updateError;
+
+  @override
+  Future<Journey> update(String journeyId, JourneyUpdate update) async {
+    calls.add('update:$journeyId');
+    if (updateError case final e?) throw e;
+    updates.add(update);
+    _replace(
+      journeyId,
+      (j) => j.copyWith(
+        title: update.title,
+        layout: update.layout,
+        cover: update.cover,
+        color: update.color,
+        reminderTime: update.reminderTime,
+        dna: update.dna,
+        clearLayout: update.clear.contains('layout'),
+      ),
+    );
+    return journeys.firstWhere((j) => j.id == journeyId);
+  }
+
   @override
   Future<void> end(String journeyId) async {
     calls.add('end:$journeyId');
@@ -232,22 +255,8 @@ class FakeJourneyRepository implements JourneyRepository {
     ));
   }
 
-  static Journey _copy(Journey j, JourneyStatus status) => Journey(
-    id: j.id,
-    ownerId: j.ownerId,
-    kind: j.kind,
-    templateId: j.templateId,
-    title: j.title,
-    emoji: j.emoji,
-    startDate: j.startDate,
-    durationDays: j.durationDays,
-    timezone: j.timezone,
-    visibility: j.visibility,
-    status: status,
-    metricName: j.metricName,
-    metricUnit: j.metricUnit,
-    hideMetricDefault: j.hideMetricDefault,
-  );
+  static Journey _copy(Journey j, JourneyStatus status) =>
+      j.copyWith(status: status);
 }
 
 class FakeCheckInRepository implements CheckInRepository {

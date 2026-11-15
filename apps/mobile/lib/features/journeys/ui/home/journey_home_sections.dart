@@ -106,12 +106,20 @@ class JourneyHomeMilestones extends StatelessWidget {
 
 /// "Hội hôm nay" (groups only) and "Tạo thiệp" (`quiet-home-actions`).
 class JourneyHomeActions extends StatelessWidget {
-  const JourneyHomeActions({required this.onShare, this.onSquad, super.key});
+  const JourneyHomeActions({
+    required this.onShare,
+    this.onSquad,
+    this.onWrapped,
+    super.key,
+  });
 
   final VoidCallback onShare;
 
   /// Null for solo journeys (no squad row, as in Figma `journey.shared`).
   final VoidCallback? onSquad;
+
+  /// Ended journeys: opens the finish story ("Xem tổng kết").
+  final VoidCallback? onWrapped;
 
   @override
   Widget build(BuildContext context) {
@@ -120,6 +128,15 @@ class JourneyHomeActions extends StatelessWidget {
       key: const ValueKey('journey-home-actions'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (onWrapped != null) ...[
+          UiButton(
+            key: const ValueKey('journey-home-wrapped'),
+            glyph: const OurneyIcon(name: 'trophy', size: 19, flat: true),
+            label: l10n.journeys_home_viewWrapped,
+            onPressed: onWrapped,
+          ),
+          const SizedBox(height: UiSpace.sm),
+        ],
         if (onSquad != null) ...[
           UiButton.secondary(
             key: const ValueKey('journey-home-squad'),

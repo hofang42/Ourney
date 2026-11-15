@@ -127,7 +127,7 @@
   "journeys_daysUnit": "days",
   "journeys_dateRange": "{start} — {end}",
   "journeys_sinceDate": "Since {start}",
-  "journeys_addMore": "Add more",
+  "journeys_addMore": "Take another photo today",
   "journeys_statCurrentShort": "Current",
   "journeys_sharedSection": "Shared with me",
   "journeys_retell": "Retell a past journey",
@@ -562,5 +562,456 @@
     }
   },
   "journeys_home_retake": "Take another photo today",
-  "journeys_home_timelineLabel": "Timeline"
+  "journeys_home_timelineLabel": "Timeline",
+  "journeys_edit_title": "update journey.",
+  "journeys_edit_save": "Save",
+  "journeys_edit_name": "Name",
+  "journeys_edit_cover": "Cover",
+  "journeys_edit_coverOption": "Cover {n}",
+  "@journeys_edit_coverOption": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_layout": "Layout",
+  "journeys_edit_layoutNote": "Some layouts need more data, so they are hidden.",
+  "journeys_edit_layoutInUse": "In use",
+  "journeys_edit_layoutPreviewLabel": "Preview the {name} layout",
+  "@journeys_edit_layoutPreviewLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_edit_previewTag": "PREVIEW",
+  "journeys_edit_hudPreview": "Camera HUD",
+  "journeys_edit_dayOf": "DAY {day}/{total}",
+  "@journeys_edit_dayOf": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_dayOpen": "DAY {day}",
+  "@journeys_edit_dayOpen": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_useLayout": "Use this layout",
+  "journeys_edit_cancel": "Not now",
+  "journeys_edit_layoutApplied": "Layout changed for this journey.",
+  "journeys_edit_layoutOwnerOnly": "The group owner picks the layout for everyone.",
+  "journeys_edit_color": "Colour",
+  "journeys_edit_trophy": "Trophy name",
+  "journeys_edit_film": "Film roll",
+  "journeys_edit_filmReadonly": "{n} · view only",
+  "@journeys_edit_filmReadonly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_couple": "The two of us",
+  "journeys_edit_hud": "HUD style",
+  "journeys_edit_hudBold": "Bold",
+  "journeys_edit_hudStamp": "Minimal stamp",
+  "journeys_edit_hudStrip": "Film strip",
+  "journeys_edit_reminder": "Reminder time",
+  "journeys_edit_reminderHour": "Hour",
+  "journeys_edit_reminderMinute": "Minute",
+  "journeys_edit_visibility": "Who can view",
+  "journeys_edit_visPrivate": "Only me",
+  "journeys_edit_visLink": "View link (revocable)",
+  "journeys_edit_visQuietNote": "The view page always hides kg and blurs photos by default.",
+  "journeys_edit_membersOnly": "Members only",
+  "journeys_edit_membersOnlyHint": "group journeys have no public link",
+  "journeys_edit_quietLock": "Private",
+  "journeys_edit_endTitle": "End this journey?",
+  "journeys_edit_endBody": "You can still look back, but not add photos.",
+  "journeys_edit_endConfirm": "End",
+  "journeys_edit_saved": "Saved.",
+  "journeys_edit_ownerOnly": "Only the journey owner can edit.",
+  "journeys_edit_menu": "Edit journey",
+  "journeys_wrapped_title": "Journey complete",
+  "journeys_wrapped_close": "Close",
+  "journeys_wrapped_step": "Step {n}",
+  "@journeys_wrapped_step": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_moments": "{moments} moments over {days} days",
+  "@journeys_wrapped_moments": {
+    "placeholders": {
+      "moments": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_streak": "{n}-day streak",
+  "@journeys_wrapped_streak": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_quietEnd": "You made it.",
+  "journeys_wrapped_checkIns": "{n} check-ins",
+  "@journeys_wrapped_checkIns": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_squadEnd": "Finished, everyone!",
+  "journeys_wrapped_frames": "{n} frames",
+  "@journeys_wrapped_frames": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_daysTogether": "{n} days together",
+  "@journeys_wrapped_daysTogether": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_coupleFallback": "The moment we will remember",
+  "journeys_wrapped_km": "{km} KM",
+  "@journeys_wrapped_km": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_pace": "PACE {pace}",
+  "@journeys_wrapped_pace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_flexStreak": "STREAK {n}.",
+  "@journeys_wrapped_flexStreak": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_minimalLine": "{done}/{total} DAYS · {name}",
+  "@journeys_wrapped_minimalLine": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_memoryEnd": "The roll is finished. Time to print it.",
+  "journeys_wrapped_sumQuiet": "DAY 01 vs DAY {total}",
+  "@journeys_wrapped_sumQuiet": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sumSquad": "{done}/{total} FINISHED",
+  "@journeys_wrapped_sumSquad": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sumMemory": "{total} DAYS · {name}",
+  "@journeys_wrapped_sumMemory": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sumCouple": "{total} DAYS TOGETHER · {moments} MOMENTS",
+  "@journeys_wrapped_sumCouple": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "moments": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sumFlexer": "{total} DAYS · {km} KM",
+  "@journeys_wrapped_sumFlexer": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sumMinimal": "{done}/{total} DAYS · {pct}% CONSISTENT",
+  "@journeys_wrapped_sumMinimal": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_hideKg": "Hide kg",
+  "journeys_wrapped_blur": "Blur photos",
+  "journeys_wrapped_on": "On",
+  "journeys_wrapped_off": "Off",
+  "journeys_wrapped_ctaPoster": "Share the trip poster",
+  "journeys_wrapped_ctaStory": "Share our story",
+  "journeys_wrapped_ctaFlexer": "Share to Story",
+  "journeys_wrapped_ctaMinimal": "Export card",
+  "journeys_wrapped_ctaCard": "Make a card",
+  "journeys_wrapped_share": "Share",
+  "journeys_wrapped_save": "Save image",
+  "journeys_wrapped_sheetTitle": "share the card.",
+  "journeys_wrapped_hideBrand": "Hide the ourney wordmark",
+  "journeys_wrapped_messages": "Messages",
+  "journeys_wrapped_otherApps": "Other apps",
+  "journeys_wrapped_open": "See the finished journey",
+  "journeys_wrapped_menu": "Finish story",
+  "journeys_home_squadChip": "{title} · {days} DAYS",
+  "@journeys_home_squadChip": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_squadToday": "{done}/{total} TODAY",
+  "@journeys_home_squadToday": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_trophyDefault": "TROPHY",
+  "journeys_home_trophyDay": "DAY {day}",
+  "@journeys_home_trophyDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_filmRoll": "FILM ROLL {frames}/{total}",
+  "@journeys_home_filmRoll": {
+    "placeholders": {
+      "frames": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_rollNote": "Roll of {total} used · open a new roll",
+  "@journeys_home_rollNote": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_coupleLine": "{total} DAYS {ritual}",
+  "@journeys_home_coupleLine": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "ritual": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_ritualCook": "COOKING FOR EACH OTHER",
+  "journeys_home_ritualSave": "SAVING TOGETHER",
+  "journeys_home_ritualLdr": "CLOSE FROM FAR",
+  "journeys_home_ritualOther": "TOGETHER",
+  "journeys_home_pairWaiting": "waiting for {name}",
+  "@journeys_home_pairWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_pairBoth": "both shot today",
+  "journeys_home_pairNeither": "nobody has shot today yet",
+  "journeys_home_flexSummary": "{km} KM TOTAL · {pace} /KM AVG PACE",
+  "@journeys_home_flexSummary": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_flexKmOnly": "{km} KM TOTAL",
+  "@journeys_home_flexKmOnly": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_flexRan": "{done}/{total} RAN",
+  "@journeys_home_flexRan": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_minimalMonth": "{month} · STREAK {streak} DAYS",
+  "@journeys_home_minimalMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_minimalDone": "{done}/{total} DONE",
+  "@journeys_home_minimalDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_viewWrapped": "See the wrap-up",
+  "journeys_addMoreTag": "Add more",
+  "journeys_hubTitle": "journeys.",
+  "journeys_hubGreeting": "hi {name}.",
+  "@journeys_hubGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_hubGreetingNoName": "hi there.",
+  "journeys_hubOffline": "saved on this phone, will send when you are online",
+  "journeys_hubResumeTitle": "Continue creating a journey",
+  "journeys_hubResumeStep": "step {n}/5",
+  "@journeys_hubResumeStep": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_hubSection": "your journeys.",
+  "journeys_hubRunning": "{n} running",
+  "@journeys_hubRunning": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_hubNewTitle": "new journey.",
+  "journeys_hubNewHint": "pick a world to start",
+  "journeys_hubEmptyTitle": "no journeys yet.",
+  "journeys_hubEmptyBody": "one photo a day keeps the whole road.",
+  "journeys_hubErrorTitle": "could not load. try again?",
+  "journeys_hubLoading": "Loading",
+  "journeys_createDeckCard": "Card {n} of {total}, {name}",
+  "@journeys_createDeckCard": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_createDeckChosen": "Chosen",
+  "journeys_createDeckPrev": "Previous card",
+  "journeys_createDeckNext": "Next card",
+  "journeys_createDeckCounter": "{n}/{total}",
+  "@journeys_createDeckCounter": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_createDeckChoose": "Choose this type"
 }

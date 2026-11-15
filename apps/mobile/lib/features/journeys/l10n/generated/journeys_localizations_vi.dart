@@ -453,7 +453,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_addMore => 'Thêm ảnh';
+  String get journeys_addMore => 'Chụp thêm ảnh hôm nay';
 
   @override
   String get journeys_statCurrentShort => 'Hiện tại';
@@ -482,7 +482,7 @@ class JourneysL10nVi extends JourneysL10n {
       'Mỗi ngày một tấm ảnh để giữ lại hành trình. Bắt đầu với điều bạn quan tâm.';
 
   @override
-  String get journeys_dayZeroStart => 'Bắt đầu hành trình đầu tiên';
+  String get journeys_dayZeroStart => 'Tạo hành trình đầu tiên';
 
   @override
   String journeys_greetingHi(String name) {
@@ -1168,4 +1168,452 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_home_timelineLabel => 'Dòng thời gian';
+
+  @override
+  String get journeys_edit_title => 'cập nhật hành trình.';
+
+  @override
+  String get journeys_edit_save => 'Lưu';
+
+  @override
+  String get journeys_edit_name => 'Tên';
+
+  @override
+  String get journeys_edit_cover => 'Bìa';
+
+  @override
+  String journeys_edit_coverOption(int n) {
+    return 'Bìa $n';
+  }
+
+  @override
+  String get journeys_edit_layout => 'Giao diện';
+
+  @override
+  String get journeys_edit_layoutNote =>
+      'Một số giao diện cần thêm dữ liệu nên không hiện.';
+
+  @override
+  String get journeys_edit_layoutInUse => 'Đang dùng';
+
+  @override
+  String journeys_edit_layoutPreviewLabel(String name) {
+    return 'Xem trước giao diện $name';
+  }
+
+  @override
+  String get journeys_edit_previewTag => 'XEM TRƯỚC';
+
+  @override
+  String get journeys_edit_hudPreview => 'HUD máy ảnh';
+
+  @override
+  String journeys_edit_dayOf(int day, int total) {
+    return 'NGÀY $day/$total';
+  }
+
+  @override
+  String journeys_edit_dayOpen(int day) {
+    return 'NGÀY $day';
+  }
+
+  @override
+  String get journeys_edit_useLayout => 'Dùng giao diện này';
+
+  @override
+  String get journeys_edit_cancel => 'Thôi';
+
+  @override
+  String get journeys_edit_layoutApplied => 'Đã đổi giao diện cho hành trình.';
+
+  @override
+  String get journeys_edit_layoutOwnerOnly =>
+      'Chủ nhóm chọn giao diện cho cả hội.';
+
+  @override
+  String get journeys_edit_color => 'Màu';
+
+  @override
+  String get journeys_edit_trophy => 'Tên chiếc cúp';
+
+  @override
+  String get journeys_edit_film => 'Cuộn phim';
+
+  @override
+  String journeys_edit_filmReadonly(int n) {
+    return '$n · chỉ xem';
+  }
+
+  @override
+  String get journeys_edit_couple => 'Hai đứa mình';
+
+  @override
+  String get journeys_edit_hud => 'Kiểu HUD';
+
+  @override
+  String get journeys_edit_hudBold => 'Đậm';
+
+  @override
+  String get journeys_edit_hudStamp => 'Dấu tối giản';
+
+  @override
+  String get journeys_edit_hudStrip => 'Dải phim';
+
+  @override
+  String get journeys_edit_reminder => 'Giờ nhắc';
+
+  @override
+  String get journeys_edit_reminderHour => 'Giờ';
+
+  @override
+  String get journeys_edit_reminderMinute => 'Phút';
+
+  @override
+  String get journeys_edit_visibility => 'Ai được xem';
+
+  @override
+  String get journeys_edit_visPrivate => 'Chỉ mình tôi';
+
+  @override
+  String get journeys_edit_visLink => 'Có link xem (thu hồi được)';
+
+  @override
+  String get journeys_edit_visQuietNote =>
+      'Trang xem luôn ẩn số kg và làm mờ ảnh theo mặc định.';
+
+  @override
+  String get journeys_edit_membersOnly => 'Chỉ thành viên';
+
+  @override
+  String get journeys_edit_membersOnlyHint =>
+      'hành trình nhóm không có link công khai';
+
+  @override
+  String get journeys_edit_quietLock => 'Riêng tư';
+
+  @override
+  String get journeys_edit_endTitle => 'Kết thúc hành trình?';
+
+  @override
+  String get journeys_edit_endBody =>
+      'Bạn vẫn xem lại được, nhưng không chụp thêm.';
+
+  @override
+  String get journeys_edit_endConfirm => 'Kết thúc';
+
+  @override
+  String get journeys_edit_saved => 'Đã lưu.';
+
+  @override
+  String get journeys_edit_ownerOnly => 'Chỉ chủ hành trình mới sửa được.';
+
+  @override
+  String get journeys_edit_menu => 'Sửa hành trình';
+
+  @override
+  String get journeys_wrapped_title => 'Hành trình đã về đích';
+
+  @override
+  String get journeys_wrapped_close => 'Đóng';
+
+  @override
+  String journeys_wrapped_step(int n) {
+    return 'Bước $n';
+  }
+
+  @override
+  String journeys_wrapped_moments(int moments, int days) {
+    return '$moments khoảnh khắc trong $days ngày';
+  }
+
+  @override
+  String journeys_wrapped_streak(int n) {
+    return 'Chuỗi $n ngày';
+  }
+
+  @override
+  String get journeys_wrapped_quietEnd => 'Bạn đã về đích.';
+
+  @override
+  String journeys_wrapped_checkIns(int n) {
+    return '$n lần điểm danh';
+  }
+
+  @override
+  String get journeys_wrapped_squadEnd => 'Về đích rồi, cả hội!';
+
+  @override
+  String journeys_wrapped_frames(int n) {
+    return '$n khung hình';
+  }
+
+  @override
+  String journeys_wrapped_daysTogether(int n) {
+    return '$n ngày bên nhau';
+  }
+
+  @override
+  String get journeys_wrapped_coupleFallback => 'Khoảnh khắc đáng nhớ nhất';
+
+  @override
+  String journeys_wrapped_km(String km) {
+    return '$km KM';
+  }
+
+  @override
+  String journeys_wrapped_pace(String pace) {
+    return 'NHỊP ĐỘ $pace';
+  }
+
+  @override
+  String journeys_wrapped_flexStreak(int n) {
+    return 'CHUỖI $n.';
+  }
+
+  @override
+  String journeys_wrapped_minimalLine(int done, int total, String name) {
+    return '$done/$total NGÀY · $name';
+  }
+
+  @override
+  String get journeys_wrapped_memoryEnd => 'Cuộn phim đã hết. Mang đi in thôi.';
+
+  @override
+  String journeys_wrapped_sumQuiet(int total) {
+    return 'NGÀY 01 vs NGÀY $total';
+  }
+
+  @override
+  String journeys_wrapped_sumSquad(int done, int total) {
+    return '$done/$total ĐÃ VỀ ĐÍCH';
+  }
+
+  @override
+  String journeys_wrapped_sumMemory(int total, String name) {
+    return '$total NGÀY · $name';
+  }
+
+  @override
+  String journeys_wrapped_sumCouple(int total, int moments) {
+    return '$total NGÀY BÊN NHAU · $moments KHOẢNH KHẮC';
+  }
+
+  @override
+  String journeys_wrapped_sumFlexer(int total, String km) {
+    return '$total NGÀY · $km KM';
+  }
+
+  @override
+  String journeys_wrapped_sumMinimal(int done, int total, int pct) {
+    return '$done/$total NGÀY · $pct% ĐỀU ĐẶN';
+  }
+
+  @override
+  String get journeys_wrapped_hideKg => 'Ẩn số kg';
+
+  @override
+  String get journeys_wrapped_blur => 'Làm mờ ảnh';
+
+  @override
+  String get journeys_wrapped_on => 'Bật';
+
+  @override
+  String get journeys_wrapped_off => 'Tắt';
+
+  @override
+  String get journeys_wrapped_ctaPoster => 'Chia sẻ poster chuyến đi';
+
+  @override
+  String get journeys_wrapped_ctaStory => 'Chia sẻ câu chuyện';
+
+  @override
+  String get journeys_wrapped_ctaFlexer => 'Chia sẻ lên Story';
+
+  @override
+  String get journeys_wrapped_ctaMinimal => 'Xuất thẻ';
+
+  @override
+  String get journeys_wrapped_ctaCard => 'Tạo thiệp';
+
+  @override
+  String get journeys_wrapped_share => 'Chia sẻ';
+
+  @override
+  String get journeys_wrapped_save => 'Lưu ảnh';
+
+  @override
+  String get journeys_wrapped_sheetTitle => 'chia sẻ tấm thiệp.';
+
+  @override
+  String get journeys_wrapped_hideBrand => 'Ẩn chữ ourney';
+
+  @override
+  String get journeys_wrapped_messages => 'Tin nhắn';
+
+  @override
+  String get journeys_wrapped_otherApps => 'Ứng dụng khác';
+
+  @override
+  String get journeys_wrapped_open => 'Xem hành trình đã về đích';
+
+  @override
+  String get journeys_wrapped_menu => 'Câu chuyện về đích';
+
+  @override
+  String journeys_home_squadChip(String title, int days) {
+    return '$title · $days NGÀY';
+  }
+
+  @override
+  String journeys_home_squadToday(int done, int total) {
+    return '$done/$total HÔM NAY';
+  }
+
+  @override
+  String get journeys_home_trophyDefault => 'CÚP';
+
+  @override
+  String journeys_home_trophyDay(int day) {
+    return 'NGÀY $day';
+  }
+
+  @override
+  String journeys_home_filmRoll(int frames, int total) {
+    return 'CUỘN PHIM $frames/$total';
+  }
+
+  @override
+  String journeys_home_rollNote(int total) {
+    return 'Hết cuộn $total tấm · mở cuộn mới';
+  }
+
+  @override
+  String journeys_home_coupleLine(int total, String ritual) {
+    return '$total NGÀY $ritual';
+  }
+
+  @override
+  String get journeys_home_ritualCook => 'NẤU CHO NHAU';
+
+  @override
+  String get journeys_home_ritualSave => 'TIẾT KIỆM CÙNG NHAU';
+
+  @override
+  String get journeys_home_ritualLdr => 'XA MÀ GẦN';
+
+  @override
+  String get journeys_home_ritualOther => 'BÊN NHAU';
+
+  @override
+  String journeys_home_pairWaiting(String name) {
+    return 'đang chờ $name';
+  }
+
+  @override
+  String get journeys_home_pairBoth => 'cả hai đã chụp hôm nay';
+
+  @override
+  String get journeys_home_pairNeither => 'hôm nay chưa ai chụp';
+
+  @override
+  String journeys_home_flexSummary(String km, String pace) {
+    return '$km KM TỔNG · $pace /KM NHỊP TB';
+  }
+
+  @override
+  String journeys_home_flexKmOnly(String km) {
+    return '$km KM TỔNG';
+  }
+
+  @override
+  String journeys_home_flexRan(int done, int total) {
+    return '$done/$total ĐÃ CHẠY';
+  }
+
+  @override
+  String journeys_home_minimalMonth(String month, int streak) {
+    return 'THÁNG $month · CHUỖI $streak NGÀY';
+  }
+
+  @override
+  String journeys_home_minimalDone(int done, int total) {
+    return '$done/$total ĐÃ XONG';
+  }
+
+  @override
+  String get journeys_home_viewWrapped => 'Xem tổng kết';
+
+  @override
+  String get journeys_addMoreTag => 'Thêm ảnh';
+
+  @override
+  String get journeys_hubTitle => 'hành trình.';
+
+  @override
+  String journeys_hubGreeting(String name) {
+    return 'chào $name.';
+  }
+
+  @override
+  String get journeys_hubGreetingNoName => 'chào bạn.';
+
+  @override
+  String get journeys_hubOffline => 'đang lưu trên máy, có mạng sẽ tự gửi';
+
+  @override
+  String get journeys_hubResumeTitle => 'Tiếp tục tạo hành trình';
+
+  @override
+  String journeys_hubResumeStep(int n) {
+    return 'bước $n/5';
+  }
+
+  @override
+  String get journeys_hubSection => 'hành trình của bạn.';
+
+  @override
+  String journeys_hubRunning(int n) {
+    return '$n đang chạy';
+  }
+
+  @override
+  String get journeys_hubNewTitle => 'hành trình mới.';
+
+  @override
+  String get journeys_hubNewHint => 'chọn một thế giới để bắt đầu';
+
+  @override
+  String get journeys_hubEmptyTitle => 'chưa có hành trình nào.';
+
+  @override
+  String get journeys_hubEmptyBody =>
+      'một tấm mỗi ngày, giữ được cả chặng đường.';
+
+  @override
+  String get journeys_hubErrorTitle => 'không tải được. thử lại?';
+
+  @override
+  String get journeys_hubLoading => 'Đang tải';
+
+  @override
+  String journeys_createDeckCard(int n, int total, String name) {
+    return 'Thẻ $n trên $total, $name';
+  }
+
+  @override
+  String get journeys_createDeckChosen => 'Đã chọn';
+
+  @override
+  String get journeys_createDeckPrev => 'Thẻ trước';
+
+  @override
+  String get journeys_createDeckNext => 'Thẻ sau';
+
+  @override
+  String journeys_createDeckCounter(int n, int total) {
+    return '$n/$total';
+  }
+
+  @override
+  String get journeys_createDeckChoose => 'Chọn kiểu này';
 }

@@ -103,6 +103,10 @@ abstract interface class JourneyRepository {
   /// journeys, [OurneyException] `invalid` for a bad kind/visibility combo.
   Future<Journey> create(JourneyDraft draft);
 
+  /// `update_journey` (owner only): rename, layout, cover, colour, reminder
+  /// time, DNA. Throws `notFound`, `ended`, `invalid`.
+  Future<Journey> update(String journeyId, JourneyUpdate update);
+
   /// `end_journey` (owner only): status → ended, check-ins become read-only.
   /// Throws `forbidden`, `ended`, `notFound`.
   Future<void> end(String journeyId);

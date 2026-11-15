@@ -73,6 +73,13 @@ class Journeys extends Table {
   TextColumn get coupleSelfName => text().nullable()();
   TextColumn get couplePartnerName => text().nullable()();
 
+  /// Edit-journey fields (0012; schema version 5). `dna` is a JSON object.
+  TextColumn get layout => text().nullable()();
+  IntColumn get cover => integer().nullable()();
+  IntColumn get color => integer().nullable()();
+  TextColumn get reminderTime => text().nullable()();
+  TextColumn get dna => text().nullable()();
+
   /// Client-only "archive" (JourneyRepository.archive): hidden from the list.
   BoolColumn get localArchived =>
       boolean().withDefault(const Constant(false))();
@@ -203,7 +210,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -229,6 +236,14 @@ class AppDatabase extends _$AppDatabase {
         // 0011: per-user pin and "hide my extras" preference.
         await m.addColumn(memberships, memberships.hideExtras);
         await m.addColumn(memberships, memberships.pinned);
+      }
+      if (from < 5) {
+        // 0012: layout / cover / colour / reminder time / DNA.
+        await m.addColumn(journeys, journeys.layout);
+        await m.addColumn(journeys, journeys.cover);
+        await m.addColumn(journeys, journeys.color);
+        await m.addColumn(journeys, journeys.reminderTime);
+        await m.addColumn(journeys, journeys.dna);
       }
     },
   );

@@ -18,6 +18,18 @@ abstract final class JourneysPaths {
   static String day(String journeyId, LocalDate date) =>
       '${AppRoutes.journey(journeyId)}/day/$date';
 
+  /// Journey home (same as `AppRoutes.journey`).
+  static String home(String journeyId) => AppRoutes.journey(journeyId);
+
+  /// Edit screen (Figma `JourneyEditScreen`): `/journey/<id>/edit`.
+  static String edit(String journeyId) =>
+      '${AppRoutes.journey(journeyId)}/edit';
+
+  /// End-of-journey story (Figma `JourneyWrappedScreen`):
+  /// `/journey/<id>/wrapped`.
+  static String wrapped(String journeyId) =>
+      '${AppRoutes.journey(journeyId)}/wrapped';
+
   /// Camera with [journeyId] preselected (also stored in
   /// `camera.lastJourneyId`, see README.md).
   static String captureFor(String journeyId) => Uri(

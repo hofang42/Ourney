@@ -1,5 +1,7 @@
 // Wire <-> drift <-> domain mapping. Enum values cross every boundary through
 // `wireName` / `fromWire` only (schema.md: never `Enum.name`).
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -46,8 +48,38 @@ JourneysCompanion journeyFromRemote(RemoteRow r) => JourneysCompanion(
   ),
   coupleSelfName: Value(r['couple_self_name'] as String?),
   couplePartnerName: Value(r['couple_partner_name'] as String?),
+  layout: Value(r['layout'] as String?),
+  cover: Value((r['cover'] as num?)?.toInt()),
+  color: Value((r['color'] as num?)?.toInt()),
+  reminderTime: Value(r['reminder_time'] as String?),
+  dna: Value(_encodeDna(r['dna'])),
   updatedAt: Value(r['updated_at'] as String?),
 );
+
+String? _encodeDna(Object? v) => switch (v) {
+  null => null,
+  final Map<dynamic, dynamic> m => jsonEncode(m),
+  final String s => s,
+  _ => null,
+};
+
+Map<String, Object?>? decodeDna(String? s) {
+  if (s == null) return null;
+  try {
+    final v = jsonDecode(s);
+    return v is Map ? v.cast<String, Object?>() : null;
+  } on FormatException {
+    return null;
+  }
+}
+
+PersonaSkinId? _layoutOf(String? wire) {
+  if (wire == null) return null;
+  for (final v in PersonaSkinId.values) {
+    if (v.wireName == wire) return v;
+  }
+  return null;
+}
 
 Journey journeyFromRow(JourneyRow r) => Journey(
   id: r.id,
@@ -70,6 +102,11 @@ Journey journeyFromRow(JourneyRow r) => Journey(
   origin: JourneyOrigin.fromWire(r.origin),
   coupleSelfName: r.coupleSelfName,
   couplePartnerName: r.couplePartnerName,
+  layout: _layoutOf(r.layout),
+  cover: r.cover,
+  color: r.color,
+  reminderTime: r.reminderTime,
+  dna: decodeDna(r.dna),
 );
 
 /// `create_journey` arguments (names from 0004_rpc.sql).
@@ -89,6 +126,18 @@ Map<String, dynamic> createJourneyParams(String id, JourneyDraft d) => {
   'p_visibility': normalizedVisibility(d.kind, d.visibility).wireName,
   'p_couple_self_name': d.coupleSelfName?.trim(),
   'p_couple_partner_name': d.couplePartnerName?.trim(),
+};
+
+/// `update_journey` arguments (names from 0012_journey_edit.sql).
+Map<String, dynamic> updateJourneyParams(String id, JourneyUpdate u) => {
+  'p_journey': id,
+  'p_title': u.title?.trim(),
+  'p_layout': u.layout?.wireName,
+  'p_cover': u.cover,
+  'p_color': u.color,
+  'p_reminder_time': u.reminderTime,
+  'p_dna': u.dna,
+  'p_clear': u.clear.toList(),
 };
 
 // --- memberships ------------------------------------------------------------

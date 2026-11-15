@@ -219,6 +219,11 @@ class Journey {
     this.origin = JourneyOrigin.live,
     this.coupleSelfName,
     this.couplePartnerName,
+    this.layout,
+    this.cover,
+    this.color,
+    this.reminderTime,
+    this.dna,
   });
 
   final String id;
@@ -250,8 +255,59 @@ class Journey {
   final String? coupleSelfName;
   final String? couplePartnerName;
 
+  /// `journeys.layout` (0012): owner's skin override; null = derived from the template.
+  final PersonaSkinId? layout;
+
+  /// `journeys.cover` / `color` (0012): sticker and colour-variant index 0..2.
+  final int? cover;
+  final int? color;
+
+  /// `journeys.reminder_time` (0012): `HH:MM`.
+  final String? reminderTime;
+
+  /// `journeys.dna` (0012): validated create-flow answers (see [journeyDnaKeys]).
+  final Map<String, Object?>? dna;
+
   LocalDate? get endDate =>
       durationDays == null ? null : startDate.addDays(durationDays! - 1);
+
+  /// Copy with the edit-screen fields and status replaced (null = keep).
+  Journey copyWith({
+    String? title,
+    JourneyStatus? status,
+    PersonaSkinId? layout,
+    int? cover,
+    int? color,
+    String? reminderTime,
+    Map<String, Object?>? dna,
+    bool clearLayout = false,
+  }) => Journey(
+    id: id,
+    ownerId: ownerId,
+    kind: kind,
+    templateId: templateId,
+    title: title ?? this.title,
+    emoji: emoji,
+    startDate: startDate,
+    timezone: timezone,
+    visibility: visibility,
+    status: status ?? this.status,
+    durationDays: durationDays,
+    metricName: metricName,
+    metricUnit: metricUnit,
+    hideMetricDefault: hideMetricDefault,
+    inviteCode: inviteCode,
+    maxMembers: maxMembers,
+    publicToken: publicToken,
+    origin: origin,
+    coupleSelfName: coupleSelfName,
+    couplePartnerName: couplePartnerName,
+    layout: clearLayout ? null : (layout ?? this.layout),
+    cover: cover ?? this.cover,
+    color: color ?? this.color,
+    reminderTime: reminderTime ?? this.reminderTime,
+    dna: dna ?? this.dna,
+  );
 }
 
 class JourneyDraft {
@@ -270,6 +326,11 @@ class JourneyDraft {
     this.id,
     this.coupleSelfName,
     this.couplePartnerName,
+    this.layout,
+    this.cover,
+    this.color,
+    this.reminderTime,
+    this.dna,
   }) : visibility = visibility ??
             (kind == JourneyKind.group
                 ? JourneyVisibility.group
@@ -298,6 +359,77 @@ class JourneyDraft {
   /// Couple names (both or none, 1..24 chars; see `validateCoupleNames`).
   final String? coupleSelfName;
   final String? couplePartnerName;
+
+  /// Optional 0012 fields persisted right after creation.
+  final PersonaSkinId? layout;
+  final int? cover;
+  final int? color;
+  final String? reminderTime;
+  final Map<String, Object?>? dna;
+}
+
+/// Keys `journeys.dna` accepts (server `journey_dna_valid`). Weight and the
+/// ghost-photo request are deliberately absent: they never leave the device.
+const Set<String> journeyDnaKeys = {
+  'goal', 'minutes', 'sport', 'measure', 'hud', 'film', 'ritual', 'side',
+  'trophy', 'place', 'habit', 'reason', 'dates',
+};
+
+/// Keeps only the storable DNA answers (drops unknown keys and empties).
+Map<String, Object?>? sanitizeJourneyDna(Map<String, Object?> answers) {
+  final out = <String, Object?>{
+    for (final e in answers.entries)
+      if (journeyDnaKeys.contains(e.key) &&
+          e.value != null &&
+          (e.value is! String || (e.value as String).trim().isNotEmpty))
+        e.key: e.value is String
+            ? _clipDna(e.key, (e.value as String).trim())
+            : e.value,
+  };
+  return out.isEmpty ? null : out;
+}
+
+const Map<String, int> _dnaTextMax = {
+  'trophy': 24,
+  'place': 60,
+  'habit': 40,
+  'reason': 80,
+};
+
+String _clipDna(String key, String v) {
+  final max = _dnaTextMax[key];
+  return max != null && v.length > max ? v.substring(0, max) : v;
+}
+
+/// Partial edit sent to `update_journey` (null = unchanged; [clear] resets
+/// the named fields: layout, cover, color, reminder_time, dna).
+class JourneyUpdate {
+  const JourneyUpdate({
+    this.title,
+    this.layout,
+    this.cover,
+    this.color,
+    this.reminderTime,
+    this.dna,
+    this.clear = const {},
+  });
+
+  final String? title;
+  final PersonaSkinId? layout;
+  final int? cover;
+  final int? color;
+  final String? reminderTime;
+  final Map<String, Object?>? dna;
+  final Set<String> clear;
+
+  bool get isEmpty =>
+      title == null &&
+      layout == null &&
+      cover == null &&
+      color == null &&
+      reminderTime == null &&
+      dna == null &&
+      clear.isEmpty;
 }
 
 /// A `memberships` row. Every journey (solo too) has one for its owner.

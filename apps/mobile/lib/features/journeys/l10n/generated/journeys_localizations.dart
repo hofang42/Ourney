@@ -863,7 +863,7 @@ abstract class JourneysL10n {
   /// Floating button when today is already posted.
   ///
   /// In vi, this message translates to:
-  /// **'Thêm ảnh'**
+  /// **'Chụp thêm ảnh hôm nay'**
   String get journeys_addMore;
 
   /// Short visible label of the current-streak stat column.
@@ -917,7 +917,7 @@ abstract class JourneysL10n {
   /// Empty hub primary button.
   ///
   /// In vi, this message translates to:
-  /// **'Bắt đầu hành trình đầu tiên'**
+  /// **'Tạo hành trình đầu tiên'**
   String get journeys_dayZeroStart;
 
   /// Empty hub greeting.
@@ -2167,6 +2167,738 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Dòng thời gian'**
   String get journeys_home_timelineLabel;
+
+  /// No description provided for @journeys_edit_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'cập nhật hành trình.'**
+  String get journeys_edit_title;
+
+  /// No description provided for @journeys_edit_save.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu'**
+  String get journeys_edit_save;
+
+  /// No description provided for @journeys_edit_name.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên'**
+  String get journeys_edit_name;
+
+  /// No description provided for @journeys_edit_cover.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bìa'**
+  String get journeys_edit_cover;
+
+  /// No description provided for @journeys_edit_coverOption.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bìa {n}'**
+  String journeys_edit_coverOption(int n);
+
+  /// No description provided for @journeys_edit_layout.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giao diện'**
+  String get journeys_edit_layout;
+
+  /// No description provided for @journeys_edit_layoutNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một số giao diện cần thêm dữ liệu nên không hiện.'**
+  String get journeys_edit_layoutNote;
+
+  /// No description provided for @journeys_edit_layoutInUse.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang dùng'**
+  String get journeys_edit_layoutInUse;
+
+  /// No description provided for @journeys_edit_layoutPreviewLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem trước giao diện {name}'**
+  String journeys_edit_layoutPreviewLabel(String name);
+
+  /// No description provided for @journeys_edit_previewTag.
+  ///
+  /// In vi, this message translates to:
+  /// **'XEM TRƯỚC'**
+  String get journeys_edit_previewTag;
+
+  /// No description provided for @journeys_edit_hudPreview.
+  ///
+  /// In vi, this message translates to:
+  /// **'HUD máy ảnh'**
+  String get journeys_edit_hudPreview;
+
+  /// No description provided for @journeys_edit_dayOf.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}/{total}'**
+  String journeys_edit_dayOf(int day, int total);
+
+  /// No description provided for @journeys_edit_dayOpen.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String journeys_edit_dayOpen(int day);
+
+  /// No description provided for @journeys_edit_useLayout.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dùng giao diện này'**
+  String get journeys_edit_useLayout;
+
+  /// No description provided for @journeys_edit_cancel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thôi'**
+  String get journeys_edit_cancel;
+
+  /// No description provided for @journeys_edit_layoutApplied.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đổi giao diện cho hành trình.'**
+  String get journeys_edit_layoutApplied;
+
+  /// No description provided for @journeys_edit_layoutOwnerOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chủ nhóm chọn giao diện cho cả hội.'**
+  String get journeys_edit_layoutOwnerOnly;
+
+  /// No description provided for @journeys_edit_color.
+  ///
+  /// In vi, this message translates to:
+  /// **'Màu'**
+  String get journeys_edit_color;
+
+  /// No description provided for @journeys_edit_trophy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên chiếc cúp'**
+  String get journeys_edit_trophy;
+
+  /// No description provided for @journeys_edit_film.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cuộn phim'**
+  String get journeys_edit_film;
+
+  /// No description provided for @journeys_edit_filmReadonly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} · chỉ xem'**
+  String journeys_edit_filmReadonly(int n);
+
+  /// No description provided for @journeys_edit_couple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hai đứa mình'**
+  String get journeys_edit_couple;
+
+  /// No description provided for @journeys_edit_hud.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kiểu HUD'**
+  String get journeys_edit_hud;
+
+  /// No description provided for @journeys_edit_hudBold.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đậm'**
+  String get journeys_edit_hudBold;
+
+  /// No description provided for @journeys_edit_hudStamp.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dấu tối giản'**
+  String get journeys_edit_hudStamp;
+
+  /// No description provided for @journeys_edit_hudStrip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dải phim'**
+  String get journeys_edit_hudStrip;
+
+  /// No description provided for @journeys_edit_reminder.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giờ nhắc'**
+  String get journeys_edit_reminder;
+
+  /// No description provided for @journeys_edit_reminderHour.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giờ'**
+  String get journeys_edit_reminderHour;
+
+  /// No description provided for @journeys_edit_reminderMinute.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phút'**
+  String get journeys_edit_reminderMinute;
+
+  /// No description provided for @journeys_edit_visibility.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ai được xem'**
+  String get journeys_edit_visibility;
+
+  /// No description provided for @journeys_edit_visPrivate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ mình tôi'**
+  String get journeys_edit_visPrivate;
+
+  /// No description provided for @journeys_edit_visLink.
+  ///
+  /// In vi, this message translates to:
+  /// **'Có link xem (thu hồi được)'**
+  String get journeys_edit_visLink;
+
+  /// No description provided for @journeys_edit_visQuietNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trang xem luôn ẩn số kg và làm mờ ảnh theo mặc định.'**
+  String get journeys_edit_visQuietNote;
+
+  /// No description provided for @journeys_edit_membersOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ thành viên'**
+  String get journeys_edit_membersOnly;
+
+  /// No description provided for @journeys_edit_membersOnlyHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'hành trình nhóm không có link công khai'**
+  String get journeys_edit_membersOnlyHint;
+
+  /// No description provided for @journeys_edit_quietLock.
+  ///
+  /// In vi, this message translates to:
+  /// **'Riêng tư'**
+  String get journeys_edit_quietLock;
+
+  /// No description provided for @journeys_edit_endTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kết thúc hành trình?'**
+  String get journeys_edit_endTitle;
+
+  /// No description provided for @journeys_edit_endBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn vẫn xem lại được, nhưng không chụp thêm.'**
+  String get journeys_edit_endBody;
+
+  /// No description provided for @journeys_edit_endConfirm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kết thúc'**
+  String get journeys_edit_endConfirm;
+
+  /// No description provided for @journeys_edit_saved.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu.'**
+  String get journeys_edit_saved;
+
+  /// No description provided for @journeys_edit_ownerOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ chủ hành trình mới sửa được.'**
+  String get journeys_edit_ownerOnly;
+
+  /// No description provided for @journeys_edit_menu.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa hành trình'**
+  String get journeys_edit_menu;
+
+  /// No description provided for @journeys_wrapped_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình đã về đích'**
+  String get journeys_wrapped_title;
+
+  /// No description provided for @journeys_wrapped_close.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng'**
+  String get journeys_wrapped_close;
+
+  /// No description provided for @journeys_wrapped_step.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bước {n}'**
+  String journeys_wrapped_step(int n);
+
+  /// No description provided for @journeys_wrapped_moments.
+  ///
+  /// In vi, this message translates to:
+  /// **'{moments} khoảnh khắc trong {days} ngày'**
+  String journeys_wrapped_moments(int moments, int days);
+
+  /// No description provided for @journeys_wrapped_streak.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {n} ngày'**
+  String journeys_wrapped_streak(int n);
+
+  /// No description provided for @journeys_wrapped_quietEnd.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đã về đích.'**
+  String get journeys_wrapped_quietEnd;
+
+  /// No description provided for @journeys_wrapped_checkIns.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} lần điểm danh'**
+  String journeys_wrapped_checkIns(int n);
+
+  /// No description provided for @journeys_wrapped_squadEnd.
+  ///
+  /// In vi, this message translates to:
+  /// **'Về đích rồi, cả hội!'**
+  String get journeys_wrapped_squadEnd;
+
+  /// No description provided for @journeys_wrapped_frames.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} khung hình'**
+  String journeys_wrapped_frames(int n);
+
+  /// No description provided for @journeys_wrapped_daysTogether.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} ngày bên nhau'**
+  String journeys_wrapped_daysTogether(int n);
+
+  /// No description provided for @journeys_wrapped_coupleFallback.
+  ///
+  /// In vi, this message translates to:
+  /// **'Khoảnh khắc đáng nhớ nhất'**
+  String get journeys_wrapped_coupleFallback;
+
+  /// No description provided for @journeys_wrapped_km.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM'**
+  String journeys_wrapped_km(String km);
+
+  /// No description provided for @journeys_wrapped_pace.
+  ///
+  /// In vi, this message translates to:
+  /// **'NHỊP ĐỘ {pace}'**
+  String journeys_wrapped_pace(String pace);
+
+  /// No description provided for @journeys_wrapped_flexStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'CHUỖI {n}.'**
+  String journeys_wrapped_flexStreak(int n);
+
+  /// No description provided for @journeys_wrapped_minimalLine.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} NGÀY · {name}'**
+  String journeys_wrapped_minimalLine(int done, int total, String name);
+
+  /// No description provided for @journeys_wrapped_memoryEnd.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cuộn phim đã hết. Mang đi in thôi.'**
+  String get journeys_wrapped_memoryEnd;
+
+  /// No description provided for @journeys_wrapped_sumQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY 01 vs NGÀY {total}'**
+  String journeys_wrapped_sumQuiet(int total);
+
+  /// No description provided for @journeys_wrapped_sumSquad.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ VỀ ĐÍCH'**
+  String journeys_wrapped_sumSquad(int done, int total);
+
+  /// No description provided for @journeys_wrapped_sumMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'{total} NGÀY · {name}'**
+  String journeys_wrapped_sumMemory(int total, String name);
+
+  /// No description provided for @journeys_wrapped_sumCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'{total} NGÀY BÊN NHAU · {moments} KHOẢNH KHẮC'**
+  String journeys_wrapped_sumCouple(int total, int moments);
+
+  /// No description provided for @journeys_wrapped_sumFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'{total} NGÀY · {km} KM'**
+  String journeys_wrapped_sumFlexer(int total, String km);
+
+  /// No description provided for @journeys_wrapped_sumMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} NGÀY · {pct}% ĐỀU ĐẶN'**
+  String journeys_wrapped_sumMinimal(int done, int total, int pct);
+
+  /// No description provided for @journeys_wrapped_hideKg.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn số kg'**
+  String get journeys_wrapped_hideKg;
+
+  /// No description provided for @journeys_wrapped_blur.
+  ///
+  /// In vi, this message translates to:
+  /// **'Làm mờ ảnh'**
+  String get journeys_wrapped_blur;
+
+  /// No description provided for @journeys_wrapped_on.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bật'**
+  String get journeys_wrapped_on;
+
+  /// No description provided for @journeys_wrapped_off.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tắt'**
+  String get journeys_wrapped_off;
+
+  /// No description provided for @journeys_wrapped_ctaPoster.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ poster chuyến đi'**
+  String get journeys_wrapped_ctaPoster;
+
+  /// No description provided for @journeys_wrapped_ctaStory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ câu chuyện'**
+  String get journeys_wrapped_ctaStory;
+
+  /// No description provided for @journeys_wrapped_ctaFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ lên Story'**
+  String get journeys_wrapped_ctaFlexer;
+
+  /// No description provided for @journeys_wrapped_ctaMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xuất thẻ'**
+  String get journeys_wrapped_ctaMinimal;
+
+  /// No description provided for @journeys_wrapped_ctaCard.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tạo thiệp'**
+  String get journeys_wrapped_ctaCard;
+
+  /// No description provided for @journeys_wrapped_share.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ'**
+  String get journeys_wrapped_share;
+
+  /// No description provided for @journeys_wrapped_save.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu ảnh'**
+  String get journeys_wrapped_save;
+
+  /// No description provided for @journeys_wrapped_sheetTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'chia sẻ tấm thiệp.'**
+  String get journeys_wrapped_sheetTitle;
+
+  /// No description provided for @journeys_wrapped_hideBrand.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn chữ ourney'**
+  String get journeys_wrapped_hideBrand;
+
+  /// No description provided for @journeys_wrapped_messages.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tin nhắn'**
+  String get journeys_wrapped_messages;
+
+  /// No description provided for @journeys_wrapped_otherApps.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ứng dụng khác'**
+  String get journeys_wrapped_otherApps;
+
+  /// No description provided for @journeys_wrapped_open.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem hành trình đã về đích'**
+  String get journeys_wrapped_open;
+
+  /// No description provided for @journeys_wrapped_menu.
+  ///
+  /// In vi, this message translates to:
+  /// **'Câu chuyện về đích'**
+  String get journeys_wrapped_menu;
+
+  /// No description provided for @journeys_home_squadChip.
+  ///
+  /// In vi, this message translates to:
+  /// **'{title} · {days} NGÀY'**
+  String journeys_home_squadChip(String title, int days);
+
+  /// No description provided for @journeys_home_squadToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} HÔM NAY'**
+  String journeys_home_squadToday(int done, int total);
+
+  /// No description provided for @journeys_home_trophyDefault.
+  ///
+  /// In vi, this message translates to:
+  /// **'CÚP'**
+  String get journeys_home_trophyDefault;
+
+  /// No description provided for @journeys_home_trophyDay.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String journeys_home_trophyDay(int day);
+
+  /// No description provided for @journeys_home_filmRoll.
+  ///
+  /// In vi, this message translates to:
+  /// **'CUỘN PHIM {frames}/{total}'**
+  String journeys_home_filmRoll(int frames, int total);
+
+  /// No description provided for @journeys_home_rollNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hết cuộn {total} tấm · mở cuộn mới'**
+  String journeys_home_rollNote(int total);
+
+  /// No description provided for @journeys_home_coupleLine.
+  ///
+  /// In vi, this message translates to:
+  /// **'{total} NGÀY {ritual}'**
+  String journeys_home_coupleLine(int total, String ritual);
+
+  /// No description provided for @journeys_home_ritualCook.
+  ///
+  /// In vi, this message translates to:
+  /// **'NẤU CHO NHAU'**
+  String get journeys_home_ritualCook;
+
+  /// No description provided for @journeys_home_ritualSave.
+  ///
+  /// In vi, this message translates to:
+  /// **'TIẾT KIỆM CÙNG NHAU'**
+  String get journeys_home_ritualSave;
+
+  /// No description provided for @journeys_home_ritualLdr.
+  ///
+  /// In vi, this message translates to:
+  /// **'XA MÀ GẦN'**
+  String get journeys_home_ritualLdr;
+
+  /// No description provided for @journeys_home_ritualOther.
+  ///
+  /// In vi, this message translates to:
+  /// **'BÊN NHAU'**
+  String get journeys_home_ritualOther;
+
+  /// No description provided for @journeys_home_pairWaiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'đang chờ {name}'**
+  String journeys_home_pairWaiting(String name);
+
+  /// No description provided for @journeys_home_pairBoth.
+  ///
+  /// In vi, this message translates to:
+  /// **'cả hai đã chụp hôm nay'**
+  String get journeys_home_pairBoth;
+
+  /// No description provided for @journeys_home_pairNeither.
+  ///
+  /// In vi, this message translates to:
+  /// **'hôm nay chưa ai chụp'**
+  String get journeys_home_pairNeither;
+
+  /// No description provided for @journeys_home_flexSummary.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM TỔNG · {pace} /KM NHỊP TB'**
+  String journeys_home_flexSummary(String km, String pace);
+
+  /// No description provided for @journeys_home_flexKmOnly.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM TỔNG'**
+  String journeys_home_flexKmOnly(String km);
+
+  /// No description provided for @journeys_home_flexRan.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ CHẠY'**
+  String journeys_home_flexRan(int done, int total);
+
+  /// No description provided for @journeys_home_minimalMonth.
+  ///
+  /// In vi, this message translates to:
+  /// **'THÁNG {month} · CHUỖI {streak} NGÀY'**
+  String journeys_home_minimalMonth(String month, int streak);
+
+  /// No description provided for @journeys_home_minimalDone.
+  ///
+  /// In vi, this message translates to:
+  /// **'{done}/{total} ĐÃ XONG'**
+  String journeys_home_minimalDone(int done, int total);
+
+  /// No description provided for @journeys_home_viewWrapped.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem tổng kết'**
+  String get journeys_home_viewWrapped;
+
+  /// No description provided for @journeys_addMoreTag.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm ảnh'**
+  String get journeys_addMoreTag;
+
+  /// No description provided for @journeys_hubTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'hành trình.'**
+  String get journeys_hubTitle;
+
+  /// No description provided for @journeys_hubGreeting.
+  ///
+  /// In vi, this message translates to:
+  /// **'chào {name}.'**
+  String journeys_hubGreeting(String name);
+
+  /// No description provided for @journeys_hubGreetingNoName.
+  ///
+  /// In vi, this message translates to:
+  /// **'chào bạn.'**
+  String get journeys_hubGreetingNoName;
+
+  /// No description provided for @journeys_hubOffline.
+  ///
+  /// In vi, this message translates to:
+  /// **'đang lưu trên máy, có mạng sẽ tự gửi'**
+  String get journeys_hubOffline;
+
+  /// No description provided for @journeys_hubResumeTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục tạo hành trình'**
+  String get journeys_hubResumeTitle;
+
+  /// No description provided for @journeys_hubResumeStep.
+  ///
+  /// In vi, this message translates to:
+  /// **'bước {n}/5'**
+  String journeys_hubResumeStep(int n);
+
+  /// No description provided for @journeys_hubSection.
+  ///
+  /// In vi, this message translates to:
+  /// **'hành trình của bạn.'**
+  String get journeys_hubSection;
+
+  /// No description provided for @journeys_hubRunning.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n} đang chạy'**
+  String journeys_hubRunning(int n);
+
+  /// No description provided for @journeys_hubNewTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'hành trình mới.'**
+  String get journeys_hubNewTitle;
+
+  /// No description provided for @journeys_hubNewHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'chọn một thế giới để bắt đầu'**
+  String get journeys_hubNewHint;
+
+  /// No description provided for @journeys_hubEmptyTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa có hành trình nào.'**
+  String get journeys_hubEmptyTitle;
+
+  /// No description provided for @journeys_hubEmptyBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'một tấm mỗi ngày, giữ được cả chặng đường.'**
+  String get journeys_hubEmptyBody;
+
+  /// No description provided for @journeys_hubErrorTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'không tải được. thử lại?'**
+  String get journeys_hubErrorTitle;
+
+  /// No description provided for @journeys_hubLoading.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang tải'**
+  String get journeys_hubLoading;
+
+  /// No description provided for @journeys_createDeckCard.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thẻ {n} trên {total}, {name}'**
+  String journeys_createDeckCard(int n, int total, String name);
+
+  /// No description provided for @journeys_createDeckChosen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã chọn'**
+  String get journeys_createDeckChosen;
+
+  /// No description provided for @journeys_createDeckPrev.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thẻ trước'**
+  String get journeys_createDeckPrev;
+
+  /// No description provided for @journeys_createDeckNext.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thẻ sau'**
+  String get journeys_createDeckNext;
+
+  /// No description provided for @journeys_createDeckCounter.
+  ///
+  /// In vi, this message translates to:
+  /// **'{n}/{total}'**
+  String journeys_createDeckCounter(int n, int total);
+
+  /// No description provided for @journeys_createDeckChoose.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn kiểu này'**
+  String get journeys_createDeckChoose;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

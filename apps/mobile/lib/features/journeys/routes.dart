@@ -5,9 +5,11 @@ import '../../app/app_routes.dart';
 import '../../app/navigator_keys.dart';
 import 'ui/create_journey_screen.dart';
 import 'ui/day_viewer_screen.dart';
+import 'ui/edit/journey_edit_screen.dart';
 import 'ui/journey_detail_screen.dart';
 import 'ui/journeys_list_screen.dart';
 import 'ui/template_picker_screen.dart';
+import 'ui/wrapped/journey_wrapped_screen.dart';
 
 /// Journeys feature (B4). Contract (lib/features/README.md): exports
 /// `List<RouteBase> journeysRoutes`; top-level paths start with `/journeys`
@@ -18,6 +20,8 @@ import 'ui/template_picker_screen.dart';
 /// * `/journeys/new/:template`     create form, `:template` = wire name
 /// * `/journey/:id`                detail + timeline (`ourney://journey/<id>`)
 /// * `/journey/:id/day/:date`      photo viewer, `:date` = YYYY-MM-DD
+/// * `/journey/:id/edit`           edit journey (owner)
+/// * `/journey/:id/wrapped`        end-of-journey story
 ///
 /// Build links with `AppRoutes` / `JourneysPaths` (journeys_paths.dart).
 final List<RouteBase> journeysRoutes = [
@@ -55,6 +59,18 @@ final List<RouteBase> journeysRoutes = [
     builder: (context, state) =>
         JourneyDetailScreen(journeyId: state.pathParameters['id']!),
     routes: [
+      GoRoute(
+        path: 'wrapped',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            JourneyWrappedScreen(journeyId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: 'edit',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) =>
+            JourneyEditScreen(journeyId: state.pathParameters['id']!),
+      ),
       GoRoute(
         path: 'day/:date',
         parentNavigatorKey: rootNavigatorKey,

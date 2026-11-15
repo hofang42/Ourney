@@ -194,6 +194,10 @@ void main() {
       await _tap(tester, _key('journeys-confirm'));
 
       expect(h.journeys.calls, contains('end:j1'));
+      // Ending opens the finish story; closing it returns to the home.
+      expect(h.location, JourneysPaths.wrapped('j1'));
+      await _tap(tester, _key('wrapped-close'));
+      expect(h.location, AppRoutes.journey('j1'));
       expect(_key('journey-home-readonly'), findsOneWidget);
       expect(_key('journey-checkin'), findsNothing);
       expect(_key('journey-pref-blur'), findsNothing);

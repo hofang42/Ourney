@@ -410,7 +410,7 @@
       }
     }
   },
-  "journeys_addMore": "Thêm ảnh",
+  "journeys_addMore": "Chụp thêm ảnh hôm nay",
   "@journeys_addMore": {
     "description": "Floating button when today is already posted."
   },
@@ -449,7 +449,7 @@
   "@journeys_dayZeroBody": {
     "description": "Empty hub body (no journeys yet)."
   },
-  "journeys_dayZeroStart": "Bắt đầu hành trình đầu tiên",
+  "journeys_dayZeroStart": "Tạo hành trình đầu tiên",
   "@journeys_dayZeroStart": {
     "description": "Empty hub primary button."
   },
@@ -1023,5 +1023,456 @@
     }
   },
   "journeys_home_retake": "Chụp thêm ảnh hôm nay",
-  "journeys_home_timelineLabel": "Dòng thời gian"
+  "journeys_home_timelineLabel": "Dòng thời gian",
+  "journeys_edit_title": "cập nhật hành trình.",
+  "journeys_edit_save": "Lưu",
+  "journeys_edit_name": "Tên",
+  "journeys_edit_cover": "Bìa",
+  "journeys_edit_coverOption": "Bìa {n}",
+  "@journeys_edit_coverOption": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_layout": "Giao diện",
+  "journeys_edit_layoutNote": "Một số giao diện cần thêm dữ liệu nên không hiện.",
+  "journeys_edit_layoutInUse": "Đang dùng",
+  "journeys_edit_layoutPreviewLabel": "Xem trước giao diện {name}",
+  "@journeys_edit_layoutPreviewLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_edit_previewTag": "XEM TRƯỚC",
+  "journeys_edit_hudPreview": "HUD máy ảnh",
+  "journeys_edit_dayOf": "NGÀY {day}/{total}",
+  "@journeys_edit_dayOf": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_dayOpen": "NGÀY {day}",
+  "@journeys_edit_dayOpen": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_useLayout": "Dùng giao diện này",
+  "journeys_edit_cancel": "Thôi",
+  "journeys_edit_layoutApplied": "Đã đổi giao diện cho hành trình.",
+  "journeys_edit_layoutOwnerOnly": "Chủ nhóm chọn giao diện cho cả hội.",
+  "journeys_edit_color": "Màu",
+  "journeys_edit_trophy": "Tên chiếc cúp",
+  "journeys_edit_film": "Cuộn phim",
+  "journeys_edit_filmReadonly": "{n} · chỉ xem",
+  "@journeys_edit_filmReadonly": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_edit_couple": "Hai đứa mình",
+  "journeys_edit_hud": "Kiểu HUD",
+  "journeys_edit_hudBold": "Đậm",
+  "journeys_edit_hudStamp": "Dấu tối giản",
+  "journeys_edit_hudStrip": "Dải phim",
+  "journeys_edit_reminder": "Giờ nhắc",
+  "journeys_edit_reminderHour": "Giờ",
+  "journeys_edit_reminderMinute": "Phút",
+  "journeys_edit_visibility": "Ai được xem",
+  "journeys_edit_visPrivate": "Chỉ mình tôi",
+  "journeys_edit_visLink": "Có link xem (thu hồi được)",
+  "journeys_edit_visQuietNote": "Trang xem luôn ẩn số kg và làm mờ ảnh theo mặc định.",
+  "journeys_edit_membersOnly": "Chỉ thành viên",
+  "journeys_edit_membersOnlyHint": "hành trình nhóm không có link công khai",
+  "journeys_edit_quietLock": "Riêng tư",
+  "journeys_edit_endTitle": "Kết thúc hành trình?",
+  "journeys_edit_endBody": "Bạn vẫn xem lại được, nhưng không chụp thêm.",
+  "journeys_edit_endConfirm": "Kết thúc",
+  "journeys_edit_saved": "Đã lưu.",
+  "journeys_edit_ownerOnly": "Chỉ chủ hành trình mới sửa được.",
+  "journeys_edit_menu": "Sửa hành trình",
+  "journeys_wrapped_title": "Hành trình đã về đích",
+  "journeys_wrapped_close": "Đóng",
+  "journeys_wrapped_step": "Bước {n}",
+  "@journeys_wrapped_step": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_moments": "{moments} khoảnh khắc trong {days} ngày",
+  "@journeys_wrapped_moments": {
+    "placeholders": {
+      "moments": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_streak": "Chuỗi {n} ngày",
+  "@journeys_wrapped_streak": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_quietEnd": "Bạn đã về đích.",
+  "journeys_wrapped_checkIns": "{n} lần điểm danh",
+  "@journeys_wrapped_checkIns": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_squadEnd": "Về đích rồi, cả hội!",
+  "journeys_wrapped_frames": "{n} khung hình",
+  "@journeys_wrapped_frames": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_daysTogether": "{n} ngày bên nhau",
+  "@journeys_wrapped_daysTogether": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_coupleFallback": "Khoảnh khắc đáng nhớ nhất",
+  "journeys_wrapped_km": "{km} KM",
+  "@journeys_wrapped_km": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_pace": "NHỊP ĐỘ {pace}",
+  "@journeys_wrapped_pace": {
+    "placeholders": {
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_flexStreak": "CHUỖI {n}.",
+  "@journeys_wrapped_flexStreak": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_minimalLine": "{done}/{total} NGÀY · {name}",
+  "@journeys_wrapped_minimalLine": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_memoryEnd": "Cuộn phim đã hết. Mang đi in thôi.",
+  "journeys_wrapped_sumQuiet": "NGÀY 01 vs NGÀY {total}",
+  "@journeys_wrapped_sumQuiet": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sumSquad": "{done}/{total} ĐÃ VỀ ĐÍCH",
+  "@journeys_wrapped_sumSquad": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sumMemory": "{total} NGÀY · {name}",
+  "@journeys_wrapped_sumMemory": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sumCouple": "{total} NGÀY BÊN NHAU · {moments} KHOẢNH KHẮC",
+  "@journeys_wrapped_sumCouple": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "moments": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_sumFlexer": "{total} NGÀY · {km} KM",
+  "@journeys_wrapped_sumFlexer": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_wrapped_sumMinimal": "{done}/{total} NGÀY · {pct}% ĐỀU ĐẶN",
+  "@journeys_wrapped_sumMinimal": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_wrapped_hideKg": "Ẩn số kg",
+  "journeys_wrapped_blur": "Làm mờ ảnh",
+  "journeys_wrapped_on": "Bật",
+  "journeys_wrapped_off": "Tắt",
+  "journeys_wrapped_ctaPoster": "Chia sẻ poster chuyến đi",
+  "journeys_wrapped_ctaStory": "Chia sẻ câu chuyện",
+  "journeys_wrapped_ctaFlexer": "Chia sẻ lên Story",
+  "journeys_wrapped_ctaMinimal": "Xuất thẻ",
+  "journeys_wrapped_ctaCard": "Tạo thiệp",
+  "journeys_wrapped_share": "Chia sẻ",
+  "journeys_wrapped_save": "Lưu ảnh",
+  "journeys_wrapped_sheetTitle": "chia sẻ tấm thiệp.",
+  "journeys_wrapped_hideBrand": "Ẩn chữ ourney",
+  "journeys_wrapped_messages": "Tin nhắn",
+  "journeys_wrapped_otherApps": "Ứng dụng khác",
+  "journeys_wrapped_open": "Xem hành trình đã về đích",
+  "journeys_wrapped_menu": "Câu chuyện về đích",
+  "journeys_home_squadChip": "{title} · {days} NGÀY",
+  "@journeys_home_squadChip": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_squadToday": "{done}/{total} HÔM NAY",
+  "@journeys_home_squadToday": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_trophyDefault": "CÚP",
+  "journeys_home_trophyDay": "NGÀY {day}",
+  "@journeys_home_trophyDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_filmRoll": "CUỘN PHIM {frames}/{total}",
+  "@journeys_home_filmRoll": {
+    "placeholders": {
+      "frames": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_rollNote": "Hết cuộn {total} tấm · mở cuộn mới",
+  "@journeys_home_rollNote": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_coupleLine": "{total} NGÀY {ritual}",
+  "@journeys_home_coupleLine": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "ritual": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_ritualCook": "NẤU CHO NHAU",
+  "journeys_home_ritualSave": "TIẾT KIỆM CÙNG NHAU",
+  "journeys_home_ritualLdr": "XA MÀ GẦN",
+  "journeys_home_ritualOther": "BÊN NHAU",
+  "journeys_home_pairWaiting": "đang chờ {name}",
+  "@journeys_home_pairWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_pairBoth": "cả hai đã chụp hôm nay",
+  "journeys_home_pairNeither": "hôm nay chưa ai chụp",
+  "journeys_home_flexSummary": "{km} KM TỔNG · {pace} /KM NHỊP TB",
+  "@journeys_home_flexSummary": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_flexKmOnly": "{km} KM TỔNG",
+  "@journeys_home_flexKmOnly": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_flexRan": "{done}/{total} ĐÃ CHẠY",
+  "@journeys_home_flexRan": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_minimalMonth": "THÁNG {month} · CHUỖI {streak} NGÀY",
+  "@journeys_home_minimalMonth": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_minimalDone": "{done}/{total} ĐÃ XONG",
+  "@journeys_home_minimalDone": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_viewWrapped": "Xem tổng kết",
+  "journeys_addMoreTag": "Thêm ảnh",
+  "journeys_hubTitle": "hành trình.",
+  "journeys_hubGreeting": "chào {name}.",
+  "@journeys_hubGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_hubGreetingNoName": "chào bạn.",
+  "journeys_hubOffline": "đang lưu trên máy, có mạng sẽ tự gửi",
+  "journeys_hubResumeTitle": "Tiếp tục tạo hành trình",
+  "journeys_hubResumeStep": "bước {n}/5",
+  "@journeys_hubResumeStep": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_hubSection": "hành trình của bạn.",
+  "journeys_hubRunning": "{n} đang chạy",
+  "@journeys_hubRunning": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_hubNewTitle": "hành trình mới.",
+  "journeys_hubNewHint": "chọn một thế giới để bắt đầu",
+  "journeys_hubEmptyTitle": "chưa có hành trình nào.",
+  "journeys_hubEmptyBody": "một tấm mỗi ngày, giữ được cả chặng đường.",
+  "journeys_hubErrorTitle": "không tải được. thử lại?",
+  "journeys_hubLoading": "Đang tải",
+  "journeys_createDeckCard": "Thẻ {n} trên {total}, {name}",
+  "@journeys_createDeckCard": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_createDeckChosen": "Đã chọn",
+  "journeys_createDeckPrev": "Thẻ trước",
+  "journeys_createDeckNext": "Thẻ sau",
+  "journeys_createDeckCounter": "{n}/{total}",
+  "@journeys_createDeckCounter": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_createDeckChoose": "Chọn kiểu này"
 }

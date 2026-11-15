@@ -17,10 +17,12 @@ import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
+import '../domain/wrapped_story.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'couple_rename_sheet.dart';
 import 'day_ticker.dart';
+import 'home/journey_home_header.dart';
 import 'home/journey_home_intro.dart';
 import 'home/journey_home_sections.dart';
 import 'journey_actions.dart';
@@ -29,7 +31,7 @@ import 'journey_row.dart';
 import 'journey_style.dart';
 import 'widgets/journey_timeline.dart';
 
-enum _Action { pin, invite, renameCouple, end, archive, delete }
+enum _Action { edit, wrapped, pin, invite, renameCouple, end, archive, delete }
 
 /// `/journey/:id`, V1.0 `Detail`: back / title / share / more header, the
 /// hero (date range, name, day N / M, progress and four stats), the journey
@@ -113,6 +115,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         : null;
 
     final actions = [
+      if (perms.isOwner && perms.isActive) _Action.edit,
+      if (!perms.isActive) _Action.wrapped,
       if (membership?.isActive ?? false) _Action.pin,
       if (perms.isActive &&
           journey.kind == JourneyKind.group &&
@@ -129,6 +133,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
 
     return UiSkinScope(
       skinId: uiSkinIdFor(skinOfJourney(journey)),
+      variant: journey.color ?? 0,
       // Read tokens from inside the scope so the skin applies.
       child: Builder(
         builder: (context) {
@@ -196,6 +201,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                               UiMenuItem(
                                 key: ValueKey('journey-action-${a.name}'),
                                 glyph: switch (a) {
+                                  _Action.edit => 'pencil',
+                                  _Action.wrapped => 'trophy',
                                   _Action.pin => 'star',
                                   _Action.invite => 'squad',
                                   _Action.renameCouple => 'edit',
@@ -205,6 +212,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                                 },
                                 destructive: a == _Action.delete,
                                 label: switch (a) {
+                                  _Action.edit => l10n.journeys_edit_menu,
+                                  _Action.wrapped => l10n.journeys_wrapped_menu,
                                   _Action.pin =>
                                     (membership?.pinned ?? false)
                                         ? l10n.journeys_unpin
@@ -250,10 +259,19 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                     ),
                     const SizedBox(height: 22),
                     if (progress != null) ...[
-                      if (skin == 'squad' || skin == 'flexer') ...[
-                        JourneyHomeAttendance(
-                          done: progress.checkInsByDate.length,
-                          total: progress.dayNumber,
+                      if (skin != 'quiet') ...[
+                        JourneyHomeSkinHeader(
+                          journey: journey,
+                          skin: skinOfJourney(journey),
+                          day: progress.dayNumber,
+                          streak: progress.summary.current,
+                          stats: WrappedStats.from(progress),
+                          now: ref.watch(journeysNowProvider),
+                          onTrophy: () => context.push(
+                            perms.isActive
+                                ? AppRoutes.share(journey.id)
+                                : JourneysPaths.wrapped(journey.id),
+                          ),
                         ),
                         const SizedBox(height: UiSpace.lg),
                       ],
@@ -302,6 +320,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                     ],
                     const SizedBox(height: UiSpace.xl),
                     JourneyHomeActions(
+                      onWrapped: perms.isActive
+                          ? null
+                          : () =>
+                                context.push(JourneysPaths.wrapped(journey.id)),
                       onShare: () => _share(context, journey),
                       onSquad: journey.kind == JourneyKind.group
                           ? () => context.go(AppRoutes.groups)
@@ -408,6 +430,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     // Ended, archived and deleted journeys lose their reminders (FR-G1).
     final reminders = ref.read(reminderSchedulerProvider);
     switch (action) {
+      case _Action.edit:
+        unawaited(router.push(JourneysPaths.edit(journey.id)));
+      case _Action.wrapped:
+        unawaited(router.push(JourneysPaths.wrapped(journey.id)));
       case _Action.pin:
         final pinned =
             ref.read(myMembershipProvider(journey.id)).value?.pinned ?? false;
@@ -429,6 +455,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         if (!ok || !context.mounted) return;
         if (await _guard(context, () => repo.end(journey.id))) {
           unawaited(reminders.reschedule());
+          // Ending a journey opens its finish story (Figma wrapped).
+          if (context.mounted) router.go(JourneysPaths.wrapped(journey.id));
         }
       case _Action.archive:
         if (await _guard(context, () => repo.archive(journey.id))) {

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -111,6 +112,7 @@ class DataJourneyRepository implements JourneyRepository {
       }
       await ctx.store.applyJourney(row.cast<String, dynamic>());
       await _insertMembership(id, me, draft.hideMetricDefault);
+      await _applyExtras(id, draft);
       final saved = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(id))).getSingle();
@@ -125,7 +127,120 @@ class DataJourneyRepository implements JourneyRepository {
     // (idempotent on p_id) before any check-in of this journey.
     final journey = await _insertLocal(id, me, draft, visibility);
     await ctx.outbox!.enqueue(OutboxKind.createJourney, journeyKey(id), params);
+    final extras = _extrasUpdate(draft);
+    if (extras != null) {
+      await ctx.outbox!.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(id)}:extras',
+        updateJourneyParams(id, extras),
+      );
+    }
     return journey;
+  }
+
+  JourneyUpdate? _extrasUpdate(JourneyDraft d) {
+    final u = JourneyUpdate(
+      layout: d.layout,
+      cover: d.cover,
+      color: d.color,
+      reminderTime: d.reminderTime,
+      dna: d.dna,
+    );
+    return u.isEmpty ? null : u;
+  }
+
+  /// `create_journey` has no edit fields: send them right after (queued when
+  /// offline) so the row carries the create-flow answers.
+  Future<void> _applyExtras(String id, JourneyDraft d) async {
+    final extras = _extrasUpdate(d);
+    if (extras == null) return;
+    try {
+      final row = await ctx.remote!.rpc(
+        'update_journey',
+        updateJourneyParams(id, extras),
+      );
+      if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
+    } on OurneyException {
+      await ctx.outbox?.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(id)}:extras',
+        updateJourneyParams(id, extras),
+      );
+    }
+  }
+
+  static final RegExp _hhmm = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
+
+  @override
+  Future<Journey> update(String journeyId, JourneyUpdate update) async {
+    final badRange =
+        (update.cover != null && (update.cover! < 0 || update.cover! > 2)) ||
+        (update.color != null && (update.color! < 0 || update.color! > 2));
+    if ((update.title != null && validateJourneyTitle(update.title!) != null) ||
+        badRange ||
+        (update.reminderTime != null && !_hhmm.hasMatch(update.reminderTime!))) {
+      throw const OurneyException(OurneyErrorCode.invalid);
+    }
+    final row = await _requireLocal(journeyId);
+    if (row.status != JourneyStatus.active.wireName) {
+      throw const OurneyException(OurneyErrorCode.ended);
+    }
+    final group = row.kind == JourneyKind.group.wireName;
+    final remote = ctx.remote;
+    if (remote != null) {
+      await _flushFirst();
+      try {
+        final res = await remote.rpc(
+          'update_journey',
+          updateJourneyParams(journeyId, update),
+        );
+        if (res is Map) {
+          await ctx.store.applyJourney(res.cast<String, dynamic>());
+          return journeyFromRow(await _requireLocal(journeyId));
+        }
+      } on OurneyException catch (e) {
+        if (e.error != OurneyErrorCode.offline || group) rethrow;
+      }
+    } else if (group) {
+      ctx.requireRemote();
+    }
+    // Local-only or offline solo: write now, replay through the outbox.
+    Value<T?> pick<T>(String key, T? v, Value<T?> Function(T) wrap) =>
+        update.clear.contains(key)
+        ? const Value(null)
+        : v == null
+        ? const Value.absent()
+        : wrap(v);
+    await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId))).write(
+      JourneysCompanion(
+        title: update.title == null
+            ? const Value.absent()
+            : Value(update.title!.trim()),
+        layout: pick<String>('layout', update.layout?.wireName, Value.new),
+        cover: pick<int>('cover', update.cover, Value.new),
+        color: pick<int>('color', update.color, Value.new),
+        reminderTime: pick<String>(
+          'reminder_time',
+          update.reminderTime,
+          Value.new,
+        ),
+        dna: pick<String>(
+          'dna',
+          update.dna == null ? null : jsonEncode(update.dna),
+          Value.new,
+        ),
+      ),
+    );
+    final outbox = ctx.outbox;
+    if (outbox != null) {
+      await outbox.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(journeyId)}:edit',
+        updateJourneyParams(journeyId, update),
+      );
+      unawaited(outbox.flush());
+    }
+    return journeyFromRow(await _requireLocal(journeyId));
   }
 
   Future<Journey> _insertLocal(
@@ -148,6 +263,11 @@ class DataJourneyRepository implements JourneyRepository {
               metricName: Value(d.metricName),
               metricUnit: Value(d.metricUnit),
               hideMetricDefault: Value(d.hideMetricDefault),
+              layout: Value(d.layout?.wireName),
+              cover: Value(d.cover),
+              color: Value(d.color),
+              reminderTime: Value(d.reminderTime),
+              dna: Value(d.dna == null ? null : jsonEncode(d.dna)),
               coupleSelfName: Value(d.coupleSelfName?.trim()),
               couplePartnerName: Value(d.couplePartnerName?.trim()),
               startDate: d.startDate,

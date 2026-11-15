@@ -12,7 +12,8 @@ enum OutboxKind {
   upsertCheckIn('upsert_check_in'),
   deleteMedia('delete_media'),
   react('react'),
-  updateMembership('update_membership');
+  updateMembership('update_membership'),
+  updateJourney('update_journey');
 
   const OutboxKind(this.wire);
   final String wire;
