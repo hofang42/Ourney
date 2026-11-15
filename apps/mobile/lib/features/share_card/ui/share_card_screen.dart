@@ -19,6 +19,7 @@ import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 import 'public_link_section.dart';
 import 'share_card.dart';
+import 'share_skin_chrome.dart';
 
 /// How long the share flow waits for the chosen photo to decode before
 /// rendering anyway (the preview normally has it already).
@@ -40,6 +41,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   ShareCardNumber _number = ShareCardNumber.streak;
   String? _photoCheckInId;
   bool? _blurOverride;
+  bool? _hideBrand;
   bool _busy = false;
 
   final _boundaryKeys = {
@@ -60,7 +62,6 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   Widget build(BuildContext context) {
     final l10n = ShareCardL10n.of(context);
     final app = AppLocalizations.of(context);
-    final ui = context.ui;
     final id = widget.journeyId;
     final journeyAsync = ref.watch(shareJourneyProvider(id));
     final backLabel = MaterialLocalizations.of(context).backButtonTooltip;
@@ -149,172 +150,309 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       caption.caption,
       '${content.emoji} ${content.title}',
     );
+    final skinId = uiSkinIdFor(
+      personaSkinForTemplate(
+        journey.templateId,
+        kind: journey.kind,
+        maxMembers: journey.maxMembers,
+        emoji: journey.emoji,
+      ),
+    );
+    final hideBrand = _hideBrand ?? shareCardHidesBrandByDefault(skinId);
+    final gallery = <ImageProvider>[
+      for (final c in candidates.take(36)) ?_photoProvider(c, thumb: true),
+    ];
     final screenHeight = MediaQuery.sizeOf(context).height;
     final previewHeight = (screenHeight * 0.55).clamp(280.0, 620.0);
+    final quiet = skinId == 'quiet';
+    void openSheet() => showShareSheet(
+      context: context,
+      skinId: skinId,
+      title: switch (skinId) {
+        'squad' => l10n.share_card_squadSheetTitle,
+        'memory' => l10n.share_card_memorySheetTitle,
+        'couple' => l10n.share_card_coupleSheetTitle,
+        'flexer' => l10n.share_card_flexerSheetTitle,
+        _ => l10n.share_card_minimalSheetTitle,
+      },
+      hideBrand: hideBrand,
+      onHideBrand: (v) => setState(() => _hideBrand = v),
+      onAction: () => _share(journey: journey, photo: photo, skinId: skinId),
+    );
+    final actionLabel = switch (skinId) {
+      'quiet' => l10n.share_card_export,
+      'squad' => l10n.share_card_squadShare,
+      'memory' => l10n.share_card_memoryShare,
+      'couple' => l10n.share_card_coupleShare,
+      'flexer' => l10n.share_card_flexerShare,
+      _ => l10n.share_card_minimalExport,
+    };
 
-    return UiScaffold(
-      key: const ValueKey('share-card-screen'),
-      padTop: 0,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          UiBackHeader(
-            onBack: _back,
-            backLabel: backLabel,
-            title: l10n.share_card_title,
-          ),
-          const SizedBox(height: UiSpace.sm),
-          _SectionLabel(l10n.share_card_sizeLabel),
-          KeyedSubtree(
-            key: const ValueKey('share-card-format'),
-            child: UiSegmented<ShareCardFormat>(
-              segments: [
-                UiSegment(
-                  value: ShareCardFormat.story,
-                  label: l10n.share_card_sizeStory,
-                ),
-                UiSegment(
-                  value: ShareCardFormat.feed,
-                  label: l10n.share_card_sizeFeed,
-                ),
-              ],
-              value: _format,
-              onChanged: (f) {
-                OurneyHaptics.selection();
-                setState(() => _format = f);
-              },
+    return UiSkinScope(
+      skinId: skinId,
+      child: Builder(
+        builder: (context) {
+          final ui = context.ui;
+          final heading = switch (skinId) {
+            'quiet' => Text(
+              l10n.share_card_quietTitle,
+              key: const ValueKey('share-card-heading'),
+              style: UiText.heading(
+                font: 'Fraunces',
+                size: 28,
+                weight: 300,
+                height: 1.2,
+                tracking: -0.025,
+                color: ui.ink,
+              ),
             ),
-          ),
-          const SizedBox(height: UiSpace.lg),
-          SizedBox(
-            height: previewHeight,
-            child: AnimatedSwitcher(
-              duration: UiMotion.of(context, UiMotion.sheet),
-              child: KeyedSubtree(
-                key: ValueKey('share-card-preview-${_format.name}'),
-                child: Semantics(
-                  image: true,
-                  label: previewLabel,
-                  excludeSemantics: true,
-                  child: Center(
-                    child: FittedBox(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          boxShadow: [
-                            BoxShadow(
-                              color: ui.shadow,
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
+            'squad' => Text(
+              l10n.share_card_squadTitle,
+              key: const ValueKey('share-card-heading'),
+              style: UiText.heading(
+                font: 'Space Grotesk',
+                size: 25,
+                weight: 700,
+                height: 1.2,
+                tracking: -0.03,
+                color: ui.ink,
+              ),
+            ),
+            'memory' => Text(
+              l10n.share_card_tripPosterTitle(
+                content.totalDays ?? content.dayNumber,
+                content.title.toUpperCase(),
+              ),
+              key: const ValueKey('share-card-heading'),
+              style: UiText.heading(
+                font: 'Fraunces',
+                size: 26,
+                weight: 300,
+                height: 1.25,
+                color: ui.ink,
+              ),
+            ),
+            'couple' => DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: ui.ink.withValues(alpha: 0.28)),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  l10n.share_card_coupleTitle(
+                    content.dayNumber.clamp(1, 100000),
+                    content.photoCount,
+                  ),
+                  key: const ValueKey('share-card-heading'),
+                  style: UiText.heading(
+                    font: 'Playfair Display',
+                    size: 18,
+                    weight: 600,
+                    height: 1.35,
+                    tracking: 0.08,
+                    color: ui.ink,
+                  ),
+                ),
+              ),
+            ),
+            _ => null,
+          };
+          return UiScaffold(
+            key: const ValueKey('share-card-screen'),
+            padTop: 0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ShareTopBar(
+                  skinId: skinId,
+                  title: journey.title,
+                  onBack: _back,
+                  backLabel: backLabel,
+                ),
+                const SizedBox(height: UiSpace.md),
+                ?heading,
+                if (heading != null) const SizedBox(height: UiSpace.md),
+                ShareRatioTabs<ShareCardFormat>(
+                  skinId: skinId,
+                  values: const [
+                    (ShareCardFormat.story, '9:16'),
+                    (ShareCardFormat.feed, '4:5'),
+                  ],
+                  value: _format,
+                  onChanged: (f) => setState(() => _format = f),
+                ),
+                const SizedBox(height: UiSpace.lg),
+                SizedBox(
+                  height: previewHeight,
+                  child: AnimatedSwitcher(
+                    duration: UiMotion.of(context, UiMotion.sheet),
+                    child: KeyedSubtree(
+                      key: ValueKey('share-card-preview-${_format.name}'),
+                      child: Semantics(
+                        image: true,
+                        label: previewLabel,
+                        excludeSemantics: true,
+                        child: Center(
+                          child: FittedBox(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: ui.shadow,
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: RepaintBoundary(
+                                key: _boundaryKeys[_format],
+                                child: ShareCard(
+                                  content: content,
+                                  format: _format,
+                                  // The quiet card always blurs its portrait.
+                                  blur: quiet ? true : blur,
+                                  photo: photo,
+                                  gallery: gallery,
+                                  skinId: skinId,
+                                  hideBrand: hideBrand,
+                                ),
+                              ),
                             ),
-                          ],
-                        ),
-                        child: RepaintBoundary(
-                          key: _boundaryKeys[_format],
-                          child: ShareCard(
-                            content: content,
-                            format: _format,
-                            blur: blur,
-                            photo: photo,
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: UiSpace.xl),
-          KeyedSubtree(
-            key: _shareButtonKey,
-            child: UiButton(
-              key: const ValueKey('share-card-share'),
-              label: _busy
-                  ? l10n.share_card_preparing
-                  : l10n.share_card_shareButton,
-              glyph: const OurneyIcon(name: 'share', size: 20),
-              loading: _busy,
-              onPressed: _busy
-                  ? null
-                  : () => _share(journey: journey, photo: photo),
-            ),
-          ),
-          const SizedBox(height: UiSpace.xl),
-          _SectionLabel(l10n.share_card_numberLabel),
-          KeyedSubtree(
-            key: const ValueKey('share-card-number-mode'),
-            child: UiSegmented<ShareCardNumber>(
-              segments: [
-                UiSegment(
-                  value: ShareCardNumber.streak,
-                  label: l10n.share_card_numberStreak,
+                const SizedBox(height: UiSpace.xl),
+                if (quiet) ...[
+                  QuietShareControls(
+                    note: _quietNote(l10n, blur || quiet, content.metricHidden),
+                    hideBrand: hideBrand,
+                    onHideBrand: (v) => setState(() => _hideBrand = v),
+                  ),
+                  const SizedBox(height: UiSpace.md),
+                ],
+                KeyedSubtree(
+                  key: _shareButtonKey,
+                  child: ShareActionButton(
+                    key: const ValueKey('share-card-share'),
+                    skinId: skinId,
+                    label: _busy ? l10n.share_card_preparing : actionLabel,
+                    glyph: quiet ? null : 'share',
+                    loading: _busy,
+                    onPressed: _busy
+                        ? null
+                        : quiet
+                        ? () => _share(
+                            journey: journey,
+                            photo: photo,
+                            skinId: skinId,
+                          )
+                        : openSheet,
+                  ),
                 ),
-                UiSegment(
-                  value: ShareCardNumber.day,
-                  label: l10n.share_card_numberDay,
+                const SizedBox(height: UiSpace.xl),
+                _SectionLabel(l10n.share_card_moreOptions),
+                _SectionLabel(l10n.share_card_numberLabel),
+                KeyedSubtree(
+                  key: const ValueKey('share-card-number-mode'),
+                  child: UiSegmented<ShareCardNumber>(
+                    segments: [
+                      UiSegment(
+                        value: ShareCardNumber.streak,
+                        label: l10n.share_card_numberStreak,
+                      ),
+                      UiSegment(
+                        value: ShareCardNumber.day,
+                        label: l10n.share_card_numberDay,
+                      ),
+                    ],
+                    value: _number,
+                    onChanged: (n) {
+                      OurneyHaptics.selection();
+                      setState(() => _number = n);
+                    },
+                  ),
                 ),
-              ],
-              value: _number,
-              onChanged: (n) {
-                OurneyHaptics.selection();
-                setState(() => _number = n);
-              },
-            ),
-          ),
-          const SizedBox(height: UiSpace.xl),
-          _SectionLabel(l10n.share_card_photoLabel),
-          if (candidates.isEmpty)
-            Text(
-              l10n.share_card_photoNone,
-              key: const ValueKey('share-card-photo-none'),
-              style: UiText.muted(color: ui.inkMuted, size: 14),
-            )
-          else ...[
-            _PhotoStrip(
-              candidates: candidates,
-              selectedId: selected?.id,
-              thumbnails: [
-                for (final c in candidates) _photoProvider(c, thumb: true),
-              ],
-              onSelect: (c) => setState(() => _photoCheckInId = c.id),
-            ),
-            UiSwitchRow(
-              key: const ValueKey('share-card-blur'),
-              label: l10n.share_card_blurPhoto,
-              subtitle: content.blurPhoto
-                  ? l10n.share_card_blurPhotoHint
-                  : null,
-              value: blur,
-              divider: false,
-              onChanged: (v) => setState(() => _blurOverride = v),
-            ),
-          ],
-          if (content.metricHidden)
-            Padding(
-              padding: const EdgeInsets.only(top: UiSpace.sm),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  OurneyIcon(name: 'lock', flat: true, size: 20, color: ui.ink),
-                  const SizedBox(width: UiSpace.sm),
-                  Expanded(
-                    child: Text(
-                      l10n.share_card_metricHidden,
-                      key: const ValueKey('share-card-metric-hidden'),
-                      style: UiText.body(size: 14, height: 1.45, color: ui.ink),
-                    ),
+                const SizedBox(height: UiSpace.xl),
+                _SectionLabel(l10n.share_card_photoLabel),
+                if (candidates.isEmpty)
+                  Text(
+                    l10n.share_card_photoNone,
+                    key: const ValueKey('share-card-photo-none'),
+                    style: UiText.muted(color: ui.inkMuted, size: 14),
+                  )
+                else ...[
+                  _PhotoStrip(
+                    candidates: candidates,
+                    selectedId: selected?.id,
+                    thumbnails: [
+                      for (final c in candidates)
+                        _photoProvider(c, thumb: true),
+                    ],
+                    onSelect: (c) => setState(() => _photoCheckInId = c.id),
+                  ),
+                  UiSwitchRow(
+                    key: const ValueKey('share-card-blur'),
+                    label: l10n.share_card_blurPhoto,
+                    subtitle: content.blurPhoto
+                        ? l10n.share_card_blurPhotoHint
+                        : null,
+                    value: blur,
+                    divider: false,
+                    onChanged: (v) => setState(() => _blurOverride = v),
                   ),
                 ],
-              ),
+                if (content.metricHidden && !quiet)
+                  Padding(
+                    padding: const EdgeInsets.only(top: UiSpace.sm),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        OurneyIcon(
+                          name: 'lock',
+                          flat: true,
+                          size: 20,
+                          color: ui.ink,
+                        ),
+                        const SizedBox(width: UiSpace.sm),
+                        Expanded(
+                          child: Text(
+                            l10n.share_card_metricHidden,
+                            key: const ValueKey('share-card-metric-hidden'),
+                            style: UiText.body(
+                              size: 14,
+                              height: 1.45,
+                              color: ui.ink,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (showLink) ...[
+                  const SizedBox(height: UiSpace.xl),
+                  PublicLinkSection(journey: journey),
+                ],
+              ],
             ),
-          if (showLink) ...[
-            const SizedBox(height: UiSpace.xl),
-            PublicLinkSection(journey: journey),
-          ],
-        ],
+          );
+        },
       ),
     );
   }
+
+  String? _quietNote(ShareCardL10n l10n, bool blur, bool metricHidden) =>
+      blur && metricHidden
+      ? l10n.share_card_noteBoth
+      : blur
+      ? l10n.share_card_noteBlur
+      : metricHidden
+      ? l10n.share_card_noteMetric
+      : null;
 
   /// Resolved photo (on-device file or MediaStore cache) as an image, or
   /// null while it is being resolved / when it cannot be.
@@ -338,6 +476,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
   Future<void> _share({
     required Journey journey,
     required ImageProvider? photo,
+    required String skinId,
   }) async {
     final l10n = ShareCardL10n.of(context);
     final format = _format;

@@ -36,7 +36,7 @@
   "@profile_usernameLabel": {
     "description": "Username field label."
   },
-  "profile_usernameHelper": "3–20 ký tự: chữ thường, số, dấu _ và dấu chấm",
+  "profile_usernameHelper": "3–20 ký tự: a–z, 0–9, _ .",
   "@profile_usernameHelper": {
     "description": "Helper text under the username field."
   },
@@ -58,11 +58,11 @@
       }
     }
   },
-  "profile_usernameInvalidChars": "Chỉ dùng chữ thường a–z, số, dấu _ và dấu chấm.",
+  "profile_usernameInvalidChars": "Chỉ dùng a–z, 0–9, _ .",
   "@profile_usernameInvalidChars": {
     "description": "Username validation error."
   },
-  "profile_usernameTaken": "Tên này đã có người dùng. Chọn tên khác nhé.",
+  "profile_usernameTaken": "Tên này đã có người dùng",
   "@profile_usernameTaken": {
     "description": "Server rejected the username because it is not unique."
   },
@@ -381,5 +381,22 @@
         "type": "int"
       }
     }
+  },
+  "profile_usernameAvailable": "Dùng được",
+  "@profile_usernameAvailable": {
+    "description": "Status under the username field when it can be used."
+  },
+  "profile_avatarColorN": "Màu đại diện {n}",
+  "@profile_avatarColorN": {
+    "description": "Semantics of one avatar color swatch.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "profile_avatarColors": "Chọn màu ảnh đại diện",
+  "@profile_avatarColors": {
+    "description": "Semantics of the avatar color row."
   }
 }

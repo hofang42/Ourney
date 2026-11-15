@@ -58,6 +58,9 @@ abstract final class AppRoutes {
   static const follow = '/follow';
   static const retell = '/retell';
 
+  /// Import a past journey (Figma `/import`), full screen.
+  static const importJourney = '/import';
+
   /// Share this journey (SCR-82, full-screen version of the sheet).
   static String shareJourney(String journeyId) =>
       '/sharing/${Uri.encodeComponent(journeyId)}';
@@ -100,6 +103,7 @@ const Map<String, List<String>> featureRoutePrefixes = {
     AppRoutes.follow,
     AppRoutes.retell,
   ],
+  'import': [AppRoutes.importJourney],
 };
 
 /// Paths reachable before onboarding/sign-in is complete. Everything else is

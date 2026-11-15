@@ -31,7 +31,10 @@ void main() {
       final auth = RecordingAuthRepository();
       await pumpBackendApp(tester, auth: auth);
       await enterEmail(tester, 'not-an-email');
-      expect(find.text('Email này chưa đúng định dạng.'), findsOneWidget);
+      expect(
+        find.text('Email chưa đúng dạng. Ví dụ: ten@gmail.com'),
+        findsOneWidget,
+      );
       expect(auth.calls, isEmpty);
     });
 
@@ -58,7 +61,10 @@ void main() {
       await wait(58);
       expect(resend().onPressed, isNull);
       await wait(2);
-      expect(resend().onPressed, isNotNull);
+      expect(
+        tester.widget<UiButton>(byKey('auth-resend')).onPressed,
+        isNotNull,
+      );
 
       await tester.tap(byKey('auth-resend'));
       await tester.pump();
@@ -167,11 +173,11 @@ void main() {
       );
       expect(
         msg(OurneyErrorCode.internal, AuthStep.sendOtp),
-        l10n.auth_errorGeneric,
+        l10n.auth_errorSendFailed,
       );
       expect(
         authErrorMessage(l10n, StateError('x'), AuthStep.sendOtp),
-        l10n.auth_errorGeneric,
+        l10n.auth_errorSendFailed,
       );
     });
 

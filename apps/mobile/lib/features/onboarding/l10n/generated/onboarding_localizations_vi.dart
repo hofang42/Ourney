@@ -13,69 +13,23 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_title => 'Chào mừng đến Ourney';
 
   @override
-  String get onboarding_next => 'Tiếp tục';
-
-  @override
   String get onboarding_skip => 'Bỏ qua';
 
   @override
-  String get onboarding_languageSwitch => 'English';
+  String get onboarding_cameraTitle => 'cho ourney dùng camera.';
 
   @override
-  String get onboarding_languageSwitchHint => 'Đổi ngôn ngữ';
+  String get onboarding_cameraBody =>
+      'Để chụp tấm đầu tiên của hành trình. Ảnh chỉ hiện với người trong hành trình đó.';
 
   @override
-  String get onboarding_page1Title => 'Từng tấm ảnh. Cả một câu chuyện.';
+  String get onboarding_cameraAllow => 'Cho phép';
 
   @override
-  String get onboarding_page1Body =>
-      'Ghi lại hôm nay để thấy câu chuyện lớn dần.';
+  String get onboarding_nudgeTitle => 'để mình khẽ nhắc trước khi chuỗi đứt.';
 
   @override
-  String get onboarding_page2Title =>
-      'Hành trình nào cũng được. Một mình, cùng nhóm, hay cùng người thương.';
-
-  @override
-  String get onboarding_page2Body => 'Chọn cách đồng hành phù hợp với bạn.';
-
-  @override
-  String get onboarding_page3Title =>
-      'Biến hành trình thành thứ đáng để chia sẻ.';
-
-  @override
-  String get onboarding_page3Body =>
-      'Tạo nên những bản tổng kết bạn muốn giữ mãi.';
-
-  @override
-  String get onboarding_recapTitle => '30 ngày yên tĩnh';
-
-  @override
-  String get onboarding_recapSubtitle => 'Đọc sách mỗi ngày · Tháng 10';
-
-  @override
-  String get onboarding_recapShare => 'Đáng để chia sẻ';
-
-  @override
-  String onboarding_pageSemantics(int current, int total) {
-    return 'Trang $current trên $total';
-  }
-
-  @override
-  String get onboarding_cameraTitle => 'cho Ourney dùng camera.';
-
-  @override
-  String get onboarding_cameraBody => 'Ourney cần camera để chụp ảnh hôm nay.';
-
-  @override
-  String get onboarding_cameraAllow => 'Cho phép camera';
-
-  @override
-  String onboarding_nudgeTitle(String time) {
-    return 'Nhắc bạn lúc $time ngày mai nhé?';
-  }
-
-  @override
-  String get onboarding_nudgeAllow => 'Bật nhắc nhở';
+  String get onboarding_nudgeAllow => 'Cho phép';
 
   @override
   String get onboarding_notNow => 'để sau vậy.';
@@ -164,4 +118,30 @@ class OnboardingL10nVi extends OnboardingL10n {
 
   @override
   String get onboarding_quizStart => 'Bắt đầu thôi';
+
+  @override
+  String get onboarding_splashTagline1 => 'chụp một tấm.';
+
+  @override
+  String get onboarding_splashTagline2 => 'giữ một chuỗi.';
+
+  @override
+  String get onboarding_splashTagline3 => 'đi cùng nhau.';
+
+  @override
+  String get onboarding_splashStart => 'Bắt đầu';
+
+  @override
+  String get onboarding_splashOpening => 'Đang mở';
+
+  @override
+  String get onboarding_resultCouple => 'hai đứa mình.';
+
+  @override
+  String get onboarding_permissionClose => 'Đóng';
+
+  @override
+  String onboarding_nudgeBody(String time) {
+    return 'Bật nhắc để mình nhắc bạn lúc $time. Có thể trễ tuỳ máy.';
+  }
 }

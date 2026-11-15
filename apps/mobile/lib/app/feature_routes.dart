@@ -4,6 +4,7 @@ import '../features/auth/routes.dart';
 import '../features/camera/routes.dart';
 import '../features/checkin/routes.dart';
 import '../features/groups/routes.dart';
+import '../features/import/routes.dart';
 import '../features/journeys/routes.dart';
 import '../features/onboarding/routes.dart';
 import '../features/profile/routes.dart';
@@ -40,6 +41,7 @@ abstract final class FeatureRoutes {
     ...remindersRoutes,
     ...socialRoutes,
     ...sharingRoutes,
+    ...importRoutes,
   ];
 
   /// Every feature's routes keyed by folder name (used by tests to enforce
@@ -57,5 +59,6 @@ abstract final class FeatureRoutes {
     'reminders': remindersRoutes,
     'social': [...socialRoutes, ...activityRoutes],
     'sharing': sharingRoutes,
+    'import': importRoutes,
   };
 }

@@ -5,27 +5,26 @@
   "auth_title": "sign in.",
   "auth_subtitle": "Enter your email and Ourney sends you a 6-digit code. No password needed.",
   "auth_emailLabel": "Email",
-  "auth_emailHint": "you@example.com",
-  "auth_emailInvalid": "That email doesn't look right.",
+  "auth_emailHint": "name@email.com",
+  "auth_emailInvalid": "That email doesn't look right. Example: name@gmail.com",
   "auth_sendCode": "Send code",
   "auth_sending": "Sending…",
-  "auth_codeSentTo": "We sent a 6-digit code to {email}.",
   "auth_codeLabel": "6-digit code",
   "auth_codeInvalidFormat": "The code is exactly 6 digits.",
   "auth_verify": "Confirm",
   "auth_verifying": "Checking…",
   "auth_resend": "Resend code",
   "auth_resendIn": "Resend in {seconds} s",
-  "auth_codeResent": "New code sent. Check your inbox.",
+  "auth_codeResent": "New code sent. The old code no longer works.",
   "auth_changeEmail": "Change email",
-  "auth_errorWrongCode": "That code is wrong or expired. Check it or ask for a new one.",
+  "auth_errorWrongCode": "That code isn't right. Check the 6 digits and try again.",
   "auth_errorRateLimited": "Too many tries. Wait a moment and try again.",
   "auth_errorOffline": "You're offline. Reconnect and try again.",
   "auth_errorGeneric": "Something went wrong. Please try again.",
   "auth_eyebrow": "OURNEY",
   "auth_eyebrowCheck": "CHECK YOUR EMAIL",
-  "auth_terms": "Terms",
-  "auth_privacy": "Privacy",
+  "auth_terms": "Terms of Use",
+  "auth_privacy": "Privacy Policy.",
   "auth_digitSemantics": "Digit {n} of 6",
   "auth_tabEmail": "Email",
   "auth_tabPhone": "Phone",
@@ -35,7 +34,6 @@
   "auth_phoneInvalid": "A Vietnamese number has 9–10 digits after 0 or +84.",
   "auth_phoneSubtitle": "Enter your phone number and Ourney texts you a 6-digit code.",
   "auth_sendSms": "Text me a code",
-  "auth_smsSentTo": "We texted a 6-digit code to {phone}.",
   "auth_changePhone": "Change phone number",
   "auth_passwordLabel": "Password",
   "auth_newPasswordLabel": "New password",
@@ -55,6 +53,59 @@
   "auth_resetSubtitle": "Enter your email and Ourney sends a 6-digit code to set a new password.",
   "auth_resetConfirm": "Set password",
   "auth_backToSignIn": "Back to sign in",
-  "auth_errorWrongPassword": "Wrong email or password.",
-  "auth_errorEmailTaken": "That email already has an account. Sign in instead."
+  "auth_errorWrongPassword": "Wrong password. Try again or sign in with a code.",
+  "auth_errorEmailTaken": "That email already has an account. Sign in instead.",
+  "@auth_emailHint": {
+    "description": ""
+  },
+  "@auth_emailInvalid": {
+    "description": ""
+  },
+  "@auth_codeResent": {
+    "description": ""
+  },
+  "@auth_terms": {
+    "description": ""
+  },
+  "@auth_privacy": {
+    "description": ""
+  },
+  "@auth_errorWrongCode": {
+    "description": ""
+  },
+  "@auth_errorWrongPassword": {
+    "description": ""
+  },
+  "auth_errorSendFailed": "Couldn't send the code. Try again in a few minutes.",
+  "@auth_errorSendFailed": {
+    "description": ""
+  },
+  "auth_codeSentPrefix": "The 6-digit code was just sent to",
+  "@auth_codeSentPrefix": {
+    "description": ""
+  },
+  "auth_offlineBanner": "You're offline, so the code wasn't sent. Turn on your connection and try again.",
+  "@auth_offlineBanner": {
+    "description": ""
+  },
+  "auth_retry": "Try again",
+  "@auth_retry": {
+    "description": ""
+  },
+  "auth_success": "All done. Welcome.",
+  "@auth_success": {
+    "description": ""
+  },
+  "auth_legalIntro": "By continuing you agree to the",
+  "@auth_legalIntro": {
+    "description": ""
+  },
+  "auth_legalAnd": "and",
+  "@auth_legalAnd": {
+    "description": ""
+  },
+  "auth_back": "Back",
+  "@auth_back": {
+    "description": ""
+  }
 }

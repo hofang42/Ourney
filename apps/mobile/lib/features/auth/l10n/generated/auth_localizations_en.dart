@@ -27,21 +27,17 @@ class AuthL10nEn extends AuthL10n {
   String get auth_emailLabel => 'Email';
 
   @override
-  String get auth_emailHint => 'you@example.com';
+  String get auth_emailHint => 'name@email.com';
 
   @override
-  String get auth_emailInvalid => 'That email doesn\'t look right.';
+  String get auth_emailInvalid =>
+      'That email doesn\'t look right. Example: name@gmail.com';
 
   @override
   String get auth_sendCode => 'Send code';
 
   @override
   String get auth_sending => 'Sending…';
-
-  @override
-  String auth_codeSentTo(String email) {
-    return 'We sent a 6-digit code to $email.';
-  }
 
   @override
   String get auth_codeLabel => '6-digit code';
@@ -64,14 +60,14 @@ class AuthL10nEn extends AuthL10n {
   }
 
   @override
-  String get auth_codeResent => 'New code sent. Check your inbox.';
+  String get auth_codeResent => 'New code sent. The old code no longer works.';
 
   @override
   String get auth_changeEmail => 'Change email';
 
   @override
   String get auth_errorWrongCode =>
-      'That code is wrong or expired. Check it or ask for a new one.';
+      'That code isn\'t right. Check the 6 digits and try again.';
 
   @override
   String get auth_errorRateLimited =>
@@ -90,10 +86,10 @@ class AuthL10nEn extends AuthL10n {
   String get auth_eyebrowCheck => 'CHECK YOUR EMAIL';
 
   @override
-  String get auth_terms => 'Terms';
+  String get auth_terms => 'Terms of Use';
 
   @override
-  String get auth_privacy => 'Privacy';
+  String get auth_privacy => 'Privacy Policy.';
 
   @override
   String auth_digitSemantics(int n) {
@@ -125,11 +121,6 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_sendSms => 'Text me a code';
-
-  @override
-  String auth_smsSentTo(String phone) {
-    return 'We texted a 6-digit code to $phone.';
-  }
 
   @override
   String get auth_changePhone => 'Change phone number';
@@ -191,9 +182,36 @@ class AuthL10nEn extends AuthL10n {
   String get auth_backToSignIn => 'Back to sign in';
 
   @override
-  String get auth_errorWrongPassword => 'Wrong email or password.';
+  String get auth_errorWrongPassword =>
+      'Wrong password. Try again or sign in with a code.';
 
   @override
   String get auth_errorEmailTaken =>
       'That email already has an account. Sign in instead.';
+
+  @override
+  String get auth_errorSendFailed =>
+      'Couldn\'t send the code. Try again in a few minutes.';
+
+  @override
+  String get auth_codeSentPrefix => 'The 6-digit code was just sent to';
+
+  @override
+  String get auth_offlineBanner =>
+      'You\'re offline, so the code wasn\'t sent. Turn on your connection and try again.';
+
+  @override
+  String get auth_retry => 'Try again';
+
+  @override
+  String get auth_success => 'All done. Welcome.';
+
+  @override
+  String get auth_legalIntro => 'By continuing you agree to the';
+
+  @override
+  String get auth_legalAnd => 'and';
+
+  @override
+  String get auth_back => 'Back';
 }

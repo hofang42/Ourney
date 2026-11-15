@@ -165,4 +165,143 @@ class ShareCardL10nEn extends ShareCardL10n {
   @override
   String get share_card_linkErrorForbidden =>
       'Only the journey owner can manage the link.';
+
+  @override
+  String get share_card_quietTitle => 'Make a card.';
+
+  @override
+  String get share_card_squadTitle => 'make a card.';
+
+  @override
+  String get share_card_quietPrivate => 'Private';
+
+  @override
+  String share_card_dayLabel(int n) {
+    return 'DAY $n';
+  }
+
+  @override
+  String share_card_steadyDays(int n) {
+    return '$n steady days';
+  }
+
+  @override
+  String share_card_attended(int done, int total, int day) {
+    return '$done/$total CHECKED IN · DAY $day';
+  }
+
+  @override
+  String share_card_cup(int n) {
+    return 'CUP $n';
+  }
+
+  @override
+  String share_card_tripPosterTitle(int days, String name) {
+    return '$days DAYS · $name';
+  }
+
+  @override
+  String share_card_coupleTitle(int days, int moments) {
+    return '$days DAYS TOGETHER · $moments MOMENTS';
+  }
+
+  @override
+  String share_card_activeDays(int n) {
+    return '$n ACTIVE DAYS';
+  }
+
+  @override
+  String share_card_minimalDays(int done, int total) {
+    return '$done/$total DAYS';
+  }
+
+  @override
+  String share_card_minimalDaysOpen(int done) {
+    return '$done DAYS';
+  }
+
+  @override
+  String share_card_minimalRate(int pct) {
+    return '$pct% CONSISTENT';
+  }
+
+  @override
+  String get share_card_noteBoth =>
+      'Cover photo is blurred · weight is always hidden';
+
+  @override
+  String get share_card_noteBlur => 'Cover photo is blurred';
+
+  @override
+  String get share_card_noteMetric => 'Weight is always hidden';
+
+  @override
+  String get share_card_hideBrand => 'Hide the ourney wordmark';
+
+  @override
+  String get share_card_brandOn => 'On';
+
+  @override
+  String get share_card_brandOff => 'Off';
+
+  @override
+  String get share_card_export => 'Export card';
+
+  @override
+  String get share_card_exportSaved => 'Card saved.';
+
+  @override
+  String get share_card_squadShare => 'Share';
+
+  @override
+  String get share_card_memoryShare => 'Share trip poster';
+
+  @override
+  String get share_card_coupleShare => 'Share our story';
+
+  @override
+  String get share_card_flexerShare => 'Share to Story';
+
+  @override
+  String get share_card_minimalExport => 'Export minimal card';
+
+  @override
+  String get share_card_squadSheetTitle => 'share the card.';
+
+  @override
+  String get share_card_memorySheetTitle => 'share the trip poster.';
+
+  @override
+  String get share_card_coupleSheetTitle => 'share the story.';
+
+  @override
+  String get share_card_flexerSheetTitle => 'share the achievement.';
+
+  @override
+  String get share_card_minimalSheetTitle => 'export the minimal card.';
+
+  @override
+  String get share_card_sheetMessages => 'Messages';
+
+  @override
+  String get share_card_sheetOther => 'Other apps';
+
+  @override
+  String get share_card_sheetSave => 'Save image';
+
+  @override
+  String get share_card_privacyTitle => 'Show weight on the card?';
+
+  @override
+  String get share_card_privacyBody =>
+      'Anyone who sees the card will see this number.';
+
+  @override
+  String get share_card_privacyKeep => 'Keep hidden';
+
+  @override
+  String get share_card_privacyShow => 'Show anyway';
+
+  @override
+  String get share_card_moreOptions => 'Card options';
 }

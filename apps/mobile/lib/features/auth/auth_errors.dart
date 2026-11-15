@@ -31,11 +31,11 @@ String authErrorMessage(AuthL10n l10n, Object error, AuthStep step) {
     AuthStep.sendOtp || AuthStep.resetSend =>
       code == OurneyErrorCode.invalid
           ? l10n.auth_emailInvalid
-          : l10n.auth_errorGeneric,
+          : l10n.auth_errorSendFailed,
     AuthStep.sendPhone =>
       code == OurneyErrorCode.invalid
           ? l10n.auth_phoneInvalid
-          : l10n.auth_errorGeneric,
+          : l10n.auth_errorSendFailed,
     AuthStep.verifyOtp ||
     AuthStep.verifyPhone ||
     AuthStep.confirmSignUp ||

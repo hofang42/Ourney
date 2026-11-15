@@ -163,4 +163,141 @@ class ShareCardL10nVi extends ShareCardL10n {
   @override
   String get share_card_linkErrorForbidden =>
       'Chỉ chủ hành trình mới quản lý được link.';
+
+  @override
+  String get share_card_quietTitle => 'Tạo thiệp.';
+
+  @override
+  String get share_card_squadTitle => 'tạo thiệp.';
+
+  @override
+  String get share_card_quietPrivate => 'Riêng tư';
+
+  @override
+  String share_card_dayLabel(int n) {
+    return 'NGÀY $n';
+  }
+
+  @override
+  String share_card_steadyDays(int n) {
+    return '$n ngày đều đặn';
+  }
+
+  @override
+  String share_card_attended(int done, int total, int day) {
+    return '$done/$total ĐÃ ĐIỂM DANH · NGÀY $day';
+  }
+
+  @override
+  String share_card_cup(int n) {
+    return 'CÚP $n';
+  }
+
+  @override
+  String share_card_tripPosterTitle(int days, String name) {
+    return '$days NGÀY · $name';
+  }
+
+  @override
+  String share_card_coupleTitle(int days, int moments) {
+    return '$days NGÀY BÊN NHAU · $moments KHOẢNH KHẮC';
+  }
+
+  @override
+  String share_card_activeDays(int n) {
+    return '$n NGÀY HOẠT ĐỘNG';
+  }
+
+  @override
+  String share_card_minimalDays(int done, int total) {
+    return '$done/$total NGÀY';
+  }
+
+  @override
+  String share_card_minimalDaysOpen(int done) {
+    return '$done NGÀY';
+  }
+
+  @override
+  String share_card_minimalRate(int pct) {
+    return '$pct% ĐỀU ĐẶN';
+  }
+
+  @override
+  String get share_card_noteBoth => 'Ảnh đại diện được làm mờ · số kg luôn ẩn';
+
+  @override
+  String get share_card_noteBlur => 'Ảnh đại diện được làm mờ';
+
+  @override
+  String get share_card_noteMetric => 'Số kg luôn ẩn';
+
+  @override
+  String get share_card_hideBrand => 'Ẩn chữ ourney';
+
+  @override
+  String get share_card_brandOn => 'Bật';
+
+  @override
+  String get share_card_brandOff => 'Tắt';
+
+  @override
+  String get share_card_export => 'Xuất thẻ';
+
+  @override
+  String get share_card_exportSaved => 'Đã lưu thẻ.';
+
+  @override
+  String get share_card_squadShare => 'Chia sẻ';
+
+  @override
+  String get share_card_memoryShare => 'Chia sẻ poster chuyến đi';
+
+  @override
+  String get share_card_coupleShare => 'Chia sẻ câu chuyện của mình';
+
+  @override
+  String get share_card_flexerShare => 'Chia sẻ lên Story';
+
+  @override
+  String get share_card_minimalExport => 'Xuất thẻ tối giản';
+
+  @override
+  String get share_card_squadSheetTitle => 'chia sẻ tấm thiệp.';
+
+  @override
+  String get share_card_memorySheetTitle => 'chia sẻ poster chuyến đi.';
+
+  @override
+  String get share_card_coupleSheetTitle => 'chia sẻ câu chuyện.';
+
+  @override
+  String get share_card_flexerSheetTitle => 'chia sẻ thành tích.';
+
+  @override
+  String get share_card_minimalSheetTitle => 'xuất thẻ tối giản.';
+
+  @override
+  String get share_card_sheetMessages => 'Tin nhắn';
+
+  @override
+  String get share_card_sheetOther => 'Ứng dụng khác';
+
+  @override
+  String get share_card_sheetSave => 'Lưu ảnh';
+
+  @override
+  String get share_card_privacyTitle => 'Hiện số kg trên thẻ?';
+
+  @override
+  String get share_card_privacyBody => 'Ai xem thẻ đều thấy số này.';
+
+  @override
+  String get share_card_privacyKeep => 'Giữ ẩn';
+
+  @override
+  String get share_card_privacyShow => 'Vẫn hiện';
+
+  @override
+  String get share_card_moreOptions => 'Tùy chỉnh thẻ';
 }

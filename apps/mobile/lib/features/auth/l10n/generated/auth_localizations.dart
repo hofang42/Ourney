@@ -130,13 +130,13 @@ abstract class AuthL10n {
   /// Email field placeholder.
   ///
   /// In vi, this message translates to:
-  /// **'ban@vidu.com'**
+  /// **'ten@email.com'**
   String get auth_emailHint;
 
   /// Validation error for the email field.
   ///
   /// In vi, this message translates to:
-  /// **'Email này chưa đúng định dạng.'**
+  /// **'Email chưa đúng dạng. Ví dụ: ten@gmail.com'**
   String get auth_emailInvalid;
 
   /// Button that sends the OTP email.
@@ -150,12 +150,6 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Đang gửi…'**
   String get auth_sending;
-
-  /// Below the OTP title.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mã 6 số đã được gửi tới {email}.'**
-  String auth_codeSentTo(String email);
 
   /// OTP field label.
   ///
@@ -196,7 +190,7 @@ abstract class AuthL10n {
   /// Confirmation after resending the OTP.
   ///
   /// In vi, this message translates to:
-  /// **'Đã gửi mã mới. Kiểm tra hộp thư nhé.'**
+  /// **'Đã gửi mã mới. Mã cũ không dùng được nữa.'**
   String get auth_codeResent;
 
   /// Go back to the email step.
@@ -208,7 +202,7 @@ abstract class AuthL10n {
   /// OTP rejected (invalid / expired).
   ///
   /// In vi, this message translates to:
-  /// **'Mã không đúng hoặc đã hết hạn. Kiểm tra lại hoặc gửi mã mới.'**
+  /// **'Mã chưa đúng. Kiểm tra lại 6 số trong email rồi nhập lại.'**
   String get auth_errorWrongCode;
 
   /// Too many OTP requests or attempts.
@@ -244,13 +238,13 @@ abstract class AuthL10n {
   /// Footer link to the terms.
   ///
   /// In vi, this message translates to:
-  /// **'Điều khoản'**
+  /// **'Điều khoản sử dụng'**
   String get auth_terms;
 
   /// Footer link to the privacy policy.
   ///
   /// In vi, this message translates to:
-  /// **'Quyền riêng tư'**
+  /// **'Chính sách quyền riêng tư.'**
   String get auth_privacy;
 
   /// Screen reader label of one OTP digit box.
@@ -306,12 +300,6 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Gửi mã SMS'**
   String get auth_sendSms;
-
-  /// Below the OTP title for phone.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mã 6 số đã gửi qua SMS tới {phone}.'**
-  String auth_smsSentTo(String phone);
 
   /// Back to the phone form.
   ///
@@ -430,7 +418,7 @@ abstract class AuthL10n {
   /// Password sign-in error.
   ///
   /// In vi, this message translates to:
-  /// **'Email hoặc mật khẩu chưa đúng.'**
+  /// **'Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.'**
   String get auth_errorWrongPassword;
 
   /// Sign-up error.
@@ -438,6 +426,54 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Email này đã có tài khoản. Hãy đăng nhập.'**
   String get auth_errorEmailTaken;
+
+  /// Sending a code failed (not offline, not rate limited).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa gửi được mã. Thử lại sau ít phút.'**
+  String get auth_errorSendFailed;
+
+  /// Before the (bold) email or phone the code went to.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mã gồm 6 số vừa gửi tới'**
+  String get auth_codeSentPrefix;
+
+  /// Offline banner (.flow-offline).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có mạng nên chưa gửi được mã. Bật mạng rồi thử lại.'**
+  String get auth_offlineBanner;
+
+  /// Retry action of the offline banner.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thử lại'**
+  String get auth_retry;
+
+  /// Shown after the code was accepted.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xong rồi. Chào bạn.'**
+  String get auth_success;
+
+  /// Start of the legal line under the sign-in form.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếp tục nghĩa là bạn đồng ý'**
+  String get auth_legalIntro;
+
+  /// Between Terms and Privacy in the legal line.
+  ///
+  /// In vi, this message translates to:
+  /// **'và'**
+  String get auth_legalAnd;
+
+  /// Back button semantics on the code step.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại'**
+  String get auth_back;
 }
 
 class _AuthL10nDelegate extends LocalizationsDelegate<AuthL10n> {

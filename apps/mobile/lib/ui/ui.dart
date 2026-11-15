@@ -4,6 +4,7 @@
 /// Import this barrel from screens: `import '../../ui/ui.dart';`.
 library;
 
+export 'components/auth_kit.dart';
 export 'components/avatar.dart';
 export 'components/banner.dart';
 export 'components/bars.dart';
@@ -13,6 +14,7 @@ export 'components/camera_chrome.dart';
 export 'components/chips.dart';
 export 'components/dock.dart';
 export 'components/feedback.dart';
+export 'components/flow_kit.dart';
 export 'components/glass.dart';
 export 'components/inputs.dart';
 export 'components/journey_wheel.dart';

@@ -45,6 +45,7 @@ void main() {
     'reminders',
     'social',
     'sharing',
+    'import',
   ];
 
   test('every feature folder is registered with route prefixes', () {

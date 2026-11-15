@@ -9,11 +9,11 @@
   "profile_setupSubtitle": "Friends see this name and photo on shared journeys.",
   "profile_editTitle": "Edit profile",
   "profile_usernameLabel": "Username",
-  "profile_usernameHelper": "3–20 characters: lowercase letters, digits, _ and .",
+  "profile_usernameHelper": "3–20 characters: a–z, 0–9, _ .",
   "profile_usernameTooShort": "At least {min} characters.",
   "profile_usernameTooLong": "At most {max} characters.",
-  "profile_usernameInvalidChars": "Use only lowercase a–z, digits, _ and dots.",
-  "profile_usernameTaken": "That username is taken. Try another one.",
+  "profile_usernameInvalidChars": "Use only a–z, 0–9, _ .",
+  "profile_usernameTaken": "That username is already taken",
   "profile_displayNameLabel": "Display name",
   "profile_displayNameEmpty": "Enter a display name.",
   "profile_displayNameTooLong": "At most {max} characters.",
@@ -85,5 +85,22 @@
   "profile_deleteDoneBody": "Thanks for using Ourney.",
   "profile_deleteDoneButton": "Back to start",
   "profile_deleteBackToSettings": "Back to settings",
-  "profile_deleteStepSemantics": "Step {current} of {total}"
+  "profile_deleteStepSemantics": "Step {current} of {total}",
+  "profile_usernameAvailable": "Available",
+  "@profile_usernameAvailable": {
+    "description": "Status under the username field when it can be used."
+  },
+  "profile_avatarColorN": "Avatar color {n}",
+  "@profile_avatarColorN": {
+    "description": "Semantics of one avatar color swatch.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "profile_avatarColors": "Choose an avatar color",
+  "@profile_avatarColors": {
+    "description": "Semantics of the avatar color row."
+  }
 }

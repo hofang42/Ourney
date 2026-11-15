@@ -342,6 +342,21 @@ const Map<String, List<_Prim>> _drawings = {
     _Prim.path('M12 4c2 2.5 2 6 0 9-2-3-2-6.5 0-9Z'),
     _Prim.path('M4 9c4 0 7 2 8 6M20 9c-4 0-7 2-8 6M5 19h14'),
   ],
+  // Journey goal icons of the onboarding quiz (V2 icons.tsx: scales, book,
+  // fitness, trip, edit). `pencil` is V2's `edit`; `edit` above keeps its
+  // older drawing.
+  'scales': [_Prim.path('M12 4v16M7 20h10M5 7h14M5 7l-3 6h6ZM19 7l-3 6h6Z')],
+  'book': [
+    _Prim.path(
+      'M4 4h6c2 0 2 2 2 2v14c0-2-2-2-2-2H4ZM20 4h-6c-2 0-2 2-2 2v14c0-2 2-2 2-2h6Z',
+    ),
+  ],
+  'fitness': [_Prim.path('M7 8v8M4 10v4M17 8v8M20 10v4M7 12h10')],
+  'trip': [
+    _Prim.path('M6 7h12v14H6Z'),
+    _Prim.path('M9 7V4h6v3M9 11h6M10 21v1M14 21v1'),
+  ],
+  'pencil': [_Prim.path('m5 17-1 4 4-1L20 8l-3-3Z'), _Prim.path('m14 8 3 3')],
 };
 
 /// Sticker fill of each icon (V2 icons.tsx `palette`).
@@ -439,6 +454,11 @@ const Map<String, Color> _palette = {
   'leaf': Color(0xFF10B981),
   'drop': Color(0xFF2AA7E0),
   'lotus': Color(0xFFA13CC9),
+  'scales': Color(0xFF10B981),
+  'book': Color(0xFFFF9F1C),
+  'fitness': Color(0xFFA13CC9),
+  'trip': Color(0xFFC2452B),
+  'pencil': Color(0xFFA13CC9),
 };
 
 /// Icons that are open strokes: their path is never filled.

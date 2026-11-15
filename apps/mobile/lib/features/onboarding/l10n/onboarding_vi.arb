@@ -4,92 +4,27 @@
   "@onboarding_title": {
     "description": "Feature title / app welcome (used in tests and accessibility)."
   },
-  "onboarding_next": "Tiếp tục",
-  "@onboarding_next": {
-    "description": "Button that moves to the next onboarding page (and finishes on the last)."
-  },
   "onboarding_skip": "Bỏ qua",
   "@onboarding_skip": {
     "description": "Top-right button that finishes onboarding immediately."
   },
-  "onboarding_languageSwitch": "English",
-  "@onboarding_languageSwitch": {
-    "description": "Chip on page 1 that switches the app language; shows the OTHER language's name."
-  },
-  "onboarding_languageSwitchHint": "Đổi ngôn ngữ",
-  "@onboarding_languageSwitchHint": {
-    "description": "Screen reader hint of the language chip."
-  },
-  "onboarding_page1Title": "Từng tấm ảnh. Cả một câu chuyện.",
-  "@onboarding_page1Title": {
-    "description": "Page 1 headline."
-  },
-  "onboarding_page1Body": "Ghi lại hôm nay để thấy câu chuyện lớn dần.",
-  "@onboarding_page1Body": {
-    "description": "Page 1 body."
-  },
-  "onboarding_page2Title": "Hành trình nào cũng được. Một mình, cùng nhóm, hay cùng người thương.",
-  "@onboarding_page2Title": {
-    "description": "Page 2 headline."
-  },
-  "onboarding_page2Body": "Chọn cách đồng hành phù hợp với bạn.",
-  "@onboarding_page2Body": {
-    "description": "Page 2 body."
-  },
-  "onboarding_page3Title": "Biến hành trình thành thứ đáng để chia sẻ.",
-  "@onboarding_page3Title": {
-    "description": "Page 3 headline."
-  },
-  "onboarding_page3Body": "Tạo nên những bản tổng kết bạn muốn giữ mãi.",
-  "@onboarding_page3Body": {
-    "description": "Page 3 body."
-  },
-  "onboarding_recapTitle": "30 ngày yên tĩnh",
-  "@onboarding_recapTitle": {
-    "description": "Title on the sample recap card in the page 3 illustration."
-  },
-  "onboarding_recapSubtitle": "Đọc sách mỗi ngày · Tháng 10",
-  "@onboarding_recapSubtitle": {
-    "description": "Subtitle on the sample recap card."
-  },
-  "onboarding_recapShare": "Đáng để chia sẻ",
-  "@onboarding_recapShare": {
-    "description": "Label on the sample story sticker in the page 3 illustration."
-  },
-  "onboarding_pageSemantics": "Trang {current} trên {total}",
-  "@onboarding_pageSemantics": {
-    "description": "Screen reader label of the page indicator.",
-    "placeholders": {
-      "current": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "onboarding_cameraTitle": "cho Ourney dùng camera.",
+  "onboarding_cameraTitle": "cho ourney dùng camera.",
   "@onboarding_cameraTitle": {
     "description": "Title of the camera permission sheet."
   },
-  "onboarding_cameraBody": "Ourney cần camera để chụp ảnh hôm nay.",
+  "onboarding_cameraBody": "Để chụp tấm đầu tiên của hành trình. Ảnh chỉ hiện với người trong hành trình đó.",
   "@onboarding_cameraBody": {
     "description": "Body of the camera permission sheet."
   },
-  "onboarding_cameraAllow": "Cho phép camera",
+  "onboarding_cameraAllow": "Cho phép",
   "@onboarding_cameraAllow": {
     "description": "Primary button of the camera permission sheet."
   },
-  "onboarding_nudgeTitle": "Nhắc bạn lúc {time} ngày mai nhé?",
+  "onboarding_nudgeTitle": "để mình khẽ nhắc trước khi chuỗi đứt.",
   "@onboarding_nudgeTitle": {
-    "description": "Title of the notification permission sheet.",
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
+    "description": "Title of the notification permission sheet."
   },
-  "onboarding_nudgeAllow": "Bật nhắc nhở",
+  "onboarding_nudgeAllow": "Cho phép",
   "@onboarding_nudgeAllow": {
     "description": "Primary button of the notification sheet."
   },
@@ -215,5 +150,42 @@
   "onboarding_quizStart": "Bắt đầu thôi",
   "@onboarding_quizStart": {
     "description": "Quiz final button."
+  },
+  "onboarding_splashTagline1": "chụp một tấm.",
+  "@onboarding_splashTagline1": {
+    "description": "Splash tagline 1 (rotates with 2 and 3)."
+  },
+  "onboarding_splashTagline2": "giữ một chuỗi.",
+  "@onboarding_splashTagline2": {
+    "description": "Splash tagline 2."
+  },
+  "onboarding_splashTagline3": "đi cùng nhau.",
+  "@onboarding_splashTagline3": {
+    "description": "Splash tagline 3."
+  },
+  "onboarding_splashStart": "Bắt đầu",
+  "@onboarding_splashStart": {
+    "description": "Screen reader label of the first-launch splash (tap to continue)."
+  },
+  "onboarding_splashOpening": "Đang mở",
+  "@onboarding_splashOpening": {
+    "description": "Screen reader label of the returning-user splash."
+  },
+  "onboarding_resultCouple": "hai đứa mình.",
+  "@onboarding_resultCouple": {
+    "description": "Result card title when the couple option is chosen."
+  },
+  "onboarding_permissionClose": "Đóng",
+  "@onboarding_permissionClose": {
+    "description": "Close button of the permission sheets."
+  },
+  "onboarding_nudgeBody": "Bật nhắc để mình nhắc bạn lúc {time}. Có thể trễ tuỳ máy.",
+  "@onboarding_nudgeBody": {
+    "description": "Body of the notification permission sheet.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   }
 }

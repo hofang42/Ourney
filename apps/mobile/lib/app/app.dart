@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../ui/ui.dart';
@@ -49,7 +50,7 @@ class OurneyApp extends ConsumerWidget {
         onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
         child: OurneyTextScaleClamp(
           child: _SplashGate(
-            enabled: !onboarded,
+            returning: onboarded,
             child: child ?? const SizedBox.shrink(),
           ),
         ),
@@ -58,12 +59,16 @@ class OurneyApp extends ConsumerWidget {
   }
 }
 
-/// Shows the V1.0 splash (coral field, ink wordmark) over the very first
-/// frames of a first launch (before onboarding), then fades it out.
+/// V2 `SplashFlow` over the first frames of every launch, then fades out.
+///
+/// First launch ([returning] false): stickers, ransom-note wordmark and a
+/// tagline that rotates every 1.2s; it holds for 2.4s and a tap skips ahead.
+/// Returning person: wordmark and spinner for 650ms. Reduced motion keeps the
+/// first tagline and removes the rotation and fades.
 class _SplashGate extends StatefulWidget {
-  const _SplashGate({required this.enabled, required this.child});
+  const _SplashGate({required this.returning, required this.child});
 
-  final bool enabled;
+  final bool returning;
   final Widget child;
 
   @override
@@ -72,19 +77,19 @@ class _SplashGate extends StatefulWidget {
 
 class _SplashGateState extends State<_SplashGate>
     with SingleTickerProviderStateMixin {
+  static const _taglineEvery = 1200;
+
+  late final int _holdMs = widget.returning ? 650 : 2400;
+  late final int _fadeMs = widget.returning ? 200 : 300;
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
+    duration: Duration(milliseconds: _holdMs + _fadeMs),
   );
-  bool _started = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.enabled) {
-      _started = true;
-      _c.forward();
-    }
+    _c.forward();
   }
 
   @override
@@ -93,10 +98,22 @@ class _SplashGateState extends State<_SplashGate>
     super.dispose();
   }
 
+  /// A tap on the first-launch splash jumps to the fade-out (V2: tap starts).
+  void _skipHold() {
+    final holdEnd = _holdMs / (_holdMs + _fadeMs);
+    if (_c.value < holdEnd) _c.forward(from: holdEnd);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!_started || _c.isCompleted) return widget.child;
+    if (_c.isCompleted) return widget.child;
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final l10n = OnboardingL10n.of(context);
+    final taglines = [
+      l10n.onboarding_splashTagline1,
+      l10n.onboarding_splashTagline2,
+      l10n.onboarding_splashTagline3,
+    ];
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -104,14 +121,33 @@ class _SplashGateState extends State<_SplashGate>
         AnimatedBuilder(
           animation: _c,
           builder: (context, _) {
-            // Hold the splash for the first 60%, then fade it out.
-            final t = ((_c.value - 0.6) / 0.4).clamp(0.0, 1.0);
             if (_c.isCompleted) return const SizedBox.shrink();
+            final total = _holdMs + _fadeMs;
+            final elapsed = _c.value * total;
+            final t = ((elapsed - _holdMs) / _fadeMs).clamp(0.0, 1.0);
+            final index = reduce
+                ? 0
+                : (elapsed ~/ _taglineEvery) % taglines.length;
             return IgnorePointer(
               ignoring: t > 0.5,
               child: Opacity(
                 opacity: reduce ? (t < 1 ? 1 : 0) : 1 - t,
-                child: const UiSplash(),
+                child: Semantics(
+                  button: !widget.returning,
+                  label: widget.returning
+                      ? l10n.onboarding_splashOpening
+                      : l10n.onboarding_splashStart,
+                  excludeSemantics: true,
+                  onTap: widget.returning ? null : _skipHold,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.returning ? null : _skipHold,
+                    child: UiSplash(
+                      returning: widget.returning,
+                      tagline: widget.returning ? null : taglines[index],
+                    ),
+                  ),
+                ),
               ),
             );
           },

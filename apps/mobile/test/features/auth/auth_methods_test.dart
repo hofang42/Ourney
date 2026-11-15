@@ -71,7 +71,10 @@ void main() {
       await tester.enterText(byKey('auth-email'), 'a@b.co');
       await tester.enterText(byKey('auth-password'), 'wrongwrong');
       await tapVisible(tester, 'auth-send');
-      expect(find.text('Email hoặc mật khẩu chưa đúng.'), findsOneWidget);
+      expect(
+        find.text('Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('sign up enforces 8 characters, then signs in', (tester) async {
@@ -136,7 +139,10 @@ void main() {
       tester,
     ) async {
       await pumpBackendApp(tester, auth: RecordingAuthRepository());
-      expect(tester.widget<UiButton>(byKey('auth-send')).onPressed, isNotNull);
+      expect(
+        tester.widget<UiFlowButton>(byKey('auth-send')).onPressed,
+        isNotNull,
+      );
     });
   });
 }

@@ -1,0 +1,265 @@
+{
+  "@@locale": "vi",
+  "import_headerTitle": "nhập hành trình cũ.",
+  "@import_headerTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_back": "Quay lại",
+  "@import_back": {
+    "description": "Import past journey flow."
+  },
+  "import_setupTitle": "Chọn loại và giao diện.",
+  "@import_setupTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_type_weight": "Giảm cân",
+  "@import_type_weight": {
+    "description": "Import past journey flow."
+  },
+  "import_type_study": "Tiếng Anh",
+  "@import_type_study": {
+    "description": "Import past journey flow."
+  },
+  "import_type_trip": "Chuyến đi",
+  "@import_type_trip": {
+    "description": "Import past journey flow."
+  },
+  "import_type_couple": "Cặp đôi",
+  "@import_type_couple": {
+    "description": "Import past journey flow."
+  },
+  "import_type_workout": "Tập luyện",
+  "@import_type_workout": {
+    "description": "Import past journey flow."
+  },
+  "import_type_custom": "Tự đặt",
+  "@import_type_custom": {
+    "description": "Import past journey flow."
+  },
+  "import_placeLabel": "Tên hoặc địa điểm",
+  "@import_placeLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_placeHint": "Hành trình đã qua",
+  "@import_placeHint": {
+    "description": "Import past journey flow."
+  },
+  "import_layoutHeading": "Giao diện",
+  "@import_layoutHeading": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_quiet": "Quiet",
+  "@import_layout_quiet": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_memory": "Memory",
+  "@import_layout_memory": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_flexer": "Flexer",
+  "@import_layout_flexer": {
+    "description": "Import past journey flow."
+  },
+  "import_layout_minimal": "Minimalist",
+  "@import_layout_minimal": {
+    "description": "Import past journey flow."
+  },
+  "import_layoutNote": "Một số giao diện cần thêm dữ liệu nên không hiện.",
+  "@import_layoutNote": {
+    "description": "Import past journey flow."
+  },
+  "import_previewLabel": "XEM TRƯỚC",
+  "@import_previewLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_previewHud": "HUD máy ảnh",
+  "@import_previewHud": {
+    "description": "Import past journey flow."
+  },
+  "import_pickOld": "Chọn ảnh cũ",
+  "@import_pickOld": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryTitle": "Chọn ảnh cũ.",
+  "@import_libraryTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryIntro": "Chọn nhiều ảnh. Ourney đọc ngày chụp để xếp vào hành trình.",
+  "@import_libraryIntro": {
+    "description": "Import past journey flow."
+  },
+  "import_openLibrary": "Chọn từ thư viện",
+  "@import_openLibrary": {
+    "description": "Import past journey flow."
+  },
+  "import_addMore": "Thêm ảnh",
+  "@import_addMore": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryEmptyTitle": "Chưa có ảnh nào",
+  "@import_libraryEmptyTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_libraryEmptyBody": "Chọn ảnh cũ từ thư viện để dựng lại hành trình.",
+  "@import_libraryEmptyBody": {
+    "description": "Import past journey flow."
+  },
+  "import_noDate": "Không có ngày",
+  "@import_noDate": {
+    "description": "Import past journey flow."
+  },
+  "import_selectPhoto": "Chọn ảnh {date}",
+  "@import_selectPhoto": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "import_deselectPhoto": "Bỏ chọn ảnh {date}",
+  "@import_deselectPhoto": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "import_reviewButton": "Xem lại {count} ảnh",
+  "@import_reviewButton": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_reviewTitle": "Xem lại trong dòng thời gian.",
+  "@import_reviewTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_dayLabel": "Ngày {day}",
+  "@import_dayLabel": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "import_noPhotos": "Chưa có ảnh",
+  "@import_noPhotos": {
+    "description": "Import past journey flow."
+  },
+  "import_fromLibrary": "{date} · từ thư viện",
+  "@import_fromLibrary": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "import_extraInDay": "ảnh thêm trong ngày",
+  "@import_extraInDay": {
+    "description": "Import past journey flow."
+  },
+  "import_undatedTitle": "Chưa có ngày",
+  "@import_undatedTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_assignDate": "Gán ngày",
+  "@import_assignDate": {
+    "description": "Import past journey flow."
+  },
+  "import_drop": "Bỏ",
+  "@import_drop": {
+    "description": "Import past journey flow."
+  },
+  "import_startLabel": "Bắt đầu",
+  "@import_startLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_endLabel": "Kết thúc",
+  "@import_endLabel": {
+    "description": "Import past journey flow."
+  },
+  "import_continueTitle": "Chụp tiếp",
+  "@import_continueTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_continueBody": "Chuỗi bắt đầu từ ảnh chụp thật đầu tiên; ảnh nhập không tính chuỗi.",
+  "@import_continueBody": {
+    "description": "Import past journey flow."
+  },
+  "import_privateNote": "Số kg vẫn ẩn và ảnh vẫn làm mờ khi chia sẻ.",
+  "@import_privateNote": {
+    "description": "Import past journey flow."
+  },
+  "import_save": "Lưu hành trình",
+  "@import_save": {
+    "description": "Import past journey flow."
+  },
+  "import_saving": "Đang lưu {done}/{total} ảnh…",
+  "@import_saving": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "import_failed": "{count} ảnh chưa lưu được",
+  "@import_failed": {
+    "description": "Import past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_retry": "Thử lại",
+  "@import_retry": {
+    "description": "Import past journey flow."
+  },
+  "import_openJourney": "Mở hành trình",
+  "@import_openJourney": {
+    "description": "Import past journey flow."
+  },
+  "import_errorNoPhotos": "Chọn ít nhất một ảnh có ngày.",
+  "@import_errorNoPhotos": {
+    "description": "Import past journey flow."
+  },
+  "import_errorUndated": "Gán ngày hoặc bỏ các ảnh chưa có ngày.",
+  "@import_errorUndated": {
+    "description": "Import past journey flow."
+  },
+  "import_errorTitle": "Nhập tên hoặc địa điểm.",
+  "@import_errorTitle": {
+    "description": "Import past journey flow."
+  },
+  "import_errorOutside": "Có ảnh nằm ngoài khoảng ngày đã chọn.",
+  "@import_errorOutside": {
+    "description": "Import past journey flow."
+  },
+  "import_errorFuture": "Ngày kết thúc không thể ở tương lai.",
+  "@import_errorFuture": {
+    "description": "Import past journey flow."
+  },
+  "import_errorRange": "Hành trình tối đa 366 ngày.",
+  "@import_errorRange": {
+    "description": "Import past journey flow."
+  },
+  "import_errorGeneric": "Không lưu được hành trình. Thử lại nhé.",
+  "@import_errorGeneric": {
+    "description": "Import past journey flow."
+  },
+  "import_pickFailed": "Không mở được thư viện ảnh.",
+  "@import_pickFailed": {
+    "description": "Import past journey flow."
+  }
+}
