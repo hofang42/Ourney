@@ -676,5 +676,36 @@
   "journeys_extraMoodTired": "Hơi mệt",
   "@journeys_extraMoodTired": {"description": "Check-in extras on the journey screens."},
   "journeys_partnerPhotoSemantics": "Ảnh của người ấy",
-  "@journeys_partnerPhotoSemantics": {"description": "Check-in extras on the journey screens."}
+  "@journeys_partnerPhotoSemantics": {"description": "Check-in extras on the journey screens."},
+  "journeys_inviteAction": "Mời bạn",
+  "journeys_renameCouple": "Sửa tên",
+  "journeys_renameCoupleTitle": "Sửa tên cặp đôi",
+  "journeys_quietHold": "Giữ để xem",
+  "journeys_quietHolding": "Đang xem",
+  "journeys_quietHoldHint": "Nhấn giữ để hiện số của bạn",
+  "journeys_quietHidden": "Đã ẩn",
+  "journeys_quietAxis": "{value} kg",
+  "journeys_quietDayTag": "NGÀY {day}",
+  "journeys_quietToday": "HÔM NAY",
+  "journeys_quietWeek": "TUẦN ĐẦU",
+  "journeys_quietHalf": "NỬA CHẶNG",
+  "journeys_quietFinish": "VỀ ĐÍCH",
+  "journeys_quietMissed": "Một ngày nghỉ không xóa hành trình.",
+  "journeys_quietMilestones": "Cột mốc",
+  "journeys_memoryToday": "HÔM NAY · chạm để chụp",
+  "journeys_memoryEmpty": "KHUNG TRỐNG",
+  "@journeys_quietAxis": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@journeys_quietDayTag": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  }
 }

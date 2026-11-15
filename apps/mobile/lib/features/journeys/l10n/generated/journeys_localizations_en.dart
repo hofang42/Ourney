@@ -682,4 +682,59 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_partnerPhotoSemantics => 'Your partner\'s photo';
+
+  @override
+  String get journeys_inviteAction => 'Invite';
+
+  @override
+  String get journeys_renameCouple => 'Edit names';
+
+  @override
+  String get journeys_renameCoupleTitle => 'Edit couple names';
+
+  @override
+  String get journeys_quietHold => 'Hold to view';
+
+  @override
+  String get journeys_quietHolding => 'Viewing';
+
+  @override
+  String get journeys_quietHoldHint => 'Press and hold to reveal your numbers';
+
+  @override
+  String get journeys_quietHidden => 'Hidden';
+
+  @override
+  String journeys_quietAxis(String value) {
+    return '$value kg';
+  }
+
+  @override
+  String journeys_quietDayTag(int day) {
+    return 'DAY $day';
+  }
+
+  @override
+  String get journeys_quietToday => 'TODAY';
+
+  @override
+  String get journeys_quietWeek => 'FIRST WEEK';
+
+  @override
+  String get journeys_quietHalf => 'HALFWAY';
+
+  @override
+  String get journeys_quietFinish => 'FINISH';
+
+  @override
+  String get journeys_quietMissed => 'A rest day doesn\'t erase the journey.';
+
+  @override
+  String get journeys_quietMilestones => 'Milestones';
+
+  @override
+  String get journeys_memoryToday => 'TODAY · tap to snap';
+
+  @override
+  String get journeys_memoryEmpty => 'EMPTY FRAME';
 }

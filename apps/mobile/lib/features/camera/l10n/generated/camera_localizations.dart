@@ -277,6 +277,96 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Chuỗi {days} ngày'**
   String camera_streakChip(int days);
+
+  /// No description provided for @camera_ghostOn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bóng ngày 1 · Bật'**
+  String get camera_ghostOn;
+
+  /// No description provided for @camera_ghostOff.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bóng ngày 1 · Tắt'**
+  String get camera_ghostOff;
+
+  /// No description provided for @camera_privateVault.
+  ///
+  /// In vi, this message translates to:
+  /// **'Kho riêng tư'**
+  String get camera_privateVault;
+
+  /// No description provided for @camera_studyStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'HỌC 45 PHÚT · {days} LIỀN'**
+  String camera_studyStreak(int days);
+
+  /// No description provided for @camera_filmRoll.
+  ///
+  /// In vi, this message translates to:
+  /// **'CUỘN PHIM'**
+  String get camera_filmRoll;
+
+  /// No description provided for @camera_partnerWaiting.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đối phương chưa chụp. Bạn chụp trước nhé.'**
+  String get camera_partnerWaiting;
+
+  /// No description provided for @camera_hudBold.
+  ///
+  /// In vi, this message translates to:
+  /// **'HUD đậm'**
+  String get camera_hudBold;
+
+  /// No description provided for @camera_hudStamp.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dấu tối giản'**
+  String get camera_hudStamp;
+
+  /// No description provided for @camera_hudStrip.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dải phim'**
+  String get camera_hudStrip;
+
+  /// No description provided for @camera_dayStreakBold.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day} · {streak} LIỀN'**
+  String camera_dayStreakBold(int day, int streak);
+
+  /// No description provided for @camera_allJourneys.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tất cả hành trình'**
+  String get camera_allJourneys;
+
+  /// No description provided for @camera_pickerTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tất cả hành trình'**
+  String get camera_pickerTitle;
+
+  /// No description provided for @camera_pickerSearch.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tìm hành trình'**
+  String get camera_pickerSearch;
+
+  /// No description provided for @camera_pickerEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không có hành trình nào khớp.'**
+  String get camera_pickerEmpty;
+
+  /// No description provided for @camera_pickerClose.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đóng'**
+  String get camera_pickerClose;
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

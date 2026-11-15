@@ -111,4 +111,54 @@ class CameraL10nEn extends CameraL10n {
   String camera_streakChip(int days) {
     return '$days day streak';
   }
+
+  @override
+  String get camera_ghostOn => 'Day 1 ghost · On';
+
+  @override
+  String get camera_ghostOff => 'Day 1 ghost · Off';
+
+  @override
+  String get camera_privateVault => 'Private vault';
+
+  @override
+  String camera_studyStreak(int days) {
+    return '45 MIN STUDY · $days STREAK';
+  }
+
+  @override
+  String get camera_filmRoll => 'FILM ROLL';
+
+  @override
+  String get camera_partnerWaiting =>
+      'Your partner hasn\'t shot yet. You go first.';
+
+  @override
+  String get camera_hudBold => 'Bold HUD';
+
+  @override
+  String get camera_hudStamp => 'Minimal stamp';
+
+  @override
+  String get camera_hudStrip => 'Film strip';
+
+  @override
+  String camera_dayStreakBold(int day, int streak) {
+    return 'DAY $day · $streak IN A ROW';
+  }
+
+  @override
+  String get camera_allJourneys => 'All journeys';
+
+  @override
+  String get camera_pickerTitle => 'All journeys';
+
+  @override
+  String get camera_pickerSearch => 'Search journeys';
+
+  @override
+  String get camera_pickerEmpty => 'No journey matches your search.';
+
+  @override
+  String get camera_pickerClose => 'Close';
 }

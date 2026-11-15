@@ -43,5 +43,37 @@
         "type": "int"
       }
     }
+  },
+  "camera_ghostOn": "Day 1 ghost · On",
+  "camera_ghostOff": "Day 1 ghost · Off",
+  "camera_privateVault": "Private vault",
+  "camera_studyStreak": "45 MIN STUDY · {days} STREAK",
+  "camera_filmRoll": "FILM ROLL",
+  "camera_partnerWaiting": "Your partner hasn't shot yet. You go first.",
+  "camera_hudBold": "Bold HUD",
+  "camera_hudStamp": "Minimal stamp",
+  "camera_hudStrip": "Film strip",
+  "camera_dayStreakBold": "DAY {day} · {streak} IN A ROW",
+  "camera_allJourneys": "All journeys",
+  "camera_pickerTitle": "All journeys",
+  "camera_pickerSearch": "Search journeys",
+  "camera_pickerEmpty": "No journey matches your search.",
+  "camera_pickerClose": "Close",
+  "@camera_studyStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@camera_dayStreakBold": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
   }
 }

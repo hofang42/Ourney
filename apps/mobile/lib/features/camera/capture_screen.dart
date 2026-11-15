@@ -19,7 +19,9 @@ import '../journeys/domain/journey_progress.dart';
 import '../profile/profile_entry_button.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
+import 'capture_overlays.dart';
 import 'capture_services.dart';
+import 'journey_picker_sheet.dart';
 import 'l10n/generated/camera_localizations.dart';
 
 enum _Phase { idle, prePrompt, starting, ready, failure }
@@ -647,6 +649,15 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 ),
               ),
             ),
+          if (journey != null && _phase == _Phase.ready)
+            Positioned.fill(
+              child: CaptureSkinOverlay(
+                key: ValueKey('capture-overlay-${journey.id}'),
+                skin: personaSkinOf(journey),
+                dayNumber: hud?.dayNumber ?? 1,
+                streak: hud?.summary.current ?? 0,
+              ),
+            ),
           if (hud != null)
             Positioned(
               left: 16,
@@ -817,6 +828,20 @@ class _JourneyBar extends StatelessWidget {
                   selected: j.id == selected?.id,
                   onTap: () => onSelect(j.id),
                 ),
+              ),
+            if (journeys.requireValue.length > 1)
+              UiGlassChip(
+                key: const ValueKey('journey-picker-open'),
+                label: l10n.camera_allJourneys,
+                leadingGlyph: 'search',
+                onPressed: () async {
+                  final id = await showJourneyPickerSheet(
+                    context,
+                    journeys: journeys.requireValue,
+                    selectedId: selected?.id,
+                  );
+                  if (id != null) onSelect(id);
+                },
               ),
           ],
         ),

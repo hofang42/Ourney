@@ -335,4 +335,34 @@ class GroupsL10nEn extends GroupsL10n {
   @override
   String get groups_errorRateLimited =>
       'Too many tries. Wait a little, then try again.';
+
+  @override
+  String get groups_inviteSheetTitle => 'Invite by username';
+
+  @override
+  String get groups_inviteHandleLabel => 'Username';
+
+  @override
+  String get groups_inviteSend => 'Send invite';
+
+  @override
+  String get groups_inviteSent => 'Invitation sent';
+
+  @override
+  String get groups_invitePendingTitle => 'Pending invitations';
+
+  @override
+  String get groups_invitePendingEmpty => 'No pending invitations.';
+
+  @override
+  String get groups_inviteRevoke => 'Revoke';
+
+  @override
+  String get groups_inviteRevoked => 'Invitation revoked';
+
+  @override
+  String get groups_inviteShareCode => 'Share the code instead';
+
+  @override
+  String get groups_inviteNeedsHandle => 'Enter a username first.';
 }

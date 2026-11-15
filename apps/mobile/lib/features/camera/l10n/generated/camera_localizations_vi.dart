@@ -110,4 +110,54 @@ class CameraL10nVi extends CameraL10n {
   String camera_streakChip(int days) {
     return 'Chuỗi $days ngày';
   }
+
+  @override
+  String get camera_ghostOn => 'Bóng ngày 1 · Bật';
+
+  @override
+  String get camera_ghostOff => 'Bóng ngày 1 · Tắt';
+
+  @override
+  String get camera_privateVault => 'Kho riêng tư';
+
+  @override
+  String camera_studyStreak(int days) {
+    return 'HỌC 45 PHÚT · $days LIỀN';
+  }
+
+  @override
+  String get camera_filmRoll => 'CUỘN PHIM';
+
+  @override
+  String get camera_partnerWaiting =>
+      'Đối phương chưa chụp. Bạn chụp trước nhé.';
+
+  @override
+  String get camera_hudBold => 'HUD đậm';
+
+  @override
+  String get camera_hudStamp => 'Dấu tối giản';
+
+  @override
+  String get camera_hudStrip => 'Dải phim';
+
+  @override
+  String camera_dayStreakBold(int day, int streak) {
+    return 'NGÀY $day · $streak LIỀN';
+  }
+
+  @override
+  String get camera_allJourneys => 'Tất cả hành trình';
+
+  @override
+  String get camera_pickerTitle => 'Tất cả hành trình';
+
+  @override
+  String get camera_pickerSearch => 'Tìm hành trình';
+
+  @override
+  String get camera_pickerEmpty => 'Không có hành trình nào khớp.';
+
+  @override
+  String get camera_pickerClose => 'Đóng';
 }

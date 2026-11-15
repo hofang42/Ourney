@@ -98,7 +98,7 @@ App đăng nhập bằng `signInWithOtp` + `verifyOTP` nên người dùng phả
 - Biến sai định dạng, thiếu file template hoặc subject lỗi sẽ làm script dừng **trước** mọi lệnh supabase (kể cả `--dry-run`).
 
 Lưu ý:
-- Chỉ `magic_link` và `confirmation` là template dạng mã. `recovery`, `invite`, `email_change` vẫn là email link mặc định; nếu app dùng các luồng đó thì phải thêm template mã tương ứng.
+- `magic_link`, `confirmation` và `recovery` là template dạng mã (script deploy đẩy cả ba). `invite`, `email_change` vẫn là email link mặc định; nếu app dùng các luồng đó thì phải thêm template mã tương ứng.
 - Email chỉ được gửi tin cậy khi đã có SMTP riêng (bước H2, mục 3): mail mặc định của Supabase bị giới hạn rất thấp. Cấu hình ở đây không thay thế SMTP.
 
 Áp dụng cho project đang chạy: chỉ cần **chạy lại workflow Deploy Supabase (hosted)** với `dry_run` = false; bước này không cần SMTP và chạy lại nhiều lần vẫn an toàn. Sau đó thử đăng nhập: email phải có mã 6 số, không có link tới localhost.
@@ -140,7 +140,7 @@ Migration `0009_profile_onboarding_stats.sql` (cột `profiles.onboarding_quiz`,
 
 1. **Đăng nhập bằng số điện thoại** (*Authentication → Providers → Phone*): bật *Enable Phone provider* và *Enable phone signup*; chọn nhà cung cấp SMS (ví dụ Twilio hoặc Twilio Verify) rồi nhập Account SID, Auth Token, Message Service SID ngay trên dashboard. Không có SMS provider thì app báo lỗi chung khi gửi mã SMS. Chạy local: export `SUPABASE_AUTH_SMS_TWILIO_ACCOUNT_SID`, `SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN`, `SUPABASE_AUTH_SMS_TWILIO_MESSAGE_SERVICE_SID` rồi đặt `[auth.sms.twilio] enabled = true`; hoặc dùng `[auth.sms.test_otp]` để thử không tốn SMS.
 2. **Email + mật khẩu** (*Providers → Email*): giữ *Enable Email provider* bật; *Minimum password length* = 8 (khớp app). *Confirm email* tắt thì đăng ký vào thẳng app; nếu bật, app tự chuyển sang bước nhập mã (cần template *Confirm signup* dạng mã 6 số, đã có `confirmation.html`).
-3. **Quên mật khẩu**: *Authentication → Emails → Reset Password*: dán nội dung `supabase/templates/recovery.html` (chỉ hiện `{{ .Token }}`) và đặt tiêu đề như trong `supabase/config.toml`. Script deploy hiện chưa tự đẩy template `recovery`, nên bước này làm tay (hoặc mở rộng script deploy sau). Chưa đổi thì email đặt lại mật khẩu vẫn là link mặc định và app sẽ không dùng được mã.
+3. **Quên mật khẩu**: *Authentication → Emails → Reset Password*: dán nội dung `supabase/templates/recovery.html` (chỉ hiện `{{ .Token }}`) và đặt tiêu đề như trong `supabase/config.toml`. Script deploy đã tự đẩy template `recovery` cùng tiêu đề; chỉ làm tay nếu bạn không chạy script. Chưa áp thì email đặt lại mật khẩu vẫn là link mặc định và app sẽ không dùng được mã.
 4. **Xoá tài khoản bằng mã (3 bước)**: không cần cấu hình thêm. Edge Function `delete-account` gửi mã bằng chính Supabase Auth (email của tài khoản, hoặc SMS nếu tài khoản chỉ có số điện thoại) rồi xác thực mã ở server trước khi xoá. Cần deploy lại hàm `delete-account` (workflow Deploy Supabase) và SMTP/SMS hoạt động như các mục trên. Giới hạn gửi mã chung với *Authentication → Rate Limits*.
 5. Chưa hỗ trợ đăng nhập bằng tên người dùng (Figma có, Supabase Auth không hỗ trợ trực tiếp): app dùng email.
 

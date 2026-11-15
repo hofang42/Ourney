@@ -17,7 +17,7 @@
 #   AUTH_URI_ALLOW_LIST (optional, comma-separated)  sent as uri_allow_list ONLY when set, so redirect
 #     URLs added by hand in the dashboard are never overwritten. Each entry is https://... or a custom
 #     scheme such as ourney://...
-# Only the magic_link and confirmation templates are code-based; recovery/invite/email_change keep
+# The magic_link, confirmation and recovery templates are code-based; invite/email_change keep
 # the default link emails. Env, templates and subjects are validated before any supabase call.
 #
 # Optional SMTP (all four required together, otherwise the script fails before doing anything):
@@ -181,7 +181,8 @@ patch_auth_config() {
 # never abort a deploy halfway. Templates are plain files in the repo (not secrets).
 magic_file=supabase/templates/magic_link.html
 confirm_file=supabase/templates/confirmation.html
-for f in "$magic_file" "$confirm_file"; do
+recovery_file=supabase/templates/recovery.html
+for f in "$magic_file" "$confirm_file" "$recovery_file"; do
   if [ ! -s "$f" ]; then
     echo "error: missing or empty email template: $f" >&2
     exit 1
@@ -189,7 +190,8 @@ for f in "$magic_file" "$confirm_file"; do
 done
 magic_subject="$(toml_subject magic_link)"
 confirm_subject="$(toml_subject confirmation)"
-for s in "$magic_subject" "$confirm_subject"; do
+recovery_subject="$(toml_subject recovery)"
+for s in "$magic_subject" "$confirm_subject" "$recovery_subject"; do
   if [ -z "$s" ] || [[ "$s" == *'"'* ]] || [[ "$s" == *'#'* ]]; then
     echo "error: bad or missing email template subject in supabase/config.toml (empty, or contains \" or #)" >&2
     exit 1
@@ -231,13 +233,17 @@ export AUTH_SITE_URL AUTH_URI_ALLOW_LIST
 body="$(
   jq -n \
     --arg magic_subject "$magic_subject" --arg confirm_subject "$confirm_subject" \
+    --arg recovery_subject "$recovery_subject" \
     --rawfile magic_html "$magic_file" --rawfile confirm_html "$confirm_file" \
+    --rawfile recovery_html "$recovery_file" \
     '{site_url: $ENV.AUTH_SITE_URL,
       mailer_otp_length: 6, mailer_otp_exp: 3600, mailer_autoconfirm: true,
       mailer_subjects_magic_link: $magic_subject,
       mailer_templates_magic_link_content: $magic_html,
       mailer_subjects_confirmation: $confirm_subject,
-      mailer_templates_confirmation_content: $confirm_html}
+      mailer_templates_confirmation_content: $confirm_html,
+      mailer_subjects_recovery: $recovery_subject,
+      mailer_templates_recovery_content: $recovery_html}
      + (if ($ENV.AUTH_URI_ALLOW_LIST // "") != "" then {uri_allow_list: $ENV.AUTH_URI_ALLOW_LIST} else {} end)'
 )"
 if [ -z "$body" ]; then

@@ -11,7 +11,10 @@ import 'package:uuid/uuid.dart';
 import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
 import '../../../../ui/ui.dart';
+import '../../../onboarding/onboarding_providers.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
+import '../../../reminders/data/reminder_settings.dart';
+import '../../../reminders/domain/reminder_plan.dart';
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_form.dart';
 import '../../domain/journey_time.dart';
@@ -131,7 +134,36 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   bool get _localOnly => ref.read(appConfigProvider).localOnly;
 
+  /// Quiz-derived defaults (type, who, reminder); applied once, overridable.
+  JourneySuggestion? _suggestion;
+  bool _suggestionApplied = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_suggestionApplied) return;
+    _suggestionApplied = true;
+    final s = ref.read(journeySuggestionProvider);
+    if (s == null) return;
+    _suggestion = s;
+    final key = s.coupleRitual ? 'couple' : s.templateId.wireName;
+    for (final o in _options) {
+      if (o.keyName != key) continue;
+      _apply(o);
+      if (!o.isCouple && !_localOnly && s.kind == JourneyKind.group) {
+        _who = CreateWho.group;
+        _applyWho(_form!);
+      }
+      return;
+    }
+  }
+
   void _select(CreateTypeOption option) {
+    _apply(option);
+    setState(() => _step = 1);
+  }
+
+  void _apply(CreateTypeOption option) {
     final l10n = JourneysL10n.of(context);
     if (_option?.keyName != option.keyName) {
       final tz = ref.read(deviceTimezoneProvider).value ?? 'UTC';
@@ -155,7 +187,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _start = null;
       _attempted.clear();
     }
-    setState(() => _step = 1);
   }
 
   void _applyWho(JourneyForm form) {
@@ -284,6 +315,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           couplePartnerName: _partnerName,
         ),
       );
+      final rt = ReminderTime.tryParse(_suggestion?.reminder);
+      if (rt != null) {
+        await ref
+            .read(reminderSettingsProvider.notifier)
+            .save(journey.id, ReminderSetting(enabled: true, time: rt));
+      }
       unawaited(reminders.reschedule());
       final hide = form.trackMetric && form.hideMetric;
       if (hide || form.blurOnShare) {

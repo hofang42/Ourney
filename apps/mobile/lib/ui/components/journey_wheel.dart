@@ -231,12 +231,14 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
                     ),
                   );
                 },
-                child: _WheelItem(
-                  key: ValueKey('journey-wheel-${widget.items[i].id}'),
-                  item: widget.items[i],
-                  active: widget.items[i].id == widget.activeId,
-                  activeHint: widget.activeHint,
-                  onTap: () => widget.onSelect(widget.items[i].id),
+                child: _LiftOnPress(
+                  child: _WheelItem(
+                    key: ValueKey('journey-wheel-${widget.items[i].id}'),
+                    item: widget.items[i],
+                    active: widget.items[i].id == widget.activeId,
+                    activeHint: widget.activeHint,
+                    onTap: () => widget.onSelect(widget.items[i].id),
+                  ),
                 ),
               ),
             Positioned(
@@ -273,6 +275,42 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Pressing the child lifts it (the "lift" of lift-then-tap); the selection
+/// still fires on the tap release, so a cancelled press selects nothing.
+class _LiftOnPress extends StatefulWidget {
+  const _LiftOnPress({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_LiftOnPress> createState() => _LiftOnPressState();
+}
+
+class _LiftOnPressState extends State<_LiftOnPress> {
+  bool _lifted = false;
+
+  void _lift(bool v) {
+    if (_lifted != v) setState(() => _lifted = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = MediaQuery.disableAnimationsOf(context);
+    return Listener(
+      key: const ValueKey('journey-wheel-lift'),
+      onPointerDown: (_) => _lift(true),
+      onPointerUp: (_) => _lift(false),
+      onPointerCancel: (_) => _lift(false),
+      child: AnimatedSlide(
+        offset: _lifted ? const Offset(0, -0.1) : Offset.zero,
+        duration: reduced ? Duration.zero : const Duration(milliseconds: 110),
+        curve: Curves.easeOut,
+        child: widget.child,
       ),
     );
   }

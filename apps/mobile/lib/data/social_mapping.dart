@@ -304,6 +304,7 @@ InboxCounts inboxCountsFromJson(Object? json) {
     newShares: _int(r['new_shares']),
     unreadMessages: _int(r['unread_messages']),
     consentRequests: _int(r['consent_requests']),
+    groupInvitations: _int(r['group_invitations']),
   );
 }
 

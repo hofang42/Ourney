@@ -296,6 +296,11 @@ void main() {
     expect(i.publicRequests, 2);
     expect(i.hasDot, isFalse, reason: 'public requests never light the dot');
     expect(inboxCountsFromJson(null).hasDot, isFalse);
+    expect(
+      inboxCountsFromJson({'group_invitations': 1}).hasDot,
+      isTrue,
+      reason: 'a pending group invitation lights the dot',
+    );
 
     final s = insightsFromJson({
       'journey_id': 'j1',

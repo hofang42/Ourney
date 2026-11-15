@@ -1255,6 +1255,108 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Ảnh của người ấy'**
   String get journeys_partnerPhotoSemantics;
+
+  /// No description provided for @journeys_inviteAction.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mời bạn'**
+  String get journeys_inviteAction;
+
+  /// No description provided for @journeys_renameCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa tên'**
+  String get journeys_renameCouple;
+
+  /// No description provided for @journeys_renameCoupleTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa tên cặp đôi'**
+  String get journeys_renameCoupleTitle;
+
+  /// No description provided for @journeys_quietHold.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giữ để xem'**
+  String get journeys_quietHold;
+
+  /// No description provided for @journeys_quietHolding.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang xem'**
+  String get journeys_quietHolding;
+
+  /// No description provided for @journeys_quietHoldHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhấn giữ để hiện số của bạn'**
+  String get journeys_quietHoldHint;
+
+  /// No description provided for @journeys_quietHidden.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã ẩn'**
+  String get journeys_quietHidden;
+
+  /// No description provided for @journeys_quietAxis.
+  ///
+  /// In vi, this message translates to:
+  /// **'{value} kg'**
+  String journeys_quietAxis(String value);
+
+  /// No description provided for @journeys_quietDayTag.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÀY {day}'**
+  String journeys_quietDayTag(int day);
+
+  /// No description provided for @journeys_quietToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'HÔM NAY'**
+  String get journeys_quietToday;
+
+  /// No description provided for @journeys_quietWeek.
+  ///
+  /// In vi, this message translates to:
+  /// **'TUẦN ĐẦU'**
+  String get journeys_quietWeek;
+
+  /// No description provided for @journeys_quietHalf.
+  ///
+  /// In vi, this message translates to:
+  /// **'NỬA CHẶNG'**
+  String get journeys_quietHalf;
+
+  /// No description provided for @journeys_quietFinish.
+  ///
+  /// In vi, this message translates to:
+  /// **'VỀ ĐÍCH'**
+  String get journeys_quietFinish;
+
+  /// No description provided for @journeys_quietMissed.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một ngày nghỉ không xóa hành trình.'**
+  String get journeys_quietMissed;
+
+  /// No description provided for @journeys_quietMilestones.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cột mốc'**
+  String get journeys_quietMilestones;
+
+  /// No description provided for @journeys_memoryToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'HÔM NAY · chạm để chụp'**
+  String get journeys_memoryToday;
+
+  /// No description provided for @journeys_memoryEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'KHUNG TRỐNG'**
+  String get journeys_memoryEmpty;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {
