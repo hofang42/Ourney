@@ -57,16 +57,14 @@ void main() {
       await _pump(tester);
       expect(find.text('1 of 4 checked in today'), findsOneWidget);
       expect(find.text('Day 7 of 30'), findsOneWidget);
-      expect(find.text('Checked in today'), findsOneWidget);
-      expect(find.text('Not yet today'), findsOneWidget);
-      expect(find.text('Done today'), findsOneWidget);
+      expect(find.text('1/4 CHECKED IN'), findsOneWidget);
       expect(find.text('Not yet'), findsNWidgets(3));
       expect(find.text('You · Owner'), findsOneWidget);
 
       // Ann first (done), then the others in join order: no ranking.
       final at = {
         for (final id in [me, 'u2', 'u3', 'u4'])
-          id: tester.getCenter(find.byKey(ValueKey('group-member-$id'))),
+          id: tester.getTopLeft(find.byKey(ValueKey('group-member-$id'))),
       };
       // Reading order of the two-column wall (tiles in a row may differ by a
       // few dp because of their tilt).

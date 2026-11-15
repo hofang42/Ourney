@@ -1,29 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:ourney_core/ourney_core.dart';
 
-import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../personas/persona_contract.dart' show personaSkinOf;
-import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../../profile/profile_entry_button.dart';
 import '../data/groups_providers.dart';
-import '../groups_paths.dart';
 import '../l10n/generated/groups_localizations.dart';
 import 'group_errors.dart';
+import 'squad_tab_sections.dart';
 
-/// Squad tab (`/groups`, App.tsx `SquadTab`): "Join with code" and "Start a
-/// group journey" actions, then one card per group journey (FR-D1).
-/// Local-only: a "needs the server" state.
-class GroupsListScreen extends ConsumerWidget {
+/// Squad tab (`/groups`, V2 `SquadScreen`): "nhập mã mời" join-inline, the
+/// "hôm nay" strip (skeleton / empty card / one overview card per group) and
+/// "lời mời đang chờ". Local-only: a "needs the server" state.
+class GroupsListScreen extends ConsumerStatefulWidget {
   const GroupsListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GroupsListScreen> createState() => _GroupsListScreenState();
+}
+
+class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
+  final _codeFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _codeFocus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
     final app = AppLocalizations.of(context);
 
@@ -56,290 +64,68 @@ class GroupsListScreen extends ConsumerWidget {
       return GroupsNotWired(id: 'groups', title: l10n.groups_title);
     }
 
+    final Widget today;
     if (groups.hasValue) {
       final list = groups.value!;
-      if (list.isEmpty) {
-        return frame(
-          UiEmptyState(
-            key: const ValueKey('groups-empty'),
-            glyph: const OurneyIcon(name: 'squad', size: 30),
-            title: l10n.groups_emptyTitle,
-            body: l10n.groups_emptyMessage,
-            actionLabel: l10n.groups_joinWithCode,
-            onAction: () => context.push(GroupsPaths.joinEntry),
-          ),
-          scroll: false,
-        );
-      }
-      return frame(_GroupList(groups: list));
-    }
-    if (groups.hasError) {
-      return frame(
-        UiEmptyState(
-          key: const ValueKey('groups-error'),
-          glyph: const OurneyIcon(name: 'error', size: 30),
-          title: l10n.groups_loadError,
-          body: groupErrorMessage(context, groups.error!),
-          actionLabel: app.common_retry,
-          onAction: () => ref.invalidate(groupJourneysProvider),
-        ),
-        scroll: false,
+      today = list.isEmpty
+          ? _EmptySquad(onEnterCode: _codeFocus.requestFocus)
+          : SquadTodayStrip(groups: list);
+    } else if (groups.hasError) {
+      today = UiEmptyState(
+        key: const ValueKey('groups-error'),
+        glyph: const OurneyIcon(name: 'error', size: 30),
+        title: l10n.groups_loadError,
+        body: groupErrorMessage(context, groups.error!),
+        actionLabel: app.common_retry,
+        onAction: () => ref.invalidate(groupJourneysProvider),
+      );
+    } else {
+      today = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          UiListHeading(title: l10n.groups_todayHeading),
+          const SquadTodaySkeleton(),
+        ],
       );
     }
     return frame(
-      Center(
-        child: CircularProgressIndicator(semanticsLabel: app.common_loading),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SquadJoinInline(enabled: true, focusNode: _codeFocus),
+          const SizedBox(height: UiSpace.xl),
+          today,
+          const SquadPendingInvites(),
+        ],
       ),
-      scroll: false,
     );
   }
 }
 
-class _GroupList extends StatelessWidget {
-  const _GroupList({required this.groups});
+/// V2 `.groups-empty`: sticker, "chưa có hội nào.", hint and a button that
+/// focuses the code field.
+class _EmptySquad extends StatelessWidget {
+  const _EmptySquad({required this.onEnterCode});
 
-  final List<Journey> groups;
+  final VoidCallback onEnterCode;
 
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
-    final active = [
-      for (final g in groups)
-        if (g.status == JourneyStatus.active) g,
-    ];
-    final finished = [
-      for (final g in groups)
-        if (g.status != JourneyStatus.active) g,
-    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // `.group-actions`: two outlined tiles side by side.
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                flex: 4,
-                child: _ActionTile(
-                  key: const ValueKey('groups-join'),
-                  glyph: 'link',
-                  label: l10n.groups_joinWithCode,
-                  onTap: () => context.push(GroupsPaths.joinEntry),
-                ),
-              ),
-              const SizedBox(width: UiSpace.sm),
-              Expanded(
-                flex: 5,
-                child: _ActionTile(
-                  key: const ValueKey('groups-create'),
-                  glyph: 'plus',
-                  label: l10n.groups_createGroup,
-                  onTap: () => context.push(AppRoutes.journeyNew),
-                ),
-              ),
-            ],
-          ),
+        UiListHeading(title: l10n.groups_todayHeading),
+        UiEmptyState(
+          key: const ValueKey('groups-empty'),
+          glyph: const OurneyIcon(name: 'squad', size: 40),
+          title: l10n.groups_emptyCardTitle,
+          body: l10n.groups_emptyCardBody,
+          actionLabel: l10n.groups_joinWithCode,
+          actionKey: const ValueKey('groups-empty-enter-code'),
+          onAction: onEnterCode,
         ),
-        const SizedBox(height: UiSpace.xl),
-        if (active.isNotEmpty) ...[
-          UiListHeading(title: l10n.groups_activeSection),
-          for (final g in active) GroupCard(journey: g),
-        ],
-        if (finished.isNotEmpty) ...[
-          UiListHeading(title: l10n.groups_finishedSection),
-          for (final g in finished) GroupCard(journey: g),
-        ],
       ],
-    );
-  }
-}
-
-/// One group journey on the Squad tab (`.group-card`): accent edge, icon
-/// tile in the journey paper, style name, title and the day.
-class GroupCard extends ConsumerWidget {
-  const GroupCard({required this.journey, super.key});
-
-  final Journey journey;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = GroupsL10n.of(context);
-    final ui = context.ui;
-    final today = journeyLocalDate(
-      journey.timezone,
-      ref.watch(journeysClockProvider).now(),
-    );
-    var day = journey.startDate.daysUntil(today) + 1;
-    if (day < 1) day = 1;
-    final total = journey.durationDays;
-    if (total != null && day > total) day = total;
-    final subtitle = switch (journey.status) {
-      JourneyStatus.active =>
-        total == null
-            ? l10n.groups_dayOpen(day)
-            : l10n.groups_dayOf(day, total),
-      JourneyStatus.ended => l10n.groups_statusEnded,
-      JourneyStatus.archived => l10n.groups_statusArchived,
-    };
-    final style = uiStyleForSkin(personaSkinOf(journey));
-    final radius = BorderRadius.circular(UiRadius.card);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: UiSpace.md),
-      child: UiPressable(
-        key: ValueKey('group-card-${journey.id}'),
-        onPressed: () => context.push(GroupsPaths.today(journey.id)),
-        semanticLabel: '${journey.title}, ${style.name}, $subtitle',
-        excludeChildSemantics: true,
-        borderRadius: radius,
-        shadowOffset: UiShadow.small,
-        shadowColor: ui.outline,
-        minSize: const Size(UiSize.tap, 118),
-        child: Container(
-          constraints: const BoxConstraints(minHeight: 118),
-          decoration: BoxDecoration(
-            color: ui.surface,
-            borderRadius: radius,
-            border: ui.stickerBorder(),
-          ),
-          child: ClipRRect(
-            borderRadius: radius,
-            child: Row(
-              children: [
-                Container(width: 4, color: style.accent),
-                Padding(
-                  padding: const EdgeInsets.all(UiSpace.md),
-                  child: Container(
-                    width: 82,
-                    height: 92,
-                    decoration: BoxDecoration(
-                      color: ui.isDark
-                          ? style.accent.withValues(alpha: 0.18)
-                          : style.paper,
-                      borderRadius: BorderRadius.circular(UiRadius.input),
-                    ),
-                    child: uiJourneyGlyph(
-                      journey.emoji,
-                      journey.templateId,
-                      size: 30,
-                      color: ui.isDark ? style.accent : style.ink,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: UiSpace.md),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          style.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: UiText.body(
-                            size: 11,
-                            height: 1.4,
-                            color: ui.inkMuted,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          journey.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: UiText.body(
-                            size: 16,
-                            weight: FontWeight.w700,
-                            height: 1.35,
-                            color: ui.ink,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: UiText.body(
-                            size: 12,
-                            height: 1.4,
-                            color: ui.inkMuted,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(right: 10, left: 4),
-                  child: OurneyIcon(
-                    name: 'chevron-right',
-                    size: 18,
-                    flat: true,
-                    color: ui.chevron,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// `.group-actions button`: outlined tile with a glyph and a label.
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.glyph,
-    required this.label,
-    required this.onTap,
-    super.key,
-  });
-
-  final String glyph;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final radius = BorderRadius.circular(UiRadius.menu);
-    return UiPressable(
-      onPressed: onTap,
-      semanticLabel: label,
-      excludeChildSemantics: true,
-      borderRadius: radius,
-      minSize: const Size(UiSize.tap, UiSize.button),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: UiSize.button),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: ui.surface,
-          borderRadius: radius,
-          border: ui.stickerBorder(UiBorder.thin),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OurneyIcon(name: glyph, size: 17, flat: true, color: ui.ink),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: UiText.body(
-                  size: 12,
-                  weight: FontWeight.w700,
-                  height: 1.3,
-                  color: ui.ink,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

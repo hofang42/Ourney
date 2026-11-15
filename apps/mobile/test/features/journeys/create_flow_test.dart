@@ -20,6 +20,52 @@ Future<void> _tap(WidgetTester tester, String key) async {
   await tester.pumpAndSettle();
 }
 
+/// Answers the V2 step-2 "DNA" question pages until the name form shows.
+Future<void> _skipDna(WidgetTester tester) async {
+  bool has(String k) => _key(k).evaluate().isNotEmpty;
+  Future<void> type(String k, String t) async {
+    await tester.enterText(_key(k), t);
+    await tester.pumpAndSettle();
+  }
+
+  final page = find.byWidgetPredicate(
+    (w) =>
+        w.key is ValueKey<String> &&
+        (w.key! as ValueKey<String>).value.startsWith('dna-page-'),
+  );
+  final choice = find.byWidgetPredicate(
+    (w) =>
+        w.key is ValueKey<String> &&
+        (w.key! as ValueKey<String>).value.startsWith('dna-choice-'),
+  );
+  for (var i = 0; i < 6 && page.evaluate().isNotEmpty; i++) {
+    if (has('dna-trophy')) {
+      await type('dna-trophy', 'Cup');
+    } else if (has('dna-place-field')) {
+      await type('dna-place-field', 'Da Lat');
+    } else if (has('dna-name-left')) {
+      await type('dna-name-left', 'An');
+      await type('dna-name-right', 'Binh');
+    } else if (has('dna-habit')) {
+      await type('dna-habit', 'Read');
+      await type('dna-reason', 'Sleep');
+    } else if (has('dna-dates-summary')) {
+      final day = DateTime.now().day;
+      await _tap(tester, 'dna-day-$day');
+      await _tap(tester, 'dna-day-$day');
+    } else if (choice.evaluate().isNotEmpty) {
+      await tester.tap(choice.first);
+      await tester.pumpAndSettle();
+    }
+    await _tap(tester, 'create-next');
+  }
+}
+
+Future<void> _pick(WidgetTester tester, String key) async {
+  await _tap(tester, key);
+  await _skipDna(tester);
+}
+
 Future<JourneysHarness> _open(
   WidgetTester tester, {
   AppConfig config = const AppConfig.localOnly(),
@@ -41,6 +87,7 @@ bool _switch(WidgetTester tester, String key) =>
     tester.widget<UiSwitchRow>(_key(key)).value;
 
 void main() {
+  _dnaGroup();
   group('Create flow (V2, 5 steps)', () {
     testWidgets('step 1 lists the six types; choosing moves to step 2', (
       tester,
@@ -52,7 +99,7 @@ void main() {
         expect(_key('template-${t.wireName}'), findsWidgets);
       }
       expect(_key('template-couple'), findsOneWidget);
-      await _tap(tester, 'template-travel');
+      await _pick(tester, 'template-travel');
       expect(_stepLabel(tester), 'Step 2/5');
       expect(
         tester.widget<TextField>(_key('journey-title')).controller!.text,
@@ -64,17 +111,19 @@ void main() {
       tester,
     ) async {
       await _open(tester);
-      await _tap(tester, 'template-custom');
+      await _pick(tester, 'template-custom');
       await tester.enterText(_key('journey-title'), 'Uống nước');
       await tester.pumpAndSettle();
       await _tap(tester, 'create-next');
       await _tap(tester, 'journey-kind-couple');
       await _tap(tester, 'create-back');
       await _tap(tester, 'create-back');
+      await _tap(tester, 'create-back'); // the habit question page
       expect(_stepLabel(tester), 'Step 1/5');
       // Same type again keeps the form; a new one would reseed it.
       await _tap(tester, 'create-next');
       expect(_stepLabel(tester), 'Step 2/5');
+      await _tap(tester, 'create-next'); // answers are kept: on to the form
       expect(
         tester.widget<TextField>(_key('journey-title')).controller!.text,
         'Uống nước',
@@ -87,7 +136,7 @@ void main() {
       tester,
     ) async {
       final h = await _open(tester);
-      await _tap(tester, 'template-custom');
+      await _pick(tester, 'template-custom');
       await _tap(tester, 'create-next');
       expect(_stepLabel(tester), 'Step 2/5');
       expect(find.text('Give your journey a name.'), findsOneWidget);
@@ -125,7 +174,7 @@ void main() {
       tester,
     ) async {
       final h = await _open(tester);
-      await _tap(tester, 'template-weight_loss');
+      await _pick(tester, 'template-weight_loss');
       expect(_switch(tester, 'journey-hide-metric'), isTrue);
       expect(_switch(tester, 'journey-blur'), isTrue);
       await _tap(tester, 'create-next');
@@ -158,7 +207,7 @@ void main() {
 
     testWidgets('turning hideWeight off is saved too', (tester) async {
       final h = await _open(tester);
-      await _tap(tester, 'template-weight_loss');
+      await _pick(tester, 'template-weight_loss');
       await _tap(tester, 'journey-hide-metric');
       await _tap(tester, 'journey-blur');
       for (var i = 0; i < 3; i++) {
@@ -173,7 +222,7 @@ void main() {
       tester,
     ) async {
       await _open(tester);
-      await _tap(tester, 'template-english_daily');
+      await _pick(tester, 'template-english_daily');
       await _tap(tester, 'create-next');
       await _tap(tester, 'create-next');
       await _tap(tester, 'create-day-2026-10-20');
@@ -195,7 +244,7 @@ void main() {
       'couple: names are stored in their own fields, not in the title',
       (tester) async {
         final h = await _open(tester);
-        await _tap(tester, 'template-couple');
+        await _pick(tester, 'template-couple');
         await _tap(tester, 'create-next');
         expect(
           tester.widget<CreateChoiceCard>(_key('journey-kind-couple')).selected,
@@ -222,7 +271,7 @@ void main() {
 
     testWidgets('local-only: group is disabled', (tester) async {
       final h = await _open(tester);
-      await _tap(tester, 'template-workout_30');
+      await _pick(tester, 'template-workout_30');
       await _tap(tester, 'create-next');
       await _tap(tester, 'journey-kind-group');
       expect(
@@ -244,7 +293,7 @@ void main() {
 
     testWidgets('with a server: group uses group visibility', (tester) async {
       final h = await _open(tester, config: testBackendConfig, userId: 'u1');
-      await _tap(tester, 'template-workout_30');
+      await _pick(tester, 'template-workout_30');
       await _tap(tester, 'create-next');
       await _tap(tester, 'journey-kind-group');
       await _tap(tester, 'create-next');
@@ -262,7 +311,7 @@ void main() {
       final repo = FakeJourneyRepository()
         ..createError = const OurneyException(OurneyErrorCode.offline);
       final h = await _open(tester, journeys: repo);
-      await _tap(tester, 'template-workout_30');
+      await _pick(tester, 'template-workout_30');
       for (var i = 0; i < 3; i++) {
         await _tap(tester, 'create-next');
       }
@@ -291,7 +340,7 @@ void main() {
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull);
           expect(tester.element(_key('journeys-create-flow')).ui.isDark, dark);
-          await _tap(tester, 'template-couple');
+          await _pick(tester, 'template-couple');
           expect(tester.takeException(), isNull);
           await _tap(tester, 'create-next');
           expect(tester.takeException(), isNull);
@@ -307,5 +356,75 @@ void main() {
         },
       );
     }
+  });
+}
+
+void _dnaGroup() {
+  group('Create step 2 DNA questions', () {
+    testWidgets('weight loss: goal, weight, ghost photo, then the form', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _tap(tester, 'template-weight_loss');
+      expect(_key('dna-page-goal'), findsOneWidget);
+      expect(find.text('Question 1/3'), findsOneWidget);
+      // Next is a no-op until a card is chosen.
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-goal'), findsOneWidget);
+      await _tap(tester, 'dna-choice-goal-keep');
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-weight'), findsOneWidget);
+      expect(find.text('70'), findsOneWidget);
+      expect(_key('dna-hide-weight'), findsOneWidget);
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-ghost'), findsOneWidget);
+      expect(_key('dna-ghost-silhouette'), findsOneWidget);
+      await _tap(tester, 'dna-ghost-later');
+      expect(_key('journey-title'), findsOneWidget);
+      expect(_stepLabel(tester), 'Step 2/5');
+      await _tap(tester, 'create-back');
+      expect(_key('dna-page-ghost'), findsOneWidget);
+    });
+
+    testWidgets('travel: place, dates set the journey length, film', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _tap(tester, 'template-travel');
+      expect(_key('dna-page-place'), findsOneWidget);
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-place'), findsOneWidget, reason: 'needs a place');
+      await _tap(tester, 'dna-place_dalat');
+      expect(_key('dna-pine'), findsOneWidget);
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-dates'), findsOneWidget);
+      final day = DateTime.now().day;
+      await _tap(tester, 'dna-day-$day');
+      await _tap(tester, 'dna-day-$day');
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-film'), findsOneWidget);
+    });
+
+    testWidgets('couple: ritual, names, side', (tester) async {
+      await _open(tester);
+      await _tap(tester, 'template-couple');
+      await _tap(tester, 'dna-choice-ritual-cook');
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-names'), findsOneWidget);
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-names'), findsOneWidget, reason: 'needs names');
+      await tester.enterText(_key('dna-name-left'), 'An');
+      await tester.enterText(_key('dna-name-right'), 'Binh');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'dna-choice-side-left');
+      await _tap(tester, 'create-next');
+      expect(_key('journey-title'), findsOneWidget);
+    });
+
+    testWidgets('the import link opens the import flow route', (tester) async {
+      await _open(tester);
+      expect(_key('create-import-link'), findsOneWidget);
+    });
   });
 }

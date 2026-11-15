@@ -365,4 +365,162 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_inviteNeedsHandle => 'Enter a username first.';
+
+  @override
+  String get groups_codeLabel => 'enter invite code';
+
+  @override
+  String get groups_codeHint => 'K7Q2-M9XA';
+
+  @override
+  String get groups_pasteCode => 'Paste code';
+
+  @override
+  String get groups_joinAction => 'Join';
+
+  @override
+  String get groups_todayHeading => 'today';
+
+  @override
+  String groups_checkedInCount(int done, int total) {
+    return '$done/$total checked in';
+  }
+
+  @override
+  String get groups_memberWaiting => 'not yet';
+
+  @override
+  String groups_openTodayOf(String name) {
+    return 'Open today for $name';
+  }
+
+  @override
+  String get groups_pendingInvitesHeading => 'pending invites';
+
+  @override
+  String groups_inviteLine(String inviter, String title) {
+    return '$inviter invited you to $title';
+  }
+
+  @override
+  String get groups_inviteAccept => 'Join';
+
+  @override
+  String get groups_inviteSkip => 'Skip';
+
+  @override
+  String get groups_memberReport => 'Report user';
+
+  @override
+  String get groups_memberBlock => 'Block';
+
+  @override
+  String groups_memberHandle(String username) {
+    return '@$username';
+  }
+
+  @override
+  String groups_overflowMore(int count) {
+    return '+$count';
+  }
+
+  @override
+  String get groups_emptyCardTitle => 'no squads yet.';
+
+  @override
+  String get groups_emptyCardBody =>
+      'Enter an invite code to join a group or start a group journey.';
+
+  @override
+  String groups_wallAttendance(int done, int total) {
+    return '$done/$total CHECKED IN';
+  }
+
+  @override
+  String groups_wallUpdated(String time) {
+    return 'Updated at $time';
+  }
+
+  @override
+  String groups_wallWaiting(String name) {
+    return '$name · WAITING';
+  }
+
+  @override
+  String get groups_quietTitle => 'Squad today.';
+
+  @override
+  String get groups_quietIntro => 'Sorted by name, not by results.';
+
+  @override
+  String groups_quietDone(String time) {
+    return 'Snapped $time';
+  }
+
+  @override
+  String get groups_quietNotYet => 'Not snapped yet';
+
+  @override
+  String groups_quietSteady(int count) {
+    return 'steady $count/7';
+  }
+
+  @override
+  String get groups_quietShow => 'Show photo';
+
+  @override
+  String get groups_quietHide => 'Hide photo';
+
+  @override
+  String get groups_quietFooter =>
+      'Nobody gets compared. We only count steadiness.';
+
+  @override
+  String groups_memoryTitle(int done, int total) {
+    return 'TODAY · $done/$total HAVE A FRAME';
+  }
+
+  @override
+  String groups_memoryFrame(String name, String time) {
+    return '$name · $time';
+  }
+
+  @override
+  String groups_memoryMissing(String name) {
+    return '$name · NO FRAME YET';
+  }
+
+  @override
+  String get groups_coupleTitle => 'Today, the two of you';
+
+  @override
+  String groups_coupleDone(String name, String time) {
+    return '$name · snapped $time';
+  }
+
+  @override
+  String groups_coupleWaiting(String name) {
+    return '$name · waiting';
+  }
+
+  @override
+  String groups_flexerTitle(int done, int total) {
+    return '$done/$total DONE';
+  }
+
+  @override
+  String groups_flexerDone(String time) {
+    return 'Done · $time';
+  }
+
+  @override
+  String get groups_flexerPending => 'NOT YET';
+
+  @override
+  String groups_minimalTitle(int done, int total) {
+    return '$done/$total DONE';
+  }
+
+  @override
+  String get groups_minimalPending => 'NOT YET';
 }

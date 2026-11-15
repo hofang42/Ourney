@@ -90,4 +90,91 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get placeholder_comingSoon => 'Sắp ra mắt';
+
+  @override
+  String get reminderBanner_now => 'bây giờ';
+
+  @override
+  String get reminderBanner_close => 'Đóng';
+
+  @override
+  String get reminderBanner_appName => 'Ourney';
+
+  @override
+  String get reminderBanner_daily_quiet =>
+      'Đến giờ của bạn rồi. Một tấm là đủ.';
+
+  @override
+  String get reminderBanner_daily_squad =>
+      'Tới giờ điểm danh! Cả hội đang chờ.';
+
+  @override
+  String get reminderBanner_daily_memory =>
+      'Thêm một khung hình cho cuộn phim?';
+
+  @override
+  String get reminderBanner_daily_couple => 'Hai đứa ơi, đến giờ rồi.';
+
+  @override
+  String get reminderBanner_daily_flexer => 'ĐẾN GIỜ. CHẠY ĐI.';
+
+  @override
+  String reminderBanner_daily_minimal(int day) {
+    return 'NGÀY $day.';
+  }
+
+  @override
+  String reminderBanner_streak_quiet(int streak, String time) {
+    return 'Chuỗi $streak ngày còn đến $time. Vẫn kịp.';
+  }
+
+  @override
+  String reminderBanner_streak_squad(int streak, String time) {
+    return 'Chuỗi $streak sắp đứt lúc $time. Chụp ngay nào!';
+  }
+
+  @override
+  String reminderBanner_streak_memory(String time) {
+    return 'Cuộn phim còn mở đến $time.';
+  }
+
+  @override
+  String reminderBanner_streak_couple(int streak, String time) {
+    return 'Chuỗi $streak ngày sắp đứt lúc $time.';
+  }
+
+  @override
+  String reminderBanner_streak_flexer(int streak, String time) {
+    return 'CHUỖI $streak. CÒN ĐẾN $time.';
+  }
+
+  @override
+  String reminderBanner_streak_minimal(int streak, String time) {
+    return 'CHUỖI $streak. $time.';
+  }
+
+  @override
+  String missedDay_chipSquad(int day) {
+    return 'NGÀY $day · LỠ';
+  }
+
+  @override
+  String missedDay_chipQuiet(int day) {
+    return 'NGÀY $day · NGHỈ';
+  }
+
+  @override
+  String get missedDay_titleSquad => 'ngày lỡ.';
+
+  @override
+  String get missedDay_titleQuiet => 'ngày nghỉ.';
+
+  @override
+  String get missedDay_bodySquad => 'Lỡ một hôm thôi. Mai về lại đường nào!';
+
+  @override
+  String get missedDay_bodyQuiet => 'Một ngày nghỉ không xóa hành trình.';
+
+  @override
+  String get missedDay_dismiss => 'Đã hiểu';
 }

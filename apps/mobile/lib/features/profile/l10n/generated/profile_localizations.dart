@@ -631,6 +631,240 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Chọn màu ảnh đại diện'**
   String get profile_avatarColors;
+
+  /// No description provided for @profile_settings_title.
+  ///
+  /// In vi, this message translates to:
+  /// **'cài đặt.'**
+  String get profile_settings_title;
+
+  /// No description provided for @profile_settings_back.
+  ///
+  /// In vi, this message translates to:
+  /// **'Quay lại'**
+  String get profile_settings_back;
+
+  /// No description provided for @profile_settings_secAccount.
+  ///
+  /// In vi, this message translates to:
+  /// **'tài khoản'**
+  String get profile_settings_secAccount;
+
+  /// No description provided for @profile_settings_editProfile.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa hồ sơ'**
+  String get profile_settings_editProfile;
+
+  /// No description provided for @profile_settings_secReminders.
+  ///
+  /// In vi, this message translates to:
+  /// **'nhắc nhở'**
+  String get profile_settings_secReminders;
+
+  /// No description provided for @profile_settings_remindersRow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Nhắc nhở hằng ngày'**
+  String get profile_settings_remindersRow;
+
+  /// No description provided for @profile_settings_remindersSub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt'**
+  String get profile_settings_remindersSub;
+
+  /// No description provided for @profile_settings_secTheme.
+  ///
+  /// In vi, this message translates to:
+  /// **'giao diện'**
+  String get profile_settings_secTheme;
+
+  /// No description provided for @profile_settings_themeLight.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sáng'**
+  String get profile_settings_themeLight;
+
+  /// No description provided for @profile_settings_themeDark.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tối'**
+  String get profile_settings_themeDark;
+
+  /// No description provided for @profile_settings_themeSystem.
+  ///
+  /// In vi, this message translates to:
+  /// **'Theo máy'**
+  String get profile_settings_themeSystem;
+
+  /// No description provided for @profile_settings_themeLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chế độ giao diện'**
+  String get profile_settings_themeLabel;
+
+  /// No description provided for @profile_settings_language.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngôn ngữ'**
+  String get profile_settings_language;
+
+  /// No description provided for @profile_settings_langVi.
+  ///
+  /// In vi, this message translates to:
+  /// **'Việt'**
+  String get profile_settings_langVi;
+
+  /// No description provided for @profile_settings_langEn.
+  ///
+  /// In vi, this message translates to:
+  /// **'English'**
+  String get profile_settings_langEn;
+
+  /// No description provided for @profile_settings_appIcon.
+  ///
+  /// In vi, this message translates to:
+  /// **'Icon ứng dụng'**
+  String get profile_settings_appIcon;
+
+  /// No description provided for @profile_settings_appIconNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Icon trên màn hình chính đổi được trong bản sau; lựa chọn của bạn được lưu.'**
+  String get profile_settings_appIconNote;
+
+  /// No description provided for @profile_settings_iconDefault.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mặc định'**
+  String get profile_settings_iconDefault;
+
+  /// No description provided for @profile_settings_iconQuiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giảm cân'**
+  String get profile_settings_iconQuiet;
+
+  /// No description provided for @profile_settings_iconSquad.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hội'**
+  String get profile_settings_iconSquad;
+
+  /// No description provided for @profile_settings_iconMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ký ức'**
+  String get profile_settings_iconMemory;
+
+  /// No description provided for @profile_settings_iconCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hai đứa'**
+  String get profile_settings_iconCouple;
+
+  /// No description provided for @profile_settings_iconFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tập luyện'**
+  String get profile_settings_iconFlexer;
+
+  /// No description provided for @profile_settings_iconMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tối giản'**
+  String get profile_settings_iconMinimal;
+
+  /// No description provided for @profile_settings_iconSemantic.
+  ///
+  /// In vi, this message translates to:
+  /// **'Icon ứng dụng {name}'**
+  String profile_settings_iconSemantic(String name);
+
+  /// No description provided for @profile_settings_secPrivacy.
+  ///
+  /// In vi, this message translates to:
+  /// **'riêng tư'**
+  String get profile_settings_secPrivacy;
+
+  /// No description provided for @profile_settings_hideKg.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ẩn số kg khi chia sẻ'**
+  String get profile_settings_hideKg;
+
+  /// No description provided for @profile_settings_blurPhotos.
+  ///
+  /// In vi, this message translates to:
+  /// **'Làm mờ ảnh khi chia sẻ'**
+  String get profile_settings_blurPhotos;
+
+  /// No description provided for @profile_settings_blocked.
+  ///
+  /// In vi, this message translates to:
+  /// **'Người bị chặn'**
+  String get profile_settings_blocked;
+
+  /// No description provided for @profile_settings_blockedSub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem và bỏ chặn'**
+  String get profile_settings_blockedSub;
+
+  /// No description provided for @profile_settings_secInfo.
+  ///
+  /// In vi, this message translates to:
+  /// **'thông tin'**
+  String get profile_settings_secInfo;
+
+  /// No description provided for @profile_settings_eula.
+  ///
+  /// In vi, this message translates to:
+  /// **'Điều khoản sử dụng (EULA)'**
+  String get profile_settings_eula;
+
+  /// No description provided for @profile_settings_privacyPolicy.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chính sách riêng tư'**
+  String get profile_settings_privacyPolicy;
+
+  /// No description provided for @profile_settings_contact.
+  ///
+  /// In vi, this message translates to:
+  /// **'Liên hệ'**
+  String get profile_settings_contact;
+
+  /// No description provided for @profile_settings_version.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phiên bản'**
+  String get profile_settings_version;
+
+  /// No description provided for @profile_settings_signOut.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng xuất'**
+  String get profile_settings_signOut;
+
+  /// No description provided for @profile_settings_delete.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xoá tài khoản'**
+  String get profile_settings_delete;
+
+  /// No description provided for @profile_settingsEntry.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cài đặt'**
+  String get profile_settingsEntry;
+
+  /// No description provided for @profile_settingsEntrySub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Giao diện, ngôn ngữ, riêng tư, thông tin'**
+  String get profile_settingsEntrySub;
 }
 
 class _ProfileL10nDelegate extends LocalizationsDelegate<ProfileL10n> {

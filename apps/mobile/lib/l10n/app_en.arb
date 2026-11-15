@@ -21,5 +21,153 @@
   "streak_atRisk": "Streak at risk",
   "needsServer_title": "Server needed",
   "needsServer_message": "This build runs in on-device mode. Solo journeys work as usual; groups need a server.",
-  "placeholder_comingSoon": "Coming soon"
+  "placeholder_comingSoon": "Coming soon",
+  "reminderBanner_now": "now",
+  "@reminderBanner_now": {
+    "description": "Shown next to the app name on the in-app reminder banner."
+  },
+  "reminderBanner_close": "Close",
+  "@reminderBanner_close": {
+    "description": "Dismiss button label of the in-app reminder banner."
+  },
+  "reminderBanner_appName": "Ourney",
+  "@reminderBanner_appName": {
+    "description": "App name on the reminder banner."
+  },
+  "reminderBanner_daily_quiet": "It's your time. One photo is enough.",
+  "@reminderBanner_daily_quiet": {
+    "description": "Daily reminder banner copy, quiet skin."
+  },
+  "reminderBanner_daily_squad": "Check-in time! The whole squad is waiting.",
+  "@reminderBanner_daily_squad": {
+    "description": "Daily reminder banner copy, squad skin."
+  },
+  "reminderBanner_daily_memory": "Add one more frame to the roll?",
+  "@reminderBanner_daily_memory": {
+    "description": "Daily reminder banner copy, memory skin."
+  },
+  "reminderBanner_daily_couple": "You two, it's time.",
+  "@reminderBanner_daily_couple": {
+    "description": "Daily reminder banner copy, couple skin."
+  },
+  "reminderBanner_daily_flexer": "TIME. GO RUN.",
+  "@reminderBanner_daily_flexer": {
+    "description": "Daily reminder banner copy, flexer skin."
+  },
+  "reminderBanner_daily_minimal": "DAY {day}.",
+  "@reminderBanner_daily_minimal": {
+    "description": "Daily reminder banner copy, minimal skin.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderBanner_streak_quiet": "Your {streak}-day streak is open until {time}. Still time.",
+  "@reminderBanner_streak_quiet": {
+    "description": "Streak-at-risk reminder banner copy, quiet skin.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderBanner_streak_squad": "Streak {streak} breaks at {time}. Snap now!",
+  "@reminderBanner_streak_squad": {
+    "description": "Streak-at-risk reminder banner copy, squad skin.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderBanner_streak_memory": "The film roll stays open until {time}.",
+  "@reminderBanner_streak_memory": {
+    "description": "Streak-at-risk reminder banner copy, memory skin.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderBanner_streak_couple": "Your {streak}-day streak breaks at {time}.",
+  "@reminderBanner_streak_couple": {
+    "description": "Streak-at-risk reminder banner copy, couple skin.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderBanner_streak_flexer": "STREAK {streak}. OPEN UNTIL {time}.",
+  "@reminderBanner_streak_flexer": {
+    "description": "Streak-at-risk reminder banner copy, flexer skin.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderBanner_streak_minimal": "STREAK {streak}. {time}.",
+  "@reminderBanner_streak_minimal": {
+    "description": "Streak-at-risk reminder banner copy, minimal skin.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "missedDay_chipSquad": "DAY {day} · MISSED",
+  "@missedDay_chipSquad": {
+    "description": "Missed-day chip, squad skin.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "missedDay_chipQuiet": "DAY {day} · REST",
+  "@missedDay_chipQuiet": {
+    "description": "Missed-day chip, quiet skin.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "missedDay_titleSquad": "missed day.",
+  "@missedDay_titleSquad": {
+    "description": "Sheet title."
+  },
+  "missedDay_titleQuiet": "rest day.",
+  "@missedDay_titleQuiet": {
+    "description": "Sheet title."
+  },
+  "missedDay_bodySquad": "Just one day missed. Back on track tomorrow!",
+  "@missedDay_bodySquad": {
+    "description": "Sheet body."
+  },
+  "missedDay_bodyQuiet": "A rest day does not erase the journey.",
+  "@missedDay_bodyQuiet": {
+    "description": "Sheet body."
+  },
+  "missedDay_dismiss": "Got it",
+  "@missedDay_dismiss": {
+    "description": "Sheet button."
+  }
 }

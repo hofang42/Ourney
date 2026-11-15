@@ -9,6 +9,7 @@ import '../../app/redirect.dart' show safeFrom;
 import 'profile_edit_screen.dart';
 import 'profile_screen.dart';
 import 'profile_setup_screen.dart';
+import 'settings_screen.dart';
 
 export 'profile_screen.dart' show profileEditPath, profileSetupPath;
 
@@ -31,6 +32,11 @@ final List<RouteBase> profileRoutes = [
         path: 'edit',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const _BackendOnly(ProfileEditScreen()),
+      ),
+      GoRoute(
+        path: 'settings',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
         path: 'setup',

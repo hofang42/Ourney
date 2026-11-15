@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +23,8 @@ import 'group_errors.dart';
 import 'group_photo.dart';
 import 'group_safety_hooks.dart';
 import 'reaction_bar.dart';
+
+part 'group_wall_skins.dart';
 
 enum GroupAction { invite, rotate, timeline, end, delete, leave }
 
@@ -180,6 +183,8 @@ class GroupTodayScreen extends ConsumerWidget {
             perms: perms,
             style: style,
             backLabel: backLabel,
+            skinId: uiSkinIdFor(personaSkinOf(journey)),
+            now: ref.watch(journeysClockProvider).now(),
           ),
         ),
       ),
@@ -193,6 +198,8 @@ class GroupTodayScreen extends ConsumerWidget {
     required GroupPermissions perms,
     required UiJourneyStyle style,
     required String backLabel,
+    required String skinId,
+    required DateTime now,
   }) {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
@@ -245,9 +252,7 @@ class GroupTodayScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: UiSpace.md),
                 ],
-                _SharedStreak(view: view),
-                const SizedBox(height: UiSpace.lg),
-                _MemberWall(view: view, perms: perms),
+                _SkinWall(skinId: skinId, view: view, perms: perms, now: now),
               ],
             ),
           ),
@@ -334,7 +339,6 @@ class _MemberWall extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = GroupsL10n.of(context);
     Widget grid(List<GroupMemberEntry> entries) => LayoutBuilder(
       builder: (context, c) {
         final cols = c.maxWidth >= 300 ? 2 : 1;
@@ -366,19 +370,8 @@ class _MemberWall extends StatelessWidget {
         return Column(children: rows);
       },
     );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (view.done.isNotEmpty) ...[
-          UiListHeading(title: l10n.groups_doneSection),
-          grid(view.done),
-        ],
-        if (view.pending.isNotEmpty) ...[
-          UiListHeading(title: l10n.groups_pendingSection),
-          grid(view.pending),
-        ],
-      ],
-    );
+    // V2 `.squad-wall`: one wall, done members first, then the waiting ones.
+    return grid([...view.done, ...view.pending]);
   }
 }
 
@@ -676,7 +669,7 @@ class _MemberTile extends ConsumerWidget {
             status,
             const SizedBox(height: 4),
             Text(
-              l10n.groups_noPhotoYet,
+              l10n.groups_wallWaiting(m.displayName.toUpperCase()),
               key: ValueKey('group-member-nophoto-${m.userId}'),
               textAlign: TextAlign.center,
               style: UiText.body(size: 12, height: 1.45, color: ui.inkMuted),

@@ -398,5 +398,51 @@
   "profile_avatarColors": "Chọn màu ảnh đại diện",
   "@profile_avatarColors": {
     "description": "Semantics of the avatar color row."
-  }
+  },
+  "profile_settings_title": "cài đặt.",
+  "profile_settings_back": "Quay lại",
+  "profile_settings_secAccount": "tài khoản",
+  "profile_settings_editProfile": "Sửa hồ sơ",
+  "profile_settings_secReminders": "nhắc nhở",
+  "profile_settings_remindersRow": "Nhắc nhở hằng ngày",
+  "profile_settings_remindersSub": "Giờ nhắc từng hành trình và báo trước khi chuỗi đứt",
+  "profile_settings_secTheme": "giao diện",
+  "profile_settings_themeLight": "Sáng",
+  "profile_settings_themeDark": "Tối",
+  "profile_settings_themeSystem": "Theo máy",
+  "profile_settings_themeLabel": "Chế độ giao diện",
+  "profile_settings_language": "Ngôn ngữ",
+  "profile_settings_langVi": "Việt",
+  "profile_settings_langEn": "English",
+  "profile_settings_appIcon": "Icon ứng dụng",
+  "profile_settings_appIconNote": "Icon trên màn hình chính đổi được trong bản sau; lựa chọn của bạn được lưu.",
+  "profile_settings_iconDefault": "Mặc định",
+  "profile_settings_iconQuiet": "Giảm cân",
+  "profile_settings_iconSquad": "Hội",
+  "profile_settings_iconMemory": "Ký ức",
+  "profile_settings_iconCouple": "Hai đứa",
+  "profile_settings_iconFlexer": "Tập luyện",
+  "profile_settings_iconMinimal": "Tối giản",
+  "profile_settings_iconSemantic": "Icon ứng dụng {name}",
+  "@profile_settings_iconSemantic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "profile_settings_secPrivacy": "riêng tư",
+  "profile_settings_hideKg": "Ẩn số kg khi chia sẻ",
+  "profile_settings_blurPhotos": "Làm mờ ảnh khi chia sẻ",
+  "profile_settings_blocked": "Người bị chặn",
+  "profile_settings_blockedSub": "Xem và bỏ chặn",
+  "profile_settings_secInfo": "thông tin",
+  "profile_settings_eula": "Điều khoản sử dụng (EULA)",
+  "profile_settings_privacyPolicy": "Chính sách riêng tư",
+  "profile_settings_contact": "Liên hệ",
+  "profile_settings_version": "Phiên bản",
+  "profile_settings_signOut": "Đăng xuất",
+  "profile_settings_delete": "Xoá tài khoản",
+  "profile_settingsEntry": "Cài đặt",
+  "profile_settingsEntrySub": "Giao diện, ngôn ngữ, riêng tư, thông tin"
 }

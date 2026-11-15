@@ -92,4 +92,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get placeholder_comingSoon => 'Coming soon';
+
+  @override
+  String get reminderBanner_now => 'now';
+
+  @override
+  String get reminderBanner_close => 'Close';
+
+  @override
+  String get reminderBanner_appName => 'Ourney';
+
+  @override
+  String get reminderBanner_daily_quiet =>
+      'It\'s your time. One photo is enough.';
+
+  @override
+  String get reminderBanner_daily_squad =>
+      'Check-in time! The whole squad is waiting.';
+
+  @override
+  String get reminderBanner_daily_memory => 'Add one more frame to the roll?';
+
+  @override
+  String get reminderBanner_daily_couple => 'You two, it\'s time.';
+
+  @override
+  String get reminderBanner_daily_flexer => 'TIME. GO RUN.';
+
+  @override
+  String reminderBanner_daily_minimal(int day) {
+    return 'DAY $day.';
+  }
+
+  @override
+  String reminderBanner_streak_quiet(int streak, String time) {
+    return 'Your $streak-day streak is open until $time. Still time.';
+  }
+
+  @override
+  String reminderBanner_streak_squad(int streak, String time) {
+    return 'Streak $streak breaks at $time. Snap now!';
+  }
+
+  @override
+  String reminderBanner_streak_memory(String time) {
+    return 'The film roll stays open until $time.';
+  }
+
+  @override
+  String reminderBanner_streak_couple(int streak, String time) {
+    return 'Your $streak-day streak breaks at $time.';
+  }
+
+  @override
+  String reminderBanner_streak_flexer(int streak, String time) {
+    return 'STREAK $streak. OPEN UNTIL $time.';
+  }
+
+  @override
+  String reminderBanner_streak_minimal(int streak, String time) {
+    return 'STREAK $streak. $time.';
+  }
+
+  @override
+  String missedDay_chipSquad(int day) {
+    return 'DAY $day · MISSED';
+  }
+
+  @override
+  String missedDay_chipQuiet(int day) {
+    return 'DAY $day · REST';
+  }
+
+  @override
+  String get missedDay_titleSquad => 'missed day.';
+
+  @override
+  String get missedDay_titleQuiet => 'rest day.';
+
+  @override
+  String get missedDay_bodySquad =>
+      'Just one day missed. Back on track tomorrow!';
+
+  @override
+  String get missedDay_bodyQuiet => 'A rest day does not erase the journey.';
+
+  @override
+  String get missedDay_dismiss => 'Got it';
 }

@@ -128,6 +128,11 @@ void main() {
     expect(key('journeys-template-picker'), findsOneWidget);
 
     await tap('template-${TemplateId.workout30.wireName}');
+    // V2 step 2 starts with the workout DNA questions (sport, measure, HUD).
+    for (final c in ['sport-run', 'measure-km', 'hud-bold']) {
+      await tap('dna-choice-$c');
+      await tap('create-next');
+    }
     // V2 five-step flow: name (2), who (3), rhythm (4), review (5).
     expect(key('journeys-create-flow'), findsOneWidget);
     for (var i = 0; i < 3; i++) {

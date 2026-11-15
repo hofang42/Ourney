@@ -739,7 +739,13 @@
     }
   },
   "journeys_extraKm": "{km} km",
-  "@journeys_extraKm": {"placeholders": {"km": {"type": "String"}}},
+  "@journeys_extraKm": {
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
   "journeys_extraPace": "{pace} /km",
   "@journeys_extraPace": {
     "placeholders": {
@@ -811,5 +817,211 @@
       }
     }
   },
-  "journeys_memoryOffline": "NGOẠI TUYẾN · chờ đồng bộ"
+  "journeys_memoryOffline": "NGOẠI TUYẾN · chờ đồng bộ",
+  "journeys_dna_goal_title_weight": "mục tiêu của bạn.",
+  "journeys_dna_weight_title": "cân nặng hiện tại.",
+  "journeys_dna_ghost_title": "chụp ảnh ngày 1 làm khung căn dáng.",
+  "journeys_dna_goal_title_english": "mục tiêu.",
+  "journeys_dna_minutes_title": "mỗi ngày bao nhiêu phút.",
+  "journeys_dna_trophy_title": "đặt tên chiếc cúp ở đích.",
+  "journeys_dna_sport_title": "môn gì.",
+  "journeys_dna_measure_title": "đo bằng gì.",
+  "journeys_dna_hud_title": "kiểu HUD.",
+  "journeys_dna_place_title": "đi đâu.",
+  "journeys_dna_dates_title": "ngày đi – ngày về.",
+  "journeys_dna_film_title": "cuộn phim mấy tấm.",
+  "journeys_dna_ritual_title": "nghi thức của hai đứa.",
+  "journeys_dna_names_title": "tên hai người.",
+  "journeys_dna_side_title": "ai chụp nửa nào.",
+  "journeys_dna_habit_title": "thói quen của bạn.",
+  "journeys_dna_c_goal_weight_lose": "Giảm cân",
+  "journeys_dna_c_goal_weight_lose_hint": "nhẹ đi, khỏe hơn mỗi ngày",
+  "journeys_dna_c_goal_weight_keep": "Giữ dáng",
+  "journeys_dna_c_goal_weight_keep_hint": "duy trì nhịp sống hiện tại",
+  "journeys_dna_c_goal_weight_shape": "Thay đổi vóc dáng",
+  "journeys_dna_c_goal_weight_shape_hint": "theo dõi một phiên bản mới",
+  "journeys_dna_c_goal_english_ielts": "IELTS",
+  "journeys_dna_c_goal_english_ielts_hint": "cùng nhau chạm band mục tiêu",
+  "journeys_dna_c_goal_english_talk": "Giao tiếp",
+  "journeys_dna_c_goal_english_talk_hint": "nói tự nhiên hơn mỗi ngày",
+  "journeys_dna_c_goal_english_read": "Đọc sách",
+  "journeys_dna_c_goal_english_read_hint": "đọc trọn cuốn sách đầu tiên",
+  "journeys_dna_c_minutes_15": "15",
+  "journeys_dna_c_minutes_15_hint": "15 phút mỗi ngày",
+  "journeys_dna_c_minutes_30": "30",
+  "journeys_dna_c_minutes_30_hint": "30 phút mỗi ngày",
+  "journeys_dna_c_minutes_45": "45",
+  "journeys_dna_c_minutes_45_hint": "45 phút mỗi ngày",
+  "journeys_dna_c_minutes_60": "60",
+  "journeys_dna_c_minutes_60_hint": "60 phút mỗi ngày",
+  "journeys_dna_c_sport_run": "Chạy",
+  "journeys_dna_c_sport_run_hint": "30 ngày chạy",
+  "journeys_dna_c_sport_gym": "Gym",
+  "journeys_dna_c_sport_gym_hint": "30 ngày gym",
+  "journeys_dna_c_sport_pilates": "Pilates",
+  "journeys_dna_c_sport_pilates_hint": "30 ngày pilates",
+  "journeys_dna_c_sport_yoga": "Yoga",
+  "journeys_dna_c_sport_yoga_hint": "30 ngày yoga",
+  "journeys_dna_c_sport_other": "Khác",
+  "journeys_dna_c_sport_other_hint": "30 ngày khác",
+  "journeys_dna_c_measure_km": "km",
+  "journeys_dna_c_measure_km_hint": "ghi lại theo km",
+  "journeys_dna_c_measure_min": "phút",
+  "journeys_dna_c_measure_min_hint": "ghi lại theo phút",
+  "journeys_dna_c_measure_session": "buổi",
+  "journeys_dna_c_measure_session_hint": "ghi lại theo buổi",
+  "journeys_dna_c_hud_bold": "HUD đậm",
+  "journeys_dna_c_hud_bold_hint": "số lớn, tương phản mạnh",
+  "journeys_dna_c_hud_stamp": "Tem tối giản",
+  "journeys_dna_c_hud_stamp_hint": "gọn như một con tem",
+  "journeys_dna_c_hud_strip": "Dải phim",
+  "journeys_dna_c_hud_strip_hint": "khoảnh khắc nối tiếp nhau",
+  "journeys_dna_c_film_24": "24 tấm",
+  "journeys_dna_c_film_24_hint": "mỗi tấm đều được cân nhắc",
+  "journeys_dna_c_film_36": "36 tấm",
+  "journeys_dna_c_film_36_hint": "thêm chỗ cho điều bất ngờ",
+  "journeys_dna_c_ritual_cook": "Nấu ăn",
+  "journeys_dna_c_ritual_cook_hint": "cùng nhau nấu ăn",
+  "journeys_dna_c_ritual_save": "Tiết kiệm",
+  "journeys_dna_c_ritual_save_hint": "cùng nhau tiết kiệm",
+  "journeys_dna_c_ritual_ldr": "Yêu xa",
+  "journeys_dna_c_ritual_ldr_hint": "cùng nhau yêu xa",
+  "journeys_dna_c_ritual_custom": "Tự đặt",
+  "journeys_dna_c_ritual_custom_hint": "cùng nhau tự đặt",
+  "journeys_dna_c_side_left": "Mình bên trái",
+  "journeys_dna_c_side_right": "Mình bên phải",
+  "journeys_dna_step_of_q": "Câu {n}/{total}",
+  "@journeys_dna_step_of_q": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dna_weight_unit": "kg",
+  "journeys_dna_weight_a11y": "Cân nặng hiện tại",
+  "journeys_dna_weight_private": "Chỉ mình bạn thấy",
+  "journeys_dna_weight_hide": "Ẩn số kg khi chia sẻ",
+  "journeys_dna_weight_skip": "Bỏ qua",
+  "journeys_dna_ghost_body": "Ảnh riêng tư này sẽ làm khung căn dáng ở những ngày tiếp theo.",
+  "journeys_dna_ghost_now": "Chụp ngay",
+  "journeys_dna_ghost_later": "Để sau vậy.",
+  "journeys_dna_trophy_label": "Tên chiếc cúp",
+  "journeys_dna_trophy_hint": "Cúp 7.5",
+  "journeys_dna_place_search": "Tìm một nơi...",
+  "journeys_dna_place_country": "Việt Nam",
+  "journeys_dna_place_dalat": "Đà Lạt",
+  "journeys_dna_place_hoian": "Hội An",
+  "journeys_dna_place_phuquoc": "Phú Quốc",
+  "journeys_dna_place_pine": "Rừng thông và sương",
+  "journeys_dna_dates_open": "chưa hẹn ngày về",
+  "journeys_dna_dates_prompt": "Chọn ngày đi và ngày về",
+  "journeys_dna_dates_open_summary": "{start} · chưa hẹn ngày về",
+  "@journeys_dna_dates_open_summary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dna_dates_range_summary": "{start} – {end}",
+  "@journeys_dna_dates_range_summary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_dna_prev_month": "Tháng trước",
+  "journeys_dna_next_month": "Tháng sau",
+  "journeys_dna_name_left": "Tên bạn",
+  "journeys_dna_name_right": "Tên người ấy",
+  "journeys_dna_habit_label": "Thói quen",
+  "journeys_dna_habit_hint": "Đọc 10 trang",
+  "journeys_dna_reason_label": "vì sao.",
+  "journeys_dna_reason_hint": "để ngủ ngon hơn",
+  "journeys_dna_forge_title": "đang đúc DNA…",
+  "journeys_dna_forge_a11y": "Đang tạo hành trình của bạn",
+  "journeys_dna_import_link": "Nhập hành trình đã qua",
+  "journeys_home_introQuiet": "Nhìn lại từng chút một.",
+  "journeys_home_introSquad": "hôm nay học bao lâu.",
+  "journeys_home_introMemory": "Hôm nay cả bọn lạc ở đâu?",
+  "journeys_home_introCouple": "Hôm nay hai đứa nấu gì?",
+  "journeys_home_offlineQuiet": "Đang lưu trên máy · sẽ đồng bộ sau",
+  "journeys_home_offlineSquad": "CHỜ ĐỒNG BỘ · ĐÃ LƯU TRÊN MÁY",
+  "journeys_home_offlineMemory": "Đang lưu trên máy. Có mạng sẽ tự gửi.",
+  "journeys_home_readOnlyQuiet": "Hành trình đã kết thúc · chỉ xem",
+  "journeys_home_readOnlyFlexer": "ĐÃ VỀ ĐÍCH · CHỈ ĐỌC",
+  "journeys_home_readOnlyMinimal": "ĐÃ KẾT THÚC · CHỈ ĐỌC",
+  "journeys_home_dayStreak": "Ngày {day}/{total} · chuỗi {streak}",
+  "@journeys_home_dayStreak": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_dayStreakOpen": "Ngày {day} · chuỗi {streak}",
+  "@journeys_home_dayStreakOpen": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_monthStreak": "{month} · CHUỖI {streak} NGÀY",
+  "@journeys_home_monthStreak": {
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_home_holdReveal": "Giữ để xem",
+  "journeys_home_viewing": "Đang xem",
+  "journeys_home_chartA11y": "Đường tiến trình",
+  "journeys_home_msWeek": "Tuần đầu",
+  "journeys_home_msHalf": "Nửa chặng",
+  "journeys_home_msFinish": "Về đích",
+  "journeys_home_msDay": "NGÀY {day}",
+  "@journeys_home_msDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_actionSquad": "Hội hôm nay",
+  "journeys_home_actionCard": "Tạo thiệp",
+  "journeys_home_attendance": "{done}/{total} NGÀY ĐÃ CHỤP",
+  "@journeys_home_attendance": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_home_retake": "Chụp thêm ảnh hôm nay",
+  "journeys_home_timelineLabel": "Dòng thời gian"
 }
