@@ -86,5 +86,37 @@
         "type": "int"
       }
     }
+  },
+  "camera_ghostOn": "Bóng ngày 1 · Bật",
+  "camera_ghostOff": "Bóng ngày 1 · Tắt",
+  "camera_privateVault": "Kho riêng tư",
+  "camera_studyStreak": "HỌC 45 PHÚT · {days} LIỀN",
+  "camera_filmRoll": "CUỘN PHIM",
+  "camera_partnerWaiting": "Đối phương chưa chụp. Bạn chụp trước nhé.",
+  "camera_hudBold": "HUD đậm",
+  "camera_hudStamp": "Dấu tối giản",
+  "camera_hudStrip": "Dải phim",
+  "camera_dayStreakBold": "NGÀY {day} · {streak} LIỀN",
+  "camera_allJourneys": "Tất cả hành trình",
+  "camera_pickerTitle": "Tất cả hành trình",
+  "camera_pickerSearch": "Tìm hành trình",
+  "camera_pickerEmpty": "Không có hành trình nào khớp.",
+  "camera_pickerClose": "Đóng",
+  "@camera_studyStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "@camera_dayStreakBold": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
   }
 }

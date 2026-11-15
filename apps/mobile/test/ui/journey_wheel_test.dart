@@ -131,4 +131,20 @@ void main() {
       }
     }
   });
+
+  testWidgets('pressing a badge lifts it and only the release selects', (
+    tester,
+  ) async {
+    final picked = await open(tester);
+    final badge = find.byKey(const ValueKey('journey-wheel-a'));
+    final before = tester.getTopLeft(badge).dy;
+    final g = await tester.startGesture(tester.getCenter(badge));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 150));
+    expect(tester.getTopLeft(badge).dy, lessThan(before));
+    expect(picked, isEmpty);
+    await g.up();
+    await tester.pumpAndSettle();
+    expect(picked, ['a']);
+  });
 }

@@ -176,6 +176,36 @@ void main() {
     expect(find.byKey(const ValueKey('timeline-chain-line')), findsOneWidget);
   });
 
+  testWidgets('quiet hides numbers until the hold button is pressed', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host('quiet', brightness: Brightness.dark, scale: 1.35, onTap: (_) {}),
+    );
+    expect(find.text('Hold to view'), findsOneWidget);
+    expect(find.byKey(const ValueKey('quiet-milestones')), findsOneWidget);
+    final hold = find.byKey(const ValueKey('quiet-hold'));
+    await tester.ensureVisible(hold);
+    final g = await tester.startGesture(tester.getCenter(hold));
+    await tester.pump();
+    expect(find.text('Viewing'), findsOneWidget);
+    await g.up();
+    await tester.pump();
+    expect(find.text('Hold to view'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('memory ties knots on the thread and labels the today slot', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host('memory', brightness: Brightness.light, scale: 1, onTap: (_) {}),
+    );
+    expect(find.byKey(const ValueKey('timeline-knot-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('timeline-knot-4')), findsOneWidget);
+    expect(find.textContaining('tap to snap'), findsOneWidget);
+  });
+
   for (final skin in _skins) {
     for (final dark in [false, true]) {
       testWidgets('$skin timeline ${dark ? 'dark' : 'light'} 320dp 1.35x', (

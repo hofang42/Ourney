@@ -18,44 +18,170 @@ String _dateText(BuildContext context, TimelineDay d) =>
 DateTime displayDateOf(TimelineDay d) =>
     DateTime(d.date.year, d.date.month, d.date.day);
 
-/// Quiet transformer: progress curve on top, vertical rail of nodes below.
-class QuietTimeline extends StatelessWidget {
+/// Quiet transformer: weight curve with private axis labels (hold to reveal),
+/// a vertical rail of nodes captioned like the Figma timeline, and a
+/// milestones row.
+class QuietTimeline extends StatefulWidget {
   const QuietTimeline({required this.days, required this.onTapDay, super.key});
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
 
   @override
+  State<QuietTimeline> createState() => _QuietTimelineState();
+}
+
+class _QuietTimelineState extends State<QuietTimeline> {
+  bool _revealed = false;
+
+  void _reveal(bool v) {
+    if (_revealed != v) setState(() => _revealed = v);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final l10n = JourneysL10n.of(context);
     final accent = timelineAccent(context);
+    final days = widget.days;
     final metric = <double>[
       for (final d in days)
         if (d.checkIn?.metricValue != null) d.checkIn!.metricValue!,
     ];
     final series = metric.length >= 2 ? metric : cumulativeSeries(days);
+    String axis(int i) {
+      if (!_revealed || metric.length < 2) return '••,•';
+      return l10n.journeys_quietAxis(
+        (i == 0 ? metric.first : metric.last).toStringAsFixed(1),
+      );
+    }
+
+    final total = days.last.dayNumber;
+    final current = days
+        .where((d) => d.state != DayState.future)
+        .fold<int>(1, (m, d) => math.max(m, d.dayNumber));
+    final marks = <int>{7, total ~/ 2, total}.where((d) => d <= total).toList()
+      ..sort();
+    String markLabel(int d) => d == total
+        ? l10n.journeys_quietFinish
+        : d == 7
+        ? l10n.journeys_quietWeek
+        : l10n.journeys_quietHalf;
+    final holdLabel = _revealed
+        ? l10n.journeys_quietHolding
+        : l10n.journeys_quietHold;
     return Column(
       key: const ValueKey('journey-timeline'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ExcludeSemantics(
-          child: Container(
-            key: const ValueKey('timeline-curve'),
-            height: 84,
-            margin: const EdgeInsets.only(bottom: UiSpace.md),
-            decoration: BoxDecoration(
-              color: ui.surface,
-              borderRadius: BorderRadius.circular(UiRadius.card),
-              border: Border.all(color: ui.border),
-            ),
-            child: CustomPaint(
-              painter: CurvePainter(
-                values: series,
-                color: accent,
-                dotColor: accent,
-                fillColor: accent.withValues(alpha: 0.12),
+        Container(
+          key: const ValueKey('timeline-curve'),
+          margin: const EdgeInsets.only(bottom: UiSpace.md),
+          padding: const EdgeInsets.all(UiSpace.md),
+          decoration: BoxDecoration(
+            color: ui.surface,
+            borderRadius: BorderRadius.circular(UiRadius.card),
+            border: Border.all(color: ui.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: TimelineNumber(
+                      axis(0),
+                      mono: true,
+                      size: 12,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                  Flexible(
+                    child: TimelineNumber(
+                      axis(1),
+                      mono: true,
+                      size: 12,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                ],
               ),
-            ),
+              ExcludeSemantics(
+                child: SizedBox(
+                  height: 84,
+                  child: CustomPaint(
+                    painter: CurvePainter(
+                      values: series,
+                      color: accent,
+                      fillColor: accent.withValues(alpha: 0.12),
+                      endDotsOnly: true,
+                      dotColor: accent,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: UiSpace.sm),
+              Align(
+                child: Semantics(
+                  key: const ValueKey('quiet-hold'),
+                  button: true,
+                  label: holdLabel,
+                  hint: l10n.journeys_quietHoldHint,
+                  onTap: () => _reveal(!_revealed),
+                  excludeSemantics: true,
+                  child: Listener(
+                    onPointerDown: (_) => _reveal(true),
+                    onPointerUp: (_) => _reveal(false),
+                    onPointerCancel: (_) => _reveal(false),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        minWidth: UiSize.tap,
+                        minHeight: UiSize.tap,
+                      ),
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: UiSpace.md,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _revealed
+                              ? accent.withValues(alpha: 0.2)
+                              : ui.fill,
+                          borderRadius: BorderRadius.circular(UiRadius.capsule),
+                          border: Border.all(color: ui.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            OurneyIcon(
+                              name: _revealed ? 'eye' : 'eye-off',
+                              size: 18,
+                              flat: true,
+                              color: ui.ink,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                holdLabel,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: UiText.body(
+                                  size: 13,
+                                  height: 1.4,
+                                  weight: FontWeight.w700,
+                                  color: ui.ink,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         for (var i = 0; i < days.length; i++)
@@ -63,8 +189,51 @@ class QuietTimeline extends StatelessWidget {
             day: days[i],
             first: i == 0,
             last: i == days.length - 1,
-            onTap: onTapDay,
+            onTap: widget.onTapDay,
+            tag: days[i].isToday
+                ? l10n.journeys_quietToday
+                : marks.contains(days[i].dayNumber)
+                ? markLabel(days[i].dayNumber)
+                : null,
           ),
+        const SizedBox(height: UiSpace.md),
+        Row(
+          key: const ValueKey('quiet-milestones'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final m in marks)
+              Expanded(
+                child: Column(
+                  children: [
+                    OurneyIcon(
+                      name: 'star',
+                      size: 20,
+                      flat: m > current,
+                      color: m > current ? ui.inkMuted : null,
+                    ),
+                    Text(
+                      l10n.journeys_quietDayTag(m),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.muted(color: ui.inkMuted, size: 11),
+                    ),
+                    Text(
+                      markLabel(m),
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 12,
+                        height: 1.35,
+                        weight: FontWeight.w700,
+                        color: ui.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -76,12 +245,14 @@ class _QuietRow extends StatelessWidget {
     required this.first,
     required this.last,
     required this.onTap,
+    this.tag,
   });
 
   final TimelineDay day;
   final bool first;
   final bool last;
   final ValueChanged<TimelineDay> onTap;
+  final String? tag;
 
   @override
   Widget build(BuildContext context) {
@@ -133,11 +304,20 @@ class _QuietRow extends StatelessWidget {
                             style: timelineHeading(context),
                           ),
                           Text(
-                            _dateText(context, day),
-                            maxLines: 1,
+                            tag == null
+                                ? _dateText(context, day)
+                                : '${_dateText(context, day)} · $tag',
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: UiText.muted(color: ui.inkMuted, size: 12),
                           ),
+                          if (day.state == DayState.missed)
+                            Text(
+                              JourneysL10n.of(context).journeys_quietMissed,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: UiText.muted(color: ui.inkMuted, size: 12),
+                            ),
                         ],
                       ),
                     ),
@@ -280,18 +460,50 @@ class MemoryTimeline extends StatelessWidget {
         Positioned.fill(
           child: ExcludeSemantics(
             child: LayoutBuilder(
-              builder: (context, c) => CustomPaint(
-                painter: DashedPathPainter(
-                  points: [
-                    Offset(c.maxWidth / 2, 0),
-                    Offset(c.maxWidth / 2, c.maxHeight),
+              builder: (context, c) {
+                final pts = [
+                  for (var i = 0; i <= days.length; i++)
+                    Offset(
+                      c.maxWidth * (i.isEven ? 0.46 : 0.54),
+                      c.maxHeight * i / days.length,
+                    ),
+                ];
+                final ui = context.ui;
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: DashedPathPainter(
+                          // Scrapbook thread: weaves between the polaroids.
+                          points: pts,
+                          curved: true,
+                          color: accent,
+                          width: 2,
+                          dash: 6,
+                          gap: 5,
+                        ),
+                      ),
+                    ),
+                    // Knots tied along the thread (four, like the Figma).
+                    for (var k = 1; k <= 4; k++)
+                      if (pts.length > k * 2)
+                        Positioned(
+                          key: ValueKey('timeline-knot-$k'),
+                          left: pts[(pts.length - 1) * k ~/ 5].dx - 5,
+                          top: pts[(pts.length - 1) * k ~/ 5].dy - 5,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: ui.bg,
+                              border: Border.all(color: accent, width: 2),
+                            ),
+                          ),
+                        ),
                   ],
-                  color: accent,
-                  width: 2,
-                  dash: 6,
-                  gap: 5,
-                ),
-              ),
+                );
+              },
             ),
           ),
         ),
@@ -367,8 +579,10 @@ class _ScrapRow extends StatelessWidget {
               footer: Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
-                  _dayText(context, day),
-                  maxLines: 1,
+                  day.state == DayState.today
+                      ? JourneysL10n.of(context).journeys_memoryToday
+                      : _dayText(context, day),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: timelineHeading(context, size: 13),

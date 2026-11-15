@@ -632,6 +632,7 @@ class InboxCounts {
     required this.newShares,
     required this.unreadMessages,
     required this.consentRequests,
+    this.groupInvitations = 0,
   });
 
   final int friendRequests;
@@ -640,8 +641,16 @@ class InboxCounts {
   final int unreadMessages;
   final int consentRequests;
 
+  /// Pending group invitations (migration 0010).
+  final int groupInvitations;
+
   bool get hasDot =>
-      friendRequests + newShares + unreadMessages + consentRequests > 0;
+      friendRequests +
+          newShares +
+          unreadMessages +
+          consentRequests +
+          groupInvitations >
+      0;
 }
 
 class DailyCount {

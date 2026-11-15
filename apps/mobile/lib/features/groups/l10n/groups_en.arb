@@ -92,5 +92,15 @@
   "groups_previewAlreadyMember": "You are already in this group.",
   "groups_previewOpenGroup": "Open group",
   "groups_previewLoading": "Looking up the code…",
-  "groups_errorRateLimited": "Too many tries. Wait a little, then try again."
+  "groups_errorRateLimited": "Too many tries. Wait a little, then try again.",
+  "groups_inviteSheetTitle": "Invite by username",
+  "groups_inviteHandleLabel": "Username",
+  "groups_inviteSend": "Send invite",
+  "groups_inviteSent": "Invitation sent",
+  "groups_invitePendingTitle": "Pending invitations",
+  "groups_invitePendingEmpty": "No pending invitations.",
+  "groups_inviteRevoke": "Revoke",
+  "groups_inviteRevoked": "Invitation revoked",
+  "groups_inviteShareCode": "Share the code instead",
+  "groups_inviteNeedsHandle": "Enter a username first."
 }

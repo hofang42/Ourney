@@ -228,5 +228,15 @@
   "groups_previewAlreadyMember": "Bạn đã ở trong nhóm này.",
   "groups_previewOpenGroup": "Mở nhóm",
   "groups_previewLoading": "Đang tìm nhóm…",
-  "groups_errorRateLimited": "Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé."
+  "groups_errorRateLimited": "Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé.",
+  "groups_inviteSheetTitle": "Mời theo tên người dùng",
+  "groups_inviteHandleLabel": "Tên người dùng",
+  "groups_inviteSend": "Gửi lời mời",
+  "groups_inviteSent": "Đã gửi lời mời",
+  "groups_invitePendingTitle": "Lời mời đang chờ",
+  "groups_invitePendingEmpty": "Chưa có lời mời nào đang chờ.",
+  "groups_inviteRevoke": "Thu hồi",
+  "groups_inviteRevoked": "Đã thu hồi lời mời",
+  "groups_inviteShareCode": "Chia sẻ mã mời",
+  "groups_inviteNeedsHandle": "Hãy nhập tên người dùng."
 }

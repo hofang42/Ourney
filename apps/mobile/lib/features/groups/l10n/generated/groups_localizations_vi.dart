@@ -334,4 +334,34 @@ class GroupsL10nVi extends GroupsL10n {
   @override
   String get groups_errorRateLimited =>
       'Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé.';
+
+  @override
+  String get groups_inviteSheetTitle => 'Mời theo tên người dùng';
+
+  @override
+  String get groups_inviteHandleLabel => 'Tên người dùng';
+
+  @override
+  String get groups_inviteSend => 'Gửi lời mời';
+
+  @override
+  String get groups_inviteSent => 'Đã gửi lời mời';
+
+  @override
+  String get groups_invitePendingTitle => 'Lời mời đang chờ';
+
+  @override
+  String get groups_invitePendingEmpty => 'Chưa có lời mời nào đang chờ.';
+
+  @override
+  String get groups_inviteRevoke => 'Thu hồi';
+
+  @override
+  String get groups_inviteRevoked => 'Đã thu hồi lời mời';
+
+  @override
+  String get groups_inviteShareCode => 'Chia sẻ mã mời';
+
+  @override
+  String get groups_inviteNeedsHandle => 'Hãy nhập tên người dùng.';
 }

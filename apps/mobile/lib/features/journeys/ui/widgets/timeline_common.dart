@@ -238,6 +238,7 @@ class CurvePainter extends CustomPainter {
     this.strokeWidth = 2.5,
     this.smooth = true,
     this.fillColor,
+    this.endDotsOnly = false,
   });
 
   final List<double> values;
@@ -246,6 +247,9 @@ class CurvePainter extends CustomPainter {
   final double strokeWidth;
   final bool smooth;
   final Color? fillColor;
+
+  /// Dots only on the first and last point (Figma quiet curve).
+  final bool endDotsOnly;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -287,7 +291,12 @@ class CurvePainter extends CustomPainter {
     );
     if (dotColor != null) {
       for (var i = 0; i < values.length; i++) {
-        canvas.drawCircle(at(i), 3, Paint()..color = dotColor!);
+        if (endDotsOnly && i != 0 && i != values.length - 1) continue;
+        canvas.drawCircle(
+          at(i),
+          endDotsOnly ? 5 : 3,
+          Paint()..color = dotColor!,
+        );
       }
     }
   }
@@ -297,7 +306,8 @@ class CurvePainter extends CustomPainter {
       old.values != values ||
       old.color != color ||
       old.dotColor != dotColor ||
-      old.fillColor != fillColor;
+      old.fillColor != fillColor ||
+      old.endDotsOnly != endDotsOnly;
 }
 
 /// Dashed path through [points] (straight or S-curved segments).

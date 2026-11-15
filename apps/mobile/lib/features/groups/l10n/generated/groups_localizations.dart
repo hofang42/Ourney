@@ -655,6 +655,66 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'Bạn thử quá nhiều lần. Chờ một lát rồi thử lại nhé.'**
   String get groups_errorRateLimited;
+
+  /// No description provided for @groups_inviteSheetTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mời theo tên người dùng'**
+  String get groups_inviteSheetTitle;
+
+  /// No description provided for @groups_inviteHandleLabel.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên người dùng'**
+  String get groups_inviteHandleLabel;
+
+  /// No description provided for @groups_inviteSend.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lời mời'**
+  String get groups_inviteSend;
+
+  /// No description provided for @groups_inviteSent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã gửi lời mời'**
+  String get groups_inviteSent;
+
+  /// No description provided for @groups_invitePendingTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lời mời đang chờ'**
+  String get groups_invitePendingTitle;
+
+  /// No description provided for @groups_invitePendingEmpty.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa có lời mời nào đang chờ.'**
+  String get groups_invitePendingEmpty;
+
+  /// No description provided for @groups_inviteRevoke.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thu hồi'**
+  String get groups_inviteRevoke;
+
+  /// No description provided for @groups_inviteRevoked.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã thu hồi lời mời'**
+  String get groups_inviteRevoked;
+
+  /// No description provided for @groups_inviteShareCode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chia sẻ mã mời'**
+  String get groups_inviteShareCode;
+
+  /// No description provided for @groups_inviteNeedsHandle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hãy nhập tên người dùng.'**
+  String get groups_inviteNeedsHandle;
 }
 
 class _GroupsL10nDelegate extends LocalizationsDelegate<GroupsL10n> {

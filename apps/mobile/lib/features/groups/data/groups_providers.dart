@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../app/providers.dart';
 import '../../../data/data_providers.dart' show dataLayerProvider;
+import 'group_invite_admin_repository.dart';
 import 'group_invite_repository.dart';
 
 /// Repository streams must not retry on their own: the repositories already
@@ -108,5 +109,25 @@ final groupPreviewProvider = FutureProvider.autoDispose
 final groupInvitationsProvider =
     FutureProvider.autoDispose<List<GroupInvitation>>(
       (ref) => ref.watch(groupInviteRepositoryProvider).pending(),
+      retry: _noRetry,
+    );
+
+/// Inviter-side management (list / revoke pending, rename couple; 0010).
+/// Falls back to an always-offline repository when the data layer is absent.
+final groupInviteAdminRepositoryProvider = Provider<GroupInviteAdminRepository>(
+  (ref) {
+    try {
+      return DataGroupInviteAdminRepository(ref.watch(dataLayerProvider).ctx);
+    } on Object {
+      return const UnavailableGroupInviteAdminRepository();
+    }
+  },
+);
+
+/// Pending invitations of one group.
+final sentGroupInvitationsProvider = FutureProvider.autoDispose
+    .family<List<SentGroupInvitation>, String>(
+      (ref, journeyId) =>
+          ref.watch(groupInviteAdminRepositoryProvider).sent(journeyId),
       retry: _noRetry,
     );

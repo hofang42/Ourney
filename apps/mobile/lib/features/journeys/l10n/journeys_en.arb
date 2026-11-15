@@ -223,5 +223,36 @@
   "journeys_extraMoodLight": "Light",
   "journeys_extraMoodNormal": "Okay",
   "journeys_extraMoodTired": "A bit tired",
-  "journeys_partnerPhotoSemantics": "Your partner's photo"
+  "journeys_partnerPhotoSemantics": "Your partner's photo",
+  "journeys_inviteAction": "Invite",
+  "journeys_renameCouple": "Edit names",
+  "journeys_renameCoupleTitle": "Edit couple names",
+  "journeys_quietHold": "Hold to view",
+  "journeys_quietHolding": "Viewing",
+  "journeys_quietHoldHint": "Press and hold to reveal your numbers",
+  "journeys_quietHidden": "Hidden",
+  "journeys_quietAxis": "{value} kg",
+  "journeys_quietDayTag": "DAY {day}",
+  "journeys_quietToday": "TODAY",
+  "journeys_quietWeek": "FIRST WEEK",
+  "journeys_quietHalf": "HALFWAY",
+  "journeys_quietFinish": "FINISH",
+  "journeys_quietMissed": "A rest day doesn't erase the journey.",
+  "journeys_quietMilestones": "Milestones",
+  "journeys_memoryToday": "TODAY · tap to snap",
+  "journeys_memoryEmpty": "EMPTY FRAME",
+  "@journeys_quietAxis": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@journeys_quietDayTag": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  }
 }

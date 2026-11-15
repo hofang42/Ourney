@@ -10,6 +10,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../groups/ui/invite_sheet.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
@@ -17,6 +18,7 @@ import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
+import 'couple_rename_sheet.dart';
 import 'day_ticker.dart';
 import 'journey_actions.dart';
 import 'journey_errors.dart';
@@ -24,7 +26,7 @@ import 'journey_row.dart';
 import 'journey_style.dart';
 import 'widgets/journey_timeline.dart';
 
-enum _Action { end, archive, delete }
+enum _Action { invite, renameCouple, end, archive, delete }
 
 /// `/journey/:id`, V1.0 `Detail`: back / title / share / more header, the
 /// hero (date range, name, day N / M, progress and four stats), the journey
@@ -108,6 +110,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         : null;
 
     final actions = [
+      if (perms.isActive &&
+          journey.kind == JourneyKind.group &&
+          (membership?.isActive ?? false) &&
+          !ref.watch(appConfigProvider).localOnly)
+        _Action.invite,
+      if (perms.canEnd && journey.coupleSelfName != null) _Action.renameCouple,
       if (perms.canEnd) _Action.end,
       if (perms.canArchive) _Action.archive,
       if (perms.canDelete) _Action.delete,
@@ -178,12 +186,17 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                               UiMenuItem(
                                 key: ValueKey('journey-action-${a.name}'),
                                 glyph: switch (a) {
+                                  _Action.invite => 'squad',
+                                  _Action.renameCouple => 'edit',
                                   _Action.end => 'flag',
                                   _Action.archive => 'inbox',
                                   _Action.delete => 'trash',
                                 },
                                 destructive: a == _Action.delete,
                                 label: switch (a) {
+                                  _Action.invite => l10n.journeys_inviteAction,
+                                  _Action.renameCouple =>
+                                    l10n.journeys_renameCouple,
                                   _Action.end => l10n.journeys_endJourney,
                                   _Action.archive => l10n.journeys_archive,
                                   _Action.delete => l10n.journeys_delete,
@@ -327,6 +340,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     // Ended, archived and deleted journeys lose their reminders (FR-G1).
     final reminders = ref.read(reminderSchedulerProvider);
     switch (action) {
+      case _Action.invite:
+        await showGroupInviteSheet(context, journey.id);
+      case _Action.renameCouple:
+        await showCoupleRenameSheet(context, journey);
       case _Action.end:
         final ok = await confirmJourneyAction(
           context,

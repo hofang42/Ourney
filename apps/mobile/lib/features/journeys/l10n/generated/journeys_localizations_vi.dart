@@ -679,4 +679,59 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_partnerPhotoSemantics => 'Ảnh của người ấy';
+
+  @override
+  String get journeys_inviteAction => 'Mời bạn';
+
+  @override
+  String get journeys_renameCouple => 'Sửa tên';
+
+  @override
+  String get journeys_renameCoupleTitle => 'Sửa tên cặp đôi';
+
+  @override
+  String get journeys_quietHold => 'Giữ để xem';
+
+  @override
+  String get journeys_quietHolding => 'Đang xem';
+
+  @override
+  String get journeys_quietHoldHint => 'Nhấn giữ để hiện số của bạn';
+
+  @override
+  String get journeys_quietHidden => 'Đã ẩn';
+
+  @override
+  String journeys_quietAxis(String value) {
+    return '$value kg';
+  }
+
+  @override
+  String journeys_quietDayTag(int day) {
+    return 'NGÀY $day';
+  }
+
+  @override
+  String get journeys_quietToday => 'HÔM NAY';
+
+  @override
+  String get journeys_quietWeek => 'TUẦN ĐẦU';
+
+  @override
+  String get journeys_quietHalf => 'NỬA CHẶNG';
+
+  @override
+  String get journeys_quietFinish => 'VỀ ĐÍCH';
+
+  @override
+  String get journeys_quietMissed => 'Một ngày nghỉ không xóa hành trình.';
+
+  @override
+  String get journeys_quietMilestones => 'Cột mốc';
+
+  @override
+  String get journeys_memoryToday => 'HÔM NAY · chạm để chụp';
+
+  @override
+  String get journeys_memoryEmpty => 'KHUNG TRỐNG';
 }

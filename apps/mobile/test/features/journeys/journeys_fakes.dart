@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
@@ -292,6 +293,7 @@ Future<JourneysHarness> pumpJourneys(
   AppConfig config = const AppConfig.localOnly(),
   String? userId,
   Locale locale = const Locale('vi'),
+  List<Override> extraOverrides = const [],
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -313,6 +315,7 @@ Future<JourneysHarness> pumpJourneys(
       mediaStoreProvider.overrideWithValue(FakeMediaStore()),
       journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
       deviceTimezoneProvider.overrideWith((ref) => testTz),
+      ...extraOverrides,
     ],
   );
   final h = JourneysHarness(container, repo, ci);

@@ -256,8 +256,11 @@ void main() {
         backend: true,
         userId: 'u1',
       );
-      // Members never get end/archive/delete: no menu at all.
-      expect(_key('journey-more'), findsNothing);
+      // Members never get end/archive/delete: the menu only offers invite.
+      await _tap(tester, _key('journey-more'));
+      expect(_key('journey-action-invite'), findsOneWidget);
+      expect(_key('journey-action-end'), findsNothing);
+      expect(_key('journey-action-delete'), findsNothing);
       expect(_key('journey-share'), findsOneWidget);
       expect(_key('journey-checkin'), findsOneWidget);
       expect(_key('journey-timeline'), findsOneWidget);
