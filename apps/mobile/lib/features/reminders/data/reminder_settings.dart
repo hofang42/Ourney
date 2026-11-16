@@ -23,7 +23,12 @@ abstract final class ReminderPrefs {
   /// when the user turns on the first reminder).
   static const permissionAsked = 'reminders.permissionAsked';
 
-  static const _reserved = {streakAlerts, permissionAsked};
+  /// Set once the in-context notification sheet was offered (journey
+  /// created with a reminder, first check-in). "Not now" there does not
+  /// count as the OS prompt: the reminders screen can still ask.
+  static const promptOffered = 'reminders.promptOffered';
+
+  static const _reserved = {streakAlerts, permissionAsked, promptOffered};
 
   /// Journey id encoded in [key], or null if [key] is not a journey setting.
   static String? journeyIdOf(String key) {

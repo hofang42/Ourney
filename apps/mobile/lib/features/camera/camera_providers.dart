@@ -72,4 +72,4 @@ final captureShotTodayProvider = FutureProvider.autoDispose<Set<String>>((
     if (list.any((c) => c.localDate == today)) shot.add(j.id);
   }
   return shot;
-});
+}, retry: _noRetry);

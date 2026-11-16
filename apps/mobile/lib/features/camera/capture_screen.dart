@@ -10,29 +10,34 @@ import '../../app/app_dock.dart';
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
-import '../../l10n/generated/app_localizations.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
-import '../checkin/checkin_controller.dart'
-    show partnerCheckInPhotosProvider, pendingWeightProvider;
+import '../checkin/checkin_controller.dart' show pendingWeightProvider;
 import '../journeys/data/journeys_providers.dart';
-import '../journeys/domain/journey_progress.dart';
-import '../profile/profile_entry_button.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
+import 'capture_journey_data.dart';
 import 'capture_overlays.dart';
 import 'capture_services.dart';
 import 'journey_picker_sheet.dart';
 import 'l10n/generated/camera_localizations.dart';
+import 'widgets/camera_panels.dart';
+import 'widgets/camera_top_bar.dart';
+import 'widgets/journey_disc_strip.dart';
+import 'widgets/viewfinder_extras.dart';
 
 enum _Phase { idle, prePrompt, starting, ready, failure }
 
-/// `/capture`: the app's start screen (FR-C1, App.tsx `CameraScreen`).
-/// Journey chips (remembering the last one), viewfinder with the day pill,
-/// flash (FR-C2), grid, library pick (FR-C3), front/back switch and the hero
-/// shutter in the dark camera dock. The OS permission is requested in
-/// context after a friendly pre-prompt; a denied state links to Settings.
+/// `/capture`: the app's start screen (FR-C1), laid out like the Figma V2
+/// camera (`routes.tsx` `CameraScreen`, SDS §8.8, design-v2 bugs.md A1):
+/// a top bar with the selected journey's name chip and the tools (flash
+/// FR-C2, lens switch, grid), the viewfinder with the skin HUD, the streak
+/// and today's latest photo, one title block, the image-only journey discs
+/// next to the library button (FR-C3), then the dark camera dock with the
+/// hero shutter. Pieces live in `widgets/` and `capture_journey_data.dart`.
+/// The OS permission is requested in context after a friendly pre-prompt; a
+/// denied state links to Settings.
 ///
 /// Performance (NFR-1): the camera starts from `didChangeDependencies` of the
 /// first build, in parallel with the journey stream; nothing else heavy runs
@@ -242,12 +247,22 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   Future<void> _toggleFlash() async {
     final next = FlashSetting.values[(_flash.index + 1) % 3];
+    final l10n = CameraL10n.of(context);
     setState(() => _flash = next);
     OurneyHaptics.selection();
     try {
       await _session?.setFlash(next);
+      if (!mounted) return;
+      showUiToast(context, switch (next) {
+        FlashSetting.off => l10n.camera_flashOff,
+        FlashSetting.auto => l10n.camera_flashAuto,
+        FlashSetting.on => l10n.camera_flashOn,
+      });
     } on Object {
-      // Ignore: keeps the chosen setting for the next start.
+      // The lens refused the mode (no flash unit): say so, back to off.
+      if (!mounted) return;
+      setState(() => _flash = FlashSetting.off);
+      showUiToast(context, l10n.camera_flashUnavailable);
     }
   }
 
@@ -333,6 +348,15 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final capturedAt = clock.now().toUtc();
     final String path;
     try {
+      // Some devices drop the flash mode after a lens or lifecycle restart:
+      // apply the chosen one again right before the shot.
+      if (s.hasFlash) {
+        try {
+          await s.setFlash(_flash);
+        } on Object {
+          // Best effort; the photo is still taken.
+        }
+      }
       path = await s.takePicture();
     } on CameraStartException {
       if (mounted) {
@@ -405,6 +429,29 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     }
   }
 
+  /// "All journeys" sheet (search, pinned / not shot / shot sections).
+  /// Opened from the name chip and from the "All (N)" disc.
+  Future<void> _openPicker(List<Journey> active, Journey? selected) async {
+    var all = active;
+    var shot = const <String>{};
+    try {
+      all = await ref.read(capturePickerJourneysProvider.future);
+      shot = await ref.read(captureShotTodayProvider.future);
+    } on Object {
+      // Sections are a nicety: fall back to the active list.
+    }
+    if (!mounted) return;
+    final id = await showJourneyPickerSheet(
+      context,
+      journeys: all,
+      selectedId: selected?.id,
+      shotTodayIds: shot,
+      pinnedIds: ref.read(pinnedJourneyIdsProvider).value ?? const <String>{},
+    );
+    // Ended journeys cannot take a check-in: not selectable.
+    if (id != null && active.any((j) => j.id == id)) _selectJourney(id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final journeys = ref.watch(captureJourneysProvider);
@@ -451,13 +498,6 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final l10n = CameraL10n.of(context);
     return Column(
       children: [
-        const Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: Padding(
-            padding: EdgeInsets.all(UiSpace.sm),
-            child: ProfileEntryButton(onDark: true),
-          ),
-        ),
         Expanded(
           child: UiFillScroll(
             child: UiEmptyState(
@@ -496,6 +536,66 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     );
   }
 
+  /// Flash, lens switch and framing grid (Figma `camera-top-actions`).
+  List<Widget> _tools(BuildContext context) {
+    final l10n = CameraL10n.of(context);
+    final session = _session;
+    final canSwitch =
+        (_phase == _Phase.ready || _phase == _Phase.starting) &&
+        (session?.canSwitch ?? false) &&
+        !_busy;
+    final hasFlash = _phase == _Phase.ready && (session?.hasFlash ?? false);
+    // Bug 4: the three states used to share one glyph and only a long-press
+    // tooltip told them apart, so a tap looked like it did nothing.
+    final (flashEmphasis, flashLabel) = switch (_flash) {
+      FlashSetting.off => (UiCameraToolEmphasis.none, l10n.camera_flashOff),
+      FlashSetting.auto => (
+        UiCameraToolEmphasis.outline,
+        l10n.camera_flashAuto,
+      ),
+      FlashSetting.on => (UiCameraToolEmphasis.filled, l10n.camera_flashOn),
+    };
+    return [
+      if (hasFlash)
+        KeyedSubtree(
+          key: const ValueKey('capture-flash'),
+          child: Tooltip(
+            message: flashLabel,
+            child: UiCameraTool(
+              glyph: 'lightning',
+              label: flashLabel,
+              emphasis: flashEmphasis,
+              onPressed: _toggleFlash,
+            ),
+          ),
+        ),
+      Tooltip(
+        message: l10n.camera_switchLens,
+        child: UiCameraTool(
+          key: const ValueKey('capture-switch'),
+          glyph: 'switch-camera',
+          label: l10n.camera_switchLens,
+          onPressed: canSwitch ? _switchLens : null,
+        ),
+      ),
+      Tooltip(
+        message: l10n.camera_grid,
+        child: UiCameraTool(
+          key: const ValueKey('capture-grid'),
+          glyph: 'grid',
+          label: l10n.camera_grid,
+          emphasis: _grid
+              ? UiCameraToolEmphasis.filled
+              : UiCameraToolEmphasis.none,
+          onPressed: () => setState(() => _grid = !_grid),
+        ),
+      ),
+    ];
+  }
+
+  /// Figma V2 camera: top bar (name chip + tools), the viewfinder with the
+  /// skin HUD, one title block, the image-only disc strip with the library
+  /// button, then the camera dock with the hero shutter.
   Widget _buildCamera(
     BuildContext context,
     AsyncValue<List<Journey>> journeys,
@@ -506,72 +606,52 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final l10n = CameraL10n.of(context);
     final width = MediaQuery.sizeOf(context).width;
     final gutter = UiSpace.gutter(width);
-    final session = _session;
-    final canSwitch =
-        (_phase == _Phase.ready || _phase == _Phase.starting) &&
-        (session?.canSwitch ?? false) &&
-        !_busy;
-    final hasFlash = _phase == _Phase.ready && (session?.hasFlash ?? false);
-    final (flashIcon, flashLabel) = switch (_flash) {
-      FlashSetting.off => ('lightning', l10n.camera_flashOff),
-      FlashSetting.auto => ('lightning', l10n.camera_flashAuto),
-      FlashSetting.on => ('lightning', l10n.camera_flashOn),
+    final data = selected == null ? null : CaptureJourneyData(ref, selected);
+    final pinned =
+        ref.watch(pinnedJourneyIdsProvider).value ?? const <String>{};
+    final shot = {
+      ...?ref.watch(captureShotTodayProvider).value,
+      if (data != null && data.today.isNotEmpty) selected!.id,
     };
-    final index = list.indexWhere((j) => j.id == selected?.id);
+    final quick = quickCameraJourneys(
+      list,
+      selectedId: selected?.id,
+      pinnedIds: pinned,
+      shotTodayIds: shot,
+    );
     return Column(
       children: [
         Padding(
-          padding: EdgeInsetsDirectional.only(start: gutter, end: UiSpace.sm),
-          child: Row(
-            children: [
-              Expanded(
-                child: _JourneyBar(
-                  journeys: journeys,
-                  selected: selected,
-                  onSelect: _selectJourney,
-                  onRetry: () => ref.invalidate(captureJourneysProvider),
-                ),
-              ),
-              if (hasFlash)
-                KeyedSubtree(
-                  key: const ValueKey('capture-flash'),
-                  child: Tooltip(
-                    message: flashLabel,
-                    child: UiCameraTool(
-                      glyph: flashIcon,
-                      label: flashLabel,
-                      onPressed: _toggleFlash,
-                    ),
-                  ),
-                ),
-              Tooltip(
-                message: l10n.camera_switchLens,
-                child: UiCameraTool(
-                  key: const ValueKey('capture-switch'),
-                  glyph: 'switch-camera',
-                  label: l10n.camera_switchLens,
-                  onPressed: canSwitch ? _switchLens : null,
-                ),
-              ),
-              const ProfileEntryButton(onDark: true),
-            ],
+          padding: EdgeInsetsDirectional.only(start: gutter, end: UiSpace.xs),
+          child: CameraTopBar(
+            journeys: journeys,
+            selected: selected,
+            onOpenPicker: () => _openPicker(list, selected),
+            onRetry: () => ref.invalidate(captureJourneysProvider),
+            tools: _tools(context),
           ),
         ),
         const SizedBox(height: UiSpace.sm),
         Expanded(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: gutter),
-            child: _buildViewfinder(context, list, selected),
+            child: _buildViewfinder(context, list, selected, data),
           ),
         ),
-        if (list.length > 1)
-          UiPageDots(count: list.length, index: index < 0 ? 0 : index)
-        else
-          const SizedBox(height: 12),
+        const SizedBox(height: UiSpace.sm),
+        if (selected != null && data != null)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: gutter),
+            child: JourneyTitleBlock(
+              journey: selected,
+              dayNumber: data.progress.dayNumber,
+              totalDays: data.progress.totalDays,
+              photosToday: data.today.length,
+            ),
+          ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Tooltip(
                 message: l10n.camera_gallery,
@@ -583,14 +663,25 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                       : () => _pickFromLibrary(selected),
                 ),
               ),
-              Tooltip(
-                message: l10n.camera_grid,
-                child: UiCameraTool(
-                  key: const ValueKey('capture-grid'),
-                  glyph: 'grid',
-                  label: l10n.camera_grid,
-                  onPressed: () => setState(() => _grid = !_grid),
-                ),
+              const SizedBox(width: UiSpace.sm),
+              Expanded(
+                child: list.length < 2
+                    ? const SizedBox(height: UiSize.tap)
+                    : Center(
+                        child: JourneyDiscStrip(
+                          journeys: quick,
+                          total: list.length,
+                          selectedId: selected?.id,
+                          accent: style?.accent,
+                          pinnedIds: pinned,
+                          shotTodayIds: shot,
+                          onSelect: (id) {
+                            OurneyHaptics.selection();
+                            _selectJourney(id);
+                          },
+                          onOpenAll: () => _openPicker(list, selected),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -604,16 +695,18 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     BuildContext context,
     List<Journey> list,
     Journey? journey,
+    CaptureJourneyData? data,
   ) {
     final l10n = CameraL10n.of(context);
     final session = _session;
+    final ready = _phase == _Phase.ready;
     final Widget content = switch (_phase) {
       _Phase.ready when session != null => KeyedSubtree(
         key: const ValueKey('capture-preview'),
         child: session.buildPreview(),
       ),
-      _Phase.prePrompt => _PrePrompt(onAccept: _acceptPrePrompt),
-      _Phase.failure => _FailurePanel(
+      _Phase.prePrompt => CameraPrePrompt(onAccept: _acceptPrePrompt),
+      _Phase.failure => CameraFailurePanel(
         failure: _failure ?? CameraFailure.failed,
         settingsSupported: ref.read(appSettingsOpenerProvider).supported,
         onOpenSettings: _openSettings,
@@ -629,7 +722,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         ),
       ),
     };
-    final hud = journey == null ? null : _hudFor(journey);
+    final today = data?.today ?? const <CheckIn>[];
 
     final viewfinder = ClipRRect(
       borderRadius: BorderRadius.circular(UiRadius.viewfinder),
@@ -637,9 +730,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         fit: StackFit.expand,
         children: [
           ColoredBox(color: UiCamera.bg, child: content),
-          if (_grid && _phase == _Phase.ready)
-            const IgnorePointer(child: CustomPaint(painter: _GridPainter())),
-          if (_phase == _Phase.ready)
+          if (_grid && ready) const CameraGrid(),
+          if (ready)
             const IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -651,65 +743,50 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 ),
               ),
             ),
-          if (journey != null && _phase == _Phase.ready)
+          if (journey != null && data != null && ready)
             Positioned.fill(
               child: CaptureSkinOverlay(
                 key: ValueKey('capture-overlay-${journey.id}'),
                 skin: personaSkinOf(journey),
-                dayNumber: hud?.dayNumber ?? 1,
-                streak: hud?.summary.current ?? 0,
-                lastPace: _lastWith(journey, (c) => c.extras.pace),
-                lastWeight: _lastWeight(journey),
-                lastWeightKg: _lastWeightKg(journey),
-                lastKm: _lastKm(journey),
+                dayNumber: data.progress.dayNumber,
+                streak: data.progress.summary.current,
+                lastPace: data.lastWith((c) => c.extras.pace),
+                lastWeight: data.lastWeight,
+                lastWeightKg: data.lastWeightKg,
+                lastKm: data.lastKm,
+                lastMinutes: data.lastMinutes,
                 onWeightChanged: (kg) => ref
                     .read(pendingWeightProvider(journey.id).notifier)
                     .setPendingWeight(kg),
-                partnerPhotoFile: _partnerPhoto(journey),
+                partnerPhotoFile: data.partnerPhoto,
               ),
             ),
-          if (hud != null)
-            Positioned(
-              left: 16,
-              top: 16,
-              right: 16,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: UiDayHud(
-                      key: const ValueKey('capture-day-hud'),
-                      l10n.camera_dayHud(hud.dayNumber),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Semantics(
-                    label: l10n.camera_streakChip(hud.summary.current),
-                    excludeSemantics: true,
-                    child: UiGlassChip(
-                      label: '${hud.summary.current}',
-                      leadingGlyph: 'flame',
-                    ),
-                  ),
-                ],
+          if (data != null && journey != null)
+            PositionedDirectional(
+              end: 14,
+              top: 14,
+              child: Semantics(
+                label: l10n.camera_streakChip(data.progress.summary.current),
+                excludeSemantics: true,
+                child: UiGlassChip(
+                  key: const ValueKey('capture-streak'),
+                  label: '${data.progress.summary.current}',
+                  leadingGlyph: 'flame',
+                ),
               ),
             ),
-          if (list.length > 1 && _phase == _Phase.ready)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 18,
-              child: IgnorePointer(
-                child: Text(
-                  l10n.camera_swipeHint,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body(
-                    size: 12,
-                    height: 1.4,
-                    color: UiCamera.ink,
-                  ),
+          // Top-start, not Figma's bottom-left: the skin HUDs (ghost and
+          // vault chips, film stamp, flexer picks) own the bottom edge.
+          if (journey != null && today.isNotEmpty && ready)
+            PositionedDirectional(
+              start: 14,
+              top: 14,
+              child: LatestPhotoThumb(
+                key: const ValueKey('capture-latest-photo'),
+                count: today.length,
+                file: data!.fileOf(today.first),
+                onPressed: () => unawaited(
+                  context.push<void>(AppRoutes.journey(journey.id)),
                 ),
               ),
             ),
@@ -738,449 +815,5 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         ),
       ),
     );
-  }
-
-  /// Day number and streak of [journey] for the viewfinder pill; day 1 and
-  /// streak 0 until the check-ins load.
-  List<CheckIn> _recent(Journey journey) {
-    final all =
-        ref.watch(myCheckInsProvider(journey.id)).value ?? const <CheckIn>[];
-    return [...all]..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
-  }
-
-  String? _lastWith(Journey journey, String? Function(CheckIn) pick) {
-    for (final c in _recent(journey)) {
-      final v = pick(c)?.trim();
-      if (v != null && v.isNotEmpty) return v;
-    }
-    return null;
-  }
-
-  double? _lastWeightKg(Journey journey) {
-    for (final c in _recent(journey)) {
-      if (c.metricValue != null) return c.metricValue;
-    }
-    return null;
-  }
-
-  double? _lastKm(Journey journey) {
-    for (final c in _recent(journey)) {
-      final p = c.extras.pace?.trim();
-      if (p != null && p.isNotEmpty) return c.extras.km;
-    }
-    return null;
-  }
-
-  String? _lastWeight(Journey journey) {
-    for (final c in _recent(journey)) {
-      final v = c.metricValue;
-      if (v == null) continue;
-      final text = v == v.roundToDouble() ? v.toStringAsFixed(0) : '$v';
-      final unit = journey.metricUnit;
-      return unit == null || unit.isEmpty ? text : '$text $unit';
-    }
-    return null;
-  }
-
-  /// Latest partner photo of a couple journey: the local file when the
-  /// check-in still has it, else the downloaded copy of the storage path.
-  String? _partnerPhoto(Journey journey) {
-    final partner =
-        ref.watch(partnerCheckInPhotosProvider(journey.id)).value ??
-        const <CheckIn>[];
-    if (partner.isNotEmpty) {
-      final f = ref.watch(mediaFileProvider(partner.first.thumbPath)).value;
-      if (f != null && f.isNotEmpty) return f;
-    }
-    for (final c in _recent(journey)) {
-      final local = c.localPartnerPhotoFile;
-      if (local != null && local.isNotEmpty) return local;
-      final remote = c.partnerPhotoPath;
-      if (remote != null && remote.isNotEmpty) {
-        return ref.watch(mediaFileProvider(remote)).value;
-      }
-    }
-    return null;
-  }
-
-  JourneyProgress _hudFor(Journey journey) {
-    final membership = ref.watch(myMembershipProvider(journey.id)).value;
-    final checkIns =
-        ref.watch(myCheckInsProvider(journey.id)).value ?? const <CheckIn>[];
-    return JourneyProgress.compute(
-      journey: journey,
-      membership: membership,
-      checkIns: checkIns,
-      now: clock.now().toUtc(),
-    );
-  }
-}
-
-/// 3x3 framing grid over the viewfinder.
-class _GridPainter extends CustomPainter {
-  const _GridPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = UiCamera.ink.withValues(alpha: 0.4)
-      ..strokeWidth = 1;
-    for (var i = 1; i < 3; i++) {
-      final x = size.width * i / 3;
-      final y = size.height * i / 3;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_GridPainter oldDelegate) => false;
-}
-
-class _JourneyBar extends StatelessWidget {
-  const _JourneyBar({
-    required this.journeys,
-    required this.selected,
-    required this.onSelect,
-    required this.onRetry,
-  });
-
-  final AsyncValue<List<Journey>> journeys;
-  final Journey? selected;
-  final ValueChanged<String> onSelect;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = CameraL10n.of(context);
-    final ui = context.ui;
-    if (journeys.hasError && !journeys.hasValue) {
-      return Row(
-        children: [
-          OurneyIcon(name: 'error', flat: true, color: ui.danger, size: 20),
-          const SizedBox(width: UiSpace.sm),
-          Flexible(
-            child: Text(
-              l10n.camera_journeysError,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(size: 13, color: ui.ink),
-            ),
-          ),
-          Flexible(
-            child: UiTextAction(
-              label: AppLocalizations.of(context).common_retry,
-              onPressed: onRetry,
-            ),
-          ),
-        ],
-      );
-    }
-    if (!journeys.hasValue) return const SizedBox(height: UiSize.tap);
-    return Semantics(
-      container: true,
-      label: l10n.camera_journeyPicker,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            for (final j in journeys.requireValue)
-              Padding(
-                padding: const EdgeInsets.only(right: UiSpace.sm),
-                child: _JourneyChip(
-                  key: ValueKey('journey-chip-${j.id}'),
-                  label: j.title,
-                  icon: uiJourneyGlyph(
-                    j.emoji,
-                    j.templateId,
-                    size: 16,
-                    color: UiCamera.ink,
-                  ),
-                  selected: j.id == selected?.id,
-                  onTap: () => onSelect(j.id),
-                ),
-              ),
-            if (journeys.requireValue.length > 1)
-              UiGlassChip(
-                key: const ValueKey('journey-picker-open'),
-                label: l10n.camera_allJourneys,
-                leadingGlyph: 'search',
-                onPressed: () async {
-                  final container = ProviderScope.containerOf(context);
-                  var all = journeys.requireValue;
-                  var shot = const <String>{};
-                  try {
-                    all = await container.read(
-                      capturePickerJourneysProvider.future,
-                    );
-                    shot = await container.read(
-                      captureShotTodayProvider.future,
-                    );
-                  } on Object {
-                    // Sections are a nicety: fall back to the active list.
-                  }
-                  if (!context.mounted) return;
-                  final id = await showJourneyPickerSheet(
-                    context,
-                    journeys: all,
-                    selectedId: selected?.id,
-                    shotTodayIds: shot,
-                    pinnedIds:
-                        container.read(pinnedJourneyIdsProvider).value ??
-                        const <String>{},
-                  );
-                  // Ended journeys cannot take a check-in: not selectable.
-                  final active = journeys.requireValue;
-                  if (id != null && active.any((j) => j.id == id)) {
-                    onSelect(id);
-                  }
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Journey chip on the camera: the selected one is solid paper with a check,
-/// the others are translucent with white text (state is not color only).
-class _JourneyChip extends StatelessWidget {
-  const _JourneyChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-    super.key,
-  });
-
-  final String label;
-  final Widget icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    if (selected) {
-      return UiGlassChip(
-        label: label,
-        leadingGlyph: 'check',
-        trailingGlyph: 'chevron-down',
-        onPressed: onTap,
-      );
-    }
-    return UiPressable(
-      onPressed: onTap,
-      semanticLabel: label,
-      excludeChildSemantics: true,
-      centerChild: true,
-      child: UiGlass.camera(
-        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 200),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              icon,
-              const SizedBox(width: 7),
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body(
-                    size: 14,
-                    weight: FontWeight.w600,
-                    height: 1.3,
-                    color: UiCamera.ink,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Shared layout for the pre-prompt and failure panels: scrolls so it never
-/// overflows at large text.
-class _Panel extends StatelessWidget {
-  const _Panel({
-    required this.icon,
-    required this.title,
-    required this.message,
-    required this.actions,
-    this.panelKey,
-  });
-
-  final Widget icon;
-  final String title;
-  final String message;
-  final List<Widget> actions;
-  final Key? panelKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Center(
-      key: panelKey,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(UiSpace.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ExcludeSemantics(
-              child: Container(
-                width: UiSize.permissionIcon,
-                height: UiSize.permissionIcon,
-                decoration: BoxDecoration(
-                  color: ui.permissionIconBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(child: icon),
-              ),
-            ),
-            const SizedBox(height: UiSpace.lg),
-            Semantics(
-              header: true,
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: UiText.h2(color: ui.ink, size: 20),
-              ),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: UiText.muted(color: ui.inkMuted, size: 14),
-            ),
-            for (final a in actions) ...[const SizedBox(height: UiSpace.md), a],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PrePrompt extends StatelessWidget {
-  const _PrePrompt({required this.onAccept});
-
-  final VoidCallback onAccept;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = CameraL10n.of(context);
-    return _Panel(
-      panelKey: const ValueKey('capture-pre-prompt'),
-      icon: const OurneyIcon(name: 'camera', size: 28),
-      title: l10n.camera_prePromptTitle,
-      message: l10n.camera_prePromptMessage,
-      actions: [
-        UiButton(
-          label: l10n.camera_prePromptAction,
-          onPressed: onAccept,
-          expand: false,
-        ),
-      ],
-    );
-  }
-}
-
-class _FailurePanel extends StatelessWidget {
-  const _FailurePanel({
-    required this.failure,
-    required this.settingsSupported,
-    required this.onOpenSettings,
-    required this.onRetry,
-  });
-
-  final CameraFailure failure;
-  final bool settingsSupported;
-  final VoidCallback onOpenSettings;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = CameraL10n.of(context);
-    final common = AppLocalizations.of(context);
-    final retry = UiButton.secondary(
-      key: const ValueKey('capture-retry'),
-      label: common.common_retry,
-      onPressed: onRetry,
-      expand: false,
-    );
-    final settings = UiButton(
-      key: const ValueKey('capture-open-settings'),
-      label: l10n.camera_openSettings,
-      onPressed: onOpenSettings,
-      expand: false,
-    );
-    final settingsHint = Text(
-      l10n.camera_deniedSettingsPath,
-      textAlign: TextAlign.center,
-      style: UiText.muted(color: context.ui.inkMuted, size: 13),
-    );
-    switch (failure) {
-      case CameraFailure.permissionDenied:
-      case CameraFailure.permissionDeniedPermanently:
-        return _Panel(
-          panelKey: const ValueKey('capture-denied'),
-          icon: OurneyIcon(
-            name: 'camera',
-            flat: true,
-            size: 28,
-            color: context.ui.ink,
-          ),
-          title: l10n.camera_deniedTitle,
-          message: l10n.camera_deniedMessage,
-          actions: [
-            if (settingsSupported) settings else settingsHint,
-            if (failure == CameraFailure.permissionDenied || !settingsSupported)
-              retry,
-          ],
-        );
-      case CameraFailure.restricted:
-        return _Panel(
-          panelKey: const ValueKey('capture-restricted'),
-          icon: OurneyIcon(
-            name: 'camera',
-            flat: true,
-            size: 28,
-            color: context.ui.ink,
-          ),
-          title: l10n.camera_deniedTitle,
-          message: l10n.camera_restrictedMessage,
-          actions: const [],
-        );
-      case CameraFailure.unavailable:
-        return _Panel(
-          panelKey: const ValueKey('capture-unavailable'),
-          icon: OurneyIcon(
-            name: 'warning',
-            flat: true,
-            size: 28,
-            color: context.ui.ink,
-          ),
-          title: l10n.camera_unavailableTitle,
-          message: l10n.camera_unavailableMessage,
-          actions: const [],
-        );
-      case CameraFailure.failed:
-        return _Panel(
-          panelKey: const ValueKey('capture-failed'),
-          icon: OurneyIcon(
-            name: 'warning',
-            flat: true,
-            size: 28,
-            color: context.ui.ink,
-          ),
-          title: l10n.camera_failedTitle,
-          message: common.common_errorGeneric,
-          actions: [retry],
-        );
-    }
   }
 }

@@ -51,12 +51,6 @@
     "description": "Primary button that posts the check-in (FR-C4)."
   },
   "checkin_posting": "Đang đăng…",
-  "checkin_replaceTitle": "Thay ảnh hôm nay?",
-  "@checkin_replaceTitle": {
-    "description": "Confirmation when a check-in already exists today for this journey (FR-C7)."
-  },
-  "checkin_replaceMessage": "Hôm nay bạn đã check-in cho hành trình này. Ảnh mới sẽ thay ảnh cũ.",
-  "checkin_replaceConfirm": "Thay ảnh",
   "checkin_errorPhoto": "Không xử lý được ảnh này. Thử ảnh khác nhé.",
   "checkin_errorEnded": "Hành trình đã kết thúc nên không check-in thêm được.",
   "checkin_missingPhoto": "Không tìm thấy ảnh. Quay lại và chụp lại nhé.",
@@ -66,7 +60,15 @@
     "description": "Text of the stamp shown after posting (FR-C8)."
   },
   "checkin_streakPlusOne": "+1 ngày",
-  "checkin_replaced": "Đã thay ảnh hôm nay",
+  "checkin_photoAdded": "Đã thêm ảnh thứ {n}",
+  "@checkin_photoAdded": {
+    "description": "Calm notice after an extra photo of a day that already counted (FR-C8). n >= 2.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_milestone7": "7 ngày liên tục!",
   "checkin_milestone30": "30 ngày liên tục!",
   "checkin_milestoneFinish": "Về đích rồi!",

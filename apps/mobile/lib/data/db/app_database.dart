@@ -131,13 +131,10 @@ class CheckIns extends Table {
   BoolColumn get uploaded => boolean().withDefault(const Constant(false))();
   TextColumn get updatedAt => text().nullable()();
 
+  // No unique (journey, user, local date): several check-ins per day are
+  // allowed (FR-C7, server migration 0014; local schema version 6).
   @override
   Set<Column> get primaryKey => {id};
-
-  @override
-  List<Set<Column>> get uniqueKeys => [
-    {journeyId, userId, localDate},
-  ];
 }
 
 @DataClassName('ReactionRow')
@@ -210,7 +207,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -244,6 +241,15 @@ class AppDatabase extends _$AppDatabase {
         await m.addColumn(journeys, journeys.color);
         await m.addColumn(journeys, journeys.reminderTime);
         await m.addColumn(journeys, journeys.dna);
+      }
+      if (from < 6) {
+        // 0014: several check-ins per day. SQLite cannot drop a table-level
+        // UNIQUE, so the table is rebuilt (rows kept) and the index restored.
+        await m.alterTable(TableMigration(checkIns));
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS check_ins_journey_idx '
+          'ON check_ins (journey_id, local_date)',
+        );
       }
     },
   );

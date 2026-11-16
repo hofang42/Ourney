@@ -15,7 +15,6 @@ import '../domain/journey_progress.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'day_ticker.dart';
 import 'home/journey_home_intro.dart' show journeyHomeOfflineProvider;
-import 'journey_errors.dart';
 import 'journey_row.dart';
 import 'shelf_view.dart';
 import 'today_card.dart';
@@ -36,10 +35,9 @@ enum HubSegment { active, shelf, shared }
 class JourneysListScreen extends ConsumerStatefulWidget {
   const JourneysListScreen({super.key});
 
-  static Future<void> startCreate(BuildContext context, JourneyBuckets b) {
-    if (!b.canCreate) return showJourneyLimitDialog(context);
-    return context.push(AppRoutes.journeyNew);
-  }
+  /// No cap on running journeys (SRS FR-B3, owner decision 2026-11-12).
+  static Future<void> startCreate(BuildContext context) =>
+      context.push(AppRoutes.journeyNew);
 
   @override
   ConsumerState<JourneysListScreen> createState() => _JourneysListState();
@@ -70,7 +68,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     final Widget body;
     if (buckets != null && buckets.isEmpty) {
       body = _DayZero(
-        onStart: () => JourneysListScreen.startCreate(context, buckets),
+        onStart: () => JourneysListScreen.startCreate(context),
       );
     } else if (buckets != null) {
       body = _HubBody(
@@ -120,10 +118,20 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
 /// Figma Hub header: the "hành trình." title, an add button and the
 /// "chào {name}." greeting underneath. Profile and activity are dock tabs.
 class _HubHeader extends ConsumerWidget {
-  const _HubHeader({this.onAdd});
+  const _HubHeader({
+    this.onAdd,
+    this.menu,
+    this.menuOpen = false,
+    this.onCloseMenu,
+  });
 
   /// Null hides the add button (the empty hub offers its own start button).
   final VoidCallback? onAdd;
+
+  /// Add menu floated under the add button while [menuOpen].
+  final Widget? menu;
+  final bool menuOpen;
+  final VoidCallback? onCloseMenu;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -133,21 +141,30 @@ class _HubHeader extends ConsumerWidget {
     final first = name == null || name.isEmpty
         ? null
         : name.split(RegExp(r'\s+')).last;
+    final bar = UiTopBar(
+      title: l10n.journeys_hubTitle,
+      actions: [
+        if (onAdd != null)
+          UiIconButton(
+            key: const ValueKey('journeys-new'),
+            glyph: const OurneyIcon(name: 'plus', size: 24),
+            label: l10n.journeys_addJourney,
+            onPressed: onAdd,
+          ),
+      ],
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        UiTopBar(
-          title: l10n.journeys_hubTitle,
-          actions: [
-            if (onAdd != null)
-              UiIconButton(
-                key: const ValueKey('journeys-new'),
-                glyph: const OurneyIcon(name: 'plus', size: 24),
-                label: l10n.journeys_addJourney,
-                onPressed: onAdd,
-              ),
-          ],
-        ),
+        if (menu case final menu?)
+          UiMenuAnchor(
+            open: menuOpen,
+            onClose: onCloseMenu ?? () {},
+            anchor: bar,
+            menu: menu,
+          )
+        else
+          bar,
         Padding(
           padding: const EdgeInsets.only(top: UiSpace.md),
           child: Semantics(
@@ -398,36 +415,36 @@ class _HubBody extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _HubHeader(onAdd: onMenu),
-        const _HubNotices(),
-        if (menuOpen)
-          Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: UiMenuSurface(
-              width: 260,
-              children: [
+        _HubHeader(
+          onAdd: onMenu,
+          menuOpen: menuOpen,
+          onCloseMenu: onCloseMenu,
+          menu: UiMenuSurface(
+            width: 260,
+            children: [
+              UiMenuItem(
+                key: const ValueKey('journeys-menu-new'),
+                glyph: 'plus',
+                label: l10n.journeys_newJourney,
+                onPressed: () {
+                  onCloseMenu();
+                  JourneysListScreen.startCreate(context);
+                },
+              ),
+              if (online)
                 UiMenuItem(
-                  key: const ValueKey('journeys-menu-new'),
-                  glyph: 'plus',
-                  label: l10n.journeys_newJourney,
+                  key: const ValueKey('journeys-menu-retell'),
+                  glyph: 'sparkle',
+                  label: l10n.journeys_retell,
                   onPressed: () {
                     onCloseMenu();
-                    JourneysListScreen.startCreate(context, buckets);
+                    context.push(AppRoutes.retell);
                   },
                 ),
-                if (online)
-                  UiMenuItem(
-                    key: const ValueKey('journeys-menu-retell'),
-                    glyph: 'sparkle',
-                    label: l10n.journeys_retell,
-                    onPressed: () {
-                      onCloseMenu();
-                      context.push(AppRoutes.retell);
-                    },
-                  ),
-              ],
-            ),
+            ],
           ),
+        ),
+        const _HubNotices(),
         const SizedBox(height: UiSpace.sm),
         UiStreakHero(
           key: const ValueKey('journeys-hub-hero'),
@@ -473,8 +490,7 @@ class _HubBody extends ConsumerWidget {
               key: const ValueKey('hub-segment-active'),
               value: HubSegment.active,
               label:
-                  '${l10n.journeys_activeSection} · '
-                  '${buckets.activeCount}/$maxActiveJourneys',
+                  '${l10n.journeys_activeSection} · ${buckets.activeCount}',
             ),
             UiSegment(
               key: const ValueKey('hub-segment-shelf'),
@@ -514,7 +530,7 @@ class _HubBody extends ConsumerWidget {
                       for (final j in buckets.active) JourneyRow(journey: j),
                       _NewJourneyCard(
                         onTap: () =>
-                            JourneysListScreen.startCreate(context, buckets),
+                            JourneysListScreen.startCreate(context),
                       ),
                     ],
                   ),

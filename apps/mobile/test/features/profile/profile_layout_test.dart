@@ -55,7 +55,9 @@ void main() {
     });
   }
 
-  testWidgets('the camera shows the profile entry with the user initials', (
+  // Bug #5 (Figma V2): the camera top bar no longer has its own profile
+  // button; profile is reached from the dock, which the camera keeps.
+  testWidgets('the camera reaches the profile through the dock', (
     tester,
   ) async {
     final c = await pumpBackendApp(
@@ -64,8 +66,9 @@ void main() {
       profiles: FakeProfileRepository(aliceProfile),
     );
     await goTo(tester, c, '/capture');
-    expect(byKey('profile-entry'), findsWidgets);
-    await tester.tap(byKey('profile-entry').first);
+    expect(byKey('profile-entry'), findsNothing);
+    expect(byKey('dock-profile'), findsOneWidget);
+    await tester.tap(byKey('dock-profile'));
     await tester.pumpAndSettle();
     expect(byKey('profile-screen'), findsOneWidget);
   });

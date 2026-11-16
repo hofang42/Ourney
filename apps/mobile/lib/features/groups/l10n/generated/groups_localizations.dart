@@ -236,12 +236,6 @@ abstract class GroupsL10n {
   /// **'Bạn không thể tham gia nhóm này.'**
   String get groups_errorBlocked;
 
-  /// No description provided for @groups_errorLimit.
-  ///
-  /// In vi, this message translates to:
-  /// **'Bạn đang chạy 3 hành trình. Kết thúc một hành trình rồi tham gia nhóm này nhé.'**
-  String get groups_errorLimit;
-
   /// No description provided for @groups_errorEnded.
   ///
   /// In vi, this message translates to:

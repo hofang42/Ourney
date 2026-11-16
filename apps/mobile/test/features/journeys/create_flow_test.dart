@@ -1,13 +1,18 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
 import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
+import 'package:ourney/features/onboarding/onboarding_providers.dart';
+import 'package:ourney/features/reminders/data/notification_gateway.dart';
+import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
 import 'journeys_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
@@ -86,8 +91,98 @@ String _stepLabel(WidgetTester tester) =>
 bool _switch(WidgetTester tester, String key) =>
     tester.widget<UiSwitchRow>(_key(key)).value;
 
+/// Bug #8: every sticker icon on screen keeps its V2 palette fill; none is
+/// painted as a solid ink (black in light mode) blob.
+void _expectNoInkFilledStickers(WidgetTester tester) {
+  final icons = find.byType(OurneyIcon).evaluate().toList();
+  expect(icons, isNotEmpty);
+  for (final e in icons) {
+    final icon = e.widget as OurneyIcon;
+    if (icon.flat) continue;
+    expect(
+      icon.color,
+      isNot(e.ui.ink),
+      reason: '${icon.name} is filled with ink',
+    );
+  }
+}
+
+void _reminderAndIconGroup() {
+  for (final brightness in Brightness.values) {
+    testWidgets('create icons keep their colours (${brightness.name})', (
+      tester,
+    ) async {
+      tester.platformDispatcher.platformBrightnessTestValue = brightness;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      await _open(tester);
+      _expectNoInkFilledStickers(tester);
+      await _pick(tester, 'template-workout_30');
+      _expectNoInkFilledStickers(tester);
+      await _tap(tester, 'create-next');
+      // Who step: solo / group / couple stickers.
+      expect(_key('journey-kind-solo'), findsOneWidget);
+      _expectNoInkFilledStickers(tester);
+      await _tap(tester, 'create-next');
+      _expectNoInkFilledStickers(tester);
+    });
+  }
+
+  testWidgets('quiz reminder: creating offers notifications (bug #7)', (
+    tester,
+  ) async {
+    final gateway = FakeNotificationGateway();
+    final h = await pumpJourneys(
+      tester,
+      location: AppRoutes.journeyNew,
+      locale: const Locale('en'),
+      extraOverrides: [
+        journeySuggestionProvider.overrideWithValue(
+          const JourneySuggestion(
+            templateId: TemplateId.workout30,
+            skin: PersonaSkinId.aestheticFlexer,
+            kind: JourneyKind.solo,
+            reminder: '07:30',
+          ),
+        ),
+        notificationGatewayProvider.overrideWithValue(gateway),
+        reminderDeviceTimezoneProvider.overrideWith((ref) async => testTz),
+        remindersClockProvider.overrideWithValue(Clock.fixed(testNow)),
+      ],
+    );
+    await _tap(tester, 'create-next');
+    await _skipDna(tester);
+    for (var i = 0; i < 3; i++) {
+      await _tap(tester, 'create-next');
+    }
+    // The DNA forge overlay animates while the sheet waits: pump frames
+    // instead of settling.
+    Future<void> frames() async {
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+    }
+
+    await tester.ensureVisible(_key('journey-create'));
+    await tester.pumpAndSettle();
+    await tester.tap(_key('journey-create'));
+    await frames();
+
+    expect(h.journeys.created, hasLength(1));
+    expect(_key('notification-sheet'), findsOneWidget);
+    expect(find.textContaining('07:30'), findsWidgets);
+    await tester.tap(_key('notification-turn-on'));
+    await frames();
+    await tester.pumpAndSettle();
+
+    expect(gateway.requests, 1);
+    expect(gateway.scheduled, isNotEmpty);
+    expect(_key('notification-sheet'), findsNothing);
+  });
+}
+
 void main() {
   _dnaGroup();
+  _reminderAndIconGroup();
   group('Create flow (V2, 5 steps)', () {
     testWidgets('step 1 lists the six types; choosing moves to step 2', (
       tester,

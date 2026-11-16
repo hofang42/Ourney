@@ -59,16 +59,6 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_posting => 'Posting…';
 
   @override
-  String get checkin_replaceTitle => 'Replace today\'s photo?';
-
-  @override
-  String get checkin_replaceMessage =>
-      'You already checked in to this journey today. The new photo will replace the old one.';
-
-  @override
-  String get checkin_replaceConfirm => 'Replace';
-
-  @override
   String get checkin_errorPhoto =>
       'Couldn\'t process this photo. Try another one.';
 
@@ -90,7 +80,9 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_streakPlusOne => '+1 day';
 
   @override
-  String get checkin_replaced => 'Today\'s photo replaced';
+  String checkin_photoAdded(int n) {
+    return 'Photo $n added';
+  }
 
   @override
   String get checkin_milestone7 => '7 days in a row!';

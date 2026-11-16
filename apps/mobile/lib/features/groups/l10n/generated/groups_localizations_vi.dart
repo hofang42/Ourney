@@ -86,10 +86,6 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_errorBlocked => 'Bạn không thể tham gia nhóm này.';
 
   @override
-  String get groups_errorLimit =>
-      'Bạn đang chạy 3 hành trình. Kết thúc một hành trình rồi tham gia nhóm này nhé.';
-
-  @override
   String get groups_errorEnded => 'Hành trình này đã kết thúc.';
 
   @override

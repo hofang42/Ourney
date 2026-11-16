@@ -26,3 +26,11 @@ cheaper tier on Skia/low-end/thermal throttle.
   them.
 - Shader cost and Impeller on Android must be verified on device.
 - Optional: call `LiquidGlassWidgets.initialize()` in main() to pre-warm shaders.
+
+## Update 2026-11-15 (device bug #11)
+On the test device the shader capsule did not read as glass, and it drops the
+2dp outline and hard shadow that CLAUDE.md §2 requires. `UiDock.liquid` now
+defaults to `false`: the dock uses the V2 `BackdropFilter` glass (`UiGlass`,
+blur 20, saturate 1.6, surface tint 62% in a journey skin / 78-80% on the
+shell, top sheen, 2dp outline + hard shadow, solid under high contrast). The
+shader path stays available as an opt-in.

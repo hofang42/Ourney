@@ -34,6 +34,11 @@ class UiSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(
+      context.getInheritedWidgetOfExactType<_InUiSheet>() == null,
+      'UiSheet inside a UiSheet: showUiSheet already wraps its builder, '
+      'so the content must not add another UiSheet.',
+    );
     final ui = context.ui;
     final mq = MediaQuery.of(context);
     final width = mq.size.width;
@@ -101,7 +106,11 @@ class UiSheet extends StatelessWidget {
                         height: topPadding - UiBorder.standard - 12 - 5,
                       ),
                     ],
-                    Flexible(child: SingleChildScrollView(child: child)),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: _InUiSheet(child: child),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -111,6 +120,14 @@ class UiSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Marks content that already sits in a [UiSheet] (catches nested sheets).
+class _InUiSheet extends InheritedWidget {
+  const _InUiSheet({required super.child});
+
+  @override
+  bool updateShouldNotify(_InUiSheet oldWidget) => false;
 }
 
 /// Opens [builder] in a [UiSheet] over the `.app-sheet-scrim` scrim.

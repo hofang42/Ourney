@@ -60,7 +60,6 @@ void main() {
       OurneyErrorCode.notFound: 'No group uses this code.',
       OurneyErrorCode.full: 'This group is full (10 members).',
       OurneyErrorCode.blocked: "You can't join this group.",
-      OurneyErrorCode.limit: 'You already have 3 journeys running.',
       OurneyErrorCode.ended: 'This journey has ended.',
       OurneyErrorCode.offline: "You're offline.",
     };

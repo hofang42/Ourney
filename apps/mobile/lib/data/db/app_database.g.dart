@@ -2754,10 +2754,6 @@ class $CheckInsTable extends CheckIns
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  List<Set<GeneratedColumn>> get uniqueKeys => [
-    {journeyId, userId, localDate},
-  ];
-  @override
   CheckInRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CheckInRow(

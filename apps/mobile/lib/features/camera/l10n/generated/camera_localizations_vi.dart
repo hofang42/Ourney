@@ -30,6 +30,9 @@ class CameraL10nVi extends CameraL10n {
   String get camera_flashOn => 'Đèn flash: bật';
 
   @override
+  String get camera_flashUnavailable => 'Camera này không có đèn flash';
+
+  @override
   String get camera_switchLens => 'Đổi camera trước/sau';
 
   @override
@@ -104,9 +107,6 @@ class CameraL10nVi extends CameraL10n {
   }
 
   @override
-  String get camera_swipeHint => 'Vuốt để sang hành trình khác';
-
-  @override
   String camera_streakChip(int days) {
     return 'Chuỗi $days ngày';
   }
@@ -119,11 +119,6 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_privateVault => 'Kho riêng tư';
-
-  @override
-  String camera_studyStreak(int days) {
-    return 'HỌC 45 PHÚT · $days LIỀN';
-  }
 
   @override
   String get camera_filmRoll => 'CUỘN PHIM';
@@ -171,11 +166,6 @@ class CameraL10nVi extends CameraL10n {
   String get camera_pickerEnded => 'Đã kết thúc';
 
   @override
-  String camera_studyElapsed(String time, int days) {
-    return 'HỌC $time · $days LIỀN';
-  }
-
-  @override
   String camera_lastPace(String pace) {
     return 'NHỊP GẦN NHẤT $pace';
   }
@@ -195,4 +185,42 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_pickerPinned => 'Đã ghim';
+
+  @override
+  String camera_dayOfTotal(int day, int total) {
+    return 'Ngày $day/$total';
+  }
+
+  @override
+  String get camera_notShotToday => 'chưa chụp hôm nay';
+
+  @override
+  String camera_shotTodayCount(int count) {
+    return 'đã có $count ảnh hôm nay';
+  }
+
+  @override
+  String camera_photoCount(int count) {
+    return '$count ảnh';
+  }
+
+  @override
+  String camera_openToday(int count) {
+    return 'Mở hành trình, hôm nay có $count ảnh';
+  }
+
+  @override
+  String camera_allJourneysCount(int count) {
+    return 'Tất cả hành trình ($count)';
+  }
+
+  @override
+  String camera_squadLastStudy(int minutes, int days) {
+    return 'LẦN TRƯỚC $minutes PHÚT · $days LIÊN TIẾP';
+  }
+
+  @override
+  String camera_squadStreak(int days) {
+    return '$days NGÀY LIÊN TIẾP';
+  }
 }

@@ -110,8 +110,8 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
     final milestone = outcome.milestone;
     // Figma Done screens: a per-skin hero, the streak, one calm line.
     final headline = _headline(l10n, skin, day ?? 1, outcome.streakAfter);
-    final message = outcome.replaced
-        ? l10n.checkin_replaced
+    final message = outcome.extraPhoto
+        ? l10n.checkin_photoAdded(outcome.photoOfDay)
         : milestoneTitle != null
         ? l10n.checkin_milestoneMessage
         : skin == 'couple'

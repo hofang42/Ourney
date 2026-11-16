@@ -278,6 +278,9 @@ void main() {
       expect(_key('journey-share'), findsOneWidget);
       expect(_key('journey-checkin'), findsOneWidget);
       expect(_key('journey-timeline'), findsOneWidget);
+      // The menu floats over the page: a tap outside closes it first.
+      await _tap(tester, _key('ui-menu-barrier'));
+      expect(_key('journey-action-invite'), findsNothing);
       await _tap(tester, _key('journey-home-squad'));
       expect(h.location, AppRoutes.groups);
     });

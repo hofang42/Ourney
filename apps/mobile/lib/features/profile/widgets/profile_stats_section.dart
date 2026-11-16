@@ -47,7 +47,12 @@ class _ProfileStatsSectionState extends ConsumerState<ProfileStatsSection> {
       key: const ValueKey('profile-stats'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
+        // Bug 6: labels wrap to different line counts ("Chuỗi dài nhất" vs
+        // "Hành trình đã xong"), so each tile took its own height. Stretch
+        // the three tiles to the tallest one; Expanded keeps equal widths.
+        IntrinsicHeight(
+          child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final (key, value, label) in [
               ('snaps', stats.totalSnaps, l10n.profile_statSnaps),
@@ -63,8 +68,13 @@ class _ProfileStatsSectionState extends ConsumerState<ProfileStatsSection> {
                     vertical: UiSpace.md,
                   ),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('$value', style: UiText.h1(size: 26, color: ui.ink)),
+                      Text(
+                        '$value',
+                        maxLines: 1,
+                        style: UiText.h1(size: 26, color: ui.ink),
+                      ),
                       const SizedBox(height: UiSpace.xs),
                       Text(
                         label,
@@ -84,6 +94,7 @@ class _ProfileStatsSectionState extends ConsumerState<ProfileStatsSection> {
               if (key != 'done') const SizedBox(width: UiSpace.sm),
             ],
           ],
+          ),
         ),
         const SizedBox(height: UiSpace.xl),
         UiListHeading(title: l10n.profile_badgesTitle),

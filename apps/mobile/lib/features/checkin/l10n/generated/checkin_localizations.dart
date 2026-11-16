@@ -188,24 +188,6 @@ abstract class CheckinL10n {
   /// **'Đang đăng…'**
   String get checkin_posting;
 
-  /// Confirmation when a check-in already exists today for this journey (FR-C7).
-  ///
-  /// In vi, this message translates to:
-  /// **'Thay ảnh hôm nay?'**
-  String get checkin_replaceTitle;
-
-  /// No description provided for @checkin_replaceMessage.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hôm nay bạn đã check-in cho hành trình này. Ảnh mới sẽ thay ảnh cũ.'**
-  String get checkin_replaceMessage;
-
-  /// No description provided for @checkin_replaceConfirm.
-  ///
-  /// In vi, this message translates to:
-  /// **'Thay ảnh'**
-  String get checkin_replaceConfirm;
-
   /// No description provided for @checkin_errorPhoto.
   ///
   /// In vi, this message translates to:
@@ -242,11 +224,11 @@ abstract class CheckinL10n {
   /// **'+1 ngày'**
   String get checkin_streakPlusOne;
 
-  /// No description provided for @checkin_replaced.
+  /// Calm notice after an extra photo of a day that already counted (FR-C8). n >= 2.
   ///
   /// In vi, this message translates to:
-  /// **'Đã thay ảnh hôm nay'**
-  String get checkin_replaced;
+  /// **'Đã thêm ảnh thứ {n}'**
+  String checkin_photoAdded(int n);
 
   /// No description provided for @checkin_milestone7.
   ///

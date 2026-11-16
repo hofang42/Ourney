@@ -278,6 +278,102 @@ class UiMenuSurface extends StatelessWidget {
   }
 }
 
+/// Floats [menu] (usually a [UiMenuSurface]) under the end edge of [anchor],
+/// like the Figma `.hub-add-menu` / `.overflow-menu` (`position: absolute`).
+///
+/// The menu lives in the overlay, so opening it never reflows the screen
+/// below the anchor. Tapping outside or the system back closes it through
+/// [onClose].
+class UiMenuAnchor extends StatefulWidget {
+  const UiMenuAnchor({
+    required this.open,
+    required this.onClose,
+    required this.anchor,
+    required this.menu,
+    this.gap = 6,
+    super.key,
+  });
+
+  final bool open;
+  final VoidCallback onClose;
+  final Widget anchor;
+  final Widget menu;
+
+  /// Space between the anchor's bottom edge and the menu.
+  final double gap;
+
+  @override
+  State<UiMenuAnchor> createState() => _UiMenuAnchorState();
+}
+
+class _UiMenuAnchorState extends State<UiMenuAnchor> {
+  final _link = LayerLink();
+  final _portal = OverlayPortalController();
+
+  @override
+  void initState() {
+    super.initState();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(UiMenuAnchor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.open != widget.open) _sync();
+  }
+
+  // show()/hide() rebuild the overlay, so they run after this frame instead
+  // of in the middle of the parent's build.
+  void _sync() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.open && !_portal.isShowing) _portal.show();
+      if (!widget.open && _portal.isShowing) _portal.hide();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return PopScope(
+      canPop: !widget.open,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) widget.onClose();
+      },
+      child: OverlayPortal(
+        controller: _portal,
+        overlayChildBuilder: (context) => Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                key: const ValueKey('ui-menu-barrier'),
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onClose,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              top: 0,
+              child: CompositedTransformFollower(
+                link: _link,
+                showWhenUnlinked: false,
+                targetAnchor: rtl ? Alignment.bottomLeft : Alignment.bottomRight,
+                followerAnchor: rtl ? Alignment.topLeft : Alignment.topRight,
+                offset: Offset(0, widget.gap),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: widget.menu,
+                ),
+              ),
+            ),
+          ],
+        ),
+        child: CompositedTransformTarget(link: _link, child: widget.anchor),
+      ),
+    );
+  }
+}
+
 /// One entry of a [UiMenuSurface].
 class UiMenuItem extends StatelessWidget {
   const UiMenuItem({

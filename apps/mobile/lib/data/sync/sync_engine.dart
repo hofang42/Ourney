@@ -149,11 +149,7 @@ class SyncEngine {
       }
       await remote.uploadFile(partnerPath, partner);
     }
-    await remote.upsert(
-      'check_ins',
-      checkInToRemote(row),
-      onConflict: 'journey_id,user_id,local_date',
-    );
+    await remote.upsert('check_ins', checkInToRemote(row), onConflict: 'id');
     // Metrics live in their own table (RLS honours hide_metric, 0005).
     await remote.upsert(
       'check_in_metrics',

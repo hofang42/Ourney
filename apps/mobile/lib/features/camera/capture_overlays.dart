@@ -9,7 +9,7 @@ import '../../ui/ui.dart';
 import 'l10n/generated/camera_localizations.dart';
 
 /// The persona HUD drawn over the live preview (CLAUDE.md section 4):
-/// ghost-align vault (quiet), study timer (squad), film stamp (memory),
+/// ghost-align vault (quiet), study proof stamp (squad), film stamp (memory),
 /// half-frame duo (couple), bold HUD / film strip / minimal stamp (flexer)
 /// and nothing at all for the zero-text minimalist. Always-dark camera
 /// chrome, so it reads on any preview in light and dark themes.
@@ -23,6 +23,7 @@ class CaptureSkinOverlay extends StatefulWidget {
     this.lastWeightKg,
     this.onWeightChanged,
     this.lastKm,
+    this.lastMinutes,
     this.partnerPhotoFile,
     super.key,
   });
@@ -47,6 +48,9 @@ class CaptureSkinOverlay extends StatefulWidget {
   /// Flexer: distance (km) of the last check-in that logged one.
   final double? lastKm;
 
+  /// Squad: study minutes logged at the last check-in (Post extras).
+  final int? lastMinutes;
+
   /// Couple: local file of the partner's latest photo, when there is one.
   final String? partnerPhotoFile;
 
@@ -64,15 +68,16 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
   static double _clampKg(double v) =>
       ((v.clamp(30.0, 200.0)) * 10).round() / 10;
 
-  // Squad: real elapsed time since the camera (this overlay) opened.
-  final DateTime _openedAt = clock.now();
-  Timer? _tick;
+  // Squad: the clock stamp (Figma `squad-camera-time`) follows the minute.
+  // Bug #9: this used to be a stopwatch counting from when the camera
+  // opened, which measured nothing the squad cares about.
+  Timer? _minute;
 
   @override
   void initState() {
     super.initState();
     if (widget.skin == PersonaSkinId.accountabilitySquad) {
-      _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      _minute = Timer.periodic(const Duration(seconds: 20), (_) {
         if (mounted) setState(() {});
       });
     }
@@ -80,17 +85,8 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
 
   @override
   void dispose() {
-    _tick?.cancel();
+    _minute?.cancel();
     super.dispose();
-  }
-
-  String _elapsed() {
-    final d = clock.now().difference(_openedAt);
-    String two(int v) => v.toString().padLeft(2, '0');
-    final h = d.inHours;
-    final m = two(d.inMinutes % 60);
-    final sec = two(d.inSeconds % 60);
-    return h > 0 ? '$h:$m:$sec' : '$m:$sec';
   }
 
   @override
@@ -220,8 +216,12 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
     );
   }
 
+  /// Accountability Squad (`studyTimerSnap`, Figma squad camera): a proof
+  /// stamp the squad can trust, the wall-clock time of the shot, plus what
+  /// the member studied last time and the streak at stake. No stopwatch.
   Widget _squad(BuildContext context) {
     final l10n = CameraL10n.of(context);
+    final minutes = widget.lastMinutes;
     return Stack(
       key: const ValueKey('overlay-squad'),
       fit: StackFit.expand,
@@ -229,19 +229,39 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
         Positioned(
           left: 16,
           right: 16,
-          bottom: 44,
-          child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            runSpacing: 4,
-            children: [
-              _Chip(
-                label: l10n.camera_studyElapsed(_elapsed(), widget.streak),
-                glyph: 'flame',
-                keyName: 'overlay-study',
-              ),
-              _Mono(_time(), keyName: 'overlay-time'),
-            ],
+          top: 64,
+          child: Center(
+            child: Text(
+              _time(),
+              key: const ValueKey('overlay-time'),
+              maxLines: 1,
+              style:
+                  UiText.body(
+                    size: 44,
+                    weight: FontWeight.w700,
+                    height: 1.3,
+                    color: UiCamera.ink,
+                  ).copyWith(
+                    fontFamily: UiFonts.mono,
+                    shadows: const [
+                      Shadow(color: UiCamera.shadow, offset: Offset(2, 2)),
+                    ],
+                  ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 84,
+          child: Center(
+            child: _Chip(
+              label: minutes == null
+                  ? l10n.camera_squadStreak(widget.streak)
+                  : l10n.camera_squadLastStudy(minutes, widget.streak),
+              glyph: minutes == null ? 'flame' : 'book',
+              keyName: 'overlay-study',
+            ),
           ),
         ),
       ],

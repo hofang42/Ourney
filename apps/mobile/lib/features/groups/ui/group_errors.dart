@@ -17,7 +17,6 @@ String groupErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.notFound => l10n.groups_errorNotFound,
     OurneyErrorCode.full => l10n.groups_errorFull,
     OurneyErrorCode.blocked => l10n.groups_errorBlocked,
-    OurneyErrorCode.limit => l10n.groups_errorLimit,
     OurneyErrorCode.ended => l10n.groups_errorEnded,
     OurneyErrorCode.forbidden => l10n.groups_errorForbidden,
     OurneyErrorCode.notAlone => l10n.groups_errorNotAlone,

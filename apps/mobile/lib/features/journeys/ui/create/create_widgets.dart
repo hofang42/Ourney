@@ -94,7 +94,7 @@ class CreateDurationChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              OurneyIcon(name: 'check', size: 15, color: ui.ink),
+              OurneyIcon(name: 'check', size: 15),
               const SizedBox(width: 5),
             ],
             Flexible(
@@ -197,7 +197,7 @@ class CreateChoiceCard extends StatelessWidget {
               ),
               if (selected) ...[
                 const SizedBox(width: UiSpace.sm),
-                OurneyIcon(name: 'check', size: 20, color: ui.ink),
+                OurneyIcon(name: 'check', size: 20),
               ],
             ],
           ),
@@ -286,7 +286,11 @@ class _CreateCalendarState extends State<CreateCalendar> {
             children: [
               UiIconButton(
                 key: const ValueKey('create-calendar-prev'),
-                glyph: OurneyIcon(name: 'back', size: 20, color: ui.ink),
+                glyph: OurneyIcon(
+                  name: 'back',
+                  size: 20,
+                  color: canPrev ? null : ui.divider,
+                ),
                 iconSize: 20,
                 color: ui.ink,
                 label: widget.prevLabel,
@@ -309,7 +313,11 @@ class _CreateCalendarState extends State<CreateCalendar> {
                 key: const ValueKey('create-calendar-next'),
                 glyph: Transform.rotate(
                   angle: 3.141592653589793,
-                  child: OurneyIcon(name: 'back', size: 20, color: ui.ink),
+                  child: OurneyIcon(
+                    name: 'back',
+                    size: 20,
+                    color: canNext ? null : ui.divider,
+                  ),
                 ),
                 iconSize: 20,
                 color: ui.ink,

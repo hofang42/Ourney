@@ -3,15 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('limits', () {
-    expect(maxActiveJourneys, 3);
     expect(maxGroupMembers, 10);
-  });
-
-  test('canCreateJourney', () {
-    expect(canCreateJourney(0), isTrue);
-    expect(canCreateJourney(2), isTrue);
-    expect(canCreateJourney(3), isFalse);
-    expect(canCreateJourney(4), isFalse);
   });
 
   group('rollingReminderTimes', () {
@@ -77,7 +69,8 @@ void main() {
     test('three journeys share budget',
         () => expect(maxReminderSlotsPerJourney(3), 10));
     test('total reminders + at-risk never exceeds iOS cap of 64', () {
-      for (var n = 0; n <= maxActiveJourneys; n++) {
+      // No cap on running journeys (FR-B3): the budget must hold for many.
+      for (var n = 0; n <= 30; n++) {
         final total =
             n * (maxReminderSlotsPerJourney(n) + maxAtRiskSlotsPerJourney(n));
         expect(total, lessThanOrEqualTo(iosPendingNotificationLimit),

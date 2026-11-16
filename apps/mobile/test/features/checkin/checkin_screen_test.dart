@@ -184,48 +184,45 @@ void main() {
     });
   });
 
-  group('replace today (FR-C7)', () {
-    testWidgets('asks before replacing; cancel keeps the old photo', (
+  group('extra photos the same day (FR-C7/C8, bug #2)', () {
+    testWidgets('posts at once, adds photo 2, does not count the day twice', (
       tester,
     ) async {
       checkIns.existing.add(testCheckIn(testToday));
-      await pump(tester);
-      await tapPost(tester);
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('checkin-replace-dialog')), findsOne);
-
-      await tester.tap(find.text('Hủy'));
-      await tester.pumpAndSettle();
-      expect(checkIns.submitted, isEmpty);
-      expect(find.byKey(const ValueKey('checkin-success')), findsNothing);
-    });
-
-    testWidgets('confirm replaces and does not count the streak twice', (
-      tester,
-    ) async {
-      checkIns.existing.add(testCheckIn(testToday));
-      await pump(tester);
-      await tapPost(tester);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('checkin-replace-confirm')));
-      await tester.pump();
-      await tester.pump();
-
-      expect(checkIns.submitted, hasLength(1));
-      expect(find.text('Đã thay ảnh hôm nay'), findsOneWidget);
-      expect(find.text('+1 ngày'), findsNothing);
-      await finishSuccess(tester);
-    });
-
-    testWidgets('a check-in yesterday does not ask', (tester) async {
-      checkIns.existing.add(testCheckIn(testToday.addDays(-1)));
       await pump(tester);
       await tapPost(tester);
       expect(
         find.byKey(const ValueKey('checkin-replace-dialog')),
         findsNothing,
       );
+      await tester.pump();
+
       expect(checkIns.submitted, hasLength(1));
+      expect(find.text('Đã thêm ảnh thứ 2'), findsOneWidget);
+      expect(find.text('+1 ngày'), findsNothing);
+      await finishSuccess(tester);
+    });
+
+    testWidgets('third photo of the day says photo 3', (tester) async {
+      checkIns.existing
+        ..add(testCheckIn(testToday))
+        ..add(testCheckIn(testToday));
+      await pump(tester);
+      await tapPost(tester);
+      await tester.pump();
+      expect(checkIns.submitted, hasLength(1));
+      expect(find.text('Đã thêm ảnh thứ 3'), findsOneWidget);
+      await finishSuccess(tester);
+    });
+
+    testWidgets('a check-in yesterday is the first photo of today', (
+      tester,
+    ) async {
+      checkIns.existing.add(testCheckIn(testToday.addDays(-1)));
+      await pump(tester);
+      await tapPost(tester);
+      expect(checkIns.submitted, hasLength(1));
+      expect(find.textContaining('Đã thêm ảnh thứ'), findsNothing);
       await finishSuccess(tester);
     });
   });

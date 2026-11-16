@@ -134,6 +134,12 @@ abstract class CameraL10n {
   /// **'Đèn flash: bật'**
   String get camera_flashOn;
 
+  /// Toast when the lens refuses a flash mode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Camera này không có đèn flash'**
+  String get camera_flashUnavailable;
+
   /// Button that switches between the front and back camera.
   ///
   /// In vi, this message translates to:
@@ -266,12 +272,6 @@ abstract class CameraL10n {
   /// **'Ngày {day}'**
   String camera_dayHud(int day);
 
-  /// Hint at the bottom of the viewfinder when there is more than one journey.
-  ///
-  /// In vi, this message translates to:
-  /// **'Vuốt để sang hành trình khác'**
-  String get camera_swipeHint;
-
   /// Semantics label of the streak counter chip at the top of the camera.
   ///
   /// In vi, this message translates to:
@@ -295,12 +295,6 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Kho riêng tư'**
   String get camera_privateVault;
-
-  /// No description provided for @camera_studyStreak.
-  ///
-  /// In vi, this message translates to:
-  /// **'HỌC 45 PHÚT · {days} LIỀN'**
-  String camera_studyStreak(int days);
 
   /// No description provided for @camera_filmRoll.
   ///
@@ -386,12 +380,6 @@ abstract class CameraL10n {
   /// **'Đã kết thúc'**
   String get camera_pickerEnded;
 
-  /// No description provided for @camera_studyElapsed.
-  ///
-  /// In vi, this message translates to:
-  /// **'HỌC {time} · {days} LIỀN'**
-  String camera_studyElapsed(String time, int days);
-
   /// No description provided for @camera_lastPace.
   ///
   /// In vi, this message translates to:
@@ -421,6 +409,54 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Đã ghim'**
   String get camera_pickerPinned;
+
+  /// No description provided for @camera_dayOfTotal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ngày {day}/{total}'**
+  String camera_dayOfTotal(int day, int total);
+
+  /// No description provided for @camera_notShotToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'chưa chụp hôm nay'**
+  String get camera_notShotToday;
+
+  /// No description provided for @camera_shotTodayCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'đã có {count} ảnh hôm nay'**
+  String camera_shotTodayCount(int count);
+
+  /// No description provided for @camera_photoCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} ảnh'**
+  String camera_photoCount(int count);
+
+  /// No description provided for @camera_openToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở hành trình, hôm nay có {count} ảnh'**
+  String camera_openToday(int count);
+
+  /// No description provided for @camera_allJourneysCount.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tất cả hành trình ({count})'**
+  String camera_allJourneysCount(int count);
+
+  /// No description provided for @camera_squadLastStudy.
+  ///
+  /// In vi, this message translates to:
+  /// **'LẦN TRƯỚC {minutes} PHÚT · {days} LIÊN TIẾP'**
+  String camera_squadLastStudy(int minutes, int days);
+
+  /// No description provided for @camera_squadStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'{days} NGÀY LIÊN TIẾP'**
+  String camera_squadStreak(int days);
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

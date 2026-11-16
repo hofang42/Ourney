@@ -29,13 +29,6 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_newJourney => 'New journey';
 
   @override
-  String get journeys_limitTitle => 'You have 3 journeys running';
-
-  @override
-  String get journeys_limitMessage =>
-      'You can run up to 3 journeys at once so posting stays light. End one to start a new one.';
-
-  @override
   String journeys_dayOf(int day, int total) {
     return 'Day $day of $total';
   }

@@ -148,6 +148,7 @@ class UiCameraTool extends StatelessWidget {
     this.glyph,
     required this.label,
     required this.onPressed,
+    this.emphasis = UiCameraToolEmphasis.none,
     super.key,
   }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
@@ -158,28 +159,46 @@ class UiCameraTool extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
 
+  /// Toggle state shown by shape, not color alone: outline ring (e.g. flash
+  /// auto) or a solid white disc with a dark glyph (flash on).
+  final UiCameraToolEmphasis emphasis;
+
   @override
   Widget build(BuildContext context) {
+    final filled = emphasis == UiCameraToolEmphasis.filled;
+    final color = onPressed == null
+        ? const Color(0x66FFFFFF)
+        : filled
+        ? UiCamera.bg
+        : UiCamera.ink;
+    final glyphWidget = glyph != null
+        ? OurneyIcon(name: glyph!, size: 22, flat: true, color: color)
+        : Icon(icon, size: 22, color: color);
     return UiPressable(
       onPressed: onPressed,
       semanticLabel: label,
+      selected: emphasis != UiCameraToolEmphasis.none,
       excludeChildSemantics: true,
       centerChild: true,
-      child: glyph != null
-          ? OurneyIcon(
-              name: glyph!,
-              size: 22,
-              flat: true,
-              color: onPressed == null ? const Color(0x66FFFFFF) : UiCamera.ink,
-            )
-          : Icon(
-              icon,
-              size: 22,
-              color: onPressed == null ? const Color(0x66FFFFFF) : UiCamera.ink,
+      child: emphasis == UiCameraToolEmphasis.none
+          ? glyphWidget
+          : Container(
+              width: 38,
+              height: 38,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: filled ? UiCamera.ink : null,
+                border: Border.all(color: UiCamera.ink, width: 2),
+              ),
+              child: glyphWidget,
             ),
     );
   }
 }
+
+/// State drawn around a [UiCameraTool] glyph.
+enum UiCameraToolEmphasis { none, outline, filled }
 
 /// `.library-thumb`: 48dp rounded outline button opening the photo library.
 class UiLibraryThumb extends StatelessWidget {

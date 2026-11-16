@@ -184,11 +184,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      if (rootError(e) case OurneyException(error: OurneyErrorCode.limit)) {
-        await showJourneyLimitDialog(context);
-      } else {
-        showJourneySnack(context, journeyErrorMessage(context, e));
-      }
+      showJourneySnack(context, journeyErrorMessage(context, e));
     }
   }
 
@@ -341,7 +337,6 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     PersonaSkinId skin,
   ) {
     final l10n = JourneysL10n.of(context);
-    final ui = context.ui;
     final localOnly = ref.watch(appConfigProvider).localOnly;
     final errors = form.validate();
     final show = _submitted;
@@ -371,7 +366,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OurneyIcon(name: icon, size: 16, color: pal.inkAt(0.72)),
+          OurneyIcon(name: icon, size: 16),
           const SizedBox(width: UiSpace.xs),
           Expanded(
             child: Text(
@@ -445,7 +440,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                 ),
                 UiIconButton(
                   key: const ValueKey('journey-based-on-remove'),
-                  glyph: OurneyIcon(name: 'close', size: 18, color: pal.ink),
+                  glyph: OurneyIcon(name: 'close', size: 18),
                   iconSize: 18,
                   color: pal.ink,
                   label: SharingL10n.of(context).sharing_removeBasedOn,
@@ -632,7 +627,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           label(l10n.journeys_fieldTimezone),
           Row(
             children: [
-              OurneyIcon(name: 'clock', size: 22, color: ui.inkMuted),
+              OurneyIcon(name: 'clock', size: 22),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: Text(
@@ -689,7 +684,7 @@ class _MoreOptionsToggle extends StatelessWidget {
               AnimatedRotation(
                 turns: open ? 0.25 : -0.25,
                 duration: UiMotion.of(context, UiMotion.press),
-                child: OurneyIcon(name: 'back', size: 20, color: color),
+                child: OurneyIcon(name: 'back', size: 20),
               ),
             ],
           ),
@@ -736,7 +731,7 @@ class _EmojiChoice extends StatelessWidget {
             width: selected ? 2 : 1,
           ),
         ),
-        child: uiJourneyGlyph(emoji, template, size: 26, color: ui.ink),
+        child: uiJourneyGlyph(emoji, template, size: 26),
       ),
     );
   }

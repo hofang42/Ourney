@@ -66,13 +66,6 @@ class DataJourneyRepository implements JourneyRepository {
           .watchSingleOrNull()
           .map((r) => r == null ? null : journeyFromRow(r));
 
-  Future<int> _activeCount(String me) async {
-    final rows = await (_mine(
-      me,
-    )..where(_db.journeys.status.equals(JourneyStatus.active.wireName))).get();
-    return rows.length;
-  }
-
   @override
   Future<Journey> create(JourneyDraft draft) async {
     if (validateJourneyTitle(draft.title) != null ||
@@ -89,9 +82,6 @@ class DataJourneyRepository implements JourneyRepository {
         _db.journeys,
       )..where((t) => t.id.equals(clientId))).getSingleOrNull();
       if (existing != null) return journeyFromRow(existing);
-    }
-    if (!canCreateJourney(await _activeCount(me))) {
-      throw const JourneyLimitException();
     }
     final id = draft.id ?? ctx.newId();
     final visibility = normalizedVisibility(draft.kind, draft.visibility);
@@ -118,9 +108,6 @@ class DataJourneyRepository implements JourneyRepository {
       )..where((t) => t.id.equals(id))).getSingle();
       return journeyFromRow(saved);
     } on OurneyException catch (e) {
-      if (e.error == OurneyErrorCode.limit) {
-        throw JourneyLimitException(e.detail);
-      }
       if (e.error != OurneyErrorCode.offline || needsServer) rethrow;
     }
     // Solo + offline: create locally, the outbox replays `create_journey`
@@ -178,7 +165,8 @@ class DataJourneyRepository implements JourneyRepository {
         (update.color != null && (update.color! < 0 || update.color! > 2));
     if ((update.title != null && validateJourneyTitle(update.title!) != null) ||
         badRange ||
-        (update.reminderTime != null && !_hhmm.hasMatch(update.reminderTime!))) {
+        (update.reminderTime != null &&
+            !_hhmm.hasMatch(update.reminderTime!))) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
     final row = await _requireLocal(journeyId);
@@ -211,7 +199,9 @@ class DataJourneyRepository implements JourneyRepository {
         : v == null
         ? const Value.absent()
         : wrap(v);
-    await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId))).write(
+    await (_db.update(
+      _db.journeys,
+    )..where((t) => t.id.equals(journeyId))).write(
       JourneysCompanion(
         title: update.title == null
             ? const Value.absent()

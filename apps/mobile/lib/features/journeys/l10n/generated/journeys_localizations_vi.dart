@@ -29,13 +29,6 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_newJourney => 'Hành trình mới';
 
   @override
-  String get journeys_limitTitle => 'Bạn đang chạy 3 hành trình';
-
-  @override
-  String get journeys_limitMessage =>
-      'Mỗi người chạy tối đa 3 hành trình cùng lúc để việc đăng ảnh luôn nhẹ nhàng. Kết thúc một hành trình rồi bắt đầu cái mới nhé.';
-
-  @override
   String journeys_dayOf(int day, int total) {
     return 'Ngày $day/$total';
   }

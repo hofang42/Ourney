@@ -15,6 +15,7 @@ import '../../../onboarding/onboarding_providers.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
 import '../../../reminders/data/reminder_settings.dart';
 import '../../../reminders/domain/reminder_plan.dart';
+import '../../../reminders/ui/reminder_permission_prompt.dart';
 import '../../data/create_progress.dart';
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_form.dart';
@@ -412,17 +413,17 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         }
       }
       if (!mounted) return;
+      // The quiz turned a reminder on: offer the OS permission now, or the
+      // scheduler has nothing it may post (bug #7).
+      if (rt != null) await offerReminderPermission(context, ref, time: rt);
+      if (!mounted) return;
       unawaited(ref.read(createProgressProvider.notifier).clear());
       unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      if (rootError(e) case OurneyException(error: OurneyErrorCode.limit)) {
-        await showJourneyLimitDialog(context);
-      } else {
-        showJourneySnack(context, journeyErrorMessage(context, e));
-      }
+      showJourneySnack(context, journeyErrorMessage(context, e));
     }
   }
 
@@ -517,7 +518,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       children: [
         UiIconButton(
           key: const ValueKey('create-back'),
-          glyph: OurneyIcon(name: 'back', size: 22, color: ui.ink),
+          glyph: OurneyIcon(name: 'back', size: 22),
           iconSize: 22,
           color: ui.ink,
           label: l10n.journeys_back,
@@ -547,7 +548,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         ),
         UiIconButton(
           key: const ValueKey('create-close'),
-          glyph: OurneyIcon(name: 'close', size: 22, color: ui.ink),
+          glyph: OurneyIcon(name: 'close', size: 22),
           iconSize: 22,
           color: ui.ink,
           label: l10n.journeys_createExit,
@@ -596,7 +597,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          OurneyIcon(name: icon, size: 16, color: ui.inkMuted),
+          OurneyIcon(name: icon, size: 16),
           const SizedBox(width: UiSpace.xs),
           Expanded(
             child: Text(
@@ -724,9 +725,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       DnaKind.trophy => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Center(
-            child: OurneyIcon(name: 'trophy', size: 76, color: ui.ink),
-          ),
+          Center(child: OurneyIcon(name: 'trophy', size: 76)),
           const SizedBox(height: UiSpace.md),
           UiTextField(
             fieldKey: const ValueKey('dna-trophy'),
@@ -904,7 +903,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   Widget _whoStep(BuildContext context, JourneyForm form) {
     final l10n = JourneysL10n.of(context);
-    final ui = context.ui;
     final localOnly = _localOnly;
     final show = _attempted.contains(2);
     void pick(CreateWho who) => setState(() {
@@ -919,7 +917,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           key: const ValueKey('journey-kind-solo'),
           title: l10n.journeys_kindSolo,
           body: l10n.journeys_kindSoloBody,
-          glyph: OurneyIcon(name: 'profile', size: 30, color: ui.ink),
+          glyph: OurneyIcon(name: 'profile', size: 30),
           selected: _who == CreateWho.solo,
           onPressed: () => pick(CreateWho.solo),
         ),
@@ -928,7 +926,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           key: const ValueKey('journey-kind-group'),
           title: l10n.journeys_kindGroup,
           body: l10n.journeys_kindGroupBody,
-          glyph: OurneyIcon(name: 'squad', size: 30, color: ui.ink),
+          glyph: OurneyIcon(name: 'squad', size: 30),
           selected: _who == CreateWho.group,
           onPressed: localOnly ? null : () => pick(CreateWho.group),
         ),
@@ -939,7 +937,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           key: const ValueKey('journey-kind-couple'),
           title: l10n.journeys_kindCouple,
           body: l10n.journeys_kindCoupleBody,
-          glyph: OurneyIcon(name: 'heart', size: 30, color: ui.ink),
+          glyph: OurneyIcon(name: 'heart', size: 30),
           selected: _who == CreateWho.couple,
           onPressed: () => pick(CreateWho.couple),
         ),
@@ -1215,7 +1213,7 @@ class _EmojiChoice extends StatelessWidget {
             width: selected ? 3 : 1,
           ),
         ),
-        child: uiJourneyGlyph(emoji, template, size: 26, color: ui.ink),
+        child: uiJourneyGlyph(emoji, template, size: 26),
       ),
     );
   }

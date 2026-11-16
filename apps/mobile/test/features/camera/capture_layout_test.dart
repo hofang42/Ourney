@@ -104,7 +104,8 @@ void main() {
       'capture-switch',
       'capture-grid',
       'journey-chip-j2',
-      'profile-entry',
+      'capture-journey-chip',
+      'capture-flash',
     ]) {
       final size = tester.getSize(find.byKey(ValueKey(key)));
       expect(size.width, greaterThanOrEqualTo(48), reason: key);

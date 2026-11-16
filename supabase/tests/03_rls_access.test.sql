@@ -83,26 +83,21 @@ select is((select count(*)::int from public.journeys), 1, 'member sees the journ
 select is((select count(*)::int from public.memberships), 3, 'member sees all memberships of the group');
 select is((select count(*)::int from public.check_ins), 3, 'member sees every member''s check-in');
 select is((select count(*)::int from storage.objects where bucket_id = 'media'), 3, 'member can read all check-in media');
-select throws_ok(
+-- 0014: several check-ins per local day; each photo is its own row (FR-C7)
+select lives_ok(
   $$ select tests.checkin('c2000000-0000-4000-8000-0000000000ff', 'a0000000-0000-4000-8000-000000000001', now()) $$,
-  '23505', null, 'one check-in per local day (unique journey,user,local_date)');
--- retake = upsert on (journey,user,local_date) with a new client id
-select lives_ok($$
-  insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path, caption)
-  values ('c2000000-0000-4000-8000-0000000000aa', 'a0000000-0000-4000-8000-000000000001', auth.uid(), '2000-01-01', now(),
-          format('checkins/%s/%s/%s.jpg', 'a0000000-0000-4000-8000-000000000001', auth.uid(), 'c2000000-0000-4000-8000-0000000000aa'),
-          format('checkins/%s/%s/%s_t.jpg', 'a0000000-0000-4000-8000-000000000001', auth.uid(), 'c2000000-0000-4000-8000-0000000000aa'),
-          'retake')
-  on conflict (journey_id, user_id, local_date) do update
-    set id = excluded.id, captured_at = excluded.captured_at, photo_path = excluded.photo_path,
-        thumb_path = excluded.thumb_path, caption = excluded.caption
-$$, 'retake upserts today''s check-in');
-select is((select caption from public.check_ins where user_id = auth.uid()), 'retake', 'retake replaced the row');
--- put the original id back so later assertions stay simple
-update public.check_ins set id = 'c2000000-0000-4000-8000-000000000002',
-  photo_path = format('checkins/%s/%s/%s.jpg', journey_id, user_id, 'c2000000-0000-4000-8000-000000000002'),
-  thumb_path = format('checkins/%s/%s/%s_t.jpg', journey_id, user_id, 'c2000000-0000-4000-8000-000000000002')
- where user_id = auth.uid();
+  'a second check-in on the same local day is accepted');
+select is((select count(*)::int from public.check_ins where user_id = auth.uid()), 2,
+  'both photos of the day are kept');
+select throws_ok(
+  $$ select tests.checkin('c2000000-0000-4000-8000-000000000002', 'a0000000-0000-4000-8000-000000000001', now()) $$,
+  '23505', null, 'the same check-in id cannot be posted twice');
+-- drop the extra photo so later assertions stay simple
+do $$ begin
+  perform tests.as_postgres();
+  delete from public.check_ins where id = 'c2000000-0000-4000-8000-0000000000ff';
+  perform tests.as_user('10000000-0000-4000-8000-000000000002');
+end $$;
 
 update public.check_ins set caption = 'hacked' where id = 'c1000000-0000-4000-8000-000000000001';
 update public.journeys set title = 'hacked' where id = 'a0000000-0000-4000-8000-000000000001';

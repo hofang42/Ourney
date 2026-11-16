@@ -134,18 +134,6 @@ abstract class JourneysL10n {
   /// **'Hành trình mới'**
   String get journeys_newJourney;
 
-  /// FR-B3: shown when the user already has 3 active journeys.
-  ///
-  /// In vi, this message translates to:
-  /// **'Bạn đang chạy 3 hành trình'**
-  String get journeys_limitTitle;
-
-  /// No description provided for @journeys_limitMessage.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mỗi người chạy tối đa 3 hành trình cùng lúc để việc đăng ảnh luôn nhẹ nhàng. Kết thúc một hành trình rồi bắt đầu cái mới nhé.'**
-  String get journeys_limitMessage;
-
   /// Day N of M (FR-B5).
   ///
   /// In vi, this message translates to:

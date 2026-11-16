@@ -109,7 +109,16 @@ class LocalNotificationGateway implements NotificationGateway {
             if (payload != null && payload.isNotEmpty) _onTap?.call(payload);
           },
         )
-        .then((_) {});
+        .then(
+          (_) {},
+          onError: (Object e, StackTrace st) {
+            // Do not cache a failed start (e.g. called before the engine
+            // registered the plugin): the next call tries again instead of
+            // failing every later reschedule.
+            _init = null;
+            Error.throwWithStackTrace(e, st);
+          },
+        );
   }
 
   AndroidFlutterLocalNotificationsPlugin? get _android => _plugin

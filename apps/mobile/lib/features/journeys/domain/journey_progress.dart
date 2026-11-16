@@ -160,7 +160,7 @@ class JourneyProgress {
 }
 
 /// Splits the journeys list (FR-B6): running journeys first, then ended and
-/// archived ones. [activeCount] feeds the 3-active-journeys rule (FR-B3).
+/// archived ones. There is no cap on running journeys (FR-B3).
 class JourneyBuckets {
   JourneyBuckets(Iterable<Journey> journeys)
     : active = [
@@ -176,6 +176,5 @@ class JourneyBuckets {
   final List<Journey> finished;
 
   int get activeCount => active.length;
-  bool get canCreate => canCreateJourney(activeCount);
   bool get isEmpty => active.isEmpty && finished.isEmpty;
 }
