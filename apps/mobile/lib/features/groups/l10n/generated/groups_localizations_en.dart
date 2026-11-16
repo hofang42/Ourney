@@ -87,10 +87,6 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_errorBlocked => 'You can\'t join this group.';
 
   @override
-  String get groups_errorLimit =>
-      'You already have 3 journeys running. End one, then join this group.';
-
-  @override
   String get groups_errorEnded => 'This journey has ended.';
 
   @override

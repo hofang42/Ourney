@@ -126,14 +126,11 @@ class CheckInPoster {
   LocalDate dayOf(Journey journey, CapturedPhoto photo) =>
       clock.localDate(photo.capturedAt, journey.timezone);
 
-  /// Whether [mine] already has a check-in on the photo's day (FR-C7).
-  bool replacesExisting(
-    Journey journey,
-    CapturedPhoto photo,
-    List<CheckIn> mine,
-  ) {
+  /// Which photo of its day this one will be: 1 for the first check-in of
+  /// the day (it counts the day), 2+ for extra same-day photos (FR-C7/C8).
+  int photoOfDay(Journey journey, CapturedPhoto photo, List<CheckIn> mine) {
     final day = dayOf(journey, photo);
-    return mine.any((c) => c.localDate == day);
+    return mine.where((c) => c.localDate == day).length + 1;
   }
 
   /// Throws [CheckInPostException].
@@ -170,7 +167,7 @@ class CheckInPoster {
     final day = dayOf(journey, photo);
     final today = clock.today(journey.timezone);
     final dates = [for (final c in mine) c.localDate];
-    final replaced = dates.contains(day);
+    final photoOfDay = dates.where((d) => d == day).length + 1;
     final before = memberStreak(
       journey: journey,
       membership: membership,
@@ -226,12 +223,12 @@ class CheckInPoster {
       checkIn: saved,
       streakBefore: before.current,
       streakAfter: after.current,
-      replaced: replaced,
+      photoOfDay: photoOfDay,
       milestone: detectMilestone(
         journey: journey,
         before: before,
         after: after,
-        replaced: replaced,
+        extraPhoto: photoOfDay > 1,
       ),
     );
   }

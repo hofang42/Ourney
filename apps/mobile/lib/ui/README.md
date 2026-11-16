@@ -33,7 +33,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.list-heading`, `.section-title` | `UiListHeading` |
 | `.journey-row` | `UiRow` |
 | `.shared-compact-list > button`, `.hub-all-done`, `.template-choice` | `UiCard` |
-| `.hub-add-menu`, `.overflow-menu` | `UiMenuSurface`, `UiMenuItem` |
+| `.hub-add-menu`, `.overflow-menu` | `UiMenuSurface`, `UiMenuItem`, floated by `UiMenuAnchor` (overlay, never reflows the page) |
 | `.topbar` | `UiTopBar` |
 | `.detail-nav` | `UiBackHeader` |
 | `.avatar`, `Avatar` | `UiAvatar`; `.avatar-picker` -> `UiAvatarPicker` |

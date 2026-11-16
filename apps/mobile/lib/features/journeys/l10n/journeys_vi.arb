@@ -18,11 +18,6 @@
   "@journeys_newJourney": {
     "description": "FAB / button that starts the create flow."
   },
-  "journeys_limitTitle": "Bạn đang chạy 3 hành trình",
-  "@journeys_limitTitle": {
-    "description": "FR-B3: shown when the user already has 3 active journeys."
-  },
-  "journeys_limitMessage": "Mỗi người chạy tối đa 3 hành trình cùng lúc để việc đăng ảnh luôn nhẹ nhàng. Kết thúc một hành trình rồi bắt đầu cái mới nhé.",
   "journeys_dayOf": "Ngày {day}/{total}",
   "@journeys_dayOf": {
     "description": "Day N of M (FR-B5).",

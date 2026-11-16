@@ -37,7 +37,6 @@ void main() {
                     checkIn: testCheckIn(day),
                     streakBefore: 6,
                     streakAfter: 7,
-                    replaced: false,
                     milestone: milestone,
                   ),
                   journey: journey,

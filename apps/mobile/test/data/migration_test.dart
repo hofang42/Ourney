@@ -33,7 +33,7 @@ void main() {
     expect(row.origin, 'live');
     expect(journeyFromRow(row).origin, JourneyOrigin.live);
     final version = await db.customSelect('pragma user_version').getSingle();
-    expect(version.data.values.single, 5);
+    expect(version.data.values.single, 6);
   });
 
   test('v2 → v3 adds extras, partner photo and couple names', () async {
@@ -106,6 +106,57 @@ void main() {
     final j = await db.select(db.journeys).getSingle();
     expect(j.layout, isNull);
     expect(j.dna, isNull);
+  });
+
+  test('v5 to v6 drops the one-check-in-per-day unique (bug #2)', () async {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    final file = File('${tempDir().path}/ourney_v5.sqlite');
+    final v6 = AppDatabase(NativeDatabase(file));
+    await v6.customSelect('select 1').get();
+    // Rebuild check_ins with the v5 table-level UNIQUE.
+    final ddl = await v6
+        .customSelect(
+          "select sql from sqlite_master where type = 'table' "
+          "and name = 'check_ins'",
+        )
+        .getSingle();
+    final sql = ddl.data['sql'] as String;
+    final v5Sql =
+        '${sql.substring(0, sql.lastIndexOf(')'))}, '
+        'UNIQUE (journey_id, user_id, local_date))';
+    await v6.customStatement('drop table check_ins');
+    await v6.customStatement(v5Sql);
+    await v6.customStatement(
+      'insert into check_ins (id, journey_id, user_id, local_date, captured_at, '
+      "photo_path, thumb_path) values ('c1', 'j1', 'u1', '2026-01-01', 0, 'p', 't')",
+    );
+    await expectLater(
+      v6.customStatement(
+        'insert into check_ins (id, journey_id, user_id, local_date, '
+        "captured_at, photo_path, thumb_path) values ('c2', 'j1', 'u1', "
+        "'2026-01-01', 1, 'p2', 't2')",
+      ),
+      throwsA(anything),
+      reason: 'the v5 shape really rejects a second photo',
+    );
+    await v6.customStatement('pragma user_version = 5');
+    await v6.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+    await db.customStatement(
+      'insert into check_ins (id, journey_id, user_id, local_date, captured_at, '
+      "photo_path, thumb_path) values ('c2', 'j1', 'u1', '2026-01-01', 1, 'p2', 't2')",
+    );
+    final rows = await db.select(db.checkIns).get();
+    expect(rows.map((r) => r.id), unorderedEquals(['c1', 'c2']));
+    final index = await db
+        .customSelect(
+          "select name from sqlite_master where type = 'index' "
+          "and name = 'check_ins_journey_idx'",
+        )
+        .get();
+    expect(index, hasLength(1));
   });
 }
 

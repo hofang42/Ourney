@@ -51,3 +51,12 @@ join / leave / end / delete.
 Tests override `notificationGatewayProvider`,
 `reminderDeviceTimezoneProvider`, `remindersClockProvider` and
 `reminderLocaleProvider`.
+
+## Permission outside `/reminders` (bug #7, 2026-11-15)
+
+Reminders also get switched on away from `/reminders`: creating a journey
+saves the quiz time as an enabled reminder, and the 21:00 alert is on by
+default. `offerReminderPermission` (`ui/reminder_permission_prompt.dart`)
+shows the V2 notification sheet once (`reminders.promptOffered`) after the
+journey is created and after a check-in, then the OS prompt, then
+reschedules. Without it the scheduler planned nothing.

@@ -7,8 +7,8 @@ import 'media_store.dart';
 import 'remote/remote_api.dart';
 
 /// Outbox entity keys (see `upload_queue.entity_key`).
-String checkInKey(String journeyId, String userId, LocalDate date) =>
-    'checkin:$journeyId:$userId:$date';
+/// One key per check-in: several check-ins per day are allowed (FR-C7, 0014).
+String checkInKey(String checkInId) => 'checkin:$checkInId';
 String reactionKey(String checkInId) => 'react:$checkInId';
 String membershipKey(String journeyId) => 'membership:$journeyId';
 String journeyKey(String journeyId) => 'journey:$journeyId';
@@ -176,23 +176,10 @@ class LocalStore {
       await deleteCheckIns(rows);
       return;
     }
-    final c = checkInFromRemote(r);
-    final journeyId = c.journeyId.value;
-    final userId = c.userId.value;
-    final date = c.localDate.value;
-    if (pending.contains(checkInKey(journeyId, userId, date))) return;
-    // A retake elsewhere replaced the day's row under a new id.
-    final replaced =
-        await (db.select(db.checkIns)..where(
-              (t) =>
-                  t.journeyId.equals(journeyId) &
-                  t.userId.equals(userId) &
-                  t.localDate.equalsValue(date) &
-                  t.id.equals(id).not(),
-            ))
-            .get();
-    await deleteCheckIns(replaced);
-    await db.into(db.checkIns).insertOnConflictUpdate(c);
+    if (pending.contains(checkInKey(id))) return;
+    // Several check-ins per day are separate rows (FR-C7, 0014): a pulled
+    // row never replaces another photo of the same day.
+    await db.into(db.checkIns).insertOnConflictUpdate(checkInFromRemote(r));
   }
 
   Future<void> applyReaction(

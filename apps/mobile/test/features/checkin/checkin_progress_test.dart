@@ -19,7 +19,7 @@ void main() {
       );
 
   /// Milestone for checking in today on top of [daysBefore] consecutive days.
-  Milestone? afterRun(Journey j, int daysBefore, {bool replaced = false}) {
+  Milestone? afterRun(Journey j, int daysBefore, {bool extraPhoto = false}) {
     final before = [
       for (var i = 1; i <= daysBefore; i++) testToday.addDays(-i),
     ];
@@ -27,7 +27,7 @@ void main() {
       journey: j,
       before: streak(j, before),
       after: streak(j, [...before, testToday]),
-      replaced: replaced,
+      extraPhoto: extraPhoto,
     );
   }
 
@@ -46,8 +46,8 @@ void main() {
       expect(afterRun(open, 0), isNull);
     });
 
-    test('replacing today never celebrates again', () {
-      expect(afterRun(open, 6, replaced: true), isNull);
+    test('an extra photo of today never celebrates again', () {
+      expect(afterRun(open, 6, extraPhoto: true), isNull);
     });
 
     test('completing every day of a fixed journey', () {
@@ -60,7 +60,7 @@ void main() {
           journey: j,
           before: streak(j, before),
           after: streak(j, [...before, testToday]),
-          replaced: false,
+          extraPhoto: false,
         ),
         isNull,
       );
@@ -117,15 +117,10 @@ void main() {
         capturedAt: DateTime.utc(2026, 10, 15, 18, 30),
       );
       expect(poster.dayOf(journey, late), testToday);
+      expect(poster.photoOfDay(journey, late, [testCheckIn(testToday)]), 2);
       expect(
-        poster.replacesExisting(journey, late, [testCheckIn(testToday)]),
-        isTrue,
-      );
-      expect(
-        poster.replacesExisting(journey, late, [
-          testCheckIn(testToday.addDays(-1)),
-        ]),
-        isFalse,
+        poster.photoOfDay(journey, late, [testCheckIn(testToday.addDays(-1))]),
+        1,
       );
     });
 
@@ -150,7 +145,8 @@ void main() {
       expect(draft.metricValue, 3);
       expect(outcome.streakBefore, 1);
       expect(outcome.streakAfter, 2);
-      expect(outcome.replaced, isFalse);
+      expect(outcome.photoOfDay, 1);
+      expect(outcome.extraPhoto, isFalse);
       expect(outcome.milestone, isNull);
     });
 

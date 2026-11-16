@@ -108,7 +108,7 @@ class DnaChoiceList extends StatelessWidget {
                 ],
               ),
             ),
-            if (selected) OurneyIcon(name: 'check', size: 20, color: ui.ink),
+            if (selected) OurneyIcon(name: 'check', size: 20),
           ],
         ),
       ),
@@ -192,7 +192,7 @@ class DnaWeightPicker extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            OurneyIcon(name: 'lock', size: 17, color: ui.inkMuted),
+            OurneyIcon(name: 'lock', size: 17),
             const SizedBox(width: UiSpace.sm),
             Flexible(
               child: Text(
@@ -317,7 +317,7 @@ class DnaPlacePicker extends StatelessWidget {
           label: l10n.journeys_dna_place_search,
           hint: l10n.journeys_dna_place_search,
           controller: controller,
-          leading: OurneyIcon(name: 'search', size: 20, color: ui.inkMuted),
+          leading: OurneyIcon(name: 'search', size: 20),
           onChanged: onChanged,
         ),
         const SizedBox(height: UiSpace.md),
@@ -353,7 +353,7 @@ class DnaPlacePicker extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        OurneyIcon(name: 'map-pin', size: 21, color: ui.ink),
+                        OurneyIcon(name: 'map-pin', size: 21),
                         const SizedBox(width: UiSpace.md),
                         Expanded(
                           child: Column(
@@ -376,8 +376,7 @@ class DnaPlacePicker extends StatelessWidget {
                             ],
                           ),
                         ),
-                        if (selected)
-                          OurneyIcon(name: 'check', size: 19, color: ui.ink),
+                        if (selected) OurneyIcon(name: 'check', size: 19),
                       ],
                     ),
                   ),
@@ -392,7 +391,7 @@ class DnaPlacePicker extends StatelessWidget {
               key: const ValueKey('dna-pine'),
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                OurneyIcon(name: 'pine', size: 24, color: ui.ink),
+                OurneyIcon(name: 'pine', size: 24),
                 const SizedBox(width: UiSpace.sm),
                 Flexible(
                   child: Text(
@@ -548,7 +547,7 @@ class _DnaDateRangeState extends State<DnaDateRange> {
               child: OurneyIcon(
                 name: icon,
                 size: 20,
-                color: onTap == null ? ui.divider : ui.ink,
+                color: onTap == null ? ui.divider : null,
               ),
             ),
           ),
@@ -660,7 +659,7 @@ class _DnaForgeState extends State<DnaForge>
                     shape: BoxShape.circle,
                     border: Border.all(color: ui.ink, width: 3),
                   ),
-                  child: OurneyIcon(name: 'trophy', size: 44, color: ui.ink),
+                  child: OurneyIcon(name: 'trophy', size: 44),
                 ),
               ),
               const SizedBox(height: UiSpace.lg),

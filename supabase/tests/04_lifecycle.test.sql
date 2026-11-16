@@ -1,4 +1,4 @@
--- Group lifecycle (SRS §3.1 / 02 §9.1), limits, invites, public link, account deletion.
+-- Group lifecycle (SRS §3.1 / 02 §9.1), member limit, no journey cap, invites, public link, account deletion.
 begin;
 create extension if not exists pgtap with schema extensions;
 select plan(51);
@@ -124,17 +124,17 @@ select is((select count(*)::int from public.memberships where journey_id = tests
 do $$ begin perform tests.as_user(tests.uid(13)); end $$;
 select throws_ok($$ select public.join_by_code(tests.code(1)) $$, 'P0001', 'full', '11th member -> full');
 
--- ===== max 3 active journeys =================================================
+-- ===== no cap on active journeys (FR-B3, 0013) ===============================
 do $$ begin perform tests.as_user(tests.uid(13));
   perform tests.new_journey(131, 'solo'); perform tests.new_journey(132, 'solo'); perform tests.new_journey(133, 'group'); end $$;
-select throws_ok($$ select tests.new_journey(134, 'solo') $$, 'P0001', 'limit', '4th active journey -> limit');
+select lives_ok($$ select tests.new_journey(134, 'solo') $$, 'a 4th active journey is allowed (no cap)');
 do $$ begin perform tests.as_user(tests.uid(14)); perform tests.new_journey(141, 'group'); end $$;
 do $$ begin perform tests.as_user(tests.uid(13)); end $$;
-select throws_ok($$ select public.join_by_code(tests.code(141)) $$, 'P0001', 'limit', 'joining as a 4th active journey -> limit');
+select lives_ok($$ select public.join_by_code(tests.code(141)) $$, 'joining as a 5th active journey is allowed (no cap)');
 select lives_ok($$ select public.create_journey(tests.jid(131), 'solo', 'custom', 'J', '🔥', null, null, false, current_date, 30, 'UTC') $$,
-  'create_journey is idempotent for the same id (offline retry), even at the limit');
+  'create_journey is idempotent for the same id (offline retry)');
 select lives_ok($$ select public.end_journey(tests.jid(131)) $$, 'owner ends a journey');
-select lives_ok($$ select tests.new_journey(134, 'solo') $$, 'ending frees a slot');
+select lives_ok($$ select tests.new_journey(134, 'solo') $$, 'create_journey stays idempotent after ending another journey');
 select throws_ok($$ select tests.checkin('d1300000-0000-4000-8000-000000000001', tests.jid(131)) $$, 'P0001', 'ended',
   'ended journey is read-only');
 do $$ begin perform tests.as_user(tests.uid(14)); perform public.end_journey(tests.jid(141)); end $$;
@@ -162,7 +162,8 @@ select ok((select visibility = 'private' and public_token is null from public.jo
 
 -- ===== account deletion =======================================================
 -- u2 owns journey 1 (with other members) -> ownership moves to the earliest member (u1);
--- u14 owns solo journey 143 -> deleted with the account.
+-- u14 owns solo journey 143 -> deleted with the account; u14 also owns ended group 141,
+-- which u13 joined once the journey cap was dropped (0013) -> kept, ownership moves to u13.
 do $$ begin perform tests.as_postgres(); end $$;
 insert into storage.objects (bucket_id, name) values
   ('media', format('avatars/%s/e0000000-0000-4000-8000-000000000001.jpg', tests.uid(14))),
@@ -179,8 +180,9 @@ select is((select owner_id from public.journeys where id = tests.jid(1)), tests.
 select is((select count(*)::int from public.memberships where journey_id = tests.jid(1) and role = 'owner' and status = 'active'), 1,
   'exactly one active owner after account deletion');
 delete from auth.users where id = tests.uid(14);
-select is((select count(*)::int from public.journeys where id in (tests.jid(141), tests.jid(143))), 0,
-  'journeys owned by a deleted user with no other active member are removed');
+select ok(not exists (select 1 from public.journeys where id = tests.jid(143))
+          and (select owner_id from public.journeys where id = tests.jid(141)) = tests.uid(13),
+  'a deleted user''s journey with no other active member is removed; one with a member is handed over');
 
 select * from finish();
 rollback;

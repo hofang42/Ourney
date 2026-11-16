@@ -25,16 +25,16 @@ StreakSummary memberStreak({
 }
 
 /// The milestone (core [milestoneFor], shared with the share card) that
-/// this check-in just reached, or null. Celebrations fire once: a
-/// replacement of today's photo, a second check-in the same day, or a
-/// journey that was already complete never celebrate again.
+/// this check-in just reached, or null. Celebrations fire once: an extra
+/// photo of a day that already counted, or a journey that was already
+/// complete never celebrate again (FR-C8).
 Milestone? detectMilestone({
   required Journey journey,
   required StreakSummary before,
   required StreakSummary after,
-  required bool replaced,
+  required bool extraPhoto,
 }) {
-  if (replaced || before.checkedInToday || !after.checkedInToday) return null;
+  if (extraPhoto || before.checkedInToday || !after.checkedInToday) return null;
   final milestone = milestoneFor(after, journey);
   if (milestone == Milestone.completed) {
     final duration = journey.durationDays!;
@@ -49,7 +49,7 @@ class CheckInOutcome {
     required this.checkIn,
     required this.streakBefore,
     required this.streakAfter,
-    required this.replaced,
+    this.photoOfDay = 1,
     this.milestone,
   });
 
@@ -57,7 +57,10 @@ class CheckInOutcome {
   final int streakBefore;
   final int streakAfter;
 
-  /// Today's earlier check-in was replaced (FR-C7).
-  final bool replaced;
+  /// Which photo of its day this check-in is (1 = the one that counted the
+  /// day). Extra same-day photos only get "Đã thêm ảnh thứ N" (FR-C8).
+  final int photoOfDay;
+
+  bool get extraPhoto => photoOfDay > 1;
   final Milestone? milestone;
 }

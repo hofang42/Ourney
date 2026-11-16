@@ -87,67 +87,33 @@ class DataCheckInRepository implements CheckInRepository {
       await ctx.files.importFile(partnerFile, partnerPath!);
     }
 
-    final old = await _db.transaction(() async {
-      final previous =
-          await (_db.select(_db.checkIns)..where(
-                (t) =>
-                    t.journeyId.equals(journey.id) &
-                    t.userId.equals(me) &
-                    t.localDate.equalsValue(localDate),
-              ))
-              .getSingleOrNull();
-      if (previous != null) {
-        await (_db.delete(
-          _db.reactions,
-        )..where((t) => t.checkInId.equals(previous.id))).go();
-        await (_db.delete(
-          _db.checkIns,
-        )..where((t) => t.id.equals(previous.id))).go();
-      }
-      await _db
-          .into(_db.checkIns)
-          .insert(
-            CheckInsCompanion.insert(
-              id: id,
-              journeyId: journey.id,
-              userId: me,
-              localDate: localDate,
-              capturedAt: draft.capturedAt.toUtc(),
-              photoPath: photoPath,
-              thumbPath: thumbPath,
-              fromLibrary: Value(draft.fromLibrary),
-              caption: Value(draft.caption),
-              metricValue: Value(draft.metricValue),
-              extras: Value(draft.extras.normalized().toJsonString()),
-              partnerPhotoPath: Value(partnerPath),
-            ),
-          );
-      return previous;
-    });
-    if (old != null) {
-      await ctx.files.delete([
-        old.photoPath,
-        old.thumbPath,
-        if (old.partnerPhotoPath != null) old.partnerPhotoPath!,
-      ]);
-    }
+    // Posting again the same day adds a photo (FR-C7, migration 0014): the
+    // earlier check-ins of that day stay, and the streak counts the day once.
+    await _db
+        .into(_db.checkIns)
+        .insert(
+          CheckInsCompanion.insert(
+            id: id,
+            journeyId: journey.id,
+            userId: me,
+            localDate: localDate,
+            capturedAt: draft.capturedAt.toUtc(),
+            photoPath: photoPath,
+            thumbPath: thumbPath,
+            fromLibrary: Value(draft.fromLibrary),
+            caption: Value(draft.caption),
+            metricValue: Value(draft.metricValue),
+            extras: Value(draft.extras.normalized().toJsonString()),
+            partnerPhotoPath: Value(partnerPath),
+          ),
+        );
 
     final outbox = ctx.outbox;
     if (outbox != null) {
-      final key = checkInKey(journey.id, me, localDate);
-      // A retake replaces a not-yet-sent take; the server row (if any) is
-      // replaced by the upsert on (journey_id, user_id, local_date).
-      await outbox.cancel(key, kind: OutboxKind.upsertCheckIn);
-      await outbox.enqueue(OutboxKind.upsertCheckIn, key, {'id': id});
-      if (old != null) {
-        await outbox.enqueue(OutboxKind.deleteMedia, 'media:${old.id}', {
-          'paths': [
-            old.photoPath,
-            old.thumbPath,
-            if (old.partnerPhotoPath != null) old.partnerPhotoPath!,
-          ],
-        });
-      }
+      // One upload per check-in, upserted on its id.
+      await outbox.enqueue(OutboxKind.upsertCheckIn, checkInKey(id), {
+        'id': id,
+      });
       unawaited(outbox.flush());
     }
 

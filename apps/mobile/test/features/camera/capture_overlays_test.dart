@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/camera/capture_overlays.dart';
@@ -119,6 +120,8 @@ void main() {
     );
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
+    // Bug 12: the sheet frame (and its grabber) is drawn once, not twice.
+    expect(find.byKey(const ValueKey('ui-sheet-outline')), findsOneWidget);
     expect(find.byKey(const ValueKey('journey-picker-j2')), findsOneWidget);
     await tester.enterText(
       find.byKey(const ValueKey('journey-picker-search')),
@@ -188,21 +191,49 @@ void main() {
     });
   }
 
-  testWidgets('squad timer counts real elapsed time', (tester) async {
+  // Bug #9 (2026-11-15): the squad HUD was a stopwatch counting from when
+  // the camera opened. It now stamps the clock time and the last study
+  // minutes + streak (Figma squad camera), and nothing counts up.
+  testWidgets('squad HUD is a clock stamp, not a stopwatch (bug #9)', (
+    tester,
+  ) async {
+    await withClock(Clock.fixed(DateTime(2026, 11, 15, 6, 15, 42)), () async {
+      await tester.pumpWidget(
+        _host(
+          const CaptureSkinOverlay(
+            skin: PersonaSkinId.accountabilitySquad,
+            dayNumber: 1,
+            streak: 4,
+            lastMinutes: 45,
+          ),
+          dark: true,
+          scale: 1,
+        ),
+      );
+      expect(find.text('06:15'), findsOneWidget);
+      expect(find.text('LAST TIME 45 MIN · 4 STREAK'), findsOneWidget);
+      expect(find.textContaining('00:00'), findsNothing);
+      await tester.pump(const Duration(seconds: 3));
+      expect(find.textContaining('00:03'), findsNothing);
+      expect(find.text('06:15'), findsOneWidget);
+    });
+  });
+
+  testWidgets('squad HUD without logged minutes shows the streak', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         const CaptureSkinOverlay(
           skin: PersonaSkinId.accountabilitySquad,
-          dayNumber: 1,
-          streak: 4,
+          dayNumber: 3,
+          streak: 2,
         ),
-        dark: true,
-        scale: 1,
+        dark: false,
       ),
     );
-    expect(find.textContaining('00:00'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 3));
-    expect(find.textContaining('00:03'), findsOneWidget);
+    expect(find.text('2 DAY STREAK'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('picker groups not shot / shot / ended', (tester) async {
@@ -287,11 +318,15 @@ void main() {
           testJourney(id: 'j2', title: 'Beta'),
         ];
         await tester.pumpWidget(
+          // The sheet content scrolls inside showUiSheet (bug 12 removed its
+          // own UiSheet wrapper); a bare 320dp host needs the scroll here.
           _host(
-            JourneyPickerSheet(
-              journeys: list,
-              selectedId: null,
-              pinnedIds: const {'j2'},
+            SingleChildScrollView(
+              child: JourneyPickerSheet(
+                journeys: list,
+                selectedId: null,
+                pinnedIds: const {'j2'},
+              ),
             ),
             dark: dark,
           ),

@@ -62,7 +62,7 @@ instants ISO-8601 UTC.
 | `public_journey_by_token(p_token text)` | `json` view | Signed-in caller; `not_found` when the token is unknown. Member → `role 'member'`; active grantee → `'friend'`; else `'stranger'`. Records a view. |
 | `follow_frame(p_journey uuid)` | `json` `{source_journey_id,template_id,kind,title,emoji,owner_name,duration_days,metric_name,metric_unit}` | Caller can view it (member/grantee/public token) and `status in ('ended','archived')` or `origin='imported'` → else `invalid`. |
 | `mark_followed(p_journey uuid, p_source uuid)` | `void` | `p_journey` owned by caller, created ≤ 1 day ago; sets `followed_from`. |
-| `create_imported_journey(p_id uuid, p_title text, p_emoji text, p_template template_id, p_first date, p_last date, p_timezone text, p_metric_name text default null, p_metric_unit text default null)` | `journeys` row | Solo, `origin='imported'`, `status='ended'`, `visibility='private'`, `start_date = p_first`, `duration_days = p_last - p_first + 1` (1..366 → else `invalid`), `p_last <= today`. Not counted toward the 3-active limit. Idempotent on `p_id`. |
+| `create_imported_journey(p_id uuid, p_title text, p_emoji text, p_template template_id, p_first date, p_last date, p_timezone text, p_metric_name text default null, p_metric_unit text default null)` | `journeys` row | Solo, `origin='imported'`, `status='ended'`, `visibility='private'`, `start_date = p_first`, `duration_days = p_last - p_first + 1` (1..366 → else `invalid`), `p_last <= today`. Idempotent on `p_id`. |
 | `unsave_journey(p_journey uuid)` | `void` | Deletes the caller's saved row and their likes on it. |
 
 **View JSON** (`shared_journey`, `public_journey_by_token`):

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../tokens.dart';
-import '../typography.dart';
+import 'dock_tab.dart';
 import 'glass.dart';
 import 'ourney_icons.dart';
 import 'pressable.dart';
@@ -19,7 +19,10 @@ const Duration _longPress = Duration(milliseconds: 400);
 const double _pillW = 68;
 const double _pillInset = 4; // clear gap between the pill and the dock edge
 const double _pillH = 52;
-const double _dockH = 64;
+// V2 `.app-dock` is 76 high around the 52 capsule: 10dp of air inside the 2dp
+// border (8dp under the capsule's 2dp shadow). At 64 the capsule sat 4dp from
+// the border and its shadow touched it (bug #11).
+const double _dockH = 76;
 const double _cameraDockH = 92;
 const double _centerSlot = 86;
 
@@ -73,18 +76,20 @@ class UiDock extends StatelessWidget {
     this.snapKey,
     this.onShutterLongPress,
     this.reduceTransparency = false,
-    this.liquid = true,
+    this.liquid = false,
     super.key,
   });
 
   /// Real shader Liquid Glass (ADR 0003) is skipped under `flutter test` and on
-  /// web; widget tests get the blurred-capsule fallback.
+  /// web; widget tests get the blurred-capsule path.
   static bool get liquidSupported =>
       !kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST');
 
-  /// Ask for the Liquid Glass capsule. It still falls back to the blurred
-  /// translucent capsule when unsupported, reduce-transparency or high
-  /// contrast is on.
+  /// Opt in to the shader Liquid Glass capsule (ADR 0003). Off by default
+  /// (bug #11, CLAUDE.md §2): the shader path drops the 2dp outline and hard
+  /// shadow and did not read as glass on the test device, so the dock uses
+  /// the V2 `BackdropFilter` glass (blur 20, saturate 1.6, translucent tint,
+  /// outline, hard shadow, solid under reduce transparency / high contrast).
   final bool liquid;
 
   /// Key of the quick-snap pill.
@@ -131,6 +136,12 @@ class UiDock extends StatelessWidget {
         : ((quiet || camera) ? UiShadow.tiny : UiShadow.large);
     final outline = camera ? UiCamera.outline : ui.outline;
     final shadowColor = camera ? UiCamera.shadow : ui.outline;
+    final solid = reduceTransparency || media.highContrast;
+    // V2: journey docks tint the skin surface at 62%, the shell dock at 78%
+    // (light) / 80% (dark), so content shows through the blur.
+    final tintAlpha = UiSkinScope.maybeOf(context) != null
+        ? 0.62
+        : (dark ? 0.80 : 0.78);
 
     final leftItems = [left, ...extraLeft];
     final rightItems = [...extraRight, right];
@@ -186,17 +197,12 @@ class UiDock extends StatelessWidget {
                     key: const ValueKey('dock-selection-pill'),
                     decoration: useLiquid
                         ? _lensDecoration(pillFill, dark)
-                        : BoxDecoration(
-                            color: pillFill,
-                            borderRadius: BorderRadius.circular(UiRadius.menu),
-                            border: Border.all(
-                              color: outline,
-                              width: UiBorder.thin,
-                            ),
-                            boxShadow: UiShadow.hard(
-                              shadowColor,
-                              UiShadow.tiny,
-                            ),
+                        : dockSelectionDecoration(
+                            accent: pillFill,
+                            surface: ui.surface,
+                            outline: outline,
+                            shadow: shadowColor,
+                            camera: camera,
                           ),
                   ),
                 ),
@@ -205,7 +211,11 @@ class UiDock extends StatelessWidget {
               children: [
                 for (final item in leftItems)
                   Expanded(
-                    child: _Tab(item: item, camera: camera, onAccent: onAccent),
+                    child: DockTab(
+                      item: item,
+                      camera: camera,
+                      onAccent: onAccent,
+                    ),
                   ),
                 SizedBox(
                   width: _centerSlot,
@@ -213,7 +223,11 @@ class UiDock extends StatelessWidget {
                 ),
                 for (final item in rightItems)
                   Expanded(
-                    child: _Tab(item: item, camera: camera, onAccent: onAccent),
+                    child: DockTab(
+                      item: item,
+                      camera: camera,
+                      onAccent: onAccent,
+                    ),
                   ),
               ],
             ),
@@ -234,6 +248,22 @@ class UiDock extends StatelessWidget {
       decoration: camera && !useLiquid
           ? const BoxDecoration(color: UiCamera.dock)
           : null,
+      // V2 glass sheen: `inset 0 1px 0 rgb(255 255 255 / 42%)`.
+      foregroundDecoration: camera || solid || useLiquid
+          ? null
+          : BoxDecoration(
+              borderRadius: radius,
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                stops: const [0, 0.05, 0.06],
+                colors: [
+                  Colors.white.withValues(alpha: dark ? 0.24 : 0.42),
+                  Colors.white.withValues(alpha: 0),
+                  Colors.white.withValues(alpha: 0),
+                ],
+              ),
+            ),
       child: bar,
     );
 
@@ -250,7 +280,7 @@ class UiDock extends StatelessWidget {
             saturation: 1.6,
             tint: camera
                 ? Colors.transparent
-                : ui.surface.withValues(alpha: 0.82),
+                : ui.surface.withValues(alpha: tintAlpha),
             fallback: camera ? UiCamera.dock : ui.surface,
             borderColor: outline,
             borderWidth: stroke,
@@ -341,71 +371,6 @@ class _LongPress extends StatelessWidget {
             ),
       },
       child: child,
-    );
-  }
-}
-
-class _Tab extends StatelessWidget {
-  const _Tab({required this.item, required this.camera, this.onAccent});
-
-  final UiDockItem item;
-  final bool camera;
-
-  /// Journey accent's foreground for the active tab (falls back to onBrand).
-  final Color? onAccent;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final active = item.active;
-    // Active tabs sit on the brand pill: solid dark ink glyph and label.
-    final Color color = active
-        ? (onAccent ?? ui.onBrand)
-        : (camera ? UiCamera.ink : ui.ink);
-    final Widget glyph = item.glyph != null
-        ? OurneyIcon(
-            name: item.glyph!,
-            size: 22,
-            // Camera dock: one flat UiCamera.ink colour, no sticker fill.
-            color: (active || camera) ? color : null,
-            inkColor: color,
-          )
-        : Icon(item.icon, size: 22, color: color);
-    return UiPressable(
-      key: item.itemKey,
-      onPressed: item.onPressed,
-      selected: active,
-      semanticLabel: item.label,
-      excludeChildSemantics: true,
-      borderRadius: BorderRadius.circular(UiRadius.menu),
-      minSize: const Size(UiSize.tap, 56),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 56),
-        // Shrink-wrap vertically: a bottom bar slot gives loose constraints
-        // as tall as the screen and `alignment` would fill them.
-        child: Center(
-          heightFactor: 1,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              glyph,
-              const SizedBox(height: 2),
-              Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: UiText.body(
-                  size: 10.5,
-                  weight: active ? FontWeight.w700 : FontWeight.w600,
-                  height: 1.35,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

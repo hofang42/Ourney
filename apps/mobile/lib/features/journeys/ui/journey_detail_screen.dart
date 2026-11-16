@@ -185,17 +185,17 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _Header(
-                      journey: journey,
-                      canMore: actions.isNotEmpty,
-                      onBack: _back,
-                      onShare: () => _share(context, journey),
-                      onMore: () => setState(() => _menuOpen = !_menuOpen),
-                    ),
-                    if (_menuOpen && actions.isNotEmpty)
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: UiMenuSurface(
+                    UiMenuAnchor(
+                      open: _menuOpen && actions.isNotEmpty,
+                      onClose: () => setState(() => _menuOpen = false),
+                      anchor: _Header(
+                        journey: journey,
+                        canMore: actions.isNotEmpty,
+                        onBack: _back,
+                        onShare: () => _share(context, journey),
+                        onMore: () => setState(() => _menuOpen = !_menuOpen),
+                      ),
+                      menu: UiMenuSurface(
                           children: [
                             for (final a in actions)
                               UiMenuItem(

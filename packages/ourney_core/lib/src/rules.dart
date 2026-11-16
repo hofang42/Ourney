@@ -1,6 +1,5 @@
 import 'models.dart';
 
-const int maxActiveJourneys = 3;
 const int maxGroupMembers = 10;
 
 /// iOS keeps at most 64 pending local notifications per app.
@@ -11,8 +10,6 @@ const int _safetyMargin = 4;
 
 /// Rolling window of non-repeating reminders per journey (docs/02 §9 #11).
 const int rollingReminderDays = 14;
-
-bool canCreateJourney(int activeCount) => activeCount < maxActiveJourneys;
 
 /// Local wall-clock times of the next [days] daily reminders at
 /// [hour]:[minute]. Today is included only if that time is still in the

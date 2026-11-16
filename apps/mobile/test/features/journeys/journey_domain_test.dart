@@ -104,7 +104,7 @@ void main() {
   });
 
   group('JourneyBuckets (FR-B3/B6)', () {
-    test('splits active and finished, enforces the 3-journey rule', () {
+    test('splits active and finished', () {
       final b = JourneyBuckets([
         testJourney(id: 'a'),
         testJourney(id: 'b', status: JourneyStatus.ended),
@@ -113,12 +113,7 @@ void main() {
       ]);
       expect(b.active.map((j) => j.id), ['a', 'c']);
       expect(b.finished.map((j) => j.id), ['b', 'd']);
-      expect(b.canCreate, isTrue);
-      expect(
-        JourneyBuckets([for (final id in 'xyz'.split('')) testJourney(id: id)])
-            .canCreate,
-        isFalse,
-      );
+      expect(b.activeCount, 2);
     });
   });
 

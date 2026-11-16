@@ -45,8 +45,9 @@ Errors are mapped from `OurneyException.error` (`limit`, `not_alone`,
 
 * Streaks, % and day N/M come from `computeMemberStreak` in the journey's
   time zone (`domain/journey_progress.dart`), never stored.
-* 3 active journeys: the FAB shows a friendly dialog (`canCreateJourney`);
-  the server's `limit` error shows the same dialog.
+* No cap on running journeys (FR-B3): the add menu always opens the create
+  flow. The add menu and the journey overflow menu float in the overlay
+  (`UiMenuAnchor`) and never push the page down.
 * Ended journeys are read-only (no check-in button, banner). Archive is only
   offered for ended journeys; delete only for the owner (`not_alone` from the
   server for groups with other members).

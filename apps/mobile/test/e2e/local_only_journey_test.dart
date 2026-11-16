@@ -157,7 +157,10 @@ void main() {
     await tester.tap(find.text('Cho phép camera'));
     await settle();
     expect(camera.isReady, isTrue);
-    expect(key('journey-chip-$journeyId'), findsOneWidget);
+    // One journey: no disc strip (bug #5 camera V2); the name chip and the
+    // title block name it.
+    expect(key('capture-journey-chip'), findsOneWidget);
+    expect(key('capture-title-$journeyId'), findsOneWidget);
 
     await tap('capture-shutter');
     expect(path(), AppRoutes.checkin);

@@ -49,127 +49,140 @@ void main() {
     expect(await layer.journeys.watchPinnedJourneyIds().first, isEmpty);
   });
 
-  test('update journey persists layout, cover, colour, reminder, dna', () async {
-    final layer = localLayer(db: db, media: media, clock: clock);
-    final j = await layer.journeys.create(
-      soloDraft(start: const LocalDate(2026, 10, 16)),
-    );
-    final u = await layer.journeys.update(
-      j.id,
-      const JourneyUpdate(
-        title: ' Renamed ',
-        layout: PersonaSkinId.minimalistHabit,
-        cover: 2,
-        color: 1,
-        reminderTime: '07:30',
-        dna: {'goal': 'ielts'},
-      ),
-    );
-    expect(u.title, 'Renamed');
-    expect(u.layout, PersonaSkinId.minimalistHabit);
-    expect((u.cover, u.color, u.reminderTime), (2, 1, '07:30'));
-    expect(u.dna, {'goal': 'ielts'});
-    final cleared = await layer.journeys.update(
-      j.id,
-      const JourneyUpdate(clear: {'layout', 'dna'}),
-    );
-    expect(cleared.layout, isNull);
-    expect(cleared.dna, isNull);
-    expect(cleared.cover, 2, reason: 'untouched fields are kept');
-    await expectLater(
-      layer.journeys.update(j.id, const JourneyUpdate(cover: 3)),
-      throwsA(isA<OurneyException>()),
-    );
-    await expectLater(
-      layer.journeys.update(j.id, const JourneyUpdate(reminderTime: '25:00')),
-      throwsA(isA<OurneyException>()),
-    );
-  });
-
-  test('create journey -> check-in -> retake replaces -> streak', () async {
-    final layer = localLayer(db: db, media: media, clock: clock);
-    const guest = 'aaaaaaaa-0000-4000-8000-000000000001';
-
-    // Created on the 14th (joined_at = now, like the server's default).
-    clock.value = DateTime.utc(2026, 10, 14, 2);
-    final journey = await layer.journeys.create(
-      soloDraft(start: const LocalDate(2026, 10, 14)),
-    );
-    clock.value = DateTime.utc(2026, 10, 16, 2);
-    expect(journey.ownerId, guest);
-    expect(journey.visibility, JourneyVisibility.private);
-    expect(journey.templateId, TemplateId.weightLoss);
-    expect(await layer.journeys.watchActive().first, hasLength(1));
-
-    final membership = await layer.journeys.watchMyMembership(journey.id).first;
-    expect(membership!.role, MemberRole.owner);
-    expect(
-      membership.hideMetric,
-      isTrue,
-      reason: 'copied from template default',
-    );
-
-    // Yesterday and the day before, then today.
-    for (final day in [14, 15]) {
-      final shot = fakeCapture(camera, 'd$day');
-      await layer.checkIns.submit(
-        CheckInDraft(
-          journeyId: journey.id,
-          capturedAt: DateTime.utc(2026, 10, day, 3),
-          photoFile: shot.photo,
-          thumbFile: shot.thumb,
+  test(
+    'update journey persists layout, cover, colour, reminder, dna',
+    () async {
+      final layer = localLayer(db: db, media: media, clock: clock);
+      final j = await layer.journeys.create(
+        soloDraft(start: const LocalDate(2026, 10, 16)),
+      );
+      final u = await layer.journeys.update(
+        j.id,
+        const JourneyUpdate(
+          title: ' Renamed ',
+          layout: PersonaSkinId.minimalistHabit,
+          cover: 2,
+          color: 1,
+          reminderTime: '07:30',
+          dna: {'goal': 'ielts'},
         ),
       );
-    }
-    final first = fakeCapture(camera, 'today1');
-    final take1 = await layer.checkIns.submit(
-      CheckInDraft(
-        journeyId: journey.id,
-        capturedAt: clock.value,
-        photoFile: first.photo,
-        thumbFile: first.thumb,
-        metricValue: 70.5,
-      ),
-    );
-    expect(take1.localDate, const LocalDate(2026, 10, 16));
-    expect(take1.photoPath, checkInPhotoPath(journey.id, guest, take1.id));
-    expect(take1.thumbPath, checkInThumbPath(journey.id, guest, take1.id));
-    expect(File(take1.localPhotoFile!).existsSync(), isTrue);
-    expect(take1.uploaded, isFalse);
+      expect(u.title, 'Renamed');
+      expect(u.layout, PersonaSkinId.minimalistHabit);
+      expect((u.cover, u.color, u.reminderTime), (2, 1, '07:30'));
+      expect(u.dna, {'goal': 'ielts'});
+      final cleared = await layer.journeys.update(
+        j.id,
+        const JourneyUpdate(clear: {'layout', 'dna'}),
+      );
+      expect(cleared.layout, isNull);
+      expect(cleared.dna, isNull);
+      expect(cleared.cover, 2, reason: 'untouched fields are kept');
+      await expectLater(
+        layer.journeys.update(j.id, const JourneyUpdate(cover: 3)),
+        throwsA(isA<OurneyException>()),
+      );
+      await expectLater(
+        layer.journeys.update(j.id, const JourneyUpdate(reminderTime: '25:00')),
+        throwsA(isA<OurneyException>()),
+      );
+    },
+  );
 
-    // Retake: same local day, replaces the first take and its files.
-    final second = fakeCapture(camera, 'today2');
-    final take2 = await layer.checkIns.submit(
-      CheckInDraft(
-        journeyId: journey.id,
-        capturedAt: clock.value.add(const Duration(minutes: 5)),
-        photoFile: second.photo,
-        thumbFile: second.thumb,
-        caption: 'Lần 2',
-      ),
-    );
-    expect(take2.id, isNot(take1.id));
-    final all = await layer.checkIns.watchForJourney(journey.id).first;
-    expect(all, hasLength(3));
-    expect(all.first.id, take2.id, reason: 'newest first');
-    expect(all.first.caption, 'Lần 2');
-    expect(File(take1.localPhotoFile!).existsSync(), isFalse);
-    expect(
-      File(await layer.media.localFileFor(take2.thumbPath)).existsSync(),
-      isTrue,
-    );
+  test(
+    'create journey -> check-in -> extra same-day photo -> streak',
+    () async {
+      final layer = localLayer(db: db, media: media, clock: clock);
+      const guest = 'aaaaaaaa-0000-4000-8000-000000000001';
 
-    final streak = computeMemberStreak(
-      journeyStart: journey.startDate,
-      durationDays: journey.durationDays,
-      joinedLocalDate: localDateOf(membership.joinedAt, vnOffset),
-      today: const LocalDate(2026, 10, 16),
-      dates: all.map((c) => c.localDate),
-    );
-    expect(streak.current, 3);
-    expect(streak.checkedInToday, isTrue);
-    expect(await layer.checkIns.watchPendingUploads().first, 0);
-  });
+      // Created on the 14th (joined_at = now, like the server's default).
+      clock.value = DateTime.utc(2026, 10, 14, 2);
+      final journey = await layer.journeys.create(
+        soloDraft(start: const LocalDate(2026, 10, 14)),
+      );
+      clock.value = DateTime.utc(2026, 10, 16, 2);
+      expect(journey.ownerId, guest);
+      expect(journey.visibility, JourneyVisibility.private);
+      expect(journey.templateId, TemplateId.weightLoss);
+      expect(await layer.journeys.watchActive().first, hasLength(1));
+
+      final membership = await layer.journeys
+          .watchMyMembership(journey.id)
+          .first;
+      expect(membership!.role, MemberRole.owner);
+      expect(
+        membership.hideMetric,
+        isTrue,
+        reason: 'copied from template default',
+      );
+
+      // Yesterday and the day before, then today.
+      for (final day in [14, 15]) {
+        final shot = fakeCapture(camera, 'd$day');
+        await layer.checkIns.submit(
+          CheckInDraft(
+            journeyId: journey.id,
+            capturedAt: DateTime.utc(2026, 10, day, 3),
+            photoFile: shot.photo,
+            thumbFile: shot.thumb,
+          ),
+        );
+      }
+      final first = fakeCapture(camera, 'today1');
+      final take1 = await layer.checkIns.submit(
+        CheckInDraft(
+          journeyId: journey.id,
+          capturedAt: clock.value,
+          photoFile: first.photo,
+          thumbFile: first.thumb,
+          metricValue: 70.5,
+        ),
+      );
+      expect(take1.localDate, const LocalDate(2026, 10, 16));
+      expect(take1.photoPath, checkInPhotoPath(journey.id, guest, take1.id));
+      expect(take1.thumbPath, checkInThumbPath(journey.id, guest, take1.id));
+      expect(File(take1.localPhotoFile!).existsSync(), isTrue);
+      expect(take1.uploaded, isFalse);
+
+      // Bug #2 (2026-11-15): a second photo the same local day is added, the
+      // first one and its files stay (FR-C7, migration 0014).
+      final second = fakeCapture(camera, 'today2');
+      final take2 = await layer.checkIns.submit(
+        CheckInDraft(
+          journeyId: journey.id,
+          capturedAt: clock.value.add(const Duration(minutes: 5)),
+          photoFile: second.photo,
+          thumbFile: second.thumb,
+          caption: 'Lần 2',
+        ),
+      );
+      expect(take2.id, isNot(take1.id));
+      final all = await layer.checkIns.watchForJourney(journey.id).first;
+      expect(all, hasLength(4));
+      final today = all
+          .where((c) => c.localDate == const LocalDate(2026, 10, 16))
+          .map((c) => c.id);
+      expect(today, unorderedEquals([take1.id, take2.id]));
+      expect(all.firstWhere((c) => c.id == take2.id).caption, 'Lần 2');
+      expect(File(take1.localPhotoFile!).existsSync(), isTrue);
+      expect(
+        File(await layer.media.localFileFor(take2.thumbPath)).existsSync(),
+        isTrue,
+      );
+
+      final streak = computeMemberStreak(
+        journeyStart: journey.startDate,
+        durationDays: journey.durationDays,
+        joinedLocalDate: localDateOf(membership.joinedAt, vnOffset),
+        today: const LocalDate(2026, 10, 16),
+        dates: all.map((c) => c.localDate),
+      );
+      expect(streak.current, 3, reason: 'two photos on the 16th count once');
+      expect(streak.completed, 3);
+      expect(streak.checkedInToday, isTrue);
+      expect(await layer.checkIns.watchPendingUploads().first, 0);
+    },
+  );
 
   test('local-only stores extras, partner photo and couple names', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
@@ -305,15 +318,13 @@ void main() {
     );
   });
 
-  test('limit of 3 active journeys, end and archive', () async {
+  test('no cap on active journeys (FR-B3), end and archive', () async {
     final layer = localLayer(db: db, media: media, clock: clock);
     final a = await layer.journeys.create(soloDraft(title: 'A'));
-    await layer.journeys.create(soloDraft(title: 'B'));
-    await layer.journeys.create(soloDraft(title: 'C'));
-    await expectLater(
-      layer.journeys.create(soloDraft(title: 'D')),
-      throwsA(isA<JourneyLimitException>()),
-    );
+    for (final t in ['B', 'C', 'D', 'E']) {
+      await layer.journeys.create(soloDraft(title: t));
+    }
+    expect(await layer.journeys.watchActive().first, hasLength(5));
 
     await layer.journeys.end(a.id);
     expect(
@@ -348,13 +359,10 @@ void main() {
         ),
       ),
     );
-    // Ended journeys no longer count toward the limit.
-    await layer.journeys.create(soloDraft(title: 'D'));
-
     await layer.journeys.archive(a.id);
     final active = await layer.journeys.watchActive().first;
     expect(active.map((j) => j.title), isNot(contains('A')));
-    expect(active, hasLength(3));
+    expect(active, hasLength(4));
   });
 
   test('check-in validation mirrors the server', () async {

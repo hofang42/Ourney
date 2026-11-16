@@ -30,6 +30,9 @@ class CameraL10nEn extends CameraL10n {
   String get camera_flashOn => 'Flash: on';
 
   @override
+  String get camera_flashUnavailable => 'This camera has no flash';
+
+  @override
   String get camera_switchLens => 'Switch front/back camera';
 
   @override
@@ -105,9 +108,6 @@ class CameraL10nEn extends CameraL10n {
   }
 
   @override
-  String get camera_swipeHint => 'Swipe for next journey';
-
-  @override
   String camera_streakChip(int days) {
     return '$days day streak';
   }
@@ -120,11 +120,6 @@ class CameraL10nEn extends CameraL10n {
 
   @override
   String get camera_privateVault => 'Private vault';
-
-  @override
-  String camera_studyStreak(int days) {
-    return '45 MIN STUDY · $days STREAK';
-  }
 
   @override
   String get camera_filmRoll => 'FILM ROLL';
@@ -172,11 +167,6 @@ class CameraL10nEn extends CameraL10n {
   String get camera_pickerEnded => 'Ended';
 
   @override
-  String camera_studyElapsed(String time, int days) {
-    return 'STUDY $time · $days STREAK';
-  }
-
-  @override
   String camera_lastPace(String pace) {
     return 'LAST PACE $pace';
   }
@@ -196,4 +186,42 @@ class CameraL10nEn extends CameraL10n {
 
   @override
   String get camera_pickerPinned => 'Pinned';
+
+  @override
+  String camera_dayOfTotal(int day, int total) {
+    return 'Day $day/$total';
+  }
+
+  @override
+  String get camera_notShotToday => 'not shot today';
+
+  @override
+  String camera_shotTodayCount(int count) {
+    return '$count photos today';
+  }
+
+  @override
+  String camera_photoCount(int count) {
+    return '$count photos';
+  }
+
+  @override
+  String camera_openToday(int count) {
+    return 'Open journey, $count photos today';
+  }
+
+  @override
+  String camera_allJourneysCount(int count) {
+    return 'All journeys ($count)';
+  }
+
+  @override
+  String camera_squadLastStudy(int minutes, int days) {
+    return 'LAST TIME $minutes MIN · $days STREAK';
+  }
+
+  @override
+  String camera_squadStreak(int days) {
+    return '$days DAY STREAK';
+  }
 }

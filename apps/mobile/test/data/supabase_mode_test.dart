@@ -117,12 +117,11 @@ void main() {
     expect(await layer.journeys.watchActive().first, hasLength(1));
   });
 
-  test('server limit becomes JourneyLimitException', () async {
-    remote.failOnce.add(const OurneyException(OurneyErrorCode.limit, 'limit'));
-    await expectLater(
-      layer.journeys.create(soloDraft()),
-      throwsA(isA<JourneyLimitException>()),
-    );
+  test('a fourth active journey is created (no cap, FR-B3)', () async {
+    for (var i = 0; i < 4; i++) {
+      await layer.journeys.create(soloDraft(title: 'J$i'));
+    }
+    expect(await layer.journeys.watchActive().first, hasLength(4));
   });
 
   test(
@@ -173,67 +172,65 @@ void main() {
     expect(await layer.journeys.watchActive().first, isEmpty);
   });
 
-  test(
-    'check-in: media then upsert on (journey_id,user_id,local_date)',
-    () async {
-      final j = await layer.journeys.create(soloDraft());
-      final c = await checkIn(j.id, 'a', metric: 70.5);
-      expect(c.uploaded, isFalse);
-      expect(c.localPhotoFile, isNotNull, reason: 'visible at once');
-      await settle();
+  test('check-in: media then upsert on id', () async {
+    final j = await layer.journeys.create(soloDraft());
+    final c = await checkIn(j.id, 'a', metric: 70.5);
+    expect(c.uploaded, isFalse);
+    expect(c.localPhotoFile, isNotNull, reason: 'visible at once');
+    await settle();
 
-      expect(remote.uploaded.keys, [
-        checkInPhotoPath(j.id, me, c.id),
-        checkInThumbPath(j.id, me, c.id),
-      ]);
-      final upsert =
-          upsertsOf('check_ins').single.args! as Map<String, dynamic>;
-      expect(upsert['onConflict'], 'journey_id,user_id,local_date');
-      final row = upsert['row'] as Map<String, dynamic>;
-      expect(row['id'], c.id);
-      expect(row['user_id'], me);
-      expect(row['local_date'], '2026-10-16');
-      expect(row.containsKey('metric_value'), isFalse, reason: '0005 (H1)');
-      final metric =
-          upsertsOf('check_in_metrics').single.args! as Map<String, dynamic>;
-      expect(metric['onConflict'], 'checkin_id');
-      expect(metric['row'], {
-        'checkin_id': c.id,
-        'journey_id': j.id,
-        'user_id': me,
-        'metric_value': 70.5,
-      });
-      final saved = (await layer.checkIns.watchForJourney(j.id).first).single;
-      expect(saved.uploaded, isTrue);
-      expect(saved.localPhotoFile, isNull);
-      // Own media stays on disk: no download needed to display it.
-      expect(
-        File(await layer.media.localFileFor(saved.photoPath)).existsSync(),
-        isTrue,
-      );
-      expect(remote.callsOf('download'), isEmpty);
-    },
-  );
+    expect(remote.uploaded.keys, [
+      checkInPhotoPath(j.id, me, c.id),
+      checkInThumbPath(j.id, me, c.id),
+    ]);
+    final upsert = upsertsOf('check_ins').single.args! as Map<String, dynamic>;
+    expect(upsert['onConflict'], 'id');
+    final row = upsert['row'] as Map<String, dynamic>;
+    expect(row['id'], c.id);
+    expect(row['user_id'], me);
+    expect(row['local_date'], '2026-10-16');
+    expect(row.containsKey('metric_value'), isFalse, reason: '0005 (H1)');
+    final metric =
+        upsertsOf('check_in_metrics').single.args! as Map<String, dynamic>;
+    expect(metric['onConflict'], 'checkin_id');
+    expect(metric['row'], {
+      'checkin_id': c.id,
+      'journey_id': j.id,
+      'user_id': me,
+      'metric_value': 70.5,
+    });
+    final saved = (await layer.checkIns.watchForJourney(j.id).first).single;
+    expect(saved.uploaded, isTrue);
+    expect(saved.localPhotoFile, isNull);
+    // Own media stays on disk: no download needed to display it.
+    expect(
+      File(await layer.media.localFileFor(saved.photoPath)).existsSync(),
+      isTrue,
+    );
+    expect(remote.callsOf('download'), isEmpty);
+  });
 
   test(
-    'retake replaces the pending take, or the uploaded one + its media',
+    'several photos the same day are each uploaded, none replaced (bug #2)',
     () async {
       final j = await layer.journeys.create(soloDraft());
       remote.failure = offline;
       final a = await checkIn(j.id, 'a');
       final b = await checkIn(j.id, 'b');
-      expect(await layer.checkIns.watchPendingUploads().first, 1);
+      expect(a.localDate, b.localDate);
+      expect(await layer.checkIns.watchPendingUploads().first, 2);
       remote.failure = null;
       await settle();
-      expect(remote.uploaded.keys, isNot(contains(a.photoPath)));
-      expect(upsertsOf('check_ins'), hasLength(1));
+      expect(remote.uploaded.keys, containsAll([a.photoPath, b.photoPath]));
+      expect(upsertsOf('check_ins'), hasLength(2));
 
       final c = await checkIn(j.id, 'c');
       await settle();
-      expect(upsertsOf('check_ins'), hasLength(2));
-      expect(remote.removed, containsAll([b.photoPath, b.thumbPath]));
+      expect(upsertsOf('check_ins'), hasLength(3));
+      expect(remote.removed, isEmpty, reason: 'no photo is replaced');
       final list = await layer.checkIns.watchForJourney(j.id).first;
-      expect(list.single.id, c.id);
+      expect(list.map((x) => x.id), unorderedEquals([a.id, b.id, c.id]));
+      expect(list.every((x) => x.uploaded), isTrue);
     },
   );
 

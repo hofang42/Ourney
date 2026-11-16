@@ -261,6 +261,74 @@ void main() {
       );
     });
 
+    for (final b in Brightness.values) {
+      testWidgets(
+        'edge pill keeps air inside the border, ${b.name} (bug #11)',
+        (tester) async {
+          for (final active in [0, 4]) {
+            await tester.pumpWidget(
+              host(fiveTab([], active: active), brightness: b),
+            );
+            await tester.pumpAndSettle();
+            final glass = tester.getRect(find.byType(UiGlass));
+            final pill = tester.getRect(
+              find.byKey(const ValueKey('dock-selection-pill')),
+            );
+            // 2dp border + >= 8dp gap, also past the pill's 2dp hard shadow.
+            const shadow = UiShadow.tiny;
+            expect(pill.top - glass.top, greaterThanOrEqualTo(10));
+            expect(
+              glass.bottom - (pill.bottom + shadow),
+              greaterThanOrEqualTo(8),
+            );
+            expect(pill.left - glass.left, greaterThanOrEqualTo(10));
+            expect(
+              glass.right - (pill.right + shadow),
+              greaterThanOrEqualTo(8),
+            );
+          }
+        },
+      );
+
+      testWidgets('active and pressed tabs keep coloured stickers, ${b.name}', (
+        tester,
+      ) async {
+        await tester.pumpWidget(host(fiveTab([]), brightness: b));
+        await tester.pumpAndSettle();
+        final tab = find.byKey(const ValueKey('tab-0'));
+        final gesture = await tester.startGesture(tester.getCenter(tab));
+        await tester.pump(const Duration(milliseconds: 60));
+        final icons = tester.widgetList<OurneyIcon>(
+          find.descendant(
+            of: find.byType(UiDock),
+            matching: find.byType(OurneyIcon),
+          ),
+        );
+        for (final icon in icons.where((i) => i.name != 'camera')) {
+          // No solid single-colour fill: the V2 palette shows through.
+          expect(icon.color, isNull, reason: icon.name);
+          expect(icon.inkColor, isNull, reason: icon.name);
+        }
+        final active = tester.widget<OurneyIcon>(
+          find.descendant(of: tab, matching: find.byType(OurneyIcon)),
+        );
+        expect(active.active, isTrue);
+        await gesture.up();
+      });
+    }
+
+    testWidgets('dock is BackdropFilter glass with a translucent tint', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(fiveTab([])));
+      final glass = tester.widget<UiGlass>(find.byType(UiGlass));
+      expect(glass.blur, 20);
+      expect(glass.borderWidth, UiBorder.standard);
+      expect(glass.hardShadow, greaterThan(0));
+      expect(glass.tint!.a, lessThan(0.9));
+      expect(find.byType(BackdropFilter), findsOneWidget);
+    });
+
     testWidgets('selection pill jumps at once under reduce-motion', (
       tester,
     ) async {
@@ -657,7 +725,7 @@ void main() {
         // swallow every tap above it.
         final height = tester.getSize(find.byType(UiDock)).height;
         expect(height, lessThan(120));
-        expect(tester.getSize(find.byType(UiGlass)).height, camera ? 92 : 64);
+        expect(tester.getSize(find.byType(UiGlass)).height, camera ? 92 : 76);
       });
     }
   });

@@ -7,7 +7,7 @@
 //   JourneyRepository.delete            -> rpc delete_journey
 //   JourneyRepository.setPublicLink     -> rpc set_public_link
 //   JourneyRepository.updateMyMembership-> update memberships (hide_metric, blur_media)
-//   CheckInRepository.submit            -> upsert check_ins on (journey_id, user_id, local_date)
+//   CheckInRepository.submit            -> upsert check_ins on (id) (0014: many per day)
 //   GroupRepository.joinByCode          -> rpc join_by_code
 //   GroupRepository.rotateInviteCode    -> rpc rotate_invite
 //   GroupRepository.leave               -> rpc leave_journey
@@ -99,8 +99,8 @@ abstract interface class JourneyRepository {
   /// `create_journey`. The client generates the id (idempotent retry).
   /// Visibility is sent as `draft.visibility` (group → `group`; solo →
   /// `private` or `link`, which issues `Journey.publicToken`).
-  /// Throws [JourneyLimitException] when the user already has 3 active
-  /// journeys, [OurneyException] `invalid` for a bad kind/visibility combo.
+  /// No cap on running journeys (SRS FR-B3). Throws [OurneyException]
+  /// `invalid` for a bad kind/visibility combo.
   Future<Journey> create(JourneyDraft draft);
 
   /// `update_journey` (owner only): rename, layout, cover, colour, reminder
@@ -147,7 +147,8 @@ abstract interface class CheckInRepository {
   Stream<List<CheckIn>> watchForJourney(String journeyId, {String? userId});
 
   /// Saves locally at once (visible immediately) and enqueues the upload.
-  /// Upserts on (journeyId, userId, localDate): a retake replaces today's.
+  /// Each call adds a new check-in (several per day are allowed, FR-C7,
+  /// migration 0014); the streak still counts a day once.
   /// The server recomputes `local_date`; rejects with `ended` after the
   /// journey ends and `invalidCapturedAt` for timestamps > now + 10 min.
   /// Streaks shown for the user must use `computeMemberStreak` (counts from
@@ -161,7 +162,7 @@ abstract interface class CheckInRepository {
 abstract interface class GroupRepository {
   /// `join_by_code`. Returns the journey id joined (idempotent; a rejoin
   /// restores the member's earlier check-ins and joinedAt). Throws
-  /// [GroupException] with `notFound`, `full`, `blocked`, `limit`, `ended`,
+  /// [GroupException] with `notFound`, `full`, `blocked`, `ended`,
   /// `forbidden` or `offline`.
   Future<String> joinByCode(String code);
 
@@ -298,14 +299,9 @@ class OurneyException implements Exception {
       'OurneyException($code${detail == null ? '' : ': $detail'})';
 }
 
-class JourneyLimitException extends OurneyException {
-  const JourneyLimitException([String? detail])
-      : super(OurneyErrorCode.limit, detail);
-}
-
 class GroupException extends OurneyException {
   /// From a wire code string (backward compatible): one of `not_found`,
-  /// `full`, `blocked`, `limit`, `ended`, `forbidden`, `offline`, ...
+  /// `full`, `blocked`, `ended`, `forbidden`, `offline`, ...
   GroupException(String code) : super(OurneyErrorCode.fromWire(code));
 
   const GroupException.of(super.error, [super.detail]);

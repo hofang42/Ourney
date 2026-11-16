@@ -115,7 +115,7 @@ on their own active row. Dart: `Membership` (`JourneyRepository.watchMyMembershi
 
 ### check_ins
 
-> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in, and follows the cadence rules of SDS §7.1 (an X-per-week day only counts toward the week). Deleting the only check-in of a day must keep that day for the streak (SDS Q11), so `journey_streak` needs an input that survives deletes, for example a `checkin_days(journey_id, user_id, local_date)` row written with the first check-in and never removed by a check-in delete. When the cover is deleted, the earliest remaining check-in of that day becomes the cover. Check-ins of an imported past journey (photos dated before the journey was created in the app) never feed the streak, so the streak input must exclude them as well as `from_library` photos dated before today. `group_today` must return one row per member (cover photo + photo count) instead of one row per check-in. Until that migration lands, the table below is still the live contract.
+> **Pending change (decided 2026-11-11, not migrated yet):** several check-ins per user per day (SRS FR-C7, SDS §7.3). The next contract version must drop `UNIQUE (journey_id, user_id, local_date)`, stop treating a same-day upsert as a retake, and add a per-day cover (for example `day_covers(journey_id, user_id, local_date, checkin_id)`). Streak counts a day once, from its first check-in, and follows the cadence rules of SDS §7.1 (an X-per-week day only counts toward the week). Deleting the only check-in of a day must keep that day for the streak (SDS Q11), so `journey_streak` needs an input that survives deletes, for example a `checkin_days(journey_id, user_id, local_date)` row written with the first check-in and never removed by a check-in delete. When the cover is deleted, the earliest remaining check-in of that day becomes the cover. Check-ins of an imported past journey (photos dated before the journey was created in the app) never feed the streak, so the streak input must exclude them as well as `from_library` photos dated before today. `group_today` must return one row per member (cover photo + photo count) instead of one row per check-in. Migration `0014_multi_photo_per_day.sql` landed the first part (unique dropped, upsert on `id`, `group_today` one row per member with the latest photo of today); the per-day cover and the delete-proof `checkin_days` streak input are still pending.
 | column | type | notes |
 |---|---|---|
 | id | uuid PK | client generated |
@@ -130,7 +130,7 @@ on their own active row. Dart: `Membership` (`JourneyRepository.watchMyMembershi
 | metric_value | numeric null | **v1.2 deprecated: always stored as NULL** (kept so old upsert bodies still work; the value is dropped). Use `check_in_metrics` |
 | moderated_at | timestamptz null | **v1.2, server-only** (`moderate_checkin`). A moderated row is also soft-deleted; its author can no longer update it (`forbidden`), a retake upsert onto that day fails too |
 | hidden_by_leave | bool | **v1.1, server-managed** (clients cannot set it). True while the author has left the group; the row is also soft-deleted then and restored on rejoin. Not in the Dart model — treat it as any tombstone (`deleted_at`) |
-| UNIQUE | (journey_id, user_id, local_date) | upsert target; retake replaces |
+| ~~UNIQUE~~ | ~~(journey_id, user_id, local_date)~~ | dropped in 0014: several check-ins per day; upsert on `id` |
 
 Writes fail with `ended` once the journey is not active or past its last day.
 
@@ -213,7 +213,7 @@ All RPCs are `SECURITY DEFINER`, require a signed-in user, and raise errors by m
 | `report_content` | `p_checkin, p_user, p_reason, p_note, p_message=null` (**v1.3**) → report id | `SafetyRepository.report` |
 | `block_user` / `unblock_user` | `p_user` | `SafetyRepository.block` / `unblock` |
 | `journey_streak` | `journey, member, today=null` → `(current_streak, best_streak, completed_days)` | `computeMemberStreak` (local mirror) |
-| table upsert `check_ins` | on `(journey_id, user_id, local_date)` | `CheckInRepository.submit` |
+| table upsert `check_ins` | on `id` (0014) | `CheckInRepository.submit` |
 | table upsert `check_in_metrics` | **v1.2** on `checkin_id` | `CheckInRepository.submit` (outbox) |
 | table upsert `reactions` | on `(checkin_id, user_id)` | `GroupRepository.react` / `unreact` |
 | friends / sharing / consents / chat / insights | **v1.3** see [sharing.md](sharing.md) (`my_friends`, `share_journey`, `shared_journey`, `create_imported_journey`, `send_message`, `journey_insights`, ...) | `FriendRepository`, `SharingRepository`, `ShareConsentRepository`, `ChatRepository`, `InsightsRepository` |
@@ -232,7 +232,7 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 | `not_found` | unknown id/code/token, invisible target; public-journey 404 |
 | `full` | group has 10 active members |
 | `blocked` | block in either direction with an active member |
-| `limit` | 3 active journeys (**to be removed**: owner dropped the cap on 2026-11-12, SRS FR-B3) |
+| `limit` | Retired by `0013_unlimited_journeys` (SRS FR-B3): no RPC raises it any more. Clients keep the code only to parse old servers |
 | `ended` | journey not active / past last day |
 | `not_alone` | `delete_journey` with other active members (end it instead) |
 | `rate_limited` | > 20 reports in 24 h; **v1.2** ≥ 10 failed invite codes in 1 h (`join_by_code`) |
@@ -244,7 +244,7 @@ thrown as `OurneyException` (`JourneyLimitException`, `GroupException` are subcl
 **Pending change (decided 2026-11-11, prototype only):** a journey keeps its own `skin` (default from the template, changeable by the owner; `docs/design-v2/feedback-2026-11-11.md` §2). Today `journeys` only has `template_id` and the client derives the skin, so the next contract version needs a `skin` column.
 
 ## Rules (enforced server-side; client mirrors for UX)
-- Max **3 active journeys** per user (as owner or active member). **Pending change (decided 2026-11-12, not migrated yet):** no cap; the next migration drops the `_active_journey_count(...) >= 3` checks and the `limit` error, and the client drops its limit dialog.
+- **No cap** on active journeys per user (owner decision 2026-11-12, SRS FR-B3). Migration `0013_unlimited_journeys` dropped the `_active_journey_count(...) >= 3` checks from `create_journey` and `join_by_code` and the helper itself; the client dropped `canCreateJourney`, `JourneyLimitException` and the limit dialog.
 - Max **10 active members** per group journey.
 - Streak: daily cadence, strict. See `streak_vectors.json`. **Pending change:** SRS FR-C7 and SDS §7.1 add X-per-week, weekly and monthly cadences. `journeys` and the `Journey` model have no cadence field yet, and `computeStreak` / `journey_streak` only count consecutive days; the next contract version needs a `cadence` column (with the X for X-per-week), a period-based streak algorithm in both places, and new `streak_vectors.json` cases.
 - **Late joiners**: a member's streak/progress window starts at

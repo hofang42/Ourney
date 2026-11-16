@@ -14,7 +14,6 @@ String journeyErrorMessage(BuildContext context, Object error) {
   final e = rootError(error);
   if (e is! OurneyException) return app.common_errorGeneric;
   return switch (e.error) {
-    OurneyErrorCode.limit => l10n.journeys_limitMessage,
     OurneyErrorCode.notAlone => l10n.journeys_errorNotAlone,
     OurneyErrorCode.forbidden => l10n.journeys_errorForbidden,
     OurneyErrorCode.ended => l10n.journeys_errorEnded,
@@ -29,45 +28,6 @@ String journeyErrorMessage(BuildContext context, Object error) {
 /// above it so it never covers the action.
 void showJourneySnack(BuildContext context, String message) =>
     showUiToast(context, message, bottomOffset: 110);
-
-/// FR-B3 friendly block shown before the create flow when 3 journeys run.
-Future<void> showJourneyLimitDialog(BuildContext context) {
-  final l10n = JourneysL10n.of(context);
-  final app = AppLocalizations.of(context);
-  return showUiSheet<void>(
-    context: context,
-    builder: (context) {
-      final ui = context.ui;
-      return Column(
-        key: const ValueKey('journeys-limit-dialog'),
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(child: const OurneyIcon(name: 'react-fire', size: 36)),
-          const SizedBox(height: UiSpace.md),
-          Semantics(
-            header: true,
-            child: Text(
-              l10n.journeys_limitTitle,
-              textAlign: TextAlign.center,
-              style: UiText.h2(color: ui.ink),
-            ),
-          ),
-          const SizedBox(height: UiSpace.sm),
-          Text(
-            l10n.journeys_limitMessage,
-            textAlign: TextAlign.center,
-            style: UiText.muted(color: ui.inkMuted),
-          ),
-          const SizedBox(height: UiSpace.xxl),
-          UiButton(
-            label: app.common_ok,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
-      );
-    },
-  );
-}
 
 /// Confirmation (end / delete). Resolves to true on confirm.
 Future<bool> confirmJourneyAction(

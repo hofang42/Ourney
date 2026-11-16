@@ -179,16 +179,16 @@ select throws_ok($$ select tests.checkin(tests.c(6), now() - interval '5 days') 
 select lives_ok($$ select tests.checkin(tests.c(7), now() - interval '2 days') $$,
   'offline check-in within the window is accepted');
 
--- ===== L3: retake of a reported check-in (id change) =========================
+-- ===== L3: id change of a reported check-in ==================================
+-- (0014 removed the same-day retake upsert; an id rewrite through UPDATE must still carry reports.)
 do $$ begin perform tests.as_user(tests.u(1)); perform public.report_content(tests.c(4), null, 'other'); end $$;
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
 select lives_ok($$
-  insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path)
-  values (tests.c(8), tests.j(), auth.uid(), current_date, now(), tests.photo(auth.uid(), tests.c(8)),
-          format('checkins/%s/%s/%s_t.jpg', tests.j(), auth.uid(), tests.c(8)))
-  on conflict (journey_id, user_id, local_date) do update
-    set id = excluded.id, photo_path = excluded.photo_path, thumb_path = excluded.thumb_path $$,
-  'E6: retake of a reported check-in succeeds');
+  update public.check_ins
+     set id = tests.c(8), photo_path = tests.photo(auth.uid(), tests.c(8)),
+         thumb_path = format('checkins/%s/%s/%s_t.jpg', tests.j(), auth.uid(), tests.c(8))
+   where id = tests.c(4) $$,
+  'E6: id change of a reported check-in succeeds');
 do $$ begin perform tests.as_postgres(); end $$;
 select is((select target_checkin_id from public.reports where reporter_id = tests.u(1)), tests.c(8),
   'report follows the retaken check-in id');

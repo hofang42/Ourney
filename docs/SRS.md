@@ -81,7 +81,7 @@ Mã yêu cầu giữ ổn định để truy vết trong `docs/TRACE.md`, issue 
 |---|---|---|
 | FR-B1 | Tạo journey từ 4 template (Giảm cân, Học tiếng Anh, 30 ngày tập luyện, Chuyến đi) hoặc Custom | P1 |
 | FR-B2 | Chọn solo/nhóm, thời lượng, metric tuỳ chọn, emoji, tiêu đề | P1 |
-| FR-B3 | **Không giới hạn** số journey đang chạy mỗi người (chủ dự án chốt 2026-11-12, bỏ luật tối đa 3). Camera dùng vòng chọn tối đa 5 đĩa + "Tất cả" có tìm kiếm (SDS §8.8). Server và client hiện vẫn chặn 3: cần migration bỏ `_active_journey_count(...) >= 3`, bỏ mã lỗi `limit` và hộp thoại giới hạn (xem `docs/contracts/schema.md`) | P1 |
+| FR-B3 | **Không giới hạn** số journey đang chạy mỗi người (chủ dự án chốt 2026-11-12, bỏ luật tối đa 3). Camera dùng vòng chọn tối đa 5 đĩa + "Tất cả" có tìm kiếm (SDS §8.8). Đã gỡ luật 3 ở cả server (migration `0013_unlimited_journeys`) và client (bỏ hộp thoại giới hạn), xem `docs/contracts/schema.md` | P1 |
 | FR-B4 | Timeline dạng **lưới lịch**: mỗi ô là ảnh của ngày, ngày lỡ hiện ô trống nét đứt | P1 |
 | FR-B5 | Hiện streak hiện tại, streak dài nhất, % hoàn thành, ngày thứ N/M | P1 |
 | FR-B6 | Kết thúc / lưu trữ journey. Journey đã kết thúc thì chỉ đọc | P1 |

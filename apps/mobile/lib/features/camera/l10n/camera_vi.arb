@@ -23,6 +23,10 @@
   },
   "camera_flashAuto": "Đèn flash: tự động",
   "camera_flashOn": "Đèn flash: bật",
+  "camera_flashUnavailable": "Camera này không có đèn flash",
+  "@camera_flashUnavailable": {
+    "description": "Toast when the lens refuses a flash mode."
+  },
   "camera_switchLens": "Đổi camera trước/sau",
   "@camera_switchLens": {
     "description": "Button that switches between the front and back camera."
@@ -74,10 +78,6 @@
       }
     }
   },
-  "camera_swipeHint": "Vuốt để sang hành trình khác",
-  "@camera_swipeHint": {
-    "description": "Hint at the bottom of the viewfinder when there is more than one journey."
-  },
   "camera_streakChip": "Chuỗi {days} ngày",
   "@camera_streakChip": {
     "description": "Semantics label of the streak counter chip at the top of the camera.",
@@ -90,7 +90,6 @@
   "camera_ghostOn": "Bóng ngày 1 · Bật",
   "camera_ghostOff": "Bóng ngày 1 · Tắt",
   "camera_privateVault": "Kho riêng tư",
-  "camera_studyStreak": "HỌC 45 PHÚT · {days} LIỀN",
   "camera_filmRoll": "CUỘN PHIM",
   "camera_partnerWaiting": "Đối phương chưa chụp. Bạn chụp trước nhé.",
   "camera_hudBold": "HUD đậm",
@@ -102,13 +101,6 @@
   "camera_pickerSearch": "Tìm hành trình",
   "camera_pickerEmpty": "Không có hành trình nào khớp.",
   "camera_pickerClose": "Đóng",
-  "@camera_studyStreak": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "@camera_dayStreakBold": {
     "placeholders": {
       "day": {
@@ -122,17 +114,6 @@
   "camera_pickerNotShot": "Chưa chụp hôm nay",
   "camera_pickerShot": "Đã chụp hôm nay",
   "camera_pickerEnded": "Đã kết thúc",
-  "camera_studyElapsed": "HỌC {time} · {days} LIỀN",
-  "@camera_studyElapsed": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      },
-      "days": {
-        "type": "int"
-      }
-    }
-  },
   "camera_lastPace": "NHỊP GẦN NHẤT {pace}",
   "@camera_lastPace": {
     "placeholders": {
@@ -161,5 +142,68 @@
       }
     }
   },
-  "camera_pickerPinned": "Đã ghim"
+  "camera_pickerPinned": "Đã ghim",
+  "camera_dayOfTotal": "Ngày {day}/{total}",
+  "@camera_dayOfTotal": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_notShotToday": "chưa chụp hôm nay",
+  "camera_shotTodayCount": "đã có {count} ảnh hôm nay",
+  "@camera_shotTodayCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_photoCount": "{count} ảnh",
+  "@camera_photoCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_openToday": "Mở hành trình, hôm nay có {count} ảnh",
+  "@camera_openToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_allJourneysCount": "Tất cả hành trình ({count})",
+  "@camera_allJourneysCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_squadLastStudy": "LẦN TRƯỚC {minutes} PHÚT · {days} LIÊN TIẾP",
+  "@camera_squadLastStudy": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "camera_squadStreak": "{days} NGÀY LIÊN TIẾP",
+  "@camera_squadStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  }
 }

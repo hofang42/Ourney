@@ -25,7 +25,7 @@ Future<String?> showJourneyPickerSheet(
   );
 }
 
-/// Search field plus the filtered list of journeys (title match, accent
+/// Content of the camera picker sheet: search field plus the filtered list of journeys (title match, accent
 /// insensitive), the selected one marked with a check.
 class JourneyPickerSheet extends StatefulWidget {
   const JourneyPickerSheet({
@@ -97,98 +97,98 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
       (l10n.camera_pickerShot, 'shot', shot),
       (l10n.camera_pickerEnded, 'ended', ended),
     ];
-    return UiSheet(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.camera_pickerTitle,
-            style: UiText.body(
-              size: 20,
-              weight: FontWeight.w800,
-              height: 1.3,
-              color: ui.ink,
+    // showUiSheet already wraps this in a UiSheet; wrapping again drew the
+    // sheet frame and grabber twice (bug 12).
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.camera_pickerTitle,
+          style: UiText.body(
+            size: 20,
+            weight: FontWeight.w800,
+            height: 1.3,
+            color: ui.ink,
+          ),
+        ),
+        const SizedBox(height: UiSpace.md),
+        UiTextField(
+          fieldKey: const ValueKey('journey-picker-search'),
+          label: l10n.camera_pickerSearch,
+          controller: _query,
+          textInputAction: TextInputAction.search,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: UiSpace.md),
+        if (shown.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: UiSpace.lg),
+            child: Text(
+              l10n.camera_pickerEmpty,
+              key: const ValueKey('journey-picker-empty'),
+              textAlign: TextAlign.center,
+              style: UiText.body(size: 14, height: 1.4, color: ui.inkMuted),
             ),
           ),
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('journey-picker-search'),
-            label: l10n.camera_pickerSearch,
-            controller: _query,
-            textInputAction: TextInputAction.search,
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: UiSpace.md),
-          if (shown.isEmpty)
+        for (final sec in sections)
+          if (sec.$3.isNotEmpty) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: UiSpace.lg),
+              padding: const EdgeInsets.only(top: UiSpace.sm, bottom: 4),
               child: Text(
-                l10n.camera_pickerEmpty,
-                key: const ValueKey('journey-picker-empty'),
-                textAlign: TextAlign.center,
-                style: UiText.body(size: 14, height: 1.4, color: ui.inkMuted),
-              ),
-            ),
-          for (final sec in sections)
-            if (sec.$3.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.only(top: UiSpace.sm, bottom: 4),
-                child: Text(
-                  sec.$1,
-                  key: ValueKey('journey-picker-section-${sec.$2}'),
-                  style: UiText.body(
-                    size: 12,
-                    weight: FontWeight.w800,
-                    height: 1.4,
-                    color: ui.inkMuted,
-                  ),
+                sec.$1,
+                key: ValueKey('journey-picker-section-${sec.$2}'),
+                style: UiText.body(
+                  size: 12,
+                  weight: FontWeight.w800,
+                  height: 1.4,
+                  color: ui.inkMuted,
                 ),
               ),
-              for (final j in sec.$3)
-                UiPressable(
-                  key: ValueKey('journey-picker-${j.id}'),
-                  onPressed: () => Navigator.of(context).pop(j.id),
-                  semanticLabel: j.title,
-                  selected: j.id == widget.selectedId,
-                  excludeChildSemantics: true,
-                  borderRadius: BorderRadius.circular(UiRadius.menu),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: UiSpace.sm,
-                      horizontal: UiSpace.sm,
-                    ),
-                    child: Row(
-                      children: [
-                        uiJourneyGlyph(j.emoji, j.templateId, size: 28),
-                        const SizedBox(width: UiSpace.sm),
-                        Expanded(
-                          child: Text(
-                            j.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: UiText.body(
-                              size: 15,
-                              weight: FontWeight.w600,
-                              height: 1.4,
-                              color: ui.ink,
-                            ),
-                          ),
-                        ),
-                        if (j.id == widget.selectedId)
-                          OurneyIcon(
-                            name: 'check',
-                            size: 20,
-                            flat: true,
+            ),
+            for (final j in sec.$3)
+              UiPressable(
+                key: ValueKey('journey-picker-${j.id}'),
+                onPressed: () => Navigator.of(context).pop(j.id),
+                semanticLabel: j.title,
+                selected: j.id == widget.selectedId,
+                excludeChildSemantics: true,
+                borderRadius: BorderRadius.circular(UiRadius.menu),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: UiSpace.sm,
+                    horizontal: UiSpace.sm,
+                  ),
+                  child: Row(
+                    children: [
+                      uiJourneyGlyph(j.emoji, j.templateId, size: 28),
+                      const SizedBox(width: UiSpace.sm),
+                      Expanded(
+                        child: Text(
+                          j.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.body(
+                            size: 15,
+                            weight: FontWeight.w600,
+                            height: 1.4,
                             color: ui.ink,
                           ),
-                      ],
-                    ),
+                        ),
+                      ),
+                      if (j.id == widget.selectedId)
+                        OurneyIcon(
+                          name: 'check',
+                          size: 20,
+                          flat: true,
+                          color: ui.ink,
+                        ),
+                    ],
                   ),
                 ),
-            ],
-        ],
-      ),
+              ),
+          ],
+      ],
     );
   }
 }

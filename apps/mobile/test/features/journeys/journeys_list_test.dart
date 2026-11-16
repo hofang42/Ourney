@@ -76,7 +76,7 @@ void main() {
         ]),
       );
 
-      expect(find.text('Active · 2/3'), findsOneWidget);
+      expect(find.text('Active · 2'), findsOneWidget);
       expect(find.text('Shelf'), findsOneWidget);
       expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
       // j1 (14 days) is a V2 journey card; the open-ended one a compact row.
@@ -115,7 +115,7 @@ void main() {
       expect(find.byKey(const ValueKey('journey-detail')), findsOneWidget);
     });
 
-    testWidgets('3 active journeys: FAB shows the limit dialog (FR-B3)', (
+    testWidgets('no cap: 3 running journeys still open create (FR-B3)', (
       tester,
     ) async {
       final journeys = [
@@ -127,36 +127,33 @@ void main() {
         locale: const Locale('en'),
         journeys: FakeJourneyRepository(journeys: journeys),
       );
-      expect(find.text('Active · 3/3'), findsOneWidget);
+      // Count only, no "x/3" cap (bug 3).
+      expect(find.text('Active · 3'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('hub-segment-shelf')));
       await tester.pumpAndSettle();
       expect(find.text('Archived'), findsOneWidget);
 
       await _addJourney(tester);
-
-      expect(
-        find.byKey(const ValueKey('journeys-limit-dialog')),
-        findsOneWidget,
-      );
-      expect(find.text('You have 3 journeys running'), findsOneWidget);
-      expect(h.location, AppRoutes.journeys);
-
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('journeys-limit-dialog')), findsNothing);
+      expect(h.location, AppRoutes.journeyNew);
     });
 
-    testWidgets('ended journeys do not count toward the limit', (tester) async {
-      final journeys = [
-        for (var i = 1; i <= 2; i++) testJourney(id: 'j$i'),
-        testJourney(id: 'e', status: JourneyStatus.ended),
-      ];
-      final h = await pumpJourneys(
+    testWidgets('add menu floats over the hub without reflowing it (bug 1)', (
+      tester,
+    ) async {
+      await pumpJourneys(
         tester,
-        journeys: FakeJourneyRepository(journeys: journeys),
+        journeys: FakeJourneyRepository(journeys: [testJourney()]),
       );
-      await _addJourney(tester);
-      expect(h.location, AppRoutes.journeyNew);
+      final greeting = find.byKey(const ValueKey('hub-greeting'));
+      final before = tester.getTopLeft(greeting);
+      await tester.tap(find.byKey(const ValueKey('journeys-new')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journeys-menu-new')), findsOneWidget);
+      expect(tester.getTopLeft(greeting), before);
+
+      await tester.tap(find.byKey(const ValueKey('ui-menu-barrier')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journeys-menu-new')), findsNothing);
     });
 
     testWidgets('data layer not wired: placeholder instead of a crash', (

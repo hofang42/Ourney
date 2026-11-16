@@ -6,8 +6,6 @@
   "journeys_emptyTitle": "No journeys yet",
   "journeys_emptyMessage": "Start your first journey: one photo a day.",
   "journeys_newJourney": "New journey",
-  "journeys_limitTitle": "You have 3 journeys running",
-  "journeys_limitMessage": "You can run up to 3 journeys at once so posting stays light. End one to start a new one.",
   "journeys_dayOf": "Day {day} of {total}",
   "journeys_dayOpen": "Day {day}",
   "journeys_checkedToday": "Checked in today",

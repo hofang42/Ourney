@@ -219,22 +219,6 @@ void main() {
       expect(h.journeys.created.single.visibility, JourneyVisibility.link);
     });
 
-    testWidgets('server limit error shows the friendly limit dialog', (
-      tester,
-    ) async {
-      final repo = FakeJourneyRepository()
-        ..createError = const OurneyException(OurneyErrorCode.limit);
-      final h = await pumpJourneys(
-        tester,
-        journeys: repo,
-        location: JourneysPaths.newFromTemplate(TemplateId.workout30),
-        locale: const Locale('en'),
-      );
-      await _tap(tester, _key('journey-create'));
-      expect(_key('journeys-limit-dialog'), findsOneWidget);
-      expect(h.location, JourneysPaths.newFromTemplate(TemplateId.workout30));
-    });
-
     testWidgets('a retry after a failure reuses the same client id', (
       tester,
     ) async {

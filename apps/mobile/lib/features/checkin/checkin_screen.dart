@@ -14,6 +14,7 @@ import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
 import '../reminders/data/reminder_scheduler.dart';
+import '../reminders/ui/reminder_permission_prompt.dart';
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
 import 'checkin_progress.dart';
@@ -196,43 +197,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final poster = ref.read(checkInPosterProvider);
     final mine = await _mine(journey.id);
     if (!mounted) return;
-    if (poster.replacesExisting(journey, photo, mine)) {
-      final ok = await showUiSheet<bool>(
-        context: context,
-        builder: (context) => Column(
-          key: const ValueKey('checkin-replace-dialog'),
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              l10n.checkin_replaceTitle,
-              style: UiText.h2(color: context.ui.ink),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            Text(
-              l10n.checkin_replaceMessage,
-              style: UiText.muted(color: context.ui.inkMuted, size: 14),
-            ),
-            const SizedBox(height: UiSpace.xl),
-            UiButton(
-              key: const ValueKey('checkin-replace-confirm'),
-              label: l10n.checkin_replaceConfirm,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            UiButton.secondary(
-              label: AppLocalizations.of(context).common_cancel,
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-          ],
-        ),
-      );
-      if (!mounted) return;
-      if (ok != true) {
-        setState(() => _posting = false);
-        return;
-      }
-    }
+    // Bug #2: another photo the same day is added, never replaces (FR-C7).
 
     try {
       final outcome = await poster.post(
@@ -252,6 +217,15 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       setState(() => _outcome = outcome);
       // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
       unawaited(rescheduleReminders(ref));
+      // V2: the first check-in offers notifications once, so the 21:00
+      // streak alert (on by default) can reach the person (bug #7).
+      unawaited(
+        offerReminderPermission(
+          context,
+          ref,
+          time: reminderOfferTime(ref, journey.id),
+        ),
+      );
     } on CheckInPostException catch (e) {
       if (!mounted) return;
       setState(() => _posting = false);

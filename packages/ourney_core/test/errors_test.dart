@@ -91,10 +91,5 @@ void main() {
     test('GroupException.of', () {
       expect(const GroupException.of(OurneyErrorCode.offline).code, 'offline');
     });
-    test('JourneyLimitException is limit', () {
-      const e = JourneyLimitException();
-      expect(e.error, OurneyErrorCode.limit);
-      expect(e, isA<OurneyException>());
-    });
   });
 }

@@ -59,16 +59,6 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_posting => 'Đang đăng…';
 
   @override
-  String get checkin_replaceTitle => 'Thay ảnh hôm nay?';
-
-  @override
-  String get checkin_replaceMessage =>
-      'Hôm nay bạn đã check-in cho hành trình này. Ảnh mới sẽ thay ảnh cũ.';
-
-  @override
-  String get checkin_replaceConfirm => 'Thay ảnh';
-
-  @override
   String get checkin_errorPhoto =>
       'Không xử lý được ảnh này. Thử ảnh khác nhé.';
 
@@ -90,7 +80,9 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_streakPlusOne => '+1 ngày';
 
   @override
-  String get checkin_replaced => 'Đã thay ảnh hôm nay';
+  String checkin_photoAdded(int n) {
+    return 'Đã thêm ảnh thứ $n';
+  }
 
   @override
   String get checkin_milestone7 => '7 ngày liên tục!';

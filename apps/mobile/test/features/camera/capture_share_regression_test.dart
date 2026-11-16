@@ -41,8 +41,10 @@ void main() {
           photoCompressorProvider.overrideWithValue(FakePhotoCompressor()),
           checkinClockProvider.overrideWithValue(FakeCheckinClock()),
           draftFilesProvider.overrideWithValue(drafts),
+          // Notifications already allowed: the one-time reminder offer after
+          // a check-in (bug #7) must not cover the Share button here.
           notificationGatewayProvider.overrideWithValue(
-            FakeNotificationGateway(),
+            FakeNotificationGateway(granted: true),
           ),
         ],
       );
