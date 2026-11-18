@@ -12,6 +12,7 @@ import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../safety/safety_fakes.dart' show FakeSafetyRepository;
 import 'sharing_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
@@ -429,23 +430,29 @@ void main() {
       lastDate: const LocalDate(2024, 2, 6),
     );
 
-    Future<void> pumpList(WidgetTester tester, FakeSharingRepository repo) =>
-        tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              appConfigProvider.overrideWithValue(testBackendConfig),
-              sharingRepositoryProvider.overrideWithValue(repo),
-              mediaStoreProvider.overrideWithValue(FakeMediaStore()),
-            ],
-            child: MaterialApp(
-              theme: buildAppTheme(Brightness.light),
-              locale: const Locale('en'),
-              localizationsDelegates: ourneyLocalizationsDelegates,
-              supportedLocales: ourneySupportedLocales,
-              home: const Scaffold(body: SharedWithMeList()),
-            ),
+    Future<void> pumpList(
+      WidgetTester tester,
+      FakeSharingRepository repo, {
+      FakeSafetyRepository? safety,
+    }) => tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(testBackendConfig),
+          sharingRepositoryProvider.overrideWithValue(repo),
+          safetyRepositoryProvider.overrideWithValue(
+            safety ?? FakeSafetyRepository(),
           ),
-        );
+          mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+        ],
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.light),
+          locale: const Locale('en'),
+          localizationsDelegates: ourneyLocalizationsDelegates,
+          supportedLocales: ourneySupportedLocales,
+          home: const Scaffold(body: SharedWithMeList()),
+        ),
+      ),
+    );
 
     testWidgets('rows, Imported badge, Saved section and unsave', (
       tester,
@@ -464,6 +471,23 @@ void main() {
       await _tap(tester, _key('shared-unsave-b'));
       expect(repo.calls, contains('unsave:b'));
       expect(find.text('Saved'), findsNothing);
+    });
+
+    testWidgets('journeys from someone just blocked disappear (C-B3)', (
+      tester,
+    ) async {
+      final safety = FakeSafetyRepository();
+      await pumpList(
+        tester,
+        FakeSharingRepository(sharedWithMe: [summary('a')]),
+        safety: safety,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Journey a'), findsOneWidget);
+      await safety.block('o1');
+      await tester.pumpAndSettle();
+      expect(find.text('Journey a'), findsNothing);
+      expect(_key('shared-with-me-empty'), findsOneWidget);
     });
 
     testWidgets('empty state', (tester) async {

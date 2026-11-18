@@ -333,6 +333,23 @@ void main() {
       expect(calls, ['block:u2']);
     });
 
+    testWidgets('pending invites from a blocked inviter are hidden (C-B3)', (
+      tester,
+    ) async {
+      final h = await pumpGroups(
+        tester,
+        journeys: FakeJourneyRepository(journeys: [groupJourney()]),
+        invites: FakeGroupInviteRepository(
+          invitations: [groupInvitation('i1')],
+        ),
+      );
+      expect(find.byKey(const ValueKey('squad-invite-i1')), findsOneWidget);
+      await h.safety.block('ha');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('squad-invite-i1')), findsNothing);
+      expect(find.byKey(const ValueKey('squad-pending-invites')), findsNothing);
+    });
+
     testWidgets('pending invites: join accepts and opens the group', (
       tester,
     ) async {

@@ -636,9 +636,15 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
-    final invites =
-        ref.watch(groupInvitationsProvider).asData?.value ??
-        const <GroupInvitation>[];
+    // An invite from someone just blocked disappears at once (C-B3).
+    final blocked =
+        ref.watch(groupBlockedIdsProvider).value ?? const <String>{};
+    final invites = [
+      for (final inv
+          in ref.watch(groupInvitationsProvider).asData?.value ??
+              const <GroupInvitation>[])
+        if (!blocked.contains(inv.inviter.userId)) inv,
+    ];
     if (invites.isEmpty) return const SizedBox.shrink();
     final radius = BorderRadius.circular(UiRadius.card);
     return Column(

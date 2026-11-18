@@ -6,6 +6,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../safety/data/safety_providers.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -56,7 +57,16 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
     final l10n = SocialL10n.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
     final async = localOnly ? null : ref.watch(friendshipsProvider);
-    final list = async?.value;
+    // Someone just blocked disappears at once, before the next sync (C-B3).
+    final blocked = localOnly
+        ? const <String>{}
+        : ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final list = async?.value == null
+        ? null
+        : [
+            for (final f in async!.value!)
+              if (!blocked.contains(f.person.userId)) f,
+          ];
     final friends = [
       for (final f in list ?? const <Friendship>[])
         if (f.isFriend) f,
