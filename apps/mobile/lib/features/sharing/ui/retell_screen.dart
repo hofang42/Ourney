@@ -259,7 +259,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
             gutter,
             UiSpace.sm,
             gutter,
-            UiSpace.lg + MediaQuery.paddingOf(context).bottom,
+            UiSpace.lg,
           ),
           child: bottom,
         ),

@@ -297,6 +297,29 @@ void main() {
       expect(UiGlass.saturationMatrix(1)[0], closeTo(1, 1e-9));
     });
 
+    testWidgets('UiScaffold keeps the bottom slot above the home bar (U1)', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(393 * 3, 852 * 3);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(top: 59 * 3, bottom: 34 * 3);
+      addTearDown(tester.view.reset);
+      for (final scroll in [true, false]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: OurneyTheme.build(Brightness.light),
+            home: UiScaffold(
+              scroll: scroll,
+              bottom: const SizedBox(key: ValueKey('cta'), height: 52),
+              child: const SizedBox(height: 10),
+            ),
+          ),
+        );
+        final cta = tester.getRect(find.byKey(const ValueKey('cta')));
+        expect(cta.bottom, 852 - 34, reason: 'scroll: $scroll');
+      }
+    });
+
     testWidgets('UiSegmented switches value', (tester) async {
       var v = 'a';
       await tester.pumpWidget(
