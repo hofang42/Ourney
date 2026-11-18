@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/journeys/journeys_paths.dart';
 import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
 import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/reminders/data/reminder_scheduler.dart';
@@ -55,7 +56,7 @@ class OurneyApp extends ConsumerWidget {
           // In-app reminder banner (V2 `ReminderNotification`): shown while
           // `reminderBannerProvider` holds a value; a tap opens the camera.
           child: ReminderBannerHost(
-            onOpenJourneyCamera: (_) => router.go(AppRoutes.capture),
+            onOpenJourneyCamera: (id) => router.go(JourneysPaths.captureFor(id)),
             child: _SplashGate(
               returning: onboarded,
               child: child ?? const SizedBox.shrink(),

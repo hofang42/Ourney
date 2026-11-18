@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
@@ -306,6 +307,35 @@ void main() {
 
       gateway.onTap!('j2');
       expect(opened, ['j1', 'j2']);
+    });
+
+    testWidgets('the language picked in the app rewrites pending texts '
+        '(bug.md 1.4, notification_gateway.dart:218)', (tester) async {
+      final gateway = FakeNotificationGateway(granted: true);
+      final h = await reminderHarness(
+        gateway: gateway,
+        // Picked in-app earlier; the test device itself is English.
+        prefs: {...reminderOn('j1'), LocaleOverride.prefsKey: 'vi'},
+        locale: null,
+      );
+      addTearDown(h.container.dispose);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: h.container,
+          child: const ReminderLifecycleHook(child: SizedBox()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        gateway.scheduled[kReminderIdBase]!.title,
+        isNot('Time to check in'),
+      );
+
+      await h.container
+          .read(localeOverrideProvider.notifier)
+          .set(const Locale('en'));
+      await tester.pumpAndSettle();
+      expect(gateway.scheduled[kReminderIdBase]!.title, 'Time to check in');
     });
   });
 }

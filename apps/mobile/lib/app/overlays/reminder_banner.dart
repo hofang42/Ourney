@@ -281,13 +281,18 @@ class ReminderBannerHost extends ConsumerWidget {
             top: MediaQuery.paddingOf(context).top + 10,
             left: 10,
             right: 10,
-            child: ReminderBanner(
-              data: data,
-              onOpen: () {
-                notifier.dismiss();
-                onOpenJourneyCamera(data.journeyId);
-              },
-              onDismiss: notifier.dismiss,
+            // The host sits above the router's pages (MaterialApp builder),
+            // so the banner's InkWell needs its own Material.
+            child: Material(
+              type: MaterialType.transparency,
+              child: ReminderBanner(
+                data: data,
+                onOpen: () {
+                  notifier.dismiss();
+                  onOpenJourneyCamera(data.journeyId);
+                },
+                onDismiss: notifier.dismiss,
+              ),
             ),
           ),
       ],
