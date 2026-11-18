@@ -28,20 +28,31 @@ const Duration _photoWait = Duration(seconds: 3);
 /// `/share/:journeyId`: card preview (story / feed), photo and number
 /// options, share sheet (FR-E1/E2) and the solo public link (FR-E3).
 class ShareCardScreen extends ConsumerStatefulWidget {
-  const ShareCardScreen({required this.journeyId, super.key});
+  const ShareCardScreen({
+    required this.journeyId,
+    this.initialFormat,
+    this.initialBlur,
+    this.initialHideBrand,
+    super.key,
+  });
 
   final String journeyId;
+
+  /// Choices handed over from the Wrapped summary (U4).
+  final ShareCardFormat? initialFormat;
+  final bool? initialBlur;
+  final bool? initialHideBrand;
 
   @override
   ConsumerState<ShareCardScreen> createState() => _ShareCardScreenState();
 }
 
 class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
-  ShareCardFormat _format = ShareCardFormat.story;
+  late ShareCardFormat _format = widget.initialFormat ?? ShareCardFormat.story;
   ShareCardNumber _number = ShareCardNumber.streak;
   String? _photoCheckInId;
-  bool? _blurOverride;
-  bool? _hideBrand;
+  late bool? _blurOverride = widget.initialBlur;
+  late bool? _hideBrand = widget.initialHideBrand;
   bool _busy = false;
 
   final _boundaryKeys = {

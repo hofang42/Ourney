@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -46,7 +47,9 @@ void main() {
       expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
       expect(_key('wrapped-segment-0'), findsOneWidget);
       expect(_key('wrapped-segment-1'), findsOneWidget);
-      expect(_key('wrapped-segment-2'), findsNothing);
+      // U4: the last segment is the summary page.
+      expect(_key('wrapped-segment-2'), findsOneWidget);
+      expect(_key('wrapped-segment-3'), findsNothing);
       await tester.tapAt(const Offset(380, 500));
       await tester.pumpAndSettle();
       expect(find.textContaining('4/14 DAYS'), findsOneWidget);
@@ -58,6 +61,33 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('wrapped-card-feed'), findsOneWidget);
       expect(find.text('Export card'), findsOneWidget);
+    });
+
+    testWidgets('U4: back arrow steps a page; story exposes scroll actions', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await _open(tester);
+      final story = tester.getSemantics(_key('wrapped-headline'));
+      expect(
+        story.getSemanticsData().hasAction(SemanticsAction.scrollLeft),
+        isTrue,
+      );
+      expect(story.label, isNotEmpty);
+      tester.binding.pipelineOwner.semanticsOwner!.performAction(
+        story.id,
+        SemanticsAction.scrollLeft,
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('4/14 DAYS'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Back').first);
+      await tester.pumpAndSettle();
+      expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
+      expect(_key('journey-wrapped'), findsOneWidget);
+      await tester.tap(_key('wrapped-segment-2'));
+      await tester.pumpAndSettle();
+      expect(_key('wrapped-summary'), findsOneWidget);
+      handle.dispose();
     });
 
     testWidgets('left tap goes back, segment jumps to a page', (tester) async {
