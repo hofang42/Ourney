@@ -61,7 +61,8 @@ select is(
 
 select ok(
   not has_function_privilege('authenticated', 'public.purge_account_data(uuid)', 'execute')
-  and not has_function_privilege('authenticated', 'public.account_media_paths(uuid)', 'execute'),
+  and not has_function_privilege('authenticated', 'public.account_media_paths(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.account_message_paths(uuid)', 'execute'),
   'account purge helpers are service_role only'
 );
 
