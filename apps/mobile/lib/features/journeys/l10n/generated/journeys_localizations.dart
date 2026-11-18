@@ -1049,7 +1049,7 @@ abstract class JourneysL10n {
   /// Departure ticket preview text.
   ///
   /// In vi, this message translates to:
-  /// **'Điểm danh mỗi ngày, cả hội cùng lên!'**
+  /// **'Điểm danh mỗi ngày, cả nhóm cùng lên!'**
   String get journeys_ticketTagSquad;
 
   /// Departure ticket preview text.
@@ -2129,7 +2129,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_home_actionSquad.
   ///
   /// In vi, this message translates to:
-  /// **'Hội hôm nay'**
+  /// **'Nhóm hôm nay'**
   String get journeys_home_actionSquad;
 
   /// No description provided for @journeys_home_actionCard.
@@ -2255,7 +2255,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_layoutOwnerOnly.
   ///
   /// In vi, this message translates to:
-  /// **'Chủ nhóm chọn giao diện cho cả hội.'**
+  /// **'Chủ nhóm chọn giao diện cho cả nhóm.'**
   String get journeys_edit_layoutOwnerOnly;
 
   /// No description provided for @journeys_edit_color.
@@ -2453,7 +2453,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_wrapped_squadEnd.
   ///
   /// In vi, this message translates to:
-  /// **'Về đích rồi, cả hội!'**
+  /// **'Về đích rồi, cả nhóm!'**
   String get journeys_wrapped_squadEnd;
 
   /// No description provided for @journeys_wrapped_frames.

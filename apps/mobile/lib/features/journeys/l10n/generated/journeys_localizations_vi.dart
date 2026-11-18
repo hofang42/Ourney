@@ -563,7 +563,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_ticketTagQuiet => 'Chỉ mình mình thấy. Từng chút một.';
 
   @override
-  String get journeys_ticketTagSquad => 'Điểm danh mỗi ngày, cả hội cùng lên!';
+  String get journeys_ticketTagSquad => 'Điểm danh mỗi ngày, cả nhóm cùng lên!';
 
   @override
   String get journeys_ticketTagMemory => 'Mang về thật nhiều khung hình.';
@@ -1146,7 +1146,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_home_actionSquad => 'Hội hôm nay';
+  String get journeys_home_actionSquad => 'Nhóm hôm nay';
 
   @override
   String get journeys_home_actionCard => 'Tạo thiệp';
@@ -1221,7 +1221,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_edit_layoutOwnerOnly =>
-      'Chủ nhóm chọn giao diện cho cả hội.';
+      'Chủ nhóm chọn giao diện cho cả nhóm.';
 
   @override
   String get journeys_edit_color => 'Màu';
@@ -1333,7 +1333,7 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
-  String get journeys_wrapped_squadEnd => 'Về đích rồi, cả hội!';
+  String get journeys_wrapped_squadEnd => 'Về đích rồi, cả nhóm!';
 
   @override
   String journeys_wrapped_frames(int n) {

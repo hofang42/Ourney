@@ -47,6 +47,8 @@ void main() {
     testWidgets('$mode: squad tab', (tester) async {
       await pump(tester, '/groups');
       expect(tester.takeException(), isNull);
+      await tester.tap(find.byKey(const ValueKey('squad-join-open')));
+      await tester.pumpAndSettle();
       for (final key in ['squad-join-submit', 'squad-today-open-g1']) {
         final size = tester.getSize(find.byKey(ValueKey(key)));
         expect(size.height, greaterThanOrEqualTo(48), reason: key);

@@ -344,7 +344,7 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_inviteSent => 'Đã gửi lời mời';
 
   @override
-  String get groups_invitePendingTitle => 'Lời mời đang chờ';
+  String get groups_invitePendingTitle => 'Đã gửi, chờ phản hồi';
 
   @override
   String get groups_invitePendingEmpty => 'Chưa có lời mời nào đang chờ.';
@@ -362,19 +362,22 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_inviteNeedsHandle => 'Hãy nhập tên người dùng.';
 
   @override
-  String get groups_codeLabel => 'nhập mã mời';
+  String get groups_codeLabel => 'Mã mời';
 
   @override
-  String get groups_codeHint => 'K7Q2-M9XA';
+  String get groups_codeHint => 'Mã gồm 8 ký tự';
 
   @override
-  String get groups_pasteCode => 'Dán mã';
+  String get groups_pasteCode => 'Dán';
+
+  @override
+  String get groups_pasteNoCode => 'Clipboard không có mã mời';
 
   @override
   String get groups_joinAction => 'Tham gia';
 
   @override
-  String get groups_todayHeading => 'hôm nay';
+  String get groups_todayHeading => 'Hôm nay';
 
   @override
   String groups_checkedInCount(int done, int total) {
@@ -386,11 +389,11 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String groups_openTodayOf(String name) {
-    return 'Mở hội hôm nay của $name';
+    return 'Mở nhóm hôm nay của $name';
   }
 
   @override
-  String get groups_pendingInvitesHeading => 'lời mời đang chờ';
+  String get groups_pendingInvitesHeading => 'Lời mời vào nhóm';
 
   @override
   String groups_inviteLine(String inviter, String title) {
@@ -415,12 +418,31 @@ class GroupsL10nVi extends GroupsL10n {
   }
 
   @override
+  String groups_memberCheckedAt(String time) {
+    return 'Đã check-in lúc $time';
+  }
+
+  @override
+  String get groups_memberNotYetToday => 'Hôm nay chưa check-in';
+
+  @override
+  String groups_memberStreak(int count) {
+    return '$count ngày liên tiếp';
+  }
+
+  @override
+  String get groups_memberCheckInNow => 'Check-in ngay';
+
+  @override
+  String get groups_memberAddPhoto => 'Thêm ảnh';
+
+  @override
   String groups_overflowMore(int count) {
     return '+$count';
   }
 
   @override
-  String get groups_emptyCardTitle => 'chưa có hội nào.';
+  String get groups_emptyCardTitle => 'chưa có nhóm nào.';
 
   @override
   String get groups_emptyCardBody =>
@@ -442,7 +464,7 @@ class GroupsL10nVi extends GroupsL10n {
   }
 
   @override
-  String get groups_quietTitle => 'Hội hôm nay.';
+  String get groups_quietTitle => 'Nhóm hôm nay.';
 
   @override
   String get groups_quietIntro => 'Xếp theo tên, không theo kết quả.';

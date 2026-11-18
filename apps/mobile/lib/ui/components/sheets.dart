@@ -48,6 +48,7 @@ class UiSheet extends StatelessWidget {
     );
     return Align(
       alignment: Alignment.bottomCenter,
+      heightFactor: 1,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: UiSpace.maxContent(width) + 40,

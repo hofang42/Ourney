@@ -46,7 +46,7 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_quizQ1 => 'bạn đang muốn kiên trì điều gì?';
 
   @override
-  String get onboarding_quizQ2 => 'đi một mình hay có hội?';
+  String get onboarding_quizQ2 => 'đi một mình hay cùng nhóm?';
 
   @override
   String get onboarding_quizQ3 => 'bạn hay quên vào lúc nào?';
@@ -76,7 +76,7 @@ class OnboardingL10nVi extends OnboardingL10n {
   String get onboarding_whoSoloHint => 'chỉ mình bạn thấy';
 
   @override
-  String get onboarding_whoGroup => 'Rủ hội bạn';
+  String get onboarding_whoGroup => 'Rủ nhóm bạn';
 
   @override
   String get onboarding_whoGroupHint => 'tối đa 10 người';

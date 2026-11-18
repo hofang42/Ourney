@@ -589,7 +589,7 @@
   "@journeys_ticketTagQuiet": {
     "description": "Departure ticket preview text."
   },
-  "journeys_ticketTagSquad": "Điểm danh mỗi ngày, cả hội cùng lên!",
+  "journeys_ticketTagSquad": "Điểm danh mỗi ngày, cả nhóm cùng lên!",
   "@journeys_ticketTagSquad": {
     "description": "Departure ticket preview text."
   },
@@ -1004,7 +1004,7 @@
       }
     }
   },
-  "journeys_home_actionSquad": "Hội hôm nay",
+  "journeys_home_actionSquad": "Nhóm hôm nay",
   "journeys_home_actionCard": "Tạo thiệp",
   "journeys_home_attendance": "{done}/{total} NGÀY ĐÃ CHỤP",
   "@journeys_home_attendance": {
@@ -1066,7 +1066,7 @@
   "journeys_edit_useLayout": "Dùng giao diện này",
   "journeys_edit_cancel": "Thôi",
   "journeys_edit_layoutApplied": "Đã đổi giao diện cho hành trình.",
-  "journeys_edit_layoutOwnerOnly": "Chủ nhóm chọn giao diện cho cả hội.",
+  "journeys_edit_layoutOwnerOnly": "Chủ nhóm chọn giao diện cho cả nhóm.",
   "journeys_edit_color": "Màu",
   "journeys_edit_trophy": "Tên chiếc cúp",
   "journeys_edit_film": "Cuộn phim",
@@ -1137,7 +1137,7 @@
       }
     }
   },
-  "journeys_wrapped_squadEnd": "Về đích rồi, cả hội!",
+  "journeys_wrapped_squadEnd": "Về đích rồi, cả nhóm!",
   "journeys_wrapped_frames": "{n} khung hình",
   "@journeys_wrapped_frames": {
     "placeholders": {

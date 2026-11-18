@@ -119,7 +119,7 @@ abstract class AppLocalizations {
   /// Bottom bar tab: groups.
   ///
   /// In vi, this message translates to:
-  /// **'Hội'**
+  /// **'Nhóm'**
   String get nav_groups;
 
   /// Bottom bar tab: notifications and activity feed.
@@ -257,7 +257,7 @@ abstract class AppLocalizations {
   /// Daily reminder banner copy, squad skin.
   ///
   /// In vi, this message translates to:
-  /// **'Tới giờ điểm danh! Cả hội đang chờ.'**
+  /// **'Tới giờ điểm danh! Cả nhóm đang chờ.'**
   String get reminderBanner_daily_squad;
 
   /// Daily reminder banner copy, memory skin.

@@ -280,17 +280,18 @@
   "groups_inviteHandleLabel": "Tên người dùng",
   "groups_inviteSend": "Gửi lời mời",
   "groups_inviteSent": "Đã gửi lời mời",
-  "groups_invitePendingTitle": "Lời mời đang chờ",
+  "groups_invitePendingTitle": "Đã gửi, chờ phản hồi",
   "groups_invitePendingEmpty": "Chưa có lời mời nào đang chờ.",
   "groups_inviteRevoke": "Thu hồi",
   "groups_inviteRevoked": "Đã thu hồi lời mời",
   "groups_inviteShareCode": "Chia sẻ mã mời",
   "groups_inviteNeedsHandle": "Hãy nhập tên người dùng.",
-  "groups_codeLabel": "nhập mã mời",
-  "groups_codeHint": "K7Q2-M9XA",
-  "groups_pasteCode": "Dán mã",
+  "groups_codeLabel": "Mã mời",
+  "groups_codeHint": "Mã gồm 8 ký tự",
+  "groups_pasteCode": "Dán",
+  "groups_pasteNoCode": "Clipboard không có mã mời",
   "groups_joinAction": "Tham gia",
-  "groups_todayHeading": "hôm nay",
+  "groups_todayHeading": "Hôm nay",
   "groups_checkedInCount": "{done}/{total} đã check-in",
   "@groups_checkedInCount": {
     "placeholders": {
@@ -303,7 +304,7 @@
     }
   },
   "groups_memberWaiting": "chưa",
-  "groups_openTodayOf": "Mở hội hôm nay của {name}",
+  "groups_openTodayOf": "Mở nhóm hôm nay của {name}",
   "@groups_openTodayOf": {
     "placeholders": {
       "name": {
@@ -311,7 +312,7 @@
       }
     }
   },
-  "groups_pendingInvitesHeading": "lời mời đang chờ",
+  "groups_pendingInvitesHeading": "Lời mời vào nhóm",
   "groups_inviteLine": "{inviter} mời bạn vào {title}",
   "@groups_inviteLine": {
     "placeholders": {
@@ -335,6 +336,25 @@
       }
     }
   },
+  "groups_memberCheckedAt": "Đã check-in lúc {time}",
+  "@groups_memberCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_memberNotYetToday": "Hôm nay chưa check-in",
+  "groups_memberStreak": "{count} ngày liên tiếp",
+  "@groups_memberStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_memberCheckInNow": "Check-in ngay",
+  "groups_memberAddPhoto": "Thêm ảnh",
   "groups_overflowMore": "+{count}",
   "@groups_overflowMore": {
     "placeholders": {
@@ -343,7 +363,7 @@
       }
     }
   },
-  "groups_emptyCardTitle": "chưa có hội nào.",
+  "groups_emptyCardTitle": "chưa có nhóm nào.",
   "groups_emptyCardBody": "Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.",
   "groups_wallAttendance": "{done}/{total} ĐÃ ĐIỂM DANH",
   "@groups_wallAttendance": {
@@ -372,7 +392,7 @@
       }
     }
   },
-  "groups_quietTitle": "Hội hôm nay.",
+  "groups_quietTitle": "Nhóm hôm nay.",
   "groups_quietIntro": "Xếp theo tên, không theo kết quả.",
   "groups_quietDone": "Đã chụp {time}",
   "@groups_quietDone": {

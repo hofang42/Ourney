@@ -59,7 +59,7 @@ class UiDockItem {
 /// 3-slot form: [left], the center snap pill, [right]. 5-tab form (V2):
 /// pass [extraLeft] / [extraRight] so the order is
 /// `left, ...extraLeft, [center], ...extraRight, right`; e.g. Hành trình ·
-/// Hội · [Chụp] · Hoạt động · Hồ sơ.
+/// Nhóm · [Chụp] · Hoạt động · Hồ sơ.
 ///
 /// Set [camera] for the dark camera dock and pass a [UiShutter] as [center].
 /// [onShutterLongPress] (400ms) opens the journey wheel from the center.

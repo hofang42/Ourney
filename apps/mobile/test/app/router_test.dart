@@ -22,7 +22,7 @@ void main() {
       expect(location(c), AppRoutes.capture);
       expect(find.byKey(const ValueKey('placeholder-camera')), findsOneWidget);
       expect(find.byKey(const ValueKey('dock-hero-shutter')), findsOneWidget);
-      expect(find.text('Hội'), findsOneWidget);
+      expect(find.text('Nhóm'), findsOneWidget);
       expect(find.text('Hành trình'), findsOneWidget);
     });
 
@@ -30,7 +30,7 @@ void main() {
       tester,
     ) async {
       await pumpOurneyApp(tester, locale: const Locale('fr'));
-      expect(find.text('Hội'), findsOneWidget);
+      expect(find.text('Nhóm'), findsOneWidget);
     });
 
     testWidgets('English when the device is English', (tester) async {
@@ -47,7 +47,7 @@ void main() {
         auth: FakeAuthRepository(userId: 'u1'),
       );
 
-      await tester.tap(find.text('Hội'));
+      await tester.tap(find.text('Nhóm'));
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.groups);
       expect(find.byKey(const ValueKey('placeholder-groups')), findsOneWidget);
@@ -84,7 +84,7 @@ void main() {
       tester,
     ) async {
       await pumpOurneyApp(tester);
-      await tester.tap(find.text('Hội'));
+      await tester.tap(find.text('Nhóm'));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('needs-server')), findsOneWidget);
       expect(find.text('Cần kết nối máy chủ'), findsOneWidget);
@@ -253,7 +253,7 @@ void main() {
       expect(location(c.container), AppRoutes.profile);
 
       // Groups tab, then back to the Profile tab from the dock.
-      await tester.tap(find.text('Hội'));
+      await tester.tap(find.text('Nhóm'));
       await tester.pumpAndSettle();
       expect(location(c.container), AppRoutes.groups);
       await tapProfile(tester);

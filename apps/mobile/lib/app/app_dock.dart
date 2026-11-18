@@ -10,7 +10,7 @@ import 'providers.dart';
 import 'theme/motion.dart';
 
 /// The 5-tab dock of every primary screen (V2 `Dock`, CLAUDE.md §2):
-/// Journeys · Squad ("Hội") · the quick-snap pill (filled with the active
+/// Journeys · Squad ("Nhóm") · the quick-snap pill (filled with the active
 /// journey's accent) · Activity · Profile. On the camera it becomes the dark `.camera-dock` with the
 /// hero shutter passed as [shutter].
 ///

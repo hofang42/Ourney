@@ -61,7 +61,7 @@ void main() {
       expect(find.text('Hành trình'), findsOneWidget);
       expect(find.text('Hoạt động'), findsOneWidget);
       expect(find.text('Hồ sơ'), findsOneWidget);
-      expect(find.text('Hội'), findsOneWidget);
+      expect(find.text('Nhóm'), findsOneWidget);
       final pill = find.descendant(
         of: find.byKey(const ValueKey('dock-snap-pill')),
         matching: find.byType(Container),

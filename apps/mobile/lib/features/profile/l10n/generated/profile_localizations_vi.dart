@@ -364,7 +364,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_iconQuiet => 'Giảm cân';
 
   @override
-  String get profile_settings_iconSquad => 'Hội';
+  String get profile_settings_iconSquad => 'Nhóm';
 
   @override
   String get profile_settings_iconMemory => 'Ký ức';
