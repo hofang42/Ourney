@@ -1,6 +1,6 @@
 # Tổng hợp lỗi, đợt quét 2026-11-18
 
-File này gom kết quả của 9 worker Antigravity chạy `gemini-4-carbon-high` ngày 2026-11-18 trên repo `Ourney` @ `2af3610`. Báo cáo gốc nằm ngoài repo, ở `D:\agent-tasks\reports\`. Lỗi do owner thử trên máy thật vẫn ghi ở `docs/bugs.md`.
+File này gom kết quả của 9 worker Antigravity chạy `gemini-4-carbon-high` ngày 2026-11-18. Tám worker làm trên repo `Ourney` @ `2af3610`, worker thứ 9 làm web "Học tập" (mục 5.2). Báo cáo gốc nằm ngoài repo, ở `D:\agent-tasks\reports\`. Lỗi do owner thử trên máy thật vẫn ghi ở `docs/bugs.md`.
 
 ## 1. Tổng quan
 
@@ -14,7 +14,7 @@ File này gom kết quả của 9 worker Antigravity chạy `gemini-4-carbon-hig
 | `ux-audit` | Rà UX và UI `apps/mobile` | 0 P0, 8 P1, 11 P2, 4 P3 (U1 đến U23) | Xong, chưa sửa |
 | `stale-audit` | Rà tài liệu, asset, code, cấu hình lỗi thời | 34 mục (S1 đến S34) | Xong, chưa dọn |
 | `impl-fr` | Làm màn "Đề xuất tính năng" | Review `review-fr`: ĐẠT | Branch `feat/feature-request` (`Ourney-fr`), còn 1 việc trước khi mở PR (mục 1.3) |
-| `hoc-tap-uiux-2` | Rà UI web "Học tập" | 13 mục | Project khác, không đưa vào file này |
+| `hoc-tap-uiux-2` | Rà UI web "Học tập" (project khác, không thuộc Ourney) | 13 mục: 6 cao, 5 vừa, 2 thấp | Báo cáo dừng ở danh sách vấn đề: 11 chờ sửa, 2 không sửa. Xem mục 5 |
 
 ### 1.0. Đã sửa gì, còn lại gì
 
@@ -1226,3 +1226,42 @@ Worker đếm: Tài liệu 13, Asset 5, Code 12, Cấu hình 4. Đây là việc
 - **Đề xuất xử lý:** **Sửa** danh sách `ignore` trong `cubic.yaml` (bỏ `**/*.freezed.dart` và `apps/mobile/dist/`, thêm `apps/mobile/lib/**/l10n/generated/**`) và nâng `sdk` trong `packages/ourney_core/pubspec.yaml` đồng bộ với workspace.
 - **Rủi ro khi xử lý:** **an toàn**
 - **Độ chắc:** **chắc chắn**
+
+## 5. Worker ngoài repo Ourney
+
+### 5.1. `impl-fr`: màn "Đề xuất tính năng"
+
+Worker làm ở bản clone `Ourney-fr`, branch `feat/feature-request`. Review `review-fr` (`claude-opus-4-6-thinking`) kết luận ĐẠT, không có lỗi logic hay bảo mật.
+
+| Mục | Nội dung |
+| --- | --- |
+| 1 | Migration `supabase/migrations/0015_feature_requests.sql`, tạo bảng `public.feature_requests` |
+| 2 | Test pgTAP `supabase/tests/15_feature_requests.test.sql` |
+| 3 | Cập nhật `docs/contracts/schema.md` |
+| 4 | Data layer phía app |
+| 5 | Màn hình và lối vào |
+| 6 | Chữ trên giao diện `profile_vi.arb`, `profile_en.arb` |
+| 7 | Bổ sung Chính sách quyền riêng tư `safety_vi.arb`, `safety_en.arb` |
+| 8 | Test Flutter |
+
+Còn một việc trước khi mở PR: thêm `'feature_requests'` vào `tables_are` ở `supabase/tests/01_rls_enabled.test.sql:6-11`, nếu không thì CI fail. Xem thêm lưu ý thứ tự số `0015` và `0016` ở mục 1.3.
+
+### 5.2. `hoc-tap-uiux-2`: web "Học tập" (CKA, DOP-C02, SOA-C03)
+
+Đây là project khác, làm trên bản sao `D:\hoc-tap-staging`. Báo cáo chỉ có phần danh sách vấn đề, chưa có phần kết quả sửa và dòng `DONE`, nên coi như chưa sửa mục nào.
+
+| # | Mức | Vấn đề | Trạng thái |
+| --- | --- | --- | --- |
+| 1 | Cao | Chữ tiếng Việt còn dịch sát tiếng Anh, tên gọi không thống nhất, còn sót tên thương hiệu bên thứ ba trên DOP/SOA | Chờ sửa |
+| 2 | Cao | Thanh dính che đầu câu hỏi trên màn 390px, mất focus khi đánh dấu câu, thiếu bảng phím tắt `?` ở màn làm bài | Chờ sửa |
+| 3 | Cao | Màn 2560px: Lịch lab DOP bị nén 6 cột, CKA và DOP kéo giãn dư khoảng trống | Chờ sửa |
+| 4 | Cao | Hộp Trợ giúp, màn báo lỗi, hộp xóa tiến độ còn hướng dẫn cũ, còn vòng xoay tải vô tận | Chờ sửa |
+| 5 | Cao | Màn 390px lệch hộp Tài khoản CKA, mất lối đổi ngày thi SOA-C03, thiếu nút lùi bài, bảng phím tắt tràn ngang | Chờ sửa |
+| 6 | Cao | Cụm chuyển khóa ở DOP/SOA thiếu mục `CKA`, vài chi tiết chung chưa đồng bộ | Chờ sửa |
+| 7 | Vừa | Lịch lab DOP mất khoảng 266 ms lần mở đầu vì parse HTML bằng `<template>` và chạy regex 13.888 lượt | Chờ sửa |
+| 8 | Vừa | Màu chữ phụ, viền điều khiển chưa đạt WCAG 2.2 AA, vài vùng bấm nhỏ hơn 24px hoặc 40px | Chờ sửa |
+| 9 | Vừa | Trạng thái lỗi và trống khi server tắt ở Tìm kiếm, Thông báo, Ghi chú, Hỏi đáp CKA chưa rõ cách khôi phục | Chờ sửa |
+| 10 | Vừa | Phím tắt, điều hướng bàn phím trong menu và dải tab phụ, nhãn đọc màn hình còn thiếu | Chờ sửa |
+| 11 | Thấp | Bài đọc CKA thiếu định dạng bảng, giãn dòng khít, gợi ý lab cuối Tuần 5 trỏ sang tuần rỗng | Chờ sửa |
+| 12 | Vừa | Nút "Luyện lại câu sai và bỏ trống" ở trang Kết quả DOP giữ nguyên `src` của bộ đề gốc | Không sửa, chờ owner chốt hướng sản phẩm |
+| 13 | Thấp | Nút "Trợ lý AI" và `.ai-fab` trên trang chủ CKA chỉ là hình mô phỏng | Không sửa, giữ giao diện hiện tại |
