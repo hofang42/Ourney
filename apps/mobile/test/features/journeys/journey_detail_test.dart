@@ -89,6 +89,31 @@ void main() {
       expect(_key('missed-day-chip'), findsOneWidget);
     });
 
+    testWidgets('U15: at 2.0x the chip and Check-in button stack, no overlap', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(360 * 3, 800 * 3);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await _pumpDetail(
+        tester,
+        journey: testJourney(templateId: TemplateId.weightLoss),
+      );
+      expect(_key('journey-overlay-stacked'), findsOneWidget);
+      final chip = tester.getRect(_key('missed-day-chip'));
+      final button = tester.getRect(_key('journey-checkin'));
+      expect(chip.overlaps(button), isFalse);
+      // One line: the label is never split mid-word.
+      final label = find.descendant(
+        of: _key('journey-checkin'),
+        matching: find.byType(Text),
+      );
+      expect(tester.getSize(label.first).height, lessThan(2 * 16 * 2.0 * 1.5));
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('journey chain: checked, missed, today, future', (
       tester,
     ) async {

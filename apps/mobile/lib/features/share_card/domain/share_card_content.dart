@@ -91,6 +91,7 @@ class ShareCardContent {
     required int dayNumber,
     required Iterable<CheckIn> checkIns,
     ShareCardNumber number = ShareCardNumber.streak,
+    bool forceHideMetric = false,
   }) {
     final core = buildShareCard(journey, streak);
     final ShareCardHeadline headline;
@@ -107,7 +108,7 @@ class ShareCardContent {
           : ShareCardHeadline.checkedIn;
     }
 
-    final hideMetric = metricHiddenFor(journey, membership);
+    final hideMetric = forceHideMetric || metricHiddenFor(journey, membership);
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
     if (!hideMetric && hasMetric) {

@@ -149,6 +149,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               missedDay != null && (skin == 'quiet' || skin == 'squad');
           final showBottomOverlay = showMissedChip || perms.canCheckIn;
           final bottomInset = MediaQuery.paddingOf(context).bottom;
+          // U15: at large text the chip and the button no longer share a row
+          // (the button used to break "Check-in" mid-word).
+          final stackOverlay =
+              MediaQuery.textScalerOf(context).scale(10) > 13 &&
+              showMissedChip &&
+              perms.canCheckIn;
           final screenWidth = MediaQuery.sizeOf(context).width;
           final home = DayTicker(
             child: ActiveJourneyScope(
@@ -157,7 +163,9 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 key: const ValueKey('journey-detail'),
                 background: pal.paper,
                 padTop: 0,
-                padBottom: showBottomOverlay ? 96 : UiSpace.xxl,
+                padBottom: showBottomOverlay
+                    ? (stackOverlay ? 170 : 96)
+                    : UiSpace.xxl,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -352,6 +360,24 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                             final chipMaxWidth = checkInButton != null
                                 ? (c.maxWidth - UiSpace.md) * 0.45
                                 : c.maxWidth;
+                            if (stackOverlay) {
+                              return Column(
+                                key: const ValueKey('journey-overlay-stacked'),
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: MissedDayOverlay(
+                                      skinId: skin,
+                                      day: missedDay,
+                                    ),
+                                  ),
+                                  const SizedBox(height: UiSpace.sm),
+                                  checkInButton!,
+                                ],
+                              );
+                            }
                             return ConstrainedBox(
                               constraints: const BoxConstraints(
                                 minHeight: UiSize.button + UiShadow.tiny,

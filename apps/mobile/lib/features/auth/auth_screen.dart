@@ -11,6 +11,7 @@ import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import '../onboarding/onboarding_providers.dart';
 import '../profile/routes.dart' show profileSetupPath;
+import '../safety/safety_paths.dart';
 import 'auth_errors.dart';
 import 'l10n/generated/auth_localizations.dart';
 import 'phone_format.dart';
@@ -135,6 +136,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final auth = ref.read(authRepositoryProvider);
     final router = GoRouter.of(context);
     final profiles = _profiles();
+    final quiz = ref.read(onboardingQuizProvider.notifier);
     final from = widget.from;
     setState(() => _busy = true);
     var step = AuthStep.sendOtp;
@@ -151,7 +153,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         case _Flow.password:
           step = AuthStep.passwordSignIn;
           await auth.signInWithPassword(_normalizedEmail, _password.text);
-          await _finishSignIn(router, profiles, from);
+          await _finishSignIn(router, profiles, quiz, from);
           return;
         case _Flow.signUp:
           step = AuthStep.signUp;
@@ -160,7 +162,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             _password.text,
           );
           if (!needsCode) {
-            await _finishSignIn(router, profiles, from);
+            await _finishSignIn(router, profiles, quiz, from);
             return;
           }
       }
@@ -206,6 +208,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final router = GoRouter.of(context);
     final auth = ref.read(authRepositoryProvider);
     final profiles = _profiles();
+    final quiz = ref.read(onboardingQuizProvider.notifier);
     final from = widget.from;
 
     setState(() => _busy = true);
@@ -234,7 +237,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
     if (mounted) setState(() => _success = true);
-    await _finishSignIn(router, profiles, from);
+    await _finishSignIn(router, profiles, quiz, from);
   }
 
   ProfileRepository? _profiles() {
@@ -248,12 +251,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _finishSignIn(
     GoRouter router,
     ProfileRepository? profiles,
+    OnboardingQuizNotifier quiz,
     String? from,
   ) async {
     OurneyHaptics.success();
     // Push the locally stored onboarding answers to the new account (best
-    // effort, never blocks sign-in).
-    unawaited(ref.read(onboardingQuizProvider.notifier).syncToServer());
+    // effort, never blocks sign-in). No `ref` here: the router may already
+    // have unmounted this screen after the sign-in await.
+    unawaited(quiz.syncToServer());
     if (profiles != null && await _needsProfileSetup(profiles)) {
       router.go(
         Uri(
@@ -424,7 +429,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               and: l10n.auth_legalAnd,
               terms: l10n.auth_terms,
               privacy: l10n.auth_privacy,
-              onOpen: () => context.push(AppRoutes.safety),
+              onTerms: () => context.push(SafetyPaths.eula),
+              onPrivacy: () => context.push(SafetyPaths.privacy),
             ),
           ],
         ],
@@ -766,14 +772,16 @@ class _Legal extends StatelessWidget {
     required this.and,
     required this.terms,
     required this.privacy,
-    required this.onOpen,
+    required this.onTerms,
+    required this.onPrivacy,
   });
 
   final String intro;
   final String and;
   final String terms;
   final String privacy;
-  final VoidCallback onOpen;
+  final VoidCallback onTerms;
+  final VoidCallback onPrivacy;
 
   @override
   Widget build(BuildContext context) {
@@ -789,7 +797,8 @@ class _Legal extends StatelessWidget {
           label: terms,
           size: 13,
           color: ui.ink,
-          onPressed: onOpen,
+          expand: false,
+          onPressed: onTerms,
         ),
         Text(and, style: muted),
         UiTextAction(
@@ -797,7 +806,8 @@ class _Legal extends StatelessWidget {
           label: privacy,
           size: 13,
           color: ui.ink,
-          onPressed: onOpen,
+          expand: false,
+          onPressed: onPrivacy,
         ),
       ],
     );

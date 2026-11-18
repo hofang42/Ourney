@@ -317,7 +317,6 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       );
     }
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
-    final viewBottom = MediaQuery.paddingOf(context).bottom;
 
     final Widget body;
     Widget? action;
@@ -359,7 +358,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
             gutter,
             UiSpace.sm,
             gutter,
-            UiSpace.lg + viewBottom,
+            UiSpace.lg,
           ),
           child: action,
         ),

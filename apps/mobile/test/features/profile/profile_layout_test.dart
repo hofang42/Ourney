@@ -35,7 +35,7 @@ void main() {
       expect(byKey('profile-card'), findsOneWidget);
       expect(find.text('Alice Nguyen'), findsOneWidget);
       expect(find.text('@alice'), findsOneWidget);
-      for (final key in ['profile-edit', 'profile-reminders']) {
+      for (final key in ['profile-edit', 'profile-settings']) {
         expect(
           tester.getSize(byKey(key)).height,
           greaterThanOrEqualTo(48),

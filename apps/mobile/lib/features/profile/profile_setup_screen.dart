@@ -48,9 +48,6 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   String? _takenUsername;
   _FormError? _error;
 
-  /// Index into [profileAvatarColors] (local look of the picker only).
-  int _color = 0;
-
   @override
   void initState() {
     super.initState();
@@ -234,7 +231,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               child: Text(
                 l10n.profile_setupTitle,
                 style: UiText.heading(
-                  font: 'Space Grotesk',
+                  font: UiFonts.spaceGrotesk,
                   size: 32,
                   weight: 700,
                   height: 1.25,
@@ -256,18 +253,38 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 excludeChildSemantics: true,
                 borderRadius: BorderRadius.circular(UiRadius.card),
                 minSize: const Size.square(ProfileFaceAvatar.size),
-                child: ProfileFaceAvatar(
-                  color: profileAvatarColors[_color],
-                  image: _picked == null ? null : MemoryImage(_picked!),
+                // U11: no color swatches here any more (the choice was
+                // never saved). A camera badge, as on UiAvatarPicker, says
+                // the face is where a photo goes.
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ProfileFaceAvatar(
+                      color: profileAvatarColor,
+                      image: _picked == null ? null : MemoryImage(_picked!),
+                    ),
+                    Positioned(
+                      right: -6,
+                      bottom: -2,
+                      child: Container(
+                        key: const ValueKey('profile-avatar-camera-badge'),
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: ui.ink,
+                          shape: BoxShape.circle,
+                        ),
+                        child: OurneyIcon(
+                          name: 'camera',
+                          size: 16,
+                          flat: true,
+                          color: ui.bg,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 18),
-            ProfileAvatarSwatches(
-              selected: _color,
-              onSelected: (i) => setState(() => _color = i),
-              label: l10n.profile_avatarColors,
-              itemLabel: l10n.profile_avatarColorN,
             ),
             const SizedBox(height: 22),
             UiTextField(

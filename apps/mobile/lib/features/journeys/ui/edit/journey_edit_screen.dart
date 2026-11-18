@@ -372,7 +372,6 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                       ),
                     ),
                   _Section(
-                    title: l10n.journeys_edit_name,
                     child: UiTextField(
                       fieldKey: const ValueKey('edit-name'),
                       label: l10n.journeys_edit_name,
@@ -475,7 +474,6 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                   ),
                   if (skin == PersonaSkinId.accountabilitySquad)
                     _Section(
-                      title: l10n.journeys_edit_trophy,
                       child: UiTextField(
                         fieldKey: const ValueKey('edit-trophy'),
                         label: l10n.journeys_edit_trophy,
@@ -651,9 +649,10 @@ class _EditBodyState extends ConsumerState<_EditBody> {
 }
 
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
+  const _Section({required this.child, this.title});
 
-  final String title;
+  /// Null when the child (a labelled field) already shows the heading (U21).
+  final String? title;
   final Widget child;
 
   @override
@@ -664,11 +663,13 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Semantics(
-            header: true,
-            child: Text(title, style: UiText.h2(color: ui.ink, size: 18)),
-          ),
-          const SizedBox(height: UiSpace.sm),
+          if (title != null) ...[
+            Semantics(
+              header: true,
+              child: Text(title!, style: UiText.h2(color: ui.ink, size: 18)),
+            ),
+            const SizedBox(height: UiSpace.sm),
+          ],
           child,
         ],
       ),

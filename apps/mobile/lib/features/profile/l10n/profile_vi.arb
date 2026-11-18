@@ -184,6 +184,14 @@
   "@profile_languageNote": {
     "description": "The app follows the device language (vi default, en)."
   },
+  "profile_languageVi": "Tiếng Việt",
+  "@profile_languageVi": {
+    "description": "Language row subtitle when Vietnamese was picked in Settings."
+  },
+  "profile_languageEn": "English",
+  "@profile_languageEn": {
+    "description": "Language row subtitle when English was picked in Settings."
+  },
   "profile_safety": "Điều khoản, quyền riêng tư & liên hệ",
   "@profile_safety": {
     "description": "Link to the safety pages (EULA, privacy, contact)."
@@ -385,19 +393,6 @@
   "profile_usernameAvailable": "Dùng được",
   "@profile_usernameAvailable": {
     "description": "Status under the username field when it can be used."
-  },
-  "profile_avatarColorN": "Màu đại diện {n}",
-  "@profile_avatarColorN": {
-    "description": "Semantics of one avatar color swatch.",
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "profile_avatarColors": "Chọn màu ảnh đại diện",
-  "@profile_avatarColors": {
-    "description": "Semantics of the avatar color row."
   },
   "profile_settings_title": "cài đặt.",
   "profile_settings_back": "Quay lại",

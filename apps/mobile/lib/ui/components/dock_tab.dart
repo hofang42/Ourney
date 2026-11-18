@@ -12,13 +12,19 @@ import 'pressable.dart';
 /// V2 `app.css` (`.app-dock .dock-tab`, `.dock-selection-capsule`):
 /// * tab glyphs stay coloured stickers in every state; the active one gets
 ///   the die-cut sticker tier and grows to 1.08x, the label turns full ink;
-/// * inactive labels are ink at 72%;
+/// * inactive labels are ink at 85%;
 /// * the selection capsule is the accent at 30% over the surface with a 1.5dp
 ///   ink outline and a 2dp hard shadow, so ink text and glyphs read on it.
 
 /// Fill of the selection capsule: `color-mix(accent 30%, surface)`.
 Color dockSelectionFill(Color accent, Color surface) =>
     Color.alphaBlend(accent.withValues(alpha: 0.30), surface);
+
+/// Corner radius of the selection pill: a full capsule, as in V2 `app.css`
+/// (`.dock-selection-capsule`, `border-radius: 999px`). On a narrow ~63dp pill
+/// the curve eats into the label row, so the tab keeps its content high and
+/// squeezes the label into the capsule's chord (see `UiDock`, U17).
+const double dockSelectionRadius = UiRadius.capsule;
 
 /// The non-liquid selection capsule.
 BoxDecoration dockSelectionDecoration({
@@ -30,10 +36,13 @@ BoxDecoration dockSelectionDecoration({
 }) => BoxDecoration(
   // The always-dark camera dock keeps the solid accent pill.
   color: camera ? accent : dockSelectionFill(accent, surface),
-  borderRadius: BorderRadius.circular(UiRadius.capsule),
+  borderRadius: BorderRadius.circular(dockSelectionRadius),
   border: Border.all(color: outline, width: UiBorder.thin),
   boxShadow: UiShadow.hard(shadow, UiShadow.tiny),
 );
+
+/// How far the tab content sits above the pill's centre (dp).
+const double dockTabLift = 4;
 
 class DockTab extends StatelessWidget {
   const DockTab({
@@ -57,7 +66,9 @@ class DockTab extends StatelessWidget {
     if (camera) {
       labelColor = active ? (onAccent ?? ui.onBrand) : UiCamera.ink;
     } else {
-      labelColor = active ? ui.ink : ui.ink.withValues(alpha: 0.72);
+      // 85% (was 72%) keeps inactive labels readable over dark content
+      // under the glass (U17).
+      labelColor = active ? ui.ink : ui.ink.withValues(alpha: 0.85);
     }
     final Widget glyph;
     if (item.glyph == null) {
@@ -94,27 +105,32 @@ class DockTab extends StatelessWidget {
         // as tall as the screen and `alignment` would fill them.
         child: Center(
           heightFactor: 1,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              glyph,
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  softWrap: false,
-                  textAlign: TextAlign.center,
-                  style: UiText.body(
-                    size: 10.5,
-                    weight: active ? FontWeight.w700 : FontWeight.w600,
-                    height: 1.35,
-                    color: labelColor,
+          // Lift the content 4dp: the label row then sits where the capsule is
+          // still wide (U17).
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: dockTabLift * 2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                glyph,
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: UiText.body(
+                      size: 10.5,
+                      weight: active ? FontWeight.w700 : FontWeight.w600,
+                      height: 1.35,
+                      color: labelColor,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

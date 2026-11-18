@@ -41,6 +41,8 @@
   "profile_haptics": "Haptic feedback",
   "profile_language": "Language",
   "profile_languageNote": "Follows your device language. Vietnamese by default.",
+  "profile_languageVi": "Tiếng Việt",
+  "profile_languageEn": "English",
   "profile_safety": "Terms, privacy & contact",
   "profile_sectionAccount": "account",
   "profile_signOut": "Sign out",
@@ -89,19 +91,6 @@
   "profile_usernameAvailable": "Available",
   "@profile_usernameAvailable": {
     "description": "Status under the username field when it can be used."
-  },
-  "profile_avatarColorN": "Avatar color {n}",
-  "@profile_avatarColorN": {
-    "description": "Semantics of one avatar color swatch.",
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "profile_avatarColors": "Choose an avatar color",
-  "@profile_avatarColors": {
-    "description": "Semantics of the avatar color row."
   },
   "profile_settings_title": "settings.",
   "profile_settings_back": "Back",

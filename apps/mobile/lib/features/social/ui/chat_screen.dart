@@ -352,12 +352,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         color: ui.surface,
         border: Border(top: BorderSide(color: ui.divider)),
       ),
-      padding: EdgeInsets.fromLTRB(
-        4,
-        UiSpace.sm,
-        UiSpace.sm,
-        UiSpace.sm + MediaQuery.paddingOf(context).bottom,
-      ),
+      // No bottom inset here: UiScaffold wraps the pinned slot in a SafeArea
+      // (U1), so adding it again would double the gap and leave a strip.
+      padding: const EdgeInsets.fromLTRB(4, UiSpace.sm, UiSpace.sm, UiSpace.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -406,7 +403,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   filled: false,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  // 13.5 + 21 + 13.5: a 48dp tap target (U5).
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13.5),
                 ),
               ),
             ),

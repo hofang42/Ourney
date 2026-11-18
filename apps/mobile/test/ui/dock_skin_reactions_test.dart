@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
+import 'package:ourney/ui/components/dock_tab.dart' show dockSelectionRadius;
 import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -187,6 +188,72 @@ void main() {
   });
 
   group('UiDock', () {
+    for (final activeTab in [0, 3]) {
+      testWidgets(
+        '360dp Vietnamese label stays inside the capsule ($activeTab)',
+        (tester) async {
+          await tester.pumpWidget(
+            host(
+              UiDock(
+                left: UiDockItem(
+                  glyph: 'journeys',
+                  label: 'Hành trình',
+                  active: activeTab == 0,
+                  onPressed: () {},
+                ),
+                extraLeft: [
+                  UiDockItem(
+                    glyph: 'squad',
+                    label: 'Nhóm',
+                    active: activeTab == 1,
+                    onPressed: () {},
+                  ),
+                ],
+                extraRight: [
+                  UiDockItem(
+                    glyph: 'activity',
+                    label: 'Hoạt động',
+                    active: activeTab == 3,
+                    onPressed: () {},
+                  ),
+                ],
+                right: UiDockItem(
+                  glyph: 'profile',
+                  label: 'Hồ sơ',
+                  active: activeTab == 4,
+                  onPressed: () {},
+                ),
+                snapLabel: 'Chụp',
+                onSnap: () {},
+              ),
+              size: const Size(360, 780),
+            ),
+          );
+          await tester.pump();
+          final pill = tester.getRect(
+            find.byKey(const ValueKey('dock-selection-pill')),
+          );
+          final label = tester.getRect(
+            find.text(activeTab == 0 ? 'Hành trình' : 'Hoạt động'),
+          );
+          final r = pill.height / 2;
+          bool inside(Offset p) {
+            final cx = p.dx.clamp(pill.left + r, pill.right - r);
+            return (p - Offset(cx, pill.center.dy)).distance <= r - 2;
+          }
+
+          for (final p in [
+            label.bottomLeft,
+            label.bottomRight,
+            label.topLeft,
+            label.topRight,
+          ]) {
+            expect(inside(p), isTrue, reason: 'label corner $p vs $pill');
+          }
+        },
+      );
+    }
+
     testWidgets('5 tabs: taps, selection pill slides, labels', (tester) async {
       final taps = <String>[];
       var active = 0;
@@ -242,6 +309,10 @@ void main() {
       final pill = find.byKey(const ValueKey('dock-selection-pill'));
       expect(tester.getSize(pill).height, 56);
       expect(tester.getSize(pill).width, inInclusiveRange(60, 78));
+      // V2 capsule shape (U17).
+      final deco =
+          tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
+      expect(deco.borderRadius, BorderRadius.circular(dockSelectionRadius));
       // Even the outermost tab keeps clear padding inside the dock border.
       expect(
         tester.getTopLeft(pill).dx - tester.getTopLeft(find.byType(UiDock)).dx,

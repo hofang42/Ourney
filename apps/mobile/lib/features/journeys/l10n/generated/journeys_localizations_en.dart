@@ -1561,7 +1561,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_wrapped_share => 'Share';
 
   @override
-  String get journeys_wrapped_save => 'Save image';
+  String get journeys_wrapped_editCard => 'Edit card';
 
   @override
   String get journeys_wrapped_sheetTitle => 'share the card.';

@@ -249,7 +249,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
                   gutter,
                   UiSpace.sm,
                   gutter,
-                  UiSpace.lg + MediaQuery.paddingOf(context).bottom,
+                  UiSpace.lg,
                 ),
                 child: UiButton(
                   key: const ValueKey('shared-do-journey'),

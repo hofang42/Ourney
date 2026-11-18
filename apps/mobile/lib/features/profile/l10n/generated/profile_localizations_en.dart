@@ -148,6 +148,12 @@ class ProfileL10nEn extends ProfileL10n {
       'Follows your device language. Vietnamese by default.';
 
   @override
+  String get profile_languageVi => 'Tiếng Việt';
+
+  @override
+  String get profile_languageEn => 'English';
+
+  @override
   String get profile_safety => 'Terms, privacy & contact';
 
   @override
@@ -297,14 +303,6 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_usernameAvailable => 'Available';
-
-  @override
-  String profile_avatarColorN(int n) {
-    return 'Avatar color $n';
-  }
-
-  @override
-  String get profile_avatarColors => 'Choose an avatar color';
 
   @override
   String get profile_settings_title => 'settings.';

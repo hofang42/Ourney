@@ -146,6 +146,12 @@ class ProfileL10nVi extends ProfileL10n {
       'Theo ngôn ngữ của máy. Mặc định là tiếng Việt.';
 
   @override
+  String get profile_languageVi => 'Tiếng Việt';
+
+  @override
+  String get profile_languageEn => 'English';
+
+  @override
   String get profile_safety => 'Điều khoản, quyền riêng tư & liên hệ';
 
   @override
@@ -295,14 +301,6 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_usernameAvailable => 'Dùng được';
-
-  @override
-  String profile_avatarColorN(int n) {
-    return 'Màu đại diện $n';
-  }
-
-  @override
-  String get profile_avatarColors => 'Chọn màu ảnh đại diện';
 
   @override
   String get profile_settings_title => 'cài đặt.';

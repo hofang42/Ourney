@@ -119,83 +119,92 @@ class UiStreakHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = 'Chuỗi $streak ngày. $title';
-    final content = ExcludeSemantics(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.heading(
-                    font: 'Space Grotesk',
-                    size: 20,
-                    weight: 700,
-                    height: 1.3,
-                    color: _onPastel,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.body(
-                      size: 14,
-                      weight: FontWeight.w600,
-                      height: 1.4,
-                      color: _onPastel,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+    // U15: at large text the key message (how many are left today) must not be
+    // cropped: stack the number above the full title instead of squeezing it.
+    final large = MediaQuery.textScalerOf(context).scale(10) > 13;
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          key: const ValueKey('streak-hero-title'),
+          maxLines: large ? null : 3,
+          overflow: large ? TextOverflow.visible : TextOverflow.ellipsis,
+          style: UiText.heading(
+            font: 'Space Grotesk',
+            size: 20,
+            weight: 700,
+            height: 1.3,
+            color: _onPastel,
           ),
-          const SizedBox(width: UiSpace.md),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 150),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    OurneyIcon(
-                      name: state == UiStreakHeroState.milestone
-                          ? 'trophy'
-                          : 'flame',
-                      size: 44,
-                      active: true,
-                      inkColor: _onPastel,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$streak',
-                      maxLines: 1,
-                      style: UiText.heading(
-                        font: 'Space Grotesk',
-                        size: 80,
-                        weight: 700,
-                        height: 1.1,
-                        tracking: -0.04,
-                        color: _onPastel,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            subtitle!,
+            maxLines: large ? null : 2,
+            overflow: large ? TextOverflow.visible : TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 14,
+              weight: FontWeight.w600,
+              height: 1.4,
+              color: _onPastel,
             ),
           ),
         ],
+      ],
+    );
+    final number = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 150),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: large ? Alignment.centerLeft : Alignment.centerRight,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            OurneyIcon(
+              name: state == UiStreakHeroState.milestone ? 'trophy' : 'flame',
+              size: 44,
+              active: true,
+              inkColor: _onPastel,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$streak',
+              maxLines: 1,
+              style: UiText.heading(
+                font: 'Space Grotesk',
+                size: 80,
+                weight: 700,
+                height: 1.1,
+                tracking: -0.04,
+                color: _onPastel,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+    final content = ExcludeSemantics(
+      child: large
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                number,
+                const SizedBox(height: UiSpace.sm),
+                texts,
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: texts),
+                const SizedBox(width: UiSpace.md),
+                Flexible(child: number),
+              ],
+            ),
     );
     final card = UiCard(
       color: _fill,

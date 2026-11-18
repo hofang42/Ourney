@@ -2828,11 +2828,11 @@ abstract class JourneysL10n {
   /// **'Chia sẻ'**
   String get journeys_wrapped_share;
 
-  /// No description provided for @journeys_wrapped_save.
+  /// No description provided for @journeys_wrapped_editCard.
   ///
   /// In vi, this message translates to:
-  /// **'Lưu ảnh'**
-  String get journeys_wrapped_save;
+  /// **'Chỉnh thẻ'**
+  String get journeys_wrapped_editCard;
 
   /// No description provided for @journeys_wrapped_sheetTitle.
   ///

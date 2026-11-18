@@ -116,6 +116,52 @@ void main() {
     expect(find.byKey(const ValueKey('message-copy')), findsNothing);
   });
 
+  testWidgets('chat input is a 48dp tap target (U5)', (tester) async {
+    await pumpSocial(
+      tester,
+      location: SocialPaths.chat('c1'),
+      fakes: chatFakes(),
+    );
+    final box = find.ancestor(
+      of: find.byKey(const ValueKey('chat-input')),
+      matching: find.byType(Container),
+    );
+    expect(tester.getSize(box.first).height, greaterThanOrEqualTo(48));
+  });
+
+  testWidgets('composer clears the home indicator once, not twice (U1)', (
+    tester,
+  ) async {
+    Future<Size> composerSize(double bottomInset) async {
+      tester.view.devicePixelRatio = 1;
+      final padding = FakeViewPadding(bottom: bottomInset);
+      tester.view.padding = padding;
+      tester.view.viewPadding = padding;
+      addTearDown(tester.view.reset);
+      await pumpSocial(
+        tester,
+        location: SocialPaths.chat('c1'),
+        fakes: chatFakes(),
+      );
+      final composer = find.ancestor(
+        of: find.byKey(const ValueKey('chat-input')),
+        matching: find.byType(Container),
+      );
+      // Outermost composer container is the last ancestor Container.
+      final rect = tester.getRect(composer.last);
+      expect(
+        rect.bottom,
+        tester.view.physicalSize.height - bottomInset,
+        reason: 'composer sits exactly on top of the safe area',
+      );
+      return rect.size;
+    }
+
+    final flat = await composerSize(0);
+    final inset = await composerSize(34);
+    expect(inset.height, flat.height);
+  });
+
   testWidgets('read-only conversation replaces the composer', (tester) async {
     await pumpSocial(
       tester,

@@ -330,9 +330,6 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final l10n = CheckinL10n.of(context);
     final ui = context.ui;
     final style = uiStyleForSkin(personaSkinOf(journey));
-    // `--accent-ink`: the accent as text, the warm ink where the accent is
-    // too light to read on paper.
-    final accentInk = ui.isDark ? style.accent : ui.warn;
     final count = _caption.text.runes.length;
     final membership = ref.watch(myMembershipProvider(journey.id)).value;
     final hideMetric = membership?.hideMetric ?? journey.hideMetricDefault;
@@ -438,16 +435,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: UiTextAction(
-                    key: const ValueKey('checkin-post-link'),
-                    label: l10n.checkin_post,
-                    onPressed: _posting ? null : () => _post(journey, photo),
-                    alignment: AlignmentDirectional.centerEnd,
-                    color: accentInk,
-                    size: 14,
-                  ),
-                ),
+                // U21: the primary Post button below is the only Post action;
+                // this spacer keeps the journey title centred.
+                const Expanded(child: SizedBox.shrink()),
               ],
             ),
             const SizedBox(height: UiSpace.sm),
@@ -474,7 +464,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                   height: 1.45,
                   color: ui.inkMuted,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                // 12.5 + 23.2 + 12.5: a >= 48dp tap target (U5).
+                contentPadding: const EdgeInsets.symmetric(vertical: 12.5),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: ui.border),
                 ),

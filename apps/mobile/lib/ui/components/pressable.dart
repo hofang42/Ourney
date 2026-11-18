@@ -103,7 +103,7 @@ class _UiPressableState extends State<UiPressable> {
           ? Center(widthFactor: 1, heightFactor: 1, child: content)
           : content,
     );
-    return Semantics(
+    final Widget node = Semantics(
       button: true,
       enabled: _enabled,
       selected: widget.selected,
@@ -134,5 +134,12 @@ class _UiPressableState extends State<UiPressable> {
         ),
       ),
     );
+    // Without an explicit label the button is named by its content (U3):
+    // merge the children into the one tappable node, so screen readers read
+    // e.g. a choice card's text instead of an empty "button".
+    if (widget.semanticLabel == null && !widget.excludeChildSemantics) {
+      return MergeSemantics(child: node);
+    }
+    return node;
   }
 }

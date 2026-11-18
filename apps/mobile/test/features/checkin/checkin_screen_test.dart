@@ -210,6 +210,22 @@ void main() {
     await finishSuccess(tester);
   });
 
+  testWidgets('caption field is a 48dp tap target (U5)', (tester) async {
+    await pump(tester);
+    final size = tester.getSize(find.byKey(const ValueKey('checkin-caption')));
+    expect(size.height, greaterThanOrEqualTo(48));
+  });
+
+  testWidgets('U21: weight-loss caption hint does not repeat the mood '
+      'question', (tester) async {
+    await pump(tester);
+    final field = tester.widget<TextField>(
+      find.byKey(const ValueKey('checkin-caption')),
+    );
+    final hint = field.decoration!.hintText!;
+    expect(hint, isNot(contains('cảm thấy')));
+  });
+
   group('caption limit (FR-C4)', () {
     testWidgets('stops at 140 characters and shows the counter', (
       tester,
@@ -511,11 +527,7 @@ void main() {
         expect(find.byKey(const ValueKey('checkin-retake')), findsOneWidget);
         expect(find.byKey(const ValueKey('checkin-post')), findsOneWidget);
         expect(find.text('Chỉ mình bạn'), findsOneWidget);
-        for (final key in [
-          'checkin-retake',
-          'checkin-post',
-          'checkin-post-link',
-        ]) {
+        for (final key in ['checkin-retake', 'checkin-post']) {
           final size = tester.getSize(find.byKey(ValueKey(key)));
           expect(size.height, greaterThanOrEqualTo(44), reason: key);
         }

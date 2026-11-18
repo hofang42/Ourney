@@ -344,6 +344,18 @@ abstract class ProfileL10n {
   /// **'Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'**
   String get profile_languageNote;
 
+  /// Language row subtitle when Vietnamese was picked in Settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếng Việt'**
+  String get profile_languageVi;
+
+  /// Language row subtitle when English was picked in Settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'English'**
+  String get profile_languageEn;
+
   /// Link to the safety pages (EULA, privacy, contact).
   ///
   /// In vi, this message translates to:
@@ -619,18 +631,6 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Dùng được'**
   String get profile_usernameAvailable;
-
-  /// Semantics of one avatar color swatch.
-  ///
-  /// In vi, this message translates to:
-  /// **'Màu đại diện {n}'**
-  String profile_avatarColorN(int n);
-
-  /// Semantics of the avatar color row.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chọn màu ảnh đại diện'**
-  String get profile_avatarColors;
 
   /// No description provided for @profile_settings_title.
   ///

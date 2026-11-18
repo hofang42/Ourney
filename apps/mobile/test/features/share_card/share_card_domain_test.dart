@@ -25,6 +25,7 @@ ShareCardContent _content(
   int dayNumber = 7,
   List<CheckIn> checkIns = const [],
   ShareCardNumber number = ShareCardNumber.streak,
+  bool forceHideMetric = false,
 }) => ShareCardContent.from(
   journey: j,
   membership: membership,
@@ -32,6 +33,7 @@ ShareCardContent _content(
   dayNumber: dayNumber,
   checkIns: checkIns,
   number: number,
+  forceHideMetric: forceHideMetric,
 );
 
 void main() {
@@ -149,6 +151,28 @@ void main() {
       );
       expect(hidden.metricValue, isNull);
       expect(hidden.metricHidden, isTrue);
+    });
+
+    test('forceHideMetric (Wrapped hide-kg handoff) only adds privacy', () {
+      final j = testJourney(metricName: 'Phút', metricUnit: 'phút');
+      final checkIns = [
+        testCheckIn(j.id, const LocalDate(2026, 10, 14), metricValue: 20),
+      ];
+      final forced = _content(
+        j,
+        membership: testMembership(j),
+        checkIns: checkIns,
+        forceHideMetric: true,
+      );
+      expect(forced.metricHidden, isTrue);
+      expect(forced.metricValue, isNull);
+      // `false` never reveals what the journey itself hides.
+      final wl = testJourney(
+        templateId: TemplateId.weightLoss,
+        metricName: 'Cân nặng',
+        metricUnit: 'kg',
+      );
+      expect(_content(wl, membership: testMembership(wl)).metricHidden, isTrue);
     });
 
     test('membership blurMedia blurs any journey', () {

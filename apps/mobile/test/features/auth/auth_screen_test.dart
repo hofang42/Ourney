@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/auth/auth_errors.dart';
@@ -15,6 +17,18 @@ Future<void> enterEmail(WidgetTester tester, String email) async {
   await tester.pumpAndSettle();
   await tester.tap(byKey('auth-send'));
   await tester.pumpAndSettle();
+}
+
+/// Emits the user id, then holds `verifyOtp` open until [release], so the
+/// router can unmount `/auth` before the sign-in await returns.
+class _SlowVerifyAuth extends RecordingAuthRepository {
+  final release = Completer<void>();
+
+  @override
+  Future<void> verifyOtp(String email, String code) async {
+    await super.verifyOtp(email, code);
+    await release.future;
+  }
 }
 
 void main() {
@@ -121,6 +135,27 @@ void main() {
       expect(byKey('profile-setup-screen'), findsOneWidget);
     });
 
+    testWidgets(
+      'first sign-in reaches profile setup even if /auth unmounts (C-B5)',
+      (tester) async {
+        final auth = _SlowVerifyAuth();
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          profiles: FakeProfileRepository(),
+        );
+        await enterEmail(tester, 'a@b.co');
+        await tester.enterText(byKey('auth-code'), '654321');
+        await tester.pumpAndSettle();
+        // The user id is out: the router has already left /auth.
+        expect(byKey('auth-step-code'), findsNothing);
+        auth.release.complete();
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(location(c), profileSetupPath);
+      },
+    );
+
     testWidgets('returning user lands on the from target', (tester) async {
       final auth = RecordingAuthRepository();
       final c = await pumpBackendApp(
@@ -132,6 +167,29 @@ void main() {
       await tester.enterText(byKey('auth-code'), '654321');
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.capture);
+    });
+
+    testWidgets('legal links open terms and privacy, inline (U13)', (
+      tester,
+    ) async {
+      final c = await pumpBackendApp(tester, auth: RecordingAuthRepository());
+      final screen = tester.getSize(find.byType(AuthScreen)).width;
+      expect(
+        tester.getSize(byKey('auth-terms')).width,
+        lessThan(screen * 0.75),
+      );
+      await tester.ensureVisible(byKey('auth-terms'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('auth-terms'));
+      await tester.pumpAndSettle();
+      expect(location(c), '/safety/eula');
+      c.read(routerProvider).pop();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(byKey('auth-privacy'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('auth-privacy'));
+      await tester.pumpAndSettle();
+      expect(location(c), '/safety/privacy');
     });
 
     testWidgets('no overflow at 2x text', (tester) async {

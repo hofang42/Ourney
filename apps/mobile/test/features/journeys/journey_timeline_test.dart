@@ -178,6 +178,32 @@ void main() {
     expect(find.byKey(const ValueKey('timeline-chain-line')), findsOneWidget);
   });
 
+  testWidgets('minimal calendar days are 48dp tap boxes at 320dp (U5)', (
+    tester,
+  ) async {
+    final tapped = <TimelineDay>[];
+    await tester.pumpWidget(
+      _host(
+        'minimal',
+        brightness: Brightness.light,
+        scale: 1,
+        onTap: tapped.add,
+      ),
+    );
+    await tester.pump();
+    for (final d in _days()) {
+      final box = find.byKey(ValueKey('day-${d.date}'));
+      final size = tester.getSize(box);
+      expect(size.width, greaterThanOrEqualTo(48), reason: '${d.date}');
+      expect(size.height, greaterThanOrEqualTo(48), reason: '${d.date}');
+    }
+    // The far edge of a checked-in day's box still hits that day.
+    final first = _days().firstWhere((d) => d.state == DayState.checkedIn);
+    final rect = tester.getRect(find.byKey(ValueKey('day-${first.date}')));
+    await tester.tapAt(rect.center + Offset(0, rect.height / 2 - 2));
+    expect(tapped.map((d) => d.date), [first.date]);
+  });
+
   testWidgets('quiet hides numbers until the hold button is pressed', (
     tester,
   ) async {

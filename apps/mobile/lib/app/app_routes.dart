@@ -38,8 +38,29 @@ abstract final class AppRoutes {
   static const reminders = '/reminders';
 
   /// Share card for a journey (C2).
-  static String share(String journeyId) =>
-      '/share/${Uri.encodeComponent(journeyId)}';
+  ///
+  /// The optional [format] (`story` / `feed`), [blur], [hideBrand] and
+  /// [hideMetric] preselect the card editor (the Wrapped summary hands over
+  /// its choices, U4). [hideMetric] only ever adds privacy: `true` hides the
+  /// kg / metric on the card, `false` never reveals what the journey hides.
+  static String share(
+    String journeyId, {
+    String? format,
+    bool? blur,
+    bool? hideBrand,
+    bool? hideMetric,
+  }) {
+    final query = <String, String>{
+      'format': ?format,
+      if (blur != null) 'blur': '$blur',
+      if (hideBrand != null) 'hideBrand': '$hideBrand',
+      if (hideMetric != null) 'hideMetric': '$hideMetric',
+    };
+    return Uri(
+      path: '/share/${Uri.encodeComponent(journeyId)}',
+      queryParameters: query.isEmpty ? null : query,
+    ).toString();
+  }
 
   // social — full screen on the root navigator. Need the server.
   static const friends = '/friends';

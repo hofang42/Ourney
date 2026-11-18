@@ -231,12 +231,17 @@ void main() {
       );
       expect(find.byKey(const ValueKey('profile-guest')), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('profile-reminders')));
+      // Reminders live in Settings now (U18).
+      await tester.tap(find.byKey(const ValueKey('profile-settings')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('settings-reminders')));
       await tester.pumpAndSettle();
       expect(
         c.container.read(routerProvider).state.uri.path,
         AppRoutes.reminders,
       );
+      c.container.read(routerProvider).pop();
+      await tester.pumpAndSettle();
       c.container.read(routerProvider).pop();
       await tester.pumpAndSettle();
 
