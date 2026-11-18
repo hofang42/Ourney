@@ -40,6 +40,8 @@ Future<bool> requestReminderPermission(WidgetRef ref) async {
   } on Object {
     granted = false;
   }
-  ref.invalidate(reminderPermissionProvider);
+  // The OS dialog can outlive the calling screen: `ref` is then unusable,
+  // and the auto-disposed permission provider has no listener to refresh.
+  if (ref.context.mounted) ref.invalidate(reminderPermissionProvider);
   return granted;
 }

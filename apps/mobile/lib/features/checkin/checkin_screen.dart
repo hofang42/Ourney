@@ -53,6 +53,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   bool _metricError = false;
   CheckInOutcome? _outcome;
 
+  /// The first-check-in notification offer; the success view waits for it
+  /// before closing by itself (B-B2).
+  Future<void>? _permissionOffer;
+
   @override
   void initState() {
     super.initState();
@@ -213,18 +217,19 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       );
       if (!mounted) return;
       ref.read(pendingWeightProvider(journey.id).notifier).clear();
-      setState(() => _outcome = outcome);
       // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
       unawaited(rescheduleReminders(ref));
       // V2: the first check-in offers notifications once, so the 21:00
       // streak alert (on by default) can reach the person (bug #7).
-      unawaited(
-        offerReminderPermission(
-          context,
-          ref,
-          time: reminderOfferTime(ref, journey.id),
-        ),
+      final offer = offerReminderPermission(
+        context,
+        ref,
+        time: reminderOfferTime(ref, journey.id),
       );
+      setState(() {
+        _outcome = outcome;
+        _permissionOffer = offer;
+      });
     } on CheckInPostException catch (e) {
       if (!mounted) return;
       setState(() => _posting = false);
@@ -272,6 +277,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         haptics: haptics,
         onDone: _close,
         onShare: () => _openShare(photo.journeyId),
+        holdAutoClose: _permissionOffer,
       );
     }
 

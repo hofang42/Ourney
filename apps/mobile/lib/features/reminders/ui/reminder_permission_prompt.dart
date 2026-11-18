@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -54,7 +56,9 @@ Future<bool> offerReminderPermission(
   );
   if (!allow || !context.mounted) return false;
   final ok = await requestReminderPermission(ref);
-  await scheduler.reschedule();
+  // Not awaited: callers wait for the answer (the check-in success screen
+  // holds its auto-close on it), not for the schedule to be rebuilt.
+  unawaited(scheduler.reschedule());
   return ok;
 }
 

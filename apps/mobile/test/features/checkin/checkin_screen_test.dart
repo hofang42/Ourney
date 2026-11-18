@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
@@ -8,10 +11,12 @@ import 'package:ourney/features/checkin/checkin_controller.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
+import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../reminders/reminders_fakes.dart';
 import 'fakes.dart';
 
 void main() {
@@ -42,6 +47,7 @@ void main() {
     Map<String, Object> prefsValues = const {},
     Brightness brightness = Brightness.light,
     void Function(ProviderContainer)? before,
+    List<Override> overrides = const [],
   }) async {
     final prefs = await testPrefs(prefsValues);
     final container = ProviderContainer(
@@ -49,6 +55,7 @@ void main() {
         ...baseOverrides(prefs: prefs, journeys: journeys, checkIns: checkIns),
         photoCompressorProvider.overrideWithValue(compressor),
         checkinClockProvider.overrideWithValue(FakeCheckinClock()),
+        ...overrides,
       ],
     );
     addTearDown(container.dispose);
@@ -108,6 +115,57 @@ void main() {
     // No milestone: closes by itself back to the camera.
     await finishSuccess(tester);
     expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
+  });
+
+  group('first check-in notification offer (B-B2)', () {
+    testWidgets('the auto-close does not pop the offer sheet', (tester) async {
+      final gateway = FakeNotificationGateway();
+      await pump(
+        tester,
+        overrides: [notificationGatewayProvider.overrideWithValue(gateway)],
+      );
+      await tapPost(tester);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('notification-sheet')), findsOneWidget);
+
+      // Reading the sheet for longer than the success delay keeps it up.
+      await tester.pump(CheckinSuccessView.autoCloseDelay * 3);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('notification-sheet')), findsOneWidget);
+      expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('notification-later')));
+      await tester.pumpAndSettle();
+      await finishSuccess(tester);
+      expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
+    });
+
+    testWidgets('a slow OS answer still schedules, without a ref error', (
+      tester,
+    ) async {
+      final answer = Completer<bool>();
+      final gateway = _SlowGateway(answer.future);
+      await pump(
+        tester,
+        overrides: [notificationGatewayProvider.overrideWithValue(gateway)],
+      );
+      await tapPost(tester);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('notification-turn-on')));
+      await tester.pumpAndSettle();
+      expect(gateway.requests, 1);
+
+      // The OS dialog is still up long after the success delay.
+      await tester.pump(CheckinSuccessView.autoCloseDelay * 2);
+      expect(find.byKey(const ValueKey('checkin-success')), findsOneWidget);
+
+      answer.complete(true);
+      await tester.pumpAndSettle();
+      await finishSuccess(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
+      expect(gateway.granted, isTrue);
+    });
   });
 
   testWidgets('streak goes +1 on success (FR-C8)', (tester) async {
@@ -488,4 +546,17 @@ void main() {
       expect(find.byKey(const ValueKey('stub-capture')), findsOneWidget);
     });
   });
+}
+
+class _SlowGateway extends FakeNotificationGateway {
+  _SlowGateway(this.answer);
+
+  final Future<bool> answer;
+
+  @override
+  Future<bool> requestPermission() async {
+    requests++;
+    granted = await answer;
+    return granted;
+  }
 }
