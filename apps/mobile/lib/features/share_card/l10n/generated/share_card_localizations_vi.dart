@@ -92,7 +92,10 @@ class ShareCardL10nVi extends ShareCardL10n {
 
   @override
   String get share_card_blurPhotoHint =>
-      'Bật sẵn theo cài đặt riêng tư của hành trình';
+      'Bật sẵn theo cài đặt riêng tư của bạn';
+
+  @override
+  String get share_card_blurPhotoLocked => 'Luôn bật với kiểu thẻ này';
 
   @override
   String get share_card_metricHidden => 'Số đo của bạn không hiện trên thẻ.';

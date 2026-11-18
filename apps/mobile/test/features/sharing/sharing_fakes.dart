@@ -140,6 +140,9 @@ class FakeSharingRepository implements SharingRepository {
     required bool hidden,
   }) async {
     calls.add('hide:$checkInId:$hidden');
+    final next = {...state.hiddenCheckInIds};
+    hidden ? next.add(checkInId) : next.remove(checkInId);
+    _setState(hidden: next);
   }
 
   @override

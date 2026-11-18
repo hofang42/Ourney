@@ -7,6 +7,8 @@ import '../../../app/providers.dart';
 import '../../../app/theme/motion.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../sharing/ui/share_journey_sheet.dart'
+    show isSensitiveTemplate, showSensitiveLinkWarning;
 import '../domain/share_card_content.dart';
 import '../l10n/generated/share_card_localizations.dart';
 
@@ -128,6 +130,10 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
   }
 
   Future<void> _create() async {
+    // S10: a sensitive journey asks before it gets a public link.
+    if (isSensitiveTemplate(widget.journey.templateId)) {
+      if (!await showSensitiveLinkWarning(context) || !mounted) return;
+    }
     setState(() => _busy = true);
     try {
       final token = await ref

@@ -13,6 +13,8 @@ import '../../../app/theme/motion.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/domain/journey_progress.dart';
+import '../../profile/settings_providers.dart';
+import '../../sharing/data/sharing_providers.dart';
 import '../data/share_card_exporter.dart';
 import '../data/share_card_providers.dart';
 import '../domain/share_card_content.dart';
@@ -114,7 +116,20 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     }
 
     final membership = ref.watch(shareMembershipProvider(id)).value;
+    final hasBackend = ref.watch(appConfigProvider).hasBackend;
+    // Every check-in counts for the streak / numbers; only the photos
+    // offered on the card are filtered.
     final checkIns = ref.watch(shareCheckInsProvider(id)).value ?? const [];
+    // S11: photos hidden from every share never reach the card. Only the
+    // server knows the flag (`hidden_in_share`), so local-only has none.
+    final hiddenInShare = hasBackend
+        ? ref.watch(shareStateProvider(id)).value?.hiddenCheckInIds ??
+              const <String>{}
+        : const <String>{};
+    final shareable = [
+      for (final c in checkIns)
+        if (!hiddenInShare.contains(c.id)) c,
+    ];
     final progress = JourneyProgress.compute(
       journey: journey,
       membership: membership,
@@ -128,8 +143,11 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       dayNumber: progress.dayNumber,
       checkIns: checkIns,
       number: _number,
+      // Global Settings > privacy switches (FR-B7).
+      hideMetricOnShare: ref.watch(hideWeightOnShareProvider),
+      blurPhotosOnShare: ref.watch(blurPhotosOnShareProvider),
     );
-    final candidates = photoCandidates(checkIns);
+    final candidates = photoCandidates(shareable);
     final selected =
         candidates.where((c) => c.id == _photoCheckInId).firstOrNull ??
         candidates.firstOrNull;
@@ -141,7 +159,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       journey: journey,
       membership: membership,
       currentUserId: ref.watch(currentUserIdProvider),
-      hasBackend: ref.watch(appConfigProvider).hasBackend,
+      hasBackend: hasBackend,
     );
 
     final caption = shareCardCaption(l10n, content);
@@ -395,15 +413,21 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     ],
                     onSelect: (c) => setState(() => _photoCheckInId = c.id),
                   ),
+                  // The quiet card always blurs its portrait: the switch
+                  // shows that and cannot be turned off there.
                   UiSwitchRow(
                     key: const ValueKey('share-card-blur'),
                     label: l10n.share_card_blurPhoto,
-                    subtitle: content.blurPhoto
+                    subtitle: quiet
+                        ? l10n.share_card_blurPhotoLocked
+                        : content.blurPhoto
                         ? l10n.share_card_blurPhotoHint
                         : null,
-                    value: blur,
+                    value: quiet || blur,
                     divider: false,
-                    onChanged: (v) => setState(() => _blurOverride = v),
+                    onChanged: quiet
+                        ? null
+                        : (v) => setState(() => _blurOverride = v),
                   ),
                 ],
                 if (content.metricHidden && !quiet)

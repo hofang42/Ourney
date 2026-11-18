@@ -92,8 +92,10 @@ class ShareCardL10nEn extends ShareCardL10n {
   String get share_card_blurPhoto => 'Blur photo';
 
   @override
-  String get share_card_blurPhotoHint =>
-      'On because of this journey\'s privacy settings';
+  String get share_card_blurPhotoHint => 'On because of your privacy settings';
+
+  @override
+  String get share_card_blurPhotoLocked => 'Always on for this card style';
 
   @override
   String get share_card_metricHidden => 'Your metric is not shown on the card.';

@@ -218,11 +218,17 @@ abstract class ShareCardL10n {
   /// **'Làm mờ ảnh'**
   String get share_card_blurPhoto;
 
-  /// Subtitle of the blur switch when privacy settings turned it on.
+  /// Subtitle of the blur switch when privacy settings (journey, membership or Settings) turned it on.
   ///
   /// In vi, this message translates to:
-  /// **'Bật sẵn theo cài đặt riêng tư của hành trình'**
+  /// **'Bật sẵn theo cài đặt riêng tư của bạn'**
   String get share_card_blurPhotoHint;
+
+  /// Subtitle of the locked blur switch on the quiet card, which always blurs its portrait.
+  ///
+  /// In vi, this message translates to:
+  /// **'Luôn bật với kiểu thẻ này'**
+  String get share_card_blurPhotoLocked;
 
   /// Note shown when the metric (e.g. kg) is hidden on the card (FR-B7).
   ///
