@@ -1940,6 +1940,12 @@ abstract class JourneysL10n {
   /// **'{start} – {end}'**
   String journeys_dna_dates_range_summary(String start, String end);
 
+  /// No description provided for @journeys_dna_dates_min_note.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình dài ít nhất {days} ngày nên ngày về đã được lùi lại.'**
+  String journeys_dna_dates_min_note(int days);
+
   /// No description provided for @journeys_dna_prev_month.
   ///
   /// In vi, this message translates to:
@@ -2245,6 +2251,30 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Thôi'**
   String get journeys_edit_cancel;
+
+  /// No description provided for @journeys_edit_discardTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ các thay đổi?'**
+  String get journeys_edit_discardTitle;
+
+  /// No description provided for @journeys_edit_discardBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đã sửa hành trình nhưng chưa lưu. Rời đi bây giờ sẽ mất các thay đổi đó.'**
+  String get journeys_edit_discardBody;
+
+  /// No description provided for @journeys_edit_discardConfirm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ thay đổi'**
+  String get journeys_edit_discardConfirm;
+
+  /// No description provided for @journeys_edit_discardKeep.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sửa tiếp'**
+  String get journeys_edit_discardKeep;
 
   /// No description provided for @journeys_edit_layoutApplied.
   ///

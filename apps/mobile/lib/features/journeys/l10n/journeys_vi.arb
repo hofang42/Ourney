@@ -933,6 +933,14 @@
       }
     }
   },
+  "journeys_dna_dates_min_note": "Hành trình dài ít nhất {days} ngày nên ngày về đã được lùi lại.",
+  "@journeys_dna_dates_min_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dna_prev_month": "Tháng trước",
   "journeys_dna_next_month": "Tháng sau",
   "journeys_dna_name_left": "Tên bạn",
@@ -1065,6 +1073,10 @@
   },
   "journeys_edit_useLayout": "Dùng giao diện này",
   "journeys_edit_cancel": "Thôi",
+  "journeys_edit_discardTitle": "Bỏ các thay đổi?",
+  "journeys_edit_discardBody": "Bạn đã sửa hành trình nhưng chưa lưu. Rời đi bây giờ sẽ mất các thay đổi đó.",
+  "journeys_edit_discardConfirm": "Bỏ thay đổi",
+  "journeys_edit_discardKeep": "Sửa tiếp",
   "journeys_edit_layoutApplied": "Đã đổi giao diện cho hành trình.",
   "journeys_edit_layoutOwnerOnly": "Chủ nhóm chọn giao diện cho cả nhóm.",
   "journeys_edit_color": "Màu",

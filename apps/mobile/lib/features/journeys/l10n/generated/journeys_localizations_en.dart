@@ -1046,6 +1046,11 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
+  String journeys_dna_dates_min_note(int days) {
+    return 'A journey lasts at least $days days, so the return date moved.';
+  }
+
+  @override
   String get journeys_dna_prev_month => 'Previous month';
 
   @override
@@ -1219,6 +1224,19 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_edit_cancel => 'Not now';
+
+  @override
+  String get journeys_edit_discardTitle => 'Discard your changes?';
+
+  @override
+  String get journeys_edit_discardBody =>
+      'You changed this journey but haven\'t saved. Leaving now drops those changes.';
+
+  @override
+  String get journeys_edit_discardConfirm => 'Discard changes';
+
+  @override
+  String get journeys_edit_discardKeep => 'Keep editing';
 
   @override
   String get journeys_edit_layoutApplied => 'Layout changed for this journey.';

@@ -1044,6 +1044,11 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
+  String journeys_dna_dates_min_note(int days) {
+    return 'Hành trình dài ít nhất $days ngày nên ngày về đã được lùi lại.';
+  }
+
+  @override
   String get journeys_dna_prev_month => 'Tháng trước';
 
   @override
@@ -1215,6 +1220,19 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_edit_cancel => 'Thôi';
+
+  @override
+  String get journeys_edit_discardTitle => 'Bỏ các thay đổi?';
+
+  @override
+  String get journeys_edit_discardBody =>
+      'Bạn đã sửa hành trình nhưng chưa lưu. Rời đi bây giờ sẽ mất các thay đổi đó.';
+
+  @override
+  String get journeys_edit_discardConfirm => 'Bỏ thay đổi';
+
+  @override
+  String get journeys_edit_discardKeep => 'Sửa tiếp';
 
   @override
   String get journeys_edit_layoutApplied => 'Đã đổi giao diện cho hành trình.';
