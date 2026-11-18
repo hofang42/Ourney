@@ -373,6 +373,10 @@ void main() {
       await tester.tap(find.text('Được chia sẻ'));
       await tester.pump();
       expect(v, 'b');
+      // Each segment is a full 48dp tap target (U5).
+      for (final p in tester.widgetList(find.byType(UiPressable))) {
+        expect(tester.getSize(find.byWidget(p)).height, UiSize.tap);
+      }
     });
 
     testWidgets('UiOtpField shows typed digits and caps at 6', (tester) async {

@@ -467,7 +467,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                   height: 1.45,
                   color: ui.inkMuted,
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                // 12.5 + 23.2 + 12.5: a >= 48dp tap target (U5).
+                contentPadding: const EdgeInsets.symmetric(vertical: 12.5),
                 enabledBorder: UnderlineInputBorder(
                   borderSide: BorderSide(color: ui.border),
                 ),

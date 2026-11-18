@@ -406,7 +406,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
                   filled: false,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  // 13.5 + 21 + 13.5: a 48dp tap target (U5).
+                  contentPadding: const EdgeInsets.symmetric(vertical: 13.5),
                 ),
               ),
             ),
