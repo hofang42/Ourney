@@ -354,6 +354,30 @@ void main() {
       handle.dispose();
     });
 
+    test('UiAvatar initials reach 4.5:1 on every disc (U14)', () {
+      double ratio(Color a, Color b) {
+        final la = a.computeLuminance();
+        final lb = b.computeLuminance();
+        return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+      }
+
+      for (final disc in uiAvatarColors) {
+        expect(ratio(disc, uiAvatarInk(disc)), greaterThanOrEqualTo(4.5));
+      }
+    });
+
+    testWidgets('UiAvatar initial stays inside the disc at 2x text (U15)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(const Center(child: UiAvatar(name: 'Linh')), textScale: 2),
+      );
+      final disc = tester.getRect(find.byType(UiAvatar));
+      final text = tester.getRect(find.text('L'));
+      expect(disc.contains(text.topLeft), isTrue);
+      expect(disc.contains(text.bottomRight), isTrue);
+    });
+
     testWidgets('UiSegmented switches value', (tester) async {
       var v = 'a';
       await tester.pumpWidget(

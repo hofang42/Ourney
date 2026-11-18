@@ -40,6 +40,15 @@ void main() {
       await tester.pump();
       expect(c.read(localeOverrideProvider), const Locale('en'));
 
+      // The selected app icon carries a check badge, not just a border (U14).
+      expect(
+        find.descendant(
+          of: byKey('settings-icon-default'),
+          matching: byKey('settings-icon-check'),
+        ),
+        findsOneWidget,
+      );
+
       await tester.scrollUntilVisible(
         byKey('settings-hide-kg'),
         200,

@@ -14,6 +14,20 @@ const List<Color> uiAvatarColors = [
   Color(0xFFFF9F1C),
 ];
 
+/// Initial color for an avatar disc: white or near-black ink, whichever
+/// contrasts more with [disc] (U14: white on the orange / green / blue discs
+/// fell to 2-3:1).
+Color uiAvatarInk(Color disc) {
+  const dark = Color(0xFF1A1A1A);
+  double ratio(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+  }
+
+  return ratio(disc, Colors.white) >= ratio(disc, dark) ? Colors.white : dark;
+}
+
 /// `.avatar`: initial on a colored disc with a 2dp paper ring. 28dp by
 /// default, 40dp large, 88dp for the profile picker. Pass [image] to show a
 /// photo instead of the initial.
@@ -51,6 +65,7 @@ class UiAvatar extends StatelessWidget {
     final initial = name.trim().isEmpty
         ? '?'
         : String.fromCharCode(name.trim().runes.first).toUpperCase();
+    final disc = uiAvatarColors[colorIndex % uiAvatarColors.length];
     return Semantics(
       label: semanticLabel ?? name,
       image: true,
@@ -60,7 +75,7 @@ class UiAvatar extends StatelessWidget {
         height: size,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: uiAvatarColors[colorIndex % uiAvatarColors.length],
+          color: disc,
           shape: BoxShape.circle,
           border: ring ? Border.all(color: ui.surface, width: 2) : null,
           image: image == null
@@ -69,13 +84,21 @@ class UiAvatar extends StatelessWidget {
         ),
         child: image != null
             ? null
-            : Text(
-                initial,
-                style: UiText.body(
-                  size: size * 0.43,
-                  weight: FontWeight.w700,
-                  height: 1.2,
-                  color: Colors.white,
+            // Large text sizes shrink the initial instead of spilling out
+            // of the disc (U15).
+            : Padding(
+                padding: EdgeInsets.all(size >= 24 ? 4 : 2),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    initial,
+                    style: UiText.body(
+                      size: size * 0.43,
+                      weight: FontWeight.w700,
+                      height: 1.2,
+                      color: uiAvatarInk(disc),
+                    ),
+                  ),
                 ),
               ),
       ),

@@ -351,22 +351,55 @@ class _AppIconPicker extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: tile,
-                          borderRadius: BorderRadius.circular(UiRadius.menu),
-                          border: Border.all(
-                            color: id == selected ? ui.focus : ui.outline,
-                            width: id == selected ? 3 : UiBorder.thin,
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: tile,
+                              borderRadius: BorderRadius.circular(
+                                UiRadius.menu,
+                              ),
+                              border: Border.all(
+                                color: id == selected ? ui.focus : ui.outline,
+                                width: id == selected ? 3 : UiBorder.thin,
+                              ),
+                            ),
+                            child: Text(
+                              'O',
+                              style: UiText.h1(size: 24, color: mark),
+                            ),
                           ),
-                        ),
-                        child: Text(
-                          'O',
-                          style: UiText.h1(size: 24, color: mark),
-                        ),
+                          // Not by border color alone (U14): a check badge.
+                          if (id == selected)
+                            Positioned(
+                              top: -6,
+                              right: -6,
+                              child: Container(
+                                key: const ValueKey('settings-icon-check'),
+                                width: 22,
+                                height: 22,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: ui.ink,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: ui.bg,
+                                    width: UiBorder.thin,
+                                  ),
+                                ),
+                                child: OurneyIcon(
+                                  name: 'check',
+                                  size: 12,
+                                  flat: true,
+                                  color: ui.bg,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 2),
                       Text(
