@@ -236,10 +236,24 @@ void main() {
       await _tap(tester, _key('journey-more'));
       expect(_key('journey-action-end'), findsNothing);
       await _tap(tester, _key('journey-action-archive'));
+      // Archiving asks first (U12): cancelling keeps the journey.
+      expect(find.text('Archive this journey?'), findsOneWidget);
+      expect(h.journeys.calls, isNot(contains('archive:j1')));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(h.location, AppRoutes.journey('j1'));
+      await _tap(tester, _key('journey-more'));
+      await _tap(tester, _key('journey-action-archive'));
+      await _tap(tester, _key('journeys-confirm'));
       expect(h.journeys.calls, contains('archive:j1'));
       expect(h.location, AppRoutes.journeys);
+      // Toast with an undo path that restores the journey.
+      expect(find.text('Journey archived'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('ui-toast-action')));
+      await tester.pumpAndSettle();
+      expect(h.journeys.calls, contains('unarchive:j1'));
       await _tap(tester, _key('hub-segment-shelf'));
-      expect(find.text('Archived'), findsOneWidget);
+      expect(find.text('Archived'), findsNothing);
     });
 
     testWidgets('cancelling end does nothing', (tester) async {

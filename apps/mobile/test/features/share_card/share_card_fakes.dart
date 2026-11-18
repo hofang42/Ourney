@@ -224,6 +224,9 @@ class FakeJourneyRepository implements JourneyRepository {
   Future<void> archive(String journeyId) => throw UnimplementedError();
 
   @override
+  Future<void> unarchive(String journeyId) => throw UnimplementedError();
+
+  @override
   Future<void> delete(String journeyId) => throw UnimplementedError();
 
   @override

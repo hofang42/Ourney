@@ -221,6 +221,12 @@ class FakeJourneyRepository implements JourneyRepository {
   }
 
   @override
+  Future<void> unarchive(String journeyId) async {
+    calls.add('unarchive:$journeyId');
+    _replace(journeyId, (j) => _copy(j, JourneyStatus.ended));
+  }
+
+  @override
   Future<void> delete(String journeyId) async {
     calls.add('delete:$journeyId');
     if (deleteError case final e?) throw e;

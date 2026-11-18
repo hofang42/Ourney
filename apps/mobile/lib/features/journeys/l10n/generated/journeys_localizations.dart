@@ -506,6 +506,30 @@ abstract class JourneysL10n {
   /// **'Lưu trữ'**
   String get journeys_archive;
 
+  /// No description provided for @journeys_archiveConfirmTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu trữ hành trình?'**
+  String get journeys_archiveConfirmTitle;
+
+  /// No description provided for @journeys_archiveConfirmMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.'**
+  String get journeys_archiveConfirmMessage;
+
+  /// No description provided for @journeys_archived.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu trữ hành trình'**
+  String get journeys_archived;
+
+  /// No description provided for @journeys_archiveUndo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tác'**
+  String get journeys_archiveUndo;
+
   /// No description provided for @journeys_delete.
   ///
   /// In vi, this message translates to:

@@ -116,6 +116,9 @@ abstract interface class JourneyRepository {
   /// member leaves or the journey is deleted.
   Future<void> archive(String journeyId);
 
+  /// Undoes [archive]: the journey is listed again.
+  Future<void> unarchive(String journeyId);
+
   /// `delete_journey` (owner only, solo or alone in the group). Throws
   /// `notAlone` while other active members exist (use [end] instead),
   /// `forbidden`, `notFound`. The RPC only tombstones rows: implementations

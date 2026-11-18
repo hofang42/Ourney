@@ -369,12 +369,15 @@ void showUiToast(
   BuildContext context,
   String message, {
   double bottomOffset = 36,
+  String? actionLabel,
+  VoidCallback? onAction,
 }) {
   final ui = context.ui;
   final messenger = ScaffoldMessenger.maybeOf(context);
   final d = UiMotion.of(context, const Duration(milliseconds: 150));
-  messenger?.hideCurrentSnackBar();
-  messenger?.showSnackBar(
+  if (messenger == null) return;
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(
     SnackBar(
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent,
@@ -393,17 +396,37 @@ void showUiToast(
             borderRadius: BorderRadius.circular(UiRadius.capsule),
             boxShadow: UiShadow.hard(ui.brand, UiShadow.small),
           ),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: UiText.body(
-              size: 13,
-              weight: FontWeight.w700,
-              height: 1.4,
-              color: ui.bg,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: UiText.body(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    height: 1.4,
+                    color: ui.bg,
+                  ),
+                ),
+              ),
+              // Optional undo-style action (e.g. restore an archived journey).
+              if (actionLabel != null && onAction != null)
+                UiTextAction(
+                  key: const ValueKey('ui-toast-action'),
+                  label: actionLabel,
+                  size: 13,
+                  color: ui.bg,
+                  underline: true,
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                    onAction();
+                  },
+                ),
+            ],
           ),
         ),
       ),

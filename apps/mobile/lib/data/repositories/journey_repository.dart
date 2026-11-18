@@ -339,6 +339,13 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
+  Future<void> unarchive(String journeyId) async {
+    await _requireLocal(journeyId);
+    await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId)))
+        .write(const JourneysCompanion(localArchived: Value(false)));
+  }
+
+  @override
   Future<void> delete(String journeyId) async {
     final remote = ctx.remote;
     if (remote == null) {

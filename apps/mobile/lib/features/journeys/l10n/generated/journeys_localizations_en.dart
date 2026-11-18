@@ -242,6 +242,19 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_archive => 'Archive';
 
   @override
+  String get journeys_archiveConfirmTitle => 'Archive this journey?';
+
+  @override
+  String get journeys_archiveConfirmMessage =>
+      'The journey is hidden from your list. You can undo right after archiving.';
+
+  @override
+  String get journeys_archived => 'Journey archived';
+
+  @override
+  String get journeys_archiveUndo => 'Undo';
+
+  @override
   String get journeys_delete => 'Delete journey';
 
   @override
