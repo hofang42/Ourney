@@ -10,6 +10,8 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart' show rootError;
+import '../../profile/settings_providers.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
@@ -92,6 +94,14 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
           .read(groupRepositoryProvider)
           .joinByCode(code);
       unawaited(reminders.reschedule());
+      // Carry the Settings share-privacy switches over to the new membership.
+      unawaited(
+        pushSharePrivacyToMemberships(
+          ref,
+          hideWeight: ref.read(hideWeightOnShareProvider) ? true : null,
+          blur: ref.read(blurPhotosOnShareProvider) ? true : null,
+        ),
+      );
       if (!mounted) return;
       context.go(GroupsPaths.today(journeyId));
     } on Object catch (e) {

@@ -101,8 +101,9 @@ Widget? _memberMenu(
   BuildContext context,
   WidgetRef ref,
   GroupMemberEntry entry,
-  GroupPermissions perms,
-) {
+  GroupPermissions perms, {
+  Color? color,
+}) {
   final l10n = GroupsL10n.of(context);
   final hooks = ref.watch(groupSafetyHooksProvider);
   final actions = <_MemberAction>[
@@ -114,7 +115,12 @@ Widget? _memberMenu(
   final tile = _MemberTile(entry: entry, perms: perms, tilt: 0);
   return UiIconButton(
     key: ValueKey('group-member-menu-${entry.member.userId}'),
-    glyph: const OurneyIcon(name: 'more', size: 20),
+    glyph: OurneyIcon(
+      name: 'more',
+      size: 20,
+      color: color,
+      flat: color != null,
+    ),
     label: l10n.groups_memberActions(entry.member.displayName),
     size: UiSize.tap,
     iconSize: 18,
@@ -339,7 +345,9 @@ class _FilmFrame extends ConsumerWidget {
     final ui = context.ui;
     final photo = entry.photo;
     final id = entry.member.userId;
-    final menu = _memberMenu(context, ref, entry, perms);
+    // The menu sits on the ink-coloured film strip: draw it in the page
+    // background colour so it reads in light and dark.
+    final menu = _memberMenu(context, ref, entry, perms, color: ui.bg);
     Widget sprockets() => Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -397,12 +405,7 @@ class _FilmFrame extends ConsumerWidget {
                   ),
                 ),
               ),
-              if (menu != null)
-                // The menu sits on the dark film strip: invert its ink.
-                IconTheme(
-                  data: IconThemeData(color: ui.bg),
-                  child: menu,
-                ),
+              ?menu,
             ],
           ),
           if (photo != null && entry.photoIsToday)
@@ -544,8 +547,10 @@ class _CoupleWall extends ConsumerWidget {
           children: [
             Expanded(
               child: Text(
-                time == null
+                !e.checkedInToday
                     ? l10n.groups_coupleWaiting(name)
+                    : time == null
+                    ? l10n.groups_coupleCheckedIn(name)
                     : l10n.groups_coupleDone(name, time),
                 key: ValueKey('group-member-status-$id'),
                 maxLines: 2,
@@ -554,7 +559,7 @@ class _CoupleWall extends ConsumerWidget {
                   size: 13,
                   weight: FontWeight.w800,
                   height: 1.4,
-                  color: time == null ? ui.inkMuted : ui.ink,
+                  color: e.checkedInToday ? ui.ink : ui.inkMuted,
                 ),
               ),
             ),

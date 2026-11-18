@@ -13,6 +13,7 @@ import '../safety/safety_paths.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
+import 'share_privacy_sync.dart';
 import 'widgets/delete_account_dialog.dart';
 
 /// Route of the settings screen (sub-path of `/profile`).
@@ -88,17 +89,19 @@ class SettingsScreen extends ConsumerWidget {
                   key: const ValueKey('settings-hide-kg'),
                   label: l10n.profile_settings_hideKg,
                   value: ref.watch(hideWeightOnShareProvider),
-                  onChanged: (v) => unawaited(
-                    ref.read(hideWeightOnShareProvider.notifier).set(v),
-                  ),
+                  onChanged: (v) => unawaited(() async {
+                    await ref.read(hideWeightOnShareProvider.notifier).set(v);
+                    await pushSharePrivacyToMemberships(ref, hideWeight: v);
+                  }()),
                 ),
                 UiSwitchRow(
                   key: const ValueKey('settings-blur-photos'),
                   label: l10n.profile_settings_blurPhotos,
                   value: ref.watch(blurPhotosOnShareProvider),
-                  onChanged: (v) => unawaited(
-                    ref.read(blurPhotosOnShareProvider.notifier).set(v),
-                  ),
+                  onChanged: (v) => unawaited(() async {
+                    await ref.read(blurPhotosOnShareProvider.notifier).set(v);
+                    await pushSharePrivacyToMemberships(ref, blur: v);
+                  }()),
                 ),
                 UiRow(
                   key: const ValueKey('settings-blocked'),

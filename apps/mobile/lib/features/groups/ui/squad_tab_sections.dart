@@ -149,7 +149,7 @@ class SquadTodayStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        UiListHeading(title: l10n.groups_todayHeading),
+        if (active.isNotEmpty) UiListHeading(title: l10n.groups_todayHeading),
         for (final g in active) SquadTodayCard(journey: g),
         if (finished.isNotEmpty) ...[
           UiListHeading(
@@ -242,10 +242,12 @@ class SquadTodayCard extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            l10n.groups_checkedInCount(
-                              done,
-                              members.isEmpty ? 0 : members.length,
-                            ),
+                            journey.status != JourneyStatus.active
+                                ? l10n.groups_statusEnded
+                                : l10n.groups_checkedInCount(
+                                    done,
+                                    members.isEmpty ? 0 : members.length,
+                                  ),
                             style: UiText.body(
                               size: 12,
                               height: 1.4,
@@ -319,6 +321,8 @@ class _MemberChip extends ConsumerWidget {
         ? _hhmm(shot.capturedAt)
         : checked
         ? l10n.groups_statusDone
+        : journey.status != JourneyStatus.active
+        ? l10n.groups_statusEnded
         : l10n.groups_memberWaiting;
     return UiPressable(
       key: ValueKey('squad-member-${member.userId}'),
@@ -469,6 +473,8 @@ class _MemberSheet extends ConsumerWidget {
                           _hhmm(shot.capturedAt),
                         ),
                         null when checked => l10n.groups_doneSection,
+                        null when journey.status != JourneyStatus.active =>
+                          l10n.groups_statusEnded,
                         null => l10n.groups_memberNotYetToday,
                       },
                       maxLines: 2,

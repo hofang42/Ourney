@@ -112,7 +112,8 @@ class ShareCardContent {
     }
 
     final hideMetric =
-        hideMetricOnShare || metricHiddenFor(journey, membership);
+        (hideMetricOnShare && isWeightMetric(journey)) ||
+        metricHiddenFor(journey, membership);
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
     if (!hideMetric && hasMetric) {
@@ -203,12 +204,29 @@ class ShareCardContent {
 /// Bars on the flexer card (`FlexerShare` draws 21).
 const int shareCardActivityDays = 21;
 
+/// True for journeys that track body weight (kg): the Settings switch "hide
+/// kg when sharing" applies to these only, never to minutes or km (C-B1).
+bool isWeightMetric(Journey journey) {
+  final unit = (journey.metricUnit ?? '').trim().toLowerCase();
+  final name = (journey.metricName ?? '').toLowerCase();
+  return journey.templateId == TemplateId.weightLoss ||
+      unit == 'kg' ||
+      name.contains('weight') ||
+      name.contains('cân nặng');
+}
+
 /// FR-B7: weight-loss journeys never show kg outside the app; other
 /// journeys follow `hideMetricDefault` and the caller's `hideMetric`.
 bool metricHiddenFor(Journey journey, Membership? membership) =>
     journey.templateId == TemplateId.weightLoss ||
     journey.hideMetricDefault ||
     (membership?.hideMetric ?? false);
+
+/// S9: a public link can only be turned on for a finished (ended or
+/// archived) or retold (imported) journey.
+bool publicLinkEligible(Journey journey) =>
+    journey.status != JourneyStatus.active ||
+    journey.origin == JourneyOrigin.imported;
 
 /// FR-E3: only the owner of a solo journey, with a backend, gets a public
 /// read-only link. Group journeys never have one. S9 (`set_public_link`):
@@ -223,10 +241,9 @@ bool canHavePublicLink({
 }) {
   if (!hasBackend) return false;
   if (journey.kind != JourneyKind.solo) return false;
-  final eligible =
-      journey.status != JourneyStatus.active ||
-      journey.origin == JourneyOrigin.imported;
-  if (!eligible && activePublicToken(journey) == null) return false;
+  if (!publicLinkEligible(journey) && activePublicToken(journey) == null) {
+    return false;
+  }
   final m = membership;
   if (m != null) return m.role == MemberRole.owner && m.isActive;
   return currentUserId != null && journey.ownerId == currentUserId;

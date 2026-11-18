@@ -7,6 +7,8 @@ import 'package:ourney_core/ourney_core.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/providers.dart';
+import '../../groups/data/groups_providers.dart';
+import '../../safety/data/safety_providers.dart';
 
 /// Repository streams never retry on a timer (the data layer handles
 /// offline/sync, and timers would leak into widget tests).
@@ -37,11 +39,61 @@ final pendingConsentsProvider = StreamProvider.autoDispose<List<ShareConsent>>(
   retry: _noRetry,
 );
 
-/// Counts behind the Hub inbox dot (S16, S27).
-final inboxCountsProvider = StreamProvider.autoDispose<InboxCounts>(
+/// Server counts behind the Hub inbox dot (S16, S27), blocked people still
+/// included: use [inboxCountsProvider].
+final rawInboxCountsProvider = StreamProvider.autoDispose<InboxCounts>(
   (ref) => ref.watch(insightsRepositoryProvider).watchInboxCounts(),
   retry: _noRetry,
 );
+
+/// [rawInboxCountsProvider] minus what comes from people the user blocked
+/// (requests, unread messages, consents, group invitations), so the badge
+/// matches the filtered inbox at once (C-B3).
+final inboxCountsProvider = Provider.autoDispose<AsyncValue<InboxCounts>>((
+  ref,
+) {
+  final raw = ref.watch(rawInboxCountsProvider);
+  final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+  if (blocked.isEmpty) return raw;
+  final friendships = ref.watch(friendshipsProvider).value ?? const [];
+  final conversations = ref.watch(conversationsProvider).value ?? const [];
+  final consents = ref.watch(pendingConsentsProvider).value ?? const [];
+  final invites = ref.watch(groupInvitationsProvider).asData?.value ?? const [];
+  return raw.whenData(
+    (c) => InboxCounts(
+      friendRequests: _minus(
+        c.friendRequests,
+        friendships.where(
+          (f) =>
+              f.isIncomingRequest &&
+              f.source == FriendSource.direct &&
+              blocked.contains(f.person.userId),
+        ),
+      ),
+      publicRequests: c.publicRequests,
+      newShares: c.newShares,
+      unreadMessages: [
+        for (final v in conversations)
+          if (blocked.contains(v.other.userId)) v.unreadCount,
+      ].fold(c.unreadMessages, (a, b) => a - b).clamp(0, 1 << 30),
+      consentRequests: _minus(
+        c.consentRequests,
+        consents.where(
+          (s) =>
+              s.status == ShareConsentStatus.pending &&
+              blocked.contains(s.requestedBy?.userId),
+        ),
+      ),
+      groupInvitations: _minus(
+        c.groupInvitations,
+        invites.where((i) => blocked.contains(i.inviter.userId)),
+      ),
+    ),
+  );
+});
+
+int _minus(int count, Iterable<Object> hidden) =>
+    (count - hidden.length).clamp(0, 1 << 30);
 
 /// Resolves a storage path (chat photo, replied-to thumbnail) to a local
 /// file through the [MediaStore] disk cache.

@@ -181,17 +181,6 @@
   },
   "groups_emptyCardTitle": "no squads yet.",
   "groups_emptyCardBody": "Enter an invite code to join a group or start a group journey.",
-  "groups_wallAttendance": "{done}/{total} CHECKED IN",
-  "@groups_wallAttendance": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "groups_wallUpdated": "Updated at {time}",
   "@groups_wallUpdated": {
     "placeholders": {
@@ -268,6 +257,14 @@
         "type": "String"
       },
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_coupleCheckedIn": "{name} · checked in",
+  "@groups_coupleCheckedIn": {
+    "placeholders": {
+      "name": {
         "type": "String"
       }
     }

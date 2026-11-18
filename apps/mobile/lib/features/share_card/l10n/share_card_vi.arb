@@ -95,6 +95,10 @@
   "@share_card_photoNone": {
     "description": "Shown when the journey has no check-in photo yet."
   },
+  "share_card_stateError": "Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên chưa thể chia sẻ. Hãy thử lại.",
+  "@share_card_stateError": {
+    "description": "Shown on the share card when the hidden-photo flags could not be loaded; sharing stays disabled with a retry button."
+  },
   "share_card_photoOfDay": "Ảnh ngày {date}",
   "@share_card_photoOfDay": {
     "description": "Accessibility label of a photo thumbnail in the picker.",
@@ -170,6 +174,10 @@
   "share_card_linkDescription": "Ai có link đều xem được hành trình này (chỉ xem). Bạn thu hồi được bất cứ lúc nào.",
   "@share_card_linkDescription": {
     "description": "Explains the public link before it is created."
+  },
+  "share_card_linkNotYet": "Link công khai sẽ mở khi hành trình này kết thúc.",
+  "@share_card_linkNotYet": {
+    "description": "Public link card on a running journey: the link cannot be created yet."
   },
   "share_card_linkActive": "Link đang bật. Ai có link đều xem được hành trình này.",
   "@share_card_linkActive": {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
@@ -5,6 +7,8 @@ import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
 import 'package:ourney/features/share_card/ui/share_card.dart';
+import 'package:ourney/features/share_card/ui/share_skin_chrome.dart';
+import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -234,10 +238,10 @@ void main() {
       expect(_key('share-card-metric-hidden'), findsNothing);
     });
 
-    testWidgets('Settings privacy switches blur and hide the metric (C-B1)', (
+    testWidgets('Settings privacy switches blur and hide only kg (C-B1)', (
       tester,
     ) async {
-      final j = testJourney(metricName: 'Thời gian', metricUnit: 'phút');
+      final j = testJourney(metricName: 'Cân nặng', metricUnit: 'kg');
       final h = await pumpShare(
         tester,
         journey: j,
@@ -245,7 +249,7 @@ void main() {
         checkIns: streakCheckIns(j.id, metricValue: 25.5),
       );
       expect(_key('share-card-photo-blurred'), findsNothing);
-      expect(_text(tester, 'share-card-number'), '25,5 PHÚT');
+      expect(_text(tester, 'share-card-number'), '25,5 KG');
 
       await h.container.read(blurPhotosOnShareProvider.notifier).set(true);
       await h.container.read(hideWeightOnShareProvider.notifier).set(true);
@@ -256,6 +260,69 @@ void main() {
         expect(s.contains('25,5'), isFalse, reason: s);
       }
       expect(_key('share-card-metric-hidden'), findsOneWidget);
+    });
+
+    testWidgets('the hide-kg switch never hides minutes or km (C-B1)', (
+      tester,
+    ) async {
+      final j = testJourney(metricName: 'Thời gian', metricUnit: 'phút');
+      final h = await pumpShare(
+        tester,
+        journey: j,
+        photos: true,
+        checkIns: streakCheckIns(j.id, metricValue: 25.5),
+      );
+      await h.container.read(hideWeightOnShareProvider.notifier).set(true);
+      await tester.pumpAndSettle();
+      expect(_text(tester, 'share-card-number'), '25,5 PHÚT');
+      expect(_key('share-card-metric-hidden'), findsNothing);
+    });
+
+    testWidgets('no photo is offered or exportable while the hidden-photo '
+        'flags load (C-B2)', (tester) async {
+      final j = testJourney();
+      final never = StreamController<JourneyShareState>();
+      addTearDown(never.close);
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        photos: true,
+        checkIns: streakCheckIns(j.id),
+        overrides: [
+          shareStateProvider(j.id).overrideWith((ref) => never.stream),
+        ],
+      );
+      expect(_key('share-card-photo'), findsNothing);
+      expect(_key('share-card-photo-none'), findsOneWidget);
+      expect(
+        tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('on error nothing is exportable and a retry is offered '
+        '(C-B2)', (tester) async {
+      final j = testJourney();
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        photos: true,
+        checkIns: streakCheckIns(j.id),
+        overrides: [
+          shareStateProvider(j.id).overrideWith(
+            (ref) => Stream<JourneyShareState>.error(StateError('offline')),
+          ),
+        ],
+      );
+      expect(_key('share-card-photo'), findsNothing);
+      expect(_key('share-card-state-error'), findsOneWidget);
+      expect(_key('share-card-state-retry'), findsOneWidget);
+      expect(
+        tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
+        isNull,
+      );
     });
 
     testWidgets('photos hidden from every share are never offered (C-B2)', (

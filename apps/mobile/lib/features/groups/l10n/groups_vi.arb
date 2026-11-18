@@ -365,17 +365,6 @@
   },
   "groups_emptyCardTitle": "chưa có nhóm nào.",
   "groups_emptyCardBody": "Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.",
-  "groups_wallAttendance": "{done}/{total} ĐÃ ĐIỂM DANH",
-  "@groups_wallAttendance": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "groups_wallUpdated": "Cập nhật lúc {time}",
   "@groups_wallUpdated": {
     "placeholders": {
@@ -452,6 +441,14 @@
         "type": "String"
       },
       "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_coupleCheckedIn": "{name} · đã check-in",
+  "@groups_coupleCheckedIn": {
+    "placeholders": {
+      "name": {
         "type": "String"
       }
     }

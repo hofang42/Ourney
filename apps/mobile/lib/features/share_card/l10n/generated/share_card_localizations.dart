@@ -206,6 +206,12 @@ abstract class ShareCardL10n {
   /// **'Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.'**
   String get share_card_photoNone;
 
+  /// Shown on the share card when the hidden-photo flags could not be loaded; sharing stays disabled with a retry button.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên chưa thể chia sẻ. Hãy thử lại.'**
+  String get share_card_stateError;
+
   /// Accessibility label of a photo thumbnail in the picker.
   ///
   /// In vi, this message translates to:
@@ -283,6 +289,12 @@ abstract class ShareCardL10n {
   /// In vi, this message translates to:
   /// **'Ai có link đều xem được hành trình này (chỉ xem). Bạn thu hồi được bất cứ lúc nào.'**
   String get share_card_linkDescription;
+
+  /// Public link card on a running journey: the link cannot be created yet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Link công khai sẽ mở khi hành trình này kết thúc.'**
+  String get share_card_linkNotYet;
 
   /// Shown while the public link is enabled.
   ///

@@ -9,6 +9,9 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../ui/ui.dart';
+import '../../safety/data/safety_providers.dart';
+import '../../share_card/domain/share_card_content.dart'
+    show publicLinkEligible;
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import '../sharing_paths.dart';
@@ -250,7 +253,10 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     final stateAsync = ref.watch(shareStateProvider(_journey.id));
     final friendsAsync = ref.watch(acceptedFriendsProvider);
     final state = stateAsync.value;
-    final friends = friendsAsync.value;
+    final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final friends = friendsAsync.value
+        ?.where((f) => !blocked.contains(f.userId))
+        .toList();
     if (state == null || friends == null) {
       final error = stateAsync.error ?? friendsAsync.error;
       if (error != null) {
@@ -790,8 +796,9 @@ class _LinkBlock extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SharingL10n.of(context);
     final ui = context.ui;
-    // S9: only ended / archived (retold journeys are created ended).
-    final eligible = journey.status != JourneyStatus.active;
+    // S9: ended / archived or retold; same rule as `canHavePublicLink`. A
+    // running journey that still has a link keeps its controls to revoke it.
+    final eligible = publicLinkEligible(journey) || state.linkOn;
 
     Widget locked(String title, String sub) => Opacity(
       opacity: 0.7,

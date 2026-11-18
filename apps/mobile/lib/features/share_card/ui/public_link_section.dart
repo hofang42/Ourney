@@ -59,6 +59,8 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     final l10n = ShareCardL10n.of(context);
     final ui = context.ui;
     final uri = _uriFor(_currentToken);
+    // S9: a running journey cannot get a link yet (revoking one stays).
+    final eligible = publicLinkEligible(widget.journey);
 
     return UiCard(
       key: const ValueKey('share-card-link'),
@@ -88,13 +90,17 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
           ),
           const SizedBox(height: UiSpace.sm),
           Text(
-            uri == null
+            uri != null
+                ? l10n.share_card_linkActive
+                : eligible
                 ? l10n.share_card_linkDescription
-                : l10n.share_card_linkActive,
+                : l10n.share_card_linkNotYet,
             style: UiText.muted(color: ui.inkMuted, size: 14),
           ),
           const SizedBox(height: UiSpace.md),
-          if (uri == null)
+          if (uri == null && !eligible)
+            const SizedBox.shrink()
+          else if (uri == null)
             UiButton(
               key: const ValueKey('share-card-link-create'),
               glyph: const OurneyIcon(name: 'link', size: 20),

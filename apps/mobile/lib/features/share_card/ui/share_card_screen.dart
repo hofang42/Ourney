@@ -122,14 +122,20 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
     final checkIns = ref.watch(shareCheckInsProvider(id)).value ?? const [];
     // S11: photos hidden from every share never reach the card. Only the
     // server knows the flag (`hidden_in_share`), so local-only has none.
-    final hiddenInShare = hasBackend
-        ? ref.watch(shareStateProvider(id)).value?.hiddenCheckInIds ??
-              const <String>{}
-        : const <String>{};
-    final shareable = [
-      for (final c in checkIns)
-        if (!hiddenInShare.contains(c.id)) c,
-    ];
+    // Fail closed: with a backend, no photo is offered (and nothing can be
+    // exported) until that flag has loaded; on error the user can retry.
+    final stateAsync = hasBackend ? ref.watch(shareStateProvider(id)) : null;
+    final stateReady = stateAsync == null || stateAsync.hasValue;
+    final stateFailed =
+        stateAsync != null && stateAsync.hasError && !stateAsync.hasValue;
+    final hiddenInShare =
+        stateAsync?.value?.hiddenCheckInIds ?? const <String>{};
+    final shareable = stateReady
+        ? [
+            for (final c in checkIns)
+              if (!hiddenInShare.contains(c.id)) c,
+          ]
+        : const <CheckIn>[];
     final progress = JourneyProgress.compute(
       journey: journey,
       membership: membership,
@@ -353,6 +359,33 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                   ),
                   const SizedBox(height: UiSpace.md),
                 ],
+                if (!stateReady) ...[
+                  if (stateFailed)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: UiSpace.sm),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            l10n.share_card_stateError,
+                            key: const ValueKey('share-card-state-error'),
+                            style: UiText.body(
+                              size: 14,
+                              height: 1.45,
+                              color: ui.ink,
+                            ),
+                          ),
+                          const SizedBox(height: UiSpace.sm),
+                          UiButton.ghost(
+                            key: const ValueKey('share-card-state-retry'),
+                            label: app.common_retry,
+                            onPressed: () =>
+                                ref.invalidate(shareStateProvider(id)),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
                 KeyedSubtree(
                   key: _shareButtonKey,
                   child: ShareActionButton(
@@ -361,7 +394,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     label: _busy ? l10n.share_card_preparing : actionLabel,
                     glyph: quiet ? null : 'share',
                     loading: _busy,
-                    onPressed: _busy
+                    onPressed: _busy || !stateReady
                         ? null
                         : quiet
                         ? () => _share(

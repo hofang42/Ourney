@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
 import '../../../shared/needs_server_view.dart';
@@ -34,7 +35,16 @@ class _BlockedList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SafetyL10n.of(context);
     final blocked = ref.watch(blockedUserIdsProvider);
-    final names = ref.watch(blockedNamesProvider);
+    final cached = ref.watch(blockedNamesProvider);
+    final people =
+        ref.watch(blockedPeopleProvider).value ??
+        const <String, PersonSummary>{};
+    // Server names first (fresh device), then the names cached here.
+    final names = {
+      ...cached,
+      for (final p in people.values)
+        if (p.displayName.isNotEmpty) p.userId: p.displayName,
+    };
     return blocked.when(
       loading: () => const Padding(
         padding: EdgeInsets.all(UiSpace.xxl),

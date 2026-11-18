@@ -10,6 +10,7 @@ import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
 import '../../../../ui/ui.dart';
 import '../../../onboarding/onboarding_providers.dart';
+import '../../../profile/share_privacy_sync.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
 import '../../../reminders/data/reminder_settings.dart';
 import '../../../reminders/domain/reminder_plan.dart';
@@ -346,13 +347,18 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
             .save(journey.id, ReminderSetting(enabled: true, time: rt));
       }
       unawaited(reminders.reschedule());
-      final hide = form.trackMetric && form.hideMetric;
-      if (hide || form.blurOnShare) {
+      final privacy = newMembershipPrivacy(
+        ref,
+        journey,
+        hideMetric: form.trackMetric && form.hideMetric,
+        blurMedia: form.blurOnShare,
+      );
+      if (privacy.hideMetric || privacy.blurMedia) {
         try {
           await repo.updateMyMembership(
             journey.id,
-            hideMetric: hide ? true : null,
-            blurMedia: form.blurOnShare ? true : null,
+            hideMetric: privacy.hideMetric ? true : null,
+            blurMedia: privacy.blurMedia ? true : null,
           );
         } on Object catch (e) {
           if (mounted) {

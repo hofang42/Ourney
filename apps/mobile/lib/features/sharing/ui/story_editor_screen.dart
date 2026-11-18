@@ -129,7 +129,17 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     setState(() {
       _hidden = {...hidden}..let(hide, checkIn.id);
       // A hidden photo can no longer be the cover (S11).
-      if (hide && _coverId == checkIn.id) _coverId = null;
+      // Not an unsaved edit: the hide itself already dropped it (C-B14).
+      if (hide && _coverId == checkIn.id) {
+        _coverId = null;
+        if (_initial.coverCheckInId == checkIn.id) {
+          _initial = JourneyStory(
+            title: _initial.title,
+            intro: _initial.intro,
+            lessons: _initial.lessons,
+          );
+        }
+      }
     });
     try {
       await ref

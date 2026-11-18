@@ -3,7 +3,7 @@
 --        7 Z invitee, 8 P consent group owner, 9 R consent requester (deleted), 10 T blocks R.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(41);
+select plan(45);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -251,6 +251,18 @@ do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is((select count(*)::int from public.conversation_messages(tests.conv(tests.j(7), tests.u(1), tests.u(5))) x
             where x->>'reply_to_thumb_path' is not null), 2,
   'C2: the member side still sees both thumbs');
+
+-- U16: my_blocked_people lists only the caller's own blocks, with names.
+do $$ begin perform tests.as_user(tests.u(10)); end $$;
+select results_eq($$ select b->>'username' from json_array_elements(public.my_blocked_people()) b $$,
+  $$ values ('bsuser9') $$, 'U16: the blocker sees the person they blocked, with the real name');
+do $$ begin perform tests.as_user(tests.u(9)); end $$;
+select is(json_array_length(public.my_blocked_people()), 0, 'U16: the blocked person does not see who blocked them');
+do $$ begin perform tests.as_user(tests.u(8)); end $$;
+select is(json_array_length(public.my_blocked_people()), 0, 'U16: a third user sees no blocks');
+select ok(not has_function_privilege('anon', 'public.my_blocked_people()', 'execute')
+          and has_function_privilege('authenticated', 'public.my_blocked_people()', 'execute'),
+  'U16: my_blocked_people is for authenticated only');
 
 select * from finish();
 rollback;

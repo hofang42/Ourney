@@ -5,6 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../data_context.dart';
 import '../db/app_database.dart';
 import '../social_context.dart';
+import '../social_mapping.dart' show personFromJson;
 
 /// Report/block need the server; in local-only mode they throw `offline`
 /// and [watchBlockedIds] stays empty.
@@ -78,6 +79,15 @@ class DataSafetyRepository implements SafetyRepository {
     for (final j in groups) {
       unawaited(sync.pullJourney(j.id).catchError((Object _) {}));
     }
+  }
+
+  @override
+  Future<List<PersonSummary>> myBlockedPeople() async {
+    final json = await ctx.requireRemote().rpc('my_blocked_people');
+    return [
+      if (json is List)
+        for (final p in json) personFromJson(p),
+    ];
   }
 
   @override

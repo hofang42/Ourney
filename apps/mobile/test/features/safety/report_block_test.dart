@@ -278,6 +278,32 @@ void main() {
       expect(c.read(blockedNamesProvider), isEmpty);
     });
 
+    testWidgets('blocked list uses server names on a fresh device (U16)', (
+      tester,
+    ) async {
+      final repo = FakeSafetyRepository(blocked: {'u2', 'u7'})
+        ..blockedPeople = const [
+          PersonSummary(userId: 'u2', username: 'lan', displayName: 'Lan'),
+          PersonSummary(userId: 'u7', username: 'minh', displayName: 'Minh'),
+        ];
+      final c = await pumpSignedInApp(tester, repo: repo);
+      await goTo(tester, c, SafetyPaths.blocked);
+      expect(find.text('Lan'), findsOneWidget);
+      expect(find.text('Minh'), findsOneWidget);
+      expect(byKey('safety-blocked-id-u2'), findsNothing);
+      expect(byKey('safety-blocked-id-u7'), findsNothing);
+    });
+
+    testWidgets('blocked list keeps the short id when the lookup fails (U16)', (
+      tester,
+    ) async {
+      final repo = FakeSafetyRepository(blocked: {'u7'})
+        ..blockedPeopleError = StateError('offline');
+      final c = await pumpSignedInApp(tester, repo: repo);
+      await goTo(tester, c, SafetyPaths.blocked);
+      expect(find.text('Mã u7'), findsOneWidget);
+    });
+
     testWidgets('empty blocked list', (tester) async {
       final c = await pumpSignedInApp(tester);
       await goTo(tester, c, SafetyPaths.blocked);
