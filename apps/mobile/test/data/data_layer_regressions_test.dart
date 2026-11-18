@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
@@ -204,7 +205,8 @@ void main() {
   });
 
   group('A-B12 create extras when update_journey fails', () {
-    JourneyDraft draft() => JourneyDraft(
+    JourneyDraft draft({String? id}) => JourneyDraft(
+      id: id,
       kind: JourneyKind.solo,
       templateId: TemplateId.custom,
       title: 'Sáng sớm',
@@ -226,7 +228,7 @@ void main() {
       );
     });
 
-    test('other errors surface instead of being swallowed', () async {
+    test('a rejection (invalid) still surfaces', () async {
       remote.rpcHandlers['update_journey'] = (_) =>
           throw const OurneyException(OurneyErrorCode.invalid);
       await expectLater(
@@ -239,6 +241,38 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('a retryable error does not fail create; extras are queued', () async {
+      remote.rpcHandlers['update_journey'] = (_) =>
+          throw const OurneyException(OurneyErrorCode.unknown, 'boom');
+      final j = await layer.journeys.create(draft());
+      expect(j.reminderTime, '07:30');
+      expect(j.color, 1);
+      expect(
+        await layer.ctx.outbox!.pendingKeys(),
+        contains('${journeyKey(j.id)}:extras'),
+      );
+    });
+
+    test('a retry with the same client id re-applies lost extras', () async {
+      const id = 'retry-journey-id';
+      remote.rpcHandlers['update_journey'] = (_) =>
+          throw const OurneyException(OurneyErrorCode.invalid);
+      await expectLater(
+        layer.journeys.create(draft(id: id)),
+        throwsA(isA<OurneyException>()),
+      );
+      // The cache now holds the plain server row (no extras).
+      await (db.update(db.journeys)..where((t) => t.id.equals(id))).write(
+        const JourneysCompanion(reminderTime: Value(null), color: Value(null)),
+      );
+      remote.rpcHandlers['update_journey'] = (p) =>
+          journeyRow(id, ownerId: me)
+            ..addAll({'reminder_time': '07:30', 'color': 1});
+      final j = await layer.journeys.create(draft(id: id));
+      expect(j.reminderTime, '07:30');
+      expect(j.color, 1);
     });
   });
 
@@ -296,10 +330,12 @@ void main() {
     remote.tables['memberships'] = [membershipRow(jid, me)];
     await layer.syncNow();
     remote.failure = offline;
-    final later = await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1, 10));
+    // Inserted oldest first, so insertion order is the opposite of the expected.
     final earlier = await checkIn(jid, 'b', DateTime.utc(2026, 10, 16, 0, 10));
+    final middle = await checkIn(jid, 'c', DateTime.utc(2026, 10, 16, 0, 40));
+    final later = await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1, 10));
     final list = await layer.checkIns.watchForJourney(jid).first;
-    expect([for (final c in list) c.id], [later.id, earlier.id]);
+    expect([for (final c in list) c.id], [later.id, middle.id, earlier.id]);
   });
 
   test('removeMember refreshes the rotated invite code', () async {

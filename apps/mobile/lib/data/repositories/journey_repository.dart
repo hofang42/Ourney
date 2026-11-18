@@ -81,7 +81,16 @@ class DataJourneyRepository implements JourneyRepository {
       final existing = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(clientId))).getSingleOrNull();
-      if (existing != null) return journeyFromRow(existing);
+      if (existing != null) {
+        // A-B12: the earlier attempt may have died between `create_journey`
+        // and the extras; put back whatever the row is missing.
+        await _reapplyMissingExtras(existing, draft);
+        return journeyFromRow(
+          await (_db.select(
+            _db.journeys,
+          )..where((t) => t.id.equals(clientId))).getSingle(),
+        );
+      }
     }
     final id = draft.id ?? ctx.newId();
     final visibility = normalizedVisibility(draft.kind, draft.visibility);
@@ -137,11 +146,14 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   /// `create_journey` has no edit fields: send them right after so the row
-  /// carries the create-flow answers. Offline, they are kept locally and
-  /// queued; any other failure is the caller's to see.
+  /// carries the create-flow answers. They are written locally first and
+  /// queued through the outbox on any retryable failure, so a transient error
+  /// never loses them nor fails a create that already landed. Only a
+  /// rejection (invalid / forbidden) is surfaced.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
+    await _writeLocal(id, extras);
     try {
       final row = await ctx.remote!.rpc(
         'update_journey',
@@ -149,8 +161,10 @@ class DataJourneyRepository implements JourneyRepository {
       );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
     } on OurneyException catch (e) {
-      if (e.error != OurneyErrorCode.offline) rethrow;
-      await _writeLocal(id, extras);
+      if (e.error == OurneyErrorCode.invalid ||
+          e.error == OurneyErrorCode.forbidden) {
+        rethrow;
+      }
       final outbox = ctx.outbox;
       if (outbox != null) {
         await outbox.enqueue(
@@ -160,6 +174,32 @@ class DataJourneyRepository implements JourneyRepository {
         );
         unawaited(outbox.flush());
       }
+    }
+  }
+
+  /// Retry of a create whose row exists: re-apply the extras the row lacks
+  /// (and that are not already queued). A rejection is not raised again.
+  Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
+    final extras = _extrasUpdate(d);
+    if (extras == null) return;
+    final complete =
+        (extras.layout == null || row.layout == extras.layout!.wireName) &&
+        (extras.cover == null || row.cover == extras.cover) &&
+        (extras.color == null || row.color == extras.color) &&
+        (extras.reminderTime == null ||
+            row.reminderTime == extras.reminderTime) &&
+        (extras.dna == null || row.dna == jsonEncode(extras.dna));
+    if (complete) return;
+    final queued = await ctx.outbox?.pendingKeys() ?? const <String>{};
+    if (queued.contains('${journeyKey(row.id)}:extras')) return;
+    if (ctx.remote == null) {
+      await _writeLocal(row.id, extras);
+      return;
+    }
+    try {
+      await _applyExtras(row.id, d);
+    } on OurneyException {
+      // Already surfaced on the first attempt; the journey exists.
     }
   }
 
