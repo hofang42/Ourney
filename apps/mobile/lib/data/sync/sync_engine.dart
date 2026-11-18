@@ -64,7 +64,12 @@ class SyncEngine {
   Future<void> ensureOwner(String userId) async {
     final owner = await db.readCursor(ownerCursorKey);
     if (owner == userId) return;
-    if (owner != null) {
+    // No recorded owner but cached rows: leftovers of a session that was wiped
+    // while a write was in flight (A-B5); they belong to nobody we know.
+    final leftovers =
+        owner == null &&
+        (await (db.select(db.journeys)..limit(1)).get()).isNotEmpty;
+    if (owner != null || leftovers) {
       await db.wipe();
       await store.files.wipe();
     }
@@ -93,14 +98,28 @@ class SyncEngine {
 
   // --- push -------------------------------------------------------------------
 
+  /// Applies a server journey row unless the session changed (sign-out wiped
+  /// the cache) while the request was in flight.
+  Future<void> _applyJourneyIfSession(
+    Object? row,
+    int epoch,
+    String? user,
+  ) async {
+    if (row is! Map) return;
+    if (epoch != _epoch || remote.currentUserId != user) return;
+    await store.applyJourney(row.cast<String, dynamic>());
+  }
+
   Future<void> execute(OutboxKind kind, Map<String, dynamic> p) async {
+    final epoch = _epoch;
+    final user = remote.currentUserId;
     switch (kind) {
       case OutboxKind.createJourney:
         final row = await remote.rpc(
           'create_journey',
           p.cast<String, dynamic>(),
         );
-        if (row is Map) await store.applyJourney(row.cast<String, dynamic>());
+        await _applyJourneyIfSession(row, epoch, user);
       case OutboxKind.upsertCheckIn:
         await _pushCheckIn(p['id'] as String);
       case OutboxKind.deleteMedia:
@@ -136,7 +155,7 @@ class SyncEngine {
           'update_journey',
           p.cast<String, dynamic>(),
         );
-        if (row is Map) await store.applyJourney(row.cast<String, dynamic>());
+        await _applyJourneyIfSession(row, epoch, user);
       case OutboxKind.updateMembership:
         await remote.update(
           'memberships',
