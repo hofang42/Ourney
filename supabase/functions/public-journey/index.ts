@@ -219,8 +219,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         emoji: journey.emoji,
         owner_name: ownerVisible ? owner.data?.display_name ?? null : null,
         duration_days: journey.duration_days,
-        metric_name: journey.metric_name,
-        metric_unit: journey.metric_unit,
+        metric_name: ownerHides ? null : journey.metric_name,
+        metric_unit: ownerHides ? null : journey.metric_unit,
       }
       : null,
     ...(journey.show_counts ? { like_count: likeCount ?? 0, follow_count: followers.count ?? 0 } : {}),

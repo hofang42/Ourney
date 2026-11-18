@@ -2,7 +2,11 @@
 //   1. authenticate the caller from their own JWT (Authorization: Bearer <access token>)
 //   2. remove every storage object of the user (public.account_media_paths lists the real
 //      objects in bucket `media`: avatars/{uid}/*, checkins/*/{uid}/*, and all media of
-//      journeys that die with the account). Repeated until empty, so retries are safe.
+//      journeys that die with the account), then every chat image in bucket `messages`
+//      (public.account_message_paths: images the user sent, every image of the user's
+//      conversations, and of conversations of journeys that die with the account).
+//      Repeated until empty, so retries are safe. Deploy migration 0016 (which adds
+//      account_message_paths) before this function.
 //   3. auth.admin.deleteUser -> cascades to public.profiles; the profiles BEFORE DELETE trigger
 //      hands group ownership to the earliest joined member / archives empty groups and
 //      deletes journeys nobody else is active in. Everything else cascades.
@@ -15,7 +19,7 @@
 //   {"action":"delete","code":"123456"} -> verifies that code server-side (the caller's identity is
 //                                         re-checked against the verified user), then deletes.
 // The destination is always read from the caller's own auth record, never from the request.
-import { createClient } from "npm:@supabase/supabase-js@2.117.2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 import { adminClient, chunk, json } from "../_shared/admin.ts";
 
 function anonClient() {
@@ -40,6 +44,34 @@ function authFailure(message: string | undefined, status: number | undefined): R
 }
 
 const MAX_ROUNDS = 20;
+
+/** Removes every object the listing RPC returns from `bucket`, until it lists nothing. */
+async function purgeBucket(
+  admin: SupabaseClient,
+  rpc: string,
+  bucket: string,
+  userId: string,
+): Promise<{ removed: number } | { error: Response }> {
+  let removed = 0;
+  for (let round = 0; ; round++) {
+    const { data: paths, error } = await admin.rpc(rpc, { p_user: userId });
+    if (error) {
+      console.error(`${rpc} failed`, error.message);
+      return { error: json({ error: "storage_listing_failed" }, 500) };
+    }
+    const list = (paths ?? []) as string[];
+    if (list.length === 0) return { removed };
+    if (round >= MAX_ROUNDS) return { error: json({ error: "storage_cleanup_incomplete" }, 500) };
+    for (const part of chunk(list, 100)) {
+      const { error: removeError } = await admin.storage.from(bucket).remove(part);
+      if (removeError) {
+        console.error(`storage remove failed (${bucket})`, removeError.message);
+        return { error: json({ error: "storage_cleanup_failed" }, 500) };
+      }
+      removed += part.length;
+    }
+  }
+}
 
 Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
@@ -86,23 +118,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   let removed = 0;
-  for (let round = 0; ; round++) {
-    const { data: paths, error } = await admin.rpc("account_media_paths", { p_user: userId });
-    if (error) {
-      console.error("account_media_paths failed", error.message);
-      return json({ error: "storage_listing_failed" }, 500);
-    }
-    const list = (paths ?? []) as string[];
-    if (list.length === 0) break;
-    if (round >= MAX_ROUNDS) return json({ error: "storage_cleanup_incomplete" }, 500);
-    for (const part of chunk(list, 100)) {
-      const { error: removeError } = await admin.storage.from("media").remove(part);
-      if (removeError) {
-        console.error("storage remove failed", removeError.message);
-        return json({ error: "storage_cleanup_failed" }, 500);
-      }
-      removed += part.length;
-    }
+  for (const [rpc, bucket] of [
+    ["account_media_paths", "media"],
+    ["account_message_paths", "messages"],
+  ] as const) {
+    const result = await purgeBucket(admin, rpc, bucket, userId);
+    if ("error" in result) return result.error;
+    removed += result.removed;
   }
 
   const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
