@@ -265,6 +265,8 @@ void main() {
       await goTo(tester, c, SafetyPaths.blocked);
       expect(find.text('Lan'), findsOneWidget);
       expect(find.text('Người dùng'), findsOneWidget); // name unknown
+      expect(find.text('Mã u7'), findsOneWidget); // U16: told apart by id
+      expect(byKey('safety-blocked-id-u2'), findsNothing);
 
       await tester.tap(byKey('safety-unblock-u2'));
       await tester.pumpAndSettle();

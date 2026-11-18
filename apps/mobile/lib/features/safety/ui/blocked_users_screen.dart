@@ -71,8 +71,28 @@ class _BlockedList extends ConsumerWidget {
     final shown = name ?? l10n.safety_unknownUser;
     return UiRow(
       key: ValueKey('safety-blocked-$id'),
-      leading: UiAvatar(name: shown, size: 40),
+      leading: UiAvatar(
+        name: shown,
+        colorIndex: UiAvatar.indexFor(id),
+        size: 40,
+      ),
       title: shown,
+      // Without a cached name every row would read "User": add a short id.
+      subtitle: name == null
+          ? Text(
+              l10n.safety_unknownUserId(
+                id.length > 8 ? id.substring(0, 8) : id,
+              ),
+              key: ValueKey('safety-blocked-id-$id'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(
+                size: 12,
+                height: 1.4,
+                color: context.ui.inkMuted,
+              ),
+            )
+          : null,
       showChevron: false,
       trailing: UiTextAction(
         key: ValueKey('safety-unblock-$id'),
