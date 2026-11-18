@@ -474,7 +474,8 @@ abstract interface class SharingRepository {
   Future<void> markFollowed(String newJourneyId, String sourceJourneyId);
 
   /// Creates a retold journey on the shelf (S1, S12): `origin = imported`,
-  /// `status = ended`, dates from the photos. Check-ins are then added with
+  /// `status = ended` (`active` and open-ended when [ImportedJourneyDraft.continues]),
+  /// dates from the photos. Check-ins are then added with
   /// `CheckInRepository.submit` (the 3-day rule does not apply to it).
   Future<Journey> createImported(ImportedJourneyDraft draft);
 }
@@ -491,6 +492,8 @@ class ImportedJourneyDraft {
     required this.timezone,
     this.metricName,
     this.metricUnit,
+    this.layout,
+    this.continues = false,
   });
 
   final String id;
@@ -502,6 +505,13 @@ class ImportedJourneyDraft {
   final String timezone;
   final String? metricName;
   final String? metricUnit;
+
+  /// The skin picked for the retold journey (never the squad or couple skin).
+  final PersonaSkinId? layout;
+
+  /// The journey is still going: it stays active and open-ended so photos
+  /// can keep coming (C-B11).
+  final bool continues;
 }
 
 // --- group consents (S29–S31) ------------------------------------------------

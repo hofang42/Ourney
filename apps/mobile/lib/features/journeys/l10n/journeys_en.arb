@@ -475,6 +475,22 @@
       }
     }
   },
+  "journeys_dna_dates_min_note": "A journey lasts at least {days} days, so the return date moved.",
+  "@journeys_dna_dates_min_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dna_dates_max_note": "A journey lasts at most {days} days, so the return date moved.",
+  "@journeys_dna_dates_max_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dna_prev_month": "Previous month",
   "journeys_dna_next_month": "Next month",
   "journeys_dna_name_left": "Your name",
@@ -607,9 +623,37 @@
   },
   "journeys_edit_useLayout": "Use this layout",
   "journeys_edit_cancel": "Not now",
+  "journeys_edit_discardTitle": "Discard your changes?",
+  "journeys_edit_discardBody": "You changed this journey but haven't saved. Leaving now drops those changes.",
+  "journeys_edit_discardConfirm": "Discard changes",
+  "journeys_edit_discardKeep": "Keep editing",
   "journeys_edit_layoutApplied": "Layout changed for this journey.",
   "journeys_edit_layoutOwnerOnly": "The group owner picks the layout for everyone.",
   "journeys_edit_color": "Colour",
+  "journeys_edit_skinShort_quiet": "Quiet",
+  "journeys_edit_skinColor_quiet_0": "Jade",
+  "journeys_edit_skinColor_quiet_1": "Sage green",
+  "journeys_edit_skinColor_quiet_2": "Mist",
+  "journeys_edit_skinShort_squad": "Squad",
+  "journeys_edit_skinColor_squad_0": "Flame",
+  "journeys_edit_skinColor_squad_1": "Purple",
+  "journeys_edit_skinColor_squad_2": "Chalk",
+  "journeys_edit_skinShort_memory": "Memory",
+  "journeys_edit_skinColor_memory_0": "Pine mist",
+  "journeys_edit_skinColor_memory_1": "Salt sea",
+  "journeys_edit_skinColor_memory_2": "Night city",
+  "journeys_edit_skinShort_couple": "Couple",
+  "journeys_edit_skinColor_couple_0": "Pink",
+  "journeys_edit_skinColor_couple_1": "Raspberry",
+  "journeys_edit_skinColor_couple_2": "Peach",
+  "journeys_edit_skinShort_flexer": "Flexer",
+  "journeys_edit_skinColor_flexer_0": "Neon lime",
+  "journeys_edit_skinColor_flexer_1": "Electric coral",
+  "journeys_edit_skinColor_flexer_2": "Ice",
+  "journeys_edit_skinShort_minimal": "Minimalist",
+  "journeys_edit_skinColor_minimal_0": "Orange",
+  "journeys_edit_skinColor_minimal_1": "Charcoal",
+  "journeys_edit_skinColor_minimal_2": "Sky",
   "journeys_edit_trophy": "Trophy name",
   "journeys_edit_film": "Film roll",
   "journeys_edit_filmReadonly": "{n} · view only",

@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
@@ -221,7 +222,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
     } else if (v.status == JourneyStatus.active && photos.isNotEmpty) {
       eyebrow = l10n.sharing_liveDay(_dayOf(photos.last) ?? photos.length);
     } else {
-      eyebrow = style.name;
+      eyebrow = journeyStyleName(context, style);
     }
     final replyTo = v.kind == JourneyKind.group
         ? (v.sharedBy ?? v.owner).displayName

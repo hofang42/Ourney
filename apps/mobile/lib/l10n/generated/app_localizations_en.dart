@@ -13,6 +13,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get app_name => 'Ourney';
 
   @override
+  String get journeyStyle_quietTransformer => 'Quiet Transformer';
+
+  @override
+  String get journeyStyle_accountabilitySquad => 'Accountability Squad';
+
+  @override
+  String get journeyStyle_memoryCollectors => 'Memory Collectors';
+
+  @override
+  String get journeyStyle_coupleRituals => 'Couple Rituals';
+
+  @override
+  String get journeyStyle_aestheticFlexer => 'Aesthetic Flexer';
+
+  @override
+  String get journeyStyle_minimalistHabit => 'Minimalist Habit';
+
+  @override
+  String get journeyStyle_glowRitual => 'Glow Ritual';
+
+  @override
+  String get journeyStyle_littleMilestones => 'Little Milestones';
+
+  @override
+  String get journeyStyle_pawGrowth => 'Paw Growth';
+
+  @override
+  String get journeyStyle_blueprintMakeover => 'Blueprint Makeover';
+
+  @override
   String get nav_journeys => 'Journeys';
 
   @override

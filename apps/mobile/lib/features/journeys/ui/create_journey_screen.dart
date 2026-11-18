@@ -150,6 +150,8 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
         form.toDraft(
           startDate: journeyLocalDate(form.timezone, now),
           id: _clientId,
+          // The colour picked on the ticket (bug B-B12).
+          color: _variant,
         ),
       );
       // The new journey may get the 21:00 streak alert (FR-G2).

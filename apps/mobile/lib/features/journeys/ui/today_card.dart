@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -63,7 +64,7 @@ class TodayCard extends ConsumerWidget {
               const Spacer(),
               Flexible(
                 child: Text(
-                  style.name.toUpperCase(),
+                  journeyStyleName(context, style).toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: label(10, opacity: 0.72),

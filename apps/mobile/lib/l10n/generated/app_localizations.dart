@@ -104,6 +104,66 @@ abstract class AppLocalizations {
   /// **'Ourney'**
   String get app_name;
 
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Lặng lẽ đổi thay'**
+  String get journeyStyle_quietTransformer;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Đội cùng cam kết'**
+  String get journeyStyle_accountabilitySquad;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Người lưu giữ ký ức'**
+  String get journeyStyle_memoryCollectors;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Nghi thức đôi lứa'**
+  String get journeyStyle_coupleRituals;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Khoe nét thẩm mỹ'**
+  String get journeyStyle_aestheticFlexer;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Thói quen tối giản'**
+  String get journeyStyle_minimalistHabit;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Nghi thức tỏa sáng'**
+  String get journeyStyle_glowRitual;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Cột mốc nhỏ'**
+  String get journeyStyle_littleMilestones;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Lớn lên cùng thú cưng'**
+  String get journeyStyle_pawGrowth;
+
+  /// Display name of a journey style (U20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Lột xác theo bản vẽ'**
+  String get journeyStyle_blueprintMakeover;
+
   /// Bottom bar tab: list of journeys (docs/03: Journeys · Chụp · Nhóm).
   ///
   /// In vi, this message translates to:

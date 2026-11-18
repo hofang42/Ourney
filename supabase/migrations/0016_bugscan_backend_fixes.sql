@@ -831,3 +831,148 @@ begin
   ), '[]'::json);
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- C-B11: create_imported_journey takes the skin (layout) and "still going"
+-- (p_continues): the journey stays active and open-ended (duration_days null) so the owner can
+-- keep adding photos. Replaces the 9-argument function from 0006_social.
+-- ---------------------------------------------------------------------------
+drop function if exists public.create_imported_journey(
+  uuid, text, text, public.template_id, date, date, text, text, text);
+
+create function public.create_imported_journey(
+  p_id uuid,
+  p_title text,
+  p_emoji text,
+  p_template public.template_id,
+  p_first date,
+  p_last date,
+  p_timezone text,
+  p_metric_name text default null,
+  p_metric_unit text default null,
+  p_layout text default null,
+  p_continues boolean default false
+) returns public.journeys
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  j public.journeys%rowtype;
+  v_days int;
+begin
+  if p_id is null or p_first is null or p_last is null or p_timezone is null then
+    raise exception 'invalid';
+  end if;
+  perform now() at time zone p_timezone; -- 22023 for an unknown timezone
+  v_days := p_last - p_first + 1;
+  if v_days < 1 or v_days > 366 or p_last > public.local_date(now(), p_timezone) then
+    raise exception 'invalid';
+  end if;
+  -- A solo journey: no squad skin, and the couple skin needs couple names.
+  if p_layout is not null and p_layout not in
+     ('quiet_transformer', 'memory_collectors', 'aesthetic_flexer', 'minimalist_habit') then
+    raise exception 'invalid';
+  end if;
+
+  perform 1 from public.profiles where id = uid and deleted_at is null for update;
+  if not found then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  select * into j from public.journeys where id = p_id;
+  if found then
+    if j.owner_id = uid then
+      return j; -- idempotent
+    end if;
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  insert into public.journeys (
+    id, owner_id, kind, template_id, title, emoji, metric_name, metric_unit,
+    hide_metric_default, start_date, duration_days, timezone, visibility, status,
+    max_members, origin, layout)
+  values (
+    p_id, uid, 'solo', coalesce(p_template, 'custom'), btrim(p_title), p_emoji,
+    p_metric_name, p_metric_unit, coalesce(p_template, 'custom') = 'weight_loss', p_first,
+    case when coalesce(p_continues, false) then null else v_days end, p_timezone, 'private',
+    case when coalesce(p_continues, false) then 'active' else 'ended' end::public.journey_status,
+    1, 'imported', p_layout)
+  returning * into j;
+  insert into public.memberships (journey_id, user_id, role, hide_metric)
+  values (j.id, uid, 'owner', j.hide_metric_default);
+  return j;
+end;
+$$;
+
+revoke execute on function
+  public.create_imported_journey(uuid, text, text, public.template_id, date, date, text, text, text, text, boolean)
+  from public, anon;
+grant execute on function
+  public.create_imported_journey(uuid, text, text, public.template_id, date, date, text, text, text, text, boolean)
+  to authenticated, service_role;
+
+-- Imported check-ins: the owner's photos stay inside start_date .. start + duration - 1 only
+-- while the journey has a duration; an open-ended (continuing) one has no upper cap.
+create or replace function public.check_ins_before_write() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  j public.journeys%rowtype;
+  v_imported boolean;
+begin
+  select * into j from public.journeys where id = new.journey_id;
+  if not found then
+    raise exception 'not_found' using errcode = 'P0001';
+  end if;
+
+  if tg_op = 'UPDATE' and (new.journey_id <> old.journey_id or new.user_id <> old.user_id) then
+    raise exception 'immutable_column' using errcode = '23514';
+  end if;
+
+  new.local_date := public.local_date(new.captured_at, j.timezone);
+  new.metric_value := null;
+  -- A live (camera) photo on a journey that is still going follows the normal rules.
+  v_imported := j.origin = 'imported' and new.user_id = j.owner_id
+    and not (j.status = 'active' and j.duration_days is null and not new.from_library);
+
+  if current_user in ('authenticated', 'anon') then
+    if tg_op = 'UPDATE' and old.moderated_at is not null then
+      raise exception 'forbidden' using errcode = '42501';
+    end if;
+    if new.captured_at > now() + interval '10 minutes' then
+      raise exception 'invalid_captured_at' using errcode = '22008';
+    end if;
+    if v_imported then
+      if j.deleted_at is not null or (j.duration_days is null and j.status <> 'active') then
+        raise exception 'ended' using errcode = 'P0001';
+      end if;
+      if new.local_date < j.start_date
+         or (j.duration_days is not null
+             and new.local_date > j.start_date + j.duration_days - 1) then
+        raise exception 'invalid_captured_at' using errcode = '22008';
+      end if;
+    else
+      if (tg_op = 'INSERT' or new.captured_at is distinct from old.captured_at)
+         and new.local_date < public.local_date(now(), j.timezone) - 3 then
+        raise exception 'invalid_captured_at' using errcode = '22008';
+      end if;
+      if j.status <> 'active' or j.deleted_at is not null then
+        raise exception 'ended' using errcode = 'P0001';
+      end if;
+      if j.duration_days is not null and new.local_date > j.start_date + j.duration_days - 1 then
+        raise exception 'ended' using errcode = 'P0001';
+      end if;
+    end if;
+    if tg_op = 'INSERT' then
+      new.hidden_by_leave := false;
+      new.moderated_at := null;
+      new.hidden_in_share := false;
+    else
+      new.hidden_by_leave := old.hidden_by_leave;
+      new.moderated_at := old.moderated_at;
+      new.hidden_in_share := old.hidden_in_share;
+    end if;
+  end if;
+  return new;
+end;
+$$;

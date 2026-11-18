@@ -684,6 +684,10 @@
   "@sharing_retellIntro": {
     "description": "SCR-28 intro."
   },
+  "sharing_retellDiscardTitle": "Rời đi mà không lưu?",
+  "sharing_retellDiscardBody": "Tên và ảnh của hành trình này chưa được lưu. Rời đi bây giờ sẽ mất chúng.",
+  "sharing_retellDiscardConfirm": "Rời đi",
+  "sharing_retellDiscardKeep": "Ở lại",
   "sharing_pickPhotos": "Chọn ảnh",
   "@sharing_pickPhotos": {
     "description": "Opens the photo library (multi select)."

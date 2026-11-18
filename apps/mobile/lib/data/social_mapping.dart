@@ -242,6 +242,8 @@ Map<String, dynamic> importedJourneyParams(ImportedJourneyDraft d) => {
   'p_timezone': d.timezone,
   'p_metric_name': d.metricName,
   'p_metric_unit': d.metricUnit,
+  'p_layout': d.layout?.wireName,
+  'p_continues': d.continues,
 };
 
 // --- consents ---------------------------------------------------------------

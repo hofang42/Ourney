@@ -1,6 +1,46 @@
 {
   "@@locale": "en",
   "app_name": "Ourney",
+  "journeyStyle_quietTransformer": "Quiet Transformer",
+  "@journeyStyle_quietTransformer": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_accountabilitySquad": "Accountability Squad",
+  "@journeyStyle_accountabilitySquad": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_memoryCollectors": "Memory Collectors",
+  "@journeyStyle_memoryCollectors": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_coupleRituals": "Couple Rituals",
+  "@journeyStyle_coupleRituals": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_aestheticFlexer": "Aesthetic Flexer",
+  "@journeyStyle_aestheticFlexer": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_minimalistHabit": "Minimalist Habit",
+  "@journeyStyle_minimalistHabit": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_glowRitual": "Glow Ritual",
+  "@journeyStyle_glowRitual": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_littleMilestones": "Little Milestones",
+  "@journeyStyle_littleMilestones": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_pawGrowth": "Paw Growth",
+  "@journeyStyle_pawGrowth": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_blueprintMakeover": "Blueprint Makeover",
+  "@journeyStyle_blueprintMakeover": {
+    "description": "Display name of a journey style (U20)."
+  },
   "nav_journeys": "Journeys",
   "nav_capture": "Capture",
   "nav_groups": "Squad",

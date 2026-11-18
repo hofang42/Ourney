@@ -62,10 +62,17 @@ class DataCheckInRepository implements CheckInRepository {
     // Same rule as the `check_ins_before_write` trigger (0006): the owner of a
     // retold journey (origin `imported`, created `ended`) fills its dates in,
     // so it skips the "journey must be active" rule.
+    final active = journey.status == JourneyStatus.active.wireName;
+    // A live photo on a journey that is still going (active, no duration)
+    // follows the normal rules (0016).
     final imported =
         journey.origin == JourneyOrigin.imported.wireName &&
-        journey.ownerId == me;
-    if (!imported && journey.status != JourneyStatus.active.wireName) {
+        journey.ownerId == me &&
+        !(active && journey.durationDays == null && !draft.fromLibrary);
+    if (!imported && !active) {
+      throw const OurneyException(OurneyErrorCode.ended);
+    }
+    if (imported && journey.durationDays == null && !active) {
       throw const OurneyException(OurneyErrorCode.ended);
     }
     if (validateCaption(draft.caption) != null ||
@@ -79,10 +86,12 @@ class DataCheckInRepository implements CheckInRepository {
     final localDate = ctx.clock.localDate(draft.capturedAt, journey.timezone);
     final duration = journey.durationDays;
     if (imported) {
-      // Retold photos must land inside the journey's dates.
-      final last = journey.startDate.addDays((duration ?? 1) - 1);
+      // Retold photos must land inside the journey's dates; a journey that
+      // is still going (no duration) has no upper cap, like the
+      // `check_ins_before_write` trigger (0016).
       if (localDate.compareTo(journey.startDate) < 0 ||
-          localDate.isAfter(last)) {
+          (duration != null &&
+              localDate.isAfter(journey.startDate.addDays(duration - 1)))) {
         throw const OurneyException(OurneyErrorCode.invalidCapturedAt);
       }
     } else if (duration != null &&

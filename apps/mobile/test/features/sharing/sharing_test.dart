@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/app/router.dart';
 import 'package:ourney/app/theme/app_theme.dart';
 import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/features/sharing/sharing.dart';
@@ -530,11 +533,16 @@ void main() {
           RetellPhoto(path: 'a.jpg', modified: DateTime(2024, 2, 3, 9)),
         ]),
       );
-      await _tap(tester, _key('retell-save'));
-      expect(_key('retell-error'), findsOneWidget);
+      // Save is off until the form is valid (U19); the reason shows once
+      // something is filled in.
+      expect(tester.widget<UiButton>(_key('retell-save')).onPressed, isNull);
+      expect(_key('retell-error'), findsNothing);
 
       await tester.enterText(_key('retell-title'), 'Hoi An 2024');
+      await tester.pumpAndSettle();
+      expect(find.text('Pick at least one photo'), findsOneWidget);
       await _tap(tester, _key('retell-pick'));
+      expect(_key('retell-error'), findsNothing);
       expect(find.text('2 photos'), findsOneWidget);
 
       // Move the first photo (3 Feb) to 2 Feb.
@@ -558,6 +566,28 @@ void main() {
       expect(checkIns.submitted.first.capturedAt, DateTime.utc(2024, 2, 2, 5));
       expect(checkIns.submitted.first.fromLibrary, isTrue);
       expect(h.location, '/journey/imp1');
+    });
+
+    testWidgets('back with picked photos asks before leaving (U19)', (
+      tester,
+    ) async {
+      final h = await pumpSharing(
+        tester,
+        location: '/journeys',
+        picker: FakeRetellPicker([
+          RetellPhoto(path: 'a.jpg', modified: DateTime(2024, 2, 3, 9)),
+        ]),
+      );
+      unawaited(h.container.read(routerProvider).push('/retell'));
+      await tester.pumpAndSettle();
+      await _tap(tester, _key('retell-pick'));
+      await _tap(tester, find.bySemanticsLabel('Back').first);
+      expect(find.text('Leave without saving?'), findsOneWidget);
+      await _tap(tester, find.text('Keep going'));
+      expect(_key('retell'), findsOneWidget);
+      await _tap(tester, find.bySemanticsLabel('Back').first);
+      await _tap(tester, _key('retell-discard-confirm'));
+      expect(_key('retell'), findsNothing);
     });
   });
 

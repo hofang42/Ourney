@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../personas/persona_contract.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 
 /// The V1.0 journey style (paper, ink, accent) of a persona skin. The six
@@ -35,7 +36,7 @@ class JourneyPalette {
       ink: dark ? context.ui.ink : style.ink,
       accent: style.accent,
       onAccent: style.onAccent,
-      name: style.name,
+      name: journeyStyleName(context, style),
     );
   }
 

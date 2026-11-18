@@ -209,7 +209,7 @@ class _HubNotices extends ConsumerWidget {
           if (resume != null)
             UiCard(
               key: const ValueKey('hub-create-progress'),
-              onPressed: () => context.push(AppRoutes.journeyNew),
+              onPressed: () => context.push(AppRoutes.journeyNewResume),
               semanticLabel:
                   '${l10n.journeys_hubResumeTitle}, ${l10n.journeys_hubResumeStep(resume)}',
               child: Row(

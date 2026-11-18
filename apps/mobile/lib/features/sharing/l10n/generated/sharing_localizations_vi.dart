@@ -512,6 +512,19 @@ class SharingL10nVi extends SharingL10n {
       'Đã đi rồi? Biến ảnh cũ thành một câu chuyện';
 
   @override
+  String get sharing_retellDiscardTitle => 'Rời đi mà không lưu?';
+
+  @override
+  String get sharing_retellDiscardBody =>
+      'Tên và ảnh của hành trình này chưa được lưu. Rời đi bây giờ sẽ mất chúng.';
+
+  @override
+  String get sharing_retellDiscardConfirm => 'Rời đi';
+
+  @override
+  String get sharing_retellDiscardKeep => 'Ở lại';
+
+  @override
   String get sharing_pickPhotos => 'Chọn ảnh';
 
   @override

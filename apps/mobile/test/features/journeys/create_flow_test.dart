@@ -3,13 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
+import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
+import 'package:ourney/features/journeys/ui/create/dna_questions.dart';
 import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
 import 'package:ourney/features/onboarding/onboarding_providers.dart';
 import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/test_helpers.dart';
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
@@ -55,7 +59,8 @@ Future<void> _skipDna(WidgetTester tester) async {
       await type('dna-habit', 'Read');
       await type('dna-reason', 'Sleep');
     } else if (has('dna-dates-summary')) {
-      final day = DateTime.now().day;
+      // The calendar opens on the journeys clock's today.
+      final day = testNow.day;
       await _tap(tester, 'dna-day-$day');
       await _tap(tester, 'dna-day-$day');
     } else if (choice.evaluate().isNotEmpty) {
@@ -181,6 +186,35 @@ void _reminderAndIconGroup() {
 }
 
 void main() {
+  group('trip length (B-B11)', () {
+    test('counts calendar days, whatever the DST change in between', () {
+      // An explicit DST zone, not the machine's: US spring-forward is
+      // 2027-03-14 (a 23-hour day), so a plain `difference` loses a day.
+      tzdata.initializeTimeZones();
+      final ny = tz.getLocation('America/New_York');
+      tz.TZDateTime at(int y, int m, int d) => tz.TZDateTime(ny, y, m, d);
+      expect(at(2027, 3, 14).difference(at(2027, 3, 27)).inDays.abs(), 12);
+      expect(dnaTripDays(at(2027, 3, 14), at(2027, 3, 27)), 14);
+      expect(dnaTripDays(at(2027, 3, 10), at(2027, 3, 16)), 7);
+      expect(dnaTripDays(at(2027, 3, 10), at(2027, 3, 10)), 1);
+    });
+
+    test('clamps the end into the journey length limits', () {
+      final start = DateTime(2027, 3, 10);
+      expect(
+        dnaClampTripEnd(start, DateTime(2027, 3, 12)),
+        DateTime(2027, 3, 16),
+      );
+      expect(
+        dnaClampTripEnd(start, DateTime(2027, 3, 20)),
+        DateTime(2027, 3, 20),
+      );
+      expect(
+        dnaTripDays(start, dnaClampTripEnd(start, DateTime(2029))),
+        durationMax,
+      );
+    });
+  });
   _dnaGroup();
   _reminderAndIconGroup();
   group('Create flow (V2, 5 steps)', () {
@@ -394,6 +428,91 @@ void main() {
       expect(find.text('step 3/5'), findsOneWidget);
     });
 
+    testWidgets('the resume card reopens the saved step and answers (U8)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-kind-couple');
+      await tester.enterText(_key('journey-couple-left'), 'An');
+      await tester.enterText(_key('journey-couple-right'), 'Bình');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 4/5');
+      await _tap(tester, 'create-close');
+      expect(find.text('step 4/5'), findsOneWidget);
+
+      await _tap(tester, 'hub-create-progress');
+      expect(_stepLabel(tester), 'Step 4/5');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-create');
+      final draft = h.journeys.created.single;
+      expect(draft.title, 'Đọc sách');
+      expect(draft.coupleSelfName, 'An');
+      expect(draft.couplePartnerName, 'Bình');
+      expect(draft.layout, PersonaSkinId.coupleRituals);
+    });
+
+    testWidgets('a fresh visit ignores the saved draft; resuming reuses '
+        'its client id and clears it once created (U8)', (tester) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-close');
+      final progress = h.container.read(createProgressProvider.notifier);
+      final savedId = progress.draft?['clientId'];
+      expect(savedId, isA<String>());
+
+      await h.go(tester, AppRoutes.journeyNew);
+      expect(_stepLabel(tester), 'Step 1/5');
+      await _tap(tester, 'create-close');
+      // Backing out of a fresh visit keeps the older draft.
+      expect(_key('hub-create-progress'), findsOneWidget);
+
+      // Leave a draft again, then resume it from the card.
+      await h.go(tester, AppRoutes.journeyNew);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-close');
+      final id = progress.draft?['clientId'] as String;
+      await _tap(tester, 'hub-create-progress');
+      expect(_stepLabel(tester), 'Step 3/5');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created.single.id, id);
+      expect(h.container.read(createProgressProvider), isNull);
+      expect(progress.draft, isNull);
+    });
+
+    testWidgets('leaving from step 1 drops the resume card (U8)', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-close');
+      expect(_key('hub-create-progress'), findsOneWidget);
+      await _tap(tester, 'hub-create-progress');
+      expect(_stepLabel(tester), 'Step 3/5');
+      for (var i = 0; i < 2; i++) {
+        await _tap(tester, 'create-back');
+      }
+      await _tap(tester, 'create-back'); // the habit question page
+      expect(_stepLabel(tester), 'Step 1/5');
+      await _tap(tester, 'create-back');
+      expect(_key('hub-create-progress'), findsNothing);
+    });
+
     testWidgets('local-only: group is disabled', (tester) async {
       final h = await _open(tester);
       await _pick(tester, 'template-workout_30');
@@ -523,7 +642,7 @@ void _dnaGroup() {
       expect(_key('dna-pine'), findsOneWidget);
       await _tap(tester, 'create-next');
       expect(_key('dna-page-dates'), findsOneWidget);
-      final day = DateTime.now().day;
+      final day = testNow.day;
       await _tap(tester, 'dna-day-$day');
       await _tap(tester, 'dna-day-$day');
       await _tap(tester, 'create-next');
@@ -545,6 +664,108 @@ void _dnaGroup() {
       await _tap(tester, 'dna-choice-side-left');
       await _tap(tester, 'create-next');
       expect(_key('journey-title'), findsOneWidget);
+    });
+
+    Future<void> toDates(WidgetTester tester) async {
+      await _tap(tester, 'template-travel');
+      await _tap(tester, 'dna-place_dalat');
+      await _tap(tester, 'create-next');
+      expect(_key('dna-page-dates'), findsOneWidget);
+    }
+
+    Future<void> finish(WidgetTester tester) async {
+      await _tap(tester, 'create-next');
+      await _skipDna(tester);
+      for (var i = 0; i < 4 && _key('journey-create').evaluate().isEmpty; i++) {
+        await _tap(tester, 'create-next');
+      }
+      await _tap(tester, 'journey-create');
+    }
+
+    testWidgets('travel: "return date not set" makes it open-ended (B-B11)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await toDates(tester);
+      await _tap(tester, 'dna-day-20');
+      await _tap(tester, 'dna-dates-open');
+      await finish(tester);
+      final draft = h.journeys.created.single;
+      expect(draft.durationDays, isNull);
+      expect(draft.startDate, const LocalDate(2026, 10, 20));
+    });
+
+    testWidgets('travel: a short trip shows and saves the shortest journey '
+        '(B-B11)', (tester) async {
+      final h = await _open(tester);
+      await toDates(tester);
+      await _tap(tester, 'dna-day-20');
+      await _tap(tester, 'dna-day-22');
+      expect(_key('dna-dates-min-note'), findsOneWidget);
+      expect(find.text('Oct 20 – Oct 26'), findsOneWidget);
+      await finish(tester);
+      expect(h.journeys.created.single.durationDays, durationMin);
+    });
+
+    testWidgets('travel: a 14-day trip is 14 days (B-B11)', (tester) async {
+      final h = await _open(tester);
+      await toDates(tester);
+      await _tap(tester, 'dna-day-17');
+      await _tap(tester, 'dna-day-30');
+      expect(_key('dna-dates-min-note'), findsNothing);
+      await finish(tester);
+      expect(h.journeys.created.single.durationDays, 14);
+    });
+
+    testWidgets('weight loss: turning "hide weight" off is kept (B-B12)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _tap(tester, 'template-weight_loss');
+      await _tap(tester, 'dna-choice-goal-keep');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'dna-hide-weight');
+      expect(_switch(tester, 'dna-hide-weight'), isFalse);
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'dna-ghost-later');
+      expect(_switch(tester, 'journey-hide-metric'), isFalse);
+      await _tap(tester, 'journey-blur');
+      await finish(tester);
+      expect(h.journeys.created.single.hideMetricDefault, isFalse);
+      expect(h.journeys.prefUpdates, isEmpty);
+    });
+
+    testWidgets('the ticket colour is saved with the journey (B-B12)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-workout_30');
+      for (var i = 0; i < 3; i++) {
+        await _tap(tester, 'create-next');
+      }
+      await tester.tap(find.text('Change color'));
+      await tester.pumpAndSettle();
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created.single.color, 1);
+    });
+
+    testWidgets('couple picked at step 3 keeps the couple skin (B-B10)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-kind-couple');
+      await tester.enterText(_key('journey-couple-left'), 'An');
+      await tester.enterText(_key('journey-couple-right'), 'Bình');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      expect(_key('ticket-couple'), findsOneWidget);
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created.single.layout, PersonaSkinId.coupleRituals);
     });
 
     testWidgets('the import link opens the import flow route', (tester) async {

@@ -211,6 +211,8 @@ void main() {
         firstDate: LocalDate(2025, 4, 1),
         lastDate: LocalDate(2025, 4, 5),
         timezone: vnZone,
+        layout: PersonaSkinId.memoryCollectors,
+        continues: true,
       ),
     );
     expect(p, {
@@ -223,6 +225,8 @@ void main() {
       'p_timezone': vnZone,
       'p_metric_name': null,
       'p_metric_unit': null,
+      'p_layout': 'memory_collectors',
+      'p_continues': true,
     });
   });
 

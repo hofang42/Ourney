@@ -26,6 +26,7 @@ class CreateDnaStep extends StatelessWidget {
     required this.onHideWeightChanged,
     required this.onAdvanceDna,
     required this.onApplyDates,
+    required this.today,
     super.key,
   });
 
@@ -44,6 +45,9 @@ class CreateDnaStep extends StatelessWidget {
   final ValueChanged<bool> onHideWeightChanged;
   final VoidCallback onAdvanceDna;
   final ValueChanged<DnaDates> onApplyDates;
+
+  /// Today in the journey's zone (the journeys clock), not `DateTime.now()`.
+  final DateTime today;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +90,7 @@ class CreateDnaStep extends StatelessWidget {
         onChanged: (v) => onSetDna('place', v),
       ),
       DnaKind.dates => DnaDateRange(
-        today: DateTime.now(),
+        today: today,
         value: dna['dates'] as DnaDates?,
         locale: locale,
         onChanged: onApplyDates,

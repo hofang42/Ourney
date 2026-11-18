@@ -341,7 +341,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         : '$metricName (${journey.metricUnit})';
     final privacy = journey.kind == JourneyKind.solo
         ? (UiPrivacy.private, l10n.checkin_privacyPrivate)
-        : journey.maxMembers == 2
+        : journey.maxMembers == 2 ||
+              journey.coupleSelfName != null ||
+              personaSkinOf(journey) == PersonaSkinId.coupleRituals
         ? (UiPrivacy.couple, l10n.checkin_privacyCouple)
         : (UiPrivacy.squad, l10n.checkin_privacySquad);
     // Per-skin copy of the Figma Post screens (primary label, caption label).

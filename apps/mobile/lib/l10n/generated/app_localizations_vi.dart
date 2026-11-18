@@ -13,6 +13,36 @@ class AppLocalizationsVi extends AppLocalizations {
   String get app_name => 'Ourney';
 
   @override
+  String get journeyStyle_quietTransformer => 'Lặng lẽ đổi thay';
+
+  @override
+  String get journeyStyle_accountabilitySquad => 'Đội cùng cam kết';
+
+  @override
+  String get journeyStyle_memoryCollectors => 'Người lưu giữ ký ức';
+
+  @override
+  String get journeyStyle_coupleRituals => 'Nghi thức đôi lứa';
+
+  @override
+  String get journeyStyle_aestheticFlexer => 'Khoe nét thẩm mỹ';
+
+  @override
+  String get journeyStyle_minimalistHabit => 'Thói quen tối giản';
+
+  @override
+  String get journeyStyle_glowRitual => 'Nghi thức tỏa sáng';
+
+  @override
+  String get journeyStyle_littleMilestones => 'Cột mốc nhỏ';
+
+  @override
+  String get journeyStyle_pawGrowth => 'Lớn lên cùng thú cưng';
+
+  @override
+  String get journeyStyle_blueprintMakeover => 'Lột xác theo bản vẽ';
+
+  @override
   String get nav_journeys => 'Hành trình';
 
   @override

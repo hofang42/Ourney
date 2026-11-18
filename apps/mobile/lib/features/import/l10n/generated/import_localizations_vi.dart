@@ -46,16 +46,16 @@ class ImportL10nVi extends ImportL10n {
   String get import_layoutHeading => 'Giao diện';
 
   @override
-  String get import_layout_quiet => 'Quiet';
+  String get import_layout_quiet => 'Lặng lẽ';
 
   @override
-  String get import_layout_memory => 'Memory';
+  String get import_layout_memory => 'Ký ức';
 
   @override
-  String get import_layout_flexer => 'Flexer';
+  String get import_layout_flexer => 'Khoe thẩm mỹ';
 
   @override
-  String get import_layout_minimal => 'Minimalist';
+  String get import_layout_minimal => 'Tối giản';
 
   @override
   String get import_layoutNote =>

@@ -3,7 +3,7 @@
 --        7 Z invitee, 8 P consent group owner, 9 R consent requester (deleted), 10 T blocks R.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(41);
+select plan(51);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -251,6 +251,35 @@ do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is((select count(*)::int from public.conversation_messages(tests.conv(tests.j(7), tests.u(1), tests.u(5))) x
             where x->>'reply_to_thumb_path' is not null), 2,
   'C2: the member side still sees both thumbs');
+
+-- ===== C-B11: retold journeys keep their skin and can still be going =============
+do $$ begin perform tests.as_user(tests.u(1)); end $$;
+select throws_ok($$ select public.create_imported_journey(tests.j(10), 'Trip', '✈️', 'travel', current_date - 40, current_date - 20, 'UTC', null, null, 'accountability_squad') $$,
+  'P0001', 'invalid', 'C-B11: a retold journey refuses the squad layout');
+select throws_ok($$ select public.create_imported_journey(tests.j(10), 'Trip', '✈️', 'travel', current_date - 40, current_date - 20, 'UTC', null, null, 'couple_rituals') $$,
+  'P0001', 'invalid', 'C-B11: a retold journey refuses the couple layout (no couple names)');
+select throws_ok($$ select public.create_imported_journey(tests.j(10), 'Trip', '✈️', 'travel', current_date - 40, current_date - 20, 'UTC', null, null, 'nope') $$,
+  'P0001', 'invalid', 'C-B11: an unknown layout is refused');
+select results_eq($$ select layout, status::text, duration_days
+                       from public.create_imported_journey(tests.j(10), 'Trip', '✈️', 'travel', current_date - 40, current_date - 20, 'UTC', null, null, 'minimalist_habit', false) $$,
+  $$ values ('minimalist_habit', 'ended', 21) $$, 'C-B11: layout stored, finished journey is ended with its length');
+select results_eq($$ select layout, status::text, duration_days
+                       from public.create_imported_journey(tests.j(11), 'Trip', '✈️', 'travel', current_date - 40, current_date - 20, 'UTC', null, null, 'memory_collectors', true) $$,
+  $$ values ('memory_collectors', 'active', null::int) $$, 'C-B11: continuing = active and open-ended');
+select lives_ok($$ select tests.checkin(tests.c(91), tests.j(11), now()) $$,
+  'C-B11: a continuing retold journey takes a photo past the old date cap');
+
+select throws_ok($$ select tests.checkin(tests.c(92), tests.j(10), now()) $$,
+  '22008', null, 'C-B11: a finished retold journey refuses a photo past its end date');
+select lives_ok($$ select tests.checkin(tests.c(93), tests.j(10), now() - interval '30 days') $$,
+  'C-B11: but takes a back-dated one inside its dates');
+do $$ begin perform tests.as_postgres();
+  update public.journeys set status = 'ended' where id = tests.j(11);
+  perform tests.as_user(tests.u(1)); end $$;
+select throws_ok($$ select tests.checkin(tests.c(94), tests.j(11), now() - interval '25 days') $$,
+  'P0001', 'ended', 'C-B11: an ended open-ended retold journey refuses photos');
+select throws_ok($$ select tests.checkin(tests.c(95), tests.j(11), now()) $$,
+  'P0001', 'ended', 'C-B11: also a live one');
 
 select * from finish();
 rollback;

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -211,7 +212,7 @@ class _TodayRow extends StatelessWidget {
         ),
       ),
       subtitle: Text(
-        style.name,
+        journeyStyleName(context, style),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: UiText.body(size: 11, color: ui.inkMuted),

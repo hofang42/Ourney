@@ -38,6 +38,38 @@ Widget _host(
 );
 
 void main() {
+  testWidgets(
+    'a trip longer than the longest journey says it was cut (B-B11)',
+    (tester) async {
+      DnaDates? value = DnaDates(DateTime(2026, 11, 20));
+      await tester.pumpWidget(
+        _host(
+          StatefulBuilder(
+            builder: (context, setState) => DnaDateRange(
+              today: DateTime(2026, 11, 15),
+              value: value,
+              locale: 'en',
+              onChanged: (v) => setState(() => value = v),
+            ),
+          ),
+          brightness: Brightness.light,
+          scale: 1,
+          locale: const Locale('en'),
+        ),
+      );
+      // 13 months on: Dec 2027, past 365 days after Nov 20 2026.
+      for (var i = 0; i < 13; i++) {
+        await tester.tap(find.byType(InkWell).last);
+        await tester.pump();
+      }
+      await tester.tap(find.byKey(const ValueKey('dna-day-28')));
+      await tester.pump();
+      expect(find.byKey(const ValueKey('dna-dates-max-note')), findsOneWidget);
+      expect(find.byKey(const ValueKey('dna-dates-min-note')), findsNothing);
+      expect(dnaTripDays(value!.start, value!.end!), durationMax);
+    },
+  );
+
   final pages = <String, Widget Function()>{
     for (final t in TemplateId.values)
       for (final q in dnaQuestionsFor(t).where((q) => q.kind == DnaKind.choice))
