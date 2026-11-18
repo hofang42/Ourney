@@ -363,19 +363,22 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_inviteNeedsHandle => 'Enter a username first.';
 
   @override
-  String get groups_codeLabel => 'enter invite code';
+  String get groups_codeLabel => 'Invite code';
 
   @override
-  String get groups_codeHint => 'K7Q2-M9XA';
+  String get groups_codeHint => '8-character code';
 
   @override
-  String get groups_pasteCode => 'Paste code';
+  String get groups_pasteCode => 'Paste';
+
+  @override
+  String get groups_pasteNoCode => 'No invite code in your clipboard';
 
   @override
   String get groups_joinAction => 'Join';
 
   @override
-  String get groups_todayHeading => 'today';
+  String get groups_todayHeading => 'Today';
 
   @override
   String groups_checkedInCount(int done, int total) {
@@ -391,7 +394,7 @@ class GroupsL10nEn extends GroupsL10n {
   }
 
   @override
-  String get groups_pendingInvitesHeading => 'pending invites';
+  String get groups_pendingInvitesHeading => 'Pending invites';
 
   @override
   String groups_inviteLine(String inviter, String title) {
@@ -414,6 +417,25 @@ class GroupsL10nEn extends GroupsL10n {
   String groups_memberHandle(String username) {
     return '@$username';
   }
+
+  @override
+  String groups_memberCheckedAt(String time) {
+    return 'Checked in at $time';
+  }
+
+  @override
+  String get groups_memberNotYetToday => 'Not checked in yet today';
+
+  @override
+  String groups_memberStreak(int count) {
+    return '$count-day streak';
+  }
+
+  @override
+  String get groups_memberCheckInNow => 'Check in now';
+
+  @override
+  String get groups_memberAddPhoto => 'Add a photo';
 
   @override
   String groups_overflowMore(int count) {

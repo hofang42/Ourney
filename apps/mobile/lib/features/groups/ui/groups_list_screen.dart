@@ -23,11 +23,19 @@ class GroupsListScreen extends ConsumerStatefulWidget {
 
 class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
   final _codeFocus = FocusNode();
+  bool _joinOpen = false;
 
   @override
   void dispose() {
     _codeFocus.dispose();
     super.dispose();
+  }
+
+  void _openJoin() {
+    setState(() => _joinOpen = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _codeFocus.requestFocus();
+    });
   }
 
   @override
@@ -68,7 +76,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     if (groups.hasValue) {
       final list = groups.value!;
       today = list.isEmpty
-          ? _EmptySquad(onEnterCode: _codeFocus.requestFocus)
+          ? _EmptySquad(onEnterCode: _openJoin)
           : SquadTodayStrip(groups: list);
     } else if (groups.hasError) {
       today = UiEmptyState(
@@ -88,14 +96,30 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
         ],
       );
     }
+    final Widget joinSection = _joinOpen
+        ? SquadJoinInline(enabled: true, focusNode: _codeFocus)
+        : UiButton.secondary(
+            key: const ValueKey('squad-join-open'),
+            label: l10n.groups_joinWithCode,
+            glyph: const OurneyIcon(name: 'plus'),
+            onPressed: _openJoin,
+          );
     return frame(
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SquadJoinInline(enabled: true, focusNode: _codeFocus),
-          const SizedBox(height: UiSpace.xl),
           today,
           const SquadPendingInvites(),
+          const SizedBox(height: UiSpace.xl),
+          if (MediaQuery.disableAnimationsOf(context))
+            joinSection
+          else
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              alignment: Alignment.topCenter,
+              child: joinSection,
+            ),
         ],
       ),
     );

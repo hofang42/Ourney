@@ -713,20 +713,26 @@ abstract class GroupsL10n {
   /// No description provided for @groups_codeLabel.
   ///
   /// In vi, this message translates to:
-  /// **'nhập mã mời'**
+  /// **'Mã mời'**
   String get groups_codeLabel;
 
   /// No description provided for @groups_codeHint.
   ///
   /// In vi, this message translates to:
-  /// **'K7Q2-M9XA'**
+  /// **'Mã gồm 8 ký tự'**
   String get groups_codeHint;
 
   /// No description provided for @groups_pasteCode.
   ///
   /// In vi, this message translates to:
-  /// **'Dán mã'**
+  /// **'Dán'**
   String get groups_pasteCode;
+
+  /// No description provided for @groups_pasteNoCode.
+  ///
+  /// In vi, this message translates to:
+  /// **'Clipboard không có mã mời'**
+  String get groups_pasteNoCode;
 
   /// No description provided for @groups_joinAction.
   ///
@@ -737,7 +743,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_todayHeading.
   ///
   /// In vi, this message translates to:
-  /// **'hôm nay'**
+  /// **'Hôm nay'**
   String get groups_todayHeading;
 
   /// No description provided for @groups_checkedInCount.
@@ -761,7 +767,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_pendingInvitesHeading.
   ///
   /// In vi, this message translates to:
-  /// **'lời mời đang chờ'**
+  /// **'Lời mời đang chờ'**
   String get groups_pendingInvitesHeading;
 
   /// No description provided for @groups_inviteLine.
@@ -799,6 +805,36 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'@{username}'**
   String groups_memberHandle(String username);
+
+  /// No description provided for @groups_memberCheckedAt.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã check-in lúc {time}'**
+  String groups_memberCheckedAt(String time);
+
+  /// No description provided for @groups_memberNotYetToday.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hôm nay chưa check-in'**
+  String get groups_memberNotYetToday;
+
+  /// No description provided for @groups_memberStreak.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} ngày liên tiếp'**
+  String groups_memberStreak(int count);
+
+  /// No description provided for @groups_memberCheckInNow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Check-in ngay'**
+  String get groups_memberCheckInNow;
+
+  /// No description provided for @groups_memberAddPhoto.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thêm ảnh'**
+  String get groups_memberAddPhoto;
 
   /// No description provided for @groups_overflowMore.
   ///

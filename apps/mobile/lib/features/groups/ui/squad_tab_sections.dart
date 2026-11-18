@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
+import '../../journeys/ui/journey_actions.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
 import '../groups_paths.dart';
@@ -72,11 +74,16 @@ class _SquadJoinInlineState extends State<SquadJoinInline> {
     final text =
         await (widget.onPasteRead?.call() ??
             Clipboard.getData(Clipboard.kTextPlain).then((d) => d?.text));
-    if (text == null || !mounted) return;
-    _controller.value = _InviteCodeFormatter().formatEditUpdate(
+    if (!mounted) return;
+    final formatted = _InviteCodeFormatter().formatEditUpdate(
       TextEditingValue.empty,
-      TextEditingValue(text: text),
+      TextEditingValue(text: text ?? ''),
     );
+    if (!isValidInviteCode(parseInviteInput(formatted.text))) {
+      showUiToast(context, GroupsL10n.of(context).groups_pasteNoCode);
+      return;
+    }
+    _controller.value = formatted;
     setState(() {});
   }
 
@@ -97,11 +104,13 @@ class _SquadJoinInlineState extends State<SquadJoinInline> {
           textCapitalization: TextCapitalization.characters,
           inputFormatters: [_InviteCodeFormatter()],
           onChanged: (_) => setState(() {}),
-          trailing: UiIconButton(
-            key: const ValueKey('squad-join-paste'),
-            glyph: const OurneyIcon(name: 'copy', flat: true),
-            label: l10n.groups_pasteCode,
-            onPressed: widget.enabled ? _paste : null,
+          trailing: IntrinsicWidth(
+            child: UiTextAction(
+              key: const ValueKey('squad-join-paste'),
+              label: l10n.groups_pasteCode,
+              size: 14,
+              onPressed: widget.enabled ? _paste : null,
+            ),
           ),
         ),
         const SizedBox(height: UiSpace.md),
@@ -292,7 +301,7 @@ class _MemberChip extends ConsumerWidget {
         : l10n.groups_memberWaiting;
     return UiPressable(
       key: ValueKey('squad-member-${member.userId}'),
-      onPressed: () => showSquadMemberSheet(context, member),
+      onPressed: () => showSquadMemberSheet(context, journey, member),
       semanticLabel: '${member.displayName}, $caption',
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(UiRadius.input),
@@ -343,19 +352,28 @@ class _MemberChip extends ConsumerWidget {
   }
 }
 
-/// V2 `MemberSheet` (member view): avatar, name, handle and the two safety
-/// actions, which hand over to the safety feature's report and block flows.
-Future<void> showSquadMemberSheet(BuildContext context, MemberToday member) {
+/// V2 `MemberSheet` (member view): avatar, name, handle, today's status +
+/// streak, check-in action for the caller or safety actions for other members.
+Future<void> showSquadMemberSheet(
+  BuildContext context,
+  Journey journey,
+  MemberToday member,
+) {
   return showUiSheet<void>(
     context: context,
     builder: (sheetContext) =>
-        _MemberSheet(member: member, hostContext: context),
+        _MemberSheet(journey: journey, member: member, hostContext: context),
   );
 }
 
 class _MemberSheet extends ConsumerWidget {
-  const _MemberSheet({required this.member, required this.hostContext});
+  const _MemberSheet({
+    required this.journey,
+    required this.member,
+    required this.hostContext,
+  });
 
+  final Journey journey;
   final MemberToday member;
   final BuildContext hostContext;
 
@@ -364,6 +382,8 @@ class _MemberSheet extends ConsumerWidget {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
     final hooks = ref.watch(groupSafetyHooksProvider);
+    final isMe = ref.watch(currentUserIdProvider) == member.userId;
+    final checked = member.checkedIn;
     final username = member.username;
     void close() => Navigator.of(context).pop();
     return Padding(
@@ -403,39 +423,179 @@ class _MemberSheet extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: UiText.muted(color: ui.inkMuted, size: 14),
             ),
+          const SizedBox(height: UiSpace.sm),
+          Wrap(
+            key: const ValueKey('squad-member-status'),
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: UiSpace.md,
+            runSpacing: UiSpace.xs,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  OurneyIcon(
+                    name: checked ? 'check-circle' : 'clock',
+                    size: 16,
+                    flat: true,
+                    color: checked ? ui.success : ui.inkMuted,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      checked
+                          ? l10n.groups_memberCheckedAt(
+                              _hhmm(member.todayCheckIn!.capturedAt),
+                            )
+                          : l10n.groups_memberNotYetToday,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 13,
+                        weight: FontWeight.w600,
+                        height: 1.4,
+                        color: checked ? ui.ink : ui.inkMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (member.currentStreak > 0)
+                Row(
+                  key: const ValueKey('squad-member-streak'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const OurneyIcon(name: 'flame', size: 16),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        l10n.groups_memberStreak(member.currentStreak),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          height: 1.4,
+                          color: ui.ink,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
           const SizedBox(height: UiSpace.xl),
-          if (hooks.onReport != null)
-            UiButton.secondary(
-              key: const ValueKey('squad-member-report'),
-              glyph: const OurneyIcon(name: 'warning', flat: true),
-              label: l10n.groups_memberReport,
-              onPressed: () async {
-                close();
-                await hooks.onReport!(
-                  hostContext,
-                  userId: member.userId,
-                  displayName: member.displayName,
-                  checkInId: member.todayCheckIn?.id,
-                );
-              },
-            ),
-          if (hooks.onReport != null && hooks.onBlock != null)
-            const SizedBox(height: UiSpace.sm),
-          if (hooks.onBlock != null)
-            UiButton.secondary(
-              key: const ValueKey('squad-member-block'),
-              glyph: const OurneyIcon(name: 'lock', flat: true),
-              label: l10n.groups_memberBlock,
-              onPressed: () async {
-                close();
-                await hooks.onBlock!(
-                  hostContext,
-                  userId: member.userId,
-                  displayName: member.displayName,
-                );
-              },
+          if (isMe)
+            checked
+                ? UiButton.secondary(
+                    key: const ValueKey('squad-member-checkin'),
+                    glyph: const OurneyIcon(name: 'camera', flat: true),
+                    label: l10n.groups_memberAddPhoto,
+                    onPressed: () async {
+                      close();
+                      await checkInNow(hostContext, ref, journey.id);
+                    },
+                  )
+                : UiButton(
+                    key: const ValueKey('squad-member-checkin'),
+                    glyph: const OurneyIcon(name: 'camera', flat: true),
+                    label: l10n.groups_memberCheckInNow,
+                    onPressed: () async {
+                      close();
+                      await checkInNow(hostContext, ref, journey.id);
+                    },
+                  )
+          else if (hooks.onReport != null || hooks.onBlock != null)
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: UiSpace.md,
+              runSpacing: UiSpace.xs,
+              children: [
+                if (hooks.onReport != null)
+                  _MemberSheetAction(
+                    key: const ValueKey('squad-member-report'),
+                    icon: 'warning',
+                    label: l10n.groups_memberReport,
+                    onPressed: () async {
+                      close();
+                      await hooks.onReport!(
+                        hostContext,
+                        userId: member.userId,
+                        displayName: member.displayName,
+                        checkInId: member.todayCheckIn?.id,
+                      );
+                    },
+                  ),
+                if (hooks.onBlock != null)
+                  _MemberSheetAction(
+                    key: const ValueKey('squad-member-block'),
+                    icon: 'block',
+                    label: l10n.groups_memberBlock,
+                    color: ui.danger,
+                    onPressed: () async {
+                      close();
+                      await hooks.onBlock!(
+                        hostContext,
+                        userId: member.userId,
+                        displayName: member.displayName,
+                      );
+                    },
+                  ),
+              ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _MemberSheetAction extends StatelessWidget {
+  const _MemberSheetAction({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.color,
+    super.key,
+  });
+
+  final String icon;
+  final String label;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final fg = color ?? ui.inkSoft;
+    return UiPressable(
+      onPressed: onPressed,
+      semanticLabel: label,
+      excludeChildSemantics: true,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: UiSize.tap),
+        padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            OurneyIcon(name: icon, size: 16, flat: true, color: fg),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.body(
+                  size: 14,
+                  weight: FontWeight.w700,
+                  height: 1.35,
+                  color: fg,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

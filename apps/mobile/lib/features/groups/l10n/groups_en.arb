@@ -102,11 +102,12 @@
   "groups_inviteRevoked": "Invitation revoked",
   "groups_inviteShareCode": "Share the code instead",
   "groups_inviteNeedsHandle": "Enter a username first.",
-  "groups_codeLabel": "enter invite code",
-  "groups_codeHint": "K7Q2-M9XA",
-  "groups_pasteCode": "Paste code",
+  "groups_codeLabel": "Invite code",
+  "groups_codeHint": "8-character code",
+  "groups_pasteCode": "Paste",
+  "groups_pasteNoCode": "No invite code in your clipboard",
   "groups_joinAction": "Join",
-  "groups_todayHeading": "today",
+  "groups_todayHeading": "Today",
   "groups_checkedInCount": "{done}/{total} checked in",
   "@groups_checkedInCount": {
     "placeholders": {
@@ -127,7 +128,7 @@
       }
     }
   },
-  "groups_pendingInvitesHeading": "pending invites",
+  "groups_pendingInvitesHeading": "Pending invites",
   "groups_inviteLine": "{inviter} invited you to {title}",
   "@groups_inviteLine": {
     "placeholders": {
@@ -151,6 +152,25 @@
       }
     }
   },
+  "groups_memberCheckedAt": "Checked in at {time}",
+  "@groups_memberCheckedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_memberNotYetToday": "Not checked in yet today",
+  "groups_memberStreak": "{count}-day streak",
+  "@groups_memberStreak": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groups_memberCheckInNow": "Check in now",
+  "groups_memberAddPhoto": "Add a photo",
   "groups_overflowMore": "+{count}",
   "@groups_overflowMore": {
     "placeholders": {
