@@ -310,6 +310,25 @@ $$;
 update public.journeys set max_members = 2
  where kind = 'group' and couple_self_name is not null and max_members <> 2;
 
+-- Owners may add couple names later (0007 grants update on them): keep two seats then too.
+create or replace function private.journeys_couple_seats() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.kind = 'group' and new.couple_self_name is not null then
+    new.max_members := 2;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists journeys_couple_seats on public.journeys;
+create trigger journeys_couple_seats
+  before insert or update of couple_self_name, couple_partner_name, max_members, kind
+  on public.journeys
+  for each row execute function private.journeys_couple_seats();
+
 -- ---------------------------------------------------------------------------
 -- A-B7: _leave_journey (from 0004_rpc) + accept_group_invitation (from 0008_group_invites)
 -- ---------------------------------------------------------------------------

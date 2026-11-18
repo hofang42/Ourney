@@ -3,7 +3,7 @@
 --        7 Z invitee, 8 P consent group owner, 9 R consent requester (deleted), 10 T blocks R.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(41);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -57,6 +57,11 @@ select is((public.create_journey(tests.j(3), 'group', 'custom', 'Us', '💞', nu
   'A-B6: create_journey forces max_members = 2 for a couple journey');
 select is((public.create_journey(tests.j(8), 'group', 'custom', 'Team', '🔥', null, null, false, current_date, 30, 'UTC')).max_members,
   10, 'A-B6: a plain group keeps max_members');
+select lives_ok($q$select public.create_journey(tests.j(9), 'group', 'custom', 'Later', null, null, null, false, current_date, 30, 'UTC')$q$,
+  'A-B6: setup plain group for later couple names');
+update public.journeys set couple_self_name = 'An', couple_partner_name = 'Binh' where id = tests.j(9);
+select is((select max_members from public.journeys where id = tests.j(9)), 2,
+  'A-B6: adding couple names later also keeps two seats');
 
 -- ===== J1: ended group with a public link; owner did not consent ================
 -- O hides the metric (hide_metric_default), M consents and blurs media.
