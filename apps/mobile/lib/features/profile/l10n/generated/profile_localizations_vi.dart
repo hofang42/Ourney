@@ -146,6 +146,12 @@ class ProfileL10nVi extends ProfileL10n {
       'Theo ngôn ngữ của máy. Mặc định là tiếng Việt.';
 
   @override
+  String get profile_languageVi => 'Tiếng Việt';
+
+  @override
+  String get profile_languageEn => 'English';
+
+  @override
   String get profile_safety => 'Điều khoản, quyền riêng tư & liên hệ';
 
   @override

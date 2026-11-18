@@ -344,6 +344,18 @@ abstract class ProfileL10n {
   /// **'Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'**
   String get profile_languageNote;
 
+  /// Language row subtitle when Vietnamese was picked in Settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiếng Việt'**
+  String get profile_languageVi;
+
+  /// Language row subtitle when English was picked in Settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'English'**
+  String get profile_languageEn;
+
   /// Link to the safety pages (EULA, privacy, contact).
   ///
   /// In vi, this message translates to:

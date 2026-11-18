@@ -184,6 +184,14 @@
   "@profile_languageNote": {
     "description": "The app follows the device language (vi default, en)."
   },
+  "profile_languageVi": "Tiếng Việt",
+  "@profile_languageVi": {
+    "description": "Language row subtitle when Vietnamese was picked in Settings."
+  },
+  "profile_languageEn": "English",
+  "@profile_languageEn": {
+    "description": "Language row subtitle when English was picked in Settings."
+  },
   "profile_safety": "Điều khoản, quyền riêng tư & liên hệ",
   "@profile_safety": {
     "description": "Link to the safety pages (EULA, privacy, contact)."

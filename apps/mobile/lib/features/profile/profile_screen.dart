@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
+import '../../app/locale_override.dart';
 import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -31,14 +32,6 @@ const String profileEditPath = '${AppRoutes.profile}/edit';
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  void _close(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go(AppRoutes.capture);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
@@ -51,11 +44,18 @@ class ProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UiBackHeader(
-            onBack: () => _close(context),
-            backLabel: MaterialLocalizations.of(context).backButtonTooltip,
-            title: l10n.profile_title,
-          ),
+          // A Dock root tab has nowhere to go back to (U9): plain title bar.
+          if (context.canPop())
+            UiBackHeader(
+              onBack: context.pop,
+              backLabel: MaterialLocalizations.of(context).backButtonTooltip,
+              title: l10n.profile_title,
+            )
+          else
+            UiTopBar(
+              key: const ValueKey('profile-top-bar'),
+              title: l10n.profile_title,
+            ),
           const SizedBox(height: UiSpace.lg),
           if (profile == null)
             const _GuestHeader()
@@ -275,6 +275,7 @@ class _SettingsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
     final haptics = ref.watch(hapticsEnabledProvider);
+    final language = ref.watch(localeOverrideProvider);
     return _GroupCard(
       child: Column(
         children: [
@@ -307,8 +308,13 @@ class _SettingsSection extends ConsumerWidget {
             key: const ValueKey('profile-language'),
             leading: const OurneyIcon(name: 'translate', flat: true),
             title: l10n.profile_language,
-            subtitle: _sub(context, l10n.profile_languageNote),
-            showChevron: false,
+            // Shows the language actually in use; Settings owns the picker.
+            subtitle: _sub(context, switch (language?.languageCode) {
+              null => l10n.profile_languageNote,
+              'en' => l10n.profile_languageEn,
+              _ => l10n.profile_languageVi,
+            }),
+            onPressed: () => context.push(profileSettingsPath),
           ),
           UiRow(
             key: const ValueKey('profile-safety'),

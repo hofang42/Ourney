@@ -41,6 +41,8 @@
   "profile_haptics": "Haptic feedback",
   "profile_language": "Language",
   "profile_languageNote": "Follows your device language. Vietnamese by default.",
+  "profile_languageVi": "Tiếng Việt",
+  "profile_languageEn": "English",
   "profile_safety": "Terms, privacy & contact",
   "profile_sectionAccount": "account",
   "profile_signOut": "Sign out",

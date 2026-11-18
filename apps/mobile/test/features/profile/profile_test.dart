@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
@@ -188,6 +189,30 @@ void main() {
       expect(byKey('profile-load-error'), findsOneWidget);
       expect(byKey('profile-retry'), findsOneWidget);
     });
+
+    testWidgets('dock root shows a title bar, not a back button (U9)', (
+      tester,
+    ) async {
+      await signedIn(tester);
+      expect(byKey('profile-top-bar'), findsOneWidget);
+      expect(find.byType(UiBackHeader), findsNothing);
+    });
+
+    testWidgets(
+      'language row shows the picked language, opens Settings (U18)',
+      (tester) async {
+        final c = await signedIn(tester);
+        expect(
+          find.text('Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'),
+          findsOneWidget,
+        );
+        await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+        await tester.pumpAndSettle();
+        expect(find.text('Tiếng Việt'), findsOneWidget);
+        await tapVisible(tester, 'profile-language');
+        expect(byKey('settings-screen'), findsOneWidget);
+      },
+    );
 
     testWidgets('sign out asks, then the router goes to /auth', (tester) async {
       final auth = RecordingAuthRepository(userId: 'u1');
