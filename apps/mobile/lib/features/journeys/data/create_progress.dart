@@ -24,7 +24,7 @@ class CreateProgressController extends Notifier<int?> {
   }
 
   /// The saved answers, or null when there is none (or it is unreadable).
-  Map<String, Object?>? get draft {
+  Map<String, Object?>? readDraft() {
     if (state == null) return null;
     final raw = ref
         .read(sharedPreferencesProvider)

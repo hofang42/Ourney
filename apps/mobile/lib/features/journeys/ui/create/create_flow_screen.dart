@@ -124,7 +124,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     _suggestionApplied = true;
     // "Continue creating" (U8): reopen where the flow was left.
     final draft = widget.resume
-        ? ref.read(createProgressProvider.notifier).draft
+        ? ref.read(createProgressProvider.notifier).readDraft()
         : null;
     if (draft != null && _restore(draft)) return;
     final s = ref.read(journeySuggestionProvider);

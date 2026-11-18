@@ -465,7 +465,7 @@ void main() {
       await _tap(tester, 'create-next');
       await _tap(tester, 'create-close');
       final progress = h.container.read(createProgressProvider.notifier);
-      final savedId = progress.draft?['clientId'];
+      final savedId = progress.readDraft()?['clientId'];
       expect(savedId, isA<String>());
 
       await h.go(tester, AppRoutes.journeyNew);
@@ -481,7 +481,7 @@ void main() {
       await tester.pumpAndSettle();
       await _tap(tester, 'create-next');
       await _tap(tester, 'create-close');
-      final id = progress.draft?['clientId'] as String;
+      final id = progress.readDraft()?['clientId'] as String;
       await _tap(tester, 'hub-create-progress');
       expect(_stepLabel(tester), 'Step 3/5');
       await _tap(tester, 'create-next');
@@ -489,7 +489,7 @@ void main() {
       await _tap(tester, 'journey-create');
       expect(h.journeys.created.single.id, id);
       expect(h.container.read(createProgressProvider), isNull);
-      expect(progress.draft, isNull);
+      expect(progress.readDraft(), isNull);
     });
 
     testWidgets('leaving from step 1 drops the resume card (U8)', (
