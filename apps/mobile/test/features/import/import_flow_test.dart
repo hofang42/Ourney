@@ -96,6 +96,29 @@ void main() {
     expect(sharing.importedDraft!.emoji, '💞');
   });
 
+  testWidgets('the picked skin and "still going" reach the server (C-B11)', (
+    tester,
+  ) async {
+    final sharing = FakeSharingRepository();
+    await pumpSharing(
+      tester,
+      location: '/import',
+      sharing: sharing,
+      checkIns: SubmittingCheckInRepository(),
+      picker: onePhoto,
+    );
+    await _tap(tester, 'import-type-weight');
+    await tester.enterText(_key('import-place'), 'Hoi An');
+    await _tap(tester, 'import-layout-quiet');
+    await _tap(tester, 'import-next');
+    await _tap(tester, 'import-pick');
+    await _tap(tester, 'import-review');
+    await _tap(tester, 'import-continue');
+    await _tap(tester, 'import-save');
+    expect(sharing.importedDraft!.layout, PersonaSkinId.quietTransformer);
+    expect(sharing.importedDraft!.continues, isTrue);
+  });
+
   testWidgets('saving waits for the device time zone (C-B12)', (tester) async {
     final zone = Completer<String>();
     final sharing = FakeSharingRepository();

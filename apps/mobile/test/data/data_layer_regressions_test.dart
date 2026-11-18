@@ -306,6 +306,35 @@ void main() {
       );
     });
 
+    test('a journey that is still going has no upper date cap', () async {
+      remote.tables['journeys'] = [
+        journeyRow(jid, ownerId: me)
+          ..['origin'] = 'imported'
+          ..['duration_days'] = null,
+      ];
+      remote.tables['memberships'] = [membershipRow(jid, me)];
+      await layer.syncNow();
+      final c = await checkIn(jid, 'a', DateTime.utc(2026, 10, 15, 5));
+      expect(c.localDate, const LocalDate(2026, 10, 15));
+      // The same date is past the end of a finished 3-day retelling.
+      remote.tables['journeys'] = [
+        journeyRow(jid, ownerId: me, status: 'ended')
+          ..['origin'] = 'imported'
+          ..['duration_days'] = 3,
+      ];
+      await layer.syncNow();
+      await expectLater(
+        checkIn(jid, 'b', DateTime.utc(2026, 10, 15, 6)),
+        throwsA(
+          isA<OurneyException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.invalidCapturedAt,
+          ),
+        ),
+      );
+    });
+
     test('an ended live journey still refuses check-ins', () async {
       remote.tables['journeys'] = [
         journeyRow(jid, ownerId: me, status: 'ended'),

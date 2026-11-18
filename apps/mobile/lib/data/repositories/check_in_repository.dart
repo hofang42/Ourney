@@ -79,10 +79,12 @@ class DataCheckInRepository implements CheckInRepository {
     final localDate = ctx.clock.localDate(draft.capturedAt, journey.timezone);
     final duration = journey.durationDays;
     if (imported) {
-      // Retold photos must land inside the journey's dates.
-      final last = journey.startDate.addDays((duration ?? 1) - 1);
+      // Retold photos must land inside the journey's dates; a journey that
+      // is still going (no duration) has no upper cap, like the
+      // `check_ins_before_write` trigger (0016).
       if (localDate.compareTo(journey.startDate) < 0 ||
-          localDate.isAfter(last)) {
+          (duration != null &&
+              localDate.isAfter(journey.startDate.addDays(duration - 1)))) {
         throw const OurneyException(OurneyErrorCode.invalidCapturedAt);
       }
     } else if (duration != null &&

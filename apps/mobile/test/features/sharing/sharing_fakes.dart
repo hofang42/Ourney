@@ -207,10 +207,13 @@ class FakeSharingRepository implements SharingRepository {
       title: draft.title,
       emoji: draft.emoji,
       startDate: draft.firstDate,
-      durationDays: draft.firstDate.daysUntil(draft.lastDate) + 1,
+      durationDays: draft.continues
+          ? null
+          : draft.firstDate.daysUntil(draft.lastDate) + 1,
       timezone: draft.timezone,
       visibility: JourneyVisibility.private,
-      status: JourneyStatus.ended,
+      layout: draft.layout,
+      status: draft.continues ? JourneyStatus.active : JourneyStatus.ended,
     );
   }
 }

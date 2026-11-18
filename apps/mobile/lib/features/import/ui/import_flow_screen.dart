@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +14,7 @@ import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/data/sharing_providers.dart';
 import '../l10n/generated/import_localizations.dart';
 import 'import_widgets.dart';
@@ -105,6 +108,14 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     if (_type == 'weight') 'quiet',
     if (_type == 'workout') 'flexer',
   ];
+
+  /// The picker's short id as the persona skin the server stores (C-B11).
+  PersonaSkinId _skinId(String id) => switch (id) {
+    'quiet' => PersonaSkinId.quietTransformer,
+    'flexer' => PersonaSkinId.aestheticFlexer,
+    'minimal' => PersonaSkinId.minimalistHabit,
+    _ => PersonaSkinId.memoryCollectors,
+  };
 
   Iterable<_Photo> get _chosen => _photos.where((p) => p.selected);
   List<_Photo> get _dated =>
@@ -215,6 +226,8 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
               firstDate: _start!,
               lastDate: _end!,
               timezone: timezone,
+              layout: _skinId(_skin),
+              continues: _continues,
             ),
           );
       final compressor = ref.read(photoCompressorProvider);
@@ -245,6 +258,10 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         }
       }
       if (!mounted) return;
+      // A journey that is still going gets its reminders planned (C-B11).
+      if (journey.status == JourneyStatus.active) {
+        unawaited(ref.read(reminderSchedulerProvider).reschedule());
+      }
       if (_failed == 0) {
         context.go(AppRoutes.journey(journey.id));
       } else {
