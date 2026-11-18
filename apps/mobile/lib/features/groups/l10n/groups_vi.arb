@@ -280,7 +280,7 @@
   "groups_inviteHandleLabel": "Tên người dùng",
   "groups_inviteSend": "Gửi lời mời",
   "groups_inviteSent": "Đã gửi lời mời",
-  "groups_invitePendingTitle": "Lời mời đang chờ",
+  "groups_invitePendingTitle": "Đã gửi, chờ phản hồi",
   "groups_invitePendingEmpty": "Chưa có lời mời nào đang chờ.",
   "groups_inviteRevoke": "Thu hồi",
   "groups_inviteRevoked": "Đã thu hồi lời mời",
@@ -304,7 +304,7 @@
     }
   },
   "groups_memberWaiting": "chưa",
-  "groups_openTodayOf": "Mở hội hôm nay của {name}",
+  "groups_openTodayOf": "Mở nhóm hôm nay của {name}",
   "@groups_openTodayOf": {
     "placeholders": {
       "name": {
@@ -312,7 +312,7 @@
       }
     }
   },
-  "groups_pendingInvitesHeading": "Lời mời đang chờ",
+  "groups_pendingInvitesHeading": "Lời mời vào nhóm",
   "groups_inviteLine": "{inviter} mời bạn vào {title}",
   "@groups_inviteLine": {
     "placeholders": {
@@ -363,7 +363,7 @@
       }
     }
   },
-  "groups_emptyCardTitle": "chưa có hội nào.",
+  "groups_emptyCardTitle": "chưa có nhóm nào.",
   "groups_emptyCardBody": "Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.",
   "groups_wallAttendance": "{done}/{total} ĐÃ ĐIỂM DANH",
   "@groups_wallAttendance": {
@@ -392,7 +392,7 @@
       }
     }
   },
-  "groups_quietTitle": "Hội hôm nay.",
+  "groups_quietTitle": "Nhóm hôm nay.",
   "groups_quietIntro": "Xếp theo tên, không theo kết quả.",
   "groups_quietDone": "Đã chụp {time}",
   "@groups_quietDone": {

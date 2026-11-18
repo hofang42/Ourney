@@ -749,7 +749,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_iconSquad.
   ///
   /// In vi, this message translates to:
-  /// **'Hội'**
+  /// **'Nhóm'**
   String get profile_settings_iconSquad;
 
   /// No description provided for @profile_settings_iconMemory.

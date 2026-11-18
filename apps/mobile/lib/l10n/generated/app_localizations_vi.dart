@@ -19,7 +19,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get nav_capture => 'Chụp';
 
   @override
-  String get nav_groups => 'Hội';
+  String get nav_groups => 'Nhóm';
 
   @override
   String get nav_activity => 'Hoạt động';
@@ -106,7 +106,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get reminderBanner_daily_squad =>
-      'Tới giờ điểm danh! Cả hội đang chờ.';
+      'Tới giờ điểm danh! Cả nhóm đang chờ.';
 
   @override
   String get reminderBanner_daily_memory =>

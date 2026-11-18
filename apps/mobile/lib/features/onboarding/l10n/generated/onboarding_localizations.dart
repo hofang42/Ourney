@@ -167,7 +167,7 @@ abstract class OnboardingL10n {
   /// Quiz question 2.
   ///
   /// In vi, this message translates to:
-  /// **'đi một mình hay có hội?'**
+  /// **'đi một mình hay cùng nhóm?'**
   String get onboarding_quizQ2;
 
   /// Quiz question 3.
@@ -227,7 +227,7 @@ abstract class OnboardingL10n {
   /// Company option.
   ///
   /// In vi, this message translates to:
-  /// **'Rủ hội bạn'**
+  /// **'Rủ nhóm bạn'**
   String get onboarding_whoGroup;
 
   /// Company hint.

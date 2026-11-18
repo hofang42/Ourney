@@ -12,7 +12,7 @@
   "@nav_capture": {
     "description": "Bottom bar center button: open the camera."
   },
-  "nav_groups": "Hội",
+  "nav_groups": "Nhóm",
   "@nav_groups": {
     "description": "Bottom bar tab: groups."
   },
@@ -76,7 +76,7 @@
   "@reminderBanner_daily_quiet": {
     "description": "Daily reminder banner copy, quiet skin."
   },
-  "reminderBanner_daily_squad": "Tới giờ điểm danh! Cả hội đang chờ.",
+  "reminderBanner_daily_squad": "Tới giờ điểm danh! Cả nhóm đang chờ.",
   "@reminderBanner_daily_squad": {
     "description": "Daily reminder banner copy, squad skin."
   },

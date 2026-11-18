@@ -677,7 +677,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_invitePendingTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Lời mời đang chờ'**
+  /// **'Đã gửi, chờ phản hồi'**
   String get groups_invitePendingTitle;
 
   /// No description provided for @groups_invitePendingEmpty.
@@ -761,13 +761,13 @@ abstract class GroupsL10n {
   /// No description provided for @groups_openTodayOf.
   ///
   /// In vi, this message translates to:
-  /// **'Mở hội hôm nay của {name}'**
+  /// **'Mở nhóm hôm nay của {name}'**
   String groups_openTodayOf(String name);
 
   /// No description provided for @groups_pendingInvitesHeading.
   ///
   /// In vi, this message translates to:
-  /// **'Lời mời đang chờ'**
+  /// **'Lời mời vào nhóm'**
   String get groups_pendingInvitesHeading;
 
   /// No description provided for @groups_inviteLine.
@@ -845,7 +845,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_emptyCardTitle.
   ///
   /// In vi, this message translates to:
-  /// **'chưa có hội nào.'**
+  /// **'chưa có nhóm nào.'**
   String get groups_emptyCardTitle;
 
   /// No description provided for @groups_emptyCardBody.
@@ -875,7 +875,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_quietTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Hội hôm nay.'**
+  /// **'Nhóm hôm nay.'**
   String get groups_quietTitle;
 
   /// No description provided for @groups_quietIntro.

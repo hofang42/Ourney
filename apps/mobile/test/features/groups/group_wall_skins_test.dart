@@ -66,7 +66,7 @@ void main() {
             expect(find.text('1/3 ĐÃ ĐIỂM DANH'), findsWidgets);
             expect(find.text('BAO · ĐANG CHỜ'), findsOneWidget);
           case 'quiet':
-            expect(find.text('Hội hôm nay.'), findsOneWidget);
+            expect(find.text('Nhóm hôm nay.'), findsOneWidget);
             expect(find.text('Chưa chụp'), findsNWidgets(2));
             expect(find.text('Xem ảnh'), findsOneWidget);
             await tester.tap(

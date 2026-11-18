@@ -51,7 +51,7 @@ UiDock fiveTab(List<String> taps, {int active = 0, VoidCallback? onLong}) {
   );
   return UiDock(
     left: item('journeys', 'Hành trình', 0),
-    extraLeft: [item('squad', 'Hội', 1)],
+    extraLeft: [item('squad', 'Nhóm', 1)],
     extraRight: [item('activity', 'Hoạt động', 3)],
     right: item('profile', 'Hồ sơ', 4),
     snapLabel: 'Chụp',
@@ -206,7 +206,7 @@ void main() {
                 extraLeft: [
                   UiDockItem(
                     glyph: 'squad',
-                    label: 'Hội',
+                    label: 'Nhóm',
                     active: active == 1,
                     onPressed: () => taps.add('h'),
                   ),
@@ -233,7 +233,7 @@ void main() {
         ),
       );
       expect(find.text('Squad'), findsNothing);
-      for (final l in ['Hành trình', 'Hội', 'Hoạt động', 'Hồ sơ']) {
+      for (final l in ['Hành trình', 'Nhóm', 'Hoạt động', 'Hồ sơ']) {
         await tester.tap(find.text(l));
       }
       await tester.tap(find.bySemanticsLabel('Chụp'));
@@ -389,7 +389,7 @@ void main() {
             ),
             right: UiDockItem(
               icon: Icons.group_outlined,
-              label: 'Hội',
+              label: 'Nhóm',
               onPressed: () => taps.add('r'),
             ),
             snapLabel: 'Chụp',
@@ -398,7 +398,7 @@ void main() {
         ),
       );
       await tester.tap(find.text('Hành trình'));
-      await tester.tap(find.text('Hội'));
+      await tester.tap(find.text('Nhóm'));
       await tester.tap(find.bySemanticsLabel('Chụp'));
       expect(taps, ['l', 'r', 's']);
       expect(find.byIcon(Icons.map_outlined), findsOneWidget);

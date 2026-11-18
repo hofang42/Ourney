@@ -344,7 +344,7 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_inviteSent => 'Đã gửi lời mời';
 
   @override
-  String get groups_invitePendingTitle => 'Lời mời đang chờ';
+  String get groups_invitePendingTitle => 'Đã gửi, chờ phản hồi';
 
   @override
   String get groups_invitePendingEmpty => 'Chưa có lời mời nào đang chờ.';
@@ -389,11 +389,11 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String groups_openTodayOf(String name) {
-    return 'Mở hội hôm nay của $name';
+    return 'Mở nhóm hôm nay của $name';
   }
 
   @override
-  String get groups_pendingInvitesHeading => 'Lời mời đang chờ';
+  String get groups_pendingInvitesHeading => 'Lời mời vào nhóm';
 
   @override
   String groups_inviteLine(String inviter, String title) {
@@ -442,7 +442,7 @@ class GroupsL10nVi extends GroupsL10n {
   }
 
   @override
-  String get groups_emptyCardTitle => 'chưa có hội nào.';
+  String get groups_emptyCardTitle => 'chưa có nhóm nào.';
 
   @override
   String get groups_emptyCardBody =>
@@ -464,7 +464,7 @@ class GroupsL10nVi extends GroupsL10n {
   }
 
   @override
-  String get groups_quietTitle => 'Hội hôm nay.';
+  String get groups_quietTitle => 'Nhóm hôm nay.';
 
   @override
   String get groups_quietIntro => 'Xếp theo tên, không theo kết quả.';

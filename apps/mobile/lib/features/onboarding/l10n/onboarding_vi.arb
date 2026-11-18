@@ -49,7 +49,7 @@
   "@onboarding_quizQ1": {
     "description": "Quiz question 1."
   },
-  "onboarding_quizQ2": "đi một mình hay có hội?",
+  "onboarding_quizQ2": "đi một mình hay cùng nhóm?",
   "@onboarding_quizQ2": {
     "description": "Quiz question 2."
   },
@@ -89,7 +89,7 @@
   "@onboarding_whoSoloHint": {
     "description": "Company hint."
   },
-  "onboarding_whoGroup": "Rủ hội bạn",
+  "onboarding_whoGroup": "Rủ nhóm bạn",
   "@onboarding_whoGroup": {
     "description": "Company option."
   },
