@@ -136,8 +136,9 @@ class DataJourneyRepository implements JourneyRepository {
     return u.isEmpty ? null : u;
   }
 
-  /// `create_journey` has no edit fields: send them right after (queued when
-  /// offline) so the row carries the create-flow answers.
+  /// `create_journey` has no edit fields: send them right after so the row
+  /// carries the create-flow answers. Offline, they are kept locally and
+  /// queued; any other failure is the caller's to see.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
@@ -147,12 +148,18 @@ class DataJourneyRepository implements JourneyRepository {
         updateJourneyParams(id, extras),
       );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
-    } on OurneyException {
-      await ctx.outbox?.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(id)}:extras',
-        updateJourneyParams(id, extras),
-      );
+    } on OurneyException catch (e) {
+      if (e.error != OurneyErrorCode.offline) rethrow;
+      await _writeLocal(id, extras);
+      final outbox = ctx.outbox;
+      if (outbox != null) {
+        await outbox.enqueue(
+          OutboxKind.updateJourney,
+          '${journeyKey(id)}:extras',
+          updateJourneyParams(id, extras),
+        );
+        unawaited(outbox.flush());
+      }
     }
   }
 
@@ -193,13 +200,28 @@ class DataJourneyRepository implements JourneyRepository {
       ctx.requireRemote();
     }
     // Local-only or offline solo: write now, replay through the outbox.
+    await _writeLocal(journeyId, update);
+    final outbox = ctx.outbox;
+    if (outbox != null) {
+      await outbox.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(journeyId)}:edit',
+        updateJourneyParams(journeyId, update),
+      );
+      unawaited(outbox.flush());
+    }
+    return journeyFromRow(await _requireLocal(journeyId));
+  }
+
+  /// Applies [update] to the cached row (what `update_journey` would store).
+  Future<void> _writeLocal(String journeyId, JourneyUpdate update) {
     Value<T?> pick<T>(String key, T? v, Value<T?> Function(T) wrap) =>
         update.clear.contains(key)
         ? const Value(null)
         : v == null
         ? const Value.absent()
         : wrap(v);
-    await (_db.update(
+    return (_db.update(
       _db.journeys,
     )..where((t) => t.id.equals(journeyId))).write(
       JourneysCompanion(
@@ -221,16 +243,6 @@ class DataJourneyRepository implements JourneyRepository {
         ),
       ),
     );
-    final outbox = ctx.outbox;
-    if (outbox != null) {
-      await outbox.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(journeyId)}:edit',
-        updateJourneyParams(journeyId, update),
-      );
-      unawaited(outbox.flush());
-    }
-    return journeyFromRow(await _requireLocal(journeyId));
   }
 
   Future<Journey> _insertLocal(
@@ -265,9 +277,7 @@ class DataJourneyRepository implements JourneyRepository {
               timezone: d.timezone,
               visibility: visibility.wireName,
               status: JourneyStatus.active.wireName,
-              maxMembers: Value(
-                d.kind == JourneyKind.solo ? 1 : maxGroupMembers,
-              ),
+              maxMembers: Value(maxMembersForDraft(d)),
             ),
           );
       await _insertMembership(id, me, d.hideMetricDefault);

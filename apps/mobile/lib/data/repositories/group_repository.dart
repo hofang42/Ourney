@@ -156,9 +156,13 @@ class DataGroupRepository implements GroupRepository {
               ? ctx.clock.localDate(ctx.now(), 'UTC')
               : LocalDate.parse((captured as String).substring(0, 10)));
       var member = memberTodayFromRemote(r, journeyId: journeyId, today: day);
-      if (member.userId == me && member.todayCheckIn == null && today != null) {
+      if (member.userId == me && today != null) {
+        // Since 0014 a day can hold several photos: show the newest one, which
+        // may still be waiting in the outbox.
         final local = await _localCheckIn(journeyId, me!, today);
-        if (local != null) {
+        final server = member.todayCheckIn;
+        if (local != null &&
+            (server == null || local.capturedAt.isAfter(server.capturedAt))) {
           member = MemberToday(
             userId: member.userId,
             username: member.username,
@@ -166,6 +170,7 @@ class DataGroupRepository implements GroupRepository {
             avatarPath: member.avatarPath,
             role: member.role,
             currentStreak: member.currentStreak,
+            checkedInHidden: member.checkedInHidden,
             todayCheckIn: local,
           );
         }
@@ -181,12 +186,18 @@ class DataGroupRepository implements GroupRepository {
     LocalDate day,
   ) async {
     final row =
-        await (_db.select(_db.checkIns)..where(
-              (t) =>
-                  t.journeyId.equals(journeyId) &
-                  t.userId.equals(me) &
-                  t.localDate.equalsValue(day),
-            ))
+        await (_db.select(_db.checkIns)
+              ..where(
+                (t) =>
+                    t.journeyId.equals(journeyId) &
+                    t.userId.equals(me) &
+                    t.localDate.equalsValue(day),
+              )
+              ..orderBy([
+                (t) => OrderingTerm.desc(t.capturedAt),
+                (t) => OrderingTerm.desc(t.id),
+              ])
+              ..limit(1))
             .getSingleOrNull();
     if (row == null) return null;
     return checkInFromRow(
@@ -295,6 +306,22 @@ class DataGroupRepository implements GroupRepository {
           ),
         );
     await ctx.store.forgetUserContent(userId, journeyId: journeyId);
+    await _refreshInviteCode(remote, journeyId);
     ctx.sync?.notifyChanged();
   });
+
+  /// `remove_member` rotates the invite code of a group (so the removed member
+  /// cannot rejoin with it) but returns nothing: read the new code back so the
+  /// invite sheet does not keep showing the dead one.
+  Future<void> _refreshInviteCode(RemoteApi remote, String journeyId) async {
+    try {
+      final rows = await remote.select('journeys', eq: {'id': journeyId});
+      if (rows.isEmpty) return;
+      final code = rows.first['invite_code'] as String?;
+      await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId)))
+          .write(JourneysCompanion(inviteCode: Value(code)));
+    } on OurneyException {
+      // The member is removed; the next sync pull brings the new code.
+    }
+  }
 }

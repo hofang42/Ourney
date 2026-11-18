@@ -6,6 +6,40 @@ void main() {
     expect(maxGroupMembers, 10);
   });
 
+  test('maxMembersForDraft: solo 1, couple 2, group 10 (A-B6)', () {
+    JourneyDraft draft(JourneyKind kind, {String? self, String? partner}) =>
+        JourneyDraft(
+          kind: kind,
+          templateId: TemplateId.custom,
+          title: 'T',
+          emoji: 'x',
+          startDate: const LocalDate(2026, 10, 16),
+          timezone: 'Asia/Ho_Chi_Minh',
+          coupleSelfName: self,
+          couplePartnerName: partner,
+        );
+    expect(maxMembersForDraft(draft(JourneyKind.solo)), 1);
+    expect(maxMembersForDraft(draft(JourneyKind.group)), maxGroupMembers);
+    expect(
+      maxMembersForDraft(draft(JourneyKind.group, self: 'An', partner: 'Bo')),
+      2,
+    );
+    expect(
+      maxMembersForDraft(draft(JourneyKind.group, self: '  ', partner: ' ')),
+      maxGroupMembers,
+      reason: 'blank names are not a couple (create_journey nullif)',
+    );
+  });
+
+  group('sanitizeJourneyDna (A-B11)', () {
+    test('clips by code points, never inside a surrogate pair', () {
+      final trophy = '${'a' * 23}\u{1F3C6}';
+      expect(sanitizeJourneyDna({'trophy': trophy})!['trophy'], trophy);
+      final long = '${'a' * 23}\u{1F3C6}\u{1F3C6}';
+      expect(sanitizeJourneyDna({'trophy': long})!['trophy'], trophy);
+    });
+  });
+
   group('rollingReminderTimes', () {
     test('before reminder time starts today, 14 entries', () {
       final t = rollingReminderTimes(

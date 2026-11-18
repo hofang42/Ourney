@@ -396,9 +396,13 @@ const Map<String, int> _dnaTextMax = {
   'reason': 80,
 };
 
+/// Clips to [_dnaTextMax] code points (Postgres `char_length`), never inside
+/// a UTF-16 surrogate pair: a lone surrogate is invalid JSON for `jsonb`.
 String _clipDna(String key, String v) {
   final max = _dnaTextMax[key];
-  return max != null && v.length > max ? v.substring(0, max) : v;
+  if (max == null) return v;
+  final runes = v.runes;
+  return runes.length > max ? String.fromCharCodes(runes.take(max)) : v;
 }
 
 /// Partial edit sent to `update_journey` (null = unchanged; [clear] resets
@@ -566,6 +570,7 @@ class MemberToday {
     this.username,
     this.avatarPath,
     this.todayCheckIn,
+    this.checkedInHidden = false,
     this.currentStreak = 0,
   });
 
@@ -576,8 +581,12 @@ class MemberToday {
   final MemberRole role;
   final CheckIn? todayCheckIn;
 
+  /// Checked in today, but the photo is hidden from the caller (they
+  /// reported it, rule L7): [todayCheckIn] is null yet the day counts.
+  final bool checkedInHidden;
+
   /// Server-computed (`journey_streak`, counts from the member's join date).
   final int currentStreak;
 
-  bool get checkedIn => todayCheckIn != null;
+  bool get checkedIn => todayCheckIn != null || checkedInHidden;
 }
