@@ -707,7 +707,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_language.
   ///
   /// In vi, this message translates to:
-  /// **'Ngôn ngữ'**
+  /// **'ngôn ngữ'**
   String get profile_settings_language;
 
   /// No description provided for @profile_settings_langVi.
@@ -725,7 +725,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_appIcon.
   ///
   /// In vi, this message translates to:
-  /// **'Icon ứng dụng'**
+  /// **'icon ứng dụng'**
   String get profile_settings_appIcon;
 
   /// No description provided for @profile_settings_appIconNote.

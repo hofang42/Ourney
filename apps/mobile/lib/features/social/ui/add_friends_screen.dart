@@ -390,14 +390,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.social_findByUsername,
-            style: UiText.h2(size: 18, color: ui.ink),
-          ),
-        ),
-        const SizedBox(height: UiSpace.md),
+        // U21: the field's own label is the heading.
         UiTextField(
           fieldKey: const ValueKey('username-field'),
           label: l10n.social_findByUsername,

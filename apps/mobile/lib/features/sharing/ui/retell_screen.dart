@@ -255,12 +255,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
         scaffoldKey: const ValueKey('retell'),
         title: l10n.sharing_retellTitle,
         bottom: Padding(
-          padding: EdgeInsets.fromLTRB(
-            gutter,
-            UiSpace.sm,
-            gutter,
-            UiSpace.lg,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
           child: bottom,
         ),
         children: [
@@ -324,14 +319,17 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
                 const SizedBox(height: UiSpace.xl),
                 Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        _picks.isEmpty
-                            ? l10n.sharing_pickPhotos
-                            : l10n.sharing_photosCount(_picks.length),
-                        style: UiText.h2(size: 18, color: ui.ink),
-                      ),
-                    ),
+                    // U21: with no photos yet the heading would repeat the
+                    // button label, so only the button shows.
+                    if (_picks.isNotEmpty)
+                      Expanded(
+                        child: Text(
+                          l10n.sharing_photosCount(_picks.length),
+                          style: UiText.h2(size: 18, color: ui.ink),
+                        ),
+                      )
+                    else
+                      const Spacer(),
                     Flexible(
                       child: SharingPillButton(
                         key: const ValueKey('retell-pick'),

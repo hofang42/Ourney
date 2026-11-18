@@ -342,7 +342,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settings_themeLabel => 'Theme';
 
   @override
-  String get profile_settings_language => 'Language';
+  String get profile_settings_language => 'language';
 
   @override
   String get profile_settings_langVi => 'Việt';
@@ -351,7 +351,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settings_langEn => 'English';
 
   @override
-  String get profile_settings_appIcon => 'App icon';
+  String get profile_settings_appIcon => 'app icon';
 
   @override
   String get profile_settings_appIconNote =>

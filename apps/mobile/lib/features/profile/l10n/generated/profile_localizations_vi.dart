@@ -340,7 +340,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_themeLabel => 'Chế độ giao diện';
 
   @override
-  String get profile_settings_language => 'Ngôn ngữ';
+  String get profile_settings_language => 'ngôn ngữ';
 
   @override
   String get profile_settings_langVi => 'Việt';
@@ -349,7 +349,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_langEn => 'English';
 
   @override
-  String get profile_settings_appIcon => 'Icon ứng dụng';
+  String get profile_settings_appIcon => 'icon ứng dụng';
 
   @override
   String get profile_settings_appIconNote =>

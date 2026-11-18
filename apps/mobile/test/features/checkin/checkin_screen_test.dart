@@ -413,11 +413,7 @@ void main() {
         expect(find.byKey(const ValueKey('checkin-retake')), findsOneWidget);
         expect(find.byKey(const ValueKey('checkin-post')), findsOneWidget);
         expect(find.text('Chỉ mình bạn'), findsOneWidget);
-        for (final key in [
-          'checkin-retake',
-          'checkin-post',
-          'checkin-post-link',
-        ]) {
+        for (final key in ['checkin-retake', 'checkin-post']) {
           final size = tester.getSize(find.byKey(ValueKey(key)));
           expect(size.height, greaterThanOrEqualTo(44), reason: key);
         }

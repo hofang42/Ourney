@@ -74,6 +74,7 @@ void main() {
         isTrue,
       );
       expect(story.label, isNotEmpty);
+      // ignore: deprecated_member_use
       tester.binding.pipelineOwner.semanticsOwner!.performAction(
         story.id,
         SemanticsAction.scrollLeft,
