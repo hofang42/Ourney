@@ -2864,6 +2864,36 @@ abstract class JourneysL10n {
   /// **'Đã chọn'**
   String get journeys_createDeckChosen;
 
+  /// No description provided for @journeys_deckPrivate.
+  ///
+  /// In vi, this message translates to:
+  /// **'Riêng tư'**
+  String get journeys_deckPrivate;
+
+  /// No description provided for @journeys_deckHudStudy.
+  ///
+  /// In vi, this message translates to:
+  /// **'45 PHÚT'**
+  String get journeys_deckHudStudy;
+
+  /// No description provided for @journeys_deckHudFlexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'5,2 KM · 5:48'**
+  String get journeys_deckHudFlexer;
+
+  /// No description provided for @journeys_deckHudMemory.
+  ///
+  /// In vi, this message translates to:
+  /// **'CUỘN PHIM 12/24'**
+  String get journeys_deckHudMemory;
+
+  /// No description provided for @journeys_deckHudCouple.
+  ///
+  /// In vi, this message translates to:
+  /// **'hai nửa · một ngày'**
+  String get journeys_deckHudCouple;
+
   /// No description provided for @journeys_createDeckPrev.
   ///
   /// In vi, this message translates to:

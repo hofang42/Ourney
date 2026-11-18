@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/ui/ui.dart';
@@ -69,6 +70,52 @@ void main() {
       );
     });
 
+    testWidgets('all 6 cards render their skin preview and HUD', (
+      tester,
+    ) async {
+      await _open(tester);
+      const expected = [
+        ('weight_loss', 'quiet'),
+        ('english_daily', 'squad'),
+        ('workout_30', 'flexer'),
+        ('travel', 'memory'),
+        ('couple', 'couple'),
+        ('custom', 'minimal'),
+      ];
+      for (final (keyName, skinId) in expected) {
+        final card = _key('template-$keyName');
+        expect(card, findsOneWidget);
+        expect(
+          find.descendant(of: card, matching: _key('deck-preview-$skinId')),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: card, matching: _key('deck-hud-$skinId')),
+          findsOneWidget,
+        );
+      }
+    });
+
+    testWidgets(
+      'at 393x852 focused card is >= 340pt and import link is <= 120pt above choose button',
+      (tester) async {
+        await _open(tester, size: const Size(393, 852));
+        final cardRect = tester.getRect(_key('template-weight_loss'));
+        expect(cardRect.height, greaterThanOrEqualTo(340));
+
+        final counterBottom = tester
+            .getBottomLeft(_key('create-deck-counter'))
+            .dy;
+        final importRect = tester.getRect(_key('create-import-link'));
+        final chooseTop = tester.getTopLeft(_key('create-choose')).dy;
+        expect(importRect.top, greaterThanOrEqualTo(counterBottom));
+
+        final gap = chooseTop - importRect.bottom;
+        expect(gap, greaterThanOrEqualTo(0));
+        expect(gap, lessThanOrEqualTo(120));
+      },
+    );
+
     for (final dark in [false, true]) {
       testWidgets('fits 320dp at 1.35x (${dark ? 'dark' : 'light'})', (
         tester,
@@ -85,6 +132,85 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       });
+    }
+
+    for (final lang in ['en', 'vi']) {
+      for (final size in const [Size(360, 780), Size(393, 852)]) {
+        testWidgets(
+          'chosen chip sits in the preview, never cut ($lang ${size.width})',
+          (tester) async {
+            await pumpJourneys(
+              tester,
+              location: AppRoutes.journeyNew,
+              locale: Locale(lang),
+            );
+            tester.view.physicalSize = size;
+            await tester.pumpAndSettle();
+
+            for (var i = 0; i < 6; i++) {
+              final chipFinder = _key('create-deck-chosen');
+              expect(chipFinder, findsOneWidget);
+
+              final stackFinder = find
+                  .ancestor(of: chipFinder, matching: find.byType(Stack))
+                  .first;
+              final previewFinder = find.descendant(
+                of: stackFinder,
+                matching: find.byWidgetPredicate(
+                  (w) =>
+                      w.key is ValueKey<String> &&
+                      (w.key! as ValueKey<String>).value.startsWith(
+                        'deck-preview-',
+                      ),
+                ),
+              );
+              expect(previewFinder, findsOneWidget);
+
+              final chipRect = tester.getRect(chipFinder);
+              final previewRect = tester.getRect(previewFinder);
+              expect(
+                chipRect.left,
+                greaterThanOrEqualTo(previewRect.left),
+                reason: 'card $i left ($lang ${size.width})',
+              );
+              expect(
+                chipRect.top,
+                greaterThanOrEqualTo(previewRect.top),
+                reason: 'card $i top ($lang ${size.width})',
+              );
+              expect(
+                chipRect.right,
+                lessThanOrEqualTo(previewRect.right),
+                reason: 'card $i right ($lang ${size.width})',
+              );
+              expect(
+                chipRect.bottom,
+                lessThanOrEqualTo(previewRect.bottom),
+                reason: 'card $i bottom ($lang ${size.width})',
+              );
+
+              final richTextFinder = find.descendant(
+                of: chipFinder,
+                matching: find.byType(RichText),
+              );
+              expect(richTextFinder, findsOneWidget);
+              final render =
+                  richTextFinder.evaluate().single.renderObject!
+                      as RenderParagraph;
+              expect(
+                render.didExceedMaxLines,
+                isFalse,
+                reason: 'card $i text overflow ($lang ${size.width})',
+              );
+
+              if (i < 5) {
+                await tester.tap(_key('create-deck-next'));
+                await tester.pumpAndSettle();
+              }
+            }
+          },
+        );
+      }
     }
   });
 }

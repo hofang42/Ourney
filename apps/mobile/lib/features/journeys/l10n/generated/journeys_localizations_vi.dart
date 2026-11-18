@@ -1597,6 +1597,21 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_createDeckChosen => 'Đã chọn';
 
   @override
+  String get journeys_deckPrivate => 'Riêng tư';
+
+  @override
+  String get journeys_deckHudStudy => '45 PHÚT';
+
+  @override
+  String get journeys_deckHudFlexer => '5,2 KM · 5:48';
+
+  @override
+  String get journeys_deckHudMemory => 'CUỘN PHIM 12/24';
+
+  @override
+  String get journeys_deckHudCouple => 'hai nửa · một ngày';
+
+  @override
   String get journeys_createDeckPrev => 'Thẻ trước';
 
   @override
