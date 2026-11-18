@@ -217,7 +217,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         day: progress.dayNumber,
                         total: journey.durationDays,
                         streak: progress.summary.current,
-                        now: ref.watch(journeysNowProvider),
+                        today: progress.today,
                         offline:
                             ref.watch(journeyHomeOfflineProvider).value ??
                             false,

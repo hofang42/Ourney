@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../ui/ui.dart';
 import '../../l10n/generated/journeys_localizations.dart';
@@ -12,21 +13,25 @@ import '../../l10n/generated/journeys_localizations.dart';
 /// to online when connectivity cannot be read (tests, unsupported platform).
 final journeyHomeOfflineProvider = StreamProvider.autoDispose<bool>((ref) {
   final c = StreamController<bool>();
+  // The provider may be disposed (screen left) while the platform call is
+  // in flight: never add to the closed controller (B-B15).
+  void emit(bool offline) {
+    if (!c.isClosed) c.add(offline);
+  }
+
   Future<void> start() async {
     try {
       final conn = Connectivity();
-      c.add(
-        (await conn.checkConnectivity()).every(
-          (r) => r == ConnectivityResult.none,
-        ),
-      );
+      final now = await conn.checkConnectivity();
+      if (c.isClosed) return;
+      emit(now.every((r) => r == ConnectivityResult.none));
       final sub = conn.onConnectivityChanged.listen(
-        (r) => c.add(r.every((x) => x == ConnectivityResult.none)),
+        (r) => emit(r.every((x) => x == ConnectivityResult.none)),
         onError: (_) {},
       );
       ref.onDispose(sub.cancel);
     } on Object {
-      c.add(false);
+      emit(false);
     }
   }
 
@@ -43,7 +48,7 @@ class JourneyHomeIntro extends StatelessWidget {
     required this.skin,
     required this.day,
     required this.streak,
-    required this.now,
+    required this.today,
     this.total,
     this.offline = false,
     this.readOnly = false,
@@ -55,7 +60,8 @@ class JourneyHomeIntro extends StatelessWidget {
   final int day;
   final int? total;
   final int streak;
-  final DateTime now;
+  /// Today in the journey's time zone (not the device clock).
+  final LocalDate today;
   final bool offline;
   final bool readOnly;
 
@@ -84,7 +90,9 @@ class JourneyHomeIntro extends StatelessWidget {
     final line = skin == 'minimal'
         ? l10n.journeys_home_monthStreak(
             streak,
-            DateFormat.MMMM(locale).format(now).toUpperCase(),
+            DateFormat.MMMM(
+              locale,
+            ).format(DateTime(today.year, today.month, today.day)).toUpperCase(),
           )
         : total == null
         ? l10n.journeys_home_dayStreakOpen(day, streak)

@@ -9,6 +9,17 @@ import '../data/journeys_providers.dart';
 /// mounted, so "today" rolls over at midnight in any journey time zone
 /// (whole- and half-hour offsets). Owned by the widget so the timer stops
 /// with the screen.
+/// Time from [now] to the next quarter hour, counted on the UTC timeline:
+/// local wall-clock arithmetic goes negative in the repeated hour of a DST
+/// fall-back and spun a 0 ms timer loop (B-B3). Every whole- and half-hour
+/// UTC offset (and the 45-minute ones) lands on these instants too.
+@visibleForTesting
+Duration untilNextQuarterHour(DateTime now) {
+  const quarter = 15 * Duration.millisecondsPerMinute;
+  final ms = now.millisecondsSinceEpoch;
+  return Duration(milliseconds: quarter - ms % quarter);
+}
+
 class DayTicker extends ConsumerStatefulWidget {
   const DayTicker({required this.child, super.key});
 
@@ -28,14 +39,8 @@ class _DayTickerState extends ConsumerState<DayTicker> {
   }
 
   void _schedule() {
-    final now = DateTime.now();
-    final next = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      now.hour,
-    ).add(Duration(minutes: (now.minute ~/ 15 + 1) * 15));
-    _timer = Timer(next.difference(now), () {
+    final now = ref.read(journeysClockProvider).now();
+    _timer = Timer(untilNextQuarterHour(now), () {
       ref.invalidate(journeysNowProvider);
       _schedule();
     });
