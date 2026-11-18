@@ -118,6 +118,19 @@ void main() {
     test('deep links are normalised before any gate', () {
       expect(r('ourney://join/X', onboarded: false), '/join/X');
     });
+
+    test('a universal link keeps only its in-app path in from= (A-B13)', () {
+      const link = 'https://ourney.tech/f/tok123456';
+      final gate = r(link, onboarded: false)!;
+      expect(gate, '/onboarding?from=%2Ff%2Ftok123456');
+      final toAuth = r(gate, auth: AuthStatus.signedOut)!;
+      expect(toAuth, '/auth?from=%2Ff%2Ftok123456');
+      expect(r(toAuth, auth: AuthStatus.signedIn), '/f/tok123456');
+      expect(
+        r(link, auth: AuthStatus.signedIn, eula: false),
+        '$kEulaAcceptPath?from=%2Ff%2Ftok123456',
+      );
+    });
   });
 
   group('safeFrom', () {
