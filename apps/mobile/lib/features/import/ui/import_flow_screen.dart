@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
@@ -83,9 +84,19 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     super.dispose();
   }
 
-  LocalDate _today() {
-    final now = ref.read(journeysClockProvider).now();
-    return LocalDate(now.year, now.month, now.day);
+  /// Today on the device's wall clock (bug C-B12: not the UTC date).
+  LocalDate _today() => journeyLocalDate(
+    ref.read(deviceTimezoneProvider).value ?? 'UTC',
+    ref.read(journeysClockProvider).now(),
+  );
+
+  /// The device zone, waiting for the platform answer (bug C-B12).
+  Future<String> _timezone() async {
+    try {
+      return await ref.read(deviceTimezoneProvider.future);
+    } on Object {
+      return 'UTC';
+    }
   }
 
   List<String> get _layouts => [
@@ -181,11 +192,12 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       _saveError = null;
     });
     if (_error(l10n) != null || _busy) return;
-    final timezone = ref.read(deviceTimezoneProvider).value ?? 'UTC';
     setState(() {
       _busy = true;
       _failed = 0;
     });
+    final timezone = await _timezone();
+    if (!mounted) return;
     try {
       final type = _types.firstWhere((t) => t.id == _type);
       final journey = _created ??= await ref
@@ -194,7 +206,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
             ImportedJourneyDraft(
               id: _clientId,
               title: _place.text.trim(),
-              emoji: templateFor(type.template).emoji,
+              // The couple heart is what marks a custom journey as a
+              // couple one (bug C-B11).
+              emoji: type.id == 'couple'
+                  ? '💞'
+                  : templateFor(type.template).emoji,
               templateId: type.template,
               firstDate: _start!,
               lastDate: _end!,
@@ -211,7 +227,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           await checkIns.submit(
             CheckInDraft(
               journeyId: journey.id,
-              capturedAt: noonInZone(photo.date!, journey.timezone),
+              capturedAt: noonInZone(
+                photo.date!,
+                journey.timezone,
+                now: ref.read(journeysClockProvider).now(),
+              ),
               photoFile: files.photoFile,
               thumbFile: files.thumbFile,
               fromLibrary: true,
@@ -258,6 +278,8 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   Widget build(BuildContext context) {
     final l10n = ImportL10n.of(context);
     final ui = context.ui;
+    // Keeps the zone loading and rebuilds once it is known (bug C-B12).
+    ref.watch(deviceTimezoneProvider);
     if (ref.watch(appConfigProvider).localOnly) {
       final app = AppLocalizations.of(context);
       return UiScaffold(

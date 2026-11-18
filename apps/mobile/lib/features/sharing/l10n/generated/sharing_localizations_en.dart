@@ -519,6 +519,19 @@ class SharingL10nEn extends SharingL10n {
       'Already did it? Turn old photos into a story';
 
   @override
+  String get sharing_retellDiscardTitle => 'Leave without saving?';
+
+  @override
+  String get sharing_retellDiscardBody =>
+      'Your name and photos for this journey are not saved yet. Leaving now drops them.';
+
+  @override
+  String get sharing_retellDiscardConfirm => 'Leave';
+
+  @override
+  String get sharing_retellDiscardKeep => 'Keep going';
+
+  @override
   String get sharing_pickPhotos => 'Pick photos';
 
   @override

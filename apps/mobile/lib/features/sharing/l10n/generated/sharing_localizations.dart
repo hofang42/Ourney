@@ -938,6 +938,30 @@ abstract class SharingL10n {
   /// **'Đã đi rồi? Biến ảnh cũ thành một câu chuyện'**
   String get sharing_retellIntro;
 
+  /// No description provided for @sharing_retellDiscardTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rời đi mà không lưu?'**
+  String get sharing_retellDiscardTitle;
+
+  /// No description provided for @sharing_retellDiscardBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên và ảnh của hành trình này chưa được lưu. Rời đi bây giờ sẽ mất chúng.'**
+  String get sharing_retellDiscardBody;
+
+  /// No description provided for @sharing_retellDiscardConfirm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rời đi'**
+  String get sharing_retellDiscardConfirm;
+
+  /// No description provided for @sharing_retellDiscardKeep.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ở lại'**
+  String get sharing_retellDiscardKeep;
+
   /// Opens the photo library (multi select).
   ///
   /// In vi, this message translates to:

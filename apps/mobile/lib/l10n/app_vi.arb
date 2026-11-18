@@ -4,6 +4,46 @@
   "@app_name": {
     "description": "App name. Not translated."
   },
+  "journeyStyle_quietTransformer": "Lặng lẽ đổi thay",
+  "@journeyStyle_quietTransformer": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_accountabilitySquad": "Đội cùng cam kết",
+  "@journeyStyle_accountabilitySquad": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_memoryCollectors": "Người lưu giữ ký ức",
+  "@journeyStyle_memoryCollectors": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_coupleRituals": "Nghi thức đôi lứa",
+  "@journeyStyle_coupleRituals": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_aestheticFlexer": "Khoe nét thẩm mỹ",
+  "@journeyStyle_aestheticFlexer": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_minimalistHabit": "Thói quen tối giản",
+  "@journeyStyle_minimalistHabit": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_glowRitual": "Nghi thức tỏa sáng",
+  "@journeyStyle_glowRitual": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_littleMilestones": "Cột mốc nhỏ",
+  "@journeyStyle_littleMilestones": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_pawGrowth": "Lớn lên cùng thú cưng",
+  "@journeyStyle_pawGrowth": {
+    "description": "Display name of a journey style (U20)."
+  },
+  "journeyStyle_blueprintMakeover": "Lột xác theo bản vẽ",
+  "@journeyStyle_blueprintMakeover": {
+    "description": "Display name of a journey style (U20)."
+  },
   "nav_journeys": "Hành trình",
   "@nav_journeys": {
     "description": "Bottom bar tab: list of journeys (docs/03: Journeys · Chụp · Nhóm)."

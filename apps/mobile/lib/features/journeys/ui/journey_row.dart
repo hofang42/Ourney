@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -154,7 +155,7 @@ class JourneyRow extends ConsumerWidget {
       subtitle: UiStyleLabel(
         dot: style.accent,
         label: [
-          style.name,
+          journeyStyleName(context, style),
           ?dayText,
           if (journey.origin == JourneyOrigin.imported) l10n.journeys_imported,
         ].join(' · '),

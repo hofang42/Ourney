@@ -383,6 +383,7 @@ Future<SharingHarness> pumpSharing(
   Size size = const Size(420, 1800),
   double textScale = 1,
   Brightness? brightness,
+  Future<String>? timezone,
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -423,7 +424,7 @@ Future<SharingHarness> pumpSharing(
       chatRepositoryProvider.overrideWithValue(chat ?? FakeChatRepository()),
       mediaStoreProvider.overrideWithValue(FakeMediaStore()),
       journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
-      deviceTimezoneProvider.overrideWith((ref) => testTz),
+      deviceTimezoneProvider.overrideWith((ref) => timezone ?? testTz),
       photoCompressorProvider.overrideWithValue(FakeCompressor()),
       draftFilesProvider.overrideWithValue(NoopDrafts()),
       retellPhotoPickerProvider.overrideWithValue(

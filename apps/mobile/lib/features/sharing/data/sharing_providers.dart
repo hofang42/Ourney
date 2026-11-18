@@ -136,7 +136,15 @@ final retellPhotoPickerProvider = Provider<RetellPhotoPicker>(
 
 /// `captured_at` of a retold photo: noon of [date] in the journey's time
 /// zone, so the server derives exactly that `local_date`.
-DateTime noonInZone(LocalDate date, String timezone) {
+///
+/// Never later than [now] (bug C-B12): a photo from this morning would be
+/// "captured" in the future at noon, which the server rejects
+/// (`invalid_captured_at`); it is stamped [now] instead, still on [date].
+DateTime noonInZone(LocalDate date, String timezone, {DateTime? now}) {
   final naive = DateTime.utc(date.year, date.month, date.day, 12);
-  return naive.subtract(timeZoneOffsetAt(timezone, naive));
+  final noon = naive.subtract(timeZoneOffsetAt(timezone, naive));
+  if (now == null || !noon.isAfter(now)) return noon;
+  final clamped = now.toUtc();
+  // Only today's photos move; a later date stays as asked (and is refused).
+  return journeyLocalDate(timezone, clamped) == date ? clamped : noon;
 }

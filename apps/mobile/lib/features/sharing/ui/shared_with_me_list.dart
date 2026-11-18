@@ -5,6 +5,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
@@ -155,7 +156,10 @@ class _SharedJourneyRowState extends ConsumerState<SharedJourneyRow> {
           if (range != null)
             Text(range, style: UiText.body(size: 12, color: ui.inkMuted)),
         ] else
-          UiStyleLabel(label: '${style.name} · $status', dot: style.accent),
+          UiStyleLabel(
+            label: '${journeyStyleName(context, style)} · $status',
+            dot: style.accent,
+          ),
       ],
     );
 
