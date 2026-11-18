@@ -86,6 +86,8 @@
   "journeys_showMetric": "Show number",
   "journeys_photoUnavailable": "Photo not available yet",
   "journeys_noCheckIn": "No photo for this day",
+  "journeys_dayPhotoCount": "{index}/{count}",
+  "journeys_dayPhotoCountSemantics": "Photo {index} of {count} for this day. Swipe to see the others.",
   "journeys_greetingMorning": "Good morning",
   "journeys_greetingAfternoon": "Good afternoon",
   "journeys_greetingEvening": "Good evening",

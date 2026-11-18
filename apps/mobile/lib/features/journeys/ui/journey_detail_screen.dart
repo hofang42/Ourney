@@ -398,7 +398,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   /// Metric values of the journey, oldest first.
   List<double> _metricSeries(JourneyProgress p) {
     final days = p.checkInsByDate.keys.toList()..sort((a, b) => a.compareTo(b));
-    return [for (final d in days) ?p.checkInsByDate[d]!.metricValue];
+    return [for (final d in days) ?latestMetric(p.checkInsOn(d))];
   }
 
   void _back() {

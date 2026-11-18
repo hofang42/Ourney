@@ -305,6 +305,16 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_noCheckIn => 'Chưa có ảnh cho ngày này';
 
   @override
+  String journeys_dayPhotoCount(int index, int count) {
+    return '$index/$count';
+  }
+
+  @override
+  String journeys_dayPhotoCountSemantics(int index, int count) {
+    return 'Ảnh $index trên $count của ngày này. Vuốt để xem ảnh khác.';
+  }
+
+  @override
   String get journeys_greetingMorning => 'Chào buổi sáng';
 
   @override

@@ -207,6 +207,30 @@
   "journeys_showMetric": "Hiện con số",
   "journeys_photoUnavailable": "Ảnh chưa tải được",
   "journeys_noCheckIn": "Chưa có ảnh cho ngày này",
+  "journeys_dayPhotoCount": "{index}/{count}",
+  "@journeys_dayPhotoCount": {
+    "description": "Day viewer: which photo of the day is shown (several photos a day).",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dayPhotoCountSemantics": "Ảnh {index} trên {count} của ngày này. Vuốt để xem ảnh khác.",
+  "@journeys_dayPhotoCountSemantics": {
+    "description": "Screen reader label of the day viewer photo counter.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_greetingMorning": "Chào buổi sáng",
   "@journeys_greetingMorning": {
     "description": "Hub greeting before noon."

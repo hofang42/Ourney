@@ -312,10 +312,7 @@ class _Summary extends StatelessWidget {
 
   /// "65.2 kg - 62.0 kg" from the first and last logged metric, if any.
   static String? _weights(WrappedStats s) {
-    final values = [
-      for (final c in s.photos)
-        if (c.metricValue != null) c.metricValue!,
-    ];
+    final values = s.weights;
     if (values.length < 2) return null;
     String f(double v) => v.toStringAsFixed(1);
     return '${f(values.first)} kg  >  ${f(values.last)} kg';

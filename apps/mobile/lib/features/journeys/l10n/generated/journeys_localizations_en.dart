@@ -307,6 +307,16 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_noCheckIn => 'No photo for this day';
 
   @override
+  String journeys_dayPhotoCount(int index, int count) {
+    return '$index/$count';
+  }
+
+  @override
+  String journeys_dayPhotoCountSemantics(int index, int count) {
+    return 'Photo $index of $count for this day. Swipe to see the others.';
+  }
+
+  @override
   String get journeys_greetingMorning => 'Good morning';
 
   @override

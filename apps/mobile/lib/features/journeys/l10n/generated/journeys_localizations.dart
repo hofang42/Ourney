@@ -614,6 +614,18 @@ abstract class JourneysL10n {
   /// **'Chưa có ảnh cho ngày này'**
   String get journeys_noCheckIn;
 
+  /// Day viewer: which photo of the day is shown (several photos a day).
+  ///
+  /// In vi, this message translates to:
+  /// **'{index}/{count}'**
+  String journeys_dayPhotoCount(int index, int count);
+
+  /// Screen reader label of the day viewer photo counter.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh {index} trên {count} của ngày này. Vuốt để xem ảnh khác.'**
+  String journeys_dayPhotoCountSemantics(int index, int count);
+
   /// Hub greeting before noon.
   ///
   /// In vi, this message translates to:
