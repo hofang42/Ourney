@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../app/providers.dart';
+import '../../safety/data/safety_providers.dart';
 
 /// Repository streams never retry on a timer (the data layer handles
 /// offline/sync, and timers would leak into widget tests).
@@ -37,11 +38,39 @@ final pendingConsentsProvider = StreamProvider.autoDispose<List<ShareConsent>>(
   retry: _noRetry,
 );
 
-/// Counts behind the Hub inbox dot (S16, S27).
-final inboxCountsProvider = StreamProvider.autoDispose<InboxCounts>(
+/// Server counts behind the Hub inbox dot (S16, S27), blocked people still
+/// included: use [inboxCountsProvider].
+final rawInboxCountsProvider = StreamProvider.autoDispose<InboxCounts>(
   (ref) => ref.watch(insightsRepositoryProvider).watchInboxCounts(),
   retry: _noRetry,
 );
+
+/// [rawInboxCountsProvider] minus unread messages of conversations with
+/// people the user just blocked, so the badge matches the filtered inbox at
+/// once (C-B3). The server already leaves blocked pairs out of friend
+/// requests and group invitations, and anonymises blocked consent requesters
+/// (they stay listed), so only unread messages need the client correction.
+final inboxCountsProvider = Provider.autoDispose<AsyncValue<InboxCounts>>((
+  ref,
+) {
+  final raw = ref.watch(rawInboxCountsProvider);
+  final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+  if (blocked.isEmpty) return raw;
+  final conversations = ref.watch(conversationsProvider).value ?? const [];
+  return raw.whenData(
+    (c) => InboxCounts(
+      friendRequests: c.friendRequests,
+      publicRequests: c.publicRequests,
+      newShares: c.newShares,
+      unreadMessages: [
+        for (final v in conversations)
+          if (blocked.contains(v.other.userId)) v.unreadCount,
+      ].fold(c.unreadMessages, (a, b) => a - b).clamp(0, 1 << 30),
+      consentRequests: c.consentRequests,
+      groupInvitations: c.groupInvitations,
+    ),
+  );
+});
 
 /// Resolves a storage path (chat photo, replied-to thumbnail) to a local
 /// file through the [MediaStore] disk cache.

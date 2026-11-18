@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/groups/ui/group_safety_hooks.dart';
 import 'package:ourney/features/groups/ui/squad_tab_sections.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
 import 'groups_fakes.dart';
@@ -291,6 +292,37 @@ void main() {
       },
     );
 
+    testWidgets(
+      'ended group moves under Finished, no check-in action (C-B13)',
+      (tester) async {
+        await pumpGroups(
+          tester,
+          journeys: FakeJourneyRepository(
+            journeys: [groupJourney(status: JourneyStatus.ended)],
+          ),
+          groups: FakeGroupRepository(
+            today: {
+              'g1': [memberToday(me, 'Linh'), memberToday('u2', 'An')],
+            },
+          ),
+        );
+        expect(
+          find.byKey(const ValueKey('squad-finished-heading')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const ValueKey('squad-member-u1')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('squad-member-sheet')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('squad-member-checkin')),
+          findsNothing,
+        );
+      },
+    );
+
     testWidgets('today strip: counts, avatar chips, member sheet hooks', (
       tester,
     ) async {
@@ -331,6 +363,23 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('squad-member-block')));
       await tester.pumpAndSettle();
       expect(calls, ['block:u2']);
+    });
+
+    testWidgets('pending invites from a blocked inviter are hidden (C-B3)', (
+      tester,
+    ) async {
+      final h = await pumpGroups(
+        tester,
+        journeys: FakeJourneyRepository(journeys: [groupJourney()]),
+        invites: FakeGroupInviteRepository(
+          invitations: [groupInvitation('i1')],
+        ),
+      );
+      expect(find.byKey(const ValueKey('squad-invite-i1')), findsOneWidget);
+      await h.safety.block('ha');
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('squad-invite-i1')), findsNothing);
+      expect(find.byKey(const ValueKey('squad-pending-invites')), findsNothing);
     });
 
     testWidgets('pending invites: join accepts and opens the group', (

@@ -70,6 +70,44 @@ void main() {
     expect(field.controller!.text, isEmpty);
   });
 
+  testWidgets('reply to a shared photo: only the first message carries it '
+      '(C-B15)', (tester) async {
+    final fakes = chatFakes();
+    await pumpSocial(tester, location: '/chat/c1?replyTo=p1', fakes: fakes);
+    expect(find.byKey(const ValueKey('chat-reply-pending')), findsOneWidget);
+    await tester.enterText(find.byKey(const ValueKey('chat-input')), 'nice');
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('chat-reply-pending')), findsNothing);
+    await tester.enterText(find.byKey(const ValueKey('chat-input')), 'again');
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
+    await tester.pumpAndSettle();
+    expect(fakes.chat.replyTo, ['p1', null]);
+  });
+
+  testWidgets('reply context can be dropped before sending', (tester) async {
+    final fakes = chatFakes();
+    await pumpSocial(tester, location: '/chat/c1?replyTo=p1', fakes: fakes);
+    await tester.tap(find.byKey(const ValueKey('chat-reply-cancel')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('chat-library')));
+    await tester.pumpAndSettle();
+    expect(fakes.chat.replyTo, [null]);
+  });
+
+  testWidgets('blocking hides their messages and closes the composer '
+      '(C-B3)', (tester) async {
+    final fakes = chatFakes();
+    await pumpSocial(tester, location: SocialPaths.chat('c1'), fakes: fakes);
+    expect(find.text('which chapter?'), findsOneWidget);
+    await fakes.safety.block('nam');
+    await tester.pumpAndSettle();
+    expect(find.text('which chapter?'), findsNothing);
+    expect(find.text('chapter 6'), findsOneWidget);
+    expect(find.byKey(const ValueKey('chat-input')), findsNothing);
+    expect(find.byKey(const ValueKey('chat-read-only')), findsOneWidget);
+  });
+
   testWidgets('empty text is not sent', (tester) async {
     final fakes = chatFakes();
     await pumpSocial(tester, location: SocialPaths.chat('c1'), fakes: fakes);

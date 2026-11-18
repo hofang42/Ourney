@@ -8,6 +8,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../safety/data/safety_providers.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -20,9 +21,16 @@ const int kChatMessageMaxLength = 500;
 
 /// SCR-86 `/chat/:id`: 1-1 conversation tied to a journey (S17, S37).
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({required this.conversationId, super.key});
+  const ChatScreen({
+    required this.conversationId,
+    this.replyToCheckInId,
+    super.key,
+  });
 
   final String conversationId;
+
+  /// Check-in the first message answers ("Reply" under a shared photo).
+  final String? replyToCheckInId;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -32,12 +40,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _controller = TextEditingController();
   bool _sending = false;
 
+  /// Pending photo context for the next message; cleared once sent.
+  String? _replyTo;
+
   /// Hidden at once while `hideMessage` reaches the stream.
   final Set<String> _hidden = {};
 
   @override
   void initState() {
     super.initState();
+    _replyTo = widget.replyToCheckInId;
     if (!ref.read(appConfigProvider).localOnly) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _markRead());
     }
@@ -62,14 +74,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final body = _controller.text.trim();
     if (body.isEmpty || _sending) return;
     setState(() => _sending = true);
+    final replyTo = _replyTo;
     final ok = await runSocialAction(
       context,
       () => ref
           .read(chatRepositoryProvider)
-          .sendText(widget.conversationId, body),
+          .sendText(widget.conversationId, body, replyToCheckInId: replyTo),
     );
     if (!mounted) return;
-    setState(() => _sending = false);
+    setState(() {
+      _sending = false;
+      if (ok) _replyTo = null;
+    });
     if (ok) _controller.clear();
   }
 
@@ -85,13 +101,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
     if (bytes == null || !mounted) return;
     setState(() => _sending = true);
-    await runSocialAction(
+    final replyTo = _replyTo;
+    final ok = await runSocialAction(
       context,
       () => ref
           .read(chatRepositoryProvider)
-          .sendPhoto(widget.conversationId, bytes!),
+          .sendPhoto(widget.conversationId, bytes!, replyToCheckInId: replyTo),
     );
-    if (mounted) setState(() => _sending = false);
+    if (mounted) {
+      setState(() {
+        _sending = false;
+        if (ok) _replyTo = null;
+      });
+    }
   }
 
   Future<void> _deleteConversation(Conversation? conv) async {
@@ -192,6 +214,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       chatMessagesProvider(widget.conversationId),
     );
     final myId = ref.watch(currentUserIdProvider);
+    // Blocking the other person hides their messages and closes the
+    // composer at once, before the server's next sync (C-B3).
+    final blockedIds =
+        ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final blocked = conv != null && blockedIds.contains(conv.other.userId);
 
     // New incoming messages while the chat is open are read at once.
     ref.listen(chatMessagesProvider(widget.conversationId), (prev, next) {
@@ -212,7 +239,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (messagesAsync.hasValue && !gone) {
       final messages = [
         for (final m in messagesAsync.value!)
-          if (!_hidden.contains(m.id)) m,
+          if (!_hidden.contains(m.id) && !blockedIds.contains(m.senderId)) m,
       ];
       body = messages.isEmpty
           ? UiEmptyState(
@@ -241,7 +268,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       key: const ValueKey('chat-screen'),
       title: conv == null ? l10n.social_message : displayNameOf(conv.other),
       body: body,
-      bottom: conv?.readOnly ?? false
+      bottom: blocked || (conv?.readOnly ?? false)
           ? const _ReadOnlyBanner()
           : _composer(context),
       header: conv == null ? null : _ChatTitle(conversation: conv),
@@ -347,6 +374,83 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget _composer(BuildContext context) {
     final l10n = SocialL10n.of(context);
     final ui = context.ui;
+    final row = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        UiIconButton(
+          key: const ValueKey('chat-camera'),
+          glyph: const OurneyIcon(name: 'camera', flat: true),
+          label: l10n.social_camera,
+          onPressed: _sending ? null : () => _sendPhoto(camera: true),
+        ),
+        UiIconButton(
+          key: const ValueKey('chat-library'),
+          glyph: const OurneyIcon(name: 'gallery', flat: true),
+          label: l10n.social_library,
+          onPressed: _sending ? null : () => _sendPhoto(camera: false),
+        ),
+        Expanded(
+          child: Container(
+            constraints: const BoxConstraints(minHeight: UiSize.tap),
+            decoration: BoxDecoration(
+              color: ui.surfaceInput,
+              borderRadius: BorderRadius.circular(UiRadius.capsule),
+              border: Border.all(color: ui.inputBorder),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            alignment: Alignment.center,
+            child: TextField(
+              key: const ValueKey('chat-input'),
+              controller: _controller,
+              maxLength: kChatMessageMaxLength,
+              minLines: 1,
+              maxLines: 4,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendText(),
+              cursorColor: ui.ink,
+              style: UiText.body(size: 15, height: 1.4, color: ui.ink),
+              decoration: InputDecoration(
+                hintText: l10n.social_messageHint,
+                hintStyle: UiText.body(
+                  size: 15,
+                  height: 1.4,
+                  color: ui.inkMuted,
+                ),
+                counterText: '',
+                isDense: true,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                // 13.5 + 21 + 13.5: a 48dp tap target (U5).
+                contentPadding: const EdgeInsets.symmetric(vertical: 13.5),
+              ),
+            ),
+          ),
+        ),
+        if (_sending)
+          SizedBox(
+            width: UiSize.tap,
+            height: UiSize.tap,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: ui.ink),
+              ),
+            ),
+          )
+        else
+          UiIconButton(
+            key: const ValueKey('chat-send'),
+            glyph: const OurneyIcon(name: 'send', flat: true),
+            label: l10n.social_send,
+            background: ui.brand,
+            color: ui.onBrand,
+            onPressed: _sendText,
+          ),
+      ],
+    );
     return Container(
       decoration: BoxDecoration(
         color: ui.surface,
@@ -355,84 +459,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // No bottom inset here: UiScaffold wraps the pinned slot in a SafeArea
       // (U1), so adding it again would double the gap and leave a strip.
       padding: const EdgeInsets.fromLTRB(4, UiSpace.sm, UiSpace.sm, UiSpace.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UiIconButton(
-            key: const ValueKey('chat-camera'),
-            glyph: const OurneyIcon(name: 'camera', flat: true),
-            label: l10n.social_camera,
-            onPressed: _sending ? null : () => _sendPhoto(camera: true),
-          ),
-          UiIconButton(
-            key: const ValueKey('chat-library'),
-            glyph: const OurneyIcon(name: 'gallery', flat: true),
-            label: l10n.social_library,
-            onPressed: _sending ? null : () => _sendPhoto(camera: false),
-          ),
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(minHeight: UiSize.tap),
-              decoration: BoxDecoration(
-                color: ui.surfaceInput,
-                borderRadius: BorderRadius.circular(UiRadius.capsule),
-                border: Border.all(color: ui.inputBorder),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              alignment: Alignment.center,
-              child: TextField(
-                key: const ValueKey('chat-input'),
-                controller: _controller,
-                maxLength: kChatMessageMaxLength,
-                minLines: 1,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendText(),
-                cursorColor: ui.ink,
-                style: UiText.body(size: 15, height: 1.4, color: ui.ink),
-                decoration: InputDecoration(
-                  hintText: l10n.social_messageHint,
-                  hintStyle: UiText.body(
-                    size: 15,
-                    height: 1.4,
+          if (_replyTo != null)
+            Padding(
+              key: const ValueKey('chat-reply-pending'),
+              padding: const EdgeInsets.only(left: UiSpace.md),
+              child: Row(
+                children: [
+                  OurneyIcon(
+                    name: 'gallery',
+                    size: 18,
                     color: ui.inkMuted,
+                    flat: true,
                   ),
-                  counterText: '',
-                  isDense: true,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  filled: false,
-                  // 13.5 + 21 + 13.5: a 48dp tap target (U5).
-                  contentPadding: const EdgeInsets.symmetric(vertical: 13.5),
-                ),
+                  const SizedBox(width: UiSpace.sm),
+                  Expanded(
+                    child: Text(
+                      l10n.social_replyingTo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 13,
+                        height: 1.4,
+                        color: ui.inkMuted,
+                      ),
+                    ),
+                  ),
+                  UiIconButton(
+                    key: const ValueKey('chat-reply-cancel'),
+                    glyph: const OurneyIcon(name: 'close', flat: true),
+                    label: AppLocalizations.of(context).common_cancel,
+                    onPressed: () => setState(() => _replyTo = null),
+                  ),
+                ],
               ),
             ),
-          ),
-          if (_sending)
-            SizedBox(
-              width: UiSize.tap,
-              height: UiSize.tap,
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: ui.ink,
-                  ),
-                ),
-              ),
-            )
-          else
-            UiIconButton(
-              key: const ValueKey('chat-send'),
-              glyph: const OurneyIcon(name: 'send', flat: true),
-              label: l10n.social_send,
-              background: ui.brand,
-              color: ui.onBrand,
-              onPressed: _sendText,
-            ),
+          row,
         ],
       ),
     );

@@ -175,6 +175,9 @@ class FakeJourneyRepository implements JourneyRepository {
   Stream<List<Journey>> watchArchived() => _view(true);
 
   @override
+  Future<List<Journey>> allMine() async => _journeys.value;
+
+  @override
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(
     (list) => list.where((j) => j.id == journeyId).firstOrNull,
   );

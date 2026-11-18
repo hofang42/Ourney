@@ -450,11 +450,6 @@ class GroupsL10nEn extends GroupsL10n {
       'Enter an invite code to join a group or start a group journey.';
 
   @override
-  String groups_wallAttendance(int done, int total) {
-    return '$done/$total CHECKED IN';
-  }
-
-  @override
   String groups_wallUpdated(String time) {
     return 'Updated at $time';
   }
@@ -514,6 +509,11 @@ class GroupsL10nEn extends GroupsL10n {
   @override
   String groups_coupleDone(String name, String time) {
     return '$name · snapped $time';
+  }
+
+  @override
+  String groups_coupleCheckedIn(String name) {
+    return '$name · checked in';
   }
 
   @override

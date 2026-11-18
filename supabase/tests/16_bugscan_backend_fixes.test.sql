@@ -3,7 +3,7 @@
 --        7 Z invitee, 8 P consent group owner, 9 R consent requester (deleted), 10 T blocks R.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(51);
+select plan(55);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -252,7 +252,7 @@ select is((select count(*)::int from public.conversation_messages(tests.conv(tes
             where x->>'reply_to_thumb_path' is not null), 2,
   'C2: the member side still sees both thumbs');
 
--- ===== C-B11: retold journeys keep their skin and can still be going =============
+-- ===== C-B11: retold journeys keep their skin and can still be going ======
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select throws_ok($$ select public.create_imported_journey(tests.j(10), 'Trip', '✈️', 'travel', current_date - 40, current_date - 20, 'UTC', null, null, 'accountability_squad') $$,
   'P0001', 'invalid', 'C-B11: a retold journey refuses the squad layout');
@@ -280,6 +280,19 @@ select throws_ok($$ select tests.checkin(tests.c(94), tests.j(11), now() - inter
   'P0001', 'ended', 'C-B11: an ended open-ended retold journey refuses photos');
 select throws_ok($$ select tests.checkin(tests.c(95), tests.j(11), now()) $$,
   'P0001', 'ended', 'C-B11: also a live one');
+=======
+-- U16: my_blocked_people lists only the caller's own blocks, with names.
+-- (User 9 is deleted above, so this uses a fresh block between two live users.)
+do $$ begin perform tests.as_user(tests.u(3)); perform public.block_user(tests.u(4)); end $$;
+select results_eq($$ select b->>'username' from json_array_elements(public.my_blocked_people()) b $$,
+  $$ values ('bsuser4') $$, 'U16: the blocker sees the person they blocked, with the real name');
+do $$ begin perform tests.as_user(tests.u(4)); end $$;
+select is(json_array_length(public.my_blocked_people()), 0, 'U16: the blocked person does not see who blocked them');
+do $$ begin perform tests.as_user(tests.u(8)); end $$;
+select is(json_array_length(public.my_blocked_people()), 0, 'U16: a third user sees no blocks');
+select ok(not has_function_privilege('anon', 'public.my_blocked_people()', 'execute')
+          and has_function_privilege('authenticated', 'public.my_blocked_people()', 'execute'),
+  'U16: my_blocked_people is for authenticated only');
 
 select * from finish();
 rollback;

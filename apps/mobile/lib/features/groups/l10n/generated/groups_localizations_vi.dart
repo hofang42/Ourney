@@ -449,11 +449,6 @@ class GroupsL10nVi extends GroupsL10n {
       'Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.';
 
   @override
-  String groups_wallAttendance(int done, int total) {
-    return '$done/$total ĐÃ ĐIỂM DANH';
-  }
-
-  @override
   String groups_wallUpdated(String time) {
     return 'Cập nhật lúc $time';
   }
@@ -512,6 +507,11 @@ class GroupsL10nVi extends GroupsL10n {
   @override
   String groups_coupleDone(String name, String time) {
     return '$name · đã chụp $time';
+  }
+
+  @override
+  String groups_coupleCheckedIn(String name) {
+    return '$name · đã check-in';
   }
 
   @override

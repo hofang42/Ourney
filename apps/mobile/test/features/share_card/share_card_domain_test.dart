@@ -186,8 +186,8 @@ void main() {
   });
 
   group('public link eligibility (FR-E3)', () {
-    test('solo owner with a backend', () {
-      final j = testJourney();
+    test('solo owner with a backend, finished journey (S9)', () {
+      final j = testJourney(status: JourneyStatus.ended);
       expect(
         canHavePublicLink(
           journey: j,
@@ -199,7 +199,29 @@ void main() {
       );
     });
 
-    test('never for group journeys, local-only, archived or non-owners', () {
+    test('S9: running journeys only while a link is still on (C-B7)', () {
+      bool can(Journey j) => canHavePublicLink(
+        journey: j,
+        membership: testMembership(j),
+        currentUserId: 'u1',
+        hasBackend: true,
+      );
+      expect(can(testJourney()), isFalse);
+      expect(
+        can(
+          testJourney(
+            visibility: JourneyVisibility.link,
+            publicToken: testToken,
+          ),
+        ),
+        isTrue,
+        reason: 'the owner can still revoke an old link',
+      );
+      expect(can(testJourney(status: JourneyStatus.ended)), isTrue);
+      expect(can(testJourney(status: JourneyStatus.archived)), isTrue);
+    });
+
+    test('never for group journeys, local-only or non-owners', () {
       final group = testJourney(kind: JourneyKind.group);
       expect(
         canHavePublicLink(
@@ -217,16 +239,6 @@ void main() {
           membership: testMembership(solo),
           currentUserId: null,
           hasBackend: false,
-        ),
-        isFalse,
-      );
-      final archived = testJourney(status: JourneyStatus.archived);
-      expect(
-        canHavePublicLink(
-          journey: archived,
-          membership: testMembership(archived),
-          currentUserId: 'u1',
-          hasBackend: true,
         ),
         isFalse,
       );

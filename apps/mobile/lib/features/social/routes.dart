@@ -33,8 +33,10 @@ final List<RouteBase> socialRoutes = [
   GoRoute(
     path: '/chat/:id',
     parentNavigatorKey: rootNavigatorKey,
-    builder: (context, state) =>
-        ChatScreen(conversationId: state.pathParameters['id']!),
+    builder: (context, state) => ChatScreen(
+      conversationId: state.pathParameters['id']!,
+      replyToCheckInId: state.uri.queryParameters['replyTo'],
+    ),
   ),
   GoRoute(
     path: '/f/:token',

@@ -24,6 +24,7 @@
 // [OurneyErrorCode.fromServer]. Writes that are queued offline do not throw.
 
 import '../models.dart';
+import 'social.dart' show PersonSummary;
 
 /// Result of an attempt that may need the server.
 sealed class SyncResult {
@@ -94,6 +95,10 @@ abstract interface class ProfileRepository {
 
 abstract interface class JourneyRepository {
   Stream<List<Journey>> watchActive();
+
+  /// Every journey the caller has a membership in, archived and ended ones
+  /// included (one-shot). Used to push account-wide preferences.
+  Future<List<Journey>> allMine();
   Stream<Journey?> watch(String journeyId);
 
   /// Journeys hidden with [archive] (client-side), newest first. They come
@@ -215,6 +220,10 @@ abstract interface class SafetyRepository {
   Future<void> block(String userId);
   Future<void> unblock(String userId);
   Stream<Set<String>> watchBlockedIds();
+
+  /// `my_blocked_people` (U16): the people the caller blocked with their real
+  /// names, even on a fresh device. Server only: throws `offline` without one.
+  Future<List<PersonSummary>> myBlockedPeople();
 }
 
 /// Resolves storage paths to displayable bytes/URLs with a disk cache keyed

@@ -27,6 +27,24 @@ void main() {
     expect(find.text('Nam Tran'), findsOneWidget);
   });
 
+  testWidgets('blocked people leave the list at once (C-B3)', (tester) async {
+    final fakes = SocialFakes(
+      friends: FakeFriendRepository([
+        request('khoa', name: 'Khoa Le'),
+        friend('nam', name: 'Nam Tran'),
+      ]),
+    );
+    await pumpSocial(tester, location: SocialPaths.friends, fakes: fakes);
+    expect(find.byKey(const ValueKey('accept-khoa')), findsOneWidget);
+    expect(find.text('Nam Tran'), findsOneWidget);
+
+    await fakes.safety.block('khoa');
+    await fakes.safety.block('nam');
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('accept-khoa')), findsNothing);
+    expect(find.text('Nam Tran'), findsNothing);
+  });
+
   testWidgets('accept turns a request into a friend', (tester) async {
     final fakes = SocialFakes(
       friends: FakeFriendRepository([request('khoa', name: 'Khoa Le')]),

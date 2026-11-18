@@ -976,3 +976,29 @@ begin
   return new;
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- U16: the caller's own blocked people with real names (a fresh device has no
+-- cached names). Only rows where the caller is the blocker; never who blocked them.
+-- ---------------------------------------------------------------------------
+create or replace function public.my_blocked_people() returns json
+language plpgsql stable security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+begin
+  return coalesce((
+    select json_agg(json_build_object(
+      'user_id', b.blocked_id,
+      'username', p.username,
+      'display_name', p.display_name,
+      'avatar_path', p.avatar_path) order by b.created_at desc)
+      from public.blocks b
+      left join public.profiles p on p.id = b.blocked_id
+     where b.blocker_id = uid and b.deleted_at is null
+  ), '[]'::json);
+end;
+$$;
+
+revoke all on function public.my_blocked_people() from public, anon;
+grant execute on function public.my_blocked_people() to authenticated;

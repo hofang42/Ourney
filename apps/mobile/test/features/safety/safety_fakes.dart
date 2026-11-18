@@ -32,6 +32,16 @@ class FakeSafetyRepository implements SafetyRepository {
   Object? blockError;
   final _changes = StreamController<Set<String>>.broadcast();
 
+  /// What `my_blocked_people` returns (U16); set [blockedPeopleError] to fail.
+  List<PersonSummary> blockedPeople = const [];
+  Object? blockedPeopleError;
+
+  @override
+  Future<List<PersonSummary>> myBlockedPeople() async {
+    if (blockedPeopleError != null) throw blockedPeopleError!;
+    return blockedPeople;
+  }
+
   Set<String> get blocked => {..._blocked};
 
   @override

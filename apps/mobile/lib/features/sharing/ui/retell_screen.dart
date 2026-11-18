@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,7 @@ import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import 'sharing_widgets.dart';
@@ -163,6 +165,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
     try {
       final metric = _metricName.text.trim();
       final unit = _metricUnit.text.trim();
+      final fresh = _created == null;
       final journey = _created ??= await ref
           .read(sharingRepositoryProvider)
           .createImported(
@@ -178,6 +181,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
               metricUnit: metric.isEmpty || unit.isEmpty ? null : unit,
             ),
           );
+      if (fresh) unawaited(pushSharePrivacyToJourney(ref, journey.id));
       final compressor = ref.read(photoCompressorProvider);
       final checkIns = ref.read(checkInRepositoryProvider);
       final drafts = ref.read(draftFilesProvider);

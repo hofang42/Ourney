@@ -12,6 +12,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/l10n/generated/sharing_localizations.dart';
 import '../data/journeys_providers.dart';
@@ -156,13 +157,18 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       );
       // The new journey may get the 21:00 streak alert (FR-G2).
       unawaited(reminders.reschedule());
-      final hide = form.trackMetric && form.hideMetric;
-      if (hide || form.blurOnShare) {
+      final privacy = newMembershipPrivacy(
+        ref,
+        journey,
+        hideMetric: form.trackMetric && form.hideMetric,
+        blurMedia: form.blurOnShare,
+      );
+      if (privacy.hideMetric || privacy.blurMedia) {
         try {
           await repo.updateMyMembership(
             journey.id,
-            hideMetric: hide ? true : null,
-            blurMedia: form.blurOnShare ? true : null,
+            hideMetric: privacy.hideMetric ? true : null,
+            blurMedia: privacy.blurMedia ? true : null,
           );
         } on Object catch (e) {
           if (mounted) {

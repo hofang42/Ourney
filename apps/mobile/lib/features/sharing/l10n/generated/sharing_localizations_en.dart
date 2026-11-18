@@ -274,6 +274,24 @@ class SharingL10nEn extends SharingL10n {
   String get sharing_storySaved => 'Story saved';
 
   @override
+  String get sharing_storyOwnerOnly =>
+      'Only the journey owner can edit the story. You can still hide your own photos.';
+
+  @override
+  String get sharing_storyTitleFallback =>
+      'Leave empty to use the journey name';
+
+  @override
+  String get sharing_discardTitle => 'Discard changes?';
+
+  @override
+  String get sharing_discardBody =>
+      'Your edits to the story haven\'t been saved yet.';
+
+  @override
+  String get sharing_discard => 'Discard';
+
+  @override
   String get sharing_fromFriends => 'From friends';
 
   @override

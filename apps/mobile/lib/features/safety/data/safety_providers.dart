@@ -60,6 +60,23 @@ final blockedUserIdsProvider = StreamProvider.autoDispose<Set<String>>(
   retry: (_, _) => null,
 );
 
+/// Blocked people with their real names from `my_blocked_people` (U16),
+/// keyed by user id. Empty when offline / not wired: callers fall back to the
+/// names cached on this device and then to a short id.
+final blockedPeopleProvider =
+    FutureProvider.autoDispose<Map<String, PersonSummary>>((ref) async {
+      // A new block / unblock changes the list.
+      ref.watch(blockedUserIdsProvider);
+      try {
+        final people = await ref
+            .watch(safetyRepositoryProvider)
+            .myBlockedPeople();
+        return {for (final p in people) p.userId: p};
+      } on Object {
+        return const {};
+      }
+    }, retry: (_, _) => null);
+
 /// Check-ins reported from this device during this session. The server
 /// already hides them from the reporter (FR-F2); lists that may still hold
 /// a cached copy should filter with this set so the content disappears

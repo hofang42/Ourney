@@ -854,12 +854,6 @@ abstract class GroupsL10n {
   /// **'Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.'**
   String get groups_emptyCardBody;
 
-  /// No description provided for @groups_wallAttendance.
-  ///
-  /// In vi, this message translates to:
-  /// **'{done}/{total} ĐÃ ĐIỂM DANH'**
-  String groups_wallAttendance(int done, int total);
-
   /// No description provided for @groups_wallUpdated.
   ///
   /// In vi, this message translates to:
@@ -949,6 +943,12 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'{name} · đã chụp {time}'**
   String groups_coupleDone(String name, String time);
+
+  /// No description provided for @groups_coupleCheckedIn.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · đã check-in'**
+  String groups_coupleCheckedIn(String name);
 
   /// No description provided for @groups_coupleWaiting.
   ///

@@ -95,6 +95,10 @@
   "@share_card_photoNone": {
     "description": "Shown when the journey has no check-in photo yet."
   },
+  "share_card_stateError": "Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.",
+  "@share_card_stateError": {
+    "description": "Shown on the share card when the hidden-photo flags could not be loaded; sharing stays disabled with a retry button."
+  },
   "share_card_photoOfDay": "Ảnh ngày {date}",
   "@share_card_photoOfDay": {
     "description": "Accessibility label of a photo thumbnail in the picker.",
@@ -108,9 +112,13 @@
   "@share_card_blurPhoto": {
     "description": "Switch: blur the photo on the shared card (FR-B7)."
   },
-  "share_card_blurPhotoHint": "Bật sẵn theo cài đặt riêng tư của hành trình",
+  "share_card_blurPhotoHint": "Bật sẵn theo cài đặt riêng tư của bạn",
   "@share_card_blurPhotoHint": {
-    "description": "Subtitle of the blur switch when privacy settings turned it on."
+    "description": "Subtitle of the blur switch when privacy settings (journey, membership or Settings) turned it on."
+  },
+  "share_card_blurPhotoLocked": "Luôn bật với kiểu thẻ này",
+  "@share_card_blurPhotoLocked": {
+    "description": "Subtitle of the locked blur switch on the quiet card, which always blurs its portrait."
   },
   "share_card_metricHidden": "Số đo của bạn không hiện trên thẻ.",
   "@share_card_metricHidden": {
@@ -166,6 +174,10 @@
   "share_card_linkDescription": "Ai có link đều xem được hành trình này (chỉ xem). Bạn thu hồi được bất cứ lúc nào.",
   "@share_card_linkDescription": {
     "description": "Explains the public link before it is created."
+  },
+  "share_card_linkNotYet": "Link công khai sẽ mở khi hành trình này kết thúc.",
+  "@share_card_linkNotYet": {
+    "description": "Public link card on a running journey: the link cannot be created yet."
   },
   "share_card_linkActive": "Link đang bật. Ai có link đều xem được hành trình này.",
   "@share_card_linkActive": {

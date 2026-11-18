@@ -204,6 +204,9 @@ class FakeSafetyRepository implements SafetyRepository {
   Stream<Set<String>> watchBlockedIds() => _blocked.watch();
 
   @override
+  Future<List<PersonSummary>> myBlockedPeople() async => const [];
+
+  @override
   Future<void> block(String userId) async =>
       _blocked.set({..._blocked.value, userId});
 

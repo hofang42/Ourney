@@ -1,12 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/features/share_card/domain/share_card_content.dart';
 import 'package:ourney/features/share_card/ui/share_card.dart';
+import 'package:ourney/features/share_card/ui/share_skin_chrome.dart';
+import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../sharing/sharing_fakes.dart' as sharing;
 import 'share_card_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
@@ -239,6 +246,130 @@ void main() {
       expect(_key('share-card-metric-hidden'), findsNothing);
     });
 
+    testWidgets('Settings privacy switches blur and hide only kg (C-B1)', (
+      tester,
+    ) async {
+      final j = testJourney(metricName: 'Cân nặng', metricUnit: 'kg');
+      final h = await pumpShare(
+        tester,
+        journey: j,
+        photos: true,
+        checkIns: streakCheckIns(j.id, metricValue: 25.5),
+      );
+      expect(_key('share-card-photo-blurred'), findsNothing);
+      expect(_text(tester, 'share-card-number'), '25,5 KG');
+
+      await h.container.read(blurPhotosOnShareProvider.notifier).set(true);
+      await h.container.read(hideWeightOnShareProvider.notifier).set(true);
+      await tester.pumpAndSettle();
+      expect(_key('share-card-photo-blurred'), findsOneWidget);
+      expect(tester.widget<UiSwitchRow>(_key('share-card-blur')).value, isTrue);
+      for (final s in _allText(tester)) {
+        expect(s.contains('25,5'), isFalse, reason: s);
+      }
+      expect(_key('share-card-metric-hidden'), findsOneWidget);
+    });
+
+    testWidgets('the hide-kg switch never hides minutes or km (C-B1)', (
+      tester,
+    ) async {
+      final j = testJourney(metricName: 'Thời gian', metricUnit: 'phút');
+      final h = await pumpShare(
+        tester,
+        journey: j,
+        photos: true,
+        checkIns: streakCheckIns(j.id, metricValue: 25.5),
+      );
+      await h.container.read(hideWeightOnShareProvider.notifier).set(true);
+      await tester.pumpAndSettle();
+      expect(_text(tester, 'share-card-number'), '25,5 PHÚT');
+      expect(_key('share-card-metric-hidden'), findsNothing);
+    });
+
+    testWidgets('no photo is offered or exportable while the hidden-photo '
+        'flags load (C-B2)', (tester) async {
+      final j = testJourney();
+      final never = StreamController<JourneyShareState>();
+      addTearDown(never.close);
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        photos: true,
+        checkIns: streakCheckIns(j.id),
+        overrides: [
+          shareStateProvider(j.id).overrideWith((ref) => never.stream),
+        ],
+      );
+      expect(_key('share-card-photo'), findsNothing);
+      expect(_key('share-card-photo-none'), findsOneWidget);
+      expect(
+        tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('on error no photo is offered, a retry is, and the card still shares '
+        '(C-B2)', (tester) async {
+      final j = testJourney();
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        photos: true,
+        checkIns: streakCheckIns(j.id),
+        overrides: [
+          shareStateProvider(j.id).overrideWith(
+            (ref) => Stream<JourneyShareState>.error(StateError('offline')),
+          ),
+        ],
+      );
+      expect(_key('share-card-photo'), findsNothing);
+      expect(_key('share-card-state-error'), findsOneWidget);
+      expect(_key('share-card-state-retry'), findsOneWidget);
+      // The illustration-only card can still be shared (C-B7).
+      expect(
+        tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
+        isNotNull,
+      );
+    });
+
+    testWidgets('photos hidden from every share are never offered (C-B2)', (
+      tester,
+    ) async {
+      final j = testJourney();
+      final repo = sharing.FakeSharingRepository();
+      await repo.setHiddenInShare('c-2026-10-15', hidden: true);
+      await pumpShare(
+        tester,
+        journey: j,
+        backend: true,
+        photos: true,
+        checkIns: streakCheckIns(j.id),
+        overrides: [sharingRepositoryProvider.overrideWithValue(repo)],
+      );
+      final photo = tester.widget<Image>(_key('share-card-photo'));
+      expect(photo.image.toString(), contains('c-2026-10-14.jpg'));
+      expect(_key('share-card-photo-c-2026-10-15'), findsNothing);
+      expect(_key('share-card-photo-c-2026-10-14'), findsOneWidget);
+    });
+
+    testWidgets('quiet card: the blur switch is locked on (U11)', (
+      tester,
+    ) async {
+      final j = weightLossJourney();
+      await pumpShare(
+        tester,
+        journey: j,
+        photos: true,
+        checkIns: streakCheckIns(j.id),
+      );
+      final row = tester.widget<UiSwitchRow>(_key('share-card-blur'));
+      expect(row.value, isTrue);
+      expect(row.onChanged, isNull);
+      expect(find.text('Luôn bật với kiểu thẻ này'), findsOneWidget);
+    });
+
     testWidgets('choosing another photo uses that check-in', (tester) async {
       final j = testJourney();
       await pumpShare(
@@ -316,8 +447,59 @@ void main() {
       expect(_key('share-card-link'), findsNothing);
     });
 
+    testWidgets('S9: a running journey cannot create a link (C-B7)', (
+      tester,
+    ) async {
+      await pumpShare(tester, journey: testJourney(), backend: true);
+      expect(_key('share-card-screen'), findsOneWidget);
+      expect(_key('share-card-link'), findsNothing);
+    });
+
+    testWidgets('S9: a retold (imported) journey can create a link (C-B7)', (
+      tester,
+    ) async {
+      await pumpShare(
+        tester,
+        journey: testJourney(origin: JourneyOrigin.imported),
+        backend: true,
+      );
+      expect(_key('share-card-link-create'), findsOneWidget);
+    });
+
+    testWidgets('S9: archived journeys keep the link section (C-B7)', (
+      tester,
+    ) async {
+      await pumpShare(
+        tester,
+        journey: testJourney(status: JourneyStatus.archived),
+        backend: true,
+      );
+      expect(_key('share-card-link-create'), findsOneWidget);
+    });
+
+    testWidgets('S10: a sensitive journey warns before the link (C-B7)', (
+      tester,
+    ) async {
+      final wl = weightLossJourney();
+      final j = testJourney(
+        templateId: wl.templateId,
+        title: wl.title,
+        emoji: wl.emoji,
+        metricName: wl.metricName,
+        metricUnit: wl.metricUnit,
+        hideMetricDefault: true,
+        status: JourneyStatus.ended,
+      );
+      final h = await pumpShare(tester, journey: j, backend: true);
+      await _tap(tester, _key('share-card-link-create'));
+      expect(_key('share-sensitive-warning'), findsOneWidget);
+      expect(h.journeys.calls, isEmpty);
+      await _tap(tester, _key('share-warning-confirm'));
+      expect(h.journeys.calls, ['setPublicLink:j1:true']);
+    });
+
     testWidgets('create & copy, then revoke', (tester) async {
-      final j = testJourney();
+      final j = testJourney(status: JourneyStatus.ended);
       final h = await pumpShare(tester, journey: j, backend: true);
       expect(_key('share-card-link'), findsOneWidget);
 
@@ -367,7 +549,7 @@ void main() {
     testWidgets('works even when the repository stream lags behind', (
       tester,
     ) async {
-      final j = testJourney();
+      final j = testJourney(status: JourneyStatus.ended);
       final h = await pumpShare(tester, journey: j, backend: true);
       h.journeys.echoLinkChanges = false;
       await _tap(tester, _key('share-card-link-create'));
@@ -378,7 +560,7 @@ void main() {
     });
 
     testWidgets('server errors are mapped, nothing is copied', (tester) async {
-      final j = testJourney();
+      final j = testJourney(status: JourneyStatus.ended);
       final h = await pumpShare(
         tester,
         journey: j,

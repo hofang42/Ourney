@@ -57,7 +57,6 @@ void main() {
       await _pump(tester);
       expect(find.text('1 of 4 checked in today'), findsOneWidget);
       expect(find.text('Day 7 of 30'), findsOneWidget);
-      expect(find.text('1/4 CHECKED IN'), findsOneWidget);
       expect(find.text('Not yet'), findsNWidgets(3));
       expect(find.text('You · Owner'), findsOneWidget);
 

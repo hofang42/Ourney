@@ -206,6 +206,16 @@
   "@safety_unknownUser": {
     "description": "Fallback name for a user whose name is not known on this device."
   },
+  "safety_unknownUserId": "Mã {id}",
+  "@safety_unknownUserId": {
+    "description": "Short account id shown under an unnamed blocked user so several unknown accounts can be told apart.",
+    "placeholders": {
+      "id": {
+        "type": "String",
+        "example": "3fa85f64"
+      }
+    }
+  },
   "safety_blockedEmptyTitle": "Bạn chưa chặn ai",
   "@safety_blockedEmptyTitle": {
     "description": "Empty state title of the blocked users list."

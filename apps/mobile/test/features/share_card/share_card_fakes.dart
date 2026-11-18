@@ -4,6 +4,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
@@ -57,7 +58,9 @@ Journey testJourney({
   String? metricName,
   String? metricUnit,
   bool hideMetricDefault = false,
+  JourneyOrigin origin = JourneyOrigin.live,
 }) => Journey(
+  origin: origin,
   id: id,
   ownerId: ownerId,
   kind: kind,
@@ -160,6 +163,9 @@ class FakeJourneyRepository implements JourneyRepository {
 
   @override
   Stream<List<Journey>> watchActive() => _journeys.watch();
+
+  @override
+  Future<List<Journey>> allMine() async => _journeys.value;
 
   @override
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(
@@ -367,6 +373,7 @@ Future<ShareHarness> pumpShare(
   Locale locale = const Locale('vi'),
   double textScale = 1,
   Size size = const Size(420, 1800),
+  List<Override> overrides = const [],
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -414,6 +421,7 @@ Future<ShareHarness> pumpShare(
       shareCardClockProvider.overrideWithValue(Clock.fixed(testNow)),
       shareCardSharerProvider.overrideWithValue(sharer),
       shareCardExporterProvider.overrideWithValue(exporter),
+      ...overrides,
     ],
   );
   container.read(routerProvider).go(AppRoutes.share(journey.id));
