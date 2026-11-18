@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/checkin/captured_photo.dart';
 import 'package:ourney/features/checkin/checkin_clock.dart';
+import 'package:ourney/features/checkin/checkin_controller.dart';
 import 'package:ourney/features/checkin/checkin_success.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
 import 'package:ourney/features/checkin/routes.dart';
@@ -40,6 +41,7 @@ void main() {
     bool noPhoto = false,
     Map<String, Object> prefsValues = const {},
     Brightness brightness = Brightness.light,
+    void Function(ProviderContainer)? before,
   }) async {
     final prefs = await testPrefs(prefsValues);
     final container = ProviderContainer(
@@ -50,6 +52,7 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    before?.call(container);
     await tester.pumpWidget(
       routedTestApp(
         container: container,
@@ -251,6 +254,43 @@ void main() {
       );
       await tapPost(tester);
       expect(checkIns.submitted.single.metricValue, 72.5);
+      await finishSuccess(tester);
+    });
+
+    testWidgets('weight picked on the camera slider beats the last logged '
+        'one (B-B1)', (tester) async {
+      journeys = FakeJourneyRepository(
+        journeys: [
+          testJourney(
+            templateId: TemplateId.weightLoss,
+            metricName: 'Cân nặng',
+            metricUnit: 'kg',
+          ),
+        ],
+      );
+      await pump(
+        tester,
+        // What the camera passes: the last logged weight as a fallback.
+        extra: CapturedPhoto(
+          journeyId: 'j1',
+          path: '/tmp/shot.jpg',
+          capturedAt: testNowUtc,
+          initialMetricValue: 65.2,
+        ),
+        before: (c) => c
+            .read(pendingWeightProvider('j1').notifier)
+            .setPendingWeight(62),
+      );
+      final field = tester.widget<EditableText>(
+        find.descendant(
+          of: find.byKey(const ValueKey('checkin-metric')),
+          matching: find.byType(EditableText),
+          matchRoot: true,
+        ),
+      );
+      expect(field.controller.text, '62');
+      await tapPost(tester);
+      expect(checkIns.submitted.single.metricValue, 62);
       await finishSuccess(tester);
     });
 

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -44,21 +45,30 @@ abstract interface class AppSettingsOpener {
 
 /// iOS: `UIApplication.openSettingsURLString` is the `app-settings:` URL,
 /// opened through url_launcher. Android has no URL for the app details page
-/// (it needs `ACTION_APPLICATION_DETAILS_SETTINGS`, which url_launcher cannot
-/// send), so the UI shows the Settings path as text there instead.
-class UrlLauncherSettingsOpener implements AppSettingsOpener {
-  const UrlLauncherSettingsOpener();
+/// (it needs `ACTION_APPLICATION_DETAILS_SETTINGS`), so it goes through the
+/// [channel] handled in `MainActivity.kt` (U7: a permanently denied camera
+/// can only be granted again from there).
+class PlatformSettingsOpener implements AppSettingsOpener {
+  const PlatformSettingsOpener();
 
   static final Uri settingsUri = Uri.parse('app-settings:');
 
+  static const MethodChannel channel = MethodChannel('ourney/app_settings');
+
   @override
-  bool get supported => defaultTargetPlatform == TargetPlatform.iOS;
+  bool get supported =>
+      defaultTargetPlatform == TargetPlatform.iOS ||
+      defaultTargetPlatform == TargetPlatform.android;
 
   @override
   Future<bool> open() async {
-    if (!supported) return false;
     try {
-      return await launchUrl(settingsUri);
+      return switch (defaultTargetPlatform) {
+        TargetPlatform.iOS => await launchUrl(settingsUri),
+        TargetPlatform.android =>
+          await channel.invokeMethod<bool>('openAppDetails') ?? false,
+        _ => false,
+      };
     } on Object {
       return false;
     }
@@ -66,5 +76,5 @@ class UrlLauncherSettingsOpener implements AppSettingsOpener {
 }
 
 final appSettingsOpenerProvider = Provider<AppSettingsOpener>(
-  (ref) => const UrlLauncherSettingsOpener(),
+  (ref) => const PlatformSettingsOpener(),
 );

@@ -167,9 +167,13 @@ class FakeCameraSession implements CameraSession {
   bool _ready = false;
   bool _front = false;
 
+  /// When set, [start] waits for it (hardware or OS dialog still busy).
+  Completer<void>? startGate;
+
   @override
   Future<void> start({bool front = false}) async {
     starts++;
+    await startGate?.future;
     final f = failure;
     if (f != null) throw CameraStartException(f);
     _front = front;

@@ -58,15 +58,14 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     super.initState();
     _drafts = ref.read(draftFilesProvider);
     _caption.addListener(_onCaptionChanged);
-    final initialMetric = widget.photo?.initialMetricValue;
-    // The camera slider writes the weight through the check-in flow
-    // (pendingWeightProvider); a value carried by the photo wins.
+    // The camera slider writes the weight chosen for this shot through the
+    // check-in flow (pendingWeightProvider): it wins over the photo's
+    // fallback, which is only the last logged value (B-B1).
     final photo = widget.photo;
-    final prefill =
-        initialMetric ??
-        (photo == null
-            ? null
-            : ref.read(pendingWeightProvider(photo.journeyId)));
+    final prefill = photo == null
+        ? null
+        : ref.read(pendingWeightProvider(photo.journeyId)) ??
+              photo.initialMetricValue;
     if (prefill != null) {
       _metric.text = prefill == prefill.roundToDouble()
           ? prefill.toInt().toString()
