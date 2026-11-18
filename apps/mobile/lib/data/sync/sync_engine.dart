@@ -41,6 +41,16 @@ class SyncEngine {
 
   Future<SyncResult>? _pulling;
   bool _pullAgain = false;
+
+  /// Session generation: bumped by [invalidateSession] when the cache is
+  /// wiped. A pull started in an older generation (or for another user)
+  /// stops before its next local write instead of refilling the wiped cache
+  /// with the previous account's rows and cursors.
+  int _epoch = 0;
+
+  /// Generation and user of the running [_pullOnce] (pulls are serialized).
+  int _runEpoch = 0;
+  String? _runUser;
   final _changes = StreamController<void>.broadcast();
 
   /// Fires after server data was applied locally (pull, outbox success).
@@ -60,6 +70,26 @@ class SyncEngine {
     }
     await db.writeCursor(ownerCursorKey, userId);
   }
+
+  /// Called when the local cache is wiped (sign-out, account deletion):
+  /// pulls still in flight for the old session write nothing more.
+  void invalidateSession() => _epoch++;
+
+  void _checkSession(int epoch, String me) {
+    if (epoch != _epoch || remote.currentUserId != me) {
+      throw const _SessionChanged();
+    }
+  }
+
+  void _checkRun() => _checkSession(_runEpoch, _runUser ?? '');
+
+  /// Runs [body] in one transaction that first checks the pull still belongs
+  /// to the current session (the wipe is a transaction too, so they never
+  /// interleave).
+  Future<void> _write(Future<void> Function() body) => db.transaction(() async {
+    _checkRun();
+    await body();
+  });
 
   // --- push -------------------------------------------------------------------
 
@@ -182,18 +212,24 @@ class SyncEngine {
 
   Future<SyncResult> _pullLoop() async {
     SyncResult result;
+    int epoch;
     do {
       _pullAgain = false;
+      epoch = _epoch;
       result = await _pullOnce();
-    } while (_pullAgain && result is SyncOk);
+      // A pull cut short by a session change still serves a sync requested
+      // meanwhile (the next account signing in).
+    } while (_pullAgain && (result is SyncOk || epoch != _epoch));
     return result;
   }
 
   Future<SyncResult> _pullOnce() async {
     final me = remote.currentUserId;
     if (me == null) return const SyncFailed('signed out');
+    _runEpoch = _epoch;
+    _runUser = me;
     try {
-      await ensureOwner(me);
+      await _write(() => ensureOwner(me));
       final pending = await outbox.pendingKeys();
       await _pullTable('journeys', store.applyJourney);
       await _pullTable('memberships', (r) => store.applyMembership(r, me: me));
@@ -213,6 +249,8 @@ class SyncEngine {
       await _pullTable('profiles', store.applyProfile, eq: {'id': me});
       notifyChanged();
       return const SyncOk();
+    } on _SessionChanged {
+      return const SyncFailed('session changed');
     } on OurneyException catch (e) {
       if (e.error == OurneyErrorCode.offline) return const SyncOffline();
       return SyncFailed(e.toString());
@@ -227,11 +265,11 @@ class SyncEngine {
     eq.isEmpty ? table : '$table?${eq.keys.join(',')}',
     (since) =>
         remote.select(table, eq: eq, updatedSince: since, limit: pullPageSize),
-    (rows) => db.transaction(() async {
+    (rows) async {
       for (final r in rows) {
         await apply(r);
       }
-    }),
+    },
   );
 
   /// Other members' check-ins that were deleted, hidden (author left or was
@@ -250,11 +288,11 @@ class SyncEngine {
             if (r is Map) r.cast<String, dynamic>(),
       ];
     },
-    (rows) => db.transaction(() async {
+    (rows) async {
       for (final r in rows) {
         await store.applyCheckInTombstone(r['id'] as String);
       }
-    }),
+    },
   );
 
   /// `check_in_metrics` (own metrics, and others' unless they hide them).
@@ -291,7 +329,7 @@ class SyncEngine {
     Future<bool> Function(RemoteRow) apply,
   ) async {
     final missing = <String>{};
-    await db.transaction(() async {
+    await _write(() async {
       for (final r in rows) {
         if (!await apply(r)) missing.add(r['checkin_id'] as String);
       }
@@ -310,7 +348,7 @@ class SyncEngine {
       );
     }
     if (fetched.isEmpty) return;
-    await db.transaction(() async {
+    await _write(() async {
       for (final c in fetched) {
         await store.applyCheckIn(c, pending);
       }
@@ -321,7 +359,8 @@ class SyncEngine {
   }
 
   /// Cursor-paged pull: [fetch] gets rows with `updated_at >= since`
-  /// (ascending), [applyPage] stores one page.
+  /// (ascending), [applyPage] stores one page (in one guarded transaction
+  /// with its cursor).
   Future<void> _pullPaged(
     String key,
     Future<List<RemoteRow>> Function(String? since) fetch,
@@ -337,12 +376,14 @@ class SyncEngine {
     while (true) {
       final rows = await fetch(since);
       if (rows.isEmpty) return;
-      await applyPage(rows);
       final last = rows.last['updated_at'] as String?;
+      await _write(() async {
+        await applyPage(rows);
+        if (last != null) await db.writeCursor(key, last);
+      });
       if (last == null) return;
       final advanced = last != cursor;
       cursor = last;
-      await db.writeCursor(key, last);
       if (rows.length < pullPageSize || !advanced) return;
       since = DateTime.parse(last).toUtc().toIso8601String();
     }
@@ -354,11 +395,23 @@ class SyncEngine {
   Future<void> pullJourney(String journeyId) async {
     final me = remote.currentUserId;
     if (me == null) return;
+    final epoch = _epoch;
+    try {
+      await _pullJourney(journeyId, me, epoch);
+    } on _SessionChanged {
+      // Signed out meanwhile: the old account's rows must not come back.
+    }
+  }
+
+  Future<void> _pullJourney(String journeyId, String me, int epoch) async {
     final pending = await outbox.pendingKeys();
     final journeys = await remote.select('journeys', eq: {'id': journeyId});
     if (journeys.isEmpty) {
       if (!pending.contains(journeyKey(journeyId))) {
-        await store.purgeJourney(journeyId);
+        await db.transaction(() async {
+          _checkSession(epoch, me);
+          await store.purgeJourney(journeyId);
+        });
       }
       notifyChanged();
       return;
@@ -394,6 +447,7 @@ class SyncEngine {
     }
 
     await db.transaction(() async {
+      _checkSession(epoch, me);
       await store.applyJourney(journeys.first);
       for (final m in members) {
         await store.applyMembership(m, me: me);
@@ -447,4 +501,9 @@ class SyncEngine {
   void dispose() {
     unawaited(_changes.close());
   }
+}
+
+/// A pull outlived its session (sign-out / account deletion wiped the cache).
+class _SessionChanged implements Exception {
+  const _SessionChanged();
 }

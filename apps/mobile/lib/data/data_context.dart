@@ -67,6 +67,8 @@ class DataContext {
   /// Removes every cached row and file (account deletion, sign-out),
   /// including leftover check-in drafts.
   Future<void> wipeLocal() async {
+    // Stop pulls still running for the old session before they refill it.
+    sync?.invalidateSession();
     await db.wipe();
     await files.wipe();
     final drafts = Directory(

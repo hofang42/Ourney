@@ -198,6 +198,25 @@ void main() {
     expect(none.role, MemberRole.owner);
   });
 
+  test('group_today: a check-in the caller reported still counts (L7)', () {
+    final m = memberTodayFromRemote(
+      {
+        'user_id': 'u2',
+        'display_name': 'Lan',
+        'role': 'member',
+        'checked_in': true,
+        'checkin_id': null,
+        'thumb_path': null,
+        'captured_at': null,
+      },
+      journeyId: 'j1',
+      today: const LocalDate(2026, 10, 16),
+    );
+    expect(m.checkedIn, isTrue);
+    expect(m.checkedInHidden, isTrue);
+    expect(m.todayCheckIn, isNull);
+  });
+
   test('membership tombstone maps to left', () {
     final m = membershipFromRemote(
       membershipRow('j', 'u')..['deleted_at'] = '2026-10-16T00:00:00+00:00',

@@ -452,6 +452,12 @@ abstract class SocialL10n {
   /// **'{name} muốn chia sẻ {title} ra ngoài nhóm'**
   String social_consentRequest(String name, String title);
 
+  /// Inbox row: share consent request whose requester deleted their account.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một thành viên cũ muốn chia sẻ {title} ra ngoài nhóm'**
+  String social_consentRequestFormer(String title);
+
   /// Agree to a share consent request.
   ///
   /// In vi, this message translates to:

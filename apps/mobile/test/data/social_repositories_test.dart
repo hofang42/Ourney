@@ -436,34 +436,38 @@ void main() {
       );
     });
 
-    test(
-      'like inserts a reaction, duplicate is ignored; unlike deletes',
-      () async {
-        await layer.sharing!.like('c1');
-        final insert = remote.callsOf('insert').single;
-        expect(insert.target, 'reactions');
-        expect(insert.args, {'checkin_id': 'c1', 'user_id': me, 'emoji': '❤️'});
+    test('like upserts (revives a soft-deleted like); unlike soft-deletes '
+        '(A-B2: no DELETE grant on reactions)', () async {
+      await layer.sharing!.like('c1');
+      final upsert = remote.callsOf('upsert').single;
+      expect(upsert.target, 'reactions');
+      expect(upsert.args, {
+        'row': {
+          'checkin_id': 'c1',
+          'user_id': me,
+          'emoji': '❤️',
+          'deleted_at': null,
+        },
+        'onConflict': 'checkin_id,user_id',
+      });
 
-        remote.failOnce.add(
-          const OurneyException(
-            OurneyErrorCode.invalid,
-            '23505: duplicate key value violates unique constraint',
-          ),
-        );
-        await layer.sharing!.like('c1');
+      remote.failOnce.add(const OurneyException(OurneyErrorCode.forbidden));
+      await expectLater(
+        layer.sharing!.like('c1'),
+        throwsA(isA<OurneyException>()),
+      );
 
-        remote.failOnce.add(const OurneyException(OurneyErrorCode.forbidden));
-        await expectLater(
-          layer.sharing!.like('c1'),
-          throwsA(isA<OurneyException>()),
-        );
-
-        await layer.sharing!.unlike('c1');
-        final del = remote.callsOf('delete').single;
-        expect(del.target, 'reactions');
-        expect(del.args, {'checkin_id': 'c1', 'user_id': me});
-      },
-    );
+      await layer.sharing!.unlike('c1');
+      expect(remote.callsOf('delete'), isEmpty);
+      final update = remote.callsOf('update').single;
+      expect(update.target, 'reactions');
+      final args = update.args! as Map<String, Object?>;
+      expect(args['match'], {'checkin_id': 'c1', 'user_id': me});
+      expect(
+        (args['values']! as Map<String, Object?>)['deleted_at'],
+        isA<String>(),
+      );
+    });
 
     test('follow frame, markFollowed, unsave, openPublic', () async {
       remote.rpcHandlers['follow_frame'] = (_) => {
