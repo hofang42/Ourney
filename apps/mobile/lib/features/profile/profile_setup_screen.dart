@@ -231,7 +231,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
               child: Text(
                 l10n.profile_setupTitle,
                 style: UiText.heading(
-                  font: 'Space Grotesk',
+                  font: UiFonts.spaceGrotesk,
                   size: 32,
                   weight: 700,
                   height: 1.25,
@@ -260,7 +260,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     ProfileFaceAvatar(
-                      color: profileAvatarColors.first,
+                      color: profileAvatarColor,
                       image: _picked == null ? null : MemoryImage(_picked!),
                     ),
                     Positioned(

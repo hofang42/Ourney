@@ -280,35 +280,37 @@ class _AppIconPicker extends ConsumerWidget {
     final l10n = ProfileL10n.of(context);
     final ui = context.ui;
     final selected = ref.watch(appIconProvider);
+    // Marks use the ink token on the light tiles (U14: the brand greens and
+    // oranges were 1.3-2:1); only the dark flexer tile keeps its neon mark.
     final items = <(String, Color, Color, String)>[
       (
         'default',
         const Color(0xFFFF4D6D),
-        const Color(0xFF10B981),
+        UiFlowColors.onPastel,
         l10n.profile_settings_iconDefault,
       ),
       (
         'quiet',
         const Color(0xFFDFF7EC),
-        const Color(0xFF10B981),
+        UiFlowColors.onPastel,
         l10n.profile_settings_iconQuiet,
       ),
       (
         'squad',
         const Color(0xFFFFF0C7),
-        const Color(0xFFFF9F1C),
+        UiFlowColors.onPastel,
         l10n.profile_settings_iconSquad,
       ),
       (
         'memory',
         const Color(0xFFF3E3C3),
-        const Color(0xFFC2452B),
+        UiFlowColors.onPastel,
         l10n.profile_settings_iconMemory,
       ),
       (
         'couple',
         const Color(0xFFFFE0E9),
-        const Color(0xFFE15B72),
+        UiFlowColors.onPastel,
         l10n.profile_settings_iconCouple,
       ),
       (
@@ -320,7 +322,7 @@ class _AppIconPicker extends ConsumerWidget {
       (
         'minimal',
         const Color(0xFFF4F4F5),
-        const Color(0xFFEA580C),
+        UiFlowColors.onPastel,
         l10n.profile_settings_iconMinimal,
       ),
     ];

@@ -2,16 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../ui/ui.dart';
 
-/// Avatar colors of ProfileSetupFlow (`avatarColors` in flow.tsx). Only the
-/// first is used: there is no saved avatar color (U11).
-const List<Color> profileAvatarColors = [
-  Color(0xFF7EE8A2),
-  Color(0xFFFFD84D),
-  Color(0xFFCF9FFF),
-  Color(0xFFFFB347),
-  Color(0xFFFF7E7E),
-  Color(0xFF7EC8E3),
-];
+/// Face color of the profile setup avatar (first of `avatarColors` in
+/// flow.tsx). There is no saved avatar color (U11), so only one is kept.
+const Color profileAvatarColor = Color(0xFF7EE8A2);
 
 const _faceInk = Color(0xFF1A1A1A);
 

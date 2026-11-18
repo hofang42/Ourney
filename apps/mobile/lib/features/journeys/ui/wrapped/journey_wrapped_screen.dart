@@ -247,7 +247,7 @@ class _Story extends StatelessWidget {
       builder: (context, c) => Semantics(
         container: true,
         excludeSemantics: true,
-        header: true,
+        button: true,
         label: footnote == null ? headline : '$headline. $footnote',
         onTap: () => onTapSide(true),
         onScrollLeft: () => onTapSide(true),
@@ -347,13 +347,14 @@ class _Summary extends StatelessWidget {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
-    // U4: carry the format and privacy choices over to the card editor.
+    // U4: carry the format and privacy choices over to the card editor. The
+    // photo blur is not handed over: the quiet card always blurs its portrait.
     void openShare() => context.push(
       AppRoutes.share(
         journey.id,
         format: ratio == _Ratio.story ? 'story' : 'feed',
-        blur: quiet ? blurred : null,
         hideBrand: hideBrand,
+        hideMetric: quiet ? hideKg : null,
       ),
     );
 
@@ -487,13 +488,9 @@ class _Summary extends StatelessWidget {
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: UiButton.secondary(
-                  key: const ValueKey('wrapped-save'),
-                  label: l10n.journeys_wrapped_save,
-                  glyph: const OurneyIcon(
-                    name: 'download',
-                    size: 18,
-                    flat: true,
-                  ),
+                  key: const ValueKey('wrapped-edit-card'),
+                  label: l10n.journeys_wrapped_editCard,
+                  glyph: const OurneyIcon(name: 'pencil', size: 18, flat: true),
                   onPressed: openShare,
                 ),
               ),

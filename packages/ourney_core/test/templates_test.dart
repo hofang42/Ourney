@@ -50,6 +50,17 @@ void main() {
     }
   });
 
+  test('caption prompts are unique per language (U21)', () {
+    final vi = allTemplates.map((t) => t.captionPromptVi).toSet();
+    final en = allTemplates.map((t) => t.captionPromptEn).toSet();
+    expect(vi.length, allTemplates.length);
+    expect(en.length, allTemplates.length);
+    // The weight-loss prompt must not repeat the Check-in mood question.
+    final wl = allTemplates.firstWhere((t) => t.id == TemplateId.weightLoss);
+    expect(wl.captionPromptVi, isNot('Hôm nay bạn cảm thấy thế nào?'));
+    expect(wl.captionPromptEn, isNot('How are you feeling today?'));
+  });
+
   test('defaults pass journey validation', () {
     for (final t in allTemplates) {
       expect(validateJourneyTitle(t.titleVi), isNull, reason: t.id.name);

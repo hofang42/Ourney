@@ -177,7 +177,16 @@ class UiDock extends StatelessWidget {
       builder: (context, c) {
         final slotW = (c.maxWidth - centerSlotWidth) / items.length;
         final pillW = math.min(_pillW, slotW);
-        final tabMaxW = math.min(slotW, math.max(UiSize.tap, pillW - 12));
+        // Label row bottom edge, measured from the pill centre; the capsule's
+        // curve narrows the usable width there (U17), so the label is
+        // scaled down to the chord instead of touching the outline.
+        const labelBottom = 19.0 - dockTabLift;
+        const r = _pillH / 2;
+        final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
+        final tabMaxW = math.min(
+          slotW,
+          math.max(UiSize.tap, pillW - 2 * inset - 5),
+        );
         double slotX(int i) => i < leftItems.length
             ? i * slotW
             : leftItems.length * slotW +

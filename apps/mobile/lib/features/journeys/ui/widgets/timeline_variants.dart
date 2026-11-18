@@ -942,81 +942,88 @@ class MinimalTimeline extends StatelessWidget {
       cells.add(null);
     }
     final rows = cells.length ~/ 7;
-    return Column(
-      key: const ValueKey('journey-timeline'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        ExcludeSemantics(
-          child: Row(
+    return LayoutBuilder(
+      builder: (context, c) {
+        // U5: every day is a >= 48dp hit box. When 7 columns do not fit the
+        // gutters (360dp phones) the calendar may bleed into them; the tile
+        // keeps its look (pitch minus the hairline gap).
+        final pitch = math.max(UiSize.tap, c.maxWidth / 7);
+        final tile = pitch - _gap;
+        final total = pitch * 7;
+        return FractionallySizedBox(
+          alignment: Alignment.topCenter,
+          widthFactor: total / c.maxWidth,
+          child: Column(
+            key: const ValueKey('journey-timeline'),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              for (var i = 0; i < 7; i++)
-                Expanded(
-                  child: Text(
-                    material.narrowWeekdays[(first + i) % 7],
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    style: UiText.body(
-                      size: 10,
-                      height: 1.3,
-                      color: ui.inkMuted,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 7),
-        LayoutBuilder(
-          builder: (context, c) {
-            final cell = (c.maxWidth - _gap * 6) / 7;
-            return Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  child: ExcludeSemantics(
-                    child: CustomPaint(
-                      key: const ValueKey('timeline-chain-line'),
-                      painter: ChainLinePainter(
-                        runs: chainRuns(cells),
-                        cell: cell,
-                        gap: _gap,
-                        color: accent,
-                      ),
-                    ),
-                  ),
-                ),
-                Column(
+              ExcludeSemantics(
+                child: Row(
                   children: [
-                    for (var r = 0; r < rows; r++)
-                      Padding(
-                        padding: EdgeInsets.only(
-                          bottom: r == rows - 1 ? 0 : _gap,
-                        ),
-                        child: Row(
-                          children: [
-                            for (var i = 0; i < 7; i++) ...[
-                              SizedBox.square(
-                                dimension: cell,
-                                child: cells[r * 7 + i] == null
-                                    ? null
-                                    : _MinimalCell(
-                                        day: cells[r * 7 + i]!,
-                                        size: cell,
-                                        onTap: onTapDay,
-                                      ),
-                              ),
-                              if (i < 6) const SizedBox(width: _gap),
-                            ],
-                          ],
+                    for (var i = 0; i < 7; i++)
+                      SizedBox(
+                        width: pitch,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: _gap),
+                          child: Text(
+                            material.narrowWeekdays[(first + i) % 7],
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            style: UiText.body(
+                              size: 10,
+                              height: 1.3,
+                              color: ui.inkMuted,
+                            ),
+                          ),
                         ),
                       ),
                   ],
                 ),
-              ],
-            );
-          },
-        ),
-      ],
+              ),
+              const SizedBox(height: 7),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: ExcludeSemantics(
+                      child: CustomPaint(
+                        key: const ValueKey('timeline-chain-line'),
+                        painter: ChainLinePainter(
+                          runs: chainRuns(cells),
+                          cell: tile,
+                          gap: _gap,
+                          color: accent,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Column(
+                    children: [
+                      for (var r = 0; r < rows; r++)
+                        Row(
+                          children: [
+                            for (var i = 0; i < 7; i++)
+                              SizedBox.square(
+                                dimension: pitch,
+                                child: cells[r * 7 + i] == null
+                                    ? null
+                                    : _MinimalCell(
+                                        day: cells[r * 7 + i]!,
+                                        size: tile,
+                                        hit: pitch,
+                                        onTap: onTapDay,
+                                      ),
+                              ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1025,11 +1032,15 @@ class _MinimalCell extends StatelessWidget {
   const _MinimalCell({
     required this.day,
     required this.size,
+    required this.hit,
     required this.onTap,
   });
 
   final TimelineDay day;
   final double size;
+
+  /// Side of the (>= 48dp) tap box; the tile sits in its top-left corner.
+  final double hit;
   final ValueChanged<TimelineDay> onTap;
 
   @override
@@ -1046,30 +1057,36 @@ class _MinimalCell extends StatelessWidget {
     return TimelineDayTap(
       day: day,
       onTap: onTap,
-      minSize: 0,
-      child: Stack(
-        children: [
-          TimelineTile(day: day, size: size),
-          Positioned(
-            left: 3,
-            top: 2,
-            child: ExcludeSemantics(
-              child: Text(
-                '${day.date.day}',
-                textScaler: TextScaler.noScaling,
-                style:
-                    UiText.body(
-                      size: 9,
-                      weight: FontWeight.w700,
-                      height: 1.2,
-                      color: color,
-                    ).copyWith(
-                      shadows: photo ? const [Shadow(blurRadius: 3)] : null,
-                    ),
+      minSize: hit,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox.square(
+          dimension: size,
+          child: Stack(
+            children: [
+              TimelineTile(day: day, size: size),
+              Positioned(
+                left: 3,
+                top: 2,
+                child: ExcludeSemantics(
+                  child: Text(
+                    '${day.date.day}',
+                    textScaler: TextScaler.noScaling,
+                    style:
+                        UiText.body(
+                          size: 9,
+                          weight: FontWeight.w700,
+                          height: 1.2,
+                          color: color,
+                        ).copyWith(
+                          shadows: photo ? const [Shadow(blurRadius: 3)] : null,
+                        ),
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -18,7 +18,6 @@ import 'settings_screen.dart' show profileSettingsPath;
 import 'widgets/delete_account_dialog.dart';
 import 'widgets/profile_avatar.dart';
 import 'widgets/profile_stats_section.dart';
-import 'widgets/sign_out_flow.dart';
 
 /// Route of the profile setup screen (sub-path of `/profile`).
 const String profileSetupPath = '${AppRoutes.profile}/setup';
@@ -286,13 +285,6 @@ class _SettingsSection extends ConsumerWidget {
             subtitle: _sub(context, l10n.profile_settingsEntrySub),
             onPressed: () => context.push(profileSettingsPath),
           ),
-          UiRow(
-            key: const ValueKey('profile-reminders'),
-            leading: const OurneyIcon(name: 'bell', flat: true),
-            title: l10n.profile_reminders,
-            subtitle: _sub(context, l10n.profile_remindersSubtitle),
-            onPressed: () => context.push(AppRoutes.reminders),
-          ),
           UiSwitchRow(
             key: const ValueKey('profile-haptics'),
             label: l10n.profile_haptics,
@@ -350,16 +342,6 @@ class _AccountSection extends ConsumerWidget {
     final ui = context.ui;
     return Column(
       children: [
-        _GroupCard(
-          child: UiRow(
-            key: const ValueKey('profile-signout'),
-            leading: const OurneyIcon(name: 'logout', flat: true),
-            title: l10n.profile_signOut,
-            divider: false,
-            onPressed: () => confirmSignOut(context, ref),
-          ),
-        ),
-        const SizedBox(height: UiSpace.lg),
         _GroupCard(
           borderColor: ui.danger,
           child: UiRow(

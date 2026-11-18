@@ -126,8 +126,15 @@ class UiPersonRow extends StatelessWidget {
           ),
         );
         if (onPressed == null) return row;
+        // A merged node would swallow interactive [actions] / [trailing]
+        // (U3): then the row is named by its own text and the children keep
+        // their own semantics.
+        final interactiveChildren = actions.isNotEmpty || trailing.isNotEmpty;
         return UiPressable(
           onPressed: onPressed,
+          semanticLabel: interactiveChildren
+              ? [title, ?subtitle, ?extraLine].join(', ')
+              : null,
           borderRadius: BorderRadius.circular(UiRadius.input),
           minSize: Size(UiSize.tap, minHeight),
           child: row,

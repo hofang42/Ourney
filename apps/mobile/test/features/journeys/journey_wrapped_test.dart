@@ -123,6 +123,48 @@ void main() {
       expect(_key('wrapped-weights'), findsOneWidget);
     });
 
+    testWidgets('U4: hide-kg and format are handed to the share card', (
+      tester,
+    ) async {
+      final j = testJourney(
+        status: JourneyStatus.ended,
+        templateId: TemplateId.weightLoss,
+      );
+      final h = await _open(tester, journey: j);
+      for (var i = 0; i < 4; i++) {
+        await tester.tapAt(const Offset(380, 500));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(_key('wrapped-cta'));
+      await tester.pumpAndSettle();
+      final uri = Uri.parse(h.location);
+      expect(uri.path, '/share/${j.id}');
+      expect(uri.queryParameters['hideMetric'], 'true');
+      expect(uri.queryParameters['format'], 'story');
+      expect(uri.queryParameters.containsKey('blur'), isFalse);
+      expect(find.text('Save image'), findsNothing);
+    });
+
+    testWidgets('U4: turning hide-kg off is handed over as false', (
+      tester,
+    ) async {
+      final j = testJourney(
+        status: JourneyStatus.ended,
+        templateId: TemplateId.weightLoss,
+      );
+      final h = await _open(tester, journey: j);
+      for (var i = 0; i < 4; i++) {
+        await tester.tapAt(const Offset(380, 500));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(_key('wrapped-hide-kg'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('wrapped-edit-card'));
+      await tester.tap(_key('wrapped-edit-card'));
+      await tester.pumpAndSettle();
+      expect(Uri.parse(h.location).queryParameters['hideMetric'], 'false');
+    });
+
     for (final skin in [
       TemplateId.weightLoss,
       TemplateId.englishDaily,

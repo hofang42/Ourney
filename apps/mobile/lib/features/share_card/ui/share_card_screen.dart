@@ -33,6 +33,7 @@ class ShareCardScreen extends ConsumerStatefulWidget {
     this.initialFormat,
     this.initialBlur,
     this.initialHideBrand,
+    this.initialHideMetric,
     super.key,
   });
 
@@ -42,6 +43,10 @@ class ShareCardScreen extends ConsumerStatefulWidget {
   final ShareCardFormat? initialFormat;
   final bool? initialBlur;
   final bool? initialHideBrand;
+
+  /// `true` hides the kg / metric on the card. `false` or `null` leave it to
+  /// the journey and membership rules (FR-B7: never revealed from a link).
+  final bool? initialHideMetric;
 
   @override
   ConsumerState<ShareCardScreen> createState() => _ShareCardScreenState();
@@ -139,6 +144,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
       dayNumber: progress.dayNumber,
       checkIns: checkIns,
       number: _number,
+      forceHideMetric: widget.initialHideMetric ?? false,
     );
     final candidates = photoCandidates(checkIns);
     final selected =

@@ -51,8 +51,8 @@ const List<JourneyTemplate> allTemplates = [
     metricName: 'Cân nặng',
     metricUnit: 'kg',
     hideMetricDefault: true,
-    captionPromptVi: 'Hôm nay bạn cảm thấy thế nào?',
-    captionPromptEn: 'How do you feel today?',
+    captionPromptVi: 'Cân nặng và năng lượng của bạn hôm nay ra sao?',
+    captionPromptEn: 'How are your weight and energy today?',
   ),
   JourneyTemplate(
     id: TemplateId.englishDaily,

@@ -141,7 +141,8 @@ class ShareTopBar extends StatelessWidget {
             onPressed: onBack,
             semanticLabel: backLabel,
             excludeChildSemantics: true,
-            minSize: const Size.square(44),
+            minSize: const Size.square(UiSize.tap),
+            centerChild: true,
             borderRadius: BorderRadius.circular(UiRadius.capsule),
             child: SizedBox.square(
               dimension: 44,
@@ -157,7 +158,7 @@ class ShareTopBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(child: label),
-          const SizedBox(width: 8 + 44),
+          const SizedBox(width: 8 + UiSize.tap),
         ],
       ),
     );
@@ -253,7 +254,9 @@ class ShareRatioTabs<T> extends StatelessWidget {
         semanticLabel: item.$2,
         excludeChildSemantics: true,
         borderRadius: radius,
-        minSize: const Size(44, 44),
+        // 44dp visual inside a 48dp hit box (U5).
+        minSize: const Size(UiSize.tap, UiSize.tap),
+        centerChild: true,
         child: child,
       );
       return flexer || minimal ? pressable : Expanded(child: pressable);

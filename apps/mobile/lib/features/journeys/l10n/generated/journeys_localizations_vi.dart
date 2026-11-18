@@ -1432,7 +1432,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_wrapped_share => 'Chia sẻ';
 
   @override
-  String get journeys_wrapped_save => 'Lưu ảnh';
+  String get journeys_wrapped_editCard => 'Chỉnh thẻ';
 
   @override
   String get journeys_wrapped_sheetTitle => 'chia sẻ tấm thiệp.';

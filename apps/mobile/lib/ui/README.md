@@ -44,7 +44,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.day-hud` | `UiDayHud` |
 | `.camera-tools .icon-button`, `.camera-secondary-controls` | `UiCameraTool`, `UiLibraryThumb` |
 | `.page-dots` | `UiPageDots` |
-| profile avatar entry in top bars | `UiProfileEntry` (feature wrapper: `ProfileEntryButton`, key `profile-entry`) |
+| profile avatar entry in top bars | `UiProfileEntry` (no top bar uses it since the V2 dock has a Profile tab) |
 | `.success-mark` | `UiSuccessMark` |
 | `.stamp` | `UiStamp` |
 | `.streak-celebrate`, `.shared-streak strong` | `UiStreakNumber` |

@@ -20,10 +20,11 @@ import 'pressable.dart';
 Color dockSelectionFill(Color accent, Color surface) =>
     Color.alphaBlend(accent.withValues(alpha: 0.30), surface);
 
-/// Corner radius of the selection pill: concentric with the 32dp dock shell
-/// minus its 10dp inset. A full capsule turned the narrow 360dp pill into a
-/// near-circle whose outline cut through two-word labels (U17).
-const double dockSelectionRadius = 22;
+/// Corner radius of the selection pill: a full capsule, as in V2 `app.css`
+/// (`.dock-selection-capsule`, `border-radius: 999px`). On a narrow ~63dp pill
+/// the curve eats into the label row, so the tab keeps its content high and
+/// squeezes the label into the capsule's chord (see `UiDock`, U17).
+const double dockSelectionRadius = UiRadius.capsule;
 
 /// The non-liquid selection capsule.
 BoxDecoration dockSelectionDecoration({
@@ -39,6 +40,9 @@ BoxDecoration dockSelectionDecoration({
   border: Border.all(color: outline, width: UiBorder.thin),
   boxShadow: UiShadow.hard(shadow, UiShadow.tiny),
 );
+
+/// How far the tab content sits above the pill's centre (dp).
+const double dockTabLift = 4;
 
 class DockTab extends StatelessWidget {
   const DockTab({
@@ -101,27 +105,32 @@ class DockTab extends StatelessWidget {
         // as tall as the screen and `alignment` would fill them.
         child: Center(
           heightFactor: 1,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              glyph,
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  item.label,
-                  maxLines: 1,
-                  softWrap: false,
-                  textAlign: TextAlign.center,
-                  style: UiText.body(
-                    size: 10.5,
-                    weight: active ? FontWeight.w700 : FontWeight.w600,
-                    height: 1.35,
-                    color: labelColor,
+          // Lift the content 4dp: the label row then sits where the capsule is
+          // still wide (U17).
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: dockTabLift * 2),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                glyph,
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    item.label,
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: UiText.body(
+                      size: 10.5,
+                      weight: active ? FontWeight.w700 : FontWeight.w600,
+                      height: 1.35,
+                      color: labelColor,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

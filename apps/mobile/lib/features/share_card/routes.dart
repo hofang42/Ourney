@@ -22,6 +22,7 @@ final List<RouteBase> shareCardRoutes = [
             : null,
         initialBlur: bool.tryParse(q['blur'] ?? ''),
         initialHideBrand: bool.tryParse(q['hideBrand'] ?? ''),
+        initialHideMetric: bool.tryParse(q['hideMetric'] ?? ''),
       );
     },
   ),

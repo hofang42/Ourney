@@ -8,6 +8,8 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/routes.dart';
+import 'package:ourney/features/profile/settings_screen.dart'
+    show profileSettingsPath;
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -168,10 +170,10 @@ void main() {
       expect(find.text('Alice N.'), findsOneWidget);
     });
 
-    testWidgets('links to reminders and safety', (tester) async {
+    testWidgets('links to settings and safety', (tester) async {
       final c = await signedIn(tester);
-      await tapVisible(tester, 'profile-reminders');
-      expect(location(c), AppRoutes.reminders);
+      await tapVisible(tester, 'profile-settings');
+      expect(location(c), profileSettingsPath);
       await goTo(tester, c, AppRoutes.profile);
       await tapVisible(tester, 'profile-safety');
       expect(location(c), AppRoutes.safety);
@@ -214,15 +216,12 @@ void main() {
       },
     );
 
-    testWidgets('sign out asks, then the router goes to /auth', (tester) async {
-      final auth = RecordingAuthRepository(userId: 'u1');
-      final c = await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-signout');
-      expect(byKey('profile-signout-dialog'), findsOneWidget);
-      await tester.tap(byKey('profile-signout-confirm'));
-      await tester.pumpAndSettle();
-      expect(auth.calls, ['signOut']);
-      expect(location(c), startsWith(AppRoutes.auth));
+    testWidgets('U18: Profile does not repeat Settings rows (sign out, '
+        'reminders); Settings owns them', (tester) async {
+      await signedIn(tester);
+      expect(byKey('profile-settings'), findsOneWidget);
+      expect(byKey('profile-signout'), findsNothing);
+      expect(byKey('profile-reminders'), findsNothing);
     });
 
     testWidgets('local-only: guest state, no account actions (FR-A5)', (
@@ -233,7 +232,7 @@ void main() {
       expect(byKey('profile-guest'), findsOneWidget);
       expect(byKey('profile-signout'), findsNothing);
       expect(byKey('profile-delete'), findsNothing);
-      expect(byKey('profile-reminders'), findsOneWidget);
+      expect(byKey('profile-settings'), findsOneWidget);
 
       await goTo(tester, c, profileEditPath);
       expect(byKey('profile-guest'), findsOneWidget);

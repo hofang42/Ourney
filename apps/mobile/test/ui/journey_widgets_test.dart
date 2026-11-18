@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/journey_widgets.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
@@ -171,6 +172,25 @@ void main() {
   });
 
   group('UiStreakHero', () {
+    testWidgets('U15: 2.0x at 360dp shows the whole title, no ellipsis', (
+      tester,
+    ) async {
+      const title = 'Còn 3 hành trình cần chụp trong hôm nay nhé';
+      await tester.pumpWidget(
+        host(
+          const UiStreakHero(streak: 12, title: title),
+          textScale: 2,
+          size: const Size(360, 800),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      final render = tester.renderObject<RenderParagraph>(
+        find.byKey(const ValueKey('streak-hero-title')),
+      );
+      expect(render.didExceedMaxLines, isFalse);
+      expect(find.text('12'), findsOneWidget);
+    });
+
     testWidgets('pastel fill per state and semantics', (tester) async {
       await tester.pumpWidget(
         host(UiStreakHero(streak: 21, title: 'Giữ chuỗi', onTap: () {})),

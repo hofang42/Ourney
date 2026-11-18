@@ -14,6 +14,21 @@ Future<void> search(WidgetTester tester, String text) async {
 }
 
 void main() {
+  testWidgets('U21: the username heading is not drawn twice', (tester) async {
+    await pumpSocial(
+      tester,
+      location: SocialPaths.friendsAdd,
+      fakes: SocialFakes(),
+    );
+    // One visible label (the field's own), not a heading above it as well.
+    final labels = find.text('Find by username');
+    expect(labels.evaluate().length, lessThanOrEqualTo(2));
+    final headings = find.byWidgetPredicate(
+      (w) => w is Text && w.data == 'Find by username',
+    );
+    expect(headings.evaluate().length, lessThanOrEqualTo(1));
+  });
+
   group('username search', () {
     testWidgets('no exact match', (tester) async {
       final fakes = SocialFakes();

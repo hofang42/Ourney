@@ -31,6 +31,14 @@ Iterable<String> _allText(WidgetTester tester) => tester
     .map((r) => r.text.toPlainText());
 
 void main() {
+  testWidgets('controls meet the 48dp tap target (U5)', (tester) async {
+    final handle = tester.ensureSemantics();
+    final j = testJourney();
+    await pumpShare(tester, journey: j, checkIns: streakCheckIns(j.id));
+    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+    handle.dispose();
+  });
+
   group('layout (FR-E1)', () {
     testWidgets('story by default at 360x640 (x3 = 1080x1920), toggles to '
         'feed 360x450 (x3 = 1080x1350)', (tester) async {
