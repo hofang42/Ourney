@@ -185,7 +185,10 @@ void main() {
       expect(can(testJourney()), isFalse);
       expect(
         can(
-          testJourney(visibility: JourneyVisibility.link, publicToken: testToken),
+          testJourney(
+            visibility: JourneyVisibility.link,
+            publicToken: testToken,
+          ),
         ),
         isTrue,
         reason: 'the owner can still revoke an old link',
