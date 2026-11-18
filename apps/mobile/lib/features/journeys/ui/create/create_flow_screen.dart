@@ -69,7 +69,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Step-2 "DNA" question page; equal to the question count = the form.
   int _dnaPage = 0;
   final Map<String, Object> _dna = {};
-  bool _hideWeight = true;
   CreateTypeOption? _option;
   JourneyForm? _form;
   CreateWho _who = CreateWho.solo;
@@ -178,11 +177,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     if (_who != CreateWho.solo) form.soloVisibility = JourneyVisibility.private;
   }
 
+  /// Couple chosen at step 1 (the couple card) or at step 3 (who).
+  bool get _isCouple => _who == CreateWho.couple;
+
   String get _skinId {
     final form = _form;
     final option = _option;
     if (form == null || option == null) return 'minimal';
-    if (_who == CreateWho.couple) return 'couple';
+    if (_isCouple) return 'couple';
     return uiSkinIdFor(
       personaSkinForTemplate(
         form.template.id,
@@ -196,6 +198,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     ref.read(deviceTimezoneProvider).value ?? form.timezone,
     ref.read(journeysClockProvider).now(),
   );
+
+  /// [_today] as a calendar `DateTime` (local midnight) for the date pages.
+  DateTime _todayDate(JourneyForm form) {
+    final t = _today(form);
+    return DateTime(t.year, t.month, t.day);
+  }
 
   void _update(void Function(JourneyForm f) change) =>
       setState(() => change(_form!));
@@ -337,6 +345,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           couplePartnerName: _partnerName,
           reminderTime: _reminderHHmm(),
           dna: _storableDna(),
+          // What the review ticket showed (bugs B-B10, B-B12): the colour
+          // variant, and the couple skin whatever template or emoji.
+          color: _variant,
+          layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
       );
       final rt = ReminderTime.tryParse(_suggestion?.reminder);
@@ -466,7 +478,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                   dnaPage: _dnaPage,
                                   totalQuestions: _questions.length,
                                   dna: _dna,
-                                  hideWeight: _hideWeight,
+                                  hideWeight: _form!.hideMetric,
                                   trophyController: _trophy,
                                   placeController: _place,
                                   nameLeftController: _nameLeft,
@@ -474,10 +486,13 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                   habitController: _habit,
                                   reasonController: _reason,
                                   onSetDna: _setDna,
+                                  // The toggle is the journey's hide-number
+                                  // default (bug B-B12).
                                   onHideWeightChanged: (v) =>
-                                      setState(() => _hideWeight = v),
+                                      _update((f) => f.hideMetric = v),
                                   onAdvanceDna: _advanceDna,
                                   onApplyDates: _applyDates,
+                                  today: _todayDate(_form!),
                                 )
                               : CreateDetailStep(
                                   form: _form!,
@@ -557,13 +572,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     _start = LocalDate(d.start.year, d.start.month, d.start.day);
     if (_start!.isBefore(today)) _start = today;
     final end = d.end;
-    if (end == null) return;
-    final n =
-        DateUtils.dateOnly(end).difference(DateUtils.dateOnly(d.start)).inDays +
-        1;
-    if (validateDurationDays(n) == null) {
-      _update((f) => f.durationDays = n);
-      _duration.text = '$n';
+    if (end == null) {
+      // "No return date yet": an open-ended trip (bug B-B11).
+      _update((f) => f.durationDays = null);
+      _duration.text = '';
+      return;
     }
+    final n = dnaTripDays(d.start, end);
+    _update((f) => f.durationDays = n);
+    _duration.text = '$n';
   }
 }

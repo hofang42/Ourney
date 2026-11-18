@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:ourney_core/ourney_core.dart' show durationMin;
 
 import '../../../../ui/ui.dart';
 import '../../l10n/generated/journeys_localizations.dart';
@@ -439,13 +440,21 @@ class _DnaDateRangeState extends State<DnaDateRange> {
   DateTime get _today =>
       DateTime(widget.today.year, widget.today.month, widget.today.day);
 
+  /// The last range was lengthened to the shortest journey: say so.
+  bool _lengthened = false;
+
   void _tap(DateTime day) {
     final v = widget.value;
     // First tap, or a tap after a finished range, starts a new range.
     if (v == null || v.end != null || day.isBefore(v.start)) {
+      setState(() => _lengthened = false);
       widget.onChanged(DnaDates(day));
     } else {
-      widget.onChanged(DnaDates(v.start, day));
+      // A journey lasts durationMin..durationMax days (bug B-B11): the
+      // calendar shows the range that will really be saved.
+      final end = dnaClampTripEnd(v.start, day);
+      setState(() => _lengthened = end != day);
+      widget.onChanged(DnaDates(v.start, end));
     }
   }
 
@@ -518,8 +527,24 @@ class _DnaDateRangeState extends State<DnaDateRange> {
           label: l10n.journeys_dna_dates_open,
           onPressed: v == null
               ? null
-              : () => widget.onChanged(DnaDates(v.start)),
+              : () {
+                  setState(() => _lengthened = false);
+                  widget.onChanged(DnaDates(v.start));
+                },
         ),
+        if (_lengthened)
+          Padding(
+            padding: const EdgeInsets.only(bottom: UiSpace.xs),
+            child: Text(
+              l10n.journeys_dna_dates_min_note(durationMin),
+              key: const ValueKey('dna-dates-min-note'),
+              textAlign: TextAlign.center,
+              style: UiText.muted(
+                color: ui.inkMuted,
+                size: 13,
+              ).copyWith(height: 1.4),
+            ),
+          ),
         Center(
           child: Text(
             summary,

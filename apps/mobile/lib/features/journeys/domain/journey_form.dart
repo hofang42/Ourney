@@ -94,7 +94,14 @@ class JourneyForm {
   }
 
   /// [id]: client id generated once per form (idempotent create retries).
-  JourneyDraft toDraft({required LocalDate startDate, String? id}) {
+  /// [color]: skin colour variant picked on the ticket; [layout]: skin
+  /// override (a couple made from a non-couple template).
+  JourneyDraft toDraft({
+    required LocalDate startDate,
+    String? id,
+    int? color,
+    PersonaSkinId? layout,
+  }) {
     final unit = metricUnit.trim();
     return JourneyDraft(
       kind: kind,
@@ -109,6 +116,8 @@ class JourneyForm {
       hideMetricDefault: trackMetric && hideMetric,
       visibility: visibility,
       id: id,
+      color: color,
+      layout: layout,
     );
   }
 }
