@@ -136,11 +136,28 @@ class SquadTodayStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
+    // Ended groups cannot take check-ins any more: keep them out of "Today"
+    // (C-B13).
+    final active = [
+      for (final g in groups)
+        if (g.status == JourneyStatus.active) g,
+    ];
+    final finished = [
+      for (final g in groups)
+        if (g.status != JourneyStatus.active) g,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         UiListHeading(title: l10n.groups_todayHeading),
-        for (final g in groups) SquadTodayCard(journey: g),
+        for (final g in active) SquadTodayCard(journey: g),
+        if (finished.isNotEmpty) ...[
+          UiListHeading(
+            key: const ValueKey('squad-finished-heading'),
+            title: l10n.groups_finishedSection,
+          ),
+          for (final g in finished) SquadTodayCard(journey: g),
+        ],
       ],
     );
   }
@@ -486,7 +503,9 @@ class _MemberSheet extends ConsumerWidget {
           ),
           const SizedBox(height: UiSpace.xl),
           if (isMe)
-            checked
+            journey.status != JourneyStatus.active
+                ? const SizedBox.shrink()
+                : checked
                 ? UiButton.secondary(
                     key: const ValueKey('squad-member-checkin'),
                     glyph: const OurneyIcon(name: 'camera', flat: true),

@@ -95,11 +95,20 @@ class GroupTodayView {
           : null;
       final serverToday = m.todayCheckIn;
       final checkedInToday = serverToday != null || localToday != null;
+      final visibleServer =
+          serverToday != null && !hiddenCheckInIds.contains(serverToday.id)
+          ? serverToday
+          : null;
+      // `group_today` returns a trimmed row (no caption / extras) and only
+      // the first photo of the day: the local copy wins when it is the same
+      // check-in or a newer one (C-B9).
       final todayCheckIn =
-          (serverToday != null && !hiddenCheckInIds.contains(serverToday.id)
-              ? serverToday
-              : null) ??
-          localToday;
+          localToday != null &&
+              (visibleServer == null ||
+                  visibleServer.id == localToday.id ||
+                  !visibleServer.capturedAt.isAfter(localToday.capturedAt))
+          ? localToday
+          : visibleServer ?? localToday;
       var streak = m.currentStreak;
       if (isMe && myMembership != null && myDates.isNotEmpty) {
         streak = computeMemberStreak(

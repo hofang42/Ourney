@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/groups/ui/group_safety_hooks.dart';
 import 'package:ourney/features/groups/ui/squad_tab_sections.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
 import 'groups_fakes.dart';
@@ -288,6 +289,37 @@ void main() {
         )..layout(maxWidth: paragraph.constraints.maxWidth);
         addTearDown(painter.dispose);
         expect(painter.computeLineMetrics().length, 1);
+      },
+    );
+
+    testWidgets(
+      'ended group moves under Finished, no check-in action (C-B13)',
+      (tester) async {
+        await pumpGroups(
+          tester,
+          journeys: FakeJourneyRepository(
+            journeys: [groupJourney(status: JourneyStatus.ended)],
+          ),
+          groups: FakeGroupRepository(
+            today: {
+              'g1': [memberToday(me, 'Linh'), memberToday('u2', 'An')],
+            },
+          ),
+        );
+        expect(
+          find.byKey(const ValueKey('squad-finished-heading')),
+          findsOneWidget,
+        );
+        await tester.tap(find.byKey(const ValueKey('squad-member-u1')));
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('squad-member-sheet')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('squad-member-checkin')),
+          findsNothing,
+        );
       },
     );
 

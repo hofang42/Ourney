@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'groups_fakes.dart';
@@ -63,7 +64,7 @@ void main() {
         );
         switch (e.key) {
           case 'squad':
-            expect(find.text('1/3 ĐÃ ĐIỂM DANH'), findsWidgets);
+            expect(find.text('1/3 ĐÃ ĐIỂM DANH'), findsNothing); // U10: one bar only
             expect(find.text('BAO · ĐANG CHỜ'), findsOneWidget);
           case 'quiet':
             expect(find.text('Nhóm hôm nay.'), findsOneWidget);
@@ -89,5 +90,86 @@ void main() {
         }
       });
     }
+  }
+
+  // C-B8: every skin offers the member menu (remove / report / block).
+  for (final e in skins.entries) {
+    testWidgets('${e.key} wall: owner gets the member menu (C-B8)', (
+      tester,
+    ) async {
+      final g = groupJourney(
+        templateId: e.value,
+        maxMembers: e.key == 'couple' ? 2 : 10,
+      );
+      await pumpGroups(
+        tester,
+        location: '/groups/g1',
+        journeys: FakeJourneyRepository(
+          journeys: [g],
+          memberships: {'g1': groupMembership(g)},
+        ),
+        checkIns: FakeCheckInRepository(),
+        groups: FakeGroupRepository(
+          today: {
+            'g1': [
+              memberToday(me, 'Minh', role: MemberRole.owner),
+              memberToday('u2', 'Ann'),
+            ],
+          },
+        ),
+      );
+      expect(
+        find.byKey(const ValueKey('group-member-menu-u2')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('group-member-menu-$me')), findsNothing);
+    });
+  }
+
+  // C-B10: a hidden photo of today must not show yesterday's photo as today's.
+  for (final key in ['memory', 'couple', 'flexer', 'minimal']) {
+    testWidgets(
+      '$key wall: hidden photo is not replaced by an old one (C-B10)',
+      (tester) async {
+        final g = groupJourney(
+          templateId: skins[key]!,
+          maxMembers: key == 'couple' ? 2 : 10,
+        );
+        final old = testCheckIn('g1', testToday.addDays(-1), userId: 'u2');
+        final today = testCheckIn('g1', testToday, userId: 'u2');
+        final h = await pumpGroups(
+          tester,
+          location: '/groups/g1',
+          journeys: FakeJourneyRepository(
+            journeys: [g],
+            memberships: {'g1': groupMembership(g)},
+          ),
+          checkIns: FakeCheckInRepository([old, today]),
+          groups: FakeGroupRepository(
+            today: {
+              'g1': [
+                memberToday(me, 'Minh', role: MemberRole.owner),
+                memberToday('u2', 'Ann', today: today),
+              ],
+            },
+          ),
+        );
+        expect(find.byKey(ValueKey('groups-reactions-${today.id}')), findsOne);
+        h.container.read(hiddenCheckInIdsProvider.notifier).hide(today.id);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(ValueKey('groups-reactions-${old.id}')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(ValueKey('groups-reactions-${today.id}')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('group-member-photo-u2')),
+          findsNothing,
+        );
+      },
+    );
   }
 }
