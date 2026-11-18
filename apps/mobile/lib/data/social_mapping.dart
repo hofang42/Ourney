@@ -241,7 +241,7 @@ ShareConsent consentFromJson(Object? json) {
     journeyTitle: r['journey_title'] as String? ?? '',
     member: personFromJson(r['member']),
     status: ShareConsentStatus.fromWire(r['status'] as String),
-    requestedBy: personFromJson(r['requested_by']),
+    requestedBy: personOrNull(r['requested_by']),
     decidedAt: _instantOrNull(r['decided_at']),
   );
 }

@@ -129,7 +129,10 @@ class DataLayer {
   late final JourneyRepository journeys = DataJourneyRepository(ctx);
   late final CheckInRepository checkIns = DataCheckInRepository(ctx);
   late final GroupRepository groups = DataGroupRepository(ctx);
-  late final SafetyRepository safety = DataSafetyRepository(ctx);
+  late final SafetyRepository safety = DataSafetyRepository(
+    ctx,
+    social: social,
+  );
   MediaStore get media => ctx.media;
 
   // Social v1.3: null in local-only mode (the providers stay unwired and the
