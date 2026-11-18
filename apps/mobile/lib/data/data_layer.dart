@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show debugPrint, debugPrintStack;
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_context.dart';
@@ -112,7 +113,12 @@ class DataLayer {
       );
       layer._authSub = remote.watchUserId().listen((id) {
         if (id != null) {
-          unawaited(sync.ensureOwner(id));
+          unawaited(
+            sync.ensureOwner(id).catchError((Object e, StackTrace st) {
+              debugPrint('sync: ensureOwner failed: $e');
+              debugPrintStack(stackTrace: st);
+            }),
+          );
           unawaited(layer.syncNow());
         }
       });

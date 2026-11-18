@@ -78,7 +78,12 @@ class DataContext {
   Future<void> wipeLocal() async {
     // Stop pulls still running for the old session before they refill it.
     sync?.invalidateSession();
-    await db.wipe();
+    // The wiped marker survives a late in-flight write: the next user to sign
+    // in finds an owner that is not them and wipes again (rows + outbox).
+    await db.transaction(() async {
+      await db.wipe();
+      if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
+    });
     await files.wipe();
     final drafts = Directory(
       p.join(files.root.parent.path, checkinDraftDirName),

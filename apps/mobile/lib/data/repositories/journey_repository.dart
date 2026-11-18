@@ -161,34 +161,75 @@ class DataJourneyRepository implements JourneyRepository {
     final previous = await _requireLocal(id);
     await _db.transaction(() async {
       await _writeLocal(id, extras);
-      await outbox?.enqueue(OutboxKind.updateJourney, key, params);
+      // Delayed: this call is sending the update right now; only a later
+      // flush (after a crash or a failure) should replay it.
+      await outbox?.enqueue(
+        OutboxKind.updateJourney,
+        key,
+        params,
+        delay: _extrasReplayDelay,
+      );
     });
     try {
       final row = await ctx.remote!.rpc('update_journey', params);
-      await outbox?.cancel(key, kind: OutboxKind.updateJourney);
+      await outbox?.cancel(
+        key,
+        kind: OutboxKind.updateJourney,
+        includeDead: true,
+      );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
     } on OurneyException catch (e) {
       if (e.error == OurneyErrorCode.invalid ||
           e.error == OurneyErrorCode.forbidden) {
-        await outbox?.cancel(key, kind: OutboxKind.updateJourney);
-        await _restoreExtras(previous);
+        await outbox?.cancel(
+          key,
+          kind: OutboxKind.updateJourney,
+          includeDead: true,
+        );
+        await _restoreExtras(previous, extras);
         rethrow;
       }
-      if (outbox != null) unawaited(outbox.flush());
+      if (outbox != null) {
+        // Retryable: make the queued item due now.
+        await outbox.makeDue(key);
+        unawaited(outbox.flush());
+      }
     }
   }
 
-  /// Puts the create-flow columns back to what [row] held (rejected extras).
-  Future<void> _restoreExtras(JourneyRow row) =>
-      (_db.update(_db.journeys)..where((t) => t.id.equals(row.id))).write(
-        JourneysCompanion(
-          layout: Value(row.layout),
-          cover: Value(row.cover),
-          color: Value(row.color),
-          reminderTime: Value(row.reminderTime),
-          dna: Value(row.dna),
-        ),
-      );
+  static const Duration _extrasReplayDelay = Duration(seconds: 30);
+
+  /// Puts the create-flow columns back to what [row] held (rejected extras),
+  /// but only those still holding the rejected values: a pull may have
+  /// brought newer ones meanwhile.
+  Future<void> _restoreExtras(
+    JourneyRow row,
+    JourneyUpdate rejected,
+  ) => _db.transaction(() async {
+    final cur = await _requireLocal(row.id);
+    await (_db.update(_db.journeys)..where((t) => t.id.equals(row.id))).write(
+      JourneysCompanion(
+        layout:
+            rejected.layout != null && cur.layout == rejected.layout!.wireName
+            ? Value(row.layout)
+            : const Value.absent(),
+        cover: rejected.cover != null && cur.cover == rejected.cover
+            ? Value(row.cover)
+            : const Value.absent(),
+        color: rejected.color != null && cur.color == rejected.color
+            ? Value(row.color)
+            : const Value.absent(),
+        reminderTime:
+            rejected.reminderTime != null &&
+                cur.reminderTime == rejected.reminderTime
+            ? Value(row.reminderTime)
+            : const Value.absent(),
+        dna: rejected.dna != null && _sameJson(cur.dna, rejected.dna)
+            ? Value(row.dna)
+            : const Value.absent(),
+      ),
+    );
+  });
 
   /// Retry of a create whose row exists: re-apply the extras the row lacks
   /// (and that are not already queued). A rejection is raised again.
@@ -251,6 +292,7 @@ class DataJourneyRepository implements JourneyRepository {
             !_hhmm.hasMatch(update.reminderTime!))) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
+    await ctx.claimUserId();
     final row = await _requireLocal(journeyId);
     if (row.status != JourneyStatus.active.wireName) {
       throw const OurneyException(OurneyErrorCode.ended);
@@ -431,7 +473,7 @@ class DataJourneyRepository implements JourneyRepository {
       await ctx.store.purgeJourney(journeyId);
       return;
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     await _flushFirst();
     await remote.rpc('delete_journey', {'journey': journeyId});
     final own = await (_db.select(
@@ -513,7 +555,7 @@ class DataJourneyRepository implements JourneyRepository {
         pinned == null) {
       return;
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     final updated =
         await (_db.update(_db.memberships)..where(
               (t) => t.journeyId.equals(journeyId) & t.userId.equals(me),

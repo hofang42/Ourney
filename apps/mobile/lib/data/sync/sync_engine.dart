@@ -18,6 +18,10 @@ const int pullPageSize = 1000;
 /// Cursor key holding the user id the cache belongs to.
 const String ownerCursorKey = '_owner';
 
+/// Owner recorded by a wipe (sign-out, account deletion): belongs to nobody,
+/// so whoever signs in next starts from an empty cache.
+const String wipedOwner = '_wiped';
+
 /// Cursor key of the `checkin_tombstones` RPC (other members' deletions).
 const String tombstoneCursorKey = 'checkin_tombstones';
 
@@ -63,39 +67,24 @@ class SyncEngine {
   /// Wipes the cache when it belongs to a different user than [userId], then
   /// records [userId] as the owner. Also called at sign-in and before local
   /// writes, so rows written right after signing in are owned from the start.
+  ///
+  /// A recorded owner other than [userId] (including [wipedOwner], left by a
+  /// sign-out) or no owner at all means every row, queued write and media file
+  /// belongs to somebody else (or to a write that was in flight while the
+  /// session was wiped): all of it goes, the outbox too, so a stale queued
+  /// write never runs under the new session. The current user's own offline
+  /// writes are safe because they are only written after this recorded them
+  /// as owner. Read, wipe and write of the owner happen in one transaction
+  /// (drift serializes them), so concurrent callers cannot wipe each other's
+  /// fresh writes.
   Future<void> ensureOwner(String userId) async {
-    final owner = await db.readCursor(ownerCursorKey);
-    if (owner == userId) return;
-    // No recorded owner but cached rows: leftovers of a session that was wiped
-    // while a write was in flight (A-B5); they belong to nobody we know.
-    // Never when the outbox holds pending items: those are this user's
-    // offline writes (the owner is claimed before any write, so a missing
-    // owner with a queue means the queue is not a stale one).
-    final leftovers =
-        owner == null &&
-        await _hasUserData() &&
-        (await outbox.pendingKeys()).isEmpty;
-    if (owner != null || leftovers) {
+    if (await db.readCursor(ownerCursorKey) == userId) return;
+    await db.transaction(() async {
+      if (await db.readCursor(ownerCursorKey) == userId) return;
       await db.wipe();
       await store.files.wipe();
-    }
-    await db.writeCursor(ownerCursorKey, userId);
-  }
-
-  /// Any row in a user-data table (the outbox and cursors do not count) or
-  /// any cached media file.
-  Future<bool> _hasUserData() async {
-    for (final t in db.allTables) {
-      final name = t.actualTableName;
-      if (name == db.uploadQueue.actualTableName ||
-          name == db.syncCursor.actualTableName) {
-        continue;
-      }
-      final rows = await db.customSelect('SELECT 1 FROM "$name" LIMIT 1').get();
-      if (rows.isNotEmpty) return true;
-    }
-    final root = store.files.root;
-    return root.existsSync() && root.listSync().isNotEmpty;
+      await db.writeCursor(ownerCursorKey, userId);
+    });
   }
 
   /// Called when the local cache is wiped (sign-out, account deletion):

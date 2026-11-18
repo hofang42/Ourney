@@ -87,11 +87,14 @@ class Outbox {
   /// Emits the kind of each item the server confirmed.
   Stream<OutboxKind> get processed => _processed.stream;
 
+  /// [delay] keeps the item out of a flush for that long (the caller is
+  /// sending it right now and only wants a later flush to replay it).
   Future<int> enqueue(
     OutboxKind kind,
     String entityKey,
-    Map<String, dynamic> payload,
-  ) => _db
+    Map<String, dynamic> payload, {
+    Duration delay = Duration.zero,
+  }) => _db
       .into(_db.uploadQueue)
       .insert(
         UploadQueueCompanion.insert(
@@ -99,20 +102,35 @@ class Outbox {
           entityKey: entityKey,
           payload: jsonEncode(payload),
           createdAt: _now(),
+          nextAttemptAt: delay == Duration.zero
+              ? const Value.absent()
+              : Value(_now().toUtc().add(delay).microsecondsSinceEpoch),
         ),
       );
 
-  /// Drops pending (not yet sent) items for [entityKey].
-  Future<void> cancel(String entityKey, {OutboxKind? kind}) =>
+  /// Drops pending (not yet sent) items for [entityKey]; [includeDead] also
+  /// drops items already given up on.
+  Future<void> cancel(
+    String entityKey, {
+    OutboxKind? kind,
+    bool includeDead = false,
+  }) =>
       (_db.delete(_db.uploadQueue)..where(
             (t) =>
                 t.entityKey.equals(entityKey) &
-                t.dead.equals(false) &
+                (includeDead ? const Constant(true) : t.dead.equals(false)) &
                 (kind == null
                     ? const Constant(true)
                     : t.kind.equals(kind.wire)),
           ))
           .go();
+
+  /// Clears the delay of the live items of [entityKey].
+  Future<void> makeDue(String entityKey) =>
+      (_db.update(
+            _db.uploadQueue,
+          )..where((t) => t.entityKey.equals(entityKey) & t.dead.equals(false)))
+          .write(const UploadQueueCompanion(nextAttemptAt: Value(0)));
 
   /// Entity keys with live (not dead) items: pull sync must not overwrite them.
   Future<Set<String>> pendingKeys() async {

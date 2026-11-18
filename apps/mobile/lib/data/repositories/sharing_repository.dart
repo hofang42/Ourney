@@ -215,7 +215,7 @@ class DataSharingRepository implements SharingRepository {
         draft.lastDate.compareTo(draft.firstDate) < 0) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
-    final me = social.requireUserId();
+    final me = await social.data.claimUserId();
     final data = social.data;
     // Retry of a create that already landed: same journey back.
     final existing = await (_db.select(

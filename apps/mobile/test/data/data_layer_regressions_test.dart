@@ -6,6 +6,7 @@ import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/local_store.dart' show journeyKey;
 import 'package:ourney/data/remote/remote_api.dart';
+import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -387,6 +388,71 @@ void main() {
       expect(await db.select(db.memberships).get(), isEmpty);
       expect(await db.readCursor(ownerCursorKey), other);
     });
+  });
+
+  group('review 3 owner wipe', () {
+    test(
+      'a write in flight at sign-out cannot leak to the next user',
+      () async {
+        await layer.syncNow();
+        await layer.auth.signOut();
+        // Late write of user A after the wipe: a row and a queued create.
+        await db.writeCursor('unrelated', 'x');
+        await db
+            .into(db.memberships)
+            .insert(
+              MembershipsCompanion.insert(
+                journeyId: 'ghost',
+                userId: me,
+                role: 'owner',
+                status: 'active',
+                joinedAt: DateTime.utc(2026, 10, 1),
+              ),
+            );
+        await layer.ctx.outbox!.enqueue(
+          OutboxKind.createJourney,
+          journeyKey('ghost'),
+          {'p_id': 'ghost'},
+        );
+        expect(await db.readCursor(ownerCursorKey), wipedOwner);
+
+        remote.emitUser(other);
+        await layer.syncNow();
+
+        expect(await db.select(db.memberships).get(), isEmpty);
+        expect(await db.select(db.uploadQueue).get(), isEmpty);
+        expect(
+          remote.callsOf('rpc').map((c) => c.target),
+          isNot(contains('create_journey')),
+        );
+        expect(await db.readCursor(ownerCursorKey), other);
+      },
+    );
+
+    test(
+      'concurrent ensureOwner calls do not wipe a write in between',
+      () async {
+        final sync = layer.ctx.sync!;
+        await sync.ensureOwner(me);
+        final first = sync.ensureOwner(other);
+        final second = sync.ensureOwner(other);
+        await first;
+        await db
+            .into(db.memberships)
+            .insert(
+              MembershipsCompanion.insert(
+                journeyId: 'mine',
+                userId: other,
+                role: 'owner',
+                status: 'active',
+                joinedAt: DateTime.utc(2026, 10, 1),
+              ),
+            );
+        await second;
+        expect(await db.select(db.memberships).get(), hasLength(1));
+        expect(await db.readCursor(ownerCursorKey), other);
+      },
+    );
   });
 
   group('imported (retold) journeys accept check-ins like the server', () {
