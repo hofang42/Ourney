@@ -166,7 +166,11 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
       final id = await ref
           .read(chatRepositoryProvider)
           .openForReply(_view.journeyId, checkInId: p.checkInId);
-      if (mounted) await context.push(SharingPaths.chat(id));
+      // `open_conversation` only finds the thread: the photo travels with
+      // the route and is attached to the first message (C-B15).
+      if (mounted) {
+        await context.push(SharingPaths.chat(id, replyTo: p.checkInId));
+      }
     } on Object catch (e) {
       if (mounted) showSharingSnack(context, sharingErrorMessage(context, e));
     } finally {

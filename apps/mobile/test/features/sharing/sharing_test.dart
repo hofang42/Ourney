@@ -524,7 +524,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(chat.opened, ['j1:p1']);
-      expect(h.location, '/chat/conv1');
+      // The photo travels with the route to the first message (C-B15).
+      expect(h.location, '/chat/conv1?replyTo=p1');
+      expect(_key('chat-reply-pending'), findsOneWidget);
     });
 
     testWidgets('stranger by token: add friend, no reply, counts', (

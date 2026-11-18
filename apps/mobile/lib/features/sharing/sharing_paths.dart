@@ -10,9 +10,15 @@ abstract final class SharingPaths {
   static String insights(String journeyId) =>
       '${AppRoutes.shareJourney(journeyId)}/insights';
 
-  /// Chat thread (SCR-86), built by the chat feature: `/chat/<id>`.
-  static String chat(String conversationId) =>
-      '/chat/${Uri.encodeComponent(conversationId)}';
+  /// Chat thread (SCR-86), built by the chat feature: `/chat/<id>`. With
+  /// [replyTo], the first message sent answers that check-in
+  /// (`/chat/<id>?replyTo=<checkInId>`).
+  static String chat(String conversationId, {String? replyTo}) {
+    final path = '/chat/${Uri.encodeComponent(conversationId)}';
+    return replyTo == null
+        ? path
+        : '$path?replyTo=${Uri.encodeQueryComponent(replyTo)}';
+  }
 
   /// Query parameter of the create form route that opens **More options**
   /// ("Change something" on SCR-87).
