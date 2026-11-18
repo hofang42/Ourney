@@ -2294,6 +2294,150 @@ abstract class JourneysL10n {
   /// **'Màu'**
   String get journeys_edit_color;
 
+  /// No description provided for @journeys_edit_skinShort_quiet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lặng'**
+  String get journeys_edit_skinShort_quiet;
+
+  /// No description provided for @journeys_edit_skinColor_quiet_0.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lục ngọc'**
+  String get journeys_edit_skinColor_quiet_0;
+
+  /// No description provided for @journeys_edit_skinColor_quiet_1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xanh sage'**
+  String get journeys_edit_skinColor_quiet_1;
+
+  /// No description provided for @journeys_edit_skinColor_quiet_2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sương mù'**
+  String get journeys_edit_skinColor_quiet_2;
+
+  /// No description provided for @journeys_edit_skinShort_squad.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đội'**
+  String get journeys_edit_skinShort_squad;
+
+  /// No description provided for @journeys_edit_skinColor_squad_0.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lửa'**
+  String get journeys_edit_skinColor_squad_0;
+
+  /// No description provided for @journeys_edit_skinColor_squad_1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tím'**
+  String get journeys_edit_skinColor_squad_1;
+
+  /// No description provided for @journeys_edit_skinColor_squad_2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phấn'**
+  String get journeys_edit_skinColor_squad_2;
+
+  /// No description provided for @journeys_edit_skinShort_memory.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ký ức'**
+  String get journeys_edit_skinShort_memory;
+
+  /// No description provided for @journeys_edit_skinColor_memory_0.
+  ///
+  /// In vi, this message translates to:
+  /// **'Sương thông'**
+  String get journeys_edit_skinColor_memory_0;
+
+  /// No description provided for @journeys_edit_skinColor_memory_1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Biển muối'**
+  String get journeys_edit_skinColor_memory_1;
+
+  /// No description provided for @journeys_edit_skinColor_memory_2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Phố đêm'**
+  String get journeys_edit_skinColor_memory_2;
+
+  /// No description provided for @journeys_edit_skinShort_couple.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đôi'**
+  String get journeys_edit_skinShort_couple;
+
+  /// No description provided for @journeys_edit_skinColor_couple_0.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hồng'**
+  String get journeys_edit_skinColor_couple_0;
+
+  /// No description provided for @journeys_edit_skinColor_couple_1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mâm xôi'**
+  String get journeys_edit_skinColor_couple_1;
+
+  /// No description provided for @journeys_edit_skinColor_couple_2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đào'**
+  String get journeys_edit_skinColor_couple_2;
+
+  /// No description provided for @journeys_edit_skinShort_flexer.
+  ///
+  /// In vi, this message translates to:
+  /// **'Năng lượng'**
+  String get journeys_edit_skinShort_flexer;
+
+  /// No description provided for @journeys_edit_skinColor_flexer_0.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lime neon'**
+  String get journeys_edit_skinColor_flexer_0;
+
+  /// No description provided for @journeys_edit_skinColor_flexer_1.
+  ///
+  /// In vi, this message translates to:
+  /// **'San hô điện'**
+  String get journeys_edit_skinColor_flexer_1;
+
+  /// No description provided for @journeys_edit_skinColor_flexer_2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Băng'**
+  String get journeys_edit_skinColor_flexer_2;
+
+  /// No description provided for @journeys_edit_skinShort_minimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tối giản'**
+  String get journeys_edit_skinShort_minimal;
+
+  /// No description provided for @journeys_edit_skinColor_minimal_0.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cam'**
+  String get journeys_edit_skinColor_minimal_0;
+
+  /// No description provided for @journeys_edit_skinColor_minimal_1.
+  ///
+  /// In vi, this message translates to:
+  /// **'Than'**
+  String get journeys_edit_skinColor_minimal_1;
+
+  /// No description provided for @journeys_edit_skinColor_minimal_2.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trời'**
+  String get journeys_edit_skinColor_minimal_2;
+
   /// No description provided for @journeys_edit_trophy.
   ///
   /// In vi, this message translates to:

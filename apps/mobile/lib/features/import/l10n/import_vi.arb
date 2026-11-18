@@ -48,19 +48,19 @@
   "@import_layoutHeading": {
     "description": "Import past journey flow."
   },
-  "import_layout_quiet": "Quiet",
+  "import_layout_quiet": "Lặng lẽ",
   "@import_layout_quiet": {
     "description": "Import past journey flow."
   },
-  "import_layout_memory": "Memory",
+  "import_layout_memory": "Ký ức",
   "@import_layout_memory": {
     "description": "Import past journey flow."
   },
-  "import_layout_flexer": "Flexer",
+  "import_layout_flexer": "Khoe thẩm mỹ",
   "@import_layout_flexer": {
     "description": "Import past journey flow."
   },
-  "import_layout_minimal": "Minimalist",
+  "import_layout_minimal": "Tối giản",
   "@import_layout_minimal": {
     "description": "Import past journey flow."
   },

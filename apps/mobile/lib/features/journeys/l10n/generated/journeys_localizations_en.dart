@@ -1249,6 +1249,78 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_edit_color => 'Colour';
 
   @override
+  String get journeys_edit_skinShort_quiet => 'Quiet';
+
+  @override
+  String get journeys_edit_skinColor_quiet_0 => 'Jade';
+
+  @override
+  String get journeys_edit_skinColor_quiet_1 => 'Sage green';
+
+  @override
+  String get journeys_edit_skinColor_quiet_2 => 'Mist';
+
+  @override
+  String get journeys_edit_skinShort_squad => 'Squad';
+
+  @override
+  String get journeys_edit_skinColor_squad_0 => 'Flame';
+
+  @override
+  String get journeys_edit_skinColor_squad_1 => 'Purple';
+
+  @override
+  String get journeys_edit_skinColor_squad_2 => 'Chalk';
+
+  @override
+  String get journeys_edit_skinShort_memory => 'Memory';
+
+  @override
+  String get journeys_edit_skinColor_memory_0 => 'Pine mist';
+
+  @override
+  String get journeys_edit_skinColor_memory_1 => 'Salt sea';
+
+  @override
+  String get journeys_edit_skinColor_memory_2 => 'Night city';
+
+  @override
+  String get journeys_edit_skinShort_couple => 'Couple';
+
+  @override
+  String get journeys_edit_skinColor_couple_0 => 'Pink';
+
+  @override
+  String get journeys_edit_skinColor_couple_1 => 'Raspberry';
+
+  @override
+  String get journeys_edit_skinColor_couple_2 => 'Peach';
+
+  @override
+  String get journeys_edit_skinShort_flexer => 'Flexer';
+
+  @override
+  String get journeys_edit_skinColor_flexer_0 => 'Neon lime';
+
+  @override
+  String get journeys_edit_skinColor_flexer_1 => 'Electric coral';
+
+  @override
+  String get journeys_edit_skinColor_flexer_2 => 'Ice';
+
+  @override
+  String get journeys_edit_skinShort_minimal => 'Minimal';
+
+  @override
+  String get journeys_edit_skinColor_minimal_0 => 'Orange';
+
+  @override
+  String get journeys_edit_skinColor_minimal_1 => 'Charcoal';
+
+  @override
+  String get journeys_edit_skinColor_minimal_2 => 'Sky';
+
+  @override
   String get journeys_edit_trophy => 'Trophy name';
 
   @override

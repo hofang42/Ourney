@@ -21,6 +21,7 @@ import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_actions.dart';
 import '../journey_errors.dart';
 import 'layout_preview.dart';
+import 'skin_names.dart';
 import 'time_wheel.dart';
 
 /// `/journey/:id/edit`, Figma `JourneyEditScreen` ("cập nhật hành trình."):
@@ -89,7 +90,10 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   late int _color = widget.journey.color ?? 0;
   late String _hud = (widget.journey.dna?['hud'] as String?) ?? 'bold';
   late bool _link = widget.journey.visibility == JourneyVisibility.link;
-  late ReminderTime _time = _initialTime();
+  /// The reminder time when the screen opened. `repo.update` and the save
+  /// that follows change what `_initialTime()` would read (bug B-B9).
+  late final ReminderTime _initialReminder = _initialTime();
+  late ReminderTime _time = _initialReminder;
   bool _busy = false;
 
   /// Saved or ended: leaving needs no "discard changes?" question.
@@ -124,22 +128,24 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       (_self.text.trim() != j.coupleSelfName ||
           _partner.text.trim() != j.couplePartnerName);
 
+  /// A journey that has couple names keeps both: `validateCoupleNames` lets
+  /// an empty pair through (it means "no names"), which is not an option here
+  /// (U19).
   bool get _coupleOk =>
-      !_coupleChanged || validateCoupleNames(_self.text, _partner.text) == null;
+      j.coupleSelfName == null ||
+      (_self.text.trim().isNotEmpty &&
+          _partner.text.trim().isNotEmpty &&
+          validateCoupleNames(_self.text, _partner.text) == null);
 
   bool get _changed =>
       _name.text.trim() != j.title ||
       _cover != (j.cover ?? 0) ||
       _color != (j.color ?? 0) ||
-      _hhmm(_time) != (j.reminderTime ?? _hhmm(_initialSaved())) ||
+      _hhmm(_time) != _hhmm(_initialReminder) ||
       _trophy.text.trim() != ((j.dna?['trophy'] as String?) ?? '') ||
       _hud != ((j.dna?['hud'] as String?) ?? 'bold') ||
       _link != (j.visibility == JourneyVisibility.link) ||
       _coupleChanged;
-
-  ReminderTime _initialSaved() =>
-      ReminderTime.tryParse(j.reminderTime) ??
-      ref.read(reminderSettingsProvider.notifier).of(j.id).time;
 
   Future<void> _save() async {
     if (!_owner || !_changed || !_nameOk || !_coupleOk || _busy) return;
@@ -183,7 +189,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       // scheduler only plans enabled settings (bug B-B9).
       final reminders = ref.read(reminderSettingsProvider.notifier);
       final current = reminders.of(j.id);
-      final timePicked = _hhmm(_time) != _hhmm(_initialSaved());
+      final timePicked = _hhmm(_time) != _hhmm(_initialReminder);
       final next = timePicked
           ? ReminderSetting(enabled: true, time: _time)
           : current.copyWith(time: _time);
@@ -242,12 +248,10 @@ class _EditBodyState extends ConsumerState<_EditBody> {
       };
 
   String? _coupleError(JourneysL10n l10n, TextEditingController field) {
-    if (!_coupleChanged) return null;
+    if (j.coupleSelfName == null) return null;
+    if (field.text.trim().isEmpty) return l10n.journeys_errorCoupleNames;
     final e = validateCoupleNames(_self.text, _partner.text);
-    if (e == null) return null;
-    if (e == CoupleNamesError.missing) {
-      return field.text.trim().isEmpty ? l10n.journeys_errorCoupleNames : null;
-    }
+    if (e != CoupleNamesError.tooLong) return null;
     return field.text.trim().runes.length > partnerNameMax
         ? l10n.journeys_errorTitleTooLong(partnerNameMax)
         : null;
@@ -452,7 +456,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
                         for (var i = 0; i < uiSkin.variants.length; i++)
                           UiChip(
                             key: ValueKey('edit-color-$i'),
-                            label: uiSkin.variants[i].name,
+                            label: skinColorName(l10n, uiSkin.id, i),
                             selected: _color == i,
                             glyph: _color == i
                                 ? const OurneyIcon(
@@ -799,7 +803,7 @@ class _LayoutTile extends StatelessWidget {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final id = uiSkinIdFor(skin);
-    final name = uiSkinById(id).short;
+    final name = skinShortName(l10n, id);
     return UiPressable(
       key: ValueKey('edit-layout-$id'),
       onPressed: enabled ? onTap : null,

@@ -142,6 +142,30 @@ void main() {
       expect(gateway.scheduled, isNotEmpty);
     });
 
+    testWidgets('a picked time offers the notification permission (B-B9)', (
+      tester,
+    ) async {
+      final gateway = FakeNotificationGateway();
+      final h = await _open(tester, gateway: gateway);
+      tester.widget<UiTimeWheel>(find.byType(UiTimeWheel)).onChanged(21, 30);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('edit-save-bottom'));
+      await tester.tap(_key('edit-save-bottom'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      // The saved journey already carries 21:30, yet the pick still counts.
+      expect(h.journeys.updates.single.reminderTime, '21:30');
+      expect(_key('notification-sheet'), findsOneWidget);
+      expect(h.container.read(reminderSettingsProvider)['j1']?.enabled, isTrue);
+      await tester.tap(_key('notification-turn-on'));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(gateway.requests, 1);
+      expect(_key('journey-edit'), findsNothing);
+    });
+
     testWidgets('ending the journey drops its pending reminders (B-B8)', (
       tester,
     ) async {
@@ -186,6 +210,36 @@ void main() {
       await tester.enterText(_key('edit-name'), '  ');
       await tester.pumpAndSettle();
       expect(find.text('Give your journey a name.'), findsOneWidget);
+    });
+
+    testWidgets('a couple journey keeps both names (U19)', (tester) async {
+      final base = testJourney(kind: JourneyKind.group);
+      final j = Journey(
+        id: base.id,
+        ownerId: base.ownerId,
+        kind: base.kind,
+        templateId: base.templateId,
+        title: base.title,
+        emoji: base.emoji,
+        startDate: base.startDate,
+        durationDays: base.durationDays,
+        timezone: base.timezone,
+        visibility: base.visibility,
+        status: base.status,
+        coupleSelfName: 'An',
+        couplePartnerName: 'Binh',
+        layout: PersonaSkinId.coupleRituals,
+      );
+      final h = await _open(tester, journey: j);
+      await tester.ensureVisible(_key('edit-self'));
+      await tester.enterText(_key('edit-self'), '');
+      await tester.enterText(_key('edit-partner'), '');
+      await tester.pumpAndSettle();
+      expect(find.text('Enter both names.'), findsNWidgets(2));
+      await tester.ensureVisible(_key('edit-save-bottom'));
+      await tester.tap(_key('edit-save-bottom'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+      expect(h.journeys.updates, isEmpty);
     });
 
     testWidgets('back with unsaved edits asks before leaving (U19)', (

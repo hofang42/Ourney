@@ -1245,6 +1245,78 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_color => 'Màu';
 
   @override
+  String get journeys_edit_skinShort_quiet => 'Lặng';
+
+  @override
+  String get journeys_edit_skinColor_quiet_0 => 'Lục ngọc';
+
+  @override
+  String get journeys_edit_skinColor_quiet_1 => 'Xanh sage';
+
+  @override
+  String get journeys_edit_skinColor_quiet_2 => 'Sương mù';
+
+  @override
+  String get journeys_edit_skinShort_squad => 'Đội';
+
+  @override
+  String get journeys_edit_skinColor_squad_0 => 'Lửa';
+
+  @override
+  String get journeys_edit_skinColor_squad_1 => 'Tím';
+
+  @override
+  String get journeys_edit_skinColor_squad_2 => 'Phấn';
+
+  @override
+  String get journeys_edit_skinShort_memory => 'Ký ức';
+
+  @override
+  String get journeys_edit_skinColor_memory_0 => 'Sương thông';
+
+  @override
+  String get journeys_edit_skinColor_memory_1 => 'Biển muối';
+
+  @override
+  String get journeys_edit_skinColor_memory_2 => 'Phố đêm';
+
+  @override
+  String get journeys_edit_skinShort_couple => 'Đôi';
+
+  @override
+  String get journeys_edit_skinColor_couple_0 => 'Hồng';
+
+  @override
+  String get journeys_edit_skinColor_couple_1 => 'Mâm xôi';
+
+  @override
+  String get journeys_edit_skinColor_couple_2 => 'Đào';
+
+  @override
+  String get journeys_edit_skinShort_flexer => 'Năng lượng';
+
+  @override
+  String get journeys_edit_skinColor_flexer_0 => 'Lime neon';
+
+  @override
+  String get journeys_edit_skinColor_flexer_1 => 'San hô điện';
+
+  @override
+  String get journeys_edit_skinColor_flexer_2 => 'Băng';
+
+  @override
+  String get journeys_edit_skinShort_minimal => 'Tối giản';
+
+  @override
+  String get journeys_edit_skinColor_minimal_0 => 'Cam';
+
+  @override
+  String get journeys_edit_skinColor_minimal_1 => 'Than';
+
+  @override
+  String get journeys_edit_skinColor_minimal_2 => 'Trời';
+
+  @override
   String get journeys_edit_trophy => 'Tên chiếc cúp';
 
   @override

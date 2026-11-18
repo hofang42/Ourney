@@ -173,25 +173,25 @@ abstract class ImportL10n {
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Quiet'**
+  /// **'Lặng lẽ'**
   String get import_layout_quiet;
 
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Memory'**
+  /// **'Ký ức'**
   String get import_layout_memory;
 
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Flexer'**
+  /// **'Khoe thẩm mỹ'**
   String get import_layout_flexer;
 
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Minimalist'**
+  /// **'Tối giản'**
   String get import_layout_minimal;
 
   /// Import past journey flow.
