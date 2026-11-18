@@ -16,7 +16,8 @@ const other = 'cccccccc-0000-4000-8000-000000000002';
 const jid = 'dddddddd-0000-4000-8000-000000000001';
 const offline = OurneyException(OurneyErrorCode.offline);
 
-/// [FakeRemoteApi] whose next `select` of [gateTable] waits for [release].
+/// [FakeRemoteApi] whose next `select` of [gateTable] answers late: the rows
+/// are read at call time, delivered after [release].
 class GatedRemoteApi extends FakeRemoteApi {
   GatedRemoteApi({super.userId});
 
@@ -33,12 +34,7 @@ class GatedRemoteApi extends FakeRemoteApi {
     bool onlyLive = false,
     int? limit,
   }) async {
-    if (table == gateTable) {
-      gateTable = null;
-      reached.complete();
-      await release.future;
-    }
-    return super.select(
+    final rows = await super.select(
       table,
       eq: eq,
       inList: inList,
@@ -46,6 +42,12 @@ class GatedRemoteApi extends FakeRemoteApi {
       onlyLive: onlyLive,
       limit: limit,
     );
+    if (table == gateTable) {
+      gateTable = null;
+      reached.complete();
+      await release.future;
+    }
+    return rows;
   }
 }
 
@@ -152,7 +154,7 @@ void main() {
       'account', () async {
     remote.tables['journeys'] = [journeyRow('journey-of-user-a', ownerId: me)];
     remote.tables['memberships'] = [membershipRow('journey-of-user-a', me)];
-    remote.gateTable = 'memberships';
+    remote.gateTable = 'journeys';
     final pullA = layer.syncNow();
     await remote.reached.future;
 
@@ -294,10 +296,10 @@ void main() {
     remote.tables['memberships'] = [membershipRow(jid, me)];
     await layer.syncNow();
     remote.failure = offline;
-    final first = await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 0, 10));
-    final second = await checkIn(jid, 'b', DateTime.utc(2026, 10, 16, 1, 10));
+    final later = await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1, 10));
+    final earlier = await checkIn(jid, 'b', DateTime.utc(2026, 10, 16, 0, 10));
     final list = await layer.checkIns.watchForJourney(jid).first;
-    expect([for (final c in list) c.id], [second.id, first.id]);
+    expect([for (final c in list) c.id], [later.id, earlier.id]);
   });
 
   test('removeMember refreshes the rotated invite code', () async {
