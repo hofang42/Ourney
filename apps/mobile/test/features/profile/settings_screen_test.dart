@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 
@@ -49,4 +51,49 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
+
+  group('settings sign out (C-B6 / U6)', () {
+    Future<(RecordingAuthRepository, ProviderContainer)> open(WidgetTester tester) async {
+      final auth = RecordingAuthRepository(userId: 'u1');
+      final c = await pumpBackendApp(
+        tester,
+        auth: auth,
+        profiles: FakeProfileRepository(aliceProfile),
+      );
+      await goTo(tester, c, '/profile/settings');
+      await tester.ensureVisible(byKey('settings-signout'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('settings-signout'));
+      await tester.pumpAndSettle();
+      return (auth, c);
+    }
+
+    testWidgets('asks first; cancel keeps the session', (tester) async {
+      final (auth, _) = await open(tester);
+      expect(byKey('profile-signout-dialog'), findsOneWidget);
+      expect(auth.calls, isEmpty);
+      await tester.tap(byKey('profile-signout-cancel'));
+      await tester.pumpAndSettle();
+      expect(auth.calls, isEmpty);
+      expect(byKey('settings-screen'), findsOneWidget);
+    });
+
+    testWidgets('confirm signs out and leaves for /auth', (tester) async {
+      final (auth, c) = await open(tester);
+      await tester.tap(byKey('profile-signout-confirm'));
+      await tester.pumpAndSettle();
+      expect(auth.calls, ['signOut']);
+      expect(location(c), startsWith(AppRoutes.auth));
+    });
+
+    testWidgets('a failing sign out shows an error, no crash', (tester) async {
+      final (auth, _) = await open(tester);
+      auth.signOutError = StateError('offline');
+      await tester.tap(byKey('profile-signout-confirm'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(auth.calls, ['signOut']);
+      expect(byKey('settings-screen'), findsOneWidget);
+    });
+  });
 }

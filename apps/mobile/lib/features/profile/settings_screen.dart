@@ -14,6 +14,7 @@ import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
 import 'settings_providers.dart';
 import 'widgets/delete_account_dialog.dart';
+import 'widgets/sign_out_flow.dart';
 
 /// Route of the settings screen (sub-path of `/profile`).
 const String profileSettingsPath = '${AppRoutes.profile}/settings';
@@ -56,8 +57,8 @@ class SettingsScreen extends ConsumerWidget {
                     leading: const OurneyIcon(name: 'logout', flat: true),
                     title: l10n.profile_settings_signOut,
                     divider: false,
-                    onPressed: () =>
-                        unawaited(ref.read(authRepositoryProvider).signOut()),
+                    showChevron: false,
+                    onPressed: () => confirmSignOut(context, ref),
                   ),
                 ],
               ),

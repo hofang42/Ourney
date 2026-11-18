@@ -17,6 +17,7 @@ import 'settings_screen.dart' show profileSettingsPath;
 import 'widgets/delete_account_dialog.dart';
 import 'widgets/profile_avatar.dart';
 import 'widgets/profile_stats_section.dart';
+import 'widgets/sign_out_flow.dart';
 
 /// Route of the profile setup screen (sub-path of `/profile`).
 const String profileSetupPath = '${AppRoutes.profile}/setup';
@@ -332,54 +333,6 @@ class _SettingsSection extends ConsumerWidget {
 class _AccountSection extends ConsumerWidget {
   const _AccountSection();
 
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final l10n = ProfileL10n.of(context);
-    final ok = await showUiSheet<bool>(
-      context: context,
-      builder: (context) {
-        final ui = context.ui;
-        return Column(
-          key: const ValueKey('profile-signout-dialog'),
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
-              header: true,
-              child: Text(
-                l10n.profile_signOutTitle,
-                style: UiText.h2(color: ui.ink),
-              ),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            Text(
-              l10n.profile_signOutMessage,
-              style: UiText.muted(color: ui.inkMuted, size: 14),
-            ),
-            const SizedBox(height: UiSpace.xl),
-            UiButton(
-              key: const ValueKey('profile-signout-confirm'),
-              label: l10n.profile_signOut,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            UiButton.secondary(
-              label: AppLocalizations.of(context).common_cancel,
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-          ],
-        );
-      },
-    );
-    if (ok != true || !context.mounted) return;
-    final errorText = AppLocalizations.of(context).common_errorGeneric;
-    try {
-      // The router redirects to /auth once the user id becomes null.
-      await ref.read(authRepositoryProvider).signOut();
-    } on Object {
-      if (context.mounted) showUiToast(context, errorText);
-    }
-  }
-
   Future<void> _delete(BuildContext context) async {
     OurneyHaptics.warning();
     await DeleteAccountDialog.show(context);
@@ -397,7 +350,7 @@ class _AccountSection extends ConsumerWidget {
             leading: const OurneyIcon(name: 'logout', flat: true),
             title: l10n.profile_signOut,
             divider: false,
-            onPressed: () => _signOut(context, ref),
+            onPressed: () => confirmSignOut(context, ref),
           ),
         ),
         const SizedBox(height: UiSpace.lg),
