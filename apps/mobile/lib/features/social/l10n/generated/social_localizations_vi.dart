@@ -211,6 +211,11 @@ class SocialL10nVi extends SocialL10n {
   }
 
   @override
+  String social_consentRequestFormer(String title) {
+    return 'Một thành viên cũ muốn chia sẻ $title ra ngoài nhóm';
+  }
+
+  @override
   String get social_agree => 'Đồng ý';
 
   @override

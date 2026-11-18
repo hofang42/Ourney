@@ -142,6 +142,11 @@
     "description": "Inbox row: a squad member asks to share a group journey.",
     "placeholders": {"name": {"type": "String"}, "title": {"type": "String"}}
   },
+  "social_consentRequestFormer": "Một thành viên cũ muốn chia sẻ {title} ra ngoài nhóm",
+  "@social_consentRequestFormer": {
+    "description": "Inbox row: share consent request whose requester deleted their account.",
+    "placeholders": {"title": {"type": "String"}}
+  },
   "social_agree": "Đồng ý",
   "@social_agree": {"description": "Agree to a share consent request."},
   "social_sectionConversations": "Trò chuyện",

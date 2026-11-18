@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,6 +6,7 @@ import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../ui/ui.dart';
+import 'account_reset.dart';
 import 'locale_override.dart';
 import 'localization.dart';
 import 'overlays/reminder_banner.dart';
@@ -23,6 +23,8 @@ class OurneyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     // Keep the haptics toggle mirrored into OurneyHaptics.enabled.
     ref.watch(hapticsEnabledProvider);
+    // Sign-out / account deletion clears the previous account's local state.
+    ref.watch(accountSessionResetProvider);
     // The active journey's persona colors the whole app; the router is not
     // rebuilt when it changes (docs/06 §1 Q1).
     final skin = ref.watch(activePersonaSkinProvider);

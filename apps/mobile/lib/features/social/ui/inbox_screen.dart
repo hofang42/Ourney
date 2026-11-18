@@ -466,10 +466,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     return _ActivityCard(
       key: ValueKey('inbox-consent-${s.journeyId}'),
       badge: const _Badge('share', UiTypePastel.workout),
-      title: l10n.social_consentRequest(
-        displayNameOf(s.requestedBy),
-        s.journeyTitle,
-      ),
+      title: switch (s.requestedBy) {
+        final by? => l10n.social_consentRequest(
+          displayNameOf(by),
+          s.journeyTitle,
+        ),
+        null => l10n.social_consentRequestFormer(s.journeyTitle),
+      },
       unread: unread,
       actions: [
         UiButton(

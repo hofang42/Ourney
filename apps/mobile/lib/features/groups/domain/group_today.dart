@@ -94,7 +94,7 @@ class GroupTodayView {
           ? latestOwn
           : null;
       final serverToday = m.todayCheckIn;
-      final checkedInToday = serverToday != null || localToday != null;
+      final checkedInToday = m.checkedIn || localToday != null;
       final visibleServer =
           serverToday != null && !hiddenCheckInIds.contains(serverToday.id)
           ? serverToday

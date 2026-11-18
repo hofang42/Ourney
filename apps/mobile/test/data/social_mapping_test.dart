@@ -236,9 +236,42 @@ void main() {
       'decided_at': '2026-10-22T10:00:00.123456+00:00',
     });
     expect(c.status, ShareConsentStatus.withdrawn);
-    expect(c.requestedBy.userId, alice);
+    expect(c.requestedBy?.userId, alice);
     expect(c.decidedAt, DateTime.utc(2026, 10, 22, 10, 0, 0, 123, 456));
   });
+
+  test('consent whose requester deleted their account (A-B10)', () {
+    final c = consentFromJson({
+      'journey_id': 'j1',
+      'journey_title': 'Squad',
+      'member': person(bob, 'bob'),
+      'status': 'pending',
+      'requested_by': null,
+      'decided_at': null,
+    });
+    expect(c.requestedBy, isNull);
+    expect(c.member.userId, bob);
+  });
+
+  test(
+    'consent with the anonymous requester of 0016 reads as null (A-B10)',
+    () {
+      final c = consentFromJson({
+        'journey_id': 'j1',
+        'journey_title': 'Squad',
+        'member': person(bob, 'bob'),
+        'status': 'pending',
+        'requested_by': {
+          'user_id': '00000000-0000-0000-0000-000000000000',
+          'username': '',
+          'display_name': '',
+          'avatar_path': null,
+        },
+        'decided_at': null,
+      });
+      expect(c.requestedBy, isNull);
+    },
+  );
 
   test('conversation and messages', () {
     final c = conversationFromJson({

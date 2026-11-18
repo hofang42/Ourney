@@ -212,6 +212,11 @@ class SocialL10nEn extends SocialL10n {
   }
 
   @override
+  String social_consentRequestFormer(String title) {
+    return 'A former member wants to share $title outside the squad';
+  }
+
+  @override
   String get social_agree => 'Agree';
 
   @override
