@@ -184,7 +184,9 @@ class SupabaseAuthRepository implements AuthRepository {
       deleteAccountFunction,
       body: {'action': 'delete', 'code': code ?? ''},
     );
-    await ctx.wipeLocal();
+    // Sign out first: a sync starting between the wipe and the sign-out
+    // would pull the deleted account's rows back into the cache.
     await remote.signOut();
+    await ctx.wipeLocal();
   }
 }
