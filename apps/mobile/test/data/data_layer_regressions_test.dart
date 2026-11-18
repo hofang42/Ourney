@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
@@ -263,16 +262,130 @@ void main() {
         layer.journeys.create(draft(id: id)),
         throwsA(isA<OurneyException>()),
       );
-      // The cache now holds the plain server row (no extras).
-      await (db.update(db.journeys)..where((t) => t.id.equals(id))).write(
-        const JourneysCompanion(reminderTime: Value(null), color: Value(null)),
-      );
+      // Review 2: the rejected values do not stay in the cache.
+      final after = await (db.select(
+        db.journeys,
+      )..where((t) => t.id.equals(id))).getSingle();
+      expect(after.reminderTime, isNull);
+      expect(after.color, isNull);
+      expect(await layer.ctx.outbox!.pendingKeys(), isEmpty);
       remote.rpcHandlers['update_journey'] = (p) =>
           journeyRow(id, ownerId: me)
             ..addAll({'reminder_time': '07:30', 'color': 1});
       final j = await layer.journeys.create(draft(id: id));
       expect(j.reminderTime, '07:30');
       expect(j.color, 1);
+    });
+
+    test('a retry after a rejection raises it again, not success', () async {
+      const id = 'retry-rejected-id';
+      remote.rpcHandlers['update_journey'] = (_) =>
+          throw const OurneyException(OurneyErrorCode.invalid);
+      for (var i = 0; i < 2; i++) {
+        await expectLater(
+          layer.journeys.create(draft(id: id)),
+          throwsA(isA<OurneyException>()),
+        );
+      }
+    });
+
+    test(
+      'extras are queued before the call (survive a crash mid-call)',
+      () async {
+        Set<String>? queuedDuringCall;
+        Object? cachedColor;
+        remote.rpcHandlers['update_journey'] = (p) async {
+          // The call is in flight: the outbox already holds the extras and the
+          // cache already carries them.
+          queuedDuringCall = await layer.ctx.outbox!.pendingKeys();
+          final cached = await db.select(db.journeys).getSingle();
+          cachedColor = cached.color;
+          return journeyRow(cached.id, ownerId: me)
+            ..addAll({'reminder_time': '07:30', 'color': 1});
+        };
+        final j = await layer.journeys.create(draft());
+        expect(queuedDuringCall, contains('${journeyKey(j.id)}:extras'));
+        expect(cachedColor, 1);
+        // Success drops the queued item again.
+        expect(await layer.ctx.outbox!.pendingKeys(), isEmpty);
+      },
+    );
+
+    test(
+      'a complete row is not re-sent (HH:MM:SS time, dna key order)',
+      () async {
+        const id = 'complete-row-id';
+        JourneyDraft withDna() => JourneyDraft(
+          id: id,
+          kind: JourneyKind.solo,
+          templateId: TemplateId.custom,
+          title: 'Sáng sớm',
+          emoji: '🔥',
+          startDate: const LocalDate(2026, 10, 16),
+          timezone: vnZone,
+          reminderTime: '07:30',
+          dna: {'b': 1, 'a': 2},
+        );
+        remote.rpcHandlers['update_journey'] = (p) =>
+            journeyRow(id, ownerId: me)..addAll({
+              'reminder_time': '07:30:00',
+              'dna': {'a': 2, 'b': 1},
+            });
+        await layer.journeys.create(withDna());
+        final before = remote.callsOf('rpc').length;
+        await layer.journeys.create(withDna());
+        expect(remote.callsOf('rpc').length, before);
+      },
+    );
+  });
+
+  group('review 2 owner claim', () {
+    test(
+      'offline journeys of a user signing in survive the first pull',
+      () async {
+        await layer.auth.signOut();
+        remote.emitUser(other);
+        remote.failure = offline;
+        final j = await layer.journeys.create(
+          JourneyDraft(
+            kind: JourneyKind.solo,
+            templateId: TemplateId.custom,
+            title: 'Offline',
+            emoji: '🔥',
+            startDate: const LocalDate(2026, 10, 16),
+            timezone: vnZone,
+          ),
+        );
+        remote.failure = null;
+        await layer.syncNow();
+        final ids = [for (final r in await db.select(db.journeys).get()) r.id];
+        expect(ids, contains(j.id));
+        // The sync flushed the queued create: it reached the server.
+        expect(
+          remote.callsOf('rpc').map((c) => c.target),
+          contains('create_journey'),
+        );
+      },
+    );
+
+    test('leftover rows of any table are wiped for a new owner', () async {
+      await layer.auth.signOut();
+      // A stale write after the wipe: a membership only, no owner recorded.
+      await db
+          .into(db.memberships)
+          .insert(
+            MembershipsCompanion.insert(
+              journeyId: 'ghost',
+              userId: me,
+              role: 'owner',
+              status: 'active',
+              joinedAt: DateTime.utc(2026, 10, 1),
+            ),
+          );
+      remote.emitUser(other);
+      await layer.syncNow();
+      expect(await db.select(db.memberships).get(), isEmpty);
+      expect(await db.readCursor(ownerCursorKey), other);
     });
   });
 

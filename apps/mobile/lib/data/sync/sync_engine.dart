@@ -60,20 +60,42 @@ class SyncEngine {
     if (!_changes.isClosed) _changes.add(null);
   }
 
-  /// Wipes the cache when it belongs to a different user than [userId].
+  /// Wipes the cache when it belongs to a different user than [userId], then
+  /// records [userId] as the owner. Also called at sign-in and before local
+  /// writes, so rows written right after signing in are owned from the start.
   Future<void> ensureOwner(String userId) async {
     final owner = await db.readCursor(ownerCursorKey);
     if (owner == userId) return;
     // No recorded owner but cached rows: leftovers of a session that was wiped
     // while a write was in flight (A-B5); they belong to nobody we know.
+    // Never when the outbox holds pending items: those are this user's
+    // offline writes (the owner is claimed before any write, so a missing
+    // owner with a queue means the queue is not a stale one).
     final leftovers =
         owner == null &&
-        (await (db.select(db.journeys)..limit(1)).get()).isNotEmpty;
+        await _hasUserData() &&
+        (await outbox.pendingKeys()).isEmpty;
     if (owner != null || leftovers) {
       await db.wipe();
       await store.files.wipe();
     }
     await db.writeCursor(ownerCursorKey, userId);
+  }
+
+  /// Any row in a user-data table (the outbox and cursors do not count) or
+  /// any cached media file.
+  Future<bool> _hasUserData() async {
+    for (final t in db.allTables) {
+      final name = t.actualTableName;
+      if (name == db.uploadQueue.actualTableName ||
+          name == db.syncCursor.actualTableName) {
+        continue;
+      }
+      final rows = await db.customSelect('SELECT 1 FROM "$name" LIMIT 1').get();
+      if (rows.isNotEmpty) return true;
+    }
+    final root = store.files.root;
+    return root.existsSync() && root.listSync().isNotEmpty;
   }
 
   /// Called when the local cache is wiped (sign-out, account deletion):

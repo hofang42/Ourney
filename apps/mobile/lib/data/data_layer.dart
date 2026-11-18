@@ -111,7 +111,10 @@ class DataLayer {
         listenLifecycle: listenLifecycle,
       );
       layer._authSub = remote.watchUserId().listen((id) {
-        if (id != null) unawaited(layer.syncNow());
+        if (id != null) {
+          unawaited(sync.ensureOwner(id));
+          unawaited(layer.syncNow());
+        }
       });
     }
     return layer;

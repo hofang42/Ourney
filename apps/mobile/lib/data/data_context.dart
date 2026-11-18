@@ -62,6 +62,15 @@ class DataContext {
         'local-only mode: this needs a server',
       ));
 
+  /// [requireUserId] for write paths: also records the signed-in user as the
+  /// cache owner before the first local write, so a later pull never mistakes
+  /// this user's offline rows for a previous account's leftovers.
+  Future<String> claimUserId() async {
+    final me = requireUserId();
+    await sync?.ensureOwner(me);
+    return me;
+  }
+
   DateTime now() => clock.now();
 
   /// Removes every cached row and file (account deletion, sign-out),

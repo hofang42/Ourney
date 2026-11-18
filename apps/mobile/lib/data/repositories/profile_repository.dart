@@ -55,7 +55,7 @@ class DataProfileRepository implements ProfileRepository {
         validateDisplayName(name) != null) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     final remote = ctx.remote;
     if (remote != null) {
       // Update first: an upsert would also SET id, which is not granted.
@@ -87,7 +87,7 @@ class DataProfileRepository implements ProfileRepository {
   /// Requires a profile (call [upsertMe] first), else `notFound`.
   @override
   Future<void> setAvatar(List<int> jpegBytes) async {
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     final existing = await _local(me);
     if (existing == null) throw const OurneyException(OurneyErrorCode.notFound);
     final path = avatarPath(me, ctx.newId());

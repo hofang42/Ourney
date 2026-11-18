@@ -75,7 +75,7 @@ class DataJourneyRepository implements JourneyRepository {
             null) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     // Retry of a create that already landed locally: same journey back.
     if (draft.id case final clientId?) {
       final existing = await (_db.select(
@@ -146,39 +146,52 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   /// `create_journey` has no edit fields: send them right after so the row
-  /// carries the create-flow answers. They are written locally first and
-  /// queued through the outbox on any retryable failure, so a transient error
-  /// never loses them nor fails a create that already landed. Only a
-  /// rejection (invalid / forbidden) is surfaced.
+  /// carries the create-flow answers. They are written locally and queued in
+  /// the outbox in ONE transaction before the call, so an app death mid-call
+  /// never loses them (the outbox replays the idempotent update). Success
+  /// drops the queued item; a retryable failure leaves it queued. A rejection
+  /// (invalid / forbidden) drops it, restores the previous row and is
+  /// surfaced.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
-    await _writeLocal(id, extras);
+    final outbox = ctx.outbox;
+    final key = '${journeyKey(id)}:extras';
+    final params = updateJourneyParams(id, extras);
+    final previous = await _requireLocal(id);
+    await _db.transaction(() async {
+      await _writeLocal(id, extras);
+      await outbox?.enqueue(OutboxKind.updateJourney, key, params);
+    });
     try {
-      final row = await ctx.remote!.rpc(
-        'update_journey',
-        updateJourneyParams(id, extras),
-      );
+      final row = await ctx.remote!.rpc('update_journey', params);
+      await outbox?.cancel(key, kind: OutboxKind.updateJourney);
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
     } on OurneyException catch (e) {
       if (e.error == OurneyErrorCode.invalid ||
           e.error == OurneyErrorCode.forbidden) {
+        await outbox?.cancel(key, kind: OutboxKind.updateJourney);
+        await _restoreExtras(previous);
         rethrow;
       }
-      final outbox = ctx.outbox;
-      if (outbox != null) {
-        await outbox.enqueue(
-          OutboxKind.updateJourney,
-          '${journeyKey(id)}:extras',
-          updateJourneyParams(id, extras),
-        );
-        unawaited(outbox.flush());
-      }
+      if (outbox != null) unawaited(outbox.flush());
     }
   }
 
+  /// Puts the create-flow columns back to what [row] held (rejected extras).
+  Future<void> _restoreExtras(JourneyRow row) =>
+      (_db.update(_db.journeys)..where((t) => t.id.equals(row.id))).write(
+        JourneysCompanion(
+          layout: Value(row.layout),
+          cover: Value(row.cover),
+          color: Value(row.color),
+          reminderTime: Value(row.reminderTime),
+          dna: Value(row.dna),
+        ),
+      );
+
   /// Retry of a create whose row exists: re-apply the extras the row lacks
-  /// (and that are not already queued). A rejection is not raised again.
+  /// (and that are not already queued). A rejection is raised again.
   Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
@@ -187,8 +200,9 @@ class DataJourneyRepository implements JourneyRepository {
         (extras.cover == null || row.cover == extras.cover) &&
         (extras.color == null || row.color == extras.color) &&
         (extras.reminderTime == null ||
-            row.reminderTime == extras.reminderTime) &&
-        (extras.dna == null || row.dna == jsonEncode(extras.dna));
+            _normalizedTime(row.reminderTime) ==
+                _normalizedTime(extras.reminderTime)) &&
+        (extras.dna == null || _sameJson(row.dna, extras.dna));
     if (complete) return;
     final queued = await ctx.outbox?.pendingKeys() ?? const <String>{};
     if (queued.contains('${journeyKey(row.id)}:extras')) return;
@@ -196,12 +210,33 @@ class DataJourneyRepository implements JourneyRepository {
       await _writeLocal(row.id, extras);
       return;
     }
+    await _applyExtras(row.id, d);
+  }
+
+  /// `HH:MM` of a time that the server may return as `HH:MM:SS`.
+  static String? _normalizedTime(String? t) =>
+      t != null && t.length >= 5 ? t.substring(0, 5) : t;
+
+  /// Structural equality of a stored JSON string and a decoded value.
+  static bool _sameJson(String? stored, Object? value) {
+    if (stored == null) return false;
     try {
-      await _applyExtras(row.id, d);
-    } on OurneyException {
-      // Already surfaced on the first attempt; the journey exists.
+      return _canonical(jsonDecode(stored)) == _canonical(value);
+    } on FormatException {
+      return false;
     }
   }
+
+  static String _canonical(Object? v) => jsonEncode(_sorted(v));
+
+  static Object? _sorted(Object? v) => switch (v) {
+    Map() => {
+      for (final k in (v.keys.map((k) => '$k').toList()..sort()))
+        k: _sorted(v[k]),
+    },
+    List() => [for (final e in v) _sorted(e)],
+    _ => v,
+  };
 
   static final RegExp _hhmm = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
 

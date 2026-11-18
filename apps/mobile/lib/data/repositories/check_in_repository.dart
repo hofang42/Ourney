@@ -54,7 +54,7 @@ class DataCheckInRepository implements CheckInRepository {
 
   @override
   Future<CheckIn> submit(CheckInDraft draft) async {
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     final journey = await (_db.select(
       _db.journeys,
     )..where((t) => t.id.equals(draft.journeyId))).getSingleOrNull();

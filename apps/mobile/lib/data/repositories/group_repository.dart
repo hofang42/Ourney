@@ -213,7 +213,7 @@ class DataGroupRepository implements GroupRepository {
       throw const GroupException.of(OurneyErrorCode.invalid);
     }
     await _assertActive(checkInId);
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     await _db
         .into(_db.reactions)
         .insertOnConflictUpdate(
@@ -231,7 +231,7 @@ class DataGroupRepository implements GroupRepository {
   Future<void> unreact(String checkInId) async {
     _remote();
     await _assertActive(checkInId);
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     await (_db.delete(
       _db.reactions,
     )..where((t) => t.checkInId.equals(checkInId) & t.userId.equals(me))).go();
