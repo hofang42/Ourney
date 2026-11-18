@@ -632,18 +632,6 @@ abstract class ProfileL10n {
   /// **'Dùng được'**
   String get profile_usernameAvailable;
 
-  /// Semantics of one avatar color swatch.
-  ///
-  /// In vi, this message translates to:
-  /// **'Màu đại diện {n}'**
-  String profile_avatarColorN(int n);
-
-  /// Semantics of the avatar color row.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chọn màu ảnh đại diện'**
-  String get profile_avatarColors;
-
   /// No description provided for @profile_settings_title.
   ///
   /// In vi, this message translates to:

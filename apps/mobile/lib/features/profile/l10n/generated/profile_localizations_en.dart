@@ -305,14 +305,6 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_usernameAvailable => 'Available';
 
   @override
-  String profile_avatarColorN(int n) {
-    return 'Avatar color $n';
-  }
-
-  @override
-  String get profile_avatarColors => 'Choose an avatar color';
-
-  @override
   String get profile_settings_title => 'settings.';
 
   @override

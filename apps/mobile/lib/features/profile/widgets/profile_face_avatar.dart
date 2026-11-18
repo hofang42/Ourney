@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../ui/ui.dart';
 
-/// Avatar swatch colors of ProfileSetupFlow (`avatarColors` in flow.tsx).
+/// Avatar colors of ProfileSetupFlow (`avatarColors` in flow.tsx). Only the
+/// first is used: there is no saved avatar color (U11).
 const List<Color> profileAvatarColors = [
   Color(0xFF7EE8A2),
   Color(0xFFFFD84D),
@@ -101,73 +102,6 @@ class ProfileFaceAvatar extends StatelessWidget {
                 ),
               ],
             ),
-    );
-  }
-}
-
-/// `.avatar-options`: the six color swatches (48dp, 2dp `#1A1A1A` outline;
-/// the selected one 3dp with a 2dp ink hard shadow and a check).
-class ProfileAvatarSwatches extends StatelessWidget {
-  const ProfileAvatarSwatches({
-    required this.selected,
-    required this.onSelected,
-    required this.label,
-    required this.itemLabel,
-    super.key,
-  });
-
-  final int selected;
-  final ValueChanged<int> onSelected;
-  final String label;
-  final String Function(int n) itemLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Semantics(
-      container: true,
-      label: label,
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        spacing: 7,
-        runSpacing: 7,
-        children: [
-          for (var i = 0; i < profileAvatarColors.length; i++)
-            UiPressable(
-              key: ValueKey('profile-avatar-color-$i'),
-              onPressed: () => onSelected(i),
-              selected: selected == i,
-              semanticLabel: itemLabel(i + 1),
-              excludeChildSemantics: true,
-              borderRadius: BorderRadius.circular(UiRadius.capsule),
-              minSize: const Size.square(48),
-              child: Container(
-                width: 48,
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: profileAvatarColors[i],
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _faceInk,
-                    width: selected == i ? 3 : UiBorder.standard,
-                  ),
-                  boxShadow: selected == i
-                      ? UiShadow.hard(ui.outline, UiShadow.tiny)
-                      : null,
-                ),
-                child: selected == i
-                    ? const OurneyIcon(
-                        name: 'check',
-                        size: 17,
-                        flat: true,
-                        color: _faceInk,
-                      )
-                    : null,
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

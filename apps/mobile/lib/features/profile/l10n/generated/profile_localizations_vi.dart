@@ -303,14 +303,6 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_usernameAvailable => 'Dùng được';
 
   @override
-  String profile_avatarColorN(int n) {
-    return 'Màu đại diện $n';
-  }
-
-  @override
-  String get profile_avatarColors => 'Chọn màu ảnh đại diện';
-
-  @override
   String get profile_settings_title => 'cài đặt.';
 
   @override

@@ -92,19 +92,6 @@
   "@profile_usernameAvailable": {
     "description": "Status under the username field when it can be used."
   },
-  "profile_avatarColorN": "Avatar color {n}",
-  "@profile_avatarColorN": {
-    "description": "Semantics of one avatar color swatch.",
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "profile_avatarColors": "Choose an avatar color",
-  "@profile_avatarColors": {
-    "description": "Semantics of the avatar color row."
-  },
   "profile_settings_title": "settings.",
   "profile_settings_back": "Back",
   "profile_settings_secAccount": "account",
