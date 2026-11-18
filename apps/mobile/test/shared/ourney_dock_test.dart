@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_dock.dart';
+import 'package:ourney/ui/components/dock_tab.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -164,5 +166,156 @@ void main() {
       ),
     );
     handle.dispose();
+  });
+
+  testWidgets(
+    'selection pill fully contains icon and label without icon/label overlap '
+    'at 360, 393, and 430pt across all 4 tabs (vi and en)',
+    (tester) async {
+      const widths = [360.0, 393.0, 430.0];
+      const tabs = [
+        (AppDock.journeysIndex, 'dock-journeys'),
+        (AppDock.groupsIndex, 'dock-groups'),
+        (AppDock.activityIndex, 'dock-activity'),
+        (AppDock.profileIndex, 'dock-profile'),
+      ];
+      final prefs = await testPrefs();
+      final container = ProviderContainer(
+        overrides: baseOverrides(
+          prefs: prefs,
+          journeys: FakeJourneyRepository(),
+        ),
+      );
+      addTearDown(container.dispose);
+      addTearDown(tester.view.reset);
+      tester.view.devicePixelRatio = 1;
+
+      for (final locale in const [Locale('vi'), Locale('en')]) {
+        for (final width in widths) {
+          tester.view.physicalSize = Size(width, 844);
+          for (final (tabIndex, tabKey) in tabs) {
+            await tester.pumpWidget(
+              UncontrolledProviderScope(
+                container: container,
+                child: testApp(
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: AppDock(currentIndex: tabIndex, onSelect: (_) {}),
+                  ),
+                  locale: locale,
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+
+            final pillRect = tester.getRect(
+              find.byKey(const ValueKey('dock-selection-pill')),
+            );
+            final tabFinder = find.byKey(ValueKey(tabKey));
+            final iconRect = tester.getRect(
+              find.descendant(of: tabFinder, matching: find.byType(OurneyIcon)),
+            );
+            final textRect = tester.getRect(
+              find.descendant(of: tabFinder, matching: find.byType(Text)),
+            );
+            final ctx = '${locale.languageCode} ${width}pt $tabKey';
+
+            expect(
+              iconRect.left,
+              greaterThanOrEqualTo(pillRect.left),
+              reason: 'icon left inside pill ($ctx)',
+            );
+            expect(
+              iconRect.top,
+              greaterThanOrEqualTo(pillRect.top),
+              reason: 'icon top inside pill ($ctx)',
+            );
+            expect(
+              iconRect.right,
+              lessThanOrEqualTo(pillRect.right),
+              reason: 'icon right inside pill ($ctx)',
+            );
+            expect(
+              iconRect.bottom,
+              lessThanOrEqualTo(pillRect.bottom),
+              reason: 'icon bottom inside pill ($ctx)',
+            );
+
+            expect(
+              textRect.left,
+              greaterThanOrEqualTo(pillRect.left),
+              reason: 'label left inside pill ($ctx)',
+            );
+            expect(
+              textRect.top,
+              greaterThanOrEqualTo(pillRect.top),
+              reason: 'label top inside pill ($ctx)',
+            );
+            expect(
+              textRect.right,
+              lessThanOrEqualTo(pillRect.right),
+              reason: 'label right inside pill ($ctx)',
+            );
+            expect(
+              textRect.bottom,
+              lessThanOrEqualTo(pillRect.bottom),
+              reason: 'label bottom inside pill ($ctx)',
+            );
+
+            expect(
+              iconRect.overlaps(textRect),
+              isFalse,
+              reason: 'icon does not overlap label ($ctx)',
+            );
+          }
+        }
+      }
+    },
+  );
+
+  testWidgets('dock labels are never cut at 360pt (en and vi)', (tester) async {
+    final prefs = await testPrefs();
+    final container = ProviderContainer(
+      overrides: baseOverrides(prefs: prefs, journeys: FakeJourneyRepository()),
+    );
+    addTearDown(container.dispose);
+    addTearDown(tester.view.reset);
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(360, 780);
+
+    for (final locale in const [Locale('en'), Locale('vi')]) {
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: testApp(
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: AppDock(
+                currentIndex: AppDock.journeysIndex,
+                onSelect: (_) {},
+              ),
+            ),
+            locale: locale,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+
+      final richTexts = find.descendant(
+        of: find.byType(DockTab),
+        matching: find.byType(RichText),
+      );
+      expect(richTexts, findsWidgets);
+      for (final element in richTexts.evaluate()) {
+        final render = element.renderObject! as RenderParagraph;
+        expect(
+          render.didExceedMaxLines,
+          isFalse,
+          reason: '${locale.languageCode}: ${render.text.toPlainText()}',
+        );
+      }
+    }
   });
 }

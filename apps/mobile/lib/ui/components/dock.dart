@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
@@ -16,15 +17,16 @@ import 'skin_scope.dart';
 const Curve _pillCurve = Cubic(0.2, 0.9, 0.3, 1.2);
 const Duration _pillDuration = Duration(milliseconds: 280);
 const Duration _longPress = Duration(milliseconds: 400);
-const double _pillW = 68;
-const double _pillInset = 4; // clear gap between the pill and the dock edge
-const double _pillH = 52;
-// V2 `.app-dock` is 76 high around the 52 capsule: 10dp of air inside the 2dp
+const double _pillW = 78;
+const double _pillH = 56;
+// V2 `.app-dock` is 76 high around the 56 capsule: 10dp of air inside the 2dp
 // border (8dp under the capsule's 2dp shadow). At 64 the capsule sat 4dp from
 // the border and its shadow touched it (bug #11).
 const double _dockH = 76;
 const double _cameraDockH = 92;
-const double _centerSlot = 86;
+const double _snapCenterSlot = 64;
+const double _cameraCenterSlot = 82;
+const double _dockSideInset = 10;
 
 /// One tab of the [UiDock]. Give it a drawn [glyph] (an [OurneyIcon] name such
 /// as `journeys`, `squad`, `activity`, `profile`) or, for older callers, a
@@ -169,16 +171,17 @@ class UiDock extends StatelessWidget {
         ? _LongPress(onLongPress: onShutterLongPress!, child: centerChild)
         : centerChild;
 
+    final centerSlotWidth = camera ? _cameraCenterSlot : _snapCenterSlot;
+
     final bar = LayoutBuilder(
       builder: (context, c) {
-        final slotW = (c.maxWidth - _centerSlot) / items.length;
-        final pillW = _pillW < slotW - 2 * _pillInset
-            ? _pillW
-            : slotW - 2 * _pillInset;
+        final slotW = (c.maxWidth - centerSlotWidth) / items.length;
+        final pillW = math.min(_pillW, slotW);
+        final tabMaxW = math.min(slotW, math.max(UiSize.tap, pillW - 12));
         double slotX(int i) => i < leftItems.length
             ? i * slotW
             : leftItems.length * slotW +
-                  _centerSlot +
+                  centerSlotWidth +
                   (i - leftItems.length) * slotW;
         final pillFill = accent ?? ui.accent;
         return Stack(
@@ -211,22 +214,32 @@ class UiDock extends StatelessWidget {
               children: [
                 for (final item in leftItems)
                   Expanded(
-                    child: DockTab(
-                      item: item,
-                      camera: camera,
-                      onAccent: onAccent,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: tabMaxW),
+                        child: DockTab(
+                          item: item,
+                          camera: camera,
+                          onAccent: onAccent,
+                        ),
+                      ),
                     ),
                   ),
                 SizedBox(
-                  width: _centerSlot,
+                  width: centerSlotWidth,
                   child: Center(child: centerSlot),
                 ),
                 for (final item in rightItems)
                   Expanded(
-                    child: DockTab(
-                      item: item,
-                      camera: camera,
-                      onAccent: onAccent,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: tabMaxW),
+                        child: DockTab(
+                          item: item,
+                          camera: camera,
+                          onAccent: onAccent,
+                        ),
+                      ),
                     ),
                   ),
               ],
@@ -240,8 +253,8 @@ class UiDock extends StatelessWidget {
     // the full available height (the dock filled the whole screen).
     final surface = Container(
       height: height,
-      padding: const EdgeInsets.symmetric(
-        horizontal: UiSpace.xs + _pillInset,
+      padding: EdgeInsets.symmetric(
+        horizontal: camera ? 8 : _dockSideInset,
         vertical: 6,
       ),
       // Camera: the dark dock tint lives here so glass stays neutral.
@@ -300,7 +313,7 @@ class UiDock extends StatelessWidget {
       child: Center(
         heightFactor: 1,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 358 + 16),
+          constraints: const BoxConstraints(maxWidth: 380 + 16),
           // UiGlass draws the outside-only hard shadow itself.
           child: glass,
         ),

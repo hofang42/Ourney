@@ -99,16 +99,19 @@ class DockTab extends StatelessWidget {
             children: [
               glyph,
               const SizedBox(height: 2),
-              Text(
-                item.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: UiText.body(
-                  size: 10.5,
-                  weight: active ? FontWeight.w700 : FontWeight.w600,
-                  height: 1.35,
-                  color: labelColor,
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  item.label,
+                  maxLines: 1,
+                  softWrap: false,
+                  textAlign: TextAlign.center,
+                  style: UiText.body(
+                    size: 10.5,
+                    weight: active ? FontWeight.w700 : FontWeight.w600,
+                    height: 1.35,
+                    color: labelColor,
+                  ),
                 ),
               ),
             ],
