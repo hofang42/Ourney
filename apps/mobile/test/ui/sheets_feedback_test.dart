@@ -63,6 +63,59 @@ void main() {
     expect(find.text('Nội dung'), findsNothing);
   });
 
+  testWidgets('sheet closes when tapping scrim at (20, 20)', (tester) async {
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => Center(
+            child: TextButton(
+              onPressed: () => showUiSheet<void>(
+                context: context,
+                builder: (_) => const Text('Ngắn'),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ngắn'), findsOneWidget);
+
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(find.text('Ngắn'), findsNothing);
+  });
+
+  testWidgets('sheet with dismissible: false stays open when tapping scrim', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      app(
+        Builder(
+          builder: (context) => Center(
+            child: TextButton(
+              onPressed: () => showUiSheet<void>(
+                context: context,
+                dismissible: false,
+                builder: (_) => const Text('Không đóng'),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    expect(find.text('Không đóng'), findsOneWidget);
+
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+    expect(find.text('Không đóng'), findsOneWidget);
+  });
+
   testWidgets('sheet default accent is brand', (tester) async {
     await tester.pumpWidget(
       app(const UiSheet(child: Text('x')), brightness: Brightness.dark),
