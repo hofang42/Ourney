@@ -169,6 +169,29 @@ void main() {
       expect(location(c), AppRoutes.capture);
     });
 
+    testWidgets('legal links open terms and privacy, inline (U13)', (
+      tester,
+    ) async {
+      final c = await pumpBackendApp(tester, auth: RecordingAuthRepository());
+      final screen = tester.getSize(find.byType(AuthScreen)).width;
+      expect(
+        tester.getSize(byKey('auth-terms')).width,
+        lessThan(screen * 0.75),
+      );
+      await tester.ensureVisible(byKey('auth-terms'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('auth-terms'));
+      await tester.pumpAndSettle();
+      expect(location(c), '/safety/eula');
+      c.read(routerProvider).pop();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(byKey('auth-privacy'));
+      await tester.pumpAndSettle();
+      await tester.tap(byKey('auth-privacy'));
+      await tester.pumpAndSettle();
+      expect(location(c), '/safety/privacy');
+    });
+
     testWidgets('no overflow at 2x text', (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);

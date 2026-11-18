@@ -11,6 +11,7 @@ import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import '../onboarding/onboarding_providers.dart';
 import '../profile/routes.dart' show profileSetupPath;
+import '../safety/safety_paths.dart';
 import 'auth_errors.dart';
 import 'l10n/generated/auth_localizations.dart';
 import 'phone_format.dart';
@@ -428,7 +429,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               and: l10n.auth_legalAnd,
               terms: l10n.auth_terms,
               privacy: l10n.auth_privacy,
-              onOpen: () => context.push(AppRoutes.safety),
+              onTerms: () => context.push(SafetyPaths.eula),
+              onPrivacy: () => context.push(SafetyPaths.privacy),
             ),
           ],
         ],
@@ -770,14 +772,16 @@ class _Legal extends StatelessWidget {
     required this.and,
     required this.terms,
     required this.privacy,
-    required this.onOpen,
+    required this.onTerms,
+    required this.onPrivacy,
   });
 
   final String intro;
   final String and;
   final String terms;
   final String privacy;
-  final VoidCallback onOpen;
+  final VoidCallback onTerms;
+  final VoidCallback onPrivacy;
 
   @override
   Widget build(BuildContext context) {
@@ -793,7 +797,8 @@ class _Legal extends StatelessWidget {
           label: terms,
           size: 13,
           color: ui.ink,
-          onPressed: onOpen,
+          expand: false,
+          onPressed: onTerms,
         ),
         Text(and, style: muted),
         UiTextAction(
@@ -801,7 +806,8 @@ class _Legal extends StatelessWidget {
           label: privacy,
           size: 13,
           color: ui.ink,
-          onPressed: onOpen,
+          expand: false,
+          onPressed: onPrivacy,
         ),
       ],
     );

@@ -228,6 +228,7 @@ class UiTextAction extends StatelessWidget {
     this.color,
     this.size = 15,
     this.alignment = Alignment.center,
+    this.expand = true,
     super.key,
   });
 
@@ -238,31 +239,37 @@ class UiTextAction extends StatelessWidget {
   final double size;
   final AlignmentGeometry alignment;
 
+  /// `false` hugs the label instead of taking the full width, e.g. inline
+  /// links inside a [Wrap] sentence or two actions side by side.
+  final bool expand;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final base = color ?? ui.inkSoft;
+    Widget box = Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
+      constraints: const BoxConstraints(minHeight: UiSize.tap),
+      child: Text(
+        label,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: UiText.body(
+          size: size,
+          weight: FontWeight.w700,
+          height: 1.35,
+          color: onPressed == null ? ui.inkMuted : base,
+        ).copyWith(decoration: underline ? TextDecoration.underline : null),
+      ),
+    );
+    if (!expand) box = IntrinsicWidth(child: box);
     return UiPressable(
       onPressed: onPressed,
       semanticLabel: label,
       excludeChildSemantics: true,
-      child: Container(
-        alignment: alignment,
-        padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
-        constraints: const BoxConstraints(minHeight: UiSize.tap),
-        child: Text(
-          label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: UiText.body(
-            size: size,
-            weight: FontWeight.w700,
-            height: 1.35,
-            color: onPressed == null ? ui.inkMuted : base,
-          ).copyWith(decoration: underline ? TextDecoration.underline : null),
-        ),
-      ),
+      child: box,
     );
   }
 }
