@@ -296,8 +296,12 @@ class _MemberChip extends ConsumerWidget {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
     final checked = member.checkedIn;
-    final caption = checked
-        ? _hhmm(member.todayCheckIn!.capturedAt)
+    final shot = member.todayCheckIn;
+    // A reported photo (L7) still counts, without its time.
+    final caption = shot != null
+        ? _hhmm(shot.capturedAt)
+        : checked
+        ? l10n.groups_statusDone
         : l10n.groups_memberWaiting;
     return UiPressable(
       key: ValueKey('squad-member-${member.userId}'),
@@ -443,11 +447,13 @@ class _MemberSheet extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      checked
-                          ? l10n.groups_memberCheckedAt(
-                              _hhmm(member.todayCheckIn!.capturedAt),
-                            )
-                          : l10n.groups_memberNotYetToday,
+                      switch (member.todayCheckIn) {
+                        final shot? => l10n.groups_memberCheckedAt(
+                          _hhmm(shot.capturedAt),
+                        ),
+                        null when checked => l10n.groups_doneSection,
+                        null => l10n.groups_memberNotYetToday,
+                      },
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: UiText.body(

@@ -520,7 +520,9 @@ class ShareConsent {
   final String journeyTitle;
   final PersonSummary member;
   final ShareConsentStatus status;
-  final PersonSummary requestedBy;
+
+  /// Null once the requester deleted their account (`on delete set null`).
+  final PersonSummary? requestedBy;
   final DateTime? decidedAt;
 }
 

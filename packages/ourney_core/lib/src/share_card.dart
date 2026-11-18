@@ -6,8 +6,9 @@ enum Milestone { sevenDays, thirtyDays, completed }
 /// Completion wins over streak milestones; 7/30 fire on the exact day.
 Milestone? milestoneFor(StreakSummary streak, Journey journey) {
   final duration = journey.durationDays;
-  if (duration != null && streak.completed >= duration)
+  if (duration != null && streak.completed >= duration) {
     return Milestone.completed;
+  }
   if (streak.current == 30) return Milestone.thirtyDays;
   if (streak.current == 7) return Milestone.sevenDays;
   return null;

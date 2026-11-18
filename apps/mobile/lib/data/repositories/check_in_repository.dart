@@ -34,6 +34,9 @@ class DataCheckInRepository implements CheckInRepository {
       ..orderBy([
         (t) => OrderingTerm.desc(t.localDate),
         (t) => OrderingTerm.asc(t.userId),
+        // Several photos a day (0014): newest first, stable on ties.
+        (t) => OrderingTerm.desc(t.capturedAt),
+        (t) => OrderingTerm.desc(t.id),
       ]);
     return q.watch().map((rows) => [for (final r in rows) _toModel(r)]);
   }
@@ -56,7 +59,13 @@ class DataCheckInRepository implements CheckInRepository {
       _db.journeys,
     )..where((t) => t.id.equals(draft.journeyId))).getSingleOrNull();
     if (journey == null) throw const OurneyException(OurneyErrorCode.notFound);
-    if (journey.status != JourneyStatus.active.wireName) {
+    // Same rule as the `check_ins_before_write` trigger (0006): the owner of a
+    // retold journey (origin `imported`, created `ended`) fills its dates in,
+    // so it skips the "journey must be active" rule.
+    final imported =
+        journey.origin == JourneyOrigin.imported.wireName &&
+        journey.ownerId == me;
+    if (!imported && journey.status != JourneyStatus.active.wireName) {
       throw const OurneyException(OurneyErrorCode.ended);
     }
     if (validateCaption(draft.caption) != null ||
@@ -69,7 +78,14 @@ class DataCheckInRepository implements CheckInRepository {
     }
     final localDate = ctx.clock.localDate(draft.capturedAt, journey.timezone);
     final duration = journey.durationDays;
-    if (duration != null &&
+    if (imported) {
+      // Retold photos must land inside the journey's dates.
+      final last = journey.startDate.addDays((duration ?? 1) - 1);
+      if (localDate.compareTo(journey.startDate) < 0 ||
+          localDate.isAfter(last)) {
+        throw const OurneyException(OurneyErrorCode.invalidCapturedAt);
+      }
+    } else if (duration != null &&
         localDate.isAfter(journey.startDate.addDays(duration - 1))) {
       throw const OurneyException(OurneyErrorCode.ended);
     }

@@ -7,6 +7,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../app/redirect.dart' show AuthStatus;
 import '../../../shared/time_zones.dart';
 import '../domain/reminder_plan.dart';
 import '../l10n/generated/reminders_localizations.dart';
@@ -78,6 +79,11 @@ class ReminderScheduler {
 
   /// The notifications that should be pending right now.
   Future<List<PlannedNotification>> buildPlan() async {
+    // Signed out: nothing of the previous account may still fire (its cache
+    // is being wiped).
+    if (_ref.read(authStatusProvider) == AuthStatus.signedOut) {
+      return const [];
+    }
     ensureTimeZonesLoaded();
     final settings = _ref.read(reminderSettingsProvider);
     final streakAlerts = _ref.read(streakAlertsEnabledProvider);

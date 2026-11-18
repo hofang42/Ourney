@@ -81,7 +81,16 @@ class DataJourneyRepository implements JourneyRepository {
       final existing = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(clientId))).getSingleOrNull();
-      if (existing != null) return journeyFromRow(existing);
+      if (existing != null) {
+        // A-B12: the earlier attempt may have died between `create_journey`
+        // and the extras; put back whatever the row is missing.
+        await _reapplyMissingExtras(existing, draft);
+        return journeyFromRow(
+          await (_db.select(
+            _db.journeys,
+          )..where((t) => t.id.equals(clientId))).getSingle(),
+        );
+      }
     }
     final id = draft.id ?? ctx.newId();
     final visibility = normalizedVisibility(draft.kind, draft.visibility);
@@ -136,23 +145,61 @@ class DataJourneyRepository implements JourneyRepository {
     return u.isEmpty ? null : u;
   }
 
-  /// `create_journey` has no edit fields: send them right after (queued when
-  /// offline) so the row carries the create-flow answers.
+  /// `create_journey` has no edit fields: send them right after so the row
+  /// carries the create-flow answers. They are written locally first and
+  /// queued through the outbox on any retryable failure, so a transient error
+  /// never loses them nor fails a create that already landed. Only a
+  /// rejection (invalid / forbidden) is surfaced.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
+    await _writeLocal(id, extras);
     try {
       final row = await ctx.remote!.rpc(
         'update_journey',
         updateJourneyParams(id, extras),
       );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
+    } on OurneyException catch (e) {
+      if (e.error == OurneyErrorCode.invalid ||
+          e.error == OurneyErrorCode.forbidden) {
+        rethrow;
+      }
+      final outbox = ctx.outbox;
+      if (outbox != null) {
+        await outbox.enqueue(
+          OutboxKind.updateJourney,
+          '${journeyKey(id)}:extras',
+          updateJourneyParams(id, extras),
+        );
+        unawaited(outbox.flush());
+      }
+    }
+  }
+
+  /// Retry of a create whose row exists: re-apply the extras the row lacks
+  /// (and that are not already queued). A rejection is not raised again.
+  Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
+    final extras = _extrasUpdate(d);
+    if (extras == null) return;
+    final complete =
+        (extras.layout == null || row.layout == extras.layout!.wireName) &&
+        (extras.cover == null || row.cover == extras.cover) &&
+        (extras.color == null || row.color == extras.color) &&
+        (extras.reminderTime == null ||
+            row.reminderTime == extras.reminderTime) &&
+        (extras.dna == null || row.dna == jsonEncode(extras.dna));
+    if (complete) return;
+    final queued = await ctx.outbox?.pendingKeys() ?? const <String>{};
+    if (queued.contains('${journeyKey(row.id)}:extras')) return;
+    if (ctx.remote == null) {
+      await _writeLocal(row.id, extras);
+      return;
+    }
+    try {
+      await _applyExtras(row.id, d);
     } on OurneyException {
-      await ctx.outbox?.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(id)}:extras',
-        updateJourneyParams(id, extras),
-      );
+      // Already surfaced on the first attempt; the journey exists.
     }
   }
 
@@ -193,13 +240,28 @@ class DataJourneyRepository implements JourneyRepository {
       ctx.requireRemote();
     }
     // Local-only or offline solo: write now, replay through the outbox.
+    await _writeLocal(journeyId, update);
+    final outbox = ctx.outbox;
+    if (outbox != null) {
+      await outbox.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(journeyId)}:edit',
+        updateJourneyParams(journeyId, update),
+      );
+      unawaited(outbox.flush());
+    }
+    return journeyFromRow(await _requireLocal(journeyId));
+  }
+
+  /// Applies [update] to the cached row (what `update_journey` would store).
+  Future<void> _writeLocal(String journeyId, JourneyUpdate update) {
     Value<T?> pick<T>(String key, T? v, Value<T?> Function(T) wrap) =>
         update.clear.contains(key)
         ? const Value(null)
         : v == null
         ? const Value.absent()
         : wrap(v);
-    await (_db.update(
+    return (_db.update(
       _db.journeys,
     )..where((t) => t.id.equals(journeyId))).write(
       JourneysCompanion(
@@ -221,16 +283,6 @@ class DataJourneyRepository implements JourneyRepository {
         ),
       ),
     );
-    final outbox = ctx.outbox;
-    if (outbox != null) {
-      await outbox.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(journeyId)}:edit',
-        updateJourneyParams(journeyId, update),
-      );
-      unawaited(outbox.flush());
-    }
-    return journeyFromRow(await _requireLocal(journeyId));
   }
 
   Future<Journey> _insertLocal(
@@ -265,9 +317,7 @@ class DataJourneyRepository implements JourneyRepository {
               timezone: d.timezone,
               visibility: visibility.wireName,
               status: JourneyStatus.active.wireName,
-              maxMembers: Value(
-                d.kind == JourneyKind.solo ? 1 : maxGroupMembers,
-              ),
+              maxMembers: Value(maxMembersForDraft(d)),
             ),
           );
       await _insertMembership(id, me, d.hideMetricDefault);
