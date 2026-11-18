@@ -34,7 +34,7 @@ class AppShell extends StatelessWidget {
     final onCamera = navigationShell.currentIndex == captureIndex;
     return Scaffold(
       backgroundColor: context.ui.bg,
-      extendBody: false,
+      extendBody: true,
       body: navigationShell,
       bottomNavigationBar: onCamera
           ? null

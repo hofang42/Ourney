@@ -1456,6 +1456,11 @@
     }
   },
   "journeys_createDeckChosen": "Đã chọn",
+  "journeys_deckPrivate": "Riêng tư",
+  "journeys_deckHudStudy": "45 PHÚT",
+  "journeys_deckHudFlexer": "5,2 KM · 5:48",
+  "journeys_deckHudMemory": "CUỘN PHIM 12/24",
+  "journeys_deckHudCouple": "hai nửa · một ngày",
   "journeys_createDeckPrev": "Thẻ trước",
   "journeys_createDeckNext": "Thẻ sau",
   "journeys_createDeckCounter": "{n}/{total}",

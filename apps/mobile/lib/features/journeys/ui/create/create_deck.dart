@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 
 import '../../../../ui/ui.dart';
 import '../../l10n/generated/journeys_localizations.dart';
+import 'create_deck_previews.dart';
 
 /// One card of the type deck.
 @immutable
 class CreateDeckItem {
   const CreateDeckItem({
     required this.keyName,
+    required this.skinId,
     required this.title,
     required this.tagline,
     required this.meta,
@@ -18,6 +20,7 @@ class CreateDeckItem {
   });
 
   final String keyName;
+  final String skinId;
   final String title;
   final String tagline;
   final String meta;
@@ -98,6 +101,10 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final n = widget.items.length;
+    final cardHeight = (MediaQuery.sizeOf(context).height * 0.52).clamp(
+      340.0,
+      460.0,
+    );
     return Column(
       key: const ValueKey('create-deck'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,6 +142,7 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
                       if (i > 0) const SizedBox(width: _gap),
                       SizedBox(
                         width: _cardWidth,
+                        height: cardHeight,
                         child: _DeckCard(
                           item: widget.items[i],
                           focused: i == _focused,
@@ -217,74 +225,156 @@ class _DeckCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ui = context.ui;
-    return UiPressable(
-      key: ValueKey('template-${item.keyName}'),
-      onPressed: onTap,
-      selected: focused,
-      semanticLabel: '$semantic, ${item.tagline}',
-      excludeChildSemantics: true,
-      borderRadius: BorderRadius.circular(UiRadius.card),
-      shadowColor: ui.outline,
-      shadowOffset: focused ? 4 : 0,
-      child: Container(
-        padding: const EdgeInsets.all(UiSpace.lg),
-        decoration: BoxDecoration(
-          color: ui.surface,
-          borderRadius: BorderRadius.circular(UiRadius.card),
-          border: Border.all(color: ui.outline, width: focused ? 3 : 2),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                UiTypeBadge(type: item.badge, size: 56),
-                const Spacer(),
-                if (focused)
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const OurneyIcon(name: 'check', size: 15, flat: true),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            chosenLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: UiText.eyebrow(color: ui.ink),
-                          ),
-                        ),
-                      ],
+    final disableAnimations = MediaQuery.disableAnimationsOf(context);
+    final duration = disableAnimations
+        ? Duration.zero
+        : const Duration(milliseconds: 200);
+    return UiSkinScope(
+      skinId: item.skinId,
+      child: Builder(
+        builder: (context) {
+          final ui = context.ui;
+          final headingFont = UiSkinScope.of(context).headingFont;
+          return AnimatedScale(
+            scale: focused ? 1.0 : 0.88,
+            duration: duration,
+            curve: Curves.easeOut,
+            child: AnimatedOpacity(
+              opacity: focused ? 1.0 : 0.66,
+              duration: duration,
+              curve: Curves.easeOut,
+              child: UiPressable(
+                key: ValueKey('template-${item.keyName}'),
+                onPressed: onTap,
+                selected: focused,
+                semanticLabel: '$semantic, ${item.tagline}',
+                excludeChildSemantics: true,
+                borderRadius: BorderRadius.circular(UiRadius.card),
+                shadowColor: ui.outline,
+                shadowOffset: focused ? 4 : 0,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: ui.surface,
+                    borderRadius: BorderRadius.circular(UiRadius.card),
+                    border: Border.all(
+                      color: ui.outline,
+                      width: focused ? 3 : 2,
                     ),
                   ),
-              ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          UiTypeBadge(type: item.badge, size: 48),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: UiText.heading(
+                                font: headingFont,
+                                size: 18,
+                                weight: 700,
+                                color: ui.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Expanded(
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(vertical: 16),
+                          clipBehavior: Clip.hardEdge,
+                          decoration: BoxDecoration(
+                            color: ui.ink.withValues(alpha: 0.05),
+                            border: Border.all(color: ui.ink, width: 1.5),
+                          ),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: CreateDeckPreview(
+                                  key: ValueKey('deck-preview-${item.skinId}'),
+                                  skinId: item.skinId,
+                                ),
+                              ),
+                              if (focused)
+                                PositionedDirectional(
+                                  top: 8,
+                                  end: 8,
+                                  child: _ChosenChip(label: chosenLabel),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      CreateDeckHud(
+                        key: ValueKey('deck-hud-${item.skinId}'),
+                        skinId: item.skinId,
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        item.tagline,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 14,
+                          weight: FontWeight.w700,
+                          height: 1.35,
+                          color: ui.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        item.meta,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.eyebrow(color: ui.inkMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: UiSpace.md),
-            Text(
-              item.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.h2(color: ui.ink, size: 22).copyWith(height: 1.3),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              item.tagline,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(size: 15, height: 1.45, color: ui.inkMuted),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            Text(
-              item.meta,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.eyebrow(color: ui.inkMuted),
-            ),
-          ],
-        ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// V2 `.create-focused-badge`: the "✓ Chosen" pill on the focused card.
+class _ChosenChip extends StatelessWidget {
+  const _ChosenChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    return Container(
+      key: const ValueKey('create-deck-chosen'),
+      constraints: const BoxConstraints(minHeight: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: ui.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: ui.ink, width: 2),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const OurneyIcon(name: 'check', size: 15, flat: true),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            style: UiText.eyebrow(color: ui.ink),
+          ),
+        ],
       ),
     );
   }

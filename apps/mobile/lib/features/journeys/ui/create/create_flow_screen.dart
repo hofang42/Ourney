@@ -1,10 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,66 +20,16 @@ import '../../domain/journey_form.dart';
 import '../../domain/journey_time.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_errors.dart';
-import '../widgets/departure_ticket.dart';
-import 'create_deck.dart';
-import 'create_widgets.dart';
+import 'create_flow_header.dart';
+import 'create_type_option.dart';
 import 'dna_pages.dart';
 import 'dna_questions.dart';
-import 'dna_text.dart';
-
-/// Who the journey is with (V2 create step 3).
-enum CreateWho { solo, group, couple }
-
-/// One journey type of step 1 (V2 `createTypes`).
-class CreateTypeOption {
-  const CreateTypeOption({
-    required this.keyName,
-    required this.templateId,
-    required this.skinId,
-    required this.badge,
-    this.isCouple = false,
-  });
-
-  final String keyName;
-  final TemplateId templateId;
-  final PersonaSkinId skinId;
-
-  /// `UiTypeBadge` id.
-  final String badge;
-  final bool isCouple;
-
-  bool get isCustom => templateId == TemplateId.custom && !isCouple;
-
-  /// The six V2 types, in the Figma order's data-model terms.
-  static List<CreateTypeOption> all() => [
-    for (final t in allTemplates.where((t) => t.id != TemplateId.custom))
-      CreateTypeOption(
-        keyName: t.id.wireName,
-        templateId: t.id,
-        skinId: t.personaSkinId,
-        badge: switch (t.id) {
-          TemplateId.weightLoss => 'weight',
-          TemplateId.englishDaily => 'study',
-          TemplateId.workout30 => 'workout',
-          TemplateId.travel => 'trip',
-          TemplateId.custom => 'custom',
-        },
-      ),
-    const CreateTypeOption(
-      keyName: 'couple',
-      templateId: TemplateId.custom,
-      skinId: PersonaSkinId.coupleRituals,
-      badge: 'couple',
-      isCouple: true,
-    ),
-    CreateTypeOption(
-      keyName: TemplateId.custom.wireName,
-      templateId: TemplateId.custom,
-      skinId: PersonaSkinId.minimalistHabit,
-      badge: 'custom',
-    ),
-  ];
-}
+import 'steps/detail_step.dart';
+import 'steps/dna_step.dart';
+import 'steps/review_step.dart';
+import 'steps/rhythm_step.dart';
+import 'steps/type_step.dart';
+import 'steps/who_step.dart';
 
 /// **Create journey**, V2 five-step flow (`/journeys/new`):
 /// 1 type, 2 name + goal (+ icon, tracked number), 3 who (+ couple names),
@@ -484,19 +432,99 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _header(context),
+                    CreateFlowHeader(
+                      step: _step,
+                      steps: _steps,
+                      onBack: _back,
+                      onClose: () {
+                        // Leave a "continue creating" card on the Hub (steps 2..5).
+                        unawaited(
+                          ref
+                              .read(createProgressProvider.notifier)
+                              .save(_step + 1),
+                        );
+                        context.pop();
+                      },
+                    ),
                     const SizedBox(height: UiSpace.md),
                     KeyedSubtree(
                       key: ValueKey('create-step-body-$_step'),
                       child: switch (_step) {
-                        0 => _typeStep(context),
+                        0 => CreateTypeStep(
+                          options: _options,
+                          deckFocus: _deckFocus,
+                          onFocus: (i) => setState(() => _deckFocus = i),
+                          onChoose: (i) {
+                            _deckFocus = i;
+                            _select(_options[i]);
+                          },
+                        ),
                         1 =>
                           _inDna
-                              ? _dnaStep(context, _questions[_dnaPage])
-                              : _detailStep(context, _form!),
-                        2 => _whoStep(context, _form!),
-                        3 => _rhythmStep(context, _form!),
-                        _ => _reviewStep(context, _form!),
+                              ? CreateDnaStep(
+                                  question: _questions[_dnaPage],
+                                  dnaPage: _dnaPage,
+                                  totalQuestions: _questions.length,
+                                  dna: _dna,
+                                  hideWeight: _hideWeight,
+                                  trophyController: _trophy,
+                                  placeController: _place,
+                                  nameLeftController: _nameLeft,
+                                  nameRightController: _nameRight,
+                                  habitController: _habit,
+                                  reasonController: _reason,
+                                  onSetDna: _setDna,
+                                  onHideWeightChanged: (v) =>
+                                      setState(() => _hideWeight = v),
+                                  onAdvanceDna: _advanceDna,
+                                  onApplyDates: _applyDates,
+                                )
+                              : CreateDetailStep(
+                                  form: _form!,
+                                  titleController: _title,
+                                  metricNameController: _metricName,
+                                  metricUnitController: _metricUnit,
+                                  showErrors: _attempted.contains(1),
+                                  onUpdate: _update,
+                                ),
+                        2 => CreateWhoStep(
+                          who: _who,
+                          localOnly: _localOnly,
+                          showErrors: _attempted.contains(2),
+                          nameLeftController: _nameLeft,
+                          nameRightController: _nameRight,
+                          onPick: (who) => setState(() {
+                            _who = who;
+                            _applyWho(_form!);
+                          }),
+                          onNamesChanged: () => setState(() {}),
+                        ),
+                        3 => CreateRhythmStep(
+                          form: _form!,
+                          who: _who,
+                          localOnly: _localOnly,
+                          showErrors: _attempted.contains(3),
+                          today: _today(_form!),
+                          start: _start,
+                          durationController: _duration,
+                          onUpdate: _update,
+                          onPickStart: (d) => setState(() => _start = d),
+                        ),
+                        _ => CreateReviewStep(
+                          form: _form!,
+                          who: _who,
+                          optionIsCouple: _option!.isCouple,
+                          skinId: _skinId,
+                          title: _finalTitle(_form!),
+                          variant: _variant,
+                          today: _today(_form!),
+                          start: _start,
+                          nameLeftController: _nameLeft,
+                          nameRightController: _nameRight,
+                          onChangeVariant: () =>
+                              setState(() => _variant = (_variant + 1) % 3),
+                          onEdit: () => setState(() => _step = 3),
+                        ),
                       },
                     ),
                   ],
@@ -506,171 +534,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _header(BuildContext context) {
-    final l10n = JourneysL10n.of(context);
-    final ui = context.ui;
-    final stepLabel = l10n.journeys_createStepOf(_step + 1, _steps);
-    return Row(
-      children: [
-        UiIconButton(
-          key: const ValueKey('create-back'),
-          glyph: OurneyIcon(name: 'back', size: 22),
-          iconSize: 22,
-          color: ui.ink,
-          label: l10n.journeys_back,
-          onPressed: _back,
-        ),
-        Expanded(
-          child: Column(
-            children: [
-              Text(
-                stepLabel,
-                key: const ValueKey('create-step-label'),
-                style: UiText.body(
-                  size: 14,
-                  weight: FontWeight.w700,
-                  height: 1.35,
-                  color: ui.ink,
-                ),
-              ),
-              const SizedBox(height: 4),
-              CreateStepSegments(
-                count: _steps,
-                current: _step,
-                label: stepLabel,
-              ),
-            ],
-          ),
-        ),
-        UiIconButton(
-          key: const ValueKey('create-close'),
-          glyph: OurneyIcon(name: 'close', size: 22),
-          iconSize: 22,
-          color: ui.ink,
-          label: l10n.journeys_createExit,
-          onPressed: () {
-            // Leave a "continue creating" card on the Hub (steps 2..5).
-            unawaited(
-              ref.read(createProgressProvider.notifier).save(_step + 1),
-            );
-            context.pop();
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _heading(BuildContext context, String text, [String? sub]) {
-    final ui = context.ui;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Semantics(
-          header: true,
-          child: Text(text, style: UiText.h1(color: ui.ink)),
-        ),
-        if (sub != null) ...[
-          const SizedBox(height: UiSpace.xs),
-          Text(sub, style: UiText.muted(color: ui.inkMuted)),
-        ],
-        const SizedBox(height: UiSpace.lg),
-      ],
-    );
-  }
-
-  Widget _label(BuildContext context, String s) => Padding(
-    padding: const EdgeInsets.only(top: 18, bottom: 7),
-    child: Semantics(
-      header: true,
-      child: Text(s, style: UiText.fieldLabel(color: context.ui.inkMuted)),
-    ),
-  );
-
-  Widget _note(BuildContext context, String icon, String s) {
-    final ui = context.ui;
-    return Padding(
-      padding: const EdgeInsets.only(top: UiSpace.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          OurneyIcon(name: icon, size: 16),
-          const SizedBox(width: UiSpace.xs),
-          Expanded(
-            child: Text(
-              s,
-              style: UiText.body(size: 12, height: 1.45, color: ui.inkMuted),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---- Step 1: type ----------------------------------------------------
-
-  Widget _typeStep(BuildContext context) {
-    final l10n = JourneysL10n.of(context);
-    final en = Localizations.localeOf(context).languageCode == 'en';
-    return KeyedSubtree(
-      key: const ValueKey('journeys-template-picker'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _heading(
-            context,
-            l10n.journeys_pickTemplateTitle,
-            l10n.journeys_createPickSubtitle,
-          ),
-          UiButton.ghost(
-            key: const ValueKey('create-import-link'),
-            label: l10n.journeys_dna_import_link,
-            onPressed: () => context.push(AppRoutes.importJourney),
-          ),
-          CreateTypeDeck(
-            items: [
-              for (final o in _options)
-                () {
-                  final tpl = templateFor(o.templateId);
-                  final title = o.isCouple
-                      ? l10n.journeys_templateCoupleTitle
-                      : (en ? tpl.titleEn : tpl.titleVi);
-                  final tagline = switch (o.templateId) {
-                    _ when o.isCouple => l10n.journeys_tagCouple,
-                    TemplateId.weightLoss => l10n.journeys_tagWeightLoss,
-                    TemplateId.englishDaily => l10n.journeys_tagEnglish,
-                    TemplateId.travel => l10n.journeys_tagTravel,
-                    TemplateId.workout30 => l10n.journeys_tagWorkout,
-                    TemplateId.custom => l10n.journeys_tagCustom,
-                  };
-                  final mode = switch (o.templateId) {
-                    _ when o.isCouple => l10n.journeys_modeCoupleOnly,
-                    TemplateId.weightLoss => l10n.journeys_modeSoloOnly,
-                    _ => l10n.journeys_modeSoloGroup,
-                  };
-                  final days = o.isCustom
-                      ? null
-                      : l10n.journeys_templateDays(tpl.defaultDurationDays);
-                  return CreateDeckItem(
-                    keyName: o.keyName,
-                    title: title,
-                    tagline: tagline,
-                    meta: [mode, ?days].join(' · '),
-                    badge: o.badge,
-                  );
-                }(),
-            ],
-            initial: _deckFocus,
-            onFocus: (i) => setState(() => _deckFocus = i),
-            onChoose: (i) {
-              _deckFocus = i;
-              _select(_options[i]);
-            },
-          ),
-        ],
       ),
     );
   }
@@ -702,519 +565,5 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _update((f) => f.durationDays = n);
       _duration.text = '$n';
     }
-  }
-
-  Widget _dnaStep(BuildContext context, DnaQuestion q) {
-    final ui = context.ui;
-    final l10n = JourneysL10n.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
-    final Widget body = switch (q.kind) {
-      DnaKind.choice => DnaChoiceList(
-        question: q,
-        value: _dna[q.key] as String?,
-        onChanged: (v) => _setDna(q.key, v),
-      ),
-      DnaKind.weight => DnaWeightPicker(
-        weight: (_dna['weight'] as int?) ?? dnaWeightDefault,
-        hide: _hideWeight,
-        onWeight: (v) => _setDna('weight', v),
-        onHide: (v) => setState(() => _hideWeight = v),
-        onSkip: _advanceDna,
-      ),
-      DnaKind.ghost => DnaGhostPage(onLater: _advanceDna),
-      DnaKind.trophy => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(child: OurneyIcon(name: 'trophy', size: 76)),
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('dna-trophy'),
-            label: l10n.journeys_dna_trophy_label,
-            hint: l10n.journeys_dna_trophy_hint,
-            controller: _trophy,
-            inputFormatters: [LengthLimitingTextInputFormatter(dnaTrophyMax)],
-            helper: '${_trophy.text.length}/$dnaTrophyMax',
-            onChanged: (v) => _setDna('trophy', v),
-          ),
-        ],
-      ),
-      DnaKind.place => DnaPlacePicker(
-        controller: _place,
-        place: (_dna['place'] as String?) ?? '',
-        onChanged: (v) => _setDna('place', v),
-      ),
-      DnaKind.dates => DnaDateRange(
-        today: DateTime.now(),
-        value: _dna['dates'] as DnaDates?,
-        locale: locale,
-        onChanged: _applyDates,
-      ),
-      DnaKind.names => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          UiTextField(
-            fieldKey: const ValueKey('dna-name-left'),
-            label: l10n.journeys_dna_name_left,
-            hint: l10n.journeys_dna_name_left,
-            controller: _nameLeft,
-            inputFormatters: [LengthLimitingTextInputFormatter(dnaNameMax)],
-            onChanged: (v) => _setDna('nameLeft', v),
-          ),
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('dna-name-right'),
-            label: l10n.journeys_dna_name_right,
-            hint: l10n.journeys_dna_name_right,
-            controller: _nameRight,
-            inputFormatters: [LengthLimitingTextInputFormatter(dnaNameMax)],
-            onChanged: (v) => _setDna('nameRight', v),
-          ),
-        ],
-      ),
-      DnaKind.habit => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          UiTextField(
-            fieldKey: const ValueKey('dna-habit'),
-            label: l10n.journeys_dna_habit_label,
-            hint: l10n.journeys_dna_habit_hint,
-            controller: _habit,
-            inputFormatters: [LengthLimitingTextInputFormatter(dnaHabitMax)],
-            helper: '${_habit.text.length}/$dnaHabitMax',
-            onChanged: (v) => _setDna('habit', v),
-          ),
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('dna-reason'),
-            label: l10n.journeys_dna_reason_label,
-            hint: l10n.journeys_dna_reason_hint,
-            controller: _reason,
-            inputFormatters: [LengthLimitingTextInputFormatter(dnaReasonMax)],
-            helper: '${_reason.text.length}/$dnaReasonMax',
-            onChanged: (v) => _setDna('reason', v),
-          ),
-        ],
-      ),
-    };
-    final total = _questions.length;
-    return Column(
-      key: ValueKey('dna-page-${q.key}'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (total > 1)
-          Padding(
-            padding: const EdgeInsets.only(bottom: UiSpace.xs),
-            child: Text(
-              l10n.journeys_dna_step_of_q(_dnaPage + 1, total),
-              key: const ValueKey('dna-question-count'),
-              style: UiText.fieldLabel(color: ui.inkMuted),
-            ),
-          ),
-        _heading(context, dnaText(l10n, q.titleId)),
-        body,
-      ],
-    );
-  }
-
-  // ---- Step 2: name + goal ----------------------------------------------
-
-  Widget _detailStep(BuildContext context, JourneyForm form) {
-    final l10n = JourneysL10n.of(context);
-    final errors = form.validate();
-    final show = _attempted.contains(1);
-    final titleError = switch (show ? errors.title : null) {
-      JourneyTitleError.empty => l10n.journeys_errorTitleEmpty,
-      JourneyTitleError.tooLong => l10n.journeys_errorTitleTooLong(
-        journeyTitleMax,
-      ),
-      null => null,
-    };
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _heading(context, l10n.journeys_createDetailTitle),
-        UiTextField(
-          fieldKey: const ValueKey('journey-title'),
-          label: l10n.journeys_fieldTitle,
-          hint: l10n.journeys_fieldTitle,
-          controller: _title,
-          error: titleError,
-          textCapitalization: TextCapitalization.sentences,
-          onChanged: (v) => _update((f) => f.title = v),
-        ),
-        _label(context, l10n.journeys_fieldEmoji),
-        Wrap(
-          spacing: UiSpace.sm,
-          runSpacing: UiSpace.sm,
-          children: [
-            for (final e in {form.template.emoji, ...journeyEmojiChoices})
-              _EmojiChoice(
-                emoji: e,
-                template: form.template.id,
-                selected: form.emoji == e,
-                onTap: () => _update((f) => f.emoji = e),
-              ),
-          ],
-        ),
-        _label(context, l10n.journeys_fieldMetric),
-        UiSwitchRow(
-          key: const ValueKey('journey-metric'),
-          label: l10n.journeys_fieldMetric,
-          subtitle: l10n.journeys_fieldMetricHint,
-          value: form.trackMetric,
-          onChanged: (v) => _update((f) => f.trackMetric = v),
-        ),
-        if (form.trackMetric) ...[
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('journey-metric-name'),
-            label: l10n.journeys_metricName,
-            controller: _metricName,
-            error: show && errors.metricName == true
-                ? l10n.journeys_errorMetricName
-                : null,
-            onChanged: (v) => _update((f) => f.metricName = v),
-          ),
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('journey-metric-unit'),
-            label: l10n.journeys_metricUnit,
-            controller: _metricUnit,
-            onChanged: (v) => _update((f) => f.metricUnit = v),
-          ),
-          UiSwitchRow(
-            key: const ValueKey('journey-hide-metric'),
-            label: l10n.journeys_hideMetric,
-            value: form.hideMetric,
-            onChanged: (v) => _update((f) => f.hideMetric = v),
-          ),
-        ],
-        UiSwitchRow(
-          key: const ValueKey('journey-blur'),
-          label: l10n.journeys_blurOnShare,
-          value: form.blurOnShare,
-          onChanged: (v) => _update((f) => f.blurOnShare = v),
-        ),
-      ],
-    );
-  }
-
-  // ---- Step 3: who ------------------------------------------------------
-
-  Widget _whoStep(BuildContext context, JourneyForm form) {
-    final l10n = JourneysL10n.of(context);
-    final localOnly = _localOnly;
-    final show = _attempted.contains(2);
-    void pick(CreateWho who) => setState(() {
-      _who = who;
-      _applyWho(form);
-    });
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _heading(context, l10n.journeys_createWhoTitle),
-        CreateChoiceCard(
-          key: const ValueKey('journey-kind-solo'),
-          title: l10n.journeys_kindSolo,
-          body: l10n.journeys_kindSoloBody,
-          glyph: OurneyIcon(name: 'profile', size: 30),
-          selected: _who == CreateWho.solo,
-          onPressed: () => pick(CreateWho.solo),
-        ),
-        const SizedBox(height: UiSpace.sm),
-        CreateChoiceCard(
-          key: const ValueKey('journey-kind-group'),
-          title: l10n.journeys_kindGroup,
-          body: l10n.journeys_kindGroupBody,
-          glyph: OurneyIcon(name: 'squad', size: 30),
-          selected: _who == CreateWho.group,
-          onPressed: localOnly ? null : () => pick(CreateWho.group),
-        ),
-        if (localOnly)
-          _note(context, 'cloud-off', l10n.journeys_groupNeedsServer),
-        const SizedBox(height: UiSpace.sm),
-        CreateChoiceCard(
-          key: const ValueKey('journey-kind-couple'),
-          title: l10n.journeys_kindCouple,
-          body: l10n.journeys_kindCoupleBody,
-          glyph: OurneyIcon(name: 'heart', size: 30),
-          selected: _who == CreateWho.couple,
-          onPressed: () => pick(CreateWho.couple),
-        ),
-        if (_who == CreateWho.couple) ...[
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('journey-couple-left'),
-            label: l10n.journeys_coupleNameYou,
-            controller: _nameLeft,
-            error: show && _nameLeft.text.trim().isEmpty
-                ? l10n.journeys_errorCoupleNames
-                : null,
-            textCapitalization: TextCapitalization.words,
-            inputFormatters: [LengthLimitingTextInputFormatter(18)],
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: UiSpace.md),
-          UiTextField(
-            fieldKey: const ValueKey('journey-couple-right'),
-            label: l10n.journeys_coupleNameOther,
-            controller: _nameRight,
-            error: show && _nameRight.text.trim().isEmpty
-                ? l10n.journeys_errorCoupleNames
-                : null,
-            textCapitalization: TextCapitalization.words,
-            inputFormatters: [LengthLimitingTextInputFormatter(18)],
-            onChanged: (_) => setState(() {}),
-          ),
-        ],
-      ],
-    );
-  }
-
-  // ---- Step 4: rhythm ---------------------------------------------------
-
-  Widget _rhythmStep(BuildContext context, JourneyForm form) {
-    final l10n = JourneysL10n.of(context);
-    final localOnly = _localOnly;
-    final errors = form.validate();
-    final durationError = _attempted.contains(3) && errors.duration != null
-        ? l10n.journeys_errorDuration(durationMin, durationMax)
-        : null;
-    final today = _today(form);
-    final start = _start != null && !_start!.isBefore(today) ? _start! : today;
-    final locale = Localizations.localeOf(context).toString();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _heading(context, l10n.journeys_createRhythmTitle),
-        Text(
-          l10n.journeys_fieldDuration,
-          style: UiText.fieldLabel(color: context.ui.inkMuted),
-        ),
-        const SizedBox(height: 7),
-        Wrap(
-          spacing: UiSpace.sm,
-          runSpacing: UiSpace.sm,
-          children: [
-            for (final d in journeyDurationChoices)
-              CreateDurationChip(
-                key: ValueKey('journey-duration-$d'),
-                label: l10n.journeys_templateDays(d),
-                selected: form.durationDays == d,
-                onPressed: () => _update((f) {
-                  f.durationDays = d;
-                  _duration.text = '$d';
-                }),
-              ),
-            if (form.allowOpenEnded)
-              CreateDurationChip(
-                key: const ValueKey('journey-duration-open'),
-                label: l10n.journeys_openEnded,
-                selected: form.durationDays == null,
-                onPressed: () => _update((f) {
-                  f.durationDays = null;
-                  _duration.clear();
-                }),
-              ),
-          ],
-        ),
-        const SizedBox(height: UiSpace.md),
-        UiTextField(
-          fieldKey: const ValueKey('journey-duration'),
-          label: l10n.journeys_durationCustom,
-          controller: _duration,
-          error: durationError,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          onChanged: (v) => _update((f) {
-            final n = int.tryParse(v);
-            f.durationDays = n ?? (f.allowOpenEnded ? null : 0);
-          }),
-        ),
-        _label(context, l10n.journeys_fieldStartDate),
-        CreateCalendar(
-          today: today,
-          start: start,
-          days: form.durationDays != null && form.durationDays! > 0
-              ? form.durationDays
-              : null,
-          locale: locale,
-          prevLabel: l10n.journeys_calendarPrev,
-          nextLabel: l10n.journeys_calendarNext,
-          onPick: (d) => setState(() => _start = d),
-        ),
-        _label(context, l10n.journeys_fieldVisibility),
-        if (_who == CreateWho.solo) ...[
-          Wrap(
-            spacing: UiSpace.sm,
-            runSpacing: UiSpace.sm,
-            children: [
-              UiChip(
-                key: const ValueKey('journey-visibility-private'),
-                label: l10n.journeys_visibilityPrivate,
-                glyph: const OurneyIcon(name: 'lock', size: 16),
-                selected: form.soloVisibility == JourneyVisibility.private,
-                onPressed: () => _update(
-                  (f) => f.soloVisibility = JourneyVisibility.private,
-                ),
-              ),
-              UiChip(
-                key: const ValueKey('journey-visibility-link'),
-                label: l10n.journeys_visibilityLink,
-                glyph: const OurneyIcon(name: 'share', size: 16),
-                selected: form.soloVisibility == JourneyVisibility.link,
-                onPressed: localOnly
-                    ? null
-                    : () => _update(
-                        (f) => f.soloVisibility = JourneyVisibility.link,
-                      ),
-              ),
-            ],
-          ),
-          if (localOnly)
-            _note(context, 'cloud-off', l10n.journeys_linkNeedsServer),
-        ] else
-          _note(
-            context,
-            'lock',
-            _who == CreateWho.group
-                ? l10n.journeys_visibilityGroup
-                : l10n.journeys_kindCouple,
-          ),
-      ],
-    );
-  }
-
-  // ---- Step 5: review ---------------------------------------------------
-
-  Widget _reviewStep(BuildContext context, JourneyForm form) {
-    final l10n = JourneysL10n.of(context);
-    final locale = Localizations.localeOf(context).toString();
-    final days = form.durationDays;
-    final hasDays = days != null && days > 0;
-    final skinId = _skinId;
-    final metric = form.trackMetric ? form.metricName.trim() : '';
-    final goalLine = metric.isNotEmpty
-        ? (form.metricUnit.trim().isEmpty
-              ? metric
-              : '$metric (${form.metricUnit.trim()})')
-        : switch (form.template.id) {
-            _ when _option!.isCouple || _who == CreateWho.couple =>
-              l10n.journeys_tagCouple,
-            TemplateId.weightLoss => l10n.journeys_tagWeightLoss,
-            TemplateId.englishDaily => l10n.journeys_tagEnglish,
-            TemplateId.travel => l10n.journeys_tagTravel,
-            TemplateId.workout30 => l10n.journeys_tagWorkout,
-            _ => l10n.journeys_tagCustom,
-          };
-    final today = _today(form);
-    final start = _start != null && !_start!.isBefore(today) ? _start! : today;
-    final fmt = DateFormat.MMMd(locale);
-    String d(LocalDate x) => fmt.format(DateTime(x.year, x.month, x.day));
-    final datesLabel = hasDays
-        ? l10n.journeys_ticketDates(d(start), d(start.addDays(days - 1)))
-        : l10n.journeys_ticketDatesOpen(d(start));
-    final milestones = !hasDays || days < 3
-        ? const <String>[]
-        : {
-            for (final n in [7, days ~/ 2, days])
-              if (n >= 1 && n <= days) l10n.journeys_ticketMilestone('$n'),
-          }.toList();
-    final title = _finalTitle(form);
-    final couple = _who == CreateWho.couple;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _heading(context, l10n.journeys_createReviewTitle),
-        KeyedSubtree(
-          key: const ValueKey('journey-create-design-preview'),
-          child: Semantics(
-            container: true,
-            label: l10n.journeys_ticketPreview,
-            child: AnimatedSwitcher(
-              duration: UiMotion.of(context, UiMotion.theme),
-              child: DepartureTicket(
-                key: ValueKey('ticket-$skinId'),
-                skinId: skinId,
-                variant: _variant,
-                title: title,
-                goalLine: goalLine,
-                durationLabel: hasDays
-                    ? l10n.journeys_templateDays(days)
-                    : l10n.journeys_ticketOpenEnded,
-                datesLabel: datesLabel,
-                milestones: milestones,
-                leftName: couple && _nameLeft.text.trim().isNotEmpty
-                    ? _nameLeft.text.trim()
-                    : l10n.journeys_ticketYou,
-                rightName: couple && _nameRight.text.trim().isNotEmpty
-                    ? _nameRight.text.trim()
-                    : l10n.journeys_ticketPartner,
-                privateLabel: l10n.journeys_ticketPrivate,
-                memoryLabel: l10n.journeys_ticketMemory,
-                tagline: switch (skinId) {
-                  'quiet' => l10n.journeys_ticketTagQuiet,
-                  'squad' => l10n.journeys_ticketTagSquad,
-                  'memory' => l10n.journeys_ticketTagMemory,
-                  'couple' => l10n.journeys_ticketTagCouple,
-                  'flexer' => l10n.journeys_ticketTagFlexer,
-                  _ => '',
-                },
-                changeVariantLabel: l10n.journeys_ticketChangeColor,
-                onChangeVariant: () =>
-                    setState(() => _variant = (_variant + 1) % 3),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: UiSpace.md),
-        UiButton.secondary(
-          key: const ValueKey('create-review-edit'),
-          label: l10n.journeys_createReviewEdit,
-          onPressed: () => setState(() => _step = 3),
-        ),
-      ],
-    );
-  }
-}
-
-class _EmojiChoice extends StatelessWidget {
-  const _EmojiChoice({
-    required this.emoji,
-    required this.template,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String emoji;
-  final TemplateId template;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return UiPressable(
-      key: ValueKey('journey-emoji-$emoji'),
-      onPressed: onTap,
-      selected: selected,
-      semanticLabel: JourneysL10n.of(context).journeys_emojiSemantics(emoji),
-      excludeChildSemantics: true,
-      borderRadius: BorderRadius.circular(UiRadius.input),
-      child: Container(
-        width: 52,
-        height: 52,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? createSelectedFill(ui) : ui.surface,
-          borderRadius: BorderRadius.circular(UiRadius.input),
-          border: Border.all(
-            color: selected ? ui.outline : ui.border,
-            width: selected ? 3 : 1,
-          ),
-        ),
-        child: uiJourneyGlyph(emoji, template, size: 26),
-      ),
-    );
   }
 }

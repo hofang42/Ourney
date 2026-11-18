@@ -1602,6 +1602,21 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_createDeckChosen => 'Chosen';
 
   @override
+  String get journeys_deckPrivate => 'Private';
+
+  @override
+  String get journeys_deckHudStudy => '45 MIN';
+
+  @override
+  String get journeys_deckHudFlexer => '5.2 KM · 5:48';
+
+  @override
+  String get journeys_deckHudMemory => 'FILM ROLL 12/24';
+
+  @override
+  String get journeys_deckHudCouple => 'two halves · one day';
+
+  @override
   String get journeys_createDeckPrev => 'Previous card';
 
   @override

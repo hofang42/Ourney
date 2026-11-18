@@ -192,14 +192,20 @@ void main() {
       expect(wall(plan.first.fireAt, ny), '2026-10-17 23:00');
     });
 
-    test('unknown time zone names fall back to UTC instead of throwing', () {
+    test('unknown time zone names fall back to a logged best guess instead of throwing', () {
       final plan = planReminders(
         now: now,
         deviceTimezone: 'Mars/Olympus',
         journeys: [journey(timezone: 'Nowhere/Zone')],
         streakAlerts: false,
       );
-      expect(wall(plan.first.fireAt, 'Etc/UTC'), '2026-10-16 20:00');
+      final fallback = guessTimeZoneForOffset(DateTime.now().timeZoneOffset)
+          .name;
+      expect(plan, isNotEmpty);
+      expect(
+        wall(plan.first.fireAt, fallback),
+        '${plan.first.journeyDate} 20:00',
+      );
     });
   });
 

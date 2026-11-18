@@ -7,8 +7,8 @@ import '../../ui/ui.dart';
 
 /// V2 `MissedDayOverlay` (quiet and squad skins only): a dashed capsule chip
 /// ("NGÀY 9 · NGHỈ" / "NGÀY 9 · LỠ", squad: square corners tilted -3deg) that
-/// opens a calm sheet explaining the gap. Position it bottom-right above the
-/// dock (V2 `right: 18, bottom: 118`).
+/// opens a calm sheet explaining the gap. Placed at bottom-start above the
+/// dock alongside the floating Check-in button.
 class MissedDayOverlay extends StatelessWidget {
   const MissedDayOverlay({required this.skinId, required this.day, super.key});
 
@@ -37,24 +37,34 @@ class MissedDayOverlay extends StatelessWidget {
           builder: (context) => _MissedDaySheet(squad: squad),
         ),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: UiSize.tap),
+          constraints: const BoxConstraints(
+            minWidth: UiSize.tap,
+            minHeight: UiSize.tap,
+          ),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            alignment: Alignment.center,
             decoration: ShapeDecoration(
               color: ui.surface,
               shape: _DashedShape(color: ui.inkMuted, radius: squad ? 4 : 999),
             ),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(
-                size: 12,
-                weight: FontWeight.w900,
-                height: 1.3,
-                color: ui.ink,
-              ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 12,
+                      weight: FontWeight.w900,
+                      height: 1.3,
+                      color: ui.ink,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

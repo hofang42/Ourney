@@ -145,6 +145,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               .where((d) => d.state == DayState.missed)
               .map((d) => d.dayNumber)
               .fold<int?>(null, (a, b) => a == null || b > a ? b : a);
+          final showMissedChip =
+              missedDay != null && (skin == 'quiet' || skin == 'squad');
+          final showBottomOverlay = showMissedChip || perms.canCheckIn;
+          final bottomInset = MediaQuery.paddingOf(context).bottom;
+          final screenWidth = MediaQuery.sizeOf(context).width;
           final home = DayTicker(
             child: ActiveJourneyScope(
               journeyId: journey.id,
@@ -152,36 +157,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 key: const ValueKey('journey-detail'),
                 background: pal.paper,
                 padTop: 0,
-                padBottom: 24,
-                bottom: perms.canCheckIn
-                    ? Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          gutter,
-                          UiSpace.sm,
-                          gutter,
-                          20,
-                        ),
-                        child: Align(
-                          alignment: AlignmentDirectional.centerEnd,
-                          child: UiButton(
-                            key: const ValueKey('journey-checkin'),
-                            label: progress?.checkedInToday ?? false
-                                ? l10n.journeys_addMore
-                                : l10n.journeys_checkInNow,
-                            glyph: const OurneyIcon(
-                              name: 'camera',
-                              size: 20,
-                              flat: true,
-                            ),
-                            accent: pal.accent,
-                            onAccent: pal.onAccent,
-                            expand: false,
-                            onPressed: () =>
-                                checkInNow(context, ref, journey.id),
-                          ),
-                        ),
-                      )
-                    : null,
+                padBottom: showBottomOverlay ? 96 : UiSpace.xxl,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -196,43 +172,43 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         onMore: () => setState(() => _menuOpen = !_menuOpen),
                       ),
                       menu: UiMenuSurface(
-                          children: [
-                            for (final a in actions)
-                              UiMenuItem(
-                                key: ValueKey('journey-action-${a.name}'),
-                                glyph: switch (a) {
-                                  _Action.edit => 'pencil',
-                                  _Action.wrapped => 'trophy',
-                                  _Action.pin => 'star',
-                                  _Action.invite => 'squad',
-                                  _Action.renameCouple => 'edit',
-                                  _Action.end => 'flag',
-                                  _Action.archive => 'inbox',
-                                  _Action.delete => 'trash',
-                                },
-                                destructive: a == _Action.delete,
-                                label: switch (a) {
-                                  _Action.edit => l10n.journeys_edit_menu,
-                                  _Action.wrapped => l10n.journeys_wrapped_menu,
-                                  _Action.pin =>
-                                    (membership?.pinned ?? false)
-                                        ? l10n.journeys_unpin
-                                        : l10n.journeys_pin,
-                                  _Action.invite => l10n.journeys_inviteAction,
-                                  _Action.renameCouple =>
-                                    l10n.journeys_renameCouple,
-                                  _Action.end => l10n.journeys_endJourney,
-                                  _Action.archive => l10n.journeys_archive,
-                                  _Action.delete => l10n.journeys_delete,
-                                },
-                                onPressed: () {
-                                  setState(() => _menuOpen = false);
-                                  unawaited(_run(context, journey, a));
-                                },
-                              ),
-                          ],
-                        ),
+                        children: [
+                          for (final a in actions)
+                            UiMenuItem(
+                              key: ValueKey('journey-action-${a.name}'),
+                              glyph: switch (a) {
+                                _Action.edit => 'pencil',
+                                _Action.wrapped => 'trophy',
+                                _Action.pin => 'star',
+                                _Action.invite => 'squad',
+                                _Action.renameCouple => 'edit',
+                                _Action.end => 'flag',
+                                _Action.archive => 'inbox',
+                                _Action.delete => 'trash',
+                              },
+                              destructive: a == _Action.delete,
+                              label: switch (a) {
+                                _Action.edit => l10n.journeys_edit_menu,
+                                _Action.wrapped => l10n.journeys_wrapped_menu,
+                                _Action.pin =>
+                                  (membership?.pinned ?? false)
+                                      ? l10n.journeys_unpin
+                                      : l10n.journeys_pin,
+                                _Action.invite => l10n.journeys_inviteAction,
+                                _Action.renameCouple =>
+                                  l10n.journeys_renameCouple,
+                                _Action.end => l10n.journeys_endJourney,
+                                _Action.archive => l10n.journeys_archive,
+                                _Action.delete => l10n.journeys_delete,
+                              },
+                              onPressed: () {
+                                setState(() => _menuOpen = false);
+                                unawaited(_run(context, journey, a));
+                              },
+                            ),
+                        ],
                       ),
+                    ),
                     Divider(height: 1, color: ui.border),
                     const SizedBox(height: 22),
                     if (progress != null)
@@ -340,11 +316,77 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           return Stack(
             children: [
               home,
-              if (missedDay != null && (skin == 'quiet' || skin == 'squad'))
-                PositionedDirectional(
-                  end: 18,
-                  bottom: 118,
-                  child: MissedDayOverlay(skinId: skin, day: missedDay),
+              if (showBottomOverlay)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: bottomInset + 10,
+                  child: Center(
+                    heightFactor: 1,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: UiSpace.maxContent(screenWidth),
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: gutter),
+                        child: LayoutBuilder(
+                          builder: (context, c) {
+                            final checkInButton = perms.canCheckIn
+                                ? UiButton(
+                                    key: const ValueKey('journey-checkin'),
+                                    label: progress?.checkedInToday ?? false
+                                        ? l10n.journeys_addMore
+                                        : l10n.journeys_checkInNow,
+                                    glyph: const OurneyIcon(
+                                      name: 'camera',
+                                      size: 20,
+                                      flat: true,
+                                    ),
+                                    accent: pal.accent,
+                                    onAccent: pal.onAccent,
+                                    expand: false,
+                                    onPressed: () =>
+                                        checkInNow(context, ref, journey.id),
+                                  )
+                                : null;
+                            final chipMaxWidth = checkInButton != null
+                                ? (c.maxWidth - UiSpace.md) * 0.45
+                                : c.maxWidth;
+                            return ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minHeight: UiSize.button + UiShadow.tiny,
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  if (showMissedChip)
+                                    ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth: chipMaxWidth,
+                                      ),
+                                      child: MissedDayOverlay(
+                                        skinId: skin,
+                                        day: missedDay,
+                                      ),
+                                    ),
+                                  if (showMissedChip && checkInButton != null)
+                                    const SizedBox(width: UiSpace.md),
+                                  if (checkInButton != null)
+                                    Expanded(
+                                      child: Align(
+                                        alignment:
+                                            AlignmentDirectional.centerEnd,
+                                        child: checkInButton,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
             ],
           );

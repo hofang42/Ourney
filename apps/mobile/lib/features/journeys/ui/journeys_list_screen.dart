@@ -67,9 +67,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
 
     final Widget body;
     if (buckets != null && buckets.isEmpty) {
-      body = _DayZero(
-        onStart: () => JourneysListScreen.startCreate(context),
-      );
+      body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
     } else if (buckets != null) {
       body = _HubBody(
         buckets: buckets,
@@ -108,7 +106,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     return DayTicker(
       child: UiScaffold(
         key: const ValueKey('journeys-list'),
-        padBottom: 120,
+        padBottom: UiSpace.xxl,
         child: body,
       ),
     );
@@ -489,8 +487,7 @@ class _HubBody extends ConsumerWidget {
             UiSegment(
               key: const ValueKey('hub-segment-active'),
               value: HubSegment.active,
-              label:
-                  '${l10n.journeys_activeSection} · ${buckets.activeCount}',
+              label: '${l10n.journeys_activeSection} · ${buckets.activeCount}',
             ),
             UiSegment(
               key: const ValueKey('hub-segment-shelf'),
@@ -529,8 +526,7 @@ class _HubBody extends ConsumerWidget {
                     children: [
                       for (final j in buckets.active) JourneyRow(journey: j),
                       _NewJourneyCard(
-                        onTap: () =>
-                            JourneysListScreen.startCreate(context),
+                        onTap: () => JourneysListScreen.startCreate(context),
                       ),
                     ],
                   ),

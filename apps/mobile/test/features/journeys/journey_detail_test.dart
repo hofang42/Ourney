@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_dock.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/app_shell.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
@@ -343,5 +345,220 @@ void main() {
       expect(_key('journey-detail-empty'), findsOneWidget);
       expect(find.text('Journey not found.'), findsOneWidget);
     });
+  });
+
+  group('Floating check-in, missed-day chip, and dock scroll clearance', () {
+    testWidgets(
+      'quiet 30-day journey with a missed day scrolls behind dock/check-in '
+      'and places final item completely above check-in on 393pt',
+      (tester) async {
+        // Day 4 of 30 (`testToday` = 2026-10-16), Day 3 (2026-10-15) missed.
+        final j = testJourney(
+          templateId: TemplateId.weightLoss,
+          startDate: const LocalDate(2026, 10, 13),
+          durationDays: 30,
+          metricName: 'Weight',
+          metricUnit: 'kg',
+        );
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: AppRoutes.journey(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(j.id, const LocalDate(2026, 10, 13), metricValue: 65.2),
+            testCheckIn(j.id, const LocalDate(2026, 10, 14), metricValue: 64.8),
+          ]),
+        );
+        tester.view.physicalSize = const Size(393, 852);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        // Shell extends body behind the glass dock so the skin background
+        // reaches the very bottom of the screen.
+        final shellScaffold = tester.widget<Scaffold>(
+          find
+              .descendant(
+                of: find.byType(AppShell),
+                matching: find.byType(Scaffold),
+              )
+              .first,
+        );
+        expect(shellScaffold.extendBody, isTrue);
+
+        final detailScroll = find.descendant(
+          of: _key('journey-detail'),
+          matching: find.byType(SingleChildScrollView),
+        );
+        expect(tester.getRect(detailScroll).bottom, 852);
+
+        final dockRect = tester.getRect(find.byType(AppDock));
+        final chipRect = tester.getRect(_key('missed-day-chip'));
+        final checkInRect = tester.getRect(_key('journey-checkin'));
+
+        // Chip sits at start (left), vertically centered with Check-in at end,
+        // non-overlapping, and both sit above the dock.
+        expect(chipRect.overlaps(checkInRect), isFalse);
+        expect(chipRect.right, lessThan(checkInRect.left));
+        expect(
+          (chipRect.center.dy - checkInRect.center.dy).abs(),
+          lessThanOrEqualTo(2),
+        );
+        expect(chipRect.bottom, lessThanOrEqualTo(dockRect.top));
+        expect(checkInRect.bottom, lessThanOrEqualTo(dockRect.top));
+
+        // Scroll all the way to the bottom: final element sits completely
+        // above the floating Check-in button and chip.
+        final scrollableState = tester.state<ScrollableState>(
+          find.descendant(of: detailScroll, matching: find.byType(Scrollable)),
+        );
+        scrollableState.position.jumpTo(
+          scrollableState.position.maxScrollExtent,
+        );
+        await tester.pumpAndSettle();
+
+        final finalItemRect = tester.getRect(_key('journey-pref-blur'));
+        final checkInAfterScroll = tester.getRect(_key('journey-checkin'));
+        final chipAfterScroll = tester.getRect(_key('missed-day-chip'));
+        expect(finalItemRect.bottom, lessThanOrEqualTo(checkInAfterScroll.top));
+        expect(finalItemRect.bottom, lessThanOrEqualTo(chipAfterScroll.top));
+      },
+    );
+
+    testWidgets(
+      'missed-day chip and check-in do not overlap at 360pt, and chip stays '
+      'above the dock when canCheckIn is false',
+      (tester) async {
+        final active = testJourney(
+          id: 'j-active',
+          templateId: TemplateId.weightLoss,
+          startDate: const LocalDate(2026, 10, 13),
+          durationDays: 30,
+        );
+        final ended = testJourney(
+          id: 'j-ended',
+          templateId: TemplateId.weightLoss,
+          startDate: const LocalDate(2026, 10, 13),
+          durationDays: 30,
+          status: JourneyStatus.ended,
+        );
+        // Check in on today as well so `journey-checkin` renders the longer
+        // "Take another photo today" / "Chụp thêm ảnh hôm nay" label at 360pt.
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('vi'),
+          location: AppRoutes.journey(active.id),
+          journeys: FakeJourneyRepository(
+            journeys: [active, ended],
+            memberships: {
+              active.id: testMembership(active),
+              ended.id: testMembership(ended),
+            },
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(active.id, const LocalDate(2026, 10, 13)),
+            testCheckIn(active.id, const LocalDate(2026, 10, 14)),
+            testCheckIn(active.id, testToday),
+            testCheckIn(ended.id, const LocalDate(2026, 10, 13)),
+            testCheckIn(ended.id, const LocalDate(2026, 10, 14)),
+          ]),
+        );
+        tester.view.physicalSize = const Size(360, 800);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        final dockRect = tester.getRect(find.byType(AppDock));
+        final chipRect = tester.getRect(_key('missed-day-chip'));
+        final checkInRect = tester.getRect(_key('journey-checkin'));
+        expect(chipRect.overlaps(checkInRect), isFalse);
+        expect(chipRect.right, lessThan(checkInRect.left));
+        expect(
+          (chipRect.center.dy - checkInRect.center.dy).abs(),
+          lessThanOrEqualTo(2),
+        );
+        expect(chipRect.bottom, lessThanOrEqualTo(dockRect.top));
+        expect(checkInRect.bottom, lessThanOrEqualTo(dockRect.top));
+
+        // Ended journey (`perms.canCheckIn == false`): chip remains at start
+        // right above the dock.
+        await h.go(tester, AppRoutes.journey(ended.id));
+        expect(tester.takeException(), isNull);
+        expect(_key('journey-checkin'), findsNothing);
+        final endedChipRect = tester.getRect(_key('missed-day-chip'));
+        expect(endedChipRect.left, closeTo(chipRect.left, 1));
+        expect(endedChipRect.bottom, lessThanOrEqualTo(dockRect.top));
+        expect(dockRect.top - endedChipRect.bottom, lessThanOrEqualTo(24));
+      },
+    );
+
+    testWidgets(
+      'shell root tabs keep their final item completely above the dock',
+      (tester) async {
+        final journeys = [
+          for (var i = 1; i <= 6; i++)
+            testJourney(id: 'j$i', title: 'Journey $i'),
+        ];
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: AppRoutes.journeys,
+          journeys: FakeJourneyRepository(
+            journeys: journeys,
+            memberships: {for (final j in journeys) j.id: testMembership(j)},
+          ),
+        );
+        tester.view.physicalSize = const Size(393, 852);
+        await tester.pumpAndSettle();
+
+        Future<void> scrollToEnd(Finder root) async {
+          final scrollables = find.descendant(
+            of: root,
+            matching: find.byType(Scrollable),
+          );
+          for (final element in scrollables.evaluate()) {
+            final state = element as StatefulElement;
+            final s = state.state as ScrollableState;
+            if (s.position.axis == Axis.vertical &&
+                s.position.maxScrollExtent > 0) {
+              s.position.jumpTo(s.position.maxScrollExtent);
+            }
+          }
+          await tester.pumpAndSettle();
+        }
+
+        // 1. Journeys tab: final `_NewJourneyCard` sits above the dock.
+        await scrollToEnd(_key('journeys-list'));
+        expect(
+          tester.getRect(_key('journeys-new-card')).bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
+        );
+
+        // 2. Squad tab (local-only): `needs-server` state sits above the dock.
+        await h.go(tester, AppRoutes.groups);
+        await scrollToEnd(_key('groups-list'));
+        expect(
+          tester.getRect(_key('needs-server')).bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
+        );
+
+        // 3. Activity tab (local-only): `needs-server` state sits above the dock.
+        await h.go(tester, AppRoutes.inbox);
+        expect(
+          tester.getRect(_key('needs-server')).bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
+        );
+
+        // 4. Profile tab: final `profile-safety` row sits above the dock.
+        await h.go(tester, AppRoutes.profile);
+        await scrollToEnd(_key('profile-screen'));
+        expect(
+          tester.getRect(_key('profile-safety')).bottom,
+          lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
+        );
+      },
+    );
   });
 }

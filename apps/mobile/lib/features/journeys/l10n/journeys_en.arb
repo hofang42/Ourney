@@ -998,6 +998,11 @@
     }
   },
   "journeys_createDeckChosen": "Chosen",
+  "journeys_deckPrivate": "Private",
+  "journeys_deckHudStudy": "45 MIN",
+  "journeys_deckHudFlexer": "5.2 KM · 5:48",
+  "journeys_deckHudMemory": "FILM ROLL 12/24",
+  "journeys_deckHudCouple": "two halves · one day",
   "journeys_createDeckPrev": "Previous card",
   "journeys_createDeckNext": "Next card",
   "journeys_createDeckCounter": "{n}/{total}",

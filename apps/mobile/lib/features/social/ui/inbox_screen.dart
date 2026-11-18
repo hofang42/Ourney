@@ -93,9 +93,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final l10n = SocialL10n.of(context);
     final app = AppLocalizations.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
     return UiScaffold(
       key: const ValueKey('inbox-screen'),
       scroll: false,
+      safeBottom: false,
       padTop: 0,
       padBottom: 0,
       child: Column(
@@ -113,11 +115,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           ),
           Expanded(
             child: localOnly
-                ? UiEmptyState(
-                    key: const ValueKey('needs-server'),
-                    glyph: const OurneyIcon(name: 'cloud-off', size: 40),
-                    title: app.needsServer_title,
-                    body: app.needsServer_message,
+                ? Padding(
+                    padding: EdgeInsets.only(bottom: bottomInset),
+                    child: UiEmptyState(
+                      key: const ValueKey('needs-server'),
+                      glyph: const OurneyIcon(name: 'cloud-off', size: 40),
+                      title: app.needsServer_title,
+                      body: app.needsServer_message,
+                    ),
                   )
                 : _body(context),
           ),
@@ -165,7 +170,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       final error = friendsAsync.error ?? convAsync.error!;
       final offline = socialErrorCode(error) == OurneyErrorCode.offline;
       return ListView(
-        padding: const EdgeInsets.only(top: UiSpace.lg),
+        padding: EdgeInsets.only(
+          top: UiSpace.lg,
+          bottom: UiSpace.xl + MediaQuery.paddingOf(context).bottom,
+        ),
         children: [
           UiStateCard(
             key: const ValueKey('inbox-error'),
@@ -336,7 +344,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           _filters(context),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.only(top: UiSpace.lg),
+              padding: EdgeInsets.only(
+                top: UiSpace.lg,
+                bottom: UiSpace.xl + MediaQuery.paddingOf(context).bottom,
+              ),
               children: [const _ActivityEmpty()],
             ),
           ),
