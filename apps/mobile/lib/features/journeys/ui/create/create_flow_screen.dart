@@ -112,6 +112,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     super.didChangeDependencies();
     if (_suggestionApplied) return;
     _suggestionApplied = true;
+    // "Continue creating" (U8): reopen where the flow was left.
+    final draft = ref.read(createProgressProvider.notifier).draft;
+    if (draft != null && _restore(draft)) return;
     final s = ref.read(journeySuggestionProvider);
     if (s == null) return;
     _suggestion = s;
@@ -258,7 +261,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   void _back() {
     if (_step == 0) {
-      context.pop();
+      _leaveFlow();
     } else if (_step == 1 && _questions.isNotEmpty && _dnaPage > 0) {
       setState(() => _dnaPage -= 1);
     } else {
@@ -429,7 +432,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     return PopScope(
       canPop: _step == 0,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _back();
+        if (!didPop) {
+          _back();
+        } else if (!_leaving) {
+          // System back from step 1: nothing to resume (U8). The route
+          // may be going away during a build: update after it.
+          final progress = ref.read(createProgressProvider.notifier);
+          unawaited(Future(progress.clear));
+        }
       },
       child: UiSkinScope(
         skinId: _skinId,
@@ -448,15 +458,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                       step: _step,
                       steps: _steps,
                       onBack: _back,
-                      onClose: () {
-                        // Leave a "continue creating" card on the Hub (steps 2..5).
-                        unawaited(
-                          ref
-                              .read(createProgressProvider.notifier)
-                              .save(_step + 1),
-                        );
-                        context.pop();
-                      },
+                      // Leave a "continue creating" card on the Hub (steps
+                      // 2..5) that really reopens this step (U8).
+                      onClose: _leaveFlow,
                     ),
                     const SizedBox(height: UiSpace.md),
                     KeyedSubtree(
@@ -551,6 +555,130 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
         ),
       ),
     );
+  }
+
+  // ---- Saved progress ("continue creating", U8) ----------------------------
+
+  static String _iso(DateTime d) =>
+      LocalDate(d.year, d.month, d.day).toString();
+
+  /// Everything needed to reopen the flow on this step.
+  Map<String, Object?> _snapshot() {
+    final form = _form!;
+    return {
+      'v': 1,
+      'option': _option!.keyName,
+      'step': _step,
+      'dnaPage': _dnaPage,
+      'dna': {
+        for (final e in _dna.entries)
+          e.key: e.value is DnaDates
+              ? {
+                  'start': _iso((e.value as DnaDates).start),
+                  if ((e.value as DnaDates).end case final end?)
+                    'end': _iso(end),
+                }
+              : e.value,
+      },
+      'title': form.title,
+      'emoji': form.emoji,
+      'durationDays': form.durationDays,
+      'trackMetric': form.trackMetric,
+      'metricName': form.metricName,
+      'metricUnit': form.metricUnit,
+      'hideMetric': form.hideMetric,
+      'blurOnShare': form.blurOnShare,
+      'soloVisibility': form.soloVisibility.wireName,
+      'who': _who.name,
+      'nameLeft': _nameLeft.text,
+      'nameRight': _nameRight.text,
+      'trophy': _trophy.text,
+      'place': _place.text,
+      'habit': _habit.text,
+      'reason': _reason.text,
+      'start': _start?.toString(),
+      'variant': _variant,
+    };
+  }
+
+  /// Restores a [_snapshot]; false (nothing changed) when it is unusable.
+  bool _restore(Map<String, Object?> d) {
+    try {
+      final option = _options.firstWhere((o) => o.keyName == d['option']);
+      _apply(option);
+      final form = _form!;
+      form
+        ..title = d['title']! as String
+        ..emoji = d['emoji']! as String
+        ..durationDays = d['durationDays'] as int?
+        ..trackMetric = d['trackMetric']! as bool
+        ..metricName = d['metricName']! as String
+        ..metricUnit = d['metricUnit']! as String
+        ..hideMetric = d['hideMetric']! as bool
+        ..blurOnShare = d['blurOnShare']! as bool
+        ..soloVisibility = JourneyVisibility.fromWire(
+          d['soloVisibility']! as String,
+        );
+      final who = CreateWho.values.byName(d['who']! as String);
+      _who = _localOnly && who == CreateWho.group ? CreateWho.solo : who;
+      _applyWho(form);
+      _title.text = form.title;
+      _duration.text = form.durationDays?.toString() ?? '';
+      _metricName.text = form.metricName;
+      _metricUnit.text = form.metricUnit;
+      _nameLeft.text = d['nameLeft'] as String? ?? '';
+      _nameRight.text = d['nameRight'] as String? ?? '';
+      _trophy.text = d['trophy'] as String? ?? '';
+      _place.text = d['place'] as String? ?? '';
+      _habit.text = d['habit'] as String? ?? '';
+      _reason.text = d['reason'] as String? ?? '';
+      _dna.clear();
+      for (final e in (d['dna']! as Map<String, Object?>).entries) {
+        final v = e.value;
+        if (v is Map<String, Object?>) {
+          LocalDate? date(Object? x) => x is String ? LocalDate.parse(x) : null;
+          final start = date(v['start'])!;
+          final end = date(v['end']);
+          _dna[e.key] = DnaDates(
+            DateTime(start.year, start.month, start.day),
+            end == null ? null : DateTime(end.year, end.month, end.day),
+          );
+        } else if (v != null) {
+          _dna[e.key] = v;
+        }
+      }
+      final start = d['start'];
+      _start = start is String ? LocalDate.parse(start) : null;
+      _variant = ((d['variant'] as int?) ?? 0).clamp(0, 2);
+      _dnaPage = ((d['dnaPage'] as int?) ?? 0).clamp(0, _questions.length);
+      _step = ((d['step'] as int?) ?? 1).clamp(1, _steps - 1);
+      return true;
+    } on Object {
+      // Older or broken draft: start over (and forget it).
+      _option = null;
+      _form = null;
+      _who = CreateWho.solo;
+      _dna.clear();
+      _step = 0;
+      unawaited(ref.read(createProgressProvider.notifier).clear());
+      return false;
+    }
+  }
+
+  /// Set while [_leaveFlow] pops the route.
+  bool _leaving = false;
+
+  /// Leaving the flow: keep a resumable draft from step 2 on, else forget
+  /// any older one so the Hub card does not linger (U8).
+  void _leaveFlow() {
+    _leaving = true;
+    final progress = ref.read(createProgressProvider.notifier);
+    if (_step == 0 || _form == null || _option == null) {
+      unawaited(progress.clear());
+    } else {
+      unawaited(progress.save(_step + 1, draft: _snapshot()));
+    }
+    context.pop();
   }
 
   // ---- Step 2: DNA questions (V2 `CreateStepTwo`) -------------------------

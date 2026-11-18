@@ -420,6 +420,55 @@ void main() {
       expect(find.text('step 3/5'), findsOneWidget);
     });
 
+    testWidgets('the resume card reopens the saved step and answers (U8)', (
+      tester,
+    ) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-kind-couple');
+      await tester.enterText(_key('journey-couple-left'), 'An');
+      await tester.enterText(_key('journey-couple-right'), 'Bình');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      expect(_stepLabel(tester), 'Step 4/5');
+      await _tap(tester, 'create-close');
+      expect(find.text('step 4/5'), findsOneWidget);
+
+      await _tap(tester, 'hub-create-progress');
+      expect(_stepLabel(tester), 'Step 4/5');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-create');
+      final draft = h.journeys.created.single;
+      expect(draft.title, 'Đọc sách');
+      expect(draft.coupleSelfName, 'An');
+      expect(draft.couplePartnerName, 'Bình');
+      expect(draft.layout, PersonaSkinId.coupleRituals);
+    });
+
+    testWidgets('leaving from step 1 drops the resume card (U8)', (
+      tester,
+    ) async {
+      await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-close');
+      expect(_key('hub-create-progress'), findsOneWidget);
+      await _tap(tester, 'hub-create-progress');
+      expect(_stepLabel(tester), 'Step 3/5');
+      for (var i = 0; i < 2; i++) {
+        await _tap(tester, 'create-back');
+      }
+      await _tap(tester, 'create-back'); // the habit question page
+      expect(_stepLabel(tester), 'Step 1/5');
+      await _tap(tester, 'create-back');
+      expect(_key('hub-create-progress'), findsNothing);
+    });
+
     testWidgets('local-only: group is disabled', (tester) async {
       final h = await _open(tester);
       await _pick(tester, 'template-workout_30');
