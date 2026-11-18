@@ -135,6 +135,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final auth = ref.read(authRepositoryProvider);
     final router = GoRouter.of(context);
     final profiles = _profiles();
+    final quiz = ref.read(onboardingQuizProvider.notifier);
     final from = widget.from;
     setState(() => _busy = true);
     var step = AuthStep.sendOtp;
@@ -151,7 +152,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         case _Flow.password:
           step = AuthStep.passwordSignIn;
           await auth.signInWithPassword(_normalizedEmail, _password.text);
-          await _finishSignIn(router, profiles, from);
+          await _finishSignIn(router, profiles, quiz, from);
           return;
         case _Flow.signUp:
           step = AuthStep.signUp;
@@ -160,7 +161,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             _password.text,
           );
           if (!needsCode) {
-            await _finishSignIn(router, profiles, from);
+            await _finishSignIn(router, profiles, quiz, from);
             return;
           }
       }
@@ -206,6 +207,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final router = GoRouter.of(context);
     final auth = ref.read(authRepositoryProvider);
     final profiles = _profiles();
+    final quiz = ref.read(onboardingQuizProvider.notifier);
     final from = widget.from;
 
     setState(() => _busy = true);
@@ -234,7 +236,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
     if (mounted) setState(() => _success = true);
-    await _finishSignIn(router, profiles, from);
+    await _finishSignIn(router, profiles, quiz, from);
   }
 
   ProfileRepository? _profiles() {
@@ -248,12 +250,14 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _finishSignIn(
     GoRouter router,
     ProfileRepository? profiles,
+    OnboardingQuizNotifier quiz,
     String? from,
   ) async {
     OurneyHaptics.success();
     // Push the locally stored onboarding answers to the new account (best
-    // effort, never blocks sign-in).
-    unawaited(ref.read(onboardingQuizProvider.notifier).syncToServer());
+    // effort, never blocks sign-in). No `ref` here: the router may already
+    // have unmounted this screen after the sign-in await.
+    unawaited(quiz.syncToServer());
     if (profiles != null && await _needsProfileSetup(profiles)) {
       router.go(
         Uri(
