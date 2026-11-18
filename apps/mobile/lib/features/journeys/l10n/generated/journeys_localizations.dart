@@ -1946,6 +1946,12 @@ abstract class JourneysL10n {
   /// **'Hành trình dài ít nhất {days} ngày nên ngày về đã được lùi lại.'**
   String journeys_dna_dates_min_note(int days);
 
+  /// No description provided for @journeys_dna_dates_max_note.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình dài tối đa {days} ngày nên ngày về đã được kéo gần lại.'**
+  String journeys_dna_dates_max_note(int days);
+
   /// No description provided for @journeys_dna_prev_month.
   ///
   /// In vi, this message translates to:

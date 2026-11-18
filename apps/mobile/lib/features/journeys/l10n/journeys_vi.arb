@@ -941,6 +941,14 @@
       }
     }
   },
+  "journeys_dna_dates_max_note": "Hành trình dài tối đa {days} ngày nên ngày về đã được kéo gần lại.",
+  "@journeys_dna_dates_max_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dna_prev_month": "Tháng trước",
   "journeys_dna_next_month": "Tháng sau",
   "journeys_dna_name_left": "Tên bạn",

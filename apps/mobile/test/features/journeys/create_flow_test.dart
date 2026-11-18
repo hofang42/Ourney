@@ -2,7 +2,6 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
-import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
@@ -13,6 +12,8 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:timezone/data/latest.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/test_helpers.dart';
 import '../reminders/reminders_fakes.dart' show FakeNotificationGateway;
@@ -187,10 +188,15 @@ void _reminderAndIconGroup() {
 void main() {
   group('trip length (B-B11)', () {
     test('counts calendar days, whatever the DST change in between', () {
-      // US spring-forward is 2027-03-14: a 23-hour day.
-      expect(dnaTripDays(DateTime(2027, 3, 14), DateTime(2027, 3, 27)), 14);
-      expect(dnaTripDays(DateTime(2027, 3, 10), DateTime(2027, 3, 16)), 7);
-      expect(dnaTripDays(DateTime(2027, 3, 10), DateTime(2027, 3, 10)), 1);
+      // An explicit DST zone, not the machine's: US spring-forward is
+      // 2027-03-14 (a 23-hour day), so a plain `difference` loses a day.
+      tzdata.initializeTimeZones();
+      final ny = tz.getLocation('America/New_York');
+      tz.TZDateTime at(int y, int m, int d) => tz.TZDateTime(ny, y, m, d);
+      expect(at(2027, 3, 14).difference(at(2027, 3, 27)).inDays.abs(), 12);
+      expect(dnaTripDays(at(2027, 3, 14), at(2027, 3, 27)), 14);
+      expect(dnaTripDays(at(2027, 3, 10), at(2027, 3, 16)), 7);
+      expect(dnaTripDays(at(2027, 3, 10), at(2027, 3, 10)), 1);
     });
 
     test('clamps the end into the journey length limits', () {

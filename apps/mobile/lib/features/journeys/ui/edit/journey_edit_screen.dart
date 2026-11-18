@@ -90,6 +90,7 @@ class _EditBodyState extends ConsumerState<_EditBody> {
   late int _color = widget.journey.color ?? 0;
   late String _hud = (widget.journey.dna?['hud'] as String?) ?? 'bold';
   late bool _link = widget.journey.visibility == JourneyVisibility.link;
+
   /// The reminder time when the screen opened. `repo.update` and the save
   /// that follows change what `_initialTime()` would read (bug B-B9).
   late final ReminderTime _initialReminder = _initialTime();

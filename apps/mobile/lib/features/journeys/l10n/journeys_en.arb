@@ -483,6 +483,14 @@
       }
     }
   },
+  "journeys_dna_dates_max_note": "A journey lasts at most {days} days, so the return date moved.",
+  "@journeys_dna_dates_max_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dna_prev_month": "Previous month",
   "journeys_dna_next_month": "Next month",
   "journeys_dna_name_left": "Your name",

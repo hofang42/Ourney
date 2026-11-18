@@ -1051,6 +1051,11 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
+  String journeys_dna_dates_max_note(int days) {
+    return 'A journey lasts at most $days days, so the return date moved.';
+  }
+
+  @override
   String get journeys_dna_prev_month => 'Previous month';
 
   @override

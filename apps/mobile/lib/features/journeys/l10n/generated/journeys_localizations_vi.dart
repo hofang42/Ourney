@@ -1049,6 +1049,11 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
+  String journeys_dna_dates_max_note(int days) {
+    return 'Hành trình dài tối đa $days ngày nên ngày về đã được kéo gần lại.';
+  }
+
+  @override
   String get journeys_dna_prev_month => 'Tháng trước';
 
   @override
