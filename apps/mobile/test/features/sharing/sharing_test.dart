@@ -337,6 +337,26 @@ void main() {
       expect(sharing.savedStory?.coverCheckInId, isNull);
     });
 
+    testWidgets('hiding the cover clears it on the server too (C-B14)', (
+      tester,
+    ) async {
+      final sharing = FakeSharingRepository();
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-cover'));
+      await _tap(tester, _key('story-cover-option-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-save'));
+      expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
+    });
+
     testWidgets('group member: story is read-only, photos can be hidden '
         '(C-B14)', (tester) async {
       final sharing = FakeSharingRepository();

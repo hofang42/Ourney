@@ -86,7 +86,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ..invalidate(pendingConsentsProvider)
       ..invalidate(groupInvitationsProvider)
       ..invalidate(conversationsProvider)
-      ..invalidate(inboxCountsProvider);
+      ..invalidate(rawInboxCountsProvider);
   }
 
   @override
@@ -203,9 +203,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     ];
     final consents = [
       for (final s in consentsAsync.value ?? const <ShareConsent>[])
-        if (s.status == ShareConsentStatus.pending &&
-            !blocked.contains(s.requestedBy?.userId))
-          s,
+        // A blocked requester arrives anonymised, so it needs no client check.
+        if (s.status == ShareConsentStatus.pending) s,
     ];
     // Group invitations are optional: a failing or unwired lookup shows none.
     final groupInvites = [

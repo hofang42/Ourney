@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/ui/journey_actions.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
 import '../groups_paths.dart';
@@ -650,6 +652,7 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
     try {
       if (accept) {
         final id = await repo.accept(inv.id);
+        unawaited(pushSharePrivacyToJourney(ref, id));
         ref.invalidate(groupInvitationsProvider);
         if (mounted) context.go(GroupsPaths.today(id));
       } else {

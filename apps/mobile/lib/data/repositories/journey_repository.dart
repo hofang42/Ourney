@@ -51,6 +51,20 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
+  Future<List<Journey>> allMine() async {
+    final me = ctx.userId;
+    if (me == null) return const [];
+    final rows = await (_db.select(_db.journeys).join([
+      innerJoin(
+        _db.memberships,
+        _db.memberships.journeyId.equalsExp(_db.journeys.id) &
+            _db.memberships.userId.equals(me),
+      ),
+    ])).get();
+    return [for (final r in rows) journeyFromRow(r.readTable(_db.journeys))];
+  }
+
+  @override
   Stream<Set<String>> watchPinnedJourneyIds() {
     final me = ctx.userId;
     if (me == null) return Stream.value(const <String>{});

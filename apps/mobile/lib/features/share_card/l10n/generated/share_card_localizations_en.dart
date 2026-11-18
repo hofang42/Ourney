@@ -85,7 +85,7 @@ class ShareCardL10nEn extends ShareCardL10n {
 
   @override
   String get share_card_stateError =>
-      'Couldn\'t check which photos are hidden from sharing, so nothing can be shared yet. Try again.';
+      'Couldn\'t check which photos are hidden from sharing, so the card has no photo for now. You can still share it with the illustration, or try again.';
 
   @override
   String share_card_photoOfDay(String date) {

@@ -209,7 +209,7 @@ abstract class ShareCardL10n {
   /// Shown on the share card when the hidden-photo flags could not be loaded; sharing stays disabled with a retry button.
   ///
   /// In vi, this message translates to:
-  /// **'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên chưa thể chia sẻ. Hãy thử lại.'**
+  /// **'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.'**
   String get share_card_stateError;
 
   /// Accessibility label of a photo thumbnail in the picker.

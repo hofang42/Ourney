@@ -91,7 +91,7 @@ class SettingsScreen extends ConsumerWidget {
                   value: ref.watch(hideWeightOnShareProvider),
                   onChanged: (v) => unawaited(() async {
                     await ref.read(hideWeightOnShareProvider.notifier).set(v);
-                    await pushSharePrivacyToMemberships(ref, hideWeight: v);
+                    if (v) await pushSharePrivacyToMemberships(ref, hideWeight: true);
                   }()),
                 ),
                 UiSwitchRow(
@@ -100,7 +100,7 @@ class SettingsScreen extends ConsumerWidget {
                   value: ref.watch(blurPhotosOnShareProvider),
                   onChanged: (v) => unawaited(() async {
                     await ref.read(blurPhotosOnShareProvider.notifier).set(v);
-                    await pushSharePrivacyToMemberships(ref, blur: v);
+                    if (v) await pushSharePrivacyToMemberships(ref, blur: true);
                   }()),
                 ),
                 UiRow(

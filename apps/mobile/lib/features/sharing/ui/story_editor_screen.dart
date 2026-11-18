@@ -36,6 +36,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
 
   /// Story as loaded, to tell whether there are unsaved edits (U19).
   JourneyStory _initial = const JourneyStory();
+  JourneyStory _saved = const JourneyStory();
 
   /// Local mirror of the hidden set (optimistic toggles).
   Set<String>? _hidden;
@@ -55,6 +56,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     _intro.text = state.story.intro ?? '';
     _lessons.text = state.story.lessons ?? '';
     _coverId = state.story.coverCheckInId;
+    _saved = state.story;
     _hidden = {...state.hiddenCheckInIds};
     _initial = _draft;
   }
@@ -126,6 +128,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   Future<void> _toggleHidden(CheckIn checkIn) async {
     final hidden = _hidden!;
     final hide = !hidden.contains(checkIn.id);
+    final dropsCover = hide && _coverId == checkIn.id;
     setState(() {
       _hidden = {...hidden}..let(hide, checkIn.id);
       // A hidden photo can no longer be the cover (S11).
@@ -145,6 +148,22 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
       await ref
           .read(sharingRepositoryProvider)
           .setHiddenInShare(checkIn.id, hidden: hide);
+      if (dropsCover && _saved.coverCheckInId == checkIn.id) {
+        // The server keeps the cover when a photo is hidden: clear it there
+        // too (saved fields only, unsaved edits stay local) so both agree.
+        _saved = JourneyStory(
+          title: _saved.title,
+          intro: _saved.intro,
+          lessons: _saved.lessons,
+        );
+        try {
+          await ref
+              .read(sharingRepositoryProvider)
+              .updateStory(widget.journeyId, _saved);
+        } on Object {
+          // Best effort: the cover is re-checked on the next story save.
+        }
+      }
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _hidden = {..._hidden!}..let(!hide, checkIn.id));

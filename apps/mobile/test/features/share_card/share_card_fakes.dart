@@ -58,7 +58,9 @@ Journey testJourney({
   String? metricName,
   String? metricUnit,
   bool hideMetricDefault = false,
+  JourneyOrigin origin = JourneyOrigin.live,
 }) => Journey(
+  origin: origin,
   id: id,
   ownerId: ownerId,
   kind: kind,
@@ -158,6 +160,9 @@ class FakeJourneyRepository implements JourneyRepository {
 
   @override
   Stream<List<Journey>> watchActive() => _journeys.watch();
+
+  @override
+  Future<List<Journey>> allMine() async => _journeys.value;
 
   @override
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(

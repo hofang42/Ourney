@@ -253,10 +253,11 @@ select is((select count(*)::int from public.conversation_messages(tests.conv(tes
   'C2: the member side still sees both thumbs');
 
 -- U16: my_blocked_people lists only the caller's own blocks, with names.
-do $$ begin perform tests.as_user(tests.u(10)); end $$;
+-- (User 9 is deleted above, so this uses a fresh block between two live users.)
+do $$ begin perform tests.as_user(tests.u(3)); perform public.block_user(tests.u(4)); end $$;
 select results_eq($$ select b->>'username' from json_array_elements(public.my_blocked_people()) b $$,
-  $$ values ('bsuser9') $$, 'U16: the blocker sees the person they blocked, with the real name');
-do $$ begin perform tests.as_user(tests.u(9)); end $$;
+  $$ values ('bsuser4') $$, 'U16: the blocker sees the person they blocked, with the real name');
+do $$ begin perform tests.as_user(tests.u(4)); end $$;
 select is(json_array_length(public.my_blocked_people()), 0, 'U16: the blocked person does not see who blocked them');
 do $$ begin perform tests.as_user(tests.u(8)); end $$;
 select is(json_array_length(public.my_blocked_people()), 0, 'U16: a third user sees no blocks');

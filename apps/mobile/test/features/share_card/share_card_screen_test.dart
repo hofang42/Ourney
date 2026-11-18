@@ -301,7 +301,7 @@ void main() {
       );
     });
 
-    testWidgets('on error nothing is exportable and a retry is offered '
+    testWidgets('on error no photo is offered, a retry is, and the card still shares '
         '(C-B2)', (tester) async {
       final j = testJourney();
       await pumpShare(
@@ -319,9 +319,10 @@ void main() {
       expect(_key('share-card-photo'), findsNothing);
       expect(_key('share-card-state-error'), findsOneWidget);
       expect(_key('share-card-state-retry'), findsOneWidget);
+      // The illustration-only card can still be shared (C-B7).
       expect(
         tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
-        isNull,
+        isNotNull,
       );
     });
 
@@ -444,6 +445,17 @@ void main() {
       await pumpShare(tester, journey: testJourney(), backend: true);
       expect(_key('share-card-screen'), findsOneWidget);
       expect(_key('share-card-link'), findsNothing);
+    });
+
+    testWidgets('S9: a retold (imported) journey can create a link (C-B7)', (
+      tester,
+    ) async {
+      await pumpShare(
+        tester,
+        journey: testJourney(origin: JourneyOrigin.imported),
+        backend: true,
+      );
+      expect(_key('share-card-link-create'), findsOneWidget);
     });
 
     testWidgets('S9: archived journeys keep the link section (C-B7)', (

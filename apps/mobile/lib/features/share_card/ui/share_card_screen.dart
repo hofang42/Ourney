@@ -394,7 +394,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     label: _busy ? l10n.share_card_preparing : actionLabel,
                     glyph: quiet ? null : 'share',
                     loading: _busy,
-                    onPressed: _busy || !stateReady
+                    onPressed: _busy || !(stateReady || stateFailed)
                         ? null
                         : quiet
                         ? () => _share(

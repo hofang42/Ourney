@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../../sharing/data/sharing_providers.dart';
 import '../l10n/generated/import_localizations.dart';
 import 'import_widgets.dart';
@@ -188,6 +190,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     });
     try {
       final type = _types.firstWhere((t) => t.id == _type);
+      final fresh = _created == null;
       final journey = _created ??= await ref
           .read(sharingRepositoryProvider)
           .createImported(
@@ -201,6 +204,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
               timezone: timezone,
             ),
           );
+      if (fresh) unawaited(pushSharePrivacyToJourney(ref, journey.id));
       final compressor = ref.read(photoCompressorProvider);
       final checkIns = ref.read(checkInRepositoryProvider);
       final drafts = ref.read(draftFilesProvider);

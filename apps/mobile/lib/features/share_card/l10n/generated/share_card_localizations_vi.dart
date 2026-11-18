@@ -84,7 +84,7 @@ class ShareCardL10nVi extends ShareCardL10n {
 
   @override
   String get share_card_stateError =>
-      'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên chưa thể chia sẻ. Hãy thử lại.';
+      'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.';
 
   @override
   String share_card_photoOfDay(String date) {

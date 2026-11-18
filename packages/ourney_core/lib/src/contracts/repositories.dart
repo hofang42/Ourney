@@ -95,6 +95,10 @@ abstract interface class ProfileRepository {
 
 abstract interface class JourneyRepository {
   Stream<List<Journey>> watchActive();
+
+  /// Every journey the caller has a membership in, archived and ended ones
+  /// included (one-shot). Used to push account-wide preferences.
+  Future<List<Journey>> allMine();
   Stream<Journey?> watch(String journeyId);
 
   /// `create_journey`. The client generates the id (idempotent retry).
