@@ -18,6 +18,9 @@ abstract final class AppRoutes {
   static const journeys = '/journeys';
   static const journeyNew = '/journeys/new';
 
+  /// The create flow reopened on its saved draft (Hub resume card, U8).
+  static const journeyNewResume = '/journeys/new?resume=1';
+
   /// Journey detail/timeline. Target of `ourney://journey/<id>`.
   static String journey(String id) => '/journey/${Uri.encodeComponent(id)}';
 

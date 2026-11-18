@@ -20,6 +20,7 @@ const List<String> accountPrefsKeys = [
   SafetyPrefs.blockedNames,
   ActiveJourneyId.prefsKey,
   CreateProgressPrefs.key,
+  CreateProgressPrefs.draftKey,
   SharePrivacyPrefs.hideWeight,
   SharePrivacyPrefs.blurPhotos,
 ];

@@ -9,8 +9,11 @@ import 'create/create_flow_screen.dart';
 /// (`CreateJourneyScreen`, `/journeys/new/:template`) stays as the fallback
 /// for "Do this journey" frames and `?more=1`.
 class TemplatePickerScreen extends StatelessWidget {
-  const TemplatePickerScreen({super.key});
+  const TemplatePickerScreen({this.resume = false, super.key});
+
+  /// `?resume=1`: the Hub's "Continue creating" card reopens the saved draft.
+  final bool resume;
 
   @override
-  Widget build(BuildContext context) => const CreateFlowScreen();
+  Widget build(BuildContext context) => CreateFlowScreen(resume: resume);
 }

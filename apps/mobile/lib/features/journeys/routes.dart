@@ -32,7 +32,9 @@ final List<RouteBase> journeysRoutes = [
       GoRoute(
         path: 'new',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const TemplatePickerScreen(),
+        builder: (context, state) => TemplatePickerScreen(
+          resume: state.uri.queryParameters['resume'] == '1',
+        ),
         routes: [
           GoRoute(
             path: ':template',

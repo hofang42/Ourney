@@ -2,7 +2,9 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/app/config.dart';
+import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
 import 'package:ourney/features/journeys/ui/create/dna_questions.dart';
 import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
@@ -446,6 +448,41 @@ void main() {
       expect(draft.coupleSelfName, 'An');
       expect(draft.couplePartnerName, 'Bình');
       expect(draft.layout, PersonaSkinId.coupleRituals);
+    });
+
+    testWidgets('a fresh visit ignores the saved draft; resuming reuses '
+        'its client id and clears it once created (U8)', (tester) async {
+      final h = await _open(tester);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-close');
+      final progress = h.container.read(createProgressProvider.notifier);
+      final savedId = progress.draft?['clientId'];
+      expect(savedId, isA<String>());
+
+      await h.go(tester, AppRoutes.journeyNew);
+      expect(_stepLabel(tester), 'Step 1/5');
+      await _tap(tester, 'create-close');
+      expect(_key('hub-create-progress'), findsNothing);
+
+      // Leave a draft again, then resume it from the card.
+      await h.go(tester, AppRoutes.journeyNew);
+      await _pick(tester, 'template-custom');
+      await tester.enterText(_key('journey-title'), 'Đọc sách');
+      await tester.pumpAndSettle();
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-close');
+      final id = progress.draft?['clientId'] as String;
+      await _tap(tester, 'hub-create-progress');
+      expect(_stepLabel(tester), 'Step 3/5');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'create-next');
+      await _tap(tester, 'journey-create');
+      expect(h.journeys.created.single.id, id);
+      expect(h.container.read(createProgressProvider), isNull);
+      expect(progress.draft, isNull);
     });
 
     testWidgets('leaving from step 1 drops the resume card (U8)', (

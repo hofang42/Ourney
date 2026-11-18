@@ -39,8 +39,14 @@ import 'steps/who_step.dart';
 /// All state lives in one [JourneyForm] plus the few flow fields below, so
 /// going back keeps every answer. The journey is created through
 /// `JourneyRepository.create` exactly like the quick setup.
+///
+/// A fresh visit (`/journeys/new`) always starts empty; only the Hub's
+/// "Continue creating" card (`?resume=1`, [resume]) restores the saved draft.
 class CreateFlowScreen extends ConsumerStatefulWidget {
-  const CreateFlowScreen({super.key});
+  const CreateFlowScreen({this.resume = false, super.key});
+
+  /// Reopen the saved draft (U8) instead of starting over.
+  final bool resume;
 
   @override
   ConsumerState<CreateFlowScreen> createState() => _CreateFlowScreenState();
@@ -80,7 +86,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   final Set<int> _attempted = {};
 
   /// One id per flow: a retry after a lost response returns the same journey.
-  final String _clientId = const Uuid().v4();
+  /// Saved in the draft so a resumed submit reuses it too (U8).
+  String _clientId = const Uuid().v4();
 
   @override
   void dispose() {
@@ -103,8 +110,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   bool get _localOnly => ref.read(appConfigProvider).localOnly;
 
+  /// The quiz's reminder time ("HH:mm"); kept in the draft so a resumed flow
+  /// still turns it on (U8).
+  String? _reminder;
+
   /// Quiz-derived defaults (type, who, reminder); applied once, overridable.
-  JourneySuggestion? _suggestion;
   bool _suggestionApplied = false;
 
   @override
@@ -113,11 +123,13 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     if (_suggestionApplied) return;
     _suggestionApplied = true;
     // "Continue creating" (U8): reopen where the flow was left.
-    final draft = ref.read(createProgressProvider.notifier).draft;
+    final draft = widget.resume
+        ? ref.read(createProgressProvider.notifier).draft
+        : null;
     if (draft != null && _restore(draft)) return;
     final s = ref.read(journeySuggestionProvider);
     if (s == null) return;
-    _suggestion = s;
+    _reminder = s.reminder;
     final key = s.coupleRitual ? 'couple' : s.templateId.wireName;
     for (final o in _options) {
       if (o.keyName != key) continue;
@@ -260,6 +272,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   }
 
   void _back() {
+    if (_busy) return;
     if (_step == 0) {
       _leaveFlow();
     } else if (_step == 1 && _questions.isNotEmpty && _dnaPage > 0) {
@@ -280,7 +293,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _who == CreateWho.couple ? _nameRight.text.trim() : null;
 
   String? _reminderHHmm() {
-    final rt = ReminderTime.tryParse(_suggestion?.reminder);
+    final rt = ReminderTime.tryParse(_reminder);
     if (rt == null) return null;
     return '${rt.hour.toString().padLeft(2, '0')}:'
         '${rt.minute.toString().padLeft(2, '0')}';
@@ -325,6 +338,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final today = _today(form);
     final start = _start != null && !_start!.isBefore(today) ? _start! : today;
     final reminders = ref.read(reminderSchedulerProvider);
+    // Read before any await: the screen may be gone when the work finishes.
+    final progress = ref.read(createProgressProvider.notifier);
+    final activeJourney = ref.read(activeJourneyIdProvider.notifier);
     final title = _finalTitle(form);
     setState(() => _busy = true);
     try {
@@ -354,7 +370,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
       );
-      final rt = ReminderTime.tryParse(_suggestion?.reminder);
+      // The journey exists: the saved draft must not resurrect it (U8).
+      unawaited(progress.clear());
+      final rt = ReminderTime.tryParse(_reminder);
       if (rt != null) {
         await ref
             .read(reminderSettingsProvider.notifier)
@@ -380,8 +398,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       // scheduler has nothing it may post (bug #7).
       if (rt != null) await offerReminderPermission(context, ref, time: rt);
       if (!mounted) return;
-      unawaited(ref.read(createProgressProvider.notifier).clear());
-      unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
+      unawaited(activeJourney.select(journey.id));
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
       if (!mounted) return;
@@ -567,6 +584,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final form = _form!;
     return {
       'v': 1,
+      'clientId': _clientId,
+      'reminder': _reminder,
       'option': _option!.keyName,
       'step': _step,
       'dnaPage': _dnaPage,
@@ -607,6 +626,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       final option = _options.firstWhere((o) => o.keyName == d['option']);
       _apply(option);
       final form = _form!;
+      if (d['clientId'] case final String id when id.isNotEmpty) {
+        _clientId = id;
+      }
+      _reminder = d['reminder'] as String?;
       form
         ..title = d['title']! as String
         ..emoji = d['emoji']! as String
@@ -671,6 +694,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Leaving the flow: keep a resumable draft from step 2 on, else forget
   /// any older one so the Hub card does not linger (U8).
   void _leaveFlow() {
+    if (_busy) return; // The journey is being created: stay for the result.
     _leaving = true;
     final progress = ref.read(createProgressProvider.notifier);
     if (_step == 0 || _form == null || _option == null) {
