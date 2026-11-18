@@ -242,6 +242,25 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_archive => 'Archive';
 
   @override
+  String get journeys_archiveConfirmTitle => 'Archive this journey?';
+
+  @override
+  String get journeys_archiveConfirmMessage =>
+      'The journey is hidden from your list. You can undo right after archiving.';
+
+  @override
+  String get journeys_archived => 'Journey archived';
+
+  @override
+  String get journeys_archiveUndo => 'Undo';
+
+  @override
+  String get journeys_archivedSection => 'Archived';
+
+  @override
+  String get journeys_unarchive => 'Unarchive';
+
+  @override
   String get journeys_delete => 'Delete journey';
 
   @override
@@ -305,6 +324,16 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_noCheckIn => 'No photo for this day';
+
+  @override
+  String journeys_dayPhotoCount(int index, int count) {
+    return '$index/$count';
+  }
+
+  @override
+  String journeys_dayPhotoCountSemantics(int index, int count) {
+    return 'Photo $index of $count for this day. Swipe to see the others.';
+  }
 
   @override
   String get journeys_greetingMorning => 'Good morning';

@@ -1,5 +1,7 @@
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/journey_clock.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/camera/camera_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -21,6 +23,7 @@ Future<(ProviderContainer, SharedPreferencesWithCache)> _container({
   final c = ProviderContainer.test(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(store),
+      journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
       if (wired)
         journeyRepositoryProvider.overrideWithValue(
           FakeJourneyRepository(journeys: journeys),

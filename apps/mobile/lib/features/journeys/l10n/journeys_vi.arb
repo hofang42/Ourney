@@ -138,6 +138,12 @@
   "journeys_endConfirmTitle": "Kết thúc hành trình?",
   "journeys_endConfirmMessage": "Sau khi kết thúc, hành trình chỉ xem được và không check-in thêm được nữa.",
   "journeys_archive": "Lưu trữ",
+  "journeys_archiveConfirmTitle": "Lưu trữ hành trình?",
+  "journeys_archiveConfirmMessage": "Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.",
+  "journeys_archived": "Đã lưu trữ hành trình",
+  "journeys_archiveUndo": "Hoàn tác",
+  "journeys_archivedSection": "Đã lưu trữ",
+  "journeys_unarchive": "Bỏ lưu trữ",
   "journeys_delete": "Xoá hành trình",
   "journeys_deleteConfirmTitle": "Xoá hành trình?",
   "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.",
@@ -207,6 +213,30 @@
   "journeys_showMetric": "Hiện con số",
   "journeys_photoUnavailable": "Ảnh chưa tải được",
   "journeys_noCheckIn": "Chưa có ảnh cho ngày này",
+  "journeys_dayPhotoCount": "{index}/{count}",
+  "@journeys_dayPhotoCount": {
+    "description": "Day viewer: which photo of the day is shown (several photos a day).",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dayPhotoCountSemantics": "Ảnh {index} trên {count} của ngày này. Vuốt để xem ảnh khác.",
+  "@journeys_dayPhotoCountSemantics": {
+    "description": "Screen reader label of the day viewer photo counter.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_greetingMorning": "Chào buổi sáng",
   "@journeys_greetingMorning": {
     "description": "Hub greeting before noon."

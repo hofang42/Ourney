@@ -217,7 +217,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         day: progress.dayNumber,
                         total: journey.durationDays,
                         streak: progress.summary.current,
-                        now: ref.watch(journeysNowProvider),
+                        today: progress.today,
                         offline:
                             ref.watch(journeyHomeOfflineProvider).value ??
                             false,
@@ -398,7 +398,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   /// Metric values of the journey, oldest first.
   List<double> _metricSeries(JourneyProgress p) {
     final days = p.checkInsByDate.keys.toList()..sort((a, b) => a.compareTo(b));
-    return [for (final d in days) ?p.checkInsByDate[d]!.metricValue];
+    return [for (final d in days) ?latestMetric(p.checkInsOn(d))];
   }
 
   void _back() {
@@ -501,8 +501,26 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           if (context.mounted) router.go(JourneysPaths.wrapped(journey.id));
         }
       case _Action.archive:
+        final ok = await confirmJourneyAction(
+          context,
+          title: l10n.journeys_archiveConfirmTitle,
+          message: l10n.journeys_archiveConfirmMessage,
+          confirmLabel: l10n.journeys_archive,
+        );
+        if (!ok || !context.mounted) return;
         if (await _guard(context, () => repo.archive(journey.id))) {
           unawaited(reminders.reschedule());
+          // The root messenger keeps the toast over the route change.
+          if (context.mounted) {
+            showJourneySnack(
+              context,
+              l10n.journeys_archived,
+              actionLabel: l10n.journeys_archiveUndo,
+              onAction: () => unawaited(
+                repo.unarchive(journey.id).then((_) => reminders.reschedule()),
+              ),
+            );
+          }
           router.go(AppRoutes.journeys);
         }
       case _Action.delete:

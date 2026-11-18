@@ -51,6 +51,26 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
+  Stream<List<Journey>> watchArchived() {
+    final me = ctx.userId;
+    if (me == null) return Stream.value(const []);
+    final q = _mine(me)
+      ..where(
+        _db.journeys.status.equals(JourneyStatus.archived.wireName).not() &
+            _db.journeys.localArchived.equals(true),
+      )
+      ..orderBy([
+        OrderingTerm.desc(_db.journeys.startDate),
+        OrderingTerm.asc(_db.journeys.id),
+      ]);
+    return q.watch().map(
+      (rows) => [
+        for (final r in rows) journeyFromRow(r.readTable(_db.journeys)),
+      ],
+    );
+  }
+
+  @override
   Stream<Set<String>> watchPinnedJourneyIds() {
     final me = ctx.userId;
     if (me == null) return Stream.value(const <String>{});
@@ -300,7 +320,7 @@ class DataJourneyRepository implements JourneyRepository {
     final group = row.kind == JourneyKind.group.wireName;
     final remote = ctx.remote;
     if (remote != null) {
-      await _flushFirst();
+      await _flushFirst(forJourney: journeyId);
       try {
         final res = await remote.rpc(
           'update_journey',
@@ -428,9 +448,32 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   /// Sends queued writes first so RPCs never race a pending `create_journey`.
-  Future<void> _flushFirst() async {
+  ///
+  /// With [forJourney], also fails (offline: retry later) when an item of that
+  /// journey is still queued after the flush: a failed upload must not be
+  /// followed by `end_journey`, the server would then reject it for good.
+  Future<void> _flushFirst({String? forJourney}) async {
     final outbox = ctx.outbox;
-    if (outbox != null) await outbox.flush(force: true);
+    if (outbox == null) return;
+    await outbox.flush(force: true);
+    if (forJourney != null && await _hasPendingFor(outbox, forJourney)) {
+      throw const OurneyException(OurneyErrorCode.offline);
+    }
+  }
+
+  Future<bool> _hasPendingFor(Outbox outbox, String journeyId) async {
+    for (final row in await outbox.pendingRows()) {
+      if (row.entityKey.contains(journeyId)) return true;
+      if (row.kind == OutboxKind.upsertCheckIn.wire) {
+        final id = (jsonDecode(row.payload) as Map)['id'];
+        if (id is! String) continue;
+        final c = await (_db.select(
+          _db.checkIns,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        if (c?.journeyId == journeyId) return true;
+      }
+    }
+    return false;
   }
 
   @override
@@ -444,7 +487,7 @@ class DataJourneyRepository implements JourneyRepository {
       await _setStatus(journeyId, JourneyStatus.ended);
       return;
     }
-    await _flushFirst();
+    await _flushFirst(forJourney: journeyId);
     final row = await remote.rpc('end_journey', {'journey': journeyId});
     if (row is Map) {
       await ctx.store.applyJourney(row.cast<String, dynamic>());
@@ -463,6 +506,13 @@ class DataJourneyRepository implements JourneyRepository {
     await _requireLocal(journeyId);
     await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId)))
         .write(const JourneysCompanion(localArchived: Value(true)));
+  }
+
+  @override
+  Future<void> unarchive(String journeyId) async {
+    await _requireLocal(journeyId);
+    await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId)))
+        .write(const JourneysCompanion(localArchived: Value(false)));
   }
 
   @override

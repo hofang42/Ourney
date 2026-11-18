@@ -75,6 +75,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   bool _visible = false;
   bool _appVisible = true;
+
+  /// Set when we sent the user to system Settings for the permission.
+  bool _sentToSettings = false;
   bool _noJourneys = false;
 
   /// Bumped whenever the camera is stopped so a start that finishes late
@@ -137,11 +140,16 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       case AppLifecycleState.resumed:
         _appVisible = true;
         // Coming back from Settings: try again if access was blocked.
+        // Android reports a "don't ask again" denial as a plain denial, so
+        // that one is retried too when we opened Settings ourselves (U7).
         if (_phase == _Phase.failure &&
             (_failure == CameraFailure.permissionDeniedPermanently ||
-                _failure == CameraFailure.restricted)) {
+                _failure == CameraFailure.restricted ||
+                (_sentToSettings &&
+                    _failure == CameraFailure.permissionDenied))) {
           _phase = _Phase.idle;
         }
+        _sentToSettings = false;
         _sync();
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
@@ -194,6 +202,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   Future<void> _start() async {
     final gen = ++_generation;
     final session = _session ??= ref.read(cameraSessionFactoryProvider)();
+    // Read before the await: `ref` is unusable once the screen unmounts.
+    final prefs = ref.read(sharedPreferencesProvider);
     setState(() {
       _phase = _Phase.starting;
       _failure = null;
@@ -223,11 +233,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         _failure = e.failure;
       });
     } finally {
-      unawaited(
-        ref
-            .read(sharedPreferencesProvider)
-            .setBool(CameraPrefs.permissionAsked, true),
-      );
+      // The start reached the OS permission prompt, so it was asked even if
+      // the user left the screen meanwhile (prefs were read before the
+      // await: `ref` is unusable once unmounted).
+      unawaited(prefs.setBool(CameraPrefs.permissionAsked, true));
     }
   }
 
@@ -242,7 +251,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   }
 
   Future<void> _openSettings() async {
-    await ref.read(appSettingsOpenerProvider).open();
+    _sentToSettings = true;
+    final opened = await ref.read(appSettingsOpenerProvider).open();
+    if (!opened) _sentToSettings = false;
   }
 
   Future<void> _toggleFlash() async {
@@ -323,8 +334,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         ?.where((c) => c.metricValue != null)
         .fold<CheckIn?>(
           null,
-          (prev, c) =>
-              prev == null || c.localDate.compareTo(prev.localDate) >= 0
+          (prev, c) => prev == null || !c.capturedAt.isBefore(prev.capturedAt)
               ? c
               : prev,
         )
@@ -752,7 +762,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 streak: data.progress.summary.current,
                 lastPace: data.lastWith((c) => c.extras.pace),
                 lastWeight: data.lastWeight,
-                lastWeightKg: data.lastWeightKg,
+                // A weight already chosen (and not posted yet) stays on
+                // the slider, so what it shows is what gets prefilled.
+                lastWeightKg:
+                    ref.read(pendingWeightProvider(journey.id)) ??
+                    data.lastWeightKg,
                 lastKm: data.lastKm,
                 lastMinutes: data.lastMinutes,
                 onWeightChanged: (kg) => ref

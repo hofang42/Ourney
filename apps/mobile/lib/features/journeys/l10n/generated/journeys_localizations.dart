@@ -506,6 +506,42 @@ abstract class JourneysL10n {
   /// **'Lưu trữ'**
   String get journeys_archive;
 
+  /// No description provided for @journeys_archiveConfirmTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lưu trữ hành trình?'**
+  String get journeys_archiveConfirmTitle;
+
+  /// No description provided for @journeys_archiveConfirmMessage.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.'**
+  String get journeys_archiveConfirmMessage;
+
+  /// No description provided for @journeys_archived.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu trữ hành trình'**
+  String get journeys_archived;
+
+  /// No description provided for @journeys_archiveUndo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hoàn tác'**
+  String get journeys_archiveUndo;
+
+  /// No description provided for @journeys_archivedSection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu trữ'**
+  String get journeys_archivedSection;
+
+  /// No description provided for @journeys_unarchive.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ lưu trữ'**
+  String get journeys_unarchive;
+
   /// No description provided for @journeys_delete.
   ///
   /// In vi, this message translates to:
@@ -613,6 +649,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chưa có ảnh cho ngày này'**
   String get journeys_noCheckIn;
+
+  /// Day viewer: which photo of the day is shown (several photos a day).
+  ///
+  /// In vi, this message translates to:
+  /// **'{index}/{count}'**
+  String journeys_dayPhotoCount(int index, int count);
+
+  /// Screen reader label of the day viewer photo counter.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh {index} trên {count} của ngày này. Vuốt để xem ảnh khác.'**
+  String journeys_dayPhotoCountSemantics(int index, int count);
 
   /// Hub greeting before noon.
   ///

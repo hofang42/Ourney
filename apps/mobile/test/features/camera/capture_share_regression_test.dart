@@ -5,6 +5,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/journey_clock.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/camera/camera_session.dart';
@@ -35,6 +36,9 @@ void main() {
       final c = await pumpOurneyApp(
         tester,
         overrides: [
+          journeysClockProvider.overrideWithValue(
+            Clock.fixed(DateTime.utc(2026, 10, 16, 5)),
+          ),
           journeyRepositoryProvider.overrideWithValue(FakeJourneyRepository()),
           checkInRepositoryProvider.overrideWithValue(checkIns),
           cameraSessionFactoryProvider.overrideWithValue(() => camera),
@@ -98,6 +102,9 @@ void main() {
     final c = await pumpOurneyApp(
       tester,
       overrides: [
+        journeysClockProvider.overrideWithValue(
+          Clock.fixed(DateTime.utc(2026, 10, 16, 5)),
+        ),
         journeyRepositoryProvider.overrideWithValue(FakeJourneyRepository()),
         checkInRepositoryProvider.overrideWithValue(FakeCheckInRepository()),
         cameraSessionFactoryProvider.overrideWithValue(FakeCameraSession.new),

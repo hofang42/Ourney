@@ -95,7 +95,8 @@ StreakSummary computeStreak({
     best: best,
     completed: completed,
     checkedInToday: checkedInToday,
-    atRisk: !checkedInToday && current > 0,
+    // Not once a fixed-length window is over: nothing can be checked in.
+    atRisk: todayIdx <= lastIdx && !checkedInToday && current > 0,
     progress: progress,
     dayIndex: dayIndex,
   );

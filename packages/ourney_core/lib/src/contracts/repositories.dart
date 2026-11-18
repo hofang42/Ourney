@@ -96,6 +96,10 @@ abstract interface class JourneyRepository {
   Stream<List<Journey>> watchActive();
   Stream<Journey?> watch(String journeyId);
 
+  /// Journeys hidden with [archive] (client-side), newest first. They come
+  /// back to [watchActive] with [unarchive].
+  Stream<List<Journey>> watchArchived();
+
   /// `create_journey`. The client generates the id (idempotent retry).
   /// Visibility is sent as `draft.visibility` (group → `group`; solo →
   /// `private` or `link`, which issues `Journey.publicToken`).
@@ -115,6 +119,9 @@ abstract interface class JourneyRepository {
   /// There is no archive RPC; the server sets `archived` itself when the last
   /// member leaves or the journey is deleted.
   Future<void> archive(String journeyId);
+
+  /// Undoes [archive]: the journey is listed again.
+  Future<void> unarchive(String journeyId);
 
   /// `delete_journey` (owner only, solo or alone in the group). Throws
   /// `notAlone` while other active members exist (use [end] instead),

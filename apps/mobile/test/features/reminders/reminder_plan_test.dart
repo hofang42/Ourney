@@ -308,6 +308,28 @@ void main() {
       expect(wall(alert.fireAt, hcm), '2026-10-16 21:00');
     });
 
+    test('a 21:00 reminder on a streak day is one notification (B-B14)', () {
+      final plan = planReminders(
+        now: now,
+        deviceTimezone: hcm,
+        journeys: [
+          journey(
+            time: const ReminderTime(21, 0),
+            checked: {d('2026-10-14'), d('2026-10-15')},
+          ),
+        ],
+      );
+      final today = [
+        for (final n in plan)
+          if (n.journeyDate == d('2026-10-16')) n,
+      ];
+      expect(today, hasLength(1));
+      expect(today.single.kind, PlannedKind.streakAlert);
+      // Other days (no streak at stake once missed) keep the reminder.
+      final instants = {for (final n in plan) (n.journeyId, n.fireAt)};
+      expect(instants, hasLength(plan.length));
+    });
+
     test('no alert when the streak is already 0', () {
       final plan = planReminders(
         now: now,
@@ -407,7 +429,7 @@ void main() {
       ]);
     });
 
-    test('at the same instant the alert sorts first', () {
+    test('at the same instant only the alert is kept (B-B14)', () {
       final plan = planReminders(
         now: now,
         deviceTimezone: hcm,
@@ -417,7 +439,7 @@ void main() {
       );
       expect(plan[0].kind, PlannedKind.streakAlert);
       expect(plan[1].kind, PlannedKind.reminder);
-      expect(plan[0].fireAt, plan[1].fireAt);
+      expect(plan[1].fireAt, isNot(plan[0].fireAt));
     });
   });
 

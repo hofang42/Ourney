@@ -50,6 +50,52 @@ void main() {
     }
   }
 
+  for (final scale in [1.0, 2.0]) {
+    testWidgets('quiet HUD: chips never cover the weight slider '
+        '(vi, 288dp viewfinder, ${scale}x) (U2)', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('vi'),
+          localizationsDelegates: CameraL10n.localizationsDelegates,
+          supportedLocales: CameraL10n.supportedLocales,
+          theme: OurneyTheme.build(Brightness.light),
+          home: MediaQuery(
+            data: MediaQueryData(
+              size: const Size(360, 780),
+              textScaler: TextScaler.linear(scale),
+            ),
+            child: Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 288,
+                  height: 520,
+                  child: CaptureSkinOverlay(
+                    skin: PersonaSkinId.quietTransformer,
+                    dayNumber: 3,
+                    streak: 2,
+                    lastWeight: '62.6 kg',
+                    lastWeightKg: 62.6,
+                    onWeightChanged: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      final slider = tester.getRect(
+        find.byKey(const ValueKey('overlay-weight-slider-row')),
+      );
+      final last = tester.getRect(find.byKey(const ValueKey('overlay-weight')));
+      for (final k in ['overlay-ghost-toggle', 'overlay-vault']) {
+        final chip = tester.getRect(find.byKey(ValueKey(k)));
+        expect(chip.overlaps(slider), isFalse, reason: '$k over slider');
+        expect(chip.overlaps(last), isFalse, reason: '$k over last weight');
+      }
+    });
+  }
+
   testWidgets('minimalist overlay draws no text', (tester) async {
     await tester.pumpWidget(
       _host(

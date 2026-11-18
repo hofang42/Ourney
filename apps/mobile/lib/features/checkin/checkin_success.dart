@@ -23,6 +23,7 @@ class CheckinSuccessView extends StatefulWidget {
     required this.haptics,
     required this.onDone,
     required this.onShare,
+    this.holdAutoClose,
     this.journey,
     super.key,
   });
@@ -32,6 +33,11 @@ class CheckinSuccessView extends StatefulWidget {
   final bool haptics;
   final VoidCallback onDone;
   final VoidCallback onShare;
+
+  /// The plain success state closes [autoCloseDelay] after this completes
+  /// (B-B2): the notification offer opened on top of this screen must not
+  /// be popped by the auto-close, nor the screen while the OS asks.
+  final Future<void>? holdAutoClose;
 
   /// How long the plain (no milestone) success state stays on screen.
   static const autoCloseDelay = Duration(milliseconds: 1800);
@@ -50,9 +56,20 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
     if (_started) return;
     _started = true;
     if (widget.haptics) OurneyHaptics.success();
-    if (widget.outcome.milestone == null) {
-      _autoClose = Timer(CheckinSuccessView.autoCloseDelay, widget.onDone);
+    if (widget.outcome.milestone == null) unawaited(_armAutoClose());
+  }
+
+  Future<void> _armAutoClose() async {
+    final hold = widget.holdAutoClose;
+    if (hold != null) {
+      try {
+        await hold;
+      } on Object {
+        // The offer never throws; close anyway if it somehow does.
+      }
     }
+    if (!mounted) return;
+    _autoClose = Timer(CheckinSuccessView.autoCloseDelay, widget.onDone);
   }
 
   @override

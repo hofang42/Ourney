@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/l10n/generated/journeys_localizations.dart';
 import 'package:ourney/features/journeys/ui/home/journey_home_intro.dart';
 import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 Widget _host(
   Widget child, {
@@ -45,7 +50,7 @@ JourneyHomeIntro _intro(
   day: 12,
   total: total,
   streak: 5,
-  now: DateTime(2026, 11, 15),
+  today: const LocalDate(2026, 11, 15),
   offline: offline,
   readOnly: readOnly,
 );
@@ -118,4 +123,43 @@ void main() {
       }
     }
   }
+
+  testWidgets('minimal month header follows the journey day, not the '
+      'device clock', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        const JourneyHomeIntro(
+          skin: 'minimal',
+          day: 1,
+          streak: 1,
+          today: LocalDate(2026, 12, 1),
+        ),
+        locale: const Locale('en'),
+      ),
+    );
+    expect(find.textContaining('DECEMBER'), findsOneWidget);
+  });
+
+  test('offline stream ignores a connectivity answer after dispose '
+      '(B-B15)', () async {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel('dev.fluttercommunity.plus/connectivity');
+    final answer = Completer<List<String>>();
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    messenger.setMockMethodCallHandler(channel, (_) => answer.future);
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    final errors = <Object>[];
+    await runZonedGuarded(() async {
+      final c = ProviderContainer();
+      final sub = c.listen(journeyHomeOfflineProvider, (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      sub.close();
+      c.dispose();
+      answer.complete(['wifi']);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }, (e, _) => errors.add(e));
+    expect(errors, isEmpty);
+  });
 }

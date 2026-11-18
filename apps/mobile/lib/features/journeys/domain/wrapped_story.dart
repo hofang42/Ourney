@@ -16,44 +16,48 @@ class WrappedStats {
     required this.lastCaption,
     required this.lastPlace,
     required this.pace,
+    this.weights = const [],
   });
 
   factory WrappedStats.from(JourneyProgress p) {
-    final byDate = p.checkInsByDate.entries.toList()
-      ..sort((a, b) => a.key.compareTo(b.key));
-    final all = [for (final e in byDate) e.value];
+    final dates = p.checkInsByDate.keys.toList()
+      ..sort((a, b) => a.compareTo(b));
+    final perDay = [for (final d in dates) p.checkInsByDate[d]!];
+    // Every photo counts (several a day since `0014`, B-B5).
+    final every = p.allCheckIns;
     var km = 0.0;
     String? pace;
     String? place;
-    for (final c in all) {
+    for (final c in every) {
       km += c.extras.km ?? 0;
       pace = c.extras.pace ?? pace;
       place = c.extras.place ?? place;
     }
     String? caption;
-    for (final c in all.reversed) {
+    for (final c in every.reversed) {
       if ((c.caption ?? '').trim().isNotEmpty) {
         caption = c.caption!.trim();
         break;
       }
     }
     return WrappedStats(
-      days: all.length,
-      moments: all.length,
-      total: p.totalDays ?? (all.isEmpty ? 1 : all.length),
+      days: perDay.length,
+      moments: every.length,
+      total: p.totalDays ?? (perDay.isEmpty ? 1 : perDay.length),
       streak: p.summary.best,
       totalKm: km,
-      photos: all,
+      photos: perDay,
       lastCaption: caption,
       lastPlace: place,
       pace: pace,
+      weights: [for (final d in dates) ?latestMetric(p.checkInsOn(d))],
     );
   }
 
   /// Distinct check-in days.
   final int days;
 
-  /// Photos taken (one per day until multi-photo lands).
+  /// Photos taken (every photo of every day).
   final int moments;
   final int total;
 
@@ -61,8 +65,11 @@ class WrappedStats {
   final int streak;
   final double totalKm;
 
-  /// Oldest first.
+  /// The latest photo of each day, oldest day first.
   final List<CheckIn> photos;
+
+  /// The latest metric value logged each day, oldest first.
+  final List<double> weights;
   final String? lastCaption;
   final String? lastPlace;
   final String? pace;

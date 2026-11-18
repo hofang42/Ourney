@@ -1,26 +1,29 @@
-import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../app/providers.dart';
+import '../../shared/time_zones.dart';
 import '../journeys/data/journeys_providers.dart';
 
 /// Repository errors surface in the UI with a retry button; never retry on
 /// a timer (no hidden work on the camera screen, NFR-1).
 Duration? _noRetry(int _, Object _) => null;
 
-/// Active journeys for the journey chip row (FR-C1).
+/// Active journeys for the journey chip row (FR-C1). A journey whose last
+/// day is over in ITS time zone takes no photo (B-B7); the clock re-filters at
+/// midnight without resubscribing to the database.
 final captureJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref
-      .watch(journeyRepositoryProvider)
-      .watchActive()
-      .map(
-        (all) => [
-          for (final j in all)
-            if (j.status == JourneyStatus.active) j,
-        ],
-      ),
+  (ref) => mapWithNow(
+    ref,
+    ref.watch(journeyRepositoryProvider).watchActive(),
+    (all, now) => [
+      for (final j in all)
+        if (j.status == JourneyStatus.active &&
+            !j.isPastEndOn(journeyLocalDate(j.timezone, now)))
+          j,
+    ],
+  ),
   retry: _noRetry,
 );
 
@@ -54,20 +57,25 @@ Journey? pickInitialJourney(List<Journey> journeys, String? lastId) {
 
 /// Every journey (active and ended) for the picker sheet sections.
 final capturePickerJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchActive(),
+  (ref) => mapWithNow(
+    ref,
+    ref.watch(journeyRepositoryProvider).watchActive(),
+    (all, now) => [
+      for (final j in all) j.settledOn(journeyLocalDate(j.timezone, now)),
+    ],
+  ),
   retry: _noRetry,
 );
 
-/// Ids of the journeys already shot today, by the device-local calendar day
-/// (the journey timezone database is never loaded on the camera, NFR-1).
+/// Ids of the journeys already shot today, by each journey's own calendar day.
 final captureShotTodayProvider = FutureProvider.autoDispose<Set<String>>((
   ref,
 ) async {
   final journeys = await ref.watch(capturePickerJourneysProvider.future);
-  final n = clock.now();
-  final today = LocalDate(n.year, n.month, n.day);
+  final now = ref.watch(journeysNowProvider);
   final shot = <String>{};
   for (final j in journeys) {
+    final today = journeyLocalDate(j.timezone, now);
     final list = await ref.watch(myCheckInsProvider(j.id).future);
     if (list.any((c) => c.localDate == today)) shot.add(j.id);
   }

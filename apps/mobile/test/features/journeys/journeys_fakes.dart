@@ -94,12 +94,15 @@ CheckIn testCheckIn(
   String? caption,
   double? metricValue,
   bool uploaded = true,
+  int hour = 2,
+  CheckInExtras extras = CheckInExtras.empty,
 }) => CheckIn(
-  id: 'c-$journeyId-$date',
+  id: hour == 2 ? 'c-$journeyId-$date' : 'c-$journeyId-$date-$hour',
+  extras: extras,
   journeyId: journeyId,
   userId: userId,
   localDate: date,
-  capturedAt: DateTime.utc(date.year, date.month, date.day, 2),
+  capturedAt: DateTime.utc(date.year, date.month, date.day, hour),
   photoPath: checkInPhotoPath(journeyId, userId, 'c-$date'),
   thumbPath: checkInThumbPath(journeyId, userId, 'c-$date'),
   caption: caption,
@@ -140,8 +143,36 @@ class FakeJourneyRepository implements JourneyRepository {
   void _replace(String id, Journey Function(Journey) f) =>
       _journeys.set([for (final j in _journeys.value) j.id == id ? f(j) : j]);
 
+  /// Ids hidden with [archive]. Like the real repository the journey keeps
+  /// its status: archiving only hides it, [unarchive] lists it again.
+  final _archived = _Live<Set<String>>(<String>{});
+
+  Stream<List<Journey>> _view(bool archived) {
+    late final StreamController<List<Journey>> c;
+    StreamSubscription<void>? a, b;
+    void emit() => c.add([
+      for (final j in _journeys.value)
+        if (_archived.value.contains(j.id) == archived) j,
+    ]);
+    c = StreamController<List<Journey>>(
+      onListen: () {
+        emit();
+        a = _journeys.watch().skip(1).listen((_) => emit());
+        b = _archived.watch().skip(1).listen((_) => emit());
+      },
+      onCancel: () async {
+        await a?.cancel();
+        await b?.cancel();
+      },
+    );
+    return c.stream;
+  }
+
   @override
-  Stream<List<Journey>> watchActive() => _journeys.watch();
+  Stream<List<Journey>> watchActive() => _view(false);
+
+  @override
+  Stream<List<Journey>> watchArchived() => _view(true);
 
   @override
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(
@@ -214,7 +245,13 @@ class FakeJourneyRepository implements JourneyRepository {
   @override
   Future<void> archive(String journeyId) async {
     calls.add('archive:$journeyId');
-    _replace(journeyId, (j) => _copy(j, JourneyStatus.archived));
+    _archived.set({..._archived.value, journeyId});
+  }
+
+  @override
+  Future<void> unarchive(String journeyId) async {
+    calls.add('unarchive:$journeyId');
+    _archived.set({..._archived.value}..remove(journeyId));
   }
 
   @override

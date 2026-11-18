@@ -44,10 +44,7 @@ class _QuietTimelineState extends State<QuietTimeline> {
     final l10n = JourneysL10n.of(context);
     final accent = timelineAccent(context);
     final days = widget.days;
-    final metric = <double>[
-      for (final d in days)
-        if (d.checkIn?.metricValue != null) d.checkIn!.metricValue!,
-    ];
+    final metric = <double>[for (final d in days) ?d.metricValue];
     final series = metric.length >= 2 ? metric : cumulativeSeries(days);
     String axis(int i) {
       if (!_revealed || metric.length < 2) return '••,•';
@@ -466,8 +463,8 @@ class MemoryTimeline extends StatelessWidget {
         .where(
           (d) => d.state == DayState.checkedIn || d.state == DayState.today,
         )
-        .where((d) => d.checkIn != null)
-        .length;
+        // Every photo is a frame (several a day since `0014`, B-B5).
+        .fold<int>(0, (n, d) => n + d.photoCount);
     final roll = Padding(
       padding: const EdgeInsets.only(bottom: UiSpace.sm),
       child: Align(
@@ -741,9 +738,7 @@ class _CouplePair extends StatelessWidget {
     final l10n = JourneysL10n.of(context);
     final accent = timelineAccent(context);
     final done = day.state == DayState.checkedIn;
-    final partnerPhoto = day.checkIn?.partnerPhotoPath == null
-        ? null
-        : day.checkIn;
+    final partnerPhoto = day.partnerCheckIn;
     final waiting =
         day.state == DayState.checkedIn || day.state == DayState.today;
     final header = [

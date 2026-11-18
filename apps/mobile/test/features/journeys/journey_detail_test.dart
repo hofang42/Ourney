@@ -153,6 +153,36 @@ void main() {
       expect(find.text('71.5 kg'), findsOneWidget);
     });
 
+    testWidgets('day viewer pages through every photo of the day (B-B6)', (
+      tester,
+    ) async {
+      final j = testJourney();
+      final d = const LocalDate(2026, 10, 15);
+      await pumpJourneys(
+        tester,
+        locale: const Locale('en'),
+        location: JourneysPaths.day(j.id, d),
+        config: const AppConfig.localOnly(),
+        journeys: FakeJourneyRepository(
+          journeys: [j],
+          memberships: {j.id: testMembership(j)},
+        ),
+        checkIns: FakeCheckInRepository([
+          testCheckIn(j.id, d, caption: 'morning coffee', hour: 1),
+          testCheckIn(j.id, d, caption: 'evening walk', hour: 12),
+        ]),
+      );
+      await tester.pumpAndSettle();
+      // Opens on the latest photo.
+      expect(find.text('evening walk'), findsOneWidget);
+      expect(find.text('2/2'), findsOneWidget);
+
+      await tester.drag(_key('journey-day-pages'), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('morning coffee'), findsOneWidget);
+      expect(find.text('1/2'), findsOneWidget);
+    });
+
     testWidgets('missed and future days are not tappable', (tester) async {
       final h = await _pumpDetail(tester);
       await _tap(tester, _day(const LocalDate(2026, 10, 12)));
@@ -207,10 +237,24 @@ void main() {
       await _tap(tester, _key('journey-more'));
       expect(_key('journey-action-end'), findsNothing);
       await _tap(tester, _key('journey-action-archive'));
+      // Archiving asks first (U12): cancelling keeps the journey.
+      expect(find.text('Archive this journey?'), findsOneWidget);
+      expect(h.journeys.calls, isNot(contains('archive:j1')));
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(h.location, AppRoutes.journey('j1'));
+      await _tap(tester, _key('journey-more'));
+      await _tap(tester, _key('journey-action-archive'));
+      await _tap(tester, _key('journeys-confirm'));
       expect(h.journeys.calls, contains('archive:j1'));
       expect(h.location, AppRoutes.journeys);
+      // Toast with an undo path that restores the journey.
+      expect(find.text('Journey archived'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('ui-toast-action')));
+      await tester.pumpAndSettle();
+      expect(h.journeys.calls, contains('unarchive:j1'));
       await _tap(tester, _key('hub-segment-shelf'));
-      expect(find.text('Archived'), findsOneWidget);
+      expect(find.text('Archived'), findsNothing);
     });
 
     testWidgets('cancelling end does nothing', (tester) async {

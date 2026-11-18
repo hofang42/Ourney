@@ -27,6 +27,7 @@ class TimelineDay {
     required this.state,
     required this.isToday,
     this.checkIn,
+    this._checkIns,
   });
 
   final LocalDate date;
@@ -37,7 +38,37 @@ class TimelineDay {
 
   /// Also true for a checked-in today (highlight ring on top of the photo).
   final bool isToday;
+
+  /// The latest photo of the day (the one the cell shows).
   final CheckIn? checkIn;
+
+  final List<CheckIn>? _checkIns;
+
+  /// Every photo of the day, oldest first (several since `0014`).
+  List<CheckIn> get checkIns => _checkIns ?? [?checkIn];
+
+  int get photoCount => checkIns.length;
+
+  /// The day's latest logged metric: a later photo without a value (e.g. an
+  /// evening stretch after the morning weigh-in) does not hide it.
+  double? get metricValue => latestMetric(checkIns);
+
+  /// The day's latest photo that carries a partner half (couple diptych).
+  CheckIn? get partnerCheckIn {
+    for (final c in checkIns.reversed) {
+      if (c.partnerPhotoPath != null) return c;
+    }
+    return null;
+  }
+}
+
+/// Latest non-null metric value of [dayCheckIns] (oldest first).
+double? latestMetric(Iterable<CheckIn> dayCheckIns) {
+  double? v;
+  for (final c in dayCheckIns) {
+    v = c.metricValue ?? v;
+  }
+  return v;
 }
 
 /// Everything the journey list card and the detail screen show, derived from
@@ -50,6 +81,7 @@ class JourneyProgress {
     required this.memberStart,
     required this.summary,
     required this.checkInsByDate,
+    this._checkInsOnDate,
   });
 
   factory JourneyProgress.compute({
@@ -62,13 +94,16 @@ class JourneyProgress {
     final joined = membership == null
         ? journey.startDate
         : journeyLocalDate(journey.timezone, membership.joinedAt);
-    final byDate = <LocalDate, CheckIn>{};
+    // Several photos a day since `0014`: keep them all (oldest first) and
+    // the latest one per day for the cell / streak (B-B5).
+    final onDate = <LocalDate, List<CheckIn>>{};
     for (final c in checkIns) {
-      final existing = byDate[c.localDate];
-      // One check-in per day; keep the latest capture if duplicates leak in.
-      if (existing == null || c.capturedAt.isAfter(existing.capturedAt)) {
-        byDate[c.localDate] = c;
-      }
+      (onDate[c.localDate] ??= []).add(c);
+    }
+    final byDate = <LocalDate, CheckIn>{};
+    for (final e in onDate.entries) {
+      e.value.sort((a, b) => a.capturedAt.compareTo(b.capturedAt));
+      byDate[e.key] = e.value.last;
     }
     final summary = computeMemberStreak(
       journeyStart: journey.startDate,
@@ -83,6 +118,7 @@ class JourneyProgress {
       memberStart: effectiveStreakStart(journey.startDate, joined),
       summary: summary,
       checkInsByDate: byDate,
+      checkInsOnDate: onDate,
     );
   }
 
@@ -92,7 +128,25 @@ class JourneyProgress {
   /// First day that counts for the caller (later of start and join date).
   final LocalDate memberStart;
   final StreakSummary summary;
+
+  /// The latest check-in of each day.
   final Map<LocalDate, CheckIn> checkInsByDate;
+
+  final Map<LocalDate, List<CheckIn>>? _checkInsOnDate;
+
+  /// Every check-in of [date], oldest first.
+  List<CheckIn> checkInsOn(LocalDate date) {
+    final all = _checkInsOnDate?[date];
+    if (all != null) return all;
+    final one = checkInsByDate[date];
+    return one == null ? const [] : [one];
+  }
+
+  /// Every check-in of the journey, oldest first.
+  List<CheckIn> get allCheckIns {
+    final days = checkInsByDate.keys.toList()..sort((a, b) => a.compareTo(b));
+    return [for (final d in days) ...checkInsOn(d)];
+  }
 
   bool get isOpenEnded => journey.durationDays == null;
   bool get isActive => journey.status == JourneyStatus.active;
@@ -155,6 +209,7 @@ class JourneyProgress {
       state: state,
       isToday: isToday,
       checkIn: checkIn,
+      checkIns: checkInsOn(date),
     );
   }
 }

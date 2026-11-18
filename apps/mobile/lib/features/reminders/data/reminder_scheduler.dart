@@ -236,5 +236,14 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    // Pending notification texts are written at schedule time: rewrite them
+    // in the language just picked in the app.
+    ref.listen(reminderLocaleProvider, (prev, next) {
+      if (prev != next) {
+        unawaited(ref.read(reminderSchedulerProvider).reschedule());
+      }
+    });
+    return widget.child;
+  }
 }

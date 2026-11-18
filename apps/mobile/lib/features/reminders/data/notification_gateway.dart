@@ -5,6 +5,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../app/locale_override.dart';
 import '../l10n/generated/reminders_localizations.dart';
 
 /// Permission state as the reminders UI needs it.
@@ -214,15 +215,21 @@ class LocalNotificationGateway implements NotificationGateway {
 }
 
 /// Language of notification texts (scheduled outside any widget tree).
-/// Follows the device language; Vietnamese unless it is English (NFR-6).
+/// The language picked in the app wins; otherwise the device language.
+/// Vietnamese unless it is English (NFR-6).
 final reminderLocaleProvider = Provider<Locale>((ref) {
-  final code = PlatformDispatcher.instance.locale.languageCode;
+  final code =
+      ref.watch(localeOverrideProvider)?.languageCode ??
+      PlatformDispatcher.instance.locale.languageCode;
   return Locale(code == 'en' ? 'en' : 'vi');
 });
 
 /// The OS gateway (flutter_local_notifications). Overridden in tests.
 final notificationGatewayProvider = Provider<NotificationGateway>((ref) {
-  final l10n = lookupRemindersL10n(ref.watch(reminderLocaleProvider));
+  // Read, not watched: rebuilding the gateway on a language change would
+  // drop the tap handler registered by `initialize`. Only the channel
+  // label keeps the language of the first build until the next launch.
+  final l10n = lookupRemindersL10n(ref.read(reminderLocaleProvider));
   return LocalNotificationGateway(
     channelName: l10n.reminders_channelName,
     channelDescription: l10n.reminders_channelDescription,

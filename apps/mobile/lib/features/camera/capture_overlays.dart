@@ -128,48 +128,46 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
               painter: _GhostPainter(),
             ),
           ),
+        // One bottom-anchored column: the chips may wrap onto two lines
+        // (Vietnamese, 360dp, large text) and must push the slider up
+        // instead of drawing over it (U2).
         Positioned(
           left: 16,
           right: 16,
           bottom: 44,
-          child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            runSpacing: 4,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Chip(
-                label: _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
-                glyph: _ghost ? 'eye' : 'eye-off',
-                onPressed: () => setState(() => _ghost = !_ghost),
-                keyName: 'overlay-ghost-toggle',
-              ),
-              _Chip(
-                label: l10n.camera_privateVault,
-                glyph: 'lock',
-                keyName: 'overlay-vault',
+              if (widget.onWeightChanged != null) _weightSlider(context, l10n),
+              if (widget.lastWeight != null)
+                _Mono(
+                  l10n.camera_lastWeight(widget.lastWeight!),
+                  keyName: 'overlay-weight',
+                ),
+              if (widget.lastWeight != null || widget.onWeightChanged != null)
+                const SizedBox(height: 8),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                runSpacing: 4,
+                children: [
+                  _Chip(
+                    label: _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+                    glyph: _ghost ? 'eye' : 'eye-off',
+                    onPressed: () => setState(() => _ghost = !_ghost),
+                    keyName: 'overlay-ghost-toggle',
+                  ),
+                  _Chip(
+                    label: l10n.camera_privateVault,
+                    glyph: 'lock',
+                    keyName: 'overlay-vault',
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        if (widget.lastWeight != null || widget.onWeightChanged != null)
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 92,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (widget.onWeightChanged != null)
-                  _weightSlider(context, l10n),
-                if (widget.lastWeight != null)
-                  _Mono(
-                    l10n.camera_lastWeight(widget.lastWeight!),
-                    keyName: 'overlay-weight',
-                  ),
-              ],
-            ),
-          ),
       ],
     );
   }

@@ -240,6 +240,25 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_archive => 'Lưu trữ';
 
   @override
+  String get journeys_archiveConfirmTitle => 'Lưu trữ hành trình?';
+
+  @override
+  String get journeys_archiveConfirmMessage =>
+      'Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.';
+
+  @override
+  String get journeys_archived => 'Đã lưu trữ hành trình';
+
+  @override
+  String get journeys_archiveUndo => 'Hoàn tác';
+
+  @override
+  String get journeys_archivedSection => 'Đã lưu trữ';
+
+  @override
+  String get journeys_unarchive => 'Bỏ lưu trữ';
+
+  @override
   String get journeys_delete => 'Xoá hành trình';
 
   @override
@@ -303,6 +322,16 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_noCheckIn => 'Chưa có ảnh cho ngày này';
+
+  @override
+  String journeys_dayPhotoCount(int index, int count) {
+    return '$index/$count';
+  }
+
+  @override
+  String journeys_dayPhotoCountSemantics(int index, int count) {
+    return 'Ảnh $index trên $count của ngày này. Vuốt để xem ảnh khác.';
+  }
 
   @override
   String get journeys_greetingMorning => 'Chào buổi sáng';
