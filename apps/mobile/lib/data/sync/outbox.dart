@@ -122,6 +122,13 @@ class Outbox {
     return {for (final r in rows) r.entityKey};
   }
 
+  /// Live (not dead) items, oldest first.
+  Future<List<OutboxRow>> pendingRows() =>
+      (_db.select(_db.uploadQueue)
+            ..where((t) => t.dead.equals(false))
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .get();
+
   Stream<int> watchPending({OutboxKind? kind}) {
     final count = _db.uploadQueue.id.count();
     final q = _db.selectOnly(_db.uploadQueue)

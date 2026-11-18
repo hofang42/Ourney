@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/journeys/journeys_paths.dart';
+import '../features/journeys/ui/day_ticker.dart';
 import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
 import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/reminders/data/reminder_scheduler.dart';
@@ -50,16 +50,19 @@ class OurneyApp extends ConsumerWidget {
       localizationsDelegates: ourneyLocalizationsDelegates,
       // Reminders: reschedule on start/resume, open the journey on a
       // notification tap (FR-G1, FR-G2).
-      builder: (context, child) => ReminderLifecycleHook(
-        onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
-        child: OurneyTextScaleClamp(
-          // In-app reminder banner (V2 `ReminderNotification`): shown while
-          // `reminderBannerProvider` holds a value; a tap opens the camera.
-          child: ReminderBannerHost(
-            onOpenJourneyCamera: (id) => router.go(JourneysPaths.captureFor(id)),
-            child: _SplashGate(
-              returning: onboarded,
-              child: child ?? const SizedBox.shrink(),
+      builder: (context, child) => DayTicker(
+        child: ReminderLifecycleHook(
+          onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
+          child: OurneyTextScaleClamp(
+            // In-app reminder banner (V2 `ReminderNotification`): shown while
+            // `reminderBannerProvider` holds a value; a tap opens the camera.
+            child: ReminderBannerHost(
+              onOpenJourneyCamera: (id) =>
+                  router.go(JourneysPaths.captureFor(id)),
+              child: _SplashGate(
+                returning: onboarded,
+                child: child ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         ),

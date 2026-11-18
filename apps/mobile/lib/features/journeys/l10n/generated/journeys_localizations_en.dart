@@ -255,6 +255,12 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_archiveUndo => 'Undo';
 
   @override
+  String get journeys_archivedSection => 'Archived';
+
+  @override
+  String get journeys_unarchive => 'Unarchive';
+
+  @override
   String get journeys_delete => 'Delete journey';
 
   @override

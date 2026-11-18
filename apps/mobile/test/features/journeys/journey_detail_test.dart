@@ -173,13 +173,14 @@ void main() {
         ]),
       );
       await tester.pumpAndSettle();
-      expect(find.text('morning coffee'), findsOneWidget);
-      expect(find.text('1/2'), findsOneWidget);
-
-      await tester.drag(_key('journey-day-pages'), const Offset(-400, 0));
-      await tester.pumpAndSettle();
+      // Opens on the latest photo.
       expect(find.text('evening walk'), findsOneWidget);
       expect(find.text('2/2'), findsOneWidget);
+
+      await tester.drag(_key('journey-day-pages'), const Offset(400, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('morning coffee'), findsOneWidget);
+      expect(find.text('1/2'), findsOneWidget);
     });
 
     testWidgets('missed and future days are not tappable', (tester) async {

@@ -142,6 +142,8 @@
   "journeys_archiveConfirmMessage": "Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.",
   "journeys_archived": "Đã lưu trữ hành trình",
   "journeys_archiveUndo": "Hoàn tác",
+  "journeys_archivedSection": "Đã lưu trữ",
+  "journeys_unarchive": "Bỏ lưu trữ",
   "journeys_delete": "Xoá hành trình",
   "journeys_deleteConfirmTitle": "Xoá hành trình?",
   "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.",

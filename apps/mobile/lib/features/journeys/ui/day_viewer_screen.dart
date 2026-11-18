@@ -41,12 +41,13 @@ class DayViewerScreen extends ConsumerStatefulWidget {
 
 class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
   bool _revealMetric = false;
-  final _pages = PageController();
+  // Created once the day's photos are known: it opens on the latest one.
+  PageController? _pages;
   int _page = 0;
 
   @override
   void dispose() {
-    _pages.dispose();
+    _pages?.dispose();
     super.dispose();
   }
 
@@ -68,6 +69,10 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
               if (c.localDate == date) c,
           ]..sort((a, b) => a.capturedAt.compareTo(b.capturedAt)));
     final count = dayCheckIns.length;
+    if (count > 0 && _pages == null) {
+      _page = count - 1;
+      _pages = PageController(initialPage: count - 1);
+    }
     final index = count == 0 ? 0 : _page.clamp(0, count - 1);
     final checkIn = count == 0 ? null : dayCheckIns[index];
 

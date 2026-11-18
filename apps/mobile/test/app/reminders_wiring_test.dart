@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/journey_clock.dart';
 import 'package:ourney/app/overlays/reminder_banner.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
@@ -19,6 +20,9 @@ void main() {
       tester,
       overrides: [
         notificationGatewayProvider.overrideWithValue(gateway),
+        journeysClockProvider.overrideWithValue(
+          Clock.fixed(DateTime.utc(2026, 10, 16, 5)),
+        ),
         journeyRepositoryProvider.overrideWithValue(
           FakeReminderJourneyRepository([reminderJourney()]),
         ),
@@ -50,6 +54,9 @@ void main() {
       tester,
       overrides: [
         notificationGatewayProvider.overrideWithValue(gateway),
+        journeysClockProvider.overrideWithValue(
+          Clock.fixed(DateTime.utc(2026, 10, 16, 5)),
+        ),
         journeyRepositoryProvider.overrideWithValue(
           FakeReminderJourneyRepository([reminderJourney()]),
         ),

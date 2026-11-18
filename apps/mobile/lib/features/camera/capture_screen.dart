@@ -233,11 +233,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         _failure = e.failure;
       });
     } finally {
-      // Only a start that ran to the end (not one superseded or abandoned
-      // by leaving the screen) has really asked the OS for the permission.
-      if (mounted && gen == _generation) {
-        unawaited(prefs.setBool(CameraPrefs.permissionAsked, true));
-      }
+      // The start reached the OS permission prompt, so it was asked even if
+      // the user left the screen meanwhile (prefs were read before the
+      // await: `ref` is unusable once unmounted).
+      unawaited(prefs.setBool(CameraPrefs.permissionAsked, true));
     }
   }
 
@@ -335,8 +334,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         ?.where((c) => c.metricValue != null)
         .fold<CheckIn?>(
           null,
-          (prev, c) =>
-              prev == null || c.localDate.compareTo(prev.localDate) >= 0
+          (prev, c) => prev == null || !c.capturedAt.isBefore(prev.capturedAt)
               ? c
               : prev,
         )

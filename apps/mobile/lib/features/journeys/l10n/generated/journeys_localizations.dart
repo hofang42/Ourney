@@ -530,6 +530,18 @@ abstract class JourneysL10n {
   /// **'Hoàn tác'**
   String get journeys_archiveUndo;
 
+  /// No description provided for @journeys_archivedSection.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã lưu trữ'**
+  String get journeys_archivedSection;
+
+  /// No description provided for @journeys_unarchive.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ lưu trữ'**
+  String get journeys_unarchive;
+
   /// No description provided for @journeys_delete.
   ///
   /// In vi, this message translates to:

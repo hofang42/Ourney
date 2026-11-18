@@ -148,6 +148,9 @@ class FakeJourneyRepository implements JourneyRepository {
 
   final List<String> calls = [];
 
+  @override
+  Stream<List<Journey>> watchArchived() => Stream.value(const []);
+
   /// When set, the next setPublicLink throws it.
   Object? linkError;
 

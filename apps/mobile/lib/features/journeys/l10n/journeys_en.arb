@@ -72,6 +72,8 @@
   "journeys_archiveConfirmMessage": "The journey is hidden from your list. You can undo right after archiving.",
   "journeys_archived": "Journey archived",
   "journeys_archiveUndo": "Undo",
+  "journeys_archivedSection": "Archived",
+  "journeys_unarchive": "Unarchive",
   "journeys_delete": "Delete journey",
   "journeys_deleteConfirmTitle": "Delete this journey?",
   "journeys_deleteConfirmMessage": "All your photos in this journey will be deleted. This can't be undone.",

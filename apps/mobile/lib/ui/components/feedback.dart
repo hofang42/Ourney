@@ -376,9 +376,18 @@ void showUiToast(
   final messenger = ScaffoldMessenger.maybeOf(context);
   final d = UiMotion.of(context, const Duration(milliseconds: 150));
   if (messenger == null) return;
+  final hasAction = actionLabel != null && onAction != null;
+  // A toast with an action stays long enough to be reached, and longer
+  // still for screen-reader / switch users (they cannot race the timer).
+  final duration = MediaQuery.maybeAccessibleNavigationOf(context) ?? false
+      ? const Duration(seconds: 30)
+      : hasAction
+      ? const Duration(seconds: 10)
+      : const Duration(seconds: 4);
   messenger.hideCurrentSnackBar();
   messenger.showSnackBar(
     SnackBar(
+      duration: duration,
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -414,7 +423,8 @@ void showUiToast(
                 ),
               ),
               // Optional undo-style action (e.g. restore an archived journey).
-              if (actionLabel != null && onAction != null)
+              if (hasAction) ...[
+                const SizedBox(width: UiSpace.sm),
                 UiTextAction(
                   key: const ValueKey('ui-toast-action'),
                   label: actionLabel,
@@ -426,6 +436,7 @@ void showUiToast(
                     onAction();
                   },
                 ),
+              ],
             ],
           ),
         ),

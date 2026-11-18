@@ -37,10 +37,9 @@ void main() {
           journeys: FakeJourneyRepository(
             journeys: [
               testJourney(
-                durationDays: null,
                 title: 'Một hành trình có tên rất dài để thử cắt chữ',
               ),
-              testJourney(durationDays: null, id: 'j2', title: 'Học tiếng Anh'),
+              testJourney(id: 'j2', title: 'Học tiếng Anh'),
             ],
           ),
         ),

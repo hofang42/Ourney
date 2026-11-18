@@ -253,6 +253,12 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_archiveUndo => 'Hoàn tác';
 
   @override
+  String get journeys_archivedSection => 'Đã lưu trữ';
+
+  @override
+  String get journeys_unarchive => 'Bỏ lưu trữ';
+
+  @override
   String get journeys_delete => 'Xoá hành trình';
 
   @override

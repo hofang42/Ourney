@@ -1,5 +1,7 @@
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/journey_clock.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/camera/camera_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -8,21 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../features/journeys/journeys_fakes.dart';
 import 'test_helpers.dart';
 
-final _running = testJourney(
-  id: 'run',
-  templateId: TemplateId.workout30,
-  durationDays: null,
-);
-final _trip = testJourney(
-  id: 'trip',
-  templateId: TemplateId.travel,
-  durationDays: null,
-);
-final _diet = testJourney(
-  id: 'diet',
-  templateId: TemplateId.weightLoss,
-  durationDays: null,
-);
+final _running = testJourney(id: 'run', templateId: TemplateId.workout30);
+final _trip = testJourney(id: 'trip', templateId: TemplateId.travel);
+final _diet = testJourney(id: 'diet', templateId: TemplateId.weightLoss);
 
 Future<(ProviderContainer, SharedPreferencesWithCache)> _container({
   List<Journey> journeys = const [],
@@ -33,6 +23,7 @@ Future<(ProviderContainer, SharedPreferencesWithCache)> _container({
   final c = ProviderContainer.test(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(store),
+      journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
       if (wired)
         journeyRepositoryProvider.overrideWithValue(
           FakeJourneyRepository(journeys: journeys),

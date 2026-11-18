@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,7 +7,9 @@ import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
+import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
@@ -16,7 +20,7 @@ import 'journey_style.dart';
 
 /// Hub "Shelf" segment (V1.0 `Shelf`): finished journeys kept like albums in
 /// a two-column grid, with the dashed **Retell a past journey** tile first.
-class ShelfView extends StatelessWidget {
+class ShelfView extends ConsumerWidget {
   const ShelfView({required this.journeys, required this.online, super.key});
 
   final List<Journey> journeys;
@@ -25,9 +29,10 @@ class ShelfView extends StatelessWidget {
   final bool online;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
+    final archived = ref.watch(archivedJourneysProvider).value ?? const [];
     final tiles = <Widget>[
       if (online) const _RetellTile(),
       for (final j in journeys) _AlbumCard(journey: j),
@@ -53,7 +58,65 @@ class ShelfView extends StatelessWidget {
             );
           },
         ),
+        if (archived.isNotEmpty) ...[
+          const SizedBox(height: 28),
+          Text(
+            l10n.journeys_archivedSection,
+            key: const ValueKey('shelf-archived-title'),
+            style: UiText.body(
+              size: 15,
+              weight: FontWeight.w700,
+              height: 1.35,
+              color: ui.ink,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final j in archived) _ArchivedRow(journey: j),
+        ],
       ],
+    );
+  }
+}
+
+/// A journey hidden with "Archive": its title and the way back.
+class _ArchivedRow extends ConsumerWidget {
+  const _ArchivedRow({required this.journey});
+
+  final Journey journey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ui = context.ui;
+    return Padding(
+      key: ValueKey('archived-${journey.id}'),
+      padding: const EdgeInsets.symmetric(vertical: UiSpace.xs),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              journey.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(size: 15, height: 1.35, color: ui.ink),
+            ),
+          ),
+          const SizedBox(width: UiSpace.sm),
+          UiButton(
+            key: ValueKey('unarchive-${journey.id}'),
+            label: JourneysL10n.of(context).journeys_unarchive,
+            variant: UiButtonVariant.secondary,
+            compact: true,
+            expand: false,
+            onPressed: () => unawaited(
+              ref.read(journeyRepositoryProvider).unarchive(journey.id).then((
+                _,
+              ) {
+                ref.read(reminderSchedulerProvider).reschedule();
+              }),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -146,10 +209,12 @@ class _AlbumCard extends ConsumerWidget {
         ? l10n.journeys_statusArchived
         : l10n.journeys_statusEnded;
     final count = progress?.checkInsByDate.length;
+    // Moments are photos (several a day), like the Wrapped totals.
+    final photos = progress?.allCheckIns.length;
     final band = count == null
         ? null
         : (journey.durationDays == null
-              ? l10n.journeys_albumMoments(count)
+              ? l10n.journeys_albumMoments(photos!)
               : l10n.journeys_albumDays(count, journey.durationDays!));
 
     return UiPressable(

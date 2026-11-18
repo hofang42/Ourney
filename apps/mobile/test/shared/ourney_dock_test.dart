@@ -54,9 +54,7 @@ void main() {
         tester,
         brightness: brightness,
         dock: AppDock(currentIndex: AppDock.journeysIndex, onSelect: (_) {}),
-        journeys: [
-          testJourney(templateId: TemplateId.travel, durationDays: null),
-        ],
+        journeys: [testJourney(templateId: TemplateId.travel)],
       );
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.takeException(), isNull);

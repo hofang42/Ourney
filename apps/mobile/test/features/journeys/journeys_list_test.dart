@@ -201,6 +201,50 @@ void main() {
       expect(repo.calls, contains('end:j1'));
     });
 
+    testWidgets('archived journeys can be restored from the shelf (U12)', (
+      tester,
+    ) async {
+      final j = testJourney(status: JourneyStatus.ended);
+      final other = testJourney(id: 'j2', durationDays: null);
+      final repo = FakeJourneyRepository(
+        journeys: [j, other],
+        memberships: {j.id: testMembership(j), other.id: testMembership(other)},
+      );
+      await repo.archive(j.id);
+      await pumpJourneys(tester, locale: const Locale('en'), journeys: repo);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('hub-segment-shelf')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('shelf-archived-title')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('unarchive-j1')));
+      await tester.pumpAndSettle();
+      expect(repo.calls, contains('unarchive:j1'));
+      expect(find.byKey(const ValueKey('shelf-archived-title')), findsNothing);
+      expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
+    });
+
+    testWidgets('inside the 3 day upload grace the RPC is not called (B-B7)', (
+      tester,
+    ) async {
+      // 14 days from 10-01 ended 10-14; the fake clock is 10-16: shown ended,
+      // but the server still takes late uploads until 10-17.
+      final j = testJourney(
+        startDate: const LocalDate(2026, 10, 1),
+        durationDays: 14,
+      );
+      final repo = FakeJourneyRepository(
+        journeys: [j],
+        memberships: {j.id: testMembership(j)},
+      );
+      await pumpJourneys(tester, locale: const Locale('en'), journeys: repo);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journeys-today-j1')), findsNothing);
+      expect(repo.calls, isNot(contains('end:j1')));
+    });
+
     testWidgets('hero is done once every journey has a photo today', (
       tester,
     ) async {

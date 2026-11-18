@@ -27,8 +27,8 @@ void main() {
     settings = FakeSettingsOpener();
     journeys = FakeJourneyRepository(
       journeys: [
-        testJourney(durationDays: null),
-        testJourney(durationDays: null, id: 'j2', title: 'Học tiếng Anh'),
+        testJourney(),
+        testJourney(id: 'j2', title: 'Học tiếng Anh'),
       ],
     );
     log = RouteLog();
@@ -248,8 +248,8 @@ void main() {
       expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
     });
 
-    testWidgets('leaving while the camera starts neither throws nor marks '
-        'the permission as asked (B-B4)', (tester) async {
+    testWidgets('leaving while the camera starts does not throw and still '
+        'remembers the permission was asked (B-B4)', (tester) async {
       camera.startGate = Completer<void>();
       await pump(tester, prefsValues: const {});
       await tester.ensureVisible(find.text('Cho phép camera'));
@@ -262,7 +262,7 @@ void main() {
       camera.startGate!.complete();
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(prefs.getBool(CameraPrefs.permissionAsked), isNull);
+      expect(prefs.getBool(CameraPrefs.permissionAsked), isTrue);
     });
 
     testWidgets('denied without Settings URL (Android) shows the path', (
@@ -331,10 +331,7 @@ void main() {
   });
 
   test('pickInitialJourney prefers the remembered active journey', () {
-    final list = [
-      testJourney(durationDays: null),
-      testJourney(durationDays: null, id: 'j2'),
-    ];
+    final list = [testJourney(), testJourney(id: 'j2')];
     expect(pickInitialJourney(list, 'j2')?.id, 'j2');
     expect(pickInitialJourney(list, 'gone')?.id, 'j1');
     expect(pickInitialJourney(const [], 'j1'), isNull);
