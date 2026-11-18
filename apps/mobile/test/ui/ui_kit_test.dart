@@ -320,6 +320,40 @@ void main() {
       }
     });
 
+    testWidgets('UiPressable without a label is named by its content (U3)', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          UiPressable(
+            onPressed: () {},
+            child: Column(
+              children: [
+                Semantics(header: true, child: const Text('Giảm cân')),
+                const Text('Theo dõi số đo mỗi tuần'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      expect(
+        tester.getSemantics(find.byType(UiPressable)),
+        matchesSemantics(
+          label: 'Giảm cân\nTheo dõi số đo mỗi tuần',
+          isButton: true,
+          hasTapAction: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isHeader: true,
+          hasFocusAction: true,
+          isFocusable: true,
+        ),
+      );
+      handle.dispose();
+    });
+
     testWidgets('UiSegmented switches value', (tester) async {
       var v = 'a';
       await tester.pumpWidget(

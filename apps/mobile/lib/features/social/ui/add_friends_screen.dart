@@ -247,14 +247,12 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
             : OurneyIcon(name: 'qr', size: 54, color: ui.ink, flat: true),
       );
     }
-    return Semantics(
-      button: true,
-      child: _Block(
-        onTap: _busy ? null : _tap,
-        leading: leading,
-        title: l10n.social_qrTitle,
-        subtitle: token == null ? l10n.social_qrShow : l10n.social_qrEnlarge,
-      ),
+    // _Block is a UiPressable: it is already the (labelled) button node.
+    return _Block(
+      onTap: _busy ? null : _tap,
+      leading: leading,
+      title: l10n.social_qrTitle,
+      subtitle: token == null ? l10n.social_qrShow : l10n.social_qrEnlarge,
     );
   }
 }
