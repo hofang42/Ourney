@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,12 +50,38 @@ final deviceTimezoneProvider = FutureProvider<String>((ref) async {
   return guessTimeZoneForOffset(DateTime.now().timeZoneOffset).name;
 }, retry: _noRetry);
 
+/// Ids whose expired window the app already asked the repository to close
+/// (once per session; a failure such as offline or not the owner is silent).
+final _settleRequestedProvider = Provider<Set<String>>((ref) => <String>{});
+
+/// [j] as it really is at [now]: a fixed-term journey past its end date is
+/// `ended` even if nothing moved it yet (B-B7 / A-B14). Its owner's app also
+/// closes it in the repository so the server and the other members follow.
+Journey settleJourney(Ref ref, Journey j, DateTime now) {
+  final settled = j.settledOn(journeyLocalDate(j.timezone, now));
+  if (identical(settled, j)) return j;
+  final userId = ref.read(currentUserIdProvider);
+  if ((userId == null || userId == j.ownerId) &&
+      ref.read(_settleRequestedProvider).add(j.id)) {
+    unawaited(
+      ref
+          .read(journeyRepositoryProvider)
+          .end(j.id)
+          .then((_) {}, onError: (_) {}),
+    );
+  }
+  return settled;
+}
+
 /// Journeys shown on the Journeys tab (active, ended and archived ones the
 /// repository still lists).
-final journeysListProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchActive(),
-  retry: _noRetry,
-);
+final journeysListProvider = StreamProvider.autoDispose<List<Journey>>((ref) {
+  final now = ref.watch(journeysNowProvider);
+  return ref
+      .watch(journeyRepositoryProvider)
+      .watchActive()
+      .map((all) => [for (final j in all) settleJourney(ref, j, now)]);
+}, retry: _noRetry);
 
 /// Ids of the journeys the caller pinned (per-user, also local-only). The
 /// list provider already orders pinned journeys first.
@@ -63,7 +91,13 @@ final pinnedJourneyIdsProvider = StreamProvider.autoDispose<Set<String>>(
 );
 
 final journeyByIdProvider = StreamProvider.autoDispose.family<Journey?, String>(
-  (ref, id) => ref.watch(journeyRepositoryProvider).watch(id),
+  (ref, id) {
+    final now = ref.watch(journeysNowProvider);
+    return ref
+        .watch(journeyRepositoryProvider)
+        .watch(id)
+        .map((j) => j == null ? null : settleJourney(ref, j, now));
+  },
   retry: _noRetry,
 );
 

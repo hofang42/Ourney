@@ -8,9 +8,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../features/journeys/journeys_fakes.dart';
 import 'test_helpers.dart';
 
-final _running = testJourney(id: 'run', templateId: TemplateId.workout30);
-final _trip = testJourney(id: 'trip', templateId: TemplateId.travel);
-final _diet = testJourney(id: 'diet', templateId: TemplateId.weightLoss);
+final _running = testJourney(
+  id: 'run',
+  templateId: TemplateId.workout30,
+  durationDays: null,
+);
+final _trip = testJourney(
+  id: 'trip',
+  templateId: TemplateId.travel,
+  durationDays: null,
+);
+final _diet = testJourney(
+  id: 'diet',
+  templateId: TemplateId.weightLoss,
+  durationDays: null,
+);
 
 Future<(ProviderContainer, SharedPreferencesWithCache)> _container({
   List<Journey> journeys = const [],

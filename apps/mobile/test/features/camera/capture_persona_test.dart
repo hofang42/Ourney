@@ -29,8 +29,9 @@ void main() {
           prefs: prefs,
           journeys: FakeJourneyRepository(
             journeys: [
-              testJourney(templateId: TemplateId.workout30),
+              testJourney(durationDays: null, templateId: TemplateId.workout30),
               testJourney(
+                durationDays: null,
                 id: 'j2',
                 title: 'Đà Lạt',
                 templateId: TemplateId.travel,

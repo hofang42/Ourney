@@ -21,11 +21,13 @@ void main() {
         journeys: FakeJourneyRepository(
           journeys: [
             testJourney(
+              durationDays: null,
               id: 'run',
               templateId: TemplateId.workout30,
               title: 'Chạy bộ',
             ),
             testJourney(
+              durationDays: null,
               id: 'trip',
               templateId: TemplateId.travel,
               title: 'Đà Lạt',

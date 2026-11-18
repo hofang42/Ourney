@@ -11,6 +11,7 @@
 //
 // Regenerate providers.g.dart with:
 //   dart run build_runner build
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show FutureProvider;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -232,9 +233,11 @@ class ActiveJourneyId extends _$ActiveJourneyId {
 Stream<Journey?> activeJourney(Ref ref) {
   final id = ref.watch(activeJourneyIdProvider);
   return ref.watch(journeyRepositoryProvider).watchActive().map((all) {
+    final n = clock.now();
+    final today = LocalDate(n.year, n.month, n.day);
     final active = [
       for (final j in all)
-        if (j.status == JourneyStatus.active) j,
+        if (j.status == JourneyStatus.active && !j.isPastEndOn(today)) j,
     ];
     for (final j in active) {
       if (j.id == id) return j;

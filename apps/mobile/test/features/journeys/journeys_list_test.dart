@@ -181,6 +181,26 @@ void main() {
       expect(card.kind, UiStateCardKind.offline);
     });
 
+    testWidgets('expired fixed-term journey is ended: no Today card (B-B7)', (
+      tester,
+    ) async {
+      // 7 days from 10-01 ended 10-07; the fake clock is 10-16.
+      final j = testJourney(
+        startDate: const LocalDate(2026, 10, 1),
+        durationDays: 7,
+      );
+      final repo = FakeJourneyRepository(
+        journeys: [j],
+        memberships: {j.id: testMembership(j)},
+      );
+      await pumpJourneys(tester, locale: const Locale('en'), journeys: repo);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journeys-today-j1')), findsNothing);
+      expect(find.byKey(const ValueKey('journey-card-j1')), findsNothing);
+      // The owner's app closes it in the repository.
+      expect(repo.calls, contains('end:j1'));
+    });
+
     testWidgets('hero is done once every journey has a photo today', (
       tester,
     ) async {

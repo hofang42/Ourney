@@ -28,6 +28,20 @@ void main() {
       expect(s.checkedInToday, isFalse);
       expect(s.atRisk, isTrue);
     });
+    test('not at risk the day after a fixed-length window ended (A-B14)', () {
+      final s = run(
+        duration: 3,
+        today: '2026-10-04',
+        dates: ['2026-10-01', '2026-10-02', '2026-10-03'],
+      );
+      expect(s.current, 3);
+      expect(s.atRisk, isFalse);
+      // The last day of the window is still at risk.
+      expect(
+        run(duration: 3, today: '2026-10-03', dates: ['2026-10-02']).atRisk,
+        isTrue,
+      );
+    });
     test('no streak means not at risk', () {
       final s = run(dates: ['2026-10-01']);
       expect(s.current, 0);

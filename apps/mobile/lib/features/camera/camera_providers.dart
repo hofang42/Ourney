@@ -18,11 +18,18 @@ final captureJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
       .map(
         (all) => [
           for (final j in all)
-            if (j.status == JourneyStatus.active) j,
+            if (j.status == JourneyStatus.active && !j.isPastEndOn(_today())) j,
         ],
       ),
   retry: _noRetry,
 );
+
+/// Device-local today (the journey timezone database is never loaded on the
+/// camera, NFR-1): a journey past its end date takes no photo (B-B7).
+LocalDate _today() {
+  final n = clock.now();
+  return LocalDate(n.year, n.month, n.day);
+}
 
 /// Shared-preferences keys owned by the camera feature.
 abstract final class CameraPrefs {
@@ -54,7 +61,10 @@ Journey? pickInitialJourney(List<Journey> journeys, String? lastId) {
 
 /// Every journey (active and ended) for the picker sheet sections.
 final capturePickerJourneysProvider = StreamProvider.autoDispose<List<Journey>>(
-  (ref) => ref.watch(journeyRepositoryProvider).watchActive(),
+  (ref) => ref
+      .watch(journeyRepositoryProvider)
+      .watchActive()
+      .map((all) => [for (final j in all) j.settledOn(_today())]),
   retry: _noRetry,
 );
 
@@ -64,8 +74,7 @@ final captureShotTodayProvider = FutureProvider.autoDispose<Set<String>>((
   ref,
 ) async {
   final journeys = await ref.watch(capturePickerJourneysProvider.future);
-  final n = clock.now();
-  final today = LocalDate(n.year, n.month, n.day);
+  final today = _today();
   final shot = <String>{};
   for (final j in journeys) {
     final list = await ref.watch(myCheckInsProvider(j.id).future);

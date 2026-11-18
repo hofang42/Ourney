@@ -62,7 +62,7 @@ CheckIn testCheckIn(LocalDate day, {String journeyId = 'j1'}) => CheckIn(
 
 class FakeJourneyRepository implements JourneyRepository {
   FakeJourneyRepository({List<Journey>? journeys, this.membership})
-    : journeys = journeys ?? [testJourney()];
+    : journeys = journeys ?? [testJourney(durationDays: null)];
 
   final List<Journey> journeys;
   final Membership? membership;

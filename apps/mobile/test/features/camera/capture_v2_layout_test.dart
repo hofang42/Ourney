@@ -134,8 +134,8 @@ void main() {
       size: const Size(320, 640),
       textScale: 1.35,
       journeys: [
-        testJourney(title: _long),
-        testJourney(id: 'j2', title: 'Học tiếng Anh'),
+        testJourney(durationDays: null, title: _long),
+        testJourney(durationDays: null, id: 'j2', title: 'Học tiếng Anh'),
       ],
     );
     await tester.pumpAndSettle();
@@ -152,8 +152,8 @@ void main() {
     await pump(
       tester,
       journeys: [
-        testJourney(),
-        testJourney(id: 'j2', title: 'Học tiếng Anh'),
+        testJourney(durationDays: null),
+        testJourney(durationDays: null, id: 'j2', title: 'Học tiếng Anh'),
       ],
     );
     await tester.tap(find.byKey(const ValueKey('journey-chip-j2')));
@@ -174,8 +174,8 @@ void main() {
     await pump(
       tester,
       journeys: [
-        testJourney(),
-        testJourney(id: 'j2', title: 'Học tiếng Anh'),
+        testJourney(durationDays: null),
+        testJourney(durationDays: null, id: 'j2', title: 'Học tiếng Anh'),
       ],
     );
     await tester.tap(find.byKey(const ValueKey('capture-journey-chip')));
@@ -196,7 +196,8 @@ void main() {
     await pump(
       tester,
       journeys: [
-        for (var i = 1; i <= 6; i++) testJourney(id: 'j$i', title: 'J$i'),
+        for (var i = 1; i <= 6; i++)
+          testJourney(durationDays: null, id: 'j$i', title: 'J$i'),
       ],
     );
     expect(find.byKey(const ValueKey('journey-picker-open')), findsOneWidget);

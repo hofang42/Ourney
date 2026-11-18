@@ -271,6 +271,19 @@ class Journey {
   LocalDate? get endDate =>
       durationDays == null ? null : startDate.addDays(durationDays! - 1);
 
+  /// True when this journey is still `active` on the server but its fixed
+  /// window is over on [today] (the day after [endDate] or later): nothing
+  /// accepts a check-in any more and nothing has moved it to `ended` yet.
+  bool isPastEndOn(LocalDate today) {
+    final end = endDate;
+    return status == JourneyStatus.active && end != null && today.isAfter(end);
+  }
+
+  /// This journey as it really is on [today]: an expired `active` journey is
+  /// reported as `ended` (it is on the server too once its owner opens it).
+  Journey settledOn(LocalDate today) =>
+      isPastEndOn(today) ? copyWith(status: JourneyStatus.ended) : this;
+
   /// Copy with the edit-screen fields and status replaced (null = keep).
   Journey copyWith({
     String? title,

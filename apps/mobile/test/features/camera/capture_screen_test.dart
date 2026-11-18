@@ -27,8 +27,8 @@ void main() {
     settings = FakeSettingsOpener();
     journeys = FakeJourneyRepository(
       journeys: [
-        testJourney(),
-        testJourney(id: 'j2', title: 'Học tiếng Anh'),
+        testJourney(durationDays: null),
+        testJourney(durationDays: null, id: 'j2', title: 'Học tiếng Anh'),
       ],
     );
     log = RouteLog();
@@ -331,7 +331,10 @@ void main() {
   });
 
   test('pickInitialJourney prefers the remembered active journey', () {
-    final list = [testJourney(), testJourney(id: 'j2')];
+    final list = [
+      testJourney(durationDays: null),
+      testJourney(durationDays: null, id: 'j2'),
+    ];
     expect(pickInitialJourney(list, 'j2')?.id, 'j2');
     expect(pickInitialJourney(list, 'gone')?.id, 'j1');
     expect(pickInitialJourney(const [], 'j1'), isNull);
