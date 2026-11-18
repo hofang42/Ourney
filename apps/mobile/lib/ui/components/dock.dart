@@ -345,7 +345,7 @@ LiquidGlassSettings _liquidSettings({
 /// The moving selection "lens": the skin accent as a translucent capsule with
 /// a specular top-left rim, so it reads as a glass bead sliding in the bar.
 BoxDecoration _lensDecoration(Color accent, bool dark) => BoxDecoration(
-  borderRadius: BorderRadius.circular(UiRadius.capsule),
+  borderRadius: BorderRadius.circular(dockSelectionRadius),
   gradient: LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,

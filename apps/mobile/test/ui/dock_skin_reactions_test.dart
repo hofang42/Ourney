@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
+import 'package:ourney/ui/components/dock_tab.dart' show dockSelectionRadius;
 import 'package:ourney/ui/components/glass.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -242,6 +243,10 @@ void main() {
       final pill = find.byKey(const ValueKey('dock-selection-pill'));
       expect(tester.getSize(pill).height, 56);
       expect(tester.getSize(pill).width, inInclusiveRange(60, 78));
+      // Concentric rounded rectangle, not a near-circle capsule (U17).
+      final deco =
+          tester.widget<DecoratedBox>(pill).decoration as BoxDecoration;
+      expect(deco.borderRadius, BorderRadius.circular(dockSelectionRadius));
       // Even the outermost tab keeps clear padding inside the dock border.
       expect(
         tester.getTopLeft(pill).dx - tester.getTopLeft(find.byType(UiDock)).dx,
