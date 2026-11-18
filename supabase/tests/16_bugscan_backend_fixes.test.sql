@@ -3,7 +3,7 @@
 --        7 Z invitee, 8 P consent group owner, 9 R consent requester (deleted), 10 T blocks R.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(47);
+select plan(51);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -268,6 +268,18 @@ select results_eq($$ select layout, status::text, duration_days
   $$ values ('memory_collectors', 'active', null::int) $$, 'C-B11: continuing = active and open-ended');
 select lives_ok($$ select tests.checkin(tests.c(91), tests.j(11), now()) $$,
   'C-B11: a continuing retold journey takes a photo past the old date cap');
+
+select throws_ok($$ select tests.checkin(tests.c(92), tests.j(10), now()) $$,
+  '22008', null, 'C-B11: a finished retold journey refuses a photo past its end date');
+select lives_ok($$ select tests.checkin(tests.c(93), tests.j(10), now() - interval '30 days') $$,
+  'C-B11: but takes a back-dated one inside its dates');
+do $$ begin perform tests.as_postgres();
+  update public.journeys set status = 'ended' where id = tests.j(11);
+  perform tests.as_user(tests.u(1)); end $$;
+select throws_ok($$ select tests.checkin(tests.c(94), tests.j(11), now() - interval '25 days') $$,
+  'P0001', 'ended', 'C-B11: an ended open-ended retold journey refuses photos');
+select throws_ok($$ select tests.checkin(tests.c(95), tests.j(11), now()) $$,
+  'P0001', 'ended', 'C-B11: also a live one');
 
 select * from finish();
 rollback;

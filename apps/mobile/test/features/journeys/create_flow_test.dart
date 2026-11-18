@@ -471,7 +471,8 @@ void main() {
       await h.go(tester, AppRoutes.journeyNew);
       expect(_stepLabel(tester), 'Step 1/5');
       await _tap(tester, 'create-close');
-      expect(_key('hub-create-progress'), findsNothing);
+      // Backing out of a fresh visit keeps the older draft.
+      expect(_key('hub-create-progress'), findsOneWidget);
 
       // Leave a draft again, then resume it from the card.
       await h.go(tester, AppRoutes.journeyNew);

@@ -931,7 +931,9 @@ begin
 
   new.local_date := public.local_date(new.captured_at, j.timezone);
   new.metric_value := null;
-  v_imported := j.origin = 'imported' and new.user_id = j.owner_id;
+  -- A live (camera) photo on a journey that is still going follows the normal rules.
+  v_imported := j.origin = 'imported' and new.user_id = j.owner_id
+    and not (j.status = 'active' and j.duration_days is null and not new.from_library);
 
   if current_user in ('authenticated', 'anon') then
     if tg_op = 'UPDATE' and old.moderated_at is not null then
@@ -941,7 +943,7 @@ begin
       raise exception 'invalid_captured_at' using errcode = '22008';
     end if;
     if v_imported then
-      if j.deleted_at is not null then
+      if j.deleted_at is not null or (j.duration_days is null and j.status <> 'active') then
         raise exception 'ended' using errcode = 'P0001';
       end if;
       if new.local_date < j.start_date

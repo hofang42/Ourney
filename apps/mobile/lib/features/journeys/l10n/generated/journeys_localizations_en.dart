@@ -1314,7 +1314,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_edit_skinColor_flexer_2 => 'Ice';
 
   @override
-  String get journeys_edit_skinShort_minimal => 'Minimal';
+  String get journeys_edit_skinShort_minimal => 'Minimalist';
 
   @override
   String get journeys_edit_skinColor_minimal_0 => 'Orange';

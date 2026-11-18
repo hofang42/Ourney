@@ -335,6 +335,26 @@ void main() {
       );
     });
 
+    test('an ended open-ended retold journey refuses check-ins', () async {
+      remote.tables['journeys'] = [
+        journeyRow(jid, ownerId: me, status: 'ended')
+          ..['origin'] = 'imported'
+          ..['duration_days'] = null,
+      ];
+      remote.tables['memberships'] = [membershipRow(jid, me)];
+      await layer.syncNow();
+      await expectLater(
+        checkIn(jid, 'a', DateTime.utc(2026, 10, 12, 5)),
+        throwsA(
+          isA<OurneyException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.ended,
+          ),
+        ),
+      );
+    });
+
     test('an ended live journey still refuses check-ins', () async {
       remote.tables['journeys'] = [
         journeyRow(jid, ownerId: me, status: 'ended'),

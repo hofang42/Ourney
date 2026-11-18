@@ -1250,7 +1250,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_color => 'Màu';
 
   @override
-  String get journeys_edit_skinShort_quiet => 'Lặng';
+  String get journeys_edit_skinShort_quiet => 'Lặng lẽ';
 
   @override
   String get journeys_edit_skinColor_quiet_0 => 'Lục ngọc';
@@ -1298,7 +1298,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_skinColor_couple_2 => 'Đào';
 
   @override
-  String get journeys_edit_skinShort_flexer => 'Năng lượng';
+  String get journeys_edit_skinShort_flexer => 'Khoe thẩm mỹ';
 
   @override
   String get journeys_edit_skinColor_flexer_0 => 'Lime neon';

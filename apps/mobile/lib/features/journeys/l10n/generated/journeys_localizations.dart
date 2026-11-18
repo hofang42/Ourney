@@ -2303,7 +2303,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_skinShort_quiet.
   ///
   /// In vi, this message translates to:
-  /// **'Lặng'**
+  /// **'Lặng lẽ'**
   String get journeys_edit_skinShort_quiet;
 
   /// No description provided for @journeys_edit_skinColor_quiet_0.
@@ -2399,7 +2399,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_skinShort_flexer.
   ///
   /// In vi, this message translates to:
-  /// **'Năng lượng'**
+  /// **'Khoe thẩm mỹ'**
   String get journeys_edit_skinShort_flexer;
 
   /// No description provided for @journeys_edit_skinColor_flexer_0.

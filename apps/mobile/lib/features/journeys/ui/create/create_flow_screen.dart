@@ -451,8 +451,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) {
           _back();
-        } else if (!_leaving) {
-          // System back from step 1: nothing to resume (U8). The route
+        } else if (!_leaving && widget.resume) {
+          // System back from step 1 of a resumed flow: nothing to resume
+          // any more (U8). A fresh visit keeps the older draft. The route
           // may be going away during a build: update after it.
           final progress = ref.read(createProgressProvider.notifier);
           unawaited(Future(progress.clear));
@@ -698,7 +699,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     _leaving = true;
     final progress = ref.read(createProgressProvider.notifier);
     if (_step == 0 || _form == null || _option == null) {
-      unawaited(progress.clear());
+      // A fresh visit that never got past step 1 leaves the saved draft be.
+      if (widget.resume) unawaited(progress.clear());
     } else {
       unawaited(progress.save(_step + 1, draft: _snapshot()));
     }
