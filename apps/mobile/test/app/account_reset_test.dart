@@ -13,6 +13,7 @@ import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/reminders/reminders_fakes.dart';
 import 'test_helpers.dart';
@@ -22,6 +23,13 @@ class _SignedInUser extends CurrentUserId {
   String? build() => 'user-a';
 
   void signOut() => state = null;
+
+  void switchTo(String id) => state = id;
+}
+
+class _SignedOutUser extends CurrentUserId {
+  @override
+  String? build() => null;
 }
 
 /// C-B4 and the section 1.4 item "sign-out / delete account keep reminders
@@ -92,5 +100,69 @@ void main() {
     expect(prefs.getString(ThemeModeController.prefsKey), 'dark');
     expect(prefs.getBool(OnboardingComplete.prefsKey), isTrue);
     expect(prefs.getBool(ReminderPrefs.permissionAsked), isTrue);
+  });
+
+  ProviderContainer containerFor(
+    SharedPreferencesWithCache prefs,
+    CurrentUserId Function() user,
+  ) {
+    final container = ProviderContainer(
+      overrides: [
+        appConfigProvider.overrideWithValue(testBackendConfig),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        supabaseClientProvider.overrideWithValue(null),
+        currentUserIdProvider.overrideWith(user),
+        notificationGatewayProvider.overrideWithValue(
+          FakeNotificationGateway(granted: true),
+        ),
+        journeyRepositoryProvider.overrideWithValue(
+          FakeReminderJourneyRepository([reminderJourney(id: journeyId)]),
+        ),
+        checkInRepositoryProvider.overrideWithValue(
+          FakeReminderCheckInRepository(),
+        ),
+        reminderDeviceTimezoneProvider.overrideWith((ref) async => hcm),
+        remindersClockProvider.overrideWithValue(Clock.fixed(reminderNow)),
+      ],
+    );
+    addTearDown(container.dispose);
+    container.listen(accountSessionResetProvider, (_, _) {});
+    return container;
+  }
+
+  test(
+    'a session that expired while the app was closed resets (C-B4)',
+    () async {
+      final prefs = await testPrefs({
+        accountOwnerPrefsKey: 'user-a',
+        SafetyPrefs.eulaAccepted: true,
+        SharePrivacyPrefs.hideWeight: true,
+      });
+      final container = containerFor(prefs, _SignedOutUser.new);
+      await pumpEventQueue();
+      expect(container.read(eulaAcceptedProvider), isFalse);
+      expect(container.read(hideWeightOnShareProvider), isFalse);
+      expect(prefs.containsKey(accountOwnerPrefsKey), isFalse);
+    },
+  );
+
+  test('a different user signing in directly resets (C-B4)', () async {
+    final prefs = await testPrefs({
+      SafetyPrefs.eulaAccepted: true,
+      SharePrivacyPrefs.blurPhotos: true,
+    });
+    final container = containerFor(prefs, _SignedInUser.new);
+    await pumpEventQueue();
+    expect(prefs.getString(accountOwnerPrefsKey), 'user-a');
+    // Same user: nothing is dropped.
+    expect(container.read(eulaAcceptedProvider), isTrue);
+
+    (container.read(currentUserIdProvider.notifier) as _SignedInUser).switchTo(
+      'user-b',
+    );
+    await pumpEventQueue();
+    expect(container.read(eulaAcceptedProvider), isFalse);
+    expect(container.read(blurPhotosOnShareProvider), isFalse);
+    expect(prefs.getString(accountOwnerPrefsKey), 'user-b');
   });
 }

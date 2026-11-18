@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/journeys/data/create_progress.dart';
 import '../features/onboarding/onboarding_providers.dart';
+import '../features/profile/settings_providers.dart';
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../features/reminders/data/reminder_settings.dart';
 import '../features/safety/data/safety_providers.dart';
@@ -19,7 +20,12 @@ const List<String> accountPrefsKeys = [
   SafetyPrefs.blockedNames,
   ActiveJourneyId.prefsKey,
   CreateProgressPrefs.key,
+  SharePrivacyPrefs.hideWeight,
+  SharePrivacyPrefs.blurPhotos,
 ];
+
+/// The user id the per-account prefs above were written for.
+const String accountOwnerPrefsKey = 'account.ownerUserId';
 
 /// Forgets every per-account value kept outside the database (which
 /// `AuthRepository.signOut` / `deleteAccount` wipe) and cancels the
@@ -47,18 +53,35 @@ Future<void> resetAccountLocalState(Ref ref) async {
     ..invalidate(hiddenCheckInIdsProvider)
     ..invalidate(activeJourneyIdProvider)
     ..invalidate(createProgressProvider)
+    ..invalidate(hideWeightOnShareProvider)
+    ..invalidate(blurPhotosOnShareProvider)
     ..invalidate(reminderSettingsProvider);
   // Signed out: the plan is empty, so every pending reminder is cancelled.
   await ref.read(reminderSchedulerProvider).reschedule();
 }
 
 /// Watch once at the app root: resets the per-account local state whenever
-/// the session ends (sign-out from any screen, account deletion, a session
-/// revoked elsewhere).
+/// the account changes: sign-out from any screen, account deletion, a
+/// session revoked elsewhere or expired while the app was closed, and a
+/// different user signing in (the owner id is kept in the preferences).
 final accountSessionResetProvider = Provider<void>((ref) {
-  ref.listen<String?>(currentUserIdProvider, (previous, next) {
-    if (previous != null && next == null) {
-      unawaited(resetAccountLocalState(ref));
+  void apply(String? next) {
+    final prefs = ref.read(sharedPreferencesProvider);
+    final owner = prefs.getString(accountOwnerPrefsKey);
+    final changed = next == null
+        ? owner != null
+        : owner != null && owner != next;
+    if (next == null) {
+      unawaited(prefs.remove(accountOwnerPrefsKey));
+    } else if (owner != next) {
+      unawaited(prefs.setString(accountOwnerPrefsKey, next));
     }
+    // Never reset synchronously: this may run while the provider builds.
+    if (changed) unawaited(Future(() => resetAccountLocalState(ref)));
+  }
+
+  apply(ref.read(currentUserIdProvider));
+  ref.listen<String?>(currentUserIdProvider, (previous, next) {
+    if (next != previous) apply(next);
   });
 });
