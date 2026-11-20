@@ -436,7 +436,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: ui.ink),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: ui.ink,
+                  semanticsLabel: AppLocalizations.of(context).common_loading,
+                ),
               ),
             ),
           )

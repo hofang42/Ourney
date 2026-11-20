@@ -86,12 +86,24 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               )
             else
               UiEmptyState(
-                glyph: const OurneyIcon(name: 'search', size: 40),
+                key: ValueKey(
+                  journeyAsync.hasError
+                      ? 'journey-detail-error'
+                      : 'journey-detail-not-found',
+                ),
+                glyph: OurneyIcon(
+                  name: journeyAsync.hasError ? 'error' : 'search',
+                  size: 40,
+                ),
                 title: journeyAsync.hasError
                     ? journeyErrorMessage(context, journeyAsync.error!)
                     : l10n.journeys_errorNotFound,
-                actionLabel: l10n.journeys_title,
-                onAction: () => context.go(AppRoutes.journeys),
+                actionLabel: journeyAsync.hasError
+                    ? app.common_retry
+                    : l10n.journeys_title,
+                onAction: journeyAsync.hasError
+                    ? () => ref.invalidate(journeyByIdProvider(journeyId))
+                    : () => context.go(AppRoutes.journeys),
               ),
           ],
         ),
@@ -275,10 +287,23 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       accent: pal.accent,
                     ),
                     const SizedBox(height: UiSpace.xl),
-                    if (progress == null)
-                      const Padding(
-                        padding: EdgeInsets.all(UiSpace.xl),
-                        child: Center(child: CircularProgressIndicator()),
+                    if (checkIns.hasError && progress == null)
+                      UiEmptyState(
+                        key: const ValueKey('journey-detail-checkins-error'),
+                        glyph: const OurneyIcon(name: 'error', size: 30),
+                        title: app.common_errorGeneric,
+                        actionLabel: app.common_retry,
+                        onAction: () =>
+                            ref.invalidate(myCheckInsProvider(journeyId)),
+                      )
+                    else if (progress == null)
+                      Padding(
+                        padding: const EdgeInsets.all(UiSpace.xl),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            semanticsLabel: app.common_loading,
+                          ),
+                        ),
                       )
                     else
                       JourneyTimeline(

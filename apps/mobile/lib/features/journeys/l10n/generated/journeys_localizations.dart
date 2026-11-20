@@ -413,7 +413,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_errorNotAlone.
   ///
   /// In vi, this message translates to:
-  /// **'Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.'**
+  /// **'Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.'**
   String get journeys_errorNotAlone;
 
   /// No description provided for @journeys_errorForbidden.
@@ -551,19 +551,19 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_delete.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá hành trình'**
+  /// **'Xóa hành trình'**
   String get journeys_delete;
 
   /// No description provided for @journeys_deleteConfirmTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá hành trình?'**
+  /// **'Xóa hành trình?'**
   String get journeys_deleteConfirmTitle;
 
   /// No description provided for @journeys_deleteConfirmMessage.
   ///
   /// In vi, this message translates to:
-  /// **'Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.'**
+  /// **'Mọi ảnh của bạn trong hành trình này sẽ bị xóa. Không hoàn tác được.'**
   String get journeys_deleteConfirmMessage;
 
   /// No description provided for @journeys_readOnlyBanner.
@@ -2309,7 +2309,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_cancel.
   ///
   /// In vi, this message translates to:
-  /// **'Thôi'**
+  /// **'Hủy'**
   String get journeys_edit_cancel;
 
   /// No description provided for @journeys_edit_discardTitle.

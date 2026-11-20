@@ -204,7 +204,7 @@
   "@checkin_extraKmHint": {"description": "Post screen per-skin input."},
   "checkin_extraKmInvalid": "Quãng đường từ 0,1 đến 500 km, một chữ số thập phân",
   "@checkin_extraKmInvalid": {"description": "Post screen per-skin input."},
-  "checkin_extraBackspace": "Xoá một số",
+  "checkin_extraBackspace": "Xóa một số",
   "@checkin_extraBackspace": {"description": "Post screen per-skin input."},
   "checkin_extraCountdown": "Tự đăng sau {seconds} giây",
   "@checkin_extraCountdown": {"placeholders": {"seconds": {"type": "int"}}},

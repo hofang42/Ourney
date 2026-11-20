@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../data/groups_providers.dart';
 import '../l10n/generated/groups_localizations.dart';
@@ -59,6 +60,14 @@ class _GroupInviteSheetState extends ConsumerState<GroupInviteSheet> {
 
   Future<void> _revoke(String id) async {
     final l10n = GroupsL10n.of(context);
+    final ok = await confirmGroupAction(
+      context,
+      title: l10n.groups_inviteRevokeTitle,
+      message: l10n.groups_inviteRevokeMessage,
+      confirmLabel: l10n.groups_inviteRevoke,
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
     try {
       await ref.read(groupInviteAdminRepositoryProvider).revoke(id);
       if (!mounted) return;
@@ -76,7 +85,6 @@ class _GroupInviteSheetState extends ConsumerState<GroupInviteSheet> {
     final sent = ref.watch(sentGroupInvitationsProvider(widget.journeyId));
     return SingleChildScrollView(
       key: const ValueKey('group-invite-sheet'),
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,9 +117,13 @@ class _GroupInviteSheetState extends ConsumerState<GroupInviteSheet> {
           UiEyebrow(l10n.groups_invitePendingTitle.toUpperCase()),
           const SizedBox(height: UiSpace.sm),
           sent.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(UiSpace.md),
-              child: Center(child: CircularProgressIndicator()),
+            loading: () => Padding(
+              padding: const EdgeInsets.all(UiSpace.md),
+              child: Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: AppLocalizations.of(context).common_loading,
+                ),
+              ),
             ),
             error: (e, _) => Text(
               groupErrorMessage(context, e),

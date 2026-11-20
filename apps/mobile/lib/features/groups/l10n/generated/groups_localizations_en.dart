@@ -541,4 +541,11 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_minimalPending => 'NOT YET';
+
+  @override
+  String get groups_inviteRevokeTitle => 'Revoke this invite?';
+
+  @override
+  String get groups_inviteRevokeMessage =>
+      'The invited person will no longer be able to use it.';
 }

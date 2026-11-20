@@ -383,25 +383,25 @@ abstract class ProfileL10n {
   /// Sign-out confirmation message.
   ///
   /// In vi, this message translates to:
-  /// **'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xoá, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.'**
+  /// **'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.'**
   String get profile_signOutMessage;
 
   /// Delete account button (FR-A4).
   ///
   /// In vi, this message translates to:
-  /// **'Xoá tài khoản'**
+  /// **'Xóa tài khoản'**
   String get profile_deleteAccount;
 
   /// Delete account confirmation title.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá tài khoản vĩnh viễn?'**
+  /// **'Xóa tài khoản vĩnh viễn?'**
   String get profile_deleteTitle;
 
   /// Delete account consequences.
   ///
   /// In vi, this message translates to:
-  /// **'Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xoá khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.'**
+  /// **'Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xóa khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.'**
   String get profile_deleteMessage;
 
   /// Instruction for the confirmation field.
@@ -419,25 +419,25 @@ abstract class ProfileL10n {
   /// Final delete button.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá vĩnh viễn'**
+  /// **'Xóa vĩnh viễn'**
   String get profile_deleteConfirmButton;
 
   /// Shown while the account is being deleted.
   ///
   /// In vi, this message translates to:
-  /// **'Đang xoá…'**
+  /// **'Đang xóa…'**
   String get profile_deleting;
 
   /// delete-account failed (storage_* / delete_failed / internal); safe to retry.
   ///
   /// In vi, this message translates to:
-  /// **'Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.'**
+  /// **'Chưa xóa xong. Thử lại để xóa nốt phần còn lại nhé.'**
   String get profile_deleteErrorRetry;
 
   /// delete-account returned unauthenticated.
   ///
   /// In vi, this message translates to:
-  /// **'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.'**
+  /// **'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xóa nhé.'**
   String get profile_deleteErrorReauth;
 
   /// Back button tooltip.
@@ -521,13 +521,13 @@ abstract class ProfileL10n {
   /// Badge semantics.
   ///
   /// In vi, this message translates to:
-  /// **'đã mở khoá'**
+  /// **'đã mở khóa'**
   String get profile_badgeUnlocked;
 
   /// Badge semantics.
   ///
   /// In vi, this message translates to:
-  /// **'chưa mở khoá'**
+  /// **'chưa mở khóa'**
   String get profile_badgeLocked;
 
   /// Delete step 1 checkbox.
@@ -569,7 +569,7 @@ abstract class ProfileL10n {
   /// OTP semantics.
   ///
   /// In vi, this message translates to:
-  /// **'Mã xác nhận xoá tài khoản gồm 6 số'**
+  /// **'Mã xác nhận xóa tài khoản gồm 6 số'**
   String get profile_deleteOtpLabel;
 
   /// Delete OTP error.
@@ -599,7 +599,7 @@ abstract class ProfileL10n {
   /// Delete step 3 done title.
   ///
   /// In vi, this message translates to:
-  /// **'Đã xoá tài khoản.'**
+  /// **'Đã xóa tài khoản.'**
   String get profile_deleteDoneTitle;
 
   /// Delete step 3 done body.
@@ -851,7 +851,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_delete.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá tài khoản'**
+  /// **'Xóa tài khoản'**
   String get profile_settings_delete;
 
   /// No description provided for @profile_settingsEntry.

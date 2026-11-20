@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/needs_server_view.dart';
 import '../../../ui/ui.dart';
 import '../data/safety_providers.dart';
@@ -46,9 +47,13 @@ class _BlockedList extends ConsumerWidget {
         if (p.displayName.isNotEmpty) p.userId: p.displayName,
     };
     return blocked.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(UiSpace.xxl),
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => Padding(
+        padding: const EdgeInsets.all(UiSpace.xxl),
+        child: Center(
+          child: CircularProgressIndicator(
+            semanticsLabel: AppLocalizations.of(context).common_loading,
+          ),
+        ),
       ),
       error: (_, _) => UiEmptyState(
         key: const ValueKey('safety-blocked-error'),

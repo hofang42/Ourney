@@ -239,7 +239,7 @@ abstract class SafetyL10n {
   /// Cancel button of the report form.
   ///
   /// In vi, this message translates to:
-  /// **'Huỷ'**
+  /// **'Hủy'**
   String get safety_reportCancel;
 
   /// Confirmation after a report was sent.
@@ -329,7 +329,7 @@ abstract class SafetyL10n {
   /// Cancel button of the block dialog.
   ///
   /// In vi, this message translates to:
-  /// **'Huỷ'**
+  /// **'Hủy'**
   String get safety_blockCancel;
 
   /// Snack bar after blocking.
@@ -515,7 +515,7 @@ abstract class SafetyL10n {
   /// EULA section body.
   ///
   /// In vi, this message translates to:
-  /// **'Bạn có thể báo cáo check-in hoặc người dùng và chặn bất kỳ ai. Chúng mình xem xét báo cáo trong vòng 24 giờ, gỡ nội dung vi phạm và khoá tài khoản của người vi phạm.'**
+  /// **'Bạn có thể báo cáo check-in hoặc người dùng và chặn bất kỳ ai. Chúng mình xem xét báo cáo trong vòng 24 giờ, gỡ nội dung vi phạm và khóa tài khoản của người vi phạm.'**
   String get safety_eula4Body;
 
   /// EULA section heading.
@@ -527,7 +527,7 @@ abstract class SafetyL10n {
   /// EULA section body.
   ///
   /// In vi, this message translates to:
-  /// **'Chúng mình có thể tạm khoá hoặc xoá tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xoá tài khoản bất cứ lúc nào trong Hồ sơ.'**
+  /// **'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào trong Hồ sơ.'**
   String get safety_eula5Body;
 
   /// EULA section heading.
@@ -593,13 +593,13 @@ abstract class SafetyL10n {
   /// Privacy section heading.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá dữ liệu'**
+  /// **'Xóa dữ liệu'**
   String get safety_privacy5Title;
 
   /// Privacy section body: deletion.
   ///
   /// In vi, this message translates to:
-  /// **'Vào Hồ sơ > Xoá tài khoản để xoá vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.'**
+  /// **'Vào Hồ sơ > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.'**
   String get safety_privacy5Body;
 
   /// Privacy section heading.

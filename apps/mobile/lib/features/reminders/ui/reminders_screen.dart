@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../data/notification_gateway.dart';
 import '../data/reminder_permission.dart';
@@ -153,7 +154,11 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
             ),
             Expanded(
               child: journeys.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => Center(
+                  child: CircularProgressIndicator(
+                    semanticsLabel: AppLocalizations.of(context).common_loading,
+                  ),
+                ),
                 error: (_, _) => UiEmptyState(
                   key: const ValueKey('reminders-error'),
                   glyph: const OurneyIcon(name: 'cloud-off', flat: true),
