@@ -50,11 +50,11 @@ void main() {
     final nameAlt = names.map(RegExp.escape).join('|');
     final pathAlt = tabNames.map((n) => '/$n').join('|');
     final call = RegExp(
-      '\.(?:push|pushReplacement|replace|pushReplacementNamed)'
-              r'(?:<[^>(]*>)?\(\s*(?:(?:' +
-          nameAlt +
-          r')\b(?!\w*\()|' +
-          '''['"](?:$pathAlt)['"])''',
+      r'\.(?:push|pushReplacement|replace|pushReplacementNamed)'
+      r'(?:<[^>(]*>)?\(\s*(?:(?:'
+      '$nameAlt'
+      r')\b(?!\w*\()|'
+      '''['"](?:$pathAlt)['"])''',
     );
     final offenders = [
       for (final e in sources.entries)
