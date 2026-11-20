@@ -1068,5 +1068,6 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Choose this type"
+  "journeys_createDeckChoose": "Choose this type",
+  "journeys_createSettingsNotSaved": "Some settings couldn't be saved"
 }

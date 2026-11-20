@@ -1748,4 +1748,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Chọn kiểu này';
+
+  @override
+  String get journeys_createSettingsNotSaved => 'Một vài cài đặt chưa lưu được';
 }

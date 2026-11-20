@@ -1548,5 +1548,9 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Chọn kiểu này"
+  "journeys_createDeckChoose": "Chọn kiểu này",
+  "journeys_createSettingsNotSaved": "Một vài cài đặt chưa lưu được",
+  "@journeys_createSettingsNotSaved": {
+    "description": "Non-fatal toast after creating a journey when the server rejected some create-flow settings."
+  }
 }
