@@ -655,7 +655,7 @@ class OurneyIconPainter extends CustomPainter {
     if (color == ink) return true;
     final a = color.computeLuminance() + 0.05;
     final b = ink.computeLuminance() + 0.05;
-    return (a > b ? a / b : b / a) < 1.8;
+    return (a > b ? a / b : b / a) < 1.55;
   }
 
   @override

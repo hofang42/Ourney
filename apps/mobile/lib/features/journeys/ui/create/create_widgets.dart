@@ -147,7 +147,7 @@ class CreateChoiceCard extends StatelessWidget {
       semanticLabel: [title, ?body].join(', '),
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(UiRadius.menu),
-      shadowColor: ui.outline,
+      shadowColor: ui.hardShadowColor,
       shadowOffset: selected ? 4 : 0,
       child: Container(
         constraints: const BoxConstraints(minHeight: 64),
