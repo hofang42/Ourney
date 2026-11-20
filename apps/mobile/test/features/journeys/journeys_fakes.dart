@@ -133,6 +133,9 @@ class FakeJourneyRepository implements JourneyRepository {
   final List<({String id, bool? hideExtras, bool? pinned})> extraPrefUpdates =
       [];
 
+  /// When set, allMine throws it.
+  Object? listError;
+
   /// When set, updateMyMembership throws it.
   Object? prefError;
 
@@ -178,7 +181,10 @@ class FakeJourneyRepository implements JourneyRepository {
   Stream<List<Journey>> watchArchived() => _view(true);
 
   @override
-  Future<List<Journey>> allMine() async => _journeys.value;
+  Future<List<Journey>> allMine() async {
+    if (listError case final e?) throw e;
+    return _journeys.value;
+  }
 
   @override
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(

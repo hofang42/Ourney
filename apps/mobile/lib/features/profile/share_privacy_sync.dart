@@ -17,8 +17,13 @@ Future<void>? _pendingPush;
 /// `accountPrefsKeys` and also carries the user it belongs to.
 /// Shape: `{"user": id, "items": {journeyId: {"h": bool, "b": bool}}}`, where
 /// only the flag(s) that failed are set, so healing never touches another
-/// per-journey choice.
-Map<String, ({bool hide, bool blur})> _loadPending(
+/// per-journey choice. The key [_allKey] means "every membership" (the
+/// journey list itself could not be read).
+const String _allKey = '*';
+
+typedef _Flags = ({bool hide, bool blur});
+
+Map<String, _Flags> _loadPending(
   SharedPreferencesWithCache prefs,
   String? userId,
 ) {
@@ -29,30 +34,35 @@ Map<String, ({bool hide, bool blur})> _loadPending(
     final map = jsonDecode(raw) as Map<String, dynamic>;
     if (map['user'] != userId) return {};
     final items = (map['items'] as Map<String, dynamic>?) ?? const {};
-    return {
-      for (final e in items.entries)
-        e.key: (
-          hide: (e.value as Map)['h'] == true,
-          blur: (e.value as Map)['b'] == true,
-        ),
-    };
+    final out = <String, _Flags>{};
+    for (final e in items.entries) {
+      // One malformed item must not drop the others.
+      try {
+        final v = e.value as Map;
+        out[e.key] = (hide: v['h'] == true, blur: v['b'] == true);
+      } on Object {
+        continue;
+      }
+    }
+    return out;
   } on Object {
     return {};
   }
 }
 
+void _logStore(Object e) => debugPrint('share privacy: prefs write failed: $e');
+
 void _savePending(
   SharedPreferencesWithCache prefs,
   String userId,
-  Map<String, ({bool hide, bool blur})> items,
+  Map<String, _Flags> items,
 ) {
   try {
+    final Future<void> write;
     if (items.isEmpty) {
-      unawaited(prefs.remove(SharePrivacyPrefs.pendingHeal));
-      return;
-    }
-    unawaited(
-      prefs.setString(
+      write = prefs.remove(SharePrivacyPrefs.pendingHeal);
+    } else {
+      write = prefs.setString(
         SharePrivacyPrefs.pendingHeal,
         jsonEncode({
           'user': userId,
@@ -61,25 +71,31 @@ void _savePending(
               e.key: {'h': e.value.hide, 'b': e.value.blur},
           },
         }),
-      ),
-    );
-  } on Object {
-    // Storage failure: the push is not retried; the next switch change does.
+      );
+    }
+    unawaited(write.catchError(_logStore));
+  } on Object catch (e) {
+    _logStore(e);
   }
 }
 
-/// Records that [journeyId] still needs the given flag(s). Signed out: only
-/// logged (there is no account to heal for).
+/// Records that [journeyId] still needs the given flag(s). Skipped when
+/// signed out, when the account changed meanwhile, or when the error is an
+/// expired session (nothing to heal for that account).
 void _noteFailure(
   SharedPreferencesWithCache prefs,
   String? userId,
+  String? Function() currentUser,
   String journeyId,
   Object e, {
   required bool hide,
   required bool blur,
 }) {
   debugPrint('share privacy: journey $journeyId failed: $e');
-  if (userId == null) return;
+  if (userId == null || currentUser() != userId) return;
+  if (e is OurneyException && e.error == OurneyErrorCode.unauthenticated) {
+    return;
+  }
   final items = _loadPending(prefs, userId);
   final old = items[journeyId];
   items[journeyId] = (
@@ -87,6 +103,48 @@ void _noteFailure(
     blur: blur || (old?.blur ?? false),
   );
   _savePending(prefs, userId, items);
+}
+
+/// Removes just the given flag(s) of [journeyId] (entry gone when empty).
+void _clearFlags(
+  SharedPreferencesWithCache prefs,
+  String? userId,
+  String journeyId, {
+  required bool hide,
+  required bool blur,
+}) {
+  if (userId == null) return;
+  final items = _loadPending(prefs, userId);
+  final old = items[journeyId];
+  if (old == null) return;
+  final next = (hide: old.hide && !hide, blur: old.blur && !blur);
+  if (next.hide || next.blur) {
+    items[journeyId] = next;
+  } else {
+    items.remove(journeyId);
+  }
+  _savePending(prefs, userId, items);
+}
+
+/// The user chose a value for [journeyId] by hand (journey settings): any
+/// waiting heal for that flag is obsolete and must not overwrite it later.
+void forgetSharePrivacyHeal(
+  WidgetRef ref,
+  String journeyId, {
+  bool hide = false,
+  bool blur = false,
+}) {
+  try {
+    _clearFlags(
+      ref.read(sharedPreferencesProvider),
+      ref.read(currentUserIdProvider),
+      journeyId,
+      hide: hide,
+      blur: blur,
+    );
+  } on Object {
+    // Nothing recorded, nothing to forget.
+  }
 }
 
 /// Journeys with a failed push waiting for [healSharePrivacy].
@@ -103,7 +161,7 @@ bool _healing = false;
 /// Re-applies ONLY the failed flag(s) of the journeys recorded by a failed
 /// push, and only while the matching Settings switch is still ON. A
 /// membership that no longer exists is forgotten. Never touches any other
-/// journey, so per-journey choices stay. Called at app resume.
+/// journey, so per-journey choices stay. Called at app start and resume.
 Future<void> healSharePrivacy(ProviderContainer container) async {
   if (_healing) return;
   final SharedPreferencesWithCache prefs;
@@ -118,32 +176,64 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
   }
   final pending = _loadPending(prefs, userId);
   if (userId == null || pending.isEmpty) return;
+  String? current() => container.read(currentUserIdProvider);
+  // Drops the snapshot flags, but only if the entry was not touched since
+  // (a push that failed meanwhile keeps its flags for the next heal).
+  void done(String key, _Flags snapshot) {
+    final now = _loadPending(prefs, userId);
+    if (now[key] != snapshot) return;
+    _clearFlags(prefs, userId, key, hide: snapshot.hide, blur: snapshot.blur);
+  }
+
   _healing = true;
   try {
     for (final entry in pending.entries) {
-      final hide =
-          entry.value.hide && container.read(hideWeightOnShareProvider);
-      final blur =
-          entry.value.blur && container.read(blurPhotosOnShareProvider);
-      var done = true;
-      if (hide || blur) {
-        try {
-          await repo.updateMyMembership(
-            entry.key,
-            hideMetric: hide ? true : null,
-            blurMedia: blur ? true : null,
-          );
-        } on OurneyException catch (e) {
-          done = e.error == OurneyErrorCode.notFound;
-          debugPrint('share privacy: heal ${entry.key} failed: $e');
-        } on Object catch (e) {
-          done = false;
-          debugPrint('share privacy: heal ${entry.key} failed: $e');
-        }
+      if (current() != userId) break;
+      final snapshot = entry.value;
+      final hideOn = snapshot.hide && container.read(hideWeightOnShareProvider);
+      final blurOn = snapshot.blur && container.read(blurPhotosOnShareProvider);
+      if (!hideOn && !blurOn) {
+        done(entry.key, snapshot);
+        continue;
       }
-      if (done && container.read(currentUserIdProvider) == userId) {
-        final cur = _loadPending(prefs, userId)..remove(entry.key);
-        _savePending(prefs, userId, cur);
+      try {
+        if (entry.key == _allKey) {
+          for (final j in await repo.allMine()) {
+            if (current() != userId) return;
+            final hide = hideOn && isWeightMetric(j);
+            if (!hide && !blurOn) continue;
+            await repo.updateMyMembership(
+              j.id,
+              hideMetric: hide ? true : null,
+              blurMedia: blurOn ? true : null,
+            );
+          }
+        } else {
+          var hide = hideOn;
+          if (hide) {
+            // The weight status may have been unknown when it failed.
+            final journey = await repo.watch(entry.key).first;
+            if (journey == null) {
+              done(entry.key, snapshot);
+              continue;
+            }
+            hide = isWeightMetric(journey);
+          }
+          if (current() != userId) break;
+          if (hide || blurOn) {
+            await repo.updateMyMembership(
+              entry.key,
+              hideMetric: hide ? true : null,
+              blurMedia: blurOn ? true : null,
+            );
+          }
+        }
+        done(entry.key, snapshot);
+      } on OurneyException catch (e) {
+        debugPrint('share privacy: heal ${entry.key} failed: $e');
+        if (e.error == OurneyErrorCode.notFound) done(entry.key, snapshot);
+      } on Object catch (e) {
+        debugPrint('share privacy: heal ${entry.key} failed: $e');
       }
     }
   } finally {
@@ -151,7 +241,7 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
   }
 }
 
-/// Heals failed share-privacy pushes when the app resumes.
+/// Heals failed share-privacy pushes at app start and when it resumes.
 class SharePrivacyHealHook extends ConsumerStatefulWidget {
   const SharePrivacyHealHook({required this.child, super.key});
 
@@ -168,6 +258,10 @@ class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(healSharePrivacy(ProviderScope.containerOf(context)));
+    });
   }
 
   @override
@@ -194,7 +288,8 @@ class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
 /// [hideWeight] only reaches weight (kg) journeys. Pushes are serialised and
 /// re-read the switch from [container] before writing, so rapid toggles (or
 /// leaving Settings) cannot leave a stale value behind. A membership that can
-/// not be updated is recorded (with just the failed flag) and healed later.
+/// not be updated (or a journey list that can not be read) is recorded with
+/// just the failed flag and healed later.
 Future<void> pushSharePrivacyToMemberships(
   ProviderContainer container, {
   bool? hideWeight,
@@ -213,36 +308,57 @@ Future<void> pushSharePrivacyToMemberships(
   } on Object {
     return Future<void>.value();
   }
+  String? current() {
+    try {
+      return container.read(currentUserIdProvider);
+    } on Object {
+      return userId;
+    }
+  }
 
   Future<void> run() async {
+    List<Journey> journeys;
     try {
-      final journeys = await repo.allMine();
-      final hideNow =
-          hideWeight == true && container.read(hideWeightOnShareProvider);
-      final blurNow = blur == true && container.read(blurPhotosOnShareProvider);
-      for (final j in journeys) {
-        final hide = hideNow && isWeightMetric(j) ? true : null;
-        final blurV = blurNow ? true : null;
-        if (hide == null && blurV == null) continue;
-        try {
-          await repo.updateMyMembership(
-            j.id,
-            hideMetric: hide,
-            blurMedia: blurV,
-          );
-        } on Object catch (e) {
-          _noteFailure(
-            prefs,
-            userId,
-            j.id,
-            e,
-            hide: hide != null,
-            blur: blurV != null,
-          );
-        }
-      }
+      journeys = await repo.allMine();
     } on Object catch (e) {
-      debugPrint('share privacy: listing journeys failed: $e');
+      _noteFailure(
+        prefs,
+        userId,
+        current,
+        _allKey,
+        e,
+        hide: hideWeight == true,
+        blur: blur == true,
+      );
+      return;
+    }
+    final hideNow =
+        hideWeight == true && container.read(hideWeightOnShareProvider);
+    final blurNow = blur == true && container.read(blurPhotosOnShareProvider);
+    for (final j in journeys) {
+      final hide = hideNow && isWeightMetric(j) ? true : null;
+      final blurV = blurNow ? true : null;
+      if (hide == null && blurV == null) continue;
+      try {
+        await repo.updateMyMembership(j.id, hideMetric: hide, blurMedia: blurV);
+        _clearFlags(
+          prefs,
+          userId,
+          j.id,
+          hide: hide != null,
+          blur: blurV != null,
+        );
+      } on Object catch (e) {
+        _noteFailure(
+          prefs,
+          userId,
+          current,
+          j.id,
+          e,
+          hide: hide != null,
+          blur: blurV != null,
+        );
+      }
     }
   }
 
@@ -272,7 +388,17 @@ Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
   } on Object {
     return;
   }
-  var hide = false;
+  String? current() {
+    try {
+      return ref.read(currentUserIdProvider);
+    } on Object {
+      return userId;
+    }
+  }
+
+  // Unknown until the journey is read: a failure before that records hide
+  // anyway and the heal decides (it only applies it to weight journeys).
+  var hide = hideOn;
   try {
     final journey = await repo.watch(journeyId).first;
     if (journey == null) return;
@@ -283,9 +409,10 @@ Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
       hideMetric: hide ? true : null,
       blurMedia: blur ? true : null,
     );
+    _clearFlags(prefs, userId, journeyId, hide: hide, blur: blur);
   } on Object catch (e) {
     // Recorded with the flag(s) that were meant; healed at the next resume.
-    _noteFailure(prefs, userId, journeyId, e, hide: hide, blur: blur);
+    _noteFailure(prefs, userId, current, journeyId, e, hide: hide, blur: blur);
   }
 }
 
