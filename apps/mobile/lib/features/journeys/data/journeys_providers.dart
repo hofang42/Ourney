@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -32,6 +33,7 @@ final deviceTimezoneProvider = FutureProvider<String>((ref) async {
     // Stored on the journey: always canonical (Asia/Saigon ->
     // Asia/Ho_Chi_Minh); an unknown name uses the logged best guess.
     if (info.identifier.isNotEmpty) {
+      registerDeviceTimeZone(info.identifier);
       return resolveTimeZone(info.identifier).name;
     }
   } on Object {
@@ -40,8 +42,32 @@ final deviceTimezoneProvider = FutureProvider<String>((ref) async {
   return guessTimeZoneForOffset(DateTime.now().timeZoneOffset).name;
 }, retry: _noRetry);
 
-/// Ids whose expired window the app has an end request in flight for.
-final _settleRequestedProvider = Provider<Set<String>>((ref) => <String>{});
+/// Registers the device zone and decodes the tz database once the first frame
+/// is out, so no later lookup pays for it (watched by the app root; the
+/// camera's first frame uses the fast path of `journeyLocalDate`).
+final timeZoneWarmupProvider = Provider<void>((ref) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(
+      ref
+          .read(deviceTimezoneProvider.future)
+          .then(
+            (_) => Future<void>.microtask(ensureTimeZonesLoaded),
+            onError: (Object _) {},
+          ),
+    );
+  });
+}, retry: _noRetry);
+
+/// Auto-end bookkeeping: ids with a request in flight (or done) and, after a
+/// refusal, the next quarter-hour tick at which the id may be tried again.
+class _SettleState {
+  final requested = <String>{};
+  final retryAt = <String, DateTime>{};
+}
+
+final _settleRequestedProvider = Provider<_SettleState>(
+  (ref) => _SettleState(),
+);
 
 /// Days after the last day during which the server still takes late check-ins
 /// (`0006_social.sql`: `local_date >= today - 3`, only while `active`).
@@ -58,17 +84,27 @@ Journey settleJourney(Ref ref, Journey j, DateTime now) {
   if (identical(settled, j)) return j;
   if (!j.isPastEndOn(today.addDays(-lateCheckInGraceDays))) return settled;
   final userId = ref.read(currentUserIdProvider);
-  if ((userId == null || userId == j.ownerId) &&
-      ref.read(_settleRequestedProvider).add(j.id)) {
-    // The repository refuses (offline error) while uploads are pending; the
-    // id is released so the next quarter-hour tick retries.
+  if (userId != null && userId != j.ownerId) return settled;
+  // The state object is captured now: `ref` may be disposed by the time the
+  // request settles (autoDispose list providers).
+  final state = ref.read(_settleRequestedProvider);
+  final retryAt = state.retryAt[j.id];
+  if (retryAt != null && now.isBefore(retryAt)) return settled;
+  if (state.requested.add(j.id)) {
+    // The repository refuses (`syncPending` / offline) while uploads are
+    // pending; the id is released and retried at the next quarter-hour tick,
+    // never forcing an outbox flush from here (that would burn the retry
+    // budget of failing uploads).
     unawaited(
       ref
           .read(journeyRepositoryProvider)
-          .end(j.id)
+          .end(j.id, background: true)
           .then(
             (_) {},
-            onError: (_) => ref.read(_settleRequestedProvider).remove(j.id),
+            onError: (Object _) {
+              state.requested.remove(j.id);
+              state.retryAt[j.id] = now.add(untilNextQuarterHour(now));
+            },
           ),
     );
   }

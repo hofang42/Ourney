@@ -131,7 +131,7 @@ abstract class AppLocalizations {
   /// Display name of a journey style (U20).
   ///
   /// In vi, this message translates to:
-  /// **'Khoe nét thẩm mỹ'**
+  /// **'Khoe thẩm mỹ'**
   String get journeyStyle_aestheticFlexer;
 
   /// Display name of a journey style (U20).

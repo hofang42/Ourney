@@ -553,6 +553,64 @@ void main() {
     });
   });
 
+  group('final review: offline edits and end with pending uploads', () {
+    Future<void> cacheActive() async {
+      remote.tables['journeys'] = [journeyRow(jid, ownerId: me)];
+      remote.tables['memberships'] = [membershipRow(jid, me)];
+      await layer.syncNow();
+    }
+
+    test('two offline edits in a row succeed locally', () async {
+      await cacheActive();
+      remote.failure = offline;
+      final a = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Một'),
+      );
+      expect(a.title, 'Một');
+      final b = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Hai'),
+      );
+      expect(b.title, 'Hai');
+      expect(
+        await layer.ctx.outbox!.pendingKeys(),
+        contains('${journeyKey(jid)}:edit'),
+      );
+    });
+
+    test('an edit after an offline photo succeeds locally', () async {
+      await cacheActive();
+      remote.failure = offline;
+      await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1));
+      final j = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Sau ảnh'),
+      );
+      expect(j.title, 'Sau ảnh');
+    });
+
+    test('end is refused with syncPending while an upload is queued', () async {
+      await cacheActive();
+      remote.failure = offline;
+      await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1));
+      await expectLater(
+        layer.journeys.end(jid),
+        throwsA(
+          isA<OurneyException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.syncPending,
+          ),
+        ),
+      );
+      expect(
+        remote.callsOf('rpc').where((c) => c.target == 'end_journey'),
+        isEmpty,
+      );
+    });
+  });
+
   test('check-ins of the same day are newest first', () async {
     remote.tables['journeys'] = [journeyRow(jid, ownerId: me)];
     remote.tables['memberships'] = [membershipRow(jid, me)];

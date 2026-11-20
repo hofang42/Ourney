@@ -118,6 +118,7 @@
   "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.",
   "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
   "journeys_errorEnded": "Hành trình này đã kết thúc.",
+  "journeys_errorSyncPending": "Ảnh vẫn đang tải lên, thử lại sau ít phút.",
   "journeys_errorNotFound": "Không tìm thấy hành trình.",
   "journeys_statCurrent": "Chuỗi hiện tại",
   "journeys_statBest": "Dài nhất",

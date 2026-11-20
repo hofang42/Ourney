@@ -334,7 +334,7 @@ class DataJourneyRepository implements JourneyRepository {
     final group = row.kind == JourneyKind.group.wireName;
     final remote = ctx.remote;
     if (remote != null) {
-      await _flushFirst(forJourney: journeyId);
+      await _flushFirst();
       try {
         final res = await remote.rpc(
           'update_journey',
@@ -463,15 +463,15 @@ class DataJourneyRepository implements JourneyRepository {
 
   /// Sends queued writes first so RPCs never race a pending `create_journey`.
   ///
-  /// With [forJourney], also fails (offline: retry later) when an item of that
+  /// With [forJourney], also fails (`syncPending`: retry later) when an item of that
   /// journey is still queued after the flush: a failed upload must not be
   /// followed by `end_journey`, the server would then reject it for good.
-  Future<void> _flushFirst({String? forJourney}) async {
+  Future<void> _flushFirst({String? forJourney, bool force = true}) async {
     final outbox = ctx.outbox;
     if (outbox == null) return;
-    await outbox.flush(force: true);
+    await outbox.flush(force: force);
     if (forJourney != null && await _hasPendingFor(outbox, forJourney)) {
-      throw const OurneyException(OurneyErrorCode.offline);
+      throw const OurneyException(OurneyErrorCode.syncPending);
     }
   }
 
@@ -491,7 +491,7 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<void> end(String journeyId) async {
+  Future<void> end(String journeyId, {bool background = false}) async {
     final remote = ctx.remote;
     if (remote == null) {
       final row = await _requireLocal(journeyId);
@@ -501,7 +501,7 @@ class DataJourneyRepository implements JourneyRepository {
       await _setStatus(journeyId, JourneyStatus.ended);
       return;
     }
-    await _flushFirst(forJourney: journeyId);
+    await _flushFirst(forJourney: journeyId, force: !background);
     final row = await remote.rpc('end_journey', {'journey': journeyId});
     if (row is Map) {
       await ctx.store.applyJourney(row.cast<String, dynamic>());

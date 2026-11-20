@@ -118,7 +118,11 @@ abstract interface class JourneyRepository {
 
   /// `end_journey` (owner only): status → ended, check-ins become read-only.
   /// Throws `forbidden`, `ended`, `notFound`.
-  Future<void> end(String journeyId);
+  ///
+  /// [background] is the automatic end of an expired window: it must not force
+  /// the outbox to retry (that would burn the retry budget of failing uploads).
+  /// Throws [OurneyErrorCode.syncPending] while uploads of the journey are queued.
+  Future<void> end(String journeyId, {bool background = false});
 
   /// Client-side only in v1: hides an ended journey from the active list.
   /// There is no archive RPC; the server sets `archived` itself when the last
@@ -259,6 +263,7 @@ enum OurneyErrorCode {
   internal('internal'),
   // Client-side.
   offline('offline'),
+  syncPending('sync_pending'), // queued uploads of the journey are not sent yet
   unknown('unknown');
 
   const OurneyErrorCode(this.wireName);

@@ -698,8 +698,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Set while [_leaveFlow] pops the route.
   bool _leaving = false;
 
-  /// Leaving the flow: keep a resumable draft from step 2 on, else forget
-  /// any older one so the Hub card does not linger (U8).
+  /// Leaving the flow: keep a resumable draft from step 2 on. Before that, a
+  /// fresh visit leaves the saved draft be; only a resumed flow clears it so
+  /// the Hub card does not linger (U8).
   void _leaveFlow() {
     if (_busy) return; // The journey is being created: stay for the result.
     _leaving = true;
