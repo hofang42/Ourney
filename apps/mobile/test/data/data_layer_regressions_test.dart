@@ -8,6 +8,7 @@ import 'package:ourney/data/local_store.dart' show journeyKey;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
+import 'package:ourney/shared/journey_warnings.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_test_helpers.dart';
@@ -228,42 +229,33 @@ void main() {
       );
     });
 
-    test('a rejection (invalid) still surfaces', () async {
-      remote.rpcHandlers['update_journey'] = (_) =>
-          throw const OurneyException(OurneyErrorCode.invalid);
-      await expectLater(
-        layer.journeys.create(draft()),
-        throwsA(
-          isA<OurneyException>().having(
-            (e) => e.error,
-            'error',
-            OurneyErrorCode.invalid,
-          ),
-        ),
+    for (final code in [
+      OurneyErrorCode.invalid,
+      OurneyErrorCode.notFound,
+      OurneyErrorCode.forbidden,
+    ]) {
+      test(
+        'a permanent rejection ($code) keeps the journey and warns',
+        () async {
+          remote.rpcHandlers['update_journey'] = (_) =>
+              throw OurneyException(code);
+          final before = journeyExtrasRejected.value;
+          final j = await layer.journeys.create(draft(id: 'rej-${code.name}'));
+          expect(journeyExtrasRejected.value, before + 1);
+          // Restored: the rejected extras are gone, nothing stays queued.
+          expect(j.reminderTime, isNull);
+          expect(
+            await layer.ctx.outbox!.pendingKeys(),
+            isNot(contains('${journeyKey(j.id)}:extras')),
+          );
+          // The retry with the same id returns the journey again (no throw).
+          final again = await layer.journeys.create(
+            draft(id: 'rej-${code.name}'),
+          );
+          expect(again.id, j.id);
+        },
       );
-    });
-
-    test(
-      'any other permanent rejection (notFound) surfaces and restores',
-      () async {
-        remote.rpcHandlers['update_journey'] = (_) =>
-            throw const OurneyException(OurneyErrorCode.notFound);
-        await expectLater(
-          layer.journeys.create(draft(id: 'nf-journey-id')),
-          throwsA(
-            isA<OurneyException>().having(
-              (e) => e.error,
-              'error',
-              OurneyErrorCode.notFound,
-            ),
-          ),
-        );
-        expect(
-          await layer.ctx.outbox!.pendingKeys(),
-          isNot(contains('${journeyKey('nf-journey-id')}:extras')),
-        );
-      },
-    );
+    }
 
     test('a retryable error does not fail create; extras are queued', () async {
       remote.rpcHandlers['update_journey'] = (_) =>
@@ -281,10 +273,7 @@ void main() {
       const id = 'retry-journey-id';
       remote.rpcHandlers['update_journey'] = (_) =>
           throw const OurneyException(OurneyErrorCode.invalid);
-      await expectLater(
-        layer.journeys.create(draft(id: id)),
-        throwsA(isA<OurneyException>()),
-      );
+      await layer.journeys.create(draft(id: id));
       // Review 2: the rejected values do not stay in the cache.
       final after = await (db.select(
         db.journeys,
@@ -300,17 +289,20 @@ void main() {
       expect(j.color, 1);
     });
 
-    test('a retry after a rejection raises it again, not success', () async {
-      const id = 'retry-rejected-id';
-      remote.rpcHandlers['update_journey'] = (_) =>
-          throw const OurneyException(OurneyErrorCode.invalid);
-      for (var i = 0; i < 2; i++) {
-        await expectLater(
-          layer.journeys.create(draft(id: id)),
-          throwsA(isA<OurneyException>()),
-        );
-      }
-    });
+    test(
+      'a retry after a rejection returns the journey and warns again',
+      () async {
+        const id = 'retry-rejected-id';
+        remote.rpcHandlers['update_journey'] = (_) =>
+            throw const OurneyException(OurneyErrorCode.invalid);
+        final before = journeyExtrasRejected.value;
+        for (var i = 0; i < 2; i++) {
+          final j = await layer.journeys.create(draft(id: id));
+          expect(j.id, id);
+        }
+        expect(journeyExtrasRejected.value, before + 2);
+      },
+    );
 
     test(
       'extras are queued before the call (survive a crash mid-call)',

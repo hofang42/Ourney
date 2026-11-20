@@ -3151,6 +3151,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chọn kiểu này'**
   String get journeys_createDeckChoose;
+
+  /// Non-fatal toast after creating a journey when the server rejected some create-flow settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một vài cài đặt chưa lưu được'**
+  String get journeys_createSettingsNotSaved;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

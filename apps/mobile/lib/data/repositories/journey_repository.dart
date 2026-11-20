@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../shared/journey_warnings.dart';
 import '../data_context.dart';
 import '../db/app_database.dart';
 import '../local_store.dart';
@@ -179,8 +180,8 @@ class DataJourneyRepository implements JourneyRepository {
   /// the outbox in ONE transaction before the call, so an app death mid-call
   /// never loses them (the outbox replays the idempotent update). Success
   /// drops the queued item; a retryable failure leaves it queued. A permanent
-  /// rejection (any non-transient error) drops it, restores the previous row and is
-  /// surfaced.
+  /// rejection (any non-transient error) drops it, restores the previous row and
+  /// bumps [journeyExtrasRejected]; create still succeeds.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
@@ -215,7 +216,10 @@ class DataJourneyRepository implements JourneyRepository {
           includeDead: true,
         );
         await _restoreExtras(previous, extras);
-        rethrow;
+        // The journey exists on the server and locally: keep it and warn
+        // instead of failing (a retry would fail the same way, forever).
+        journeyExtrasRejected.value++;
+        return;
       }
       if (outbox != null) {
         // Retryable: make the queued item due now.
@@ -260,7 +264,8 @@ class DataJourneyRepository implements JourneyRepository {
   });
 
   /// Retry of a create whose row exists: re-apply the extras the row lacks
-  /// (and that are not already queued). A rejection is raised again.
+  /// (and that are not already queued). A rejection
+  /// restores the row and warns (see [journeyExtrasRejected]).
   Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
