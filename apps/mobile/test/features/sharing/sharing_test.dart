@@ -360,6 +360,36 @@ void main() {
       expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
     });
 
+    testWidgets('a slow cover-clear never overwrites a later save', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final sharing = FakeSharingRepository(
+        story: const JourneyStory(
+          title: 'Old',
+          coverCheckInId: 'c-j1-2026-10-10',
+        ),
+        hideGate: gate,
+      );
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await tester.enterText(_key('story-title'), 'New title');
+      await tester.pump();
+      await _tap(tester, _key('story-save'));
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(sharing.savedStory?.title, 'New title');
+    });
+
     testWidgets('group member: story is read-only, photos can be hidden '
         '(C-B14)', (tester) async {
       final sharing = FakeSharingRepository();

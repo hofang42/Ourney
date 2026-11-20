@@ -87,4 +87,20 @@ void main() {
     await pushSharePrivacyToJourney(ref, 'min');
     expect(repo.prefUpdates.map((u) => u.id), ['min']);
   });
+
+  testWidgets('still applies the switches when the caller is disposed', (
+    tester,
+  ) async {
+    final (ref, repo) = await pump(tester);
+    await tester.runAsync(() async {
+      await ref.read(hideWeightOnShareProvider.notifier).set(true);
+      await ref.read(blurPhotosOnShareProvider.notifier).set(true);
+    });
+    final push = pushSharePrivacyToJourney(ref, 'kg');
+    await tester.pumpWidget(const SizedBox());
+    await push;
+    expect(repo.prefUpdates.single.id, 'kg');
+    expect(repo.prefUpdates.single.hideMetric, isTrue);
+    expect(repo.prefUpdates.single.blurMedia, isTrue);
+  });
 }

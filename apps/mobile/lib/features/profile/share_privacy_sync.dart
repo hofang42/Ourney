@@ -24,12 +24,28 @@ Future<void> pushSharePrivacyToMemberships(
   if (hideWeight != true && blur != true) {
     return _pendingPush ?? Future<void>.value();
   }
+  // Everything that needs the ref is read before the first await: the caller
+  // may unmount (and dispose the ref) while the push is still running.
+  final repo = ref.read(journeyRepositoryProvider);
+  final hideAtStart = ref.read(hideWeightOnShareProvider);
+  final blurAtStart = ref.read(blurPhotosOnShareProvider);
+  bool readOr(bool Function() read, bool fallback) {
+    try {
+      return read();
+    } on Object {
+      return fallback;
+    }
+  }
+
   Future<void> run() async {
     try {
-      final repo = ref.read(journeyRepositoryProvider);
       final journeys = await repo.allMine();
-      final hideNow = hideWeight == true && ref.read(hideWeightOnShareProvider);
-      final blurNow = blur == true && ref.read(blurPhotosOnShareProvider);
+      final hideNow =
+          hideWeight == true &&
+          readOr(() => ref.read(hideWeightOnShareProvider), hideAtStart);
+      final blurNow =
+          blur == true &&
+          readOr(() => ref.read(blurPhotosOnShareProvider), blurAtStart);
       for (final j in journeys) {
         final hide = hideNow && isWeightMetric(j) ? true : null;
         final blurV = blurNow ? true : null;
@@ -60,12 +76,14 @@ Future<void> pushSharePrivacyToMemberships(
 /// Applies the ON Settings switches to one new membership (joined group,
 /// accepted invitation, imported journey). Touches only [journeyId].
 Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
+  // Read the ref synchronously: callers navigate away right after this call.
+  final repo = ref.read(journeyRepositoryProvider);
+  final hideOn = ref.read(hideWeightOnShareProvider);
+  final blur = ref.read(blurPhotosOnShareProvider);
   try {
-    final repo = ref.read(journeyRepositoryProvider);
     final journey = await repo.watch(journeyId).first;
     if (journey == null) return;
-    final hide = ref.read(hideWeightOnShareProvider) && isWeightMetric(journey);
-    final blur = ref.read(blurPhotosOnShareProvider);
+    final hide = hideOn && isWeightMetric(journey);
     if (!hide && !blur) return;
     await repo.updateMyMembership(
       journeyId,
