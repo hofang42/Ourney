@@ -79,6 +79,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   bool _busy = false;
   int _done = 0;
   int _failed = 0;
+
+  /// Wire code of the first photo failure, shown in the summary.
+  String? _firstError;
   String? _saveError;
   Journey? _created;
 
@@ -152,7 +155,8 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         }
         _syncDates();
       });
-    } on Object {
+    } on Object catch (e) {
+      debugPrint('import: picking photos failed: $e');
       if (mounted) {
         final l10n = ImportL10n.of(context);
         showUiToast(context, l10n.import_pickFailed);
@@ -206,6 +210,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     setState(() {
       _busy = true;
       _failed = 0;
+      _firstError = null;
     });
     final timezone = await _timezone();
     if (!mounted) return;
@@ -255,8 +260,16 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           await drafts.discard([files.photoFile, files.thumbFile]);
           photo.saved = true;
           if (mounted) setState(() => _done++);
-        } on Object {
-          if (mounted) setState(() => _failed++);
+        } on Object catch (e) {
+          debugPrint('import: photo save failed: $e');
+          if (mounted) {
+            setState(() {
+              _failed++;
+              _firstError ??= e is OurneyException
+                  ? e.error.name
+                  : e.runtimeType.toString();
+            });
+          }
         }
       }
       if (!mounted) return;
@@ -776,7 +789,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.import_failed(_failed),
+            _firstError == null
+                ? l10n.import_failed(_failed)
+                : l10n.import_failedWithReason(_failed, _firstError!),
             style: UiText.body(
               size: 13,
               weight: FontWeight.w700,

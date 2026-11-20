@@ -261,5 +261,6 @@
   "import_pickFailed": "Could not open the photo library.",
   "@import_pickFailed": {
     "description": "Import past journey flow."
-  }
+  },
+  "import_failedWithReason": "{count} photos could not be saved ({reason})"
 }

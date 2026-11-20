@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -148,6 +149,7 @@ class CheckInPoster {
     try {
       files = await compressor.compress(photo.path);
     } on Object catch (e) {
+      debugPrint('check-in: compressing the photo failed: $e');
       throw CheckInPostException(CheckInFailure.photo, e);
     }
     // Couple journeys: the partner's photo goes through the same pipeline.
@@ -156,6 +158,7 @@ class CheckInPoster {
       try {
         partner = await compressor.compress(partnerPhotoPath);
       } on Object catch (e) {
+        debugPrint('check-in: compressing the partner photo failed: $e');
         _discard([files.photoFile, files.thumbFile]);
         throw CheckInPostException(CheckInFailure.photo, e);
       }
@@ -192,6 +195,7 @@ class CheckInPoster {
         ),
       );
     } on OurneyException catch (e) {
+      debugPrint('check-in: submit failed: $e');
       _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
       throw CheckInPostException(
         e.error == OurneyErrorCode.ended
@@ -200,6 +204,7 @@ class CheckInPoster {
         e,
       );
     } on Object catch (e) {
+      debugPrint('check-in: submit failed unexpectedly: $e');
       _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
       throw CheckInPostException(CheckInFailure.generic, e);
     }

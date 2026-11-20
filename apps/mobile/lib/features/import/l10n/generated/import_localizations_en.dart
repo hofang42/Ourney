@@ -209,4 +209,9 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_pickFailed => 'Could not open the photo library.';
+
+  @override
+  String import_failedWithReason(int count, String reason) {
+    return '$count photos could not be saved ($reason)';
+  }
 }

@@ -261,5 +261,17 @@
   "import_pickFailed": "Không mở được thư viện ảnh.",
   "@import_pickFailed": {
     "description": "Import past journey flow."
+  },
+  "import_failedWithReason": "{count} ảnh chưa lưu được ({reason})",
+  "@import_failedWithReason": {
+    "description": "Import failure summary with the first error code.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
   }
 }
