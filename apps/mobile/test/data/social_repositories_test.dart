@@ -735,6 +735,39 @@ void main() {
       expect(rpcCount('send_message'), 1);
     });
 
+    test('L9 a retried text send reuses its message id', () async {
+      final ids = <String>[];
+      remote.rpcHandlers['send_message'] = (p) {
+        ids.add(p['p_id'] as String);
+        if (ids.length == 1) {
+          throw const OurneyException(OurneyErrorCode.offline);
+        }
+        return null;
+      };
+      await expectLater(
+        layer.chat!.sendText('conv', 'hello'),
+        throwsA(isA<OurneyException>()),
+      );
+      final m = await layer.chat!.sendText('conv', 'hello');
+      expect(ids, hasLength(2));
+      expect(ids[1], ids[0]);
+      expect(m.id, ids[0]);
+      // After a success the next identical message is a new one.
+      await layer.chat!.sendText('conv', 'hello');
+      expect(ids[2], isNot(ids[0]));
+    });
+
+    test('L9 a photo whose send failed is removed from storage', () async {
+      remote.rpcHandlers['send_message'] = (_) =>
+          throw const OurneyException(OurneyErrorCode.offline);
+      await expectLater(
+        layer.chat!.sendPhoto('conv', [5, 5]),
+        throwsA(isA<OurneyException>()),
+      );
+      expect(remote.removed, hasLength(1));
+      expect(remote.removed.single, startsWith('messages/conv/$me/'));
+    });
+
     test('open / read / clear / hide', () async {
       remote.rpcHandlers['open_conversation'] = (_) => 'conv';
       expect(await layer.chat!.openForReply('j1', checkInId: 'c1'), 'conv');
