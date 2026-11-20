@@ -360,7 +360,7 @@ void main() {
       expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
     });
 
-    testWidgets('a slow cover-clear never overwrites a later save', (
+    testWidgets('slow hide toggles (two) never overwrite a later save', (
       tester,
     ) async {
       final gate = Completer<void>();
@@ -377,11 +377,13 @@ void main() {
         sharing: sharing,
         checkIns: FakeCheckInRepository([
           testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          testCheckIn('j1', const LocalDate(2026, 10, 11)),
         ]),
         journeys: _journeys(),
       );
       await h.go(tester, '/sharing/j1/story');
       await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-hide-c-j1-2026-10-11'));
       await tester.enterText(_key('story-title'), 'New title');
       await tester.pump();
       await _tap(tester, _key('story-save'));
