@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -8,6 +9,61 @@ import '../share_card/domain/share_card_content.dart';
 import 'settings_providers.dart';
 
 Future<void>? _pendingPush;
+
+/// Set when a membership update failed: [SharePrivacyHealHook] re-applies the
+/// ON switches at the next app resume.
+bool _needsHeal = false;
+
+/// Whether a failed push is waiting to be re-applied.
+@visibleForTesting
+bool get sharePrivacyNeedsHeal => _needsHeal;
+
+void _noteFailure(String what, Object e) {
+  _needsHeal = true;
+  debugPrint('share privacy: $what failed: $e');
+}
+
+/// Re-applies the ON Settings switches to every membership after a failed
+/// push (no-op otherwise). Called at app resume.
+Future<void> healSharePrivacy(WidgetRef ref) {
+  if (!_needsHeal) return Future<void>.value();
+  _needsHeal = false;
+  return pushSharePrivacyToMemberships(ref, hideWeight: true, blur: true);
+}
+
+/// Heals failed share-privacy pushes when the app resumes.
+class SharePrivacyHealHook extends ConsumerStatefulWidget {
+  const SharePrivacyHealHook({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  ConsumerState<SharePrivacyHealHook> createState() =>
+      _SharePrivacyHealHookState();
+}
+
+class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(healSharePrivacy(ref));
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
 
 /// Pushes a Settings share-privacy switch that was just turned ON to every
 /// journey membership (archived and ended ones included) so the public link
@@ -24,12 +80,35 @@ Future<void> pushSharePrivacyToMemberships(
   if (hideWeight != true && blur != true) {
     return _pendingPush ?? Future<void>.value();
   }
+  // Everything that needs the ref is read before the first await: the caller
+  // may unmount (and dispose the ref) while the push is still running.
+  final JourneyRepository repo;
+  final bool hideAtStart;
+  final bool blurAtStart;
+  try {
+    repo = ref.read(journeyRepositoryProvider);
+    hideAtStart = ref.read(hideWeightOnShareProvider);
+    blurAtStart = ref.read(blurPhotosOnShareProvider);
+  } on Object {
+    return Future<void>.value();
+  }
+  bool readOr(bool Function() read, bool fallback) {
+    try {
+      return read();
+    } on Object {
+      return fallback;
+    }
+  }
+
   Future<void> run() async {
     try {
-      final repo = ref.read(journeyRepositoryProvider);
       final journeys = await repo.allMine();
-      final hideNow = hideWeight == true && ref.read(hideWeightOnShareProvider);
-      final blurNow = blur == true && ref.read(blurPhotosOnShareProvider);
+      final hideNow =
+          hideWeight == true &&
+          readOr(() => ref.read(hideWeightOnShareProvider), hideAtStart);
+      final blurNow =
+          blur == true &&
+          readOr(() => ref.read(blurPhotosOnShareProvider), blurAtStart);
       for (final j in journeys) {
         final hide = hideNow && isWeightMetric(j) ? true : null;
         final blurV = blurNow ? true : null;
@@ -40,12 +119,13 @@ Future<void> pushSharePrivacyToMemberships(
             hideMetric: hide,
             blurMedia: blurV,
           );
-        } on Object {
-          // Skipped: the next switch change or journey join pushes it again.
+        } on Object catch (e) {
+          // Skipped now; healed at the next app resume (_needsHeal).
+          _noteFailure('membership ${j.id}', e);
         }
       }
-    } on Object {
-      return;
+    } on Object catch (e) {
+      _noteFailure('listing journeys', e);
     }
   }
 
@@ -60,20 +140,30 @@ Future<void> pushSharePrivacyToMemberships(
 /// Applies the ON Settings switches to one new membership (joined group,
 /// accepted invitation, imported journey). Touches only [journeyId].
 Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
+  // Read the ref synchronously: callers navigate away right after this call.
+  final JourneyRepository repo;
+  final bool hideOn;
+  final bool blur;
   try {
-    final repo = ref.read(journeyRepositoryProvider);
+    repo = ref.read(journeyRepositoryProvider);
+    hideOn = ref.read(hideWeightOnShareProvider);
+    blur = ref.read(blurPhotosOnShareProvider);
+  } on Object {
+    return;
+  }
+  try {
     final journey = await repo.watch(journeyId).first;
     if (journey == null) return;
-    final hide = ref.read(hideWeightOnShareProvider) && isWeightMetric(journey);
-    final blur = ref.read(blurPhotosOnShareProvider);
+    final hide = hideOn && isWeightMetric(journey);
     if (!hide && !blur) return;
     await repo.updateMyMembership(
       journeyId,
       hideMetric: hide ? true : null,
       blurMedia: blur ? true : null,
     );
-  } on Object {
-    // Best effort.
+  } on Object catch (e) {
+    // Healed at the next app resume (_needsHeal).
+    _noteFailure('journey $journeyId', e);
   }
 }
 

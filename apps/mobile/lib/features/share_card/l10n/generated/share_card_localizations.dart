@@ -206,7 +206,7 @@ abstract class ShareCardL10n {
   /// **'Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.'**
   String get share_card_photoNone;
 
-  /// Shown on the share card when the hidden-photo flags could not be loaded; sharing stays disabled with a retry button.
+  /// Shown on the share card when the hidden-photo flags could not be loaded; sharing stays enabled and the card falls back to the illustration (no photo).
   ///
   /// In vi, this message translates to:
   /// **'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.'**

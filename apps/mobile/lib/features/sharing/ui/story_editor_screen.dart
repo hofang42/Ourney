@@ -33,6 +33,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   String? _coverId;
   bool _seeded = false;
   bool _saving = false;
+  // Background cover-clear write; a save waits for it so it cannot land later.
+  Future<void>? _coverClear;
 
   /// Story as loaded, to tell whether there are unsaved edits (U19).
   JourneyStory _initial = const JourneyStory();
@@ -112,6 +114,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final l10n = SharingL10n.of(context);
     setState(() => _saving = true);
     try {
+      await _coverClear;
       await ref
           .read(sharingRepositoryProvider)
           .updateStory(widget.journeyId, _draft);
@@ -144,6 +147,18 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
         }
       }
     });
+    final job = _persistHidden(checkIn, hide, dropsCover);
+    _coverClear = job;
+    await job;
+  }
+
+  /// Server side of a hide toggle. A Save waits for it ([_coverClear]), so
+  /// its stale story write can never land after the user's own save.
+  Future<void> _persistHidden(
+    CheckIn checkIn,
+    bool hide,
+    bool dropsCover,
+  ) async {
     try {
       await ref
           .read(sharingRepositoryProvider)

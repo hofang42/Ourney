@@ -78,17 +78,19 @@ class DataContext {
   Future<void> wipeLocal() async {
     // Stop pulls still running for the old session before they refill it.
     sync?.invalidateSession();
+    // Files first: once the wiped marker below is written, the next user may
+    // save a photo, which a later file wipe would delete.
+    await files.wipe();
+    final drafts = Directory(
+      p.join(files.root.parent.path, checkinDraftDirName),
+    );
+    if (drafts.existsSync()) await drafts.delete(recursive: true);
     // The wiped marker survives a late in-flight write: the next user to sign
     // in finds an owner that is not them and wipes again (rows + outbox).
     await db.transaction(() async {
       await db.wipe();
       if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
     });
-    await files.wipe();
-    final drafts = Directory(
-      p.join(files.root.parent.path, checkinDraftDirName),
-    );
-    if (drafts.existsSync()) await drafts.delete(recursive: true);
     sync?.notifyChanged();
   }
 }

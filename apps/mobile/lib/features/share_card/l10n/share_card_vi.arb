@@ -97,7 +97,7 @@
   },
   "share_card_stateError": "Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.",
   "@share_card_stateError": {
-    "description": "Shown on the share card when the hidden-photo flags could not be loaded; sharing stays disabled with a retry button."
+    "description": "Shown on the share card when the hidden-photo flags could not be loaded; sharing stays enabled and the card falls back to the illustration (no photo)."
   },
   "share_card_photoOfDay": "Ảnh ngày {date}",
   "@share_card_photoOfDay": {

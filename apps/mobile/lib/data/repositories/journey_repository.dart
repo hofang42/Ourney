@@ -74,13 +74,8 @@ class DataJourneyRepository implements JourneyRepository {
   Future<List<Journey>> allMine() async {
     final me = ctx.userId;
     if (me == null) return const [];
-    final rows = await (_db.select(_db.journeys).join([
-      innerJoin(
-        _db.memberships,
-        _db.memberships.journeyId.equalsExp(_db.journeys.id) &
-            _db.memberships.userId.equals(me),
-      ),
-    ])).get();
+    // Active memberships only, archived and ended journeys included.
+    final rows = await _mine(me).get();
     return [for (final r in rows) journeyFromRow(r.readTable(_db.journeys))];
   }
 
@@ -183,8 +178,8 @@ class DataJourneyRepository implements JourneyRepository {
   /// carries the create-flow answers. They are written locally and queued in
   /// the outbox in ONE transaction before the call, so an app death mid-call
   /// never loses them (the outbox replays the idempotent update). Success
-  /// drops the queued item; a retryable failure leaves it queued. A rejection
-  /// (invalid / forbidden) drops it, restores the previous row and is
+  /// drops the queued item; a retryable failure leaves it queued. A permanent
+  /// rejection (any non-transient error) drops it, restores the previous row and is
   /// surfaced.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
@@ -213,8 +208,7 @@ class DataJourneyRepository implements JourneyRepository {
       );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
     } on OurneyException catch (e) {
-      if (e.error == OurneyErrorCode.invalid ||
-          e.error == OurneyErrorCode.forbidden) {
+      if (!isTransient(e.error)) {
         await outbox?.cancel(
           key,
           kind: OutboxKind.updateJourney,

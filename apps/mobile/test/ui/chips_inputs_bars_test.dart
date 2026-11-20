@@ -32,6 +32,33 @@ BoxDecoration decorOf(WidgetTester t, Finder f) =>
     (t.widget<Container>(f).decoration! as BoxDecoration);
 
 void main() {
+  testWidgets('person row with actions is named once, actions keep nodes', (
+    t,
+  ) async {
+    final handle = t.ensureSemantics();
+    await t.pumpWidget(
+      host(
+        UiPersonRow(
+          name: 'Lan',
+          title: 'Lan Nguyen',
+          subtitle: 'Moi tham gia',
+          onPressed: () {},
+          actions: [
+            UiButton(
+              label: 'Accept',
+              compact: true,
+              expand: false,
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel(RegExp('Lan Nguyen')), findsOneWidget);
+    expect(find.bySemanticsLabel('Accept'), findsOneWidget);
+    handle.dispose();
+  });
+
   for (final b in Brightness.values) {
     final ui = paletteOf(b);
     group('V2 sticker kit ($b)', () {
