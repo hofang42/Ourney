@@ -359,6 +359,24 @@ void main() {
     );
   });
 
+  group('wipeLocal media', () {
+    test('renames media and drafts away; a later photo survives', () async {
+      final photo = File('${media.path}/checkins/j/u/a.jpg')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('x');
+      final draft = File('${media.parent.path}/checkin_media/d.jpg')
+        ..createSync(recursive: true);
+      await layer.ctx.wipeLocal();
+      expect(photo.existsSync(), isFalse);
+      expect(draft.existsSync(), isFalse);
+      // A photo saved after the wipe is never touched by the trash delete.
+      final fresh = File('${media.path}/checkins/j/u/b.jpg')
+        ..createSync(recursive: true);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(fresh.existsSync(), isTrue);
+    });
+  });
+
   group('review 2 owner claim', () {
     test(
       'offline journeys of a user signing in survive the first pull',
