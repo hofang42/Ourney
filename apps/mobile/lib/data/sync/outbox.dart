@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../db/app_database.dart';
@@ -168,9 +169,21 @@ class Outbox {
       _again = true;
       return _running!;
     }
-    final run = _run(force).whenComplete(() => _running = null);
+    final run = _runGuarded(force).whenComplete(() => _running = null);
     _running = run;
     return run;
+  }
+
+  /// A database error inside a pass (e.g. on `_markDead` or the delete after
+  /// a successful execute) must not leak out of the `unawaited(flush())`
+  /// callers: it is logged and a retry is armed.
+  Future<void> _runGuarded(bool force) async {
+    try {
+      await _run(force);
+    } on Object catch (e) {
+      debugPrint('outbox: flush failed: $e');
+      _schedule(outboxBackoff(1));
+    }
   }
 
   Future<void> _run(bool force) async {

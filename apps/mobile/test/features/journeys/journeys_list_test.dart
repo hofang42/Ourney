@@ -196,7 +196,8 @@ void main() {
       await pumpJourneys(tester, locale: const Locale('en'), journeys: repo);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('journeys-today-j1')), findsNothing);
-      expect(find.byKey(const ValueKey('journey-card-j1')), findsNothing);
+      // Nothing runs, so the hub opens on the shelf, where it now sits.
+      expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
       // The owner's app closes it in the repository.
       expect(repo.calls, contains('end:j1'));
     });

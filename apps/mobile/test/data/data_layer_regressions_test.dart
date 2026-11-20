@@ -590,6 +590,29 @@ void main() {
       expect(j.title, 'Sau ảnh');
     });
 
+    test('online edit with the create still queued stays local', () async {
+      remote.rpcHandlers['create_journey'] = (_) => throw offline;
+      final j = await layer.journeys.create(soloDraft());
+      // Back online, but the queue head is in backoff (unforced flush).
+      remote.rpcHandlers.remove('create_journey');
+      final before = remote.callsOf('rpc').length;
+      final edited = await layer.journeys.update(
+        j.id,
+        const JourneyUpdate(title: 'Sau tạo'),
+      );
+      expect(edited.title, 'Sau tạo');
+      // Whatever replays does so in queue order: create first, never the
+      // edit jumping ahead of it (it would be notFound on the server).
+      final sent = [
+        for (final c in remote.callsOf('rpc').skip(before)) c.target,
+      ];
+      expect(sent.first, 'create_journey');
+      expect(
+        await layer.ctx.outbox!.pendingKeys(),
+        contains('${journeyKey(j.id)}:edit'),
+      );
+    });
+
     test('end is refused with syncPending while an upload is queued', () async {
       await cacheActive();
       remote.failure = offline;
