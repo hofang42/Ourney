@@ -20,6 +20,7 @@ String journeyErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.notFound => l10n.journeys_errorNotFound,
     OurneyErrorCode.invalid => l10n.journeys_errorVisibility,
     OurneyErrorCode.offline => app.common_offline,
+    OurneyErrorCode.syncPending => l10n.journeys_errorSyncPending,
     _ => app.common_errorGeneric,
   };
 }

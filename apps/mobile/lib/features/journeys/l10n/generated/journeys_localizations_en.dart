@@ -200,6 +200,10 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_errorEnded => 'This journey has ended.';
 
   @override
+  String get journeys_errorSyncPending =>
+      'Photos are still uploading. Try again in a moment.';
+
+  @override
   String get journeys_errorNotFound => 'Journey not found.';
 
   @override

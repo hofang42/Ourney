@@ -198,6 +198,10 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_errorEnded => 'Hành trình này đã kết thúc.';
 
   @override
+  String get journeys_errorSyncPending =>
+      'Ảnh vẫn đang tải lên, thử lại sau ít phút.';
+
+  @override
   String get journeys_errorNotFound => 'Không tìm thấy hành trình.';
 
   @override

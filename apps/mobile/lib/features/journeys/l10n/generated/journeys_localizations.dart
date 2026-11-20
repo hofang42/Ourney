@@ -428,6 +428,12 @@ abstract class JourneysL10n {
   /// **'Hành trình này đã kết thúc.'**
   String get journeys_errorEnded;
 
+  /// No description provided for @journeys_errorSyncPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh vẫn đang tải lên, thử lại sau ít phút.'**
+  String get journeys_errorSyncPending;
+
   /// No description provided for @journeys_errorNotFound.
   ///
   /// In vi, this message translates to:

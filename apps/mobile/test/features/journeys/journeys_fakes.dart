@@ -239,7 +239,7 @@ class FakeJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<void> end(String journeyId) async {
+  Future<void> end(String journeyId, {bool background = false}) async {
     calls.add('end:$journeyId');
     if (endError case final e?) throw e;
     _replace(journeyId, (j) => _copy(j, JourneyStatus.ended));

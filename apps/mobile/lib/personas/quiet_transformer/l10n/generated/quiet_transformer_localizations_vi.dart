@@ -10,7 +10,7 @@ class QuietTransformerL10nVi extends QuietTransformerL10n {
   QuietTransformerL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get quiet_transformer_name => 'Thay đổi thầm lặng';
+  String get quiet_transformer_name => 'Lặng lẽ đổi thay';
 
   @override
   String quiet_transformer_dayLabel(int day) {

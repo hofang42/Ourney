@@ -48,7 +48,6 @@ class UiSkinPalette {
 class UiSkin {
   const UiSkin({
     required this.id,
-    required this.short,
     required this.journey,
     required this.headingFont,
     required this.mood,
@@ -59,7 +58,6 @@ class UiSkin {
   });
 
   final String id;
-  final String short;
   final String journey;
   final String headingFont;
   final String mood;
@@ -139,7 +137,6 @@ abstract final class UiTypePastel {
 const List<UiSkin> uiSkins = [
   UiSkin(
     id: 'quiet',
-    short: 'Lặng',
     journey: 'Giảm cân',
     headingFont: 'Fraunces',
     mood: 'Lâm sàng dịu nhẹ · nét mảnh',
@@ -182,7 +179,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'squad',
-    short: 'Đội',
     journey: 'Tiếng Anh',
     headingFont: 'Space Grotesk',
     mood: 'Sổ kem · đồng đội rực lửa',
@@ -224,7 +220,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'memory',
-    short: 'Ký ức',
     journey: 'Chuyến đi',
     headingFont: 'Fraunces',
     mood: 'Giấy hạt · băng dính · phim',
@@ -266,7 +261,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'couple',
-    short: 'Đôi',
     journey: 'Cặp đôi',
     headingFont: 'Playfair Display',
     mood: 'Khung đôi · lãng mạn thanh lịch',
@@ -308,7 +302,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'flexer',
-    short: 'Năng lượng',
     journey: 'Tập luyện',
     headingFont: 'Barlow Condensed',
     mood: 'Kính mờ · viền phát sáng',
@@ -350,7 +343,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'minimal',
-    short: 'Tối giản',
     journey: 'Tự đặt',
     headingFont: 'Space Grotesk',
     mood: 'Lưới 1 điểm · không trang trí',
