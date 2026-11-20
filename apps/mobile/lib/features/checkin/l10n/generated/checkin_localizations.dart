@@ -317,7 +317,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_memoryStamp.
   ///
   /// In vi, this message translates to:
-  /// **'ĐÃ DÁN · NGÀY {day}'**
+  /// **'ĐÃ DÁN · NGÀY {day} HÀNH TRÌNH'**
   String checkin_done_memoryStamp(int day);
 
   /// No description provided for @checkin_done_coupleDay.

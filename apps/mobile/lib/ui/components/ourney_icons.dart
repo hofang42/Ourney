@@ -648,10 +648,23 @@ class OurneyIconPainter extends CustomPainter {
   final Color? shadow;
   final Color dieCut;
 
+  /// True when a two-tone sticker would collapse into one solid blob: the
+  /// fill and the outline are (nearly) the same color, e.g. `color: ui.ink`
+  /// on the default ink outline, or a white camera glyph in dark mode.
+  static bool collapses(Color color, Color ink) {
+    if (color == ink) return true;
+    final a = color.computeLuminance() + 0.05;
+    final b = ink.computeLuminance() + 0.05;
+    return (a > b ? a / b : b / a) < 1.8;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = ourneyIconPath(name);
     if (path == null) return;
+    // A two-tone icon whose fill and ink coincide is drawn as a single
+    // [color] line glyph instead of a filled blob (details stay visible).
+    final flat = this.flat || collapses(color, ink);
     final scale = size.width / 24;
     final tiny = size.width < 16;
     final full = size.width >= 24;

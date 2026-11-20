@@ -36,7 +36,7 @@
   "checkin_done_stampChecked": "CHECKED IN",
   "checkin_done_stampWeek1": "WEEK 1 DONE",
   "checkin_done_stampCup": "CUP WON",
-  "checkin_done_memoryStamp": "PASTED · DAY {day}",
+  "checkin_done_memoryStamp": "PASTED · JOURNEY DAY {day}",
   "@checkin_done_memoryStamp": {"placeholders": {"day": {"type": "int"}}},
   "checkin_done_coupleDay": "Day {day}",
   "@checkin_done_coupleDay": {"placeholders": {"day": {"type": "int"}}},

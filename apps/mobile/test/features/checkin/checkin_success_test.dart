@@ -69,4 +69,53 @@ void main() {
       }
     }
   }
+  for (final size in const [Size(320, 640), Size(390, 844), Size(430, 932)]) {
+    for (final scale in const [1.0, 1.35]) {
+      testWidgets('memory done: polaroid, title, streak never overlap '
+          '${size.width.toInt()}dp x$scale', (tester) async {
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = size;
+        addTearDown(tester.view.reset);
+        tester.platformDispatcher.textScaleFactorTestValue = scale;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        final journey = testJourney(templateId: TemplateId.travel);
+        await tester.pumpWidget(
+          ProviderScope(
+            child: testApp(
+              CheckinSuccessView(
+                outcome: CheckInOutcome(
+                  checkIn: testCheckIn(journey.startDate.addDays(2)),
+                  streakBefore: 1,
+                  streakAfter: 2,
+                  photoOfDay: 2,
+                ),
+                journey: journey,
+                haptics: false,
+                onDone: () {},
+                onShare: () {},
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        final photo = tester.getRect(
+          find.byKey(const ValueKey('checkin-polaroid')),
+        );
+        final title = tester.getRect(
+          find.byWidgetPredicate(
+            (w) =>
+                w is Text &&
+                (w.data == 'Chain kept.' || w.data == 'Giữ được chuỗi.'),
+          ),
+        );
+        final streak = tester.getRect(
+          find.byKey(const ValueKey('checkin-streak')),
+        );
+        expect(photo.bottom, lessThanOrEqualTo(title.top));
+        expect(title.bottom, lessThanOrEqualTo(streak.top));
+        expect(tester.takeException(), isNull);
+        await tester.pump(CheckinSuccessView.autoCloseDelay);
+      });
+    }
+  }
 }
