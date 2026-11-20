@@ -581,8 +581,8 @@ class _Style {
   Color get ink => ui.ink;
   Color get onAccent =>
       ThemeData.estimateBrightnessForColor(accent) == Brightness.dark
-      ? const Color(0xFFFFFFFF)
-      : const Color(0xFF1C1C1E);
+      ? (isDark ? ui.ink : const Color(0xFFFFFFFF))
+      : (isDark ? ui.bg : const Color(0xFF1C1C1E));
 
   TextStyle h(double size, {int w = 700}) => UiText.heading(
     font: font,
@@ -652,7 +652,7 @@ class _Tear extends StatelessWidget {
           fill: fill,
           border: borderColor ?? s.ink,
           shadowColor:
-              shadowColor ?? (s.isDark ? const Color(0xFF000000) : s.ink),
+              shadowColor ?? (s.isDark ? s.ui.hardShadowColor : s.ink),
           borderWidth: bw,
           shadow: shadow,
           radius: radius,
