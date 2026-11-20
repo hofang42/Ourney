@@ -227,10 +227,20 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       }
       setState(() => _phase = _Phase.ready);
     } on CameraStartException catch (e) {
+      debugPrint('camera: start failed: ${e.failure.name} ${e.detail ?? ''}');
       if (!mounted || gen != _generation) return;
       setState(() {
         _phase = _Phase.failure;
         _failure = e.failure;
+      });
+    } on Object catch (e) {
+      // Not a CameraException (a platform or state error): still end in the
+      // failure state with a retry instead of an endless "starting".
+      debugPrint('camera: start failed unexpectedly: $e');
+      if (!mounted || gen != _generation) return;
+      setState(() {
+        _phase = _Phase.failure;
+        _failure = CameraFailure.failed;
       });
     } finally {
       // The start reached the OS permission prompt, so it was asked even if
@@ -298,6 +308,14 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         setState(() {
           _phase = _Phase.failure;
           _failure = e.failure;
+        });
+      }
+    } on Object catch (e) {
+      debugPrint('camera: switch lens failed unexpectedly: $e');
+      if (mounted && gen == _generation) {
+        setState(() {
+          _phase = _Phase.failure;
+          _failure = CameraFailure.failed;
         });
       }
     } finally {

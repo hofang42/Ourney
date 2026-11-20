@@ -166,6 +166,7 @@ class PluginCameraSession implements CameraSession {
     try {
       await controller.initialize();
     } on CameraException catch (e) {
+      debugPrint('camera: initialize failed: ${e.code}: ${e.description}');
       await controller.dispose();
       throw _map(e);
     }
@@ -220,7 +221,11 @@ class PluginCameraSession implements CameraSession {
       final file = await c.takePicture();
       return file.path;
     } on CameraException catch (e) {
-      throw CameraStartException(CameraFailure.failed, e.code);
+      debugPrint('camera: takePicture failed: ${e.code}: ${e.description}');
+      throw CameraStartException(
+        CameraFailure.failed,
+        '${e.code}: ${e.description}',
+      );
     }
   }
 
