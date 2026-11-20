@@ -350,13 +350,27 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
         return Column(
           children: [
             ...confetti,
-            SizedBox(
-              width: 168,
-              height: 190,
-              child: UiPolaroid(
-                photo: GroupPhoto(checkIn: widget.outcome.checkIn),
-                footer: const SizedBox.shrink(),
-                tilt: -3,
+            // The photo gets a square slot: an unconstrained Image.file
+            // takes its natural size and spills over the title below. The
+            // vertical padding leaves room for the tilted corners.
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
+              child: SizedBox(
+                key: const ValueKey('checkin-polaroid'),
+                width: (MediaQuery.sizeOf(context).width * 0.46).clamp(
+                  120.0,
+                  168.0,
+                ),
+                child: UiPolaroid(
+                  photo: AspectRatio(
+                    aspectRatio: 1,
+                    child: ClipRect(
+                      child: GroupPhoto(checkIn: widget.outcome.checkIn),
+                    ),
+                  ),
+                  footer: const SizedBox(height: 14),
+                  tilt: -3,
+                ),
               ),
             ),
             const SizedBox(height: UiSpace.md),

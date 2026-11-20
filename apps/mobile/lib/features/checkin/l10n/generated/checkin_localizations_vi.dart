@@ -128,7 +128,7 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String checkin_done_memoryStamp(int day) {
-    return 'ĐÃ DÁN · NGÀY $day';
+    return 'ĐÃ DÁN · NGÀY $day HÀNH TRÌNH';
   }
 
   @override
