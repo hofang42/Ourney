@@ -83,7 +83,7 @@ class UiGlass extends StatelessWidget {
   /// Hard offset shadow in dp (0 = none), drawn outside the shape only.
   final double hardShadow;
 
-  /// Hard shadow color. Defaults to `context.ui.outline`.
+  /// Hard shadow color. Defaults to `context.ui.hardShadowColor`.
   final Color? hardShadowColor;
 
   /// Extra soft shadows (rarely needed; V2 glass uses the hard shadow).
@@ -169,7 +169,7 @@ class UiGlass extends StatelessWidget {
               offset: Offset(hardShadow, hardShadow),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: hardShadowColor ?? ui.outline,
+                  color: hardShadowColor ?? ui.hardShadowColor,
                   borderRadius: borderRadius,
                 ),
               ),

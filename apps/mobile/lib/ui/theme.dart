@@ -67,7 +67,7 @@ abstract final class OurneyTheme {
         shape: RoundedRectangleBorder(side: BorderSide(color: ui.divider)),
       ),
       popupMenuTheme: PopupMenuThemeData(
-        color: ui.surface,
+        color: ui.isDark ? ui.fillSelected : ui.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
         textStyle: text.labelMedium,
@@ -97,7 +97,7 @@ abstract final class OurneyTheme {
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: ui.bg,
+        backgroundColor: ui.sheet,
         surfaceTintColor: Colors.transparent,
         dragHandleColor: ui.grabber,
         dragHandleSize: const Size(42, 5),
@@ -108,7 +108,7 @@ abstract final class OurneyTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: ui.surface,
+        backgroundColor: ui.sheet,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(UiRadius.sheet),
         ),

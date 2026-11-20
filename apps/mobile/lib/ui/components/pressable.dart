@@ -89,7 +89,7 @@ class _UiPressableState extends State<UiPressable> {
           borderRadius: widget.borderRadius,
           boxShadow: pressed || !_enabled
               ? const []
-              : UiShadow.hard(widget.shadowColor ?? ui.outline, offset),
+              : UiShadow.hard(widget.shadowColor ?? ui.hardShadowColor, offset),
         ),
         child: content,
       );
