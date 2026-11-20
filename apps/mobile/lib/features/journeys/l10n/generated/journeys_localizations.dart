@@ -3005,7 +3005,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_hubTitle.
   ///
   /// In vi, this message translates to:
-  /// **'hành trình.'**
+  /// **'Ourney'**
   String get journeys_hubTitle;
 
   /// No description provided for @journeys_hubGreeting.

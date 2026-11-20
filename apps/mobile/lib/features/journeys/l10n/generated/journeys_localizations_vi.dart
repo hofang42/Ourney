@@ -1668,7 +1668,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_addMoreTag => 'Thêm ảnh';
 
   @override
-  String get journeys_hubTitle => 'hành trình.';
+  String get journeys_hubTitle => 'Ourney';
 
   @override
   String journeys_hubGreeting(String name) {

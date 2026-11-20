@@ -1001,7 +1001,7 @@
   },
   "journeys_home_viewWrapped": "See the wrap-up",
   "journeys_addMoreTag": "Add more",
-  "journeys_hubTitle": "journeys.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "hi {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {

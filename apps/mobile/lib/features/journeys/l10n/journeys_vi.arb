@@ -1481,7 +1481,7 @@
   },
   "journeys_home_viewWrapped": "Xem tổng kết",
   "journeys_addMoreTag": "Thêm ảnh",
-  "journeys_hubTitle": "hành trình.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "chào {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {
