@@ -666,19 +666,28 @@ class _FriendsBlock extends StatelessWidget {
                 prefixIcon: OurneyIcon(name: 'search', flat: true),
                 hintText: l10n.sharing_searchFriends,
                 filled: true,
-                fillColor: ui.surfaceInput,
+                fillColor: ui.fill,
                 // Single-line search: a pill.
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(UiRadius.capsule),
-                  borderSide: BorderSide(color: ui.inputBorder),
+                  borderSide: BorderSide(
+                    color: ui.border,
+                    width: UiBorder.thin,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(UiRadius.capsule),
-                  borderSide: BorderSide(color: ui.inputBorder),
+                  borderSide: BorderSide(
+                    color: ui.border,
+                    width: UiBorder.thin,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(UiRadius.capsule),
-                  borderSide: BorderSide(color: ui.ink, width: 2),
+                  borderSide: BorderSide(
+                    color: ui.accent,
+                    width: UiBorder.standard,
+                  ),
                 ),
               ),
             ),

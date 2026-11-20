@@ -3,10 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/ui.dart';
 
 Widget _host(Widget child, {bool reduce = false}) => MediaQuery(
-  data: MediaQueryData(
-    size: const Size(390, 844),
-    disableAnimations: reduce,
-  ),
+  data: MediaQueryData(size: const Size(390, 844), disableAnimations: reduce),
   child: MaterialApp(
     theme: OurneyTheme.build(Brightness.dark),
     home: Scaffold(body: Center(child: child)),

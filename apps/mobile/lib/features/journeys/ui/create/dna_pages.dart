@@ -315,6 +315,7 @@ class DnaPlacePicker extends StatelessWidget {
       children: [
         UiTextField(
           fieldKey: const ValueKey('dna-place-field'),
+          pill: true,
           label: l10n.journeys_dna_place_search,
           hint: l10n.journeys_dna_place_search,
           controller: controller,

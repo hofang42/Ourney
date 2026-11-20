@@ -49,8 +49,8 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.stamp` | `UiStamp` |
 | `.streak-celebrate`, `.shared-streak strong` | `UiStreakNumber` |
 | `.polaroid` | `UiPolaroid` |
-| `.field-label` + input | `UiTextField` |
-| `.otp-row` | `UiOtpField` |
+| `.field-label` + input | `UiTextField` (52dp, `UiRadius.field` 16, 1.5dp `ui.border`, 2dp accent on focus, no shadow; `pill: true` for single-line searches), `UiTextArea`, `UiCaptionField` (label-less, growing caption) |
+| `.otp-row` | `UiOtpField` (48x52 boxes, `UiRadius.otp` 10, same border and focus as fields) |
 | `.switch-row` | `UiSwitchRow` |
 | `.bottom-sheet`, `.modal-layer` | `UiSheet`, `showUiSheet` |
 | `.permission-sheet` | `UiPermissionSheetContent`, `showUiPermissionSheet` |

@@ -175,10 +175,10 @@ abstract final class OurneyTheme {
           horizontal: UiSpace.lg,
           vertical: UiSpace.md,
         ),
-        border: _border(ui.inputBorder),
-        enabledBorder: _border(ui.inputBorder),
-        focusedBorder: _border(ui.ink, 2),
-        errorBorder: _border(ui.danger),
+        border: _border(ui.border, UiBorder.thin),
+        enabledBorder: _border(ui.border, UiBorder.thin),
+        focusedBorder: _border(ui.accent, UiBorder.standard),
+        errorBorder: _border(ui.danger, UiBorder.thin),
         focusedErrorBorder: _border(ui.danger, 2),
       ),
       dividerTheme: DividerThemeData(color: ui.divider, space: 1, thickness: 1),
@@ -197,7 +197,7 @@ abstract final class OurneyTheme {
 
   static OutlineInputBorder _border(Color c, [double width = 1]) =>
       OutlineInputBorder(
-        borderRadius: BorderRadius.circular(UiRadius.input),
+        borderRadius: BorderRadius.circular(UiRadius.field),
         borderSide: BorderSide(color: c, width: width),
       );
 
