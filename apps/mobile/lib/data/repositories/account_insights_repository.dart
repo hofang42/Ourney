@@ -32,10 +32,13 @@ class SupabaseAccountInsightsRepository implements AccountInsightsRepository {
 
   @override
   Future<void> saveQuiz(OnboardingQuiz quiz) async {
-    await remote.update(
+    final rows = await remote.update(
       'profiles',
       {'onboarding_quiz': quiz.toJson()},
       match: {'id': _uid},
     );
+    // A new account has no profile row until the setup screen upserts it:
+    // an update that matches nothing is a failed save, not a success.
+    if (rows.isEmpty) throw const OurneyException(OurneyErrorCode.notFound);
   }
 }
