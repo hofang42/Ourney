@@ -24,6 +24,7 @@
   "groups_errorFull": "This group is full (10 members).",
   "groups_errorBlocked": "You can't join this group.",
   "groups_errorEnded": "This journey has ended.",
+  "groups_errorSyncPending": "Photos are still uploading. Try again in a moment.",
   "groups_errorForbidden": "You're not allowed to do that.",
   "groups_errorNotAlone": "Other members are still in the group. End the journey instead of deleting it.",
   "groups_errorInvalid": "This action isn't possible here.",

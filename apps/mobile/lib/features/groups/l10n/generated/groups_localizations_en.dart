@@ -90,6 +90,10 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_errorEnded => 'This journey has ended.';
 
   @override
+  String get groups_errorSyncPending =>
+      'Photos are still uploading. Try again in a moment.';
+
+  @override
   String get groups_errorForbidden => 'You\'re not allowed to do that.';
 
   @override

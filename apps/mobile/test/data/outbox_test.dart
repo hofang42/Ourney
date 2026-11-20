@@ -58,6 +58,25 @@ void main() {
       failures = [];
     });
 
+    test(
+      'a database error in a pass is contained and re-arms a retry',
+      () async {
+        final outbox = Outbox(
+          db,
+          executor: (kind, payload) async {
+            // The item is "sent", then the delete that follows fails.
+            await db.close();
+          },
+          now: clock.call,
+          timer: timers.call,
+        );
+        addTearDown(outbox.dispose);
+        await outbox.enqueue(OutboxKind.createJourney, 'journey:1', {'n': 1});
+        await outbox.flush(); // must not throw
+        expect(timers.delays, [outboxBackoff(1)]);
+      },
+    );
+
     test('runs items in FIFO order and removes them', () async {
       final outbox = build(db);
       await outbox.enqueue(OutboxKind.createJourney, 'journey:1', {'n': 1});
