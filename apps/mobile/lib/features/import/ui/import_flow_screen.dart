@@ -155,8 +155,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     } on Object {
       if (mounted) {
         final l10n = ImportL10n.of(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.import_pickFailed)));
+        showUiToast(context, l10n.import_pickFailed);
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -357,12 +356,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         padTop: 0,
         padBottom: 0,
         bottom: Padding(
-          padding: EdgeInsets.fromLTRB(
-            gutter,
-            UiSpace.sm,
-            gutter,
-            UiSpace.lg,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
           child: action,
         ),
         child: Column(
@@ -1025,7 +1019,7 @@ class _PhotoTile extends StatelessWidget {
           color: ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: on ? const Color(0xFFFF8A3D) : ui.ink.withValues(alpha: 0.2),
+            color: on ? ui.brand : ui.ink.withValues(alpha: 0.2),
             width: UiBorder.standard,
           ),
         ),
@@ -1051,7 +1045,7 @@ class _PhotoTile extends StatelessWidget {
                         name: 'check',
                         size: 15,
                         flat: true,
-                        color: Color(0xFF111111),
+                        color: UiFlowColors.onPastel,
                       ),
                     ),
                   ),
@@ -1130,7 +1124,7 @@ class _TimelineRow extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF8A3D).withValues(alpha: 0.22),
+                    color: ui.brand.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(UiRadius.capsule),
                   ),
                   child: Text(

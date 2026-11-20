@@ -123,7 +123,7 @@ class JourneyAvatarStack extends StatelessWidget {
                     color: ui.ink,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    height: 1.2,
+                    height: 1.3,
                   ),
                 ),
               ),

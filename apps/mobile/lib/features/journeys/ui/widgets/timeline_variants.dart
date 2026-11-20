@@ -1066,12 +1066,13 @@ class _MinimalCell extends StatelessWidget {
                 child: ExcludeSemantics(
                   child: Text(
                     '${day.date.day}',
-                    textScaler: TextScaler.noScaling,
+                    textScaler: MediaQuery.textScalerOf(context)
+                        .clamp(maxScaleFactor: 1.35),
                     style:
                         UiText.body(
-                          size: 9,
+                          size: 10,
                           weight: FontWeight.w700,
-                          height: 1.2,
+                          height: 1.3,
                           color: color,
                         ).copyWith(
                           shadows: photo ? const [Shadow(blurRadius: 3)] : null,

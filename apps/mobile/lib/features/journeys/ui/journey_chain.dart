@@ -166,11 +166,11 @@ class _Cell extends StatelessWidget {
     };
     final number = Text(
       '${day.date.day}',
-      textScaler: TextScaler.noScaling,
+      textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.35),
       style: UiText.body(
         size: 10,
         weight: day.isToday ? FontWeight.w800 : FontWeight.w600,
-        height: 1.2,
+        height: 1.3,
         color: switch (day.state) {
           DayState.future || DayState.notCounted => ui.inkMuted,
           DayState.today => pal.accent,
@@ -189,11 +189,12 @@ class _Cell extends StatelessWidget {
             top: 2,
             child: Text(
               '${day.date.day}',
-              textScaler: TextScaler.noScaling,
+              textScaler: MediaQuery.textScalerOf(context)
+                  .clamp(maxScaleFactor: 1.35),
               style: UiText.body(
-                size: 9,
+                size: 10,
                 weight: FontWeight.w700,
-                height: 1.2,
+                height: 1.3,
                 color: UiCamera.ink,
               ).copyWith(shadows: const [Shadow(blurRadius: 3)]),
             ),

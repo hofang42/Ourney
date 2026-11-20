@@ -178,14 +178,17 @@ class ImportLayoutPreview extends StatelessWidget {
       ),
     );
     final label = TextStyle(
-      fontSize: 8,
-      height: 1.2,
+      fontSize: 10,
+      height: 1.3,
       fontWeight: FontWeight.w800,
       color: fg,
     );
     return ExcludeSemantics(
       child: MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+        data: MediaQuery.of(context).copyWith(
+          textScaler: MediaQuery.textScalerOf(context)
+              .clamp(maxScaleFactor: 1.35),
+        ),
         child: Container(
           height: 92,
           padding: const EdgeInsets.all(6),

@@ -112,7 +112,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                         font: 'SpaceGrotesk',
                         size: 32,
                         weight: 700,
-                        height: 1.2,
+                        height: 1.3,
                         tracking: -0.045,
                         color: ui.ink,
                       ),
@@ -314,7 +314,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                       height: 72,
                       alignment: Alignment.center,
                       decoration: const BoxDecoration(
-                        color: Colors.white,
+                        color: UiFlowColors.paper,
                         border: Border.fromBorderSide(
                           BorderSide(
                             color: UiFlowColors.onPastel,
@@ -381,7 +381,7 @@ class _Chip extends StatelessWidget {
     constraints: const BoxConstraints(minHeight: 30),
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
     decoration: BoxDecoration(
-      color: Colors.white,
+      color: UiFlowColors.paper,
       borderRadius: BorderRadius.circular(9),
       border: Border.all(color: UiFlowColors.onPastel, width: UiBorder.thin),
     ),
