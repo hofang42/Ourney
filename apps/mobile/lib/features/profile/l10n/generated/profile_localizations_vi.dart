@@ -423,4 +423,15 @@ class ProfileL10nVi extends ProfileL10n {
   @override
   String get profile_settingsEntrySub =>
       'Giao diện, ngôn ngữ, riêng tư, thông tin';
+
+  @override
+  String profile_signOutPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Còn $count ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.',
+    );
+    return '$_temp0';
+  }
 }

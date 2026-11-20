@@ -137,5 +137,6 @@
   "profile_settings_signOut": "Sign out",
   "profile_settings_delete": "Delete account",
   "profile_settingsEntry": "Settings",
-  "profile_settingsEntrySub": "Appearance, language, privacy, info"
+  "profile_settingsEntrySub": "Appearance, language, privacy, info",
+  "profile_signOutPending": "{count, plural, one{1 photo has not been uploaded yet. Ourney tries to send it before signing out; if it can't, it is lost.} other{{count} photos have not been uploaded yet. Ourney tries to send them before signing out; any that can't be sent are lost.}}"
 }

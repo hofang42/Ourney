@@ -424,4 +424,16 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_settingsEntrySub => 'Appearance, language, privacy, info';
+
+  @override
+  String profile_signOutPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count photos have not been uploaded yet. Ourney tries to send them before signing out; any that can\'t be sent are lost.',
+      one: '1 photo has not been uploaded yet. Ourney tries to send it before signing out; if it can\'t, it is lost.',
+    );
+    return '$_temp0';
+  }
 }

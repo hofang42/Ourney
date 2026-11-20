@@ -149,4 +149,14 @@ void main() {
       [OutboxKind.deleteMedia.wire],
     );
   });
+
+  test('L7 sign-out sends the pending uploads first', () async {
+    remote.failure = offline;
+    await checkIn('a');
+    remote.failure = null;
+    await layer.auth.signOut();
+    expect(remote.uploaded, isNotEmpty);
+    final order = [for (final c in remote.calls) c.method];
+    expect(order.indexOf('upload'), lessThan(order.indexOf('signOut')));
+  });
 }

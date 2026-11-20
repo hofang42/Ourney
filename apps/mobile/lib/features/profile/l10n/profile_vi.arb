@@ -439,5 +439,14 @@
   "profile_settings_signOut": "Đăng xuất",
   "profile_settings_delete": "Xóa tài khoản",
   "profile_settingsEntry": "Cài đặt",
-  "profile_settingsEntrySub": "Giao diện, ngôn ngữ, riêng tư, thông tin"
+  "profile_settingsEntrySub": "Giao diện, ngôn ngữ, riêng tư, thông tin",
+  "profile_signOutPending": "{count, plural, other{Còn {count} ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.}}",
+  "@profile_signOutPending": {
+    "description": "Warning in the sign-out sheet when check-ins are still waiting to upload.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

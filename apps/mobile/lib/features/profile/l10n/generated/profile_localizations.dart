@@ -865,6 +865,12 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Giao diện, ngôn ngữ, riêng tư, thông tin'**
   String get profile_settingsEntrySub;
+
+  /// Warning in the sign-out sheet when check-ins are still waiting to upload.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{Còn {count} ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.}}'**
+  String profile_signOutPending(int count);
 }
 
 class _ProfileL10nDelegate extends LocalizationsDelegate<ProfileL10n> {
