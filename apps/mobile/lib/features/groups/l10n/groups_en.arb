@@ -310,5 +310,7 @@
   },
   "groups_minimalPending": "NOT YET",
   "groups_inviteRevokeTitle": "Revoke this invite?",
-  "groups_inviteRevokeMessage": "The invited person will no longer be able to use it."
+  "groups_inviteRevokeMessage": "The invited person will no longer be able to use it.",
+  "groups_flexerKm": "{km} KM",
+  "groups_flexerKmPace": "{km} KM · {pace} /KM"
 }

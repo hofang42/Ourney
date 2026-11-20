@@ -104,5 +104,6 @@
   "social_groupInviteFrom": "{name} invited you to {group}",
   "social_groupInviteMembers": "{count} of {max} members",
   "social_groupInviteJoin": "Join",
-  "social_groupInviteSkip": "Skip"
+  "social_groupInviteSkip": "Skip",
+  "social_messageCounter": "{count}/{max}"
 }

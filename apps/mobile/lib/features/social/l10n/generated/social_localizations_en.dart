@@ -404,4 +404,9 @@ class SocialL10nEn extends SocialL10n {
 
   @override
   String get social_groupInviteSkip => 'Skip';
+
+  @override
+  String social_messageCounter(int count, int max) {
+    return '$count/$max';
+  }
 }

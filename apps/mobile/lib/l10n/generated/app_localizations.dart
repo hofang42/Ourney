@@ -421,6 +421,18 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'Đã hiểu'**
   String get missedDay_dismiss;
+
+  /// Journey wheel semantics label.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chọn hành trình'**
+  String get nav_chooseJourney;
+
+  /// Journey wheel active item hint.
+  ///
+  /// In vi, this message translates to:
+  /// **'đang chọn'**
+  String get nav_journeySelected;
 }
 
 class _AppLocalizationsDelegate

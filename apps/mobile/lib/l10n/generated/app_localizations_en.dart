@@ -209,4 +209,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get missedDay_dismiss => 'Got it';
+
+  @override
+  String get nav_chooseJourney => 'Choose journey';
+
+  @override
+  String get nav_journeySelected => 'selected';
 }

@@ -727,6 +727,12 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'Bỏ qua'**
   String get social_groupInviteSkip;
+
+  /// Chat composer length counter near the limit.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count}/{max}'**
+  String social_messageCounter(int count, int max);
 }
 
 class _SocialL10nDelegate extends LocalizationsDelegate<SocialL10n> {

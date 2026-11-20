@@ -546,4 +546,14 @@ class GroupsL10nVi extends GroupsL10n {
   @override
   String get groups_inviteRevokeMessage =>
       'Người được mời sẽ không thể dùng lời mời này nữa.';
+
+  @override
+  String groups_flexerKm(String km) {
+    return '$km KM';
+  }
+
+  @override
+  String groups_flexerKmPace(String km, String pace) {
+    return '$km KM · $pace /KM';
+  }
 }

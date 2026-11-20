@@ -500,5 +500,26 @@
   "groups_inviteRevokeMessage": "Người được mời sẽ không thể dùng lời mời này nữa.",
   "@groups_inviteRevokeMessage": {
     "description": "Confirm sheet body before revoking a pending invite."
+  },
+  "groups_flexerKm": "{km} KM",
+  "@groups_flexerKm": {
+    "description": "Flexer wall stat: distance.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerKmPace": "{km} KM · {pace} /KM",
+  "@groups_flexerKmPace": {
+    "description": "Flexer wall stat: distance and pace.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
   }
 }

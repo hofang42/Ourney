@@ -997,6 +997,18 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'Người được mời sẽ không thể dùng lời mời này nữa.'**
   String get groups_inviteRevokeMessage;
+
+  /// Flexer wall stat: distance.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM'**
+  String groups_flexerKm(String km);
+
+  /// Flexer wall stat: distance and pace.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM · {pace} /KM'**
+  String groups_flexerKmPace(String km, String pace);
 }
 
 class _GroupsL10nDelegate extends LocalizationsDelegate<GroupsL10n> {
