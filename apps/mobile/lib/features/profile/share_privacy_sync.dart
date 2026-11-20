@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -8,6 +9,61 @@ import '../share_card/domain/share_card_content.dart';
 import 'settings_providers.dart';
 
 Future<void>? _pendingPush;
+
+/// Set when a membership update failed: [SharePrivacyHealHook] re-applies the
+/// ON switches at the next app resume.
+bool _needsHeal = false;
+
+/// Whether a failed push is waiting to be re-applied.
+@visibleForTesting
+bool get sharePrivacyNeedsHeal => _needsHeal;
+
+void _noteFailure(String what, Object e) {
+  _needsHeal = true;
+  debugPrint('share privacy: $what failed: $e');
+}
+
+/// Re-applies the ON Settings switches to every membership after a failed
+/// push (no-op otherwise). Called at app resume.
+Future<void> healSharePrivacy(WidgetRef ref) {
+  if (!_needsHeal) return Future<void>.value();
+  _needsHeal = false;
+  return pushSharePrivacyToMemberships(ref, hideWeight: true, blur: true);
+}
+
+/// Heals failed share-privacy pushes when the app resumes.
+class SharePrivacyHealHook extends ConsumerStatefulWidget {
+  const SharePrivacyHealHook({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  ConsumerState<SharePrivacyHealHook> createState() =>
+      _SharePrivacyHealHookState();
+}
+
+class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) unawaited(healSharePrivacy(ref));
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
 
 /// Pushes a Settings share-privacy switch that was just turned ON to every
 /// journey membership (archived and ended ones included) so the public link
@@ -63,12 +119,13 @@ Future<void> pushSharePrivacyToMemberships(
             hideMetric: hide,
             blurMedia: blurV,
           );
-        } on Object {
-          // Skipped: the next switch change or journey join pushes it again.
+        } on Object catch (e) {
+          // Skipped now; healed at the next app resume (_needsHeal).
+          _noteFailure('membership ${j.id}', e);
         }
       }
-    } on Object {
-      return;
+    } on Object catch (e) {
+      _noteFailure('listing journeys', e);
     }
   }
 
@@ -104,8 +161,9 @@ Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
       hideMetric: hide ? true : null,
       blurMedia: blur ? true : null,
     );
-  } on Object {
-    // Best effort.
+  } on Object catch (e) {
+    // Healed at the next app resume (_needsHeal).
+    _noteFailure('journey $journeyId', e);
   }
 }
 

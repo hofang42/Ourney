@@ -133,6 +133,9 @@ class FakeJourneyRepository implements JourneyRepository {
   final List<({String id, bool? hideExtras, bool? pinned})> extraPrefUpdates =
       [];
 
+  /// When set, updateMyMembership throws it.
+  Object? prefError;
+
   /// When set, the next matching call throws it.
   Object? createError;
   Object? endError;
@@ -280,6 +283,7 @@ class FakeJourneyRepository implements JourneyRepository {
     bool? pinned,
   }) async {
     calls.add('updateMyMembership:$journeyId');
+    if (prefError case final e?) throw e;
     if (hideExtras != null || pinned != null) {
       extraPrefUpdates.add((
         id: journeyId,

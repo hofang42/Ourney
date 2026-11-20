@@ -113,4 +113,21 @@ void main() {
     expect(repo.prefUpdates.single.hideMetric, isTrue);
     expect(repo.prefUpdates.single.blurMedia, isTrue);
   });
+
+  testWidgets('a failed push is flagged and healed on the next resume', (
+    tester,
+  ) async {
+    final (ref, repo) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.prefError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToMemberships(ref, blur: true);
+    expect(sharePrivacyNeedsHeal, isTrue);
+    expect(repo.prefUpdates, isEmpty);
+    repo.prefError = null;
+    await healSharePrivacy(ref);
+    expect(sharePrivacyNeedsHeal, isFalse);
+    expect(repo.prefUpdates.map((u) => u.id).toSet(), {'kg', 'min', 'old'});
+  });
 }
