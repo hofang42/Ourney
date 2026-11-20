@@ -243,6 +243,28 @@ void main() {
       );
     });
 
+    test(
+      'any other permanent rejection (notFound) surfaces and restores',
+      () async {
+        remote.rpcHandlers['update_journey'] = (_) =>
+            throw const OurneyException(OurneyErrorCode.notFound);
+        await expectLater(
+          layer.journeys.create(draft(id: 'nf-journey-id')),
+          throwsA(
+            isA<OurneyException>().having(
+              (e) => e.error,
+              'error',
+              OurneyErrorCode.notFound,
+            ),
+          ),
+        );
+        expect(
+          await layer.ctx.outbox!.pendingKeys(),
+          isNot(contains('${journeyKey('nf-journey-id')}:extras')),
+        );
+      },
+    );
+
     test('a retryable error does not fail create; extras are queued', () async {
       remote.rpcHandlers['update_journey'] = (_) =>
           throw const OurneyException(OurneyErrorCode.unknown, 'boom');

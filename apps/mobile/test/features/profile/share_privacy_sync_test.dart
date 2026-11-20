@@ -48,7 +48,9 @@ void main() {
     tester,
   ) async {
     final (ref, repo) = await pump(tester);
-    await tester.runAsync(() => ref.read(hideWeightOnShareProvider.notifier).set(true));
+    await tester.runAsync(
+      () => ref.read(hideWeightOnShareProvider.notifier).set(true),
+    );
     await pushSharePrivacyToMemberships(ref, hideWeight: true);
     expect(
       {for (final u in repo.prefUpdates) u.id: u.hideMetric},
@@ -58,7 +60,9 @@ void main() {
 
   testWidgets('blur on reaches every journey', (tester) async {
     final (ref, repo) = await pump(tester);
-    await tester.runAsync(() => ref.read(blurPhotosOnShareProvider.notifier).set(true));
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
     await pushSharePrivacyToMemberships(ref, blur: true);
     expect(repo.prefUpdates.map((u) => u.id).toSet(), {'kg', 'min', 'old'});
     expect(repo.prefUpdates.every((u) => u.blurMedia == true), isTrue);
@@ -74,16 +78,22 @@ void main() {
     tester,
   ) async {
     final (ref, repo) = await pump(tester);
-    await tester.runAsync(() => ref.read(hideWeightOnShareProvider.notifier).set(true));
+    await tester.runAsync(
+      () => ref.read(hideWeightOnShareProvider.notifier).set(true),
+    );
     final push = pushSharePrivacyToMemberships(ref, hideWeight: true);
-    await tester.runAsync(() => ref.read(hideWeightOnShareProvider.notifier).set(false));
+    await tester.runAsync(
+      () => ref.read(hideWeightOnShareProvider.notifier).set(false),
+    );
     await push;
     expect(repo.prefUpdates, isEmpty);
   });
 
   testWidgets('a new membership only updates its own journey', (tester) async {
     final (ref, repo) = await pump(tester);
-    await tester.runAsync(() => ref.read(blurPhotosOnShareProvider.notifier).set(true));
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
     await pushSharePrivacyToJourney(ref, 'min');
     expect(repo.prefUpdates.map((u) => u.id), ['min']);
   });

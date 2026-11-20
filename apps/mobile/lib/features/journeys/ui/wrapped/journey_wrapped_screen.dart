@@ -71,7 +71,6 @@ class _WrappedBodyState extends State<_WrappedBody> {
   int _page = 0;
   _Ratio _ratio = _Ratio.story;
   bool _hideKg = true;
-  bool _blurred = true;
   late bool _hideBrand =
       personaSkinOf(widget.journey) == PersonaSkinId.quietTransformer;
 
@@ -135,11 +134,9 @@ class _WrappedBodyState extends State<_WrappedBody> {
                           stats: widget.stats,
                           ratio: _ratio,
                           hideKg: _hideKg,
-                          blurred: _blurred,
                           hideBrand: _hideBrand,
                           onRatio: (r) => setState(() => _ratio = r),
                           onHideKg: () => setState(() => _hideKg = !_hideKg),
-                          onBlur: () => setState(() => _blurred = !_blurred),
                           onHideBrand: (v) => setState(() => _hideBrand = v),
                         )
                       : _Story(
@@ -303,11 +300,9 @@ class _Summary extends StatelessWidget {
     required this.stats,
     required this.ratio,
     required this.hideKg,
-    required this.blurred,
     required this.hideBrand,
     required this.onRatio,
     required this.onHideKg,
-    required this.onBlur,
     required this.onHideBrand,
   });
 
@@ -316,11 +311,9 @@ class _Summary extends StatelessWidget {
   final WrappedStats stats;
   final _Ratio ratio;
   final bool hideKg;
-  final bool blurred;
   final bool hideBrand;
   final ValueChanged<_Ratio> onRatio;
   final VoidCallback onHideKg;
-  final VoidCallback onBlur;
   final ValueChanged<bool> onHideBrand;
 
   /// "65.2 kg - 62.0 kg" from the first and last logged metric, if any.
@@ -397,7 +390,7 @@ class _Summary extends StatelessWidget {
                               skin: skin,
                               stats: stats,
                               page: 3,
-                              blurPhotos: quiet && blurred,
+                              blurPhotos: quiet,
                             ),
                           ),
                         ),
@@ -450,17 +443,15 @@ class _Summary extends StatelessWidget {
                   ),
                   onPressed: onHideKg,
                 ),
+                // Locked: the quiet card always blurs its portrait, so the
+                // chip shows that state instead of a switch that does nothing.
                 UiChip(
                   key: const ValueKey('wrapped-blur'),
                   label:
-                      '${l10n.journeys_wrapped_blur} · ${blurred ? l10n.journeys_wrapped_on : l10n.journeys_wrapped_off}',
-                  selected: blurred,
-                  glyph: OurneyIcon(
-                    name: blurred ? 'check' : 'eye',
-                    size: 14,
-                    flat: true,
-                  ),
-                  onPressed: onBlur,
+                      '${l10n.journeys_wrapped_blur} · ${l10n.journeys_wrapped_on}',
+                  selected: true,
+                  glyph: const OurneyIcon(name: 'check', size: 14, flat: true),
+                  onPressed: null,
                 ),
               ],
             ),

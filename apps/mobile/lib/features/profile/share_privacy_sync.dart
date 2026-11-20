@@ -26,9 +26,16 @@ Future<void> pushSharePrivacyToMemberships(
   }
   // Everything that needs the ref is read before the first await: the caller
   // may unmount (and dispose the ref) while the push is still running.
-  final repo = ref.read(journeyRepositoryProvider);
-  final hideAtStart = ref.read(hideWeightOnShareProvider);
-  final blurAtStart = ref.read(blurPhotosOnShareProvider);
+  final JourneyRepository repo;
+  final bool hideAtStart;
+  final bool blurAtStart;
+  try {
+    repo = ref.read(journeyRepositoryProvider);
+    hideAtStart = ref.read(hideWeightOnShareProvider);
+    blurAtStart = ref.read(blurPhotosOnShareProvider);
+  } on Object {
+    return Future<void>.value();
+  }
   bool readOr(bool Function() read, bool fallback) {
     try {
       return read();
@@ -77,9 +84,16 @@ Future<void> pushSharePrivacyToMemberships(
 /// accepted invitation, imported journey). Touches only [journeyId].
 Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
   // Read the ref synchronously: callers navigate away right after this call.
-  final repo = ref.read(journeyRepositoryProvider);
-  final hideOn = ref.read(hideWeightOnShareProvider);
-  final blur = ref.read(blurPhotosOnShareProvider);
+  final JourneyRepository repo;
+  final bool hideOn;
+  final bool blur;
+  try {
+    repo = ref.read(journeyRepositoryProvider);
+    hideOn = ref.read(hideWeightOnShareProvider);
+    blur = ref.read(blurPhotosOnShareProvider);
+  } on Object {
+    return;
+  }
   try {
     final journey = await repo.watch(journeyId).first;
     if (journey == null) return;
