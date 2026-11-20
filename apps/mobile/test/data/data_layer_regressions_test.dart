@@ -627,6 +627,25 @@ void main() {
       );
     });
 
+    test('a group owner can edit while uploads are queued', () async {
+      await cacheGroup();
+      remote.failure = offline;
+      await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1));
+      remote.failure = null;
+      remote.rpcHandlers['update_journey'] = (p) =>
+          journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group')
+            ..['title'] = p['p_title'];
+      final j = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Đổi tên'),
+      );
+      expect(j.title, 'Đổi tên');
+      expect(
+        remote.callsOf('rpc').any((c) => c.target == 'update_journey'),
+        isTrue,
+      );
+    });
+
     test('end is refused with syncPending while an upload is queued', () async {
       await cacheActive();
       remote.failure = offline;

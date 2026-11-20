@@ -8,6 +8,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/journey_clock.dart';
 import '../../../app/providers.dart';
+import '../../../data/sync/outbox.dart' show isTransient;
 
 import '../../../shared/time_zones.dart';
 
@@ -121,8 +122,7 @@ Journey settleJourney(Ref ref, Journey j, DateTime now) {
               final code = rootError(e) is OurneyException
                   ? (rootError(e) as OurneyException).error
                   : OurneyErrorCode.offline;
-              if (code == OurneyErrorCode.syncPending ||
-                  code == OurneyErrorCode.offline) {
+              if (code == OurneyErrorCode.syncPending || isTransient(code)) {
                 state.requested.remove(j.id);
                 state.retryAt[j.id] = now.add(untilNextQuarterHour(now));
               }

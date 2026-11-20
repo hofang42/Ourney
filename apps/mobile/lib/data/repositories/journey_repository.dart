@@ -337,15 +337,14 @@ class DataJourneyRepository implements JourneyRepository {
       await _flushFirst();
       // Anything of this journey still queued (its create, an older edit)
       // must replay first: skip the RPC and queue behind it.
+      // Solo journeys only: group edits are never queued and the items a
+      // group can have queued do not affect `update_journey`.
       final blocked =
+          !group &&
           outboxForEdit != null &&
           await _hasPendingFor(outboxForEdit, journeyId);
       try {
-        if (blocked) {
-          throw OurneyException(
-            group ? OurneyErrorCode.syncPending : OurneyErrorCode.offline,
-          );
-        }
+        if (blocked) throw const OurneyException(OurneyErrorCode.offline);
         final res = await remote.rpc(
           'update_journey',
           updateJourneyParams(journeyId, update),
