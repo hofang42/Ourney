@@ -280,7 +280,6 @@ select throws_ok($$ select tests.checkin(tests.c(94), tests.j(11), now() - inter
   'P0001', 'ended', 'C-B11: an ended open-ended retold journey refuses photos');
 select throws_ok($$ select tests.checkin(tests.c(95), tests.j(11), now()) $$,
   'P0001', 'ended', 'C-B11: also a live one');
-=======
 -- U16: my_blocked_people lists only the caller's own blocks, with names.
 -- (User 9 is deleted above, so this uses a fresh block between two live users.)
 do $$ begin perform tests.as_user(tests.u(3)); perform public.block_user(tests.u(4)); end $$;

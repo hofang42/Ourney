@@ -328,6 +328,7 @@ create trigger journeys_couple_seats
   before insert or update of couple_self_name, couple_partner_name, max_members, kind
   on public.journeys
   for each row execute function private.journeys_couple_seats();
+revoke all on function private.journeys_couple_seats() from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
 -- A-B7: _leave_journey (from 0004_rpc) + accept_group_invitation (from 0008_group_invites)
