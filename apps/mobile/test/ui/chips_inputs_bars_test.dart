@@ -185,7 +185,7 @@ void main() {
         expect(find.text('Sai email'), findsOneWidget);
         final deco = t.widget<TextField>(find.byType(TextField)).decoration!;
         final border = deco.enabledBorder! as OutlineInputBorder;
-        expect(border.borderRadius, BorderRadius.circular(12));
+        expect(border.borderRadius, BorderRadius.circular(UiRadius.input));
         expect(border.borderSide.width, 2);
         expect(border.borderSide.color, ui.danger);
         expect(
@@ -265,7 +265,7 @@ void main() {
         expect(d(2).boxShadow!.single.offset, const Offset(4, 4));
         expect(d(0).boxShadow, isNull);
         expect((d(0).border! as Border).top.color, ui.outline);
-        expect(d(0).borderRadius, BorderRadius.circular(12));
+        expect(d(0).borderRadius, BorderRadius.circular(UiRadius.input));
         set(() => error = true);
         await t.pump();
         expect((d(0).border! as Border).top.color, ui.danger);

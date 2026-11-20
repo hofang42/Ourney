@@ -464,12 +464,24 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                   height: 1.45,
                   color: ui.inkMuted,
                 ),
+                // Kit field shape: filled, rounded with the input radius.
+                filled: true,
+                fillColor: ui.surfaceInput,
                 // 12.5 + 23.2 + 12.5: a >= 48dp tap target (U5).
-                contentPadding: const EdgeInsets.symmetric(vertical: 12.5),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: ui.border),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12.5,
                 ),
-                focusedBorder: UnderlineInputBorder(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.input),
+                  borderSide: BorderSide(color: ui.inputBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.input),
+                  borderSide: BorderSide(color: ui.inputBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.input),
                   borderSide: BorderSide(color: ui.ink, width: 2),
                 ),
               ),
