@@ -250,7 +250,7 @@ class _DeckCard extends StatelessWidget {
                 semanticLabel: '$semantic, ${item.tagline}',
                 excludeChildSemantics: true,
                 borderRadius: BorderRadius.circular(UiRadius.card),
-                shadowColor: ui.outline,
+                shadowColor: ui.hardShadowColor,
                 shadowOffset: focused ? 4 : 0,
                 child: Container(
                   padding: const EdgeInsets.all(20),

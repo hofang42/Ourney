@@ -10,7 +10,7 @@ class AestheticFlexerL10nVi extends AestheticFlexerL10n {
   AestheticFlexerL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get aesthetic_flexer_name => 'Khoe nhịp tập';
+  String get aesthetic_flexer_name => 'Khoe thẩm mỹ';
 
   @override
   String aesthetic_flexer_dayLabel(int day) {

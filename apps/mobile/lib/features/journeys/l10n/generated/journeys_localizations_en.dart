@@ -200,6 +200,10 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_errorEnded => 'This journey has ended.';
 
   @override
+  String get journeys_errorSyncPending =>
+      'Photos are still uploading. Try again in a moment.';
+
+  @override
   String get journeys_errorNotFound => 'Journey not found.';
 
   @override
@@ -1669,7 +1673,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_addMoreTag => 'Add more';
 
   @override
-  String get journeys_hubTitle => 'journeys.';
+  String get journeys_hubTitle => 'Ourney';
 
   @override
   String journeys_hubGreeting(String name) {
@@ -1753,4 +1757,8 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Choose this type';
+
+  @override
+  String get journeys_createSettingsNotSaved =>
+      'Some settings couldn\'t be saved';
 }

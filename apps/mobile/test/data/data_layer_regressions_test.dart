@@ -8,6 +8,7 @@ import 'package:ourney/data/local_store.dart' show journeyKey;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
+import 'package:ourney/shared/journey_warnings.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_test_helpers.dart';
@@ -228,20 +229,33 @@ void main() {
       );
     });
 
-    test('a rejection (invalid) still surfaces', () async {
-      remote.rpcHandlers['update_journey'] = (_) =>
-          throw const OurneyException(OurneyErrorCode.invalid);
-      await expectLater(
-        layer.journeys.create(draft()),
-        throwsA(
-          isA<OurneyException>().having(
-            (e) => e.error,
-            'error',
-            OurneyErrorCode.invalid,
-          ),
-        ),
+    for (final code in [
+      OurneyErrorCode.invalid,
+      OurneyErrorCode.notFound,
+      OurneyErrorCode.forbidden,
+    ]) {
+      test(
+        'a permanent rejection ($code) keeps the journey and warns',
+        () async {
+          remote.rpcHandlers['update_journey'] = (_) =>
+              throw OurneyException(code);
+          final before = journeyExtrasRejected.value;
+          final j = await layer.journeys.create(draft(id: 'rej-${code.name}'));
+          expect(journeyExtrasRejected.value, before + 1);
+          // Restored: the rejected extras are gone, nothing stays queued.
+          expect(j.reminderTime, isNull);
+          expect(
+            await layer.ctx.outbox!.pendingKeys(),
+            isNot(contains('${journeyKey(j.id)}:extras')),
+          );
+          // The retry with the same id returns the journey again (no throw).
+          final again = await layer.journeys.create(
+            draft(id: 'rej-${code.name}'),
+          );
+          expect(again.id, j.id);
+        },
       );
-    });
+    }
 
     test('a retryable error does not fail create; extras are queued', () async {
       remote.rpcHandlers['update_journey'] = (_) =>
@@ -259,10 +273,7 @@ void main() {
       const id = 'retry-journey-id';
       remote.rpcHandlers['update_journey'] = (_) =>
           throw const OurneyException(OurneyErrorCode.invalid);
-      await expectLater(
-        layer.journeys.create(draft(id: id)),
-        throwsA(isA<OurneyException>()),
-      );
+      await layer.journeys.create(draft(id: id));
       // Review 2: the rejected values do not stay in the cache.
       final after = await (db.select(
         db.journeys,
@@ -278,17 +289,20 @@ void main() {
       expect(j.color, 1);
     });
 
-    test('a retry after a rejection raises it again, not success', () async {
-      const id = 'retry-rejected-id';
-      remote.rpcHandlers['update_journey'] = (_) =>
-          throw const OurneyException(OurneyErrorCode.invalid);
-      for (var i = 0; i < 2; i++) {
-        await expectLater(
-          layer.journeys.create(draft(id: id)),
-          throwsA(isA<OurneyException>()),
-        );
-      }
-    });
+    test(
+      'a retry after a rejection returns the journey and warns again',
+      () async {
+        const id = 'retry-rejected-id';
+        remote.rpcHandlers['update_journey'] = (_) =>
+            throw const OurneyException(OurneyErrorCode.invalid);
+        final before = journeyExtrasRejected.value;
+        for (var i = 0; i < 2; i++) {
+          final j = await layer.journeys.create(draft(id: id));
+          expect(j.id, id);
+        }
+        expect(journeyExtrasRejected.value, before + 2);
+      },
+    );
 
     test(
       'extras are queued before the call (survive a crash mid-call)',
@@ -549,6 +563,106 @@ void main() {
             OurneyErrorCode.ended,
           ),
         ),
+      );
+    });
+  });
+
+  group('final review: offline edits and end with pending uploads', () {
+    Future<void> cacheActive() async {
+      remote.tables['journeys'] = [journeyRow(jid, ownerId: me)];
+      remote.tables['memberships'] = [membershipRow(jid, me)];
+      await layer.syncNow();
+    }
+
+    test('two offline edits in a row succeed locally', () async {
+      await cacheActive();
+      remote.failure = offline;
+      final a = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Một'),
+      );
+      expect(a.title, 'Một');
+      final b = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Hai'),
+      );
+      expect(b.title, 'Hai');
+      expect(
+        await layer.ctx.outbox!.pendingKeys(),
+        contains('${journeyKey(jid)}:edit'),
+      );
+    });
+
+    test('an edit after an offline photo succeeds locally', () async {
+      await cacheActive();
+      remote.failure = offline;
+      await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1));
+      final j = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Sau ảnh'),
+      );
+      expect(j.title, 'Sau ảnh');
+    });
+
+    test('online edit with the create still queued stays local', () async {
+      remote.rpcHandlers['create_journey'] = (_) => throw offline;
+      final j = await layer.journeys.create(soloDraft());
+      // Back online, but the queue head is in backoff (unforced flush).
+      remote.rpcHandlers.remove('create_journey');
+      final before = remote.callsOf('rpc').length;
+      final edited = await layer.journeys.update(
+        j.id,
+        const JourneyUpdate(title: 'Sau tạo'),
+      );
+      expect(edited.title, 'Sau tạo');
+      // Whatever replays does so in queue order: create first, never the
+      // edit jumping ahead of it (it would be notFound on the server).
+      final sent = [
+        for (final c in remote.callsOf('rpc').skip(before)) c.target,
+      ];
+      expect(sent.first, 'create_journey');
+      expect(
+        await layer.ctx.outbox!.pendingKeys(),
+        contains('${journeyKey(j.id)}:edit'),
+      );
+    });
+
+    test('a group owner can edit while uploads are queued', () async {
+      await cacheGroup();
+      remote.failure = offline;
+      await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1));
+      remote.failure = null;
+      remote.rpcHandlers['update_journey'] = (p) =>
+          journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group')
+            ..['title'] = p['p_title'];
+      final j = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Đổi tên'),
+      );
+      expect(j.title, 'Đổi tên');
+      expect(
+        remote.callsOf('rpc').any((c) => c.target == 'update_journey'),
+        isTrue,
+      );
+    });
+
+    test('end is refused with syncPending while an upload is queued', () async {
+      await cacheActive();
+      remote.failure = offline;
+      await checkIn(jid, 'a', DateTime.utc(2026, 10, 16, 1));
+      await expectLater(
+        layer.journeys.end(jid),
+        throwsA(
+          isA<OurneyException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.syncPending,
+          ),
+        ),
+      );
+      expect(
+        remote.callsOf('rpc').where((c) => c.target == 'end_journey'),
+        isEmpty,
       );
     });
   });

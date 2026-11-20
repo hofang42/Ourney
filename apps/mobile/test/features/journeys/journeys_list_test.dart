@@ -196,7 +196,8 @@ void main() {
       await pumpJourneys(tester, locale: const Locale('en'), journeys: repo);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('journeys-today-j1')), findsNothing);
-      expect(find.byKey(const ValueKey('journey-card-j1')), findsNothing);
+      // Nothing runs, so the hub opens on the shelf, where it now sits.
+      expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
       // The owner's app closes it in the repository.
       expect(repo.calls, contains('end:j1'));
     });
@@ -224,6 +225,27 @@ void main() {
       expect(repo.calls, contains('unarchive:j1'));
       expect(find.byKey(const ValueKey('shelf-archived-title')), findsNothing);
       expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
+    });
+
+    testWidgets('only archived journeys: the shelf opens, not Day Zero (U12)', (
+      tester,
+    ) async {
+      final j = testJourney(status: JourneyStatus.ended);
+      final repo = FakeJourneyRepository(
+        journeys: [j],
+        memberships: {j.id: testMembership(j)},
+      );
+      await repo.archive(j.id);
+      await pumpJourneys(tester, locale: const Locale('en'), journeys: repo);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('journeys-empty')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('shelf-archived-title')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('unarchive-j1')));
+      await tester.pumpAndSettle();
+      expect(repo.calls, contains('unarchive:j1'));
     });
 
     testWidgets('inside the 3 day upload grace the RPC is not called (B-B7)', (

@@ -11,10 +11,15 @@ class UiSkinVariant {
     required this.button,
     required this.buttonLabel,
     required this.secondary,
+    this.accentDark,
   });
 
   final String name;
   final Color accent;
+
+  /// Accent override in dark mode, for accents that fall under 4.5:1 on the
+  /// dark bg (null keeps [accent]).
+  final Color? accentDark;
 
   /// Fill of the primary button and shutter.
   final Color button;
@@ -48,7 +53,6 @@ class UiSkinPalette {
 class UiSkin {
   const UiSkin({
     required this.id,
-    required this.short,
     required this.journey,
     required this.headingFont,
     required this.mood,
@@ -59,7 +63,6 @@ class UiSkin {
   });
 
   final String id;
-  final String short;
   final String journey;
   final String headingFont;
   final String mood;
@@ -83,9 +86,18 @@ class UiSkin {
     if (id == 'minimal' && index == 1 && brightness == Brightness.dark) {
       return UiSkinVariant(
         name: v.name,
-        accent: v.accent,
-        button: const Color(0xFFF4F4F5),
-        buttonLabel: const Color(0xFF0E0E10),
+        accent: v.accentDark ?? v.accent,
+        button: const Color(0xFFE4E4E7),
+        buttonLabel: const Color(0xFF18181A),
+        secondary: v.secondary,
+      );
+    }
+    if (brightness == Brightness.dark && v.accentDark != null) {
+      return UiSkinVariant(
+        name: v.name,
+        accent: v.accentDark!,
+        button: v.button,
+        buttonLabel: v.buttonLabel,
         secondary: v.secondary,
       );
     }
@@ -101,23 +113,32 @@ class UiSkin {
     final v = resolvedVariant(variantIndex, base.brightness);
     Color tint(Color over, Color on, double a) =>
         Color.alphaBlend(over.withValues(alpha: a), on);
+    final dark = base.brightness == Brightness.dark;
+    // Dark: a mid-tone outline and a drop shadow darker than bg, so cream
+    // ink never glows around every card. Light keeps ink for both.
+    final outline = dark ? Color.lerp(p.ink, p.bg, 0.55)! : p.ink;
     return base.copyWith(
+      outline: outline,
+      hardShadowColor: dark
+          ? Color.lerp(p.bg, const Color(0xFF000000), 0.55)
+          : p.ink,
+      sheet: dark ? Color.lerp(p.bg, p.surface, 0.5) : p.bg,
       bg: p.bg,
       surface: p.surface,
       surfaceInput: p.surface,
       fill: tint(p.ink, p.bg, 0.06),
-      fillSelected: p.surface,
+      fillSelected: dark ? tint(p.ink, p.surface, 0.06) : p.surface,
       ink: p.ink,
       inkMuted: p.muted,
       inkSoft: Color.lerp(p.ink, p.muted, 0.35),
       border: tint(p.ink, p.bg, 0.16),
-      inputBorder: p.ink,
+      inputBorder: outline,
       divider: tint(p.ink, p.bg, 0.10),
       brand: v.button,
       onBrand: v.buttonLabel,
       grabber: tint(p.muted, p.bg, 0.5),
       dockBg: p.surface.withValues(alpha: 0.92),
-      dockBorder: p.ink,
+      dockBorder: outline,
       permissionIconBg: tint(p.ink, p.bg, 0.06),
       accent: v.accent,
     );
@@ -139,7 +160,6 @@ abstract final class UiTypePastel {
 const List<UiSkin> uiSkins = [
   UiSkin(
     id: 'quiet',
-    short: 'Lặng',
     journey: 'Giảm cân',
     headingFont: 'Fraunces',
     mood: 'Lâm sàng dịu nhẹ · nét mảnh',
@@ -151,10 +171,10 @@ const List<UiSkin> uiSkins = [
       muted: Color(0xFF53605B),
     ),
     dark: UiSkinPalette(
-      bg: Color(0xFF0B0F12),
-      surface: Color(0xFF151C21),
-      ink: Color(0xFFF1F5F9),
-      muted: Color(0xFFA8B2B9),
+      bg: Color(0xFF161B1C),
+      surface: Color(0xFF1F2628),
+      ink: Color(0xFFE6ECEA),
+      muted: Color(0xFFA7B2AF),
     ),
     variants: [
       UiSkinVariant(
@@ -182,7 +202,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'squad',
-    short: 'Đội',
     journey: 'Tiếng Anh',
     headingFont: 'Space Grotesk',
     mood: 'Sổ kem · đồng đội rực lửa',
@@ -193,10 +212,10 @@ const List<UiSkin> uiSkins = [
       muted: Color(0xFF665F57),
     ),
     dark: UiSkinPalette(
-      bg: Color(0xFF12131A),
-      surface: Color(0xFF1D1F2B),
-      ink: Color(0xFFF8FAFC),
-      muted: Color(0xFFB6BAC8),
+      bg: Color(0xFF191A22),
+      surface: Color(0xFF23252F),
+      ink: Color(0xFFEEEFF4),
+      muted: Color(0xFFB3B6C4),
     ),
     variants: [
       UiSkinVariant(
@@ -209,6 +228,7 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Tím',
         accent: Color(0xFF7556F8),
+        accentDark: Color(0xFF9B87FA),
         button: Color(0xFFFF9F1C),
         buttonLabel: Color(0xFF1E1B18),
         secondary: Color(0xFF7556F8),
@@ -224,7 +244,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'memory',
-    short: 'Ký ức',
     journey: 'Chuyến đi',
     headingFont: 'Fraunces',
     mood: 'Giấy hạt · băng dính · phim',
@@ -235,15 +254,16 @@ const List<UiSkin> uiSkins = [
       muted: Color(0xFF675E59),
     ),
     dark: UiSkinPalette(
-      bg: Color(0xFF141312),
-      surface: Color(0xFF1F1D1B),
-      ink: Color(0xFFF5F2EB),
-      muted: Color(0xFFB8B0A6),
+      bg: Color(0xFF1C1A17),
+      surface: Color(0xFF26231F),
+      ink: Color(0xFFEEE8DD),
+      muted: Color(0xFFB6AC9F),
     ),
     variants: [
       UiSkinVariant(
         name: 'Sương thông',
         accent: Color(0xFFCC4A2F),
+        accentDark: Color(0xFFE07A5F),
         button: Color(0xFFCC4A2F),
         buttonLabel: Color(0xFFFFFFFF),
         secondary: Color(0xFF4A6B53),
@@ -251,6 +271,7 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Biển muối',
         accent: Color(0xFF2F6F8F),
+        accentDark: Color(0xFF6FA8C7),
         button: Color(0xFF2F6F8F),
         buttonLabel: Color(0xFFFFFFFF),
         secondary: Color(0xFFD9A441),
@@ -258,6 +279,7 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Phố đêm',
         accent: Color(0xFF7B5EA7),
+        accentDark: Color(0xFFA98BD6),
         button: Color(0xFF7B5EA7),
         buttonLabel: Color(0xFFFFFFFF),
         secondary: Color(0xFFE0A43A),
@@ -266,7 +288,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'couple',
-    short: 'Đôi',
     journey: 'Cặp đôi',
     headingFont: 'Playfair Display',
     mood: 'Khung đôi · lãng mạn thanh lịch',
@@ -277,15 +298,16 @@ const List<UiSkin> uiSkins = [
       muted: Color(0xFF6D5E64),
     ),
     dark: UiSkinPalette(
-      bg: Color(0xFF171215),
-      surface: Color(0xFF241C21),
-      ink: Color(0xFFFCE7F3),
-      muted: Color(0xFFCDB5C2),
+      bg: Color(0xFF1E181B),
+      surface: Color(0xFF2A2126),
+      ink: Color(0xFFF3E4EA),
+      muted: Color(0xFFC8B3BD),
     ),
     variants: [
       UiSkinVariant(
         name: 'Hồng',
         accent: Color(0xFF9D174D),
+        accentDark: Color(0xFFE7739A),
         button: Color(0xFFE15B72),
         buttonLabel: Color(0xFF1A1316),
         secondary: Color(0xFF9D174D),
@@ -300,6 +322,7 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Đào',
         accent: Color(0xFFB4533A),
+        accentDark: Color(0xFFE08A6E),
         button: Color(0xFFF08A6B),
         buttonLabel: Color(0xFF1A1316),
         secondary: Color(0xFFB4533A),
@@ -308,7 +331,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'flexer',
-    short: 'Năng lượng',
     journey: 'Tập luyện',
     headingFont: 'Barlow Condensed',
     mood: 'Kính mờ · viền phát sáng',
@@ -319,9 +341,9 @@ const List<UiSkin> uiSkins = [
       muted: Color(0xFF525660),
     ),
     dark: UiSkinPalette(
-      bg: Color(0xFF090A0F),
-      surface: Color(0xFF14161F),
-      ink: Color(0xFFF8FAFC),
+      bg: Color(0xFF14161C),
+      surface: Color(0xFF1E2029),
+      ink: Color(0xFFEEF0F5),
       muted: Color(0xFFA9AFBD),
     ),
     variants: [
@@ -350,7 +372,6 @@ const List<UiSkin> uiSkins = [
   ),
   UiSkin(
     id: 'minimal',
-    short: 'Tối giản',
     journey: 'Tự đặt',
     headingFont: 'Space Grotesk',
     mood: 'Lưới 1 điểm · không trang trí',
@@ -361,15 +382,16 @@ const List<UiSkin> uiSkins = [
       muted: Color(0xFF626166),
     ),
     dark: UiSkinPalette(
-      bg: Color(0xFF0E0E10),
-      surface: Color(0xFF18181B),
-      ink: Color(0xFFF4F4F5),
+      bg: Color(0xFF18181A),
+      surface: Color(0xFF222225),
+      ink: Color(0xFFECECEE),
       muted: Color(0xFFA1A1AA),
     ),
     variants: [
       UiSkinVariant(
         name: 'Cam',
         accent: Color(0xFFEA580C),
+        accentDark: Color(0xFFF07A3A),
         button: Color(0xFFEA580C),
         buttonLabel: Color(0xFF1C1C1E),
         secondary: Color(0xFF27272A),
@@ -377,6 +399,7 @@ const List<UiSkin> uiSkins = [
       UiSkinVariant(
         name: 'Than',
         accent: Color(0xFF27272A),
+        accentDark: Color(0xFFD4D4D8),
         button: Color(0xFF27272A),
         buttonLabel: Color(0xFFFFFFFF),
         secondary: Color(0xFF27272A),

@@ -78,17 +78,25 @@ class DataContext {
   Future<void> wipeLocal() async {
     // Stop pulls still running for the old session before they refill it.
     sync?.invalidateSession();
-    // The wiped marker survives a late in-flight write: the next user to sign
-    // in finds an owner that is not them and wipes again (rows + outbox).
+    // Rows first: a failed wipe then leaves files AND rows (consistent), never
+    // rows pointing at deleted media. The wiped marker survives a late
+    // in-flight write: the next user to sign in finds an owner that is not
+    // them and wipes again (rows + outbox).
     await db.transaction(() async {
       await db.wipe();
       if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
     });
-    await files.wipe();
-    final drafts = Directory(
-      p.join(files.root.parent.path, checkinDraftDirName),
-    );
-    if (drafts.existsSync()) await drafts.delete(recursive: true);
+    // Files only while the marker still stands: a new user who has already
+    // claimed the cache (owner changed) may have saved a photo meanwhile.
+    final stillWiped =
+        sync == null || await db.readCursor(ownerCursorKey) == wipedOwner;
+    if (stillWiped) {
+      await files.wipe();
+      final drafts = Directory(
+        p.join(files.root.parent.path, checkinDraftDirName),
+      );
+      if (drafts.existsSync()) await drafts.delete(recursive: true);
+    }
     sync?.notifyChanged();
   }
 }

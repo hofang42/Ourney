@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
+import '../../../../shared/journey_warnings.dart';
 import '../../../../ui/ui.dart';
 import '../../../onboarding/onboarding_providers.dart';
 import '../../../profile/share_privacy_sync.dart';
@@ -343,6 +344,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final progress = ref.read(createProgressProvider.notifier);
     final activeJourney = ref.read(activeJourneyIdProvider.notifier);
     final title = _finalTitle(form);
+    final rejectedBefore = journeyExtrasRejected.value;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -373,6 +375,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
+      if (mounted && journeyExtrasRejected.value > rejectedBefore) {
+        showJourneySnack(
+          context,
+          JourneysL10n.of(context).journeys_createSettingsNotSaved,
+        );
+      }
       final rt = ReminderTime.tryParse(_reminder);
       if (rt != null) {
         await ref
@@ -698,8 +706,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Set while [_leaveFlow] pops the route.
   bool _leaving = false;
 
-  /// Leaving the flow: keep a resumable draft from step 2 on, else forget
-  /// any older one so the Hub card does not linger (U8).
+  /// Leaving the flow: keep a resumable draft from step 2 on. Before that, a
+  /// fresh visit leaves the saved draft be; only a resumed flow clears it so
+  /// the Hub card does not linger (U8).
   void _leaveFlow() {
     if (_busy) return; // The journey is being created: stay for the result.
     _leaving = true;

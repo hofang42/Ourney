@@ -104,7 +104,7 @@ abstract class QuietTransformerL10n {
   /// Tên phong cách, hiện ở nhãn đầu màn
   ///
   /// In vi, this message translates to:
-  /// **'Thay đổi thầm lặng'**
+  /// **'Lặng lẽ đổi thay'**
   String get quiet_transformer_name;
 
   /// Ngày thứ N của hành trình

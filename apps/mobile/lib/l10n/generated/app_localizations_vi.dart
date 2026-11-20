@@ -25,7 +25,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get journeyStyle_coupleRituals => 'Nghi thức đôi lứa';
 
   @override
-  String get journeyStyle_aestheticFlexer => 'Khoe nét thẩm mỹ';
+  String get journeyStyle_aestheticFlexer => 'Khoe thẩm mỹ';
 
   @override
   String get journeyStyle_minimalistHabit => 'Thói quen tối giản';

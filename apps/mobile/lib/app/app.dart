@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/journeys/data/journeys_providers.dart'
+    show timeZoneWarmupProvider;
 import '../features/journeys/journeys_paths.dart';
 import '../features/journeys/ui/day_ticker.dart';
 import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
 import '../features/profile/settings_providers.dart' show themeModeProvider;
+import '../features/profile/share_privacy_sync.dart' show SharePrivacyHealHook;
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../ui/ui.dart';
@@ -27,6 +30,8 @@ class OurneyApp extends ConsumerWidget {
     ref.watch(hapticsEnabledProvider);
     // Sign-out / account deletion clears the previous account's local state.
     ref.watch(accountSessionResetProvider);
+    // tz database decoded after the first frame (camera ready < 1 s).
+    ref.watch(timeZoneWarmupProvider);
     // The active journey's persona colors the whole app; the router is not
     // rebuilt when it changes (docs/06 §1 Q1).
     final skin = ref.watch(activePersonaSkinProvider);
@@ -54,17 +59,19 @@ class OurneyApp extends ConsumerWidget {
       // Reminders: reschedule on start/resume, open the journey on a
       // notification tap (FR-G1, FR-G2).
       builder: (context, child) => DayTicker(
-        child: ReminderLifecycleHook(
-          onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
-          child: OurneyTextScaleClamp(
-            // In-app reminder banner (V2 `ReminderNotification`): shown while
-            // `reminderBannerProvider` holds a value; a tap opens the camera.
-            child: ReminderBannerHost(
-              onOpenJourneyCamera: (id) =>
-                  router.go(JourneysPaths.captureFor(id)),
-              child: _SplashGate(
-                returning: onboarded,
-                child: child ?? const SizedBox.shrink(),
+        child: SharePrivacyHealHook(
+          child: ReminderLifecycleHook(
+            onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
+            child: OurneyTextScaleClamp(
+              // In-app reminder banner (V2 `ReminderNotification`): shown while
+              // `reminderBannerProvider` holds a value; a tap opens the camera.
+              child: ReminderBannerHost(
+                onOpenJourneyCamera: (id) =>
+                    router.go(JourneysPaths.captureFor(id)),
+                child: _SplashGate(
+                  returning: onboarded,
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           ),

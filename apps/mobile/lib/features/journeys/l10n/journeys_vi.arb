@@ -118,6 +118,7 @@
   "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.",
   "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
   "journeys_errorEnded": "Hành trình này đã kết thúc.",
+  "journeys_errorSyncPending": "Ảnh vẫn đang tải lên, thử lại sau ít phút.",
   "journeys_errorNotFound": "Không tìm thấy hành trình.",
   "journeys_statCurrent": "Chuỗi hiện tại",
   "journeys_statBest": "Dài nhất",
@@ -1480,7 +1481,7 @@
   },
   "journeys_home_viewWrapped": "Xem tổng kết",
   "journeys_addMoreTag": "Thêm ảnh",
-  "journeys_hubTitle": "hành trình.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "chào {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {
@@ -1548,5 +1549,9 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Chọn kiểu này"
+  "journeys_createDeckChoose": "Chọn kiểu này",
+  "journeys_createSettingsNotSaved": "Một vài cài đặt chưa lưu được",
+  "@journeys_createSettingsNotSaved": {
+    "description": "Non-fatal toast after creating a journey when the server rejected some create-flow settings."
+  }
 }

@@ -428,6 +428,12 @@ abstract class JourneysL10n {
   /// **'Hành trình này đã kết thúc.'**
   String get journeys_errorEnded;
 
+  /// No description provided for @journeys_errorSyncPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh vẫn đang tải lên, thử lại sau ít phút.'**
+  String get journeys_errorSyncPending;
+
   /// No description provided for @journeys_errorNotFound.
   ///
   /// In vi, this message translates to:
@@ -2999,7 +3005,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_hubTitle.
   ///
   /// In vi, this message translates to:
-  /// **'hành trình.'**
+  /// **'Ourney'**
   String get journeys_hubTitle;
 
   /// No description provided for @journeys_hubGreeting.
@@ -3145,6 +3151,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chọn kiểu này'**
   String get journeys_createDeckChoose;
+
+  /// Non-fatal toast after creating a journey when the server rejected some create-flow settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một vài cài đặt chưa lưu được'**
+  String get journeys_createSettingsNotSaved;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

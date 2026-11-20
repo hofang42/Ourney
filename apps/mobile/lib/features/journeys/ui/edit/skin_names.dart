@@ -1,7 +1,7 @@
 import '../../l10n/generated/journeys_localizations.dart';
 
-/// Localized short name of a V2 skin (`uiSkinById(id).short` is a hard-coded
-/// Vietnamese label, bug U20).
+/// Localized short name of a V2 skin (replaces a hard-coded Vietnamese
+/// label, bug U20).
 String skinShortName(JourneysL10n l10n, String skinId) => switch (skinId) {
   'quiet' => l10n.journeys_edit_skinShort_quiet,
   'squad' => l10n.journeys_edit_skinShort_squad,

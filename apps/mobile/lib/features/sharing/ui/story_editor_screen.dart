@@ -33,6 +33,9 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   String? _coverId;
   bool _seeded = false;
   bool _saving = false;
+  // Every hide toggle's server work, chained in order; a save waits for the
+  // whole chain so no stale story write can land after it.
+  Future<void> _hideChain = Future<void>.value();
 
   /// Story as loaded, to tell whether there are unsaved edits (U19).
   JourneyStory _initial = const JourneyStory();
@@ -112,6 +115,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final l10n = SharingL10n.of(context);
     setState(() => _saving = true);
     try {
+      await _hideChain.timeout(const Duration(seconds: 15), onTimeout: () {});
       await ref
           .read(sharingRepositoryProvider)
           .updateStory(widget.journeyId, _draft);
@@ -126,6 +130,8 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   }
 
   Future<void> _toggleHidden(CheckIn checkIn) async {
+    // Hide toggles during a save would race its story write.
+    if (_saving) return;
     final hidden = _hidden!;
     final hide = !hidden.contains(checkIn.id);
     final dropsCover = hide && _coverId == checkIn.id;
@@ -144,6 +150,20 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
         }
       }
     });
+    final job = _hideChain.then(
+      (_) => _persistHidden(checkIn, hide, dropsCover),
+    );
+    _hideChain = job;
+    await job;
+  }
+
+  /// Server side of a hide toggle. A Save waits for it ([_hideChain]), so
+  /// its stale story write can never land after the user's own save.
+  Future<void> _persistHidden(
+    CheckIn checkIn,
+    bool hide,
+    bool dropsCover,
+  ) async {
     try {
       await ref
           .read(sharingRepositoryProvider)

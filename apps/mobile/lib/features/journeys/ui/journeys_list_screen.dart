@@ -44,7 +44,9 @@ class JourneysListScreen extends ConsumerStatefulWidget {
 }
 
 class _JourneysListState extends ConsumerState<JourneysListScreen> {
-  HubSegment _segment = HubSegment.active;
+  /// Null until the user picks a segment (then the hub may default to the
+  /// shelf when nothing runs).
+  HubSegment? _segment;
   bool _menuOpen = false;
 
   @override
@@ -64,14 +66,33 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     }
 
     final buckets = journeys.hasValue ? JourneyBuckets(journeys.value!) : null;
+    // Only archived journeys left: the hub still opens (on the shelf) so they
+    // can be restored; Day Zero is for a Hub with nothing at all.
+    final archivedAsync = ref.watch(archivedJourneysProvider);
+    final archivedValue = archivedAsync.value;
+    final hasArchived = archivedValue?.isNotEmpty ?? false;
 
     final Widget body;
-    if (buckets != null && buckets.isEmpty) {
+    if (buckets != null &&
+        buckets.isEmpty &&
+        archivedValue == null &&
+        !archivedAsync.hasError) {
+      // Archived list not known yet: not Day Zero for an archive-only user.
+      body = const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
+      );
+    } else if (buckets != null && buckets.isEmpty && !hasArchived) {
       body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
     } else if (buckets != null) {
       body = _HubBody(
         buckets: buckets,
-        segment: _segment,
+        segment:
+            _segment ??
+            (buckets.active.isEmpty &&
+                    (buckets.finished.isNotEmpty || hasArchived)
+                ? HubSegment.shelf
+                : HubSegment.active),
         onSegment: (s) => setState(() => _segment = s),
         menuOpen: _menuOpen,
         onMenu: () => setState(() => _menuOpen = !_menuOpen),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../db/app_database.dart';
@@ -82,6 +83,9 @@ class Outbox {
   Future<void>? _running;
   bool _again = false;
   bool _disposed = false;
+
+  /// Consecutive failed passes (database errors); drives the retry backoff.
+  int _passFailures = 0;
   final _processed = StreamController<OutboxKind>.broadcast();
 
   /// Emits the kind of each item the server confirmed.
@@ -168,9 +172,33 @@ class Outbox {
       _again = true;
       return _running!;
     }
-    final run = _run(force).whenComplete(() => _running = null);
+    final run = _runGuarded(force).whenComplete(() => _running = null);
     _running = run;
     return run;
+  }
+
+  /// A database error inside a pass (e.g. on `_markDead` or the delete after
+  /// a successful execute) must not leak out of the `unawaited(flush())`
+  /// callers: it is logged and a retry is armed.
+  Future<void> _runGuarded(bool force) async {
+    try {
+      await _run(force);
+      _passFailures = 0;
+    } on Object catch (e) {
+      debugPrint('outbox: flush failed: $e');
+      // A closed database never recovers: do not keep a timer alive for it.
+      if (!await _isDatabaseUsable()) return;
+      _schedule(outboxBackoff(++_passFailures));
+    }
+  }
+
+  Future<bool> _isDatabaseUsable() async {
+    try {
+      await _db.customSelect('SELECT 1').get();
+      return true;
+    } on Object {
+      return false;
+    }
   }
 
   Future<void> _run(bool force) async {

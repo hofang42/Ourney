@@ -36,17 +36,22 @@ class _Live<T> {
 }
 
 class FakeSharingRepository implements SharingRepository {
+  /// When set, [setHiddenInShare] waits for it (to force write races).
+  final Completer<void>? hideGate;
+
   FakeSharingRepository({
     List<PersonSummary> viewers = const [],
     String? token,
     List<SharedJourneySummary> sharedWithMe = const [],
     this.view,
     this.frame,
+    JourneyStory story = const JourneyStory(),
+    this.hideGate,
   }) : _state = _Live(
          JourneyShareState(
            journeyId: 'j1',
            viewers: viewers,
-           story: const JourneyStory(),
+           story: story,
            publicSettings: const PublicSettings(
              showCounts: false,
              allowPublicReactions: true,
@@ -140,6 +145,7 @@ class FakeSharingRepository implements SharingRepository {
     required bool hidden,
   }) async {
     calls.add('hide:$checkInId:$hidden');
+    await hideGate?.future;
     final next = {...state.hiddenCheckInIds};
     hidden ? next.add(checkInId) : next.remove(checkInId);
     _setState(hidden: next);

@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart'
+    show ApplyInterceptor, QueryExecutor, QueryInterceptor;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/db/app_database.dart';
@@ -56,6 +58,48 @@ void main() {
       timers = RecordingTimers();
       executed = [];
       failures = [];
+    });
+
+    test(
+      'a database error in a pass on a closed database is contained, no retry',
+      () async {
+        final outbox = Outbox(
+          db,
+          executor: (kind, payload) async {
+            // The item is "sent", then the delete that follows fails.
+            await db.close();
+          },
+          now: clock.call,
+          timer: timers.call,
+        );
+        addTearDown(outbox.dispose);
+        await outbox.enqueue(OutboxKind.createJourney, 'journey:1', {'n': 1});
+        await outbox.flush(); // must not throw
+        expect(timers.delays, isEmpty);
+      },
+    );
+
+    test('repeated pass failures back off with a growing delay', () async {
+      final failing = AppDatabase(
+        NativeDatabase.memory().interceptWith(_FailDeletes()),
+      );
+      addTearDown(failing.close);
+      final outbox = Outbox(
+        failing,
+        executor: (kind, payload) async {},
+        now: clock.call,
+        timer: timers.call,
+      );
+      addTearDown(outbox.dispose);
+      await outbox.enqueue(OutboxKind.createJourney, 'journey:1', {'n': 1});
+      await outbox.flush();
+      await outbox.flush();
+      await outbox.flush();
+      expect(timers.delays, [
+        outboxBackoff(1),
+        outboxBackoff(2),
+        outboxBackoff(3),
+      ]);
     });
 
     test('runs items in FIFO order and removes them', () async {
@@ -160,4 +204,14 @@ void main() {
       expect(executed, ['upsert_check_in:7']);
     });
   });
+}
+
+/// Fails every DELETE: the pass dies after a successful execute.
+class _FailDeletes extends QueryInterceptor {
+  @override
+  Future<int> runDelete(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) => throw StateError('disk full');
 }

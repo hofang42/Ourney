@@ -55,6 +55,7 @@
   "journeys_errorNotAlone": "Other members are still in the group, so it can't be deleted. You can end the journey instead.",
   "journeys_errorForbidden": "Only the journey owner can do this.",
   "journeys_errorEnded": "This journey has ended.",
+  "journeys_errorSyncPending": "Photos are still uploading. Try again in a moment.",
   "journeys_errorNotFound": "Journey not found.",
   "journeys_statCurrent": "Current streak",
   "journeys_statBest": "Longest",
@@ -1000,7 +1001,7 @@
   },
   "journeys_home_viewWrapped": "See the wrap-up",
   "journeys_addMoreTag": "Add more",
-  "journeys_hubTitle": "journeys.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "hi {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {
@@ -1068,5 +1069,6 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Choose this type"
+  "journeys_createDeckChoose": "Choose this type",
+  "journeys_createSettingsNotSaved": "Some settings couldn't be saved"
 }

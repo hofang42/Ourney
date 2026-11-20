@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../shared/journey_warnings.dart';
 import '../data_context.dart';
 import '../db/app_database.dart';
 import '../local_store.dart';
@@ -74,13 +75,8 @@ class DataJourneyRepository implements JourneyRepository {
   Future<List<Journey>> allMine() async {
     final me = ctx.userId;
     if (me == null) return const [];
-    final rows = await (_db.select(_db.journeys).join([
-      innerJoin(
-        _db.memberships,
-        _db.memberships.journeyId.equalsExp(_db.journeys.id) &
-            _db.memberships.userId.equals(me),
-      ),
-    ])).get();
+    // Active memberships only, archived and ended journeys included.
+    final rows = await _mine(me).get();
     return [for (final r in rows) journeyFromRow(r.readTable(_db.journeys))];
   }
 
@@ -183,9 +179,9 @@ class DataJourneyRepository implements JourneyRepository {
   /// carries the create-flow answers. They are written locally and queued in
   /// the outbox in ONE transaction before the call, so an app death mid-call
   /// never loses them (the outbox replays the idempotent update). Success
-  /// drops the queued item; a retryable failure leaves it queued. A rejection
-  /// (invalid / forbidden) drops it, restores the previous row and is
-  /// surfaced.
+  /// drops the queued item; a retryable failure leaves it queued. A permanent
+  /// rejection (any non-transient error) drops it, restores the previous row and
+  /// bumps [journeyExtrasRejected]; create still succeeds.
   Future<void> _applyExtras(String id, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
@@ -213,15 +209,17 @@ class DataJourneyRepository implements JourneyRepository {
       );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
     } on OurneyException catch (e) {
-      if (e.error == OurneyErrorCode.invalid ||
-          e.error == OurneyErrorCode.forbidden) {
+      if (!isTransient(e.error)) {
         await outbox?.cancel(
           key,
           kind: OutboxKind.updateJourney,
           includeDead: true,
         );
         await _restoreExtras(previous, extras);
-        rethrow;
+        // The journey exists on the server and locally: keep it and warn
+        // instead of failing (a retry would fail the same way, forever).
+        journeyExtrasRejected.value++;
+        return;
       }
       if (outbox != null) {
         // Retryable: make the queued item due now.
@@ -266,7 +264,8 @@ class DataJourneyRepository implements JourneyRepository {
   });
 
   /// Retry of a create whose row exists: re-apply the extras the row lacks
-  /// (and that are not already queued). A rejection is raised again.
+  /// (and that are not already queued). A rejection
+  /// restores the row and warns (see [journeyExtrasRejected]).
   Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
@@ -333,9 +332,19 @@ class DataJourneyRepository implements JourneyRepository {
     }
     final group = row.kind == JourneyKind.group.wireName;
     final remote = ctx.remote;
+    final outboxForEdit = ctx.outbox;
     if (remote != null) {
-      await _flushFirst(forJourney: journeyId);
+      await _flushFirst();
+      // Anything of this journey still queued (its create, an older edit)
+      // must replay first: skip the RPC and queue behind it.
+      // Solo journeys only: group edits are never queued and the items a
+      // group can have queued do not affect `update_journey`.
+      final blocked =
+          !group &&
+          outboxForEdit != null &&
+          await _hasPendingFor(outboxForEdit, journeyId);
       try {
+        if (blocked) throw const OurneyException(OurneyErrorCode.offline);
         final res = await remote.rpc(
           'update_journey',
           updateJourneyParams(journeyId, update),
@@ -463,15 +472,15 @@ class DataJourneyRepository implements JourneyRepository {
 
   /// Sends queued writes first so RPCs never race a pending `create_journey`.
   ///
-  /// With [forJourney], also fails (offline: retry later) when an item of that
+  /// With [forJourney], also fails (`syncPending`: retry later) when an item of that
   /// journey is still queued after the flush: a failed upload must not be
   /// followed by `end_journey`, the server would then reject it for good.
-  Future<void> _flushFirst({String? forJourney}) async {
+  Future<void> _flushFirst({String? forJourney, bool force = true}) async {
     final outbox = ctx.outbox;
     if (outbox == null) return;
-    await outbox.flush(force: true);
+    await outbox.flush(force: force);
     if (forJourney != null && await _hasPendingFor(outbox, forJourney)) {
-      throw const OurneyException(OurneyErrorCode.offline);
+      throw const OurneyException(OurneyErrorCode.syncPending);
     }
   }
 
@@ -491,7 +500,7 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<void> end(String journeyId) async {
+  Future<void> end(String journeyId, {bool background = false}) async {
     final remote = ctx.remote;
     if (remote == null) {
       final row = await _requireLocal(journeyId);
@@ -501,7 +510,7 @@ class DataJourneyRepository implements JourneyRepository {
       await _setStatus(journeyId, JourneyStatus.ended);
       return;
     }
-    await _flushFirst(forJourney: journeyId);
+    await _flushFirst(forJourney: journeyId, force: !background);
     final row = await remote.rpc('end_journey', {'journey': journeyId});
     if (row is Map) {
       await ctx.store.applyJourney(row.cast<String, dynamic>());

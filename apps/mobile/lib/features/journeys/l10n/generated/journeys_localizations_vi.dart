@@ -198,6 +198,10 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_errorEnded => 'Hành trình này đã kết thúc.';
 
   @override
+  String get journeys_errorSyncPending =>
+      'Ảnh vẫn đang tải lên, thử lại sau ít phút.';
+
+  @override
   String get journeys_errorNotFound => 'Không tìm thấy hành trình.';
 
   @override
@@ -1664,7 +1668,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_addMoreTag => 'Thêm ảnh';
 
   @override
-  String get journeys_hubTitle => 'hành trình.';
+  String get journeys_hubTitle => 'Ourney';
 
   @override
   String journeys_hubGreeting(String name) {
@@ -1748,4 +1752,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Chọn kiểu này';
+
+  @override
+  String get journeys_createSettingsNotSaved => 'Một vài cài đặt chưa lưu được';
 }

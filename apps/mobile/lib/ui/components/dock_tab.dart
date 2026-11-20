@@ -44,6 +44,21 @@ BoxDecoration dockSelectionDecoration({
 /// How far the tab content sits above the pill's centre (dp).
 const double dockTabLift = 4;
 
+/// Largest text scale the tab label follows (Dynamic Type cap).
+const double dockLabelMaxScale = 1.35;
+
+/// Label line height at 1x (10.5 * 1.35).
+const double dockLabelLineHeight = 10.5 * 1.35;
+
+/// How far the label row's bottom edge drops below its 1x position at the
+/// current text scale (the content is centred, so half the growth).
+double dockLabelGrowth(BuildContext context) {
+  final s = MediaQuery.textScalerOf(context)
+      .clamp(maxScaleFactor: dockLabelMaxScale)
+      .scale(1);
+  return (s - 1) * dockLabelLineHeight / 2;
+}
+
 class DockTab extends StatelessWidget {
   const DockTab({
     required this.item,
@@ -116,16 +131,22 @@ class DockTab extends StatelessWidget {
                 const SizedBox(height: 2),
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(
-                    item.label,
-                    maxLines: 1,
-                    softWrap: false,
-                    textAlign: TextAlign.center,
-                    style: UiText.body(
-                      size: 10.5,
-                      weight: active ? FontWeight.w700 : FontWeight.w600,
-                      height: 1.35,
-                      color: labelColor,
+                  child: MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: MediaQuery.textScalerOf(context)
+                          .clamp(maxScaleFactor: dockLabelMaxScale),
+                    ),
+                    child: Text(
+                      item.label,
+                      maxLines: 1,
+                      softWrap: false,
+                      textAlign: TextAlign.center,
+                      style: UiText.body(
+                        size: 10.5,
+                        weight: active ? FontWeight.w700 : FontWeight.w600,
+                        height: 1.35,
+                        color: labelColor,
+                      ),
                     ),
                   ),
                 ),

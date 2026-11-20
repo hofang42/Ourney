@@ -101,7 +101,7 @@ abstract class CoupleRitualsL10n {
   /// Tên phong cách, hiện ở nhãn đầu màn
   ///
   /// In vi, this message translates to:
-  /// **'Nghi thức đôi'**
+  /// **'Nghi thức đôi lứa'**
   String get couple_rituals_name;
 
   /// Ngày thứ N của hành trình

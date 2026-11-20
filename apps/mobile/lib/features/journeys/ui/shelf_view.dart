@@ -15,6 +15,7 @@ import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'journey_actions.dart';
+import 'journey_errors.dart';
 import 'journey_photo.dart';
 import 'journey_style.dart';
 
@@ -84,6 +85,20 @@ class _ArchivedRow extends ConsumerWidget {
 
   final Journey journey;
 
+  Future<void> _unarchive(BuildContext context, WidgetRef ref) async {
+    // Read before the await: the row unmounts as soon as it is restored.
+    final scheduler = ref.read(reminderSchedulerProvider);
+    final repo = ref.read(journeyRepositoryProvider);
+    try {
+      await repo.unarchive(journey.id);
+      unawaited(scheduler.reschedule());
+    } on Object catch (e) {
+      if (context.mounted) {
+        showJourneySnack(context, journeyErrorMessage(context, e));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ui = context.ui;
@@ -107,13 +122,7 @@ class _ArchivedRow extends ConsumerWidget {
             variant: UiButtonVariant.secondary,
             compact: true,
             expand: false,
-            onPressed: () => unawaited(
-              ref.read(journeyRepositoryProvider).unarchive(journey.id).then((
-                _,
-              ) {
-                ref.read(reminderSchedulerProvider).reschedule();
-              }),
-            ),
+            onPressed: () => unawaited(_unarchive(context, ref)),
           ),
         ],
       ),
