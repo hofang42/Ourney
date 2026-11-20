@@ -110,7 +110,15 @@ abstract interface class JourneyRepository {
   /// `private` or `link`, which issues `Journey.publicToken`).
   /// No cap on running journeys (SRS FR-B3). Throws [OurneyException]
   /// `invalid` for a bad kind/visibility combo.
-  Future<Journey> create(JourneyDraft draft);
+  ///
+  /// The create-flow extras (cover, colour, reminder, layout...) are sent
+  /// right after. When the server permanently rejects them the journey is
+  /// kept, the extras are rolled back and [onExtrasRejected] is called (a
+  /// non-fatal warning: failing here would strand a journey that exists).
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  });
 
   /// `update_journey` (owner only): rename, layout, cover, colour, reminder
   /// time, DNA. Throws `notFound`, `ended`, `invalid`.

@@ -11,7 +11,6 @@ import 'package:uuid/uuid.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
-import '../../../shared/journey_warnings.dart';
 import '../../../ui/ui.dart';
 import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
@@ -146,7 +145,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final repo = ref.read(journeyRepositoryProvider);
     final now = ref.read(journeysClockProvider).now();
     final reminders = ref.read(reminderSchedulerProvider);
-    final rejectedBefore = journeyExtrasRejected.value;
+    var extrasRejected = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -156,8 +155,9 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           // The colour picked on the ticket (bug B-B12).
           color: _variant,
         ),
+        onExtrasRejected: () => extrasRejected = true,
       );
-      if (mounted && journeyExtrasRejected.value > rejectedBefore) {
+      if (mounted && extrasRejected) {
         showJourneySnack(
           context,
           JourneysL10n.of(context).journeys_createSettingsNotSaved,

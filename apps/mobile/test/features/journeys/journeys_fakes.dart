@@ -199,7 +199,10 @@ class FakeJourneyRepository implements JourneyRepository {
       _memberships.putIfAbsent(journeyId, () => _Live(null)).watch();
 
   @override
-  Future<Journey> create(JourneyDraft draft) async {
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  }) async {
     calls.add('create');
     attempts.add(draft);
     if (createError case final e?) throw e;

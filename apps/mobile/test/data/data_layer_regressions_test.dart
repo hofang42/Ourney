@@ -8,7 +8,6 @@ import 'package:ourney/data/local_store.dart' show journeyKey;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
-import 'package:ourney/shared/journey_warnings.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_test_helpers.dart';
@@ -239,9 +238,12 @@ void main() {
         () async {
           remote.rpcHandlers['update_journey'] = (_) =>
               throw OurneyException(code);
-          final before = journeyExtrasRejected.value;
-          final j = await layer.journeys.create(draft(id: 'rej-${code.name}'));
-          expect(journeyExtrasRejected.value, before + 1);
+          var rejected = 0;
+          final j = await layer.journeys.create(
+            draft(id: 'rej-${code.name}'),
+            onExtrasRejected: () => rejected++,
+          );
+          expect(rejected, 1);
           // Restored: the rejected extras are gone, nothing stays queued.
           expect(j.reminderTime, isNull);
           expect(
@@ -295,12 +297,15 @@ void main() {
         const id = 'retry-rejected-id';
         remote.rpcHandlers['update_journey'] = (_) =>
             throw const OurneyException(OurneyErrorCode.invalid);
-        final before = journeyExtrasRejected.value;
+        var rejected = 0;
         for (var i = 0; i < 2; i++) {
-          final j = await layer.journeys.create(draft(id: id));
+          final j = await layer.journeys.create(
+            draft(id: id),
+            onExtrasRejected: () => rejected++,
+          );
           expect(j.id, id);
         }
-        expect(journeyExtrasRejected.value, before + 2);
+        expect(rejected, 2);
       },
     );
 

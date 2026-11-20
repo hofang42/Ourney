@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../shared/journey_warnings.dart';
 import '../data_context.dart';
 import '../db/app_database.dart';
 import '../local_store.dart';
@@ -97,7 +96,10 @@ class DataJourneyRepository implements JourneyRepository {
           .map((r) => r == null ? null : journeyFromRow(r));
 
   @override
-  Future<Journey> create(JourneyDraft draft) async {
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  }) async {
     if (validateJourneyTitle(draft.title) != null ||
         validateDurationDays(draft.durationDays) != null ||
         validateJourneyVisibility(draft.kind, draft.visibility) != null ||
@@ -114,7 +116,7 @@ class DataJourneyRepository implements JourneyRepository {
       if (existing != null) {
         // A-B12: the earlier attempt may have died between `create_journey`
         // and the extras; put back whatever the row is missing.
-        await _reapplyMissingExtras(existing, draft);
+        await _reapplyMissingExtras(existing, draft, onExtrasRejected);
         return journeyFromRow(
           await (_db.select(
             _db.journeys,
@@ -141,7 +143,7 @@ class DataJourneyRepository implements JourneyRepository {
       }
       await ctx.store.applyJourney(row.cast<String, dynamic>());
       await _insertMembership(id, me, draft.hideMetricDefault);
-      await _applyExtras(id, draft);
+      await _applyExtras(id, draft, onExtrasRejected);
       final saved = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(id))).getSingle();
@@ -181,8 +183,12 @@ class DataJourneyRepository implements JourneyRepository {
   /// never loses them (the outbox replays the idempotent update). Success
   /// drops the queued item; a retryable failure leaves it queued. A permanent
   /// rejection (any non-transient error) drops it, restores the previous row and
-  /// bumps [journeyExtrasRejected]; create still succeeds.
-  Future<void> _applyExtras(String id, JourneyDraft d) async {
+  /// bumps [onRejected]; create still succeeds.
+  Future<void> _applyExtras(
+    String id,
+    JourneyDraft d,
+    void Function()? onRejected,
+  ) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
     final outbox = ctx.outbox;
@@ -218,7 +224,7 @@ class DataJourneyRepository implements JourneyRepository {
         await _restoreExtras(previous, extras);
         // The journey exists on the server and locally: keep it and warn
         // instead of failing (a retry would fail the same way, forever).
-        journeyExtrasRejected.value++;
+        onRejected?.call();
         return;
       }
       if (outbox != null) {
@@ -265,8 +271,12 @@ class DataJourneyRepository implements JourneyRepository {
 
   /// Retry of a create whose row exists: re-apply the extras the row lacks
   /// (and that are not already queued). A rejection
-  /// restores the row and warns (see [journeyExtrasRejected]).
-  Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
+  /// restores the row and warns (see [onRejected]).
+  Future<void> _reapplyMissingExtras(
+    JourneyRow row,
+    JourneyDraft d,
+    void Function()? onRejected,
+  ) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
     final complete =
@@ -284,7 +294,7 @@ class DataJourneyRepository implements JourneyRepository {
       await _writeLocal(row.id, extras);
       return;
     }
-    await _applyExtras(row.id, d);
+    await _applyExtras(row.id, d, onRejected);
   }
 
   /// `HH:MM` of a time that the server may return as `HH:MM:SS`.
