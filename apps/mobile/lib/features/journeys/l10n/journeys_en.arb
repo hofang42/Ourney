@@ -1069,5 +1069,7 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Choose this type"
+  "journeys_createDeckChoose": "Choose this type",
+  "journeys_cardStreak": "{days}-day streak",
+  "journeys_heroSemantics": "{streak}-day streak. {title}"
 }

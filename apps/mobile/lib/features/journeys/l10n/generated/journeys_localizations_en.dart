@@ -1757,4 +1757,14 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Choose this type';
+
+  @override
+  String journeys_cardStreak(int days) {
+    return '$days-day streak';
+  }
+
+  @override
+  String journeys_heroSemantics(int streak, String title) {
+    return '$streak-day streak. $title';
+  }
 }

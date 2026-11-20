@@ -97,6 +97,7 @@ class UiStreakHero extends StatelessWidget {
   const UiStreakHero({
     required this.streak,
     required this.title,
+    required this.semanticLabel,
     this.subtitle,
     this.onTap,
     this.state = UiStreakHeroState.normal,
@@ -105,6 +106,9 @@ class UiStreakHero extends StatelessWidget {
 
   final int streak;
   final String title;
+
+  /// Localized spoken label (streak and title).
+  final String semanticLabel;
   final String? subtitle;
   final VoidCallback? onTap;
   final UiStreakHeroState state;
@@ -118,7 +122,7 @@ class UiStreakHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = 'Chuỗi $streak ngày. $title';
+    final label = semanticLabel;
     // U15: at large text the key message (how many are left today) must not be
     // cropped: stack the number above the full title instead of squeezing it.
     final large = MediaQuery.textScalerOf(context).scale(10) > 13;
@@ -341,7 +345,9 @@ class UiJourneyCard extends StatelessWidget {
     this.members = const [],
     this.onTap,
     this.onSnap,
-    this.snapLabel = 'Chụp ảnh hôm nay',
+    required this.snapLabel,
+    this.dayLabel,
+    this.streakLabel,
     super.key,
   });
 
@@ -363,13 +369,17 @@ class UiJourneyCard extends StatelessWidget {
   /// Semantics label of the snap button.
   final String snapLabel;
 
+  /// Localized `Day N/M` text and `N-day streak` spoken label.
+  final String? dayLabel;
+  final String? streakLabel;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final dayText = 'Ngày $day/$totalDays';
+    final dayText = dayLabel ?? '$day/$totalDays';
     final progress = totalDays <= 0 ? 0.0 : (day / totalDays).clamp(0.0, 1.0);
     final label =
-        '$title, $dayText, Chuỗi $streak ngày'
+        '$title, $dayText, ${streakLabel ?? '$streak'}'
         '${subtitle == null ? '' : ', $subtitle'}';
     final showSnap = !todayDone;
     final body = ExcludeSemantics(

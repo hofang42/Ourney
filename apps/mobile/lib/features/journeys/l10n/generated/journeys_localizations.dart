@@ -3151,6 +3151,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chọn kiểu này'**
   String get journeys_createDeckChoose;
+
+  /// Streak chip spoken label on the journey card.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {days} ngày'**
+  String journeys_cardStreak(int days);
+
+  /// Screen reader label of the Hub streak hero.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {streak} ngày. {title}'**
+  String journeys_heroSemantics(int streak, String title);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

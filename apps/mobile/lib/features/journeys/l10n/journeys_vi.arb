@@ -1549,5 +1549,26 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Chọn kiểu này"
+  "journeys_createDeckChoose": "Chọn kiểu này",
+  "journeys_cardStreak": "Chuỗi {days} ngày",
+  "@journeys_cardStreak": {
+    "description": "Streak chip spoken label on the journey card.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_heroSemantics": "Chuỗi {streak} ngày. {title}",
+  "@journeys_heroSemantics": {
+    "description": "Screen reader label of the Hub streak hero.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  }
 }

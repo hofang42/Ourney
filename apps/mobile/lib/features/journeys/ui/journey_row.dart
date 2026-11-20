@@ -115,6 +115,12 @@ class JourneyRow extends ConsumerWidget {
           totalDays: progress.totalDays!,
           streak: progress.summary.current,
           todayDone: done,
+          snapLabel: l10n.journeys_snapToday,
+          dayLabel: l10n.journeys_dayOf(
+            progress.dayNumber,
+            progress.totalDays!,
+          ),
+          streakLabel: l10n.journeys_cardStreak(progress.summary.current),
           onTap: open,
           onSnap: () {
             unawaited(

@@ -1752,4 +1752,14 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Chọn kiểu này';
+
+  @override
+  String journeys_cardStreak(int days) {
+    return 'Chuỗi $days ngày';
+  }
+
+  @override
+  String journeys_heroSemantics(int streak, String title) {
+    return 'Chuỗi $streak ngày. $title';
+  }
 }
