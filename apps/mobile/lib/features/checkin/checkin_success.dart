@@ -365,7 +365,10 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
                   photo: AspectRatio(
                     aspectRatio: 1,
                     child: ClipRect(
-                      child: GroupPhoto(checkIn: widget.outcome.checkIn),
+                      child: GroupPhoto(
+                        checkIn: widget.outcome.checkIn,
+                        decodeWidth: 168,
+                      ),
                     ),
                   ),
                   footer: const SizedBox(height: 14),
@@ -374,7 +377,14 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
               ),
             ),
             const SizedBox(height: UiSpace.md),
-            UiStamp(l10n.checkin_done_memoryStamp(d)),
+            // Room for the -8 degree tilt: about width * sin(8) / 2.
+            Padding(
+              key: const ValueKey('checkin-stamp'),
+              padding: EdgeInsets.symmetric(
+                vertical: MediaQuery.sizeOf(context).width * 0.07,
+              ),
+              child: UiStamp(l10n.checkin_done_memoryStamp(d)),
+            ),
           ],
         );
       case 'couple':
@@ -386,7 +396,10 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
               height: 120,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(UiRadius.card),
-                child: GroupPhoto(checkIn: widget.outcome.checkIn),
+                child: GroupPhoto(
+                  checkIn: widget.outcome.checkIn,
+                  decodeWidth: 120,
+                ),
               ),
             ),
             const SizedBox(height: UiSpace.sm),
