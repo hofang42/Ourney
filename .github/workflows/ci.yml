@@ -75,6 +75,13 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+      # A hand-resolved merge once left a bare `=======` in a pgTAP file.
+      - name: No merge conflict markers
+        run: |
+          if git grep -nE '^(<<<<<<<|=======|>>>>>>>)( |$)' -- ':!*.md'; then
+            echo "::error::merge conflict markers found"
+            exit 1
+          fi
       # shellcheck and jq come preinstalled on ubuntu-latest.
       - name: shellcheck (scripts/**/*.sh)
         run: find scripts -name '*.sh' -print0 | xargs -0 shellcheck
