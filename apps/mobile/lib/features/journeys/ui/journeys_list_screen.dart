@@ -53,6 +53,18 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final journeys = ref.watch(journeysListProvider);
+    // A remembered segment pick goes stale when Active flips between empty
+    // and non-empty, or when another account signs in.
+    ref.listen<AsyncValue<List<Journey>>>(journeysListProvider, (prev, next) {
+      final was = prev?.value?.any((j) => j.status == JourneyStatus.active);
+      final now = next.value?.any((j) => j.status == JourneyStatus.active);
+      if (was != null && now != null && was != now && _segment != null) {
+        setState(() => _segment = null);
+      }
+    });
+    ref.listen<String?>(currentUserIdProvider, (_, _) {
+      if (_segment != null) setState(() => _segment = null);
+    });
 
     if (journeys.hasError && isNotWired(journeys.error!)) {
       // Data layer (B1) not wired yet.
@@ -81,6 +93,21 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
       body = const Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
+      );
+    } else if (buckets != null && buckets.isEmpty && archivedAsync.hasError) {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _HubHeader(),
+          const _HubNotices(),
+          UiStateCard(
+            key: const ValueKey('journeys-error'),
+            kind: UiStateCardKind.error,
+            title: l10n.journeys_hubErrorTitle,
+            actionLabel: AppLocalizations.of(context).common_retry,
+            onAction: () => ref.invalidate(archivedJourneysProvider),
+          ),
+        ],
       );
     } else if (buckets != null && buckets.isEmpty && !hasArchived) {
       body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
