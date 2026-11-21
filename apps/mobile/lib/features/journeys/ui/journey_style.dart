@@ -26,16 +26,20 @@ class JourneyPalette {
     required this.ink,
     required this.accent,
     required this.onAccent,
+    required this.outline,
     required this.name,
   });
 
   factory JourneyPalette.of(BuildContext context, UiJourneyStyle style) {
     final dark = context.ui.isDark;
+    // Inside a UiSkinScope the chosen variant (and its dark accent) wins.
+    final scoped = UiSkinScope.maybeOf(context) != null;
     return JourneyPalette(
       paper: dark ? context.ui.bg : style.paper,
       ink: dark ? context.ui.ink : style.ink,
-      accent: style.accent,
-      onAccent: style.onAccent,
+      accent: scoped ? context.ui.accent : style.accent,
+      onAccent: scoped ? context.ui.onAccent : style.onAccent,
+      outline: dark ? context.ui.outline : style.ink,
       name: journeyStyleName(context, style),
     );
   }
@@ -44,6 +48,10 @@ class JourneyPalette {
   final Color ink;
   final Color accent;
   final Color onAccent;
+
+  /// Border color of cards on [paper]: [ink] in light, the mid-tone dark
+  /// outline in dark so cream ink never frames every card.
+  final Color outline;
   final String name;
 
   Color inkAt(double opacity) => ink.withValues(alpha: opacity);

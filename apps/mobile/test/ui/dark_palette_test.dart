@@ -53,6 +53,19 @@ void _checkDark(String label, OurneyUi ui) {
       );
     });
 
+    test('outline reads on the sheet and fill layers (3:1)', () {
+      expect(_c(ui.outline, ui.sheet), greaterThanOrEqualTo(3.0));
+      expect(_c(ui.outline, ui.fill), greaterThanOrEqualTo(3.0));
+    });
+
+    test('surface lifts off bg (>= 1.08)', () {
+      expect(_c(ui.surface, ui.bg), greaterThanOrEqualTo(1.08));
+    });
+
+    test('label on an accent fill reads (4.5:1)', () {
+      expect(_c(ui.onAccent, ui.accent), greaterThanOrEqualTo(4.5));
+    });
+
     test('accent and button label read', () {
       expect(_c(ui.accent, ui.bg), greaterThanOrEqualTo(4.5));
       expect(_c(ui.onBrand, ui.brand), greaterThanOrEqualTo(4.5));
@@ -99,6 +112,42 @@ void main() {
       _checkDark('${skin.id} v$i', ui);
     }
   }
+
+  test('label on accent reads in every skin variant, both modes', () {
+    for (final base in [OurneyUi.light, OurneyUi.dark]) {
+      expect(_c(base.onAccent, base.accent), greaterThanOrEqualTo(4.5));
+      for (final skin in uiSkins) {
+        for (var i = 0; i < skin.variants.length; i++) {
+          final a = skin.apply(base, variantIndex: i);
+          expect(
+            _c(a.onAccent, a.accent),
+            greaterThanOrEqualTo(4.5),
+            reason: '${skin.id} v$i ${base.brightness.name}',
+          );
+        }
+      }
+    }
+  });
+
+  test('onAccentFor keeps the ink when it reads, else white, else black', () {
+    expect(
+      OurneyUi.onAccentFor(const Color(0xFFFF8A3D)),
+      const Color(0xFF1A1A1A),
+    );
+    expect(
+      OurneyUi.onAccentFor(const Color(0xFF7A1F3D)),
+      const Color(0xFFFFFFFF),
+    );
+  });
+
+  test('onAccentFor falls back to black on a mid-tone (L ~ 0.20)', () {
+    // Neither 1A1A1A (3.9:1) nor white (4.48:1) reaches 4.5 here; black does.
+    const mid = Color(0xFF777777);
+    expect(mid.computeLuminance(), closeTo(0.20, 0.03));
+    expect(_c(const Color(0xFF1A1A1A), mid), lessThan(4.5));
+    expect(_c(const Color(0xFFFFFFFF), mid), lessThan(4.5));
+    expect(OurneyUi.onAccentFor(mid), const Color(0xFF000000));
+  });
 
   test('dark minimal "Than" button uses the softened light fill', () {
     final ui = uiSkinById('minimal').apply(OurneyUi.dark, variantIndex: 1);

@@ -125,9 +125,9 @@ class ShareTopBar extends StatelessWidget {
     };
     final border = switch (skinId) {
       'squad' => Border(
-        bottom: BorderSide(color: ui.ink, width: UiBorder.standard),
+        bottom: BorderSide(color: ui.outline, width: UiBorder.standard),
       ),
-      'memory' => Border(bottom: BorderSide(color: ui.ink)),
+      'memory' => Border(bottom: BorderSide(color: ui.outline)),
       _ => null,
     };
     return Container(
@@ -192,8 +192,8 @@ class ShareRatioTabs<T> extends StatelessWidget {
 
     // (selected fill, selected label, selected outline)
     final (Color selFill, Color selInk, Color? selBorder) = switch (skinId) {
-      'squad' => (v.button, const Color(0xFF1A1A1A), ui.ink),
-      'memory' => (v.button, Colors.white, ui.ink),
+      'squad' => (v.button, const Color(0xFF1A1A1A), ui.outline),
+      'memory' => (v.button, Colors.white, ui.outline),
       'couple' => (v.button, const Color(0xFF1A1316), null),
       'flexer' => (v.accent, const Color(0xFF090A0F), null),
       'minimal' => (v.button, const Color(0xFF1C1C1E), null),
@@ -207,7 +207,7 @@ class ShareRatioTabs<T> extends StatelessWidget {
           ? BoxDecoration(
               border: Border(
                 bottom: selected
-                    ? BorderSide(color: ui.ink, width: UiBorder.standard)
+                    ? BorderSide(color: ui.outline, width: UiBorder.standard)
                     : BorderSide.none,
               ),
             )
@@ -220,7 +220,7 @@ class ShareRatioTabs<T> extends StatelessWidget {
                         ? Border.all(color: ui.ink.withValues(alpha: 0.25))
                         : (minimal
                               ? Border.all(
-                                  color: ui.ink,
+                                  color: ui.outline,
                                   width: UiBorder.standard,
                                 )
                               : null)),
@@ -284,7 +284,9 @@ class ShareRatioTabs<T> extends StatelessWidget {
           color: skinId == 'couple' ? ui.surface : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
           border: Border.all(
-            color: skinId == 'couple' ? ui.ink.withValues(alpha: 0.2) : ui.ink,
+            color: skinId == 'couple'
+                ? ui.ink.withValues(alpha: 0.2)
+                : ui.outline,
             width: skinId == 'couple' ? UiBorder.hairline : UiBorder.standard,
           ),
           boxShadow: switch (skinId) {
@@ -296,7 +298,7 @@ class ShareRatioTabs<T> extends StatelessWidget {
             ],
             'memory' => [
               BoxShadow(
-                color: ui.ink,
+                color: ui.hardShadowColor,
                 offset: const Offset(UiShadow.small, UiShadow.small),
               ),
             ],
@@ -359,7 +361,7 @@ class ShareActionButton extends StatelessWidget {
         Border.all(color: ui.outline, width: UiBorder.standard),
         [
           BoxShadow(
-            color: ui.ink,
+            color: ui.hardShadowColor,
             offset: const Offset(UiShadow.small, UiShadow.small),
           ),
         ],

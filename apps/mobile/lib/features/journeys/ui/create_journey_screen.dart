@@ -743,7 +743,7 @@ class _EmojiChoice extends StatelessWidget {
           color: selected ? accent.withValues(alpha: 0.18) : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: selected ? ui.ink : ui.border,
+            color: selected ? ui.outline : ui.border,
             width: selected ? 2 : 1,
           ),
         ),

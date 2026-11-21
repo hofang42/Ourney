@@ -421,7 +421,7 @@ class UiSnapPill extends StatelessWidget {
   final double outlineWidth;
   final double shadowOffset;
 
-  /// Hard shadow color; defaults to [outlineColor].
+  /// Hard shadow color; defaults to `ui.hardShadowColor`.
   final Color? shadowColor;
 
   /// 400ms press (journey wheel).
@@ -439,7 +439,7 @@ class UiSnapPill extends StatelessWidget {
       minSize: const Size(UiSize.snapPillW, UiSize.tap),
       centerChild: true,
       shadowOffset: shadowOffset,
-      shadowColor: shadowColor ?? line,
+      shadowColor: shadowColor ?? ui.hardShadowColor,
       child: Container(
         width: UiSize.snapPillW,
         height: UiSize.snapPillH,
@@ -485,7 +485,7 @@ class UiShutter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final line = outlineColor ?? UiCamera.outline;
-    final shadow = outlineColor ?? UiCamera.shadow;
+    const shadow = UiCamera.shadow;
     final fg = onAccent ?? context.ui.onBrand;
     final width =
         UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;

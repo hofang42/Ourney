@@ -69,7 +69,7 @@ class WrappedVisual extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: ui.accent,
                         shape: BoxShape.circle,
-                        border: Border.all(color: ui.ink, width: 2),
+                        border: Border.all(color: ui.outline, width: 2),
                       ),
                     ),
                   const OurneyIcon(name: 'trophy', size: 28, active: true),
@@ -153,7 +153,7 @@ class _Frame extends StatelessWidget {
           decoration: BoxDecoration(
             color: ui.fill,
             borderRadius: BorderRadius.circular(UiRadius.input),
-            border: Border.all(color: ui.ink, width: 2),
+            border: Border.all(color: ui.outline, width: 2),
           ),
           clipBehavior: Clip.antiAlias,
           child: c == null
@@ -193,7 +193,7 @@ class _Photos extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: ui.fill,
                     borderRadius: BorderRadius.circular(UiRadius.input),
-                    border: Border.all(color: ui.ink, width: 1.5),
+                    border: Border.all(color: ui.outline, width: 1.5),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: c == null
@@ -241,7 +241,7 @@ class _Film extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: ui.fill,
-                border: Border.all(color: ui.ink, width: 2),
+                border: Border.all(color: ui.outline, width: 2),
               ),
               child: c == null
                   ? null

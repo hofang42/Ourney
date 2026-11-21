@@ -709,7 +709,7 @@ class _CoverTile extends StatelessWidget {
           color: selected ? ui.fillSelected : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.menu),
           border: Border.all(
-            color: selected ? ui.ink : ui.border,
+            color: selected ? ui.outline : ui.border,
             width: selected ? 2 : 1.5,
           ),
         ),
@@ -819,7 +819,7 @@ class _LayoutTile extends StatelessWidget {
           color: selected ? ui.fillSelected : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.menu),
           border: Border.all(
-            color: selected ? ui.ink : ui.border,
+            color: selected ? ui.outline : ui.border,
             width: selected ? 2 : 1.5,
           ),
         ),

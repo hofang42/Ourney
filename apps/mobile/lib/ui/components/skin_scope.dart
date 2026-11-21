@@ -41,7 +41,8 @@ class _SkinInherited extends InheritedWidget {
   bool updateShouldNotify(_SkinInherited old) =>
       old.data.skin.id != data.skin.id ||
       old.data.variantIndex != data.variantIndex ||
-      old.data.variant.button != data.variant.button;
+      old.data.variant.button != data.variant.button ||
+      old.data.variant.accent != data.variant.accent;
 }
 
 /// Recolors everything below it with a V2 journey skin: wraps [Theme] with

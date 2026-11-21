@@ -189,7 +189,7 @@ class DepartureTicket extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
                       border: Border.symmetric(
-                        horizontal: BorderSide(color: s.ink),
+                        horizontal: BorderSide(color: s.ui.outline),
                       ),
                     ),
                     child: Text(
@@ -249,7 +249,7 @@ class DepartureTicket extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: s.accent,
                           shape: BoxShape.circle,
-                          border: Border.all(color: s.ink, width: 1.5),
+                          border: Border.all(color: s.ui.outline, width: 1.5),
                         ),
                       ),
                     OurneyIcon(
@@ -426,7 +426,7 @@ class DepartureTicket extends StatelessWidget {
         margin: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: s.ink, width: 2),
+          border: Border.all(color: s.ui.outline, width: 2),
         ),
       ),
     );
@@ -654,8 +654,8 @@ class _Tear extends StatelessWidget {
       return CustomPaint(
         painter: _PiecePainter(
           fill: fill,
-          border: borderColor ?? s.ink,
-          shadowColor: shadowColor ?? (s.isDark ? s.ui.hardShadowColor : s.ink),
+          border: borderColor ?? s.ui.outline,
+          shadowColor: shadowColor ?? s.ui.hardShadowColor,
           borderWidth: bw,
           shadow: shadow,
           radius: radius,

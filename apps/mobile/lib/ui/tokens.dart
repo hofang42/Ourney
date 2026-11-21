@@ -25,6 +25,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     required this.chevron,
     required this.brand,
     required this.onBrand,
+    required this.onAccent,
     required this.accent,
     required this.onDanger,
     required this.focus,
@@ -75,6 +76,10 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   /// Brand orange `#FF8A3D` (V2). Same in both modes; text on it is [onBrand] ink.
   final Color brand;
   final Color onBrand;
+
+  /// Label / glyph color on an [accent] fill (selected chips, badges). Picked
+  /// per accent so it reaches 4.5:1 in both modes (see [onAccentFor]).
+  final Color onAccent;
 
   /// Journey accent (V2 `--skin-accent`): sheet top shadow, progress, nodes.
   /// The neutral shell uses the brand orange; `UiSkin.apply` swaps in the
@@ -140,6 +145,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
     onBrand: Color(0xFF1A1A1A),
+    onAccent: Color(0xFF1A1A1A),
     accent: Color(0xFFFF8A3D),
     onDanger: Color(0xFFFFFFFF),
     focus: Color(0xFF0284C7),
@@ -175,6 +181,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
     onBrand: Color(0xFF1A1A1A),
+    onAccent: Color(0xFF1A1A1A),
     accent: Color(0xFFFF8A3D),
     onDanger: Color(0xFF1A1A1A),
     focus: Color(0xFF5EC4F0),
@@ -194,6 +201,24 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     sheet: Color(0xFF211F1B),
   );
 
+  /// The readable label color on [accent]: [preferred] (ink) when it reaches
+  /// 4.5:1, else white, else black. Black / white always clear 4.5:1 on one
+  /// side of any accent.
+  static Color onAccentFor(
+    Color accent, {
+    Color preferred = const Color(0xFF1A1A1A),
+  }) {
+    double ratio(Color a, Color b) {
+      final la = a.computeLuminance(), lb = b.computeLuminance();
+      final hi = la > lb ? la : lb, lo = la > lb ? lb : la;
+      return (hi + 0.05) / (lo + 0.05);
+    }
+
+    for (final c in [preferred, const Color(0xFFFFFFFF)]) {
+      if (ratio(c, accent) >= 4.5) return c;
+    }
+    return const Color(0xFF000000);
+  }
 
   static OurneyUi of(BuildContext context) =>
       Theme.of(context).extension<OurneyUi>() ??
@@ -214,6 +239,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     Color? divider,
     Color? brand,
     Color? onBrand,
+    Color? onAccent,
     Color? grabber,
     Color? dockBg,
     Color? dockBorder,
@@ -238,6 +264,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     chevron: chevron,
     brand: brand ?? this.brand,
     onBrand: onBrand ?? this.onBrand,
+    onAccent: onAccent ?? this.onAccent,
     accent: accent ?? this.accent,
     onDanger: onDanger,
     focus: focus,
@@ -277,6 +304,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
       chevron: l(chevron, other.chevron),
       brand: l(brand, other.brand),
       onBrand: l(onBrand, other.onBrand),
+      onAccent: l(onAccent, other.onAccent),
       accent: l(accent, other.accent),
       onDanger: l(onDanger, other.onDanger),
       focus: l(focus, other.focus),
@@ -309,6 +337,10 @@ abstract final class UiCamera {
   static const dock = Color(0xEB111114);
   static const dockBorder = Color(0x29FFFFFF);
   static const ink = Color(0xFFF5F0E6);
+
+  /// Text and glyphs drawn over a photo or scrim on a screen that follows the
+  /// app theme: always white, never the cream camera ink.
+  static const onPhoto = Color(0xFFFFFFFF);
 
   /// Disabled / secondary camera glyphs (white at 64%).
   static const muted = Color(0xA3F5F0E6);
