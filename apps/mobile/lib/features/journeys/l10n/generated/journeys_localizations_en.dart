@@ -1119,7 +1119,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_dna_forge_a11y => 'Creating your journey';
 
   @override
-  String get journeys_dna_import_link => 'Import a past journey';
+  String get journeys_dna_import_link => 'Retell a past journey';
 
   @override
   String get journeys_home_introQuiet => 'Look back, a little at a time.';

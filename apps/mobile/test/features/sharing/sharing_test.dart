@@ -6,9 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
-import 'package:ourney/app/router.dart';
 import 'package:ourney/app/theme/app_theme.dart';
-import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/features/sharing/sharing.dart';
 import 'package:ourney/features/sharing/ui/insights_screen.dart';
 import 'package:ourney/ui/ui.dart';
@@ -763,80 +761,6 @@ void main() {
     });
   });
 
-  group('Retell (SCR-28)', () {
-    testWidgets('picks photos, edits a date, creates and submits', (
-      tester,
-    ) async {
-      final sharing = FakeSharingRepository();
-      final checkIns = SubmittingCheckInRepository();
-      final h = await pumpSharing(
-        tester,
-        location: '/retell',
-        sharing: sharing,
-        checkIns: checkIns,
-        picker: FakeRetellPicker([
-          RetellPhoto(path: 'b.jpg', modified: DateTime(2024, 2, 6, 9)),
-          RetellPhoto(path: 'a.jpg', modified: DateTime(2024, 2, 3, 9)),
-        ]),
-      );
-      // Save is off until the form is valid (U19); the reason shows once
-      // something is filled in.
-      expect(tester.widget<UiButton>(_key('retell-save')).onPressed, isNull);
-      expect(_key('retell-error'), findsNothing);
-
-      await tester.enterText(_key('retell-title'), 'Hoi An 2024');
-      await tester.pumpAndSettle();
-      expect(find.text('Pick at least one photo'), findsOneWidget);
-      await _tap(tester, _key('retell-pick'));
-      expect(_key('retell-error'), findsNothing);
-      expect(find.text('2 photos'), findsOneWidget);
-
-      // Move the first photo (3 Feb) to 2 Feb.
-      await _tap(tester, _key('retell-date-0'));
-      await tester.tap(find.byIcon(Icons.edit_outlined));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).last, '02/02/2024');
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
-
-      await _tap(tester, _key('retell-style-travel'));
-      await _tap(tester, _key('retell-save'));
-
-      final draft = sharing.importedDraft!;
-      expect(draft.title, 'Hoi An 2024');
-      expect(draft.firstDate, const LocalDate(2024, 2, 2));
-      expect(draft.lastDate, const LocalDate(2024, 2, 6));
-      expect(draft.timezone, testTz);
-      expect(checkIns.submitted, hasLength(2));
-      // Noon in Ho Chi Minh City (UTC+7).
-      expect(checkIns.submitted.first.capturedAt, DateTime.utc(2024, 2, 2, 5));
-      expect(checkIns.submitted.first.fromLibrary, isTrue);
-      expect(h.location, '/journey/imp1');
-    });
-
-    testWidgets('back with picked photos asks before leaving (U19)', (
-      tester,
-    ) async {
-      final h = await pumpSharing(
-        tester,
-        location: '/journeys',
-        picker: FakeRetellPicker([
-          RetellPhoto(path: 'a.jpg', modified: DateTime(2024, 2, 3, 9)),
-        ]),
-      );
-      unawaited(h.container.read(routerProvider).push('/retell'));
-      await tester.pumpAndSettle();
-      await _tap(tester, _key('retell-pick'));
-      await _tap(tester, find.bySemanticsLabel('Back').first);
-      expect(find.text('Leave without saving?'), findsOneWidget);
-      await _tap(tester, find.text('Keep going'));
-      expect(_key('retell'), findsOneWidget);
-      await _tap(tester, find.bySemanticsLabel('Back').first);
-      await _tap(tester, _key('retell-discard-confirm'));
-      expect(_key('retell'), findsNothing);
-    });
-  });
-
   group('Local-only and layout', () {
     for (final path in ['/sharing/j1', '/shared/j1', '/retell', '/follow/j1']) {
       testWidgets('$path needs the server', (tester) async {
@@ -856,7 +780,6 @@ void main() {
         '/sharing/j1/insights',
         '/sharing/j1/story',
         '/follow/j1',
-        '/retell',
       ]) {
         testWidgets('$path at 320dp, 1.35x, $brightness, vi', (tester) async {
           await pumpSharing(

@@ -33,7 +33,7 @@ void main() {
     expect(row.origin, 'live');
     expect(journeyFromRow(row).origin, JourneyOrigin.live);
     final version = await db.customSelect('pragma user_version').getSingle();
-    expect(version.data.values.single, 6);
+    expect(version.data.values.single, 7);
   });
 
   test('v2 → v3 adds extras, partner photo and couple names', () async {
@@ -157,6 +157,44 @@ void main() {
         )
         .get();
     expect(index, hasLength(1));
+  });
+
+  test('v6 to v7 adds the durable import job tables', () async {
+    final dir = Directory.systemTemp.createTempSync('ourney_mig_v7');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final file = File('${dir.path}/db.sqlite');
+    final v7 = AppDatabase(NativeDatabase(file));
+    // Rows a v6 install already had.
+    await v7.customStatement(
+      'insert into journeys (id, owner_id, kind, template_id, title, emoji, '
+      'start_date, timezone, visibility, status) values '
+      "('j1', 'u1', 'solo', 'custom', 'T', 'x', '2026-01-01', 'UTC', "
+      "'private', 'active')",
+    );
+    await v7.customStatement(
+      'insert into check_ins (id, journey_id, user_id, local_date, captured_at, '
+      "photo_path, thumb_path) values ('c1', 'j1', 'u1', '2026-01-01', 0, 'p', 't')",
+    );
+    await v7.customStatement('drop table import_job_photos');
+    await v7.customStatement('drop table import_jobs');
+    await v7.customStatement('pragma user_version = 6');
+    await v7.close();
+
+    final db = AppDatabase(NativeDatabase(file));
+    addTearDown(db.close);
+    final tables = await db
+        .customSelect(
+          "select name from sqlite_master where type = 'table' "
+          "and name like 'import_job%'",
+        )
+        .get();
+    // The upgrade kept what was there.
+    expect((await db.select(db.journeys).getSingle()).id, 'j1');
+    expect((await db.select(db.checkIns).getSingle()).id, 'c1');
+    expect(
+      tables.map((r) => r.data['name']),
+      unorderedEquals(['import_jobs', 'import_job_photos']),
+    );
   });
 }
 

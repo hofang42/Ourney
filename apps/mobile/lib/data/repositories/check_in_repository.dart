@@ -60,6 +60,28 @@ class DataCheckInRepository implements CheckInRepository {
       _db.journeys,
     )..where((t) => t.id.equals(draft.journeyId))).getSingleOrNull();
     if (journey == null) throw const OurneyException(OurneyErrorCode.notFound);
+    // A retry with the same client id (an import job photo) hands back the
+    // row the first attempt created; it only makes sure the upload is queued.
+    final clientId = draft.id;
+    if (clientId != null) {
+      final prior = await (_db.select(
+        _db.checkIns,
+      )..where((t) => t.id.equals(clientId))).getSingleOrNull();
+      if (prior != null) {
+        if (!prior.uploaded) {
+          final queue = ctx.outbox;
+          if (queue != null) {
+            await queue.enqueue(
+              OutboxKind.upsertCheckIn,
+              checkInKey(prior.id),
+              {'id': prior.id},
+            );
+            unawaited(queue.flush());
+          }
+        }
+        return _toModel(prior);
+      }
+    }
     // Same rule as the `check_ins_before_write` trigger (0006): the owner of a
     // retold journey (origin `imported`, created `ended`) fills its dates in,
     // so it skips the "journey must be active" rule.
@@ -100,7 +122,7 @@ class DataCheckInRepository implements CheckInRepository {
       throw const OurneyException(OurneyErrorCode.ended);
     }
 
-    final id = ctx.newId();
+    final id = clientId ?? ctx.newId();
     final photoPath = checkInPhotoPath(journey.id, me, id);
     final thumbPath = checkInThumbPath(journey.id, me, id);
     final partnerFile = draft.partnerPhotoFile;

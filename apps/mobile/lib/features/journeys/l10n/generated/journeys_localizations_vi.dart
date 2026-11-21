@@ -1117,7 +1117,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_forge_a11y => 'Đang tạo hành trình của bạn';
 
   @override
-  String get journeys_dna_import_link => 'Nhập hành trình đã qua';
+  String get journeys_dna_import_link => 'Kể lại hành trình đã qua';
 
   @override
   String get journeys_home_introQuiet => 'Nhìn lại từng chút một.';

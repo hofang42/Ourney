@@ -487,7 +487,7 @@ class _HubBody extends ConsumerWidget {
                   label: l10n.journeys_retell,
                   onPressed: () {
                     onCloseMenu();
-                    context.push(AppRoutes.retell);
+                    context.push(AppRoutes.importJourney);
                   },
                 ),
             ],

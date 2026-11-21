@@ -2069,7 +2069,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_dna_import_link.
   ///
   /// In vi, this message translates to:
-  /// **'Nhập hành trình đã qua'**
+  /// **'Kể lại hành trình đã qua'**
   String get journeys_dna_import_link;
 
   /// No description provided for @journeys_home_introQuiet.
