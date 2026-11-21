@@ -305,4 +305,7 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_extraCountdownStop => 'Chạm bất kỳ đâu để dừng';
+
+  @override
+  String get checkin_details => 'Chi tiết';
 }

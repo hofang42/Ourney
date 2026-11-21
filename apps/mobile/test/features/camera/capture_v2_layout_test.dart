@@ -1,7 +1,8 @@
 // Bug #5 (device, 2026-11-15): camera rebuilt to the Figma V2 camera and
-// design-v2 bugs.md A1. Discs are image-only, one title block names the
-// selected journey in full (never "..."), the top chip shows only the name
-// and opens the picker once, and today's photos show as a counted thumb.
+// design-v2 bugs.md A1. Discs are image-only and the top chip names the
+// selected journey in full with its day ("Name · Ngày N", never "...") and
+// opens the picker once. The 2026-11-20 redesign dropped the title block and
+// the latest-photo thumb.
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderParagraph;
@@ -101,14 +102,15 @@ void main() {
           ],
         );
         expect(tester.takeException(), isNull);
-        // One title block with the full name, no cut text anywhere.
+        // The chip carries the full name and day, no cut text anywhere.
         expect(
           find.descendant(
-            of: find.byKey(const ValueKey('capture-title')),
-            matching: find.text(_long),
+            of: find.byKey(const ValueKey('capture-journey-chip')),
+            matching: find.text('$_long · Ngày 16'),
           ),
           findsOneWidget,
         );
+        expect(find.byKey(const ValueKey('capture-title')), findsNothing);
         expect(cutTexts(tester), isEmpty);
         // Discs are images: no Text inside a journey disc.
         for (final id in ['j1', 'j2']) {
@@ -120,8 +122,6 @@ void main() {
             findsNothing,
           );
         }
-        expect(find.textContaining('Ngày 16/30'), findsOneWidget);
-        expect(find.textContaining('chưa chụp hôm nay'), findsOneWidget);
       });
     });
   }
@@ -161,7 +161,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('capture-journey-chip')),
-        matching: find.text('Học tiếng Anh'),
+        matching: find.textContaining('Học tiếng Anh · Ngày'),
       ),
       findsOneWidget,
     );
@@ -186,7 +186,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byKey(const ValueKey('capture-journey-chip')),
-        matching: find.text('Học tiếng Anh'),
+        matching: find.textContaining('Học tiếng Anh · Ngày'),
       ),
       findsOneWidget,
     );
@@ -212,7 +212,7 @@ void main() {
     expect(find.byKey(const ValueKey('journey-picker-search')), findsOneWidget);
   });
 
-  testWidgets('two photos today: thumb shows "2 ảnh" (bug #2 + A1)', (
+  testWidgets('two photos today: no thumb or title block, shutter enabled', (
     tester,
   ) async {
     await withClock(Clock.fixed(testNowUtc), () async {
@@ -221,12 +221,8 @@ void main() {
         journeys: [testJourney()],
         checkIns: [testCheckIn(testToday), testCheckIn(testToday)],
       );
-      expect(
-        find.byKey(const ValueKey('capture-latest-photo')),
-        findsOneWidget,
-      );
-      expect(find.text('2 ảnh'), findsOneWidget);
-      expect(find.textContaining('đã có 2 ảnh hôm nay'), findsOneWidget);
+      expect(find.byKey(const ValueKey('capture-latest-photo')), findsNothing);
+      expect(find.byKey(const ValueKey('capture-title')), findsNothing);
       // The shutter stays enabled: more photos the same day are allowed.
       final shutter = tester.widget<UiShutter>(
         find.byKey(const ValueKey('capture-shutter')),

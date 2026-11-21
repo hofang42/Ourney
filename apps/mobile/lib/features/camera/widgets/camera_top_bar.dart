@@ -6,11 +6,11 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../l10n/generated/camera_localizations.dart';
 
-/// Camera top bar (Figma V2 `camera-safe-top`): the selected journey's name
-/// in one chip on the left (tap opens the searchable picker), and the camera
-/// tools on the right (flash, switch lens, framing grid).
+/// Camera top bar (Figma V2 `camera-safe-top`): the selected journey in one
+/// chip on the left (accent dot, "Name · Day N", tap opens the searchable
+/// picker), and the camera tools on the right (flash, grid, ghost guide).
 ///
-/// bugs.md A1: the chip shows only the journey name, one line. The text
+/// bugs.md A1: the chip is one line. The text
 /// shrinks to 13px before anything is cut; a name still too long glides once
 /// to its end and back instead of ending in "...".
 class CameraTopBar extends StatelessWidget {
@@ -20,6 +20,8 @@ class CameraTopBar extends StatelessWidget {
     required this.onOpenPicker,
     required this.onRetry,
     required this.tools,
+    this.chipLabel,
+    this.accent,
     super.key,
   });
 
@@ -28,8 +30,14 @@ class CameraTopBar extends StatelessWidget {
   final VoidCallback onOpenPicker;
   final VoidCallback onRetry;
 
-  /// Tool buttons, already keyed (`capture-flash`, `capture-switch`, ...).
+  /// Tool buttons, already keyed (`capture-flash`, `capture-grid`, ...).
   final List<Widget> tools;
+
+  /// Chip text, e.g. "Giảm cân · Ngày 12"; defaults to the journey title.
+  final String? chipLabel;
+
+  /// Persona accent of the chip dot.
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +76,10 @@ class CameraTopBar extends StatelessWidget {
         alignment: AlignmentDirectional.centerStart,
         child: _NameChip(
           key: const ValueKey('capture-journey-chip'),
-          name: selected!.title,
-          semanticLabel: '${selected!.title}, ${l10n.camera_journeyPicker}',
+          name: chipLabel ?? selected!.title,
+          accent: accent,
+          semanticLabel:
+              '${chipLabel ?? selected!.title}, ${l10n.camera_journeyPicker}',
           onPressed: onOpenPicker,
         ),
       );
@@ -90,10 +100,12 @@ class _NameChip extends StatelessWidget {
     required this.name,
     required this.semanticLabel,
     required this.onPressed,
+    this.accent,
     super.key,
   });
 
   final String name;
+  final Color? accent;
   final String semanticLabel;
   final VoidCallback onPressed;
 
@@ -119,6 +131,18 @@ class _NameChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (accent != null) ...[
+              Container(
+                key: const ValueKey('capture-chip-dot'),
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
             Flexible(
               child: _FitOrGlide(text: name, color: _ink),
             ),
@@ -139,7 +163,7 @@ class _NameChip extends StatelessWidget {
 /// One line of text: 15px, shrunk down to 13px to fit; if it still does not
 /// fit, it scrolls once to the end and back (no motion when animations are
 /// reduced: the start of the name stays visible and the full name is in the
-/// title block and the semantics label).
+/// semantics label and the journey picker).
 class _FitOrGlide extends StatefulWidget {
   const _FitOrGlide({required this.text, required this.color});
 

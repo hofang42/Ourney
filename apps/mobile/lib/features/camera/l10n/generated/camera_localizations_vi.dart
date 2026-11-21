@@ -102,11 +102,6 @@ class CameraL10nVi extends CameraL10n {
   String get camera_grid => 'Lưới căn khung';
 
   @override
-  String camera_dayHud(int day) {
-    return 'Ngày $day';
-  }
-
-  @override
   String camera_streakChip(int days) {
     return 'Chuỗi $days ngày';
   }
@@ -116,30 +111,6 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_ghostOff => 'Bóng ngày 1 · Tắt';
-
-  @override
-  String get camera_privateVault => 'Kho riêng tư';
-
-  @override
-  String get camera_filmRoll => 'CUỘN PHIM';
-
-  @override
-  String get camera_partnerWaiting =>
-      'Đối phương chưa chụp. Bạn chụp trước nhé.';
-
-  @override
-  String get camera_hudBold => 'HUD đậm';
-
-  @override
-  String get camera_hudStamp => 'Dấu tối giản';
-
-  @override
-  String get camera_hudStrip => 'Dải phim';
-
-  @override
-  String camera_dayStreakBold(int day, int streak) {
-    return 'NGÀY $day · $streak LIỀN';
-  }
 
   @override
   String get camera_allJourneys => 'Tất cả hành trình';
@@ -166,48 +137,7 @@ class CameraL10nVi extends CameraL10n {
   String get camera_pickerEnded => 'Đã kết thúc';
 
   @override
-  String camera_lastPace(String pace) {
-    return 'NHỊP GẦN NHẤT $pace';
-  }
-
-  @override
-  String camera_lastWeight(String value) {
-    return 'Lần cân gần nhất $value';
-  }
-
-  @override
-  String get camera_weightSliderLabel => 'Cân nặng (kg)';
-
-  @override
-  String camera_lastPaceKm(String pace, String km) {
-    return 'NHỊP GẦN NHẤT $pace · km $km';
-  }
-
-  @override
   String get camera_pickerPinned => 'Đã ghim';
-
-  @override
-  String camera_dayOfTotal(int day, int total) {
-    return 'Ngày $day/$total';
-  }
-
-  @override
-  String get camera_notShotToday => 'chưa chụp hôm nay';
-
-  @override
-  String camera_shotTodayCount(int count) {
-    return 'đã có $count ảnh hôm nay';
-  }
-
-  @override
-  String camera_photoCount(int count) {
-    return '$count ảnh';
-  }
-
-  @override
-  String camera_openToday(int count) {
-    return 'Mở hành trình, hôm nay có $count ảnh';
-  }
 
   @override
   String camera_allJourneysCount(int count) {
@@ -215,12 +145,10 @@ class CameraL10nVi extends CameraL10n {
   }
 
   @override
-  String camera_squadLastStudy(int minutes, int days) {
-    return 'LẦN TRƯỚC $minutes PHÚT · $days LIÊN TIẾP';
+  String camera_chipDay(String title, int day) {
+    return '$title · Ngày $day';
   }
 
   @override
-  String camera_squadStreak(int days) {
-    return '$days NGÀY LIÊN TIẾP';
-  }
+  String get camera_partnerPhoto => 'Ảnh của người ấy, chạm để phóng to';
 }

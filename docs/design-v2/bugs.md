@@ -270,3 +270,8 @@ Bấm thử trên version 21–22 (đều ĐẠT):
 - Nút chụp: chạm nhanh mở camera; giữ 600ms mở vòng xoay (bằng pointer event giả lập).
 
 CHƯA KIỂM ĐƯỢC: nhấn giữ trên máy thật và Dynamic Type 1.35x, vì server điều khiển thiết bị (mobai) không kết nối được.
+
+### Camera: toast đè lên nút chụp (2026-11-20)
+
+- Nguyên nhân: `_toggleFlash` gọi `showUiToast`, một SnackBar nổi với `bottomOffset: 36`. Màn camera không có `bottomNavigationBar` (dock nằm trong thân màn hình), nên toast nằm ngay trên dock và nút chụp 76dp, giữ 4 giây.
+- Cách sửa: camera không gọi `showUiToast` nữa. Trạng thái flash, "không có flash" và lỗi chụp hiện trong `UiCameraStatusPill` ở đầu khung ngắm (1,2 giây, đọc to cho trình đọc màn hình). Xem `camera-compose-redesign-2026-11-20.md`.

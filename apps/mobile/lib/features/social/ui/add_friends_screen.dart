@@ -393,6 +393,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
         // U21: the field's own label is the heading.
         UiTextField(
           fieldKey: const ValueKey('username-field'),
+          pill: true,
           label: l10n.social_findByUsername,
           controller: _controller,
           hint: l10n.social_usernameHint,

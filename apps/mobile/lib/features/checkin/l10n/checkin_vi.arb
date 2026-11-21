@@ -84,14 +84,35 @@
   "checkin_done_stampWeek1": "TUẦN 1 XONG",
   "checkin_done_stampCup": "CÚP VỀ TAY",
   "checkin_done_memoryStamp": "ĐÃ DÁN · NGÀY {day} HÀNH TRÌNH",
-  "@checkin_done_memoryStamp": {"placeholders": {"day": {"type": "int"}}},
+  "@checkin_done_memoryStamp": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_done_coupleDay": "Ngày {day}",
-  "@checkin_done_coupleDay": {"placeholders": {"day": {"type": "int"}}},
+  "@checkin_done_coupleDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_done_coupleSent": "Nửa của bạn đã được gửi.",
   "checkin_done_coupleWeek": "Tuần đầu bên nhau",
   "checkin_done_coupleFull30": "Tròn 30 ngày",
   "checkin_done_flexerDay": "NGÀY {day}. {streak} NGÀY LIỀN.",
-  "@checkin_done_flexerDay": {"placeholders": {"day": {"type": "int"}, "streak": {"type": "int"}}},
+  "@checkin_done_flexerDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_done_flexerWeek": "TUẦN ĐẦU XONG",
   "checkin_done_flexerFinish": "VỀ ĐÍCH",
   "checkin_done_minimalDone": "XONG.",
@@ -151,63 +172,136 @@
     }
   },
   "checkin_extraMoodLabel": "Hôm nay bạn cảm thấy thế nào?",
-  "@checkin_extraMoodLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraMoodLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMoodLight": "Nhẹ nhõm",
-  "@checkin_extraMoodLight": {"description": "Post screen per-skin input."},
+  "@checkin_extraMoodLight": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMoodNormal": "Bình thường",
-  "@checkin_extraMoodNormal": {"description": "Post screen per-skin input."},
+  "@checkin_extraMoodNormal": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMoodTired": "Hơi mệt",
-  "@checkin_extraMoodTired": {"description": "Post screen per-skin input."},
+  "@checkin_extraMoodTired": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMinutesLabel": "Hôm nay học bao lâu?",
-  "@checkin_extraMinutesLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraMinutesLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMinutesValue": "{minutes} phút",
-  "@checkin_extraMinutesValue": {"placeholders": {"minutes": {"type": "int"}}},
+  "@checkin_extraMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_extraMinutesOther": "Khác",
-  "@checkin_extraMinutesOther": {"description": "Post screen per-skin input."},
+  "@checkin_extraMinutesOther": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMinutesLess": "Giảm năm phút",
-  "@checkin_extraMinutesLess": {"description": "Post screen per-skin input."},
+  "@checkin_extraMinutesLess": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraMinutesMore": "Tăng năm phút",
-  "@checkin_extraMinutesMore": {"description": "Post screen per-skin input."},
+  "@checkin_extraMinutesMore": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPlaceLabel": "Bạn đang ở đâu?",
-  "@checkin_extraPlaceLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraPlaceLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPlaceHint": "Tìm một nơi...",
-  "@checkin_extraPlaceHint": {"description": "Post screen per-skin input."},
+  "@checkin_extraPlaceHint": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraDishLabel": "Món hôm nay",
-  "@checkin_extraDishLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraDishLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraDishHint": "Để trống cũng được",
-  "@checkin_extraDishHint": {"description": "Post screen per-skin input."},
+  "@checkin_extraDishHint": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraCookLabel": "Ai nấu?",
-  "@checkin_extraCookLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraCookLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraYou": "Bạn",
-  "@checkin_extraYou": {"description": "Post screen per-skin input."},
+  "@checkin_extraYou": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPartner": "Người ấy",
-  "@checkin_extraPartner": {"description": "Post screen per-skin input."},
+  "@checkin_extraPartner": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraHeartsLabel": "Bữa này mấy tim?",
-  "@checkin_extraHeartsLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraHeartsLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraHeartsValue": "{count} tim",
-  "@checkin_extraHeartsValue": {"placeholders": {"count": {"type": "int"}}},
+  "@checkin_extraHeartsValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_extraPartnerPhoto": "Thêm ảnh của người ấy",
-  "@checkin_extraPartnerPhoto": {"description": "Post screen per-skin input."},
+  "@checkin_extraPartnerPhoto": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPartnerPhotoChange": "Đổi ảnh của người ấy",
-  "@checkin_extraPartnerPhotoChange": {"description": "Post screen per-skin input."},
+  "@checkin_extraPartnerPhotoChange": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPartnerPhotoRemove": "Bỏ ảnh của người ấy",
-  "@checkin_extraPartnerPhotoRemove": {"description": "Post screen per-skin input."},
+  "@checkin_extraPartnerPhotoRemove": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPartnerPhotoSemantics": "Ảnh của người ấy",
-  "@checkin_extraPartnerPhotoSemantics": {"description": "Post screen per-skin input."},
+  "@checkin_extraPartnerPhotoSemantics": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPaceLabel": "Nhịp chạy (phút/km)",
-  "@checkin_extraPaceLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraPaceLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraPaceInvalid": "Nhịp không hợp lệ, giây phải dưới 60",
-  "@checkin_extraPaceInvalid": {"description": "Post screen per-skin input."},
+  "@checkin_extraPaceInvalid": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraKmLabel": "Quãng đường (km)",
-  "@checkin_extraKmLabel": {"description": "Post screen per-skin input."},
+  "@checkin_extraKmLabel": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraKmHint": "VD: 5,3",
-  "@checkin_extraKmHint": {"description": "Post screen per-skin input."},
+  "@checkin_extraKmHint": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraKmInvalid": "Quãng đường từ 0,1 đến 500 km, một chữ số thập phân",
-  "@checkin_extraKmInvalid": {"description": "Post screen per-skin input."},
+  "@checkin_extraKmInvalid": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraBackspace": "Xóa một số",
-  "@checkin_extraBackspace": {"description": "Post screen per-skin input."},
+  "@checkin_extraBackspace": {
+    "description": "Post screen per-skin input."
+  },
   "checkin_extraCountdown": "Tự đăng sau {seconds} giây",
-  "@checkin_extraCountdown": {"placeholders": {"seconds": {"type": "int"}}},
+  "@checkin_extraCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_extraCountdownStop": "Chạm bất kỳ đâu để dừng",
-  "@checkin_extraCountdownStop": {"description": "Post screen per-skin input."}
+  "@checkin_extraCountdownStop": {
+    "description": "Post screen per-skin input."
+  },
+  "checkin_details": "Chi tiết"
 }

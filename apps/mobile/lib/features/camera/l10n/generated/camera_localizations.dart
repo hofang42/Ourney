@@ -266,12 +266,6 @@ abstract class CameraL10n {
   /// **'Lưới căn khung'**
   String get camera_grid;
 
-  /// Pill on the viewfinder showing the day number of the selected journey.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ngày {day}'**
-  String camera_dayHud(int day);
-
   /// Semantics label of the streak counter chip at the top of the camera.
   ///
   /// In vi, this message translates to:
@@ -289,48 +283,6 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Bóng ngày 1 · Tắt'**
   String get camera_ghostOff;
-
-  /// No description provided for @camera_privateVault.
-  ///
-  /// In vi, this message translates to:
-  /// **'Kho riêng tư'**
-  String get camera_privateVault;
-
-  /// No description provided for @camera_filmRoll.
-  ///
-  /// In vi, this message translates to:
-  /// **'CUỘN PHIM'**
-  String get camera_filmRoll;
-
-  /// No description provided for @camera_partnerWaiting.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đối phương chưa chụp. Bạn chụp trước nhé.'**
-  String get camera_partnerWaiting;
-
-  /// No description provided for @camera_hudBold.
-  ///
-  /// In vi, this message translates to:
-  /// **'HUD đậm'**
-  String get camera_hudBold;
-
-  /// No description provided for @camera_hudStamp.
-  ///
-  /// In vi, this message translates to:
-  /// **'Dấu tối giản'**
-  String get camera_hudStamp;
-
-  /// No description provided for @camera_hudStrip.
-  ///
-  /// In vi, this message translates to:
-  /// **'Dải phim'**
-  String get camera_hudStrip;
-
-  /// No description provided for @camera_dayStreakBold.
-  ///
-  /// In vi, this message translates to:
-  /// **'NGÀY {day} · {streak} LIỀN'**
-  String camera_dayStreakBold(int day, int streak);
 
   /// No description provided for @camera_allJourneys.
   ///
@@ -380,65 +332,11 @@ abstract class CameraL10n {
   /// **'Đã kết thúc'**
   String get camera_pickerEnded;
 
-  /// No description provided for @camera_lastPace.
-  ///
-  /// In vi, this message translates to:
-  /// **'NHỊP GẦN NHẤT {pace}'**
-  String camera_lastPace(String pace);
-
-  /// No description provided for @camera_lastWeight.
-  ///
-  /// In vi, this message translates to:
-  /// **'Lần cân gần nhất {value}'**
-  String camera_lastWeight(String value);
-
-  /// No description provided for @camera_weightSliderLabel.
-  ///
-  /// In vi, this message translates to:
-  /// **'Cân nặng (kg)'**
-  String get camera_weightSliderLabel;
-
-  /// No description provided for @camera_lastPaceKm.
-  ///
-  /// In vi, this message translates to:
-  /// **'NHỊP GẦN NHẤT {pace} · km {km}'**
-  String camera_lastPaceKm(String pace, String km);
-
   /// No description provided for @camera_pickerPinned.
   ///
   /// In vi, this message translates to:
   /// **'Đã ghim'**
   String get camera_pickerPinned;
-
-  /// No description provided for @camera_dayOfTotal.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ngày {day}/{total}'**
-  String camera_dayOfTotal(int day, int total);
-
-  /// No description provided for @camera_notShotToday.
-  ///
-  /// In vi, this message translates to:
-  /// **'chưa chụp hôm nay'**
-  String get camera_notShotToday;
-
-  /// No description provided for @camera_shotTodayCount.
-  ///
-  /// In vi, this message translates to:
-  /// **'đã có {count} ảnh hôm nay'**
-  String camera_shotTodayCount(int count);
-
-  /// No description provided for @camera_photoCount.
-  ///
-  /// In vi, this message translates to:
-  /// **'{count} ảnh'**
-  String camera_photoCount(int count);
-
-  /// No description provided for @camera_openToday.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mở hành trình, hôm nay có {count} ảnh'**
-  String camera_openToday(int count);
 
   /// No description provided for @camera_allJourneysCount.
   ///
@@ -446,17 +344,17 @@ abstract class CameraL10n {
   /// **'Tất cả hành trình ({count})'**
   String camera_allJourneysCount(int count);
 
-  /// No description provided for @camera_squadLastStudy.
+  /// No description provided for @camera_chipDay.
   ///
   /// In vi, this message translates to:
-  /// **'LẦN TRƯỚC {minutes} PHÚT · {days} LIÊN TIẾP'**
-  String camera_squadLastStudy(int minutes, int days);
+  /// **'{title} · Ngày {day}'**
+  String camera_chipDay(String title, int day);
 
-  /// No description provided for @camera_squadStreak.
+  /// No description provided for @camera_partnerPhoto.
   ///
   /// In vi, this message translates to:
-  /// **'{days} NGÀY LIÊN TIẾP'**
-  String camera_squadStreak(int days);
+  /// **'Ảnh của người ấy, chạm để phóng to'**
+  String get camera_partnerPhoto;
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

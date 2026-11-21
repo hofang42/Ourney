@@ -320,7 +320,10 @@ abstract final class UiCamera {
 
 /// Radii used across index.css.
 abstract final class UiRadius {
-  static const double input = 16;
+  static const double input = 12;
+
+  /// Text inputs and text areas (kit fields).
+  static const double field = 16;
   static const double otp = 10;
   static const double thumb = 12;
   static const double menu = 16;

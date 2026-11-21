@@ -57,28 +57,6 @@ final partnerCheckInPhotosProvider = StreamProvider.autoDispose
           );
     }, retry: _noRetry);
 
-/// A weight (metric value) chosen on the camera screen, waiting to be posted
-/// with the next check-in of that journey. The camera slider calls
-/// `ref.read(pendingWeightProvider(id).notifier).setPendingWeight(v)`; the
-/// post screen prefills its metric field from it and clears it after posting.
-class PendingWeight extends Notifier<double?> {
-  PendingWeight(this.journeyId);
-
-  final String journeyId;
-
-  @override
-  double? build() => null;
-
-  /// [kg] is the metric value (validated like the typed one at post time).
-  void setPendingWeight(double kg) => state = kg;
-
-  void clear() => state = null;
-}
-
-/// Not auto-disposed: the value must survive the camera -> post navigation.
-final pendingWeightProvider =
-    NotifierProvider.family<PendingWeight, double?, String>(PendingWeight.new);
-
 /// The caller's membership (join date for streaks, metric privacy).
 final myMembershipProvider = StreamProvider.autoDispose
     .family<Membership?, String>(

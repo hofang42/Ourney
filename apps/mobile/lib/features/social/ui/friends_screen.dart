@@ -154,6 +154,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
               padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
               child: UiTextField(
                 fieldKey: const ValueKey('friends-filter'),
+                pill: true,
                 label: l10n.social_searchFriends,
                 hint: l10n.social_searchFriends,
                 controller: _filterController,

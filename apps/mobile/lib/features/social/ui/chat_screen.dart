@@ -393,9 +393,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: Container(
             constraints: const BoxConstraints(minHeight: UiSize.tap),
             decoration: BoxDecoration(
-              color: ui.surfaceInput,
+              color: ui.fill,
               borderRadius: BorderRadius.circular(UiRadius.capsule),
-              border: Border.all(color: ui.inputBorder),
+              border: Border.all(color: ui.border, width: UiBorder.thin),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.center,

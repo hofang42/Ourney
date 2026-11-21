@@ -314,13 +314,13 @@ class _CodeBoxes extends StatelessWidget {
                             key: ValueKey('groups-join-box-$i'),
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: ui.surface,
-                              borderRadius: BorderRadius.circular(
-                                UiRadius.input,
-                              ),
+                              color: ui.fill,
+                              borderRadius: BorderRadius.circular(UiRadius.otp),
                               border: Border.all(
-                                color: i == active ? ui.ink : ui.inkMuted,
-                                width: i == active ? 2.5 : 1.5,
+                                color: i == active ? ui.accent : ui.border,
+                                width: i == active
+                                    ? UiBorder.standard
+                                    : UiBorder.thin,
                               ),
                             ),
                             child: FittedBox(

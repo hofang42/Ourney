@@ -170,9 +170,21 @@ class PostExtrasSection extends StatelessWidget {
           PersonaSkinId.minimalistHabit => null,
         };
         if (child == null) return const SizedBox.shrink();
+        final ui = context.ui;
         return Padding(
-          padding: const EdgeInsets.only(top: UiSpace.md),
-          child: child,
+          padding: const EdgeInsets.only(top: UiSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                CheckinL10n.of(context).checkin_details,
+                key: const ValueKey('checkin-details'),
+                style: UiText.fieldLabel(color: ui.inkMuted),
+              ),
+              const SizedBox(height: UiSpace.md),
+              child,
+            ],
+          ),
         );
       },
     );

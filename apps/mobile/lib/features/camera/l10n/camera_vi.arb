@@ -69,15 +69,6 @@
   "@camera_grid": {
     "description": "Tooltip of the button that toggles the 3x3 framing grid over the viewfinder."
   },
-  "camera_dayHud": "Ngày {day}",
-  "@camera_dayHud": {
-    "description": "Pill on the viewfinder showing the day number of the selected journey.",
-    "placeholders": {
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "camera_streakChip": "Chuỗi {days} ngày",
   "@camera_streakChip": {
     "description": "Semantics label of the streak counter chip at the top of the camera.",
@@ -89,96 +80,15 @@
   },
   "camera_ghostOn": "Bóng ngày 1 · Bật",
   "camera_ghostOff": "Bóng ngày 1 · Tắt",
-  "camera_privateVault": "Kho riêng tư",
-  "camera_filmRoll": "CUỘN PHIM",
-  "camera_partnerWaiting": "Đối phương chưa chụp. Bạn chụp trước nhé.",
-  "camera_hudBold": "HUD đậm",
-  "camera_hudStamp": "Dấu tối giản",
-  "camera_hudStrip": "Dải phim",
-  "camera_dayStreakBold": "NGÀY {day} · {streak} LIỀN",
   "camera_allJourneys": "Tất cả hành trình",
   "camera_pickerTitle": "Tất cả hành trình",
   "camera_pickerSearch": "Tìm hành trình",
   "camera_pickerEmpty": "Không có hành trình nào khớp.",
   "camera_pickerClose": "Đóng",
-  "@camera_dayStreakBold": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "streak": {
-        "type": "int"
-      }
-    }
-  },
   "camera_pickerNotShot": "Chưa chụp hôm nay",
   "camera_pickerShot": "Đã chụp hôm nay",
   "camera_pickerEnded": "Đã kết thúc",
-  "camera_lastPace": "NHỊP GẦN NHẤT {pace}",
-  "@camera_lastPace": {
-    "placeholders": {
-      "pace": {
-        "type": "String"
-      }
-    }
-  },
-  "camera_lastWeight": "Lần cân gần nhất {value}",
-  "@camera_lastWeight": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "camera_weightSliderLabel": "Cân nặng (kg)",
-  "camera_lastPaceKm": "NHỊP GẦN NHẤT {pace} · km {km}",
-  "@camera_lastPaceKm": {
-    "placeholders": {
-      "pace": {
-        "type": "String"
-      },
-      "km": {
-        "type": "String"
-      }
-    }
-  },
   "camera_pickerPinned": "Đã ghim",
-  "camera_dayOfTotal": "Ngày {day}/{total}",
-  "@camera_dayOfTotal": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "camera_notShotToday": "chưa chụp hôm nay",
-  "camera_shotTodayCount": "đã có {count} ảnh hôm nay",
-  "@camera_shotTodayCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "camera_photoCount": "{count} ảnh",
-  "@camera_photoCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "camera_openToday": "Mở hành trình, hôm nay có {count} ảnh",
-  "@camera_openToday": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "camera_allJourneysCount": "Tất cả hành trình ({count})",
   "@camera_allJourneysCount": {
     "placeholders": {
@@ -187,23 +97,16 @@
       }
     }
   },
-  "camera_squadLastStudy": "LẦN TRƯỚC {minutes} PHÚT · {days} LIÊN TIẾP",
-  "@camera_squadLastStudy": {
+  "camera_chipDay": "{title} · Ngày {day}",
+  "@camera_chipDay": {
     "placeholders": {
-      "minutes": {
-        "type": "int"
+      "title": {
+        "type": "String"
       },
-      "days": {
+      "day": {
         "type": "int"
       }
     }
   },
-  "camera_squadStreak": "{days} NGÀY LIÊN TIẾP",
-  "@camera_squadStreak": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  }
+  "camera_partnerPhoto": "Ảnh của người ấy, chạm để phóng to"
 }
