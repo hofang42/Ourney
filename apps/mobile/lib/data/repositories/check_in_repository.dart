@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';
@@ -102,45 +103,58 @@ class DataCheckInRepository implements CheckInRepository {
     final id = ctx.newId();
     final photoPath = checkInPhotoPath(journey.id, me, id);
     final thumbPath = checkInThumbPath(journey.id, me, id);
-    await ctx.files.importFile(draft.photoFile, photoPath);
-    await ctx.files.importFile(draft.thumbFile, thumbPath);
     final partnerFile = draft.partnerPhotoFile;
     final partnerPath = partnerFile == null
         ? null
         : checkInPartnerPhotoPath(journey.id, me, id);
-    if (partnerFile != null) {
-      await ctx.files.importFile(partnerFile, partnerPath!);
-    }
+    final written = <String>[photoPath, thumbPath, ?partnerPath];
+    try {
+      await ctx.files.importFile(draft.photoFile, photoPath);
+      await ctx.files.importFile(draft.thumbFile, thumbPath);
+      if (partnerFile != null) {
+        await ctx.files.importFile(partnerFile, partnerPath!);
+      }
 
-    // Posting again the same day adds a photo (FR-C7, migration 0014): the
-    // earlier check-ins of that day stay, and the streak counts the day once.
-    await _db
-        .into(_db.checkIns)
-        .insert(
-          CheckInsCompanion.insert(
-            id: id,
-            journeyId: journey.id,
-            userId: me,
-            localDate: localDate,
-            capturedAt: draft.capturedAt.toUtc(),
-            photoPath: photoPath,
-            thumbPath: thumbPath,
-            fromLibrary: Value(draft.fromLibrary),
-            caption: Value(draft.caption),
-            metricValue: Value(draft.metricValue),
-            extras: Value(draft.extras.normalized().toJsonString()),
-            partnerPhotoPath: Value(partnerPath),
-          ),
-        );
-
-    final outbox = ctx.outbox;
-    if (outbox != null) {
-      // One upload per check-in, upserted on its id.
-      await outbox.enqueue(OutboxKind.upsertCheckIn, checkInKey(id), {
-        'id': id,
+      // The row and its outbox item commit together: a crash between the
+      // two must not leave a check-in that is never uploaded.
+      // Posting again the same day adds a photo (FR-C7, migration 0014): the
+      // earlier check-ins of that day stay, and the streak counts the day
+      // once.
+      await _db.transaction(() async {
+        await _db
+            .into(_db.checkIns)
+            .insert(
+              CheckInsCompanion.insert(
+                id: id,
+                journeyId: journey.id,
+                userId: me,
+                localDate: localDate,
+                capturedAt: draft.capturedAt.toUtc(),
+                photoPath: photoPath,
+                thumbPath: thumbPath,
+                fromLibrary: Value(draft.fromLibrary),
+                caption: Value(draft.caption),
+                metricValue: Value(draft.metricValue),
+                extras: Value(draft.extras.normalized().toJsonString()),
+                partnerPhotoPath: Value(partnerPath),
+              ),
+            );
+        // One upload per check-in, upserted on its id.
+        await ctx.outbox?.enqueue(OutboxKind.upsertCheckIn, checkInKey(id), {
+          'id': id,
+        });
       });
-      unawaited(outbox.flush());
+    } on Object catch (e) {
+      debugPrint('check-in: save failed, removing its media: $e');
+      try {
+        await ctx.files.delete(written);
+      } on Object catch (cleanup) {
+        debugPrint('check-in: media cleanup failed: $cleanup');
+      }
+      rethrow;
     }
+    final outbox = ctx.outbox;
+    if (outbox != null) unawaited(outbox.flush());
 
     final saved = await (_db.select(
       _db.checkIns,

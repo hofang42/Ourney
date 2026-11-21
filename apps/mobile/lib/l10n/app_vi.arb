@@ -247,5 +247,13 @@
   "missedDay_dismiss": "Đã hiểu",
   "@missedDay_dismiss": {
     "description": "Sheet button."
+  },
+  "nav_chooseJourney": "Chọn hành trình",
+  "@nav_chooseJourney": {
+    "description": "Journey wheel semantics label."
+  },
+  "nav_journeySelected": "đang chọn",
+  "@nav_journeySelected": {
+    "description": "Journey wheel active item hint."
   }
 }

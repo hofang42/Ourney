@@ -165,17 +165,17 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_signOutMessage =>
-      'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xoá, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.';
+      'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.';
 
   @override
-  String get profile_deleteAccount => 'Xoá tài khoản';
+  String get profile_deleteAccount => 'Xóa tài khoản';
 
   @override
-  String get profile_deleteTitle => 'Xoá tài khoản vĩnh viễn?';
+  String get profile_deleteTitle => 'Xóa tài khoản vĩnh viễn?';
 
   @override
   String get profile_deleteMessage =>
-      'Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xoá khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.';
+      'Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xóa khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.';
 
   @override
   String profile_deleteTypeToConfirm(String phrase) {
@@ -186,18 +186,18 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_deleteConfirmWord => 'XOA';
 
   @override
-  String get profile_deleteConfirmButton => 'Xoá vĩnh viễn';
+  String get profile_deleteConfirmButton => 'Xóa vĩnh viễn';
 
   @override
-  String get profile_deleting => 'Đang xoá…';
+  String get profile_deleting => 'Đang xóa…';
 
   @override
   String get profile_deleteErrorRetry =>
-      'Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.';
+      'Chưa xóa xong. Thử lại để xóa nốt phần còn lại nhé.';
 
   @override
   String get profile_deleteErrorReauth =>
-      'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.';
+      'Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xóa nhé.';
 
   @override
   String get profile_back => 'Quay lại';
@@ -239,10 +239,10 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_badge100Rule => 'Check-in đủ 100 ngày.';
 
   @override
-  String get profile_badgeUnlocked => 'đã mở khoá';
+  String get profile_badgeUnlocked => 'đã mở khóa';
 
   @override
-  String get profile_badgeLocked => 'chưa mở khoá';
+  String get profile_badgeLocked => 'chưa mở khóa';
 
   @override
   String get profile_deleteUnderstand =>
@@ -266,7 +266,7 @@ class ProfileL10nVi extends ProfileL10n {
       'Mã gồm 6 số vừa gửi tới email hoặc số điện thoại của tài khoản này.';
 
   @override
-  String get profile_deleteOtpLabel => 'Mã xác nhận xoá tài khoản gồm 6 số';
+  String get profile_deleteOtpLabel => 'Mã xác nhận xóa tài khoản gồm 6 số';
 
   @override
   String get profile_deleteOtpWrong => 'Mã chưa đúng. Kiểm tra lại nhé.';
@@ -283,7 +283,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_deleteCodeSent => 'Đã gửi mã mới.';
 
   @override
-  String get profile_deleteDoneTitle => 'Đã xoá tài khoản.';
+  String get profile_deleteDoneTitle => 'Đã xóa tài khoản.';
 
   @override
   String get profile_deleteDoneBody => 'Cảm ơn bạn đã dùng Ourney.';
@@ -415,7 +415,7 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_signOut => 'Đăng xuất';
 
   @override
-  String get profile_settings_delete => 'Xoá tài khoản';
+  String get profile_settings_delete => 'Xóa tài khoản';
 
   @override
   String get profile_settingsEntry => 'Cài đặt';
@@ -423,4 +423,15 @@ class ProfileL10nVi extends ProfileL10n {
   @override
   String get profile_settingsEntrySub =>
       'Giao diện, ngôn ngữ, riêng tư, thông tin';
+
+  @override
+  String profile_signOutPending(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          'Còn $count ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.',
+    );
+    return '$_temp0';
+  }
 }

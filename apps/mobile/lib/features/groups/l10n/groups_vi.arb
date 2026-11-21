@@ -66,7 +66,7 @@
   "groups_errorEnded": "Hành trình này đã kết thúc.",
   "groups_errorSyncPending": "Ảnh vẫn đang tải lên, thử lại sau ít phút.",
   "groups_errorForbidden": "Bạn không có quyền làm việc này.",
-  "groups_errorNotAlone": "Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xoá.",
+  "groups_errorNotAlone": "Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xóa.",
   "groups_errorInvalid": "Không thể thực hiện thao tác này.",
   "groups_todayHeader": "Hôm nay {done}/{total} người đã check-in",
   "@groups_todayHeader": {
@@ -143,9 +143,9 @@
   "groups_actionEnd": "Kết thúc hành trình",
   "groups_endTitle": "Kết thúc hành trình cho cả nhóm?",
   "groups_endMessage": "Sau đó không ai check-in được nữa. Ảnh và streak vẫn còn để mọi người xem lại.",
-  "groups_actionDelete": "Xoá hành trình",
-  "groups_deleteTitle": "Xoá hành trình nhóm này?",
-  "groups_deleteMessage": "Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xoá vĩnh viễn.",
+  "groups_actionDelete": "Xóa hành trình",
+  "groups_deleteTitle": "Xóa hành trình nhóm này?",
+  "groups_deleteMessage": "Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xóa vĩnh viễn.",
   "groups_actionLeave": "Rời nhóm",
   "groups_leaveTitle": "Rời nhóm này?",
   "groups_leaveMessage": "Các check-in của bạn sẽ bị ẩn khỏi nhóm. Nếu tham gia lại bằng mã mời, chúng sẽ hiện lại.",
@@ -155,8 +155,8 @@
   "groups_leaveOwnerNote": "Bạn là chủ nhóm: quyền chủ nhóm sẽ chuyển cho người tham gia sớm nhất.",
   "groups_leaveAloneNote": "Bạn là thành viên duy nhất: hành trình sẽ được lưu trữ.",
   "groups_leftDone": "Bạn đã rời nhóm.",
-  "groups_actionRemove": "Xoá khỏi nhóm",
-  "groups_removeTitle": "Xoá {name} khỏi nhóm?",
+  "groups_actionRemove": "Xóa khỏi nhóm",
+  "groups_removeTitle": "Xóa {name} khỏi nhóm?",
   "@groups_removeTitle": {
     "placeholders": {
       "name": {
@@ -165,7 +165,7 @@
     }
   },
   "groups_removeMessage": "Check-in của người này sẽ bị ẩn khỏi nhóm. Họ vẫn có thể tham gia lại bằng mã mời nếu bạn không đổi mã.",
-  "groups_removedDone": "Đã xoá {name} khỏi nhóm.",
+  "groups_removedDone": "Đã xóa {name} khỏi nhóm.",
   "@groups_removedDone": {
     "placeholders": {
       "name": {
@@ -493,5 +493,34 @@
       }
     }
   },
-  "groups_minimalPending": "CHƯA"
+  "groups_minimalPending": "CHƯA",
+  "groups_inviteRevokeTitle": "Thu hồi lời mời?",
+  "@groups_inviteRevokeTitle": {
+    "description": "Confirm sheet title before revoking a pending invite."
+  },
+  "groups_inviteRevokeMessage": "Người được mời sẽ không thể dùng lời mời này nữa.",
+  "@groups_inviteRevokeMessage": {
+    "description": "Confirm sheet body before revoking a pending invite."
+  },
+  "groups_flexerKm": "{km} KM",
+  "@groups_flexerKm": {
+    "description": "Flexer wall stat: distance.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "groups_flexerKmPace": "{km} KM · {pace} /KM",
+  "@groups_flexerKmPace": {
+    "description": "Flexer wall stat: distance and pace.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      },
+      "pace": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -1070,5 +1070,10 @@
     }
   },
   "journeys_createDeckChoose": "Choose this type",
+  "journeys_cardStreak": "{days}-day streak",
+  "journeys_heroSemantics": "{streak}-day streak. {title}",
+  "journeys_deadUploads": "{count, plural, one{1 photo couldn't be sent} other{{count} photos couldn't be sent}}",
+  "journeys_deadRetry": "Retry",
+  "journeys_deadDiscard": "Discard",
   "journeys_createSettingsNotSaved": "Some settings couldn't be saved"
 }

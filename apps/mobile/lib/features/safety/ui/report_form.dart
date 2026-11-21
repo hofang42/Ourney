@@ -27,22 +27,19 @@ Future<bool> showReportSheet(
   assert(checkInId != null || userId != null, 'report needs a target');
   final sent = await showUiSheet<bool>(
     context: context,
-    builder: (context) => Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          UiSpace.xl,
-          0,
-          UiSpace.xl,
-          UiSpace.xl,
-        ),
-        child: ReportForm(
-          checkInId: checkInId,
-          userId: userId,
-          name: name,
-          showTitle: true,
-          onClose: (sent) => Navigator.of(context).pop(sent),
-        ),
+    builder: (context) => SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        UiSpace.xl,
+        0,
+        UiSpace.xl,
+        UiSpace.xl,
+      ),
+      child: ReportForm(
+        checkInId: checkInId,
+        userId: userId,
+        name: name,
+        showTitle: true,
+        onClose: (sent) => Navigator.of(context).pop(sent),
       ),
     ),
   );

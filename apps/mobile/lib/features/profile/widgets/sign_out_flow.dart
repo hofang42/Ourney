@@ -16,6 +16,8 @@ Future<void> confirmSignOut(BuildContext context, WidgetRef ref) async {
   final l10n = ProfileL10n.of(context);
   // Read before any await: the screen may be gone once the sheet closes.
   final auth = ref.read(authRepositoryProvider);
+  final pending = await _pendingUploads(ref);
+  if (!context.mounted) return;
   final ok = await showUiSheet<bool>(
     context: context,
     builder: (context) {
@@ -37,6 +39,19 @@ Future<void> confirmSignOut(BuildContext context, WidgetRef ref) async {
             l10n.profile_signOutMessage,
             style: UiText.muted(color: ui.inkMuted, size: 14),
           ),
+          if (pending > 0) ...[
+            const SizedBox(height: UiSpace.sm),
+            Text(
+              l10n.profile_signOutPending(pending),
+              key: const ValueKey('profile-signout-pending'),
+              style: UiText.body(
+                size: 14,
+                weight: FontWeight.w700,
+                height: 1.4,
+                color: ui.danger,
+              ),
+            ),
+          ],
           const SizedBox(height: UiSpace.xl),
           UiButton(
             key: const ValueKey('profile-signout-confirm'),
@@ -59,5 +74,18 @@ Future<void> confirmSignOut(BuildContext context, WidgetRef ref) async {
     await auth.signOut();
   } on Object {
     if (context.mounted) showUiToast(context, errorText);
+  }
+}
+
+/// Check-ins still waiting to upload; 0 when unknown (never blocks the sheet).
+Future<int> _pendingUploads(WidgetRef ref) async {
+  try {
+    return await ref
+        .read(checkInRepositoryProvider)
+        .watchPendingUploads()
+        .first
+        .timeout(const Duration(seconds: 1));
+  } on Object {
+    return 0;
   }
 }

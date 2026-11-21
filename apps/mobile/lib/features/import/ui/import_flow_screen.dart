@@ -79,6 +79,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   bool _busy = false;
   int _done = 0;
   int _failed = 0;
+
+  /// Wire code of the first photo failure, shown in the summary.
+  String? _firstError;
   String? _saveError;
   Journey? _created;
 
@@ -152,11 +155,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         }
         _syncDates();
       });
-    } on Object {
+    } on Object catch (e) {
+      debugPrint('import: picking photos failed: $e');
       if (mounted) {
         final l10n = ImportL10n.of(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.import_pickFailed)));
+        showUiToast(context, l10n.import_pickFailed);
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -207,6 +210,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     setState(() {
       _busy = true;
       _failed = 0;
+      _firstError = null;
     });
     final timezone = await _timezone();
     if (!mounted) return;
@@ -256,8 +260,16 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           await drafts.discard([files.photoFile, files.thumbFile]);
           photo.saved = true;
           if (mounted) setState(() => _done++);
-        } on Object {
-          if (mounted) setState(() => _failed++);
+        } on Object catch (e) {
+          debugPrint('import: photo save failed: $e');
+          if (mounted) {
+            setState(() {
+              _failed++;
+              _firstError ??= e is OurneyException
+                  ? e.error.name
+                  : e.runtimeType.toString();
+            });
+          }
         }
       }
       if (!mounted) return;
@@ -357,12 +369,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         padTop: 0,
         padBottom: 0,
         bottom: Padding(
-          padding: EdgeInsets.fromLTRB(
-            gutter,
-            UiSpace.sm,
-            gutter,
-            UiSpace.lg,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
           child: action,
         ),
         child: Column(
@@ -782,7 +789,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.import_failed(_failed),
+            _firstError == null
+                ? l10n.import_failed(_failed)
+                : l10n.import_failedWithReason(_failed, _firstError!),
             style: UiText.body(
               size: 13,
               weight: FontWeight.w700,
@@ -1025,7 +1034,7 @@ class _PhotoTile extends StatelessWidget {
           color: ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: on ? const Color(0xFFFF8A3D) : ui.ink.withValues(alpha: 0.2),
+            color: on ? ui.brand : ui.ink.withValues(alpha: 0.2),
             width: UiBorder.standard,
           ),
         ),
@@ -1051,7 +1060,7 @@ class _PhotoTile extends StatelessWidget {
                         name: 'check',
                         size: 15,
                         flat: true,
-                        color: Color(0xFF111111),
+                        color: UiFlowColors.onPastel,
                       ),
                     ),
                   ),
@@ -1130,7 +1139,7 @@ class _TimelineRow extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF8A3D).withValues(alpha: 0.22),
+                    color: ui.brand.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(UiRadius.capsule),
                   ),
                   child: Text(

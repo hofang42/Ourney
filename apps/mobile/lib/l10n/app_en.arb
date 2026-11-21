@@ -209,5 +209,7 @@
   "missedDay_dismiss": "Got it",
   "@missedDay_dismiss": {
     "description": "Sheet button."
-  }
+  },
+  "nav_chooseJourney": "Choose journey",
+  "nav_journeySelected": "selected"
 }

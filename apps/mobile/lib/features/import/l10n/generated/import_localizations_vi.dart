@@ -195,4 +195,9 @@ class ImportL10nVi extends ImportL10n {
 
   @override
   String get import_pickFailed => 'Không mở được thư viện ảnh.';
+
+  @override
+  String import_failedWithReason(int count, String reason) {
+    return '$count ảnh chưa lưu được ($reason)';
+  }
 }

@@ -115,7 +115,7 @@
   },
   "journeys_errorMetricName": "Nhập tên chỉ số.",
   "journeys_errorVisibility": "Kiểu hiển thị này không dùng được cho hành trình này.",
-  "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.",
+  "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.",
   "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
   "journeys_errorEnded": "Hành trình này đã kết thúc.",
   "journeys_errorSyncPending": "Ảnh vẫn đang tải lên, thử lại sau ít phút.",
@@ -145,9 +145,9 @@
   "journeys_archiveUndo": "Hoàn tác",
   "journeys_archivedSection": "Đã lưu trữ",
   "journeys_unarchive": "Bỏ lưu trữ",
-  "journeys_delete": "Xoá hành trình",
-  "journeys_deleteConfirmTitle": "Xoá hành trình?",
-  "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.",
+  "journeys_delete": "Xóa hành trình",
+  "journeys_deleteConfirmTitle": "Xóa hành trình?",
+  "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xóa. Không hoàn tác được.",
   "journeys_readOnlyBanner": "Hành trình đã kết thúc. Chỉ xem.",
   "journeys_moreActions": "Thêm thao tác",
   "journeys_timelineTitle": "Dòng thời gian",
@@ -1111,7 +1111,7 @@
     }
   },
   "journeys_edit_useLayout": "Dùng giao diện này",
-  "journeys_edit_cancel": "Thôi",
+  "journeys_edit_cancel": "Hủy",
   "journeys_edit_discardTitle": "Bỏ các thay đổi?",
   "journeys_edit_discardBody": "Bạn đã sửa hành trình nhưng chưa lưu. Rời đi bây giờ sẽ mất các thay đổi đó.",
   "journeys_edit_discardConfirm": "Bỏ thay đổi",
@@ -1550,6 +1550,44 @@
     }
   },
   "journeys_createDeckChoose": "Chọn kiểu này",
+  "journeys_cardStreak": "Chuỗi {days} ngày",
+  "@journeys_cardStreak": {
+    "description": "Streak chip spoken label on the journey card.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_heroSemantics": "Chuỗi {streak} ngày. {title}",
+  "@journeys_heroSemantics": {
+    "description": "Screen reader label of the Hub streak hero.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_deadUploads": "{count, plural, other{{count} ảnh chưa gửi được}}",
+  "@journeys_deadUploads": {
+    "description": "Banner when check-in uploads were given up on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_deadRetry": "Gửi lại",
+  "@journeys_deadRetry": {
+    "description": "Retry the failed uploads."
+  },
+  "journeys_deadDiscard": "Bỏ ảnh",
+  "@journeys_deadDiscard": {
+    "description": "Discard the failed uploads and their local photos."
+  },
   "journeys_createSettingsNotSaved": "Một vài cài đặt chưa lưu được",
   "@journeys_createSettingsNotSaved": {
     "description": "Non-fatal toast after creating a journey when the server rejected some create-flow settings."

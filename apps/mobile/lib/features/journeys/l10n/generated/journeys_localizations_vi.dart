@@ -189,7 +189,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_errorNotAlone =>
-      'Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.';
+      'Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.';
 
   @override
   String get journeys_errorForbidden => 'Chỉ chủ hành trình làm được việc này.';
@@ -263,14 +263,14 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_unarchive => 'Bỏ lưu trữ';
 
   @override
-  String get journeys_delete => 'Xoá hành trình';
+  String get journeys_delete => 'Xóa hành trình';
 
   @override
-  String get journeys_deleteConfirmTitle => 'Xoá hành trình?';
+  String get journeys_deleteConfirmTitle => 'Xóa hành trình?';
 
   @override
   String get journeys_deleteConfirmMessage =>
-      'Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.';
+      'Mọi ảnh của bạn trong hành trình này sẽ bị xóa. Không hoàn tác được.';
 
   @override
   String get journeys_readOnlyBanner => 'Hành trình đã kết thúc. Chỉ xem.';
@@ -1257,7 +1257,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_useLayout => 'Dùng giao diện này';
 
   @override
-  String get journeys_edit_cancel => 'Thôi';
+  String get journeys_edit_cancel => 'Hủy';
 
   @override
   String get journeys_edit_discardTitle => 'Bỏ các thay đổi?';
@@ -1752,6 +1752,32 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Chọn kiểu này';
+
+  @override
+  String journeys_cardStreak(int days) {
+    return 'Chuỗi $days ngày';
+  }
+
+  @override
+  String journeys_heroSemantics(int streak, String title) {
+    return 'Chuỗi $streak ngày. $title';
+  }
+
+  @override
+  String journeys_deadUploads(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ảnh chưa gửi được',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_deadRetry => 'Gửi lại';
+
+  @override
+  String get journeys_deadDiscard => 'Bỏ ảnh';
 
   @override
   String get journeys_createSettingsNotSaved => 'Một vài cài đặt chưa lưu được';

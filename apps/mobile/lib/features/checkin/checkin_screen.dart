@@ -292,7 +292,17 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         skinId: uiSkinIdFor(personaSkinOf(j)),
         child: Builder(builder: (context) => _compose(context, j, photo)),
       ),
-      AsyncData() || AsyncError() => _frame(
+      AsyncError() => _frame(
+        body: UiEmptyState(
+          key: const ValueKey('checkin-journey-error'),
+          glyph: const OurneyIcon(name: 'error', size: 30),
+          title: AppLocalizations.of(context).common_errorGeneric,
+          actionLabel: AppLocalizations.of(context).common_retry,
+          onAction: () =>
+              ref.invalidate(checkinJourneyProvider(photo.journeyId)),
+        ),
+      ),
+      AsyncData() => _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-journey'),
           glyph: const OurneyIcon(name: 'flag', size: 30),
@@ -301,7 +311,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
           onAction: _close,
         ),
       ),
-      _ => _frame(body: const Center(child: CircularProgressIndicator())),
+      _ => _frame(
+        body: Center(
+          child: CircularProgressIndicator(
+            semanticsLabel: AppLocalizations.of(context).common_loading,
+          ),
+        ),
+      ),
     };
   }
 

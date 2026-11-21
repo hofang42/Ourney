@@ -102,8 +102,8 @@ Known gap: V2 disabled buttons use a dashed border; Flutter has no dashed `Borde
 | Widget | Contents |
 | --- | --- |
 | `UiTypeBadge(type:, size:)` | Pastel rounded sticker with the type icon. Ids `weight study trip couple workout custom`; `UiTypeBadge.idFor('Giảm cân')` maps the V2 labels |
-| `UiStreakHero(streak:, title:, subtitle:, onTap:, state:)` | Hub hero: big Space Grotesk streak number (FittedBox, safe at 1.35x) + flame (trophy at `milestone`); states `normal done milestone group` |
-| `UiJourneyCard(title:, type:, day:, totalDays:, streak:, todayDone:, members:, onTap:, onSnap:)` | Type badge, `Ngày N/M` + streak chips, progress bar, 3 avatars + `+N`, 48dp snap button until done today |
+| `UiStreakHero(streak:, title:, semanticLabel:, subtitle:, onTap:, state:)` | Hub hero: big Space Grotesk streak number (FittedBox, safe at 1.35x) + flame (trophy at `milestone`); states `normal done milestone group` |
+| `UiJourneyCard(title:, type:, snapLabel:, dayLabel:, streakLabel:, day:, totalDays:, streak:, todayDone:, members:, onTap:, onSnap:)` | Type badge, `Ngày N/M` + streak chips, progress bar, 3 avatars + `+N`, 48dp snap button until done today |
 | `UiStateCard(kind:, title:, body:, actionLabel:, onAction:)` | Kinds `empty offline error loading` (plus / cloud-off / warning icons, `UiSkeleton` for loading) |
 
 New drawn icons in `ourney_icons.dart`: type-weight/study/trip/couple/workout/custom, flame, trophy, lock, check, warning, wifi-off, cloud-off, clock, timer, image, plus, back, close, settings, share, switch-camera, lightning, calendar, heart, star.

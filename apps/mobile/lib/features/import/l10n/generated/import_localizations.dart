@@ -433,6 +433,12 @@ abstract class ImportL10n {
   /// In vi, this message translates to:
   /// **'Không mở được thư viện ảnh.'**
   String get import_pickFailed;
+
+  /// Import failure summary with the first error code.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} ảnh chưa lưu được ({reason})'**
+  String import_failedWithReason(int count, String reason);
 }
 
 class _ImportL10nDelegate extends LocalizationsDelegate<ImportL10n> {

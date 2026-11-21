@@ -243,5 +243,17 @@
   "social_groupInviteMembers": "{count}/{max} thành viên",
   "@social_groupInviteMembers": {"description": "Group invitation subtitle.", "placeholders": {"count": {"type": "int"}, "max": {"type": "int"}}},
   "social_groupInviteJoin": "Tham gia",
-  "social_groupInviteSkip": "Bỏ qua"
+  "social_groupInviteSkip": "Bỏ qua",
+  "social_messageCounter": "{count}/{max}",
+  "@social_messageCounter": {
+    "description": "Chat composer length counter near the limit.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  }
 }

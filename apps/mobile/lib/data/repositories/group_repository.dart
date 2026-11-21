@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';
@@ -106,6 +107,16 @@ class DataGroupRepository implements GroupRepository {
             if (!controller.isClosed) {
               controller.addError(
                 e is GroupException ? e : GroupException.of(e.error, e.detail),
+                st,
+              );
+            }
+          } on Object catch (e, st) {
+            // Anything else (a decode error, a drift error) must reach the
+            // listener too, or the wall spins on its last value forever.
+            debugPrint('group today load failed: $e');
+            if (!controller.isClosed) {
+              controller.addError(
+                GroupException.of(OurneyErrorCode.unknown, e.toString()),
                 st,
               );
             }

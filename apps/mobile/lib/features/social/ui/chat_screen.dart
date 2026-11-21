@@ -405,6 +405,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               maxLength: kChatMessageMaxLength,
               minLines: 1,
               maxLines: 4,
+              buildCounter:
+                  (
+                    context, {
+                    required currentLength,
+                    required isFocused,
+                    maxLength,
+                  }) {
+                    final max = maxLength ?? kChatMessageMaxLength;
+                    if (max - currentLength > 50) return null;
+                    return Text(
+                      l10n.social_messageCounter(currentLength, max),
+                      style: UiText.body(
+                        size: 11,
+                        height: 1.4,
+                        color: currentLength >= max ? ui.danger : ui.inkMuted,
+                      ),
+                    );
+                  },
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendText(),
               cursorColor: ui.ink,
@@ -416,7 +434,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   height: 1.4,
                   color: ui.inkMuted,
                 ),
-                counterText: '',
                 isDense: true,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
@@ -436,7 +453,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: ui.ink),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: ui.ink,
+                  semanticsLabel: AppLocalizations.of(context).common_loading,
+                ),
               ),
             ),
           )

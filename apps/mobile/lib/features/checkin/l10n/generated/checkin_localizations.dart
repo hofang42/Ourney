@@ -611,7 +611,7 @@ abstract class CheckinL10n {
   /// Post screen per-skin input.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá một số'**
+  /// **'Xóa một số'**
   String get checkin_extraBackspace;
 
   /// No description provided for @checkin_extraCountdown.

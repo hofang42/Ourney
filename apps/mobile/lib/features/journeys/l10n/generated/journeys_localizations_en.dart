@@ -1759,6 +1759,33 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_createDeckChoose => 'Choose this type';
 
   @override
+  String journeys_cardStreak(int days) {
+    return '$days-day streak';
+  }
+
+  @override
+  String journeys_heroSemantics(int streak, String title) {
+    return '$streak-day streak. $title';
+  }
+
+  @override
+  String journeys_deadUploads(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos couldn\'t be sent',
+      one: '1 photo couldn\'t be sent',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_deadRetry => 'Retry';
+
+  @override
+  String get journeys_deadDiscard => 'Discard';
+
+  @override
   String get journeys_createSettingsNotSaved =>
       'Some settings couldn\'t be saved';
 }

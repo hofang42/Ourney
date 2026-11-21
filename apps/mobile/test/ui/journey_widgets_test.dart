@@ -70,17 +70,20 @@ const newIcons = [
 List<Widget> allWidgets({VoidCallback? onTap}) => [
   UiTypeBadge(type: 'trip'),
   UiStreakHero(
+    semanticLabel: 'Chuỗi',
     streak: 128,
     title: 'Còn 3 tiếng để giữ chuỗi của hành trình dài tên rất dài',
     subtitle: 'Nam và Hà đang chờ bạn chụp ảnh hôm nay nhé',
     onTap: onTap,
   ),
   UiStreakHero(
+    semanticLabel: 'Chuỗi',
     streak: 30,
     title: 'Về đích',
     state: UiStreakHeroState.milestone,
   ),
   UiJourneyCard(
+    snapLabel: 'Chụp ảnh hôm nay',
     title: 'Học tiếng Anh mỗi ngày cùng cả đội thật là dài dòng',
     subtitle: 'Mốc kế: Ngày 30 · Về đích',
     type: 'study',
@@ -92,6 +95,7 @@ List<Widget> allWidgets({VoidCallback? onTap}) => [
     onSnap: onTap,
   ),
   UiJourneyCard(
+    snapLabel: 'Chụp ảnh hôm nay',
     title: 'Giảm cân',
     type: 'weight',
     day: 30,
@@ -171,6 +175,42 @@ void main() {
     }
   });
 
+  group('localized labels', () {
+    testWidgets('card and hero use the labels they are given', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          const Column(
+            children: [
+              UiStreakHero(
+                semanticLabel: '5-day streak. Go',
+                streak: 5,
+                title: 'Go',
+              ),
+              UiJourneyCard(
+                title: 'Run',
+                type: 'workout',
+                day: 2,
+                totalDays: 9,
+                streak: 3,
+                snapLabel: 'Snap today',
+                dayLabel: 'Day 2 of 9',
+                streakLabel: '3-day streak',
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(find.bySemanticsLabel('5-day streak. Go'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Run, Day 2 of 9, 3-day streak'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Snap today'), findsOneWidget);
+      handle.dispose();
+    });
+  });
+
   group('UiStreakHero', () {
     testWidgets('U15: 2.0x at 360dp shows the whole title, no ellipsis', (
       tester,
@@ -178,7 +218,7 @@ void main() {
       const title = 'Còn 3 hành trình cần chụp trong hôm nay nhé';
       await tester.pumpWidget(
         host(
-          const UiStreakHero(streak: 12, title: title),
+          const UiStreakHero(semanticLabel: 'Chuỗi', streak: 12, title: title),
           textScale: 2,
           size: const Size(360, 800),
         ),
@@ -193,7 +233,14 @@ void main() {
 
     testWidgets('pastel fill per state and semantics', (tester) async {
       await tester.pumpWidget(
-        host(UiStreakHero(streak: 21, title: 'Giữ chuỗi', onTap: () {})),
+        host(
+          UiStreakHero(
+            semanticLabel: 'Chuỗi 21 ngày. Giữ chuỗi',
+            streak: 21,
+            title: 'Giữ chuỗi',
+            onTap: () {},
+          ),
+        ),
       );
       expect(find.bySemanticsLabel('Chuỗi 21 ngày. Giữ chuỗi'), findsOneWidget);
       expect(find.text('21'), findsOneWidget);
@@ -213,7 +260,14 @@ void main() {
     testWidgets('tap fires and target is >= 48dp', (tester) async {
       var taps = 0;
       await tester.pumpWidget(
-        host(UiStreakHero(streak: 3, title: 'Hi', onTap: () => taps++)),
+        host(
+          UiStreakHero(
+            semanticLabel: 'Chuỗi',
+            streak: 3,
+            title: 'Hi',
+            onTap: () => taps++,
+          ),
+        ),
       );
       expect(
         tester.getSize(find.byType(UiStreakHero)).height,
@@ -231,8 +285,11 @@ void main() {
       await tester.pumpWidget(
         host(
           UiJourneyCard(
+            snapLabel: 'Chụp ảnh hôm nay',
             title: 'IELTS',
             type: 'study',
+            dayLabel: 'Ngày 12/30',
+            streakLabel: 'Chuỗi 12 ngày',
             day: 12,
             totalDays: 30,
             streak: 12,
@@ -273,6 +330,7 @@ void main() {
       await tester.pumpWidget(
         host(
           const UiJourneyCard(
+            snapLabel: 'Chụp ảnh hôm nay',
             title: 'IELTS',
             type: 'study',
             day: 30,
@@ -291,6 +349,7 @@ void main() {
       await tester.pumpWidget(
         host(
           UiJourneyCard(
+            snapLabel: 'Chụp ảnh hôm nay',
             title: 'IELTS',
             type: 'study',
             day: 1,
@@ -318,6 +377,7 @@ void main() {
         await tester.pumpWidget(
           host(
             const UiJourneyCard(
+              snapLabel: 'Chụp ảnh hôm nay',
               title: 'IELTS',
               type: 'trip',
               day: 3,

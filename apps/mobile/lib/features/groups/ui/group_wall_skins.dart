@@ -631,10 +631,15 @@ class _RunnerWall extends ConsumerWidget {
     final name = e.member.displayName.toUpperCase();
     final km = flexer && done && e.photoIsToday ? e.photo?.extras.km : null;
     final pace = flexer && done && e.photoIsToday ? e.photo?.extras.pace : null;
-    final stat = km == null
+    final kmText = km == null
         ? null
-        : '${km.toStringAsFixed(2).replaceAll('.', ',')} KM'
-              '${pace == null ? '' : ' · $pace /KM'}';
+        : NumberFormat('0.00', Localizations.localeOf(context).toString())
+              .format(km);
+    final stat = kmText == null
+        ? null
+        : (pace == null
+              ? l10n.groups_flexerKm(kmText)
+              : l10n.groups_flexerKmPace(kmText, pace.toString()));
     final menu = _memberMenu(context, ref, e, perms);
     final status = done
         ? (flexer ? l10n.groups_flexerDone(time ?? '') : (time ?? ''))

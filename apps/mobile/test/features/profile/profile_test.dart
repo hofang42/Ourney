@@ -312,7 +312,7 @@ void main() {
       await tapVisible(tester, 'profile-delete-confirm');
       await tester.pumpAndSettle();
       expect(
-        find.text('Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.'),
+        find.text('Chưa xóa xong. Thử lại để xóa nốt phần còn lại nhé.'),
         findsOneWidget,
       );
       expect(byKey('profile-delete-retry'), findsOneWidget);
@@ -341,7 +341,7 @@ void main() {
       await tapVisible(tester, 'profile-delete-continue');
       await tester.pumpAndSettle();
       expect(
-        find.text('Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.'),
+        find.text('Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xóa nhé.'),
         findsOneWidget,
       );
       expect(byKey('profile-delete-otp'), findsNothing);

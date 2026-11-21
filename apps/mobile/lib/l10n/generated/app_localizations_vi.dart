@@ -207,4 +207,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get missedDay_dismiss => 'Đã hiểu';
+
+  @override
+  String get nav_chooseJourney => 'Chọn hành trình';
+
+  @override
+  String get nav_journeySelected => 'đang chọn';
 }

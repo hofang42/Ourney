@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import '../../app/app_routes.dart';
 import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
+import '../onboarding/onboarding_providers.dart';
 import 'avatar_picker.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
@@ -155,6 +158,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     try {
       if (profileChanged) {
         await repo.upsertMe(username: username, displayName: displayName);
+        // The profile row exists now: push the quiz answers a new account
+        // could not save before (best effort, never throws).
+        unawaited(ref.read(onboardingQuizProvider.notifier).syncToServer());
       }
     } on OurneyException catch (e) {
       if (!mounted) return;

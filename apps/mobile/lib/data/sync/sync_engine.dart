@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:path/path.dart' as p;
 
@@ -235,6 +236,28 @@ class SyncEngine {
     );
   }
 
+  /// Own check-ins that were never uploaded and have no queue item at all
+  /// (not even a dead one): a crash or an old bug lost their outbox row.
+  /// Enqueues them again so they are not stuck local forever.
+  Future<int> enqueueOrphanUploads(String me) async {
+    final rows = await (db.select(
+      db.checkIns,
+    )..where((t) => t.userId.equals(me) & t.uploaded.equals(false))).get();
+    if (rows.isEmpty) return 0;
+    final queued = {
+      for (final q in await db.select(db.uploadQueue).get()) q.entityKey,
+    };
+    var n = 0;
+    for (final r in rows) {
+      final key = checkInKey(r.id);
+      if (queued.contains(key)) continue;
+      await outbox.enqueue(OutboxKind.upsertCheckIn, key, {'id': r.id});
+      n++;
+    }
+    if (n > 0) debugPrint('sync: re-queued $n orphan check-in upload(s)');
+    return n;
+  }
+
   // --- pull -------------------------------------------------------------------
 
   /// Pulls every table changed since its cursor. Concurrent calls coalesce.
@@ -268,9 +291,26 @@ class SyncEngine {
     _runUser = me;
     try {
       await _write(() => ensureOwner(me));
-      final pending = await outbox.pendingKeys();
-      await _pullTable('journeys', store.applyJourney);
-      await _pullTable('memberships', (r) => store.applyMembership(r, me: me));
+      await enqueueOrphanUploads(me);
+      var pending = await outbox.pendingKeys();
+      // A local edit still waiting in the outbox wins over the server copy
+      // (it will be pushed, and the next pull brings the merged result).
+      // Re-read per page: a flush may drain items while pulling.
+      await _pullTable('journeys', (r) async {
+        final id = r['id'];
+        if (id is String &&
+            (pending.contains(journeyKey(id)) ||
+                pending.contains('${journeyKey(id)}:edit'))) {
+          return;
+        }
+        await store.applyJourney(r);
+      }, onPage: () async => pending = await outbox.pendingKeys());
+      await _pullTable('memberships', (r) async {
+        final id = r['journey_id'];
+        if (id is String && pending.contains(membershipKey(id))) return;
+        await store.applyMembership(r, me: me);
+      }, onPage: () async => pending = await outbox.pendingKeys());
+      pending = await outbox.pendingKeys();
       await _pullTable('check_ins', (r) => store.applyCheckIn(r, pending));
       await _pullTombstones();
       await _pullMetrics(pending);
@@ -299,11 +339,13 @@ class SyncEngine {
     String table,
     Future<void> Function(RemoteRow) apply, {
     Map<String, Object> eq = const {},
+    Future<void> Function()? onPage,
   }) => _pullPaged(
     eq.isEmpty ? table : '$table?${eq.keys.join(',')}',
     (since) =>
         remote.select(table, eq: eq, updatedSince: since, limit: pullPageSize),
     (rows) async {
+      await onPage?.call();
       for (final r in rows) {
         await apply(r);
       }

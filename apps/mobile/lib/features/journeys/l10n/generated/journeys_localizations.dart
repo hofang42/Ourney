@@ -413,7 +413,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_errorNotAlone.
   ///
   /// In vi, this message translates to:
-  /// **'Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.'**
+  /// **'Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.'**
   String get journeys_errorNotAlone;
 
   /// No description provided for @journeys_errorForbidden.
@@ -551,19 +551,19 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_delete.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá hành trình'**
+  /// **'Xóa hành trình'**
   String get journeys_delete;
 
   /// No description provided for @journeys_deleteConfirmTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá hành trình?'**
+  /// **'Xóa hành trình?'**
   String get journeys_deleteConfirmTitle;
 
   /// No description provided for @journeys_deleteConfirmMessage.
   ///
   /// In vi, this message translates to:
-  /// **'Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.'**
+  /// **'Mọi ảnh của bạn trong hành trình này sẽ bị xóa. Không hoàn tác được.'**
   String get journeys_deleteConfirmMessage;
 
   /// No description provided for @journeys_readOnlyBanner.
@@ -2309,7 +2309,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_edit_cancel.
   ///
   /// In vi, this message translates to:
-  /// **'Thôi'**
+  /// **'Hủy'**
   String get journeys_edit_cancel;
 
   /// No description provided for @journeys_edit_discardTitle.
@@ -3151,6 +3151,36 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chọn kiểu này'**
   String get journeys_createDeckChoose;
+
+  /// Streak chip spoken label on the journey card.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {days} ngày'**
+  String journeys_cardStreak(int days);
+
+  /// Screen reader label of the Hub streak hero.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chuỗi {streak} ngày. {title}'**
+  String journeys_heroSemantics(int streak, String title);
+
+  /// Banner when check-in uploads were given up on.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{{count} ảnh chưa gửi được}}'**
+  String journeys_deadUploads(int count);
+
+  /// Retry the failed uploads.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại'**
+  String get journeys_deadRetry;
+
+  /// Discard the failed uploads and their local photos.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ ảnh'**
+  String get journeys_deadDiscard;
 
   /// Non-fatal toast after creating a journey when the server rejected some create-flow settings.
   ///

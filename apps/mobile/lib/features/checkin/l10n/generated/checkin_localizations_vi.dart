@@ -296,7 +296,7 @@ class CheckinL10nVi extends CheckinL10n {
       'Quãng đường từ 0,1 đến 500 km, một chữ số thập phân';
 
   @override
-  String get checkin_extraBackspace => 'Xoá một số';
+  String get checkin_extraBackspace => 'Xóa một số';
 
   @override
   String checkin_extraCountdown(int seconds) {

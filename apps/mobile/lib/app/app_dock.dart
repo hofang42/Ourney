@@ -67,7 +67,7 @@ class _AppDockState extends ConsumerState<AppDock> {
     final activeId = active.any((j) => j.id == stored)
         ? stored
         : active.first.id;
-    final en = Localizations.localeOf(context).languageCode == 'en';
+    final l10n = AppLocalizations.of(context);
     OurneyHaptics.selection();
     showUiJourneyWheel(
       context,
@@ -82,9 +82,9 @@ class _AppDockState extends ConsumerState<AppDock> {
       ],
       activeId: activeId,
       anchor: box.localToGlobal(box.size.center(Offset.zero)),
-      semanticLabel: en ? 'Choose journey' : 'Chọn hành trình',
-      closeLabel: en ? 'Close' : 'Đóng',
-      activeHint: en ? 'selected' : 'đang chọn',
+      semanticLabel: l10n.nav_chooseJourney,
+      closeLabel: l10n.common_close,
+      activeHint: l10n.nav_journeySelected,
       onSelect: (id) {
         OurneyHaptics.selection();
         ref.read(activeJourneyIdProvider.notifier).select(id);

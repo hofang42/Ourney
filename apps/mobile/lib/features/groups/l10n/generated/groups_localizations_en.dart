@@ -545,4 +545,21 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_minimalPending => 'NOT YET';
+
+  @override
+  String get groups_inviteRevokeTitle => 'Revoke this invite?';
+
+  @override
+  String get groups_inviteRevokeMessage =>
+      'The invited person will no longer be able to use it.';
+
+  @override
+  String groups_flexerKm(String km) {
+    return '$km KM';
+  }
+
+  @override
+  String groups_flexerKmPace(String km, String pace) {
+    return '$km KM · $pace /KM';
+  }
 }

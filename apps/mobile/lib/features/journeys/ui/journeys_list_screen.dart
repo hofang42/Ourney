@@ -495,6 +495,12 @@ class _HubBody extends ConsumerWidget {
         UiStreakHero(
           key: const ValueKey('journeys-hub-hero'),
           streak: bestStreak,
+          semanticLabel: l10n.journeys_heroSemantics(
+            bestStreak,
+            allDone
+                ? l10n.journeys_allDonePrompt
+                : l10n.journeys_remainingToday(pending.length),
+          ),
           title: allDone
               ? l10n.journeys_allDonePrompt
               : l10n.journeys_remainingToday(pending.length),

@@ -151,6 +151,36 @@ class Outbox {
             ..orderBy([(t) => OrderingTerm.asc(t.id)]))
           .get();
 
+  /// Items given up on (permanent failure or too many attempts), oldest
+  /// first. They stay in the queue only so the UI can offer retry / discard.
+  Stream<List<OutboxRow>> watchDead({OutboxKind? kind}) =>
+      (_db.select(_db.uploadQueue)
+            ..where(
+              (t) =>
+                  t.dead.equals(true) &
+                  (kind == null
+                      ? const Constant(true)
+                      : t.kind.equals(kind.wire)),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .watch();
+
+  /// Revives dead items [ids] (attempts reset) and flushes.
+  Future<void> retryDead(Iterable<int> ids) async {
+    await (_db.update(_db.uploadQueue)..where((t) => t.id.isIn(ids))).write(
+      const UploadQueueCompanion(
+        dead: Value(false),
+        attempts: Value(0),
+        nextAttemptAt: Value(0),
+      ),
+    );
+    unawaited(flush(force: true));
+  }
+
+  /// Removes queue items [ids] (the caller drops what they were for).
+  Future<void> deleteItems(Iterable<int> ids) =>
+      (_db.delete(_db.uploadQueue)..where((t) => t.id.isIn(ids))).go();
+
   Stream<int> watchPending({OutboxKind? kind}) {
     final count = _db.uploadQueue.id.count();
     final q = _db.selectOnly(_db.uploadQueue)
@@ -275,10 +305,14 @@ class Outbox {
     }
   }
 
-  Future<void> _markDead(OutboxRow row, String reason) =>
-      (_db.update(_db.uploadQueue)..where((t) => t.id.equals(row.id))).write(
-        UploadQueueCompanion(dead: const Value(true), lastError: Value(reason)),
-      );
+  Future<void> _markDead(OutboxRow row, String reason) {
+    debugPrint('outbox: giving up on ${row.kind} ${row.entityKey}: $reason');
+    return (_db.update(
+      _db.uploadQueue,
+    )..where((t) => t.id.equals(row.id))).write(
+      UploadQueueCompanion(dead: const Value(true), lastError: Value(reason)),
+    );
+  }
 
   void _schedule(Duration delay) {
     _retry?.cancel();

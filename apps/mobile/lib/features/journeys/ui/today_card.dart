@@ -332,19 +332,23 @@ class _DayCell extends StatelessWidget {
     return ExcludeSemantics(
       child: Column(
         children: [
-          SizedBox(
-            height: 20,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 20),
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: UiText.body(
-                  size: 8,
-                  weight: FontWeight.w700,
-                  height: 1.2,
-                  color: isToday ? ink : pal.inkAt(0.72),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  textScaler: MediaQuery.textScalerOf(context)
+                      .clamp(maxScaleFactor: 1.35),
+                  style: UiText.body(
+                    size: 10,
+                    weight: FontWeight.w700,
+                    height: 1.3,
+                    color: isToday ? ink : pal.inkAt(0.72),
+                  ),
                 ),
               ),
             ),
@@ -354,10 +358,12 @@ class _DayCell extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '${date.day}',
+            textScaler: MediaQuery.textScalerOf(context)
+                .clamp(maxScaleFactor: 1.35),
             style: UiText.body(
-              size: 9,
+              size: 10,
               weight: FontWeight.w700,
-              height: 1.2,
+              height: 1.3,
               color: ink,
             ),
           ),

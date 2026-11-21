@@ -81,7 +81,7 @@ void main() {
       expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
       // j1 (14 days) is a V2 journey card; the open-ended one a compact row.
       expect(find.byType(UiJourneyCard), findsOneWidget);
-      expect(find.text('Ngày 7/14'), findsOneWidget);
+      expect(find.text('Day 7 of 14'), findsOneWidget);
       expect(find.textContaining('· Day 7'), findsOneWidget); // open j2
       expect(find.text('Not yet'), findsOneWidget);
       expect(find.byType(UiStreakHero), findsOneWidget);

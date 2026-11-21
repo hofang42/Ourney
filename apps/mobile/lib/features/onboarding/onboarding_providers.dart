@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -54,8 +55,10 @@ class OnboardingQuizNotifier extends Notifier<OnboardingQuiz?> {
             .read(sharedPreferencesProvider)
             .setString(prefsKey, jsonEncode(remote.toJson()));
       }
-    } on Object {
-      // Offline or the profile row does not exist yet: retried later.
+    } on Object catch (e) {
+      // Offline or the profile row does not exist yet: retried later (after
+      // the profile is saved, and on the next sign-in).
+      debugPrint('onboarding: quiz sync skipped: $e');
     }
   }
 
