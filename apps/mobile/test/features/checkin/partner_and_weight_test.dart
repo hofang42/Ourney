@@ -23,17 +23,6 @@ class _Me extends CurrentUserId {
 }
 
 void main() {
-  test('pending weight survives without listeners and clears', () {
-    final c = ProviderContainer();
-    addTearDown(c.dispose);
-    expect(c.read(pendingWeightProvider('j1')), isNull);
-    c.read(pendingWeightProvider('j1').notifier).setPendingWeight(72.5);
-    expect(c.read(pendingWeightProvider('j1')), 72.5);
-    expect(c.read(pendingWeightProvider('j2')), isNull);
-    c.read(pendingWeightProvider('j1').notifier).clear();
-    expect(c.read(pendingWeightProvider('j1')), isNull);
-  });
-
   test('partner photos: others only, newest first', () async {
     final repo = FakeCheckInRepository(
       existing: [

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../db/app_database.dart';
@@ -82,16 +83,22 @@ class Outbox {
   Future<void>? _running;
   bool _again = false;
   bool _disposed = false;
+
+  /// Consecutive failed passes (database errors); drives the retry backoff.
+  int _passFailures = 0;
   final _processed = StreamController<OutboxKind>.broadcast();
 
   /// Emits the kind of each item the server confirmed.
   Stream<OutboxKind> get processed => _processed.stream;
 
+  /// [delay] keeps the item out of a flush for that long (the caller is
+  /// sending it right now and only wants a later flush to replay it).
   Future<int> enqueue(
     OutboxKind kind,
     String entityKey,
-    Map<String, dynamic> payload,
-  ) => _db
+    Map<String, dynamic> payload, {
+    Duration delay = Duration.zero,
+  }) => _db
       .into(_db.uploadQueue)
       .insert(
         UploadQueueCompanion.insert(
@@ -99,20 +106,35 @@ class Outbox {
           entityKey: entityKey,
           payload: jsonEncode(payload),
           createdAt: _now(),
+          nextAttemptAt: delay == Duration.zero
+              ? const Value.absent()
+              : Value(_now().toUtc().add(delay).microsecondsSinceEpoch),
         ),
       );
 
-  /// Drops pending (not yet sent) items for [entityKey].
-  Future<void> cancel(String entityKey, {OutboxKind? kind}) =>
+  /// Drops pending (not yet sent) items for [entityKey]; [includeDead] also
+  /// drops items already given up on.
+  Future<void> cancel(
+    String entityKey, {
+    OutboxKind? kind,
+    bool includeDead = false,
+  }) =>
       (_db.delete(_db.uploadQueue)..where(
             (t) =>
                 t.entityKey.equals(entityKey) &
-                t.dead.equals(false) &
+                (includeDead ? const Constant(true) : t.dead.equals(false)) &
                 (kind == null
                     ? const Constant(true)
                     : t.kind.equals(kind.wire)),
           ))
           .go();
+
+  /// Clears the delay of the live items of [entityKey].
+  Future<void> makeDue(String entityKey) =>
+      (_db.update(
+            _db.uploadQueue,
+          )..where((t) => t.entityKey.equals(entityKey) & t.dead.equals(false)))
+          .write(const UploadQueueCompanion(nextAttemptAt: Value(0)));
 
   /// Entity keys with live (not dead) items: pull sync must not overwrite them.
   Future<Set<String>> pendingKeys() async {
@@ -121,6 +143,43 @@ class Outbox {
     )..where((t) => t.dead.equals(false))).get();
     return {for (final r in rows) r.entityKey};
   }
+
+  /// Live (not dead) items, oldest first.
+  Future<List<OutboxRow>> pendingRows() =>
+      (_db.select(_db.uploadQueue)
+            ..where((t) => t.dead.equals(false))
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .get();
+
+  /// Items given up on (permanent failure or too many attempts), oldest
+  /// first. They stay in the queue only so the UI can offer retry / discard.
+  Stream<List<OutboxRow>> watchDead({OutboxKind? kind}) =>
+      (_db.select(_db.uploadQueue)
+            ..where(
+              (t) =>
+                  t.dead.equals(true) &
+                  (kind == null
+                      ? const Constant(true)
+                      : t.kind.equals(kind.wire)),
+            )
+            ..orderBy([(t) => OrderingTerm.asc(t.id)]))
+          .watch();
+
+  /// Revives dead items [ids] (attempts reset) and flushes.
+  Future<void> retryDead(Iterable<int> ids) async {
+    await (_db.update(_db.uploadQueue)..where((t) => t.id.isIn(ids))).write(
+      const UploadQueueCompanion(
+        dead: Value(false),
+        attempts: Value(0),
+        nextAttemptAt: Value(0),
+      ),
+    );
+    unawaited(flush(force: true));
+  }
+
+  /// Removes queue items [ids] (the caller drops what they were for).
+  Future<void> deleteItems(Iterable<int> ids) =>
+      (_db.delete(_db.uploadQueue)..where((t) => t.id.isIn(ids))).go();
 
   Stream<int> watchPending({OutboxKind? kind}) {
     final count = _db.uploadQueue.id.count();
@@ -143,9 +202,35 @@ class Outbox {
       _again = true;
       return _running!;
     }
-    final run = _run(force).whenComplete(() => _running = null);
+    final run = _runGuarded(force).whenComplete(() => _running = null);
     _running = run;
     return run;
+  }
+
+  /// A database error inside a pass (e.g. on `_markDead` or the delete after
+  /// a successful execute) must not leak out of the `unawaited(flush())`
+  /// callers: it is logged and a retry is armed.
+  Future<void> _runGuarded(bool force) async {
+    try {
+      await _run(force);
+      _passFailures = 0;
+    } on Object catch (e) {
+      debugPrint('outbox: flush failed: $e');
+      // A closed database never recovers: do not keep a timer alive for it.
+      if (!await _isDatabaseUsable()) return;
+      _schedule(outboxBackoff(++_passFailures));
+      // A flush() that arrived meanwhile was coalesced into this failed run.
+      if (_again) _schedule(Duration.zero);
+    }
+  }
+
+  Future<bool> _isDatabaseUsable() async {
+    try {
+      await _db.customSelect('SELECT 1').get();
+      return true;
+    } on Object {
+      return false;
+    }
   }
 
   Future<void> _run(bool force) async {
@@ -220,10 +305,14 @@ class Outbox {
     }
   }
 
-  Future<void> _markDead(OutboxRow row, String reason) =>
-      (_db.update(_db.uploadQueue)..where((t) => t.id.equals(row.id))).write(
-        UploadQueueCompanion(dead: const Value(true), lastError: Value(reason)),
-      );
+  Future<void> _markDead(OutboxRow row, String reason) {
+    debugPrint('outbox: giving up on ${row.kind} ${row.entityKey}: $reason');
+    return (_db.update(
+      _db.uploadQueue,
+    )..where((t) => t.id.equals(row.id))).write(
+      UploadQueueCompanion(dead: const Value(true), lastError: Value(reason)),
+    );
+  }
 
   void _schedule(Duration delay) {
     _retry?.cancel();

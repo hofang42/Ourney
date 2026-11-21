@@ -94,12 +94,15 @@ CheckIn testCheckIn(
   String? caption,
   double? metricValue,
   bool uploaded = true,
+  int hour = 2,
+  CheckInExtras extras = CheckInExtras.empty,
 }) => CheckIn(
-  id: 'c-$journeyId-$date',
+  id: hour == 2 ? 'c-$journeyId-$date' : 'c-$journeyId-$date-$hour',
+  extras: extras,
   journeyId: journeyId,
   userId: userId,
   localDate: date,
-  capturedAt: DateTime.utc(date.year, date.month, date.day, 2),
+  capturedAt: DateTime.utc(date.year, date.month, date.day, hour),
   photoPath: checkInPhotoPath(journeyId, userId, 'c-$date'),
   thumbPath: checkInThumbPath(journeyId, userId, 'c-$date'),
   caption: caption,
@@ -130,6 +133,15 @@ class FakeJourneyRepository implements JourneyRepository {
   final List<({String id, bool? hideExtras, bool? pinned})> extraPrefUpdates =
       [];
 
+  /// When set, allMine throws it.
+  Object? listError;
+
+  /// Per-journey updateMyMembership errors.
+  final Map<String, Object> prefErrorFor = {};
+
+  /// When set, updateMyMembership throws it.
+  Object? prefError;
+
   /// When set, the next matching call throws it.
   Object? createError;
   Object? endError;
@@ -140,8 +152,42 @@ class FakeJourneyRepository implements JourneyRepository {
   void _replace(String id, Journey Function(Journey) f) =>
       _journeys.set([for (final j in _journeys.value) j.id == id ? f(j) : j]);
 
+  /// Ids hidden with [archive]. Like the real repository the journey keeps
+  /// its status: archiving only hides it, [unarchive] lists it again.
+  final _archived = _Live<Set<String>>(<String>{});
+
+  Stream<List<Journey>> _view(bool archived) {
+    late final StreamController<List<Journey>> c;
+    StreamSubscription<void>? a, b;
+    void emit() => c.add([
+      for (final j in _journeys.value)
+        if (_archived.value.contains(j.id) == archived) j,
+    ]);
+    c = StreamController<List<Journey>>(
+      onListen: () {
+        emit();
+        a = _journeys.watch().skip(1).listen((_) => emit());
+        b = _archived.watch().skip(1).listen((_) => emit());
+      },
+      onCancel: () async {
+        await a?.cancel();
+        await b?.cancel();
+      },
+    );
+    return c.stream;
+  }
+
   @override
-  Stream<List<Journey>> watchActive() => _journeys.watch();
+  Stream<List<Journey>> watchActive() => _view(false);
+
+  @override
+  Stream<List<Journey>> watchArchived() => _view(true);
+
+  @override
+  Future<List<Journey>> allMine() async {
+    if (listError case final e?) throw e;
+    return _journeys.value;
+  }
 
   @override
   Stream<Journey?> watch(String journeyId) => _journeys.watch().map(
@@ -156,7 +202,10 @@ class FakeJourneyRepository implements JourneyRepository {
       _memberships.putIfAbsent(journeyId, () => _Live(null)).watch();
 
   @override
-  Future<Journey> create(JourneyDraft draft) async {
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  }) async {
     calls.add('create');
     attempts.add(draft);
     if (createError case final e?) throw e;
@@ -205,7 +254,7 @@ class FakeJourneyRepository implements JourneyRepository {
   }
 
   @override
-  Future<void> end(String journeyId) async {
+  Future<void> end(String journeyId, {bool background = false}) async {
     calls.add('end:$journeyId');
     if (endError case final e?) throw e;
     _replace(journeyId, (j) => _copy(j, JourneyStatus.ended));
@@ -214,7 +263,13 @@ class FakeJourneyRepository implements JourneyRepository {
   @override
   Future<void> archive(String journeyId) async {
     calls.add('archive:$journeyId');
-    _replace(journeyId, (j) => _copy(j, JourneyStatus.archived));
+    _archived.set({..._archived.value, journeyId});
+  }
+
+  @override
+  Future<void> unarchive(String journeyId) async {
+    calls.add('unarchive:$journeyId');
+    _archived.set({..._archived.value}..remove(journeyId));
   }
 
   @override
@@ -240,6 +295,8 @@ class FakeJourneyRepository implements JourneyRepository {
     bool? pinned,
   }) async {
     calls.add('updateMyMembership:$journeyId');
+    if (prefError case final e?) throw e;
+    if (prefErrorFor[journeyId] case final e?) throw e;
     if (hideExtras != null || pinned != null) {
       extraPrefUpdates.add((
         id: journeyId,

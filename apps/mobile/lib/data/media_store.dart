@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:path/path.dart' as p;
 
@@ -49,9 +50,91 @@ class MediaFiles {
     final dir = Directory(p.joinAll([root.path, ...storagePrefix.split('/')]));
     if (dir.existsSync()) await dir.delete(recursive: true);
   }
+}
 
-  Future<void> wipe() async {
-    if (root.existsSync()) await root.delete(recursive: true);
+/// Wipes media folders together with a database transaction without ever
+/// leaving rows that point at deleted files:
+/// 1. leftovers of earlier wipes (`<dir>.trash-*`) are swept;
+/// 2. inside the transaction the folders are RENAMED to trash (atomic; a
+///    rename that fails throws, so the transaction rolls back before any
+///    file is lost);
+/// 3. only after the commit is the trash deleted (background);
+/// 4. if the transaction throws, the folders are renamed back.
+abstract final class MediaWipe {
+  static const _marker = '.trash-';
+
+  /// Deletes `<dir>.trash-*` siblings of each of [dirs] (best effort).
+  static Future<void> sweep(Iterable<Directory> dirs) async {
+    // A running wipe owns its trash until it commits or restores it.
+    if (_active > 0) return;
+    await _sweep(dirs);
+  }
+
+  static int _active = 0;
+
+  static Future<void> _sweep(Iterable<Directory> dirs) async {
+    for (final dir in dirs) {
+      final parent = dir.parent;
+      if (!parent.existsSync()) continue;
+      final prefix = '${p.basename(dir.path)}$_marker';
+      try {
+        for (final e in parent.listSync()) {
+          if (p.basename(e.path).startsWith(prefix)) {
+            await e.delete(recursive: true);
+          }
+        }
+      } on Object catch (e) {
+        debugPrint('media wipe: sweep failed: $e');
+      }
+    }
+  }
+
+  /// Runs [transaction], handing it a `moveMedia` step to call inside it.
+  static Future<void> run(
+    List<Directory> dirs,
+    Future<void> Function(Future<void> Function() moveMedia) transaction,
+  ) async {
+    _active++;
+    if (_active == 1) await _sweep(dirs);
+    final moved = <({Directory dir, Directory trash})>[];
+    Future<void> moveMedia() async {
+      for (final dir in dirs) {
+        if (!dir.existsSync()) continue;
+        final trash = Directory(
+          '${dir.path}$_marker${DateTime.now().microsecondsSinceEpoch}',
+        );
+        await dir.rename(trash.path);
+        moved.add((dir: dir, trash: trash));
+      }
+    }
+
+    try {
+      try {
+        await transaction(moveMedia);
+      } on Object {
+        for (final m in moved.reversed) {
+          try {
+            if (!m.dir.existsSync()) await m.trash.rename(m.dir.path);
+          } on Object catch (e) {
+            debugPrint('media wipe: could not restore ${m.dir.path}: $e');
+          }
+        }
+        rethrow;
+      }
+      // Committed: the old media may go (in the background).
+      for (final m in moved) {
+        unawaited(
+          m.trash
+              .delete(recursive: true)
+              .then<void>(
+                (_) {},
+                onError: (Object e) => debugPrint('media wipe: trash left: $e'),
+              ),
+        );
+      }
+    } finally {
+      _active--;
+    }
   }
 }
 

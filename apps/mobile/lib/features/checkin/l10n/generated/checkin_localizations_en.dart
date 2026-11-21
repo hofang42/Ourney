@@ -128,7 +128,7 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String checkin_done_memoryStamp(int day) {
-    return 'PASTED · DAY $day';
+    return 'PASTED · JOURNEY DAY $day';
   }
 
   @override
@@ -307,4 +307,7 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_extraCountdownStop => 'Tap anywhere to stop';
+
+  @override
+  String get checkin_details => 'Details';
 }

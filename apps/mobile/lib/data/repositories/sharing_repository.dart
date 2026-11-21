@@ -168,24 +168,24 @@ class DataSharingRepository implements SharingRepository {
   @override
   Future<void> like(String checkInId) async {
     final me = social.requireUserId();
-    try {
-      await social.remote.insert('reactions', {
-        'checkin_id': checkInId,
-        'user_id': me,
-        'emoji': likeEmoji,
-      });
-    } on OurneyException catch (e) {
-      // Already liked (unique violation): liking is idempotent.
-      if (!(e.detail?.startsWith('23505') ?? false)) rethrow;
-    }
+    // Upsert so liking again revives a soft-deleted row (unlike / unsave set
+    // `deleted_at`); liking twice stays idempotent.
+    await social.remote.upsert('reactions', {
+      'checkin_id': checkInId,
+      'user_id': me,
+      'emoji': likeEmoji,
+      'deleted_at': null,
+    }, onConflict: 'checkin_id,user_id');
     social.changed();
   }
 
   @override
   Future<void> unlike(String checkInId) async {
     final me = social.requireUserId();
-    await social.remote.delete(
+    // Clients have no DELETE grant on `reactions`: soft-delete like the outbox.
+    await social.remote.update(
       'reactions',
+      {'deleted_at': social.data.now().toUtc().toIso8601String()},
       match: {'checkin_id': checkInId, 'user_id': me},
     );
     social.changed();
@@ -215,7 +215,7 @@ class DataSharingRepository implements SharingRepository {
         draft.lastDate.compareTo(draft.firstDate) < 0) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
-    final me = social.requireUserId();
+    final me = await social.data.claimUserId();
     final data = social.data;
     // Retry of a create that already landed: same journey back.
     final existing = await (_db.select(

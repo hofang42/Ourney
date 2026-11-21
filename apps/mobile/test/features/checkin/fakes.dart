@@ -2,12 +2,14 @@
 // providers throw until B1 wires lib/data, so every test overrides them.
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney/app/config.dart';
+import 'package:ourney/app/journey_clock.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/theme/app_theme.dart';
@@ -167,9 +169,13 @@ class FakeCameraSession implements CameraSession {
   bool _ready = false;
   bool _front = false;
 
+  /// When set, [start] waits for it (hardware or OS dialog still busy).
+  Completer<void>? startGate;
+
   @override
   Future<void> start({bool front = false}) async {
     starts++;
+    await startGate?.future;
     final f = failure;
     if (f != null) throw CameraStartException(f);
     _front = front;
@@ -307,6 +313,8 @@ List<Override> baseOverrides({
   sharedPreferencesProvider.overrideWithValue(prefs),
   supabaseClientProvider.overrideWithValue(null),
   draftFilesProvider.overrideWithValue(FakeDraftFiles()),
+  // Fixed-term fixtures are in their window on this day.
+  journeysClockProvider.overrideWithValue(Clock.fixed(testNowUtc)),
   if (journeys != null) journeyRepositoryProvider.overrideWithValue(journeys),
   if (checkIns != null) checkInRepositoryProvider.overrideWithValue(checkIns),
 ];

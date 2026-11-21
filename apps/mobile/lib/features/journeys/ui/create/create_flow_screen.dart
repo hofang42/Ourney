@@ -10,6 +10,7 @@ import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
 import '../../../../ui/ui.dart';
 import '../../../onboarding/onboarding_providers.dart';
+import '../../../profile/share_privacy_sync.dart';
 import '../../../reminders/data/reminder_scheduler.dart';
 import '../../../reminders/data/reminder_settings.dart';
 import '../../../reminders/domain/reminder_plan.dart';
@@ -39,8 +40,14 @@ import 'steps/who_step.dart';
 /// All state lives in one [JourneyForm] plus the few flow fields below, so
 /// going back keeps every answer. The journey is created through
 /// `JourneyRepository.create` exactly like the quick setup.
+///
+/// A fresh visit (`/journeys/new`) always starts empty; only the Hub's
+/// "Continue creating" card (`?resume=1`, [resume]) restores the saved draft.
 class CreateFlowScreen extends ConsumerStatefulWidget {
-  const CreateFlowScreen({super.key});
+  const CreateFlowScreen({this.resume = false, super.key});
+
+  /// Reopen the saved draft (U8) instead of starting over.
+  final bool resume;
 
   @override
   ConsumerState<CreateFlowScreen> createState() => _CreateFlowScreenState();
@@ -69,7 +76,6 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   /// Step-2 "DNA" question page; equal to the question count = the form.
   int _dnaPage = 0;
   final Map<String, Object> _dna = {};
-  bool _hideWeight = true;
   CreateTypeOption? _option;
   JourneyForm? _form;
   CreateWho _who = CreateWho.solo;
@@ -81,7 +87,8 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   final Set<int> _attempted = {};
 
   /// One id per flow: a retry after a lost response returns the same journey.
-  final String _clientId = const Uuid().v4();
+  /// Saved in the draft so a resumed submit reuses it too (U8).
+  String _clientId = const Uuid().v4();
 
   @override
   void dispose() {
@@ -104,8 +111,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   bool get _localOnly => ref.read(appConfigProvider).localOnly;
 
+  /// The quiz's reminder time ("HH:mm"); kept in the draft so a resumed flow
+  /// still turns it on (U8).
+  String? _reminder;
+
   /// Quiz-derived defaults (type, who, reminder); applied once, overridable.
-  JourneySuggestion? _suggestion;
   bool _suggestionApplied = false;
 
   @override
@@ -113,9 +123,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     super.didChangeDependencies();
     if (_suggestionApplied) return;
     _suggestionApplied = true;
+    // "Continue creating" (U8): reopen where the flow was left.
+    final draft = widget.resume
+        ? ref.read(createProgressProvider.notifier).readDraft()
+        : null;
+    if (draft != null && _restore(draft)) return;
     final s = ref.read(journeySuggestionProvider);
     if (s == null) return;
-    _suggestion = s;
+    _reminder = s.reminder;
     final key = s.coupleRitual ? 'couple' : s.templateId.wireName;
     for (final o in _options) {
       if (o.keyName != key) continue;
@@ -178,11 +193,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     if (_who != CreateWho.solo) form.soloVisibility = JourneyVisibility.private;
   }
 
+  /// Couple chosen at step 1 (the couple card) or at step 3 (who).
+  bool get _isCouple => _who == CreateWho.couple;
+
   String get _skinId {
     final form = _form;
     final option = _option;
     if (form == null || option == null) return 'minimal';
-    if (_who == CreateWho.couple) return 'couple';
+    if (_isCouple) return 'couple';
     return uiSkinIdFor(
       personaSkinForTemplate(
         form.template.id,
@@ -196,6 +214,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     ref.read(deviceTimezoneProvider).value ?? form.timezone,
     ref.read(journeysClockProvider).now(),
   );
+
+  /// [_today] as a calendar `DateTime` (local midnight) for the date pages.
+  DateTime _todayDate(JourneyForm form) {
+    final t = _today(form);
+    return DateTime(t.year, t.month, t.day);
+  }
 
   void _update(void Function(JourneyForm f) change) =>
       setState(() => change(_form!));
@@ -249,8 +273,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   }
 
   void _back() {
+    if (_busy) return;
     if (_step == 0) {
-      context.pop();
+      _leaveFlow();
     } else if (_step == 1 && _questions.isNotEmpty && _dnaPage > 0) {
       setState(() => _dnaPage -= 1);
     } else {
@@ -269,7 +294,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _who == CreateWho.couple ? _nameRight.text.trim() : null;
 
   String? _reminderHHmm() {
-    final rt = ReminderTime.tryParse(_suggestion?.reminder);
+    final rt = ReminderTime.tryParse(_reminder);
     if (rt == null) return null;
     return '${rt.hour.toString().padLeft(2, '0')}:'
         '${rt.minute.toString().padLeft(2, '0')}';
@@ -314,7 +339,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final today = _today(form);
     final start = _start != null && !_start!.isBefore(today) ? _start! : today;
     final reminders = ref.read(reminderSchedulerProvider);
+    // Read before any await: the screen may be gone when the work finishes.
+    final progress = ref.read(createProgressProvider.notifier);
+    final activeJourney = ref.read(activeJourneyIdProvider.notifier);
     final title = _finalTitle(form);
+    var extrasRejected = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -337,22 +366,40 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           couplePartnerName: _partnerName,
           reminderTime: _reminderHHmm(),
           dna: _storableDna(),
+          // What the review ticket showed (bugs B-B10, B-B12): the colour
+          // variant, and the couple skin whatever template or emoji.
+          color: _variant,
+          layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
+        onExtrasRejected: () => extrasRejected = true,
       );
-      final rt = ReminderTime.tryParse(_suggestion?.reminder);
+      // The journey exists: the saved draft must not resurrect it (U8).
+      unawaited(progress.clear());
+      if (mounted && extrasRejected) {
+        showJourneySnack(
+          context,
+          JourneysL10n.of(context).journeys_createSettingsNotSaved,
+        );
+      }
+      final rt = ReminderTime.tryParse(_reminder);
       if (rt != null) {
         await ref
             .read(reminderSettingsProvider.notifier)
             .save(journey.id, ReminderSetting(enabled: true, time: rt));
       }
       unawaited(reminders.reschedule());
-      final hide = form.trackMetric && form.hideMetric;
-      if (hide || form.blurOnShare) {
+      final privacy = newMembershipPrivacy(
+        ref,
+        journey,
+        hideMetric: form.trackMetric && form.hideMetric,
+        blurMedia: form.blurOnShare,
+      );
+      if (privacy.hideMetric || privacy.blurMedia) {
         try {
           await repo.updateMyMembership(
             journey.id,
-            hideMetric: hide ? true : null,
-            blurMedia: form.blurOnShare ? true : null,
+            hideMetric: privacy.hideMetric ? true : null,
+            blurMedia: privacy.blurMedia ? true : null,
           );
         } on Object catch (e) {
           if (mounted) {
@@ -365,8 +412,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       // scheduler has nothing it may post (bug #7).
       if (rt != null) await offerReminderPermission(context, ref, time: rt);
       if (!mounted) return;
-      unawaited(ref.read(createProgressProvider.notifier).clear());
-      unawaited(ref.read(activeJourneyIdProvider.notifier).select(journey.id));
+      unawaited(activeJourney.select(journey.id));
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
       if (!mounted) return;
@@ -417,7 +463,15 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     return PopScope(
       canPop: _step == 0,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _back();
+        if (!didPop) {
+          _back();
+        } else if (!_leaving && widget.resume) {
+          // System back from step 1 of a resumed flow: nothing to resume
+          // any more (U8). A fresh visit keeps the older draft. The route
+          // may be going away during a build: update after it.
+          final progress = ref.read(createProgressProvider.notifier);
+          unawaited(Future(progress.clear));
+        }
       },
       child: UiSkinScope(
         skinId: _skinId,
@@ -436,15 +490,9 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                       step: _step,
                       steps: _steps,
                       onBack: _back,
-                      onClose: () {
-                        // Leave a "continue creating" card on the Hub (steps 2..5).
-                        unawaited(
-                          ref
-                              .read(createProgressProvider.notifier)
-                              .save(_step + 1),
-                        );
-                        context.pop();
-                      },
+                      // Leave a "continue creating" card on the Hub (steps
+                      // 2..5) that really reopens this step (U8).
+                      onClose: _leaveFlow,
                     ),
                     const SizedBox(height: UiSpace.md),
                     KeyedSubtree(
@@ -466,7 +514,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                   dnaPage: _dnaPage,
                                   totalQuestions: _questions.length,
                                   dna: _dna,
-                                  hideWeight: _hideWeight,
+                                  hideWeight: _form!.hideMetric,
                                   trophyController: _trophy,
                                   placeController: _place,
                                   nameLeftController: _nameLeft,
@@ -474,10 +522,13 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                                   habitController: _habit,
                                   reasonController: _reason,
                                   onSetDna: _setDna,
+                                  // The toggle is the journey's hide-number
+                                  // default (bug B-B12).
                                   onHideWeightChanged: (v) =>
-                                      setState(() => _hideWeight = v),
+                                      _update((f) => f.hideMetric = v),
                                   onAdvanceDna: _advanceDna,
                                   onApplyDates: _applyDates,
+                                  today: _todayDate(_form!),
                                 )
                               : CreateDetailStep(
                                   form: _form!,
@@ -538,6 +589,139 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     );
   }
 
+  // ---- Saved progress ("continue creating", U8) ----------------------------
+
+  static String _iso(DateTime d) =>
+      LocalDate(d.year, d.month, d.day).toString();
+
+  /// Everything needed to reopen the flow on this step.
+  Map<String, Object?> _snapshot() {
+    final form = _form!;
+    return {
+      'v': 1,
+      'clientId': _clientId,
+      'reminder': _reminder,
+      'option': _option!.keyName,
+      'step': _step,
+      'dnaPage': _dnaPage,
+      'dna': {
+        for (final e in _dna.entries)
+          e.key: e.value is DnaDates
+              ? {
+                  'start': _iso((e.value as DnaDates).start),
+                  if ((e.value as DnaDates).end case final end?)
+                    'end': _iso(end),
+                }
+              : e.value,
+      },
+      'title': form.title,
+      'emoji': form.emoji,
+      'durationDays': form.durationDays,
+      'trackMetric': form.trackMetric,
+      'metricName': form.metricName,
+      'metricUnit': form.metricUnit,
+      'hideMetric': form.hideMetric,
+      'blurOnShare': form.blurOnShare,
+      'soloVisibility': form.soloVisibility.wireName,
+      'who': _who.name,
+      'nameLeft': _nameLeft.text,
+      'nameRight': _nameRight.text,
+      'trophy': _trophy.text,
+      'place': _place.text,
+      'habit': _habit.text,
+      'reason': _reason.text,
+      'start': _start?.toString(),
+      'variant': _variant,
+    };
+  }
+
+  /// Restores a [_snapshot]; false (nothing changed) when it is unusable.
+  bool _restore(Map<String, Object?> d) {
+    try {
+      final option = _options.firstWhere((o) => o.keyName == d['option']);
+      _apply(option);
+      final form = _form!;
+      if (d['clientId'] case final String id when id.isNotEmpty) {
+        _clientId = id;
+      }
+      _reminder = d['reminder'] as String?;
+      form
+        ..title = d['title']! as String
+        ..emoji = d['emoji']! as String
+        ..durationDays = d['durationDays'] as int?
+        ..trackMetric = d['trackMetric']! as bool
+        ..metricName = d['metricName']! as String
+        ..metricUnit = d['metricUnit']! as String
+        ..hideMetric = d['hideMetric']! as bool
+        ..blurOnShare = d['blurOnShare']! as bool
+        ..soloVisibility = JourneyVisibility.fromWire(
+          d['soloVisibility']! as String,
+        );
+      final who = CreateWho.values.byName(d['who']! as String);
+      _who = _localOnly && who == CreateWho.group ? CreateWho.solo : who;
+      _applyWho(form);
+      _title.text = form.title;
+      _duration.text = form.durationDays?.toString() ?? '';
+      _metricName.text = form.metricName;
+      _metricUnit.text = form.metricUnit;
+      _nameLeft.text = d['nameLeft'] as String? ?? '';
+      _nameRight.text = d['nameRight'] as String? ?? '';
+      _trophy.text = d['trophy'] as String? ?? '';
+      _place.text = d['place'] as String? ?? '';
+      _habit.text = d['habit'] as String? ?? '';
+      _reason.text = d['reason'] as String? ?? '';
+      _dna.clear();
+      for (final e in (d['dna']! as Map<String, Object?>).entries) {
+        final v = e.value;
+        if (v is Map<String, Object?>) {
+          LocalDate? date(Object? x) => x is String ? LocalDate.parse(x) : null;
+          final start = date(v['start'])!;
+          final end = date(v['end']);
+          _dna[e.key] = DnaDates(
+            DateTime(start.year, start.month, start.day),
+            end == null ? null : DateTime(end.year, end.month, end.day),
+          );
+        } else if (v != null) {
+          _dna[e.key] = v;
+        }
+      }
+      final start = d['start'];
+      _start = start is String ? LocalDate.parse(start) : null;
+      _variant = ((d['variant'] as int?) ?? 0).clamp(0, 2);
+      _dnaPage = ((d['dnaPage'] as int?) ?? 0).clamp(0, _questions.length);
+      _step = ((d['step'] as int?) ?? 1).clamp(1, _steps - 1);
+      return true;
+    } on Object {
+      // Older or broken draft: start over (and forget it).
+      _option = null;
+      _form = null;
+      _who = CreateWho.solo;
+      _dna.clear();
+      _step = 0;
+      unawaited(ref.read(createProgressProvider.notifier).clear());
+      return false;
+    }
+  }
+
+  /// Set while [_leaveFlow] pops the route.
+  bool _leaving = false;
+
+  /// Leaving the flow: keep a resumable draft from step 2 on. Before that, a
+  /// fresh visit leaves the saved draft be; only a resumed flow clears it so
+  /// the Hub card does not linger (U8).
+  void _leaveFlow() {
+    if (_busy) return; // The journey is being created: stay for the result.
+    _leaving = true;
+    final progress = ref.read(createProgressProvider.notifier);
+    if (_step == 0 || _form == null || _option == null) {
+      // A fresh visit that never got past step 1 leaves the saved draft be.
+      if (widget.resume) unawaited(progress.clear());
+    } else {
+      unawaited(progress.save(_step + 1, draft: _snapshot()));
+    }
+    context.pop();
+  }
+
   // ---- Step 2: DNA questions (V2 `CreateStepTwo`) -------------------------
 
   void _setDna(String key, Object value) => setState(() => _dna[key] = value);
@@ -557,13 +741,14 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     _start = LocalDate(d.start.year, d.start.month, d.start.day);
     if (_start!.isBefore(today)) _start = today;
     final end = d.end;
-    if (end == null) return;
-    final n =
-        DateUtils.dateOnly(end).difference(DateUtils.dateOnly(d.start)).inDays +
-        1;
-    if (validateDurationDays(n) == null) {
-      _update((f) => f.durationDays = n);
-      _duration.text = '$n';
+    if (end == null) {
+      // "No return date yet": an open-ended trip (bug B-B11).
+      _update((f) => f.durationDays = null);
+      _duration.text = '';
+      return;
     }
+    final n = dnaTripDays(d.start, end);
+    _update((f) => f.durationDays = n);
+    _duration.text = '$n';
   }
 }

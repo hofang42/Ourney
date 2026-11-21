@@ -5,7 +5,9 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
+import '../../safety/data/safety_providers.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import 'sharing_widgets.dart';
@@ -37,7 +39,16 @@ class SharedWithMeList extends ConsumerWidget {
     }
     final l10n = SharingL10n.of(context);
     final async = ref.watch(sharedWithMeProvider);
-    final items = async.value;
+    // A journey from someone just blocked disappears at once (C-B3).
+    final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final items = async.value == null
+        ? null
+        : [
+            for (final s in async.value!)
+              if (!blocked.contains(s.owner.userId) &&
+                  !blocked.contains(s.sharedBy.userId))
+                s,
+          ];
     if (items == null) {
       return async.hasError
           ? SharingErrorView(
@@ -155,7 +166,10 @@ class _SharedJourneyRowState extends ConsumerState<SharedJourneyRow> {
           if (range != null)
             Text(range, style: UiText.body(size: 12, color: ui.inkMuted)),
         ] else
-          UiStyleLabel(label: '${style.name} · $status', dot: style.accent),
+          UiStyleLabel(
+            label: '${journeyStyleName(context, style)} · $status',
+            dot: style.accent,
+          ),
       ],
     );
 

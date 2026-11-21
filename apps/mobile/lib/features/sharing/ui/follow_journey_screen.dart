@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/journeys_paths.dart';
 import '../data/sharing_providers.dart';
@@ -69,6 +70,7 @@ class _FollowBody extends StatelessWidget {
         emoji: frame.emoji,
       ),
     );
+    final styleName = journeyStyleName(context, style);
     final dark = ui.brightness == Brightness.dark;
     final cardBg = dark ? ui.surface : style.paper;
     final cardInk = dark ? ui.ink : style.ink;
@@ -153,10 +155,10 @@ class _FollowBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: UiSpace.md),
-              UiEyebrow(style.name.toUpperCase(), color: cardInk),
+              UiEyebrow(styleName.toUpperCase(), color: cardInk),
               const SizedBox(height: 4),
               Text(
-                l10n.sharing_startYourOwn(style.name),
+                l10n.sharing_startYourOwn(styleName),
                 style: UiText.h2(size: 24, color: cardInk),
               ),
               const SizedBox(height: 6),

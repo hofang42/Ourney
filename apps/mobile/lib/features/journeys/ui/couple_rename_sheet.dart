@@ -68,7 +68,6 @@ class _CoupleRenameSheetState extends ConsumerState<_CoupleRenameSheet> {
     final ui = context.ui;
     return SingleChildScrollView(
       key: const ValueKey('couple-rename-sheet'),
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

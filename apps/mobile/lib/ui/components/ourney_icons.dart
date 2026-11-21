@@ -626,6 +626,7 @@ class OurneyIconPainter extends CustomPainter {
     this.active = false,
     this.shadow,
     this.dieCut = const Color(0xFFFFFFFF),
+    this.haloFallback,
     this.flat = false,
   });
 
@@ -648,10 +649,56 @@ class OurneyIconPainter extends CustomPainter {
   final Color? shadow;
   final Color dieCut;
 
+  /// Outline used instead of [ink] when the fill is within 1.6:1 of it.
+  final Color? haloFallback;
+
+  /// WCAG-style luminance ratio of two colors (>= 1).
+  static double contrast(Color a, Color b) {
+    final x = a.computeLuminance() + 0.05;
+    final y = b.computeLuminance() + 0.05;
+    return x > y ? x / y : y / x;
+  }
+
+  static List<double> _oklab(Color c) {
+    double lin(double v) =>
+        v <= 0.04045 ? v / 12.92 : math.pow((v + 0.055) / 1.055, 2.4) as double;
+    double cbrt(double v) => math.pow(v, 1 / 3) as double;
+    final r = lin(c.r), g = lin(c.g), b = lin(c.b);
+    final l = cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+    final m = cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+    final s = cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+    return [
+      0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+      1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+      0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+    ];
+  }
+
+  /// Safety net, not a tint rule: true when the fill and the outline are the
+  /// same color or visually indistinguishable (OKLab lightness within 0.15
+  /// and total distance under 0.1), so the sticker would be one solid blob.
+  /// Saturated fills of similar brightness (yellow, lime, mint, ice on the
+  /// cream dark ink) differ in chroma and stay stickers. Call sites choose
+  /// line glyphs explicitly with `flat: true`.
+  static bool collapses(Color color, Color ink) {
+    if (color == ink) return true;
+    final p = _oklab(color), q = _oklab(ink);
+    final dl = (p[0] - q[0]).abs();
+    final da = p[1] - q[1], db = p[2] - q[2];
+    return dl < 0.15 && math.sqrt(dl * dl + da * da + db * db) < 0.1;
+  }
+
+  /// A fill this close to the outline in luminance (< 1.6:1) is not drawn
+  /// with the ink halo but with [haloFallback] so it stays readable.
+  static bool lowContrast(Color color, Color ink) => contrast(color, ink) < 1.6;
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = ourneyIconPath(name);
     if (path == null) return;
+    // A two-tone icon whose fill and ink coincide is drawn as a single
+    // [color] line glyph instead of a filled blob (details stay visible).
+    final flat = this.flat || collapses(color, ink);
     final scale = size.width / 24;
     final tiny = size.width < 16;
     final full = size.width >= 24;
@@ -685,7 +732,11 @@ class OurneyIconPainter extends CustomPainter {
       }
       layer(path, dieCut, 12);
     }
-    if (!tiny) layer(path, ink, full ? 6 : 5);
+    // The ink halo scales with the icon so it does not clump at 16-22px.
+    final halo = haloFallback != null && lowContrast(color, ink)
+        ? haloFallback!
+        : ink;
+    if (!tiny) layer(path, halo, (size.width * 0.22).clamp(3.5, 6.0));
     layer(path, color, tiny ? 3.5 : 2);
     final core = _cores[name];
     if (core != null && !tiny && color == ourneyIconColor(name)) {
@@ -707,7 +758,8 @@ class OurneyIconPainter extends CustomPainter {
       old.active != active ||
       old.flat != flat ||
       old.shadow != shadow ||
-      old.dieCut != dieCut;
+      old.dieCut != dieCut ||
+      old.haloFallback != haloFallback;
 }
 
 /// A drawn Ourney sticker icon (`OIcon` in V2). Never a Material icon.
@@ -717,7 +769,8 @@ class OurneyIconPainter extends CustomPainter {
 /// sticker. Pass it as the `glyph:` of kit widgets (`UiButton`, `UiChip`,
 /// `UiMenuItem`, `UiEmptyState`...). Names: see [ourneyIconNames].
 ///
-/// [color] overrides the sticker fill (e.g. a solid ink glyph) and [inkColor]
+/// Tone is explicit: pass `flat: true` for a line glyph (disabled, muted,
+/// on-accent); the default is the sticker. [color] overrides the sticker fill (e.g. a solid ink glyph) and [inkColor]
 /// the outline; they default to the V2 palette and `context.ui.ink`.
 /// Decorative unless [semanticLabel] is given.
 class OurneyIcon extends StatelessWidget {
@@ -727,6 +780,7 @@ class OurneyIcon extends StatelessWidget {
     this.active = false,
     this.color,
     this.inkColor,
+    this.dieCut,
     this.flat = false,
     this.semanticLabel,
     super.key,
@@ -741,21 +795,28 @@ class OurneyIcon extends StatelessWidget {
   final bool active;
   final Color? color;
   final Color? inkColor;
+
+  /// Edge ring of an [active] icon; defaults to white (light) / the surface
+  /// (dark). Pass a transparent color over photos and accent backgrounds.
+  final Color? dieCut;
   final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final ink = inkColor ?? ui.ink;
     final Widget icon = SizedBox.square(
       dimension: size,
       child: CustomPaint(
         painter: OurneyIconPainter(
           name: name,
           color: color ?? (flat ? ui.ink : ourneyIconColor(name)),
-          ink: inkColor ?? ui.ink,
+          ink: ink,
           active: active,
           flat: flat,
-          shadow: ui.isDark ? const Color(0xFF000000) : ui.ink,
+          shadow: ui.isDark ? ui.hardShadowColor : ui.ink,
+          dieCut: dieCut ?? (ui.isDark ? ui.surface : const Color(0xFFFFFFFF)),
+          haloFallback: ui.hardShadowColor,
         ),
       ),
     );

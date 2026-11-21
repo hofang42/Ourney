@@ -23,7 +23,8 @@ class UiScaffold extends StatelessWidget {
   final Color? background;
 
   /// Pinned below the content, above the keyboard / safe area
-  /// (e.g. a dock or the primary button).
+  /// (e.g. a dock or the primary button). Always kept clear of the bottom
+  /// safe-area inset, so callers must not add it themselves.
   final Widget? bottom;
   final bool scroll;
 
@@ -75,7 +76,16 @@ class UiScaffold extends StatelessWidget {
                 child: Column(
                   children: [
                     Expanded(child: body),
-                    ?bottom,
+                    // The pinned slot always clears the home indicator /
+                    // gesture bar (U1). Inside it the bottom padding is
+                    // consumed, so children reading it get 0 (no double pad).
+                    if (bottom case final pinned?)
+                      SafeArea(
+                        top: false,
+                        left: false,
+                        right: false,
+                        child: pinned,
+                      ),
                   ],
                 ),
               ),

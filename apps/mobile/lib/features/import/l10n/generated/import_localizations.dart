@@ -173,25 +173,25 @@ abstract class ImportL10n {
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Quiet'**
+  /// **'Lặng lẽ'**
   String get import_layout_quiet;
 
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Memory'**
+  /// **'Ký ức'**
   String get import_layout_memory;
 
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Flexer'**
+  /// **'Khoe thẩm mỹ'**
   String get import_layout_flexer;
 
   /// Import past journey flow.
   ///
   /// In vi, this message translates to:
-  /// **'Minimalist'**
+  /// **'Tối giản'**
   String get import_layout_minimal;
 
   /// Import past journey flow.
@@ -433,6 +433,12 @@ abstract class ImportL10n {
   /// In vi, this message translates to:
   /// **'Không mở được thư viện ảnh.'**
   String get import_pickFailed;
+
+  /// Import failure summary with the first error code.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count} ảnh chưa lưu được ({reason})'**
+  String import_failedWithReason(int count, String reason);
 }
 
 class _ImportL10nDelegate extends LocalizationsDelegate<ImportL10n> {

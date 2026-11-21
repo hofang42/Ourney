@@ -12,8 +12,8 @@ import '../l10n/generated/journeys_localizations.dart';
 import 'journey_extras.dart';
 import 'journey_photo.dart';
 
-/// `/journey/:id/day/:date`: full photo of the caller's check-in for that
-/// day with caption and metric, on the camera black. The metric starts
+/// `/journey/:id/day/:date`: the caller's photos of that day (swipe through
+/// several, B-B6) with caption and metric, on the camera black. The metric starts
 /// hidden when the journey or the caller hides it (FR-B7) and can be
 /// revealed on this device.
 class DayViewerScreen extends ConsumerStatefulWidget {
@@ -41,6 +41,15 @@ class DayViewerScreen extends ConsumerStatefulWidget {
 
 class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
   bool _revealMetric = false;
+  // Created once the day's photos are known: it opens on the latest one.
+  PageController? _pages;
+  int _page = 0;
+
+  @override
+  void dispose() {
+    _pages?.dispose();
+    super.dispose();
+  }
 
   static const _muted = UiCamera.muted;
 
@@ -52,15 +61,20 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
     final membership = ref.watch(myMembershipProvider(widget.journeyId)).value;
     final checkIns = ref.watch(myCheckInsProvider(widget.journeyId));
     final date = widget.date;
-    CheckIn? checkIn;
-    if (date != null) {
-      for (final c in checkIns.value ?? const <CheckIn>[]) {
-        if (c.localDate == date &&
-            (checkIn == null || c.capturedAt.isAfter(checkIn.capturedAt))) {
-          checkIn = c;
-        }
-      }
+    // Every photo of the day, oldest first (several a day since `0014`).
+    final dayCheckIns = date == null
+        ? const <CheckIn>[]
+        : ([
+            for (final c in checkIns.value ?? const <CheckIn>[])
+              if (c.localDate == date) c,
+          ]..sort((a, b) => a.capturedAt.compareTo(b.capturedAt)));
+    final count = dayCheckIns.length;
+    if (count > 0 && _pages == null) {
+      _page = count - 1;
+      _pages = PageController(initialPage: count - 1);
     }
+    final index = count == 0 ? 0 : _page.clamp(0, count - 1);
+    final checkIn = count == 0 ? null : dayCheckIns[index];
 
     final hidden =
         (membership?.hideMetric ?? journey?.hideMetricDefault ?? false) &&
@@ -133,20 +147,70 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
               borderRadius: BorderRadius.circular(UiRadius.card),
               child: AspectRatio(
                 aspectRatio: 1,
-                child: Semantics(
-                  image: true,
-                  label: checkIn.caption ?? dateText,
-                  child: JourneyPhoto(
-                    key: const ValueKey('journey-day-photo'),
-                    checkIn: checkIn,
-                    thumbnail: false,
-                    fallback: Center(
-                      child: Text(
-                        l10n.journeys_photoUnavailable,
-                        style: UiText.body(size: 14, color: _muted),
-                      ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    PageView.builder(
+                      key: const ValueKey('journey-day-pages'),
+                      controller: _pages,
+                      itemCount: count,
+                      onPageChanged: (i) => setState(() => _page = i),
+                      itemBuilder: (_, i) {
+                        final c = dayCheckIns[i];
+                        return Semantics(
+                          image: true,
+                          label: c.caption ?? dateText,
+                          child: JourneyPhoto(
+                            key: i == index
+                                ? const ValueKey('journey-day-photo')
+                                : null,
+                            checkIn: c,
+                            thumbnail: false,
+                            fallback: Center(
+                              child: Text(
+                                l10n.journeys_photoUnavailable,
+                                style: UiText.body(size: 14, color: _muted),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
+                    if (count > 1)
+                      Positioned(
+                        right: UiSpace.sm,
+                        bottom: UiSpace.sm,
+                        child: Semantics(
+                          label: l10n.journeys_dayPhotoCountSemantics(
+                            index + 1,
+                            count,
+                          ),
+                          excludeSemantics: true,
+                          child: Container(
+                            key: const ValueKey('journey-day-counter'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: UiSpace.sm,
+                              vertical: UiSpace.xs,
+                            ),
+                            decoration: BoxDecoration(
+                              color: UiCamera.bg.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(
+                                UiRadius.capsule,
+                              ),
+                            ),
+                            child: Text(
+                              l10n.journeys_dayPhotoCount(index + 1, count),
+                              style: UiText.body(
+                                size: 12,
+                                weight: FontWeight.w700,
+                                height: 1.3,
+                                color: UiCamera.ink,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),

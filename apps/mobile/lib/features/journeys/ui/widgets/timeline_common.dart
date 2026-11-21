@@ -166,13 +166,13 @@ class TimelineNumber extends StatelessWidget {
     final style = UiText.body(
       size: size,
       weight: FontWeight.w800,
-      height: 1.2,
+      height: 1.3,
       color: color ?? context.ui.ink,
     );
     return Text(
       text,
       maxLines: 1,
-      textScaler: TextScaler.noScaling,
+      textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.35),
       style: mono ? style.copyWith(fontFamily: UiFonts.mono) : style,
     );
   }

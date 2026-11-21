@@ -36,15 +36,36 @@
   "checkin_done_stampChecked": "CHECKED IN",
   "checkin_done_stampWeek1": "WEEK 1 DONE",
   "checkin_done_stampCup": "CUP WON",
-  "checkin_done_memoryStamp": "PASTED · DAY {day}",
-  "@checkin_done_memoryStamp": {"placeholders": {"day": {"type": "int"}}},
+  "checkin_done_memoryStamp": "PASTED · JOURNEY DAY {day}",
+  "@checkin_done_memoryStamp": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_done_coupleDay": "Day {day}",
-  "@checkin_done_coupleDay": {"placeholders": {"day": {"type": "int"}}},
+  "@checkin_done_coupleDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_done_coupleSent": "Your half is sent.",
   "checkin_done_coupleWeek": "First week together",
   "checkin_done_coupleFull30": "A full 30 days",
   "checkin_done_flexerDay": "DAY {day}. {streak} DAYS STRAIGHT.",
-  "@checkin_done_flexerDay": {"placeholders": {"day": {"type": "int"}, "streak": {"type": "int"}}},
+  "@checkin_done_flexerDay": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "streak": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_done_flexerWeek": "WEEK ONE DONE",
   "checkin_done_flexerFinish": "FINISHED",
   "checkin_done_minimalDone": "DONE.",
@@ -81,7 +102,13 @@
   "checkin_extraMoodTired": "A bit tired",
   "checkin_extraMinutesLabel": "How long did you study today?",
   "checkin_extraMinutesValue": "{minutes} min",
-  "@checkin_extraMinutesValue": {"placeholders": {"minutes": {"type": "int"}}},
+  "@checkin_extraMinutesValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_extraMinutesOther": "Other",
   "checkin_extraMinutesLess": "Five minutes less",
   "checkin_extraMinutesMore": "Five minutes more",
@@ -94,7 +121,13 @@
   "checkin_extraPartner": "Partner",
   "checkin_extraHeartsLabel": "How many hearts for this meal?",
   "checkin_extraHeartsValue": "{count} hearts",
-  "@checkin_extraHeartsValue": {"placeholders": {"count": {"type": "int"}}},
+  "@checkin_extraHeartsValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "checkin_extraPartnerPhoto": "Add your partner's photo",
   "checkin_extraPartnerPhotoChange": "Change partner's photo",
   "checkin_extraPartnerPhotoRemove": "Remove partner's photo",
@@ -106,6 +139,13 @@
   "checkin_extraKmInvalid": "Distance must be 0.1 to 500 km, one decimal",
   "checkin_extraBackspace": "Delete one digit",
   "checkin_extraCountdown": "Posting in {seconds} s",
-  "@checkin_extraCountdown": {"placeholders": {"seconds": {"type": "int"}}},
-  "checkin_extraCountdownStop": "Tap anywhere to stop"
+  "@checkin_extraCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "checkin_extraCountdownStop": "Tap anywhere to stop",
+  "checkin_details": "Details"
 }

@@ -32,10 +32,10 @@ void main() {
       expect(OurneyUi.light.inkMuted, const Color(0xFF5A544C));
       expect(OurneyUi.light.brand, const Color(0xFFFF8A3D));
       expect(OurneyUi.light.danger, const Color(0xFFB3261E));
-      expect(OurneyUi.dark.bg, const Color(0xFF121212));
-      expect(OurneyUi.dark.ink, const Color(0xFFF5F0E6));
-      expect(OurneyUi.dark.surface, const Color(0xFF1C1B19));
-      expect(OurneyUi.dark.inkMuted, const Color(0xFFB8B0A4));
+      expect(OurneyUi.dark.bg, const Color(0xFF1B1916));
+      expect(OurneyUi.dark.ink, const Color(0xFFECE5D8));
+      expect(OurneyUi.dark.surface, const Color(0xFF25221E));
+      expect(OurneyUi.dark.inkMuted, const Color(0xFFB3AA9C));
       expect(OurneyUi.dark.brand, const Color(0xFFFF8A3D));
     });
 
@@ -62,13 +62,13 @@ void main() {
         uiSkins.map((s) => s.id).toSet(),
       );
       final dark = uiSkinById('squad').apply(OurneyUi.dark, variantIndex: 1);
-      expect(dark.bg, const Color(0xFF12131A));
-      expect(dark.ink, const Color(0xFFF8FAFC));
+      expect(dark.bg, const Color(0xFF191A22));
+      expect(dark.ink, const Color(0xFFEEEFF4));
       // V2 override: minimal variant 1 in dark mode uses a light button.
       final minimal = uiSkinById('minimal')
           .apply(OurneyUi.dark, variantIndex: 1);
-      expect(minimal.brand, const Color(0xFFF4F4F5));
-      expect(minimal.onBrand, const Color(0xFF0E0E10));
+      expect(minimal.brand, const Color(0xFFE4E4E7));
+      expect(minimal.onBrand, const Color(0xFF18181A));
       // Derived neutrals follow the skin, not the warm shell.
       expect(quiet.surfaceInput, quiet.surface);
       expect(quiet.inputBorder, quiet.ink);
@@ -297,6 +297,87 @@ void main() {
       expect(UiGlass.saturationMatrix(1)[0], closeTo(1, 1e-9));
     });
 
+    testWidgets('UiScaffold keeps the bottom slot above the home bar (U1)', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(393 * 3, 852 * 3);
+      tester.view.devicePixelRatio = 3;
+      tester.view.padding = const FakeViewPadding(top: 59 * 3, bottom: 34 * 3);
+      addTearDown(tester.view.reset);
+      for (final scroll in [true, false]) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: OurneyTheme.build(Brightness.light),
+            home: UiScaffold(
+              scroll: scroll,
+              bottom: const SizedBox(key: ValueKey('cta'), height: 52),
+              child: const SizedBox(height: 10),
+            ),
+          ),
+        );
+        final cta = tester.getRect(find.byKey(const ValueKey('cta')));
+        expect(cta.bottom, 852 - 34, reason: 'scroll: $scroll');
+      }
+    });
+
+    testWidgets('UiPressable without a label is named by its content (U3)', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          UiPressable(
+            onPressed: () {},
+            child: Column(
+              children: [
+                Semantics(header: true, child: const Text('Giảm cân')),
+                const Text('Theo dõi số đo mỗi tuần'),
+              ],
+            ),
+          ),
+        ),
+      );
+      await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+      expect(
+        tester.getSemantics(find.byType(UiPressable)),
+        matchesSemantics(
+          label: 'Giảm cân\nTheo dõi số đo mỗi tuần',
+          isButton: true,
+          hasTapAction: true,
+          hasEnabledState: true,
+          isEnabled: true,
+          isHeader: true,
+          hasFocusAction: true,
+          isFocusable: true,
+        ),
+      );
+      handle.dispose();
+    });
+
+    test('UiAvatar initials reach 4.5:1 on every disc (U14)', () {
+      double ratio(Color a, Color b) {
+        final la = a.computeLuminance();
+        final lb = b.computeLuminance();
+        return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
+      }
+
+      for (final disc in uiAvatarColors) {
+        expect(ratio(disc, uiAvatarInk(disc)), greaterThanOrEqualTo(4.5));
+      }
+    });
+
+    testWidgets('UiAvatar initial stays inside the disc at 2x text (U15)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host(const Center(child: UiAvatar(name: 'Linh')), textScale: 2),
+      );
+      final disc = tester.getRect(find.byType(UiAvatar));
+      final text = tester.getRect(find.text('L'));
+      expect(disc.contains(text.topLeft), isTrue);
+      expect(disc.contains(text.bottomRight), isTrue);
+    });
+
     testWidgets('UiSegmented switches value', (tester) async {
       var v = 'a';
       await tester.pumpWidget(
@@ -316,6 +397,10 @@ void main() {
       await tester.tap(find.text('Được chia sẻ'));
       await tester.pump();
       expect(v, 'b');
+      // Each segment is a full 48dp tap target (U5).
+      for (final p in tester.widgetList(find.byType(UiPressable))) {
+        expect(tester.getSize(find.byWidget(p)).height, UiSize.tap);
+      }
     });
 
     testWidgets('UiOtpField shows typed digits and caps at 6', (tester) async {

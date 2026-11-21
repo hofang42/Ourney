@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,9 +10,12 @@ import 'package:uuid/uuid.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
+import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../profile/share_privacy_sync.dart';
+import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/data/sharing_providers.dart';
 import '../l10n/generated/import_localizations.dart';
 import 'import_widgets.dart';
@@ -74,6 +79,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   bool _busy = false;
   int _done = 0;
   int _failed = 0;
+
+  /// Wire code of the first photo failure, shown in the summary.
+  String? _firstError;
   String? _saveError;
   Journey? _created;
 
@@ -83,9 +91,19 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     super.dispose();
   }
 
-  LocalDate _today() {
-    final now = ref.read(journeysClockProvider).now();
-    return LocalDate(now.year, now.month, now.day);
+  /// Today on the device's wall clock (bug C-B12: not the UTC date).
+  LocalDate _today() => journeyLocalDate(
+    ref.read(deviceTimezoneProvider).value ?? 'UTC',
+    ref.read(journeysClockProvider).now(),
+  );
+
+  /// The device zone, waiting for the platform answer (bug C-B12).
+  Future<String> _timezone() async {
+    try {
+      return await ref.read(deviceTimezoneProvider.future);
+    } on Object {
+      return 'UTC';
+    }
   }
 
   List<String> get _layouts => [
@@ -94,6 +112,14 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     if (_type == 'weight') 'quiet',
     if (_type == 'workout') 'flexer',
   ];
+
+  /// The picker's short id as the persona skin the server stores (C-B11).
+  PersonaSkinId _skinId(String id) => switch (id) {
+    'quiet' => PersonaSkinId.quietTransformer,
+    'flexer' => PersonaSkinId.aestheticFlexer,
+    'minimal' => PersonaSkinId.minimalistHabit,
+    _ => PersonaSkinId.memoryCollectors,
+  };
 
   Iterable<_Photo> get _chosen => _photos.where((p) => p.selected);
   List<_Photo> get _dated =>
@@ -129,11 +155,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         }
         _syncDates();
       });
-    } on Object {
+    } on Object catch (e) {
+      debugPrint('import: picking photos failed: $e');
       if (mounted) {
         final l10n = ImportL10n.of(context);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(l10n.import_pickFailed)));
+        showUiToast(context, l10n.import_pickFailed);
       }
     } finally {
       if (mounted) setState(() => _picking = false);
@@ -181,26 +207,36 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       _saveError = null;
     });
     if (_error(l10n) != null || _busy) return;
-    final timezone = ref.read(deviceTimezoneProvider).value ?? 'UTC';
     setState(() {
       _busy = true;
       _failed = 0;
+      _firstError = null;
     });
+    final timezone = await _timezone();
+    if (!mounted) return;
     try {
       final type = _types.firstWhere((t) => t.id == _type);
+      final fresh = _created == null;
       final journey = _created ??= await ref
           .read(sharingRepositoryProvider)
           .createImported(
             ImportedJourneyDraft(
               id: _clientId,
               title: _place.text.trim(),
-              emoji: templateFor(type.template).emoji,
+              // The couple heart is what marks a custom journey as a
+              // couple one (bug C-B11).
+              emoji: type.id == 'couple'
+                  ? '💞'
+                  : templateFor(type.template).emoji,
               templateId: type.template,
               firstDate: _start!,
               lastDate: _end!,
               timezone: timezone,
+              layout: _skinId(_skin),
+              continues: _continues,
             ),
           );
+      if (fresh) unawaited(pushSharePrivacyToJourney(ref, journey.id));
       final compressor = ref.read(photoCompressorProvider);
       final checkIns = ref.read(checkInRepositoryProvider);
       final drafts = ref.read(draftFilesProvider);
@@ -211,7 +247,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           await checkIns.submit(
             CheckInDraft(
               journeyId: journey.id,
-              capturedAt: noonInZone(photo.date!, journey.timezone),
+              capturedAt: noonInZone(
+                photo.date!,
+                journey.timezone,
+                now: ref.read(journeysClockProvider).now(),
+              ),
               photoFile: files.photoFile,
               thumbFile: files.thumbFile,
               fromLibrary: true,
@@ -220,11 +260,23 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
           await drafts.discard([files.photoFile, files.thumbFile]);
           photo.saved = true;
           if (mounted) setState(() => _done++);
-        } on Object {
-          if (mounted) setState(() => _failed++);
+        } on Object catch (e) {
+          debugPrint('import: photo save failed: $e');
+          if (mounted) {
+            setState(() {
+              _failed++;
+              _firstError ??= e is OurneyException
+                  ? e.error.name
+                  : e.runtimeType.toString();
+            });
+          }
         }
       }
       if (!mounted) return;
+      // A journey that is still going gets its reminders planned (C-B11).
+      if (journey.status == JourneyStatus.active) {
+        unawaited(ref.read(reminderSchedulerProvider).reschedule());
+      }
       if (_failed == 0) {
         context.go(AppRoutes.journey(journey.id));
       } else {
@@ -258,6 +310,8 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   Widget build(BuildContext context) {
     final l10n = ImportL10n.of(context);
     final ui = context.ui;
+    // Keeps the zone loading and rebuilds once it is known (bug C-B12).
+    ref.watch(deviceTimezoneProvider);
     if (ref.watch(appConfigProvider).localOnly) {
       final app = AppLocalizations.of(context);
       return UiScaffold(
@@ -278,7 +332,6 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       );
     }
     final gutter = UiSpace.gutter(MediaQuery.sizeOf(context).width);
-    final viewBottom = MediaQuery.paddingOf(context).bottom;
 
     final Widget body;
     Widget? action;
@@ -316,12 +369,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         padTop: 0,
         padBottom: 0,
         bottom: Padding(
-          padding: EdgeInsets.fromLTRB(
-            gutter,
-            UiSpace.sm,
-            gutter,
-            UiSpace.lg + viewBottom,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
           child: action,
         ),
         child: Column(
@@ -741,7 +789,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            l10n.import_failed(_failed),
+            _firstError == null
+                ? l10n.import_failed(_failed)
+                : l10n.import_failedWithReason(_failed, _firstError!),
             style: UiText.body(
               size: 13,
               weight: FontWeight.w700,
@@ -984,7 +1034,7 @@ class _PhotoTile extends StatelessWidget {
           color: ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: on ? const Color(0xFFFF8A3D) : ui.ink.withValues(alpha: 0.2),
+            color: on ? ui.brand : ui.ink.withValues(alpha: 0.2),
             width: UiBorder.standard,
           ),
         ),
@@ -1010,7 +1060,7 @@ class _PhotoTile extends StatelessWidget {
                         name: 'check',
                         size: 15,
                         flat: true,
-                        color: Color(0xFF111111),
+                        color: UiFlowColors.onPastel,
                       ),
                     ),
                   ),
@@ -1089,7 +1139,7 @@ class _TimelineRow extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF8A3D).withValues(alpha: 0.22),
+                    color: ui.brand.withValues(alpha: 0.22),
                     borderRadius: BorderRadius.circular(UiRadius.capsule),
                   ),
                   child: Text(

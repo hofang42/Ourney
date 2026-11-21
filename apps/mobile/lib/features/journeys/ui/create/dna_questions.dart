@@ -41,6 +41,24 @@ class DnaDates {
   final DateTime? end;
 }
 
+/// Days of a trip from [start] to [end], both included, counted on the
+/// calendar (UTC dates), so a DST change in between cannot drop a day.
+int dnaTripDays(DateTime start, DateTime end) =>
+    DateTime.utc(
+      end.year,
+      end.month,
+      end.day,
+    ).difference(DateTime.utc(start.year, start.month, start.day)).inDays +
+    1;
+
+/// The end of a [start]..[end] trip clamped into the journey length limits
+/// (`durationMin`..`durationMax` days): a shorter pick is lengthened to the
+/// shortest journey, so the calendar shows what will be saved.
+DateTime dnaClampTripEnd(DateTime start, DateTime end) {
+  final n = dnaTripDays(start, end).clamp(durationMin, durationMax);
+  return DateTime(start.year, start.month, start.day + n - 1);
+}
+
 const int dnaWeightMin = 40;
 const int dnaWeightMax = 120;
 const int dnaWeightDefault = 70;

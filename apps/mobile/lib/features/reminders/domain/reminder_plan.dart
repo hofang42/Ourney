@@ -164,6 +164,8 @@ class PlannedNotification {
 ///   check-ins, is at least 1 (i.e. today when yesterday was checked in, or
 ///   tomorrow once today is checked in);
 /// * only instants strictly after [now];
+/// * a reminder at the same instant as a streak alert of the same journey
+///   is dropped (one notification, the alert);
 /// * sorted by time (nearest first) and capped at [maxPending].
 ///
 /// Nonexistent local times (DST spring-forward gap) move forward by the gap
@@ -232,6 +234,19 @@ List<PlannedNotification> planReminders({
       }
     }
   }
+
+  // A daily reminder set to the streak alert's instant (21:00 in the same
+  // zone) would fire twice at once for one journey: keep the alert, whose
+  // text names the streak at stake (B-B14).
+  final alerts = {
+    for (final n in out)
+      if (n.kind == PlannedKind.streakAlert) (n.journeyId, n.fireAt),
+  };
+  out.removeWhere(
+    (n) =>
+        n.kind == PlannedKind.reminder &&
+        alerts.contains((n.journeyId, n.fireAt)),
+  );
 
   out.sort((a, b) {
     final t = a.fireAt.compareTo(b.fireAt);

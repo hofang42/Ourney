@@ -13,7 +13,7 @@ String _hm(DateTime t) {
 /// Time of the member's check-in today, or null while still waiting.
 String? _todayTime(GroupMemberEntry e) {
   final p = e.photo;
-  return e.checkedInToday && p != null ? _hm(p.capturedAt) : null;
+  return e.photoIsToday && p != null ? _hm(p.capturedAt) : null;
 }
 
 List<GroupMemberEntry> _allEntries(GroupTodayView v) => [
@@ -64,37 +64,11 @@ class _SquadWall extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
-    final total = view.memberCount;
-    final label = l10n.groups_wallAttendance(view.doneCount, total);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SharedStreak(view: view),
-        const SizedBox(height: UiSpace.md),
-        Semantics(
-          label: label,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              UiProgressBar(
-                value: total == 0 ? 0 : view.doneCount / total,
-                color: ui.accent,
-                semanticLabel: label,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          key: const ValueKey('group-wall-attendance'),
-          style: UiText.body(
-            size: 12,
-            weight: FontWeight.w900,
-            height: 1.4,
-            color: ui.ink,
-          ),
-        ),
+        const SizedBox(height: 4),
         Text(
           l10n.groups_wallUpdated(_hm(now)),
           style: UiText.body(size: 11, height: 1.4, color: ui.inkMuted),
@@ -127,8 +101,9 @@ Widget? _memberMenu(
   BuildContext context,
   WidgetRef ref,
   GroupMemberEntry entry,
-  GroupPermissions perms,
-) {
+  GroupPermissions perms, {
+  Color? color,
+}) {
   final l10n = GroupsL10n.of(context);
   final hooks = ref.watch(groupSafetyHooksProvider);
   final actions = <_MemberAction>[
@@ -140,7 +115,12 @@ Widget? _memberMenu(
   final tile = _MemberTile(entry: entry, perms: perms, tilt: 0);
   return UiIconButton(
     key: ValueKey('group-member-menu-${entry.member.userId}'),
-    glyph: const OurneyIcon(name: 'more', size: 20),
+    glyph: OurneyIcon(
+      name: 'more',
+      size: 20,
+      color: color,
+      flat: color != null,
+    ),
     label: l10n.groups_memberActions(entry.member.displayName),
     size: UiSize.tap,
     iconSize: 18,
@@ -349,7 +329,7 @@ class _QuietWallState extends ConsumerState<_QuietWall> {
 }
 
 /// A 35mm frame: sprocket strip, photo, caption (memory skin).
-class _FilmFrame extends StatelessWidget {
+class _FilmFrame extends ConsumerWidget {
   const _FilmFrame({
     required this.entry,
     required this.perms,
@@ -361,10 +341,13 @@ class _FilmFrame extends StatelessWidget {
   final String caption;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ui = context.ui;
     final photo = entry.photo;
     final id = entry.member.userId;
+    // The menu sits on the ink-coloured film strip: draw it in the page
+    // background colour so it reads in light and dark.
+    final menu = _memberMenu(context, ref, entry, perms, color: ui.bg);
     Widget sprockets() => Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -394,7 +377,7 @@ class _FilmFrame extends StatelessWidget {
           const SizedBox(height: 6),
           SizedBox(
             height: 170,
-            child: photo == null || !entry.checkedInToday
+            child: photo == null || !entry.photoIsToday
                 ? Container(
                     key: ValueKey('group-member-nophoto-$id'),
                     decoration: BoxDecoration(
@@ -407,18 +390,25 @@ class _FilmFrame extends StatelessWidget {
                   ),
           ),
           const SizedBox(height: 6),
-          Text(
-            caption,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: UiText.body(
-              size: 12,
-              weight: FontWeight.w800,
-              height: 1.4,
-              color: ui.bg,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: UiText.body(
+                    size: 12,
+                    weight: FontWeight.w800,
+                    height: 1.4,
+                    color: ui.bg,
+                  ),
+                ),
+              ),
+              ?menu,
+            ],
           ),
-          if (photo != null && entry.checkedInToday)
+          if (photo != null && entry.photoIsToday)
             ReactionBar(
               checkInId: photo.id,
               enabled: perms.isActive && !entry.isMe,
@@ -476,14 +466,14 @@ class _MemoryWall extends StatelessWidget {
 }
 
 /// Couple skin: "today of the two of you", one half per partner.
-class _CoupleWall extends StatelessWidget {
+class _CoupleWall extends ConsumerWidget {
   const _CoupleWall({required this.view, required this.perms});
 
   final GroupTodayView view;
   final GroupPermissions perms;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
     final entries = _allEntries(view).take(2).toList();
@@ -510,7 +500,7 @@ class _CoupleWall extends StatelessWidget {
           children: [
             for (final (i, e) in entries.indexed) ...[
               if (i > 0) const SizedBox(width: UiSpace.md),
-              Expanded(child: _half(context, e, l10n, ui)),
+              Expanded(child: _half(context, ref, e, l10n, ui)),
             ],
           ],
         ),
@@ -520,6 +510,7 @@ class _CoupleWall extends StatelessWidget {
 
   Widget _half(
     BuildContext context,
+    WidgetRef ref,
     GroupMemberEntry e,
     GroupsL10n l10n,
     OurneyUi ui,
@@ -528,6 +519,7 @@ class _CoupleWall extends StatelessWidget {
     final time = _todayTime(e);
     final photo = e.photo;
     final name = e.member.displayName;
+    final menu = _memberMenu(context, ref, e, perms);
     return Column(
       key: ValueKey('group-member-$id'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -551,19 +543,28 @@ class _CoupleWall extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
-          time == null
-              ? l10n.groups_coupleWaiting(name)
-              : l10n.groups_coupleDone(name, time),
-          key: ValueKey('group-member-status-$id'),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: UiText.body(
-            size: 13,
-            weight: FontWeight.w800,
-            height: 1.4,
-            color: time == null ? ui.inkMuted : ui.ink,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                !e.checkedInToday
+                    ? l10n.groups_coupleWaiting(name)
+                    : time == null
+                    ? l10n.groups_coupleCheckedIn(name)
+                    : l10n.groups_coupleDone(name, time),
+                key: ValueKey('group-member-status-$id'),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: UiText.body(
+                  size: 13,
+                  weight: FontWeight.w800,
+                  height: 1.4,
+                  color: e.checkedInToday ? ui.ink : ui.inkMuted,
+                ),
+              ),
+            ),
+            ?menu,
+          ],
         ),
         if (photo != null && time != null)
           ReactionBar(checkInId: photo.id, enabled: perms.isActive && !e.isMe),
@@ -628,12 +629,17 @@ class _RunnerWall extends ConsumerWidget {
     final photo = e.photo;
     final time = _todayTime(e);
     final name = e.member.displayName.toUpperCase();
-    final km = flexer && done ? e.photo?.extras.km : null;
-    final pace = flexer && done ? e.photo?.extras.pace : null;
-    final stat = km == null
+    final km = flexer && done && e.photoIsToday ? e.photo?.extras.km : null;
+    final pace = flexer && done && e.photoIsToday ? e.photo?.extras.pace : null;
+    final kmText = km == null
         ? null
-        : '${km.toStringAsFixed(2).replaceAll('.', ',')} KM'
-              '${pace == null ? '' : ' · $pace /KM'}';
+        : NumberFormat('0.00', Localizations.localeOf(context).toString())
+              .format(km);
+    final stat = kmText == null
+        ? null
+        : (pace == null
+              ? l10n.groups_flexerKm(kmText)
+              : l10n.groups_flexerKmPace(kmText, pace.toString()));
     final menu = _memberMenu(context, ref, e, perms);
     final status = done
         ? (flexer ? l10n.groups_flexerDone(time ?? '') : (time ?? ''))
@@ -709,7 +715,7 @@ class _RunnerWall extends ConsumerWidget {
                       color: ui.accent,
                     ),
                   ),
-                if (done && photo != null)
+                if (done && photo != null && e.photoIsToday)
                   ReactionBar(
                     checkInId: photo.id,
                     enabled: perms.isActive && !e.isMe,
@@ -717,7 +723,7 @@ class _RunnerWall extends ConsumerWidget {
               ],
             ),
           ),
-          if (done && photo != null) ...[
+          if (done && photo != null && e.photoIsToday) ...[
             const SizedBox(width: UiSpace.sm),
             SizedBox(
               width: 72,

@@ -122,7 +122,7 @@ Map<String, dynamic> createJourneyParams(String id, JourneyDraft d) => {
   'p_start_date': d.startDate.toString(),
   'p_duration_days': d.durationDays,
   'p_timezone': d.timezone,
-  'p_max_members': d.kind == JourneyKind.solo ? 1 : maxGroupMembers,
+  'p_max_members': maxMembersForDraft(d),
   'p_visibility': normalizedVisibility(d.kind, d.visibility).wireName,
   'p_couple_self_name': d.coupleSelfName?.trim(),
   'p_couple_partner_name': d.couplePartnerName?.trim(),
@@ -302,7 +302,9 @@ MemberToday memberTodayFromRemote(
 }) {
   final userId = r['user_id'] as String;
   final checkInId = r['checkin_id'] as String?;
-  final checkedIn = (r['checked_in'] as bool? ?? false) && checkInId != null;
+  final checkedIn = r['checked_in'] as bool? ?? false;
+  // L7: a check-in the caller reported comes back with checked_in = true but
+  // no id/thumb/time; the member still checked in today.
   return MemberToday(
     userId: userId,
     username: r['username'] as String?,
@@ -310,7 +312,8 @@ MemberToday memberTodayFromRemote(
     avatarPath: r['avatar_path'] as String?,
     role: MemberRole.fromWire(r['role'] as String),
     currentStreak: (r['current_streak'] as num?)?.toInt() ?? 0,
-    todayCheckIn: checkedIn
+    checkedInHidden: checkedIn && checkInId == null,
+    todayCheckIn: checkedIn && checkInId != null
         ? CheckIn(
             id: checkInId,
             journeyId: journeyId,

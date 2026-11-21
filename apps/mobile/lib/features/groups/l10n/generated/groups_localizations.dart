@@ -242,6 +242,12 @@ abstract class GroupsL10n {
   /// **'Hành trình này đã kết thúc.'**
   String get groups_errorEnded;
 
+  /// No description provided for @groups_errorSyncPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh vẫn đang tải lên, thử lại sau ít phút.'**
+  String get groups_errorSyncPending;
+
   /// No description provided for @groups_errorForbidden.
   ///
   /// In vi, this message translates to:
@@ -251,7 +257,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_errorNotAlone.
   ///
   /// In vi, this message translates to:
-  /// **'Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xoá.'**
+  /// **'Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xóa.'**
   String get groups_errorNotAlone;
 
   /// No description provided for @groups_errorInvalid.
@@ -413,19 +419,19 @@ abstract class GroupsL10n {
   /// No description provided for @groups_actionDelete.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá hành trình'**
+  /// **'Xóa hành trình'**
   String get groups_actionDelete;
 
   /// No description provided for @groups_deleteTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá hành trình nhóm này?'**
+  /// **'Xóa hành trình nhóm này?'**
   String get groups_deleteTitle;
 
   /// No description provided for @groups_deleteMessage.
   ///
   /// In vi, this message translates to:
-  /// **'Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xoá vĩnh viễn.'**
+  /// **'Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xóa vĩnh viễn.'**
   String get groups_deleteMessage;
 
   /// No description provided for @groups_actionLeave.
@@ -467,13 +473,13 @@ abstract class GroupsL10n {
   /// No description provided for @groups_actionRemove.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá khỏi nhóm'**
+  /// **'Xóa khỏi nhóm'**
   String get groups_actionRemove;
 
   /// No description provided for @groups_removeTitle.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá {name} khỏi nhóm?'**
+  /// **'Xóa {name} khỏi nhóm?'**
   String groups_removeTitle(String name);
 
   /// No description provided for @groups_removeMessage.
@@ -485,7 +491,7 @@ abstract class GroupsL10n {
   /// No description provided for @groups_removedDone.
   ///
   /// In vi, this message translates to:
-  /// **'Đã xoá {name} khỏi nhóm.'**
+  /// **'Đã xóa {name} khỏi nhóm.'**
   String groups_removedDone(String name);
 
   /// Member menu entry; the flow belongs to the safety feature.
@@ -854,12 +860,6 @@ abstract class GroupsL10n {
   /// **'Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.'**
   String get groups_emptyCardBody;
 
-  /// No description provided for @groups_wallAttendance.
-  ///
-  /// In vi, this message translates to:
-  /// **'{done}/{total} ĐÃ ĐIỂM DANH'**
-  String groups_wallAttendance(int done, int total);
-
   /// No description provided for @groups_wallUpdated.
   ///
   /// In vi, this message translates to:
@@ -950,6 +950,12 @@ abstract class GroupsL10n {
   /// **'{name} · đã chụp {time}'**
   String groups_coupleDone(String name, String time);
 
+  /// No description provided for @groups_coupleCheckedIn.
+  ///
+  /// In vi, this message translates to:
+  /// **'{name} · đã check-in'**
+  String groups_coupleCheckedIn(String name);
+
   /// No description provided for @groups_coupleWaiting.
   ///
   /// In vi, this message translates to:
@@ -985,6 +991,30 @@ abstract class GroupsL10n {
   /// In vi, this message translates to:
   /// **'CHƯA'**
   String get groups_minimalPending;
+
+  /// Confirm sheet title before revoking a pending invite.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thu hồi lời mời?'**
+  String get groups_inviteRevokeTitle;
+
+  /// Confirm sheet body before revoking a pending invite.
+  ///
+  /// In vi, this message translates to:
+  /// **'Người được mời sẽ không thể dùng lời mời này nữa.'**
+  String get groups_inviteRevokeMessage;
+
+  /// Flexer wall stat: distance.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM'**
+  String groups_flexerKm(String km);
+
+  /// Flexer wall stat: distance and pace.
+  ///
+  /// In vi, this message translates to:
+  /// **'{km} KM · {pace} /KM'**
+  String groups_flexerKmPace(String km, String pace);
 }
 
 class _GroupsL10nDelegate extends LocalizationsDelegate<GroupsL10n> {

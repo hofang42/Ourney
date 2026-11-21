@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -219,6 +221,48 @@ void main() {
         ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
+    });
+
+    testWidgets('plain denial (Android never-ask-again) offers Settings and '
+        'retries when back from it (U7)', (tester) async {
+      // CameraX reports "don't ask again" as a plain CameraAccessDenied.
+      camera.failure = CameraFailure.permissionDenied;
+      await pump(tester);
+      expect(find.byKey(const ValueKey('capture-denied')), findsOneWidget);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('capture-open-settings')),
+      );
+      await tester.tap(find.byKey(const ValueKey('capture-open-settings')));
+      await tester.pump();
+      expect(settings.opened, 1);
+
+      camera.failure = null;
+      tester.binding
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.hidden)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.paused)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.hidden)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.inactive)
+        ..handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
+    });
+
+    testWidgets('leaving while the camera starts does not throw and still '
+        'remembers the permission was asked (B-B4)', (tester) async {
+      camera.startGate = Completer<void>();
+      await pump(tester, prefsValues: const {});
+      await tester.ensureVisible(find.text('Cho phép camera'));
+      await tester.pump();
+      await tester.tap(find.text('Cho phép camera'));
+      await tester.pump();
+      expect(camera.starts, 1);
+
+      await tester.pumpWidget(const SizedBox());
+      camera.startGate!.complete();
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      expect(prefs.getBool(CameraPrefs.permissionAsked), isTrue);
     });
 
     testWidgets('denied without Settings URL (Android) shows the path', (

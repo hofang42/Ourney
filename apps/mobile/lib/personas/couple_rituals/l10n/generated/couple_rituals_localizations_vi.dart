@@ -10,7 +10,7 @@ class CoupleRitualsL10nVi extends CoupleRitualsL10n {
   CoupleRitualsL10nVi([String locale = 'vi']) : super(locale);
 
   @override
-  String get couple_rituals_name => 'Nghi thức đôi';
+  String get couple_rituals_name => 'Nghi thức đôi lứa';
 
   @override
   String couple_rituals_dayLabel(int day) {

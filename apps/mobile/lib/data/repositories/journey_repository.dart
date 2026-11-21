@@ -51,6 +51,35 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
+  Stream<List<Journey>> watchArchived() {
+    final me = ctx.userId;
+    if (me == null) return Stream.value(const []);
+    final q = _mine(me)
+      ..where(
+        _db.journeys.status.equals(JourneyStatus.archived.wireName).not() &
+            _db.journeys.localArchived.equals(true),
+      )
+      ..orderBy([
+        OrderingTerm.desc(_db.journeys.startDate),
+        OrderingTerm.asc(_db.journeys.id),
+      ]);
+    return q.watch().map(
+      (rows) => [
+        for (final r in rows) journeyFromRow(r.readTable(_db.journeys)),
+      ],
+    );
+  }
+
+  @override
+  Future<List<Journey>> allMine() async {
+    final me = ctx.userId;
+    if (me == null) return const [];
+    // Active memberships only, archived and ended journeys included.
+    final rows = await _mine(me).get();
+    return [for (final r in rows) journeyFromRow(r.readTable(_db.journeys))];
+  }
+
+  @override
   Stream<Set<String>> watchPinnedJourneyIds() {
     final me = ctx.userId;
     if (me == null) return Stream.value(const <String>{});
@@ -67,7 +96,10 @@ class DataJourneyRepository implements JourneyRepository {
           .map((r) => r == null ? null : journeyFromRow(r));
 
   @override
-  Future<Journey> create(JourneyDraft draft) async {
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  }) async {
     if (validateJourneyTitle(draft.title) != null ||
         validateDurationDays(draft.durationDays) != null ||
         validateJourneyVisibility(draft.kind, draft.visibility) != null ||
@@ -75,13 +107,22 @@ class DataJourneyRepository implements JourneyRepository {
             null) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     // Retry of a create that already landed locally: same journey back.
     if (draft.id case final clientId?) {
       final existing = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(clientId))).getSingleOrNull();
-      if (existing != null) return journeyFromRow(existing);
+      if (existing != null) {
+        // A-B12: the earlier attempt may have died between `create_journey`
+        // and the extras; put back whatever the row is missing.
+        await _reapplyMissingExtras(existing, draft, onExtrasRejected);
+        return journeyFromRow(
+          await (_db.select(
+            _db.journeys,
+          )..where((t) => t.id.equals(clientId))).getSingle(),
+        );
+      }
     }
     final id = draft.id ?? ctx.newId();
     final visibility = normalizedVisibility(draft.kind, draft.visibility);
@@ -102,7 +143,7 @@ class DataJourneyRepository implements JourneyRepository {
       }
       await ctx.store.applyJourney(row.cast<String, dynamic>());
       await _insertMembership(id, me, draft.hideMetricDefault);
-      await _applyExtras(id, draft);
+      await _applyExtras(id, draft, onExtrasRejected);
       final saved = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(id))).getSingle();
@@ -136,25 +177,150 @@ class DataJourneyRepository implements JourneyRepository {
     return u.isEmpty ? null : u;
   }
 
-  /// `create_journey` has no edit fields: send them right after (queued when
-  /// offline) so the row carries the create-flow answers.
-  Future<void> _applyExtras(String id, JourneyDraft d) async {
+  /// `create_journey` has no edit fields: send them right after so the row
+  /// carries the create-flow answers. They are written locally and queued in
+  /// the outbox in ONE transaction before the call, so an app death mid-call
+  /// never loses them (the outbox replays the idempotent update). Success
+  /// drops the queued item; a retryable failure leaves it queued. A permanent
+  /// rejection (any non-transient error) drops it, restores the previous row and
+  /// bumps [onRejected]; create still succeeds.
+  Future<void> _applyExtras(
+    String id,
+    JourneyDraft d,
+    void Function()? onRejected,
+  ) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
+    final outbox = ctx.outbox;
+    final key = '${journeyKey(id)}:extras';
+    final params = updateJourneyParams(id, extras);
+    final previous = await _requireLocal(id);
+    await _db.transaction(() async {
+      await _writeLocal(id, extras);
+      // Delayed: this call is sending the update right now; only a later
+      // flush (after a crash or a failure) should replay it.
+      await outbox?.enqueue(
+        OutboxKind.updateJourney,
+        key,
+        params,
+        delay: _extrasReplayDelay,
+      );
+    });
     try {
-      final row = await ctx.remote!.rpc(
-        'update_journey',
-        updateJourneyParams(id, extras),
+      final row = await ctx.remote!.rpc('update_journey', params);
+      await outbox?.cancel(
+        key,
+        kind: OutboxKind.updateJourney,
+        includeDead: true,
       );
       if (row is Map) await ctx.store.applyJourney(row.cast<String, dynamic>());
-    } on OurneyException {
-      await ctx.outbox?.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(id)}:extras',
-        updateJourneyParams(id, extras),
-      );
+    } on OurneyException catch (e) {
+      if (!isTransient(e.error)) {
+        await outbox?.cancel(
+          key,
+          kind: OutboxKind.updateJourney,
+          includeDead: true,
+        );
+        await _restoreExtras(previous, extras);
+        // The journey exists on the server and locally: keep it and warn
+        // instead of failing (a retry would fail the same way, forever).
+        onRejected?.call();
+        return;
+      }
+      if (outbox != null) {
+        // Retryable: make the queued item due now.
+        await outbox.makeDue(key);
+        unawaited(outbox.flush());
+      }
     }
   }
+
+  static const Duration _extrasReplayDelay = Duration(seconds: 30);
+
+  /// Puts the create-flow columns back to what [row] held (rejected extras),
+  /// but only those still holding the rejected values: a pull may have
+  /// brought newer ones meanwhile.
+  Future<void> _restoreExtras(
+    JourneyRow row,
+    JourneyUpdate rejected,
+  ) => _db.transaction(() async {
+    final cur = await _requireLocal(row.id);
+    await (_db.update(_db.journeys)..where((t) => t.id.equals(row.id))).write(
+      JourneysCompanion(
+        layout:
+            rejected.layout != null && cur.layout == rejected.layout!.wireName
+            ? Value(row.layout)
+            : const Value.absent(),
+        cover: rejected.cover != null && cur.cover == rejected.cover
+            ? Value(row.cover)
+            : const Value.absent(),
+        color: rejected.color != null && cur.color == rejected.color
+            ? Value(row.color)
+            : const Value.absent(),
+        reminderTime:
+            rejected.reminderTime != null &&
+                cur.reminderTime == rejected.reminderTime
+            ? Value(row.reminderTime)
+            : const Value.absent(),
+        dna: rejected.dna != null && _sameJson(cur.dna, rejected.dna)
+            ? Value(row.dna)
+            : const Value.absent(),
+      ),
+    );
+  });
+
+  /// Retry of a create whose row exists: re-apply the extras the row lacks
+  /// (and that are not already queued). A rejection
+  /// restores the row and warns (see [onRejected]).
+  Future<void> _reapplyMissingExtras(
+    JourneyRow row,
+    JourneyDraft d,
+    void Function()? onRejected,
+  ) async {
+    final extras = _extrasUpdate(d);
+    if (extras == null) return;
+    final complete =
+        (extras.layout == null || row.layout == extras.layout!.wireName) &&
+        (extras.cover == null || row.cover == extras.cover) &&
+        (extras.color == null || row.color == extras.color) &&
+        (extras.reminderTime == null ||
+            _normalizedTime(row.reminderTime) ==
+                _normalizedTime(extras.reminderTime)) &&
+        (extras.dna == null || _sameJson(row.dna, extras.dna));
+    if (complete) return;
+    final queued = await ctx.outbox?.pendingKeys() ?? const <String>{};
+    if (queued.contains('${journeyKey(row.id)}:extras')) return;
+    if (ctx.remote == null) {
+      await _writeLocal(row.id, extras);
+      return;
+    }
+    await _applyExtras(row.id, d, onRejected);
+  }
+
+  /// `HH:MM` of a time that the server may return as `HH:MM:SS`.
+  static String? _normalizedTime(String? t) =>
+      t != null && t.length >= 5 ? t.substring(0, 5) : t;
+
+  /// Structural equality of a stored JSON string and a decoded value.
+  static bool _sameJson(String? stored, Object? value) {
+    if (stored == null) return false;
+    try {
+      return _canonical(jsonDecode(stored)) == _canonical(value);
+    } on FormatException {
+      return false;
+    }
+  }
+
+  static String _canonical(Object? v) => jsonEncode(_sorted(v));
+
+  static Object? _sorted(Object? v) => switch (v) {
+    Map() => {
+      for (final k in (v.keys.map((k) => '$k').toList()..sort()))
+        k: _sorted(v[k]),
+    },
+    List() => [for (final e in v) _sorted(e)],
+    _ => v,
+  };
 
   static final RegExp _hhmm = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
 
@@ -169,37 +335,145 @@ class DataJourneyRepository implements JourneyRepository {
             !_hhmm.hasMatch(update.reminderTime!))) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
+    await ctx.claimUserId();
     final row = await _requireLocal(journeyId);
     if (row.status != JourneyStatus.active.wireName) {
       throw const OurneyException(OurneyErrorCode.ended);
     }
     final group = row.kind == JourneyKind.group.wireName;
     final remote = ctx.remote;
+    final outboxForEdit = ctx.outbox;
     if (remote != null) {
       await _flushFirst();
+      // Anything of this journey still queued (its create, an older edit)
+      // must replay first: skip the RPC and queue behind it.
+      // Solo journeys only: group edits are never queued and the items a
+      // group can have queued do not affect `update_journey`.
+      final blocked =
+          !group &&
+          outboxForEdit != null &&
+          await _hasPendingFor(outboxForEdit, journeyId);
+      // A queued extras/edit of a group journey would replay after (and
+      // overwrite) this edit: take it out and merge it under the new values.
+      final stale = group && outboxForEdit != null
+          ? await _takeQueuedUpdates(outboxForEdit, journeyId)
+          : const <_QueuedUpdate>[];
+      var params = updateJourneyParams(journeyId, update);
+      for (final q in stale.reversed) {
+        params = _mergeUpdateParams(q.params, params);
+      }
       try {
-        final res = await remote.rpc(
-          'update_journey',
-          updateJourneyParams(journeyId, update),
-        );
+        if (blocked) throw const OurneyException(OurneyErrorCode.offline);
+        final res = await remote.rpc('update_journey', params);
         if (res is Map) {
           await ctx.store.applyJourney(res.cast<String, dynamic>());
           return journeyFromRow(await _requireLocal(journeyId));
         }
       } on OurneyException catch (e) {
+        if (stale.isNotEmpty) {
+          // Transient: one merged item replays later; otherwise the taken
+          // items go back as they were.
+          if (isTransient(e.error)) {
+            await outboxForEdit!.enqueue(
+              OutboxKind.updateJourney,
+              '${journeyKey(journeyId)}:edit',
+              params,
+            );
+          } else {
+            for (final q in stale) {
+              await outboxForEdit!.enqueue(
+                OutboxKind.updateJourney,
+                q.key,
+                q.params,
+              );
+            }
+          }
+        }
         if (e.error != OurneyErrorCode.offline || group) rethrow;
       }
     } else if (group) {
       ctx.requireRemote();
     }
     // Local-only or offline solo: write now, replay through the outbox.
+    await _writeLocal(journeyId, update);
+    final outbox = ctx.outbox;
+    if (outbox != null) {
+      await outbox.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(journeyId)}:edit',
+        updateJourneyParams(journeyId, update),
+      );
+      unawaited(outbox.flush());
+    }
+    return journeyFromRow(await _requireLocal(journeyId));
+  }
+
+  /// Removes and returns the live queued `:extras` / `:edit` items of
+  /// [journeyId] (oldest first).
+  Future<List<_QueuedUpdate>> _takeQueuedUpdates(
+    Outbox outbox,
+    String journeyId,
+  ) async {
+    final keys = [
+      '${journeyKey(journeyId)}:extras',
+      '${journeyKey(journeyId)}:edit',
+    ];
+    final taken = <_QueuedUpdate>[];
+    for (final row in await outbox.pendingRows()) {
+      if (row.kind == OutboxKind.updateJourney.wire &&
+          keys.contains(row.entityKey)) {
+        taken.add(
+          _QueuedUpdate(
+            row.entityKey,
+            (jsonDecode(row.payload) as Map).cast<String, dynamic>(),
+          ),
+        );
+      }
+    }
+    for (final k in keys) {
+      await outbox.cancel(k, kind: OutboxKind.updateJourney);
+    }
+    return taken;
+  }
+
+  static const _fieldOfParam = {
+    'p_layout': 'layout',
+    'p_cover': 'cover',
+    'p_color': 'color',
+    'p_reminder_time': 'reminder_time',
+    'p_dna': 'dna',
+  };
+
+  /// [older] `update_journey` params under [newer]: the newer value (or
+  /// clear) wins per field, fields it leaves alone come from [older].
+  static Map<String, dynamic> _mergeUpdateParams(
+    Map<String, dynamic> older,
+    Map<String, dynamic> newer,
+  ) {
+    final newClear = {...(newer['p_clear'] as List? ?? const [])};
+    final oldClear = {...(older['p_clear'] as List? ?? const [])};
+    final merged = Map<String, dynamic>.of(newer);
+    final clear = <Object?>{...newClear};
+    merged['p_title'] = newer['p_title'] ?? older['p_title'];
+    for (final e in _fieldOfParam.entries) {
+      final touchedByNew = newer[e.key] != null || newClear.contains(e.value);
+      if (touchedByNew) continue;
+      if (older[e.key] != null) merged[e.key] = older[e.key];
+      if (oldClear.contains(e.value)) clear.add(e.value);
+    }
+    merged['p_clear'] = clear.toList();
+    return merged;
+  }
+
+  /// Applies [update] to the cached row (what `update_journey` would store).
+  Future<void> _writeLocal(String journeyId, JourneyUpdate update) {
     Value<T?> pick<T>(String key, T? v, Value<T?> Function(T) wrap) =>
         update.clear.contains(key)
         ? const Value(null)
         : v == null
         ? const Value.absent()
         : wrap(v);
-    await (_db.update(
+    return (_db.update(
       _db.journeys,
     )..where((t) => t.id.equals(journeyId))).write(
       JourneysCompanion(
@@ -221,16 +495,6 @@ class DataJourneyRepository implements JourneyRepository {
         ),
       ),
     );
-    final outbox = ctx.outbox;
-    if (outbox != null) {
-      await outbox.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(journeyId)}:edit',
-        updateJourneyParams(journeyId, update),
-      );
-      unawaited(outbox.flush());
-    }
-    return journeyFromRow(await _requireLocal(journeyId));
   }
 
   Future<Journey> _insertLocal(
@@ -265,9 +529,7 @@ class DataJourneyRepository implements JourneyRepository {
               timezone: d.timezone,
               visibility: visibility.wireName,
               status: JourneyStatus.active.wireName,
-              maxMembers: Value(
-                d.kind == JourneyKind.solo ? 1 : maxGroupMembers,
-              ),
+              maxMembers: Value(maxMembersForDraft(d)),
             ),
           );
       await _insertMembership(id, me, d.hideMetricDefault);
@@ -301,13 +563,36 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   /// Sends queued writes first so RPCs never race a pending `create_journey`.
-  Future<void> _flushFirst() async {
+  ///
+  /// With [forJourney], also fails (`syncPending`: retry later) when an item of that
+  /// journey is still queued after the flush: a failed upload must not be
+  /// followed by `end_journey`, the server would then reject it for good.
+  Future<void> _flushFirst({String? forJourney, bool force = true}) async {
     final outbox = ctx.outbox;
-    if (outbox != null) await outbox.flush(force: true);
+    if (outbox == null) return;
+    await outbox.flush(force: force);
+    if (forJourney != null && await _hasPendingFor(outbox, forJourney)) {
+      throw const OurneyException(OurneyErrorCode.syncPending);
+    }
+  }
+
+  Future<bool> _hasPendingFor(Outbox outbox, String journeyId) async {
+    for (final row in await outbox.pendingRows()) {
+      if (row.entityKey.contains(journeyId)) return true;
+      if (row.kind == OutboxKind.upsertCheckIn.wire) {
+        final id = (jsonDecode(row.payload) as Map)['id'];
+        if (id is! String) continue;
+        final c = await (_db.select(
+          _db.checkIns,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        if (c?.journeyId == journeyId) return true;
+      }
+    }
+    return false;
   }
 
   @override
-  Future<void> end(String journeyId) async {
+  Future<void> end(String journeyId, {bool background = false}) async {
     final remote = ctx.remote;
     if (remote == null) {
       final row = await _requireLocal(journeyId);
@@ -317,7 +602,7 @@ class DataJourneyRepository implements JourneyRepository {
       await _setStatus(journeyId, JourneyStatus.ended);
       return;
     }
-    await _flushFirst();
+    await _flushFirst(forJourney: journeyId, force: !background);
     final row = await remote.rpc('end_journey', {'journey': journeyId});
     if (row is Map) {
       await ctx.store.applyJourney(row.cast<String, dynamic>());
@@ -339,6 +624,13 @@ class DataJourneyRepository implements JourneyRepository {
   }
 
   @override
+  Future<void> unarchive(String journeyId) async {
+    await _requireLocal(journeyId);
+    await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId)))
+        .write(const JourneysCompanion(localArchived: Value(false)));
+  }
+
+  @override
   Future<void> delete(String journeyId) async {
     final remote = ctx.remote;
     if (remote == null) {
@@ -346,7 +638,7 @@ class DataJourneyRepository implements JourneyRepository {
       await ctx.store.purgeJourney(journeyId);
       return;
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     await _flushFirst();
     await remote.rpc('delete_journey', {'journey': journeyId});
     final own = await (_db.select(
@@ -428,7 +720,7 @@ class DataJourneyRepository implements JourneyRepository {
         pinned == null) {
       return;
     }
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     final updated =
         await (_db.update(_db.memberships)..where(
               (t) => t.journeyId.equals(journeyId) & t.userId.equals(me),
@@ -464,4 +756,10 @@ class DataJourneyRepository implements JourneyRepository {
     );
     unawaited(outbox.flush());
   }
+}
+
+class _QueuedUpdate {
+  const _QueuedUpdate(this.key, this.params);
+  final String key;
+  final Map<String, dynamic> params;
 }

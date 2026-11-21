@@ -250,7 +250,7 @@ class _DeckCard extends StatelessWidget {
                 semanticLabel: '$semantic, ${item.tagline}',
                 excludeChildSemantics: true,
                 borderRadius: BorderRadius.circular(UiRadius.card),
-                shadowColor: ui.outline,
+                shadowColor: ui.hardShadowColor,
                 shadowOffset: focused ? 4 : 0,
                 child: Container(
                   padding: const EdgeInsets.all(20),
@@ -290,7 +290,7 @@ class _DeckCard extends StatelessWidget {
                           clipBehavior: Clip.hardEdge,
                           decoration: BoxDecoration(
                             color: ui.ink.withValues(alpha: 0.05),
-                            border: Border.all(color: ui.ink, width: 1.5),
+                            border: Border.all(color: ui.outline, width: 1.5),
                           ),
                           child: Stack(
                             children: [
@@ -361,7 +361,7 @@ class _ChosenChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: ui.surface,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: ui.ink, width: 2),
+        border: Border.all(color: ui.outline, width: 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -317,7 +317,7 @@ abstract class CheckinL10n {
   /// No description provided for @checkin_done_memoryStamp.
   ///
   /// In vi, this message translates to:
-  /// **'ĐÃ DÁN · NGÀY {day}'**
+  /// **'ĐÃ DÁN · NGÀY {day} HÀNH TRÌNH'**
   String checkin_done_memoryStamp(int day);
 
   /// No description provided for @checkin_done_coupleDay.
@@ -611,7 +611,7 @@ abstract class CheckinL10n {
   /// Post screen per-skin input.
   ///
   /// In vi, this message translates to:
-  /// **'Xoá một số'**
+  /// **'Xóa một số'**
   String get checkin_extraBackspace;
 
   /// No description provided for @checkin_extraCountdown.
@@ -625,6 +625,12 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Chạm bất kỳ đâu để dừng'**
   String get checkin_extraCountdownStop;
+
+  /// No description provided for @checkin_details.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chi tiết'**
+  String get checkin_details;
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {

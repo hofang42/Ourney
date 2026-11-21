@@ -36,17 +36,22 @@ class _Live<T> {
 }
 
 class FakeSharingRepository implements SharingRepository {
+  /// When set, [setHiddenInShare] waits for it (to force write races).
+  final Completer<void>? hideGate;
+
   FakeSharingRepository({
     List<PersonSummary> viewers = const [],
     String? token,
     List<SharedJourneySummary> sharedWithMe = const [],
     this.view,
     this.frame,
+    JourneyStory story = const JourneyStory(),
+    this.hideGate,
   }) : _state = _Live(
          JourneyShareState(
            journeyId: 'j1',
            viewers: viewers,
-           story: const JourneyStory(),
+           story: story,
            publicSettings: const PublicSettings(
              showCounts: false,
              allowPublicReactions: true,
@@ -140,6 +145,10 @@ class FakeSharingRepository implements SharingRepository {
     required bool hidden,
   }) async {
     calls.add('hide:$checkInId:$hidden');
+    await hideGate?.future;
+    final next = {...state.hiddenCheckInIds};
+    hidden ? next.add(checkInId) : next.remove(checkInId);
+    _setState(hidden: next);
   }
 
   @override
@@ -207,10 +216,13 @@ class FakeSharingRepository implements SharingRepository {
       title: draft.title,
       emoji: draft.emoji,
       startDate: draft.firstDate,
-      durationDays: draft.firstDate.daysUntil(draft.lastDate) + 1,
+      durationDays: draft.continues
+          ? null
+          : draft.firstDate.daysUntil(draft.lastDate) + 1,
       timezone: draft.timezone,
       visibility: JourneyVisibility.private,
-      status: JourneyStatus.ended,
+      layout: draft.layout,
+      status: draft.continues ? JourneyStatus.active : JourneyStatus.ended,
     );
   }
 }
@@ -383,6 +395,7 @@ Future<SharingHarness> pumpSharing(
   Size size = const Size(420, 1800),
   double textScale = 1,
   Brightness? brightness,
+  Future<String>? timezone,
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -423,7 +436,7 @@ Future<SharingHarness> pumpSharing(
       chatRepositoryProvider.overrideWithValue(chat ?? FakeChatRepository()),
       mediaStoreProvider.overrideWithValue(FakeMediaStore()),
       journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
-      deviceTimezoneProvider.overrideWith((ref) => testTz),
+      deviceTimezoneProvider.overrideWith((ref) => timezone ?? testTz),
       photoCompressorProvider.overrideWithValue(FakeCompressor()),
       draftFilesProvider.overrideWithValue(NoopDrafts()),
       retellPhotoPickerProvider.overrideWithValue(

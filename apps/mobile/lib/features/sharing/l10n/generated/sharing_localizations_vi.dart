@@ -269,6 +269,23 @@ class SharingL10nVi extends SharingL10n {
   String get sharing_storySaved => 'Đã lưu câu chuyện';
 
   @override
+  String get sharing_storyOwnerOnly =>
+      'Chỉ chủ hành trình sửa được câu chuyện. Bạn vẫn có thể ẩn ảnh của mình.';
+
+  @override
+  String get sharing_storyTitleFallback => 'Để trống sẽ dùng tên hành trình';
+
+  @override
+  String get sharing_discardTitle => 'Bỏ thay đổi?';
+
+  @override
+  String get sharing_discardBody =>
+      'Những gì bạn vừa sửa trong câu chuyện chưa được lưu.';
+
+  @override
+  String get sharing_discard => 'Bỏ thay đổi';
+
+  @override
   String get sharing_fromFriends => 'Từ bạn bè';
 
   @override
@@ -510,6 +527,19 @@ class SharingL10nVi extends SharingL10n {
   @override
   String get sharing_retellIntro =>
       'Đã đi rồi? Biến ảnh cũ thành một câu chuyện';
+
+  @override
+  String get sharing_retellDiscardTitle => 'Rời đi mà không lưu?';
+
+  @override
+  String get sharing_retellDiscardBody =>
+      'Tên và ảnh của hành trình này chưa được lưu. Rời đi bây giờ sẽ mất chúng.';
+
+  @override
+  String get sharing_retellDiscardConfirm => 'Rời đi';
+
+  @override
+  String get sharing_retellDiscardKeep => 'Ở lại';
 
   @override
   String get sharing_pickPhotos => 'Chọn ảnh';

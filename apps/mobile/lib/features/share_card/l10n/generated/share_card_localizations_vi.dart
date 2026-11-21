@@ -83,6 +83,10 @@ class ShareCardL10nVi extends ShareCardL10n {
       'Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.';
 
   @override
+  String get share_card_stateError =>
+      'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.';
+
+  @override
   String share_card_photoOfDay(String date) {
     return 'Ảnh ngày $date';
   }
@@ -92,7 +96,10 @@ class ShareCardL10nVi extends ShareCardL10n {
 
   @override
   String get share_card_blurPhotoHint =>
-      'Bật sẵn theo cài đặt riêng tư của hành trình';
+      'Bật sẵn theo cài đặt riêng tư của bạn';
+
+  @override
+  String get share_card_blurPhotoLocked => 'Luôn bật với kiểu thẻ này';
 
   @override
   String get share_card_metricHidden => 'Số đo của bạn không hiện trên thẻ.';
@@ -129,6 +136,10 @@ class ShareCardL10nVi extends ShareCardL10n {
   @override
   String get share_card_linkDescription =>
       'Ai có link đều xem được hành trình này (chỉ xem). Bạn thu hồi được bất cứ lúc nào.';
+
+  @override
+  String get share_card_linkNotYet =>
+      'Link công khai sẽ mở khi hành trình này kết thúc.';
 
   @override
   String get share_card_linkActive =>

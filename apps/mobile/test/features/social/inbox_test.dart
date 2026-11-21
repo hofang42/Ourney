@@ -98,6 +98,21 @@ void main() {
     expect(find.byKey(const ValueKey('unread-badge')), findsOneWidget);
   });
 
+  testWidgets('blocking someone drops their request and thread at once '
+      '(C-B3)', (tester) async {
+    final fakes = fullInbox();
+    await pumpSocial(tester, location: SocialPaths.inbox, fakes: fakes);
+    expect(find.text('Friend request from Khoa Le'), findsOneWidget);
+    expect(find.byKey(const ValueKey('inbox-conversation-c1')), findsOneWidget);
+
+    await fakes.safety.block('khoa');
+    await fakes.safety.block('nam');
+    await tester.pumpAndSettle();
+    expect(find.text('Friend request from Khoa Le'), findsNothing);
+    expect(find.byKey(const ValueKey('inbox-accept-khoa')), findsNothing);
+    expect(find.byKey(const ValueKey('inbox-conversation-c1')), findsNothing);
+  });
+
   testWidgets('V2 header, Today / This week, no back button as a tab', (
     tester,
   ) async {

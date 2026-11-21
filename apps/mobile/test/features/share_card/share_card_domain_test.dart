@@ -25,6 +25,7 @@ ShareCardContent _content(
   int dayNumber = 7,
   List<CheckIn> checkIns = const [],
   ShareCardNumber number = ShareCardNumber.streak,
+  bool forceHideMetric = false,
 }) => ShareCardContent.from(
   journey: j,
   membership: membership,
@@ -32,6 +33,7 @@ ShareCardContent _content(
   dayNumber: dayNumber,
   checkIns: checkIns,
   number: number,
+  forceHideMetric: forceHideMetric,
 );
 
 void main() {
@@ -151,6 +153,28 @@ void main() {
       expect(hidden.metricHidden, isTrue);
     });
 
+    test('forceHideMetric (Wrapped hide-kg handoff) only adds privacy', () {
+      final j = testJourney(metricName: 'Phút', metricUnit: 'phút');
+      final checkIns = [
+        testCheckIn(j.id, const LocalDate(2026, 10, 14), metricValue: 20),
+      ];
+      final forced = _content(
+        j,
+        membership: testMembership(j),
+        checkIns: checkIns,
+        forceHideMetric: true,
+      );
+      expect(forced.metricHidden, isTrue);
+      expect(forced.metricValue, isNull);
+      // `false` never reveals what the journey itself hides.
+      final wl = testJourney(
+        templateId: TemplateId.weightLoss,
+        metricName: 'Cân nặng',
+        metricUnit: 'kg',
+      );
+      expect(_content(wl, membership: testMembership(wl)).metricHidden, isTrue);
+    });
+
     test('membership blurMedia blurs any journey', () {
       final j = testJourney();
       expect(_content(j, membership: testMembership(j)).blurPhoto, isFalse);
@@ -162,8 +186,8 @@ void main() {
   });
 
   group('public link eligibility (FR-E3)', () {
-    test('solo owner with a backend', () {
-      final j = testJourney();
+    test('solo owner with a backend, finished journey (S9)', () {
+      final j = testJourney(status: JourneyStatus.ended);
       expect(
         canHavePublicLink(
           journey: j,
@@ -175,7 +199,29 @@ void main() {
       );
     });
 
-    test('never for group journeys, local-only, archived or non-owners', () {
+    test('S9: running journeys only while a link is still on (C-B7)', () {
+      bool can(Journey j) => canHavePublicLink(
+        journey: j,
+        membership: testMembership(j),
+        currentUserId: 'u1',
+        hasBackend: true,
+      );
+      expect(can(testJourney()), isFalse);
+      expect(
+        can(
+          testJourney(
+            visibility: JourneyVisibility.link,
+            publicToken: testToken,
+          ),
+        ),
+        isTrue,
+        reason: 'the owner can still revoke an old link',
+      );
+      expect(can(testJourney(status: JourneyStatus.ended)), isTrue);
+      expect(can(testJourney(status: JourneyStatus.archived)), isTrue);
+    });
+
+    test('never for group journeys, local-only or non-owners', () {
       final group = testJourney(kind: JourneyKind.group);
       expect(
         canHavePublicLink(
@@ -193,16 +239,6 @@ void main() {
           membership: testMembership(solo),
           currentUserId: null,
           hasBackend: false,
-        ),
-        isFalse,
-      );
-      final archived = testJourney(status: JourneyStatus.archived);
-      expect(
-        canHavePublicLink(
-          journey: archived,
-          membership: testMembership(archived),
-          currentUserId: 'u1',
-          hasBackend: true,
         ),
         isFalse,
       );

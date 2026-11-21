@@ -3,10 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/routes.dart';
+import 'package:ourney/features/profile/settings_screen.dart'
+    show profileSettingsPath;
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -167,10 +170,10 @@ void main() {
       expect(find.text('Alice N.'), findsOneWidget);
     });
 
-    testWidgets('links to reminders and safety', (tester) async {
+    testWidgets('links to settings and safety', (tester) async {
       final c = await signedIn(tester);
-      await tapVisible(tester, 'profile-reminders');
-      expect(location(c), AppRoutes.reminders);
+      await tapVisible(tester, 'profile-settings');
+      expect(location(c), profileSettingsPath);
       await goTo(tester, c, AppRoutes.profile);
       await tapVisible(tester, 'profile-safety');
       expect(location(c), AppRoutes.safety);
@@ -189,15 +192,36 @@ void main() {
       expect(byKey('profile-retry'), findsOneWidget);
     });
 
-    testWidgets('sign out asks, then the router goes to /auth', (tester) async {
-      final auth = RecordingAuthRepository(userId: 'u1');
-      final c = await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-signout');
-      expect(byKey('profile-signout-dialog'), findsOneWidget);
-      await tester.tap(byKey('profile-signout-confirm'));
-      await tester.pumpAndSettle();
-      expect(auth.calls, ['signOut']);
-      expect(location(c), startsWith(AppRoutes.auth));
+    testWidgets('dock root shows a title bar, not a back button (U9)', (
+      tester,
+    ) async {
+      await signedIn(tester);
+      expect(byKey('profile-top-bar'), findsOneWidget);
+      expect(find.byType(UiBackHeader), findsNothing);
+    });
+
+    testWidgets(
+      'language row shows the picked language, opens Settings (U18)',
+      (tester) async {
+        final c = await signedIn(tester);
+        expect(
+          find.text('Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'),
+          findsOneWidget,
+        );
+        await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
+        await tester.pumpAndSettle();
+        expect(find.text('Tiếng Việt'), findsOneWidget);
+        await tapVisible(tester, 'profile-language');
+        expect(byKey('settings-screen'), findsOneWidget);
+      },
+    );
+
+    testWidgets('U18: Profile does not repeat Settings rows (sign out, '
+        'reminders); Settings owns them', (tester) async {
+      await signedIn(tester);
+      expect(byKey('profile-settings'), findsOneWidget);
+      expect(byKey('profile-signout'), findsNothing);
+      expect(byKey('profile-reminders'), findsNothing);
     });
 
     testWidgets('local-only: guest state, no account actions (FR-A5)', (
@@ -208,7 +232,7 @@ void main() {
       expect(byKey('profile-guest'), findsOneWidget);
       expect(byKey('profile-signout'), findsNothing);
       expect(byKey('profile-delete'), findsNothing);
-      expect(byKey('profile-reminders'), findsOneWidget);
+      expect(byKey('profile-settings'), findsOneWidget);
 
       await goTo(tester, c, profileEditPath);
       expect(byKey('profile-guest'), findsOneWidget);
@@ -288,7 +312,7 @@ void main() {
       await tapVisible(tester, 'profile-delete-confirm');
       await tester.pumpAndSettle();
       expect(
-        find.text('Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.'),
+        find.text('Chưa xóa xong. Thử lại để xóa nốt phần còn lại nhé.'),
         findsOneWidget,
       );
       expect(byKey('profile-delete-retry'), findsOneWidget);
@@ -317,7 +341,7 @@ void main() {
       await tapVisible(tester, 'profile-delete-continue');
       await tester.pumpAndSettle();
       expect(
-        find.text('Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.'),
+        find.text('Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xóa nhé.'),
         findsOneWidget,
       );
       expect(byKey('profile-delete-otp'), findsNothing);

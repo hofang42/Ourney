@@ -5,7 +5,6 @@ import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart';
-import '../../profile/profile_entry_button.dart';
 import '../data/groups_providers.dart';
 import '../l10n/generated/groups_localizations.dart';
 import 'group_errors.dart';
@@ -54,7 +53,6 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
             eyebrow: l10n.groups_eyebrow,
             title: l10n.groups_title,
             titleSize: 30,
-            actions: const [ProfileEntryButton()],
           ),
           const SizedBox(height: UiSpace.lg),
           if (scroll) body else Expanded(child: UiFillScroll(child: body)),

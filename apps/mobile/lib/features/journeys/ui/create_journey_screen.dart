@@ -12,6 +12,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/l10n/generated/sharing_localizations.dart';
 import '../data/journeys_providers.dart';
@@ -144,23 +145,38 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final repo = ref.read(journeyRepositoryProvider);
     final now = ref.read(journeysClockProvider).now();
     final reminders = ref.read(reminderSchedulerProvider);
+    var extrasRejected = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
         form.toDraft(
           startDate: journeyLocalDate(form.timezone, now),
           id: _clientId,
+          // The colour picked on the ticket (bug B-B12).
+          color: _variant,
         ),
+        onExtrasRejected: () => extrasRejected = true,
       );
+      if (mounted && extrasRejected) {
+        showJourneySnack(
+          context,
+          JourneysL10n.of(context).journeys_createSettingsNotSaved,
+        );
+      }
       // The new journey may get the 21:00 streak alert (FR-G2).
       unawaited(reminders.reschedule());
-      final hide = form.trackMetric && form.hideMetric;
-      if (hide || form.blurOnShare) {
+      final privacy = newMembershipPrivacy(
+        ref,
+        journey,
+        hideMetric: form.trackMetric && form.hideMetric,
+        blurMedia: form.blurOnShare,
+      );
+      if (privacy.hideMetric || privacy.blurMedia) {
         try {
           await repo.updateMyMembership(
             journey.id,
-            hideMetric: hide ? true : null,
-            blurMedia: form.blurOnShare ? true : null,
+            hideMetric: privacy.hideMetric ? true : null,
+            blurMedia: privacy.blurMedia ? true : null,
           );
         } on Object catch (e) {
           if (mounted) {
@@ -727,7 +743,7 @@ class _EmojiChoice extends StatelessWidget {
           color: selected ? accent.withValues(alpha: 0.18) : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: selected ? ui.ink : ui.border,
+            color: selected ? ui.outline : ui.border,
             width: selected ? 2 : 1,
           ),
         ),

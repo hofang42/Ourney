@@ -101,7 +101,7 @@ abstract class AestheticFlexerL10n {
   /// Tên phong cách, hiện ở nhãn đầu màn
   ///
   /// In vi, this message translates to:
-  /// **'Khoe nhịp tập'**
+  /// **'Khoe thẩm mỹ'**
   String get aesthetic_flexer_name;
 
   /// Ngày thứ N của hành trình

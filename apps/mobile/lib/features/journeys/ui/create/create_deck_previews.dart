@@ -67,7 +67,7 @@ class _QuietPreview extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: ui.accent.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
-                      border: Border.all(color: ui.ink, width: 2),
+                      border: Border.all(color: ui.outline, width: 2),
                     ),
                   ),
                 ),
@@ -80,7 +80,7 @@ class _QuietPreview extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: ui.bg,
                   borderRadius: BorderRadius.circular(9),
-                  border: Border.all(color: ui.ink, width: 1.5),
+                  border: Border.all(color: ui.outline, width: 1.5),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -168,7 +168,7 @@ class _SquadPreview extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: ui.accent,
                     shape: BoxShape.circle,
-                    border: Border.all(color: ui.ink, width: 2),
+                    border: Border.all(color: ui.outline, width: 2),
                   ),
                   child: i == points.length - 1
                       ? const OurneyIcon(name: 'trophy', size: 22, active: true)
@@ -287,7 +287,7 @@ class _MemoryPreview extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: ui.surface,
-                      border: Border.all(color: ui.ink, width: 2),
+                      border: Border.all(color: ui.outline, width: 2),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -391,7 +391,7 @@ class _CouplePreview extends StatelessWidget {
           decoration: BoxDecoration(
             color: ui.surface,
             shape: BoxShape.circle,
-            border: Border.all(color: ui.ink, width: 2),
+            border: Border.all(color: ui.outline, width: 2),
           ),
           child: const OurneyIcon(name: 'heart', size: 20, active: true),
         ),
@@ -497,7 +497,7 @@ class CreateDeckHud extends StatelessWidget {
         decoration: BoxDecoration(
           color: ui.accent,
           shape: BoxShape.circle,
-          border: Border.all(color: ui.ink, width: 2),
+          border: Border.all(color: ui.outline, width: 2),
         ),
       ),
     };
@@ -507,7 +507,7 @@ class CreateDeckHud extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: ui.ink, width: 1.5),
+        border: Border.all(color: ui.outline, width: 1.5),
       ),
       child: child,
     );

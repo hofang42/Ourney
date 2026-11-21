@@ -115,9 +115,10 @@
   },
   "journeys_errorMetricName": "Nhập tên chỉ số.",
   "journeys_errorVisibility": "Kiểu hiển thị này không dùng được cho hành trình này.",
-  "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.",
+  "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.",
   "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
   "journeys_errorEnded": "Hành trình này đã kết thúc.",
+  "journeys_errorSyncPending": "Ảnh vẫn đang tải lên, thử lại sau ít phút.",
   "journeys_errorNotFound": "Không tìm thấy hành trình.",
   "journeys_statCurrent": "Chuỗi hiện tại",
   "journeys_statBest": "Dài nhất",
@@ -138,9 +139,15 @@
   "journeys_endConfirmTitle": "Kết thúc hành trình?",
   "journeys_endConfirmMessage": "Sau khi kết thúc, hành trình chỉ xem được và không check-in thêm được nữa.",
   "journeys_archive": "Lưu trữ",
-  "journeys_delete": "Xoá hành trình",
-  "journeys_deleteConfirmTitle": "Xoá hành trình?",
-  "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.",
+  "journeys_archiveConfirmTitle": "Lưu trữ hành trình?",
+  "journeys_archiveConfirmMessage": "Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.",
+  "journeys_archived": "Đã lưu trữ hành trình",
+  "journeys_archiveUndo": "Hoàn tác",
+  "journeys_archivedSection": "Đã lưu trữ",
+  "journeys_unarchive": "Bỏ lưu trữ",
+  "journeys_delete": "Xóa hành trình",
+  "journeys_deleteConfirmTitle": "Xóa hành trình?",
+  "journeys_deleteConfirmMessage": "Mọi ảnh của bạn trong hành trình này sẽ bị xóa. Không hoàn tác được.",
   "journeys_readOnlyBanner": "Hành trình đã kết thúc. Chỉ xem.",
   "journeys_moreActions": "Thêm thao tác",
   "journeys_timelineTitle": "Dòng thời gian",
@@ -207,6 +214,30 @@
   "journeys_showMetric": "Hiện con số",
   "journeys_photoUnavailable": "Ảnh chưa tải được",
   "journeys_noCheckIn": "Chưa có ảnh cho ngày này",
+  "journeys_dayPhotoCount": "{index}/{count}",
+  "@journeys_dayPhotoCount": {
+    "description": "Day viewer: which photo of the day is shown (several photos a day).",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dayPhotoCountSemantics": "Ảnh {index} trên {count} của ngày này. Vuốt để xem ảnh khác.",
+  "@journeys_dayPhotoCountSemantics": {
+    "description": "Screen reader label of the day viewer photo counter.",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_greetingMorning": "Chào buổi sáng",
   "@journeys_greetingMorning": {
     "description": "Hub greeting before noon."
@@ -933,6 +964,22 @@
       }
     }
   },
+  "journeys_dna_dates_min_note": "Hành trình dài ít nhất {days} ngày nên ngày về đã được lùi lại.",
+  "@journeys_dna_dates_min_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_dna_dates_max_note": "Hành trình dài tối đa {days} ngày nên ngày về đã được kéo gần lại.",
+  "@journeys_dna_dates_max_note": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "journeys_dna_prev_month": "Tháng trước",
   "journeys_dna_next_month": "Tháng sau",
   "journeys_dna_name_left": "Tên bạn",
@@ -1064,10 +1111,38 @@
     }
   },
   "journeys_edit_useLayout": "Dùng giao diện này",
-  "journeys_edit_cancel": "Thôi",
+  "journeys_edit_cancel": "Hủy",
+  "journeys_edit_discardTitle": "Bỏ các thay đổi?",
+  "journeys_edit_discardBody": "Bạn đã sửa hành trình nhưng chưa lưu. Rời đi bây giờ sẽ mất các thay đổi đó.",
+  "journeys_edit_discardConfirm": "Bỏ thay đổi",
+  "journeys_edit_discardKeep": "Sửa tiếp",
   "journeys_edit_layoutApplied": "Đã đổi giao diện cho hành trình.",
   "journeys_edit_layoutOwnerOnly": "Chủ nhóm chọn giao diện cho cả nhóm.",
   "journeys_edit_color": "Màu",
+  "journeys_edit_skinShort_quiet": "Lặng lẽ",
+  "journeys_edit_skinColor_quiet_0": "Lục ngọc",
+  "journeys_edit_skinColor_quiet_1": "Xanh sage",
+  "journeys_edit_skinColor_quiet_2": "Sương mù",
+  "journeys_edit_skinShort_squad": "Đội",
+  "journeys_edit_skinColor_squad_0": "Lửa",
+  "journeys_edit_skinColor_squad_1": "Tím",
+  "journeys_edit_skinColor_squad_2": "Phấn",
+  "journeys_edit_skinShort_memory": "Ký ức",
+  "journeys_edit_skinColor_memory_0": "Sương thông",
+  "journeys_edit_skinColor_memory_1": "Biển muối",
+  "journeys_edit_skinColor_memory_2": "Phố đêm",
+  "journeys_edit_skinShort_couple": "Đôi",
+  "journeys_edit_skinColor_couple_0": "Hồng",
+  "journeys_edit_skinColor_couple_1": "Mâm xôi",
+  "journeys_edit_skinColor_couple_2": "Đào",
+  "journeys_edit_skinShort_flexer": "Khoe thẩm mỹ",
+  "journeys_edit_skinColor_flexer_0": "Lime neon",
+  "journeys_edit_skinColor_flexer_1": "San hô điện",
+  "journeys_edit_skinColor_flexer_2": "Băng",
+  "journeys_edit_skinShort_minimal": "Tối giản",
+  "journeys_edit_skinColor_minimal_0": "Cam",
+  "journeys_edit_skinColor_minimal_1": "Than",
+  "journeys_edit_skinColor_minimal_2": "Trời",
   "journeys_edit_trophy": "Tên chiếc cúp",
   "journeys_edit_film": "Cuộn phim",
   "journeys_edit_filmReadonly": "{n} · chỉ xem",
@@ -1270,7 +1345,7 @@
   "journeys_wrapped_ctaMinimal": "Xuất thẻ",
   "journeys_wrapped_ctaCard": "Tạo thiệp",
   "journeys_wrapped_share": "Chia sẻ",
-  "journeys_wrapped_save": "Lưu ảnh",
+  "journeys_wrapped_editCard": "Chỉnh thẻ",
   "journeys_wrapped_sheetTitle": "chia sẻ tấm thiệp.",
   "journeys_wrapped_hideBrand": "Ẩn chữ ourney",
   "journeys_wrapped_messages": "Tin nhắn",
@@ -1406,7 +1481,7 @@
   },
   "journeys_home_viewWrapped": "Xem tổng kết",
   "journeys_addMoreTag": "Thêm ảnh",
-  "journeys_hubTitle": "hành trình.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "chào {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {
@@ -1474,5 +1549,47 @@
       }
     }
   },
-  "journeys_createDeckChoose": "Chọn kiểu này"
+  "journeys_createDeckChoose": "Chọn kiểu này",
+  "journeys_cardStreak": "Chuỗi {days} ngày",
+  "@journeys_cardStreak": {
+    "description": "Streak chip spoken label on the journey card.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_heroSemantics": "Chuỗi {streak} ngày. {title}",
+  "@journeys_heroSemantics": {
+    "description": "Screen reader label of the Hub streak hero.",
+    "placeholders": {
+      "streak": {
+        "type": "int"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "journeys_deadUploads": "{count, plural, other{{count} ảnh chưa gửi được}}",
+  "@journeys_deadUploads": {
+    "description": "Banner when check-in uploads were given up on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_deadRetry": "Gửi lại",
+  "@journeys_deadRetry": {
+    "description": "Retry the failed uploads."
+  },
+  "journeys_deadDiscard": "Bỏ ảnh",
+  "@journeys_deadDiscard": {
+    "description": "Discard the failed uploads and their local photos."
+  },
+  "journeys_createSettingsNotSaved": "Một vài cài đặt chưa lưu được",
+  "@journeys_createSettingsNotSaved": {
+    "description": "Non-fatal toast after creating a journey when the server rejected some create-flow settings."
+  }
 }

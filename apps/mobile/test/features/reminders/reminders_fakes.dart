@@ -164,7 +164,8 @@ Future<ReminderHarness> reminderHarness({
   Map<String, Object> prefs = const {},
   bool failJourneys = false,
   bool unwiredJourneys = false,
-  Locale locale = const Locale('vi'),
+  /// Null keeps the real provider (in-app language, then device).
+  Locale? locale = const Locale('vi'),
   List<Override> overrides = const [],
 }) async {
   final p = await testPrefs(prefs);
@@ -188,7 +189,7 @@ Future<ReminderHarness> reminderHarness({
       notificationGatewayProvider.overrideWithValue(g),
       reminderDeviceTimezoneProvider.overrideWith((ref) async => hcm),
       remindersClockProvider.overrideWithValue(Clock.fixed(reminderNow)),
-      reminderLocaleProvider.overrideWithValue(locale),
+      if (locale != null) reminderLocaleProvider.overrideWithValue(locale),
       ...overrides,
     ],
   );

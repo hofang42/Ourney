@@ -6,15 +6,25 @@ import '../typography.dart';
 import 'ourney_icons.dart';
 import 'pressable.dart';
 
-const double _fieldHeight = 56;
 const double _otpW = 48;
-const double _otpH = 58;
+
+/// Outline of every kit text field: 16dp radius, 1.5dp at rest, 2dp on focus
+/// (pass [UiBorder.standard]). No shadow.
+OutlineInputBorder uiFieldBorder(
+  Color color, [
+  double width = UiBorder.thin,
+  double radius = UiRadius.field,
+]) => OutlineInputBorder(
+  borderRadius: BorderRadius.circular(radius),
+  borderSide: BorderSide(color: color, width: width),
+);
 const double _otpGap = 8;
 
-/// `.flow-field`: bold label always visible above a 56dp field (12dp radius,
-/// 2dp ink outline). Focus adds a 3dp brand ring, [error] swaps the outline
-/// to `danger` and prints the message under the field. [helper] sits below;
-/// [prefixText] and [trailing] are inside the field.
+/// `.flow-field`: bold label always visible above a 52dp field (16dp radius,
+/// 1.5dp `ui.border` outline, `ui.fill` background, no shadow). Focus swaps
+/// the outline to a 2dp accent border, [error] to `danger`, and prints the
+/// message under the field. [helper] sits below; [prefixText] and [trailing]
+/// are inside the field.
 class UiTextField extends StatefulWidget {
   const UiTextField({
     required this.label,
@@ -39,10 +49,14 @@ class UiTextField extends StatefulWidget {
     this.onSubmitted,
     this.readOnly = false,
     this.obscureText = false,
+    this.pill = false,
     super.key,
   });
 
   final String label;
+
+  /// Single-line search fields: capsule shape instead of the 16dp radius.
+  final bool pill;
   final TextEditingController controller;
 
   /// Password field: hides the text (also disables suggestions/autocorrect).
@@ -78,17 +92,13 @@ class UiTextField extends StatefulWidget {
 }
 
 class _UiTextFieldState extends State<UiTextField> {
-  bool _focused = false;
-
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    OutlineInputBorder border(Color c) => OutlineInputBorder(
-      borderRadius: BorderRadius.circular(UiRadius.input),
-      borderSide: BorderSide(color: c, width: UiBorder.standard),
-    );
     final hasError = widget.error != null || widget.invalid;
-    final edge = hasError ? ui.danger : ui.outline;
+    final edge = hasError ? ui.danger : ui.border;
+    final focusEdge = hasError ? ui.danger : ui.accent;
+    final radius = widget.pill ? UiRadius.capsule : UiRadius.field;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -102,78 +112,68 @@ class _UiTextFieldState extends State<UiTextField> {
           ),
         ),
         const SizedBox(height: 8),
-        Focus(
-          canRequestFocus: false,
-          skipTraversal: true,
-          onFocusChange: (v) => setState(() => _focused = v),
-          child: DecoratedBox(
-            key: const ValueKey('ui-field-ring'),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(UiRadius.input),
-              boxShadow: _focused && widget.enabled
-                  ? [BoxShadow(color: ui.brand, spreadRadius: 3)]
-                  : const [],
+        TextField(
+          key: widget.fieldKey,
+          controller: widget.controller,
+          focusNode: widget.focusNode,
+          enabled: widget.enabled,
+          readOnly: widget.readOnly,
+          keyboardType: widget.keyboardType,
+          textInputAction: widget.textInputAction,
+          autofillHints: widget.autofillHints,
+          inputFormatters: widget.inputFormatters,
+          textCapitalization: widget.textCapitalization,
+          obscureText: widget.obscureText,
+          autocorrect: widget.autocorrect && !widget.obscureText,
+          enableSuggestions: widget.autocorrect && !widget.obscureText,
+          onChanged: widget.onChanged,
+          onSubmitted: widget.onSubmitted,
+          cursorColor: ui.ink,
+          style: UiText.body(
+            size: 16,
+            weight: FontWeight.w500,
+            height: 1.4,
+            color: ui.ink,
+          ),
+          decoration: InputDecoration(
+            isDense: true,
+            filled: true,
+            fillColor: ui.fill,
+            hintText: widget.hint,
+            hintStyle: UiText.body(size: 16, color: ui.inkMuted),
+            prefixText: widget.leading == null ? widget.prefixText : null,
+            prefixIcon: widget.leading == null
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(left: 14, right: 10),
+                    child: widget.leading,
+                  ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 0),
+            prefixStyle: UiText.body(
+              size: 16,
+              weight: FontWeight.w500,
+              color: ui.inkMuted,
             ),
-            child: TextField(
-              key: widget.fieldKey,
-              controller: widget.controller,
-              focusNode: widget.focusNode,
-              enabled: widget.enabled,
-              readOnly: widget.readOnly,
-              keyboardType: widget.keyboardType,
-              textInputAction: widget.textInputAction,
-              autofillHints: widget.autofillHints,
-              inputFormatters: widget.inputFormatters,
-              textCapitalization: widget.textCapitalization,
-              obscureText: widget.obscureText,
-              autocorrect: widget.autocorrect && !widget.obscureText,
-              enableSuggestions: widget.autocorrect && !widget.obscureText,
-              onChanged: widget.onChanged,
-              onSubmitted: widget.onSubmitted,
-              cursorColor: ui.ink,
-              style: UiText.body(
-                size: 16,
-                weight: FontWeight.w500,
-                height: 1.4,
-                color: ui.ink,
-              ),
-              decoration: InputDecoration(
-                isDense: true,
-                filled: true,
-                fillColor: ui.surfaceInput,
-                hintText: widget.hint,
-                hintStyle: UiText.body(size: 16, color: ui.inkMuted),
-                prefixText: widget.leading == null ? widget.prefixText : null,
-                prefixIcon: widget.leading == null
-                    ? null
-                    : Padding(
-                        padding: const EdgeInsets.only(left: 14, right: 10),
-                        child: widget.leading,
-                      ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 0),
-                prefixStyle: UiText.body(
-                  size: 16,
-                  weight: FontWeight.w500,
-                  color: ui.inkMuted,
-                ),
-                suffixIcon: widget.trailing == null
-                    ? null
-                    : Padding(
-                        padding: const EdgeInsets.only(right: 14),
-                        child: widget.trailing,
-                      ),
-                suffixIconConstraints: const BoxConstraints(minWidth: 0),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 15,
-                ),
-                constraints: const BoxConstraints(minHeight: _fieldHeight),
-                border: border(edge),
-                enabledBorder: border(edge),
-                disabledBorder: border(ui.ink.withValues(alpha: 0.3)),
-                focusedBorder: border(edge),
-              ),
+            suffixIcon: widget.trailing == null
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(right: 14),
+                    child: widget.trailing,
+                  ),
+            suffixIconConstraints: const BoxConstraints(minWidth: 0),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
             ),
+            constraints: const BoxConstraints(minHeight: UiSize.input),
+            border: uiFieldBorder(edge, UiBorder.thin, radius),
+            enabledBorder: uiFieldBorder(edge, UiBorder.thin, radius),
+            disabledBorder: uiFieldBorder(
+              ui.border.withValues(alpha: 0.5),
+              UiBorder.thin,
+              radius,
+            ),
+            focusedBorder: uiFieldBorder(focusEdge, UiBorder.standard, radius),
           ),
         ),
         if (widget.error != null)
@@ -219,11 +219,11 @@ class _UiTextFieldState extends State<UiTextField> {
   }
 }
 
-/// `.otp-boxes`: [length] digit boxes (48x58, 8dp gap, 12dp radius, 2dp
-/// outline) driven by ONE real text field, so paste, SMS autofill
-/// (`oneTimeCode`) and `enterText` all work. The active box carries a 4dp
-/// brand hard shadow; [hasError] swaps the outline to `danger`. Boxes shrink
-/// evenly when the row is narrower than 332dp (320dp phones).
+/// `.otp-boxes`: [length] digit boxes (48x52, 8dp gap, 10dp radius, 1.5dp
+/// `ui.border` outline, no shadow) driven by ONE real text field, so paste,
+/// SMS autofill (`oneTimeCode`) and `enterText` all work. The active box gets
+/// a 2dp accent border; [hasError] swaps the outline to `danger`. Boxes
+/// shrink evenly when the row is narrower than 328dp (320dp phones).
 class UiOtpField extends StatefulWidget {
   const UiOtpField({
     required this.controller,
@@ -283,54 +283,51 @@ class _UiOtpFieldState extends State<UiOtpField> {
       child: LayoutBuilder(
         builder: (context, c) {
           final gaps = _otpGap * (widget.length - 1);
-          // Leave room for the 4dp active shadow on the last box.
-          final fit = (c.maxWidth - gaps - 4) / widget.length;
+          final fit = (c.maxWidth - gaps) / widget.length;
           final w = fit.isFinite ? fit.clamp(22.0, _otpW) : _otpW;
           return Stack(
             children: [
               ExcludeSemantics(
                 child: Align(
                   alignment: Alignment.center,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 4, bottom: 4),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (var i = 0; i < widget.length; i++) ...[
-                          if (i > 0) const SizedBox(width: _otpGap),
-                          Container(
-                            key: ValueKey('ui-otp-box-$i'),
-                            width: w,
-                            height: _otpH,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: ui.surfaceInput,
-                              borderRadius: BorderRadius.circular(
-                                UiRadius.input,
-                              ),
-                              border: Border.all(
-                                color: widget.hasError ? ui.danger : ui.outline,
-                                width: UiBorder.standard,
-                              ),
-                              boxShadow: focused && i == active
-                                  ? UiShadow.hard(ui.brand)
-                                  : null,
-                            ),
-                            child: Text(
-                              i < text.length ? text[i] : '',
-                              style: TextStyle(
-                                fontFamily: UiFonts.spaceGrotesk,
-                                fontFamilyFallback: const [UiFonts.body],
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                height: 1.3,
-                                color: ui.ink,
-                              ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < widget.length; i++) ...[
+                        if (i > 0) const SizedBox(width: _otpGap),
+                        Container(
+                          key: ValueKey('ui-otp-box-$i'),
+                          width: w,
+                          height: UiSize.input,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: ui.fill,
+                            borderRadius: BorderRadius.circular(UiRadius.otp),
+                            border: Border.all(
+                              color: widget.hasError
+                                  ? ui.danger
+                                  : focused && i == active
+                                  ? ui.accent
+                                  : ui.border,
+                              width: focused && i == active
+                                  ? UiBorder.standard
+                                  : UiBorder.thin,
                             ),
                           ),
-                        ],
+                          child: Text(
+                            i < text.length ? text[i] : '',
+                            style: TextStyle(
+                              fontFamily: UiFonts.spaceGrotesk,
+                              fontFamilyFallback: const [UiFonts.body],
+                              fontSize: 28,
+                              fontWeight: FontWeight.w700,
+                              height: 1.3,
+                              color: ui.ink,
+                            ),
+                          ),
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),

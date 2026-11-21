@@ -1,9 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';
 import '../remote/remote_api.dart';
+
+/// How long sign-out waits for the outbox to drain before wiping.
+const Duration signOutFlushTimeout = Duration(seconds: 5);
 
 /// Local-only mode (FR-A5): there is no account. Per the contract
 /// [currentUserId] is null and [watchUserId] emits null; the data layer
@@ -167,6 +171,16 @@ class SupabaseAuthRepository implements AuthRepository {
   /// on the device.
   @override
   Future<void> signOut() async {
+    // Unsent check-ins are lost with the wipe: give the outbox one last short
+    // chance while the session is still valid (offline fails fast).
+    final outbox = ctx.outbox;
+    if (outbox != null && remote.currentUserId != null) {
+      try {
+        await outbox.flush(force: true).timeout(signOutFlushTimeout);
+      } on Object catch (e) {
+        debugPrint('auth: outbox flush before sign-out skipped: $e');
+      }
+    }
     await remote.signOut(global: true);
     await ctx.wipeLocal();
   }
@@ -184,7 +198,9 @@ class SupabaseAuthRepository implements AuthRepository {
       deleteAccountFunction,
       body: {'action': 'delete', 'code': code ?? ''},
     );
-    await ctx.wipeLocal();
+    // Sign out first: a sync starting between the wipe and the sign-out
+    // would pull the deleted account's rows back into the cache.
     await remote.signOut();
+    await ctx.wipeLocal();
   }
 }

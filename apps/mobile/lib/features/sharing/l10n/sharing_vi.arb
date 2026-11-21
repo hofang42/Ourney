@@ -336,6 +336,26 @@
   "@sharing_storySaved": {
     "description": "Snack after saving."
   },
+  "sharing_storyOwnerOnly": "Chỉ chủ hành trình sửa được câu chuyện. Bạn vẫn có thể ẩn ảnh của mình.",
+  "@sharing_storyOwnerOnly": {
+    "description": "SCR-83 note for a group member who is not the owner (C-B14)."
+  },
+  "sharing_storyTitleFallback": "Để trống sẽ dùng tên hành trình",
+  "@sharing_storyTitleFallback": {
+    "description": "SCR-83 helper under an empty story title."
+  },
+  "sharing_discardTitle": "Bỏ thay đổi?",
+  "@sharing_discardTitle": {
+    "description": "SCR-83 confirm title when leaving with unsaved edits (U19)."
+  },
+  "sharing_discardBody": "Những gì bạn vừa sửa trong câu chuyện chưa được lưu.",
+  "@sharing_discardBody": {
+    "description": "SCR-83 confirm message when leaving with unsaved edits."
+  },
+  "sharing_discard": "Bỏ thay đổi",
+  "@sharing_discard": {
+    "description": "Confirm button: leave without saving."
+  },
   "sharing_fromFriends": "Từ bạn bè",
   "@sharing_fromFriends": {
     "description": "Shared with me section."
@@ -684,6 +704,10 @@
   "@sharing_retellIntro": {
     "description": "SCR-28 intro."
   },
+  "sharing_retellDiscardTitle": "Rời đi mà không lưu?",
+  "sharing_retellDiscardBody": "Tên và ảnh của hành trình này chưa được lưu. Rời đi bây giờ sẽ mất chúng.",
+  "sharing_retellDiscardConfirm": "Rời đi",
+  "sharing_retellDiscardKeep": "Ở lại",
   "sharing_pickPhotos": "Chọn ảnh",
   "@sharing_pickPhotos": {
     "description": "Opens the photo library (multi select)."

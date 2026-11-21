@@ -1,6 +1,6 @@
 {
   "@@locale": "vi",
-  "quiet_transformer_name": "Thay đổi thầm lặng",
+  "quiet_transformer_name": "Lặng lẽ đổi thay",
   "@quiet_transformer_name": {
     "description": "Tên phong cách, hiện ở nhãn đầu màn"
   },

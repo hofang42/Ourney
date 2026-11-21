@@ -40,6 +40,9 @@ class UiSegmented<T> extends StatelessWidget {
   final ValueChanged<T> onChanged;
   final bool scrollable;
 
+  /// Visual inset of the selected pill inside the 48dp track.
+  static const double _inset = 4;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
@@ -91,8 +94,12 @@ class UiSegmented<T> extends StatelessWidget {
         selected: selected,
         semanticLabel: s.label,
         excludeChildSemantics: true,
-        minSize: const Size(UiSize.tap, 40),
-        child: child,
+        // The 40dp pill sits inside a full 48dp-tall hit area (U5): the
+        // track's vertical inset belongs to the tap target.
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: _inset),
+          child: child,
+        ),
       );
       return scrollable ? pressable : Expanded(child: pressable);
     }
@@ -103,7 +110,7 @@ class UiSegmented<T> extends StatelessWidget {
     );
     return Container(
       height: UiSize.tap,
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.symmetric(horizontal: _inset),
       decoration: BoxDecoration(
         color: ui.fill,
         borderRadius: BorderRadius.circular(UiRadius.capsule),

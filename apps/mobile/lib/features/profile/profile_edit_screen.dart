@@ -54,9 +54,13 @@ class ProfileEditScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            _ => const Padding(
-              padding: EdgeInsets.all(UiSpace.xxl),
-              child: Center(child: CircularProgressIndicator()),
+            _ => Padding(
+              padding: const EdgeInsets.all(UiSpace.xxl),
+              child: Center(
+                child: CircularProgressIndicator(
+                  semanticsLabel: AppLocalizations.of(context).common_loading,
+                ),
+              ),
             ),
           },
         ],

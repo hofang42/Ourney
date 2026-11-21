@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,9 +9,11 @@ import 'package:uuid/uuid.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import 'sharing_widgets.dart';
@@ -60,9 +63,50 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
     super.dispose();
   }
 
-  LocalDate _today() {
-    final now = ref.read(journeysClockProvider).now();
-    return LocalDate(now.year, now.month, now.day);
+  /// Today on the device's wall clock (bug C-B12: not the UTC date).
+  LocalDate _today() => journeyLocalDate(
+    ref.read(deviceTimezoneProvider).value ?? 'UTC',
+    ref.read(journeysClockProvider).now(),
+  );
+
+  /// The device zone, waiting for the platform answer (bug C-B12).
+  Future<String> _timezone() async {
+    try {
+      return await ref.read(deviceTimezoneProvider.future);
+    } on Object {
+      return 'UTC';
+    }
+  }
+
+  /// Typed or picked something that leaving would lose (U19).
+  bool get _dirty =>
+      _created == null &&
+      (_picks.isNotEmpty ||
+          _title.text.trim().isNotEmpty ||
+          _metricName.text.trim().isNotEmpty ||
+          _metricUnit.text.trim().isNotEmpty);
+
+  Future<void> _back() async {
+    if (_busy) return;
+    if (_dirty) {
+      final l10n = SharingL10n.of(context);
+      final leave = await showUiConfirmSheet(
+        context: context,
+        title: l10n.sharing_retellDiscardTitle,
+        message: l10n.sharing_retellDiscardBody,
+        confirmLabel: l10n.sharing_retellDiscardConfirm,
+        cancelLabel: l10n.sharing_retellDiscardKeep,
+        destructive: true,
+        confirmKey: const ValueKey('retell-discard-confirm'),
+      );
+      if (!leave || !mounted) return;
+      // Confirmed: pop past the PopScope guard.
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+        return;
+      }
+    }
+    if (mounted) sharingBack(context);
   }
 
   void _sort() => _picks.sort((a, b) => a.date.compareTo(b.date));
@@ -112,14 +156,16 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
     final l10n = SharingL10n.of(context);
     setState(() => _submitted = true);
     if (_error(l10n) != null || _busy) return;
-    final timezone = ref.read(deviceTimezoneProvider).value ?? 'UTC';
     setState(() {
       _busy = true;
       _failed = 0;
     });
+    final timezone = await _timezone();
+    if (!mounted) return;
     try {
       final metric = _metricName.text.trim();
       final unit = _metricUnit.text.trim();
+      final fresh = _created == null;
       final journey = _created ??= await ref
           .read(sharingRepositoryProvider)
           .createImported(
@@ -135,6 +181,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
               metricUnit: metric.isEmpty || unit.isEmpty ? null : unit,
             ),
           );
+      if (fresh) unawaited(pushSharePrivacyToJourney(ref, journey.id));
       final compressor = ref.read(photoCompressorProvider);
       final checkIns = ref.read(checkInRepositoryProvider);
       final drafts = ref.read(draftFilesProvider);
@@ -145,7 +192,11 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
           await checkIns.submit(
             CheckInDraft(
               journeyId: journey.id,
-              capturedAt: noonInZone(pick.date, journey.timezone),
+              capturedAt: noonInZone(
+                pick.date,
+                journey.timezone,
+                now: ref.read(journeysClockProvider).now(),
+              ),
               photoFile: files.photoFile,
               thumbFile: files.thumbFile,
               fromLibrary: true,
@@ -182,7 +233,12 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
         children: const [SharingNeedsServer()],
       );
     }
-    final error = _submitted ? _error(l10n) : null;
+    // Keeps the zone loading and rebuilds once it is known.
+    ref.watch(deviceTimezoneProvider);
+    // Save is on only when the form is valid; once something is filled in
+    // the reason it is off shows (U19).
+    final invalid = _error(l10n);
+    final error = _submitted || _dirty ? invalid : null;
     final dates = [for (final p in _picks) p.date];
     final dupes = {
       for (final d in dates)
@@ -244,23 +300,23 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
       bottom = UiButton(
         key: const ValueKey('retell-save'),
         label: l10n.sharing_saveToShelf,
-        onPressed: _save,
+        onPressed: invalid == null ? _save : null,
       );
     }
 
     // Leaving mid-import would orphan a half-filled journey.
+    // Unsaved picks ask before leaving (U19).
     return PopScope(
-      canPop: !_busy,
+      canPop: !_busy && !_dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back();
+      },
       child: SharingPage(
         scaffoldKey: const ValueKey('retell'),
         title: l10n.sharing_retellTitle,
+        onBack: _back,
         bottom: Padding(
-          padding: EdgeInsets.fromLTRB(
-            gutter,
-            UiSpace.sm,
-            gutter,
-            UiSpace.lg + MediaQuery.paddingOf(context).bottom,
-          ),
+          padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, UiSpace.lg),
           child: bottom,
         ),
         children: [
@@ -308,6 +364,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
                         label: l10n.sharing_metricName,
                         fieldKey: const ValueKey('retell-metric-name'),
                         controller: _metricName,
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                     const SizedBox(width: UiSpace.sm),
@@ -317,6 +374,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
                         label: l10n.sharing_metricUnit,
                         fieldKey: const ValueKey('retell-metric-unit'),
                         controller: _metricUnit,
+                        onChanged: (_) => setState(() {}),
                       ),
                     ),
                   ],
@@ -324,14 +382,17 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
                 const SizedBox(height: UiSpace.xl),
                 Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        _picks.isEmpty
-                            ? l10n.sharing_pickPhotos
-                            : l10n.sharing_photosCount(_picks.length),
-                        style: UiText.h2(size: 18, color: ui.ink),
-                      ),
-                    ),
+                    // U21: with no photos yet the heading would repeat the
+                    // button label, so only the button shows.
+                    if (_picks.isNotEmpty)
+                      Expanded(
+                        child: Text(
+                          l10n.sharing_photosCount(_picks.length),
+                          style: UiText.h2(size: 18, color: ui.ink),
+                        ),
+                      )
+                    else
+                      const Spacer(),
                     Flexible(
                       child: SharingPillButton(
                         key: const ValueKey('retell-pick'),

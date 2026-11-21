@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../social_context.dart';
@@ -12,6 +13,13 @@ class DataChatRepository implements ChatRepository {
   DataChatRepository(this.social);
 
   final SocialContext social;
+
+  /// Message id per draft, kept until the send succeeds: a retry after a lost
+  /// response reuses it, so the server never stores the message twice.
+  final Map<String, String> _draftIds = {};
+
+  String _idFor(String draftKey) =>
+      _draftIds.putIfAbsent(draftKey, social.data.newId);
 
   void refresh() => social.changed();
 
@@ -70,13 +78,16 @@ class DataChatRepository implements ChatRepository {
     if (text.isEmpty || text.length > maxMessageLength) {
       throw const OurneyException(OurneyErrorCode.invalid, 'message length');
     }
-    return _send(
-      id: social.data.newId(),
+    final draftKey = 'text|$conversationId|$replyToCheckInId|$text';
+    final sent = await _send(
+      id: _idFor(draftKey),
       conversationId: conversationId,
       kind: MessageKind.text,
       body: text,
       replyToCheckInId: replyToCheckInId,
     );
+    _draftIds.remove(draftKey);
+    return sent;
   }
 
   @override
@@ -94,7 +105,10 @@ class DataChatRepository implements ChatRepository {
       throw const OurneyException(OurneyErrorCode.invalid, 'message length');
     }
     final me = social.requireUserId();
-    final id = social.data.newId();
+    final draftKey =
+        'photo|$conversationId|$replyToCheckInId|$caption|'
+        '${jpegBytes.length}|${Object.hashAll(jpegBytes)}';
+    final id = _idFor(draftKey);
     final path = messagePhotoPath(conversationId, me, id);
     await social.remote.uploadBytes(path, jpegBytes);
     // Keep a local copy: the sender's own photo shows without a download.
@@ -103,14 +117,28 @@ class DataChatRepository implements ChatRepository {
     } on Object {
       // Cache only; the media store downloads it on demand otherwise.
     }
-    return _send(
-      id: id,
-      conversationId: conversationId,
-      kind: MessageKind.photo,
-      body: caption == null || caption.isEmpty ? null : caption,
-      mediaPath: path,
-      replyToCheckInId: replyToCheckInId,
-    );
+    try {
+      final sent = await _send(
+        id: id,
+        conversationId: conversationId,
+        kind: MessageKind.photo,
+        body: caption == null || caption.isEmpty ? null : caption,
+        mediaPath: path,
+        replyToCheckInId: replyToCheckInId,
+      );
+      _draftIds.remove(draftKey);
+      return sent;
+    } on Object catch (e) {
+      // Do not leave an orphan object in the bucket; the retry uploads it
+      // again (upsert) under the same id.
+      debugPrint('chat: send failed, removing uploaded photo: $e');
+      try {
+        await social.remote.removeFiles([path]);
+      } on Object catch (cleanup) {
+        debugPrint('chat: photo cleanup failed: $cleanup');
+      }
+      rethrow;
+    }
   }
 
   Future<ChatMessage> _send({

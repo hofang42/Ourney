@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -46,7 +47,9 @@ void main() {
       expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
       expect(_key('wrapped-segment-0'), findsOneWidget);
       expect(_key('wrapped-segment-1'), findsOneWidget);
-      expect(_key('wrapped-segment-2'), findsNothing);
+      // U4: the last segment is the summary page.
+      expect(_key('wrapped-segment-2'), findsOneWidget);
+      expect(_key('wrapped-segment-3'), findsNothing);
       await tester.tapAt(const Offset(380, 500));
       await tester.pumpAndSettle();
       expect(find.textContaining('4/14 DAYS'), findsOneWidget);
@@ -58,6 +61,34 @@ void main() {
       await tester.pumpAndSettle();
       expect(_key('wrapped-card-feed'), findsOneWidget);
       expect(find.text('Export card'), findsOneWidget);
+    });
+
+    testWidgets('U4: back arrow steps a page; story exposes scroll actions', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await _open(tester);
+      final story = tester.getSemantics(_key('wrapped-headline'));
+      expect(
+        story.getSemanticsData().hasAction(SemanticsAction.scrollLeft),
+        isTrue,
+      );
+      expect(story.label, isNotEmpty);
+      // ignore: deprecated_member_use
+      tester.binding.pipelineOwner.semanticsOwner!.performAction(
+        story.id,
+        SemanticsAction.scrollLeft,
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('4/14 DAYS'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Back').first);
+      await tester.pumpAndSettle();
+      expect(find.text('4 MOMENTS OVER 4 DAYS'), findsOneWidget);
+      expect(_key('journey-wrapped'), findsOneWidget);
+      await tester.tap(_key('wrapped-segment-2'));
+      await tester.pumpAndSettle();
+      expect(_key('wrapped-summary'), findsOneWidget);
+      handle.dispose();
     });
 
     testWidgets('left tap goes back, segment jumps to a page', (tester) async {
@@ -90,6 +121,48 @@ void main() {
       await tester.tap(_key('wrapped-hide-kg'));
       await tester.pumpAndSettle();
       expect(_key('wrapped-weights'), findsOneWidget);
+    });
+
+    testWidgets('U4: hide-kg and format are handed to the share card', (
+      tester,
+    ) async {
+      final j = testJourney(
+        status: JourneyStatus.ended,
+        templateId: TemplateId.weightLoss,
+      );
+      final h = await _open(tester, journey: j);
+      for (var i = 0; i < 4; i++) {
+        await tester.tapAt(const Offset(380, 500));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(_key('wrapped-cta'));
+      await tester.pumpAndSettle();
+      final uri = Uri.parse(h.location);
+      expect(uri.path, '/share/${j.id}');
+      expect(uri.queryParameters['hideMetric'], 'true');
+      expect(uri.queryParameters['format'], 'story');
+      expect(uri.queryParameters.containsKey('blur'), isFalse);
+      expect(find.text('Save image'), findsNothing);
+    });
+
+    testWidgets('U4: turning hide-kg off is handed over as false', (
+      tester,
+    ) async {
+      final j = testJourney(
+        status: JourneyStatus.ended,
+        templateId: TemplateId.weightLoss,
+      );
+      final h = await _open(tester, journey: j);
+      for (var i = 0; i < 4; i++) {
+        await tester.tapAt(const Offset(380, 500));
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(_key('wrapped-hide-kg'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(_key('wrapped-edit-card'));
+      await tester.tap(_key('wrapped-edit-card'));
+      await tester.pumpAndSettle();
+      expect(Uri.parse(h.location).queryParameters['hideMetric'], 'false');
     });
 
     for (final skin in [

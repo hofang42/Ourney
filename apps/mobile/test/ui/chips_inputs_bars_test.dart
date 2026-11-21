@@ -32,6 +32,33 @@ BoxDecoration decorOf(WidgetTester t, Finder f) =>
     (t.widget<Container>(f).decoration! as BoxDecoration);
 
 void main() {
+  testWidgets('person row with actions is named once, actions keep nodes', (
+    t,
+  ) async {
+    final handle = t.ensureSemantics();
+    await t.pumpWidget(
+      host(
+        UiPersonRow(
+          name: 'Lan',
+          title: 'Lan Nguyen',
+          subtitle: 'Moi tham gia',
+          onPressed: () {},
+          actions: [
+            UiButton(
+              label: 'Accept',
+              compact: true,
+              expand: false,
+              onPressed: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel(RegExp('Lan Nguyen')), findsOneWidget);
+    expect(find.bySemanticsLabel('Accept'), findsOneWidget);
+    handle.dispose();
+  });
+
   for (final b in Brightness.values) {
     final ui = paletteOf(b);
     group('V2 sticker kit ($b)', () {
@@ -153,7 +180,7 @@ void main() {
             matching: find.byType(Container),
           ),
         );
-        expect(card.boxShadow!.single.color, ui.outline);
+        expect(card.boxShadow!.single.color, ui.hardShadowColor);
         final menu = decorOf(
           t,
           find
@@ -185,8 +212,8 @@ void main() {
         expect(find.text('Sai email'), findsOneWidget);
         final deco = t.widget<TextField>(find.byType(TextField)).decoration!;
         final border = deco.enabledBorder! as OutlineInputBorder;
-        expect(border.borderRadius, BorderRadius.circular(12));
-        expect(border.borderSide.width, 2);
+        expect(border.borderRadius, BorderRadius.circular(16));
+        expect(border.borderSide.width, 1.5);
         expect(border.borderSide.color, ui.danger);
         expect(
           t.getTopLeft(find.text('Sai email')).dy,
@@ -194,42 +221,97 @@ void main() {
         );
       });
 
-      testWidgets('text field: focus draws a 3dp brand ring', (t) async {
+      testWidgets(
+        'text field: 52dp, 1.5dp border, no shadow, 2dp accent focus',
+        (t) async {
+          final c = TextEditingController();
+          final f = FocusNode();
+          await t.pumpWidget(
+            host(
+              UiTextField(label: 'Ten', controller: c, focusNode: f),
+              brightness: b,
+            ),
+          );
+          InputDecoration deco() =>
+              t.widget<TextField>(find.byType(TextField)).decoration!;
+          expect(t.getSize(find.byType(TextField)).height, 52);
+          final rest = deco().enabledBorder! as OutlineInputBorder;
+          expect(rest.borderSide.color, ui.border);
+          expect(rest.borderSide.width, 1.5);
+          final focus = deco().focusedBorder! as OutlineInputBorder;
+          expect(focus.borderSide.color, ui.accent);
+          expect(focus.borderSide.width, 2);
+          expect(find.byKey(const ValueKey('ui-field-ring')), findsNothing);
+          // No hard shadow anywhere around the field.
+          expect(
+            find.descendant(
+              of: find.byType(UiTextField),
+              matching: find.byWidgetPredicate(
+                (w) =>
+                    w is DecoratedBox &&
+                    w.decoration is BoxDecoration &&
+                    (w.decoration as BoxDecoration).boxShadow?.isNotEmpty ==
+                        true,
+              ),
+            ),
+            findsNothing,
+          );
+        },
+      );
+
+      testWidgets('text field: pill search uses a capsule outline', (t) async {
         final c = TextEditingController();
-        final f = FocusNode();
         await t.pumpWidget(
           host(
-            UiTextField(label: 'Ten', controller: c, focusNode: f),
+            UiTextField(label: 'Tim', controller: c, pill: true),
             brightness: b,
           ),
         );
-        BoxDecoration ring() =>
-            t
-                    .widget<DecoratedBox>(
-                      find.byKey(const ValueKey('ui-field-ring')),
-                    )
-                    .decoration
-                as BoxDecoration;
-        expect(ring().boxShadow, isEmpty);
+        final deco = t.widget<TextField>(find.byType(TextField)).decoration!;
         expect(
-          (t
-                      .widget<TextField>(find.byType(TextField))
-                      .decoration!
-                      .enabledBorder!
-                  as OutlineInputBorder)
-              .borderSide
-              .color,
-          ui.outline,
+          (deco.enabledBorder! as OutlineInputBorder).borderRadius,
+          BorderRadius.circular(999),
         );
-        f.requestFocus();
-        await t.pump();
-        final s = ring().boxShadow!.single;
-        expect(s.color, ui.brand);
-        expect(s.spreadRadius, 3);
-        expect(s.blurRadius, 0);
       });
 
-      testWidgets('otp: 48x58 boxes, 8 gap, active shadow, error outline', (
+      testWidgets('caption field: label-less, rounded, counter on demand', (
+        t,
+      ) async {
+        final c = TextEditingController();
+        await t.pumpWidget(
+          host(
+            UiCaptionField(
+              controller: c,
+              semanticLabel: 'Caption',
+              hint: 'Today?',
+              counter: '121/140',
+              counterKey: const ValueKey('cc'),
+            ),
+            brightness: b,
+          ),
+        );
+        final deco = t.widget<TextField>(find.byType(TextField)).decoration!;
+        expect(deco.fillColor, ui.fill);
+        expect(deco.hintText, 'Today?');
+        final rest = deco.enabledBorder! as OutlineInputBorder;
+        expect(rest.borderRadius, BorderRadius.circular(16));
+        expect(rest.borderSide.width, 1.5);
+        expect(
+          (deco.focusedBorder! as OutlineInputBorder).borderSide.color,
+          ui.accent,
+        );
+        expect(
+          t.getSize(find.byType(TextField)).height,
+          greaterThanOrEqualTo(52),
+        );
+        expect(find.text('121/140'), findsOneWidget);
+        expect(
+          t.widget<TextField>(find.byType(TextField)).textInputAction,
+          TextInputAction.done,
+        );
+      });
+
+      testWidgets('otp: 48x52 boxes, 8 gap, 2dp accent active, error outline', (
         t,
       ) async {
         final c = TextEditingController();
@@ -253,7 +335,7 @@ void main() {
           ),
         );
         Finder box(int i) => find.byKey(ValueKey('ui-otp-box-$i'));
-        expect(t.getSize(box(0)), const Size(48, 58));
+        expect(t.getSize(box(0)), const Size(48, 52));
         expect(t.getTopLeft(box(1)).dx - t.getTopRight(box(0)).dx, 8);
         f.requestFocus();
         await t.pump();
@@ -261,11 +343,13 @@ void main() {
         await t.pump();
         expect(find.text('1'), findsOneWidget);
         BoxDecoration d(int i) => decorOf(t, box(i));
-        expect(d(2).boxShadow!.single.color, ui.brand);
-        expect(d(2).boxShadow!.single.offset, const Offset(4, 4));
+        expect(d(2).boxShadow, isNull);
+        expect((d(2).border! as Border).top.color, ui.accent);
+        expect((d(2).border! as Border).top.width, 2);
         expect(d(0).boxShadow, isNull);
-        expect((d(0).border! as Border).top.color, ui.outline);
-        expect(d(0).borderRadius, BorderRadius.circular(12));
+        expect((d(0).border! as Border).top.color, ui.border);
+        expect((d(0).border! as Border).top.width, 1.5);
+        expect(d(0).borderRadius, BorderRadius.circular(10));
         set(() => error = true);
         await t.pump();
         expect((d(0).border! as Border).top.color, ui.danger);

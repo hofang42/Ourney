@@ -42,7 +42,10 @@ class LayoutPreview extends StatelessWidget {
       decoration: BoxDecoration(
         color: p.bg,
         borderRadius: BorderRadius.circular(large ? UiRadius.card : 14),
-        border: Border.all(color: p.ink, width: skin.borderWidth),
+        border: Border.all(
+          color: p.outlineIn(dark ? Brightness.dark : Brightness.light),
+          width: skin.borderWidth,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

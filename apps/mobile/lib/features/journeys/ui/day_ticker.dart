@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/journeys_providers.dart';
 
+export '../data/journeys_providers.dart' show untilNextQuarterHour;
+
 /// Refreshes [journeysNowProvider] on every quarter hour while [child] is
 /// mounted, so "today" rolls over at midnight in any journey time zone
 /// (whole- and half-hour offsets). Owned by the widget so the timer stops
@@ -28,14 +30,8 @@ class _DayTickerState extends ConsumerState<DayTicker> {
   }
 
   void _schedule() {
-    final now = DateTime.now();
-    final next = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      now.hour,
-    ).add(Duration(minutes: (now.minute ~/ 15 + 1) * 15));
-    _timer = Timer(next.difference(now), () {
+    final now = ref.read(journeysClockProvider).now();
+    _timer = Timer(untilNextQuarterHour(now), () {
       ref.invalidate(journeysNowProvider);
       _schedule();
     });

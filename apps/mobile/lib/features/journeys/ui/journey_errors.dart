@@ -20,14 +20,25 @@ String journeyErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.notFound => l10n.journeys_errorNotFound,
     OurneyErrorCode.invalid => l10n.journeys_errorVisibility,
     OurneyErrorCode.offline => app.common_offline,
+    OurneyErrorCode.syncPending => l10n.journeys_errorSyncPending,
     _ => app.common_errorGeneric,
   };
 }
 
 /// Journey screens pin their primary button to the bottom: lift the toast
 /// above it so it never covers the action.
-void showJourneySnack(BuildContext context, String message) =>
-    showUiToast(context, message, bottomOffset: 110);
+void showJourneySnack(
+  BuildContext context,
+  String message, {
+  String? actionLabel,
+  VoidCallback? onAction,
+}) => showUiToast(
+  context,
+  message,
+  bottomOffset: 110,
+  actionLabel: actionLabel,
+  onAction: onAction,
+);
 
 /// Confirmation (end / delete). Resolves to true on confirm.
 Future<bool> confirmJourneyAction(

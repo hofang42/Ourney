@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:ourney_core/ourney_core.dart';
@@ -31,7 +32,14 @@ class DataContext {
     this.sync,
     String Function()? newId,
   }) : store = LocalStore(db, files),
-       newId = newId ?? const Uuid().v4;
+       newId = newId ?? const Uuid().v4 {
+    // Leftovers of wipes that were interrupted before deleting their trash.
+    unawaited(MediaWipe.sweep([files.root, _draftsDir]));
+  }
+
+  /// Check-in drafts folder (next to the media root).
+  Directory get _draftsDir =>
+      Directory(p.join(files.root.parent.path, checkinDraftDirName));
 
   final AppDatabase db;
   final MediaFiles files;
@@ -62,17 +70,34 @@ class DataContext {
         'local-only mode: this needs a server',
       ));
 
+  /// [requireUserId] for write paths: also records the signed-in user as the
+  /// cache owner before the first local write, so a later pull never mistakes
+  /// this user's offline rows for a previous account's leftovers.
+  Future<String> claimUserId() async {
+    final me = requireUserId();
+    await sync?.ensureOwner(me);
+    return me;
+  }
+
   DateTime now() => clock.now();
 
   /// Removes every cached row and file (account deletion, sign-out),
   /// including leftover check-in drafts.
   Future<void> wipeLocal() async {
-    await db.wipe();
-    await files.wipe();
-    final drafts = Directory(
-      p.join(files.root.parent.path, checkinDraftDirName),
+    // Stop pulls still running for the old session before they refill it.
+    sync?.invalidateSession();
+    // Rows + marker + media renamed to trash in one step (see [MediaWipe]):
+    // a failure anywhere keeps rows and files together, and the trash is only
+    // deleted after the commit. The marker survives a late in-flight write:
+    // the next user to sign in finds an owner that is not them and wipes again.
+    await MediaWipe.run(
+      [files.root, _draftsDir],
+      (moveMedia) => db.transaction(() async {
+        await db.wipe();
+        if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
+        await moveMedia();
+      }),
     );
-    if (drafts.existsSync()) await drafts.delete(recursive: true);
     sync?.notifyChanged();
   }
 }

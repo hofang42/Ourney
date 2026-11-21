@@ -18,7 +18,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../personas/persona_contract.dart';
+import '../shared/time_zones.dart';
 import 'config.dart';
+import 'journey_clock.dart';
 import 'redirect.dart';
 import 'theme/motion.dart';
 
@@ -231,10 +233,15 @@ class ActiveJourneyId extends _$ActiveJourneyId {
 @Riverpod(keepAlive: true, retry: _noRetry)
 Stream<Journey?> activeJourney(Ref ref) {
   final id = ref.watch(activeJourneyIdProvider);
-  return ref.watch(journeyRepositoryProvider).watchActive().map((all) {
+  return mapWithNow(ref, ref.watch(journeyRepositoryProvider).watchActive(), (
+    all,
+    now,
+  ) {
     final active = [
       for (final j in all)
-        if (j.status == JourneyStatus.active) j,
+        if (j.status == JourneyStatus.active &&
+            !j.isPastEndOn(journeyLocalDate(j.timezone, now)))
+          j,
     ];
     for (final j in active) {
       if (j.id == id) return j;

@@ -274,6 +274,24 @@ class SharingL10nEn extends SharingL10n {
   String get sharing_storySaved => 'Story saved';
 
   @override
+  String get sharing_storyOwnerOnly =>
+      'Only the journey owner can edit the story. You can still hide your own photos.';
+
+  @override
+  String get sharing_storyTitleFallback =>
+      'Leave empty to use the journey name';
+
+  @override
+  String get sharing_discardTitle => 'Discard changes?';
+
+  @override
+  String get sharing_discardBody =>
+      'Your edits to the story haven\'t been saved yet.';
+
+  @override
+  String get sharing_discard => 'Discard';
+
+  @override
   String get sharing_fromFriends => 'From friends';
 
   @override
@@ -517,6 +535,19 @@ class SharingL10nEn extends SharingL10n {
   @override
   String get sharing_retellIntro =>
       'Already did it? Turn old photos into a story';
+
+  @override
+  String get sharing_retellDiscardTitle => 'Leave without saving?';
+
+  @override
+  String get sharing_retellDiscardBody =>
+      'Your name and photos for this journey are not saved yet. Leaving now drops them.';
+
+  @override
+  String get sharing_retellDiscardConfirm => 'Leave';
+
+  @override
+  String get sharing_retellDiscardKeep => 'Keep going';
 
   @override
   String get sharing_pickPhotos => 'Pick photos';

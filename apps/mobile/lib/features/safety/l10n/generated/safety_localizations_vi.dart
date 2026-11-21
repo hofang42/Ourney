@@ -82,7 +82,7 @@ class SafetyL10nVi extends SafetyL10n {
   String get safety_reportSubmit => 'Gửi báo cáo';
 
   @override
-  String get safety_reportCancel => 'Huỷ';
+  String get safety_reportCancel => 'Hủy';
 
   @override
   String get safety_reportSent =>
@@ -136,7 +136,7 @@ class SafetyL10nVi extends SafetyL10n {
   String get safety_blockConfirm => 'Chặn';
 
   @override
-  String get safety_blockCancel => 'Huỷ';
+  String get safety_blockCancel => 'Hủy';
 
   @override
   String safety_blocked(String name) {
@@ -162,6 +162,11 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_unknownUser => 'Người dùng';
+
+  @override
+  String safety_unknownUserId(String id) {
+    return 'Mã $id';
+  }
 
   @override
   String get safety_blockedEmptyTitle => 'Bạn chưa chặn ai';
@@ -244,14 +249,14 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_eula4Body =>
-      'Bạn có thể báo cáo check-in hoặc người dùng và chặn bất kỳ ai. Chúng mình xem xét báo cáo trong vòng 24 giờ, gỡ nội dung vi phạm và khoá tài khoản của người vi phạm.';
+      'Bạn có thể báo cáo check-in hoặc người dùng và chặn bất kỳ ai. Chúng mình xem xét báo cáo trong vòng 24 giờ, gỡ nội dung vi phạm và khóa tài khoản của người vi phạm.';
 
   @override
   String get safety_eula5Title => '5. Chấm dứt';
 
   @override
   String get safety_eula5Body =>
-      'Chúng mình có thể tạm khoá hoặc xoá tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xoá tài khoản bất cứ lúc nào trong Hồ sơ.';
+      'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào trong Hồ sơ.';
 
   @override
   String get safety_eula6Title => '6. Miễn trừ và thay đổi';
@@ -289,11 +294,11 @@ class SafetyL10nVi extends SafetyL10n {
       'Lời nhắc check-in là thông báo cục bộ, được lên lịch ngay trên máy bạn.';
 
   @override
-  String get safety_privacy5Title => 'Xoá dữ liệu';
+  String get safety_privacy5Title => 'Xóa dữ liệu';
 
   @override
   String get safety_privacy5Body =>
-      'Vào Hồ sơ > Xoá tài khoản để xoá vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.';
+      'Vào Hồ sơ > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.';
 
   @override
   String get safety_privacy6Title => 'Liên hệ';

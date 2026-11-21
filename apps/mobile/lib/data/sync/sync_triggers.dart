@@ -10,11 +10,17 @@ class SyncTriggers {
   SyncTriggers({
     required this.onTrigger,
     Stream<List<ConnectivityResult>>? connectivity,
+    Future<List<ConnectivityResult>> Function()? initialConnectivity,
     bool listenLifecycle = true,
     Duration startDelay = const Duration(seconds: 2),
     Duration periodic = const Duration(minutes: 5),
   }) {
     _sub = connectivity?.listen(_onConnectivity);
+    // The stream only reports changes: seed the state so a cold start while
+    // offline does not read the first `online` event as "regained".
+    if (connectivity != null) {
+      unawaited(_seed(initialConnectivity ?? Connectivity().checkConnectivity));
+    }
     if (listenLifecycle) {
       _lifecycle = AppLifecycleListener(
         onResume: () => _fire(),
@@ -36,7 +42,21 @@ class SyncTriggers {
   bool _online = true;
   bool _foreground = true;
 
+  bool _seenEvent = false;
+
+  Future<void> _seed(Future<List<ConnectivityResult>> Function() check) async {
+    try {
+      final results = await check();
+      // A stream event that arrived first is fresher than this answer.
+      if (_seenEvent) return;
+      _online = results.any((r) => r != ConnectivityResult.none);
+    } on Object catch (e) {
+      debugPrint('sync: initial connectivity check failed: $e');
+    }
+  }
+
   void _onConnectivity(List<ConnectivityResult> results) {
+    _seenEvent = true;
     final online = results.any((r) => r != ConnectivityResult.none);
     final regained = online && !_online;
     _online = online;

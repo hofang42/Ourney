@@ -65,7 +65,11 @@ class UiPersonRow extends StatelessWidget {
             color: color ?? ui.inkMuted,
           ),
         );
-        final texts = Column(
+        // With interactive [actions] / [trailing] the pressable is named by
+        // its own label (U3): the visible text is excluded so it is not read
+        // twice, while the actions keep their own semantics nodes.
+        final interactiveChildren = actions.isNotEmpty || trailing.isNotEmpty;
+        final textLines = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -82,6 +86,16 @@ class UiPersonRow extends StatelessWidget {
             ),
             if (subtitle != null) line(subtitle!),
             if (extraLine != null) line(extraLine!),
+          ],
+        );
+        final texts = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (onPressed != null && interactiveChildren)
+              ExcludeSemantics(child: textLines)
+            else
+              textLines,
             if (!inline) ...[
               const SizedBox(height: 6),
               Wrap(spacing: 6, runSpacing: 6, children: actions),
@@ -126,8 +140,14 @@ class UiPersonRow extends StatelessWidget {
           ),
         );
         if (onPressed == null) return row;
+        // A merged node would swallow interactive [actions] / [trailing]
+        // (U3): then the row is named by its own text and the children keep
+        // their own semantics.
         return UiPressable(
           onPressed: onPressed,
+          semanticLabel: interactiveChildren
+              ? [title, ?subtitle, ?extraLine].join(', ')
+              : null,
           borderRadius: BorderRadius.circular(UiRadius.input),
           minSize: Size(UiSize.tap, minHeight),
           child: row,

@@ -44,14 +44,16 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 ## 4. The 6 Adaptive Persona UI Styles (`PersonaSkinId`)
 Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board in `apps/mobile/assets/design_personas/`:
 
-| # | `PersonaSkinId` | `TemplateId` | Visual Reference Asset | Timeline Variant | Camera HUD Variant | Share / Squad Variant |
+| # | `PersonaSkinId` | `TemplateId` | Visual Reference Asset | Timeline Variant | Camera | Share / Squad Variant |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | `quietTransformer` | `weightLoss` | `persona_1_quiet_transformer.jpg` | `connectedWeightCurve` (Weight trend curve + vertical nodes) | `ghostAlignVault` (Day 1 silhouette guide + `Private Vault` + weight slider) | `sideBySideArchive` (`DAY 01 vs DAY 21` + `Hide Exact Weight` toggle) |
-| **2** | `accountabilitySquad` | `englishDaily` | `persona_2_accountability_squad.jpg` | `steppingStoneQuest` (S-curve winding path to Day 30 Trophy) | `studyTimerSnap` (`45 MIN STUDY · 21 STREAK` with the `flame` icon + timestamp) | `squadPolaroidWall` (`4/5 Checked In` 2x2 grid + `Nudge` button with the `nudge` icon) |
-| **3** | `memoryCollectors` | `travel` | `persona_3_memory_collectors.jpg` | `scrapbookThread` (Stitched terracotta line + taped Polaroids) | `disposableFilmStamp` (`FILM ROLL` + retro date/temp stamp) | `filmContactSheet` (35mm Kodak 20-frame contact sheet poster) |
-| **4** | `coupleRituals` | `couple` | `persona_4_couple_rituals.jpg` | `duoSplitTimeline` (His & Her paired daily photos + heart nodes) | `halfFrameDuo` (Left: Partner's photo, Right: Live viewfinder) | `coupleMosaicPoster` (`18 DAYS TOGETHER · 36 MOMENTS` diptych grid) |
-| **5** | `aestheticFlexer` | `workout30` | `persona_5_aesthetic_flexers.jpg` | `athleticTelemetry` (Neon pace sparkline + vertical run nodes) | `stravaStickerStudio` (`Bold HUD`, `Minimal Stamp`, `Film Strip`) | `transparentStorySticker` (9:16 Story card + 21-bar active heatmap) |
-| **6** | `minimalistHabit` | `custom` | `persona_6_minimalist_habit.jpg` | `chainCalendarGrid` (7-column photo calendar with continuous orange line) | `zeroText3Sec` (1-tap Braun orange shutter, zero text inputs) | `zenSummaryCard` (`24/30 Days · 96% Consistency` minimal poster) |
+| **1** | `quietTransformer` | `weightLoss` | `persona_1_quiet_transformer.jpg` | `connectedWeightCurve` (Weight trend curve + vertical nodes) | Shared camera; accent + Day 1 ghost guide (top-bar toggle); weight is entered on the Post screen | `sideBySideArchive` (`DAY 01 vs DAY 21` + `Hide Exact Weight` toggle) |
+| **2** | `accountabilitySquad` | `englishDaily` | `persona_2_accountability_squad.jpg` | `steppingStoneQuest` (S-curve winding path to Day 30 Trophy) | Shared camera; accent only | `squadPolaroidWall` (`4/5 Checked In` 2x2 grid + `Nudge` button with the `nudge` icon) |
+| **3** | `memoryCollectors` | `travel` | `persona_3_memory_collectors.jpg` | `scrapbookThread` (Stitched terracotta line + taped Polaroids) | Shared camera; accent only | `filmContactSheet` (35mm Kodak 20-frame contact sheet poster) |
+| **4** | `coupleRituals` | `couple` | `persona_4_couple_rituals.jpg` | `duoSplitTimeline` (His & Her paired daily photos + heart nodes) | Shared camera; accent + partner photo 72x96 PiP (tap to enlarge) | `coupleMosaicPoster` (`18 DAYS TOGETHER · 36 MOMENTS` diptych grid) |
+| **5** | `aestheticFlexer` | `workout30` | `persona_5_aesthetic_flexers.jpg` | `athleticTelemetry` (Neon pace sparkline + vertical run nodes) | Shared camera; accent only | `transparentStorySticker` (9:16 Story card + 21-bar active heatmap) |
+| **6** | `minimalistHabit` | `custom` | `persona_6_minimalist_habit.jpg` | `chainCalendarGrid` (7-column photo calendar with continuous orange line) | Shared camera; accent only (1-tap shutter, zero text inputs) | `zenSummaryCard` (`24/30 Days · 96% Consistency` minimal poster) |
+
+**Camera (decision 2026-11-20, `docs/design-v2/camera-compose-redesign-2026-11-20.md`)**: one shared camera for all personas; the persona only changes the accent colour, plus two functional guides: the ghost silhouette (weight loss) and the partner thumbnail (couple). No per-persona stamps, clocks, HUD pickers or vault chips. Transient state (flash, errors) shows in the status pill inside the preview, never in a toast.
 
 ---
 

@@ -71,7 +71,6 @@ class _WrappedBodyState extends State<_WrappedBody> {
   int _page = 0;
   _Ratio _ratio = _Ratio.story;
   bool _hideKg = true;
-  bool _blurred = true;
   late bool _hideBrand =
       personaSkinOf(widget.journey) == PersonaSkinId.quietTransformer;
 
@@ -85,7 +84,6 @@ class _WrappedBodyState extends State<_WrappedBody> {
     final skin = personaSkinOf(j);
     final pages = wrappedPagesFor(l10n, j, skin, widget.stats);
     final summary = _page >= pages.length;
-    final selected = _page.clamp(0, pages.length - 1);
 
     return UiSkinScope(
       skinId: uiSkinIdFor(skin),
@@ -101,7 +99,11 @@ class _WrappedBodyState extends State<_WrappedBody> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 UiBackHeader(
-                  onBack: () => _close(context, j.id),
+                  // U4: the arrow steps back a page; only the close button
+                  // leaves the screen.
+                  onBack: () => _page > 0
+                      ? _move(-1, pages.length)
+                      : _close(context, j.id),
                   backLabel: l10n.journeys_back,
                   title: l10n.journeys_wrapped_title,
                   bordered: false,
@@ -117,8 +119,9 @@ class _WrappedBodyState extends State<_WrappedBody> {
                   ),
                 ),
                 _Segments(
-                  count: pages.length,
-                  selected: selected,
+                  // One extra segment for the summary page (U4).
+                  count: pages.length + 1,
+                  selected: _page.clamp(0, pages.length),
                   labelOf: l10n.journeys_wrapped_step,
                   onTap: (i) => setState(() => _page = i),
                 ),
@@ -131,11 +134,9 @@ class _WrappedBodyState extends State<_WrappedBody> {
                           stats: widget.stats,
                           ratio: _ratio,
                           hideKg: _hideKg,
-                          blurred: _blurred,
                           hideBrand: _hideBrand,
                           onRatio: (r) => setState(() => _ratio = r),
                           onHideKg: () => setState(() => _hideKg = !_hideKg),
-                          onBlur: () => setState(() => _blurred = !_blurred),
                           onHideBrand: (v) => setState(() => _hideBrand = v),
                         )
                       : _Story(
@@ -202,7 +203,7 @@ class _Segments extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i <= selected ? ui.accent : ui.fill,
                     borderRadius: BorderRadius.circular(3),
-                    border: Border.all(color: ui.ink, width: 1.5),
+                    border: Border.all(color: ui.outline, width: 1.5),
                   ),
                 ),
               ),
@@ -237,25 +238,34 @@ class _Story extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     return LayoutBuilder(
-      builder: (context, c) => GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapUp: (d) => onTapSide(d.localPosition.dx > c.maxWidth / 2),
-        onHorizontalDragEnd: (d) {
-          final v = d.primaryVelocity ?? 0;
-          if (v.abs() > 200) onTapSide(v < 0);
-        },
-        child: SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: c.maxHeight),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                WrappedVisual(skin: skin, stats: stats, page: page),
-                const SizedBox(height: UiSpace.xl),
-                Semantics(
-                  header: true,
-                  child: Text(
+      // U4: one labelled node with explicit next / previous actions, so a
+      // screen reader can step through the story (a double tap lands on the
+      // exact centre and used to always go back).
+      builder: (context, c) => Semantics(
+        container: true,
+        excludeSemantics: true,
+        button: true,
+        label: footnote == null ? headline : '$headline. $footnote',
+        onTap: () => onTapSide(true),
+        onScrollLeft: () => onTapSide(true),
+        onScrollRight: () => onTapSide(false),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (d) => onTapSide(d.localPosition.dx >= c.maxWidth / 2),
+          onHorizontalDragEnd: (d) {
+            final v = d.primaryVelocity ?? 0;
+            if (v.abs() > 200) onTapSide(v < 0);
+          },
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: c.maxHeight),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  WrappedVisual(skin: skin, stats: stats, page: page),
+                  const SizedBox(height: UiSpace.xl),
+                  Text(
                     headline,
                     key: const ValueKey('wrapped-headline'),
                     textAlign: TextAlign.center,
@@ -264,17 +274,17 @@ class _Story extends StatelessWidget {
                       size: 34,
                     ).copyWith(height: 1.25),
                   ),
-                ),
-                if (footnote != null) ...[
-                  const SizedBox(height: UiSpace.md),
-                  Text(
-                    footnote!,
-                    textAlign: TextAlign.center,
-                    style: UiText.muted(color: ui.inkMuted)
-                        .copyWith(height: 1.45),
-                  ),
+                  if (footnote != null) ...[
+                    const SizedBox(height: UiSpace.md),
+                    Text(
+                      footnote!,
+                      textAlign: TextAlign.center,
+                      style: UiText.muted(color: ui.inkMuted)
+                          .copyWith(height: 1.45),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),
@@ -290,11 +300,9 @@ class _Summary extends StatelessWidget {
     required this.stats,
     required this.ratio,
     required this.hideKg,
-    required this.blurred,
     required this.hideBrand,
     required this.onRatio,
     required this.onHideKg,
-    required this.onBlur,
     required this.onHideBrand,
   });
 
@@ -303,19 +311,14 @@ class _Summary extends StatelessWidget {
   final WrappedStats stats;
   final _Ratio ratio;
   final bool hideKg;
-  final bool blurred;
   final bool hideBrand;
   final ValueChanged<_Ratio> onRatio;
   final VoidCallback onHideKg;
-  final VoidCallback onBlur;
   final ValueChanged<bool> onHideBrand;
 
   /// "65.2 kg - 62.0 kg" from the first and last logged metric, if any.
   static String? _weights(WrappedStats s) {
-    final values = [
-      for (final c in s.photos)
-        if (c.metricValue != null) c.metricValue!,
-    ];
+    final values = s.weights;
     if (values.length < 2) return null;
     String f(double v) => v.toStringAsFixed(1);
     return '${f(values.first)} kg  >  ${f(values.last)} kg';
@@ -334,7 +337,16 @@ class _Summary extends StatelessWidget {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
-    void openShare() => context.push(AppRoutes.share(journey.id));
+    // U4: carry the format and privacy choices over to the card editor. The
+    // photo blur is not handed over: the quiet card always blurs its portrait.
+    void openShare() => context.push(
+      AppRoutes.share(
+        journey.id,
+        format: ratio == _Ratio.story ? 'story' : 'feed',
+        hideBrand: hideBrand,
+        hideMetric: quiet ? hideKg : null,
+      ),
+    );
 
     return SingleChildScrollView(
       key: const ValueKey('wrapped-summary'),
@@ -363,7 +375,7 @@ class _Summary extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: ui.surface,
                     borderRadius: BorderRadius.circular(UiRadius.card),
-                    border: Border.all(color: ui.ink, width: 2),
+                    border: Border.all(color: ui.outline, width: 2),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -378,7 +390,7 @@ class _Summary extends StatelessWidget {
                               skin: skin,
                               stats: stats,
                               page: 3,
-                              blurPhotos: quiet && blurred,
+                              blurPhotos: quiet,
                             ),
                           ),
                         ),
@@ -431,17 +443,15 @@ class _Summary extends StatelessWidget {
                   ),
                   onPressed: onHideKg,
                 ),
+                // Locked: the quiet card always blurs its portrait, so the
+                // chip shows that state instead of a switch that does nothing.
                 UiChip(
                   key: const ValueKey('wrapped-blur'),
                   label:
-                      '${l10n.journeys_wrapped_blur} · ${blurred ? l10n.journeys_wrapped_on : l10n.journeys_wrapped_off}',
-                  selected: blurred,
-                  glyph: OurneyIcon(
-                    name: blurred ? 'check' : 'eye',
-                    size: 14,
-                    flat: true,
-                  ),
-                  onPressed: onBlur,
+                      '${l10n.journeys_wrapped_blur} · ${l10n.journeys_wrapped_on}',
+                  selected: true,
+                  glyph: const OurneyIcon(name: 'check', size: 14, flat: true),
+                  onPressed: null,
                 ),
               ],
             ),
@@ -460,19 +470,15 @@ class _Summary extends StatelessWidget {
                   key: const ValueKey('wrapped-share'),
                   label: l10n.journeys_wrapped_share,
                   glyph: const OurneyIcon(name: 'share', size: 18, flat: true),
-                  onPressed: () => _shareSheet(context),
+                  onPressed: () => _shareSheet(context, openShare),
                 ),
               ),
               const SizedBox(width: UiSpace.sm),
               Expanded(
                 child: UiButton.secondary(
-                  key: const ValueKey('wrapped-save'),
-                  label: l10n.journeys_wrapped_save,
-                  glyph: const OurneyIcon(
-                    name: 'download',
-                    size: 18,
-                    flat: true,
-                  ),
+                  key: const ValueKey('wrapped-edit-card'),
+                  label: l10n.journeys_wrapped_editCard,
+                  glyph: const OurneyIcon(name: 'pencil', size: 18, flat: true),
                   onPressed: openShare,
                 ),
               ),
@@ -484,7 +490,7 @@ class _Summary extends StatelessWidget {
     );
   }
 
-  Future<void> _shareSheet(BuildContext context) {
+  Future<void> _shareSheet(BuildContext context, VoidCallback openShare) {
     final l10n = JourneysL10n.of(context);
     return showUiSheet<void>(
       context: context,
@@ -494,7 +500,7 @@ class _Summary extends StatelessWidget {
         onHideBrand: onHideBrand,
         onOpen: () {
           Navigator.of(ctx).pop();
-          context.push(AppRoutes.share(journey.id));
+          openShare();
         },
       ),
     );

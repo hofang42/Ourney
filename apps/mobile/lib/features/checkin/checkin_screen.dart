@@ -26,6 +26,11 @@ import 'post_extras.dart';
 /// `/checkin`: photo preview, caption (<= 140 code points), metric when the
 /// journey has one, then Post (FR-C4). Shutter + Post = 2 taps; a retake on
 /// the same day adds the "replace today's photo" confirmation (FR-C7).
+///
+/// 2026-11-20 redesign: close button header, Retake on the photo, a rounded
+/// caption field (counter from 120 characters), and the photo collapses to a
+/// 72x96 thumbnail beside the caption while the keyboard is open. The Post
+/// button sits in the bottom bar, which rides on the keyboard.
 class CheckinScreen extends ConsumerStatefulWidget {
   const CheckinScreen({required this.photo, super.key});
 
@@ -45,6 +50,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
 
   /// Minimal skin: posts by itself after 3 s unless touched (Figma).
   static const int _countdownFrom = 3;
+
+  /// The caption counter appears from this many code points.
+  static const int _counterFrom = 120;
   Timer? _countdown;
   int _secondsLeft = _countdownFrom;
   bool _countdownStarted = false;
@@ -53,20 +61,17 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
   bool _metricError = false;
   CheckInOutcome? _outcome;
 
+  /// The first-check-in notification offer; the success view waits for it
+  /// before closing by itself (B-B2).
+  Future<void>? _permissionOffer;
+
   @override
   void initState() {
     super.initState();
     _drafts = ref.read(draftFilesProvider);
     _caption.addListener(_onCaptionChanged);
-    final initialMetric = widget.photo?.initialMetricValue;
-    // The camera slider writes the weight through the check-in flow
-    // (pendingWeightProvider); a value carried by the photo wins.
-    final photo = widget.photo;
-    final prefill =
-        initialMetric ??
-        (photo == null
-            ? null
-            : ref.read(pendingWeightProvider(photo.journeyId)));
+    // The metric field starts from the last logged value (B-B1).
+    final prefill = widget.photo?.initialMetricValue;
     if (prefill != null) {
       _metric.text = prefill == prefill.roundToDouble()
           ? prefill.toInt().toString()
@@ -213,19 +218,19 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             : null,
       );
       if (!mounted) return;
-      ref.read(pendingWeightProvider(journey.id).notifier).clear();
-      setState(() => _outcome = outcome);
       // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
       unawaited(rescheduleReminders(ref));
       // V2: the first check-in offers notifications once, so the 21:00
       // streak alert (on by default) can reach the person (bug #7).
-      unawaited(
-        offerReminderPermission(
-          context,
-          ref,
-          time: reminderOfferTime(ref, journey.id),
-        ),
+      final offer = offerReminderPermission(
+        context,
+        ref,
+        time: reminderOfferTime(ref, journey.id),
       );
+      setState(() {
+        _outcome = outcome;
+        _permissionOffer = offer;
+      });
     } on CheckInPostException catch (e) {
       if (!mounted) return;
       setState(() => _posting = false);
@@ -273,6 +278,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         haptics: haptics,
         onDone: _close,
         onShare: () => _openShare(photo.journeyId),
+        holdAutoClose: _permissionOffer,
       );
     }
 
@@ -287,7 +293,17 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         skinId: uiSkinIdFor(personaSkinOf(j)),
         child: Builder(builder: (context) => _compose(context, j, photo)),
       ),
-      AsyncData() || AsyncError() => _frame(
+      AsyncError() => _frame(
+        body: UiEmptyState(
+          key: const ValueKey('checkin-journey-error'),
+          glyph: const OurneyIcon(name: 'error', size: 30),
+          title: AppLocalizations.of(context).common_errorGeneric,
+          actionLabel: AppLocalizations.of(context).common_retry,
+          onAction: () =>
+              ref.invalidate(checkinJourneyProvider(photo.journeyId)),
+        ),
+      ),
+      AsyncData() => _frame(
         body: UiEmptyState(
           key: const ValueKey('checkin-missing-journey'),
           glyph: const OurneyIcon(name: 'flag', size: 30),
@@ -296,7 +312,13 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
           onAction: _close,
         ),
       ),
-      _ => _frame(body: const Center(child: CircularProgressIndicator())),
+      _ => _frame(
+        body: Center(
+          child: CircularProgressIndicator(
+            semanticsLabel: AppLocalizations.of(context).common_loading,
+          ),
+        ),
+      ),
     };
   }
 
@@ -321,18 +343,42 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     );
   }
 
+  final _captionKey = GlobalKey();
+
+  Widget _captionField(
+    CheckinL10n l10n, {
+    required bool vi,
+    required JourneyTemplate template,
+    required String semanticsLabel,
+    required int count,
+  }) {
+    return UiCaptionField(
+      key: _captionKey,
+      fieldKey: const ValueKey('checkin-caption'),
+      controller: _caption,
+      semanticLabel: semanticsLabel,
+      hint: vi ? template.captionPromptVi : template.captionPromptEn,
+      inputFormatters: [_CodePointLimit(captionMax)],
+      // The counter only shows near the limit; screen readers always get it.
+      counter: count >= _counterFrom
+          ? l10n.checkin_captionCounter(count, captionMax)
+          : null,
+      counterKey: const ValueKey('checkin-caption-counter'),
+      counterDanger: count >= captionMax,
+      counterSemantics: l10n.checkin_captionCounterSemantics(count, captionMax),
+    );
+  }
+
   Widget _compose(BuildContext context, Journey journey, CapturedPhoto photo) {
     final l10n = CheckinL10n.of(context);
     final ui = context.ui;
     final style = uiStyleForSkin(personaSkinOf(journey));
-    // `--accent-ink`: the accent as text, the warm ink where the accent is
-    // too light to read on paper.
-    final accentInk = ui.isDark ? style.accent : ui.warn;
     final count = _caption.text.runes.length;
     final membership = ref.watch(myMembershipProvider(journey.id)).value;
     final hideMetric = membership?.hideMetric ?? journey.hideMetricDefault;
     final template = templateFor(journey.templateId);
     final vi = Localizations.localeOf(context).languageCode == 'vi';
+    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
     final metricName = journey.metricName;
     final metricLabel = metricName == null
         ? null
@@ -341,7 +387,9 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         : '$metricName (${journey.metricUnit})';
     final privacy = journey.kind == JourneyKind.solo
         ? (UiPrivacy.private, l10n.checkin_privacyPrivate)
-        : journey.maxMembers == 2
+        : journey.maxMembers == 2 ||
+              journey.coupleSelfName != null ||
+              personaSkinOf(journey) == PersonaSkinId.coupleRituals
         ? (UiPrivacy.couple, l10n.checkin_privacyCouple)
         : (UiPrivacy.squad, l10n.checkin_privacySquad);
     // Per-skin copy of the Figma Post screens (primary label, caption label).
@@ -351,7 +399,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       PersonaSkinId.minimalistHabit => l10n.checkin_postMinimal,
       _ => l10n.checkin_post,
     };
-    final captionLabel = switch (skin) {
+    final captionSemantics = switch (skin) {
       PersonaSkinId.memoryCollectors => l10n.checkin_captionLabelMemory,
       PersonaSkinId.aestheticFlexer => l10n.checkin_captionLabelFlexer,
       _ => l10n.checkin_captionLabel,
@@ -397,20 +445,16 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // `.compose-header`: Retake | journey + privacy | Post.
+            // `.compose-header`: close | journey + privacy | (empty).
             Row(
               children: [
-                Expanded(
-                  child: UiTextAction(
-                    key: const ValueKey('checkin-retake'),
-                    label: l10n.checkin_retake,
-                    onPressed: _posting ? null : _close,
-                    alignment: AlignmentDirectional.centerStart,
-                    size: 14,
-                  ),
+                UiIconButton(
+                  key: const ValueKey('checkin-close'),
+                  glyph: const OurneyIcon(name: 'close', size: 20),
+                  label: AppLocalizations.of(context).common_close,
+                  onPressed: _posting ? null : _close,
                 ),
                 Expanded(
-                  flex: 2,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -431,69 +475,60 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: UiTextAction(
-                    key: const ValueKey('checkin-post-link'),
-                    label: l10n.checkin_post,
-                    onPressed: _posting ? null : () => _post(journey, photo),
-                    alignment: AlignmentDirectional.centerEnd,
-                    color: accentInk,
-                    size: 14,
-                  ),
-                ),
+                // Keeps the title centred (U21: the bottom Post button is the
+                // only Post action).
+                const SizedBox(width: UiSize.tap),
               ],
             ),
             const SizedBox(height: UiSpace.sm),
-            _PhotoPreview(photo: photo),
-            const SizedBox(height: UiSpace.lg),
-            // `.caption-field`: label + underlined textarea.
-            Text(captionLabel, style: UiText.fieldLabel(color: ui.inkMuted)),
-            TextField(
-              key: const ValueKey('checkin-caption'),
-              controller: _caption,
-              minLines: 1,
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-              inputFormatters: [_CodePointLimit(captionMax)],
-              cursorColor: ui.ink,
-              style: UiText.body(size: 16, height: 1.45, color: ui.ink),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: vi
-                    ? template.captionPromptVi
-                    : template.captionPromptEn,
-                hintStyle: UiText.body(
-                  size: 16,
-                  height: 1.45,
-                  color: ui.inkMuted,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: ui.border),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: ui.ink, width: 2),
-                ),
-              ),
-            ),
+            // Photo + caption: the photo collapses to a thumbnail beside the
+            // caption while the keyboard is open. The caption keeps its
+            // state (and focus) through the move via its GlobalKey.
             Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: Semantics(
-                label: l10n.checkin_captionCounterSemantics(count, captionMax),
-                child: ExcludeSemantics(
-                  child: Text(
-                    l10n.checkin_captionCounter(count, captionMax),
-                    key: const ValueKey('checkin-caption-counter'),
-                    style: UiText.body(
-                      size: 12,
-                      color: count >= captionMax ? ui.danger : ui.inkMuted,
+              alignment: Alignment.topCenter,
+              child: typing
+                  ? Row(
+                      key: const ValueKey('checkin-compose-typing'),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _PhotoThumb(
+                          photo: photo,
+                          onTap: () =>
+                              FocusManager.instance.primaryFocus?.unfocus(),
+                        ),
+                        const SizedBox(width: UiSpace.md),
+                        Expanded(
+                          child: _captionField(
+                            l10n,
+                            vi: vi,
+                            template: template,
+                            semanticsLabel: captionSemantics,
+                            count: count,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      key: const ValueKey('checkin-compose-idle'),
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _PhotoPreview(
+                          photo: photo,
+                          onRetake: _posting ? null : _close,
+                        ),
+                        const SizedBox(height: UiSpace.lg),
+                        _captionField(
+                          l10n,
+                          vi: vi,
+                          template: template,
+                          semanticsLabel: captionSemantics,
+                          count: count,
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-              ),
             ),
             if (metricLabel != null) ...[
-              const SizedBox(height: UiSpace.md),
+              const SizedBox(height: UiSpace.lg),
               UiTextField(
                 fieldKey: const ValueKey('checkin-metric'),
                 label: metricLabel,
@@ -583,16 +618,18 @@ class _CountdownHint extends StatelessWidget {
   }
 }
 
-/// `.compose-photo`: 3:4 photo with 20dp corners, capped in height.
+/// `.compose-photo`: 3:4 photo with 20dp corners, up to 55% of the height
+/// (max 520). Retake is a glass button on the photo, bottom-start.
 class _PhotoPreview extends StatelessWidget {
-  const _PhotoPreview({required this.photo});
+  const _PhotoPreview({required this.photo, required this.onRetake});
 
   final CapturedPhoto photo;
+  final VoidCallback? onRetake;
 
   @override
   Widget build(BuildContext context) {
     final l10n = CheckinL10n.of(context);
-    final height = (MediaQuery.sizeOf(context).height * 0.45).clamp(0.0, 462.0);
+    final height = (MediaQuery.sizeOf(context).height * 0.55).clamp(0.0, 520.0);
     return Center(
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: height),
@@ -615,7 +652,7 @@ class _PhotoPreview extends StatelessWidget {
                       errorBuilder: (_, _, _) => const OurneyIcon(
                         name: 'image',
                         flat: true,
-                        color: UiCamera.ink,
+                        color: UiCamera.onPhoto,
                         size: 48,
                       ),
                     ),
@@ -624,17 +661,104 @@ class _PhotoPreview extends StatelessWidget {
                 if (photo.fromLibrary)
                   Positioned(
                     left: UiSpace.md,
-                    bottom: UiSpace.md,
+                    top: UiSpace.md,
                     child: UiTag(
                       key: const ValueKey('checkin-from-library'),
                       label: l10n.checkin_fromLibrary,
                       glyph: const OurneyIcon(name: 'gallery', size: 20),
                       background: const Color(0xB3000000),
-                      foreground: UiCamera.ink,
+                      foreground: UiCamera.onPhoto,
                       borderColor: UiCamera.outline,
                     ),
                   ),
+                PositionedDirectional(
+                  start: UiSpace.sm,
+                  bottom: UiSpace.sm,
+                  child: UiPressable(
+                    key: const ValueKey('checkin-retake'),
+                    onPressed: onRetake,
+                    semanticLabel: l10n.checkin_retake,
+                    excludeChildSemantics: true,
+                    borderRadius: BorderRadius.circular(UiRadius.capsule),
+                    child: Container(
+                      constraints: const BoxConstraints(minHeight: UiSize.tap),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xB3000000),
+                        borderRadius: BorderRadius.circular(UiRadius.capsule),
+                        border: Border.all(color: UiCamera.dockBorder),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const OurneyIcon(
+                            name: 'refresh',
+                            flat: true,
+                            size: 18,
+                            color: UiCamera.onPhoto,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            l10n.checkin_retake,
+                            maxLines: 1,
+                            style: UiText.body(
+                              size: 14,
+                              weight: FontWeight.w600,
+                              height: 1.3,
+                              color: UiCamera.onPhoto,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 72x96 thumbnail shown beside the caption while the keyboard is open. Tap
+/// closes the keyboard (and brings the full photo back).
+class _PhotoThumb extends StatelessWidget {
+  const _PhotoThumb({required this.photo, required this.onTap});
+
+  final CapturedPhoto photo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = CheckinL10n.of(context);
+    return UiPressable(
+      key: const ValueKey('checkin-photo-thumb'),
+      onPressed: onTap,
+      semanticLabel: l10n.checkin_photoSemantics,
+      excludeChildSemantics: true,
+      borderRadius: BorderRadius.circular(UiRadius.thumb),
+      child: SizedBox(
+        width: 72,
+        height: 96,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(UiRadius.thumb),
+          child: ColoredBox(
+            color: UiCamera.bg,
+            child: Image.file(
+              File(photo.path),
+              fit: BoxFit.cover,
+              cacheWidth: 240,
+              excludeFromSemantics: true,
+              errorBuilder: (_, _, _) => const Center(
+                child: OurneyIcon(
+                  name: 'image',
+                  flat: true,
+                  color: UiCamera.onPhoto,
+                  size: 24,
+                ),
+              ),
             ),
           ),
         ),

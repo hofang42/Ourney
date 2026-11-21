@@ -548,6 +548,36 @@ abstract class SharingL10n {
   /// **'Đã lưu câu chuyện'**
   String get sharing_storySaved;
 
+  /// SCR-83 note for a group member who is not the owner (C-B14).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chỉ chủ hành trình sửa được câu chuyện. Bạn vẫn có thể ẩn ảnh của mình.'**
+  String get sharing_storyOwnerOnly;
+
+  /// SCR-83 helper under an empty story title.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để trống sẽ dùng tên hành trình'**
+  String get sharing_storyTitleFallback;
+
+  /// SCR-83 confirm title when leaving with unsaved edits (U19).
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ thay đổi?'**
+  String get sharing_discardTitle;
+
+  /// SCR-83 confirm message when leaving with unsaved edits.
+  ///
+  /// In vi, this message translates to:
+  /// **'Những gì bạn vừa sửa trong câu chuyện chưa được lưu.'**
+  String get sharing_discardBody;
+
+  /// Confirm button: leave without saving.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ thay đổi'**
+  String get sharing_discard;
+
   /// Shared with me section.
   ///
   /// In vi, this message translates to:
@@ -937,6 +967,30 @@ abstract class SharingL10n {
   /// In vi, this message translates to:
   /// **'Đã đi rồi? Biến ảnh cũ thành một câu chuyện'**
   String get sharing_retellIntro;
+
+  /// No description provided for @sharing_retellDiscardTitle.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rời đi mà không lưu?'**
+  String get sharing_retellDiscardTitle;
+
+  /// No description provided for @sharing_retellDiscardBody.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tên và ảnh của hành trình này chưa được lưu. Rời đi bây giờ sẽ mất chúng.'**
+  String get sharing_retellDiscardBody;
+
+  /// No description provided for @sharing_retellDiscardConfirm.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rời đi'**
+  String get sharing_retellDiscardConfirm;
+
+  /// No description provided for @sharing_retellDiscardKeep.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ở lại'**
+  String get sharing_retellDiscardKeep;
 
   /// Opens the photo library (multi select).
   ///

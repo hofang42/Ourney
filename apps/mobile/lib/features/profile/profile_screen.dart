@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
+import '../../app/locale_override.dart';
 import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -30,14 +31,6 @@ const String profileEditPath = '${AppRoutes.profile}/edit';
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  void _close(BuildContext context) {
-    if (context.canPop()) {
-      context.pop();
-    } else {
-      context.go(AppRoutes.capture);
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
@@ -50,11 +43,18 @@ class ProfileScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UiBackHeader(
-            onBack: () => _close(context),
-            backLabel: MaterialLocalizations.of(context).backButtonTooltip,
-            title: l10n.profile_title,
-          ),
+          // A Dock root tab has nowhere to go back to (U9): plain title bar.
+          if (context.canPop())
+            UiBackHeader(
+              onBack: context.pop,
+              backLabel: MaterialLocalizations.of(context).backButtonTooltip,
+              title: l10n.profile_title,
+            )
+          else
+            UiTopBar(
+              key: const ValueKey('profile-top-bar'),
+              title: l10n.profile_title,
+            ),
           const SizedBox(height: UiSpace.lg),
           if (profile == null)
             const _GuestHeader()
@@ -274,6 +274,7 @@ class _SettingsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
     final haptics = ref.watch(hapticsEnabledProvider);
+    final language = ref.watch(localeOverrideProvider);
     return _GroupCard(
       child: Column(
         children: [
@@ -283,13 +284,6 @@ class _SettingsSection extends ConsumerWidget {
             title: l10n.profile_settingsEntry,
             subtitle: _sub(context, l10n.profile_settingsEntrySub),
             onPressed: () => context.push(profileSettingsPath),
-          ),
-          UiRow(
-            key: const ValueKey('profile-reminders'),
-            leading: const OurneyIcon(name: 'bell', flat: true),
-            title: l10n.profile_reminders,
-            subtitle: _sub(context, l10n.profile_remindersSubtitle),
-            onPressed: () => context.push(AppRoutes.reminders),
           ),
           UiSwitchRow(
             key: const ValueKey('profile-haptics'),
@@ -306,8 +300,13 @@ class _SettingsSection extends ConsumerWidget {
             key: const ValueKey('profile-language'),
             leading: const OurneyIcon(name: 'translate', flat: true),
             title: l10n.profile_language,
-            subtitle: _sub(context, l10n.profile_languageNote),
-            showChevron: false,
+            // Shows the language actually in use; Settings owns the picker.
+            subtitle: _sub(context, switch (language?.languageCode) {
+              null => l10n.profile_languageNote,
+              'en' => l10n.profile_languageEn,
+              _ => l10n.profile_languageVi,
+            }),
+            onPressed: () => context.push(profileSettingsPath),
           ),
           UiRow(
             key: const ValueKey('profile-safety'),
@@ -332,54 +331,6 @@ class _SettingsSection extends ConsumerWidget {
 class _AccountSection extends ConsumerWidget {
   const _AccountSection();
 
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final l10n = ProfileL10n.of(context);
-    final ok = await showUiSheet<bool>(
-      context: context,
-      builder: (context) {
-        final ui = context.ui;
-        return Column(
-          key: const ValueKey('profile-signout-dialog'),
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Semantics(
-              header: true,
-              child: Text(
-                l10n.profile_signOutTitle,
-                style: UiText.h2(color: ui.ink),
-              ),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            Text(
-              l10n.profile_signOutMessage,
-              style: UiText.muted(color: ui.inkMuted, size: 14),
-            ),
-            const SizedBox(height: UiSpace.xl),
-            UiButton(
-              key: const ValueKey('profile-signout-confirm'),
-              label: l10n.profile_signOut,
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-            const SizedBox(height: UiSpace.sm),
-            UiButton.secondary(
-              label: AppLocalizations.of(context).common_cancel,
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-          ],
-        );
-      },
-    );
-    if (ok != true || !context.mounted) return;
-    final errorText = AppLocalizations.of(context).common_errorGeneric;
-    try {
-      // The router redirects to /auth once the user id becomes null.
-      await ref.read(authRepositoryProvider).signOut();
-    } on Object {
-      if (context.mounted) showUiToast(context, errorText);
-    }
-  }
-
   Future<void> _delete(BuildContext context) async {
     OurneyHaptics.warning();
     await DeleteAccountDialog.show(context);
@@ -391,16 +342,6 @@ class _AccountSection extends ConsumerWidget {
     final ui = context.ui;
     return Column(
       children: [
-        _GroupCard(
-          child: UiRow(
-            key: const ValueKey('profile-signout'),
-            leading: const OurneyIcon(name: 'logout', flat: true),
-            title: l10n.profile_signOut,
-            divider: false,
-            onPressed: () => _signOut(context, ref),
-          ),
-        ),
-        const SizedBox(height: UiSpace.lg),
         _GroupCard(
           borderColor: ui.danger,
           child: UiRow(

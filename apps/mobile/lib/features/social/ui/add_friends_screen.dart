@@ -247,14 +247,12 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
             : OurneyIcon(name: 'qr', size: 54, color: ui.ink, flat: true),
       );
     }
-    return Semantics(
-      button: true,
-      child: _Block(
-        onTap: _busy ? null : _tap,
-        leading: leading,
-        title: l10n.social_qrTitle,
-        subtitle: token == null ? l10n.social_qrShow : l10n.social_qrEnlarge,
-      ),
+    // _Block is a UiPressable: it is already the (labelled) button node.
+    return _Block(
+      onTap: _busy ? null : _tap,
+      leading: leading,
+      title: l10n.social_qrTitle,
+      subtitle: token == null ? l10n.social_qrShow : l10n.social_qrEnlarge,
     );
   }
 }
@@ -392,16 +390,10 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Semantics(
-          header: true,
-          child: Text(
-            l10n.social_findByUsername,
-            style: UiText.h2(size: 18, color: ui.ink),
-          ),
-        ),
-        const SizedBox(height: UiSpace.md),
+        // U21: the field's own label is the heading.
         UiTextField(
           fieldKey: const ValueKey('username-field'),
+          pill: true,
           label: l10n.social_findByUsername,
           controller: _controller,
           hint: l10n.social_usernameHint,

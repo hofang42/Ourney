@@ -184,6 +184,14 @@
   "@profile_languageNote": {
     "description": "The app follows the device language (vi default, en)."
   },
+  "profile_languageVi": "Tiếng Việt",
+  "@profile_languageVi": {
+    "description": "Language row subtitle when Vietnamese was picked in Settings."
+  },
+  "profile_languageEn": "English",
+  "@profile_languageEn": {
+    "description": "Language row subtitle when English was picked in Settings."
+  },
   "profile_safety": "Điều khoản, quyền riêng tư & liên hệ",
   "@profile_safety": {
     "description": "Link to the safety pages (EULA, privacy, contact)."
@@ -200,19 +208,19 @@
   "@profile_signOutTitle": {
     "description": "Sign-out confirmation title."
   },
-  "profile_signOutMessage": "Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xoá, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.",
+  "profile_signOutMessage": "Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.",
   "@profile_signOutMessage": {
     "description": "Sign-out confirmation message."
   },
-  "profile_deleteAccount": "Xoá tài khoản",
+  "profile_deleteAccount": "Xóa tài khoản",
   "@profile_deleteAccount": {
     "description": "Delete account button (FR-A4)."
   },
-  "profile_deleteTitle": "Xoá tài khoản vĩnh viễn?",
+  "profile_deleteTitle": "Xóa tài khoản vĩnh viễn?",
   "@profile_deleteTitle": {
     "description": "Delete account confirmation title."
   },
-  "profile_deleteMessage": "Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xoá khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.",
+  "profile_deleteMessage": "Hồ sơ, hành trình, check-in và toàn bộ ảnh của bạn sẽ bị xóa khỏi máy chủ và máy này. Nhóm bạn đang tham gia được chuyển cho thành viên tham gia sớm nhất. Không thể hoàn tác.",
   "@profile_deleteMessage": {
     "description": "Delete account consequences."
   },
@@ -229,19 +237,19 @@
   "@profile_deleteConfirmWord": {
     "description": "Word to type when the username is unknown. ASCII only so it is easy to type."
   },
-  "profile_deleteConfirmButton": "Xoá vĩnh viễn",
+  "profile_deleteConfirmButton": "Xóa vĩnh viễn",
   "@profile_deleteConfirmButton": {
     "description": "Final delete button."
   },
-  "profile_deleting": "Đang xoá…",
+  "profile_deleting": "Đang xóa…",
   "@profile_deleting": {
     "description": "Shown while the account is being deleted."
   },
-  "profile_deleteErrorRetry": "Chưa xoá xong. Thử lại để xoá nốt phần còn lại nhé.",
+  "profile_deleteErrorRetry": "Chưa xóa xong. Thử lại để xóa nốt phần còn lại nhé.",
   "@profile_deleteErrorRetry": {
     "description": "delete-account failed (storage_* / delete_failed / internal); safe to retry."
   },
-  "profile_deleteErrorReauth": "Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xoá nhé.",
+  "profile_deleteErrorReauth": "Phiên đăng nhập đã hết hạn. Đăng nhập lại rồi xóa nhé.",
   "@profile_deleteErrorReauth": {
     "description": "delete-account returned unauthenticated."
   },
@@ -297,11 +305,11 @@
   "@profile_badge100Rule": {
     "description": "Badge rule."
   },
-  "profile_badgeUnlocked": "đã mở khoá",
+  "profile_badgeUnlocked": "đã mở khóa",
   "@profile_badgeUnlocked": {
     "description": "Badge semantics."
   },
-  "profile_badgeLocked": "chưa mở khoá",
+  "profile_badgeLocked": "chưa mở khóa",
   "@profile_badgeLocked": {
     "description": "Badge semantics."
   },
@@ -329,7 +337,7 @@
   "@profile_deleteOtpLead": {
     "description": "Delete step 2 lead."
   },
-  "profile_deleteOtpLabel": "Mã xác nhận xoá tài khoản gồm 6 số",
+  "profile_deleteOtpLabel": "Mã xác nhận xóa tài khoản gồm 6 số",
   "@profile_deleteOtpLabel": {
     "description": "OTP semantics."
   },
@@ -354,7 +362,7 @@
   "@profile_deleteCodeSent": {
     "description": "Resend info."
   },
-  "profile_deleteDoneTitle": "Đã xoá tài khoản.",
+  "profile_deleteDoneTitle": "Đã xóa tài khoản.",
   "@profile_deleteDoneTitle": {
     "description": "Delete step 3 done title."
   },
@@ -385,19 +393,6 @@
   "profile_usernameAvailable": "Dùng được",
   "@profile_usernameAvailable": {
     "description": "Status under the username field when it can be used."
-  },
-  "profile_avatarColorN": "Màu đại diện {n}",
-  "@profile_avatarColorN": {
-    "description": "Semantics of one avatar color swatch.",
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
-  },
-  "profile_avatarColors": "Chọn màu ảnh đại diện",
-  "@profile_avatarColors": {
-    "description": "Semantics of the avatar color row."
   },
   "profile_settings_title": "cài đặt.",
   "profile_settings_back": "Quay lại",
@@ -442,7 +437,16 @@
   "profile_settings_contact": "Liên hệ",
   "profile_settings_version": "Phiên bản",
   "profile_settings_signOut": "Đăng xuất",
-  "profile_settings_delete": "Xoá tài khoản",
+  "profile_settings_delete": "Xóa tài khoản",
   "profile_settingsEntry": "Cài đặt",
-  "profile_settingsEntrySub": "Giao diện, ngôn ngữ, riêng tư, thông tin"
+  "profile_settingsEntrySub": "Giao diện, ngôn ngữ, riêng tư, thông tin",
+  "profile_signOutPending": "{count, plural, other{Còn {count} ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.}}",
+  "@profile_signOutPending": {
+    "description": "Warning in the sign-out sheet when check-ins are still waiting to upload.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

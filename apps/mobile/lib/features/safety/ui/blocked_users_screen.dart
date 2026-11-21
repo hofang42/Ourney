@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/needs_server_view.dart';
 import '../../../ui/ui.dart';
 import '../data/safety_providers.dart';
@@ -34,11 +36,24 @@ class _BlockedList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SafetyL10n.of(context);
     final blocked = ref.watch(blockedUserIdsProvider);
-    final names = ref.watch(blockedNamesProvider);
+    final cached = ref.watch(blockedNamesProvider);
+    final people =
+        ref.watch(blockedPeopleProvider).value ??
+        const <String, PersonSummary>{};
+    // Server names first (fresh device), then the names cached here.
+    final names = {
+      ...cached,
+      for (final p in people.values)
+        if (p.displayName.isNotEmpty) p.userId: p.displayName,
+    };
     return blocked.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.all(UiSpace.xxl),
-        child: Center(child: CircularProgressIndicator()),
+      loading: () => Padding(
+        padding: const EdgeInsets.all(UiSpace.xxl),
+        child: Center(
+          child: CircularProgressIndicator(
+            semanticsLabel: AppLocalizations.of(context).common_loading,
+          ),
+        ),
       ),
       error: (_, _) => UiEmptyState(
         key: const ValueKey('safety-blocked-error'),
@@ -71,8 +86,28 @@ class _BlockedList extends ConsumerWidget {
     final shown = name ?? l10n.safety_unknownUser;
     return UiRow(
       key: ValueKey('safety-blocked-$id'),
-      leading: UiAvatar(name: shown, size: 40),
+      leading: UiAvatar(
+        name: shown,
+        colorIndex: UiAvatar.indexFor(id),
+        size: 40,
+      ),
       title: shown,
+      // Without a cached name every row would read "User": add a short id.
+      subtitle: name == null
+          ? Text(
+              l10n.safety_unknownUserId(
+                id.length > 8 ? id.substring(0, 8) : id,
+              ),
+              key: ValueKey('safety-blocked-id-$id'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(
+                size: 12,
+                height: 1.4,
+                color: context.ui.inkMuted,
+              ),
+            )
+          : null,
       showChevron: false,
       trailing: UiTextAction(
         key: ValueKey('safety-unblock-$id'),

@@ -369,13 +369,25 @@ void showUiToast(
   BuildContext context,
   String message, {
   double bottomOffset = 36,
+  String? actionLabel,
+  VoidCallback? onAction,
 }) {
   final ui = context.ui;
   final messenger = ScaffoldMessenger.maybeOf(context);
   final d = UiMotion.of(context, const Duration(milliseconds: 150));
-  messenger?.hideCurrentSnackBar();
-  messenger?.showSnackBar(
+  if (messenger == null) return;
+  final hasAction = actionLabel != null && onAction != null;
+  // A toast with an action stays long enough to be reached, and longer
+  // still for screen-reader / switch users (they cannot race the timer).
+  final duration = MediaQuery.maybeAccessibleNavigationOf(context) ?? false
+      ? const Duration(seconds: 30)
+      : hasAction
+      ? const Duration(seconds: 10)
+      : const Duration(seconds: 4);
+  messenger.hideCurrentSnackBar();
+  messenger.showSnackBar(
     SnackBar(
+      duration: duration,
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -393,17 +405,39 @@ void showUiToast(
             borderRadius: BorderRadius.circular(UiRadius.capsule),
             boxShadow: UiShadow.hard(ui.brand, UiShadow.small),
           ),
-          child: Text(
-            message,
-            textAlign: TextAlign.center,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: UiText.body(
-              size: 13,
-              weight: FontWeight.w700,
-              height: 1.4,
-              color: ui.bg,
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: UiText.body(
+                    size: 13,
+                    weight: FontWeight.w700,
+                    height: 1.4,
+                    color: ui.bg,
+                  ),
+                ),
+              ),
+              // Optional undo-style action (e.g. restore an archived journey).
+              if (hasAction) ...[
+                const SizedBox(width: UiSpace.sm),
+                UiTextAction(
+                  key: const ValueKey('ui-toast-action'),
+                  label: actionLabel,
+                  size: 13,
+                  color: ui.bg,
+                  underline: true,
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                    onAction();
+                  },
+                ),
+              ],
+            ],
           ),
         ),
       ),

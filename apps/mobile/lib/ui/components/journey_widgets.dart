@@ -97,6 +97,7 @@ class UiStreakHero extends StatelessWidget {
   const UiStreakHero({
     required this.streak,
     required this.title,
+    required this.semanticLabel,
     this.subtitle,
     this.onTap,
     this.state = UiStreakHeroState.normal,
@@ -105,6 +106,9 @@ class UiStreakHero extends StatelessWidget {
 
   final int streak;
   final String title;
+
+  /// Localized spoken label (streak and title).
+  final String semanticLabel;
   final String? subtitle;
   final VoidCallback? onTap;
   final UiStreakHeroState state;
@@ -118,84 +122,93 @@ class UiStreakHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = 'Chuỗi $streak ngày. $title';
-    final content = ExcludeSemantics(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.heading(
-                    font: 'Space Grotesk',
-                    size: 20,
-                    weight: 700,
-                    height: 1.3,
-                    color: _onPastel,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    subtitle!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: UiText.body(
-                      size: 14,
-                      weight: FontWeight.w600,
-                      height: 1.4,
-                      color: _onPastel,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+    final label = semanticLabel;
+    // U15: at large text the key message (how many are left today) must not be
+    // cropped: stack the number above the full title instead of squeezing it.
+    final large = MediaQuery.textScalerOf(context).scale(10) > 13;
+    final texts = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          key: const ValueKey('streak-hero-title'),
+          maxLines: large ? null : 3,
+          overflow: large ? TextOverflow.visible : TextOverflow.ellipsis,
+          style: UiText.heading(
+            font: 'Space Grotesk',
+            size: 20,
+            weight: 700,
+            height: 1.3,
+            color: _onPastel,
           ),
-          const SizedBox(width: UiSpace.md),
-          Flexible(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 150),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    OurneyIcon(
-                      name: state == UiStreakHeroState.milestone
-                          ? 'trophy'
-                          : 'flame',
-                      size: 44,
-                      active: true,
-                      inkColor: _onPastel,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '$streak',
-                      maxLines: 1,
-                      style: UiText.heading(
-                        font: 'Space Grotesk',
-                        size: 80,
-                        weight: 700,
-                        height: 1.1,
-                        tracking: -0.04,
-                        color: _onPastel,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 6),
+          Text(
+            subtitle!,
+            maxLines: large ? null : 2,
+            overflow: large ? TextOverflow.visible : TextOverflow.ellipsis,
+            style: UiText.body(
+              size: 14,
+              weight: FontWeight.w600,
+              height: 1.4,
+              color: _onPastel,
             ),
           ),
         ],
+      ],
+    );
+    final number = ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 150),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: large ? Alignment.centerLeft : Alignment.centerRight,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            OurneyIcon(
+              name: state == UiStreakHeroState.milestone ? 'trophy' : 'flame',
+              size: 44,
+              active: true,
+              inkColor: _onPastel,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '$streak',
+              maxLines: 1,
+              style: UiText.heading(
+                font: 'Space Grotesk',
+                size: 80,
+                weight: 700,
+                height: 1.1,
+                tracking: -0.04,
+                color: _onPastel,
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+    final content = ExcludeSemantics(
+      child: large
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                number,
+                const SizedBox(height: UiSpace.sm),
+                texts,
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: texts),
+                const SizedBox(width: UiSpace.md),
+                Flexible(child: number),
+              ],
+            ),
     );
     final card = UiCard(
       color: _fill,
@@ -332,7 +345,9 @@ class UiJourneyCard extends StatelessWidget {
     this.members = const [],
     this.onTap,
     this.onSnap,
-    this.snapLabel = 'Chụp ảnh hôm nay',
+    required this.snapLabel,
+    this.dayLabel,
+    this.streakLabel,
     super.key,
   });
 
@@ -354,13 +369,17 @@ class UiJourneyCard extends StatelessWidget {
   /// Semantics label of the snap button.
   final String snapLabel;
 
+  /// Localized `Day N/M` text and `N-day streak` spoken label.
+  final String? dayLabel;
+  final String? streakLabel;
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final dayText = 'Ngày $day/$totalDays';
+    final dayText = dayLabel ?? '$day/$totalDays';
     final progress = totalDays <= 0 ? 0.0 : (day / totalDays).clamp(0.0, 1.0);
     final label =
-        '$title, $dayText, Chuỗi $streak ngày'
+        '$title, $dayText, ${streakLabel ?? '$streak'}'
         '${subtitle == null ? '' : ', $subtitle'}';
     final showSnap = !todayDone;
     final body = ExcludeSemantics(

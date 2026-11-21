@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';
@@ -109,6 +110,16 @@ class DataGroupRepository implements GroupRepository {
                 st,
               );
             }
+          } on Object catch (e, st) {
+            // Anything else (a decode error, a drift error) must reach the
+            // listener too, or the wall spins on its last value forever.
+            debugPrint('group today load failed: $e');
+            if (!controller.isClosed) {
+              controller.addError(
+                GroupException.of(OurneyErrorCode.unknown, e.toString()),
+                st,
+              );
+            }
           }
         } while (again && !controller.isClosed);
       } finally {
@@ -156,9 +167,13 @@ class DataGroupRepository implements GroupRepository {
               ? ctx.clock.localDate(ctx.now(), 'UTC')
               : LocalDate.parse((captured as String).substring(0, 10)));
       var member = memberTodayFromRemote(r, journeyId: journeyId, today: day);
-      if (member.userId == me && member.todayCheckIn == null && today != null) {
+      if (member.userId == me && today != null) {
+        // Since 0014 a day can hold several photos: show the newest one, which
+        // may still be waiting in the outbox.
         final local = await _localCheckIn(journeyId, me!, today);
-        if (local != null) {
+        final server = member.todayCheckIn;
+        if (local != null &&
+            (server == null || local.capturedAt.isAfter(server.capturedAt))) {
           member = MemberToday(
             userId: member.userId,
             username: member.username,
@@ -166,6 +181,7 @@ class DataGroupRepository implements GroupRepository {
             avatarPath: member.avatarPath,
             role: member.role,
             currentStreak: member.currentStreak,
+            checkedInHidden: member.checkedInHidden,
             todayCheckIn: local,
           );
         }
@@ -181,12 +197,18 @@ class DataGroupRepository implements GroupRepository {
     LocalDate day,
   ) async {
     final row =
-        await (_db.select(_db.checkIns)..where(
-              (t) =>
-                  t.journeyId.equals(journeyId) &
-                  t.userId.equals(me) &
-                  t.localDate.equalsValue(day),
-            ))
+        await (_db.select(_db.checkIns)
+              ..where(
+                (t) =>
+                    t.journeyId.equals(journeyId) &
+                    t.userId.equals(me) &
+                    t.localDate.equalsValue(day),
+              )
+              ..orderBy([
+                (t) => OrderingTerm.desc(t.capturedAt),
+                (t) => OrderingTerm.desc(t.id),
+              ])
+              ..limit(1))
             .getSingleOrNull();
     if (row == null) return null;
     return checkInFromRow(
@@ -202,7 +224,7 @@ class DataGroupRepository implements GroupRepository {
       throw const GroupException.of(OurneyErrorCode.invalid);
     }
     await _assertActive(checkInId);
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     await _db
         .into(_db.reactions)
         .insertOnConflictUpdate(
@@ -220,7 +242,7 @@ class DataGroupRepository implements GroupRepository {
   Future<void> unreact(String checkInId) async {
     _remote();
     await _assertActive(checkInId);
-    final me = ctx.requireUserId();
+    final me = await ctx.claimUserId();
     await (_db.delete(
       _db.reactions,
     )..where((t) => t.checkInId.equals(checkInId) & t.userId.equals(me))).go();
@@ -295,6 +317,22 @@ class DataGroupRepository implements GroupRepository {
           ),
         );
     await ctx.store.forgetUserContent(userId, journeyId: journeyId);
+    await _refreshInviteCode(remote, journeyId);
     ctx.sync?.notifyChanged();
   });
+
+  /// `remove_member` rotates the invite code of a group (so the removed member
+  /// cannot rejoin with it) but returns nothing: read the new code back so the
+  /// invite sheet does not keep showing the dead one.
+  Future<void> _refreshInviteCode(RemoteApi remote, String journeyId) async {
+    try {
+      final rows = await remote.select('journeys', eq: {'id': journeyId});
+      if (rows.isEmpty) return;
+      final code = rows.first['invite_code'] as String?;
+      await (_db.update(_db.journeys)..where((t) => t.id.equals(journeyId)))
+          .write(JourneysCompanion(inviteCode: Value(code)));
+    } on OurneyException {
+      // The member is removed; the next sync pull brings the new code.
+    }
+  }
 }

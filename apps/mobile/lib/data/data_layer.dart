@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart' show debugPrint, debugPrintStack;
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_context.dart';
 import 'db/app_database.dart';
+import 'dead_uploads.dart';
 import 'journey_clock.dart';
 import 'local_store.dart';
 import 'media_store.dart';
@@ -111,7 +113,15 @@ class DataLayer {
         listenLifecycle: listenLifecycle,
       );
       layer._authSub = remote.watchUserId().listen((id) {
-        if (id != null) unawaited(layer.syncNow());
+        if (id != null) {
+          unawaited(
+            sync.ensureOwner(id).catchError((Object e, StackTrace st) {
+              debugPrint('sync: ensureOwner failed: $e');
+              debugPrintStack(stackTrace: st);
+            }),
+          );
+          unawaited(layer.syncNow());
+        }
       });
     }
     return layer;
@@ -129,7 +139,10 @@ class DataLayer {
   late final JourneyRepository journeys = DataJourneyRepository(ctx);
   late final CheckInRepository checkIns = DataCheckInRepository(ctx);
   late final GroupRepository groups = DataGroupRepository(ctx);
-  late final SafetyRepository safety = DataSafetyRepository(ctx);
+  late final SafetyRepository safety = DataSafetyRepository(
+    ctx,
+    social: social,
+  );
   MediaStore get media => ctx.media;
 
   // Social v1.3: null in local-only mode (the providers stay unwired and the
@@ -146,6 +159,9 @@ class DataLayer {
     final s = social;
     return s == null ? null : build(s);
   }
+
+  /// Dead check-in uploads (Retry / Discard); null in local-only mode.
+  DeadUploads? get deadUploads => ctx.outbox == null ? null : DeadUploads(ctx);
 
   bool get isLocalOnly => ctx.localOnly;
 

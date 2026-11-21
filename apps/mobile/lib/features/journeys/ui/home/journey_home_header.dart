@@ -123,7 +123,7 @@ class JourneyAvatarStack extends StatelessWidget {
                     color: ui.ink,
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    height: 1.2,
+                    height: 1.3,
                   ),
                 ),
               ),
@@ -148,7 +148,7 @@ class _Squad extends ConsumerWidget {
     final members =
         ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
         const <MemberToday>[];
-    final done = members.where((m) => m.todayCheckIn != null).length;
+    final done = members.where((m) => m.checkedIn).length;
     final total = members.isEmpty ? 1 : members.length;
     final trophy =
         (journey.dna?['trophy'] as String?)?.trim().toUpperCase() ??
@@ -331,7 +331,7 @@ class _Couple extends ConsumerWidget {
     final members =
         ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
         const <MemberToday>[];
-    final shot = members.where((m) => m.todayCheckIn != null).length;
+    final shot = members.where((m) => m.checkedIn).length;
     final ritual = switch (journey.dna?['ritual']) {
       'cook' => l10n.journeys_home_ritualCook,
       'save' => l10n.journeys_home_ritualSave,
@@ -346,7 +346,7 @@ class _Couple extends ConsumerWidget {
         ? l10n.journeys_home_pairNeither
         : l10n.journeys_home_pairWaiting(
             members
-                    .where((m) => m.todayCheckIn == null)
+                    .where((m) => !m.checkedIn)
                     .map((m) => m.displayName)
                     .firstOrNull ??
                 partner,
@@ -444,7 +444,7 @@ class _Flexer extends ConsumerWidget {
     final members =
         ref.watch(groupMembersTodaySafeProvider(journey.id)).value ??
         const <MemberToday>[];
-    final ran = members.where((m) => m.todayCheckIn != null).length;
+    final ran = members.where((m) => m.checkedIn).length;
     final km = stats.kmText;
     final pace = stats.pace;
     return Column(
@@ -486,7 +486,7 @@ class _Month extends ConsumerWidget {
     final members =
         ref.watch(groupMembersTodaySafeProvider(journeyId)).value ??
         const <MemberToday>[];
-    final done = members.where((m) => m.todayCheckIn != null).length;
+    final done = members.where((m) => m.checkedIn).length;
     return Column(
       key: const ValueKey('journey-home-minimal-header'),
       crossAxisAlignment: CrossAxisAlignment.start,

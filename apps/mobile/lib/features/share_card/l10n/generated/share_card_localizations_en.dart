@@ -84,6 +84,10 @@ class ShareCardL10nEn extends ShareCardL10n {
       'No check-in photos yet. The card uses an illustration.';
 
   @override
+  String get share_card_stateError =>
+      'Couldn\'t check which photos are hidden from sharing, so the card has no photo for now. You can still share it with the illustration, or try again.';
+
+  @override
   String share_card_photoOfDay(String date) {
     return 'Photo from $date';
   }
@@ -92,8 +96,10 @@ class ShareCardL10nEn extends ShareCardL10n {
   String get share_card_blurPhoto => 'Blur photo';
 
   @override
-  String get share_card_blurPhotoHint =>
-      'On because of this journey\'s privacy settings';
+  String get share_card_blurPhotoHint => 'On because of your privacy settings';
+
+  @override
+  String get share_card_blurPhotoLocked => 'Always on for this card style';
 
   @override
   String get share_card_metricHidden => 'Your metric is not shown on the card.';
@@ -131,6 +137,10 @@ class ShareCardL10nEn extends ShareCardL10n {
   @override
   String get share_card_linkDescription =>
       'Anyone with the link can view this journey (read-only). You can revoke it at any time.';
+
+  @override
+  String get share_card_linkNotYet =>
+      'A public link becomes available once this journey is finished.';
 
   @override
   String get share_card_linkActive =>

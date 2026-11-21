@@ -44,7 +44,7 @@ class UiProfileEntry extends StatelessWidget {
               name: 'profile',
               size: size * 0.55,
               flat: true,
-              color: onDark ? UiCamera.ink : ui.ink,
+              color: onDark ? UiCamera.onPhoto : ui.ink,
             ),
           )
         : UiAvatar(name: n, colorIndex: UiAvatar.indexFor(n), size: size);

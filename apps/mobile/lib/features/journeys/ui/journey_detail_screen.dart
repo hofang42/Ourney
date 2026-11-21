@@ -12,6 +12,7 @@ import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../groups/ui/invite_sheet.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
@@ -22,6 +23,7 @@ import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'couple_rename_sheet.dart';
 import 'day_ticker.dart';
+import 'dead_uploads_banner.dart';
 import 'home/journey_home_header.dart';
 import 'home/journey_home_intro.dart';
 import 'home/journey_home_sections.dart';
@@ -86,12 +88,24 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               )
             else
               UiEmptyState(
-                glyph: const OurneyIcon(name: 'search', size: 40),
+                key: ValueKey(
+                  journeyAsync.hasError
+                      ? 'journey-detail-error'
+                      : 'journey-detail-not-found',
+                ),
+                glyph: OurneyIcon(
+                  name: journeyAsync.hasError ? 'error' : 'search',
+                  size: 40,
+                ),
                 title: journeyAsync.hasError
                     ? journeyErrorMessage(context, journeyAsync.error!)
                     : l10n.journeys_errorNotFound,
-                actionLabel: l10n.journeys_title,
-                onAction: () => context.go(AppRoutes.journeys),
+                actionLabel: journeyAsync.hasError
+                    ? app.common_retry
+                    : l10n.journeys_title,
+                onAction: journeyAsync.hasError
+                    ? () => ref.invalidate(journeyByIdProvider(journeyId))
+                    : () => context.go(AppRoutes.journeys),
               ),
           ],
         ),
@@ -149,6 +163,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               missedDay != null && (skin == 'quiet' || skin == 'squad');
           final showBottomOverlay = showMissedChip || perms.canCheckIn;
           final bottomInset = MediaQuery.paddingOf(context).bottom;
+          // U15: at large text the chip and the button no longer share a row
+          // (the button used to break "Check-in" mid-word).
+          final stackOverlay =
+              MediaQuery.textScalerOf(context).scale(10) > 13 &&
+              showMissedChip &&
+              perms.canCheckIn;
           final screenWidth = MediaQuery.sizeOf(context).width;
           final home = DayTicker(
             child: ActiveJourneyScope(
@@ -157,7 +177,9 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 key: const ValueKey('journey-detail'),
                 background: pal.paper,
                 padTop: 0,
-                padBottom: showBottomOverlay ? 96 : UiSpace.xxl,
+                padBottom: showBottomOverlay
+                    ? (stackOverlay ? 170 : 96)
+                    : UiSpace.xxl,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -217,13 +239,14 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         day: progress.dayNumber,
                         total: journey.durationDays,
                         streak: progress.summary.current,
-                        now: ref.watch(journeysNowProvider),
+                        today: progress.today,
                         offline:
                             ref.watch(journeyHomeOfflineProvider).value ??
                             false,
                         readOnly: !perms.isActive,
                       ),
                     if (progress != null) const SizedBox(height: UiSpace.lg),
+                    DeadUploadsBanner(journeyId: journey.id),
                     UiEyebrow(_dateRange(context, journey).toUpperCase()),
                     const SizedBox(height: 4),
                     Semantics(
@@ -267,10 +290,23 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       accent: pal.accent,
                     ),
                     const SizedBox(height: UiSpace.xl),
-                    if (progress == null)
-                      const Padding(
-                        padding: EdgeInsets.all(UiSpace.xl),
-                        child: Center(child: CircularProgressIndicator()),
+                    if (checkIns.hasError && progress == null)
+                      UiEmptyState(
+                        key: const ValueKey('journey-detail-checkins-error'),
+                        glyph: const OurneyIcon(name: 'error', size: 30),
+                        title: app.common_errorGeneric,
+                        actionLabel: app.common_retry,
+                        onAction: () =>
+                            ref.invalidate(myCheckInsProvider(journeyId)),
+                      )
+                    else if (progress == null)
+                      Padding(
+                        padding: const EdgeInsets.all(UiSpace.xl),
+                        child: Center(
+                          child: CircularProgressIndicator(
+                            semanticsLabel: app.common_loading,
+                          ),
+                        ),
                       )
                     else
                       JourneyTimeline(
@@ -352,6 +388,24 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                             final chipMaxWidth = checkInButton != null
                                 ? (c.maxWidth - UiSpace.md) * 0.45
                                 : c.maxWidth;
+                            if (stackOverlay) {
+                              return Column(
+                                key: const ValueKey('journey-overlay-stacked'),
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Align(
+                                    alignment: AlignmentDirectional.centerStart,
+                                    child: MissedDayOverlay(
+                                      skinId: skin,
+                                      day: missedDay,
+                                    ),
+                                  ),
+                                  const SizedBox(height: UiSpace.sm),
+                                  checkInButton!,
+                                ],
+                              );
+                            }
                             return ConstrainedBox(
                               constraints: const BoxConstraints(
                                 minHeight: UiSize.button + UiShadow.tiny,
@@ -398,7 +452,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   /// Metric values of the journey, oldest first.
   List<double> _metricSeries(JourneyProgress p) {
     final days = p.checkInsByDate.keys.toList()..sort((a, b) => a.compareTo(b));
-    return [for (final d in days) ?p.checkInsByDate[d]!.metricValue];
+    return [for (final d in days) ?latestMetric(p.checkInsOn(d))];
   }
 
   void _back() {
@@ -501,8 +555,26 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           if (context.mounted) router.go(JourneysPaths.wrapped(journey.id));
         }
       case _Action.archive:
+        final ok = await confirmJourneyAction(
+          context,
+          title: l10n.journeys_archiveConfirmTitle,
+          message: l10n.journeys_archiveConfirmMessage,
+          confirmLabel: l10n.journeys_archive,
+        );
+        if (!ok || !context.mounted) return;
         if (await _guard(context, () => repo.archive(journey.id))) {
           unawaited(reminders.reschedule());
+          // The root messenger keeps the toast over the route change.
+          if (context.mounted) {
+            showJourneySnack(
+              context,
+              l10n.journeys_archived,
+              actionLabel: l10n.journeys_archiveUndo,
+              onAction: () => unawaited(
+                repo.unarchive(journey.id).then((_) => reminders.reschedule()),
+              ),
+            );
+          }
           router.go(AppRoutes.journeys);
         }
       case _Action.delete:
@@ -696,6 +768,13 @@ class _PrivacySection extends ConsumerWidget {
       bool? blurMedia,
       bool? hideExtras,
     }) async {
+      // An explicit choice here wins over any waiting heal of that flag.
+      forgetSharePrivacyHeal(
+        ref,
+        journey.id,
+        hide: hideMetric != null,
+        blur: blurMedia != null,
+      );
       try {
         await repo.updateMyMembership(
           journey.id,

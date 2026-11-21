@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsService;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -13,7 +14,6 @@ import '../../app/theme/motion.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
-import '../checkin/checkin_controller.dart' show pendingWeightProvider;
 import '../journeys/data/journeys_providers.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
@@ -30,12 +30,16 @@ import 'widgets/viewfinder_extras.dart';
 enum _Phase { idle, prePrompt, starting, ready, failure }
 
 /// `/capture`: the app's start screen (FR-C1), laid out like the Figma V2
-/// camera (`routes.tsx` `CameraScreen`, SDS §8.8, design-v2 bugs.md A1):
-/// a top bar with the selected journey's name chip and the tools (flash
-/// FR-C2, lens switch, grid), the viewfinder with the skin HUD, the streak
-/// and today's latest photo, one title block, the image-only journey discs
-/// next to the library button (FR-C3), then the dark camera dock with the
-/// hero shutter. Pieces live in `widgets/` and `capture_journey_data.dart`.
+/// camera (`routes.tsx` `CameraScreen`, SDS §8.8, design-v2 bugs.md A1) and
+/// the 2026-11-20 camera redesign: a top bar with the journey chip
+/// ("Name · Day N") and the tools (flash FR-C2, grid, ghost guide for the
+/// quiet persona), a large 3:4 viewfinder inset by 8dp (streak chip, status
+/// pill, persona guides), one controls row (library, journey discs FR-C3,
+/// lens switch), then the dark camera dock with the hero shutter. One shared
+/// camera for all personas: the persona only changes the accent. Pieces live
+/// in `widgets/` and `capture_journey_data.dart`. Transient state ("Flash:
+/// auto", capture failed) shows in a status pill inside the preview, never in
+/// a toast (it covered the shutter).
 /// The OS permission is requested in context after a friendly pre-prompt; a
 /// denied state links to Settings.
 ///
@@ -73,8 +77,21 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   bool _flashOverlay = false;
   bool _grid = false;
 
+  /// Quiet persona: the day-1 ghost silhouette guide.
+  bool _ghost = true;
+
+  // Status pill inside the preview (replaces the toast).
+  String _statusMessage = '';
+  String? _statusGlyph;
+  UiCameraStatusTone _statusTone = UiCameraStatusTone.neutral;
+  bool _statusVisible = false;
+  Timer? _statusTimer;
+
   bool _visible = false;
   bool _appVisible = true;
+
+  /// Set when we sent the user to system Settings for the permission.
+  bool _sentToSettings = false;
   bool _noJourneys = false;
 
   /// Bumped whenever the camera is stopped so a start that finishes late
@@ -137,11 +154,16 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       case AppLifecycleState.resumed:
         _appVisible = true;
         // Coming back from Settings: try again if access was blocked.
+        // Android reports a "don't ask again" denial as a plain denial, so
+        // that one is retried too when we opened Settings ourselves (U7).
         if (_phase == _Phase.failure &&
             (_failure == CameraFailure.permissionDeniedPermanently ||
-                _failure == CameraFailure.restricted)) {
+                _failure == CameraFailure.restricted ||
+                (_sentToSettings &&
+                    _failure == CameraFailure.permissionDenied))) {
           _phase = _Phase.idle;
         }
+        _sentToSettings = false;
         _sync();
       case AppLifecycleState.hidden:
       case AppLifecycleState.paused:
@@ -156,6 +178,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _statusTimer?.cancel();
     _generation++;
     unawaited(_session?.stop());
     super.dispose();
@@ -194,6 +217,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   Future<void> _start() async {
     final gen = ++_generation;
     final session = _session ??= ref.read(cameraSessionFactoryProvider)();
+    // Read before the await: `ref` is unusable once the screen unmounts.
+    final prefs = ref.read(sharedPreferencesProvider);
     setState(() {
       _phase = _Phase.starting;
       _failure = null;
@@ -217,17 +242,26 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       }
       setState(() => _phase = _Phase.ready);
     } on CameraStartException catch (e) {
+      debugPrint('camera: start failed: ${e.failure.name} ${e.detail ?? ''}');
       if (!mounted || gen != _generation) return;
       setState(() {
         _phase = _Phase.failure;
         _failure = e.failure;
       });
+    } on Object catch (e) {
+      // Not a CameraException (a platform or state error): still end in the
+      // failure state with a retry instead of an endless "starting".
+      debugPrint('camera: start failed unexpectedly: $e');
+      if (!mounted || gen != _generation) return;
+      setState(() {
+        _phase = _Phase.failure;
+        _failure = CameraFailure.failed;
+      });
     } finally {
-      unawaited(
-        ref
-            .read(sharedPreferencesProvider)
-            .setBool(CameraPrefs.permissionAsked, true),
-      );
+      // The start reached the OS permission prompt, so it was asked even if
+      // the user left the screen meanwhile (prefs were read before the
+      // await: `ref` is unusable once unmounted).
+      unawaited(prefs.setBool(CameraPrefs.permissionAsked, true));
     }
   }
 
@@ -242,8 +276,44 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   }
 
   Future<void> _openSettings() async {
-    await ref.read(appSettingsOpenerProvider).open();
+    _sentToSettings = true;
+    final opened = await ref.read(appSettingsOpenerProvider).open();
+    if (!opened) _sentToSettings = false;
   }
+
+  /// Shows [message] in the status pill for 1.2s (1.5s under Reduce Motion)
+  /// and announces it to screen readers.
+  void _showStatus(String message, {String? glyph, bool danger = false}) {
+    if (!mounted) return;
+    _statusTimer?.cancel();
+    final hold = OurneyMotion.reduced(context)
+        ? const Duration(milliseconds: 1500)
+        : const Duration(milliseconds: 1200);
+    setState(() {
+      _statusMessage = message;
+      _statusGlyph = glyph;
+      _statusTone = danger
+          ? UiCameraStatusTone.danger
+          : UiCameraStatusTone.neutral;
+      _statusVisible = true;
+    });
+    unawaited(
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        message,
+        Directionality.of(context),
+      ),
+    );
+    _statusTimer = Timer(hold, () {
+      if (mounted) setState(() => _statusVisible = false);
+    });
+  }
+
+  static String _flashGlyph(FlashSetting f) => switch (f) {
+    FlashSetting.off => 'flash-off',
+    FlashSetting.auto => 'flash-auto',
+    FlashSetting.on => 'lightning',
+  };
 
   Future<void> _toggleFlash() async {
     final next = FlashSetting.values[(_flash.index + 1) % 3];
@@ -252,18 +322,27 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     OurneyHaptics.selection();
     try {
       await _session?.setFlash(next);
-      if (!mounted) return;
-      showUiToast(context, switch (next) {
+      _showStatus(switch (next) {
         FlashSetting.off => l10n.camera_flashOff,
         FlashSetting.auto => l10n.camera_flashAuto,
         FlashSetting.on => l10n.camera_flashOn,
-      });
+      }, glyph: _flashGlyph(next));
     } on Object {
       // The lens refused the mode (no flash unit): say so, back to off.
       if (!mounted) return;
       setState(() => _flash = FlashSetting.off);
-      showUiToast(context, l10n.camera_flashUnavailable);
+      _showStatus(l10n.camera_flashUnavailable, glyph: 'flash-off');
     }
+  }
+
+  void _toggleGhost() {
+    final l10n = CameraL10n.of(context);
+    OurneyHaptics.selection();
+    setState(() => _ghost = !_ghost);
+    _showStatus(
+      _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+      glyph: _ghost ? 'eye' : 'eye-off',
+    );
   }
 
   Future<void> _switchLens() async {
@@ -287,6 +366,14 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         setState(() {
           _phase = _Phase.failure;
           _failure = e.failure;
+        });
+      }
+    } on Object catch (e) {
+      debugPrint('camera: switch lens failed unexpectedly: $e');
+      if (mounted && gen == _generation) {
+        setState(() {
+          _phase = _Phase.failure;
+          _failure = CameraFailure.failed;
         });
       }
     } finally {
@@ -323,8 +410,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         ?.where((c) => c.metricValue != null)
         .fold<CheckIn?>(
           null,
-          (prev, c) =>
-              prev == null || c.localDate.compareTo(prev.localDate) >= 0
+          (prev, c) => prev == null || !c.capturedAt.isBefore(prev.capturedAt)
               ? c
               : prev,
         )
@@ -360,7 +446,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       path = await s.takePicture();
     } on CameraStartException {
       if (mounted) {
-        showUiToast(context, CameraL10n.of(context).camera_captureFailed);
+        _showStatus(
+          CameraL10n.of(context).camera_captureFailed,
+          glyph: 'error',
+          danger: true,
+        );
       }
       return;
     } finally {
@@ -536,17 +626,18 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     );
   }
 
-  /// Flash, lens switch and framing grid (Figma `camera-top-actions`).
-  List<Widget> _tools(BuildContext context) {
+  /// Flash, framing grid and (quiet persona) the ghost guide. The lens switch
+  /// lives in the controls row, opposite the library.
+  List<Widget> _tools(
+    BuildContext context,
+    Journey? journey,
+    UiJourneyStyle? style,
+  ) {
     final l10n = CameraL10n.of(context);
     final session = _session;
-    final canSwitch =
-        (_phase == _Phase.ready || _phase == _Phase.starting) &&
-        (session?.canSwitch ?? false) &&
-        !_busy;
     final hasFlash = _phase == _Phase.ready && (session?.hasFlash ?? false);
-    // Bug 4: the three states used to share one glyph and only a long-press
-    // tooltip told them apart, so a tap looked like it did nothing.
+    // The state is carried by the glyph shape (slashed bolt, bolt with an A,
+    // filled accent disc), not by colour alone.
     final (flashEmphasis, flashLabel) = switch (_flash) {
       FlashSetting.off => (UiCameraToolEmphasis.none, l10n.camera_flashOff),
       FlashSetting.auto => (
@@ -555,29 +646,38 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       ),
       FlashSetting.on => (UiCameraToolEmphasis.filled, l10n.camera_flashOn),
     };
+    final quiet =
+        journey != null &&
+        personaSkinOf(journey) == PersonaSkinId.quietTransformer;
     return [
+      if (quiet)
+        Tooltip(
+          message: _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+          child: UiCameraTool(
+            key: const ValueKey('capture-ghost'),
+            glyph: _ghost ? 'eye' : 'eye-off',
+            label: _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
+            emphasis: _ghost
+                ? UiCameraToolEmphasis.filled
+                : UiCameraToolEmphasis.none,
+            accent: style?.accent,
+            onPressed: _toggleGhost,
+          ),
+        ),
       if (hasFlash)
         KeyedSubtree(
           key: const ValueKey('capture-flash'),
           child: Tooltip(
             message: flashLabel,
             child: UiCameraTool(
-              glyph: 'lightning',
+              glyph: _flashGlyph(_flash),
               label: flashLabel,
               emphasis: flashEmphasis,
+              accent: style?.accent,
               onPressed: _toggleFlash,
             ),
           ),
         ),
-      Tooltip(
-        message: l10n.camera_switchLens,
-        child: UiCameraTool(
-          key: const ValueKey('capture-switch'),
-          glyph: 'switch-camera',
-          label: l10n.camera_switchLens,
-          onPressed: canSwitch ? _switchLens : null,
-        ),
-      ),
       Tooltip(
         message: l10n.camera_grid,
         child: UiCameraTool(
@@ -587,15 +687,16 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           emphasis: _grid
               ? UiCameraToolEmphasis.filled
               : UiCameraToolEmphasis.none,
+          accent: style?.accent,
           onPressed: () => setState(() => _grid = !_grid),
         ),
       ),
     ];
   }
 
-  /// Figma V2 camera: top bar (name chip + tools), the viewfinder with the
-  /// skin HUD, one title block, the image-only disc strip with the library
-  /// button, then the camera dock with the hero shutter.
+  /// Camera layout: top bar (journey chip + tools), the viewfinder, one
+  /// controls row (library, disc strip, lens switch), then the camera dock
+  /// with the hero shutter.
   Widget _buildCamera(
     BuildContext context,
     AsyncValue<List<Journey>> journeys,
@@ -613,12 +714,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
       ...?ref.watch(captureShotTodayProvider).value,
       if (data != null && data.today.isNotEmpty) selected!.id,
     };
-    final quick = quickCameraJourneys(
-      list,
-      selectedId: selected?.id,
-      pinnedIds: pinned,
-      shotTodayIds: shot,
-    );
+    final session = _session;
+    final canSwitch =
+        (_phase == _Phase.ready || _phase == _Phase.starting) &&
+        (session?.canSwitch ?? false) &&
+        !_busy;
     return Column(
       children: [
         Padding(
@@ -626,64 +726,86 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           child: CameraTopBar(
             journeys: journeys,
             selected: selected,
+            chipLabel: selected == null || data == null
+                ? null
+                : l10n.camera_chipDay(selected.title, data.progress.dayNumber),
+            accent: style?.accent,
             onOpenPicker: () => _openPicker(list, selected),
             onRetry: () => ref.invalidate(captureJourneysProvider),
-            tools: _tools(context),
+            tools: _tools(context, selected, style),
           ),
         ),
         const SizedBox(height: UiSpace.sm),
         Expanded(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: gutter),
+            padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
             child: _buildViewfinder(context, list, selected, data),
           ),
         ),
         const SizedBox(height: UiSpace.sm),
-        if (selected != null && data != null)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: gutter),
-            child: JourneyTitleBlock(
-              journey: selected,
-              dayNumber: data.progress.dayNumber,
-              totalDays: data.progress.totalDays,
-              photosToday: data.today.length,
-            ),
-          ),
         Padding(
           padding: EdgeInsets.symmetric(horizontal: gutter),
-          child: Row(
-            children: [
-              Tooltip(
-                message: l10n.camera_gallery,
-                child: UiLibraryThumb(
-                  key: const ValueKey('capture-gallery'),
-                  label: l10n.camera_gallery,
-                  onPressed: selected == null || _busy
-                      ? null
-                      : () => _pickFromLibrary(selected),
+          child: SizedBox(
+            height: 56,
+            child: Row(
+              children: [
+                Tooltip(
+                  message: l10n.camera_gallery,
+                  child: UiLibraryThumb(
+                    key: const ValueKey('capture-gallery'),
+                    label: l10n.camera_gallery,
+                    onPressed: selected == null || _busy
+                        ? null
+                        : () => _pickFromLibrary(selected),
+                  ),
                 ),
-              ),
-              const SizedBox(width: UiSpace.sm),
-              Expanded(
-                child: list.length < 2
-                    ? const SizedBox(height: UiSize.tap)
-                    : Center(
-                        child: JourneyDiscStrip(
-                          journeys: quick,
-                          total: list.length,
-                          selectedId: selected?.id,
-                          accent: style?.accent,
-                          pinnedIds: pinned,
-                          shotTodayIds: shot,
-                          onSelect: (id) {
-                            OurneyHaptics.selection();
-                            _selectJourney(id);
+                const SizedBox(width: UiSpace.xs),
+                Expanded(
+                  child: list.length < 2
+                      ? const SizedBox(height: UiSize.tap)
+                      : LayoutBuilder(
+                          builder: (context, box) {
+                            // As many discs as fit; the last slot becomes the
+                            // "All (N)" disc when there are more journeys.
+                            final slots = (box.maxWidth / kCameraDiscSlot)
+                                .floor()
+                                .clamp(2, kCameraQuickDiscs + 1);
+                            return Center(
+                              child: JourneyDiscStrip(
+                                journeys: quickCameraJourneys(
+                                  list,
+                                  selectedId: selected?.id,
+                                  pinnedIds: pinned,
+                                  shotTodayIds: shot,
+                                  maxDiscs: slots,
+                                ),
+                                total: list.length,
+                                selectedId: selected?.id,
+                                accent: style?.accent,
+                                pinnedIds: pinned,
+                                shotTodayIds: shot,
+                                onSelect: (id) {
+                                  OurneyHaptics.selection();
+                                  _selectJourney(id);
+                                },
+                                onOpenAll: () => _openPicker(list, selected),
+                              ),
+                            );
                           },
-                          onOpenAll: () => _openPicker(list, selected),
                         ),
-                      ),
-              ),
-            ],
+                ),
+                const SizedBox(width: UiSpace.xs),
+                Tooltip(
+                  message: l10n.camera_switchLens,
+                  child: UiCameraTool(
+                    key: const ValueKey('capture-switch'),
+                    glyph: 'switch-camera',
+                    label: l10n.camera_switchLens,
+                    onPressed: canSwitch ? _switchLens : null,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         _dock(context, selected, style),
@@ -722,8 +844,6 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         ),
       ),
     };
-    final today = data?.today ?? const <CheckIn>[];
-
     final viewfinder = ClipRRect(
       borderRadius: BorderRadius.circular(UiRadius.viewfinder),
       child: Stack(
@@ -731,40 +851,19 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         children: [
           ColoredBox(color: UiCamera.bg, child: content),
           if (_grid && ready) const CameraGrid(),
-          if (ready)
-            const IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(0, 0.3),
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0x00000000), Color(0x88000000)],
-                  ),
-                ),
-              ),
-            ),
           if (journey != null && data != null && ready)
             Positioned.fill(
               child: CaptureSkinOverlay(
                 key: ValueKey('capture-overlay-${journey.id}'),
                 skin: personaSkinOf(journey),
-                dayNumber: data.progress.dayNumber,
-                streak: data.progress.summary.current,
-                lastPace: data.lastWith((c) => c.extras.pace),
-                lastWeight: data.lastWeight,
-                lastWeightKg: data.lastWeightKg,
-                lastKm: data.lastKm,
-                lastMinutes: data.lastMinutes,
-                onWeightChanged: (kg) => ref
-                    .read(pendingWeightProvider(journey.id).notifier)
-                    .setPendingWeight(kg),
+                showGhost: _ghost,
                 partnerPhotoFile: data.partnerPhoto,
               ),
             ),
           if (data != null && journey != null)
             PositionedDirectional(
               end: 14,
-              top: 14,
+              top: 52,
               child: Semantics(
                 label: l10n.camera_streakChip(data.progress.summary.current),
                 excludeSemantics: true,
@@ -775,18 +874,18 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 ),
               ),
             ),
-          // Top-start, not Figma's bottom-left: the skin HUDs (ghost and
-          // vault chips, film stamp, flexer picks) own the bottom edge.
-          if (journey != null && today.isNotEmpty && ready)
-            PositionedDirectional(
-              start: 14,
-              top: 14,
-              child: LatestPhotoThumb(
-                key: const ValueKey('capture-latest-photo'),
-                count: today.length,
-                file: data!.fileOf(today.first),
-                onPressed: () => unawaited(
-                  context.push<void>(AppRoutes.journey(journey.id)),
+          if (ready)
+            Positioned(
+              top: 12,
+              left: 16,
+              right: 16,
+              child: Center(
+                child: UiCameraStatusPill(
+                  key: const ValueKey('capture-status'),
+                  message: _statusMessage,
+                  glyph: _statusGlyph,
+                  tone: _statusTone,
+                  visible: _statusVisible,
                 ),
               ),
             ),

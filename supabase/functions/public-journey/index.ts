@@ -62,7 +62,7 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-Deno.serve(async (req: Request): Promise<Response> => {
+async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405, { ...cors, Allow: "GET" });
 
@@ -99,9 +99,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .select("id, user_id, local_date, caption, from_library, photo_path, thumb_path")
       .eq("journey_id", journey.id).is("deleted_at", null).is("moderated_at", null)
       .eq("hidden_in_share", false)
-      .order("local_date", { ascending: true }).limit(MAX_CHECKINS),
+      // Newest first so a journey over MAX_CHECKINS drops its oldest photos; restored below.
+      .order("local_date", { ascending: false }).order("id", { ascending: false }).limit(MAX_CHECKINS),
     admin.from("check_in_metrics").select("checkin_id, metric_value")
-      .eq("journey_id", journey.id).limit(MAX_CHECKINS),
+      .eq("journey_id", journey.id).order("updated_at", { ascending: false }).limit(MAX_CHECKINS),
     journey.show_counts
       ? admin.from("journeys").select("id", { count: "exact", head: true })
         .eq("followed_from", journey.id).is("deleted_at", null)
@@ -123,7 +124,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       visibleAuthors.set(m.user_id, m);
     }
   }
-  const rows = ((checkIns.data ?? []) as CheckInRow[]).filter((c) => visibleAuthors.has(c.user_id));
+  const rows = ((checkIns.data ?? []) as CheckInRow[]).filter((c) => visibleAuthors.has(c.user_id)).reverse();
 
   const metricById = new Map<string, number | null>();
   for (const m of (metrics.data ?? []) as { checkin_id: string; metric_value: number | null }[]) {
@@ -219,8 +220,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         emoji: journey.emoji,
         owner_name: ownerVisible ? owner.data?.display_name ?? null : null,
         duration_days: journey.duration_days,
-        metric_name: journey.metric_name,
-        metric_unit: journey.metric_unit,
+        metric_name: ownerHides ? null : journey.metric_name,
+        metric_unit: ownerHides ? null : journey.metric_unit,
       }
       : null,
     ...(journey.show_counts ? { like_count: likeCount ?? 0, follow_count: followers.count ?? 0 } : {}),
@@ -240,4 +241,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       };
     }),
   }, 200, cors);
+}
+
+Deno.serve(async (req: Request): Promise<Response> => {
+  try {
+    return await handle(req);
+  } catch (e) {
+    // adminClient() throws when the environment is incomplete; never leak it as a bare 500.
+    console.error("public-journey failed", e instanceof Error ? e.message : String(e));
+    return json({ error: "internal" }, 500, cors);
+  }
 });

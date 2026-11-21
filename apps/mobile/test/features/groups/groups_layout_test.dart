@@ -54,7 +54,8 @@ void main() {
         expect(size.height, greaterThanOrEqualTo(48), reason: key);
         expect(size.width, greaterThanOrEqualTo(48), reason: key);
       }
-      expect(find.byKey(const ValueKey('profile-entry')), findsWidgets);
+      // U23: Profile is a dock tab, no entry button in the top bar.
+      expect(find.byKey(const ValueKey('profile-entry')), findsNothing);
     });
 
     testWidgets('$mode: squad wall', (tester) async {

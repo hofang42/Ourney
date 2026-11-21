@@ -24,6 +24,7 @@
   "groups_errorFull": "This group is full (10 members).",
   "groups_errorBlocked": "You can't join this group.",
   "groups_errorEnded": "This journey has ended.",
+  "groups_errorSyncPending": "Photos are still uploading. Try again in a moment.",
   "groups_errorForbidden": "You're not allowed to do that.",
   "groups_errorNotAlone": "Other members are still in the group. End the journey instead of deleting it.",
   "groups_errorInvalid": "This action isn't possible here.",
@@ -181,17 +182,6 @@
   },
   "groups_emptyCardTitle": "no squads yet.",
   "groups_emptyCardBody": "Enter an invite code to join a group or start a group journey.",
-  "groups_wallAttendance": "{done}/{total} CHECKED IN",
-  "@groups_wallAttendance": {
-    "placeholders": {
-      "done": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
   "groups_wallUpdated": "Updated at {time}",
   "@groups_wallUpdated": {
     "placeholders": {
@@ -272,6 +262,14 @@
       }
     }
   },
+  "groups_coupleCheckedIn": "{name} · checked in",
+  "@groups_coupleCheckedIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "groups_coupleWaiting": "{name} · waiting",
   "@groups_coupleWaiting": {
     "placeholders": {
@@ -311,5 +309,9 @@
       }
     }
   },
-  "groups_minimalPending": "NOT YET"
+  "groups_minimalPending": "NOT YET",
+  "groups_inviteRevokeTitle": "Revoke this invite?",
+  "groups_inviteRevokeMessage": "The invited person will no longer be able to use it.",
+  "groups_flexerKm": "{km} KM",
+  "groups_flexerKmPace": "{km} KM · {pace} /KM"
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +9,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/ui/journey_actions.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../data/groups_providers.dart';
 import '../domain/invite_code.dart';
 import '../groups_paths.dart';
@@ -136,11 +138,28 @@ class SquadTodayStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
+    // Ended groups cannot take check-ins any more: keep them out of "Today"
+    // (C-B13).
+    final active = [
+      for (final g in groups)
+        if (g.status == JourneyStatus.active) g,
+    ];
+    final finished = [
+      for (final g in groups)
+        if (g.status != JourneyStatus.active) g,
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        UiListHeading(title: l10n.groups_todayHeading),
-        for (final g in groups) SquadTodayCard(journey: g),
+        if (active.isNotEmpty) UiListHeading(title: l10n.groups_todayHeading),
+        for (final g in active) SquadTodayCard(journey: g),
+        if (finished.isNotEmpty) ...[
+          UiListHeading(
+            key: const ValueKey('squad-finished-heading'),
+            title: l10n.groups_finishedSection,
+          ),
+          for (final g in finished) SquadTodayCard(journey: g),
+        ],
       ],
     );
   }
@@ -225,10 +244,12 @@ class SquadTodayCard extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            l10n.groups_checkedInCount(
-                              done,
-                              members.isEmpty ? 0 : members.length,
-                            ),
+                            journey.status != JourneyStatus.active
+                                ? l10n.groups_statusEnded
+                                : l10n.groups_checkedInCount(
+                                    done,
+                                    members.isEmpty ? 0 : members.length,
+                                  ),
                             style: UiText.body(
                               size: 12,
                               height: 1.4,
@@ -296,8 +317,14 @@ class _MemberChip extends ConsumerWidget {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
     final checked = member.checkedIn;
-    final caption = checked
-        ? _hhmm(member.todayCheckIn!.capturedAt)
+    final shot = member.todayCheckIn;
+    // A reported photo (L7) still counts, without its time.
+    final caption = shot != null
+        ? _hhmm(shot.capturedAt)
+        : checked
+        ? l10n.groups_statusDone
+        : journey.status != JourneyStatus.active
+        ? l10n.groups_statusEnded
         : l10n.groups_memberWaiting;
     return UiPressable(
       key: ValueKey('squad-member-${member.userId}'),
@@ -443,11 +470,15 @@ class _MemberSheet extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      checked
-                          ? l10n.groups_memberCheckedAt(
-                              _hhmm(member.todayCheckIn!.capturedAt),
-                            )
-                          : l10n.groups_memberNotYetToday,
+                      switch (member.todayCheckIn) {
+                        final shot? => l10n.groups_memberCheckedAt(
+                          _hhmm(shot.capturedAt),
+                        ),
+                        null when checked => l10n.groups_doneSection,
+                        null when journey.status != JourneyStatus.active =>
+                          l10n.groups_statusEnded,
+                        null => l10n.groups_memberNotYetToday,
+                      },
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: UiText.body(
@@ -486,7 +517,9 @@ class _MemberSheet extends ConsumerWidget {
           ),
           const SizedBox(height: UiSpace.xl),
           if (isMe)
-            checked
+            journey.status != JourneyStatus.active
+                ? const SizedBox.shrink()
+                : checked
                 ? UiButton.secondary(
                     key: const ValueKey('squad-member-checkin'),
                     glyph: const OurneyIcon(name: 'camera', flat: true),
@@ -619,6 +652,7 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
     try {
       if (accept) {
         final id = await repo.accept(inv.id);
+        unawaited(pushSharePrivacyToJourney(ref, id));
         ref.invalidate(groupInvitationsProvider);
         if (mounted) context.go(GroupsPaths.today(id));
       } else {
@@ -636,9 +670,15 @@ class _SquadPendingInvitesState extends ConsumerState<SquadPendingInvites> {
   Widget build(BuildContext context) {
     final l10n = GroupsL10n.of(context);
     final ui = context.ui;
-    final invites =
-        ref.watch(groupInvitationsProvider).asData?.value ??
-        const <GroupInvitation>[];
+    // An invite from someone just blocked disappears at once (C-B3).
+    final blocked =
+        ref.watch(groupBlockedIdsProvider).value ?? const <String>{};
+    final invites = [
+      for (final inv
+          in ref.watch(groupInvitationsProvider).asData?.value ??
+              const <GroupInvitation>[])
+        if (!blocked.contains(inv.inviter.userId)) inv,
+    ];
     if (invites.isEmpty) return const SizedBox.shrink();
     final radius = BorderRadius.circular(UiRadius.card);
     return Column(

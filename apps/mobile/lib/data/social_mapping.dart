@@ -65,6 +65,18 @@ PersonSummary personFromJson(Object? json) {
 PersonSummary? personOrNull(Object? json) =>
     json == null ? null : personFromJson(json);
 
+/// The nil-uuid person the backend emits for an anonymous account (consent_json,
+/// owner_for_viewer): empty names, no avatar.
+const anonymousPersonId = '00000000-0000-0000-0000-000000000000';
+
+bool isAnonymousPerson(PersonSummary p) => p.userId == anonymousPersonId;
+
+/// Like [personOrNull], but the anonymous (nil-uuid) person reads as null too.
+PersonSummary? namedPersonOrNull(Object? json) {
+  final p = personOrNull(json);
+  return p == null || isAnonymousPerson(p) ? null : p;
+}
+
 List<PersonSummary> peopleFromJson(Object? json) => [
   for (final p in json as List<dynamic>? ?? const []) personFromJson(p),
 ];
@@ -230,6 +242,8 @@ Map<String, dynamic> importedJourneyParams(ImportedJourneyDraft d) => {
   'p_timezone': d.timezone,
   'p_metric_name': d.metricName,
   'p_metric_unit': d.metricUnit,
+  'p_layout': d.layout?.wireName,
+  'p_continues': d.continues,
 };
 
 // --- consents ---------------------------------------------------------------
@@ -241,7 +255,7 @@ ShareConsent consentFromJson(Object? json) {
     journeyTitle: r['journey_title'] as String? ?? '',
     member: personFromJson(r['member']),
     status: ShareConsentStatus.fromWire(r['status'] as String),
-    requestedBy: personFromJson(r['requested_by']),
+    requestedBy: namedPersonOrNull(r['requested_by']),
     decidedAt: _instantOrNull(r['decided_at']),
   );
 }

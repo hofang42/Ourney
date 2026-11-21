@@ -27,7 +27,7 @@ class InboxButton extends ConsumerWidget {
       semanticLabel: dot ? l10n.social_inboxNew : l10n.social_inboxTitle,
       excludeChildSemantics: true,
       centerChild: true,
-      onPressed: () => context.push(SocialPaths.inbox),
+      onPressed: () => context.go(SocialPaths.inbox),
       child: SizedBox(
         width: 28,
         height: 28,

@@ -22,6 +22,9 @@ void main() {
       expect(byKey('profile-setup-screen'), findsOneWidget);
       expect(find.byType(ProfileFaceAvatar), findsOneWidget);
       expect(find.text('hồ sơ của bạn.'), findsOneWidget);
+      // U11: no unsaved color swatches; the face shows the photo badge.
+      expect(byKey('profile-avatar-color-0'), findsNothing);
+      expect(byKey('profile-avatar-camera-badge'), findsOneWidget);
 
       await tester.enterText(byKey('profile-display-name'), 'Linh Tran');
       await tester.enterText(byKey('profile-username'), 'linh.tran');

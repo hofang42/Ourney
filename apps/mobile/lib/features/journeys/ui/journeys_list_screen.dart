@@ -44,13 +44,27 @@ class JourneysListScreen extends ConsumerStatefulWidget {
 }
 
 class _JourneysListState extends ConsumerState<JourneysListScreen> {
-  HubSegment _segment = HubSegment.active;
+  /// Null until the user picks a segment (then the hub may default to the
+  /// shelf when nothing runs).
+  HubSegment? _segment;
   bool _menuOpen = false;
 
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final journeys = ref.watch(journeysListProvider);
+    // A remembered segment pick goes stale when Active flips between empty
+    // and non-empty, or when another account signs in.
+    ref.listen<AsyncValue<List<Journey>>>(journeysListProvider, (prev, next) {
+      final was = prev?.value?.any((j) => j.status == JourneyStatus.active);
+      final now = next.value?.any((j) => j.status == JourneyStatus.active);
+      if (was != null && now != null && was != now && _segment != null) {
+        setState(() => _segment = null);
+      }
+    });
+    ref.listen<String?>(currentUserIdProvider, (_, _) {
+      if (_segment != null) setState(() => _segment = null);
+    });
 
     if (journeys.hasError && isNotWired(journeys.error!)) {
       // Data layer (B1) not wired yet.
@@ -64,14 +78,51 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     }
 
     final buckets = journeys.hasValue ? JourneyBuckets(journeys.value!) : null;
+    // Only archived journeys left: the hub still opens (on the shelf) so they
+    // can be restored; Day Zero is for a Hub with nothing at all.
+    final archivedAsync = ref.watch(archivedJourneysProvider);
+    final archivedValue = archivedAsync.value;
+    final hasArchived = archivedValue?.isNotEmpty ?? false;
 
     final Widget body;
-    if (buckets != null && buckets.isEmpty) {
+    if (buckets != null &&
+        buckets.isEmpty &&
+        archivedValue == null &&
+        !archivedAsync.hasError) {
+      // Archived list not known yet: not Day Zero for an archive-only user.
+      body = const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
+      );
+    } else if (buckets != null &&
+        buckets.isEmpty &&
+        archivedValue == null &&
+        archivedAsync.hasError) {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _HubHeader(),
+          const _HubNotices(),
+          UiStateCard(
+            key: const ValueKey('journeys-error'),
+            kind: UiStateCardKind.error,
+            title: l10n.journeys_hubErrorTitle,
+            actionLabel: AppLocalizations.of(context).common_retry,
+            onAction: () => ref.invalidate(archivedJourneysProvider),
+          ),
+        ],
+      );
+    } else if (buckets != null && buckets.isEmpty && !hasArchived) {
       body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
     } else if (buckets != null) {
       body = _HubBody(
         buckets: buckets,
-        segment: _segment,
+        segment:
+            _segment ??
+            (buckets.active.isEmpty &&
+                    (buckets.finished.isNotEmpty || hasArchived)
+                ? HubSegment.shelf
+                : HubSegment.active),
         onSegment: (s) => setState(() => _segment = s),
         menuOpen: _menuOpen,
         onMenu: () => setState(() => _menuOpen = !_menuOpen),
@@ -209,7 +260,7 @@ class _HubNotices extends ConsumerWidget {
           if (resume != null)
             UiCard(
               key: const ValueKey('hub-create-progress'),
-              onPressed: () => context.push(AppRoutes.journeyNew),
+              onPressed: () => context.push(AppRoutes.journeyNewResume),
               semanticLabel:
                   '${l10n.journeys_hubResumeTitle}, ${l10n.journeys_hubResumeStep(resume)}',
               child: Row(
@@ -313,7 +364,7 @@ class _DayZero extends StatelessWidget {
             decoration: BoxDecoration(
               color: UiTypePastel.weightLoss,
               shape: BoxShape.circle,
-              border: Border.all(color: ui.ink, width: 2),
+              border: Border.all(color: ui.outline, width: 2),
             ),
             child: const OurneyIcon(name: 'camera', size: 40, active: true),
           ),
@@ -447,6 +498,12 @@ class _HubBody extends ConsumerWidget {
         UiStreakHero(
           key: const ValueKey('journeys-hub-hero'),
           streak: bestStreak,
+          semanticLabel: l10n.journeys_heroSemantics(
+            bestStreak,
+            allDone
+                ? l10n.journeys_allDonePrompt
+                : l10n.journeys_remainingToday(pending.length),
+          ),
           title: allDone
               ? l10n.journeys_allDonePrompt
               : l10n.journeys_remainingToday(pending.length),
@@ -615,7 +672,7 @@ class _NewJourneyCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: UiTypePastel.english,
               shape: BoxShape.circle,
-              border: Border.all(color: ui.ink, width: 2),
+              border: Border.all(color: ui.outline, width: 2),
             ),
             child: const OurneyIcon(name: 'send', size: 32, active: true),
           ),

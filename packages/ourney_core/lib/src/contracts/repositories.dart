@@ -24,6 +24,7 @@
 // [OurneyErrorCode.fromServer]. Writes that are queued offline do not throw.
 
 import '../models.dart';
+import 'social.dart' show PersonSummary;
 
 /// Result of an attempt that may need the server.
 sealed class SyncResult {
@@ -94,14 +95,30 @@ abstract interface class ProfileRepository {
 
 abstract interface class JourneyRepository {
   Stream<List<Journey>> watchActive();
+
+  /// Every journey the caller has a membership in, archived and ended ones
+  /// included (one-shot). Used to push account-wide preferences.
+  Future<List<Journey>> allMine();
   Stream<Journey?> watch(String journeyId);
+
+  /// Journeys hidden with [archive] (client-side), newest first. They come
+  /// back to [watchActive] with [unarchive].
+  Stream<List<Journey>> watchArchived();
 
   /// `create_journey`. The client generates the id (idempotent retry).
   /// Visibility is sent as `draft.visibility` (group → `group`; solo →
   /// `private` or `link`, which issues `Journey.publicToken`).
   /// No cap on running journeys (SRS FR-B3). Throws [OurneyException]
   /// `invalid` for a bad kind/visibility combo.
-  Future<Journey> create(JourneyDraft draft);
+  ///
+  /// The create-flow extras (cover, colour, reminder, layout...) are sent
+  /// right after. When the server permanently rejects them the journey is
+  /// kept, the extras are rolled back and [onExtrasRejected] is called (a
+  /// non-fatal warning: failing here would strand a journey that exists).
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  });
 
   /// `update_journey` (owner only): rename, layout, cover, colour, reminder
   /// time, DNA. Throws `notFound`, `ended`, `invalid`.
@@ -109,12 +126,19 @@ abstract interface class JourneyRepository {
 
   /// `end_journey` (owner only): status → ended, check-ins become read-only.
   /// Throws `forbidden`, `ended`, `notFound`.
-  Future<void> end(String journeyId);
+  ///
+  /// [background] is the automatic end of an expired window: it must not force
+  /// the outbox to retry (that would burn the retry budget of failing uploads).
+  /// Throws [OurneyErrorCode.syncPending] while uploads of the journey are queued.
+  Future<void> end(String journeyId, {bool background = false});
 
   /// Client-side only in v1: hides an ended journey from the active list.
   /// There is no archive RPC; the server sets `archived` itself when the last
   /// member leaves or the journey is deleted.
   Future<void> archive(String journeyId);
+
+  /// Undoes [archive]: the journey is listed again.
+  Future<void> unarchive(String journeyId);
 
   /// `delete_journey` (owner only, solo or alone in the group). Throws
   /// `notAlone` while other active members exist (use [end] instead),
@@ -208,6 +232,10 @@ abstract interface class SafetyRepository {
   Future<void> block(String userId);
   Future<void> unblock(String userId);
   Stream<Set<String>> watchBlockedIds();
+
+  /// `my_blocked_people` (U16): the people the caller blocked with their real
+  /// names, even on a fresh device. Server only: throws `offline` without one.
+  Future<List<PersonSummary>> myBlockedPeople();
 }
 
 /// Resolves storage paths to displayable bytes/URLs with a disk cache keyed
@@ -243,6 +271,7 @@ enum OurneyErrorCode {
   internal('internal'),
   // Client-side.
   offline('offline'),
+  syncPending('sync_pending'), // queued uploads of the journey are not sent yet
   unknown('unknown');
 
   const OurneyErrorCode(this.wireName);

@@ -16,6 +16,7 @@ import 'package:ourney/features/social/social.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../safety/safety_fakes.dart' show FakeSafetyRepository;
 
 const me = 'me';
 
@@ -148,6 +149,9 @@ class FakeChatRepository implements ChatRepository {
   final Map<String, _Live<List<ChatMessage>>> _messages;
   final List<String> calls = [];
   final List<List<int>> photos = [];
+
+  /// `replyToCheckInId` of every message sent, in order.
+  final List<String?> replyTo = [];
   var _seq = 0;
 
   _Live<List<ChatMessage>> _thread(String id) =>
@@ -186,6 +190,7 @@ class FakeChatRepository implements ChatRepository {
     String? replyToCheckInId,
   }) async {
     calls.add('text:$body');
+    replyTo.add(replyToCheckInId);
     return _add(conversationId, MessageKind.text, body: body);
   }
 
@@ -198,6 +203,7 @@ class FakeChatRepository implements ChatRepository {
   }) async {
     calls.add('photo:${jpegBytes.length}');
     photos.add(jpegBytes);
+    replyTo.add(replyToCheckInId);
     return _add(conversationId, MessageKind.photo, path: 'messages/x.jpg');
   }
 
@@ -335,7 +341,9 @@ class SocialFakes {
     FakeShareConsentRepository? consents,
     FakeInsightsRepository? insights,
     FakeChatPhotoPicker? picker,
+    FakeSafetyRepository? safety,
   }) : friends = friends ?? FakeFriendRepository(),
+       safety = safety ?? FakeSafetyRepository(),
        chat = chat ?? FakeChatRepository(),
        consents = consents ?? FakeShareConsentRepository(),
        insights = insights ?? FakeInsightsRepository(),
@@ -346,10 +354,12 @@ class SocialFakes {
   final FakeShareConsentRepository consents;
   final FakeInsightsRepository insights;
   final FakeChatPhotoPicker picker;
+  final FakeSafetyRepository safety;
   final List<String> shared = [];
   final List<String> copied = [];
 
   List<Override> get overrides => [
+    safetyRepositoryProvider.overrideWithValue(safety),
     friendRepositoryProvider.overrideWithValue(friends),
     chatRepositoryProvider.overrideWithValue(chat),
     shareConsentRepositoryProvider.overrideWithValue(consents),

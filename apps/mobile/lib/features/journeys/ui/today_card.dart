@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
 import '../data/journeys_providers.dart';
 import '../domain/journey_progress.dart';
@@ -52,7 +53,7 @@ class TodayCard extends ConsumerWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: pal.paper,
-        border: Border.all(color: pal.ink),
+        border: Border.all(color: pal.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,7 +64,7 @@ class TodayCard extends ConsumerWidget {
               const Spacer(),
               Flexible(
                 child: Text(
-                  style.name.toUpperCase(),
+                  journeyStyleName(context, style).toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: label(10, opacity: 0.72),
@@ -76,7 +77,7 @@ class TodayCard extends ConsumerWidget {
             height: 148,
             decoration: BoxDecoration(
               color: UiCamera.bg,
-              border: Border.all(color: pal.ink),
+              border: Border.all(color: pal.outline),
             ),
             child: Stack(
               fit: StackFit.expand,
@@ -121,7 +122,7 @@ class TodayCard extends ConsumerWidget {
                           style: UiText.display(
                             size: 20,
                             height: 1.25,
-                            color: UiCamera.ink,
+                            color: UiCamera.onPhoto,
                           ),
                         ),
                       ),
@@ -132,7 +133,7 @@ class TodayCard extends ConsumerWidget {
                           size: 12,
                           weight: FontWeight.w700,
                           height: 1.3,
-                          color: UiCamera.ink,
+                          color: UiCamera.onPhoto,
                         ),
                       ),
                     ],
@@ -291,7 +292,7 @@ class _DayCell extends StatelessWidget {
     final Widget cell;
     if (checkIn != null) {
       cell = Container(
-        decoration: BoxDecoration(border: Border.all(color: ink)),
+        decoration: BoxDecoration(border: Border.all(color: pal.outline)),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -316,7 +317,7 @@ class _DayCell extends StatelessWidget {
       );
     } else if (isToday) {
       cell = CustomPaint(
-        painter: _DashedBorderPainter(color: ink),
+        painter: _DashedBorderPainter(color: pal.outline),
         child: Center(
           child: OurneyIcon(name: 'camera', size: 16, inkColor: ink),
         ),
@@ -331,19 +332,23 @@ class _DayCell extends StatelessWidget {
     return ExcludeSemantics(
       child: Column(
         children: [
-          SizedBox(
-            height: 20,
+          ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 20),
             child: Align(
               alignment: Alignment.bottomCenter,
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.clip,
-                style: UiText.body(
-                  size: 8,
-                  weight: FontWeight.w700,
-                  height: 1.2,
-                  color: isToday ? ink : pal.inkAt(0.72),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  textScaler: MediaQuery.textScalerOf(context)
+                      .clamp(maxScaleFactor: 1.35),
+                  style: UiText.body(
+                    size: 10,
+                    weight: FontWeight.w700,
+                    height: 1.3,
+                    color: isToday ? ink : pal.inkAt(0.72),
+                  ),
                 ),
               ),
             ),
@@ -353,10 +358,12 @@ class _DayCell extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             '${date.day}',
+            textScaler: MediaQuery.textScalerOf(context)
+                .clamp(maxScaleFactor: 1.35),
             style: UiText.body(
-              size: 9,
+              size: 10,
               weight: FontWeight.w700,
-              height: 1.2,
+              height: 1.3,
               color: ink,
             ),
           ),

@@ -170,9 +170,21 @@ class PostExtrasSection extends StatelessWidget {
           PersonaSkinId.minimalistHabit => null,
         };
         if (child == null) return const SizedBox.shrink();
+        final ui = context.ui;
         return Padding(
-          padding: const EdgeInsets.only(top: UiSpace.md),
-          child: child,
+          padding: const EdgeInsets.only(top: UiSpace.xl),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                CheckinL10n.of(context).checkin_details,
+                key: const ValueKey('checkin-details'),
+                style: UiText.fieldLabel(color: ui.inkMuted),
+              ),
+              const SizedBox(height: UiSpace.md),
+              child,
+            ],
+          ),
         );
       },
     );
@@ -382,11 +394,20 @@ class _CoupleInputs extends StatelessWidget {
             for (var i = 1; i <= extrasHeartsMax; i++)
               UiIconButton(
                 key: ValueKey('checkin-heart-$i'),
-                glyph: OurneyIcon(
-                  name: 'heart',
-                  size: 26,
-                  color: i <= (c.hearts ?? 0) ? ui.accent : ui.fill,
-                ),
+                // On: accent sticker; off: quiet line heart.
+                glyph: i <= (c.hearts ?? 0)
+                    ? OurneyIcon(
+                        name: 'heart',
+                        size: 26,
+                        color: ui.accent,
+                        inkColor: ui.ink,
+                      )
+                    : OurneyIcon(
+                        name: 'heart',
+                        size: 26,
+                        flat: true,
+                        color: ui.inkMuted,
+                      ),
                 label: l10n.checkin_extraHeartsValue(i),
                 onPressed: () => c.pickHearts(i),
               ),

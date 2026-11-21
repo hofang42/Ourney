@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -55,28 +56,6 @@ final partnerCheckInPhotosProvider = StreamProvider.autoDispose
             ]..sort((a, b) => b.capturedAt.compareTo(a.capturedAt)),
           );
     }, retry: _noRetry);
-
-/// A weight (metric value) chosen on the camera screen, waiting to be posted
-/// with the next check-in of that journey. The camera slider calls
-/// `ref.read(pendingWeightProvider(id).notifier).setPendingWeight(v)`; the
-/// post screen prefills its metric field from it and clears it after posting.
-class PendingWeight extends Notifier<double?> {
-  PendingWeight(this.journeyId);
-
-  final String journeyId;
-
-  @override
-  double? build() => null;
-
-  /// [kg] is the metric value (validated like the typed one at post time).
-  void setPendingWeight(double kg) => state = kg;
-
-  void clear() => state = null;
-}
-
-/// Not auto-disposed: the value must survive the camera -> post navigation.
-final pendingWeightProvider =
-    NotifierProvider.family<PendingWeight, double?, String>(PendingWeight.new);
 
 /// The caller's membership (join date for streaks, metric privacy).
 final myMembershipProvider = StreamProvider.autoDispose
@@ -148,6 +127,7 @@ class CheckInPoster {
     try {
       files = await compressor.compress(photo.path);
     } on Object catch (e) {
+      debugPrint('check-in: compressing the photo failed: $e');
       throw CheckInPostException(CheckInFailure.photo, e);
     }
     // Couple journeys: the partner's photo goes through the same pipeline.
@@ -156,6 +136,7 @@ class CheckInPoster {
       try {
         partner = await compressor.compress(partnerPhotoPath);
       } on Object catch (e) {
+        debugPrint('check-in: compressing the partner photo failed: $e');
         _discard([files.photoFile, files.thumbFile]);
         throw CheckInPostException(CheckInFailure.photo, e);
       }
@@ -192,6 +173,7 @@ class CheckInPoster {
         ),
       );
     } on OurneyException catch (e) {
+      debugPrint('check-in: submit failed: $e');
       _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
       throw CheckInPostException(
         e.error == OurneyErrorCode.ended
@@ -200,6 +182,7 @@ class CheckInPoster {
         e,
       );
     } on Object catch (e) {
+      debugPrint('check-in: submit failed unexpectedly: $e');
       _discard([files.photoFile, files.thumbFile, ...partnerFiles]);
       throw CheckInPostException(CheckInFailure.generic, e);
     }

@@ -5,6 +5,7 @@ import 'db/app_database.dart';
 import 'mapping.dart';
 import 'media_store.dart';
 import 'remote/remote_api.dart';
+import 'sync/outbox.dart';
 
 /// Outbox entity keys (see `upload_queue.entity_key`).
 /// One key per check-in: several check-ins per day are allowed (FR-C7, 0014).
@@ -31,6 +32,20 @@ class LocalStore {
                 ..where(db.checkIns.journeyId.equals(journeyId)))
               .map((r) => r.read(db.checkIns.id)!)
               .get();
+      // Queued uploads for rows that no longer exist would only fail (or
+      // resurrect data); media deletions stay, they must still run.
+      await (db.delete(db.uploadQueue)..where(
+            (t) =>
+                t.kind.equals(OutboxKind.deleteMedia.wire).not() &
+                t.entityKey.isIn([
+                  journeyKey(journeyId),
+                  '${journeyKey(journeyId)}:extras',
+                  '${journeyKey(journeyId)}:edit',
+                  membershipKey(journeyId),
+                  for (final id in ids) ...[checkInKey(id), reactionKey(id)],
+                ]),
+          ))
+          .go();
       await (db.delete(db.reactions)..where((t) => t.checkInId.isIn(ids))).go();
       await (db.delete(
         db.checkIns,

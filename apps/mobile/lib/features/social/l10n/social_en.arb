@@ -59,6 +59,7 @@
   "social_friendRequestFrom": "Friend request from {name}",
   "social_sectionConsents": "Share requests",
   "social_consentRequest": "{name} wants to share {title} outside the squad",
+  "social_consentRequestFormer": "A former member wants to share {title} outside the squad",
   "social_agree": "Agree",
   "social_sectionConversations": "Conversations",
   "social_photoMessage": "Sent a photo",
@@ -103,5 +104,6 @@
   "social_groupInviteFrom": "{name} invited you to {group}",
   "social_groupInviteMembers": "{count} of {max} members",
   "social_groupInviteJoin": "Join",
-  "social_groupInviteSkip": "Skip"
+  "social_groupInviteSkip": "Skip",
+  "social_messageCounter": "{count}/{max}"
 }

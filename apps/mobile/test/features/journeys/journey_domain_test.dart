@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/domain/journey_form.dart';
 import 'package:ourney/features/journeys/domain/journey_progress.dart';
 import 'package:ourney/features/journeys/domain/journey_time.dart';
+import 'package:ourney/features/journeys/domain/wrapped_story.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'journeys_fakes.dart';
@@ -100,6 +101,36 @@ void main() {
       expect(p.timeline().last.date, testToday);
       expect(p.percentComplete, isNull);
       expect(p.dayNumber, 7);
+    });
+  });
+
+  group('JourneyProgress multi-photo day (B-B5)', () {
+    test('keeps every photo, km and the latest metric of a day', () {
+      final j = testJourney();
+      final d = const LocalDate(2026, 10, 12);
+      final progress = JourneyProgress.compute(
+        journey: j,
+        membership: testMembership(j),
+        checkIns: [
+          testCheckIn(
+            j.id,
+            d,
+            hour: 1,
+            metricValue: 62,
+            extras: const CheckInExtras(km: 5),
+          ),
+          testCheckIn(j.id, d, hour: 12),
+        ],
+        now: testNow,
+      );
+      final stats = WrappedStats.from(progress);
+      expect(stats.moments, 2);
+      expect(stats.days, 1);
+      expect(stats.totalKm, 5.0);
+      expect(stats.weights, [62.0]);
+      final day = progress.timeline().firstWhere((t) => t.date == d);
+      expect(day.photoCount, 2);
+      expect(day.metricValue, 62);
     });
   });
 

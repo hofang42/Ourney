@@ -234,7 +234,12 @@ class PhotoPlaceholder extends StatelessWidget {
     return ColoredBox(
       color: ui.fill,
       child: Center(
-        child: OurneyIcon(name: 'camera', size: 22, color: ui.fillSelected),
+        child: OurneyIcon(
+          name: 'camera',
+          size: 22,
+          flat: true,
+          color: ui.fillSelected,
+        ),
       ),
     );
   }

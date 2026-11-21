@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
 import '../../../ui/ui.dart';
+import '../../safety/data/safety_providers.dart';
 import '../data/social_providers.dart';
 import '../l10n/generated/social_localizations.dart';
 import '../social_paths.dart';
@@ -20,7 +21,12 @@ class FriendsProfileTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (ref.watch(appConfigProvider).localOnly) return const SizedBox.shrink();
     final l10n = SocialL10n.of(context);
-    final list = ref.watch(friendshipsProvider).value;
+    final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final list = ref
+        .watch(friendshipsProvider)
+        .value
+        ?.where((f) => !blocked.contains(f.person.userId))
+        .toList();
     final friends = list?.where((f) => f.isFriend).length;
     final requests = list?.where((f) => f.isIncomingRequest).length ?? 0;
     return UiRow(

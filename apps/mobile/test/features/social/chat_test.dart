@@ -70,6 +70,44 @@ void main() {
     expect(field.controller!.text, isEmpty);
   });
 
+  testWidgets('reply to a shared photo: only the first message carries it '
+      '(C-B15)', (tester) async {
+    final fakes = chatFakes();
+    await pumpSocial(tester, location: '/chat/c1?replyTo=p1', fakes: fakes);
+    expect(find.byKey(const ValueKey('chat-reply-pending')), findsOneWidget);
+    await tester.enterText(find.byKey(const ValueKey('chat-input')), 'nice');
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('chat-reply-pending')), findsNothing);
+    await tester.enterText(find.byKey(const ValueKey('chat-input')), 'again');
+    await tester.tap(find.byKey(const ValueKey('chat-send')));
+    await tester.pumpAndSettle();
+    expect(fakes.chat.replyTo, ['p1', null]);
+  });
+
+  testWidgets('reply context can be dropped before sending', (tester) async {
+    final fakes = chatFakes();
+    await pumpSocial(tester, location: '/chat/c1?replyTo=p1', fakes: fakes);
+    await tester.tap(find.byKey(const ValueKey('chat-reply-cancel')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('chat-library')));
+    await tester.pumpAndSettle();
+    expect(fakes.chat.replyTo, [null]);
+  });
+
+  testWidgets('blocking hides their messages and closes the composer '
+      '(C-B3)', (tester) async {
+    final fakes = chatFakes();
+    await pumpSocial(tester, location: SocialPaths.chat('c1'), fakes: fakes);
+    expect(find.text('which chapter?'), findsOneWidget);
+    await fakes.safety.block('nam');
+    await tester.pumpAndSettle();
+    expect(find.text('which chapter?'), findsNothing);
+    expect(find.text('chapter 6'), findsOneWidget);
+    expect(find.byKey(const ValueKey('chat-input')), findsNothing);
+    expect(find.byKey(const ValueKey('chat-read-only')), findsOneWidget);
+  });
+
   testWidgets('empty text is not sent', (tester) async {
     final fakes = chatFakes();
     await pumpSocial(tester, location: SocialPaths.chat('c1'), fakes: fakes);
@@ -114,6 +152,52 @@ void main() {
     expect(find.byKey(const ValueKey('message-report')), findsOneWidget);
     // Photo message: nothing to copy.
     expect(find.byKey(const ValueKey('message-copy')), findsNothing);
+  });
+
+  testWidgets('chat input is a 48dp tap target (U5)', (tester) async {
+    await pumpSocial(
+      tester,
+      location: SocialPaths.chat('c1'),
+      fakes: chatFakes(),
+    );
+    final box = find.ancestor(
+      of: find.byKey(const ValueKey('chat-input')),
+      matching: find.byType(Container),
+    );
+    expect(tester.getSize(box.first).height, greaterThanOrEqualTo(48));
+  });
+
+  testWidgets('composer clears the home indicator once, not twice (U1)', (
+    tester,
+  ) async {
+    Future<Size> composerSize(double bottomInset) async {
+      tester.view.devicePixelRatio = 1;
+      final padding = FakeViewPadding(bottom: bottomInset);
+      tester.view.padding = padding;
+      tester.view.viewPadding = padding;
+      addTearDown(tester.view.reset);
+      await pumpSocial(
+        tester,
+        location: SocialPaths.chat('c1'),
+        fakes: chatFakes(),
+      );
+      final composer = find.ancestor(
+        of: find.byKey(const ValueKey('chat-input')),
+        matching: find.byType(Container),
+      );
+      // Outermost composer container is the last ancestor Container.
+      final rect = tester.getRect(composer.last);
+      expect(
+        rect.bottom,
+        tester.view.physicalSize.height - bottomInset,
+        reason: 'composer sits exactly on top of the safe area',
+      );
+      return rect.size;
+    }
+
+    final flat = await composerSize(0);
+    final inset = await composerSize(34);
+    expect(inset.height, flat.height);
   });
 
   testWidgets('read-only conversation replaces the composer', (tester) async {

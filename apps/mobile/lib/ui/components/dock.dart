@@ -137,7 +137,7 @@ class UiDock extends StatelessWidget {
         ? 0.0
         : ((quiet || camera) ? UiShadow.tiny : UiShadow.large);
     final outline = camera ? UiCamera.outline : ui.outline;
-    final shadowColor = camera ? UiCamera.shadow : ui.outline;
+    final shadowColor = camera ? UiCamera.shadow : ui.hardShadowColor;
     final solid = reduceTransparency || media.highContrast;
     // V2: journey docks tint the skin surface at 62%, the shell dock at 78%
     // (light) / 80% (dark), so content shows through the blur.
@@ -177,7 +177,16 @@ class UiDock extends StatelessWidget {
       builder: (context, c) {
         final slotW = (c.maxWidth - centerSlotWidth) / items.length;
         final pillW = math.min(_pillW, slotW);
-        final tabMaxW = math.min(slotW, math.max(UiSize.tap, pillW - 12));
+        // Label row bottom edge, measured from the pill centre; the capsule's
+        // curve narrows the usable width there (U17), so the label is
+        // scaled down to the chord instead of touching the outline.
+        final labelBottom = 19.0 - dockTabLift + dockLabelGrowth(context);
+        const r = _pillH / 2;
+        final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
+        final tabMaxW = math.min(
+          slotW,
+          math.max(UiSize.tap, pillW - 2 * inset - 5),
+        );
         double slotX(int i) => i < leftItems.length
             ? i * slotW
             : leftItems.length * slotW +
@@ -345,7 +354,7 @@ LiquidGlassSettings _liquidSettings({
 /// The moving selection "lens": the skin accent as a translucent capsule with
 /// a specular top-left rim, so it reads as a glass bead sliding in the bar.
 BoxDecoration _lensDecoration(Color accent, bool dark) => BoxDecoration(
-  borderRadius: BorderRadius.circular(UiRadius.capsule),
+  borderRadius: BorderRadius.circular(dockSelectionRadius),
   gradient: LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -412,7 +421,7 @@ class UiSnapPill extends StatelessWidget {
   final double outlineWidth;
   final double shadowOffset;
 
-  /// Hard shadow color; defaults to [outlineColor].
+  /// Hard shadow color; defaults to `ui.hardShadowColor`.
   final Color? shadowColor;
 
   /// 400ms press (journey wheel).
@@ -430,7 +439,7 @@ class UiSnapPill extends StatelessWidget {
       minSize: const Size(UiSize.snapPillW, UiSize.tap),
       centerChild: true,
       shadowOffset: shadowOffset,
-      shadowColor: shadowColor ?? line,
+      shadowColor: shadowColor ?? ui.hardShadowColor,
       child: Container(
         width: UiSize.snapPillW,
         height: UiSize.snapPillH,
@@ -476,7 +485,7 @@ class UiShutter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final line = outlineColor ?? UiCamera.outline;
-    final shadow = outlineColor ?? UiCamera.shadow;
+    const shadow = UiCamera.shadow;
     final fg = onAccent ?? context.ui.onBrand;
     final width =
         UiSkinScope.maybeOf(context)?.skin.borderWidth ?? UiBorder.standard;

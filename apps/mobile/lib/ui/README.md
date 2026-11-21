@@ -43,14 +43,15 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.glass-chip` | `UiGlassChip` (camera journey / streak chips) |
 | `.day-hud` | `UiDayHud` |
 | `.camera-tools .icon-button`, `.camera-secondary-controls` | `UiCameraTool`, `UiLibraryThumb` |
+| Camera state label (flash, errors; replaces the toast) | `UiCameraStatusPill` (32dp glass capsule inside the preview, 150ms in / 1.2s / 200ms out, live region) |
 | `.page-dots` | `UiPageDots` |
-| profile avatar entry in top bars | `UiProfileEntry` (feature wrapper: `ProfileEntryButton`, key `profile-entry`) |
+| profile avatar entry in top bars | `UiProfileEntry` (no top bar uses it since the V2 dock has a Profile tab) |
 | `.success-mark` | `UiSuccessMark` |
 | `.stamp` | `UiStamp` |
 | `.streak-celebrate`, `.shared-streak strong` | `UiStreakNumber` |
 | `.polaroid` | `UiPolaroid` |
-| `.field-label` + input | `UiTextField` |
-| `.otp-row` | `UiOtpField` |
+| `.field-label` + input | `UiTextField` (52dp, `UiRadius.field` 16, 1.5dp `ui.border`, 2dp accent on focus, no shadow; `pill: true` for single-line searches), `UiTextArea`, `UiCaptionField` (label-less, growing caption) |
+| `.otp-row` | `UiOtpField` (48x52 boxes, `UiRadius.otp` 10, same border and focus as fields) |
 | `.switch-row` | `UiSwitchRow` |
 | `.bottom-sheet`, `.modal-layer` | `UiSheet`, `showUiSheet` |
 | `.permission-sheet` | `UiPermissionSheetContent`, `showUiPermissionSheet` |
@@ -86,7 +87,7 @@ PR 1 adds the foundation; screens migrate in later PRs.
 
 | File | Contents |
 | --- | --- |
-| `tokens.dart` | Shell palette is now the V2 shell (`#FFF8EE`/`#121212`, brand `#FF8A3D`). New `UiBorder` (2 / 1.5 / 1), `UiShadow.hard(color, offset)` (no blur), `ctx.ui.outline`, `stickerBorder()`, `hardShadow()` |
+| `tokens.dart` | Shell palette is now the V2 shell (`#FFF8EE` light, warm `#1B1916` dark, brand `#FF8A3D`). New `UiBorder` (2 / 1.5 / 1), `UiShadow.hard(color, offset)` (no blur), palette fields `outline`, `hardShadowColor`, `sheet`, `stickerBorder()`, `hardShadow()`. Light: outline = shadow = ink. Dark: mid-tone outline (3:1+), drop shadow darker than bg, `sheet` one step above bg |
 | `skins.dart` | `uiSkins` (quiet, squad, memory, couple, flexer, minimal) x 3 variants x light/dark; `UiSkin.apply(OurneyUi, variantIndex:)` recolors the shell for a journey; `UiTypePastel` journey-type colors |
 | `typography.dart` | `UiText.heading(font:, size:)` for per-skin heading fonts (Space Grotesk, Fraunces, Playfair Display, Barlow Condensed; Space Mono for labels), all OFL, bundled in `assets/fonts` |
 | `components/pressable.dart` | `shadowOffset`: sticker press (translate by the offset, shadow disappears). Without it, the 0.96 scale press |
@@ -102,8 +103,8 @@ Known gap: V2 disabled buttons use a dashed border; Flutter has no dashed `Borde
 | Widget | Contents |
 | --- | --- |
 | `UiTypeBadge(type:, size:)` | Pastel rounded sticker with the type icon. Ids `weight study trip couple workout custom`; `UiTypeBadge.idFor('Giảm cân')` maps the V2 labels |
-| `UiStreakHero(streak:, title:, subtitle:, onTap:, state:)` | Hub hero: big Space Grotesk streak number (FittedBox, safe at 1.35x) + flame (trophy at `milestone`); states `normal done milestone group` |
-| `UiJourneyCard(title:, type:, day:, totalDays:, streak:, todayDone:, members:, onTap:, onSnap:)` | Type badge, `Ngày N/M` + streak chips, progress bar, 3 avatars + `+N`, 48dp snap button until done today |
+| `UiStreakHero(streak:, title:, semanticLabel:, subtitle:, onTap:, state:)` | Hub hero: big Space Grotesk streak number (FittedBox, safe at 1.35x) + flame (trophy at `milestone`); states `normal done milestone group` |
+| `UiJourneyCard(title:, type:, snapLabel:, dayLabel:, streakLabel:, day:, totalDays:, streak:, todayDone:, members:, onTap:, onSnap:)` | Type badge, `Ngày N/M` + streak chips, progress bar, 3 avatars + `+N`, 48dp snap button until done today |
 | `UiStateCard(kind:, title:, body:, actionLabel:, onAction:)` | Kinds `empty offline error loading` (plus / cloud-off / warning icons, `UiSkeleton` for loading) |
 
 New drawn icons in `ourney_icons.dart`: type-weight/study/trip/couple/workout/custom, flame, trophy, lock, check, warning, wifi-off, cloud-off, clock, timer, image, plus, back, close, settings, share, switch-camera, lightning, calendar, heart, star.

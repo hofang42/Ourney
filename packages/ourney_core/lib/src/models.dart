@@ -271,6 +271,19 @@ class Journey {
   LocalDate? get endDate =>
       durationDays == null ? null : startDate.addDays(durationDays! - 1);
 
+  /// True when this journey is still `active` on the server but its fixed
+  /// window is over on [today] (the day after [endDate] or later): nothing
+  /// accepts a check-in any more and nothing has moved it to `ended` yet.
+  bool isPastEndOn(LocalDate today) {
+    final end = endDate;
+    return status == JourneyStatus.active && end != null && today.isAfter(end);
+  }
+
+  /// This journey as it really is on [today]: an expired `active` journey is
+  /// reported as `ended` (it is on the server too once its owner opens it).
+  Journey settledOn(LocalDate today) =>
+      isPastEndOn(today) ? copyWith(status: JourneyStatus.ended) : this;
+
   /// Copy with the edit-screen fields and status replaced (null = keep).
   Journey copyWith({
     String? title,
@@ -396,9 +409,13 @@ const Map<String, int> _dnaTextMax = {
   'reason': 80,
 };
 
+/// Clips to [_dnaTextMax] code points (Postgres `char_length`), never inside
+/// a UTF-16 surrogate pair: a lone surrogate is invalid JSON for `jsonb`.
 String _clipDna(String key, String v) {
   final max = _dnaTextMax[key];
-  return max != null && v.length > max ? v.substring(0, max) : v;
+  if (max == null) return v;
+  final runes = v.runes;
+  return runes.length > max ? String.fromCharCodes(runes.take(max)) : v;
 }
 
 /// Partial edit sent to `update_journey` (null = unchanged; [clear] resets
@@ -566,6 +583,7 @@ class MemberToday {
     this.username,
     this.avatarPath,
     this.todayCheckIn,
+    this.checkedInHidden = false,
     this.currentStreak = 0,
   });
 
@@ -576,8 +594,12 @@ class MemberToday {
   final MemberRole role;
   final CheckIn? todayCheckIn;
 
+  /// Checked in today, but the photo is hidden from the caller (they
+  /// reported it, rule L7): [todayCheckIn] is null yet the day counts.
+  final bool checkedInHidden;
+
   /// Server-computed (`journey_streak`, counts from the member's join date).
   final int currentStreak;
 
-  bool get checkedIn => todayCheckIn != null;
+  bool get checkedIn => todayCheckIn != null || checkedInHidden;
 }

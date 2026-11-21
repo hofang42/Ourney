@@ -22,6 +22,10 @@ abstract final class UiFlowColors {
 
   /// Ink used on top of the pastel fills (`#1a1a1a`), also in dark mode.
   static const onPastel = Color(0xFF1A1A1A);
+
+  /// White sticker paper that sits on the pastel fills, also in dark mode
+  /// (it always carries [onPastel] ink).
+  static const paper = Color(0xFFFFFFFF);
 }
 
 /// The six journey goals of the quiz and the splash stickers.

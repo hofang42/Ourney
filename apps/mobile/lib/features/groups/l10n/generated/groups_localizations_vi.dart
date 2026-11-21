@@ -89,11 +89,15 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_errorEnded => 'Hành trình này đã kết thúc.';
 
   @override
+  String get groups_errorSyncPending =>
+      'Ảnh vẫn đang tải lên, thử lại sau ít phút.';
+
+  @override
   String get groups_errorForbidden => 'Bạn không có quyền làm việc này.';
 
   @override
   String get groups_errorNotAlone =>
-      'Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xoá.';
+      'Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xóa.';
 
   @override
   String get groups_errorInvalid => 'Không thể thực hiện thao tác này.';
@@ -185,14 +189,14 @@ class GroupsL10nVi extends GroupsL10n {
       'Sau đó không ai check-in được nữa. Ảnh và streak vẫn còn để mọi người xem lại.';
 
   @override
-  String get groups_actionDelete => 'Xoá hành trình';
+  String get groups_actionDelete => 'Xóa hành trình';
 
   @override
-  String get groups_deleteTitle => 'Xoá hành trình nhóm này?';
+  String get groups_deleteTitle => 'Xóa hành trình nhóm này?';
 
   @override
   String get groups_deleteMessage =>
-      'Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xoá vĩnh viễn.';
+      'Bạn là thành viên duy nhất. Hành trình và ảnh của bạn sẽ bị xóa vĩnh viễn.';
 
   @override
   String get groups_actionLeave => 'Rời nhóm';
@@ -216,11 +220,11 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_leftDone => 'Bạn đã rời nhóm.';
 
   @override
-  String get groups_actionRemove => 'Xoá khỏi nhóm';
+  String get groups_actionRemove => 'Xóa khỏi nhóm';
 
   @override
   String groups_removeTitle(String name) {
-    return 'Xoá $name khỏi nhóm?';
+    return 'Xóa $name khỏi nhóm?';
   }
 
   @override
@@ -229,7 +233,7 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String groups_removedDone(String name) {
-    return 'Đã xoá $name khỏi nhóm.';
+    return 'Đã xóa $name khỏi nhóm.';
   }
 
   @override
@@ -449,11 +453,6 @@ class GroupsL10nVi extends GroupsL10n {
       'Nhập mã mời để vào nhóm hoặc tạo hành trình nhóm.';
 
   @override
-  String groups_wallAttendance(int done, int total) {
-    return '$done/$total ĐÃ ĐIỂM DANH';
-  }
-
-  @override
   String groups_wallUpdated(String time) {
     return 'Cập nhật lúc $time';
   }
@@ -515,6 +514,11 @@ class GroupsL10nVi extends GroupsL10n {
   }
 
   @override
+  String groups_coupleCheckedIn(String name) {
+    return '$name · đã check-in';
+  }
+
+  @override
   String groups_coupleWaiting(String name) {
     return '$name · đang chờ';
   }
@@ -539,4 +543,21 @@ class GroupsL10nVi extends GroupsL10n {
 
   @override
   String get groups_minimalPending => 'CHƯA';
+
+  @override
+  String get groups_inviteRevokeTitle => 'Thu hồi lời mời?';
+
+  @override
+  String get groups_inviteRevokeMessage =>
+      'Người được mời sẽ không thể dùng lời mời này nữa.';
+
+  @override
+  String groups_flexerKm(String km) {
+    return '$km KM';
+  }
+
+  @override
+  String groups_flexerKmPace(String km, String pace) {
+    return '$km KM · $pace /KM';
+  }
 }

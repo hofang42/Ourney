@@ -206,6 +206,12 @@ abstract class ShareCardL10n {
   /// **'Chưa có ảnh check-in. Thẻ sẽ dùng hình trang trí.'**
   String get share_card_photoNone;
 
+  /// Shown on the share card when the hidden-photo flags could not be loaded; sharing stays enabled and the card falls back to the illustration (no photo).
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa kiểm tra được ảnh nào đang bị ẩn khỏi chia sẻ nên thẻ tạm thời chưa có ảnh. Bạn vẫn có thể chia sẻ thẻ với hình trang trí hoặc thử lại.'**
+  String get share_card_stateError;
+
   /// Accessibility label of a photo thumbnail in the picker.
   ///
   /// In vi, this message translates to:
@@ -218,11 +224,17 @@ abstract class ShareCardL10n {
   /// **'Làm mờ ảnh'**
   String get share_card_blurPhoto;
 
-  /// Subtitle of the blur switch when privacy settings turned it on.
+  /// Subtitle of the blur switch when privacy settings (journey, membership or Settings) turned it on.
   ///
   /// In vi, this message translates to:
-  /// **'Bật sẵn theo cài đặt riêng tư của hành trình'**
+  /// **'Bật sẵn theo cài đặt riêng tư của bạn'**
   String get share_card_blurPhotoHint;
+
+  /// Subtitle of the locked blur switch on the quiet card, which always blurs its portrait.
+  ///
+  /// In vi, this message translates to:
+  /// **'Luôn bật với kiểu thẻ này'**
+  String get share_card_blurPhotoLocked;
 
   /// Note shown when the metric (e.g. kg) is hidden on the card (FR-B7).
   ///
@@ -277,6 +289,12 @@ abstract class ShareCardL10n {
   /// In vi, this message translates to:
   /// **'Ai có link đều xem được hành trình này (chỉ xem). Bạn thu hồi được bất cứ lúc nào.'**
   String get share_card_linkDescription;
+
+  /// Public link card on a running journey: the link cannot be created yet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Link công khai sẽ mở khi hành trình này kết thúc.'**
+  String get share_card_linkNotYet;
 
   /// Shown while the public link is enabled.
   ///

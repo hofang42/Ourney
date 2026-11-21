@@ -189,13 +189,17 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_errorNotAlone =>
-      'Nhóm vẫn còn thành viên khác nên chưa xoá được. Bạn có thể kết thúc hành trình.';
+      'Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.';
 
   @override
   String get journeys_errorForbidden => 'Chỉ chủ hành trình làm được việc này.';
 
   @override
   String get journeys_errorEnded => 'Hành trình này đã kết thúc.';
+
+  @override
+  String get journeys_errorSyncPending =>
+      'Ảnh vẫn đang tải lên, thử lại sau ít phút.';
 
   @override
   String get journeys_errorNotFound => 'Không tìm thấy hành trình.';
@@ -240,14 +244,33 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_archive => 'Lưu trữ';
 
   @override
-  String get journeys_delete => 'Xoá hành trình';
+  String get journeys_archiveConfirmTitle => 'Lưu trữ hành trình?';
 
   @override
-  String get journeys_deleteConfirmTitle => 'Xoá hành trình?';
+  String get journeys_archiveConfirmMessage =>
+      'Hành trình sẽ được ẩn khỏi danh sách. Bạn có thể hoàn tác ngay sau khi lưu trữ.';
+
+  @override
+  String get journeys_archived => 'Đã lưu trữ hành trình';
+
+  @override
+  String get journeys_archiveUndo => 'Hoàn tác';
+
+  @override
+  String get journeys_archivedSection => 'Đã lưu trữ';
+
+  @override
+  String get journeys_unarchive => 'Bỏ lưu trữ';
+
+  @override
+  String get journeys_delete => 'Xóa hành trình';
+
+  @override
+  String get journeys_deleteConfirmTitle => 'Xóa hành trình?';
 
   @override
   String get journeys_deleteConfirmMessage =>
-      'Mọi ảnh của bạn trong hành trình này sẽ bị xoá. Không hoàn tác được.';
+      'Mọi ảnh của bạn trong hành trình này sẽ bị xóa. Không hoàn tác được.';
 
   @override
   String get journeys_readOnlyBanner => 'Hành trình đã kết thúc. Chỉ xem.';
@@ -303,6 +326,16 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_noCheckIn => 'Chưa có ảnh cho ngày này';
+
+  @override
+  String journeys_dayPhotoCount(int index, int count) {
+    return '$index/$count';
+  }
+
+  @override
+  String journeys_dayPhotoCountSemantics(int index, int count) {
+    return 'Ảnh $index trên $count của ngày này. Vuốt để xem ảnh khác.';
+  }
 
   @override
   String get journeys_greetingMorning => 'Chào buổi sáng';
@@ -1044,6 +1077,16 @@ class JourneysL10nVi extends JourneysL10n {
   }
 
   @override
+  String journeys_dna_dates_min_note(int days) {
+    return 'Hành trình dài ít nhất $days ngày nên ngày về đã được lùi lại.';
+  }
+
+  @override
+  String journeys_dna_dates_max_note(int days) {
+    return 'Hành trình dài tối đa $days ngày nên ngày về đã được kéo gần lại.';
+  }
+
+  @override
   String get journeys_dna_prev_month => 'Tháng trước';
 
   @override
@@ -1214,7 +1257,20 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_edit_useLayout => 'Dùng giao diện này';
 
   @override
-  String get journeys_edit_cancel => 'Thôi';
+  String get journeys_edit_cancel => 'Hủy';
+
+  @override
+  String get journeys_edit_discardTitle => 'Bỏ các thay đổi?';
+
+  @override
+  String get journeys_edit_discardBody =>
+      'Bạn đã sửa hành trình nhưng chưa lưu. Rời đi bây giờ sẽ mất các thay đổi đó.';
+
+  @override
+  String get journeys_edit_discardConfirm => 'Bỏ thay đổi';
+
+  @override
+  String get journeys_edit_discardKeep => 'Sửa tiếp';
 
   @override
   String get journeys_edit_layoutApplied => 'Đã đổi giao diện cho hành trình.';
@@ -1225,6 +1281,78 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_edit_color => 'Màu';
+
+  @override
+  String get journeys_edit_skinShort_quiet => 'Lặng lẽ';
+
+  @override
+  String get journeys_edit_skinColor_quiet_0 => 'Lục ngọc';
+
+  @override
+  String get journeys_edit_skinColor_quiet_1 => 'Xanh sage';
+
+  @override
+  String get journeys_edit_skinColor_quiet_2 => 'Sương mù';
+
+  @override
+  String get journeys_edit_skinShort_squad => 'Đội';
+
+  @override
+  String get journeys_edit_skinColor_squad_0 => 'Lửa';
+
+  @override
+  String get journeys_edit_skinColor_squad_1 => 'Tím';
+
+  @override
+  String get journeys_edit_skinColor_squad_2 => 'Phấn';
+
+  @override
+  String get journeys_edit_skinShort_memory => 'Ký ức';
+
+  @override
+  String get journeys_edit_skinColor_memory_0 => 'Sương thông';
+
+  @override
+  String get journeys_edit_skinColor_memory_1 => 'Biển muối';
+
+  @override
+  String get journeys_edit_skinColor_memory_2 => 'Phố đêm';
+
+  @override
+  String get journeys_edit_skinShort_couple => 'Đôi';
+
+  @override
+  String get journeys_edit_skinColor_couple_0 => 'Hồng';
+
+  @override
+  String get journeys_edit_skinColor_couple_1 => 'Mâm xôi';
+
+  @override
+  String get journeys_edit_skinColor_couple_2 => 'Đào';
+
+  @override
+  String get journeys_edit_skinShort_flexer => 'Khoe thẩm mỹ';
+
+  @override
+  String get journeys_edit_skinColor_flexer_0 => 'Lime neon';
+
+  @override
+  String get journeys_edit_skinColor_flexer_1 => 'San hô điện';
+
+  @override
+  String get journeys_edit_skinColor_flexer_2 => 'Băng';
+
+  @override
+  String get journeys_edit_skinShort_minimal => 'Tối giản';
+
+  @override
+  String get journeys_edit_skinColor_minimal_0 => 'Cam';
+
+  @override
+  String get journeys_edit_skinColor_minimal_1 => 'Than';
+
+  @override
+  String get journeys_edit_skinColor_minimal_2 => 'Trời';
 
   @override
   String get journeys_edit_trophy => 'Tên chiếc cúp';
@@ -1432,7 +1560,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_wrapped_share => 'Chia sẻ';
 
   @override
-  String get journeys_wrapped_save => 'Lưu ảnh';
+  String get journeys_wrapped_editCard => 'Chỉnh thẻ';
 
   @override
   String get journeys_wrapped_sheetTitle => 'chia sẻ tấm thiệp.';
@@ -1540,7 +1668,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_addMoreTag => 'Thêm ảnh';
 
   @override
-  String get journeys_hubTitle => 'hành trình.';
+  String get journeys_hubTitle => 'Ourney';
 
   @override
   String journeys_hubGreeting(String name) {
@@ -1624,4 +1752,33 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Chọn kiểu này';
+
+  @override
+  String journeys_cardStreak(int days) {
+    return 'Chuỗi $days ngày';
+  }
+
+  @override
+  String journeys_heroSemantics(int streak, String title) {
+    return 'Chuỗi $streak ngày. $title';
+  }
+
+  @override
+  String journeys_deadUploads(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ảnh chưa gửi được',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_deadRetry => 'Gửi lại';
+
+  @override
+  String get journeys_deadDiscard => 'Bỏ ảnh';
+
+  @override
+  String get journeys_createSettingsNotSaved => 'Một vài cài đặt chưa lưu được';
 }

@@ -79,6 +79,9 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('invite-revoke-i1')));
       await tester.pumpAndSettle();
+      expect(admin.calls, isEmpty, reason: 'revoke asks first');
+      await tester.tap(find.byKey(const ValueKey('groups-confirm')));
+      await tester.pumpAndSettle();
       expect(admin.calls, ['revoke:i1']);
       expect(
         find.byKey(const ValueKey('invite-pending-empty')),

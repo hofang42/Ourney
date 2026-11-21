@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show Provider;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -14,6 +15,7 @@ import '../features/profile/profile_providers.dart'
     show accountInsightsRepositoryProvider;
 import 'data_layer.dart';
 import 'db/app_database.dart';
+import 'dead_uploads.dart';
 import 'remote/remote_api.dart';
 import 'remote/supabase_remote_api.dart';
 import 'repositories/account_insights_repository.dart';
@@ -104,6 +106,16 @@ DataLayer dataLayer(Ref ref) {
 @riverpod
 Future<String> mediaFile(Ref ref, String storagePath) =>
     ref.watch(mediaStoreProvider).localFileFor(storagePath);
+
+/// Dead check-in uploads (Retry / Discard); null in local-only mode or when
+/// the data layer is not wired (tests).
+final deadUploadsProvider = Provider<DeadUploads?>((ref) {
+  try {
+    return ref.watch(dataLayerProvider).deadUploads;
+  } on Object {
+    return null;
+  }
+});
 
 /// The social repository of [layer] chosen by [pick], or the same
 /// "not wired" [UnimplementedError] as the placeholder providers when the

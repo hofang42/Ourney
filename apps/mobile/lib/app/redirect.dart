@@ -87,7 +87,7 @@ String? resolveRedirect({
         pathHasPrefix(path, AppRoutes.auth);
     final target = leavingGate
         ? (safeFrom(uri) ?? AppRoutes.capture)
-        : uri.toString();
+        : _inAppTarget(uri);
     if (target == AppRoutes.capture) return kEulaAcceptPath;
     return Uri(
       path: kEulaAcceptPath,
@@ -118,8 +118,17 @@ String? safeFrom(Uri uri) {
   return from;
 }
 
+/// The in-app part (`path?query`) of [uri]. A universal link such as
+/// `https://ourney.tech/f/<token>` reaches the router with scheme and host;
+/// keeping them in `?from=` would make [safeFrom] reject the target later.
+String _inAppTarget(Uri uri) {
+  if (!uri.hasScheme && !uri.hasAuthority) return uri.toString();
+  final path = uri.path.isEmpty ? '/' : uri.path;
+  return uri.hasQuery ? '$path?${uri.query}' : path;
+}
+
 String _withFrom(String gate, Uri original) {
-  final target = original.toString();
+  final target = _inAppTarget(original);
   if (target == AppRoutes.capture) return gate;
   return Uri(
     path: gate,

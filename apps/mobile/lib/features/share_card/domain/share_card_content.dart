@@ -63,7 +63,9 @@ enum ShareCardHeadline { streak, checkedIn, finished, day }
 /// Everything drawn on the card, derived from the journey, the caller's
 /// membership and their check-ins. Big number, milestone and the default
 /// photo blur come from `buildShareCard` (packages/ourney_core); the
-/// membership's `blurMedia` / `hideMetric` (FR-B7) are applied on top.
+/// membership's `blurMedia` / `hideMetric` (FR-B7) and the global Settings
+/// switches ([hideMetricOnShare] / [blurPhotosOnShare] of [ShareCardContent.from])
+/// are applied on top.
 class ShareCardContent {
   const ShareCardContent({
     required this.title,
@@ -91,6 +93,9 @@ class ShareCardContent {
     required int dayNumber,
     required Iterable<CheckIn> checkIns,
     ShareCardNumber number = ShareCardNumber.streak,
+    bool forceHideMetric = false,
+    bool hideMetricOnShare = false,
+    bool blurPhotosOnShare = false,
   }) {
     final core = buildShareCard(journey, streak);
     final ShareCardHeadline headline;
@@ -107,7 +112,10 @@ class ShareCardContent {
           : ShareCardHeadline.checkedIn;
     }
 
-    final hideMetric = metricHiddenFor(journey, membership);
+    final hideMetric =
+        forceHideMetric ||
+        (hideMetricOnShare && isWeightMetric(journey)) ||
+        metricHiddenFor(journey, membership);
     final hasMetric = journey.metricName != null || journey.metricUnit != null;
     double? metric;
     if (!hideMetric && hasMetric) {
@@ -142,7 +150,10 @@ class ShareCardContent {
       number: value,
       totalDays: journey.durationDays,
       milestone: core.milestone,
-      blurPhoto: core.blurPhoto || (membership?.blurMedia ?? false),
+      blurPhoto:
+          core.blurPhoto ||
+          blurPhotosOnShare ||
+          (membership?.blurMedia ?? false),
       metricHidden: hideMetric && hasMetric,
       metricValue: metric,
       metricUnit: metric == null ? null : journey.metricUnit,
@@ -164,7 +175,8 @@ class ShareCardContent {
   final Milestone? milestone;
 
   /// Default for the blur switch: on when the journey (weight-loss default,
-  /// `hideMetricDefault`) or the caller's membership (`blurMedia`) asks.
+  /// `hideMetricDefault`), the caller's membership (`blurMedia`) or the
+  /// global "Blur photos when sharing" setting asks.
   final bool blurPhoto;
 
   /// True when the journey tracks a metric that must not appear on the card.
@@ -194,6 +206,17 @@ class ShareCardContent {
 /// Bars on the flexer card (`FlexerShare` draws 21).
 const int shareCardActivityDays = 21;
 
+/// True for journeys that track body weight (kg): the Settings switch "hide
+/// kg when sharing" applies to these only, never to minutes or km (C-B1).
+bool isWeightMetric(Journey journey) {
+  final unit = (journey.metricUnit ?? '').trim().toLowerCase();
+  final name = (journey.metricName ?? '').toLowerCase();
+  return journey.templateId == TemplateId.weightLoss ||
+      unit == 'kg' ||
+      name.contains('weight') ||
+      name.contains('cân nặng');
+}
+
 /// FR-B7: weight-loss journeys never show kg outside the app; other
 /// journeys follow `hideMetricDefault` and the caller's `hideMetric`.
 bool metricHiddenFor(Journey journey, Membership? membership) =>
@@ -201,8 +224,17 @@ bool metricHiddenFor(Journey journey, Membership? membership) =>
     journey.hideMetricDefault ||
     (membership?.hideMetric ?? false);
 
+/// S9: a public link can only be turned on for a finished (ended or
+/// archived) or retold (imported) journey.
+bool publicLinkEligible(Journey journey) =>
+    journey.status != JourneyStatus.active ||
+    journey.origin == JourneyOrigin.imported;
+
 /// FR-E3: only the owner of a solo journey, with a backend, gets a public
-/// read-only link. Group journeys never have one.
+/// read-only link. Group journeys never have one. S9 (`set_public_link`):
+/// a link can only be turned on once the journey is finished (ended or
+/// archived) or retold (imported); a running journey that still has a link
+/// keeps the section so the owner can revoke it.
 bool canHavePublicLink({
   required Journey journey,
   required Membership? membership,
@@ -211,7 +243,9 @@ bool canHavePublicLink({
 }) {
   if (!hasBackend) return false;
   if (journey.kind != JourneyKind.solo) return false;
-  if (journey.status == JourneyStatus.archived) return false;
+  if (!publicLinkEligible(journey) && activePublicToken(journey) == null) {
+    return false;
+  }
   final m = membership;
   if (m != null) return m.role == MemberRole.owner && m.isActive;
   return currentUserId != null && journey.ownerId == currentUserId;

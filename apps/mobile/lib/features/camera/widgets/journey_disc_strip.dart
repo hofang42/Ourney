@@ -9,6 +9,9 @@ import '../l10n/generated/camera_localizations.dart';
 /// the "All (N)" disc (SDS §8.8: 5 discs = 4 journeys + All).
 const int kCameraQuickDiscs = 4;
 
+/// Width of one disc slot (also its tap target).
+const double kCameraDiscSlot = 48;
+
 /// The journeys shown as discs: every journey when they fit, else pinned
 /// first, then not shot today, then shot today (SDS §8.8), and the selected
 /// one always stays visible. Order is stable inside each group.
@@ -17,8 +20,12 @@ List<Journey> quickCameraJourneys(
   required String? selectedId,
   Set<String> pinnedIds = const {},
   Set<String> shotTodayIds = const {},
+  int maxDiscs = kCameraQuickDiscs + 1,
 }) {
-  if (all.length <= kCameraQuickDiscs + 1) return all;
+  // [maxDiscs] slots: every journey when they fit, else maxDiscs - 1 plus
+  // the "All (N)" disc (narrow phones have fewer slots).
+  final quickCount = maxDiscs - 1;
+  if (all.length <= maxDiscs) return all;
   int rank(Journey j) => pinnedIds.contains(j.id)
       ? 0
       : shotTodayIds.contains(j.id)
@@ -29,101 +36,12 @@ List<Journey> quickCameraJourneys(
       final r = rank(a.$2).compareTo(rank(b.$2));
       return r != 0 ? r : a.$1.compareTo(b.$1);
     });
-  final quick = [for (final e in indexed.take(kCameraQuickDiscs)) e.$2];
+  final quick = [for (final e in indexed.take(quickCount)) e.$2];
   final selected = all.where((j) => j.id == selectedId).firstOrNull;
   if (selected != null && !quick.contains(selected)) {
     quick[quick.length - 1] = selected;
   }
   return quick;
-}
-
-/// One title block above the disc strip for the selected journey (bugs.md
-/// A1): the full name on up to two lines, never cut with "...", and one calm
-/// status line. Cross-fades when the journey changes.
-class JourneyTitleBlock extends StatelessWidget {
-  const JourneyTitleBlock({
-    required this.journey,
-    required this.dayNumber,
-    required this.totalDays,
-    required this.photosToday,
-    super.key,
-  });
-
-  final Journey journey;
-  final int dayNumber;
-  final int? totalDays;
-  final int photosToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = CameraL10n.of(context);
-    final day = totalDays == null
-        ? l10n.camera_dayHud(dayNumber)
-        : l10n.camera_dayOfTotal(dayNumber, totalDays!);
-    final status = photosToday == 0
-        ? l10n.camera_notShotToday
-        : l10n.camera_shotTodayCount(photosToday);
-    return AnimatedSwitcher(
-      duration: UiMotion.of(context, const Duration(milliseconds: 120)),
-      child: Semantics(
-        key: ValueKey('capture-title-${journey.id}'),
-        container: true,
-        liveRegion: true,
-        child: Column(
-          key: const ValueKey('capture-title'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            LayoutBuilder(
-              builder: (context, box) {
-                final fits16 = _fitsTwoLines(context, journey.title, box);
-                // Never cut: a name too long for two lines at 16px drops to
-                // 14px and keeps every word (titles are short in practice).
-                return Text(
-                  journey.title,
-                  textAlign: TextAlign.center,
-                  maxLines: fits16 ? 2 : null,
-                  style: _titleStyle(fits16 ? 16 : 14),
-                );
-              },
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '$day · $status',
-              key: const ValueKey('capture-title-status'),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: UiText.body(size: 13, height: 1.35, color: UiCamera.muted),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static TextStyle _titleStyle(double size) => UiText.body(
-    size: size,
-    weight: FontWeight.w700,
-    height: 1.3,
-    color: UiCamera.ink,
-  );
-
-  /// Whether [text] fits two lines at 16px in [box].
-  static bool _fitsTwoLines(
-    BuildContext context,
-    String text,
-    BoxConstraints box,
-  ) {
-    if (!box.maxWidth.isFinite) return true;
-    final painter = TextPainter(
-      text: TextSpan(text: text, style: _titleStyle(16)),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-      maxLines: 2,
-    )..layout(maxWidth: box.maxWidth);
-    final fits = !painter.didExceedMaxLines;
-    painter.dispose();
-    return fits;
-  }
 }
 
 /// Image-only journey discs (bugs.md A1, SDS §8.8): no text under a disc;
@@ -222,17 +140,17 @@ class _Disc extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ring = accent ?? UiCamera.outline;
-    final size = selected ? 56.0 : 48.0;
+    final size = selected ? 48.0 : 42.0;
     return UiPressable(
       onPressed: onTap,
       selected: selected,
       semanticLabel: semanticLabel,
       excludeChildSemantics: true,
       centerChild: true,
-      minSize: const Size(60, 64),
+      minSize: const Size(kCameraDiscSlot, 56),
       child: SizedBox(
-        width: 60,
-        height: 64,
+        width: kCameraDiscSlot,
+        height: 56,
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -255,14 +173,14 @@ class _Disc extends StatelessWidget {
             ),
             if (pinned)
               const Positioned(
-                left: 2,
-                top: 4,
+                left: 0,
+                top: 0,
                 child: _Badge(glyph: 'star', key: ValueKey('disc-pinned')),
               ),
             if (shot)
               const Positioned(
-                right: 2,
-                bottom: 4,
+                right: 0,
+                bottom: 0,
                 child: _Badge(glyph: 'check', key: ValueKey('disc-shot')),
               ),
           ],

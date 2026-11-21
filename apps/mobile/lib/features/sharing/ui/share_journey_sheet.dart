@@ -9,6 +9,9 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../ui/ui.dart';
+import '../../safety/data/safety_providers.dart';
+import '../../share_card/domain/share_card_content.dart'
+    show publicLinkEligible;
 import '../data/sharing_providers.dart';
 import '../l10n/generated/sharing_localizations.dart';
 import '../sharing_paths.dart';
@@ -250,7 +253,10 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     final stateAsync = ref.watch(shareStateProvider(_journey.id));
     final friendsAsync = ref.watch(acceptedFriendsProvider);
     final state = stateAsync.value;
-    final friends = friendsAsync.value;
+    final blocked = ref.watch(blockedUserIdsProvider).value ?? const <String>{};
+    final friends = friendsAsync.value
+        ?.where((f) => !blocked.contains(f.userId))
+        .toList();
     if (state == null || friends == null) {
       final error = stateAsync.error ?? friendsAsync.error;
       if (error != null) {
@@ -350,7 +356,9 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           onPublic: _setPublic,
           onInsights: () => _open(SharingPaths.insights(_journey.id)),
         ),
-        if (state.viewers.isNotEmpty || state.linkOn) ...[
+        // A member's "stop" only revokes their own grants; the link is the
+        // owner's (unshare(all: true)).
+        if (state.viewers.isNotEmpty || (owner && state.linkOn)) ...[
           const SizedBox(height: UiSpace.md),
           UiTextAction(
             key: const ValueKey('share-stop'),
@@ -610,22 +618,28 @@ class _FriendsBlock extends StatelessWidget {
             if (friends.isNotEmpty)
               Flexible(
                 flex: 2,
+                // Each action keeps its own width so both sit on one line
+                // (a text action otherwise fills the whole column).
                 child: Wrap(
                   alignment: WrapAlignment.end,
                   children: [
-                    UiTextAction(
-                      key: const ValueKey('share-select-all'),
-                      label: l10n.sharing_selectAll,
-                      size: 12,
-                      color: ui.inkMuted,
-                      onPressed: onSelectAll,
+                    IntrinsicWidth(
+                      child: UiTextAction(
+                        key: const ValueKey('share-select-all'),
+                        label: l10n.sharing_selectAll,
+                        size: 12,
+                        color: ui.inkMuted,
+                        onPressed: onSelectAll,
+                      ),
                     ),
-                    UiTextAction(
-                      key: const ValueKey('share-clear'),
-                      label: l10n.sharing_clear,
-                      size: 12,
-                      color: ui.inkMuted,
-                      onPressed: onClear,
+                    IntrinsicWidth(
+                      child: UiTextAction(
+                        key: const ValueKey('share-clear'),
+                        label: l10n.sharing_clear,
+                        size: 12,
+                        color: ui.inkMuted,
+                        onPressed: onClear,
+                      ),
                     ),
                   ],
                 ),
@@ -652,10 +666,28 @@ class _FriendsBlock extends StatelessWidget {
                 prefixIcon: OurneyIcon(name: 'search', flat: true),
                 hintText: l10n.sharing_searchFriends,
                 filled: true,
-                fillColor: ui.surfaceInput,
+                fillColor: ui.fill,
+                // Single-line search: a pill.
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(UiRadius.input),
-                  borderSide: BorderSide(color: ui.inputBorder),
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  borderSide: BorderSide(
+                    color: ui.border,
+                    width: UiBorder.thin,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  borderSide: BorderSide(
+                    color: ui.border,
+                    width: UiBorder.thin,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  borderSide: BorderSide(
+                    color: ui.accent,
+                    width: UiBorder.standard,
+                  ),
                 ),
               ),
             ),
@@ -782,8 +814,9 @@ class _LinkBlock extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SharingL10n.of(context);
     final ui = context.ui;
-    // S9: only ended / archived (retold journeys are created ended).
-    final eligible = journey.status != JourneyStatus.active;
+    // S9: ended / archived or retold; same rule as `canHavePublicLink`. A
+    // running journey that still has a link keeps its controls to revoke it.
+    final eligible = publicLinkEligible(journey) || state.linkOn;
 
     Widget locked(String title, String sub) => Opacity(
       opacity: 0.7,
@@ -815,12 +848,22 @@ class _LinkBlock extends ConsumerWidget {
         UiSwitchRow(
           key: const ValueKey('share-link-switch'),
           label: l10n.sharing_linkOn,
-          subtitle: state.linkOn
-              ? (linkUri?.toString() ?? l10n.sharing_linkOn)
-              : l10n.sharing_linkOff,
+          subtitle: state.linkOn ? null : l10n.sharing_linkOff,
           value: state.linkOn,
           onChanged: under18 || busy ? null : onLink,
         ),
+        // The raw server URL is long: one line, the full link is copied.
+        if (state.linkOn && linkUri != null)
+          Padding(
+            padding: const EdgeInsets.only(top: UiSpace.sm),
+            child: Text(
+              linkUri!.toString(),
+              key: const ValueKey('share-link-url'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+            ),
+          ),
         if (under18)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),

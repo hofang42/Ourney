@@ -9,6 +9,7 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../groups/data/groups_providers.dart';
 import '../../groups/groups_paths.dart';
+import '../../safety/data/safety_providers.dart';
 import '../../safety/ui/block_dialogs.dart';
 import '../../safety/ui/report_form.dart';
 import '../data/social_providers.dart';
@@ -85,7 +86,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ..invalidate(pendingConsentsProvider)
       ..invalidate(groupInvitationsProvider)
       ..invalidate(conversationsProvider)
-      ..invalidate(inboxCountsProvider);
+      ..invalidate(rawInboxCountsProvider);
   }
 
   @override
@@ -186,7 +187,12 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       );
     }
 
-    final friendships = friendsAsync.value ?? const <Friendship>[];
+    // Someone just blocked disappears at once, before the next sync (C-B3).
+    final blocked = ref.watch(blockedUserIdsProvider).value ?? const {};
+    final friendships = [
+      for (final f in friendsAsync.value ?? const <Friendship>[])
+        if (!blocked.contains(f.person.userId)) f,
+    ];
     final requests = [
       for (final f in friendships)
         if (f.isIncomingRequest && f.source == FriendSource.direct) f,
@@ -197,13 +203,20 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     ];
     final consents = [
       for (final s in consentsAsync.value ?? const <ShareConsent>[])
+        // A blocked requester arrives anonymised, so it needs no client check.
         if (s.status == ShareConsentStatus.pending) s,
     ];
     // Group invitations are optional: a failing or unwired lookup shows none.
-    final groupInvites =
-        ref.watch(groupInvitationsProvider).asData?.value ??
-        const <GroupInvitation>[];
-    final conversations = convAsync.value ?? const <Conversation>[];
+    final groupInvites = [
+      for (final inv
+          in ref.watch(groupInvitationsProvider).asData?.value ??
+              const <GroupInvitation>[])
+        if (!blocked.contains(inv.inviter.userId)) inv,
+    ];
+    final conversations = [
+      for (final c in convAsync.value ?? const <Conversation>[])
+        if (!blocked.contains(c.other.userId)) c,
+    ];
     final newShares = countsAsync.value?.newShares ?? 0;
 
     final showInvites = _filter != InboxFilter.replies;
@@ -452,10 +465,13 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     return _ActivityCard(
       key: ValueKey('inbox-consent-${s.journeyId}'),
       badge: const _Badge('share', UiTypePastel.workout),
-      title: l10n.social_consentRequest(
-        displayNameOf(s.requestedBy),
-        s.journeyTitle,
-      ),
+      title: switch (s.requestedBy) {
+        final by? => l10n.social_consentRequest(
+          displayNameOf(by),
+          s.journeyTitle,
+        ),
+        null => l10n.social_consentRequestFormer(s.journeyTitle),
+      },
       unread: unread,
       actions: [
         UiButton(

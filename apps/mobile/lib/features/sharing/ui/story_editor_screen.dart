@@ -33,6 +33,13 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   String? _coverId;
   bool _seeded = false;
   bool _saving = false;
+  // Every hide toggle's server work, chained in order; a save waits for the
+  // whole chain so no stale story write can land after it.
+  Future<void> _hideChain = Future<void>.value();
+
+  /// Story as loaded, to tell whether there are unsaved edits (U19).
+  JourneyStory _initial = const JourneyStory();
+  JourneyStory _saved = const JourneyStory();
 
   /// Local mirror of the hidden set (optimistic toggles).
   Set<String>? _hidden;
@@ -52,7 +59,43 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     _intro.text = state.story.intro ?? '';
     _lessons.text = state.story.lessons ?? '';
     _coverId = state.story.coverCheckInId;
+    _saved = state.story;
     _hidden = {...state.hiddenCheckInIds};
+    _initial = _draft;
+  }
+
+  JourneyStory get _draft => JourneyStory(
+    title: _clean(_title.text),
+    intro: _clean(_intro.text),
+    lessons: _clean(_lessons.text),
+    coverCheckInId: _coverId,
+  );
+
+  /// Story fields edited since load and not saved yet.
+  bool get _dirty {
+    if (!_seeded || _saving) return false;
+    final d = _draft;
+    return d.title != _initial.title ||
+        d.intro != _initial.intro ||
+        d.lessons != _initial.lessons ||
+        d.coverCheckInId != _initial.coverCheckInId;
+  }
+
+  /// Back button / gesture: asks before throwing unsaved edits away.
+  Future<void> _back() async {
+    if (_dirty && !await _confirmDiscard()) return;
+    if (mounted) _leave();
+  }
+
+  Future<bool> _confirmDiscard() {
+    final l10n = SharingL10n.of(context);
+    return confirmSharingAction(
+      context,
+      title: l10n.sharing_discardTitle,
+      message: l10n.sharing_discardBody,
+      confirmLabel: l10n.sharing_discard,
+      destructive: true,
+    );
   }
 
   void _leave() {
@@ -72,17 +115,10 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final l10n = SharingL10n.of(context);
     setState(() => _saving = true);
     try {
+      await _hideChain.timeout(const Duration(seconds: 15), onTimeout: () {});
       await ref
           .read(sharingRepositoryProvider)
-          .updateStory(
-            widget.journeyId,
-            JourneyStory(
-              title: _clean(_title.text),
-              intro: _clean(_intro.text),
-              lessons: _clean(_lessons.text),
-              coverCheckInId: _coverId,
-            ),
-          );
+          .updateStory(widget.journeyId, _draft);
       if (!mounted) return;
       showSharingSnack(context, l10n.sharing_storySaved);
       _leave();
@@ -94,13 +130,62 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   }
 
   Future<void> _toggleHidden(CheckIn checkIn) async {
+    // Hide toggles during a save would race its story write.
+    if (_saving) return;
     final hidden = _hidden!;
     final hide = !hidden.contains(checkIn.id);
-    setState(() => _hidden = {...hidden}..let(hide, checkIn.id));
+    final dropsCover = hide && _coverId == checkIn.id;
+    setState(() {
+      _hidden = {...hidden}..let(hide, checkIn.id);
+      // A hidden photo can no longer be the cover (S11).
+      // Not an unsaved edit: the hide itself already dropped it (C-B14).
+      if (hide && _coverId == checkIn.id) {
+        _coverId = null;
+        if (_initial.coverCheckInId == checkIn.id) {
+          _initial = JourneyStory(
+            title: _initial.title,
+            intro: _initial.intro,
+            lessons: _initial.lessons,
+          );
+        }
+      }
+    });
+    // Read before queueing: a queued job must still run (and reach the
+    // server) after this screen closes, when `ref` is no longer usable.
+    final repo = ref.read(sharingRepositoryProvider);
+    final job = _hideChain.then(
+      (_) => _persistHidden(repo, checkIn, hide, dropsCover),
+    );
+    _hideChain = job;
+    await job;
+  }
+
+  /// Server side of a hide toggle. A Save waits for it ([_hideChain]), so
+  /// its stale story write can never land after the user's own save.
+  Future<void> _persistHidden(
+    SharingRepository repo,
+    CheckIn checkIn,
+    bool hide,
+    bool dropsCover,
+  ) async {
     try {
-      await ref
-          .read(sharingRepositoryProvider)
-          .setHiddenInShare(checkIn.id, hidden: hide);
+      await repo.setHiddenInShare(checkIn.id, hidden: hide);
+      // Once a save started its story write already carries the cleared
+      // cover: a late write of the older saved fields could revert it.
+      if (!_saving && dropsCover && _saved.coverCheckInId == checkIn.id) {
+        // The server keeps the cover when a photo is hidden: clear it there
+        // too (saved fields only, unsaved edits stay local) so both agree.
+        _saved = JourneyStory(
+          title: _saved.title,
+          intro: _saved.intro,
+          lessons: _saved.lessons,
+        );
+        try {
+          await repo.updateStory(widget.journeyId, _saved);
+        } on Object {
+          // Best effort: the cover is re-checked on the next story save.
+        }
+      }
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _hidden = {..._hidden!}..let(!hide, checkIn.id));
@@ -155,20 +240,32 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     final app = AppLocalizations.of(context);
     final ui = context.ui;
 
-    Widget page(List<Widget> children, {Color? paper, bool canSave = false}) =>
-        SharingPage(
-          scaffoldKey: const ValueKey('story-editor'),
-          background: paper,
-          onBack: _leave,
-          title: l10n.sharing_storyHeader,
-          trailing: UiTextAction(
-            key: const ValueKey('story-save'),
-            label: app.common_save,
-            color: canSave && !_saving ? ui.ink : ui.inkMuted,
-            onPressed: canSave && !_saving ? _save : null,
-          ),
-          children: children,
-        );
+    Widget page(
+      List<Widget> children, {
+      Color? paper,
+      bool canSave = false,
+      bool showSave = true,
+    }) => PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back();
+      },
+      child: SharingPage(
+        scaffoldKey: const ValueKey('story-editor'),
+        background: paper,
+        onBack: _back,
+        title: l10n.sharing_storyHeader,
+        trailing: showSave
+            ? UiTextAction(
+                key: const ValueKey('story-save'),
+                label: app.common_save,
+                color: canSave && !_saving ? ui.ink : ui.inkMuted,
+                onPressed: canSave && !_saving ? _save : null,
+              )
+            : null,
+        children: children,
+      ),
+    );
 
     if (ref.watch(appConfigProvider).localOnly) {
       return page(const [SharingNeedsServer()]);
@@ -213,39 +310,59 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     ];
     final cover = all.where((ci) => ci.id == _coverId).firstOrNull;
     final hidden = _hidden!;
+    // Only the owner writes the story (`update_journey_story`); members
+    // only choose which of their own photos stay out of every share.
+    final owner = me == null || me == journey.ownerId;
+    void changed(String _) => setState(() {});
 
-    return page(paper: paper, canSave: true, [
+    return page(paper: paper, canSave: _dirty, showSave: owner, [
       const SizedBox(height: UiSpace.lg),
-      UiTextArea(
-        label: l10n.sharing_storyTitleField,
-        fieldKey: const ValueKey('story-title'),
-        controller: _title,
-        maxLength: storyTitleMax,
-      ),
-      const SizedBox(height: UiSpace.md),
-      UiTextArea(
-        label: l10n.sharing_introField,
-        fieldKey: const ValueKey('story-intro'),
-        controller: _intro,
-        hint: l10n.sharing_introHint,
-        maxLength: storyTextMax,
-        minLines: 3,
-      ),
-      const SizedBox(height: UiSpace.md),
-      UiTextArea(
-        label: l10n.sharing_lessonsField,
-        optionalLabel: l10n.sharing_optional,
-        fieldKey: const ValueKey('story-lessons'),
-        controller: _lessons,
-        maxLength: storyTextMax,
-        minLines: 3,
-      ),
-      const SizedBox(height: UiSpace.md),
-      _CoverPicker(
-        cover: cover,
-        // Only my visible photos: never a hidden or another member's.
-        onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
-      ),
+      if (owner) ...[
+        UiTextArea(
+          label: l10n.sharing_storyTitleField,
+          fieldKey: const ValueKey('story-title'),
+          controller: _title,
+          maxLength: storyTitleMax,
+          onChanged: changed,
+        ),
+        if (_title.text.trim().isEmpty)
+          Text(
+            l10n.sharing_storyTitleFallback,
+            key: const ValueKey('story-title-fallback'),
+            style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+          ),
+        const SizedBox(height: UiSpace.md),
+        UiTextArea(
+          label: l10n.sharing_introField,
+          fieldKey: const ValueKey('story-intro'),
+          controller: _intro,
+          hint: l10n.sharing_introHint,
+          maxLength: storyTextMax,
+          minLines: 3,
+          onChanged: changed,
+        ),
+        const SizedBox(height: UiSpace.md),
+        UiTextArea(
+          label: l10n.sharing_lessonsField,
+          optionalLabel: l10n.sharing_optional,
+          fieldKey: const ValueKey('story-lessons'),
+          controller: _lessons,
+          maxLength: storyTextMax,
+          minLines: 3,
+          onChanged: changed,
+        ),
+        const SizedBox(height: UiSpace.md),
+        _CoverPicker(
+          cover: cover,
+          // Only my visible photos: never a hidden or another member's.
+          onTap: coverable.isEmpty ? null : () => _pickCover(coverable),
+        ),
+      ] else
+        Text(
+          l10n.sharing_storyOwnerOnly,
+          key: const ValueKey('story-owner-only'),
+          style: UiText.body(size: 14, height: 1.45, color: ui.inkMuted),
+        ),
       const SizedBox(height: UiSpace.xl),
       UiListHeading(title: l10n.sharing_hidePhotos),
       const SizedBox(height: 4),
@@ -265,7 +382,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
             _HideCell(
               checkIn: ci,
               hidden: hidden.contains(ci.id),
-              onTap: () => _toggleHidden(ci),
+              onTap: _saving ? null : () => _toggleHidden(ci),
             ),
         ],
       ),
@@ -334,7 +451,7 @@ class _HideCell extends StatelessWidget {
 
   final CheckIn checkIn;
   final bool hidden;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -348,35 +465,38 @@ class _HideCell extends StatelessWidget {
           ? l10n.sharing_photoHidden(date)
           : l10n.sharing_photoShown(date),
       excludeSemantics: true,
-      child: UiPressable(
-        key: ValueKey('story-hide-${checkIn.id}'),
-        onPressed: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(UiRadius.otp),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Opacity(
-                opacity: hidden ? 0.32 : 1,
-                child: StoragePhoto(path: checkIn.thumbPath, cacheWidth: 200),
-              ),
-              if (hidden)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: ui.bg.withValues(alpha: 0.85),
-                      shape: BoxShape.circle,
-                    ),
-                    child: OurneyIcon(
-                      name: 'eye-off',
-                      size: 20,
-                      color: ui.ink,
-                      flat: true,
+      child: Opacity(
+        opacity: onTap == null ? 0.5 : 1,
+        child: UiPressable(
+          key: ValueKey('story-hide-${checkIn.id}'),
+          onPressed: onTap,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(UiRadius.otp),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Opacity(
+                  opacity: hidden ? 0.32 : 1,
+                  child: StoragePhoto(path: checkIn.thumbPath, cacheWidth: 200),
+                ),
+                if (hidden)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: ui.bg.withValues(alpha: 0.85),
+                        shape: BoxShape.circle,
+                      ),
+                      child: OurneyIcon(
+                        name: 'eye-off',
+                        size: 20,
+                        color: ui.ink,
+                        flat: true,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

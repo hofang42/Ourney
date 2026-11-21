@@ -90,6 +90,10 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_errorEnded => 'This journey has ended.';
 
   @override
+  String get groups_errorSyncPending =>
+      'Photos are still uploading. Try again in a moment.';
+
+  @override
   String get groups_errorForbidden => 'You\'re not allowed to do that.';
 
   @override
@@ -450,11 +454,6 @@ class GroupsL10nEn extends GroupsL10n {
       'Enter an invite code to join a group or start a group journey.';
 
   @override
-  String groups_wallAttendance(int done, int total) {
-    return '$done/$total CHECKED IN';
-  }
-
-  @override
   String groups_wallUpdated(String time) {
     return 'Updated at $time';
   }
@@ -517,6 +516,11 @@ class GroupsL10nEn extends GroupsL10n {
   }
 
   @override
+  String groups_coupleCheckedIn(String name) {
+    return '$name · checked in';
+  }
+
+  @override
   String groups_coupleWaiting(String name) {
     return '$name · waiting';
   }
@@ -541,4 +545,21 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_minimalPending => 'NOT YET';
+
+  @override
+  String get groups_inviteRevokeTitle => 'Revoke this invite?';
+
+  @override
+  String get groups_inviteRevokeMessage =>
+      'The invited person will no longer be able to use it.';
+
+  @override
+  String groups_flexerKm(String km) {
+    return '$km KM';
+  }
+
+  @override
+  String groups_flexerKmPace(String km, String pace) {
+    return '$km KM · $pace /KM';
+  }
 }

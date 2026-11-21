@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/app/router.dart';
 import 'package:ourney/app/theme/app_theme.dart';
 import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney/features/sharing/sharing.dart';
@@ -12,6 +15,7 @@ import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../safety/safety_fakes.dart' show FakeSafetyRepository;
 import 'sharing_fakes.dart';
 
 Finder _key(String k) => find.byKey(ValueKey(k));
@@ -192,6 +196,53 @@ void main() {
       expect(consents.calls, ['request:j1']);
     });
 
+    testWidgets('member: no Stop sharing for the owner link (C-B14)', (
+      tester,
+    ) async {
+      await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: FakeSharingRepository(token: 'tok${'0' * 37}'),
+        journeys: FakeJourneyRepository(
+          journeys: [
+            testJourney(
+              ownerId: 'owner',
+              kind: JourneyKind.group,
+              status: JourneyStatus.ended,
+            ),
+          ],
+        ),
+      );
+      expect(_key('share-link-block'), findsOneWidget);
+      expect(_key('share-stop'), findsNothing);
+    });
+
+    testWidgets('owner: link on shows one ellipsized URL line (U22)', (
+      tester,
+    ) async {
+      await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: FakeSharingRepository(token: 'tok${'0' * 37}'),
+        journeys: _journeys(),
+        friends: _friends,
+      );
+      final url = tester.widget<Text>(_key('share-link-url'));
+      expect(url.data, contains('token=tok'));
+      expect(url.maxLines, 1);
+      expect(url.overflow, TextOverflow.ellipsis);
+      expect(
+        tester.widget<UiSwitchRow>(_key('share-link-switch')).subtitle,
+        isNull,
+      );
+      expect(_key('share-stop'), findsOneWidget);
+      // Select all / Clear sit side by side on one line.
+      final all = tester.getRect(_key('share-select-all'));
+      final clear = tester.getRect(_key('share-clear'));
+      expect(clear.top, all.top);
+      expect(clear.left, greaterThanOrEqualTo(all.right));
+    });
+
     testWidgets('showShareJourneySheet opens the panel', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -263,6 +314,179 @@ void main() {
       expect(sharing.savedStory?.lessons, isNull);
       expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
     });
+
+    testWidgets('hiding the cover photo clears the cover (C-B14)', (
+      tester,
+    ) async {
+      final sharing = FakeSharingRepository();
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          testCheckIn('j1', const LocalDate(2026, 10, 11)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-cover'));
+      await _tap(tester, _key('story-cover-option-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await tester.enterText(_key('story-intro'), 'Why I started');
+      await tester.pumpAndSettle();
+      await _tap(tester, _key('story-save'));
+      expect(sharing.savedStory?.intro, 'Why I started');
+      expect(sharing.savedStory?.coverCheckInId, isNull);
+    });
+
+    testWidgets('hiding the cover clears it on the server too (C-B14)', (
+      tester,
+    ) async {
+      final sharing = FakeSharingRepository();
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-cover'));
+      await _tap(tester, _key('story-cover-option-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-save'));
+      expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
+    });
+
+    testWidgets('slow hide toggles (two) never overwrite a later save', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final sharing = FakeSharingRepository(
+        story: const JourneyStory(
+          title: 'Old',
+          coverCheckInId: 'c-j1-2026-10-10',
+        ),
+        hideGate: gate,
+      );
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          testCheckIn('j1', const LocalDate(2026, 10, 11)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-hide-c-j1-2026-10-11'));
+      await tester.enterText(_key('story-title'), 'New title');
+      await tester.pump();
+      await _tap(tester, _key('story-save'));
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(sharing.savedStory?.title, 'New title');
+    });
+
+    testWidgets('queued hide toggles still reach the server after closing', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final sharing = FakeSharingRepository(hideGate: gate);
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          testCheckIn('j1', const LocalDate(2026, 10, 11)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-hide-c-j1-2026-10-11'));
+      await h.go(tester, '/sharing/j1');
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(
+        sharing.calls.where((c) => c.startsWith('hide:')).toSet(),
+        {'hide:c-j1-2026-10-10:true', 'hide:c-j1-2026-10-11:true'},
+      );
+    });
+
+    testWidgets('group member: story is read-only, photos can be hidden '
+        '(C-B14)', (tester) async {
+      final sharing = FakeSharingRepository();
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+        ]),
+        journeys: FakeJourneyRepository(
+          journeys: [
+            testJourney(
+              ownerId: 'owner',
+              kind: JourneyKind.group,
+              status: JourneyStatus.ended,
+            ),
+          ],
+        ),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      expect(_key('story-owner-only'), findsOneWidget);
+      expect(_key('story-title'), findsNothing);
+      expect(_key('story-cover'), findsNothing);
+      expect(_key('story-save'), findsNothing);
+      await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      expect(sharing.calls, contains('hide:c-j1-2026-10-10:true'));
+    });
+
+    testWidgets('unsaved edits: back asks first, Save only when changed '
+        '(U19)', (tester) async {
+      final sharing = FakeSharingRepository();
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1');
+      await _tap(tester, _key('share-edit-story'));
+      expect(_key('story-editor'), findsOneWidget);
+      UiTextAction save() => tester.widget<UiTextAction>(_key('story-save'));
+      expect(save().onPressed, isNull);
+
+      await tester.enterText(_key('story-title'), '');
+      await tester.pumpAndSettle();
+      expect(_key('story-title-fallback'), findsOneWidget);
+      await tester.enterText(_key('story-intro'), 'Why I started');
+      await tester.pumpAndSettle();
+      expect(save().onPressed, isNotNull);
+
+      // System back (gesture / Android button) goes through PopScope.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('Discard changes?'), findsOneWidget);
+      await _tap(tester, find.text('Cancel'));
+      expect(_key('story-editor'), findsOneWidget);
+
+      final back = find.descendant(
+        of: _key('story-editor'),
+        matching: find.byType(UiBarIconButton),
+      );
+      await _tap(tester, back.first);
+      expect(find.text('Discard changes?'), findsOneWidget);
+      await _tap(tester, _key('sharing-confirm'));
+      expect(_key('story-editor'), findsNothing);
+      expect(sharing.savedStory, isNull);
+    });
   });
 
   group('Shared with me', () {
@@ -288,23 +512,29 @@ void main() {
       lastDate: const LocalDate(2024, 2, 6),
     );
 
-    Future<void> pumpList(WidgetTester tester, FakeSharingRepository repo) =>
-        tester.pumpWidget(
-          ProviderScope(
-            overrides: [
-              appConfigProvider.overrideWithValue(testBackendConfig),
-              sharingRepositoryProvider.overrideWithValue(repo),
-              mediaStoreProvider.overrideWithValue(FakeMediaStore()),
-            ],
-            child: MaterialApp(
-              theme: buildAppTheme(Brightness.light),
-              locale: const Locale('en'),
-              localizationsDelegates: ourneyLocalizationsDelegates,
-              supportedLocales: ourneySupportedLocales,
-              home: const Scaffold(body: SharedWithMeList()),
-            ),
+    Future<void> pumpList(
+      WidgetTester tester,
+      FakeSharingRepository repo, {
+      FakeSafetyRepository? safety,
+    }) => tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appConfigProvider.overrideWithValue(testBackendConfig),
+          sharingRepositoryProvider.overrideWithValue(repo),
+          safetyRepositoryProvider.overrideWithValue(
+            safety ?? FakeSafetyRepository(),
           ),
-        );
+          mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+        ],
+        child: MaterialApp(
+          theme: buildAppTheme(Brightness.light),
+          locale: const Locale('en'),
+          localizationsDelegates: ourneyLocalizationsDelegates,
+          supportedLocales: ourneySupportedLocales,
+          home: const Scaffold(body: SharedWithMeList()),
+        ),
+      ),
+    );
 
     testWidgets('rows, Imported badge, Saved section and unsave', (
       tester,
@@ -323,6 +553,23 @@ void main() {
       await _tap(tester, _key('shared-unsave-b'));
       expect(repo.calls, contains('unsave:b'));
       expect(find.text('Saved'), findsNothing);
+    });
+
+    testWidgets('journeys from someone just blocked disappear (C-B3)', (
+      tester,
+    ) async {
+      final safety = FakeSafetyRepository();
+      await pumpList(
+        tester,
+        FakeSharingRepository(sharedWithMe: [summary('a')]),
+        safety: safety,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Journey a'), findsOneWidget);
+      await safety.block('o1');
+      await tester.pumpAndSettle();
+      expect(find.text('Journey a'), findsNothing);
+      expect(_key('shared-with-me-empty'), findsOneWidget);
     });
 
     testWidgets('empty state', (tester) async {
@@ -383,7 +630,9 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(chat.opened, ['j1:p1']);
-      expect(h.location, '/chat/conv1');
+      // The photo travels with the route to the first message (C-B15).
+      expect(h.location, '/chat/conv1?replyTo=p1');
+      expect(_key('chat-reply-pending'), findsOneWidget);
     });
 
     testWidgets('stranger by token: add friend, no reply, counts', (
@@ -530,11 +779,16 @@ void main() {
           RetellPhoto(path: 'a.jpg', modified: DateTime(2024, 2, 3, 9)),
         ]),
       );
-      await _tap(tester, _key('retell-save'));
-      expect(_key('retell-error'), findsOneWidget);
+      // Save is off until the form is valid (U19); the reason shows once
+      // something is filled in.
+      expect(tester.widget<UiButton>(_key('retell-save')).onPressed, isNull);
+      expect(_key('retell-error'), findsNothing);
 
       await tester.enterText(_key('retell-title'), 'Hoi An 2024');
+      await tester.pumpAndSettle();
+      expect(find.text('Pick at least one photo'), findsOneWidget);
       await _tap(tester, _key('retell-pick'));
+      expect(_key('retell-error'), findsNothing);
       expect(find.text('2 photos'), findsOneWidget);
 
       // Move the first photo (3 Feb) to 2 Feb.
@@ -558,6 +812,28 @@ void main() {
       expect(checkIns.submitted.first.capturedAt, DateTime.utc(2024, 2, 2, 5));
       expect(checkIns.submitted.first.fromLibrary, isTrue);
       expect(h.location, '/journey/imp1');
+    });
+
+    testWidgets('back with picked photos asks before leaving (U19)', (
+      tester,
+    ) async {
+      final h = await pumpSharing(
+        tester,
+        location: '/journeys',
+        picker: FakeRetellPicker([
+          RetellPhoto(path: 'a.jpg', modified: DateTime(2024, 2, 3, 9)),
+        ]),
+      );
+      unawaited(h.container.read(routerProvider).push('/retell'));
+      await tester.pumpAndSettle();
+      await _tap(tester, _key('retell-pick'));
+      await _tap(tester, find.bySemanticsLabel('Back').first);
+      expect(find.text('Leave without saving?'), findsOneWidget);
+      await _tap(tester, find.text('Keep going'));
+      expect(_key('retell'), findsOneWidget);
+      await _tap(tester, find.bySemanticsLabel('Back').first);
+      await _tap(tester, _key('retell-discard-confirm'));
+      expect(_key('retell'), findsNothing);
     });
   });
 

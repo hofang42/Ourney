@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../app/redirect.dart' show AuthStatus;
 import '../../../shared/time_zones.dart';
 import '../domain/reminder_plan.dart';
 import '../l10n/generated/reminders_localizations.dart';
@@ -72,12 +74,19 @@ class ReminderScheduler {
       await _apply(gateway, planned);
     } on Object catch (e, st) {
       debugPrint('reminders: reschedule skipped: $e');
-      if (e is! UnimplementedError) debugPrintStack(stackTrace: st);
+      if (kDebugMode && e is! UnimplementedError) {
+        debugPrintStack(stackTrace: st);
+      }
     }
   }
 
   /// The notifications that should be pending right now.
   Future<List<PlannedNotification>> buildPlan() async {
+    // Signed out: nothing of the previous account may still fire (its cache
+    // is being wiped).
+    if (_ref.read(authStatusProvider) == AuthStatus.signedOut) {
+      return const [];
+    }
     ensureTimeZonesLoaded();
     final settings = _ref.read(reminderSettingsProvider);
     final streakAlerts = _ref.read(streakAlertsEnabledProvider);
@@ -136,10 +145,6 @@ class ReminderScheduler {
     NotificationGateway gateway,
     List<PlannedNotification> planned,
   ) async {
-    final pending = await gateway.pendingIds();
-    for (final id in pending.where(_isReminderId)) {
-      await gateway.cancel(id);
-    }
     final l10n = lookupRemindersL10n(_ref.read(reminderLocaleProvider));
     for (var i = 0; i < planned.length && i < kMaxPendingNotifications; i++) {
       final p = planned[i];
@@ -157,6 +162,17 @@ class ReminderScheduler {
           payload: p.journeyId,
         ),
       );
+    }
+    // Schedule first, then drop only the ids the new plan no longer uses: a
+    // failure in between leaves the old reminders (replaced by id) instead
+    // of an empty schedule.
+    final used = {
+      for (var i = 0; i < planned.length && i < kMaxPendingNotifications; i++)
+        kReminderIdBase + i,
+    };
+    final pending = await gateway.pendingIds();
+    for (final id in pending.where(_isReminderId)) {
+      if (!used.contains(id)) await gateway.cancel(id);
     }
   }
 }
@@ -230,5 +246,14 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
   }
 
   @override
-  Widget build(BuildContext context) => widget.child;
+  Widget build(BuildContext context) {
+    // Pending notification texts are written at schedule time: rewrite them
+    // in the language just picked in the app.
+    ref.listen(reminderLocaleProvider, (prev, next) {
+      if (prev != next) {
+        unawaited(ref.read(reminderSchedulerProvider).reschedule());
+      }
+    });
+    return widget.child;
+  }
 }

@@ -103,11 +103,6 @@ class CameraL10nEn extends CameraL10n {
   String get camera_grid => 'Framing grid';
 
   @override
-  String camera_dayHud(int day) {
-    return 'Day $day';
-  }
-
-  @override
   String camera_streakChip(int days) {
     return '$days day streak';
   }
@@ -117,30 +112,6 @@ class CameraL10nEn extends CameraL10n {
 
   @override
   String get camera_ghostOff => 'Day 1 ghost · Off';
-
-  @override
-  String get camera_privateVault => 'Private vault';
-
-  @override
-  String get camera_filmRoll => 'FILM ROLL';
-
-  @override
-  String get camera_partnerWaiting =>
-      'Your partner hasn\'t shot yet. You go first.';
-
-  @override
-  String get camera_hudBold => 'Bold HUD';
-
-  @override
-  String get camera_hudStamp => 'Minimal stamp';
-
-  @override
-  String get camera_hudStrip => 'Film strip';
-
-  @override
-  String camera_dayStreakBold(int day, int streak) {
-    return 'DAY $day · $streak IN A ROW';
-  }
 
   @override
   String get camera_allJourneys => 'All journeys';
@@ -167,48 +138,7 @@ class CameraL10nEn extends CameraL10n {
   String get camera_pickerEnded => 'Ended';
 
   @override
-  String camera_lastPace(String pace) {
-    return 'LAST PACE $pace';
-  }
-
-  @override
-  String camera_lastWeight(String value) {
-    return 'Last weigh-in $value';
-  }
-
-  @override
-  String get camera_weightSliderLabel => 'Weight (kg)';
-
-  @override
-  String camera_lastPaceKm(String pace, String km) {
-    return 'LAST PACE $pace · km $km';
-  }
-
-  @override
   String get camera_pickerPinned => 'Pinned';
-
-  @override
-  String camera_dayOfTotal(int day, int total) {
-    return 'Day $day/$total';
-  }
-
-  @override
-  String get camera_notShotToday => 'not shot today';
-
-  @override
-  String camera_shotTodayCount(int count) {
-    return '$count photos today';
-  }
-
-  @override
-  String camera_photoCount(int count) {
-    return '$count photos';
-  }
-
-  @override
-  String camera_openToday(int count) {
-    return 'Open journey, $count photos today';
-  }
 
   @override
   String camera_allJourneysCount(int count) {
@@ -216,12 +146,10 @@ class CameraL10nEn extends CameraL10n {
   }
 
   @override
-  String camera_squadLastStudy(int minutes, int days) {
-    return 'LAST TIME $minutes MIN · $days STREAK';
+  String camera_chipDay(String title, int day) {
+    return '$title · Day $day';
   }
 
   @override
-  String camera_squadStreak(int days) {
-    return '$days DAY STREAK';
-  }
+  String get camera_partnerPhoto => 'Partner\'s photo, tap to enlarge';
 }

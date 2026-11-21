@@ -149,6 +149,7 @@ class UiCameraTool extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.emphasis = UiCameraToolEmphasis.none,
+    this.accent,
     super.key,
   }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
@@ -162,6 +163,10 @@ class UiCameraTool extends StatelessWidget {
   /// Toggle state shown by shape, not color alone: outline ring (e.g. flash
   /// auto) or a solid white disc with a dark glyph (flash on).
   final UiCameraToolEmphasis emphasis;
+
+  /// Journey accent: fills the disc of a [UiCameraToolEmphasis.filled] tool
+  /// (flash on, grid on) instead of white. The glyph turns dark on it.
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
@@ -188,8 +193,11 @@ class UiCameraTool extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: filled ? UiCamera.ink : null,
-                border: Border.all(color: UiCamera.ink, width: 2),
+                color: filled ? (accent ?? UiCamera.ink) : null,
+                border: Border.all(
+                  color: filled ? (accent ?? UiCamera.ink) : UiCamera.ink,
+                  width: 2,
+                ),
               ),
               child: glyphWidget,
             ),
@@ -199,6 +207,104 @@ class UiCameraTool extends StatelessWidget {
 
 /// State drawn around a [UiCameraTool] glyph.
 enum UiCameraToolEmphasis { none, outline, filled }
+
+/// Colour of a [UiCameraStatusPill].
+enum UiCameraStatusTone { neutral, danger }
+
+/// Transient state label inside the viewfinder (flash mode, "no flash",
+/// capture failed). It replaces the toast, which landed on the shutter: it
+/// sits at the top of the preview, never near the dock.
+///
+/// Glass dark capsule, 32dp tall, glyph plus one line of text. Fades in over
+/// 150ms and out over 200ms (no fade under Reduce Motion). It is a live
+/// region; callers also announce the message with
+/// `SemanticsService.sendAnnouncement`. The caller owns the hold timer
+/// (1.2s, 1.5s under Reduce Motion) and flips [visible].
+class UiCameraStatusPill extends StatelessWidget {
+  const UiCameraStatusPill({
+    required this.message,
+    required this.visible,
+    this.glyph,
+    this.tone = UiCameraStatusTone.neutral,
+    super.key,
+  });
+
+  final String message;
+  final bool visible;
+
+  /// [OurneyIcon] name drawn before the text.
+  final String? glyph;
+  final UiCameraStatusTone tone;
+
+  static const double height = 32;
+
+  @override
+  Widget build(BuildContext context) {
+    final danger = tone == UiCameraStatusTone.danger;
+    final color = danger ? OurneyUi.dark.danger : UiCamera.ink;
+    return IgnorePointer(
+      child: AnimatedOpacity(
+        opacity: visible ? 1 : 0,
+        duration: UiMotion.of(
+          context,
+          Duration(milliseconds: visible ? 150 : 200),
+        ),
+        child: Semantics(
+          liveRegion: true,
+          container: true,
+          label: visible ? message : null,
+          child: ExcludeSemantics(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(UiRadius.capsule),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  key: const ValueKey('ui-camera-status-pill'),
+                  constraints: const BoxConstraints(minHeight: height),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xB3000000),
+                    borderRadius: BorderRadius.circular(UiRadius.capsule),
+                    border: Border.all(
+                      color: danger ? color : UiCamera.dockBorder,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (glyph != null) ...[
+                        OurneyIcon(
+                          name: glyph!,
+                          size: 16,
+                          flat: true,
+                          color: color,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Flexible(
+                        child: Text(
+                          message,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.body(
+                            size: 13,
+                            weight: FontWeight.w600,
+                            height: 1.3,
+                            color: color,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// `.library-thumb`: 48dp rounded outline button opening the photo library.
 class UiLibraryThumb extends StatelessWidget {
@@ -270,7 +376,9 @@ class UiPageDots extends StatelessWidget {
                 width: i == index ? 16 : 5,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: i == index ? UiCamera.ink : const Color(0x55FFFFFF),
+                  color: i == index
+                      ? UiCamera.ink
+                      : UiCamera.ink.withValues(alpha: 0.33),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),

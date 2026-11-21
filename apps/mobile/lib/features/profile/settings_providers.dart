@@ -43,11 +43,20 @@ class PrefSwitch extends Notifier<bool> {
   }
 }
 
+/// Per-account (dropped on sign-out, see `accountPrefsKeys`).
+abstract final class SharePrivacyPrefs {
+  static const hideWeight = 'privacy.hideWeightOnShare';
+  static const blurPhotos = 'privacy.blurPhotosOnShare';
+
+  /// Failed membership pushes to heal (see share_privacy_sync.dart).
+  static const pendingHeal = 'privacy.pendingHeal';
+}
+
 final hideWeightOnShareProvider = NotifierProvider<PrefSwitch, bool>(
-  () => PrefSwitch('privacy.hideWeightOnShare'),
+  () => PrefSwitch(SharePrivacyPrefs.hideWeight),
 );
 final blurPhotosOnShareProvider = NotifierProvider<PrefSwitch, bool>(
-  () => PrefSwitch('privacy.blurPhotosOnShare'),
+  () => PrefSwitch(SharePrivacyPrefs.blurPhotos),
 );
 
 /// Selected app icon id (Figma `appIcon`). No platform plugin switches the
