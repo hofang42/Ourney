@@ -8,7 +8,7 @@ argument-hint: "[screen, route, feature folder or file; empty = screens changed 
 
 Scope: $ARGUMENTS
 
-- Empty: screens and `lib/ui` components touched by `git diff main...HEAD -- apps/mobile/lib` (Ourney PRs target `main`).
+- Empty: screens and `lib/ui` components touched by `git diff origin/main...HEAD -- apps/mobile/lib` (run `git fetch origin main` first) (Ourney PRs target `main`).
 - A route (`/journeys`), a feature folder (`features/checkin`), or a file: scan that.
 
 Goal: a list of real, reproducible UI/UX bugs with evidence (screenshot, matcher output or code line), ranked P0–P3, in the same shape as the 2026-11-18 `ux-audit` in `docs/bug.md` (U1–U23). Report only; do not fix unless the user asks.
@@ -28,7 +28,7 @@ Run both halves: **render** (Phase 2) catches what reading code misses (overflow
 2. Fill `screens` with the routes in scope. For a screen that needs data, add provider overrides to `pumpOurneyApp(overrides: [...])` or seed a local layer (`apps/mobile/test/data/data_test_helpers.dart`: `localLayer`, `memoryDb`, `TestClock`). Add one test per state from Phase 1 (empty, error, long Vietnamese title of ~60 characters, 30+ items). For a single widget, pump it with `testApp(widget, brightness:)` instead of the whole app.
 3. Run from `apps/mobile` (Flutter is at `E:\tools\flutter\bin` if not on PATH):
    `flutter test test/zz_uxscan --update-goldens`
-   The template sets an iPhone safe area (59 top, 34 bottom), loads the real fonts, and for each cell of the matrix (320/360/393/430dp, light/dark, text scale 1.0/1.35/2.0, vi/en) records layout exceptions, writes `test/zz_uxscan/out/<screen>_<config>.png`, and runs `labeledTapTargetGuideline`, `iOSTapTargetGuideline`, `androidTapTargetGuideline` and `textContrastGuideline`. The `reminders: notifications unavailable` log lines are normal in tests.
+   The template sets an iPhone safe area (59 top, 34 bottom), loads the real fonts, and for each cell of the matrix (320/360/393/430dp, light/dark, text scale 1.0/1.35/2.0, vi/en) records layout exceptions, writes `test/zz_uxscan/out/<screen>_<config>.png`, and runs `labeledTapTargetGuideline`, `iOSTapTargetGuideline`, `androidTapTargetGuideline` and `textContrastGuideline`. The `reminders: notifications unavailable` log lines and `FlutterLocalNotificationsPlatform._instance` stack traces are normal in tests, not failures.
 4. **Look at every PNG** (Read the file). For each, check the visual list in Phase 3 §A–C: clipped or overlapping text, content under the home indicator or the dock, a dark-mode surface that stayed light, a hard shadow or border that vanished, misaligned rows, inconsistent spacing.
 5. For each failing matcher, find the widget from the `SemanticsNode` rect and label. `textContrastGuideline` samples pixels, so on glass over photos confirm against the tokens before reporting.
 

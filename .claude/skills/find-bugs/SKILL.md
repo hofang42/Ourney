@@ -12,12 +12,12 @@ Review code for bugs, security vulnerabilities, and code quality issues.
 
 Scope: $ARGUMENTS
 
-- Empty: the changes on this branch. Ourney PRs target `main`, so the diff is `git diff main...HEAD`.
+- Empty: the changes on this branch. Ourney PRs target `main`, so the diff is `git fetch origin main` then `git diff origin/main...HEAD`.
 - A file, folder or feature name (`checkin`, `data/sync`, `ourney_core`, `supabase/migrations/0014*`): scan that code as it is now, not only a diff.
 
 ## Phase 1: Complete Input Gathering
 
-1. Get the FULL diff (`git diff main...HEAD`), or list every file in the scope (`git ls-files <path>`).
+1. Get the FULL diff (`git fetch origin main` then `git diff origin/main...HEAD`), or list every file in the scope (`git ls-files <path>`).
 2. If output is truncated, read each file individually until you have seen every changed line (whole-folder scope: every line of every file).
 3. List all files in scope before proceeding.
 4. Read what already exists, so you do not report known bugs: `docs/bug.md` (the 2026-11-18 scan, codes `A-B*`, `B-B*`, `C-B*`, `U*`), `docs/bugs.md` (device bugs), and the tests for the files in scope (`apps/mobile/test/**`, `packages/ourney_core/test/**`, `supabase/tests/*.test.sql`).
@@ -68,7 +68,7 @@ For each potential issue:
 * Check if it's already handled elsewhere in the code (callers, the repository layer, SQL constraints, RLS)
 * Search for existing tests covering the scenario
 * Read surrounding context to verify the issue is real
-* **Prove it when you can.** Write a temporary failing test in `apps/mobile/test/zz_bugscan/` (Dart) or run it against `packages/ourney_core` (`dart test`). Reuse `apps/mobile/test/data/data_test_helpers.dart` (`memoryDb`, `TestClock`, `testJourneyClock`, `FakeRemoteApi`, `localLayer`, `supabaseLayer`) and `apps/mobile/test/app/test_helpers.dart` (`pumpOurneyApp`). SQL issues: a pgTAP case shaped like `supabase/tests/*.test.sql` (needs a local Supabase; otherwise mark the finding "not run"). Run with the full Flutter path if `flutter` is not on PATH (`E:\tools\flutter\bin\flutter test test/zz_bugscan`). Delete `test/zz_bugscan/` before finishing unless the user wants the tests kept as regressions.
+* **Prove it when you can.** Write a temporary failing test in `apps/mobile/test/zz_bugscan/` (Dart) or in `packages/ourney_core/test/zz_bugscan/` (`dart test test/zz_bugscan`). Reuse `apps/mobile/test/data/data_test_helpers.dart` (`memoryDb`, `TestClock`, `testJourneyClock`, `FakeRemoteApi`, `localLayer`, `supabaseLayer`) and `apps/mobile/test/app/test_helpers.dart` (`pumpOurneyApp`). SQL issues: a pgTAP case shaped like `supabase/tests/*.test.sql` (needs a local Supabase; otherwise mark the finding "not run"). Run with the full Flutter path if `flutter` is not on PATH (`E:\tools\flutter\bin\flutter test test/zz_bugscan`). Delete both `zz_bugscan/` folders before finishing unless the user wants the tests kept as regressions.
 * Grade confidence: **chắc chắn** (test fails as described), **có khả năng** (code reading only, path is reachable), **nghi ngờ** (depends on timing or device behaviour you could not reproduce).
 
 ## Phase 5: Pre-Conclusion Audit
@@ -99,4 +99,4 @@ Write the report in the user's language (Vietnamese by default for Ourney). For 
 
 If you find nothing significant, say so - don't invent issues.
 
-Do not make changes - just report findings. I'll decide what to address. (Temporary tests in `test/zz_bugscan/` are the one exception, and they are removed at the end.)
+Do not make changes - just report findings. I'll decide what to address. (Temporary tests in the `zz_bugscan/` folders are the one exception, and they are removed at the end.)

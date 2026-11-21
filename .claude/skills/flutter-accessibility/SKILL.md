@@ -10,7 +10,6 @@ description: >
   For layout, theme and state bugs use ui-bug-scan; for logic bugs use find-bugs.
 effort: medium
 argument-hint: "[file, folder or screen] [wcag-level]"
-allowed-tools: Read Glob Grep
 ---
 
 <!-- Modified for Ourney from verygoodopensource/vgv-ai-flutter-plugin (MIT). See NOTICE.md. -->
@@ -27,7 +26,7 @@ Load only the file the current phase names.
 
 ## Ourney overrides (these win over the rest of this file and the references)
 
-Scope: $ARGUMENTS (empty: the files changed on this branch, `git diff main...HEAD -- apps/mobile/lib`).
+Scope: $ARGUMENTS (empty: the files changed on this branch, `git diff origin/main...HEAD -- apps/mobile/lib` (run `git fetch origin main` first)).
 
 - **Level and platforms are fixed.** WCAG 2.2 **AA** on **iOS and Android** (`docs/adr/0001-ios-min-version-and-build.md`: iPhone only, portrait; Android ships from CI). Skip the Phase 1 and Phase 2 questions unless the user names another level or platform. Load only `references/platforms/ios.md` and `references/platforms/android.md`; web and desktop are out of scope.
 - **Target size is 48x48dp, not 24.** `CLAUDE.md` §2.2 sets 48dp (`UiSize.tap`) for every interactive control, so anything under 48dp is a finding, MAJOR when the control is primary.
@@ -35,7 +34,7 @@ Scope: $ARGUMENTS (empty: the files changed on this branch, `git diff main...HEA
 - **No Material or Cupertino icons.** `CLAUDE.md` §1.3 forbids `Icons.*`, `CupertinoIcons.*`, emoji and Unicode glyphs as icons. The `Icons.close` in upstream examples is illustration only; Ourney fixes draw `OurneyIcon` (`lib/ui/components/ourney_icons.dart`).
 - **Colours come from tokens.** Contrast findings name the `context.ui` token pair (`ink`/`bg`, `inkMuted`/`surface`, `onBrand`/`brand`...) and the skin (`UiSkin.apply`, `lib/ui/skins.dart`) in both brightnesses. Check pairs with `contrastRatio` (`lib/shared/color_utils.dart`), as `test/app/theme_contrast_test.dart` and `test/ui/contrast_tokens_test.dart` do. Never fix by hardcoding a colour.
 - **Text scaling.** The app clamps system text scale to 2x (`OurneyTextScaleClamp`, `lib/app/theme/app_theme.dart`) and `CLAUDE.md` §3.5 requires Dynamic Type up to 1.35x. Test at 1.0, 1.35 and 2.0, at 320dp and 390dp wide; iOS 3.1x is out of scope because of the clamp. Vietnamese text keeps `height` 1.3–1.45 and overflow handling.
-- **Reduce Transparency.** Glass surfaces (`UiGlass`, dock, journey wheel) must fall back to solid when `MediaQuery.highContrast` or `reduceTransparency` is on (`CLAUDE.md` §2.1).
+- **Reduce Transparency.** Glass surfaces (`UiGlass`, dock, journey wheel) must fall back to solid when `MediaQuery.highContrast` is on or the kit `reduceTransparency` parameter is set (`UiGlass`, `dock.dart`, `bars.dart`; Flutter has no `MediaQuery.reduceTransparency`) (`CLAUDE.md` §2.1).
 - **Copy is localized.** Semantic labels and tooltips come from the feature's l10n (ARB), in Vietnamese and English; a hardcoded English label is a finding.
 - **Tests follow the repo.** Use `testApp(..., brightness:)` and `pumpOurneyApp` from `apps/mobile/test/app/test_helpers.dart`, and the guideline matchers already used in `test/ui/ui_kit_test.dart` and `test/features/share_card/share_card_screen_test.dart` (`meetsGuideline(labeledTapTargetGuideline)`, `androidTapTargetGuideline`, `iOSTapTargetGuideline`, `textContrastGuideline`). Pattern for text scale: `test/app/accessibility_test.dart`.
 - **Report language.** Write the report in the user's language (Vietnamese by default for Ourney). Keep the finding block and severity labels below.

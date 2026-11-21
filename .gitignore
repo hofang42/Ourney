@@ -17,3 +17,4 @@ env.json
 
 # Temporary bug-scan and UI-scan tests (find-bugs, ui-bug-scan skills)
 apps/mobile/test/zz_*/
+packages/ourney_core/test/zz_*/
