@@ -68,12 +68,18 @@ void main() {
     return null;
   }
 
-  testWidgets('the first journey sets the shutter accent and day pill', (
+  testWidgets('the first journey sets the shutter accent and the chip day', (
     tester,
   ) async {
     await pump(tester);
     expect(shutterAccent(tester), uiJourneyStyles[4].accent);
-    expect(find.byKey(const ValueKey('capture-title-status')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('capture-journey-chip')),
+        matching: find.textContaining('Ngày'),
+      ),
+      findsOneWidget,
+    );
     expect(find.byKey(const ValueKey('dock-hero-shutter')), findsOneWidget);
     expect(find.byKey(const ValueKey('fake-preview')), findsOneWidget);
   });

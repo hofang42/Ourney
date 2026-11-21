@@ -28,14 +28,6 @@
   "camera_starting": "Opening camera…",
   "camera_captureFailed": "Couldn't take the photo. Please try again.",
   "camera_grid": "Framing grid",
-  "camera_dayHud": "Day {day}",
-  "@camera_dayHud": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      }
-    }
-  },
   "camera_streakChip": "{days} day streak",
   "@camera_streakChip": {
     "placeholders": {
@@ -46,96 +38,15 @@
   },
   "camera_ghostOn": "Day 1 ghost · On",
   "camera_ghostOff": "Day 1 ghost · Off",
-  "camera_privateVault": "Private vault",
-  "camera_filmRoll": "FILM ROLL",
-  "camera_partnerWaiting": "Your partner hasn't shot yet. You go first.",
-  "camera_hudBold": "Bold HUD",
-  "camera_hudStamp": "Minimal stamp",
-  "camera_hudStrip": "Film strip",
-  "camera_dayStreakBold": "DAY {day} · {streak} IN A ROW",
   "camera_allJourneys": "All journeys",
   "camera_pickerTitle": "All journeys",
   "camera_pickerSearch": "Search journeys",
   "camera_pickerEmpty": "No journey matches your search.",
   "camera_pickerClose": "Close",
-  "@camera_dayStreakBold": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "streak": {
-        "type": "int"
-      }
-    }
-  },
   "camera_pickerNotShot": "Not shot today",
   "camera_pickerShot": "Shot today",
   "camera_pickerEnded": "Ended",
-  "camera_lastPace": "LAST PACE {pace}",
-  "@camera_lastPace": {
-    "placeholders": {
-      "pace": {
-        "type": "String"
-      }
-    }
-  },
-  "camera_lastWeight": "Last weigh-in {value}",
-  "@camera_lastWeight": {
-    "placeholders": {
-      "value": {
-        "type": "String"
-      }
-    }
-  },
-  "camera_weightSliderLabel": "Weight (kg)",
-  "camera_lastPaceKm": "LAST PACE {pace} · km {km}",
-  "@camera_lastPaceKm": {
-    "placeholders": {
-      "pace": {
-        "type": "String"
-      },
-      "km": {
-        "type": "String"
-      }
-    }
-  },
   "camera_pickerPinned": "Pinned",
-  "camera_dayOfTotal": "Day {day}/{total}",
-  "@camera_dayOfTotal": {
-    "placeholders": {
-      "day": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  },
-  "camera_notShotToday": "not shot today",
-  "camera_shotTodayCount": "{count} photos today",
-  "@camera_shotTodayCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "camera_photoCount": "{count} photos",
-  "@camera_photoCount": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "camera_openToday": "Open journey, {count} photos today",
-  "@camera_openToday": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
   "camera_allJourneysCount": "All journeys ({count})",
   "@camera_allJourneysCount": {
     "placeholders": {
@@ -144,23 +55,16 @@
       }
     }
   },
-  "camera_squadLastStudy": "LAST TIME {minutes} MIN · {days} STREAK",
-  "@camera_squadLastStudy": {
+  "camera_chipDay": "{title} · Day {day}",
+  "@camera_chipDay": {
     "placeholders": {
-      "minutes": {
-        "type": "int"
+      "title": {
+        "type": "String"
       },
-      "days": {
+      "day": {
         "type": "int"
       }
     }
   },
-  "camera_squadStreak": "{days} DAY STREAK",
-  "@camera_squadStreak": {
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  }
+  "camera_partnerPhoto": "Partner's photo, tap to enlarge"
 }

@@ -36,56 +36,6 @@ class CaptureJourneyData {
       if (c.localDate == progress.today) c,
   ];
 
-  String? lastWith(String? Function(CheckIn) pick) {
-    for (final c in recent) {
-      final v = pick(c)?.trim();
-      if (v != null && v.isNotEmpty) return v;
-    }
-    return null;
-  }
-
-  double? get lastWeightKg {
-    for (final c in recent) {
-      if (c.metricValue != null) return c.metricValue;
-    }
-    return null;
-  }
-
-  double? get lastKm {
-    for (final c in recent) {
-      final p = c.extras.pace?.trim();
-      if (p != null && p.isNotEmpty) return c.extras.km;
-    }
-    return null;
-  }
-
-  /// Squad: minutes studied at the last check-in that logged them.
-  int? get lastMinutes {
-    for (final c in recent) {
-      final m = c.extras.minutes;
-      if (m != null && m > 0) return m;
-    }
-    return null;
-  }
-
-  String? get lastWeight {
-    for (final c in recent) {
-      final v = c.metricValue;
-      if (v == null) continue;
-      final text = v == v.roundToDouble() ? v.toStringAsFixed(0) : '$v';
-      final unit = journey.metricUnit;
-      return unit == null || unit.isEmpty ? text : '$text $unit';
-    }
-    return null;
-  }
-
-  /// A displayable file for [c]: its local photo, else the downloaded thumb.
-  String? fileOf(CheckIn c) {
-    final local = c.localPhotoFile;
-    if (local != null && local.isNotEmpty) return local;
-    return ref.watch(mediaFileProvider(c.thumbPath)).value;
-  }
-
   /// Latest partner photo of a couple journey: the local file when the
   /// check-in still has it, else the downloaded copy of the storage path.
   String? get partnerPhoto {

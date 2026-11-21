@@ -1,4 +1,3 @@
-import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/camera/capture_overlays.dart';
@@ -25,122 +24,102 @@ Widget _host(Widget child, {required bool dark, double scale = 1.35}) =>
     );
 
 void main() {
-  const keys = {
-    PersonaSkinId.quietTransformer: 'overlay-quiet',
-    PersonaSkinId.accountabilitySquad: 'overlay-study',
-    PersonaSkinId.memoryCollectors: 'overlay-film',
-    PersonaSkinId.coupleRituals: 'overlay-half-divider',
-    PersonaSkinId.aestheticFlexer: 'overlay-hud-bold',
-  };
+  const noHud = [
+    PersonaSkinId.accountabilitySquad,
+    PersonaSkinId.memoryCollectors,
+    PersonaSkinId.aestheticFlexer,
+    PersonaSkinId.minimalistHabit,
+  ];
 
   for (final dark in [false, true]) {
-    for (final e in keys.entries) {
-      testWidgets('${e.key.name} overlay ${dark ? 'dark' : 'light'} 1.35x', (
-        tester,
-      ) async {
+    for (final skin in noHud) {
+      testWidgets('${skin.name} draws nothing on the preview '
+          '(${dark ? 'dark' : 'light'})', (tester) async {
         await tester.pumpWidget(
           _host(
-            CaptureSkinOverlay(skin: e.key, dayNumber: 7, streak: 5),
+            Stack(children: [CaptureSkinOverlay(skin: skin)]),
             dark: dark,
           ),
         );
-        expect(find.byKey(ValueKey(e.value)), findsOneWidget);
+        expect(find.byKey(const ValueKey('overlay-none')), findsOneWidget);
+        expect(find.byType(Text), findsNothing);
+        expect(find.byKey(const ValueKey('overlay-ghost')), findsNothing);
         expect(tester.takeException(), isNull);
       });
     }
   }
 
-  for (final scale in [1.0, 2.0]) {
-    testWidgets('quiet HUD: chips never cover the weight slider '
-        '(vi, 288dp viewfinder, ${scale}x) (U2)', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          locale: const Locale('vi'),
-          localizationsDelegates: CameraL10n.localizationsDelegates,
-          supportedLocales: CameraL10n.supportedLocales,
-          theme: OurneyTheme.build(Brightness.light),
-          home: MediaQuery(
-            data: MediaQueryData(
-              size: const Size(360, 780),
-              textScaler: TextScaler.linear(scale),
-            ),
-            child: Scaffold(
-              body: Center(
-                child: SizedBox(
-                  width: 288,
-                  height: 520,
-                  child: CaptureSkinOverlay(
-                    skin: PersonaSkinId.quietTransformer,
-                    dayNumber: 3,
-                    streak: 2,
-                    lastWeight: '62.6 kg',
-                    lastWeightKg: 62.6,
-                    onWeightChanged: (_) {},
-                  ),
-                ),
+  testWidgets('quiet ghost follows showGhost', (tester) async {
+    Future<void> show(bool ghost) => tester.pumpWidget(
+      _host(
+        Stack(
+          children: [
+            Positioned.fill(
+              child: CaptureSkinOverlay(
+                skin: PersonaSkinId.quietTransformer,
+                showGhost: ghost,
               ),
             ),
-          ),
-        ),
-      );
-      await tester.pump();
-      final slider = tester.getRect(
-        find.byKey(const ValueKey('overlay-weight-slider-row')),
-      );
-      final last = tester.getRect(find.byKey(const ValueKey('overlay-weight')));
-      for (final k in ['overlay-ghost-toggle', 'overlay-vault']) {
-        final chip = tester.getRect(find.byKey(ValueKey(k)));
-        expect(chip.overlaps(slider), isFalse, reason: '$k over slider');
-        expect(chip.overlaps(last), isFalse, reason: '$k over last weight');
-      }
-    });
-  }
-
-  testWidgets('minimalist overlay draws no text', (tester) async {
-    await tester.pumpWidget(
-      _host(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.minimalistHabit,
-          dayNumber: 7,
-          streak: 5,
+          ],
         ),
         dark: true,
       ),
     );
-    expect(find.byType(Text), findsNothing);
-  });
-
-  testWidgets('quiet ghost toggles off', (tester) async {
-    await tester.pumpWidget(
-      _host(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.quietTransformer,
-          dayNumber: 3,
-          streak: 2,
-        ),
-        dark: false,
-      ),
-    );
+    await show(true);
     expect(find.byKey(const ValueKey('overlay-ghost')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('overlay-ghost-toggle')));
-    await tester.pump();
+    await show(false);
     expect(find.byKey(const ValueKey('overlay-ghost')), findsNothing);
   });
 
-  testWidgets('flexer switches to the film strip', (tester) async {
-    await tester.pumpWidget(
+  group('couple partner PiP', () {
+    Future<void> show(WidgetTester tester, {String? file}) => tester.pumpWidget(
       _host(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.aestheticFlexer,
-          dayNumber: 3,
-          streak: 2,
+        Stack(
+          children: [
+            Positioned.fill(
+              child: CaptureSkinOverlay(
+                skin: PersonaSkinId.coupleRituals,
+                partnerPhotoFile: file,
+              ),
+            ),
+          ],
         ),
         dark: true,
+        scale: 1,
       ),
     );
-    await tester.tap(find.byKey(const ValueKey('overlay-hud-pick-strip')));
-    await tester.pump();
-    expect(find.byKey(const ValueKey('overlay-film-strip')), findsOneWidget);
+
+    testWidgets('is a 72x96 thumbnail at the top-start corner', (tester) async {
+      await show(tester, file: 'missing-partner.jpg');
+      final pip = find.byKey(const ValueKey('overlay-partner-pip'));
+      expect(pip, findsOneWidget);
+      expect(tester.getSize(pip), const Size(72, 96));
+      final box = tester.getRect(find.byType(Stack).first);
+      expect(tester.getTopLeft(pip).dx - box.left, 14);
+      expect(
+        find.byKey(const ValueKey('overlay-partner-photo')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('shows nothing without a partner photo', (tester) async {
+      await show(tester);
+      expect(find.byKey(const ValueKey('overlay-partner-pip')), findsNothing);
+      expect(find.byType(Text), findsNothing);
+    });
+
+    testWidgets('tap enlarges to a half frame for 3s', (tester) async {
+      await show(tester, file: 'missing-partner.jpg');
+      await tester.tap(find.byKey(const ValueKey('overlay-partner-pip')));
+      await tester.pump();
+      final half = find.byKey(const ValueKey('overlay-partner-half'));
+      expect(half, findsOneWidget);
+      expect(find.byKey(const ValueKey('overlay-partner-pip')), findsNothing);
+      await tester.pump(const Duration(seconds: 3, milliseconds: 100));
+      expect(half, findsNothing);
+      expect(find.byKey(const ValueKey('overlay-partner-pip')), findsOneWidget);
+    });
   });
 
   testWidgets('journey picker filters by search', (tester) async {
@@ -191,97 +170,6 @@ void main() {
     expect(picked, 'j2');
   });
 
-  for (final dark in [false, true]) {
-    testWidgets('data-driven overlay lines ${dark ? 'dark' : 'light'}', (
-      tester,
-    ) async {
-      Future<void> show(CaptureSkinOverlay o) async {
-        await tester.pumpWidget(_host(o, dark: dark));
-        await tester.pump();
-      }
-
-      await show(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.quietTransformer,
-          dayNumber: 3,
-          streak: 2,
-          lastWeight: '72.4 kg',
-        ),
-      );
-      expect(find.byKey(const ValueKey('overlay-weight')), findsOneWidget);
-      expect(find.textContaining('72.4 kg'), findsOneWidget);
-
-      await show(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.aestheticFlexer,
-          dayNumber: 3,
-          streak: 2,
-          lastPace: '5:30',
-        ),
-      );
-      expect(find.textContaining('5:30'), findsOneWidget);
-
-      await show(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.coupleRituals,
-          dayNumber: 3,
-          streak: 2,
-          partnerPhotoFile: 'missing-partner.jpg',
-        ),
-      );
-      expect(
-        find.byKey(const ValueKey('overlay-partner-photo')),
-        findsOneWidget,
-      );
-      expect(tester.takeException(), isNull);
-    });
-  }
-
-  // Bug #9 (2026-11-15): the squad HUD was a stopwatch counting from when
-  // the camera opened. It now stamps the clock time and the last study
-  // minutes + streak (Figma squad camera), and nothing counts up.
-  testWidgets('squad HUD is a clock stamp, not a stopwatch (bug #9)', (
-    tester,
-  ) async {
-    await withClock(Clock.fixed(DateTime(2026, 11, 15, 6, 15, 42)), () async {
-      await tester.pumpWidget(
-        _host(
-          const CaptureSkinOverlay(
-            skin: PersonaSkinId.accountabilitySquad,
-            dayNumber: 1,
-            streak: 4,
-            lastMinutes: 45,
-          ),
-          dark: true,
-          scale: 1,
-        ),
-      );
-      expect(find.text('06:15'), findsOneWidget);
-      expect(find.text('LAST TIME 45 MIN · 4 STREAK'), findsOneWidget);
-      expect(find.textContaining('00:00'), findsNothing);
-      await tester.pump(const Duration(seconds: 3));
-      expect(find.textContaining('00:03'), findsNothing);
-      expect(find.text('06:15'), findsOneWidget);
-    });
-  });
-
-  testWidgets('squad HUD without logged minutes shows the streak', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _host(
-        const CaptureSkinOverlay(
-          skin: PersonaSkinId.accountabilitySquad,
-          dayNumber: 3,
-          streak: 2,
-        ),
-        dark: false,
-      ),
-    );
-    expect(find.text('2 DAY STREAK'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-
   testWidgets('picker groups not shot / shot / ended', (tester) async {
     final list = [
       testJourney(id: 'a', title: 'Alpha'),
@@ -312,79 +200,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  for (final dark in [false, true]) {
-    testWidgets(
-      'weight slider, km pace and pinned ${dark ? 'dark' : 'light'}',
-      (tester) async {
-        double? got;
-        await tester.pumpWidget(
-          _host(
-            CaptureSkinOverlay(
-              skin: PersonaSkinId.quietTransformer,
-              dayNumber: 3,
-              streak: 2,
-              lastWeight: '72.4 kg',
-              lastWeightKg: 72.4,
-              onWeightChanged: (v) => got = v,
-            ),
-            dark: dark,
+  testWidgets('pinned section sorts first in the picker sheet', (tester) async {
+    final list = [
+      testJourney(title: 'Alpha'),
+      testJourney(id: 'j2', title: 'Beta'),
+    ];
+    await tester.pumpWidget(
+      // The sheet content scrolls inside showUiSheet (bug 12 removed its
+      // own UiSheet wrapper); a bare 320dp host needs the scroll here.
+      _host(
+        SingleChildScrollView(
+          child: JourneyPickerSheet(
+            journeys: list,
+            selectedId: null,
+            pinnedIds: const {'j2'},
           ),
-        );
-        await tester.pump();
-        final slider = find.byKey(const ValueKey('overlay-weight-slider'));
-        expect(slider, findsOneWidget);
-        expect(tester.getSize(slider).height, greaterThanOrEqualTo(48));
-        expect(find.textContaining('72.4 kg'), findsWidgets);
-        await tester.drag(slider, const Offset(30, 0));
-        await tester.pump();
-        expect(got, isNotNull);
-        expect(got, greaterThan(72.4));
-        expect(((got! * 10).round() / 10 - got!).abs(), lessThan(1e-9));
-        expect(tester.takeException(), isNull);
-
-        await tester.pumpWidget(
-          _host(
-            const CaptureSkinOverlay(
-              skin: PersonaSkinId.aestheticFlexer,
-              dayNumber: 3,
-              streak: 2,
-              lastPace: '5:30',
-              lastKm: 8.5,
-            ),
-            dark: dark,
-          ),
-        );
-        await tester.pump();
-        expect(find.textContaining('5:30'), findsOneWidget);
-        expect(find.textContaining('8.5'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-
-        final list = [
-          testJourney(title: 'Alpha'),
-          testJourney(id: 'j2', title: 'Beta'),
-        ];
-        await tester.pumpWidget(
-          // The sheet content scrolls inside showUiSheet (bug 12 removed its
-          // own UiSheet wrapper); a bare 320dp host needs the scroll here.
-          _host(
-            SingleChildScrollView(
-              child: JourneyPickerSheet(
-                journeys: list,
-                selectedId: null,
-                pinnedIds: const {'j2'},
-              ),
-            ),
-            dark: dark,
-          ),
-        );
-        await tester.pump();
-        expect(
-          find.byKey(const ValueKey('journey-picker-section-pinned')),
-          findsOneWidget,
-        );
-        expect(find.byKey(const ValueKey('journey-picker-j2')), findsOneWidget);
-        expect(tester.takeException(), isNull);
-      },
+        ),
+        dark: false,
+      ),
     );
-  }
+    await tester.pump();
+    expect(
+      find.byKey(const ValueKey('journey-picker-section-pinned')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('journey-picker-j2')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
