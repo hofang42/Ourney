@@ -353,26 +353,42 @@ class DataJourneyRepository implements JourneyRepository {
           !group &&
           outboxForEdit != null &&
           await _hasPendingFor(outboxForEdit, journeyId);
-      if (group && outboxForEdit != null) {
-        // A queued extras/edit of this group journey would replay after (and
-        // overwrite) this edit: wait until it is sent.
-        final keys = await outboxForEdit.pendingKeys();
-        if (keys.contains('${journeyKey(journeyId)}:extras') ||
-            keys.contains('${journeyKey(journeyId)}:edit')) {
-          throw const OurneyException(OurneyErrorCode.syncPending);
-        }
+      // A queued extras/edit of a group journey would replay after (and
+      // overwrite) this edit: take it out and merge it under the new values.
+      final stale = group && outboxForEdit != null
+          ? await _takeQueuedUpdates(outboxForEdit, journeyId)
+          : const <_QueuedUpdate>[];
+      var params = updateJourneyParams(journeyId, update);
+      for (final q in stale.reversed) {
+        params = _mergeUpdateParams(q.params, params);
       }
       try {
         if (blocked) throw const OurneyException(OurneyErrorCode.offline);
-        final res = await remote.rpc(
-          'update_journey',
-          updateJourneyParams(journeyId, update),
-        );
+        final res = await remote.rpc('update_journey', params);
         if (res is Map) {
           await ctx.store.applyJourney(res.cast<String, dynamic>());
           return journeyFromRow(await _requireLocal(journeyId));
         }
       } on OurneyException catch (e) {
+        if (stale.isNotEmpty) {
+          // Transient: one merged item replays later; otherwise the taken
+          // items go back as they were.
+          if (isTransient(e.error)) {
+            await outboxForEdit!.enqueue(
+              OutboxKind.updateJourney,
+              '${journeyKey(journeyId)}:edit',
+              params,
+            );
+          } else {
+            for (final q in stale) {
+              await outboxForEdit!.enqueue(
+                OutboxKind.updateJourney,
+                q.key,
+                q.params,
+              );
+            }
+          }
+        }
         if (e.error != OurneyErrorCode.offline || group) rethrow;
       }
     } else if (group) {
@@ -390,6 +406,63 @@ class DataJourneyRepository implements JourneyRepository {
       unawaited(outbox.flush());
     }
     return journeyFromRow(await _requireLocal(journeyId));
+  }
+
+  /// Removes and returns the live queued `:extras` / `:edit` items of
+  /// [journeyId] (oldest first).
+  Future<List<_QueuedUpdate>> _takeQueuedUpdates(
+    Outbox outbox,
+    String journeyId,
+  ) async {
+    final keys = [
+      '${journeyKey(journeyId)}:extras',
+      '${journeyKey(journeyId)}:edit',
+    ];
+    final taken = <_QueuedUpdate>[];
+    for (final row in await outbox.pendingRows()) {
+      if (row.kind == OutboxKind.updateJourney.wire &&
+          keys.contains(row.entityKey)) {
+        taken.add(
+          _QueuedUpdate(
+            row.entityKey,
+            (jsonDecode(row.payload) as Map).cast<String, dynamic>(),
+          ),
+        );
+      }
+    }
+    for (final k in keys) {
+      await outbox.cancel(k, kind: OutboxKind.updateJourney);
+    }
+    return taken;
+  }
+
+  static const _fieldOfParam = {
+    'p_layout': 'layout',
+    'p_cover': 'cover',
+    'p_color': 'color',
+    'p_reminder_time': 'reminder_time',
+    'p_dna': 'dna',
+  };
+
+  /// [older] `update_journey` params under [newer]: the newer value (or
+  /// clear) wins per field, fields it leaves alone come from [older].
+  static Map<String, dynamic> _mergeUpdateParams(
+    Map<String, dynamic> older,
+    Map<String, dynamic> newer,
+  ) {
+    final newClear = {...(newer['p_clear'] as List? ?? const [])};
+    final oldClear = {...(older['p_clear'] as List? ?? const [])};
+    final merged = Map<String, dynamic>.of(newer);
+    final clear = <Object?>{...newClear};
+    merged['p_title'] = newer['p_title'] ?? older['p_title'];
+    for (final e in _fieldOfParam.entries) {
+      final touchedByNew = newer[e.key] != null || newClear.contains(e.value);
+      if (touchedByNew) continue;
+      if (older[e.key] != null) merged[e.key] = older[e.key];
+      if (oldClear.contains(e.value)) clear.add(e.value);
+    }
+    merged['p_clear'] = clear.toList();
+    return merged;
   }
 
   /// Applies [update] to the cached row (what `update_journey` would store).
@@ -683,4 +756,10 @@ class DataJourneyRepository implements JourneyRepository {
     );
     unawaited(outbox.flush());
   }
+}
+
+class _QueuedUpdate {
+  const _QueuedUpdate(this.key, this.params);
+  final String key;
+  final Map<String, dynamic> params;
 }
