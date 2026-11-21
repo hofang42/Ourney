@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'contrast.dart';
+
 /// Ourney design tokens. The shell palette is the V2 shell from the Figma
 /// Make prototype (`design/ourney-v2-app/src/app/app.css`, light `.system`
 /// values and `.mode-dark` overrides); structure and names come from V1.0
@@ -20,7 +22,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     required this.inkMuted,
     required this.inkSoft,
     required this.border,
-    required this.inputBorder,
+    required this.fieldBorder,
     required this.divider,
     required this.chevron,
     required this.brand,
@@ -69,7 +71,11 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
   final Color inkSoft;
 
   final Color border;
-  final Color inputBorder;
+
+  /// Rest outline of text fields, areas, search pills and code boxes. Unlike
+  /// [border] (hairline dividers and cards) it reaches 3:1 against the field
+  /// fill ([fill]) so the control is perceivable (WCAG 1.4.11).
+  final Color fieldBorder;
   final Color divider;
   final Color chevron;
 
@@ -140,7 +146,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     inkMuted: Color(0xFF5A544C),
     inkSoft: Color(0xFF3F3A34),
     border: Color(0xFFDCD2C2),
-    inputBorder: Color(0xFF1A1A1A),
+    fieldBorder: Color(0xFF8A8378),
     divider: Color(0xFFEADFCC),
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
@@ -176,7 +182,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     inkMuted: Color(0xFFB3AA9C),
     inkSoft: Color(0xFFD2C9BA),
     border: Color(0xFF3C3A35),
-    inputBorder: Color(0xFF79756D),
+    fieldBorder: Color(0xFF79756D),
     divider: Color(0xFF312E29),
     chevron: Color(0xFF8A8378),
     brand: Color(0xFFFF8A3D),
@@ -208,14 +214,8 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     Color accent, {
     Color preferred = const Color(0xFF1A1A1A),
   }) {
-    double ratio(Color a, Color b) {
-      final la = a.computeLuminance(), lb = b.computeLuminance();
-      final hi = la > lb ? la : lb, lo = la > lb ? lb : la;
-      return (hi + 0.05) / (lo + 0.05);
-    }
-
     for (final c in [preferred, const Color(0xFFFFFFFF)]) {
-      if (ratio(c, accent) >= 4.5) return c;
+      if (uiContrast(c, accent) >= 4.5) return c;
     }
     return const Color(0xFF000000);
   }
@@ -235,7 +235,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     Color? inkMuted,
     Color? inkSoft,
     Color? border,
-    Color? inputBorder,
+    Color? fieldBorder,
     Color? divider,
     Color? brand,
     Color? onBrand,
@@ -259,7 +259,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
     inkMuted: inkMuted ?? this.inkMuted,
     inkSoft: inkSoft ?? this.inkSoft,
     border: border ?? this.border,
-    inputBorder: inputBorder ?? this.inputBorder,
+    fieldBorder: fieldBorder ?? this.fieldBorder,
     divider: divider ?? this.divider,
     chevron: chevron,
     brand: brand ?? this.brand,
@@ -299,7 +299,7 @@ class OurneyUi extends ThemeExtension<OurneyUi> {
       inkMuted: l(inkMuted, other.inkMuted),
       inkSoft: l(inkSoft, other.inkSoft),
       border: l(border, other.border),
-      inputBorder: l(inputBorder, other.inputBorder),
+      fieldBorder: l(fieldBorder, other.fieldBorder),
       divider: l(divider, other.divider),
       chevron: l(chevron, other.chevron),
       brand: l(brand, other.brand),
@@ -352,7 +352,7 @@ abstract final class UiCamera {
 
 /// Radii used across index.css.
 abstract final class UiRadius {
-  static const double input = 12;
+  static const double input = 16;
 
   /// Text inputs and text areas (kit fields).
   static const double field = 16;

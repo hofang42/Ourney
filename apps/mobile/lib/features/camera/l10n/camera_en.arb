@@ -38,11 +38,9 @@
   },
   "camera_ghostOn": "Day 1 ghost · On",
   "camera_ghostOff": "Day 1 ghost · Off",
-  "camera_allJourneys": "All journeys",
   "camera_pickerTitle": "All journeys",
   "camera_pickerSearch": "Search journeys",
   "camera_pickerEmpty": "No journey matches your search.",
-  "camera_pickerClose": "Close",
   "camera_pickerNotShot": "Not shot today",
   "camera_pickerShot": "Shot today",
   "camera_pickerEnded": "Ended",
@@ -66,5 +64,7 @@
       }
     }
   },
-  "camera_partnerPhoto": "Partner's photo, tap to enlarge"
+  "camera_partnerPhoto": "Partner's photo",
+  "camera_partnerPhotoEnlargeHint": "Tap to enlarge",
+  "camera_partnerPhotoShrinkHint": "Tap to shrink"
 }

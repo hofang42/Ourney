@@ -169,14 +169,14 @@ abstract final class OurneyTheme {
       listTileTheme: ListTileThemeData(iconColor: ui.ink, textColor: ui.ink),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: ui.surfaceInput,
+        fillColor: ui.fill,
         hintStyle: text.bodyMedium?.copyWith(color: ui.inkMuted),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: UiSpace.lg,
           vertical: UiSpace.md,
         ),
-        border: _border(ui.border, UiBorder.thin),
-        enabledBorder: _border(ui.border, UiBorder.thin),
+        border: _border(ui.fieldBorder, UiBorder.thin),
+        enabledBorder: _border(ui.fieldBorder, UiBorder.thin),
         focusedBorder: _border(ui.accent, UiBorder.standard),
         errorBorder: _border(ui.danger, UiBorder.thin),
         focusedErrorBorder: _border(ui.danger, 2),

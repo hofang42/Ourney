@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../tokens.dart';
 import '../typography.dart';
 import 'buttons.dart';
+import 'layout.dart';
 import 'ourney_icons.dart';
 
 /// Empty / error state: sticker icon slot, Space Grotesk h2 title, muted body
@@ -360,11 +361,20 @@ class UiInlineError extends StatelessWidget {
   }
 }
 
+/// Bottom margin of a toast: [offset] alone, or above the pinned slot (never
+/// the two added, since callers like the journey screens already lift it).
+double _toastBottom(BuildContext context, double offset) {
+  final pinned = UiScaffold.pinnedBottomHeightOf(context);
+  return pinned > 0 ? math.max(offset, 36 + pinned) : offset;
+}
+
 /// V2 `.system-toast`: ink pill with paper text, 3dp brand hard shadow,
 /// 150ms in/out. [bottomOffset] is the gap above whatever the Scaffold already
 /// reserves: a floating SnackBar is lifted above `bottomNavigationBar` by
 /// the Scaffold itself, so it must stay small (adding the dock height here
-/// double-counted it and covered controls).
+/// double-counted it and covered controls). A pinned `UiScaffold.bottom` slot
+/// (primary button) is not a `bottomNavigationBar`, so its height is added
+/// automatically (`max(bottomOffset, 36 + pinned)`, not their sum).
 void showUiToast(
   BuildContext context,
   String message, {
@@ -395,7 +405,12 @@ void showUiToast(
       shape: const StadiumBorder(),
       // Let the hard shadow paint outside the snackbar's own bounds.
       clipBehavior: Clip.none,
-      margin: EdgeInsets.fromLTRB(24, 0, 24, bottomOffset),
+      margin: EdgeInsets.fromLTRB(
+        24,
+        0,
+        24,
+        _toastBottom(context, bottomOffset),
+      ),
       content: Center(
         child: Container(
           key: const ValueKey('ui-toast'),

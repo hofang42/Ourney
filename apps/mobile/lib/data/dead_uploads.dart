@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'data_context.dart';
 import 'db/app_database.dart';
+import 'local_store.dart' show checkInKey, reactionKey;
 import 'sync/outbox.dart';
 
 /// A check-in the outbox gave up uploading (permanent server error or too many
@@ -69,16 +70,49 @@ class DeadUploads {
   Future<void> discard(List<DeadUpload> items) async {
     final outbox = _ctx.outbox;
     if (outbox == null || items.isEmpty) return;
-    final rows = await (_ctx.db.select(
-      _ctx.db.checkIns,
-    )..where((t) => t.id.isIn([for (final i in items) i.checkInId]))).get();
-    debugPrint('dead uploads: discarding ${rows.length} check-in(s)');
-    await outbox.deleteItems([for (final i in items) i.queueId]);
-    // Only rows that never reached the server: an uploaded one stays.
-    await _ctx.store.deleteCheckIns([
-      for (final r in rows)
-        if (!r.uploaded) r,
+    final db = _ctx.db;
+    final wanted = [for (final i in items) i.checkInId];
+    late final List<CheckInRow> local;
+    // Rows are read inside the transaction, so what is deleted is exactly
+    // what was seen; queue rows and check-ins go together, or neither does.
+    await db.transaction(() async {
+      final rows = await (db.select(
+        db.checkIns,
+      )..where((t) => t.id.isIn(wanted))).get();
+      // Only rows that never reached the server: an uploaded one stays.
+      local = [
+        for (final r in rows)
+          if (!r.uploaded) r,
+      ];
+      final ids = [for (final r in local) r.id];
+      await outbox.deleteItems([for (final i in items) i.queueId]);
+      // Any other item for these check-ins (a queued reaction, a second
+      // upload) would fail once the row is gone.
+      await (db.delete(db.uploadQueue)..where(
+            (t) => t.entityKey.isIn([
+              for (final id in ids) ...[checkInKey(id), reactionKey(id)],
+            ]),
+          ))
+          .go();
+      await (db.delete(db.reactions)..where((t) => t.checkInId.isIn(ids))).go();
+      await (db.delete(db.checkIns)..where((t) => t.id.isIn(ids))).go();
+    });
+    debugPrint('dead uploads: discarded ${local.length} check-in(s)');
+    await _ctx.files.delete([
+      for (final r in local) ...[
+        r.photoPath,
+        r.thumbPath,
+        if (r.partnerPhotoPath != null) r.partnerPhotoPath!,
+      ],
     ]);
+    // The pull skipped server versions while these were pending.
+    for (final j in {for (final i in items) i.journeyId}) {
+      try {
+        await _ctx.sync?.pullJourney(j);
+      } on Object catch (e) {
+        debugPrint('dead uploads: re-pull of $j failed: $e');
+      }
+    }
   }
 
   static String? _checkInId(OutboxRow row) {

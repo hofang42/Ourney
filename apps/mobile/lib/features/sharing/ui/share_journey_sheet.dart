@@ -671,14 +671,14 @@ class _FriendsBlock extends StatelessWidget {
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(UiRadius.capsule),
                   borderSide: BorderSide(
-                    color: ui.border,
+                    color: ui.fieldBorder,
                     width: UiBorder.thin,
                   ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(UiRadius.capsule),
                   borderSide: BorderSide(
-                    color: ui.border,
+                    color: ui.fieldBorder,
                     width: UiBorder.thin,
                   ),
                 ),

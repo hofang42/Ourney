@@ -82,7 +82,7 @@ class SyncEngine {
   /// as owner. Read, wipe and write of the owner happen in one transaction
   /// (drift serializes them), so concurrent callers cannot wipe each other's
   /// fresh writes.
-  Future<void> ensureOwner(String userId) async {
+  Future<void> ensureOwner(String userId, {bool checkRun = false}) async {
     if (await db.readCursor(ownerCursorKey) == userId) return;
     final drafts = Directory(
       p.join(store.files.root.parent.path, checkinDraftDirName),
@@ -90,8 +90,10 @@ class SyncEngine {
     // Rows, files and drafts of the previous owner (or of the wiped marker)
     // go together; see [MediaWipe] for the failure/rollback rules.
     await MediaWipe.run(
+      db,
       [store.files.root, drafts],
       (moveMedia) => db.transaction(() async {
+        if (checkRun) _checkRun();
         if (await db.readCursor(ownerCursorKey) == userId) return;
         await db.wipe();
         await moveMedia();
@@ -294,7 +296,9 @@ class SyncEngine {
     _runEpoch = _epoch;
     _runUser = me;
     try {
-      await _write(() => ensureOwner(me));
+      // Not inside `_write`: the media wipe must not run in a nested
+      // transaction (its commit would only be a savepoint).
+      await ensureOwner(me, checkRun: true);
       await enqueueOrphanUploads(me);
       var pending = await outbox.pendingKeys();
       // A local edit still waiting in the outbox wins over the server copy
@@ -311,7 +315,17 @@ class SyncEngine {
       }, onPage: () async => pending = await outbox.pendingKeys());
       await _pullTable('memberships', (r) async {
         final id = r['journey_id'];
-        if (id is String && pending.contains(membershipKey(id))) return;
+        // Only MY pending change blocks my own row, and never a `left` row
+        // (leaving/removal on the server wins and purges the journey).
+        // Other members' rows always apply.
+        final mine = r['user_id'] == me;
+        final left = r['status'] == MemberStatus.left.wireName;
+        if (id is String &&
+            mine &&
+            !left &&
+            pending.contains(membershipKey(id))) {
+          return;
+        }
         await store.applyMembership(r, me: me);
       }, onPage: () async => pending = await outbox.pendingKeys());
       pending = await outbox.pendingKeys();
@@ -473,6 +487,35 @@ class SyncEngine {
     }
   }
 
+  /// An outbox item was given up on or discarded: the pull skipped server
+  /// versions of its entity while it was pending and the cursor moved on, so
+  /// refresh that journey now. Never throws.
+  Future<void> repullAfterDrop(OutboxKind? kind, String entityKey) async {
+    // A dead create_journey must not purge the (only) local copy.
+    if (kind == null ||
+        kind == OutboxKind.createJourney ||
+        kind == OutboxKind.deleteMedia) {
+      return;
+    }
+    try {
+      final parts = entityKey.split(':');
+      final id = parts.length < 2 ? null : parts[1];
+      if (id == null) return;
+      String? journeyId;
+      if (parts[0] == 'journey' || parts[0] == 'membership') {
+        journeyId = id;
+      } else {
+        final c = await (db.select(
+          db.checkIns,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        journeyId = c?.journeyId;
+      }
+      if (journeyId != null) await pullJourney(journeyId);
+    } on Object catch (e) {
+      debugPrint('sync: re-pull after a dropped item failed: $e');
+    }
+  }
+
   /// Full refresh of one journey (after join/rejoin, unblock, or when a
   /// group screen opens): rows that disappeared server-side without a
   /// tombstone (RLS: blocks, reports) are dropped locally.
@@ -487,11 +530,46 @@ class SyncEngine {
     }
   }
 
+  /// True when the journey may exist only on this device: live outbox work
+  /// for it or its check-ins, or its own create_journey item (even dead).
+  Future<bool> _hasQueuedWork(String journeyId) async {
+    final ids =
+        await (db.selectOnly(db.checkIns)
+              ..addColumns([db.checkIns.id])
+              ..where(db.checkIns.journeyId.equals(journeyId)))
+            .map((r) => r.read(db.checkIns.id)!)
+            .get();
+    final keys = [
+      journeyKey(journeyId),
+      '${journeyKey(journeyId)}:extras',
+      '${journeyKey(journeyId)}:edit',
+      membershipKey(journeyId),
+      for (final id in ids) ...[checkInKey(id), reactionKey(id)],
+    ];
+    final rows =
+        await (db.select(db.uploadQueue)
+              ..where(
+                (t) =>
+                    t.entityKey.isIn(keys) &
+                    // Live work always protects. A dead item protects only
+                    // when it is the journey's own create_journey: the mark
+                    // of a journey the server never had. Other dead items
+                    // (the server said no) must not keep a deleted journey.
+                    (t.dead.equals(false) |
+                        t.kind.equals(OutboxKind.createJourney.wire)),
+              )
+              ..limit(1))
+            .get();
+    return rows.isNotEmpty;
+  }
+
   Future<void> _pullJourney(String journeyId, String me, int epoch) async {
     final pending = await outbox.pendingKeys();
     final journeys = await remote.select('journeys', eq: {'id': journeyId});
     if (journeys.isEmpty) {
-      if (!pending.contains(journeyKey(journeyId))) {
+      // Never purge a journey that exists only here: any queue row (live or
+      // dead, e.g. its own create_journey) or an unsent check-in keeps it.
+      if (!await _hasQueuedWork(journeyId)) {
         await db.transaction(() async {
           _checkSession(epoch, me);
           await store.purgeJourney(journeyId);

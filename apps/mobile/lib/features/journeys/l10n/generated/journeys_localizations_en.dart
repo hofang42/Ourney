@@ -1788,4 +1788,19 @@ class JourneysL10nEn extends JourneysL10n {
   @override
   String get journeys_createSettingsNotSaved =>
       'Some settings couldn\'t be saved';
+
+  @override
+  String get journeys_deadDiscardTitle => 'Discard unsent photos?';
+
+  @override
+  String journeys_deadDiscardBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count photos will be deleted from this phone and never uploaded. This can\'t be undone.',
+      one: '1 photo will be deleted from this phone and never uploaded. This can\'t be undone.',
+    );
+    return '$_temp0';
+  }
 }

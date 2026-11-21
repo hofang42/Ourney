@@ -1075,5 +1075,7 @@
   "journeys_deadUploads": "{count, plural, one{1 photo couldn't be sent} other{{count} photos couldn't be sent}}",
   "journeys_deadRetry": "Retry",
   "journeys_deadDiscard": "Discard",
-  "journeys_createSettingsNotSaved": "Some settings couldn't be saved"
+  "journeys_createSettingsNotSaved": "Some settings couldn't be saved",
+  "journeys_deadDiscardTitle": "Discard unsent photos?",
+  "journeys_deadDiscardBody": "{count, plural, one{1 photo will be deleted from this phone and never uploaded. This can't be undone.} other{{count} photos will be deleted from this phone and never uploaded. This can't be undone.}}"
 }

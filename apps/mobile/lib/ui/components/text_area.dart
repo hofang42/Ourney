@@ -6,7 +6,7 @@ import '../typography.dart';
 import 'inputs.dart' show uiFieldBorder;
 
 /// `.field-label` + multi-line (or length-limited) input with a character
-/// counter. Same look as `UiTextField` (16dp radius, 1.5dp `ui.border`, 2dp
+/// counter. Same look as `UiTextField` (16dp radius, 1.5dp `ui.fieldBorder`, 2dp
 /// accent on focus), which has no `maxLength` / `maxLines`.
 class UiTextArea extends StatelessWidget {
   const UiTextArea({
@@ -94,8 +94,8 @@ class UiTextArea extends StatelessWidget {
               vertical: 15,
             ),
             constraints: const BoxConstraints(minHeight: UiSize.input),
-            border: uiFieldBorder(ui.border),
-            enabledBorder: uiFieldBorder(ui.border),
+            border: uiFieldBorder(ui.fieldBorder),
+            enabledBorder: uiFieldBorder(ui.fieldBorder),
             focusedBorder: uiFieldBorder(ui.accent, UiBorder.standard),
           ),
         ),
@@ -125,6 +125,7 @@ class UiCaptionField extends StatelessWidget {
     this.counterSemantics,
     this.onChanged,
     this.focusNode,
+    this.readOnly = false,
     super.key,
   });
 
@@ -140,6 +141,9 @@ class UiCaptionField extends StatelessWidget {
   final String? counterSemantics;
   final ValueChanged<String>? onChanged;
   final FocusNode? focusNode;
+
+  /// Keeps the text and focus but refuses edits (e.g. while posting).
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +165,8 @@ class UiCaptionField extends StatelessWidget {
             textInputAction: TextInputAction.done,
             inputFormatters: inputFormatters,
             onChanged: onChanged,
-            cursorColor: ui.accent,
+            readOnly: readOnly,
+            cursorColor: ui.ink,
             style: UiText.body(size: 16, height: 1.45, color: ui.ink),
             decoration: InputDecoration(
               isDense: true,
@@ -178,8 +183,8 @@ class UiCaptionField extends StatelessWidget {
                 vertical: 14,
               ),
               constraints: const BoxConstraints(minHeight: UiSize.input),
-              border: uiFieldBorder(ui.border),
-              enabledBorder: uiFieldBorder(ui.border),
+              border: uiFieldBorder(ui.fieldBorder),
+              enabledBorder: uiFieldBorder(ui.fieldBorder),
               focusedBorder: uiFieldBorder(ui.accent, UiBorder.standard),
             ),
           ),

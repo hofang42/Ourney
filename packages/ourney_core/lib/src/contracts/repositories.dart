@@ -268,6 +268,8 @@ enum OurneyErrorCode {
   storageCleanupIncomplete('storage_cleanup_incomplete'),
   storageCleanupFailed('storage_cleanup_failed'),
   deleteFailed('delete_failed'),
+  // delete-account 410: the caller's account no longer exists (a retry after a lost response).
+  alreadyDeleted('already_deleted'),
   internal('internal'),
   // Client-side.
   offline('offline'),

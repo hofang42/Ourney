@@ -1781,4 +1781,18 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createSettingsNotSaved => 'Một vài cài đặt chưa lưu được';
+
+  @override
+  String get journeys_deadDiscardTitle => 'Bỏ ảnh chưa gửi được?';
+
+  @override
+  String journeys_deadDiscardBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count ảnh sẽ bị xóa khỏi máy này và không gửi lên được nữa. Không hoàn tác được.',
+    );
+    return '$_temp0';
+  }
 }

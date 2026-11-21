@@ -122,12 +122,6 @@ abstract class CheckinL10n {
   /// **'Chú thích'**
   String get checkin_captionLabel;
 
-  /// No description provided for @checkin_captionHint.
-  ///
-  /// In vi, this message translates to:
-  /// **'Viết vài dòng (không bắt buộc)'**
-  String get checkin_captionHint;
-
   /// Caption length counter (FR-C4, max 140).
   ///
   /// In vi, this message translates to:
@@ -211,18 +205,6 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Không tìm thấy hành trình này.'**
   String get checkin_missingJourney;
-
-  /// Text of the stamp shown after posting (FR-C8).
-  ///
-  /// In vi, this message translates to:
-  /// **'Đã check-in!'**
-  String get checkin_stamp;
-
-  /// No description provided for @checkin_streakPlusOne.
-  ///
-  /// In vi, this message translates to:
-  /// **'+1 ngày'**
-  String get checkin_streakPlusOne;
 
   /// Calm notice after an extra photo of a day that already counted (FR-C8). n >= 2.
   ///
@@ -380,23 +362,11 @@ abstract class CheckinL10n {
   /// **'ĐỦ 30 NGÀY'**
   String get checkin_done_minimalFull;
 
-  /// No description provided for @checkin_done_chainLabel.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chuỗi'**
-  String get checkin_done_chainLabel;
-
   /// No description provided for @checkin_done.
   ///
   /// In vi, this message translates to:
   /// **'Xong'**
   String get checkin_done;
-
-  /// Eyebrow of the success screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đã đăng khoảnh khắc'**
-  String get checkin_posted;
 
   /// Headline of the success screen without a milestone.
   ///
@@ -631,6 +601,18 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Chi tiết'**
   String get checkin_details;
+
+  /// No description provided for @checkin_captionLimitReached.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã đạt giới hạn {max} ký tự'**
+  String checkin_captionLimitReached(int max);
+
+  /// No description provided for @checkin_metricLast.
+  ///
+  /// In vi, this message translates to:
+  /// **'Lần trước: {value}'**
+  String checkin_metricLast(String value);
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {

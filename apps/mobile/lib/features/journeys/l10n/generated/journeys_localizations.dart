@@ -3187,6 +3187,18 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Một vài cài đặt chưa lưu được'**
   String get journeys_createSettingsNotSaved;
+
+  /// Confirm sheet title before discarding failed uploads.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ ảnh chưa gửi được?'**
+  String get journeys_deadDiscardTitle;
+
+  /// Confirm sheet body: how many photos are deleted.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{{count} ảnh sẽ bị xóa khỏi máy này và không gửi lên được nữa. Không hoàn tác được.}}'**
+  String journeys_deadDiscardBody(int count);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

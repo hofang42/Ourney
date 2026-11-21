@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../contrast.dart';
+
 import '../tokens.dart';
 import '../typography.dart';
 import 'ourney_icons.dart';
@@ -19,13 +21,9 @@ const List<Color> uiAvatarColors = [
 /// fell to 2-3:1).
 Color uiAvatarInk(Color disc) {
   const dark = Color(0xFF1A1A1A);
-  double ratio(Color a, Color b) {
-    final la = a.computeLuminance();
-    final lb = b.computeLuminance();
-    return la > lb ? (la + 0.05) / (lb + 0.05) : (lb + 0.05) / (la + 0.05);
-  }
-
-  return ratio(disc, Colors.white) >= ratio(disc, dark) ? Colors.white : dark;
+  return uiContrast(disc, Colors.white) >= uiContrast(disc, dark)
+      ? Colors.white
+      : dark;
 }
 
 /// `.avatar`: initial on a colored disc with a 2dp paper ring. 28dp by

@@ -314,6 +314,7 @@ class FakeChatRepository implements ChatRepository {
     String conversationId,
     String body, {
     String? replyToCheckInId,
+    String? draftId,
   }) => throw UnimplementedError();
   @override
   Future<ChatMessage> sendPhoto(

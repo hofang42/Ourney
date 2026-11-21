@@ -67,13 +67,14 @@ void main() {
     expect(t.widget<AnimatedOpacity>(opacity).duration, Duration.zero);
   });
 
-  testWidgets('pill is a live region carrying the message', (t) async {
+  testWidgets('pill is out of the semantics tree (announced by service)', (
+    t,
+  ) async {
     final handle = t.ensureSemantics();
     await t.pumpWidget(
       _host(const UiCameraStatusPill(message: 'Flash: on', visible: true)),
     );
-    final node = t.getSemantics(find.bySemanticsLabel('Flash: on'));
-    expect(node.flagsCollection.isLiveRegion, isTrue);
+    expect(find.bySemanticsLabel('Flash: on'), findsNothing);
     handle.dispose();
   });
 

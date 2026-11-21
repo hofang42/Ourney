@@ -51,6 +51,7 @@ OurneyErrorCode _functionCode(int status, Object? details) {
     401 => OurneyErrorCode.unauthenticated,
     403 => OurneyErrorCode.forbidden,
     404 => OurneyErrorCode.notFound,
+    410 => OurneyErrorCode.alreadyDeleted,
     405 => OurneyErrorCode.methodNotAllowed,
     >= 500 => OurneyErrorCode.internal,
     _ => OurneyErrorCode.unknown,

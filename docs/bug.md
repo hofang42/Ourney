@@ -324,6 +324,8 @@ Worker tự chấm: 4 cao, 10 vừa, 1 thấp. 15 lỗi, đều có test tạm f
 
 #### B-B1. Số cân vừa chọn trên thanh trượt Camera bị ghi đè bởi số cân của lần điểm danh trước khi sang màn đăng ảnh
 
+> **Đã thay thế 2026-11-20 (thiết kế lại camera/caption):** thanh trượt cân nặng và `pendingWeightProvider` đã bị bỏ khỏi màn camera; cân nặng nhập ở màn đăng ảnh, số lần trước chỉ hiện dạng gợi ý ("Lần trước: 72,5"), không điền sẵn vào ô. Mục này không còn áp dụng.
+
 - **Vị trí:** `apps/mobile/lib/features/camera/capture_screen.dart:378` (kèm `apps/mobile/lib/features/camera/capture_screen.dart:401`, `apps/mobile/lib/features/checkin/checkin_screen.dart:65-69`)
 - **Mức độ:** cao
 - **Độ chắc:** chắc chắn

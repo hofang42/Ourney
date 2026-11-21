@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show SemanticsService;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -42,11 +43,14 @@ class CheckinScreen extends ConsumerStatefulWidget {
   ConsumerState<CheckinScreen> createState() => _CheckinScreenState();
 }
 
-class _CheckinScreenState extends ConsumerState<CheckinScreen> {
+class _CheckinScreenState extends ConsumerState<CheckinScreen>
+    with WidgetsBindingObserver {
   final _caption = TextEditingController();
   final _metric = TextEditingController();
   final _extras = PostExtrasController();
+  final _captionFocus = FocusNode();
   bool _posting = false;
+  bool _limitAnnounced = false;
 
   /// Minimal skin: posts by itself after 3 s unless touched (Figma).
   static const int _countdownFrom = 3;
@@ -70,17 +74,42 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     super.initState();
     _drafts = ref.read(draftFilesProvider);
     _caption.addListener(_onCaptionChanged);
-    // The metric field starts from the last logged value (B-B1).
-    final prefill = widget.photo?.initialMetricValue;
-    if (prefill != null) {
-      _metric.text = prefill == prefill.roundToDouble()
-          ? prefill.toInt().toString()
-          : prefill.toStringAsFixed(1);
+    _captionFocus.addListener(_onCaptionFocus);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  bool _keyboardWasUp = false;
+
+  /// The keyboard closing while the caption keeps focus (Android back
+  /// gesture) would leave the thumbnail layout stuck: drop the focus so the
+  /// full photo comes back.
+  @override
+  void didChangeMetrics() {
+    final nowUp = View.of(context).viewInsets.bottom > 0;
+    if (_keyboardWasUp && !nowUp && _captionFocus.hasFocus) {
+      _captionFocus.unfocus();
     }
+    _keyboardWasUp = nowUp;
+  }
+
+  /// The last logged value, shown as a hint (never as text: a stale value
+  /// must not be posted by accident), with the locale's decimal separator.
+  String? _lastMetricHint(CheckinL10n l10n, bool vi) {
+    final last = widget.photo?.initialMetricValue;
+    if (last == null) return null;
+    var text = last == last.roundToDouble()
+        ? last.toInt().toString()
+        : last.toStringAsFixed(1);
+    if (vi) text = text.replaceAll('.', ',');
+    return l10n.checkin_metricLast(text);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _captionFocus
+      ..removeListener(_onCaptionFocus)
+      ..dispose();
     _caption
       ..removeListener(_onCaptionChanged)
       ..dispose();
@@ -96,7 +125,24 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     super.dispose();
   }
 
-  void _onCaptionChanged() => setState(() {});
+  void _onCaptionChanged() {
+    // One announcement when the 140-character limit is reached (the visible
+    // counter is excluded from semantics).
+    final atLimit = _caption.text.runes.length >= captionMax;
+    if (atLimit && !_limitAnnounced && mounted) {
+      unawaited(
+        SemanticsService.sendAnnouncement(
+          View.of(context),
+          CheckinL10n.of(context).checkin_captionLimitReached(captionMax),
+          Directionality.of(context),
+        ),
+      );
+    }
+    _limitAnnounced = atLimit;
+    setState(() {});
+  }
+
+  void _onCaptionFocus() => setState(() {});
 
   void _stopCountdown() {
     _countdown?.cancel();
@@ -356,6 +402,8 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
       key: _captionKey,
       fieldKey: const ValueKey('checkin-caption'),
       controller: _caption,
+      focusNode: _captionFocus,
+      readOnly: _posting,
       semanticLabel: semanticsLabel,
       hint: vi ? template.captionPromptVi : template.captionPromptEn,
       inputFormatters: [_CodePointLimit(captionMax)],
@@ -378,7 +426,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
     final hideMetric = membership?.hideMetric ?? journey.hideMetricDefault;
     final template = templateFor(journey.templateId);
     final vi = Localizations.localeOf(context).languageCode == 'vi';
-    final typing = MediaQuery.viewInsetsOf(context).bottom > 0;
+    // The thumbnail swap follows the caption's focus, not any keyboard (the
+    // metric field's keyboard keeps the full photo).
+    final typing = _captionFocus.hasFocus;
+    final keyboardUp = MediaQuery.viewInsetsOf(context).bottom > 0;
     final metricName = journey.metricName;
     final metricLabel = metricName == null
         ? null
@@ -423,22 +474,21 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
         padBottom: UiSpace.lg,
         bottom: Center(
           child: Padding(
+            // UiScaffold's pinned slot already clears the safe area; the
+            // bar hugs the keyboard while it is up.
             padding: EdgeInsets.fromLTRB(
               gutter,
               UiSpace.sm,
               gutter,
-              UiSpace.lg,
+              keyboardUp ? UiSpace.sm : UiSpace.lg,
             ),
-            child: SafeArea(
-              top: false,
-              child: UiButton(
-                key: const ValueKey('checkin-post'),
-                label: _posting ? l10n.checkin_posting : postLabel,
-                glyph: const OurneyIcon(name: 'send', size: 20),
-                accent: style.accent,
-                onAccent: style.onAccent,
-                onPressed: _posting ? null : () => _post(journey, photo),
-              ),
+            child: UiButton(
+              key: const ValueKey('checkin-post'),
+              label: _posting ? l10n.checkin_posting : postLabel,
+              glyph: const OurneyIcon(name: 'send', size: 20),
+              accent: style.accent,
+              onAccent: style.onAccent,
+              onPressed: _posting ? null : () => _post(journey, photo),
             ),
           ),
         ),
@@ -532,6 +582,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
               UiTextField(
                 fieldKey: const ValueKey('checkin-metric'),
                 label: metricLabel,
+                hint: _lastMetricHint(l10n, vi),
                 controller: _metric,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,

@@ -12,7 +12,7 @@
 // A view is recorded with viewer_key = sha256(token | user-agent | day salt) — no raw IP (S19).
 // Spike S7: Supabase rewrites `text/html` GET responses to `text/plain` on the default
 // supabase.co domain, so this returns JSON for a static page (e.g. GitHub Pages) to render.
-import { adminClient, json } from "../_shared/admin.ts";
+import { adminClient, chunk, json } from "../_shared/admin.ts";
 
 const TOKEN_RE = /^[a-z0-9]{40}$/;
 const SIGNED_URL_TTL_SECONDS = 600;
@@ -88,7 +88,7 @@ async function handle(req: Request): Promise<Response> {
   if (!journeyData) return notFound();
   const journey = journeyData as unknown as JourneyRow;
 
-  const [members, consents, owner, checkIns, metrics, followers] = await Promise.all([
+  const [members, consents, owner, checkIns, followers] = await Promise.all([
     admin.from("memberships").select("user_id, hide_metric, blur_media, joined_at")
       .eq("journey_id", journey.id).eq("status", "active").is("deleted_at", null)
       .order("joined_at", { ascending: true }),
@@ -101,14 +101,12 @@ async function handle(req: Request): Promise<Response> {
       .eq("hidden_in_share", false)
       // Newest first so a journey over MAX_CHECKINS drops its oldest photos; restored below.
       .order("local_date", { ascending: false }).order("id", { ascending: false }).limit(MAX_CHECKINS),
-    admin.from("check_in_metrics").select("checkin_id, metric_value")
-      .eq("journey_id", journey.id).order("updated_at", { ascending: false }).limit(MAX_CHECKINS),
     journey.show_counts
       ? admin.from("journeys").select("id", { count: "exact", head: true })
         .eq("followed_from", journey.id).is("deleted_at", null)
       : Promise.resolve({ data: null, error: null, count: null }),
   ]);
-  for (const r of [members, consents, owner, checkIns, metrics, followers]) {
+  for (const r of [members, consents, owner, checkIns, followers]) {
     if (r.error) {
       console.error("public-journey query failed", r.error.message);
       return json({ error: "internal" }, 500, cors);
@@ -126,9 +124,22 @@ async function handle(req: Request): Promise<Response> {
   }
   const rows = ((checkIns.data ?? []) as CheckInRow[]).filter((c) => visibleAuthors.has(c.user_id)).reverse();
 
+  // Metrics only for the returned check-ins (not a second, independently truncated list).
   const metricById = new Map<string, number | null>();
-  for (const m of (metrics.data ?? []) as { checkin_id: string; metric_value: number | null }[]) {
-    metricById.set(m.checkin_id, m.metric_value);
+  const shownIds = rows.map((c) => c.id);
+  const metricChunks = await Promise.all(
+    chunk(shownIds, 100).map((ids) =>
+      admin.from("check_in_metrics").select("checkin_id, metric_value").in("checkin_id", ids)
+    ),
+  );
+  for (const res of metricChunks) {
+    if (res.error) {
+      console.error("metrics query failed", res.error.message);
+      return json({ error: "internal" }, 500, cors);
+    }
+    for (const m of (res.data ?? []) as { checkin_id: string; metric_value: number | null }[]) {
+      metricById.set(m.checkin_id, m.metric_value);
+    }
   }
 
   let likeCount: number | null = null;

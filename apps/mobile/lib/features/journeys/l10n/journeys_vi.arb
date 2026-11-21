@@ -1591,5 +1591,18 @@
   "journeys_createSettingsNotSaved": "Một vài cài đặt chưa lưu được",
   "@journeys_createSettingsNotSaved": {
     "description": "Non-fatal toast after creating a journey when the server rejected some create-flow settings."
+  },
+  "journeys_deadDiscardTitle": "Bỏ ảnh chưa gửi được?",
+  "@journeys_deadDiscardTitle": {
+    "description": "Confirm sheet title before discarding failed uploads."
+  },
+  "journeys_deadDiscardBody": "{count, plural, other{{count} ảnh sẽ bị xóa khỏi máy này và không gửi lên được nữa. Không hoàn tác được.}}",
+  "@journeys_deadDiscardBody": {
+    "description": "Confirm sheet body: how many photos are deleted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

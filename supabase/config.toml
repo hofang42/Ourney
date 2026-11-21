@@ -440,3 +440,7 @@ verify_jwt = true
 [functions.public-journey]
 # Public viewers are anonymous; access is gated by the revocable journeys.public_token.
 verify_jwt = false
+
+[functions.storage-purge-sweep]
+# Gated by the SWEEP_TOKEN secret (x-sweep-token header), not by a user JWT.
+verify_jwt = false

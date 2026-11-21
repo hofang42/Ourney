@@ -10,6 +10,7 @@ class UiPressable extends StatefulWidget {
     required this.child,
     required this.onPressed,
     this.semanticLabel,
+    this.semanticHint,
     this.minSize = const Size(UiSize.tap, UiSize.tap),
     this.borderRadius = const BorderRadius.all(
       Radius.circular(UiRadius.capsule),
@@ -25,6 +26,9 @@ class UiPressable extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;
   final String? semanticLabel;
+
+  /// Screen-reader hint (the action), kept out of [semanticLabel].
+  final String? semanticHint;
   final Size minSize;
   final BorderRadius borderRadius;
   final bool excludeChildSemantics;
@@ -108,6 +112,7 @@ class _UiPressableState extends State<UiPressable> {
       enabled: _enabled,
       selected: widget.selected,
       label: widget.semanticLabel,
+      hint: widget.semanticHint,
       excludeSemantics: widget.excludeChildSemantics,
       onTap: widget.onPressed,
       child: FocusableActionDetector(

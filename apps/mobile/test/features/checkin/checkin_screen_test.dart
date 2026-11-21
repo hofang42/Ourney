@@ -323,6 +323,7 @@ void main() {
         find.byKey(const ValueKey('checkin-retake')),
       );
       expect(fullPhoto.height, greaterThanOrEqualTo(48));
+      await tester.tap(find.byKey(const ValueKey('checkin-caption')));
       await tester.enterText(
         find.byKey(const ValueKey('checkin-caption')),
         'Hello',
@@ -347,6 +348,17 @@ void main() {
       // Post stays reachable on top of the keyboard.
       expect(find.byKey(const ValueKey('checkin-post')), findsOneWidget);
 
+      // Keyboard closed by the system (Android back) while the caption keeps
+      // focus: the focus is dropped and the full photo returns.
+      tester.view.resetViewInsets();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('checkin-photo-thumb')), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('checkin-caption')));
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      expect(thumb, findsOneWidget);
+      // Tapping the thumbnail takes the focus off the caption: full photo.
+      await tester.tap(thumb);
       tester.view.resetViewInsets();
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('checkin-photo-thumb')), findsNothing);
@@ -424,7 +436,7 @@ void main() {
       await finishSuccess(tester);
     });
 
-    testWidgets('the metric field starts from the last logged value (B-B1)', (
+    testWidgets('the last logged value is a hint, never prefilled text', (
       tester,
     ) async {
       journeys = FakeJourneyRepository(
@@ -453,7 +465,8 @@ void main() {
           matchRoot: true,
         ),
       );
-      expect(field.controller.text, '65.2');
+      expect(field.controller.text, isEmpty);
+      expect(find.text('Lần trước: 65,2'), findsOneWidget);
       await tester.enterText(
         find.byKey(const ValueKey('checkin-metric')),
         '62',

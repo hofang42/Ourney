@@ -25,6 +25,19 @@ const String _allKey = '*';
 /// journey while [_allKey] was pending: the all-marker must skip them.
 const String _exclPrefix = '!';
 
+/// Full pushes to every membership that are running right now (in memory:
+/// no push survives an app kill) and the flags the user set by hand for a
+/// journey meanwhile. A push that fails for such a journey must not record
+/// the flag, or the heal would overwrite the user's choice.
+int _flights = 0;
+
+/// Per flag: the push sequence at the time of the hand-set (null = none).
+final Map<String, ({int? hideSeq, int? blurSeq})> _heldByHand = {};
+
+/// Number of full pushes started so far; a hand-set choice only supersedes
+/// failures of pushes that started before it.
+int _pushSeq = 0;
+
 typedef _Flags = ({bool hide, bool blur});
 
 Map<String, _Flags> _loadPending(
@@ -54,6 +67,16 @@ Map<String, _Flags> _loadPending(
   }
 }
 
+String? _storedUser(SharedPreferencesWithCache prefs) {
+  try {
+    final raw = prefs.getString(SharePrivacyPrefs.pendingHeal);
+    if (raw == null) return null;
+    return (jsonDecode(raw) as Map<String, dynamic>)['user'] as String?;
+  } on Object {
+    return null;
+  }
+}
+
 void _logStore(Object e) => debugPrint('share privacy: prefs write failed: $e');
 
 void _savePending(
@@ -64,6 +87,8 @@ void _savePending(
   try {
     final Future<void> write;
     if (items.isEmpty) {
+      // Never delete another account's record.
+      if (_storedUser(prefs) case final owner? when owner != userId) return;
       write = prefs.remove(SharePrivacyPrefs.pendingHeal);
     } else {
       write = prefs.setString(
@@ -94,54 +119,67 @@ void _noteFailure(
   Object e, {
   required bool hide,
   required bool blur,
+  int? pushSeq,
 }) {
   debugPrint('share privacy: journey $journeyId failed: $e');
   if (userId == null || currentUser() != userId) return;
   if (e is OurneyException && e.error == OurneyErrorCode.unauthenticated) {
     return;
   }
+  // A hand-set value during a running push supersedes this failure.
+  // (only one that happened after this push started or while it ran).
+  final held = _heldByHand[journeyId];
+  bool superseded(int? heldSeq) =>
+      heldSeq != null && pushSeq != null && heldSeq >= pushSeq;
+  final hideF = hide && !superseded(held?.hideSeq);
+  final blurF = blur && !superseded(held?.blurSeq);
+  if (!hideF && !blurF) return;
   final items = _loadPending(prefs, userId);
   final old = items[journeyId];
   items[journeyId] = (
-    hide: hide || (old?.hide ?? false),
-    blur: blur || (old?.blur ?? false),
+    hide: hideF || (old?.hide ?? false),
+    blur: blurF || (old?.blur ?? false),
   );
   _savePending(prefs, userId, items);
 }
 
 /// Removes just the given flag(s) of [journeyId] (entry gone when empty).
+/// With [byHand] the flags are also excluded from a pending all-marker.
 void _clearFlags(
   SharedPreferencesWithCache prefs,
   String? userId,
   String journeyId, {
   required bool hide,
   required bool blur,
+  bool byHand = false,
 }) {
   if (userId == null) return;
   final items = _loadPending(prefs, userId);
-  if (items.containsKey(_allKey) && journeyId != _allKey) {
+  var changed = false;
+  if (byHand && items.containsKey(_allKey) && journeyId != _allKey) {
     final ex = items['$_exclPrefix$journeyId'];
     items['$_exclPrefix$journeyId'] = (
       hide: hide || (ex?.hide ?? false),
       blur: blur || (ex?.blur ?? false),
     );
+    changed = true;
   }
   final old = items[journeyId];
-  if (old == null) {
-    _savePending(prefs, userId, items);
-    return;
+  if (old != null) {
+    final next = (hide: old.hide && !hide, blur: old.blur && !blur);
+    if (next.hide || next.blur) {
+      items[journeyId] = next;
+    } else {
+      items.remove(journeyId);
+    }
+    changed = true;
   }
-  final next = (hide: old.hide && !hide, blur: old.blur && !blur);
-  if (next.hide || next.blur) {
-    items[journeyId] = next;
-  } else {
-    items.remove(journeyId);
-  }
-  // Exclusions only mean something while the all-marker is pending.
   if (!items.containsKey(_allKey)) {
+    final before = items.length;
     items.removeWhere((k, _) => k.startsWith(_exclPrefix));
+    if (items.length != before) changed = true;
   }
-  _savePending(prefs, userId, items);
+  if (changed) _savePending(prefs, userId, items);
 }
 
 /// The user chose a value for [journeyId] by hand (journey settings): any
@@ -152,6 +190,13 @@ void forgetSharePrivacyHeal(
   bool hide = false,
   bool blur = false,
 }) {
+  if (_flights > 0) {
+    final old = _heldByHand[journeyId];
+    _heldByHand[journeyId] = (
+      hideSeq: hide ? _pushSeq : old?.hideSeq,
+      blurSeq: blur ? _pushSeq : old?.blurSeq,
+    );
+  }
   try {
     _clearFlags(
       ref.read(sharedPreferencesProvider),
@@ -159,6 +204,7 @@ void forgetSharePrivacyHeal(
       journeyId,
       hide: hide,
       blur: blur,
+      byHand: true,
     );
   } on Object {
     // Nothing recorded, nothing to forget.
@@ -206,7 +252,9 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
   _healing = true;
   try {
     for (final entry in pending.entries) {
-      if (entry.key.startsWith(_exclPrefix)) continue;
+      if (entry.key.startsWith(_exclPrefix)) {
+        continue;
+      }
       if (current() != userId) break;
       final snapshot = entry.value;
       final hideOn = snapshot.hide && container.read(hideWeightOnShareProvider);
@@ -219,8 +267,10 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
         if (entry.key == _allKey) {
           for (final j in await repo.allMine()) {
             if (current() != userId) return;
-            // Journeys the user set by hand meanwhile keep their choice.
-            final ex = pending['$_exclPrefix${j.id}'];
+            // Re-read now: the user may have decided meanwhile.
+            final fresh = _loadPending(prefs, userId);
+            if (!fresh.containsKey(_allKey)) break;
+            final ex = fresh['$_exclPrefix${j.id}'];
             final hide = hideOn && isWeightMetric(j) && !(ex?.hide ?? false);
             final blurV = blurOn && !(ex?.blur ?? false);
             if (!hide && !blurV) continue;
@@ -247,11 +297,17 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
             hide = isWeightMetric(journey);
           }
           if (current() != userId) break;
-          if (hide || blurOn) {
+          // Re-read after the awaits: a hand-set choice (or a newer heal)
+          // may have removed the entry or some of its flags.
+          final fresh = _loadPending(prefs, userId)[entry.key];
+          if (fresh == null) continue;
+          hide = hide && fresh.hide;
+          final blurNow = blurOn && fresh.blur;
+          if (hide || blurNow) {
             await repo.updateMyMembership(
               entry.key,
               hideMetric: hide ? true : null,
-              blurMedia: blurOn ? true : null,
+              blurMedia: blurNow ? true : null,
             );
           }
         }
@@ -335,6 +391,9 @@ Future<void> pushSharePrivacyToMemberships(
   } on Object {
     return Future<void>.value();
   }
+  // Hand-set choices made while this push runs supersede its failures.
+  _flights++;
+  final mySeq = ++_pushSeq;
   String? current() {
     try {
       return container.read(currentUserIdProvider);
@@ -387,6 +446,7 @@ Future<void> pushSharePrivacyToMemberships(
           e,
           hide: hide != null,
           blur: blurV != null,
+          pushSeq: mySeq,
         );
       }
     }
@@ -406,6 +466,8 @@ Future<void> pushSharePrivacyToMemberships(
   final next = previous == null ? run() : previous.then((_) => run());
   _pendingPush = next;
   return next.whenComplete(() {
+    _flights--;
+    if (_flights == 0) _heldByHand.clear();
     if (identical(_pendingPush, next)) _pendingPush = null;
   });
 }

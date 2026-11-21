@@ -413,10 +413,10 @@ void main() {
       await h.go(tester, '/sharing/j1');
       gate.complete();
       await tester.pumpAndSettle();
-      expect(
-        sharing.calls.where((c) => c.startsWith('hide:')).toSet(),
-        {'hide:c-j1-2026-10-10:true', 'hide:c-j1-2026-10-11:true'},
-      );
+      expect(sharing.calls.where((c) => c.startsWith('hide:')).toSet(), {
+        'hide:c-j1-2026-10-10:true',
+        'hide:c-j1-2026-10-11:true',
+      });
     });
 
     testWidgets('group member: story is read-only, photos can be hidden '

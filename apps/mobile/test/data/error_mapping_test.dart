@@ -97,6 +97,26 @@ void main() {
       );
     });
 
+    test('410 already_deleted is distinct from a 401', () {
+      expect(
+        codeOf(
+          const FunctionsHttpException(
+            status: 410,
+            details: {'error': 'already_deleted'},
+          ),
+        ),
+        OurneyErrorCode.alreadyDeleted,
+      );
+      expect(
+        codeOf(const FunctionsHttpException(status: 410)),
+        OurneyErrorCode.alreadyDeleted,
+      );
+      expect(
+        codeOf(const FunctionsHttpException(status: 401)),
+        OurneyErrorCode.unauthenticated,
+      );
+    });
+
     test('falls back to the HTTP status', () {
       expect(
         codeOf(const FunctionsHttpException(status: 404)),

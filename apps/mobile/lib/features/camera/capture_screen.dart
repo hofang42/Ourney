@@ -282,7 +282,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   }
 
   /// Shows [message] in the status pill for 1.2s (1.5s under Reduce Motion)
-  /// and announces it to screen readers.
+  /// The message is also announced to screen readers.
   void _showStatus(String message, {String? glyph, bool danger = false}) {
     if (!mounted) return;
     _statusTimer?.cancel();
@@ -297,6 +297,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           : UiCameraStatusTone.neutral;
       _statusVisible = true;
     });
+    // Announced through the service, not a live region (which can steal
+    // VoiceOver focus), and on every call so an identical repeat within the
+    // hold is read again.
     unawaited(
       SemanticsService.sendAnnouncement(
         View.of(context),
@@ -661,6 +664,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 ? UiCameraToolEmphasis.filled
                 : UiCameraToolEmphasis.none,
             accent: style?.accent,
+            onAccent: style?.onAccent,
             onPressed: _toggleGhost,
           ),
         ),
@@ -674,6 +678,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               label: flashLabel,
               emphasis: flashEmphasis,
               accent: style?.accent,
+              onAccent: style?.onAccent,
               onPressed: _toggleFlash,
             ),
           ),
@@ -688,6 +693,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               ? UiCameraToolEmphasis.filled
               : UiCameraToolEmphasis.none,
           accent: style?.accent,
+          onAccent: style?.onAccent,
           onPressed: () => setState(() => _grid = !_grid),
         ),
       ),

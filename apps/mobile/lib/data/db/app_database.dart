@@ -182,6 +182,10 @@ class UploadQueue extends Table {
 
 /// Pull-sync cursors: server `updated_at` (exact string) per table, plus
 /// bookkeeping keys such as `_owner` (user the cache belongs to).
+/// DB cursor holding the JSON list of committed, deletable media trash paths
+/// (see `MediaWipe`).
+const String pendingTrashCursorKey = 'media.pendingTrash';
+
 @DataClassName('SyncCursorRow')
 class SyncCursor extends Table {
   TextColumn get tableKey => text()();
@@ -255,8 +259,16 @@ class AppDatabase extends _$AppDatabase {
   );
 
   /// Removes every cached row (sign-out, account deletion, user switch).
+  /// Keeps [pendingTrashCursorKey]: the media-wipe record must survive the
+  /// wipe it is written alongside.
   Future<void> wipe() => transaction(() async {
     for (final table in allTables) {
+      if (table.actualTableName == syncCursor.actualTableName) {
+        await (delete(
+          syncCursor,
+        )..where((t) => t.tableKey.equals(pendingTrashCursorKey).not())).go();
+        continue;
+      }
       await delete(table).go();
     }
   });

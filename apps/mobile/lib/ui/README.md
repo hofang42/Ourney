@@ -50,7 +50,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.stamp` | `UiStamp` |
 | `.streak-celebrate`, `.shared-streak strong` | `UiStreakNumber` |
 | `.polaroid` | `UiPolaroid` |
-| `.field-label` + input | `UiTextField` (52dp, `UiRadius.field` 16, 1.5dp `ui.border`, 2dp accent on focus, no shadow; `pill: true` for single-line searches), `UiTextArea`, `UiCaptionField` (label-less, growing caption) |
+| `.field-label` + input | `UiTextField` (52dp, `UiRadius.field` 16, 1.5dp `ui.fieldBorder`, 2dp accent on focus, no shadow; `pill: true` for single-line searches), `UiTextArea`, `UiCaptionField` (label-less, growing caption) |
 | `.otp-row` | `UiOtpField` (48x52 boxes, `UiRadius.otp` 10, same border and focus as fields) |
 | `.switch-row` | `UiSwitchRow` |
 | `.bottom-sheet`, `.modal-layer` | `UiSheet`, `showUiSheet` |
@@ -60,7 +60,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.all-done-illustration`, `.hub-all-done > span` | `UiCheckBadge` |
 | empty states | `UiEmptyState` |
 | inline errors | `UiInlineError` |
-| `.toast` | `showUiToast` (`bottomOffset` lifts it above a pinned button) |
+| `.toast` | `showUiToast` (clears the `UiScaffold` pinned bottom slot automatically; `bottomOffset` adds more) |
 | `.wordmark` | `UiWordmark` |
 | `.splash-screen` | `UiSplash` (shown on first launch by `OurneyApp`) |
 | screen frame (`.screen`, safe area, gutters) | `UiScaffold` |

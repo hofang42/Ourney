@@ -357,7 +357,9 @@ class _UiMenuAnchorState extends State<UiMenuAnchor> {
               child: CompositedTransformFollower(
                 link: _link,
                 showWhenUnlinked: false,
-                targetAnchor: rtl ? Alignment.bottomLeft : Alignment.bottomRight,
+                targetAnchor: rtl
+                    ? Alignment.bottomLeft
+                    : Alignment.bottomRight,
                 followerAnchor: rtl ? Alignment.topLeft : Alignment.topRight,
                 offset: Offset(0, widget.gap),
                 child: Material(
