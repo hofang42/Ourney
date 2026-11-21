@@ -227,11 +227,30 @@ void main() {
   });
 
   group('caption limit (FR-C4)', () {
-    testWidgets('stops at 140 characters and shows the counter', (
+    final counter = find.byKey(const ValueKey('checkin-caption-counter'));
+
+    testWidgets('counter shows only from 120 characters', (tester) async {
+      await pump(tester);
+      expect(counter, findsNothing);
+      await tester.enterText(
+        find.byKey(const ValueKey('checkin-caption')),
+        'a' * 119,
+      );
+      await tester.pump();
+      expect(counter, findsNothing);
+      await tester.enterText(
+        find.byKey(const ValueKey('checkin-caption')),
+        'a' * 120,
+      );
+      await tester.pump();
+      expect(counter, findsOneWidget);
+      expect(find.text('120/140'), findsOneWidget);
+    });
+
+    testWidgets('stops at 140 characters, counter turns to danger', (
       tester,
     ) async {
       await pump(tester);
-      expect(find.text('0/140'), findsOneWidget);
       await tester.enterText(
         find.byKey(const ValueKey('checkin-caption')),
         'a' * 150,
@@ -242,6 +261,17 @@ void main() {
       );
       expect(field.controller!.text.length, 140);
       expect(find.text('140/140'), findsOneWidget);
+      expect(tester.widget<Text>(counter).style!.color, OurneyUi.light.danger);
+    });
+
+    testWidgets('screen readers always get the count', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pump(tester);
+      final node = tester.getSemantics(
+        find.byKey(const ValueKey('checkin-caption')),
+      );
+      expect(node.hint, contains('Đã nhập 0 trên 140 ký tự'));
+      handle.dispose();
     });
 
     testWidgets('counts code points like the server (emoji = 1)', (
@@ -258,6 +288,70 @@ void main() {
       );
       expect(field.controller!.text.runes.length, 140);
       expect(find.text('140/140'), findsOneWidget);
+    });
+  });
+
+  group('caption field style', () {
+    testWidgets('rounded, filled, 1.5dp border, accent focus, no label', (
+      tester,
+    ) async {
+      await pump(tester);
+      final deco = tester
+          .widget<TextField>(find.byKey(const ValueKey('checkin-caption')))
+          .decoration!;
+      final rest = deco.enabledBorder! as OutlineInputBorder;
+      expect(rest.borderRadius, BorderRadius.circular(16));
+      expect(rest.borderSide.width, 1.5);
+      final ui = Theme.of(
+        tester.element(find.byKey(const ValueKey('checkin-caption'))),
+      ).extension<OurneyUi>()!;
+      expect(deco.fillColor, ui.fill);
+      final focus = deco.focusedBorder! as OutlineInputBorder;
+      expect(focus.borderSide.width, 2);
+      // The placeholder is the label: no text above the field.
+      expect(find.text('Chú thích'), findsNothing);
+      expect(deco.hintText, isNotEmpty);
+    });
+  });
+
+  group('keyboard collapses the photo', () {
+    testWidgets('photo becomes a 72x96 thumbnail beside the caption', (
+      tester,
+    ) async {
+      await pump(tester);
+      expect(find.byKey(const ValueKey('checkin-photo-thumb')), findsNothing);
+      final fullPhoto = tester.getSize(
+        find.byKey(const ValueKey('checkin-retake')),
+      );
+      expect(fullPhoto.height, greaterThanOrEqualTo(48));
+      await tester.enterText(
+        find.byKey(const ValueKey('checkin-caption')),
+        'Hello',
+      );
+
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      final thumb = find.byKey(const ValueKey('checkin-photo-thumb'));
+      expect(thumb, findsOneWidget);
+      expect(tester.getSize(thumb), const Size(72, 96));
+      expect(find.byKey(const ValueKey('checkin-retake')), findsNothing);
+      // Caption keeps its text and sits to the right of the thumbnail.
+      final caption = tester.widget<TextField>(
+        find.byKey(const ValueKey('checkin-caption')),
+      );
+      expect(caption.controller!.text, 'Hello');
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey('checkin-caption'))).dx,
+        greaterThan(tester.getTopRight(thumb).dx),
+      );
+      // Post stays reachable on top of the keyboard.
+      expect(find.byKey(const ValueKey('checkin-post')), findsOneWidget);
+
+      tester.view.resetViewInsets();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('checkin-photo-thumb')), findsNothing);
+      expect(find.byKey(const ValueKey('checkin-retake')), findsOneWidget);
     });
   });
 
@@ -331,8 +425,9 @@ void main() {
       await finishSuccess(tester);
     });
 
-    testWidgets('weight picked on the camera slider beats the last logged '
-        'one (B-B1)', (tester) async {
+    testWidgets('the metric field starts from the last logged value (B-B1)', (
+      tester,
+    ) async {
       journeys = FakeJourneyRepository(
         journeys: [
           testJourney(
@@ -351,9 +446,6 @@ void main() {
           capturedAt: testNowUtc,
           initialMetricValue: 65.2,
         ),
-        before: (c) => c
-            .read(pendingWeightProvider('j1').notifier)
-            .setPendingWeight(62),
       );
       final field = tester.widget<EditableText>(
         find.descendant(
@@ -362,7 +454,11 @@ void main() {
           matchRoot: true,
         ),
       );
-      expect(field.controller.text, '62');
+      expect(field.controller.text, '65.2');
+      await tester.enterText(
+        find.byKey(const ValueKey('checkin-metric')),
+        '62',
+      );
       await tapPost(tester);
       expect(checkIns.submitted.single.metricValue, 62);
       await finishSuccess(tester);

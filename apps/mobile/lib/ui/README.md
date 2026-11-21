@@ -43,6 +43,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.glass-chip` | `UiGlassChip` (camera journey / streak chips) |
 | `.day-hud` | `UiDayHud` |
 | `.camera-tools .icon-button`, `.camera-secondary-controls` | `UiCameraTool`, `UiLibraryThumb` |
+| Camera state label (flash, errors; replaces the toast) | `UiCameraStatusPill` (32dp glass capsule inside the preview, 150ms in / 1.2s / 200ms out, live region) |
 | `.page-dots` | `UiPageDots` |
 | profile avatar entry in top bars | `UiProfileEntry` (no top bar uses it since the V2 dock has a Profile tab) |
 | `.success-mark` | `UiSuccessMark` |

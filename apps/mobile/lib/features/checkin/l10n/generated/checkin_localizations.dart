@@ -625,6 +625,12 @@ abstract class CheckinL10n {
   /// In vi, this message translates to:
   /// **'Chạm bất kỳ đâu để dừng'**
   String get checkin_extraCountdownStop;
+
+  /// No description provided for @checkin_details.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chi tiết'**
+  String get checkin_details;
 }
 
 class _CheckinL10nDelegate extends LocalizationsDelegate<CheckinL10n> {
