@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import 'data_context.dart';
 import 'db/app_database.dart';
+import 'dead_uploads.dart';
 import 'journey_clock.dart';
 import 'local_store.dart';
 import 'media_store.dart';
@@ -158,6 +159,9 @@ class DataLayer {
     final s = social;
     return s == null ? null : build(s);
   }
+
+  /// Dead check-in uploads (Retry / Discard); null in local-only mode.
+  DeadUploads? get deadUploads => ctx.outbox == null ? null : DeadUploads(ctx);
 
   bool get isLocalOnly => ctx.localOnly;
 

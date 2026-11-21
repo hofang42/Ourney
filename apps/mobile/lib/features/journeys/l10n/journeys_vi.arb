@@ -1570,5 +1570,22 @@
         "type": "String"
       }
     }
+  },
+  "journeys_deadUploads": "{count, plural, other{{count} ảnh chưa gửi được}}",
+  "@journeys_deadUploads": {
+    "description": "Banner when check-in uploads were given up on.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "journeys_deadRetry": "Gửi lại",
+  "@journeys_deadRetry": {
+    "description": "Retry the failed uploads."
+  },
+  "journeys_deadDiscard": "Bỏ ảnh",
+  "@journeys_deadDiscard": {
+    "description": "Discard the failed uploads and their local photos."
   }
 }

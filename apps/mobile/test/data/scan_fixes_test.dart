@@ -159,4 +159,46 @@ void main() {
     final order = [for (final c in remote.calls) c.method];
     expect(order.indexOf('upload'), lessThan(order.indexOf('signOut')));
   });
+
+  group('L1 dead uploads', () {
+    Future<CheckIn> deadCheckIn() async {
+      remote.failure = offline;
+      final c = await checkIn('a');
+      await db
+          .update(db.uploadQueue)
+          .write(
+            const UploadQueueCompanion(
+              dead: Value(true),
+              lastError: Value('x'),
+            ),
+          );
+      remote.failure = null;
+      return c;
+    }
+
+    test('are listed per journey', () async {
+      final c = await deadCheckIn();
+      final dead = layer.deadUploads!;
+      final items = await dead.watch(journeyId: jid).first;
+      expect(items.single.checkInId, c.id);
+      expect(await dead.watch(journeyId: 'other').first, isEmpty);
+    });
+
+    test('retry revives and uploads them', () async {
+      await deadCheckIn();
+      final dead = layer.deadUploads!;
+      await dead.retry(await dead.watch().first);
+      await layer.ctx.outbox!.flush(force: true);
+      expect(remote.uploaded, isNotEmpty);
+      expect(await dead.watch().first, isEmpty);
+    });
+
+    test('discard removes the queue item and the local check-in', () async {
+      await deadCheckIn();
+      final dead = layer.deadUploads!;
+      await dead.discard(await dead.watch().first);
+      expect(await queue(), isEmpty);
+      expect(await db.select(db.checkIns).get(), isEmpty);
+    });
+  });
 }

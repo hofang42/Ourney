@@ -3163,6 +3163,24 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Chuỗi {streak} ngày. {title}'**
   String journeys_heroSemantics(int streak, String title);
+
+  /// Banner when check-in uploads were given up on.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{{count} ảnh chưa gửi được}}'**
+  String journeys_deadUploads(int count);
+
+  /// Retry the failed uploads.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gửi lại'**
+  String get journeys_deadRetry;
+
+  /// Discard the failed uploads and their local photos.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ ảnh'**
+  String get journeys_deadDiscard;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

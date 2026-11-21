@@ -175,6 +175,42 @@ void main() {
     }
   });
 
+  group('localized labels', () {
+    testWidgets('card and hero use the labels they are given', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          const Column(
+            children: [
+              UiStreakHero(
+                semanticLabel: '5-day streak. Go',
+                streak: 5,
+                title: 'Go',
+              ),
+              UiJourneyCard(
+                title: 'Run',
+                type: 'workout',
+                day: 2,
+                totalDays: 9,
+                streak: 3,
+                snapLabel: 'Snap today',
+                dayLabel: 'Day 2 of 9',
+                streakLabel: '3-day streak',
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(find.bySemanticsLabel('5-day streak. Go'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Run, Day 2 of 9, 3-day streak'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Snap today'), findsOneWidget);
+      handle.dispose();
+    });
+  });
+
   group('UiStreakHero', () {
     testWidgets('U15: 2.0x at 360dp shows the whole title, no ellipsis', (
       tester,
@@ -199,7 +235,7 @@ void main() {
       await tester.pumpWidget(
         host(
           UiStreakHero(
-            semanticLabel: 'Chuỗi',
+            semanticLabel: 'Chuỗi 21 ngày. Giữ chuỗi',
             streak: 21,
             title: 'Giữ chuỗi',
             onTap: () {},
@@ -252,6 +288,8 @@ void main() {
             snapLabel: 'Chụp ảnh hôm nay',
             title: 'IELTS',
             type: 'study',
+            dayLabel: 'Ngày 12/30',
+            streakLabel: 'Chuỗi 12 ngày',
             day: 12,
             totalDays: 30,
             streak: 12,

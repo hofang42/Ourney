@@ -1762,4 +1762,20 @@ class JourneysL10nVi extends JourneysL10n {
   String journeys_heroSemantics(int streak, String title) {
     return 'Chuỗi $streak ngày. $title';
   }
+
+  @override
+  String journeys_deadUploads(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ảnh chưa gửi được',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_deadRetry => 'Gửi lại';
+
+  @override
+  String get journeys_deadDiscard => 'Bỏ ảnh';
 }

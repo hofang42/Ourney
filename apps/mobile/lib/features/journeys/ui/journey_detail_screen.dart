@@ -22,6 +22,7 @@ import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'couple_rename_sheet.dart';
 import 'day_ticker.dart';
+import 'dead_uploads_banner.dart';
 import 'home/journey_home_header.dart';
 import 'home/journey_home_intro.dart';
 import 'home/journey_home_sections.dart';
@@ -244,6 +245,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                         readOnly: !perms.isActive,
                       ),
                     if (progress != null) const SizedBox(height: UiSpace.lg),
+                    DeadUploadsBanner(journeyId: journey.id),
                     UiEyebrow(_dateRange(context, journey).toUpperCase()),
                     const SizedBox(height: 4),
                     Semantics(
