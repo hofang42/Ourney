@@ -364,7 +364,7 @@ class _DayZero extends StatelessWidget {
             decoration: BoxDecoration(
               color: UiTypePastel.weightLoss,
               shape: BoxShape.circle,
-              border: Border.all(color: ui.ink, width: 2),
+              border: Border.all(color: ui.outline, width: 2),
             ),
             child: const OurneyIcon(name: 'camera', size: 40, active: true),
           ),
@@ -672,7 +672,7 @@ class _NewJourneyCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: UiTypePastel.english,
               shape: BoxShape.circle,
-              border: Border.all(color: ui.ink, width: 2),
+              border: Border.all(color: ui.outline, width: 2),
             ),
             child: const OurneyIcon(name: 'send', size: 32, active: true),
           ),

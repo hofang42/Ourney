@@ -700,7 +700,7 @@ class _DnaForgeState extends State<DnaForge>
                   decoration: BoxDecoration(
                     color: ui.accent,
                     shape: BoxShape.circle,
-                    border: Border.all(color: ui.ink, width: 3),
+                    border: Border.all(color: ui.outline, width: 3),
                   ),
                   child: OurneyIcon(name: 'trophy', size: 44),
                 ),

@@ -203,7 +203,7 @@ class _Segments extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: i <= selected ? ui.accent : ui.fill,
                     borderRadius: BorderRadius.circular(3),
-                    border: Border.all(color: ui.ink, width: 1.5),
+                    border: Border.all(color: ui.outline, width: 1.5),
                   ),
                 ),
               ),
@@ -375,7 +375,7 @@ class _Summary extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: ui.surface,
                     borderRadius: BorderRadius.circular(UiRadius.card),
-                    border: Border.all(color: ui.ink, width: 2),
+                    border: Border.all(color: ui.outline, width: 2),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
