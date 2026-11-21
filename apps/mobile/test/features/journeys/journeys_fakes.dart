@@ -136,6 +136,9 @@ class FakeJourneyRepository implements JourneyRepository {
   /// When set, allMine throws it.
   Object? listError;
 
+  /// Per-journey updateMyMembership errors.
+  final Map<String, Object> prefErrorFor = {};
+
   /// When set, updateMyMembership throws it.
   Object? prefError;
 
@@ -293,6 +296,7 @@ class FakeJourneyRepository implements JourneyRepository {
   }) async {
     calls.add('updateMyMembership:$journeyId');
     if (prefError case final e?) throw e;
+    if (prefErrorFor[journeyId] case final e?) throw e;
     if (hideExtras != null || pinned != null) {
       extraPrefUpdates.add((
         id: journeyId,
