@@ -14,3 +14,6 @@ supabase/.branches/
 .claude/worktrees/
 env.json
 **/env.json
+
+# Temporary bug-scan and UI-scan tests (find-bugs, ui-bug-scan skills)
+apps/mobile/test/zz_*/
