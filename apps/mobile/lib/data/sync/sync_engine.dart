@@ -9,7 +9,7 @@ import '../data_context.dart' show checkinDraftDirName;
 import '../db/app_database.dart';
 import '../local_store.dart';
 import '../mapping.dart';
-import '../media_store.dart' show MediaFiles;
+import '../media_store.dart' show MediaWipe;
 import '../remote/remote_api.dart';
 import 'outbox.dart';
 
@@ -83,16 +83,20 @@ class SyncEngine {
   /// fresh writes.
   Future<void> ensureOwner(String userId) async {
     if (await db.readCursor(ownerCursorKey) == userId) return;
-    await db.transaction(() async {
-      if (await db.readCursor(ownerCursorKey) == userId) return;
-      await db.wipe();
-      await store.files.wipe();
-      // Drafts of the previous owner (or of the wiped marker) go too.
-      await MediaFiles.wipeDirectory(
-        Directory(p.join(store.files.root.parent.path, checkinDraftDirName)),
-      );
-      await db.writeCursor(ownerCursorKey, userId);
-    });
+    final drafts = Directory(
+      p.join(store.files.root.parent.path, checkinDraftDirName),
+    );
+    // Rows, files and drafts of the previous owner (or of the wiped marker)
+    // go together; see [MediaWipe] for the failure/rollback rules.
+    await MediaWipe.run(
+      [store.files.root, drafts],
+      (moveMedia) => db.transaction(() async {
+        if (await db.readCursor(ownerCursorKey) == userId) return;
+        await db.wipe();
+        await moveMedia();
+        await db.writeCursor(ownerCursorKey, userId);
+      }),
+    );
   }
 
   /// Called when the local cache is wiped (sign-out, account deletion):

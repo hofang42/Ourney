@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/local_store.dart' show journeyKey;
+import 'package:ourney/data/media_store.dart' show MediaWipe;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
@@ -357,6 +358,48 @@ void main() {
         expect(remote.callsOf('rpc').length, before);
       },
     );
+  });
+
+  group('MediaWipe', () {
+    late Directory dir;
+    setUp(() {
+      dir = Directory('${media.path}/wipe-me')..createSync();
+      File('${dir.path}/a.jpg').writeAsStringSync('x');
+    });
+
+    test('a failing transaction restores the folders', () async {
+      await expectLater(
+        MediaWipe.run([dir], (move) async {
+          await move();
+          expect(dir.existsSync(), isFalse);
+          throw StateError('commit failed');
+        }),
+        throwsStateError,
+      );
+      expect(File('${dir.path}/a.jpg').existsSync(), isTrue);
+    });
+
+    test('the trash is deleted only after the commit', () async {
+      late Directory trash;
+      await MediaWipe.run([dir], (move) async {
+        await move();
+        trash = media.listSync().whereType<Directory>().firstWhere(
+          (d) => d.path.contains('wipe-me.trash-'),
+        );
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(trash.existsSync(), isTrue);
+      });
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      expect(trash.existsSync(), isFalse);
+      expect(dir.existsSync(), isFalse);
+    });
+
+    test('sweep removes leftover trash siblings', () async {
+      final left = Directory('${dir.path}.trash-123')..createSync();
+      await MediaWipe.sweep([dir]);
+      expect(left.existsSync(), isFalse);
+      expect(dir.existsSync(), isTrue);
+    });
   });
 
   group('wipeLocal media', () {
