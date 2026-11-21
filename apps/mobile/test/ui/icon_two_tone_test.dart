@@ -106,7 +106,7 @@ void main() {
         ),
       );
       for (final w in [flame, heartOn, heartOff, ok, bad]) {
-        expect(painterOf(w).flat, isFalse, reason: '${(w).name}');
+        expect(painterOf(w).flat, isFalse, reason: w.name);
       }
       expect(painterOf(muted).flat, isTrue);
       expect(painterOf(ink).flat, isTrue);
