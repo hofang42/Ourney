@@ -11,6 +11,9 @@ Skill là quy trình mà Claude Code nạp khi được gọi (gõ `/<tên>`, ho
 | `/wrap-up` | chỉ user | Ghi nhật ký cuối phiên: task ID, commit SHA, mã FR, bằng chứng test, việc còn dở |
 | `/pr-check [task ID]` | chỉ user | Chạy đúng các job CI mà thay đổi đụng tới, rà checklist PR template, soạn PR body |
 | `/design-ref [persona] [màn]` | user hoặc Claude | Cắt và phóng to đúng màn trong bảng thiết kế `apps/mobile/assets/design_personas/`, chỉ ra token cần dùng và lỗi của mockup không được chép. Cần `python3` + Pillow; thiếu Pillow thì đọc cả bảng |
+| `/ui-bug-scan [màn, route, thư mục]` | user hoặc Claude | Quét lỗi UI/UX: dựng từng màn theo ma trận bề rộng × sáng/tối × cỡ chữ × ngôn ngữ (ảnh chụp + matcher vùng chạm, tương phản), rồi rà checklist tràn layout, safe area, token màu, trạng thái rỗng/lỗi/offline, rule `CLAUDE.md`. Mẫu test ở `templates/scan_test.dart`, chạy trong `apps/mobile/test/zz_uxscan/` rồi xóa. Viết từ các nguồn ghi ở mục Sources của skill |
+
+Quét bug: "quét bug" / "scan for bugs" gọi cả `find-bugs` (logic) và `ui-bug-scan` (UI/UX); `flutter-accessibility` dùng khi cần rà sâu trình đọc màn hình và tương phản.
 
 Nhật ký và bài học nằm trong thư mục auto-memory local của từng người (`~/.claude/projects/<repo>/memory/`), không commit.
 
@@ -26,6 +29,8 @@ Mỗi thư mục có `LICENSE` của nguồn và `NOTICE.md` ghi nguồn cùng c
 | `dart-use-pattern-matching` | flutter/agent-plugins | Không |
 | `dart-write-documentation` | flutter/agent-plugins | Không |
 | `supabase-postgres-best-practices` | [supabase/agent-skills](https://github.com/supabase/agent-skills) (MIT) | Không |
+| `find-bugs` | [getsentry/skills](https://github.com/getsentry/skills) (Apache-2.0) | Phạm vi so với `main` hoặc cả thư mục; checklist lỗi logic Dart/Flutter/Supabase mới (`references/dart-flutter-checklist.md`); bỏ XSS, CSRF; chứng minh bằng test tạm `test/zz_bugscan/` |
+| `flutter-accessibility` | [verygoodopensource/vgv-ai-flutter-plugin](https://github.com/verygoodopensource/vgv-ai-flutter-plugin) (MIT) | Đổi tên từ `accessibility`; chốt WCAG 2.2 AA, iOS + Android; thêm mục "Ourney overrides" (48dp, component `lib/ui`, token, cấm `Icons.*`); bỏ file platform web/desktop |
 
 Cập nhật: chép lại từ nguồn, rồi áp lại các chỗ sửa ghi trong `NOTICE.md`.
 
@@ -46,4 +51,7 @@ Cập nhật: chép lại từ nguồn, rồi áp lại các chỗ sửa ghi tro
 | `dart-use-primary-constructors` | Cần Dart ≥ 3.12; `packages/ourney_core` khai báo `sdk: ^3.5.0` |
 | `dart-fix-runtime-errors`, `flutter-fix-layout-issues` | Cần Dart MCP server, không thêm |
 | `flutter-implement-json-serialization`, `flutter-add-widget-preview` | Chưa có nhu cầu |
+| trailofbits/skills (`differential-review`, `variant-analysis`...) | Giấy phép CC-BY-SA-4.0 (share-alike), không phải giấy phép cho phép tự do như MIT/BSD/Apache; nội dung hướng audit bảo mật C/Solidity |
+| vercel-labs `web-design-guidelines` | Luật cho web (HTML, ARIA, CSS); các ý dùng được đã viết lại cho Flutter trong `ui-bug-scan` |
+| obra/superpowers `systematic-debugging` | Là quy trình gỡ một lỗi đã biết, không phải quét tìm lỗi; đã có sẵn qua plugin superpowers |
 | `dart-build-cli-app`, `dart-setup-ffi-assets`, `dart-use-ffigen`, `dart-use-doc-examples`, `dart-collect-coverage`, `dart-use-path-package` | Không liên quan tới app |
