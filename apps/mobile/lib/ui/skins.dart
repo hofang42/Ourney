@@ -136,6 +136,7 @@ class UiSkin {
       divider: tint(p.ink, p.bg, 0.10),
       brand: v.button,
       onBrand: v.buttonLabel,
+      onAccent: OurneyUi.onAccentFor(v.accent),
       grabber: tint(p.muted, p.bg, 0.5),
       dockBg: p.surface.withValues(alpha: 0.92),
       dockBorder: outline,

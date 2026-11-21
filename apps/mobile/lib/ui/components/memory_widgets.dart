@@ -137,7 +137,8 @@ class UiPolaroid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final edge = ui.isDark ? ui.border : const Color(0xFF1E1B18);
+    final edge = ui.isDark ? ui.outline : const Color(0xFF1E1B18);
+    final shadow = ui.isDark ? ui.hardShadowColor : edge;
     return Transform.rotate(
       angle: tilt * math.pi / 180,
       child: Container(
@@ -145,7 +146,7 @@ class UiPolaroid extends StatelessWidget {
         decoration: BoxDecoration(
           color: ui.isDark ? ui.surface : const Color(0xFFFFFDF9),
           border: Border.all(color: edge, width: 2),
-          boxShadow: [BoxShadow(color: edge, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: shadow, offset: const Offset(0, 3))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

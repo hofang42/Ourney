@@ -108,7 +108,7 @@ abstract final class OurneyTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: ui.sheet,
+        backgroundColor: ui.isDark ? ui.sheet : ui.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(UiRadius.sheet),
         ),

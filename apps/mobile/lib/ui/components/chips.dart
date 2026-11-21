@@ -32,7 +32,7 @@ class UiChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final fg = selected ? ui.onBrand : ui.ink;
+    final fg = selected ? ui.onAccent : ui.ink;
     return UiPressable(
       onPressed: onPressed,
       selected: selected,

@@ -376,7 +376,9 @@ class UiPageDots extends StatelessWidget {
                 width: i == index ? 16 : 5,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: i == index ? UiCamera.ink : const Color(0x55FFFFFF),
+                  color: i == index
+                      ? UiCamera.ink
+                      : UiCamera.ink.withValues(alpha: 0.33),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),

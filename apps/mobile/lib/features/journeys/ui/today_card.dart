@@ -53,7 +53,7 @@ class TodayCard extends ConsumerWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: pal.paper,
-        border: Border.all(color: pal.ink),
+        border: Border.all(color: pal.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,7 +77,7 @@ class TodayCard extends ConsumerWidget {
             height: 148,
             decoration: BoxDecoration(
               color: UiCamera.bg,
-              border: Border.all(color: pal.ink),
+              border: Border.all(color: pal.outline),
             ),
             child: Stack(
               fit: StackFit.expand,
@@ -122,7 +122,7 @@ class TodayCard extends ConsumerWidget {
                           style: UiText.display(
                             size: 20,
                             height: 1.25,
-                            color: UiCamera.ink,
+                            color: UiCamera.onPhoto,
                           ),
                         ),
                       ),
@@ -133,7 +133,7 @@ class TodayCard extends ConsumerWidget {
                           size: 12,
                           weight: FontWeight.w700,
                           height: 1.3,
-                          color: UiCamera.ink,
+                          color: UiCamera.onPhoto,
                         ),
                       ),
                     ],
@@ -292,7 +292,7 @@ class _DayCell extends StatelessWidget {
     final Widget cell;
     if (checkIn != null) {
       cell = Container(
-        decoration: BoxDecoration(border: Border.all(color: ink)),
+        decoration: BoxDecoration(border: Border.all(color: pal.outline)),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -317,7 +317,7 @@ class _DayCell extends StatelessWidget {
       );
     } else if (isToday) {
       cell = CustomPaint(
-        painter: _DashedBorderPainter(color: ink),
+        painter: _DashedBorderPainter(color: pal.outline),
         child: Center(
           child: OurneyIcon(name: 'camera', size: 16, inkColor: ink),
         ),

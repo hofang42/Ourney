@@ -285,7 +285,7 @@ class _AlbumCard extends ConsumerWidget {
                             weight: FontWeight.w700,
                             height: 1.3,
                             tracking: 0.08,
-                            color: UiCamera.ink,
+                            color: UiCamera.onPhoto,
                           ),
                         ),
                       ),
@@ -298,7 +298,7 @@ class _AlbumCard extends ConsumerWidget {
                     child: UiTag(
                       label: l10n.journeys_imported,
                       background: UiCamera.bg,
-                      foreground: UiCamera.ink,
+                      foreground: UiCamera.onPhoto,
                       borderColor: UiCamera.outline,
                     ),
                   ),
