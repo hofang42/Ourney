@@ -76,4 +76,53 @@ void main() {
     expect(painterOf(palette).flat, isFalse);
     expect(painterOf(withInk).flat, isFalse);
   });
+
+  for (final base in [OurneyUi.light, OurneyUi.dark]) {
+    testWidgets('intentional colors stay stickers, greys go line '
+        '(dark=${base.isDark})', (tester) async {
+      OurneyIconPainter painterOf(Widget w) {
+        final paint = tester.widget<CustomPaint>(
+          find.descendant(
+            of: find.byWidget(w),
+            matching: find.byType(CustomPaint),
+          ),
+        );
+        return paint.painter! as OurneyIconPainter;
+      }
+
+      final flame = OurneyIcon(name: 'flame', color: base.flame);
+      final heartOn = OurneyIcon(name: 'heart', color: base.accent);
+      final heartOff = OurneyIcon(name: 'heart', color: base.fill);
+      final ok = OurneyIcon(name: 'check-circle', color: base.success);
+      final bad = OurneyIcon(name: 'warning', color: base.danger);
+      final muted = OurneyIcon(name: 'star', color: base.inkMuted);
+      final ink = OurneyIcon(name: 'star', color: base.ink);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(brightness: base.brightness, extensions: [base]),
+          home: Column(
+            children: [flame, heartOn, heartOff, ok, bad, muted, ink],
+          ),
+        ),
+      );
+      for (final w in [flame, heartOn, heartOff, ok, bad]) {
+        expect(painterOf(w).flat, isFalse, reason: '${(w).name}');
+      }
+      expect(painterOf(muted).flat, isTrue);
+      expect(painterOf(ink).flat, isTrue);
+    });
+  }
+
+  test('saturated pastels / neon never collapse into a similar-light ink', () {
+    for (final fill in const [
+      Color(0xFFC6FF00), // lime neon
+      Color(0xFF7EE8A2), // weight-loss pastel
+      Color(0xFF7EC8E3), // custom pastel
+      Color(0xFFFFB347), // trip pastel
+    ]) {
+      for (final ink in [OurneyUi.light.ink, OurneyUi.dark.ink]) {
+        expect(OurneyIconPainter.collapses(fill, ink), isFalse);
+      }
+    }
+  });
 }

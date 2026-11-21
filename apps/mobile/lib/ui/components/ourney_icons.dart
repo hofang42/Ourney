@@ -648,15 +648,37 @@ class OurneyIconPainter extends CustomPainter {
   final Color? shadow;
   final Color dieCut;
 
+  /// WCAG-style luminance ratio of two colors (>= 1).
+  static double contrast(Color a, Color b) {
+    final x = a.computeLuminance() + 0.05;
+    final y = b.computeLuminance() + 0.05;
+    return x > y ? x / y : y / x;
+  }
+
+  /// Greys / near-greys (inks, muted text, fills, hairlines): low HSL
+  /// saturation. Saturated colors (flame, success, danger, accent, pastels)
+  /// are intentional sticker fills.
+  static bool isNeutral(Color c) => HSLColor.fromColor(c).saturation < 0.25;
+
   /// True when a two-tone sticker would collapse into one solid blob: the
-  /// fill and the outline are (nearly) the same color, e.g. `color: ui.ink`
-  /// on the default ink outline, or a white camera glyph in dark mode.
+  /// fill and the outline are the same color, or close in both luminance
+  /// (ratio < 1.6) and hue/chroma (every RGB channel within ~38%), e.g.
+  /// `color: ui.ink` or a white glyph on the dark-mode ink. Saturated fills
+  /// of similar brightness (lime, pastels) keep their hue and stay stickers.
   static bool collapses(Color color, Color ink) {
     if (color == ink) return true;
-    final a = color.computeLuminance() + 0.05;
-    final b = ink.computeLuminance() + 0.05;
-    return (a > b ? a / b : b / a) < 1.3;
+    if (contrast(color, ink) >= 1.6) return false;
+    final dr = (color.r - ink.r).abs();
+    final dg = (color.g - ink.g).abs();
+    final db = (color.b - ink.b).abs();
+    return [dr, dg, db].reduce((m, v) => v > m ? v : m) < 0.38;
   }
+
+  /// Whether [OurneyIcon] should draw [color] (a custom tint, no [ink] given)
+  /// as a line glyph: it collapses into the ink, or it is a grey that is not
+  /// far enough from the ink to read as a sticker fill (muted text colors).
+  static bool tintIsLine(Color color, Color ink) =>
+      collapses(color, ink) || (isNeutral(color) && contrast(color, ink) < 6);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -760,22 +782,27 @@ class OurneyIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    // A custom [color] without an [inkColor] is a neutral / state tint (ink,
-    // muted, divider...): as a sticker fill it would swallow the outline, so
-    // it is drawn as a line glyph. Palette colors keep the sticker look.
+    // A neutral grey tint (ink, muted...) without an [inkColor] would swallow
+    // the outline as a sticker fill, so it is drawn as a line glyph. Palette
+    // and saturated colors (flame, success, danger, accent) stay stickers.
+    final ink = inkColor ?? ui.ink;
     final lineGlyph =
         flat ||
-        (color != null && inkColor == null && color != ourneyIconColor(name));
+        (color != null &&
+            inkColor == null &&
+            color != ourneyIconColor(name) &&
+            OurneyIconPainter.tintIsLine(color!, ink));
     final Widget icon = SizedBox.square(
       dimension: size,
       child: CustomPaint(
         painter: OurneyIconPainter(
           name: name,
           color: color ?? (lineGlyph ? ui.ink : ourneyIconColor(name)),
-          ink: inkColor ?? ui.ink,
+          ink: ink,
           active: active,
           flat: lineGlyph,
-          shadow: ui.isDark ? const Color(0xFF000000) : ui.ink,
+          shadow: ui.isDark ? ui.hardShadowColor : ui.ink,
+          dieCut: ui.isDark ? ui.surface : const Color(0xFFFFFFFF),
         ),
       ),
     );
