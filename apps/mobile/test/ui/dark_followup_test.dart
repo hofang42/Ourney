@@ -56,47 +56,77 @@ void main() {
     expect(scoped!.outline, isNot(scoped!.ink));
   });
 
-  testWidgets('skin scope rebuilds dependents when only the accent changes', (
-    t,
-  ) async {
-    var builds = 0;
-    final probe = Builder(
-      builder: (c) {
-        UiSkinScope.of(c);
-        builds++;
-        return const SizedBox();
-      },
-    );
-    // Variants of one skin that share the button but differ in accent.
-    int? a;
-    int? b;
-    outer:
-    for (final skin in uiSkins) {
-      for (var i = 0; i < skin.variants.length; i++) {
-        for (var j = i + 1; j < skin.variants.length; j++) {
-          final x = skin.variants[i], y = skin.variants[j];
-          if (x.button == y.button && x.accent != y.accent) {
-            a = i;
-            b = j;
-            await t.pumpWidget(
-              _app(
-                Brightness.light,
-                UiSkinScope(skinId: skin.id, variant: i, child: probe),
-              ),
-            );
-            builds = 0;
-            await t.pumpWidget(
-              _app(
-                Brightness.light,
-                UiSkinScope(skinId: skin.id, variant: j, child: probe),
-              ),
-            );
-            break outer;
+  testWidgets(
+    'skin scope notifies when only the accent changes (light to dark)',
+    (t) async {
+      // A variant whose dark accent differs while skin, index and button stay.
+      String? skinId;
+      int? index;
+      for (final skin in uiSkins) {
+        for (var i = 0; i < skin.variants.length; i++) {
+          final l = skin.resolvedVariant(i, Brightness.light);
+          final d = skin.resolvedVariant(i, Brightness.dark);
+          if (l.button == d.button && l.accent != d.accent) {
+            skinId = skin.id;
+            index = i;
           }
         }
       }
-    }
-    if (a == null) return; // no such variant pair in the current skins
-    expect(builds, greaterThan(0), reason: 'variants $a -> $b');
-  });
+      expect(skinId, isNotNull, reason: 'a variant with a distinct accentDark');
+      var builds = 0;
+      final probe = Builder(
+        builder: (c) {
+          UiSkinScope.of(c);
+          builds++;
+          return const SizedBox();
+        },
+      );
+      Widget app(Brightness b) => MaterialApp(
+        home: Theme(
+          data: OurneyTheme.build(b),
+          child: UiSkinScope(skinId: skinId!, variant: index!, child: probe),
+        ),
+      );
+      await t.pumpWidget(app(Brightness.light));
+      builds = 0;
+      await t.pumpWidget(app(Brightness.dark));
+      expect(builds, greaterThan(0));
+    },
+  );
+
+  testWidgets(
+    'light mode: palette outline is the style ink, accent the variant',
+    (t) async {
+      final style = uiJourneyStyles.first;
+      JourneyPalette? bare;
+      JourneyPalette? scoped;
+      await t.pumpWidget(
+        MaterialApp(
+          theme: OurneyTheme.build(Brightness.light),
+          home: Column(
+            children: [
+              Builder(
+                builder: (c) {
+                  bare = JourneyPalette.of(c, style);
+                  return const SizedBox();
+                },
+              ),
+              UiSkinScope(
+                skinId: 'squad',
+                variant: 1,
+                child: Builder(
+                  builder: (c) {
+                    scoped = JourneyPalette.of(c, style);
+                    return const SizedBox();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      expect(bare!.outline, style.ink);
+      expect(scoped!.accent, uiSkinById('squad').variant(1).accent);
+    },
+  );
 }

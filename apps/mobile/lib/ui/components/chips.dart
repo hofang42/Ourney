@@ -7,7 +7,7 @@ import 'pressable.dart';
 
 /// `.create-extra-chip` / `.language-chip`: sticker capsule. 44dp visual
 /// inside a 48dp hit area, 1.5dp outline, surface fill, 3dp hard shadow.
-/// Selected chips fill with the brand color and an ink label.
+/// Selected chips fill with `accent` and an `onAccent` label.
 class UiChip extends StatelessWidget {
   const UiChip({
     required this.label,

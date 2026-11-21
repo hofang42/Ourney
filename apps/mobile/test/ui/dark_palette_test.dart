@@ -140,6 +140,15 @@ void main() {
     );
   });
 
+  test('onAccentFor falls back to black on a mid-tone (L ~ 0.20)', () {
+    // Neither 1A1A1A (3.9:1) nor white (4.48:1) reaches 4.5 here; black does.
+    const mid = Color(0xFF777777);
+    expect(mid.computeLuminance(), closeTo(0.20, 0.03));
+    expect(_c(const Color(0xFF1A1A1A), mid), lessThan(4.5));
+    expect(_c(const Color(0xFFFFFFFF), mid), lessThan(4.5));
+    expect(OurneyUi.onAccentFor(mid), const Color(0xFF000000));
+  });
+
   test('dark minimal "Than" button uses the softened light fill', () {
     final ui = uiSkinById('minimal').apply(OurneyUi.dark, variantIndex: 1);
     expect(ui.brand, const Color(0xFFE4E4E7));

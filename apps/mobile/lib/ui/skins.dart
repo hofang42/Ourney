@@ -43,6 +43,11 @@ class UiSkinPalette {
   final Color surface;
   final Color ink;
   final Color muted;
+
+  /// Border color: ink in light; in dark a mid-tone between ink and bg so
+  /// cream ink never glows around every card.
+  Color outlineIn(Brightness brightness) =>
+      brightness == Brightness.dark ? Color.lerp(ink, bg, 0.55)! : ink;
 }
 
 /// A V2 journey skin: palettes for both brightnesses, three accent variants
@@ -116,7 +121,7 @@ class UiSkin {
     final dark = base.brightness == Brightness.dark;
     // Dark: a mid-tone outline and a drop shadow darker than bg, so cream
     // ink never glows around every card. Light keeps ink for both.
-    final outline = dark ? Color.lerp(p.ink, p.bg, 0.55)! : p.ink;
+    final outline = p.outlineIn(base.brightness);
     return base.copyWith(
       outline: outline,
       hardShadowColor: dark

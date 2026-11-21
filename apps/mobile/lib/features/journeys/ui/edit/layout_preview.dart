@@ -43,7 +43,7 @@ class LayoutPreview extends StatelessWidget {
         color: p.bg,
         borderRadius: BorderRadius.circular(large ? UiRadius.card : 14),
         border: Border.all(
-          color: dark ? Color.lerp(p.ink, p.bg, 0.55)! : p.ink,
+          color: p.outlineIn(dark ? Brightness.dark : Brightness.light),
           width: skin.borderWidth,
         ),
       ),

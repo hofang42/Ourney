@@ -421,7 +421,7 @@ class UiSnapPill extends StatelessWidget {
   final double outlineWidth;
   final double shadowOffset;
 
-  /// Hard shadow color; defaults to [outlineColor].
+  /// Hard shadow color; defaults to `ui.hardShadowColor`.
   final Color? shadowColor;
 
   /// 400ms press (journey wheel).
