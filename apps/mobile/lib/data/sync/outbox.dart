@@ -189,6 +189,8 @@ class Outbox {
       // A closed database never recovers: do not keep a timer alive for it.
       if (!await _isDatabaseUsable()) return;
       _schedule(outboxBackoff(++_passFailures));
+      // A flush() that arrived meanwhile was coalesced into this failed run.
+      if (_again) _schedule(Duration.zero);
     }
   }
 

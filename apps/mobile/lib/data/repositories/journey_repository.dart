@@ -343,6 +343,15 @@ class DataJourneyRepository implements JourneyRepository {
           !group &&
           outboxForEdit != null &&
           await _hasPendingFor(outboxForEdit, journeyId);
+      if (group && outboxForEdit != null) {
+        // A queued extras/edit of this group journey would replay after (and
+        // overwrite) this edit: wait until it is sent.
+        final keys = await outboxForEdit.pendingKeys();
+        if (keys.contains('${journeyKey(journeyId)}:extras') ||
+            keys.contains('${journeyKey(journeyId)}:edit')) {
+          throw const OurneyException(OurneyErrorCode.syncPending);
+        }
+      }
       try {
         if (blocked) throw const OurneyException(OurneyErrorCode.offline);
         final res = await remote.rpc(

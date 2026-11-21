@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/local_store.dart' show journeyKey;
+import 'package:ourney/data/mapping.dart' show updateJourneyParams;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
@@ -643,6 +644,26 @@ void main() {
       expect(
         remote.callsOf('rpc').any((c) => c.target == 'update_journey'),
         isTrue,
+      );
+    });
+
+    test('a group edit waits while its queued extras are unsent', () async {
+      await cacheGroup();
+      remote.rpcHandlers['update_journey'] = (_) => throw offline;
+      await layer.ctx.outbox!.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(jid)}:extras',
+        updateJourneyParams(jid, const JourneyUpdate(color: 1)),
+      );
+      await expectLater(
+        layer.journeys.update(jid, const JourneyUpdate(title: 'Mới')),
+        throwsA(
+          isA<OurneyException>().having(
+            (e) => e.error,
+            'error',
+            OurneyErrorCode.syncPending,
+          ),
+        ),
       );
     });
 
