@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ourney · chụp một tấm. giữ một chuỗi.</title>
+  <meta name="description" content="Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay một thói quen nhỏ.">
+  <meta name="theme-color" content="#FFF8EE" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/brand/icon-camera.png">
+  <link rel="preload" href="assets/fonts/SpaceGrotesk-Variable.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/BeVietnamPro-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    document.documentElement.classList.add('js');
+    try { const t = localStorage.getItem('ourney-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Bỏ qua tới nội dung</a>
+
+  <header class="nav" id="top">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Ourney, về đầu trang"><img src="assets/brand/wordmark.png" alt="ourney" width="122" height="45"></a>
+      <nav aria-label="Chính">
+        <ul class="nav-links">
+          <li><a href="#journeys">hành trình</a></li>
+          <li><a href="#how">cách dùng</a></li>
+          <li><a href="#privacy">riêng tư</a></li>
+          <li><a href="#faq">hỏi đáp</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối">
+          <svg class="tg-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1.5 12h3M19.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+          <svg class="tg-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
+        </button>
+        <a class="btn btn-primary btn-sm" href="#beta">nhận lời mời<span class="hide-xs">&nbsp;beta</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="chip reveal"><img src="assets/brand/icon-sparkle.png" alt="" width="22" height="22"> nhật ký ảnh mỗi ngày</p>
+          <h1 class="reveal">
+            <span class="hl"><img src="assets/brand/icon-camera.png" alt="" width="64" height="64">chụp một tấm.</span>
+            <span class="hl"><img src="assets/brand/icon-flame.png" alt="" width="64" height="64">giữ một chuỗi.</span>
+            <span class="hl"><img src="assets/brand/icon-squad.png" alt="" width="64" height="64">đi cùng nhau.</span>
+          </h1>
+          <p class="lede reveal">Ourney là nhật ký ảnh cho điều bạn muốn kiên trì: học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay một thói quen nhỏ. Mỗi ngày một tấm, app giữ chuỗi giúp bạn.</p>
+          <div class="hero-cta reveal">
+            <a class="btn btn-primary" href="#beta">nhận lời mời beta <img src="assets/brand/icon-arrow-right.png" alt="" width="24" height="24"></a>
+            <a class="btn btn-secondary" href="#journeys">xem app</a>
+          </div>
+        </div>
+        <div class="hero-stage">
+          <img class="sticker s1" src="assets/brand/icon-trophy.png" alt="" width="84" height="84">
+          <img class="sticker s2" src="assets/brand/icon-react-clap.png" alt="" width="76" height="76">
+          <img class="sticker s3" src="assets/brand/icon-heart.png" alt="" width="64" height="64">
+          <figure class="phone phone-hero" id="hero-phone">
+            <img class="scr-l" src="assets/screens/hub.webp" alt="Màn hành trình của app Ourney: thẻ vàng 'Còn 2 hành trình chờ ảnh hôm nay', thẻ Hôm nay của IELTS 7.5 ngày 21/30 với 20 ngày liên tiếp và nút Chụp hôm nay" width="390" height="844">
+            <img class="scr-d" src="assets/screens/hub-dark.webp" alt="" aria-hidden="true" width="390" height="844">
+          </figure>
+          <div class="float-card fc1" aria-hidden="true"><img src="assets/brand/icon-flame.png" alt="" width="34" height="34"><span><b class="ticker" data-to="20">20</b> ngày liên tiếp</span></div>
+          <div class="float-card fc2" aria-hidden="true"><img src="assets/brand/icon-bell.png" alt="" width="30" height="30"><span>còn 6 giờ để giữ chuỗi</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TICKER -->
+    <section class="band" aria-label="Khẩu hiệu">
+      <div class="marquee" id="marquee"><div class="marquee-track" id="marquee-track"></div></div>
+      <button type="button" class="pause-btn" id="marquee-toggle" aria-pressed="false">tạm dừng</button>
+    </section>
+
+    <!-- JOURNEYS -->
+    <section class="journeys" id="journeys">
+      <div class="wrap j-layout">
+        <div class="j-side">
+          <p class="eyebrow reveal">mỗi hành trình một thế giới</p>
+          <h2 class="section-h reveal">bước vào là<br>đổi hẳn chất liệu.</h2>
+          <p class="muted reveal j-intro">Không còn một lưới lịch dùng chung. Học tiếng Anh là con đường tới chiếc cúp, chạy bộ là biểu đồ km, chuyến đi là cuộn phim dán băng keo. Ảnh chụp bên cạnh lấy từ app thật.</p>
+          <div class="j-tabs" role="tablist" aria-label="Chọn hành trình" id="j-tabs"></div>
+          <div class="j-info card" role="tabpanel" id="j-panel" tabindex="0">
+            <p class="j-kind" id="j-kind"></p>
+            <h3 id="j-title"></h3>
+            <p id="j-desc" class="muted"></p>
+          </div>
+        </div>
+        <div class="j-stage">
+          <figure class="phone phone-j">
+            <img class="scr-l" id="j-img" src="assets/screens/j-ielts.webp" alt="" width="390" height="844">
+            <img class="scr-d" id="j-img-d" src="assets/screens/j-ielts-dark.webp" alt="" aria-hidden="true" width="390" height="844">
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW -->
+    <section class="how" id="how">
+      <div class="wrap">
+        <p class="eyebrow reveal">cách dùng</p>
+        <h2 class="section-h reveal">ba bước, mỗi ngày.</h2>
+      </div>
+      <div class="wrap how-grid">
+        <ol class="steps">
+          <li class="step" data-step="0">
+            <span class="step-num">1</span>
+            <h3>chọn kiểu hành trình.</h3>
+            <p>Vuốt qua các thẻ: giảm cân, học tiếng Anh, tập luyện, chuyến đi, nghi thức của hai đứa hay một thói quen tự đặt. Mỗi kiểu hỏi bạn vài câu riêng rồi mới bắt đầu.</p>
+            <figure class="phone phone-step"><img class="scr-l" src="assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/create-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+          </li>
+          <li class="step" data-step="1">
+            <span class="step-num">2</span>
+            <h3>chụp một tấm.</h3>
+            <p>Nút chụp nằm giữa dock. Mở camera là thấy ngay các hành trình chưa có ảnh hôm nay, chạm để chuyển. Ảnh chỉ được đăng khi bạn bấm Đăng.</p>
+            <figure class="phone phone-step"><img class="scr-l" src="assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30, hàng hành trình chờ chụp" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/capture-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+          </li>
+          <li class="step" data-step="2">
+            <span class="step-num">3</span>
+            <h3>nhìn lại, rồi khoe.</h3>
+            <p>Mỗi ảnh nối thêm một ngày vào chuỗi. Khi muốn, xuất một thẻ Story 9:16 có sẵn số liệu của bạn để đăng ở đâu cũng được.</p>
+            <figure class="phone phone-step"><img class="scr-l" src="assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/share-run-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+          </li>
+        </ol>
+        <div class="how-visual" aria-hidden="true">
+          <div class="phone phone-how" data-screen="0">
+            <img class="swap" data-scr="0" src="assets/screens/create.webp" alt="" width="390" height="844">
+            <img class="swap" data-scr="1" src="assets/screens/capture.webp" alt="" width="390" height="844">
+            <img class="swap" data-scr="2" src="assets/screens/share-run.webp" alt="" width="390" height="844">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FINISH LINE -->
+    <section class="finish">
+      <div class="wrap finish-grid">
+        <div class="finish-copy">
+          <p class="eyebrow reveal">về đích</p>
+          <h2 class="section-h reveal">hết hành trình,<br>có một tấm thiệp.</h2>
+          <p class="muted reveal">Chuyến đi được gói lại thành một poster có cuộn phim. Ba mươi ngày chạy bộ thành một câu chuyện ngắn: bao nhiêu khoảnh khắc, trong bao nhiêu ngày.</p>
+          <ul class="ticks reveal">
+            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28">khổ Story 9:16 hoặc 4:5</li>
+            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28">chọn chuỗi ngày hay số ngày để in lên thẻ</li>
+            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28">bạn quyết định con số nào được hiện</li>
+          </ul>
+        </div>
+        <div class="finish-phones">
+          <figure class="phone phone-a"><img class="scr-l" src="assets/screens/share-travel.webp" alt="Poster chuyến đi Đà Lạt 7 ngày với cuộn phim các ngày" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/share-travel-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+          <figure class="phone phone-b"><img class="scr-l" src="assets/screens/wrapped-run.webp" alt="Hành trình đã về đích: 20 khoảnh khắc trong 20 ngày" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/wrapped-run-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- GROUPS -->
+    <section class="groups">
+      <div class="wrap">
+        <div class="group-card card reveal">
+          <div class="gc-icons" aria-hidden="true">
+            <img src="assets/brand/icon-squad.png" alt="" width="72" height="72">
+            <img src="assets/brand/icon-react-fire.png" alt="" width="56" height="56">
+            <img src="assets/brand/icon-react-flex.png" alt="" width="56" height="56">
+            <img src="assets/brand/icon-react-clap.png" alt="" width="56" height="56">
+          </div>
+          <div>
+            <p class="eyebrow">nhóm</p>
+            <h2 class="section-h sm">rủ cả nhóm cùng giữ chuỗi.</h2>
+            <p class="muted">Một hành trình nhóm có tối đa 10 người, vào bằng mã mời. Mỗi ngày mở app là biết ai đã chụp, ai chưa, và thả cảm xúc cho nhau. Tiến độ của người mới tính từ ngày họ tham gia.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRIVACY -->
+    <section class="privacy" id="privacy">
+      <div class="wrap privacy-grid">
+        <div class="privacy-copy">
+          <p class="eyebrow reveal">riêng tư</p>
+          <h2 class="section-h reveal">có những hành trình<br>chỉ dành cho bạn.</h2>
+          <p class="muted reveal">Hành trình giảm cân hiện cân nặng thành dấu chấm, giữ ngón tay lên mới thấy. Mỗi hành trình có chế độ xem riêng.</p>
+          <div class="vis-row reveal">
+            <span class="chip"><img src="assets/brand/icon-lock.png" alt="" width="22" height="22">Chỉ mình tôi</span>
+            <span class="chip"><img src="assets/brand/icon-link.png" alt="" width="22" height="22">Ai có link</span>
+            <span class="chip"><img src="assets/brand/icon-squad.png" alt="" width="22" height="22">Thành viên trong nhóm</span>
+          </div>
+          <ul class="toggles reveal">
+            <li class="card">
+              <img src="assets/brand/icon-eye-off.png" alt="" width="40" height="40">
+              <span class="grow"><b>Ẩn con số với người khác</b><small>Người khác chỉ thấy ảnh, không thấy cân nặng hay số phút.</small></span>
+              <label class="switch"><input type="checkbox" checked><span aria-hidden="true"></span><span class="sr">Ẩn con số với người khác</span></label>
+            </li>
+            <li class="card">
+              <img src="assets/brand/icon-drop.png" alt="" width="40" height="40">
+              <span class="grow"><b>Làm mờ ảnh khi chia sẻ ra ngoài</b><small>Ảnh xem trước của link được làm mờ.</small></span>
+              <label class="switch"><input type="checkbox"><span aria-hidden="true"></span><span class="sr">Làm mờ ảnh khi chia sẻ ra ngoài</span></label>
+            </li>
+          </ul>
+        </div>
+        <figure class="phone phone-privacy reveal"><img class="scr-l" src="assets/screens/j-weight.webp" alt="Hành trình 30 ngày cơ thể: Nhìn lại từng chút một, biểu đồ cân nặng với con số bị ẩn, Giữ để xem" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/j-weight-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq" id="faq">
+      <div class="wrap faq-grid">
+        <div>
+          <p class="eyebrow reveal">hỏi đáp</p>
+          <h2 class="section-h reveal">vài điều<br>bạn sẽ hỏi.</h2>
+        </div>
+        <div class="faq-list">
+          <details name="faq" open><summary>Không có mạng thì dùng được không?<i aria-hidden="true"></i></summary><div class="ans"><p>Được. Ourney có chế độ chỉ trên máy: dữ liệu nằm trên máy của bạn, hành trình một mình dùng đầy đủ. Đăng nhập và hành trình nhóm thì cần máy chủ.</p></div></details>
+          <details name="faq"><summary>Nhóm có bao nhiêu người?<i aria-hidden="true"></i></summary><div class="ans"><p>Tối đa 10 người, tham gia bằng mã mời. Tiến độ của bạn tính từ ngày tham gia, và bạn vẫn xem được lịch sử của nhóm.</p></div></details>
+          <details name="faq"><summary>Ai xem được ảnh của tôi?<i aria-hidden="true"></i></summary><div class="ans"><p>Bạn chọn cho từng hành trình: chỉ mình tôi, ai có link, hoặc thành viên trong nhóm. Bạn có thể ẩn con số theo dõi và làm mờ ảnh khi chia sẻ ra ngoài.</p></div></details>
+          <details name="faq"><summary>Một ngày chụp nhiều tấm được không?<i aria-hidden="true"></i></summary><div class="ans"><p>Được. Chụp thêm trong cùng ngày sẽ thêm ảnh vào ngày đó, còn chuỗi vẫn chỉ tính ngày đó một lần.</p></div></details>
+          <details name="faq"><summary>Ourney có trên iOS và Android không?<i aria-hidden="true"></i></summary><div class="ans"><p>Ourney được làm cho cả iOS và Android. Để lại email để nhận tin khi bản beta mở.</p></div></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta" id="beta">
+      <div class="wrap cta-inner">
+        <div class="cta-card card">
+          <img class="cta-sticker" src="assets/brand/icon-star.png" alt="" width="80" height="80">
+          <p class="eyebrow">beta sắp mở</p>
+          <h2 class="cta-h">ngày 1 của bạn<br>bắt đầu từ hôm nay.</h2>
+          <form class="beta-form" id="beta-form" novalidate>
+            <label for="email" class="sr">Email</label>
+            <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="email@cua-ban.vn" required aria-describedby="form-msg">
+            <button class="btn btn-primary" type="submit">nhận lời mời</button>
+          </form>
+          <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer-inner">
+      <img src="assets/brand/wordmark.png" alt="ourney" width="98" height="36">
+      <p class="muted">chụp một tấm. giữ một chuỗi. đi cùng nhau.</p>
+      <ul>
+        <li><a href="#privacy">riêng tư</a></li>
+        <li><a href="#faq">hỏi đáp</a></li>
+        <li><a href="#beta">nhận lời mời</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="main.js" defer></script>
+</body>
+</html>
