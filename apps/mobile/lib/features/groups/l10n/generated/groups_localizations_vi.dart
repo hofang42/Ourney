@@ -89,6 +89,10 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_errorEnded => 'Hành trình này đã kết thúc.';
 
   @override
+  String get groups_errorSyncPending =>
+      'Ảnh vẫn đang tải lên, thử lại sau ít phút.';
+
+  @override
   String get groups_errorForbidden => 'Bạn không có quyền làm việc này.';
 
   @override

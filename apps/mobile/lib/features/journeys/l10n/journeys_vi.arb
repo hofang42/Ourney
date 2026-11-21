@@ -1481,7 +1481,7 @@
   },
   "journeys_home_viewWrapped": "Xem tổng kết",
   "journeys_addMoreTag": "Thêm ảnh",
-  "journeys_hubTitle": "hành trình.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "chào {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {
@@ -1587,5 +1587,9 @@
   "journeys_deadDiscard": "Bỏ ảnh",
   "@journeys_deadDiscard": {
     "description": "Discard the failed uploads and their local photos."
+  },
+  "journeys_createSettingsNotSaved": "Một vài cài đặt chưa lưu được",
+  "@journeys_createSettingsNotSaved": {
+    "description": "Non-fatal toast after creating a journey when the server rejected some create-flow settings."
   }
 }

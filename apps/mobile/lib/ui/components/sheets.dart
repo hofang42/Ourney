@@ -77,7 +77,7 @@ class UiSheet extends StatelessWidget {
               0,
             ),
             child: DecoratedBox(
-              decoration: BoxDecoration(color: ui.bg, borderRadius: inner),
+              decoration: BoxDecoration(color: ui.sheet, borderRadius: inner),
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   UiSpace.xl,

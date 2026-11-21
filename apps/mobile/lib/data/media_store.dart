@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:path/path.dart' as p;
 
@@ -50,8 +51,32 @@ class MediaFiles {
     if (dir.existsSync()) await dir.delete(recursive: true);
   }
 
-  Future<void> wipe() async {
-    if (root.existsSync()) await root.delete(recursive: true);
+  /// Empties the cache. The folder is renamed away first (atomic, so a photo
+  /// saved right after can never be caught by the delete) and the renamed
+  /// copy is deleted in the background.
+  Future<void> wipe() => wipeDirectory(root);
+
+  /// Same as [wipe] for any folder (e.g. the check-in drafts).
+  static Future<void> wipeDirectory(Directory dir) async {
+    if (!dir.existsSync()) return;
+    final trash = Directory(
+      '${dir.path}.trash-${DateTime.now().microsecondsSinceEpoch}',
+    );
+    try {
+      await dir.rename(trash.path);
+    } on FileSystemException {
+      // Could not rename (e.g. busy): delete in place.
+      await dir.delete(recursive: true);
+      return;
+    }
+    unawaited(
+      trash
+          .delete(recursive: true)
+          .then<void>(
+            (_) {},
+            onError: (Object e) => debugPrint('media wipe: trash left: $e'),
+          ),
+    );
   }
 }
 

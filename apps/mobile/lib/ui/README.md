@@ -86,7 +86,7 @@ PR 1 adds the foundation; screens migrate in later PRs.
 
 | File | Contents |
 | --- | --- |
-| `tokens.dart` | Shell palette is now the V2 shell (`#FFF8EE`/`#121212`, brand `#FF8A3D`). New `UiBorder` (2 / 1.5 / 1), `UiShadow.hard(color, offset)` (no blur), `ctx.ui.outline`, `stickerBorder()`, `hardShadow()` |
+| `tokens.dart` | Shell palette is now the V2 shell (`#FFF8EE` light, warm `#1B1916` dark, brand `#FF8A3D`). New `UiBorder` (2 / 1.5 / 1), `UiShadow.hard(color, offset)` (no blur), palette fields `outline`, `hardShadowColor`, `sheet`, `stickerBorder()`, `hardShadow()`. Light: outline = shadow = ink. Dark: mid-tone outline (3:1+), drop shadow darker than bg, `sheet` one step above bg |
 | `skins.dart` | `uiSkins` (quiet, squad, memory, couple, flexer, minimal) x 3 variants x light/dark; `UiSkin.apply(OurneyUi, variantIndex:)` recolors the shell for a journey; `UiTypePastel` journey-type colors |
 | `typography.dart` | `UiText.heading(font:, size:)` for per-skin heading fonts (Space Grotesk, Fraunces, Playfair Display, Barlow Condensed; Space Mono for labels), all OFL, bundled in `assets/fonts` |
 | `components/pressable.dart` | `shadowOffset`: sticker press (translate by the offset, shadow disappears). Without it, the 0.96 scale press |

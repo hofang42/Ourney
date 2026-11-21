@@ -667,9 +667,18 @@ class _FriendsBlock extends StatelessWidget {
                 hintText: l10n.sharing_searchFriends,
                 filled: true,
                 fillColor: ui.surfaceInput,
+                // Single-line search: a pill.
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(UiRadius.input),
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
                   borderSide: BorderSide(color: ui.inputBorder),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  borderSide: BorderSide(color: ui.inputBorder),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  borderSide: BorderSide(color: ui.ink, width: 2),
                 ),
               ),
             ),

@@ -137,7 +137,7 @@ class UiDock extends StatelessWidget {
         ? 0.0
         : ((quiet || camera) ? UiShadow.tiny : UiShadow.large);
     final outline = camera ? UiCamera.outline : ui.outline;
-    final shadowColor = camera ? UiCamera.shadow : ui.outline;
+    final shadowColor = camera ? UiCamera.shadow : ui.hardShadowColor;
     final solid = reduceTransparency || media.highContrast;
     // V2: journey docks tint the skin surface at 62%, the shell dock at 78%
     // (light) / 80% (dark), so content shows through the blur.
@@ -180,7 +180,7 @@ class UiDock extends StatelessWidget {
         // Label row bottom edge, measured from the pill centre; the capsule's
         // curve narrows the usable width there (U17), so the label is
         // scaled down to the chord instead of touching the outline.
-        const labelBottom = 19.0 - dockTabLift;
+        final labelBottom = 19.0 - dockTabLift + dockLabelGrowth(context);
         const r = _pillH / 2;
         final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
         final tabMaxW = math.min(

@@ -343,6 +343,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final progress = ref.read(createProgressProvider.notifier);
     final activeJourney = ref.read(activeJourneyIdProvider.notifier);
     final title = _finalTitle(form);
+    var extrasRejected = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -370,9 +371,16 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           color: _variant,
           layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
+        onExtrasRejected: () => extrasRejected = true,
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
+      if (mounted && extrasRejected) {
+        showJourneySnack(
+          context,
+          JourneysL10n.of(context).journeys_createSettingsNotSaved,
+        );
+      }
       final rt = ReminderTime.tryParse(_reminder);
       if (rt != null) {
         await ref

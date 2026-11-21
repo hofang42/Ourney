@@ -12,6 +12,7 @@ import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../groups/ui/invite_sheet.dart';
+import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
@@ -767,6 +768,13 @@ class _PrivacySection extends ConsumerWidget {
       bool? blurMedia,
       bool? hideExtras,
     }) async {
+      // An explicit choice here wins over any waiting heal of that flag.
+      forgetSharePrivacyHeal(
+        ref,
+        journey.id,
+        hide: hideMetric != null,
+        blur: blurMedia != null,
+      );
       try {
         await repo.updateMyMembership(
           journey.id,

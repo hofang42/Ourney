@@ -64,6 +64,7 @@
   "groups_errorFull": "Nhóm này đã đủ 10 thành viên.",
   "groups_errorBlocked": "Bạn không thể tham gia nhóm này.",
   "groups_errorEnded": "Hành trình này đã kết thúc.",
+  "groups_errorSyncPending": "Ảnh vẫn đang tải lên, thử lại sau ít phút.",
   "groups_errorForbidden": "Bạn không có quyền làm việc này.",
   "groups_errorNotAlone": "Nhóm vẫn còn thành viên khác. Hãy kết thúc hành trình thay vì xóa.",
   "groups_errorInvalid": "Không thể thực hiện thao tác này.",

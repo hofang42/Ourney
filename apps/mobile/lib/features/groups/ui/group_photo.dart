@@ -15,6 +15,7 @@ class GroupPhoto extends ConsumerWidget {
     required this.checkIn,
     this.thumbnail = true,
     this.dimmed = false,
+    this.decodeWidth = 480,
     super.key,
   });
 
@@ -24,8 +25,12 @@ class GroupPhoto extends ConsumerWidget {
   /// Older photo (member not checked in today): drawn faded.
   final bool dimmed;
 
+  /// Logical width the photo is shown at (decode size = this x DPR).
+  final double decodeWidth;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final dpr = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0;
     final local = checkIn.localPhotoFile;
     String? path;
     if (local != null && !checkIn.uploaded) {
@@ -40,6 +45,8 @@ class GroupPhoto extends ConsumerWidget {
         : Image.file(
             File(path),
             fit: BoxFit.cover,
+            // Decode near the displayed size, not the full 12MP original.
+            cacheWidth: (decodeWidth * dpr).ceil(),
             gaplessPlayback: true,
             excludeFromSemantics: true,
             errorBuilder: (context, error, stack) => const _PhotoFallback(),

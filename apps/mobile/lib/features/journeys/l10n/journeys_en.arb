@@ -1001,7 +1001,7 @@
   },
   "journeys_home_viewWrapped": "See the wrap-up",
   "journeys_addMoreTag": "Add more",
-  "journeys_hubTitle": "journeys.",
+  "journeys_hubTitle": "Ourney",
   "journeys_hubGreeting": "hi {name}.",
   "@journeys_hubGreeting": {
     "placeholders": {
@@ -1074,5 +1074,6 @@
   "journeys_heroSemantics": "{streak}-day streak. {title}",
   "journeys_deadUploads": "{count, plural, one{1 photo couldn't be sent} other{{count} photos couldn't be sent}}",
   "journeys_deadRetry": "Retry",
-  "journeys_deadDiscard": "Discard"
+  "journeys_deadDiscard": "Discard",
+  "journeys_createSettingsNotSaved": "Some settings couldn't be saved"
 }

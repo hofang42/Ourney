@@ -32,10 +32,10 @@ void main() {
       expect(OurneyUi.light.inkMuted, const Color(0xFF5A544C));
       expect(OurneyUi.light.brand, const Color(0xFFFF8A3D));
       expect(OurneyUi.light.danger, const Color(0xFFB3261E));
-      expect(OurneyUi.dark.bg, const Color(0xFF121212));
-      expect(OurneyUi.dark.ink, const Color(0xFFF5F0E6));
-      expect(OurneyUi.dark.surface, const Color(0xFF1C1B19));
-      expect(OurneyUi.dark.inkMuted, const Color(0xFFB8B0A4));
+      expect(OurneyUi.dark.bg, const Color(0xFF1B1916));
+      expect(OurneyUi.dark.ink, const Color(0xFFECE5D8));
+      expect(OurneyUi.dark.surface, const Color(0xFF25221E));
+      expect(OurneyUi.dark.inkMuted, const Color(0xFFB3AA9C));
       expect(OurneyUi.dark.brand, const Color(0xFFFF8A3D));
     });
 
@@ -62,13 +62,13 @@ void main() {
         uiSkins.map((s) => s.id).toSet(),
       );
       final dark = uiSkinById('squad').apply(OurneyUi.dark, variantIndex: 1);
-      expect(dark.bg, const Color(0xFF12131A));
-      expect(dark.ink, const Color(0xFFF8FAFC));
+      expect(dark.bg, const Color(0xFF191A22));
+      expect(dark.ink, const Color(0xFFEEEFF4));
       // V2 override: minimal variant 1 in dark mode uses a light button.
       final minimal = uiSkinById('minimal')
           .apply(OurneyUi.dark, variantIndex: 1);
-      expect(minimal.brand, const Color(0xFFF4F4F5));
-      expect(minimal.onBrand, const Color(0xFF0E0E10));
+      expect(minimal.brand, const Color(0xFFE4E4E7));
+      expect(minimal.onBrand, const Color(0xFF18181A));
       // Derived neutrals follow the skin, not the warm shell.
       expect(quiet.surfaceInput, quiet.surface);
       expect(quiet.inputBorder, quiet.ink);

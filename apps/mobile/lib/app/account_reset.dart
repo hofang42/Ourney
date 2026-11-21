@@ -23,6 +23,7 @@ const List<String> accountPrefsKeys = [
   CreateProgressPrefs.draftKey,
   SharePrivacyPrefs.hideWeight,
   SharePrivacyPrefs.blurPhotos,
+  SharePrivacyPrefs.pendingHeal,
 ];
 
 /// The user id the per-account prefs above were written for.

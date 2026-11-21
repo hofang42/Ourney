@@ -90,19 +90,39 @@ class SettingsScreen extends ConsumerWidget {
                   key: const ValueKey('settings-hide-kg'),
                   label: l10n.profile_settings_hideKg,
                   value: ref.watch(hideWeightOnShareProvider),
-                  onChanged: (v) => unawaited(() async {
-                    await ref.read(hideWeightOnShareProvider.notifier).set(v);
-                    if (v) await pushSharePrivacyToMemberships(ref, hideWeight: true);
-                  }()),
+                  onChanged: (v) {
+                    final container = ProviderScope.containerOf(context);
+                    unawaited(() async {
+                      await container
+                          .read(hideWeightOnShareProvider.notifier)
+                          .set(v);
+                      if (v) {
+                        await pushSharePrivacyToMemberships(
+                          container,
+                          hideWeight: true,
+                        );
+                      }
+                    }());
+                  },
                 ),
                 UiSwitchRow(
                   key: const ValueKey('settings-blur-photos'),
                   label: l10n.profile_settings_blurPhotos,
                   value: ref.watch(blurPhotosOnShareProvider),
-                  onChanged: (v) => unawaited(() async {
-                    await ref.read(blurPhotosOnShareProvider.notifier).set(v);
-                    if (v) await pushSharePrivacyToMemberships(ref, blur: true);
-                  }()),
+                  onChanged: (v) {
+                    final container = ProviderScope.containerOf(context);
+                    unawaited(() async {
+                      await container
+                          .read(blurPhotosOnShareProvider.notifier)
+                          .set(v);
+                      if (v) {
+                        await pushSharePrivacyToMemberships(
+                          container,
+                          blur: true,
+                        );
+                      }
+                    }());
+                  },
                 ),
                 UiRow(
                   key: const ValueKey('settings-blocked'),

@@ -648,10 +648,23 @@ class OurneyIconPainter extends CustomPainter {
   final Color? shadow;
   final Color dieCut;
 
+  /// True when a two-tone sticker would collapse into one solid blob: the
+  /// fill and the outline are (nearly) the same color, e.g. `color: ui.ink`
+  /// on the default ink outline, or a white camera glyph in dark mode.
+  static bool collapses(Color color, Color ink) {
+    if (color == ink) return true;
+    final a = color.computeLuminance() + 0.05;
+    final b = ink.computeLuminance() + 0.05;
+    return (a > b ? a / b : b / a) < 1.3;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = ourneyIconPath(name);
     if (path == null) return;
+    // A two-tone icon whose fill and ink coincide is drawn as a single
+    // [color] line glyph instead of a filled blob (details stay visible).
+    final flat = this.flat || collapses(color, ink);
     final scale = size.width / 24;
     final tiny = size.width < 16;
     final full = size.width >= 24;
@@ -685,7 +698,8 @@ class OurneyIconPainter extends CustomPainter {
       }
       layer(path, dieCut, 12);
     }
-    if (!tiny) layer(path, ink, full ? 6 : 5);
+    // The ink halo scales with the icon so it does not clump at 16-22px.
+    if (!tiny) layer(path, ink, (size.width * 0.22).clamp(3.5, 6.0));
     layer(path, color, tiny ? 3.5 : 2);
     final core = _cores[name];
     if (core != null && !tiny && color == ourneyIconColor(name)) {
@@ -746,15 +760,21 @@ class OurneyIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    // A custom [color] without an [inkColor] is a neutral / state tint (ink,
+    // muted, divider...): as a sticker fill it would swallow the outline, so
+    // it is drawn as a line glyph. Palette colors keep the sticker look.
+    final lineGlyph =
+        flat ||
+        (color != null && inkColor == null && color != ourneyIconColor(name));
     final Widget icon = SizedBox.square(
       dimension: size,
       child: CustomPaint(
         painter: OurneyIconPainter(
           name: name,
-          color: color ?? (flat ? ui.ink : ourneyIconColor(name)),
+          color: color ?? (lineGlyph ? ui.ink : ourneyIconColor(name)),
           ink: inkColor ?? ui.ink,
           active: active,
-          flat: flat,
+          flat: lineGlyph,
           shadow: ui.isDark ? const Color(0xFF000000) : ui.ink,
         ),
       ),

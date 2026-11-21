@@ -83,7 +83,7 @@
   "checkin_done_stampChecked": "ĐÃ ĐIỂM DANH",
   "checkin_done_stampWeek1": "TUẦN 1 XONG",
   "checkin_done_stampCup": "CÚP VỀ TAY",
-  "checkin_done_memoryStamp": "ĐÃ DÁN · NGÀY {day}",
+  "checkin_done_memoryStamp": "ĐÃ DÁN · NGÀY {day} HÀNH TRÌNH",
   "@checkin_done_memoryStamp": {"placeholders": {"day": {"type": "int"}}},
   "checkin_done_coupleDay": "Ngày {day}",
   "@checkin_done_coupleDay": {"placeholders": {"day": {"type": "int"}}},

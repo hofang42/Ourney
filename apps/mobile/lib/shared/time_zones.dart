@@ -191,24 +191,23 @@ tz.Location guessTimeZoneForOffset(Duration offset, {DateTime? at}) {
 }
 
 /// UTC offset of zone [name] at [instant] (see [resolveTimeZone]).
+///
+/// Fast path (NFR-1: the camera must be ready in under a second): an empty
+/// name means the device zone, and while the tz database is not loaded yet the
+/// registered device zone is answered with the device offset, so the first
+/// frame never decodes the database on the main isolate.
 Duration timeZoneOffsetAt(String name, DateTime instant) {
+  if (name.trim().isEmpty || (!_loaded && _isDeviceZone(name))) {
+    return instant.toLocal().timeZoneOffset;
+  }
   return resolveTimeZone(name).timeZone(instant.millisecondsSinceEpoch).offset;
 }
 
 /// Journey-local calendar date of [instant] in the IANA zone [timezone] (same
 /// rule as the server's `local_date`). Legacy and unknown zones are handled by
 /// [timeZoneOffsetAt], so a bad server value never crashes the UI.
-///
-/// Fast path (NFR-1: the camera must be ready in under a second): while the
-/// tz database is not loaded yet and [timezone] is the device's own zone (or
-/// empty), the device offset is used, so the first frame never decodes the
-/// database on the main isolate.
-LocalDate journeyLocalDate(String timezone, DateTime instant) {
-  if (!_loaded && _isDeviceZone(timezone)) {
-    return localDateOf(instant, instant.toLocal().timeZoneOffset);
-  }
-  return localDateOf(instant, timeZoneOffsetAt(timezone, instant));
-}
+LocalDate journeyLocalDate(String timezone, DateTime instant) =>
+    localDateOf(instant, timeZoneOffsetAt(timezone, instant));
 
 String? _deviceZone;
 
@@ -220,8 +219,7 @@ void registerDeviceTimeZone(String name) {
 }
 
 bool _isDeviceZone(String timezone) {
-  final n = canonicalTimeZoneName(timezone);
-  return n.isEmpty || (_deviceZone != null && n == _deviceZone);
+  return _deviceZone != null && canonicalTimeZoneName(timezone) == _deviceZone;
 }
 
 @visibleForTesting

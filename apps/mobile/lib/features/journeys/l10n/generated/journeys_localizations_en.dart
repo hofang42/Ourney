@@ -1673,7 +1673,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_addMoreTag => 'Add more';
 
   @override
-  String get journeys_hubTitle => 'journeys.';
+  String get journeys_hubTitle => 'Ourney';
 
   @override
   String journeys_hubGreeting(String name) {
@@ -1784,4 +1784,8 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_deadDiscard => 'Discard';
+
+  @override
+  String get journeys_createSettingsNotSaved =>
+      'Some settings couldn\'t be saved';
 }

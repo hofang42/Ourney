@@ -242,6 +242,12 @@ abstract class GroupsL10n {
   /// **'Hành trình này đã kết thúc.'**
   String get groups_errorEnded;
 
+  /// No description provided for @groups_errorSyncPending.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh vẫn đang tải lên, thử lại sau ít phút.'**
+  String get groups_errorSyncPending;
+
   /// No description provided for @groups_errorForbidden.
   ///
   /// In vi, this message translates to:

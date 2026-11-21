@@ -3005,7 +3005,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_hubTitle.
   ///
   /// In vi, this message translates to:
-  /// **'hành trình.'**
+  /// **'Ourney'**
   String get journeys_hubTitle;
 
   /// No description provided for @journeys_hubGreeting.
@@ -3181,6 +3181,12 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Bỏ ảnh'**
   String get journeys_deadDiscard;
+
+  /// Non-fatal toast after creating a journey when the server rejected some create-flow settings.
+  ///
+  /// In vi, this message translates to:
+  /// **'Một vài cài đặt chưa lưu được'**
+  String get journeys_createSettingsNotSaved;
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

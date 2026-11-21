@@ -1,12 +1,16 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
+import 'package:path/path.dart' as p;
 
+import '../data_context.dart' show checkinDraftDirName;
 import '../db/app_database.dart';
 import '../local_store.dart';
 import '../mapping.dart';
+import '../media_store.dart' show MediaFiles;
 import '../remote/remote_api.dart';
 import 'outbox.dart';
 
@@ -84,6 +88,10 @@ class SyncEngine {
       if (await db.readCursor(ownerCursorKey) == userId) return;
       await db.wipe();
       await store.files.wipe();
+      // Drafts of the previous owner (or of the wiped marker) go too.
+      await MediaFiles.wipeDirectory(
+        Directory(p.join(store.files.root.parent.path, checkinDraftDirName)),
+      );
       await db.writeCursor(ownerCursorKey, userId);
     });
   }

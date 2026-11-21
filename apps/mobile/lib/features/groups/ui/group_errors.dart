@@ -23,6 +23,7 @@ String groupErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.invalid => l10n.groups_errorInvalid,
     OurneyErrorCode.rateLimited => l10n.groups_errorRateLimited,
     OurneyErrorCode.offline => app.common_offline,
+    OurneyErrorCode.syncPending => l10n.groups_errorSyncPending,
     _ => app.common_errorGeneric,
   };
 }

@@ -145,6 +145,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
     final repo = ref.read(journeyRepositoryProvider);
     final now = ref.read(journeysClockProvider).now();
     final reminders = ref.read(reminderSchedulerProvider);
+    var extrasRejected = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -154,7 +155,14 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           // The colour picked on the ticket (bug B-B12).
           color: _variant,
         ),
+        onExtrasRejected: () => extrasRejected = true,
       );
+      if (mounted && extrasRejected) {
+        showJourneySnack(
+          context,
+          JourneysL10n.of(context).journeys_createSettingsNotSaved,
+        );
+      }
       // The new journey may get the 21:00 streak alert (FR-G2).
       unawaited(reminders.reschedule());
       final privacy = newMembershipPrivacy(

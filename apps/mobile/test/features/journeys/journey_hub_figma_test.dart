@@ -53,7 +53,7 @@ void main() {
       tester,
     ) async {
       await _pump(tester);
-      expect(find.text('journeys.'), findsOneWidget);
+      expect(find.text('Ourney'), findsOneWidget);
       expect(_key('hub-greeting'), findsOneWidget);
       expect(find.text('your journeys.'), findsOneWidget);
       expect(find.text('1 running'), findsOneWidget);

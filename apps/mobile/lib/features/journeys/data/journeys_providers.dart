@@ -8,6 +8,7 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/journey_clock.dart';
 import '../../../app/providers.dart';
+import '../../../data/sync/outbox.dart' show isTransient;
 
 import '../../../shared/time_zones.dart';
 
@@ -28,18 +29,26 @@ Duration? _noRetry(int _, Object _) => null;
 /// IANA name of the device time zone: the default for new journeys.
 /// Override in tests (it uses a platform channel).
 final deviceTimezoneProvider = FutureProvider<String>((ref) async {
+  final id = await ref.watch(_deviceZoneIdProvider.future);
+  // Stored on the journey: always canonical (Asia/Saigon ->
+  // Asia/Ho_Chi_Minh); an unknown name uses the logged best guess.
+  if (id != null) return resolveTimeZone(id).name;
+  return guessTimeZoneForOffset(DateTime.now().timeZoneOffset).name;
+}, retry: _noRetry);
+
+/// Raw platform zone id, registered for the tz fast path without touching the
+/// tz database (null when unsupported).
+final _deviceZoneIdProvider = FutureProvider<String?>((ref) async {
   try {
     final info = await FlutterTimezone.getLocalTimezone();
-    // Stored on the journey: always canonical (Asia/Saigon ->
-    // Asia/Ho_Chi_Minh); an unknown name uses the logged best guess.
     if (info.identifier.isNotEmpty) {
       registerDeviceTimeZone(info.identifier);
-      return resolveTimeZone(info.identifier).name;
+      return info.identifier;
     }
   } on Object {
-    // Fall through: unsupported platform or channel missing.
+    // Unsupported platform or channel missing.
   }
-  return guessTimeZoneForOffset(DateTime.now().timeZoneOffset).name;
+  return null;
 }, retry: _noRetry);
 
 /// Registers the device zone and decodes the tz database once the first frame
@@ -47,14 +56,20 @@ final deviceTimezoneProvider = FutureProvider<String>((ref) async {
 /// camera's first frame uses the fast path of `journeyLocalDate`).
 final timeZoneWarmupProvider = Provider<void>((ref) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(
-      ref
-          .read(deviceTimezoneProvider.future)
-          .then(
-            (_) => Future<void>.microtask(ensureTimeZonesLoaded),
-            onError: (Object _) {},
-          ),
-    );
+    unawaited(() async {
+      // Registers the device zone; a hung or failed platform call must not
+      // hold the decode back, so it is not awaited.
+      unawaited(
+        ref
+            .read(_deviceZoneIdProvider.future)
+            .then((_) {}, onError: (Object _) {}),
+      );
+      // Let a couple of frames pass before the synchronous decode.
+      final binding = WidgetsBinding.instance;
+      await binding.endOfFrame;
+      await binding.endOfFrame;
+      ensureTimeZonesLoaded();
+    }());
   });
 }, retry: _noRetry);
 
@@ -101,9 +116,16 @@ Journey settleJourney(Ref ref, Journey j, DateTime now) {
           .end(j.id, background: true)
           .then(
             (_) {},
-            onError: (Object _) {
-              state.requested.remove(j.id);
-              state.retryAt[j.id] = now.add(untilNextQuarterHour(now));
+            onError: (Object e) {
+              // Only transient refusals retry; ended/forbidden/notFound stay
+              // requested (the repository will not accept them later).
+              final code = rootError(e) is OurneyException
+                  ? (rootError(e) as OurneyException).error
+                  : OurneyErrorCode.offline;
+              if (code == OurneyErrorCode.syncPending || isTransient(code)) {
+                state.requested.remove(j.id);
+                state.retryAt[j.id] = now.add(untilNextQuarterHour(now));
+              }
             },
           ),
     );

@@ -47,6 +47,9 @@ class PrefSwitch extends Notifier<bool> {
 abstract final class SharePrivacyPrefs {
   static const hideWeight = 'privacy.hideWeightOnShare';
   static const blurPhotos = 'privacy.blurPhotosOnShare';
+
+  /// Failed membership pushes to heal (see share_privacy_sync.dart).
+  static const pendingHeal = 'privacy.pendingHeal';
 }
 
 final hideWeightOnShareProvider = NotifierProvider<PrefSwitch, bool>(
