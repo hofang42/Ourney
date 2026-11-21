@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @common_serverOutdated.
   ///
   /// In vi, this message translates to:
-  /// **'Máy chủ chưa được cập nhật, vui lòng thử lại sau.'**
+  /// **'Ourney đang cập nhật. Cập nhật app hoặc thử lại sau nhé.'**
   String get common_serverOutdated;
 
   /// No description provided for @common_offline.

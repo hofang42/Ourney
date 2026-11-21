@@ -54,14 +54,11 @@ final profileStatsProvider = FutureProvider.autoDispose<ProfileStats>((
   final journeyRepo = ref.watch(journeyRepositoryProvider);
   final checkIns = ref.watch(checkInRepositoryProvider);
   final userId = ref.watch(currentUserIdProvider);
-  // The server counts every membership, archived journeys included.
-  final active = await journeyRepo.watchActive().first;
-  final archived = await journeyRepo.watchArchived().first;
-  final journeys = <Journey>[
-    ...active,
-    for (final j in archived)
-      if (!active.any((a) => a.id == j.id)) j,
-  ];
+  // Same set as the server's `profile_stats` (every active membership,
+  // archived and ended journeys included).
+  // Remaining gap: the server's `total_snaps` counts all my check-ins in
+  // any journey, even one I left; here only journeys I am still in count.
+  final journeys = await journeyRepo.allMine();
   final byJourney = <String, List<CheckIn>>{};
   final joined = <String, LocalDate>{};
   for (final j in journeys) {

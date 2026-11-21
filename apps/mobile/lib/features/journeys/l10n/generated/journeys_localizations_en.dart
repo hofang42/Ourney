@@ -194,10 +194,6 @@ class JourneysL10nEn extends JourneysL10n {
       'You have too many running journeys. End one and try again.';
 
   @override
-  String get journeys_errorVisibility =>
-      'This visibility isn\'t available for this journey.';
-
-  @override
   String get journeys_errorNotAlone =>
       'Other members are still in the group, so it can\'t be deleted. You can end the journey instead.';
 

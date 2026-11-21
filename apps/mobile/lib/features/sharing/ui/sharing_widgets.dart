@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
@@ -32,12 +33,6 @@ OurneyErrorCode? sharingErrorCode(Object error) =>
 String sharingErrorMessage(BuildContext context, Object error) {
   final l10n = SharingL10n.of(context);
   final app = AppLocalizations.of(context);
-  final root = sharingRootError(error);
-  debugPrint(
-    'sharingError: code=${sharingErrorCode(error)?.wireName} '
-    'detail=${root is OurneyException ? root.detail : null} '
-    'original=$error',
-  );
   return switch (sharingErrorCode(error)) {
     OurneyErrorCode.serverOutdated => app.common_serverOutdated,
     OurneyErrorCode.forbidden => l10n.sharing_errorNotFriend,
@@ -48,6 +43,20 @@ String sharingErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.offline => app.common_offline,
     _ => app.common_errorGeneric,
   };
+}
+
+/// For catch blocks (never `build`): logs the cause in debug builds, then
+/// returns the user-facing message.
+String sharingFailure(BuildContext context, Object error) {
+  if (kDebugMode) {
+    final root = sharingRootError(error);
+    debugPrint(
+      'sharing error: code=${sharingErrorCode(error)?.wireName} '
+      'detail=${root is OurneyException ? root.detail : null} '
+      'original=$error',
+    );
+  }
+  return sharingErrorMessage(context, error);
 }
 
 void showSharingSnack(BuildContext context, String message) =>

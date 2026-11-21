@@ -218,7 +218,7 @@ class _RetellScreenState extends ConsumerState<RetellScreen> {
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      showSharingSnack(context, sharingErrorMessage(context, e));
+      showSharingSnack(context, sharingFailure(context, e));
     }
   }
 

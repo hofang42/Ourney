@@ -233,7 +233,8 @@ void main() {
     () async {
       final e = mapRemoteError(const FormatException('bad enum "x"'));
       expect(e.error, OurneyErrorCode.unknown);
-      expect(e.detail, contains('bad enum'));
+      expect(e.detail, startsWith('bad data:'));
+    expect(e.detail, contains('bad enum'));
       await expectLater(
         guardRemote<void>(() async => throw const FormatException('row')),
         throwsA(isA<OurneyException>()),

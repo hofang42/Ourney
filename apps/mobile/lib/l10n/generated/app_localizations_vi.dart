@@ -83,7 +83,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get common_serverOutdated =>
-      'Máy chủ chưa được cập nhật, vui lòng thử lại sau.';
+      'Ourney đang cập nhật. Cập nhật app hoặc thử lại sau nhé.';
 
   @override
   String get common_offline =>

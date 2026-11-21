@@ -83,7 +83,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get common_serverOutdated =>
-      'The server isn\'t up to date yet. Please try again later.';
+      'Ourney is being updated. Update the app or try again later.';
 
   @override
   String get common_offline =>

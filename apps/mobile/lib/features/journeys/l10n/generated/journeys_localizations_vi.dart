@@ -189,11 +189,7 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_errorLimit =>
-      'Bạn đang có quá nhiều hành trình đang chạy. Hãy kết thúc bớt một hành trình rồi thử lại.';
-
-  @override
-  String get journeys_errorVisibility =>
-      'Kiểu hiển thị này không dùng được cho hành trình này.';
+      'Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.';
 
   @override
   String get journeys_errorNotAlone =>

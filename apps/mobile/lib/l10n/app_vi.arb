@@ -75,7 +75,7 @@
   "common_save": "Lưu",
   "common_loading": "Đang tải…",
   "common_errorGeneric": "Có lỗi xảy ra. Thử lại nhé.",
-  "common_serverOutdated": "Máy chủ chưa được cập nhật, vui lòng thử lại sau.",
+  "common_serverOutdated": "Ourney đang cập nhật. Cập nhật app hoặc thử lại sau nhé.",
   "common_offline": "Bạn đang offline. Ourney sẽ tự đồng bộ khi có mạng.",
   "empty_default_title": "Chưa có gì ở đây",
   "streak_days": "{count, plural, other{{count} ngày}}",

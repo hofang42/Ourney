@@ -12,17 +12,13 @@ String journeyErrorMessage(BuildContext context, Object error) {
   final l10n = JourneysL10n.of(context);
   final app = AppLocalizations.of(context);
   final e = rootError(error);
-  debugPrint('journeyError: $e (original: $error)');
   if (e is! OurneyException) return app.common_errorGeneric;
   return switch (e.error) {
     OurneyErrorCode.notAlone => l10n.journeys_errorNotAlone,
     OurneyErrorCode.forbidden => l10n.journeys_errorForbidden,
     OurneyErrorCode.ended => l10n.journeys_errorEnded,
     OurneyErrorCode.notFound => l10n.journeys_errorNotFound,
-    OurneyErrorCode.invalid =>
-      (e.detail ?? '').toLowerCase().contains('visib')
-          ? l10n.journeys_errorVisibility
-          : l10n.journeys_errorInvalid,
+    OurneyErrorCode.invalid => l10n.journeys_errorInvalid,
     OurneyErrorCode.limit => l10n.journeys_errorLimit,
     OurneyErrorCode.serverOutdated => app.common_serverOutdated,
     OurneyErrorCode.offline => app.common_offline,

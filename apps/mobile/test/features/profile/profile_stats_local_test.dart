@@ -13,9 +13,7 @@ class _Journeys implements JourneyRepository {
   final Membership membership;
 
   @override
-  Stream<List<Journey>> watchActive() => Stream.value(active);
-  @override
-  Stream<List<Journey>> watchArchived() => Stream.value(archived);
+  Future<List<Journey>> allMine() async => [...active, ...archived];
   @override
   Stream<Membership?> watchMyMembership(String journeyId) =>
       Stream.value(membership);

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -416,10 +417,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
       final root = rootError(e);
-      debugPrint(
-        'createJourney failed: code=${root is OurneyException ? root.code : 'n/a'} '
-        'detail=${root is OurneyException ? root.detail : null} original=$e',
-      );
+      if (kDebugMode) {
+        debugPrint(
+          'createJourney failed: code=${root is OurneyException ? root.code : 'n/a'} '
+          'detail=${root is OurneyException ? root.detail : null} original=$e',
+        );
+      }
       if (!mounted) return;
       setState(() => _busy = false);
       showJourneySnack(context, journeyErrorMessage(context, e));

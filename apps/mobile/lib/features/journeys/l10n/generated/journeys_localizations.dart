@@ -413,14 +413,8 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_errorLimit.
   ///
   /// In vi, this message translates to:
-  /// **'Bạn đang có quá nhiều hành trình đang chạy. Hãy kết thúc bớt một hành trình rồi thử lại.'**
+  /// **'Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.'**
   String get journeys_errorLimit;
-
-  /// No description provided for @journeys_errorVisibility.
-  ///
-  /// In vi, this message translates to:
-  /// **'Kiểu hiển thị này không dùng được cho hành trình này.'**
-  String get journeys_errorVisibility;
 
   /// No description provided for @journeys_errorNotAlone.
   ///
