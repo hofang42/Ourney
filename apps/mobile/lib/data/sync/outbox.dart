@@ -83,6 +83,9 @@ class Outbox {
   Future<void>? _running;
   bool _again = false;
   bool _disposed = false;
+
+  /// Consecutive failed passes (database errors); drives the retry backoff.
+  int _passFailures = 0;
   final _processed = StreamController<OutboxKind>.broadcast();
 
   /// Emits the kind of each item the server confirmed.
@@ -180,9 +183,23 @@ class Outbox {
   Future<void> _runGuarded(bool force) async {
     try {
       await _run(force);
+      _passFailures = 0;
     } on Object catch (e) {
       debugPrint('outbox: flush failed: $e');
-      _schedule(outboxBackoff(1));
+      // A closed database never recovers: do not keep a timer alive for it.
+      if (!await _isDatabaseUsable()) return;
+      _schedule(outboxBackoff(++_passFailures));
+      // A flush() that arrived meanwhile was coalesced into this failed run.
+      if (_again) _schedule(Duration.zero);
+    }
+  }
+
+  Future<bool> _isDatabaseUsable() async {
+    try {
+      await _db.customSelect('SELECT 1').get();
+      return true;
+    } on Object {
+      return false;
     }
   }
 

@@ -360,7 +360,7 @@ void main() {
       expect(sharing.savedStory?.coverCheckInId, 'c-j1-2026-10-10');
     });
 
-    testWidgets('a slow cover-clear never overwrites a later save', (
+    testWidgets('slow hide toggles (two) never overwrite a later save', (
       tester,
     ) async {
       final gate = Completer<void>();
@@ -377,17 +377,46 @@ void main() {
         sharing: sharing,
         checkIns: FakeCheckInRepository([
           testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          testCheckIn('j1', const LocalDate(2026, 10, 11)),
         ]),
         journeys: _journeys(),
       );
       await h.go(tester, '/sharing/j1/story');
       await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-hide-c-j1-2026-10-11'));
       await tester.enterText(_key('story-title'), 'New title');
       await tester.pump();
       await _tap(tester, _key('story-save'));
       gate.complete();
       await tester.pumpAndSettle();
       expect(sharing.savedStory?.title, 'New title');
+    });
+
+    testWidgets('queued hide toggles still reach the server after closing', (
+      tester,
+    ) async {
+      final gate = Completer<void>();
+      final sharing = FakeSharingRepository(hideGate: gate);
+      final h = await pumpSharing(
+        tester,
+        location: '/sharing/j1',
+        sharing: sharing,
+        checkIns: FakeCheckInRepository([
+          testCheckIn('j1', const LocalDate(2026, 10, 10)),
+          testCheckIn('j1', const LocalDate(2026, 10, 11)),
+        ]),
+        journeys: _journeys(),
+      );
+      await h.go(tester, '/sharing/j1/story');
+      await _tap(tester, _key('story-hide-c-j1-2026-10-10'));
+      await _tap(tester, _key('story-hide-c-j1-2026-10-11'));
+      await h.go(tester, '/sharing/j1');
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(
+        sharing.calls.where((c) => c.startsWith('hide:')).toSet(),
+        {'hide:c-j1-2026-10-10:true', 'hide:c-j1-2026-10-11:true'},
+      );
     });
 
     testWidgets('group member: story is read-only, photos can be hidden '

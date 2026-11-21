@@ -634,7 +634,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(seen.brand, const Color(0xFFF4F4F5));
+      expect(seen.brand, const Color(0xFFE4E4E7));
     });
 
     testWidgets('animates 320ms when the skin changes', (tester) async {

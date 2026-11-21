@@ -289,7 +289,10 @@ class ShareRatioTabs<T> extends StatelessWidget {
           ),
           boxShadow: switch (skinId) {
             'squad' => [
-              BoxShadow(color: ui.ink, offset: const Offset(0, UiShadow.small)),
+              BoxShadow(
+                color: ui.hardShadowColor,
+                offset: const Offset(0, UiShadow.small),
+              ),
             ],
             'memory' => [
               BoxShadow(
@@ -341,14 +344,19 @@ class ShareActionButton extends StatelessWidget {
       'squad' => (
         _squadViolet,
         Colors.white,
-        Border.all(color: ui.ink, width: UiBorder.standard),
-        [BoxShadow(color: ui.ink, offset: const Offset(0, UiShadow.small))],
+        Border.all(color: ui.outline, width: UiBorder.standard),
+        [
+          BoxShadow(
+            color: ui.hardShadowColor,
+            offset: const Offset(0, UiShadow.small),
+          ),
+        ],
         UiRadius.capsule,
       ),
       'memory' => (
         _memoryOlive,
-        ui.isDark ? const Color(0xFFF5F2EB) : Colors.white,
-        Border.all(color: ui.ink, width: UiBorder.standard),
+        ui.isDark ? ui.ink : Colors.white,
+        Border.all(color: ui.outline, width: UiBorder.standard),
         [
           BoxShadow(
             color: ui.ink,
@@ -360,7 +368,7 @@ class ShareActionButton extends StatelessWidget {
       'couple' => (
         v.button,
         const Color(0xFF1A1316),
-        Border.all(color: ui.ink, width: UiBorder.standard),
+        Border.all(color: ui.outline, width: UiBorder.standard),
         [
           const BoxShadow(
             color: _coupleBerry,
@@ -383,7 +391,7 @@ class ShareActionButton extends StatelessWidget {
         UiRadius.capsule,
       ),
       'minimal' => (
-        ui.isDark ? const Color(0xFF27272A) : const Color(0xFF27272A),
+        ui.isDark ? const Color(0xFF3F3F46) : const Color(0xFF27272A),
         Colors.white,
         null,
         null,
@@ -544,14 +552,24 @@ Future<void> showShareSheet({
             'squad' => (
               ui.surface,
               14.0,
-              Border.all(color: ui.ink, width: UiBorder.standard),
-              [BoxShadow(color: ui.ink, offset: const Offset(0, 3))],
+              Border.all(color: ui.outline, width: UiBorder.standard),
+              [
+                BoxShadow(
+                  color: ui.hardShadowColor,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             'memory' => (
               ui.surface,
               14.0,
-              Border.all(color: ui.ink, width: UiBorder.standard),
-              [BoxShadow(color: ui.ink, offset: const Offset(3, 3))],
+              Border.all(color: ui.outline, width: UiBorder.standard),
+              [
+                BoxShadow(
+                  color: ui.hardShadowColor,
+                  offset: const Offset(3, 3),
+                ),
+              ],
             ),
             'couple' => (
               ui.surface,
@@ -574,8 +592,13 @@ Future<void> showShareSheet({
             _ => (
               ui.surface,
               8.0,
-              Border.all(color: ui.ink, width: UiBorder.standard),
-              [BoxShadow(color: ui.ink, offset: const Offset(3, 3))],
+              Border.all(color: ui.outline, width: UiBorder.standard),
+              [
+                BoxShadow(
+                  color: ui.hardShadowColor,
+                  offset: const Offset(3, 3),
+                ),
+              ],
             ),
           };
           Widget row(

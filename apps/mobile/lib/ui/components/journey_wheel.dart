@@ -251,7 +251,7 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
                 fallback: ui.surface,
                 borderColor: ui.outline,
                 hardShadow: UiShadow.tiny,
-                hardShadowColor: ui.outline,
+                hardShadowColor: ui.hardShadowColor,
                 reduceTransparency: widget.reduceTransparency,
                 child: UiPressable(
                   key: const ValueKey('journey-wheel-close'),
@@ -355,7 +355,7 @@ class _WheelItem extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: active ? Border.all(color: ring, width: 4) : null,
                 boxShadow: active
-                    ? UiShadow.hard(ui.outline, UiShadow.tiny)
+                    ? UiShadow.hard(ui.hardShadowColor, UiShadow.tiny)
                     : null,
               ),
               child: UiTypeBadge(type: item.type, size: active ? 44 : 48),

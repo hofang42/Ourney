@@ -180,7 +180,7 @@ void main() {
             matching: find.byType(Container),
           ),
         );
-        expect(card.boxShadow!.single.color, ui.outline);
+        expect(card.boxShadow!.single.color, ui.hardShadowColor);
         final menu = decorOf(
           t,
           find

@@ -128,7 +128,7 @@ void main() {
                 .decoration
             as BoxDecoration;
     expect(deco.boxShadow!.single.color, OurneyUi.dark.brand);
-    expect(deco.color, OurneyUi.dark.ink);
+    expect(deco.color, OurneyUi.dark.outline);
   });
 
   for (final b in [Brightness.light, Brightness.dark]) {

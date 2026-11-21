@@ -1757,4 +1757,8 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_createDeckChoose => 'Choose this type';
+
+  @override
+  String get journeys_createSettingsNotSaved =>
+      'Some settings couldn\'t be saved';
 }

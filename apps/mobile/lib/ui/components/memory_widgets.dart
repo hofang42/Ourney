@@ -51,15 +51,18 @@ class UiStamp extends StatelessWidget {
           color: context.ui.surface.withValues(alpha: 0.6),
           border: Border.all(color: c, width: 3),
         ),
-        child: Text(
-          text,
-          maxLines: 1,
-          style: UiText.body(
-            size: 12,
-            weight: FontWeight.w700,
-            height: 1.3,
-            tracking: 0.04,
-            color: c,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            text,
+            maxLines: 1,
+            style: UiText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              height: 1.3,
+              tracking: 0.04,
+              color: c,
+            ),
           ),
         ),
       ),

@@ -137,7 +137,7 @@ class UiDock extends StatelessWidget {
         ? 0.0
         : ((quiet || camera) ? UiShadow.tiny : UiShadow.large);
     final outline = camera ? UiCamera.outline : ui.outline;
-    final shadowColor = camera ? UiCamera.shadow : ui.outline;
+    final shadowColor = camera ? UiCamera.shadow : ui.hardShadowColor;
     final solid = reduceTransparency || media.highContrast;
     // V2: journey docks tint the skin surface at 62%, the shell dock at 78%
     // (light) / 80% (dark), so content shows through the blur.

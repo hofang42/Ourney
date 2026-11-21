@@ -96,7 +96,10 @@ class DataJourneyRepository implements JourneyRepository {
           .map((r) => r == null ? null : journeyFromRow(r));
 
   @override
-  Future<Journey> create(JourneyDraft draft) async {
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  }) async {
     if (validateJourneyTitle(draft.title) != null ||
         validateDurationDays(draft.durationDays) != null ||
         validateJourneyVisibility(draft.kind, draft.visibility) != null ||
@@ -113,7 +116,7 @@ class DataJourneyRepository implements JourneyRepository {
       if (existing != null) {
         // A-B12: the earlier attempt may have died between `create_journey`
         // and the extras; put back whatever the row is missing.
-        await _reapplyMissingExtras(existing, draft);
+        await _reapplyMissingExtras(existing, draft, onExtrasRejected);
         return journeyFromRow(
           await (_db.select(
             _db.journeys,
@@ -140,7 +143,7 @@ class DataJourneyRepository implements JourneyRepository {
       }
       await ctx.store.applyJourney(row.cast<String, dynamic>());
       await _insertMembership(id, me, draft.hideMetricDefault);
-      await _applyExtras(id, draft);
+      await _applyExtras(id, draft, onExtrasRejected);
       final saved = await (_db.select(
         _db.journeys,
       )..where((t) => t.id.equals(id))).getSingle();
@@ -179,9 +182,13 @@ class DataJourneyRepository implements JourneyRepository {
   /// the outbox in ONE transaction before the call, so an app death mid-call
   /// never loses them (the outbox replays the idempotent update). Success
   /// drops the queued item; a retryable failure leaves it queued. A permanent
-  /// rejection (any non-transient error) drops it, restores the previous row and is
-  /// surfaced.
-  Future<void> _applyExtras(String id, JourneyDraft d) async {
+  /// rejection (any non-transient error) drops it, restores the previous row and
+  /// bumps [onRejected]; create still succeeds.
+  Future<void> _applyExtras(
+    String id,
+    JourneyDraft d,
+    void Function()? onRejected,
+  ) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
     final outbox = ctx.outbox;
@@ -215,7 +222,10 @@ class DataJourneyRepository implements JourneyRepository {
           includeDead: true,
         );
         await _restoreExtras(previous, extras);
-        rethrow;
+        // The journey exists on the server and locally: keep it and warn
+        // instead of failing (a retry would fail the same way, forever).
+        onRejected?.call();
+        return;
       }
       if (outbox != null) {
         // Retryable: make the queued item due now.
@@ -260,8 +270,13 @@ class DataJourneyRepository implements JourneyRepository {
   });
 
   /// Retry of a create whose row exists: re-apply the extras the row lacks
-  /// (and that are not already queued). A rejection is raised again.
-  Future<void> _reapplyMissingExtras(JourneyRow row, JourneyDraft d) async {
+  /// (and that are not already queued). A rejection
+  /// restores the row and warns (see [onRejected]).
+  Future<void> _reapplyMissingExtras(
+    JourneyRow row,
+    JourneyDraft d,
+    void Function()? onRejected,
+  ) async {
     final extras = _extrasUpdate(d);
     if (extras == null) return;
     final complete =
@@ -279,7 +294,7 @@ class DataJourneyRepository implements JourneyRepository {
       await _writeLocal(row.id, extras);
       return;
     }
-    await _applyExtras(row.id, d);
+    await _applyExtras(row.id, d, onRejected);
   }
 
   /// `HH:MM` of a time that the server may return as `HH:MM:SS`.
@@ -332,15 +347,23 @@ class DataJourneyRepository implements JourneyRepository {
       await _flushFirst();
       // Anything of this journey still queued (its create, an older edit)
       // must replay first: skip the RPC and queue behind it.
+      // Solo journeys only: group edits are never queued and the items a
+      // group can have queued do not affect `update_journey`.
       final blocked =
+          !group &&
           outboxForEdit != null &&
           await _hasPendingFor(outboxForEdit, journeyId);
-      try {
-        if (blocked) {
-          throw OurneyException(
-            group ? OurneyErrorCode.syncPending : OurneyErrorCode.offline,
-          );
+      if (group && outboxForEdit != null) {
+        // A queued extras/edit of this group journey would replay after (and
+        // overwrite) this edit: wait until it is sent.
+        final keys = await outboxForEdit.pendingKeys();
+        if (keys.contains('${journeyKey(journeyId)}:extras') ||
+            keys.contains('${journeyKey(journeyId)}:edit')) {
+          throw const OurneyException(OurneyErrorCode.syncPending);
         }
+      }
+      try {
+        if (blocked) throw const OurneyException(OurneyErrorCode.offline);
         final res = await remote.rpc(
           'update_journey',
           updateJourneyParams(journeyId, update),
