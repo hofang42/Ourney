@@ -74,6 +74,7 @@ class JourneyHomeMilestones extends StatelessWidget {
                       child: OurneyIcon(
                         name: 'star',
                         size: 17,
+                        flat: true,
                         color: day >= d ? onAccent : ui.inkMuted,
                       ),
                     ),
@@ -311,6 +312,7 @@ class _JourneyHomeChartState extends State<JourneyHomeChart> {
                         OurneyIcon(
                           name: _revealed ? 'eye-off' : 'eye',
                           size: 20,
+                          flat: true,
                           color: ui.ink,
                         ),
                         const SizedBox(width: UiSpace.sm),

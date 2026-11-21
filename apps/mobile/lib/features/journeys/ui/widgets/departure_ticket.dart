@@ -146,6 +146,7 @@ class DepartureTicket extends StatelessWidget {
       child: OurneyIcon(
         name: _icon('lock', 'profile'),
         size: 28,
+        flat: true,
         color: s.accent,
       ),
     );
@@ -385,6 +386,9 @@ class DepartureTicket extends StatelessWidget {
               size: 30,
               active: true,
               color: s.accent,
+              inkColor: s.ink,
+              // The ticket is paper, not the app surface: no dark die-cut ring.
+              dieCut: const Color(0x00000000),
             ),
           ],
         ),
@@ -651,8 +655,7 @@ class _Tear extends StatelessWidget {
         painter: _PiecePainter(
           fill: fill,
           border: borderColor ?? s.ink,
-          shadowColor:
-              shadowColor ?? (s.isDark ? s.ui.hardShadowColor : s.ink),
+          shadowColor: shadowColor ?? (s.isDark ? s.ui.hardShadowColor : s.ink),
           borderWidth: bw,
           shadow: shadow,
           radius: radius,

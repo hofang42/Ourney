@@ -798,11 +798,19 @@ class _CouplePair extends StatelessWidget {
                                     : ui.bg,
                               ),
                               child: Center(
-                                child: OurneyIcon(
-                                  name: 'heart',
-                                  size: 22,
-                                  color: done ? accent : ui.fill,
-                                ),
+                                child: done
+                                    ? OurneyIcon(
+                                        name: 'heart',
+                                        size: 22,
+                                        color: accent,
+                                        inkColor: ui.ink,
+                                      )
+                                    : OurneyIcon(
+                                        name: 'heart',
+                                        size: 22,
+                                        flat: true,
+                                        color: ui.inkMuted,
+                                      ),
                               ),
                             ),
                           ),

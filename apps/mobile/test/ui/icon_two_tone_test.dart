@@ -1,27 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/ui.dart';
+import 'package:ourney_core/ourney_core.dart';
+
+OurneyIconPainter _painterOf(WidgetTester tester, Widget w) {
+  final paint = tester.widget<CustomPaint>(
+    find
+        .descendant(of: find.byWidget(w), matching: find.byType(CustomPaint))
+        .first,
+  );
+  return paint.painter! as OurneyIconPainter;
+}
+
+Future<void> _pump(WidgetTester tester, OurneyUi ui, List<Widget> kids) =>
+    tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(brightness: ui.brightness, extensions: [ui]),
+        home: Column(children: kids),
+      ),
+    );
 
 void main() {
-  for (final ui in [OurneyUi.light, OurneyUi.dark]) {
-    test('sticker fill never matches the ink outline (dark=${ui.isDark})', () {
-      for (final name in ourneyIconNames) {
-        final fill = ourneyIconColor(name);
-        expect(
-          OurneyIconPainter.collapses(fill, ui.ink),
-          isFalse,
-          reason: '$name fill $fill collapses into ink ${ui.ink}',
-        );
-      }
-    });
-  }
-
   for (final skin in uiSkins) {
     for (final base in [OurneyUi.light, OurneyUi.dark]) {
       for (var v = 0; v < skin.variants.length; v++) {
-        test('palette icons stay two-tone in skin ${skin.id} v$v '
-            '(dark=${base.isDark})', () {
-          final ui = skin.apply(base, variantIndex: v);
+        final label = '${skin.id} v$v dark=${base.isDark}';
+        final ui = skin.apply(base, variantIndex: v);
+
+        test('palette stickers never collapse ($label)', () {
           for (final name in ourneyIconNames) {
             expect(
               OurneyIconPainter.collapses(ourneyIconColor(name), ui.ink),
@@ -30,11 +36,52 @@ void main() {
             );
           }
         });
+
+        testWidgets('explicit tones ($label)', (tester) async {
+          final on = OurneyIcon(
+            name: 'heart',
+            color: ui.accent,
+            inkColor: ui.ink,
+          );
+          final off = OurneyIcon(name: 'heart', flat: true, color: ui.inkMuted);
+          final disabled = OurneyIcon(
+            name: 'back',
+            flat: true,
+            color: ui.divider,
+          );
+          const enabled = OurneyIcon(name: 'back');
+          final onAccent = uiJourneyGlyph(
+            '✈',
+            TemplateId.travel,
+            color: ui.brand,
+          );
+          await _pump(tester, ui, [on, off, disabled, enabled, onAccent]);
+          expect(_painterOf(tester, on).flat, isFalse);
+          expect(_painterOf(tester, off).flat, isTrue);
+          expect(_painterOf(tester, disabled).flat, isTrue);
+          expect(_painterOf(tester, enabled).flat, isFalse);
+          expect(_painterOf(tester, onAccent).flat, isTrue);
+        });
       }
     }
   }
 
-  test('a fill equal or close to the ink is detected as a blob', () {
+  testWidgets('an explicit-color journey glyph is theme independent', (
+    tester,
+  ) async {
+    const white = Color(0xFFFFFFFF);
+    final states = <(bool, Color)>[];
+    for (final base in [OurneyUi.light, OurneyUi.dark]) {
+      final glyph = uiJourneyGlyph('💪', TemplateId.workout30, color: white);
+      await _pump(tester, base, [glyph]);
+      final painter = _painterOf(tester, glyph);
+      states.add((painter.flat, painter.color));
+    }
+    expect(states[0], states[1]);
+    expect(states[0].$1, isTrue);
+  });
+
+  test('safety net: equal or indistinguishable fills collapse', () {
     expect(
       OurneyIconPainter.collapses(OurneyUi.light.ink, OurneyUi.light.ink),
       isTrue,
@@ -49,80 +96,27 @@ void main() {
     );
   });
 
-  testWidgets('neutral tint without inkColor draws a line glyph', (
+  testWidgets('saturated fills on the cream dark ink are not blobs', (
     tester,
   ) async {
-    OurneyIconPainter painterOf(OurneyIcon icon) {
-      final paint = tester.widget<CustomPaint>(
-        find.descendant(
-          of: find.byWidget(icon),
-          matching: find.byType(CustomPaint),
-        ),
-      );
-      return paint.painter! as OurneyIconPainter;
-    }
-
-    const muted = OurneyIcon(name: 'star', color: Color(0xFF888888));
-    const palette = OurneyIcon(name: 'star');
-    const withInk = OurneyIcon(
-      name: 'star',
-      color: Color(0xFFFFFFFF),
-      inkColor: Color(0xFF000000),
-    );
-    await tester.pumpWidget(
-      MaterialApp(home: Column(children: const [muted, palette, withInk])),
-    );
-    expect(painterOf(muted).flat, isTrue);
-    expect(painterOf(palette).flat, isFalse);
-    expect(painterOf(withInk).flat, isFalse);
-  });
-
-  for (final base in [OurneyUi.light, OurneyUi.dark]) {
-    testWidgets('intentional colors stay stickers, greys go line '
-        '(dark=${base.isDark})', (tester) async {
-      OurneyIconPainter painterOf(Widget w) {
-        final paint = tester.widget<CustomPaint>(
-          find.descendant(
-            of: find.byWidget(w),
-            matching: find.byType(CustomPaint),
-          ),
-        );
-        return paint.painter! as OurneyIconPainter;
-      }
-
-      final flame = OurneyIcon(name: 'flame', color: base.flame);
-      final heartOn = OurneyIcon(name: 'heart', color: base.accent);
-      final heartOff = OurneyIcon(name: 'heart', color: base.fill);
-      final ok = OurneyIcon(name: 'check-circle', color: base.success);
-      final bad = OurneyIcon(name: 'warning', color: base.danger);
-      final muted = OurneyIcon(name: 'star', color: base.inkMuted);
-      final ink = OurneyIcon(name: 'star', color: base.ink);
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(brightness: base.brightness, extensions: [base]),
-          home: Column(
-            children: [flame, heartOn, heartOff, ok, bad, muted, ink],
-          ),
-        ),
-      );
-      for (final w in [flame, heartOn, heartOff, ok, bad]) {
-        expect(painterOf(w).flat, isFalse, reason: w.name);
-      }
-      expect(painterOf(muted).flat, isTrue);
-      expect(painterOf(ink).flat, isTrue);
-    });
-  }
-
-  test('saturated pastels / neon never collapse into a similar-light ink', () {
+    final ink = OurneyUi.dark.ink;
     for (final fill in const [
+      Color(0xFFFFD84D), // yellow
       Color(0xFFC6FF00), // lime neon
-      Color(0xFF7EE8A2), // weight-loss pastel
-      Color(0xFF7EC8E3), // custom pastel
-      Color(0xFFFFB347), // trip pastel
+      Color(0xFF7EE8A2), // mint
+      Color(0xFFA8D8F0), // ice
     ]) {
-      for (final ink in [OurneyUi.light.ink, OurneyUi.dark.ink]) {
-        expect(OurneyIconPainter.collapses(fill, ink), isFalse);
-      }
+      expect(
+        OurneyIconPainter.collapses(fill, ink),
+        isFalse,
+        reason: '$fill collapses into the cream ink',
+      );
+      final icon = OurneyIcon(name: 'star', color: fill);
+      await _pump(tester, OurneyUi.dark, [icon]);
+      final painter = _painterOf(tester, icon);
+      expect(painter.flat, isFalse);
+      // The halo falls back to the hard shadow, never the (near) fill color.
+      expect(painter.haloFallback, OurneyUi.dark.hardShadowColor);
     }
   });
 }
