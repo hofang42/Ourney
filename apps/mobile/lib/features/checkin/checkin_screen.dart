@@ -468,9 +468,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen> {
             // Photo + caption: the photo collapses to a thumbnail beside the
             // caption while the keyboard is open. The caption keeps its
             // state (and focus) through the move via its GlobalKey.
-            AnimatedSize(
-              duration: UiMotion.of(context, const Duration(milliseconds: 220)),
-              curve: Curves.easeOut,
+            Align(
               alignment: Alignment.topCenter,
               child: typing
                   ? Row(
