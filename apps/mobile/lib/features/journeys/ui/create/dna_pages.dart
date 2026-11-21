@@ -588,6 +588,7 @@ class _DnaDateRangeState extends State<DnaDateRange> {
               child: OurneyIcon(
                 name: icon,
                 size: 20,
+                flat: onTap == null,
                 color: onTap == null ? ui.divider : null,
               ),
             ),

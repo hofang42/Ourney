@@ -323,7 +323,12 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView> {
                     ),
                   ),
                   const SizedBox(width: 6),
-                  OurneyIcon(name: 'check', size: 18, color: ui.ink),
+                  OurneyIcon(
+                    name: 'check',
+                    size: 18,
+                    color: ui.ink,
+                    flat: true,
+                  ),
                 ],
               ),
             ),

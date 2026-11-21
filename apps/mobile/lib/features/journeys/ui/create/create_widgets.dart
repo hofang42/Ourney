@@ -289,6 +289,7 @@ class _CreateCalendarState extends State<CreateCalendar> {
                 glyph: OurneyIcon(
                   name: 'back',
                   size: 20,
+                  flat: !canPrev,
                   color: canPrev ? null : ui.divider,
                 ),
                 iconSize: 20,
@@ -316,6 +317,7 @@ class _CreateCalendarState extends State<CreateCalendar> {
                   child: OurneyIcon(
                     name: 'back',
                     size: 20,
+                    flat: !canNext,
                     color: canNext ? null : ui.divider,
                   ),
                 ),

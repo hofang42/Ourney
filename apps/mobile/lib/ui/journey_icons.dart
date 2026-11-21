@@ -5,7 +5,12 @@ import 'components/ourney_icons.dart';
 
 /// Drawn [OurneyIcon] of a journey template.
 Widget uiTemplateGlyph(TemplateId id, {double size = 24, Color? color}) =>
-    OurneyIcon(name: _templateNames[id]!, size: size, color: color);
+    OurneyIcon(
+      name: _templateNames[id]!,
+      size: size,
+      color: color,
+      flat: color != null,
+    );
 
 /// Drawn [OurneyIcon] for a journey's emoji; an emoji outside the create
 /// form's choices falls back to the glyph of [template].
@@ -18,6 +23,9 @@ Widget uiJourneyGlyph(
   name: _emojiNames[emoji.replaceAll('️', '')] ?? _templateNames[template]!,
   size: size,
   color: color,
+  // An explicit color is a monochrome mark (on-accent, share card): a line
+  // glyph whose tone does not depend on the device theme.
+  flat: color != null,
 );
 
 const Map<TemplateId, String> _templateNames = {

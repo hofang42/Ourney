@@ -382,11 +382,20 @@ class _CoupleInputs extends StatelessWidget {
             for (var i = 1; i <= extrasHeartsMax; i++)
               UiIconButton(
                 key: ValueKey('checkin-heart-$i'),
-                glyph: OurneyIcon(
-                  name: 'heart',
-                  size: 26,
-                  color: i <= (c.hearts ?? 0) ? ui.accent : ui.fill,
-                ),
+                // On: accent sticker; off: quiet line heart.
+                glyph: i <= (c.hearts ?? 0)
+                    ? OurneyIcon(
+                        name: 'heart',
+                        size: 26,
+                        color: ui.accent,
+                        inkColor: ui.ink,
+                      )
+                    : OurneyIcon(
+                        name: 'heart',
+                        size: 26,
+                        flat: true,
+                        color: ui.inkMuted,
+                      ),
                 label: l10n.checkin_extraHeartsValue(i),
                 onPressed: () => c.pickHearts(i),
               ),

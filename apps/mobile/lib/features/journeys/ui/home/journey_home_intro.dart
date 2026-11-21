@@ -60,6 +60,7 @@ class JourneyHomeIntro extends StatelessWidget {
   final int day;
   final int? total;
   final int streak;
+
   /// Today in the journey's time zone (not the device clock).
   final LocalDate today;
   final bool offline;
@@ -90,9 +91,9 @@ class JourneyHomeIntro extends StatelessWidget {
     final line = skin == 'minimal'
         ? l10n.journeys_home_monthStreak(
             streak,
-            DateFormat.MMMM(
-              locale,
-            ).format(DateTime(today.year, today.month, today.day)).toUpperCase(),
+            DateFormat.MMMM(locale)
+                .format(DateTime(today.year, today.month, today.day))
+                .toUpperCase(),
           )
         : total == null
         ? l10n.journeys_home_dayStreakOpen(day, streak)
@@ -168,7 +169,7 @@ class _Chip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            OurneyIcon(name: icon, size: 17, color: ui.ink),
+            OurneyIcon(name: icon, size: 17, color: ui.ink, flat: true),
             const SizedBox(width: UiSpace.sm),
             Flexible(
               child: Text(
