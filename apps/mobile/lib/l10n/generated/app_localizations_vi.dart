@@ -82,6 +82,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get common_errorGeneric => 'Có lỗi xảy ra. Thử lại nhé.';
 
   @override
+  String get common_serverOutdated =>
+      'Máy chủ chưa được cập nhật, vui lòng thử lại sau.';
+
+  @override
   String get common_offline =>
       'Bạn đang offline. Ourney sẽ tự đồng bộ khi có mạng.';
 

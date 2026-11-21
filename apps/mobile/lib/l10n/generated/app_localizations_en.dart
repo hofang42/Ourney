@@ -82,6 +82,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get common_errorGeneric => 'Something went wrong. Please try again.';
 
   @override
+  String get common_serverOutdated =>
+      'The server isn\'t up to date yet. Please try again later.';
+
+  @override
   String get common_offline =>
       'You\'re offline. Ourney will sync when you\'re back online.';
 

@@ -32,7 +32,14 @@ OurneyErrorCode? sharingErrorCode(Object error) =>
 String sharingErrorMessage(BuildContext context, Object error) {
   final l10n = SharingL10n.of(context);
   final app = AppLocalizations.of(context);
+  final root = sharingRootError(error);
+  debugPrint(
+    'sharingError: code=${sharingErrorCode(error)?.wireName} '
+    'detail=${root is OurneyException ? root.detail : null} '
+    'original=$error',
+  );
   return switch (sharingErrorCode(error)) {
+    OurneyErrorCode.serverOutdated => app.common_serverOutdated,
     OurneyErrorCode.forbidden => l10n.sharing_errorNotFriend,
     OurneyErrorCode.rateLimited => l10n.sharing_errorRateLimited,
     OurneyErrorCode.invalid => l10n.sharing_linkLockedTitle,

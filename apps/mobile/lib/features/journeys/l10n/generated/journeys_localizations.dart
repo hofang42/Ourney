@@ -404,6 +404,18 @@ abstract class JourneysL10n {
   /// **'Nhập tên chỉ số.'**
   String get journeys_errorMetricName;
 
+  /// No description provided for @journeys_errorInvalid.
+  ///
+  /// In vi, this message translates to:
+  /// **'Dữ liệu chưa hợp lệ. Kiểm tra lại rồi thử lại nhé.'**
+  String get journeys_errorInvalid;
+
+  /// No description provided for @journeys_errorLimit.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đang có quá nhiều hành trình đang chạy. Hãy kết thúc bớt một hành trình rồi thử lại.'**
+  String get journeys_errorLimit;
+
   /// No description provided for @journeys_errorVisibility.
   ///
   /// In vi, this message translates to:

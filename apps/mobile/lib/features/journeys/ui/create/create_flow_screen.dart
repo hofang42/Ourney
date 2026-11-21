@@ -415,6 +415,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       unawaited(activeJourney.select(journey.id));
       context.go(AppRoutes.journey(journey.id));
     } on Object catch (e) {
+      final root = rootError(e);
+      debugPrint(
+        'createJourney failed: code=${root is OurneyException ? root.code : 'n/a'} '
+        'detail=${root is OurneyException ? root.detail : null} original=$e',
+      );
       if (!mounted) return;
       setState(() => _busy = false);
       showJourneySnack(context, journeyErrorMessage(context, e));

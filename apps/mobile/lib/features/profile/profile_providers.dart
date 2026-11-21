@@ -53,14 +53,35 @@ final profileStatsProvider = FutureProvider.autoDispose<ProfileStats>((
   }
   final journeyRepo = ref.watch(journeyRepositoryProvider);
   final checkIns = ref.watch(checkInRepositoryProvider);
-  final journeys = await journeyRepo.watchActive().first;
-  final byJourney = <String, List<CheckIn>>{
-    for (final j in journeys) j.id: await checkIns.watchForJourney(j.id).first,
-  };
+  final userId = ref.watch(currentUserIdProvider);
+  // The server counts every membership, archived journeys included.
+  final active = await journeyRepo.watchActive().first;
+  final archived = await journeyRepo.watchArchived().first;
+  final journeys = <Journey>[
+    ...active,
+    for (final j in archived)
+      if (!active.any((a) => a.id == j.id)) j,
+  ];
+  final byJourney = <String, List<CheckIn>>{};
+  final joined = <String, LocalDate>{};
+  for (final j in journeys) {
+    final m = await journeyRepo.watchMyMembership(j.id).first;
+    // Own check-ins only: group journeys also hold other members' photos.
+    byJourney[j.id] = await checkIns
+        .watchForJourney(j.id, userId: userId ?? m?.userId)
+        .first;
+    if (m != null) {
+      joined[j.id] = localDateOf(
+        m.joinedAt,
+        timeZoneOffsetAt(j.timezone, m.joinedAt),
+      );
+    }
+  }
   final now = DateTime.now().toUtc();
   return computeLocalProfileStats(
     journeys: journeys,
     checkInsByJourney: byJourney,
+    joinedLocalDateByJourney: joined,
     today: (tz) => localDateOf(now, timeZoneOffsetAt(tz, now)),
   );
 });

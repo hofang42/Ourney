@@ -186,6 +186,14 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_errorMetricName => 'Enter a metric name.';
 
   @override
+  String get journeys_errorInvalid =>
+      'Some of this data isn\'t valid. Check it and try again.';
+
+  @override
+  String get journeys_errorLimit =>
+      'You have too many running journeys. End one and try again.';
+
+  @override
   String get journeys_errorVisibility =>
       'This visibility isn\'t available for this journey.';
 
