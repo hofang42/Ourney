@@ -9,7 +9,6 @@ import 'package:ourney/data/mapping.dart' show updateJourneyParams;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
-import 'package:ourney/shared/journey_warnings.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'data_test_helpers.dart';
@@ -240,9 +239,12 @@ void main() {
         () async {
           remote.rpcHandlers['update_journey'] = (_) =>
               throw OurneyException(code);
-          final before = journeyExtrasRejected.value;
-          final j = await layer.journeys.create(draft(id: 'rej-${code.name}'));
-          expect(journeyExtrasRejected.value, before + 1);
+          var rejected = 0;
+          final j = await layer.journeys.create(
+            draft(id: 'rej-${code.name}'),
+            onExtrasRejected: () => rejected++,
+          );
+          expect(rejected, 1);
           // Restored: the rejected extras are gone, nothing stays queued.
           expect(j.reminderTime, isNull);
           expect(
@@ -296,12 +298,15 @@ void main() {
         const id = 'retry-rejected-id';
         remote.rpcHandlers['update_journey'] = (_) =>
             throw const OurneyException(OurneyErrorCode.invalid);
-        final before = journeyExtrasRejected.value;
+        var rejected = 0;
         for (var i = 0; i < 2; i++) {
-          final j = await layer.journeys.create(draft(id: id));
+          final j = await layer.journeys.create(
+            draft(id: id),
+            onExtrasRejected: () => rejected++,
+          );
           expect(j.id, id);
         }
-        expect(journeyExtrasRejected.value, before + 2);
+        expect(rejected, 2);
       },
     );
 
@@ -353,6 +358,24 @@ void main() {
         expect(remote.callsOf('rpc').length, before);
       },
     );
+  });
+
+  group('wipeLocal media', () {
+    test('renames media and drafts away; a later photo survives', () async {
+      final photo = File('${media.path}/checkins/j/u/a.jpg')
+        ..createSync(recursive: true)
+        ..writeAsStringSync('x');
+      final draft = File('${media.parent.path}/checkin_media/d.jpg')
+        ..createSync(recursive: true);
+      await layer.ctx.wipeLocal();
+      expect(photo.existsSync(), isFalse);
+      expect(draft.existsSync(), isFalse);
+      // A photo saved after the wipe is never touched by the trash delete.
+      final fresh = File('${media.path}/checkins/j/u/b.jpg')
+        ..createSync(recursive: true);
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      expect(fresh.existsSync(), isTrue);
+    });
   });
 
   group('review 2 owner claim', () {

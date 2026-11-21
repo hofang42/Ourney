@@ -8,7 +8,6 @@ import 'package:uuid/uuid.dart';
 
 import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
-import '../../../../shared/journey_warnings.dart';
 import '../../../../ui/ui.dart';
 import '../../../onboarding/onboarding_providers.dart';
 import '../../../profile/share_privacy_sync.dart';
@@ -344,7 +343,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     final progress = ref.read(createProgressProvider.notifier);
     final activeJourney = ref.read(activeJourneyIdProvider.notifier);
     final title = _finalTitle(form);
-    final rejectedBefore = journeyExtrasRejected.value;
+    var extrasRejected = false;
     setState(() => _busy = true);
     try {
       final journey = await repo.create(
@@ -372,10 +371,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           color: _variant,
           layout: _isCouple ? PersonaSkinId.coupleRituals : null,
         ),
+        onExtrasRejected: () => extrasRejected = true,
       );
       // The journey exists: the saved draft must not resurrect it (U8).
       unawaited(progress.clear());
-      if (mounted && journeyExtrasRejected.value > rejectedBefore) {
+      if (mounted && extrasRejected) {
         showJourneySnack(
           context,
           JourneysL10n.of(context).journeys_createSettingsNotSaved,

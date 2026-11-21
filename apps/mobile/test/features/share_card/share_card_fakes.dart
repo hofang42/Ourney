@@ -220,7 +220,10 @@ class FakeJourneyRepository implements JourneyRepository {
   );
 
   @override
-  Future<Journey> create(JourneyDraft draft) => throw UnimplementedError();
+  Future<Journey> create(
+    JourneyDraft draft, {
+    void Function()? onExtrasRejected,
+  }) => throw UnimplementedError();
 
   @override
   Future<Journey> update(String journeyId, JourneyUpdate update) =>

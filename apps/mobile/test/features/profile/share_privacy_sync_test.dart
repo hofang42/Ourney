@@ -179,4 +179,59 @@ void main() {
       expect(repo.prefUpdates, isEmpty);
     },
   );
+
+  testWidgets('a hand-set journey choice forgets the waiting heal', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.prefError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToJourney(ref, 'min');
+    expect(pendingSharePrivacy(container), isNotEmpty);
+    forgetSharePrivacyHeal(ref, 'min', blur: true);
+    expect(pendingSharePrivacy(container), isEmpty);
+    repo.prefError = null;
+    await healSharePrivacy(container);
+    expect(repo.prefUpdates, isEmpty);
+  });
+
+  testWidgets('a later successful push drops the waiting heal', (tester) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.prefError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToJourney(ref, 'min');
+    repo.prefError = null;
+    await pushSharePrivacyToJourney(ref, 'min');
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
+
+  testWidgets('a failed journey list is recorded and healed for all', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.listError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToMemberships(container, blur: true);
+    expect(pendingSharePrivacy(container).keys, ['*']);
+    repo.listError = null;
+    await healSharePrivacy(container);
+    expect(repo.prefUpdates.map((u) => u.id).toSet(), {'kg', 'min', 'old'});
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
+
+  testWidgets('an expired session records nothing', (tester) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.prefError = const OurneyException(OurneyErrorCode.unauthenticated);
+    await pushSharePrivacyToJourney(ref, 'min');
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
 }

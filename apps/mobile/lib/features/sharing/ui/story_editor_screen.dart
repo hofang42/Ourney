@@ -150,8 +150,11 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
         }
       }
     });
+    // Read before queueing: a queued job must still run (and reach the
+    // server) after this screen closes, when `ref` is no longer usable.
+    final repo = ref.read(sharingRepositoryProvider);
     final job = _hideChain.then(
-      (_) => _persistHidden(checkIn, hide, dropsCover),
+      (_) => _persistHidden(repo, checkIn, hide, dropsCover),
     );
     _hideChain = job;
     await job;
@@ -160,15 +163,16 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
   /// Server side of a hide toggle. A Save waits for it ([_hideChain]), so
   /// its stale story write can never land after the user's own save.
   Future<void> _persistHidden(
+    SharingRepository repo,
     CheckIn checkIn,
     bool hide,
     bool dropsCover,
   ) async {
     try {
-      await ref
-          .read(sharingRepositoryProvider)
-          .setHiddenInShare(checkIn.id, hidden: hide);
-      if (dropsCover && _saved.coverCheckInId == checkIn.id) {
+      await repo.setHiddenInShare(checkIn.id, hidden: hide);
+      // Once a save started its story write already carries the cleared
+      // cover: a late write of the older saved fields could revert it.
+      if (!_saving && dropsCover && _saved.coverCheckInId == checkIn.id) {
         // The server keeps the cover when a photo is hidden: clear it there
         // too (saved fields only, unsaved edits stay local) so both agree.
         _saved = JourneyStory(
@@ -177,9 +181,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
           lessons: _saved.lessons,
         );
         try {
-          await ref
-              .read(sharingRepositoryProvider)
-              .updateStory(widget.journeyId, _saved);
+          await repo.updateStory(widget.journeyId, _saved);
         } on Object {
           // Best effort: the cover is re-checked on the next story save.
         }
@@ -380,7 +382,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
             _HideCell(
               checkIn: ci,
               hidden: hidden.contains(ci.id),
-              onTap: () => _toggleHidden(ci),
+              onTap: _saving ? null : () => _toggleHidden(ci),
             ),
         ],
       ),
@@ -449,7 +451,7 @@ class _HideCell extends StatelessWidget {
 
   final CheckIn checkIn;
   final bool hidden;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -463,35 +465,38 @@ class _HideCell extends StatelessWidget {
           ? l10n.sharing_photoHidden(date)
           : l10n.sharing_photoShown(date),
       excludeSemantics: true,
-      child: UiPressable(
-        key: ValueKey('story-hide-${checkIn.id}'),
-        onPressed: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(UiRadius.otp),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Opacity(
-                opacity: hidden ? 0.32 : 1,
-                child: StoragePhoto(path: checkIn.thumbPath, cacheWidth: 200),
-              ),
-              if (hidden)
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: ui.bg.withValues(alpha: 0.85),
-                      shape: BoxShape.circle,
-                    ),
-                    child: OurneyIcon(
-                      name: 'eye-off',
-                      size: 20,
-                      color: ui.ink,
-                      flat: true,
+      child: Opacity(
+        opacity: onTap == null ? 0.5 : 1,
+        child: UiPressable(
+          key: ValueKey('story-hide-${checkIn.id}'),
+          onPressed: onTap,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(UiRadius.otp),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Opacity(
+                  opacity: hidden ? 0.32 : 1,
+                  child: StoragePhoto(path: checkIn.thumbPath, cacheWidth: 200),
+                ),
+                if (hidden)
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: ui.bg.withValues(alpha: 0.85),
+                        shape: BoxShape.circle,
+                      ),
+                      child: OurneyIcon(
+                        name: 'eye-off',
+                        size: 20,
+                        color: ui.ink,
+                        flat: true,
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
