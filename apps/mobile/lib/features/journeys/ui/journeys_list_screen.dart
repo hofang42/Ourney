@@ -94,7 +94,10 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
       );
-    } else if (buckets != null && buckets.isEmpty && archivedAsync.hasError) {
+    } else if (buckets != null &&
+        buckets.isEmpty &&
+        archivedValue == null &&
+        archivedAsync.hasError) {
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

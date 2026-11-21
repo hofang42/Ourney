@@ -633,7 +633,7 @@ void main() {
       );
     });
 
-    test('a group edit waits while its queued extras are unsent', () async {
+    Future<void> queueGroupExtras() async {
       await cacheGroup();
       remote.rpcHandlers['update_journey'] = (_) => throw offline;
       await layer.ctx.outbox!.enqueue(
@@ -641,16 +641,46 @@ void main() {
         '${journeyKey(jid)}:extras',
         updateJourneyParams(jid, const JourneyUpdate(color: 1)),
       );
+      await layer.ctx.outbox!.flush(force: true); // fails: stays queued
+    }
+
+    test('a group edit merges queued extras into one RPC', () async {
+      await queueGroupExtras();
+      final sent = <Map<String, dynamic>>[];
+      remote.rpcHandlers['update_journey'] = (p) {
+        // The flush before the edit fails (still queued); the direct call
+        // goes through.
+        if (sent.isEmpty && p['p_title'] == null) {
+          sent.add({});
+          throw offline;
+        }
+        sent.add(p);
+        return journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group')
+          ..['title'] = p['p_title']
+          ..['color'] = p['p_color'];
+      };
+      final j = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Mới'),
+      );
+      expect(j.title, 'Mới');
+      expect(sent, hasLength(2)); // failed flush replay + the merged call
+      expect(sent.last['p_title'], 'Mới');
+      expect(sent.last['p_color'], 1);
+      expect(await layer.ctx.outbox!.pendingKeys(), isEmpty);
+    });
+
+    test('a transient failure re-queues the merged group edit once', () async {
+      await queueGroupExtras();
       await expectLater(
         layer.journeys.update(jid, const JourneyUpdate(title: 'Mới')),
-        throwsA(
-          isA<OurneyException>().having(
-            (e) => e.error,
-            'error',
-            OurneyErrorCode.syncPending,
-          ),
-        ),
+        throwsA(isA<OurneyException>()),
       );
+      final keys = await layer.ctx.outbox!.pendingKeys();
+      expect(keys, {'${journeyKey(jid)}:edit'});
+      final rows = await layer.ctx.outbox!.pendingRows();
+      expect(rows.single.payload, contains('"p_color":1'));
+      expect(rows.single.payload, contains('Mới'));
     });
 
     test('end is refused with syncPending while an upload is queued', () async {
