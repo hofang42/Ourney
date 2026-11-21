@@ -234,4 +234,50 @@ void main() {
     await pushSharePrivacyToJourney(ref, 'min');
     expect(pendingSharePrivacy(container), isEmpty);
   });
+
+  testWidgets('the all-marker skips a journey set by hand meanwhile', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.listError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToMemberships(container, blur: true);
+    repo.listError = null;
+    forgetSharePrivacyHeal(ref, 'min', blur: true);
+    await healSharePrivacy(container);
+    expect(repo.prefUpdates.map((u) => u.id).toSet(), {'kg', 'old'});
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
+
+  testWidgets('the all-marker survives one journey that left (notFound)', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.listError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToMemberships(container, blur: true);
+    repo.listError = null;
+    repo.prefErrorFor['kg'] = const OurneyException(OurneyErrorCode.notFound);
+    await healSharePrivacy(container);
+    expect(repo.prefUpdates.map((u) => u.id).toSet(), {'min', 'old'});
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
+
+  testWidgets('a full push that succeeds clears the all-marker', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.listError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToMemberships(container, blur: true);
+    repo.listError = null;
+    await pushSharePrivacyToMemberships(container, blur: true);
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
 }

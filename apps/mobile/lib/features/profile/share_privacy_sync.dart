@@ -21,6 +21,10 @@ Future<void>? _pendingPush;
 /// journey list itself could not be read).
 const String _allKey = '*';
 
+/// `"!<journeyId>"` entries list the flags the user set by hand for that
+/// journey while [_allKey] was pending: the all-marker must skip them.
+const String _exclPrefix = '!';
+
 typedef _Flags = ({bool hide, bool blur});
 
 Map<String, _Flags> _loadPending(
@@ -115,13 +119,27 @@ void _clearFlags(
 }) {
   if (userId == null) return;
   final items = _loadPending(prefs, userId);
+  if (items.containsKey(_allKey) && journeyId != _allKey) {
+    final ex = items['$_exclPrefix$journeyId'];
+    items['$_exclPrefix$journeyId'] = (
+      hide: hide || (ex?.hide ?? false),
+      blur: blur || (ex?.blur ?? false),
+    );
+  }
   final old = items[journeyId];
-  if (old == null) return;
+  if (old == null) {
+    _savePending(prefs, userId, items);
+    return;
+  }
   final next = (hide: old.hide && !hide, blur: old.blur && !blur);
   if (next.hide || next.blur) {
     items[journeyId] = next;
   } else {
     items.remove(journeyId);
+  }
+  // Exclusions only mean something while the all-marker is pending.
+  if (!items.containsKey(_allKey)) {
+    items.removeWhere((k, _) => k.startsWith(_exclPrefix));
   }
   _savePending(prefs, userId, items);
 }
@@ -188,6 +206,7 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
   _healing = true;
   try {
     for (final entry in pending.entries) {
+      if (entry.key.startsWith(_exclPrefix)) continue;
       if (current() != userId) break;
       final snapshot = entry.value;
       final hideOn = snapshot.hide && container.read(hideWeightOnShareProvider);
@@ -200,13 +219,21 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
         if (entry.key == _allKey) {
           for (final j in await repo.allMine()) {
             if (current() != userId) return;
-            final hide = hideOn && isWeightMetric(j);
-            if (!hide && !blurOn) continue;
-            await repo.updateMyMembership(
-              j.id,
-              hideMetric: hide ? true : null,
-              blurMedia: blurOn ? true : null,
-            );
+            // Journeys the user set by hand meanwhile keep their choice.
+            final ex = pending['$_exclPrefix${j.id}'];
+            final hide = hideOn && isWeightMetric(j) && !(ex?.hide ?? false);
+            final blurV = blurOn && !(ex?.blur ?? false);
+            if (!hide && !blurV) continue;
+            try {
+              await repo.updateMyMembership(
+                j.id,
+                hideMetric: hide ? true : null,
+                blurMedia: blurV ? true : null,
+              );
+            } on OurneyException catch (e) {
+              // One journey left meanwhile: the others still get theirs.
+              if (e.error != OurneyErrorCode.notFound) rethrow;
+            }
           }
         } else {
           var hide = hideOn;
@@ -312,7 +339,8 @@ Future<void> pushSharePrivacyToMemberships(
     try {
       return container.read(currentUserIdProvider);
     } on Object {
-      return userId;
+      // Unknown user: record nothing (never fall back to the old one).
+      return null;
     }
   }
 
@@ -335,6 +363,7 @@ Future<void> pushSharePrivacyToMemberships(
     final hideNow =
         hideWeight == true && container.read(hideWeightOnShareProvider);
     final blurNow = blur == true && container.read(blurPhotosOnShareProvider);
+    var allOk = true;
     for (final j in journeys) {
       final hide = hideNow && isWeightMetric(j) ? true : null;
       final blurV = blurNow ? true : null;
@@ -349,6 +378,7 @@ Future<void> pushSharePrivacyToMemberships(
           blur: blurV != null,
         );
       } on Object catch (e) {
+        allOk = false;
         _noteFailure(
           prefs,
           userId,
@@ -359,6 +389,16 @@ Future<void> pushSharePrivacyToMemberships(
           blur: blurV != null,
         );
       }
+    }
+    // A full push that reached every membership settles the all-marker.
+    if (allOk) {
+      _clearFlags(
+        prefs,
+        userId,
+        _allKey,
+        hide: hideWeight == true,
+        blur: blur == true,
+      );
     }
   }
 
@@ -392,7 +432,8 @@ Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
     try {
       return ref.read(currentUserIdProvider);
     } on Object {
-      return userId;
+      // Unknown user: record nothing (never fall back to the old one).
+      return null;
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:ourney_core/ourney_core.dart';
@@ -31,7 +32,14 @@ class DataContext {
     this.sync,
     String Function()? newId,
   }) : store = LocalStore(db, files),
-       newId = newId ?? const Uuid().v4;
+       newId = newId ?? const Uuid().v4 {
+    // Leftovers of wipes that were interrupted before deleting their trash.
+    unawaited(MediaWipe.sweep([files.root, _draftsDir]));
+  }
+
+  /// Check-in drafts folder (next to the media root).
+  Directory get _draftsDir =>
+      Directory(p.join(files.root.parent.path, checkinDraftDirName));
 
   final AppDatabase db;
   final MediaFiles files;
@@ -78,20 +86,18 @@ class DataContext {
   Future<void> wipeLocal() async {
     // Stop pulls still running for the old session before they refill it.
     sync?.invalidateSession();
-    // One transaction: rows, the wiped marker, and the media folders renamed
-    // away (atomic, deleted in the background). A failed DB wipe throws before
-    // any file moves, so rows never point at deleted media, and a photo a new
-    // user saves afterwards is never caught by the delete. The marker survives
-    // a late in-flight write: the next user to sign in finds an owner that is
-    // not them and wipes again (rows + outbox).
-    await db.transaction(() async {
-      await db.wipe();
-      if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
-      await files.wipe();
-      await MediaFiles.wipeDirectory(
-        Directory(p.join(files.root.parent.path, checkinDraftDirName)),
-      );
-    });
+    // Rows + marker + media renamed to trash in one step (see [MediaWipe]):
+    // a failure anywhere keeps rows and files together, and the trash is only
+    // deleted after the commit. The marker survives a late in-flight write:
+    // the next user to sign in finds an owner that is not them and wipes again.
+    await MediaWipe.run(
+      [files.root, _draftsDir],
+      (moveMedia) => db.transaction(() async {
+        await db.wipe();
+        if (sync != null) await db.writeCursor(ownerCursorKey, wipedOwner);
+        await moveMedia();
+      }),
+    );
     sync?.notifyChanged();
   }
 }
