@@ -45,55 +45,68 @@ class ShareTopBar extends StatelessWidget {
   final VoidCallback onBack;
   final String backLabel;
 
+  /// Quiet skin: title and a "Private" pill. At large text scales the pill
+  /// moves to its own line so neither loses its label.
+  Widget _quietLabel(BuildContext context, String upper, ShareCardL10n l10n) {
+    final ui = context.ui;
+    final big = MediaQuery.textScalerOf(context).scale(16) / 16 > 1.2;
+    final heading = Text(
+      upper,
+      maxLines: big ? 2 : 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+      style: UiText.body(
+        size: 12,
+        weight: FontWeight.w700,
+        tracking: 0.08,
+        color: ui.ink,
+      ),
+    );
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        border: Border.all(color: ui.border),
+        borderRadius: BorderRadius.circular(UiRadius.capsule),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          OurneyIcon(name: 'lock', flat: true, size: 13, color: ui.ink),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(
+              l10n.share_card_quietPrivate,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(size: 12, height: 1.3, color: ui.ink),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (big) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [heading, const SizedBox(height: 4), pill],
+      );
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(child: heading),
+        const SizedBox(width: 7),
+        Flexible(child: pill),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final l10n = ShareCardL10n.of(context);
     final upper = title.toUpperCase();
     final Widget label = switch (skinId) {
-      'quiet' => Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Flexible(
-            child: Text(
-              upper,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: UiText.body(
-                size: 12,
-                weight: FontWeight.w700,
-                tracking: 0.08,
-                color: ui.ink,
-              ),
-            ),
-          ),
-          const SizedBox(width: 7),
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-              decoration: BoxDecoration(
-                border: Border.all(color: ui.border),
-                borderRadius: BorderRadius.circular(UiRadius.capsule),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  OurneyIcon(name: 'lock', flat: true, size: 13, color: ui.ink),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      l10n.share_card_quietPrivate,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: UiText.body(size: 12, height: 1.3, color: ui.ink),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+      'quiet' => _quietLabel(context, upper, l10n),
       _ => Text(
         upper,
         maxLines: 1,
@@ -429,7 +442,7 @@ class ShareActionButton extends StatelessWidget {
             if (loading)
               SizedBox.square(
                 dimension: 19,
-                child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+                child: UiSpinner(strokeWidth: 2, color: fg),
               )
             else if (glyph != null)
               OurneyIcon(name: glyph!, flat: true, size: 19, color: fg),

@@ -81,9 +81,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 120),
                 child: Center(
-                  child: CircularProgressIndicator(
-                    semanticsLabel: app.common_loading,
-                  ),
+                  child: UiSpinner(semanticsLabel: app.common_loading),
                 ),
               )
             else
@@ -165,10 +163,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           final bottomInset = MediaQuery.paddingOf(context).bottom;
           // U15: at large text the chip and the button no longer share a row
           // (the button used to break "Check-in" mid-word).
-          final stackOverlay =
-              MediaQuery.textScalerOf(context).scale(10) > 13 &&
-              showMissedChip &&
-              perms.canCheckIn;
+          final bigText = MediaQuery.textScalerOf(context).scale(10) > 13;
+          final stackOverlay = bigText && showMissedChip && perms.canCheckIn;
           final screenWidth = MediaQuery.sizeOf(context).width;
           final home = DayTicker(
             child: ActiveJourneyScope(
@@ -177,8 +173,10 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                 key: const ValueKey('journey-detail'),
                 background: pal.paper,
                 padTop: 0,
+                // The overlay text is clamped to 1.35x (below), so its height
+                // is bounded and this reserve keeps it off the content.
                 padBottom: showBottomOverlay
-                    ? (stackOverlay ? 170 : 96)
+                    ? (stackOverlay ? 180 : (bigText ? 130 : 96))
                     : UiSpace.xxl,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -303,9 +301,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       Padding(
                         padding: const EdgeInsets.all(UiSpace.xl),
                         child: Center(
-                          child: CircularProgressIndicator(
-                            semanticsLabel: app.common_loading,
-                          ),
+                          child: UiSpinner(semanticsLabel: app.common_loading),
                         ),
                       )
                     else
@@ -365,78 +361,84 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       ),
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: gutter),
-                        child: LayoutBuilder(
-                          builder: (context, c) {
-                            final checkInButton = perms.canCheckIn
-                                ? UiButton(
-                                    key: const ValueKey('journey-checkin'),
-                                    label: progress?.checkedInToday ?? false
-                                        ? l10n.journeys_addMore
-                                        : l10n.journeys_checkInNow,
-                                    glyph: const OurneyIcon(
-                                      name: 'camera',
-                                      size: 20,
-                                      flat: true,
-                                    ),
-                                    accent: pal.accent,
-                                    onAccent: pal.onAccent,
-                                    expand: false,
-                                    onPressed: () =>
-                                        checkInNow(context, ref, journey.id),
-                                  )
-                                : null;
-                            final chipMaxWidth = checkInButton != null
-                                ? (c.maxWidth - UiSpace.md) * 0.45
-                                : c.maxWidth;
-                            if (stackOverlay) {
-                              return Column(
-                                key: const ValueKey('journey-overlay-stacked'),
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: MissedDayOverlay(
-                                      skinId: skin,
-                                      day: missedDay,
-                                    ),
-                                  ),
-                                  const SizedBox(height: UiSpace.sm),
-                                  checkInButton!,
-                                ],
-                              );
-                            }
-                            return ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minHeight: UiSize.button + UiShadow.tiny,
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  if (showMissedChip)
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: chipMaxWidth,
+                        child: MediaQuery.withClampedTextScaling(
+                          maxScaleFactor: 1.35,
+                          child: LayoutBuilder(
+                            builder: (context, c) {
+                              final checkInButton = perms.canCheckIn
+                                  ? UiButton(
+                                      key: const ValueKey('journey-checkin'),
+                                      label: progress?.checkedInToday ?? false
+                                          ? l10n.journeys_addMore
+                                          : l10n.journeys_checkInNow,
+                                      glyph: const OurneyIcon(
+                                        name: 'camera',
+                                        size: 20,
+                                        flat: true,
                                       ),
+                                      accent: pal.accent,
+                                      onAccent: pal.onAccent,
+                                      expand: false,
+                                      onPressed: () =>
+                                          checkInNow(context, ref, journey.id),
+                                    )
+                                  : null;
+                              final chipMaxWidth = checkInButton != null
+                                  ? (c.maxWidth - UiSpace.md) * 0.45
+                                  : c.maxWidth;
+                              if (stackOverlay) {
+                                return Column(
+                                  key: const ValueKey(
+                                    'journey-overlay-stacked',
+                                  ),
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Align(
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
                                       child: MissedDayOverlay(
                                         skinId: skin,
                                         day: missedDay,
                                       ),
                                     ),
-                                  if (showMissedChip && checkInButton != null)
-                                    const SizedBox(width: UiSpace.md),
-                                  if (checkInButton != null)
-                                    Expanded(
-                                      child: Align(
-                                        alignment:
-                                            AlignmentDirectional.centerEnd,
-                                        child: checkInButton,
+                                    const SizedBox(height: UiSpace.sm),
+                                    checkInButton!,
+                                  ],
+                                );
+                              }
+                              return ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: UiSize.button + UiShadow.tiny,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    if (showMissedChip)
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth: chipMaxWidth,
+                                        ),
+                                        child: MissedDayOverlay(
+                                          skinId: skin,
+                                          day: missedDay,
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
+                                    if (showMissedChip && checkInButton != null)
+                                      const SizedBox(width: UiSpace.md),
+                                    if (checkInButton != null)
+                                      Expanded(
+                                        child: Align(
+                                          alignment:
+                                              AlignmentDirectional.centerEnd,
+                                          child: checkInButton,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),

@@ -262,78 +262,104 @@ class _DeckCard extends StatelessWidget {
                       width: focused ? 3 : 2,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          UiTypeBadge(type: item.badge, size: 48),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              maxLines: 2,
+                  child: LayoutBuilder(
+                    builder: (context, box) {
+                      final big =
+                          MediaQuery.textScalerOf(context).scale(16) / 16 >
+                          1.35;
+                      final title = Text(
+                        item.title,
+                        maxLines: 3,
+                        softWrap: true,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.heading(
+                          font: headingFont,
+                          size: 18,
+                          weight: 700,
+                          color: ui.ink,
+                        ),
+                      );
+                      // Content scrolls inside the card when the text scale
+                      // makes it taller than the card (min preview 110dp).
+                      return SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Large text: the badge sits above the title so a
+                            // word never has to break mid-word to fit.
+                            if (big) ...[
+                              Align(
+                                alignment: AlignmentDirectional.centerStart,
+                                child: UiTypeBadge(type: item.badge, size: 40),
+                              ),
+                              const SizedBox(height: 6),
+                              title,
+                            ] else
+                              Row(
+                                children: [
+                                  UiTypeBadge(type: item.badge, size: 48),
+                                  const SizedBox(width: 10),
+                                  Expanded(child: title),
+                                ],
+                              ),
+                            Container(
+                              height: math.max(110, box.maxHeight * 0.42),
+                              margin: const EdgeInsets.symmetric(vertical: 16),
+                              clipBehavior: Clip.hardEdge,
+                              decoration: BoxDecoration(
+                                color: ui.ink.withValues(alpha: 0.05),
+                                border: Border.all(
+                                  color: ui.outline,
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: CreateDeckPreview(
+                                      key: ValueKey(
+                                        'deck-preview-${item.skinId}',
+                                      ),
+                                      skinId: item.skinId,
+                                    ),
+                                  ),
+                                  if (focused)
+                                    PositionedDirectional(
+                                      top: 8,
+                                      end: 8,
+                                      child: _ChosenChip(label: chosenLabel),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            CreateDeckHud(
+                              key: ValueKey('deck-hud-${item.skinId}'),
+                              skinId: item.skinId,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              item.tagline,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
-                              style: UiText.heading(
-                                font: headingFont,
-                                size: 18,
-                                weight: 700,
+                              style: UiText.body(
+                                size: 14,
+                                weight: FontWeight.w700,
+                                height: 1.35,
                                 color: ui.ink,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 16),
-                          clipBehavior: Clip.hardEdge,
-                          decoration: BoxDecoration(
-                            color: ui.ink.withValues(alpha: 0.05),
-                            border: Border.all(color: ui.outline, width: 1.5),
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: CreateDeckPreview(
-                                  key: ValueKey('deck-preview-${item.skinId}'),
-                                  skinId: item.skinId,
-                                ),
-                              ),
-                              if (focused)
-                                PositionedDirectional(
-                                  top: 8,
-                                  end: 8,
-                                  child: _ChosenChip(label: chosenLabel),
-                                ),
-                            ],
-                          ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.meta,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: UiText.eyebrow(color: ui.inkMuted),
+                            ),
+                          ],
                         ),
-                      ),
-                      CreateDeckHud(
-                        key: ValueKey('deck-hud-${item.skinId}'),
-                        skinId: item.skinId,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        item.tagline,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.body(
-                          size: 14,
-                          weight: FontWeight.w700,
-                          height: 1.35,
-                          color: ui.ink,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.eyebrow(color: ui.inkMuted),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),

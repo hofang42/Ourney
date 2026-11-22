@@ -109,6 +109,11 @@ class UiPersonRow extends StatelessWidget {
             border: Border(bottom: BorderSide(color: ui.divider)),
           ),
           child: Row(
+            // Actions stacked under the text (large text): the avatar stays
+            // with the name instead of floating mid-row.
+            crossAxisAlignment: inline
+                ? CrossAxisAlignment.center
+                : CrossAxisAlignment.start,
             children: [
               if (unread) ...[
                 Container(

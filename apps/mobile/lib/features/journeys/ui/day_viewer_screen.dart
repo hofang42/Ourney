@@ -128,9 +128,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
               padding: const EdgeInsets.only(top: 120),
               child: Center(
                 child: checkIns.isLoading
-                    ? CircularProgressIndicator(
-                        semanticsLabel: app.common_loading,
-                      )
+                    ? UiSpinner(semanticsLabel: app.common_loading)
                     : Text(
                         l10n.journeys_noCheckIn,
                         textAlign: TextAlign.center,

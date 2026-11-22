@@ -428,26 +428,43 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     // Keeps the timezone provider alive and rebuilds when it resolves.
     ref.watch(deviceTimezoneProvider);
 
+    // At large text scales the pinned CTA is clamped to 1.35x and compact so
+    // it never swallows the scrolling content above it.
+    final big = MediaQuery.textScalerOf(context).scale(16) / 16 > 1.35;
+    Widget cta(Widget button) => Padding(
+      padding: EdgeInsets.fromLTRB(
+        gutter,
+        big ? UiSpace.xs : UiSpace.sm,
+        gutter,
+        big ? 10 : 20,
+      ),
+      child: MediaQuery.withClampedTextScaling(
+        maxScaleFactor: 1.35,
+        child: button,
+      ),
+    );
+
     final Widget bottom = switch (_step) {
-      0 => Padding(
-        padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
+      0 => cta(
         // Same type as already chosen (back from step 2, quiz suggestion):
         // "Next" keeps the form; another card is chosen with this button.
-        child: _option?.keyName == _options[_deckFocus].keyName
+        _option?.keyName == _options[_deckFocus].keyName
             ? UiButton(
                 key: const ValueKey('create-next'),
                 label: l10n.journeys_createNext,
+                compact: big,
                 onPressed: _next,
               )
             : UiButton(
                 key: const ValueKey('create-choose'),
                 label: l10n.journeys_createDeckChoose,
+                compact: big,
                 onPressed: () => _select(_options[_deckFocus]),
               ),
       ),
-      _ => Padding(
-        padding: EdgeInsets.fromLTRB(gutter, UiSpace.sm, gutter, 20),
-        child: UiButton(
+      _ => cta(
+        UiButton(
+          compact: big,
           key: ValueKey(_step == _steps - 1 ? 'journey-create' : 'create-next'),
           label: _step == _steps - 1
               ? l10n.journeys_createButton

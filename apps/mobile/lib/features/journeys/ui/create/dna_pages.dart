@@ -606,7 +606,7 @@ class _DnaDateRangeState extends State<DnaDateRange> {
     final on = isStart || isEnd;
     return SizedBox(
       width: cell,
-      height: cell < 44 ? 44 : cell,
+      height: cell < UiSize.tap ? UiSize.tap : cell,
       child: Semantics(
         button: true,
         selected: on,

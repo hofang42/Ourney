@@ -10,9 +10,9 @@ import '../l10n/generated/camera_localizations.dart';
 /// chip on the left (accent dot, "Name · Day N", tap opens the searchable
 /// picker), and the camera tools on the right (flash, grid, ghost guide).
 ///
-/// bugs.md A1: the chip is one line. The text
-/// shrinks to 13px before anything is cut; a name still too long glides once
-/// to its end and back instead of ending in "...".
+/// The chip text shrinks to 13px before anything is cut; a name still too
+/// long ends in an ellipsis (the full name is in the semantics label and the
+/// picker).
 class CameraTopBar extends StatelessWidget {
   const CameraTopBar({
     required this.journeys,
@@ -109,8 +109,9 @@ class _NameChip extends StatelessWidget {
   final String semanticLabel;
   final VoidCallback onPressed;
 
-  static const _paper = Color(0xE0FFFFFF);
-  static const _ink = Color(0xFF111114);
+  // Dark-only camera: cream glass over the viewfinder, camera bg as ink.
+  static final _paper = UiCamera.ink.withValues(alpha: 0.88);
+  static const _ink = UiCamera.bg;
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +145,7 @@ class _NameChip extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             Flexible(
-              child: _FitOrGlide(text: name, color: _ink),
+              child: _FitText(text: name, color: _ink),
             ),
             const SizedBox(width: 4),
             const OurneyIcon(
@@ -160,81 +161,21 @@ class _NameChip extends StatelessWidget {
   }
 }
 
-/// One line of text: 15px, shrunk down to 13px to fit; if it still does not
-/// fit, it scrolls once to the end and back (no motion when animations are
-/// reduced: the start of the name stays visible and the full name is in the
-/// semantics label and the journey picker).
-class _FitOrGlide extends StatefulWidget {
-  const _FitOrGlide({required this.text, required this.color});
+/// 15px, shrunk down to 13px to fit; a name still too long ends in an
+/// ellipsis (two lines at large text scales). The full name is in the
+/// semantics label and the journey picker.
+class _FitText extends StatelessWidget {
+  const _FitText({required this.text, required this.color});
 
   final String text;
   final Color color;
-
-  @override
-  State<_FitOrGlide> createState() => _FitOrGlideState();
-}
-
-class _FitOrGlideState extends State<_FitOrGlide>
-    with SingleTickerProviderStateMixin {
-  final _scroll = ScrollController();
-  String? _glidedFor;
-
-  /// Hold, glide to the end, hold, glide back: one ticker-driven run (no
-  /// timers, so it pauses with the tab and never outlives the widget).
-  late final AnimationController _glide = AnimationController(vsync: this)
-    ..addListener(() {
-      if (!_scroll.hasClients) return;
-      _scroll.jumpTo(_path.value * _scroll.position.maxScrollExtent);
-    });
-  late final Animation<double> _path = TweenSequence<double>([
-    TweenSequenceItem(tween: ConstantTween<double>(0), weight: 15),
-    TweenSequenceItem(
-      tween: Tween<double>(
-        begin: 0,
-        end: 1,
-      ).chain(CurveTween(curve: Curves.easeInOut)),
-      weight: 50,
-    ),
-    TweenSequenceItem(tween: ConstantTween<double>(1), weight: 20),
-    TweenSequenceItem(
-      tween: Tween<double>(
-        begin: 1,
-        end: 0,
-      ).chain(CurveTween(curve: Curves.easeOut)),
-      weight: 15,
-    ),
-  ]).animate(_glide);
-
-  @override
-  void dispose() {
-    _glide.dispose();
-    _scroll.dispose();
-    super.dispose();
-  }
 
   TextStyle _style(double size) => UiText.body(
     size: size,
     weight: FontWeight.w700,
     height: 1.3,
-    color: widget.color,
+    color: color,
   );
-
-  void _glideOnce() {
-    if (_glidedFor == widget.text) return;
-    _glidedFor = widget.text;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_scroll.hasClients) return;
-      final max = _scroll.position.maxScrollExtent;
-      if (max <= 0 || UiMotion.of(context, UiMotion.theme) == Duration.zero) {
-        return;
-      }
-      _glide
-        ..duration = Duration(
-          milliseconds: (max * 36).clamp(1600, 7000).toInt(),
-        )
-        ..forward(from: 0);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,7 +185,7 @@ class _FitOrGlideState extends State<_FitOrGlide>
         final scaler = MediaQuery.textScalerOf(context);
         bool fits(double s) {
           final p = TextPainter(
-            text: TextSpan(text: widget.text, style: _style(s)),
+            text: TextSpan(text: text, style: _style(s)),
             textDirection: Directionality.of(context),
             textScaler: scaler,
             maxLines: 1,
@@ -257,19 +198,12 @@ class _FitOrGlideState extends State<_FitOrGlide>
         while (size > 13 && !fits(size)) {
           size -= 1;
         }
-        final text = Text(
-          widget.text,
-          maxLines: 1,
-          softWrap: false,
+        final big = scaler.scale(16) / 16 > 1.35;
+        return Text(
+          text,
+          maxLines: big ? 2 : 1,
+          overflow: TextOverflow.ellipsis,
           style: _style(size),
-        );
-        if (fits(size)) return text;
-        _glideOnce();
-        return SingleChildScrollView(
-          controller: _scroll,
-          scrollDirection: Axis.horizontal,
-          physics: const NeverScrollableScrollPhysics(),
-          child: text,
         );
       },
     );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart' show SemanticsService;
@@ -360,7 +361,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       ),
       _ => _frame(
         body: Center(
-          child: CircularProgressIndicator(
+          child: UiSpinner(
             semanticsLabel: AppLocalizations.of(context).common_loading,
           ),
         ),
@@ -680,91 +681,102 @@ class _PhotoPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = CheckinL10n.of(context);
-    final height = (MediaQuery.sizeOf(context).height * 0.55).clamp(0.0, 520.0);
+    final mq = MediaQuery.of(context);
+    final available = mq.size.height - mq.padding.vertical;
+    // Large text leaves little room: the photo shrinks to 45% of the usable
+    // height so the caption and fields stay in reach (the form scrolls).
+    final big = mq.textScaler.scale(16) / 16 > 1.35;
+    final height = (available * (big ? 0.45 : 0.55)).clamp(0.0, 520.0);
     return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: height),
-        child: AspectRatio(
-          aspectRatio: 3 / 4,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(UiRadius.card),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                ColoredBox(
-                  color: UiCamera.bg,
-                  child: Semantics(
-                    image: true,
-                    label: l10n.checkin_photoSemantics,
-                    child: Image.file(
-                      File(photo.path),
-                      fit: BoxFit.cover,
-                      cacheWidth: 1080,
-                      errorBuilder: (_, _, _) => const OurneyIcon(
-                        name: 'image',
-                        flat: true,
-                        color: UiCamera.onPhoto,
-                        size: 48,
+      child: LayoutBuilder(
+        builder: (context, box) => ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: math.min(height, box.maxWidth * 4 / 3),
+          ),
+          child: AspectRatio(
+            aspectRatio: 3 / 4,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(UiRadius.card),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(
+                    color: UiCamera.bg,
+                    child: Semantics(
+                      image: true,
+                      label: l10n.checkin_photoSemantics,
+                      child: Image.file(
+                        File(photo.path),
+                        fit: BoxFit.cover,
+                        cacheWidth: 1080,
+                        errorBuilder: (_, _, _) => const OurneyIcon(
+                          name: 'image',
+                          flat: true,
+                          color: UiCamera.onPhoto,
+                          size: 48,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                if (photo.fromLibrary)
-                  Positioned(
-                    left: UiSpace.md,
-                    top: UiSpace.md,
-                    child: UiTag(
-                      key: const ValueKey('checkin-from-library'),
-                      label: l10n.checkin_fromLibrary,
-                      glyph: const OurneyIcon(name: 'gallery', size: 20),
-                      background: const Color(0xB3000000),
-                      foreground: UiCamera.onPhoto,
-                      borderColor: UiCamera.outline,
-                    ),
-                  ),
-                PositionedDirectional(
-                  start: UiSpace.sm,
-                  bottom: UiSpace.sm,
-                  child: UiPressable(
-                    key: const ValueKey('checkin-retake'),
-                    onPressed: onRetake,
-                    semanticLabel: l10n.checkin_retake,
-                    excludeChildSemantics: true,
-                    borderRadius: BorderRadius.circular(UiRadius.capsule),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: UiSize.tap),
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xB3000000),
-                        borderRadius: BorderRadius.circular(UiRadius.capsule),
-                        border: Border.all(color: UiCamera.dockBorder),
+                  if (photo.fromLibrary)
+                    Positioned(
+                      left: UiSpace.md,
+                      top: UiSpace.md,
+                      child: UiTag(
+                        key: const ValueKey('checkin-from-library'),
+                        label: l10n.checkin_fromLibrary,
+                        glyph: const OurneyIcon(name: 'gallery', size: 20),
+                        background: const Color(0xB3000000),
+                        foreground: UiCamera.onPhoto,
+                        borderColor: UiCamera.outline,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const OurneyIcon(
-                            name: 'refresh',
-                            flat: true,
-                            size: 18,
-                            color: UiCamera.onPhoto,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            l10n.checkin_retake,
-                            maxLines: 1,
-                            style: UiText.body(
-                              size: 14,
-                              weight: FontWeight.w600,
-                              height: 1.3,
+                    ),
+                  PositionedDirectional(
+                    start: UiSpace.sm,
+                    bottom: UiSpace.sm,
+                    child: UiPressable(
+                      key: const ValueKey('checkin-retake'),
+                      onPressed: onRetake,
+                      semanticLabel: l10n.checkin_retake,
+                      excludeChildSemantics: true,
+                      borderRadius: BorderRadius.circular(UiRadius.capsule),
+                      child: Container(
+                        constraints: const BoxConstraints(
+                          minHeight: UiSize.tap,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xB3000000),
+                          borderRadius: BorderRadius.circular(UiRadius.capsule),
+                          border: Border.all(color: UiCamera.dockBorder),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const OurneyIcon(
+                              name: 'refresh',
+                              flat: true,
+                              size: 18,
                               color: UiCamera.onPhoto,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 6),
+                            Text(
+                              l10n.checkin_retake,
+                              maxLines: 1,
+                              style: UiText.body(
+                                size: 14,
+                                weight: FontWeight.w600,
+                                height: 1.3,
+                                color: UiCamera.onPhoto,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

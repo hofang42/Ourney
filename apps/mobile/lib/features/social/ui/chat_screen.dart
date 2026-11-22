@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart' show CustomSemanticsAction;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -489,7 +490,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(
+                child: UiSpinner(
                   strokeWidth: 2,
                   color: ui.ink,
                   semanticsLabel: AppLocalizations.of(context).common_loading,
@@ -653,7 +654,7 @@ class _Bubble extends StatelessWidget {
     final ui = context.ui;
     final m = message;
     final fg = mine ? ui.onBrand : ui.ink;
-    final muted = mine ? ui.onBrand.withValues(alpha: 0.72) : ui.inkMuted;
+    final muted = mine ? ui.onBrand.withValues(alpha: 0.86) : ui.inkMuted;
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(16),
       topRight: const Radius.circular(16),
@@ -673,6 +674,12 @@ class _Bubble extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Semantics(
           onLongPressHint: MaterialLocalizations.of(context).showMenuTooltip,
+          // Long-press has an alternative for screen-reader and switch users.
+          customSemanticsActions: {
+            CustomSemanticsAction(
+              label: MaterialLocalizations.of(context).showMenuTooltip,
+            ): onLongPress,
+          },
           child: GestureDetector(
             key: ValueKey('message-${m.id}'),
             onLongPress: onLongPress,

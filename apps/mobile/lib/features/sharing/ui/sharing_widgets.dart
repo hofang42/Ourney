@@ -346,7 +346,7 @@ class SharingLoading extends StatelessWidget {
   Widget build(BuildContext context) => Center(
     child: Padding(
       padding: const EdgeInsets.all(UiSpace.xl),
-      child: CircularProgressIndicator(
+      child: UiSpinner(
         color: context.ui.brand,
         semanticsLabel: AppLocalizations.of(context).common_loading,
       ),

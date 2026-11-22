@@ -120,7 +120,7 @@ class _GroupInviteSheetState extends ConsumerState<GroupInviteSheet> {
             loading: () => Padding(
               padding: const EdgeInsets.all(UiSpace.md),
               child: Center(
-                child: CircularProgressIndicator(
+                child: UiSpinner(
                   semanticsLabel: AppLocalizations.of(context).common_loading,
                 ),
               ),

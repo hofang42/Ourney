@@ -845,7 +845,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           label: l10n.camera_starting,
           child: const SizedBox.square(
             dimension: 28,
-            child: CircularProgressIndicator(strokeWidth: 3),
+            child: UiSpinner(strokeWidth: 3),
           ),
         ),
       ),

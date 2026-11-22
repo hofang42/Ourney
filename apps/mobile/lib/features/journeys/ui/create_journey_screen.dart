@@ -258,11 +258,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
                     backLabel: l10n.journeys_back,
                   ),
                   const SizedBox(height: 120),
-                  Center(
-                    child: CircularProgressIndicator(
-                      semanticsLabel: app.common_loading,
-                    ),
-                  ),
+                  Center(child: UiSpinner(semanticsLabel: app.common_loading)),
                 ],
               )
             : _buildForm(context, form, pal, skin),

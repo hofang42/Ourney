@@ -117,15 +117,7 @@ class JourneyAvatarStack extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: ui.ink, width: 1.5),
                 ),
-                child: Text(
-                  '+$extra',
-                  style: TextStyle(
-                    color: ui.ink,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    height: 1.3,
-                  ),
-                ),
+                child: Text('+$extra', style: UiText.fieldLabel(color: ui.ink)),
               ),
             ),
         ],

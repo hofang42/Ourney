@@ -131,6 +131,9 @@ class _UiPressableState extends State<UiPressable> {
         },
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
+          // The outer Semantics already carries the tap action; a second
+          // tap node would stay unlabeled and separate from it.
+          excludeFromSemantics: true,
           onTapDown: _enabled ? (_) => _setDown(true) : null,
           onTapUp: _enabled ? (_) => _setDown(false) : null,
           onTapCancel: () => _setDown(false),
