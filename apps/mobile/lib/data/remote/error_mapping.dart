@@ -27,8 +27,11 @@ OurneyException mapRemoteError(Object error) {
       );
     case AuthRetryableFetchException():
       return OurneyException(OurneyErrorCode.offline, error.toString());
-    case AuthException(:final statusCode, :final message):
-      return OurneyException(_authCode(statusCode), '$statusCode: $message');
+    case AuthException(:final statusCode, :final message, :final code):
+      return OurneyException(
+        _authCodeFor(code, statusCode),
+        '$statusCode: $message',
+      );
     case SocketException() ||
         HttpException() ||
         TimeoutException() ||
@@ -74,6 +77,17 @@ OurneyErrorCode _storageCode(String? status, String message, String? error) {
     _ => OurneyErrorCode.unknown,
   };
 }
+
+/// Supabase Auth's own `error_code` wins over the HTTP status.
+OurneyErrorCode _authCodeFor(String? code, String? status) => switch (code) {
+  'phone_provider_disabled' ||
+  'sms_provider_disabled' => OurneyErrorCode.unavailable,
+  'sms_send_failed' => OurneyErrorCode.internal,
+  'otp_expired' => OurneyErrorCode.invalid,
+  'over_sms_send_rate_limit' ||
+  'over_email_send_rate_limit' => OurneyErrorCode.rateLimited,
+  _ => _authCode(status),
+};
 
 OurneyErrorCode _authCode(String? status) => switch (status) {
   '401' => OurneyErrorCode.unauthenticated,

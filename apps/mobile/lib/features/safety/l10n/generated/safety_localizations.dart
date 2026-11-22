@@ -449,14 +449,8 @@ abstract class SafetyL10n {
   /// Intro of the EULA acceptance screen.
   ///
   /// In vi, this message translates to:
-  /// **'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Hãy đọc và đồng ý với điều khoản sử dụng để tiếp tục.'**
+  /// **'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Bấm \"Đồng ý và tiếp tục\" là bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.'**
   String get safety_eulaAcceptIntro;
-
-  /// Checkbox label on the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tôi đã đọc và đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.'**
-  String get safety_eulaAcceptCheckbox;
 
   /// Accept button on the EULA acceptance screen.
   ///
@@ -613,6 +607,12 @@ abstract class SafetyL10n {
   /// In vi, this message translates to:
   /// **'Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.'**
   String get safety_privacy6Body;
+
+  /// Escape on the terms gate: sign out instead of agreeing.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng xuất'**
+  String get safety_eulaAcceptSignOut;
 }
 
 class _SafetyL10nDelegate extends LocalizationsDelegate<SafetyL10n> {

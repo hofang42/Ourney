@@ -633,8 +633,10 @@ class _RunnerWall extends ConsumerWidget {
     final pace = flexer && done && e.photoIsToday ? e.photo?.extras.pace : null;
     final kmText = km == null
         ? null
-        : NumberFormat('0.00', Localizations.localeOf(context).toString())
-              .format(km);
+        : NumberFormat(
+            '0.00',
+            Localizations.localeOf(context).toString(),
+          ).format(km);
     final stat = kmText == null
         ? null
         : (pace == null

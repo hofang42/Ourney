@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/locale_override.dart';
@@ -20,8 +21,10 @@ import 'widgets/sign_out_flow.dart';
 /// Route of the settings screen (sub-path of `/profile`).
 const String profileSettingsPath = '${AppRoutes.profile}/settings';
 
-/// Figma `SettingsScreen` (`/settings`): account, reminders, appearance
-/// (theme, language, app icon), privacy, info, delete account.
+/// Figma `SettingsScreen` (`/settings`), reached by the gear on Profile.
+/// Named groups, each one flat card: account, reminders, appearance and
+/// language, privacy and safety, about. Sign out and delete account sit alone
+/// at the bottom (delete is a quiet danger action).
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -29,6 +32,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
+    final signedIn = !localOnly && ref.watch(currentUserIdProvider) != null;
     return UiScaffold(
       key: const ValueKey('settings-screen'),
       padTop: 0,
@@ -47,23 +51,18 @@ class SettingsScreen extends ConsumerWidget {
             _Card(
               child: Column(
                 children: [
+                  const _SignedInRow(),
                   UiRow(
                     key: const ValueKey('settings-edit-profile'),
                     leading: const OurneyIcon(name: 'profile', flat: true),
                     title: l10n.profile_settings_editProfile,
-                    onPressed: () => context.push(profileEditPath),
-                  ),
-                  UiRow(
-                    key: const ValueKey('settings-signout'),
-                    leading: const OurneyIcon(name: 'logout', flat: true),
-                    title: l10n.profile_settings_signOut,
                     divider: false,
-                    showChevron: false,
-                    onPressed: () => confirmSignOut(context, ref),
+                    onPressed: () => context.push(profileEditPath),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: UiSpace.lg),
           ],
           UiListHeading(title: l10n.profile_settings_secReminders),
           _Card(
@@ -76,12 +75,35 @@ class SettingsScreen extends ConsumerWidget {
               onPressed: () => context.push(AppRoutes.reminders),
             ),
           ),
-          UiListHeading(title: l10n.profile_settings_secTheme),
-          const _ThemePicker(),
-          const SizedBox(height: UiSpace.md),
-          const _LanguagePicker(),
-          const SizedBox(height: UiSpace.md),
-          const _AppIconPicker(),
+          const SizedBox(height: UiSpace.lg),
+          UiListHeading(title: l10n.profile_settings_secAppearance),
+          _Card(
+            child: Column(
+              children: [
+                _PickerRow(
+                  eyebrow: l10n.profile_settings_themeEyebrow,
+                  child: const _ThemePicker(),
+                ),
+                _PickerRow(
+                  eyebrow: l10n.profile_settings_languageEyebrow,
+                  child: const _LanguagePicker(),
+                ),
+                UiSwitchRow(
+                  key: const ValueKey('settings-haptics'),
+                  label: l10n.profile_settings_haptics,
+                  value: ref.watch(hapticsEnabledProvider),
+                  divider: false,
+                  onChanged: (v) {
+                    unawaited(
+                      ref.read(hapticsEnabledProvider.notifier).set(enabled: v),
+                    );
+                    if (v) OurneyHaptics.selection();
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: UiSpace.lg),
           UiListHeading(title: l10n.profile_settings_secPrivacy),
           _Card(
             child: Column(
@@ -89,6 +111,7 @@ class SettingsScreen extends ConsumerWidget {
                 UiSwitchRow(
                   key: const ValueKey('settings-hide-kg'),
                   label: l10n.profile_settings_hideKg,
+                  subtitle: l10n.profile_settings_shareNote,
                   value: ref.watch(hideWeightOnShareProvider),
                   onChanged: (v) {
                     final container = ProviderScope.containerOf(context);
@@ -108,7 +131,9 @@ class SettingsScreen extends ConsumerWidget {
                 UiSwitchRow(
                   key: const ValueKey('settings-blur-photos'),
                   label: l10n.profile_settings_blurPhotos,
+                  subtitle: l10n.profile_settings_shareNote,
                   value: ref.watch(blurPhotosOnShareProvider),
+                  divider: signedIn,
                   onChanged: (v) {
                     final container = ProviderScope.containerOf(context);
                     unawaited(() async {
@@ -124,24 +149,26 @@ class SettingsScreen extends ConsumerWidget {
                     }());
                   },
                 ),
-                UiRow(
-                  key: const ValueKey('settings-blocked'),
-                  leading: const OurneyIcon(name: 'user-minus', flat: true),
-                  title: l10n.profile_settings_blocked,
-                  subtitle: _sub(context, l10n.profile_settings_blockedSub),
-                  divider: false,
-                  onPressed: () => context.push(SafetyPaths.blocked),
-                ),
+                if (signedIn)
+                  UiRow(
+                    key: const ValueKey('settings-blocked'),
+                    leading: const OurneyIcon(name: 'user-minus', flat: true),
+                    title: l10n.profile_settings_blocked,
+                    subtitle: _sub(context, l10n.profile_settings_blockedSub),
+                    divider: false,
+                    onPressed: () => context.push(SafetyPaths.blocked),
+                  ),
               ],
             ),
           ),
+          const SizedBox(height: UiSpace.lg),
           UiListHeading(title: l10n.profile_settings_secInfo),
           _Card(
             child: Column(
               children: [
                 UiRow(
                   key: const ValueKey('settings-eula'),
-                  leading: const OurneyIcon(name: 'shield', flat: true),
+                  leading: const OurneyIcon(name: 'gavel', flat: true),
                   title: l10n.profile_settings_eula,
                   onPressed: () => context.push(SafetyPaths.eula),
                 ),
@@ -153,33 +180,31 @@ class SettingsScreen extends ConsumerWidget {
                 ),
                 UiRow(
                   key: const ValueKey('settings-contact'),
-                  leading: const OurneyIcon(name: 'chat', flat: true),
+                  leading: const OurneyIcon(name: 'mail', flat: true),
                   title: l10n.profile_settings_contact,
-                  divider: false,
                   onPressed: () => context.push(SafetyPaths.contact),
                 ),
+                const _VersionRow(),
               ],
             ),
           ),
           if (!localOnly) ...[
-            const SizedBox(height: UiSpace.lg),
-            _Card(
-              borderColor: context.ui.danger,
-              child: UiRow(
-                key: const ValueKey('settings-delete'),
-                leading: OurneyIcon(
-                  name: 'trash',
-                  flat: true,
-                  color: context.ui.danger,
-                ),
-                title: l10n.profile_settings_delete,
-                divider: false,
-                showChevron: false,
-                onPressed: () {
-                  OurneyHaptics.warning();
-                  unawaited(DeleteAccountDialog.show(context));
-                },
-              ),
+            const SizedBox(height: UiSpace.xl),
+            UiButton.secondary(
+              key: const ValueKey('settings-signout'),
+              label: l10n.profile_settings_signOut,
+              glyph: const OurneyIcon(name: 'logout', flat: true),
+              onPressed: () => confirmSignOut(context, ref),
+            ),
+            const SizedBox(height: UiSpace.md),
+            UiTextAction(
+              key: const ValueKey('settings-delete'),
+              label: l10n.profile_settings_delete,
+              color: context.ui.danger,
+              onPressed: () {
+                OurneyHaptics.warning();
+                unawaited(DeleteAccountDialog.show(context));
+              },
             ),
           ],
           const SizedBox(height: UiSpace.xl),
@@ -196,20 +221,111 @@ class SettingsScreen extends ConsumerWidget {
   );
 }
 
+/// One flat group card: no hard shadow, hairline dividers between rows.
 class _Card extends StatelessWidget {
-  const _Card({required this.child, this.borderColor});
+  const _Card({required this.child});
 
   final Widget child;
-  final Color? borderColor;
 
   @override
   Widget build(BuildContext context) => UiCard(
     radius: UiRadius.card,
-    borderColor: borderColor,
-    shadowOffset: UiShadow.small,
+    shadowOffset: 0,
     padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
     child: child,
   );
+}
+
+/// A segmented control inside a card, under a small eyebrow label.
+class _PickerRow extends StatelessWidget {
+  const _PickerRow({required this.eyebrow, required this.child});
+
+  final String eyebrow;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(vertical: 12),
+    decoration: BoxDecoration(
+      border: Border(
+        bottom: BorderSide(color: context.ui.ink.withValues(alpha: 0.12)),
+      ),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        UiEyebrow(eyebrow),
+        const SizedBox(height: UiSpace.sm),
+        child,
+      ],
+    ),
+  );
+}
+
+/// Read-only "Signed in with" row: the account's email or phone number.
+class _SignedInRow extends ConsumerWidget {
+  const _SignedInRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ProfileL10n.of(context);
+    // Rebuild when the account changes.
+    ref.watch(currentUserIdProvider);
+    final String? id;
+    try {
+      id = ref.watch(authRepositoryProvider).signInIdentifier;
+    } on Object {
+      return const SizedBox.shrink();
+    }
+    if (id == null) return const SizedBox.shrink();
+    return UiRow(
+      key: const ValueKey('settings-account-id'),
+      leading: OurneyIcon(
+        name: id.contains('@') ? 'mail' : 'phone',
+        flat: true,
+      ),
+      title: l10n.profile_settings_signedInWith,
+      subtitle: Text(
+        id,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: UiText.body(size: 13, height: 1.4, color: context.ui.inkMuted),
+      ),
+    );
+  }
+}
+
+/// App version and build, read once from the platform (empty when the
+/// platform channel is not available, e.g. in tests).
+final appVersionProvider = FutureProvider<String>((ref) async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    return info.buildNumber.isEmpty
+        ? info.version
+        : '${info.version} (${info.buildNumber})';
+  } on Object {
+    return '';
+  }
+});
+
+class _VersionRow extends ConsumerWidget {
+  const _VersionRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ProfileL10n.of(context);
+    final version = ref.watch(appVersionProvider).asData?.value ?? '';
+    return UiRow(
+      key: const ValueKey('settings-version'),
+      leading: const OurneyIcon(name: 'info', flat: true),
+      title: l10n.profile_settings_version,
+      divider: false,
+      trailing: Text(
+        version,
+        style: UiText.body(size: 14, height: 1.4, color: context.ui.inkMuted),
+      ),
+    );
+  }
 }
 
 /// `.theme-segmented`: Sáng / Tối / Theo máy.
@@ -258,192 +374,20 @@ class _LanguagePicker extends ConsumerWidget {
     final override = ref.watch(localeOverrideProvider);
     final code =
         override?.languageCode ?? Localizations.localeOf(context).languageCode;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.profile_settings_language,
-          style: UiText.body(
-            size: 14,
-            weight: FontWeight.w700,
-            color: context.ui.ink,
-          ),
+    return UiSegmented<String>(
+      value: code == 'en' ? 'en' : 'vi',
+      onChanged: (c) =>
+          unawaited(ref.read(localeOverrideProvider.notifier).set(Locale(c))),
+      segments: [
+        UiSegment(
+          key: const ValueKey('settings-lang-vi'),
+          value: 'vi',
+          label: l10n.profile_settings_langVi,
         ),
-        const SizedBox(height: UiSpace.sm),
-        UiSegmented<String>(
-          value: code == 'en' ? 'en' : 'vi',
-          onChanged: (c) => unawaited(
-            ref.read(localeOverrideProvider.notifier).set(Locale(c)),
-          ),
-          segments: [
-            UiSegment(
-              key: const ValueKey('settings-lang-vi'),
-              value: 'vi',
-              label: l10n.profile_settings_langVi,
-            ),
-            UiSegment(
-              key: const ValueKey('settings-lang-en'),
-              value: 'en',
-              label: l10n.profile_settings_langEn,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// `.app-icon-picker`: 7 tiles. Selection is stored only; no plugin switches
-/// the launcher icon yet (see [appIconProvider]).
-class _AppIconPicker extends ConsumerWidget {
-  const _AppIconPicker();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ProfileL10n.of(context);
-    final ui = context.ui;
-    final selected = ref.watch(appIconProvider);
-    // Marks use the ink token on the light tiles (U14: the brand greens and
-    // oranges were 1.3-2:1); only the dark flexer tile keeps its neon mark.
-    final items = <(String, Color, Color, String)>[
-      (
-        'default',
-        const Color(0xFFFF4D6D),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconDefault,
-      ),
-      (
-        'quiet',
-        const Color(0xFFDFF7EC),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconQuiet,
-      ),
-      (
-        'squad',
-        const Color(0xFFFFF0C7),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconSquad,
-      ),
-      (
-        'memory',
-        const Color(0xFFF3E3C3),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconMemory,
-      ),
-      (
-        'couple',
-        const Color(0xFFFFE0E9),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconCouple,
-      ),
-      (
-        'flexer',
-        const Color(0xFF14161F),
-        const Color(0xFF3DE88C),
-        l10n.profile_settings_iconFlexer,
-      ),
-      (
-        'minimal',
-        const Color(0xFFF4F4F5),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconMinimal,
-      ),
-    ];
-    return Column(
-      key: const ValueKey('settings-app-icons'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.profile_settings_appIcon,
-          style: UiText.body(size: 14, weight: FontWeight.w700, color: ui.ink),
-        ),
-        const SizedBox(height: UiSpace.sm),
-        Wrap(
-          spacing: UiSpace.sm,
-          runSpacing: UiSpace.sm,
-          children: [
-            for (final (id, tile, mark, label) in items)
-              UiPressable(
-                key: ValueKey('settings-icon-$id'),
-                selected: id == selected,
-                semanticLabel: l10n.profile_settings_iconSemantic(label),
-                excludeChildSemantics: true,
-                borderRadius: BorderRadius.circular(UiRadius.menu),
-                onPressed: () =>
-                    unawaited(ref.read(appIconProvider.notifier).set(id)),
-                child: SizedBox(
-                  width: 72,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: tile,
-                              borderRadius: BorderRadius.circular(
-                                UiRadius.menu,
-                              ),
-                              border: Border.all(
-                                color: id == selected ? ui.focus : ui.outline,
-                                width: id == selected ? 3 : UiBorder.thin,
-                              ),
-                            ),
-                            child: Text(
-                              'O',
-                              style: UiText.h1(size: 24, color: mark),
-                            ),
-                          ),
-                          // Not by border color alone (U14): a check badge.
-                          if (id == selected)
-                            Positioned(
-                              top: -6,
-                              right: -6,
-                              child: Container(
-                                key: const ValueKey('settings-icon-check'),
-                                width: 22,
-                                height: 22,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: ui.ink,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: ui.bg,
-                                    width: UiBorder.thin,
-                                  ),
-                                ),
-                                child: OurneyIcon(
-                                  name: 'check',
-                                  size: 12,
-                                  flat: true,
-                                  color: ui.bg,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: UiText.body(size: 11, color: ui.ink),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: UiSpace.xs),
-        Text(
-          l10n.profile_settings_appIconNote,
-          style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+        UiSegment(
+          key: const ValueKey('settings-lang-en'),
+          value: 'en',
+          label: l10n.profile_settings_langEn,
         ),
       ],
     );

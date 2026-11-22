@@ -48,7 +48,6 @@
   "@safety_hubHowToReportBody": {
     "description": "Body of the how-to-report card on the hub."
   },
-
   "safety_reportCheckInTitle": "Báo cáo check-in",
   "@safety_reportCheckInTitle": {
     "description": "Title of the report sheet for a check-in."
@@ -141,7 +140,6 @@
   "@safety_needsAccount": {
     "description": "Shown in local-only mode instead of the report/block UI."
   },
-
   "safety_blockTitle": "Chặn {name}?",
   "@safety_blockTitle": {
     "description": "Block confirmation title.",
@@ -232,7 +230,6 @@
   "@safety_retry": {
     "description": "Retry button."
   },
-
   "safety_contactIntro": "Cần giúp đỡ, muốn góp ý hay báo cáo một vấn đề an toàn khẩn cấp? Viết cho chúng mình. Báo cáo nội dung được xem xét trong vòng 24 giờ.",
   "@safety_contactIntro": {
     "description": "Intro of the contact page."
@@ -261,18 +258,13 @@
   "@safety_contactNoMailApp": {
     "description": "Error when no mail app can be opened."
   },
-
   "safety_eulaAcceptTitle": "Trước khi bắt đầu",
   "@safety_eulaAcceptTitle": {
     "description": "Title of the EULA acceptance screen."
   },
-  "safety_eulaAcceptIntro": "Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Hãy đọc và đồng ý với điều khoản sử dụng để tiếp tục.",
+  "safety_eulaAcceptIntro": "Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Bấm \"Đồng ý và tiếp tục\" là bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.",
   "@safety_eulaAcceptIntro": {
     "description": "Intro of the EULA acceptance screen."
-  },
-  "safety_eulaAcceptCheckbox": "Tôi đã đọc và đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.",
-  "@safety_eulaAcceptCheckbox": {
-    "description": "Checkbox label on the EULA acceptance screen."
   },
   "safety_eulaAcceptButton": "Đồng ý và tiếp tục",
   "@safety_eulaAcceptButton": {
@@ -288,7 +280,6 @@
       }
     }
   },
-
   "safety_eula1Title": "1. Đồng ý điều khoản",
   "@safety_eula1Title": {
     "description": "EULA section heading."
@@ -337,7 +328,6 @@
   "@safety_eula6Body": {
     "description": "EULA section body."
   },
-
   "safety_privacy1Title": "Chúng mình lưu gì",
   "@safety_privacy1Title": {
     "description": "Privacy section heading."
@@ -385,5 +375,9 @@
   "safety_privacy6Body": "Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.",
   "@safety_privacy6Body": {
     "description": "Privacy section body: contact."
+  },
+  "safety_eulaAcceptSignOut": "Đăng xuất",
+  "@safety_eulaAcceptSignOut": {
+    "description": "Escape on the terms gate: sign out instead of agreeing."
   }
 }

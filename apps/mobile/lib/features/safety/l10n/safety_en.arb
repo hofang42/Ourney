@@ -12,7 +12,6 @@
   "safety_hubBlocked": "Blocked people",
   "safety_hubHowToReport": "How to report",
   "safety_hubHowToReportBody": "Open a group journey, tap the menu button (three dots) on a member's card and choose \"Report\" (reports the photo shown on the card, or the person if there is none) or \"Block\". Content you report is hidden on your device right away.",
-
   "safety_reportCheckInTitle": "Report check-in",
   "safety_reportUserTitle": "Report user",
   "safety_reportPrompt": "What's wrong? Reports are confidential: the person won't know it was you.",
@@ -36,7 +35,6 @@
   "safety_errorOffline": "No connection. Try again when you're back online.",
   "safety_errorGeneric": "Something went wrong. Please try again later.",
   "safety_needsAccount": "Reporting and blocking need the Ourney server. In on-device mode nobody else can see your content.",
-
   "safety_blockTitle": "Block {name}?",
   "safety_blockBody": "You won't see each other's check-ins or reactions any more, and they can't join groups you're in. They won't be told. You can unblock at any time.",
   "safety_blockConfirm": "Block",
@@ -52,7 +50,6 @@
   "safety_blockedEmptyMessage": "People you block show up here so you can unblock them later.",
   "safety_loadError": "Couldn't load the list. Please try again later.",
   "safety_retry": "Try again",
-
   "safety_contactIntro": "Need help, have feedback or want to flag an urgent safety issue? Write to us. Content reports are reviewed within 24 hours.",
   "safety_contactEmailLabel": "Support email",
   "safety_contactSend": "Send email",
@@ -60,13 +57,10 @@
   "safety_contactCopied": "Email address copied.",
   "safety_contactSubject": "Ourney - support",
   "safety_contactNoMailApp": "Couldn't open a mail app. Copy the address and write from the app you use.",
-
   "safety_eulaAcceptTitle": "Before you start",
-  "safety_eulaAcceptIntro": "Ourney has zero tolerance for objectionable content or abusive users. Please read and accept the terms of use to continue.",
-  "safety_eulaAcceptCheckbox": "I have read and agree to the Terms of use and the Privacy policy.",
+  "safety_eulaAcceptIntro": "Ourney has zero tolerance for objectionable content or abusive users. Tapping \"Agree and continue\" means you accept the Terms of use and Privacy policy.",
   "safety_eulaAcceptButton": "Agree and continue",
   "safety_lastUpdated": "Last updated: {date}",
-
   "safety_eula1Title": "1. Accepting these terms",
   "safety_eula1Body": "By creating an account or using Ourney you agree to these terms. If you don't agree, please don't use the app.",
   "safety_eula2Title": "2. Zero tolerance for objectionable content",
@@ -79,7 +73,6 @@
   "safety_eula5Body": "We may suspend or delete accounts that break these terms without notice. You can delete your account at any time from your Profile.",
   "safety_eula6Title": "6. Disclaimer and changes",
   "safety_eula6Body": "Ourney is provided \"as is\" and is not a substitute for professional medical, nutrition or fitness advice. When these terms change we'll let you know in the app.",
-
   "safety_privacy1Title": "What we store",
   "safety_privacy1Body": "Your email (to sign in); display name, username and avatar; the journeys you create; check-ins with their photo, caption, numbers (for example weight) and time taken; reactions; your reports and block list.",
   "safety_privacy2Title": "Who can see it",
@@ -91,5 +84,6 @@
   "safety_privacy5Title": "Deleting your data",
   "safety_privacy5Body": "Go to Profile > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a group, ownership passes to the earliest-joined member.",
   "safety_privacy6Title": "Contact",
-  "safety_privacy6Body": "Questions about privacy? See the Contact page under Safety & support."
+  "safety_privacy6Body": "Questions about privacy? See the Contact page under Safety & support.",
+  "safety_eulaAcceptSignOut": "Sign out"
 }

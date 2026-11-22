@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../tokens.dart';
 import '../typography.dart';
 import 'ourney_icons.dart';
-import 'pressable.dart';
 
 /// `.flow-error` / `.username-status`: bare warning icon (20) plus 13dp
 /// danger text, no box. [success] gives the `.available` variant (check icon,
@@ -46,86 +45,6 @@ class UiFlowError extends StatelessWidget {
                 style: UiText.body(size: 13, height: 1.4, color: color),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class UiFlowTab<T> {
-  const UiFlowTab({required this.value, required this.label, this.key});
-
-  final T value;
-  final String label;
-  final Key? key;
-}
-
-/// `.login-tabs`: two-segment tab bar, 2dp outline, 12dp radius, the active
-/// tab filled sticker amber (`#FFB347`, ink label in both themes).
-class UiFlowTabs<T> extends StatelessWidget {
-  const UiFlowTabs({
-    required this.tabs,
-    required this.value,
-    required this.onChanged,
-    super.key,
-  });
-
-  final List<UiFlowTab<T>> tabs;
-  final T value;
-  final ValueChanged<T> onChanged;
-
-  static const _active = Color(0xFFFFB347);
-  static const _activeInk = Color(0xFF1A1A1A);
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(UiRadius.input),
-        border: ui.stickerBorder(),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (var i = 0; i < tabs.length; i++) ...[
-              if (i > 0) Container(width: UiBorder.standard, color: ui.outline),
-              Expanded(
-                child: UiPressable(
-                  key: tabs[i].key,
-                  onPressed: () => onChanged(tabs[i].value),
-                  selected: tabs[i].value == value,
-                  semanticLabel: tabs[i].label,
-                  excludeChildSemantics: true,
-                  borderRadius: BorderRadius.zero,
-                  minSize: const Size(UiSize.tap, 48),
-                  child: Container(
-                    alignment: Alignment.center,
-                    constraints: const BoxConstraints(minHeight: 48),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 6,
-                    ),
-                    color: tabs[i].value == value ? _active : ui.surface,
-                    child: Text(
-                      tabs[i].label,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: UiText.body(
-                        size: 15,
-                        weight: FontWeight.w700,
-                        height: 1.3,
-                        color: tabs[i].value == value ? _activeInk : ui.ink,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

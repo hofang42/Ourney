@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,11 @@ final supportEmailProvider = Provider<String>(
 /// the texts in l10n/safety_*.arb change.
 final DateTime kLegalLastUpdated = DateTime(2026, 10, 16);
 
+/// Version of the terms and privacy text the user has to accept. Bump it only
+/// when the text changes materially: accounts that accepted an older version
+/// are then asked again (`terms_version` in the account's user metadata).
+const int kTermsVersion = 1;
+
 /// Shared-preferences keys of the safety feature.
 abstract final class SafetyPrefs {
   /// `true` once the user accepted the EULA on this device (FR-F3).
@@ -30,17 +36,55 @@ abstract final class SafetyPrefs {
 
 /// Whether the EULA was accepted (FR-F3, Apple Guideline 1.2). Gate any
 /// user-generated content on it; see lib/features/safety/README.md.
+///
+/// Accepted when this device remembers it OR the signed-in account carries
+/// `terms_version >= kTermsVersion` in its user metadata, so an existing
+/// account is never asked again after signing in on a new device.
 class EulaAccepted extends Notifier<bool> {
   @override
-  bool build() =>
-      ref.watch(sharedPreferencesProvider).getBool(SafetyPrefs.eulaAccepted) ??
-      false;
+  bool build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    final local = prefs.getBool(SafetyPrefs.eulaAccepted) ?? false;
+    // Recomputes when the session arrives or the account changes.
+    if (ref.watch(currentUserIdProvider) == null) return local;
+    final AuthRepository auth;
+    try {
+      auth = ref.watch(authRepositoryProvider);
+    } on Object {
+      return local; // Not wired.
+    }
+    final serverOk = (auth.acceptedTermsVersion ?? 0) >= kTermsVersion;
+    if (local && !serverOk) {
+      // Accepted here but the account record failed earlier: retry quietly.
+      unawaited(_record(auth));
+    } else if (serverOk && !local) {
+      // Cheap local cache of the server record.
+      unawaited(prefs.setBool(SafetyPrefs.eulaAccepted, true));
+    }
+    return local || serverOk;
+  }
 
+  Future<void> _record(AuthRepository auth) async {
+    try {
+      await auth.recordTermsAccepted(kTermsVersion);
+    } on Object {
+      // Offline: the next launch tries again; the gate stays satisfied.
+    }
+  }
+
+  /// Accepts on this device and records it on the account (best effort: a
+  /// failure keeps the local flag and the next launch asks the server again).
   Future<void> accept() async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    AuthRepository? auth;
+    try {
+      auth = ref.read(authRepositoryProvider);
+    } on Object {
+      auth = null; // Not wired.
+    }
     state = true;
-    await ref
-        .read(sharedPreferencesProvider)
-        .setBool(SafetyPrefs.eulaAccepted, true);
+    await prefs.setBool(SafetyPrefs.eulaAccepted, true);
+    if (auth != null && auth.currentUserId != null) await _record(auth);
   }
 
   /// Account deletion / QA: ask again.

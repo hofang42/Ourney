@@ -28,6 +28,15 @@ class LocalAuthRepository implements AuthRepository {
   bool get isLocalOnly => true;
 
   @override
+  String? get signInIdentifier => null;
+
+  @override
+  int? get acceptedTermsVersion => null;
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {}
+
+  @override
   Stream<String?> watchUserId() => Stream<String?>.value(null);
 
   static Never _needsServer() => throw const OurneyException(
@@ -93,6 +102,16 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   bool get isLocalOnly => false;
+
+  @override
+  String? get signInIdentifier => remote.signInIdentifier;
+
+  @override
+  int? get acceptedTermsVersion => remote.acceptedTermsVersion;
+
+  @override
+  Future<void> recordTermsAccepted(int version) =>
+      remote.recordTermsAccepted(version);
 
   @override
   Stream<String?> watchUserId() => remote.watchUserId();

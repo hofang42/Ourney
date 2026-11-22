@@ -106,19 +106,19 @@ abstract class AuthL10n {
   /// Helper under the code step.
   ///
   /// In vi, this message translates to:
-  /// **'Không thấy thư? Xem mục thư rác hoặc quảng cáo.'**
-  String get auth_otpHelper;
+  /// **'Không thấy thư? Xem mục Thư rác hoặc Quảng cáo.'**
+  String get auth_otpHelperEmail;
 
   /// Title of the sign-in screen (email step).
   ///
   /// In vi, this message translates to:
-  /// **'đăng nhập.'**
+  /// **'vào ourney.'**
   String get auth_title;
 
   /// Explains email OTP sign-in (FR-A1).
   ///
   /// In vi, this message translates to:
-  /// **'Nhập email, Ourney gửi bạn mã 6 số. Không cần mật khẩu.'**
+  /// **'Nhập email, mình gửi mã 6 số. Chưa có tài khoản thì Ourney tạo luôn.'**
   String get auth_subtitle;
 
   /// Email field label.
@@ -202,7 +202,7 @@ abstract class AuthL10n {
   /// OTP rejected (invalid / expired).
   ///
   /// In vi, this message translates to:
-  /// **'Mã chưa đúng. Kiểm tra lại 6 số trong email rồi nhập lại.'**
+  /// **'Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại rồi nhập lại.'**
   String get auth_errorWrongCode;
 
   /// Too many OTP requests or attempts.
@@ -238,13 +238,13 @@ abstract class AuthL10n {
   /// Footer link to the terms.
   ///
   /// In vi, this message translates to:
-  /// **'Điều khoản sử dụng'**
+  /// **'Điều khoản'**
   String get auth_terms;
 
   /// Footer link to the privacy policy.
   ///
   /// In vi, this message translates to:
-  /// **'Chính sách quyền riêng tư.'**
+  /// **'Chính sách riêng tư'**
   String get auth_privacy;
 
   /// Screen reader label of one OTP digit box.
@@ -292,14 +292,8 @@ abstract class AuthL10n {
   /// Subtitle of the phone form.
   ///
   /// In vi, this message translates to:
-  /// **'Nhập số điện thoại, Ourney gửi mã 6 số qua SMS.'**
+  /// **'Nhập số điện thoại, mình gửi mã 6 số qua SMS. Chưa có tài khoản thì Ourney tạo luôn.'**
   String get auth_phoneSubtitle;
-
-  /// Button: send an SMS code.
-  ///
-  /// In vi, this message translates to:
-  /// **'Gửi mã SMS'**
-  String get auth_sendSms;
 
   /// Back to the phone form.
   ///
@@ -346,13 +340,13 @@ abstract class AuthL10n {
   /// Link to switch to password mode.
   ///
   /// In vi, this message translates to:
-  /// **'Dùng mật khẩu'**
+  /// **'Đăng nhập bằng mật khẩu'**
   String get auth_usePassword;
 
   /// Link to switch to emailed-code mode.
   ///
   /// In vi, this message translates to:
-  /// **'Dùng mã đăng nhập'**
+  /// **'Dùng mã thay thế'**
   String get auth_useCode;
 
   /// Link to the reset flow.
@@ -360,36 +354,6 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Quên mật khẩu?'**
   String get auth_forgot;
-
-  /// Link to sign-up.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tạo tài khoản bằng mật khẩu'**
-  String get auth_createAccount;
-
-  /// Link back to sign-in.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đã có tài khoản? Đăng nhập'**
-  String get auth_haveAccount;
-
-  /// Sign-up title.
-  ///
-  /// In vi, this message translates to:
-  /// **'tạo tài khoản.'**
-  String get auth_signUpTitle;
-
-  /// Sign-up subtitle.
-  ///
-  /// In vi, this message translates to:
-  /// **'Dùng email và mật khẩu của bạn. Có thể cần xác nhận bằng mã gửi qua email.'**
-  String get auth_signUpSubtitle;
-
-  /// Sign-up button.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tạo tài khoản'**
-  String get auth_signUpButton;
 
   /// Reset title.
   ///
@@ -421,12 +385,6 @@ abstract class AuthL10n {
   /// **'Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.'**
   String get auth_errorWrongPassword;
 
-  /// Sign-up error.
-  ///
-  /// In vi, this message translates to:
-  /// **'Email này đã có tài khoản. Hãy đăng nhập.'**
-  String get auth_errorEmailTaken;
-
   /// Sending a code failed (not offline, not rate limited).
   ///
   /// In vi, this message translates to:
@@ -436,7 +394,7 @@ abstract class AuthL10n {
   /// Before the (bold) email or phone the code went to.
   ///
   /// In vi, this message translates to:
-  /// **'Mã gồm 6 số vừa gửi tới'**
+  /// **'Mã 6 số vừa gửi tới'**
   String get auth_codeSentPrefix;
 
   /// Offline banner (.flow-offline).
@@ -460,7 +418,7 @@ abstract class AuthL10n {
   /// Start of the legal line under the sign-in form.
   ///
   /// In vi, this message translates to:
-  /// **'Tiếp tục nghĩa là bạn đồng ý'**
+  /// **'Bấm \"Gửi mã\" là bạn đồng ý với'**
   String get auth_legalIntro;
 
   /// Between Terms and Privacy in the legal line.
@@ -474,6 +432,36 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Quay lại'**
   String get auth_back;
+
+  /// Screen reader label of the email/phone method switch.
+  ///
+  /// In vi, this message translates to:
+  /// **'Cách nhận mã'**
+  String get auth_methodLabel;
+
+  /// Title of the password sign-in form.
+  ///
+  /// In vi, this message translates to:
+  /// **'đăng nhập bằng mật khẩu.'**
+  String get auth_passwordTitle;
+
+  /// Helper under the code step when the code went by SMS.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa nhận được SMS? Đợi một chút rồi bấm Gửi lại mã.'**
+  String get auth_otpHelperSms;
+
+  /// SMS sign-in is switched off on the server.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng nhập bằng SMS tạm thời chưa dùng được. Dùng email nhé.'**
+  String get auth_errorPhoneUnavailable;
+
+  /// The SMS could not be sent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chưa gửi được SMS. Kiểm tra số rồi thử lại sau ít phút.'**
+  String get auth_errorSmsFailed;
 }
 
 class _AuthL10nDelegate extends LocalizationsDelegate<AuthL10n> {

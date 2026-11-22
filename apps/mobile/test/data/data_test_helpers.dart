@@ -146,6 +146,20 @@ class FakeRemoteApi implements RemoteApi {
   String? get currentUserId => userId;
 
   @override
+  String? get signInIdentifier => userId == null ? null : 'me@example.com';
+
+  int? termsVersion;
+
+  @override
+  int? get acceptedTermsVersion => termsVersion;
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {
+    calls.add(RemoteCall('recordTermsAccepted', '$version'));
+    termsVersion = version;
+  }
+
+  @override
   Stream<String?> watchUserId() => _auth.stream;
 
   @override

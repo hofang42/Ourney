@@ -161,10 +161,11 @@ void main() {
   });
 
   group('EULA gate', () {
-    testWidgets('accept needs the checkbox, stores the flag, continues', (
+    testWidgets('one tap agrees: stores the flag, records on the account', (
       tester,
     ) async {
-      final c = await pumpSignedInApp(tester, eulaAccepted: false);
+      final auth = FakeAuthRepository(userId: 'u1');
+      final c = await pumpSignedInApp(tester, eulaAccepted: false, auth: auth);
       expect(c.read(eulaAcceptedProvider), isFalse);
       await goTo(
         tester,
@@ -175,13 +176,8 @@ void main() {
         ).toString(),
       );
       expect(byKey('safety-eula-accept'), findsOneWidget);
+      expect(byKey('safety-eula-checkbox'), findsNothing);
 
-      await tester.tap(byKey('safety-eula-accept-button'));
-      await tester.pumpAndSettle();
-      expect(c.read(eulaAcceptedProvider), isFalse, reason: 'not checked');
-
-      await tester.tap(byKey('safety-eula-checkbox'));
-      await tester.pumpAndSettle();
       await tester.tap(byKey('safety-eula-accept-button'));
       await tester.pumpAndSettle();
 
@@ -190,7 +186,39 @@ void main() {
         c.read(sharedPreferencesProvider).getBool(SafetyPrefs.eulaAccepted),
         isTrue,
       );
+      expect(auth.recordedTerms, [kTermsVersion]);
       expect(locationOf(c), SafetyPaths.contact);
+    });
+
+    testWidgets('gate offers sign out', (tester) async {
+      final c = await pumpSignedInApp(tester, eulaAccepted: false);
+      await goTo(tester, c, SafetyPaths.eulaAccept);
+      await tester.ensureVisible(byKey('safety-eula-sign-out'));
+      await tester.tap(byKey('safety-eula-sign-out'));
+      await tester.pumpAndSettle();
+      expect(byKey('profile-signout-dialog'), findsOneWidget);
+    });
+
+    testWidgets('an account that already accepted is never asked', (
+      tester,
+    ) async {
+      final c = await pumpSignedInApp(
+        tester,
+        eulaAccepted: false,
+        auth: FakeAuthRepository(userId: 'u1', termsVersion: kTermsVersion),
+      );
+      expect(c.read(eulaAcceptedProvider), isTrue);
+      await goTo(tester, c, AppRoutes.capture);
+      expect(locationOf(c), isNot(startsWith(SafetyPaths.eulaAccept)));
+    });
+
+    testWidgets('an older accepted version is asked again', (tester) async {
+      final c = await pumpSignedInApp(
+        tester,
+        eulaAccepted: false,
+        auth: FakeAuthRepository(userId: 'u1', termsVersion: kTermsVersion - 1),
+      );
+      expect(c.read(eulaAcceptedProvider), isFalse);
     });
 
     testWidgets('unsafe from target falls back to the camera', (tester) async {
@@ -200,8 +228,6 @@ void main() {
         c,
         '${SafetyPaths.eulaAccept}?from=${Uri.encodeComponent('https://evil.example')}',
       );
-      await tester.tap(byKey('safety-eula-checkbox'));
-      await tester.pumpAndSettle();
       await tester.tap(byKey('safety-eula-accept-button'));
       await tester.pumpAndSettle();
       expect(locationOf(c), startsWith(AppRoutes.capture));

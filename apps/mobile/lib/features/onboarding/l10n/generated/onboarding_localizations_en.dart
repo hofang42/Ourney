@@ -144,4 +144,7 @@ class OnboardingL10nEn extends OnboardingL10n {
   String onboarding_nudgeBody(String time) {
     return 'Turn on reminders and we will nudge you at $time. It may run late on some phones.';
   }
+
+  @override
+  String get onboarding_haveAccount => 'Already have an account? Sign in';
 }

@@ -209,11 +209,7 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_eulaAcceptIntro =>
-      'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Hãy đọc và đồng ý với điều khoản sử dụng để tiếp tục.';
-
-  @override
-  String get safety_eulaAcceptCheckbox =>
-      'Tôi đã đọc và đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.';
+      'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Bấm \"Đồng ý và tiếp tục\" là bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.';
 
   @override
   String get safety_eulaAcceptButton => 'Đồng ý và tiếp tục';
@@ -306,4 +302,7 @@ class SafetyL10nVi extends SafetyL10n {
   @override
   String get safety_privacy6Body =>
       'Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.';
+
+  @override
+  String get safety_eulaAcceptSignOut => 'Đăng xuất';
 }

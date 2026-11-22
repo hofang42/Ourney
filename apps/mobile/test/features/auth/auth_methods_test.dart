@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/auth/phone_format.dart';
@@ -30,7 +31,7 @@ void main() {
       tester,
     ) async {
       final auth = RecordingAuthRepository();
-      final c = await pumpBackendApp(tester, auth: auth);
+      final c = await pumpBackendApp(tester, auth: auth, phoneAvailable: true);
       await tester.tap(byKey('auth-tab-phone'));
       await tester.pumpAndSettle();
 
@@ -77,38 +78,6 @@ void main() {
       );
     });
 
-    testWidgets('sign up enforces 8 characters, then signs in', (tester) async {
-      final auth = RecordingAuthRepository();
-      await pumpBackendApp(tester, auth: auth);
-      await tapVisible(tester, 'auth-use-password');
-      await tapVisible(tester, 'auth-create-account');
-      await tester.enterText(byKey('auth-email'), 'new@b.co');
-      await tester.enterText(byKey('auth-password'), 'short');
-      await tapVisible(tester, 'auth-send');
-      expect(find.text('Mật khẩu cần ít nhất 8 ký tự.'), findsOneWidget);
-      expect(auth.calls, isEmpty);
-
-      await tester.enterText(byKey('auth-password'), 'longenough1');
-      await tapVisible(tester, 'auth-send');
-      expect(auth.calls, ['signUp:new@b.co']);
-    });
-
-    testWidgets('sign up that needs the emailed code confirms it', (
-      tester,
-    ) async {
-      final auth = RecordingAuthRepository()..signUpNeedsCode = true;
-      await pumpBackendApp(tester, auth: auth);
-      await tapVisible(tester, 'auth-use-password');
-      await tapVisible(tester, 'auth-create-account');
-      await tester.enterText(byKey('auth-email'), 'new@b.co');
-      await tester.enterText(byKey('auth-password'), 'longenough1');
-      await tapVisible(tester, 'auth-send');
-      expect(byKey('auth-step-code'), findsOneWidget);
-      await tester.enterText(byKey('auth-code'), '111222');
-      await tester.pumpAndSettle();
-      expect(auth.calls.last, 'confirmSignUp:new@b.co:111222');
-    });
-
     testWidgets('forgot password: code + new password', (tester) async {
       final auth = RecordingAuthRepository();
       await pumpBackendApp(tester, auth: auth);
@@ -127,6 +96,100 @@ void main() {
       await tapVisible(tester, 'auth-verify');
       expect(auth.calls.last, 'reset:a@b.co:123456');
     });
+
+    testWidgets('phone option is hidden when the server has phone off', (
+      tester,
+    ) async {
+      await pumpBackendApp(tester, auth: RecordingAuthRepository());
+      expect(byKey('auth-tab-phone'), findsNothing);
+      expect(byKey('auth-tab-email'), findsNothing);
+      expect(byKey('auth-email'), findsOneWidget);
+    });
+
+    testWidgets('phone option shows when the server has phone on', (
+      tester,
+    ) async {
+      await pumpBackendApp(
+        tester,
+        auth: RecordingAuthRepository(),
+        phoneAvailable: true,
+      );
+      expect(byKey('auth-tab-phone'), findsOneWidget);
+      expect(byKey('auth-tab-email'), findsOneWidget);
+    });
+
+    testWidgets('start screen: subtitle visible, no create-account link', (
+      tester,
+    ) async {
+      await pumpBackendApp(tester, auth: RecordingAuthRepository());
+      expect(byKey('auth-subtitle'), findsOneWidget);
+      await tapVisible(tester, 'auth-use-password');
+      expect(byKey('auth-create-account'), findsNothing);
+      expect(byKey('auth-forgot'), findsOneWidget);
+      await tester.tap(byKey('auth-flow-back'));
+      await tester.pumpAndSettle();
+      expect(byKey('auth-step-email'), findsOneWidget);
+    });
+
+    testWidgets('SMS provider off: clear message, Phone disappears', (
+      tester,
+    ) async {
+      final auth = RecordingAuthRepository()
+        ..phoneError = const OurneyException(OurneyErrorCode.unavailable);
+      await pumpBackendApp(tester, auth: auth, phoneAvailable: true);
+      await tester.tap(byKey('auth-tab-phone'));
+      await tester.pumpAndSettle();
+      await tester.enterText(byKey('auth-phone'), '0912 345 678');
+      await tapVisible(tester, 'auth-send');
+      expect(
+        find.text(
+          'Đăng nhập bằng SMS tạm thời chưa dùng được. Dùng email nhé.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('9–10 số'), findsNothing);
+      expect(byKey('auth-tab-phone'), findsNothing);
+      expect(byKey('auth-email'), findsOneWidget);
+    });
+
+    testWidgets('code step after phone shows the SMS helper', (tester) async {
+      await pumpBackendApp(
+        tester,
+        auth: RecordingAuthRepository(),
+        phoneAvailable: true,
+      );
+      await tester.tap(byKey('auth-tab-phone'));
+      await tester.pumpAndSettle();
+      await tester.enterText(byKey('auth-phone'), '0912 345 678');
+      await tapVisible(tester, 'auth-send');
+      expect(find.textContaining('SMS'), findsWidgets);
+      expect(find.textContaining('Thư rác'), findsNothing);
+    });
+
+    for (final dark in [false, true]) {
+      testWidgets('${dark ? 'dark' : 'light'}: start fits at 320dp 1.35x', (
+        tester,
+      ) async {
+        tester.platformDispatcher.platformBrightnessTestValue = dark
+            ? Brightness.dark
+            : Brightness.light;
+        addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+        tester.platformDispatcher.textScaleFactorTestValue = 1.35;
+        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+        tester.view.physicalSize = const Size(320 * 2, 640 * 2);
+        tester.view.devicePixelRatio = 2;
+        addTearDown(tester.view.reset);
+        await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(),
+          phoneAvailable: true,
+        );
+        expect(tester.takeException(), isNull);
+        await tester.tap(byKey('auth-tab-phone'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      });
+    }
 
     testWidgets('no Google button anywhere', (tester) async {
       await pumpBackendApp(tester, auth: RecordingAuthRepository());

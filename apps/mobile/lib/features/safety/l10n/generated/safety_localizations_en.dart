@@ -211,11 +211,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_eulaAcceptIntro =>
-      'Ourney has zero tolerance for objectionable content or abusive users. Please read and accept the terms of use to continue.';
-
-  @override
-  String get safety_eulaAcceptCheckbox =>
-      'I have read and agree to the Terms of use and the Privacy policy.';
+      'Ourney has zero tolerance for objectionable content or abusive users. Tapping \"Agree and continue\" means you accept the Terms of use and Privacy policy.';
 
   @override
   String get safety_eulaAcceptButton => 'Agree and continue';
@@ -308,4 +304,7 @@ class SafetyL10nEn extends SafetyL10n {
   @override
   String get safety_privacy6Body =>
       'Questions about privacy? See the Contact page under Safety & support.';
+
+  @override
+  String get safety_eulaAcceptSignOut => 'Sign out';
 }

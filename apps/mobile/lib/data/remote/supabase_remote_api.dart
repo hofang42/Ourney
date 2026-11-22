@@ -30,6 +30,33 @@ class SupabaseRemoteApi implements RemoteApi {
       _client.auth.onAuthStateChange.map((s) => s.session?.user.id).distinct();
 
   @override
+  String? get signInIdentifier {
+    final user = _client.auth.currentUser;
+    final email = user?.email;
+    if (email != null && email.isNotEmpty) return email;
+    final phone = user?.phone;
+    return phone != null && phone.isNotEmpty ? phone : null;
+  }
+
+  @override
+  int? get acceptedTermsVersion {
+    final v = _client.auth.currentUser?.userMetadata?['terms_version'];
+    return v is num ? v.toInt() : null;
+  }
+
+  @override
+  Future<void> recordTermsAccepted(int version) => guardRemote(
+    () => _client.auth.updateUser(
+      UserAttributes(
+        data: {
+          'terms_version': version,
+          'terms_accepted_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      ),
+    ),
+  );
+
+  @override
   Future<void> sendOtp(String email) => guardRemote(
     () =>
         _client.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true),

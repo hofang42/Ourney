@@ -127,35 +127,10 @@ class ProfileL10nVi extends ProfileL10n {
       'Dữ liệu của bạn chỉ nằm trên máy này. Hành trình một mình dùng đầy đủ; đăng nhập và nhóm cần máy chủ.';
 
   @override
-  String get profile_sectionSettings => 'cài đặt';
-
-  @override
   String get profile_reminders => 'Nhắc nhở';
 
   @override
   String get profile_remindersSubtitle => 'Giờ nhắc check-in mỗi ngày';
-
-  @override
-  String get profile_haptics => 'Rung phản hồi';
-
-  @override
-  String get profile_language => 'Ngôn ngữ';
-
-  @override
-  String get profile_languageNote =>
-      'Theo ngôn ngữ của máy. Mặc định là tiếng Việt.';
-
-  @override
-  String get profile_languageVi => 'Tiếng Việt';
-
-  @override
-  String get profile_languageEn => 'English';
-
-  @override
-  String get profile_safety => 'Điều khoản, quyền riêng tư & liên hệ';
-
-  @override
-  String get profile_sectionAccount => 'tài khoản';
 
   @override
   String get profile_signOut => 'Đăng xuất';
@@ -166,9 +141,6 @@ class ProfileL10nVi extends ProfileL10n {
   @override
   String get profile_signOutMessage =>
       'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.';
-
-  @override
-  String get profile_deleteAccount => 'Xóa tài khoản';
 
   @override
   String get profile_deleteTitle => 'Xóa tài khoản vĩnh viễn?';
@@ -325,9 +297,6 @@ class ProfileL10nVi extends ProfileL10n {
       'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt';
 
   @override
-  String get profile_settings_secTheme => 'giao diện';
-
-  @override
   String get profile_settings_themeLight => 'Sáng';
 
   @override
@@ -340,49 +309,13 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_themeLabel => 'Chế độ giao diện';
 
   @override
-  String get profile_settings_language => 'Ngôn ngữ';
-
-  @override
   String get profile_settings_langVi => 'Việt';
 
   @override
   String get profile_settings_langEn => 'English';
 
   @override
-  String get profile_settings_appIcon => 'Icon ứng dụng';
-
-  @override
-  String get profile_settings_appIconNote =>
-      'Icon trên màn hình chính đổi được trong bản sau; lựa chọn của bạn được lưu.';
-
-  @override
-  String get profile_settings_iconDefault => 'Mặc định';
-
-  @override
-  String get profile_settings_iconQuiet => 'Giảm cân';
-
-  @override
-  String get profile_settings_iconSquad => 'Nhóm';
-
-  @override
-  String get profile_settings_iconMemory => 'Ký ức';
-
-  @override
-  String get profile_settings_iconCouple => 'Hai đứa';
-
-  @override
-  String get profile_settings_iconFlexer => 'Tập luyện';
-
-  @override
-  String get profile_settings_iconMinimal => 'Tối giản';
-
-  @override
-  String profile_settings_iconSemantic(String name) {
-    return 'Icon ứng dụng $name';
-  }
-
-  @override
-  String get profile_settings_secPrivacy => 'riêng tư';
+  String get profile_settings_secPrivacy => 'riêng tư & an toàn';
 
   @override
   String get profile_settings_hideKg => 'Ẩn số kg khi chia sẻ';
@@ -421,10 +354,6 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settingsEntry => 'Cài đặt';
 
   @override
-  String get profile_settingsEntrySub =>
-      'Giao diện, ngôn ngữ, riêng tư, thông tin';
-
-  @override
   String profile_signOutPending(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -434,4 +363,23 @@ class ProfileL10nVi extends ProfileL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get profile_settings_secAppearance => 'giao diện & ngôn ngữ';
+
+  @override
+  String get profile_settings_signedInWith => 'Đăng nhập bằng';
+
+  @override
+  String get profile_settings_haptics => 'Rung phản hồi';
+
+  @override
+  String get profile_settings_shareNote =>
+      'Áp dụng cho ảnh chia sẻ ra ngoài và trong nhóm';
+
+  @override
+  String get profile_settings_themeEyebrow => 'GIAO DIỆN';
+
+  @override
+  String get profile_settings_languageEyebrow => 'NGÔN NGỮ';
 }

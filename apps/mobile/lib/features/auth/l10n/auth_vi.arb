@@ -4,15 +4,15 @@
   "@auth_codeTitle": {
     "description": "Title of the code step."
   },
-  "auth_otpHelper": "Không thấy thư? Xem mục thư rác hoặc quảng cáo.",
-  "@auth_otpHelper": {
+  "auth_otpHelperEmail": "Không thấy thư? Xem mục Thư rác hoặc Quảng cáo.",
+  "@auth_otpHelperEmail": {
     "description": "Helper under the code step."
   },
-  "auth_title": "đăng nhập.",
+  "auth_title": "vào ourney.",
   "@auth_title": {
     "description": "Title of the sign-in screen (email step)."
   },
-  "auth_subtitle": "Nhập email, Ourney gửi bạn mã 6 số. Không cần mật khẩu.",
+  "auth_subtitle": "Nhập email, mình gửi mã 6 số. Chưa có tài khoản thì Ourney tạo luôn.",
   "@auth_subtitle": {
     "description": "Explains email OTP sign-in (FR-A1)."
   },
@@ -73,7 +73,7 @@
   "@auth_changeEmail": {
     "description": "Go back to the email step."
   },
-  "auth_errorWrongCode": "Mã chưa đúng. Kiểm tra lại 6 số trong email rồi nhập lại.",
+  "auth_errorWrongCode": "Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại rồi nhập lại.",
   "@auth_errorWrongCode": {
     "description": "OTP rejected (invalid / expired)."
   },
@@ -97,11 +97,11 @@
   "@auth_eyebrowCheck": {
     "description": "Small label above the headline on the code step."
   },
-  "auth_terms": "Điều khoản sử dụng",
+  "auth_terms": "Điều khoản",
   "@auth_terms": {
     "description": "Footer link to the terms."
   },
-  "auth_privacy": "Chính sách quyền riêng tư.",
+  "auth_privacy": "Chính sách riêng tư",
   "@auth_privacy": {
     "description": "Footer link to the privacy policy."
   },
@@ -138,13 +138,9 @@
   "@auth_phoneInvalid": {
     "description": "Phone validation error."
   },
-  "auth_phoneSubtitle": "Nhập số điện thoại, Ourney gửi mã 6 số qua SMS.",
+  "auth_phoneSubtitle": "Nhập số điện thoại, mình gửi mã 6 số qua SMS. Chưa có tài khoản thì Ourney tạo luôn.",
   "@auth_phoneSubtitle": {
     "description": "Subtitle of the phone form."
-  },
-  "auth_sendSms": "Gửi mã SMS",
-  "@auth_sendSms": {
-    "description": "Button: send an SMS code."
   },
   "auth_changePhone": "Đổi số điện thoại",
   "@auth_changePhone": {
@@ -174,37 +170,17 @@
   "@auth_signIn": {
     "description": "Button: sign in with a password."
   },
-  "auth_usePassword": "Dùng mật khẩu",
+  "auth_usePassword": "Đăng nhập bằng mật khẩu",
   "@auth_usePassword": {
     "description": "Link to switch to password mode."
   },
-  "auth_useCode": "Dùng mã đăng nhập",
+  "auth_useCode": "Dùng mã thay thế",
   "@auth_useCode": {
     "description": "Link to switch to emailed-code mode."
   },
   "auth_forgot": "Quên mật khẩu?",
   "@auth_forgot": {
     "description": "Link to the reset flow."
-  },
-  "auth_createAccount": "Tạo tài khoản bằng mật khẩu",
-  "@auth_createAccount": {
-    "description": "Link to sign-up."
-  },
-  "auth_haveAccount": "Đã có tài khoản? Đăng nhập",
-  "@auth_haveAccount": {
-    "description": "Link back to sign-in."
-  },
-  "auth_signUpTitle": "tạo tài khoản.",
-  "@auth_signUpTitle": {
-    "description": "Sign-up title."
-  },
-  "auth_signUpSubtitle": "Dùng email và mật khẩu của bạn. Có thể cần xác nhận bằng mã gửi qua email.",
-  "@auth_signUpSubtitle": {
-    "description": "Sign-up subtitle."
-  },
-  "auth_signUpButton": "Tạo tài khoản",
-  "@auth_signUpButton": {
-    "description": "Sign-up button."
   },
   "auth_resetTitle": "đặt lại mật khẩu.",
   "@auth_resetTitle": {
@@ -226,15 +202,11 @@
   "@auth_errorWrongPassword": {
     "description": "Password sign-in error."
   },
-  "auth_errorEmailTaken": "Email này đã có tài khoản. Hãy đăng nhập.",
-  "@auth_errorEmailTaken": {
-    "description": "Sign-up error."
-  },
   "auth_errorSendFailed": "Chưa gửi được mã. Thử lại sau ít phút.",
   "@auth_errorSendFailed": {
     "description": "Sending a code failed (not offline, not rate limited)."
   },
-  "auth_codeSentPrefix": "Mã gồm 6 số vừa gửi tới",
+  "auth_codeSentPrefix": "Mã 6 số vừa gửi tới",
   "@auth_codeSentPrefix": {
     "description": "Before the (bold) email or phone the code went to."
   },
@@ -250,7 +222,7 @@
   "@auth_success": {
     "description": "Shown after the code was accepted."
   },
-  "auth_legalIntro": "Tiếp tục nghĩa là bạn đồng ý",
+  "auth_legalIntro": "Bấm \"Gửi mã\" là bạn đồng ý với",
   "@auth_legalIntro": {
     "description": "Start of the legal line under the sign-in form."
   },
@@ -261,5 +233,25 @@
   "auth_back": "Quay lại",
   "@auth_back": {
     "description": "Back button semantics on the code step."
+  },
+  "auth_methodLabel": "Cách nhận mã",
+  "@auth_methodLabel": {
+    "description": "Screen reader label of the email/phone method switch."
+  },
+  "auth_passwordTitle": "đăng nhập bằng mật khẩu.",
+  "@auth_passwordTitle": {
+    "description": "Title of the password sign-in form."
+  },
+  "auth_otpHelperSms": "Chưa nhận được SMS? Đợi một chút rồi bấm Gửi lại mã.",
+  "@auth_otpHelperSms": {
+    "description": "Helper under the code step when the code went by SMS."
+  },
+  "auth_errorPhoneUnavailable": "Đăng nhập bằng SMS tạm thời chưa dùng được. Dùng email nhé.",
+  "@auth_errorPhoneUnavailable": {
+    "description": "SMS sign-in is switched off on the server."
+  },
+  "auth_errorSmsFailed": "Chưa gửi được SMS. Kiểm tra số rồi thử lại sau ít phút.",
+  "@auth_errorSmsFailed": {
+    "description": "The SMS could not be sent."
   }
 }

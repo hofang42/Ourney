@@ -9,8 +9,6 @@ enum AuthStep {
   sendPhone,
   verifyPhone,
   passwordSignIn,
-  signUp,
-  confirmSignUp,
   resetSend,
   resetConfirm,
 }
@@ -32,20 +30,15 @@ String authErrorMessage(AuthL10n l10n, Object error, AuthStep step) {
       code == OurneyErrorCode.invalid
           ? l10n.auth_emailInvalid
           : l10n.auth_errorSendFailed,
-    AuthStep.sendPhone =>
-      code == OurneyErrorCode.invalid
-          ? l10n.auth_phoneInvalid
-          : l10n.auth_errorSendFailed,
-    AuthStep.verifyOtp ||
-    AuthStep.verifyPhone ||
-    AuthStep.confirmSignUp ||
-    AuthStep.resetConfirm =>
+    AuthStep.sendPhone => switch (code) {
+      OurneyErrorCode.unavailable => l10n.auth_errorPhoneUnavailable,
+      OurneyErrorCode.internal => l10n.auth_errorSmsFailed,
+      OurneyErrorCode.invalid => l10n.auth_phoneInvalid,
+      _ => l10n.auth_errorSendFailed,
+    },
+    AuthStep.verifyOtp || AuthStep.verifyPhone || AuthStep.resetConfirm =>
       badInput ? l10n.auth_errorWrongCode : l10n.auth_errorGeneric,
     AuthStep.passwordSignIn =>
       badInput ? l10n.auth_errorWrongPassword : l10n.auth_errorGeneric,
-    AuthStep.signUp =>
-      code == OurneyErrorCode.invalid
-          ? l10n.auth_errorEmailTaken
-          : l10n.auth_errorGeneric,
   };
 }

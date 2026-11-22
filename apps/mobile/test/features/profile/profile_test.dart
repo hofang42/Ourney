@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
@@ -170,13 +169,10 @@ void main() {
       expect(find.text('Alice N.'), findsOneWidget);
     });
 
-    testWidgets('links to settings and safety', (tester) async {
+    testWidgets('the gear opens settings', (tester) async {
       final c = await signedIn(tester);
       await tapVisible(tester, 'profile-settings');
       expect(location(c), profileSettingsPath);
-      await goTo(tester, c, AppRoutes.profile);
-      await tapVisible(tester, 'profile-safety');
-      expect(location(c), AppRoutes.safety);
     });
 
     testWidgets('missing profile offers setup', (tester) async {
@@ -200,28 +196,20 @@ void main() {
       expect(find.byType(UiBackHeader), findsNothing);
     });
 
-    testWidgets(
-      'language row shows the picked language, opens Settings (U18)',
-      (tester) async {
-        final c = await signedIn(tester);
-        expect(
-          find.text('Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'),
-          findsOneWidget,
-        );
-        await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
-        await tester.pumpAndSettle();
-        expect(find.text('Tiếng Việt'), findsOneWidget);
-        await tapVisible(tester, 'profile-language');
-        expect(byKey('settings-screen'), findsOneWidget);
-      },
-    );
-
     testWidgets('U18: Profile does not repeat Settings rows (sign out, '
         'reminders); Settings owns them', (tester) async {
       await signedIn(tester);
       expect(byKey('profile-settings'), findsOneWidget);
-      expect(byKey('profile-signout'), findsNothing);
-      expect(byKey('profile-reminders'), findsNothing);
+      for (final key in [
+        'profile-signout',
+        'profile-reminders',
+        'profile-haptics',
+        'profile-language',
+        'profile-safety',
+        'profile-delete',
+      ]) {
+        expect(byKey(key), findsNothing, reason: key);
+      }
     });
 
     testWidgets('local-only: guest state, no account actions (FR-A5)', (
@@ -253,7 +241,8 @@ void main() {
 
   group('delete account (FR-A4, 3 steps: confirm, code, final)', () {
     Future<void> toCodeStep(WidgetTester tester) async {
-      await tapVisible(tester, 'profile-delete');
+      await tapVisible(tester, 'profile-settings');
+      await tapVisible(tester, 'settings-delete');
       expect(byKey('profile-delete-dialog'), findsOneWidget);
       UiButton next() =>
           tester.widget<UiButton>(byKey('profile-delete-continue'));
@@ -322,7 +311,8 @@ void main() {
     testWidgets('cancel does nothing', (tester) async {
       final auth = RecordingAuthRepository(userId: 'u1');
       await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-delete');
+      await tapVisible(tester, 'profile-settings');
+      await tapVisible(tester, 'settings-delete');
       await tapVisible(tester, 'profile-delete-cancel');
       await tester.pumpAndSettle();
       expect(byKey('profile-delete-dialog'), findsNothing);
@@ -335,7 +325,8 @@ void main() {
           OurneyErrorCode.unauthenticated,
         );
       await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-delete');
+      await tapVisible(tester, 'profile-settings');
+      await tapVisible(tester, 'settings-delete');
       await tapVisible(tester, 'profile-delete-understand');
       await tester.pump();
       await tapVisible(tester, 'profile-delete-continue');

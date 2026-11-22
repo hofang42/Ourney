@@ -13,15 +13,15 @@ class AuthL10nVi extends AuthL10n {
   String get auth_codeTitle => 'nhập mã.';
 
   @override
-  String get auth_otpHelper =>
-      'Không thấy thư? Xem mục thư rác hoặc quảng cáo.';
+  String get auth_otpHelperEmail =>
+      'Không thấy thư? Xem mục Thư rác hoặc Quảng cáo.';
 
   @override
-  String get auth_title => 'đăng nhập.';
+  String get auth_title => 'vào ourney.';
 
   @override
   String get auth_subtitle =>
-      'Nhập email, Ourney gửi bạn mã 6 số. Không cần mật khẩu.';
+      'Nhập email, mình gửi mã 6 số. Chưa có tài khoản thì Ourney tạo luôn.';
 
   @override
   String get auth_emailLabel => 'Email';
@@ -66,7 +66,7 @@ class AuthL10nVi extends AuthL10n {
 
   @override
   String get auth_errorWrongCode =>
-      'Mã chưa đúng. Kiểm tra lại 6 số trong email rồi nhập lại.';
+      'Mã chưa đúng hoặc đã hết hạn. Kiểm tra lại rồi nhập lại.';
 
   @override
   String get auth_errorRateLimited =>
@@ -85,10 +85,10 @@ class AuthL10nVi extends AuthL10n {
   String get auth_eyebrowCheck => 'KIỂM TRA EMAIL';
 
   @override
-  String get auth_terms => 'Điều khoản sử dụng';
+  String get auth_terms => 'Điều khoản';
 
   @override
-  String get auth_privacy => 'Chính sách quyền riêng tư.';
+  String get auth_privacy => 'Chính sách riêng tư';
 
   @override
   String auth_digitSemantics(int n) {
@@ -116,10 +116,7 @@ class AuthL10nVi extends AuthL10n {
 
   @override
   String get auth_phoneSubtitle =>
-      'Nhập số điện thoại, Ourney gửi mã 6 số qua SMS.';
-
-  @override
-  String get auth_sendSms => 'Gửi mã SMS';
+      'Nhập số điện thoại, mình gửi mã 6 số qua SMS. Chưa có tài khoản thì Ourney tạo luôn.';
 
   @override
   String get auth_changePhone => 'Đổi số điện thoại';
@@ -143,29 +140,13 @@ class AuthL10nVi extends AuthL10n {
   String get auth_signIn => 'Đăng nhập';
 
   @override
-  String get auth_usePassword => 'Dùng mật khẩu';
+  String get auth_usePassword => 'Đăng nhập bằng mật khẩu';
 
   @override
-  String get auth_useCode => 'Dùng mã đăng nhập';
+  String get auth_useCode => 'Dùng mã thay thế';
 
   @override
   String get auth_forgot => 'Quên mật khẩu?';
-
-  @override
-  String get auth_createAccount => 'Tạo tài khoản bằng mật khẩu';
-
-  @override
-  String get auth_haveAccount => 'Đã có tài khoản? Đăng nhập';
-
-  @override
-  String get auth_signUpTitle => 'tạo tài khoản.';
-
-  @override
-  String get auth_signUpSubtitle =>
-      'Dùng email và mật khẩu của bạn. Có thể cần xác nhận bằng mã gửi qua email.';
-
-  @override
-  String get auth_signUpButton => 'Tạo tài khoản';
 
   @override
   String get auth_resetTitle => 'đặt lại mật khẩu.';
@@ -185,14 +166,10 @@ class AuthL10nVi extends AuthL10n {
       'Sai mật khẩu. Thử lại hoặc đăng nhập bằng mã.';
 
   @override
-  String get auth_errorEmailTaken =>
-      'Email này đã có tài khoản. Hãy đăng nhập.';
-
-  @override
   String get auth_errorSendFailed => 'Chưa gửi được mã. Thử lại sau ít phút.';
 
   @override
-  String get auth_codeSentPrefix => 'Mã gồm 6 số vừa gửi tới';
+  String get auth_codeSentPrefix => 'Mã 6 số vừa gửi tới';
 
   @override
   String get auth_offlineBanner =>
@@ -205,11 +182,29 @@ class AuthL10nVi extends AuthL10n {
   String get auth_success => 'Xong rồi. Chào bạn.';
 
   @override
-  String get auth_legalIntro => 'Tiếp tục nghĩa là bạn đồng ý';
+  String get auth_legalIntro => 'Bấm \"Gửi mã\" là bạn đồng ý với';
 
   @override
   String get auth_legalAnd => 'và';
 
   @override
   String get auth_back => 'Quay lại';
+
+  @override
+  String get auth_methodLabel => 'Cách nhận mã';
+
+  @override
+  String get auth_passwordTitle => 'đăng nhập bằng mật khẩu.';
+
+  @override
+  String get auth_otpHelperSms =>
+      'Chưa nhận được SMS? Đợi một chút rồi bấm Gửi lại mã.';
+
+  @override
+  String get auth_errorPhoneUnavailable =>
+      'Đăng nhập bằng SMS tạm thời chưa dùng được. Dùng email nhé.';
+
+  @override
+  String get auth_errorSmsFailed =>
+      'Chưa gửi được SMS. Kiểm tra số rồi thử lại sau ít phút.';
 }

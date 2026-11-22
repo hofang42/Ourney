@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../app/app_routes.dart';
 import '../../../app/redirect.dart' show safeFrom;
 import '../../../ui/ui.dart';
+import '../../profile/widgets/sign_out_flow.dart';
 import '../data/safety_providers.dart';
 import '../l10n/generated/safety_localizations.dart';
 import '../safety_paths.dart';
@@ -76,8 +77,10 @@ class LegalScreen extends StatelessWidget {
 }
 
 /// `/safety/eula/accept?from=<path>`: the EULA acceptance gate (FR-F3).
-/// Accepting stores `safety.eulaAccepted` and continues to the `from`
-/// target (or the camera).
+/// One tap on "Agree and continue" is the consent: it stores
+/// `safety.eulaAccepted`, records `terms_version` on the account (so it is
+/// never asked again for this account) and continues to the `from` target (or
+/// the camera). "Sign out" is the way out.
 class EulaAcceptScreen extends ConsumerStatefulWidget {
   const EulaAcceptScreen({this.from, super.key});
 
@@ -89,8 +92,6 @@ class EulaAcceptScreen extends ConsumerStatefulWidget {
 }
 
 class _EulaAcceptScreenState extends ConsumerState<EulaAcceptScreen> {
-  bool _checked = false;
-
   Future<void> _accept() async {
     await ref.read(eulaAcceptedProvider.notifier).accept();
     if (!mounted) return;
@@ -111,18 +112,16 @@ class _EulaAcceptScreenState extends ConsumerState<EulaAcceptScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UiSwitchRow(
-            key: const ValueKey('safety-eula-checkbox'),
-            label: l10n.safety_eulaAcceptCheckbox,
-            value: _checked,
-            divider: false,
-            onChanged: (v) => setState(() => _checked = v),
-          ),
-          const SizedBox(height: UiSpace.sm),
           UiButton(
             key: const ValueKey('safety-eula-accept-button'),
             label: l10n.safety_eulaAcceptButton,
-            onPressed: _checked ? _accept : null,
+            onPressed: _accept,
+          ),
+          const SizedBox(height: UiSpace.sm),
+          UiButton.ghost(
+            key: const ValueKey('safety-eula-sign-out'),
+            label: l10n.safety_eulaAcceptSignOut,
+            onPressed: () => confirmSignOut(context, ref),
           ),
         ],
       ),

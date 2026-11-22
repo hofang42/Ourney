@@ -191,6 +191,31 @@ void main() {
         OurneyErrorCode.offline,
       );
     });
+
+    test('Auth error_code wins over the HTTP status', () {
+      AuthException ex(String code, [String status = '400']) =>
+          AuthException('x', statusCode: status, code: code);
+      expect(
+        codeOf(ex('phone_provider_disabled')),
+        OurneyErrorCode.unavailable,
+      );
+      expect(codeOf(ex('sms_provider_disabled')), OurneyErrorCode.unavailable);
+      expect(codeOf(ex('sms_send_failed')), OurneyErrorCode.internal);
+      expect(codeOf(ex('otp_expired')), OurneyErrorCode.invalid);
+      expect(
+        codeOf(ex('over_sms_send_rate_limit')),
+        OurneyErrorCode.rateLimited,
+      );
+      expect(
+        codeOf(ex('over_email_send_rate_limit')),
+        OurneyErrorCode.rateLimited,
+      );
+      // No code: the status decides.
+      expect(
+        codeOf(const AuthException('bad', statusCode: '400')),
+        OurneyErrorCode.invalid,
+      );
+    });
   });
 
   test('network errors are offline, OurneyException passes through', () {

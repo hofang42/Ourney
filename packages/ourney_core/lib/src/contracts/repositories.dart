@@ -49,6 +49,18 @@ abstract interface class AuthRepository {
   String? get currentUserId;
   bool get isLocalOnly;
   Stream<String?> watchUserId();
+
+  /// How the account signs in: its email, else its phone number. Null when
+  /// signed out or local-only.
+  String? get signInIdentifier;
+
+  /// Version of the terms the account accepted (user metadata
+  /// `terms_version`). Null when absent or local-only.
+  int? get acceptedTermsVersion;
+
+  /// Records on the account that it accepted terms [version] (once per
+  /// account). No-op in local-only mode.
+  Future<void> recordTermsAccepted(int version);
   Future<void> sendOtp(String email);
   Future<void> verifyOtp(String email, String code);
 
@@ -272,6 +284,8 @@ enum OurneyErrorCode {
   alreadyDeleted('already_deleted'),
   internal('internal'),
   // Client-side.
+  // The auth provider (e.g. phone/SMS) is turned off on the server.
+  unavailable('unavailable'),
   offline('offline'),
   syncPending('sync_pending'), // queued uploads of the journey are not sent yet
   unknown('unknown');

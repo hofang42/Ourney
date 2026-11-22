@@ -308,12 +308,6 @@ abstract class ProfileL10n {
   /// **'Dữ liệu của bạn chỉ nằm trên máy này. Hành trình một mình dùng đầy đủ; đăng nhập và nhóm cần máy chủ.'**
   String get profile_guestMessage;
 
-  /// Settings section header.
-  ///
-  /// In vi, this message translates to:
-  /// **'cài đặt'**
-  String get profile_sectionSettings;
-
   /// Link to the reminders screen.
   ///
   /// In vi, this message translates to:
@@ -325,48 +319,6 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Giờ nhắc check-in mỗi ngày'**
   String get profile_remindersSubtitle;
-
-  /// Haptics toggle.
-  ///
-  /// In vi, this message translates to:
-  /// **'Rung phản hồi'**
-  String get profile_haptics;
-
-  /// Language row title.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ngôn ngữ'**
-  String get profile_language;
-
-  /// The app follows the device language (vi default, en).
-  ///
-  /// In vi, this message translates to:
-  /// **'Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'**
-  String get profile_languageNote;
-
-  /// Language row subtitle when Vietnamese was picked in Settings.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tiếng Việt'**
-  String get profile_languageVi;
-
-  /// Language row subtitle when English was picked in Settings.
-  ///
-  /// In vi, this message translates to:
-  /// **'English'**
-  String get profile_languageEn;
-
-  /// Link to the safety pages (EULA, privacy, contact).
-  ///
-  /// In vi, this message translates to:
-  /// **'Điều khoản, quyền riêng tư & liên hệ'**
-  String get profile_safety;
-
-  /// Account section header.
-  ///
-  /// In vi, this message translates to:
-  /// **'tài khoản'**
-  String get profile_sectionAccount;
 
   /// Sign-out button and dialog action.
   ///
@@ -385,12 +337,6 @@ abstract class ProfileL10n {
   /// In vi, this message translates to:
   /// **'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.'**
   String get profile_signOutMessage;
-
-  /// Delete account button (FR-A4).
-  ///
-  /// In vi, this message translates to:
-  /// **'Xóa tài khoản'**
-  String get profile_deleteAccount;
 
   /// Delete account confirmation title.
   ///
@@ -674,12 +620,6 @@ abstract class ProfileL10n {
   /// **'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt'**
   String get profile_settings_remindersSub;
 
-  /// No description provided for @profile_settings_secTheme.
-  ///
-  /// In vi, this message translates to:
-  /// **'giao diện'**
-  String get profile_settings_secTheme;
-
   /// No description provided for @profile_settings_themeLight.
   ///
   /// In vi, this message translates to:
@@ -704,12 +644,6 @@ abstract class ProfileL10n {
   /// **'Chế độ giao diện'**
   String get profile_settings_themeLabel;
 
-  /// No description provided for @profile_settings_language.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ngôn ngữ'**
-  String get profile_settings_language;
-
   /// No description provided for @profile_settings_langVi.
   ///
   /// In vi, this message translates to:
@@ -722,70 +656,10 @@ abstract class ProfileL10n {
   /// **'English'**
   String get profile_settings_langEn;
 
-  /// No description provided for @profile_settings_appIcon.
-  ///
-  /// In vi, this message translates to:
-  /// **'Icon ứng dụng'**
-  String get profile_settings_appIcon;
-
-  /// No description provided for @profile_settings_appIconNote.
-  ///
-  /// In vi, this message translates to:
-  /// **'Icon trên màn hình chính đổi được trong bản sau; lựa chọn của bạn được lưu.'**
-  String get profile_settings_appIconNote;
-
-  /// No description provided for @profile_settings_iconDefault.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mặc định'**
-  String get profile_settings_iconDefault;
-
-  /// No description provided for @profile_settings_iconQuiet.
-  ///
-  /// In vi, this message translates to:
-  /// **'Giảm cân'**
-  String get profile_settings_iconQuiet;
-
-  /// No description provided for @profile_settings_iconSquad.
-  ///
-  /// In vi, this message translates to:
-  /// **'Nhóm'**
-  String get profile_settings_iconSquad;
-
-  /// No description provided for @profile_settings_iconMemory.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ký ức'**
-  String get profile_settings_iconMemory;
-
-  /// No description provided for @profile_settings_iconCouple.
-  ///
-  /// In vi, this message translates to:
-  /// **'Hai đứa'**
-  String get profile_settings_iconCouple;
-
-  /// No description provided for @profile_settings_iconFlexer.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tập luyện'**
-  String get profile_settings_iconFlexer;
-
-  /// No description provided for @profile_settings_iconMinimal.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tối giản'**
-  String get profile_settings_iconMinimal;
-
-  /// No description provided for @profile_settings_iconSemantic.
-  ///
-  /// In vi, this message translates to:
-  /// **'Icon ứng dụng {name}'**
-  String profile_settings_iconSemantic(String name);
-
   /// No description provided for @profile_settings_secPrivacy.
   ///
   /// In vi, this message translates to:
-  /// **'riêng tư'**
+  /// **'riêng tư & an toàn'**
   String get profile_settings_secPrivacy;
 
   /// No description provided for @profile_settings_hideKg.
@@ -860,17 +734,47 @@ abstract class ProfileL10n {
   /// **'Cài đặt'**
   String get profile_settingsEntry;
 
-  /// No description provided for @profile_settingsEntrySub.
-  ///
-  /// In vi, this message translates to:
-  /// **'Giao diện, ngôn ngữ, riêng tư, thông tin'**
-  String get profile_settingsEntrySub;
-
   /// Warning in the sign-out sheet when check-ins are still waiting to upload.
   ///
   /// In vi, this message translates to:
   /// **'{count, plural, other{Còn {count} ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.}}'**
   String profile_signOutPending(int count);
+
+  /// Settings group: theme, language, haptics.
+  ///
+  /// In vi, this message translates to:
+  /// **'giao diện & ngôn ngữ'**
+  String get profile_settings_secAppearance;
+
+  /// Read-only settings row: the email or phone the account signs in with.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đăng nhập bằng'**
+  String get profile_settings_signedInWith;
+
+  /// Haptic feedback switch.
+  ///
+  /// In vi, this message translates to:
+  /// **'Rung phản hồi'**
+  String get profile_settings_haptics;
+
+  /// Subtitle of the share privacy switches.
+  ///
+  /// In vi, this message translates to:
+  /// **'Áp dụng cho ảnh chia sẻ ra ngoài và trong nhóm'**
+  String get profile_settings_shareNote;
+
+  /// Small label above the theme control.
+  ///
+  /// In vi, this message translates to:
+  /// **'GIAO DIỆN'**
+  String get profile_settings_themeEyebrow;
+
+  /// Small label above the language control.
+  ///
+  /// In vi, this message translates to:
+  /// **'NGÔN NGỮ'**
+  String get profile_settings_languageEyebrow;
 }
 
 class _ProfileL10nDelegate extends LocalizationsDelegate<ProfileL10n> {

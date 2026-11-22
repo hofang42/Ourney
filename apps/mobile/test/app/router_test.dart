@@ -184,8 +184,6 @@ void main() {
       expect(location(c), '/safety/eula/accept?from=%2Fgroups');
       expect(find.byKey(const ValueKey('safety-eula-accept')), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('safety-eula-checkbox')));
-      await tester.pumpAndSettle();
       await tester.ensureVisible(
         find.byKey(const ValueKey('safety-eula-accept-button')),
       );
@@ -220,7 +218,7 @@ void main() {
     }
 
     testWidgets('the dock opens /profile from every tab; reminders and '
-        'safety are reachable from there', (tester) async {
+        'terms are reachable from there', (tester) async {
       final c = await pumpJourneys(tester);
 
       // Journeys tab.
@@ -245,14 +243,15 @@ void main() {
       c.container.read(routerProvider).pop();
       await tester.pumpAndSettle();
 
-      await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('profile-safety')),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.byKey(const ValueKey('profile-safety')));
+      // Terms, privacy and contact are one gear away, under Settings.
+      await tester.tap(find.byKey(const ValueKey('profile-settings')));
       await tester.pumpAndSettle();
-      expect(c.container.read(routerProvider).state.uri.path, AppRoutes.safety);
+      await tester.ensureVisible(find.byKey(const ValueKey('settings-eula')));
+      await tester.tap(find.byKey(const ValueKey('settings-eula')));
+      await tester.pumpAndSettle();
+      expect(c.container.read(routerProvider).state.uri.path, '/safety/eula');
+      c.container.read(routerProvider).pop();
+      await tester.pumpAndSettle();
       c.container.read(routerProvider).pop();
       await tester.pumpAndSettle();
       expect(location(c.container), AppRoutes.profile);

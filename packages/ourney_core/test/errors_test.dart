@@ -42,6 +42,12 @@ void main() {
     expect(names.toSet().length, names.length);
   });
 
+  test('unavailable (provider disabled) round-trips', () {
+    expect(
+        OurneyErrorCode.fromWire('unavailable'), OurneyErrorCode.unavailable);
+    expect(OurneyErrorCode.unavailable.wireName, 'unavailable');
+  });
+
   test('unknown strings map to unknown', () {
     expect(OurneyErrorCode.fromWire('something_new'), OurneyErrorCode.unknown);
   });
