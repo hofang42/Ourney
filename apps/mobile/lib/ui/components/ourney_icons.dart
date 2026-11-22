@@ -689,6 +689,53 @@ class OurneyIconPainter extends CustomPainter {
   /// with the ink halo but with [haloFallback] so it stays readable.
   static bool lowContrast(Color color, Color ink) => contrast(color, ink) < 1.6;
 
+  /// Die-cut ring width (logical px) of the active full-tier icon.
+  static const double dieCutStroke = 12;
+
+  /// Hard-shadow offset (logical px) of the active full-tier icon.
+  static const double activeShadowOffset = 2;
+
+  /// Where the active die-cut icon actually paints, in logical px inside a
+  /// [size] box: the artwork bounds grown by the die-cut ring and the hard
+  /// shadow, uniformly shrunk (and nudged) so the whole sticker stays inside
+  /// the box. Wide drawings such as the `journeys` map used to spill past the
+  /// tab icon box (dock bug: map icon overflowed).
+  static ({double scale, Offset shift, Rect painted}) activeFit(
+    Path path,
+    double size, {
+    bool shadow = true,
+  }) {
+    final b = path.getBounds();
+    final k = size / 24;
+    final ring = dieCutStroke / 2;
+    final o = shadow ? activeShadowOffset : 0.0;
+    final rect = Rect.fromLTRB(
+      b.left * k - ring,
+      b.top * k - ring,
+      b.right * k + ring + o,
+      b.bottom * k + ring + o,
+    );
+    final f = math.min(1.0, size / math.max(rect.width, rect.height));
+    final c = Offset(size / 2, size / 2);
+    var r = Rect.fromLTRB(
+      c.dx + (rect.left - c.dx) * f,
+      c.dy + (rect.top - c.dy) * f,
+      c.dx + (rect.right - c.dx) * f,
+      c.dy + (rect.bottom - c.dy) * f,
+    );
+    var dx = 0.0, dy = 0.0;
+    if (r.left < 0) dx = -r.left;
+    if (r.right > size) dx = size - r.right;
+    if (r.top < 0) dy = -r.top;
+    if (r.bottom > size) dy = size - r.bottom;
+    r = r.shift(Offset(dx, dy));
+    return (
+      scale: f,
+      shift: Offset(dx + c.dx * (1 - f), dy + c.dy * (1 - f)),
+      painted: r,
+    );
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = ourneyIconPath(name);
@@ -700,6 +747,11 @@ class OurneyIconPainter extends CustomPainter {
     final tiny = size.width < 16;
     final full = size.width >= 24;
     canvas.save();
+    if (active && full && !flat) {
+      final fit = activeFit(path, size.width, shadow: shadow != null);
+      canvas.translate(fit.shift.dx, fit.shift.dy);
+      canvas.scale(fit.scale);
+    }
     canvas.scale(scale);
 
     final open = _openIcons.contains(name);

@@ -215,52 +215,86 @@ class UiBackHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final titleStyle = UiText.heading(
+      font: 'Space Grotesk',
+      size: 27,
+      weight: 700,
+      tracking: -0.02,
+      color: ui.ink,
+    );
+    // Height of the (one line) title at the current text scale. The back and
+    // trailing controls are centred on THIS row, not on title + subtitle, so
+    // they stay level with the title when the subtitle wraps or the text
+    // grows (they used to float down at 1.35x and 2x).
+    final titleRow = TextPainter(
+      text: TextSpan(text: title ?? 'Ag', style: titleStyle),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final rowH = titleRow.height < UiSize.tap ? UiSize.tap : titleRow.height;
+    titleRow.dispose();
+    Widget slot(Widget child) => SizedBox(
+      height: rowH,
+      child: Center(child: child),
+    );
     return _BarFrame(
       glass: glass,
       bordered: bordered,
       reduceTransparency: reduceTransparency,
       minHeight: 56,
-      child: Row(
-        children: [
-          UiBarIconButton(
-            glyph: const OurneyIcon(name: 'back', size: 21),
-            label: backLabel,
-            onPressed: onBack,
-          ),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (title != null)
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      title!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: UiText.heading(
-                        font: 'Space Grotesk',
-                        size: 27,
-                        weight: 700,
-                        tracking: -0.02,
-                        color: ui.ink,
+      child: Padding(
+        // The bar grows with its content; 8dp of air under the subtitle so it
+        // never touches the hairline.
+        padding: EdgeInsets.only(bottom: subtitle != null ? UiSpace.sm : 0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            slot(
+              UiBarIconButton(
+                glyph: const OurneyIcon(name: 'back', size: 21),
+                label: backLabel,
+                onPressed: onBack,
+              ),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (title != null)
+                    SizedBox(
+                      height: rowH,
+                      child: Center(
+                        child: Semantics(
+                          header: true,
+                          child: Text(
+                            title!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: titleStyle,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: UiText.body(size: 11, color: ui.inkMuted),
-                  ),
-              ],
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: UiText.body(
+                        size: 11,
+                        height: 1.35,
+                        color: ui.inkMuted,
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          trailing ?? const SizedBox(width: UiSize.tap),
-        ],
+            slot(trailing ?? const SizedBox(width: UiSize.tap)),
+          ],
+        ),
       ),
     );
   }

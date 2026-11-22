@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -197,69 +198,68 @@ class SquadTodayCard extends ConsumerWidget {
         if (!blocked.contains(m.userId)) m,
     ];
     final done = members.where((m) => m.checkedIn).length;
-    final radius = BorderRadius.circular(UiRadius.card);
     final shown = members.take(5).toList();
+    // The whole card is one pressable (sticker press, button semantics named
+    // after the group, >= 48dp): not just the title text. Member chips keep
+    // their own nested hit areas, which win over the card.
     return Padding(
+      key: ValueKey('squad-today-${journey.id}'),
       padding: const EdgeInsets.only(bottom: UiSpace.md),
-      child: Container(
-        key: ValueKey('squad-today-${journey.id}'),
-        decoration: BoxDecoration(
-          color: ui.surface,
-          borderRadius: radius,
-          border: ui.stickerBorder(),
-          boxShadow: ui.hardShadow(UiShadow.small),
-        ),
+      child: UiCard(
+        key: ValueKey('squad-today-open-${journey.id}'),
+        padding: EdgeInsets.zero,
+        radius: UiRadius.card,
+        shadowOffset: UiShadow.small,
+        onPressed: () => context.push(GroupsPaths.today(journey.id)),
+        semanticLabel: l10n.groups_openTodayOf(journey.title),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            UiPressable(
-              key: ValueKey('squad-today-open-${journey.id}'),
-              onPressed: () => context.push(GroupsPaths.today(journey.id)),
-              semanticLabel: l10n.groups_openTodayOf(journey.title),
-              excludeChildSemantics: true,
-              borderRadius: radius,
-              minSize: const Size(UiSize.tap, UiSize.tap),
-              child: Padding(
-                padding: const EdgeInsets.all(UiSpace.md),
-                child: Row(
-                  children: [
-                    UiTypeBadge(
-                      type: groupTypeBadgeId(journey.templateId.wireName),
-                      size: 44,
-                    ),
-                    const SizedBox(width: UiSpace.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            journey.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: UiText.body(
-                              size: 16,
-                              weight: FontWeight.w700,
-                              height: 1.35,
-                              color: ui.ink,
-                            ),
-                          ),
-                          Text(
-                            journey.status != JourneyStatus.active
-                                ? l10n.groups_statusEnded
-                                : l10n.groups_checkedInCount(
-                                    done,
-                                    members.isEmpty ? 0 : members.length,
-                                  ),
-                            style: UiText.body(
-                              size: 12,
-                              height: 1.4,
-                              color: ui.inkMuted,
-                            ),
-                          ),
-                        ],
+            ExcludeSemantics(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: UiSize.tap),
+                child: Padding(
+                  padding: const EdgeInsets.all(UiSpace.md),
+                  child: Row(
+                    children: [
+                      UiTypeBadge(
+                        type: groupTypeBadgeId(journey.templateId.wireName),
+                        size: 44,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: UiSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              journey.title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: UiText.body(
+                                size: 16,
+                                weight: FontWeight.w700,
+                                height: 1.35,
+                                color: ui.ink,
+                              ),
+                            ),
+                            Text(
+                              journey.status != JourneyStatus.active
+                                  ? l10n.groups_statusEnded
+                                  : l10n.groups_checkedInCount(
+                                      done,
+                                      members.isEmpty ? 0 : members.length,
+                                    ),
+                              style: UiText.body(
+                                size: 12,
+                                height: 1.4,
+                                color: ui.inkMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

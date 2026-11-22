@@ -1,13 +1,13 @@
 {
   "@@locale": "en",
-  "groups_title": "Groups",
-  "groups_emptyTitle": "No groups yet",
-  "groups_emptyMessage": "Enter a friend's invite code, or start a group journey from the Journeys tab.",
+  "groups_title": "Squad",
+  "groups_emptyTitle": "No squads yet",
+  "groups_emptyMessage": "Enter a friend's invite code, or start a squad journey from the Journeys tab.",
   "groups_joinWithCode": "Join with code",
   "groups_createGroup": "New group journey",
   "groups_activeSection": "Running",
   "groups_finishedSection": "Finished",
-  "groups_loadError": "Couldn't load your groups.",
+  "groups_loadError": "Couldn't load your squads.",
   "groups_statusEnded": "Ended",
   "groups_statusArchived": "Archived",
   "groups_dayOf": "Day {day} of {total}",
@@ -181,7 +181,7 @@
     }
   },
   "groups_emptyCardTitle": "no squads yet.",
-  "groups_emptyCardBody": "Enter an invite code to join a group or start a group journey.",
+  "groups_emptyCardBody": "Enter an invite code to join a squad or start a squad journey.",
   "groups_wallUpdated": "Updated at {time}",
   "@groups_wallUpdated": {
     "placeholders": {

@@ -24,8 +24,10 @@ const double _pillH = 56;
 // the border and its shadow touched it (bug #11).
 const double _dockH = 76;
 const double _cameraDockH = 92;
-const double _snapCenterSlot = 64;
-const double _cameraCenterSlot = 82;
+// One center slot width for both docks: the camera route swaps the snap pill
+// for the 76dp hero shutter, and the four tabs must not slide sideways when
+// that happens (they used to move 3-7dp because the slots were 64 vs 82).
+const double _centerSlot = 82;
 const double _dockSideInset = 10;
 
 /// One tab of the [UiDock]. Give it a drawn [glyph] (an [OurneyIcon] name such
@@ -171,7 +173,14 @@ class UiDock extends StatelessWidget {
         ? _LongPress(onLongPress: onShutterLongPress!, child: centerChild)
         : centerChild;
 
-    final centerSlotWidth = camera ? _cameraCenterSlot : _snapCenterSlot;
+    const centerSlotWidth = _centerSlot;
+    // The camera dock is 16dp taller and its hard shadow 2dp smaller, so its
+    // vertical centre sits (16 / 2 - 2) = 6dp higher than the shell dock's.
+    // Push the tab row (not the shutter) back down by that much so Journeys,
+    // Squad, Activity and Profile stay exactly where they were.
+    final tabDy = camera
+        ? (_cameraDockH - _dockH) / 2 - (UiShadow.large - UiShadow.tiny)
+        : 0.0;
 
     final bar = LayoutBuilder(
       builder: (context, c) {
@@ -187,6 +196,9 @@ class UiDock extends StatelessWidget {
           slotW,
           math.max(UiSize.tap, pillW - 2 * inset - 5),
         );
+        final labelFit = dockLabelFit(context, [
+          for (final e in items) e.label,
+        ], tabMaxW);
         double slotX(int i) => i < leftItems.length
             ? i * slotW
             : leftItems.length * slotW +
@@ -201,7 +213,7 @@ class UiDock extends StatelessWidget {
                 duration: UiMotion.of(context, _pillDuration),
                 curve: _pillCurve,
                 left: slotX(activeIndex) + (slotW - pillW) / 2,
-                top: (c.maxHeight - _pillH) / 2,
+                top: (c.maxHeight - _pillH) / 2 + tabDy,
                 width: pillW,
                 height: _pillH,
                 child: IgnorePointer(
@@ -223,13 +235,17 @@ class UiDock extends StatelessWidget {
               children: [
                 for (final item in leftItems)
                   Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: tabMaxW),
-                        child: DockTab(
-                          item: item,
-                          camera: camera,
-                          onAccent: onAccent,
+                    child: Transform.translate(
+                      offset: Offset(0, tabDy),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: tabMaxW),
+                          child: DockTab(
+                            item: item,
+                            camera: camera,
+                            onAccent: onAccent,
+                            labelFit: labelFit,
+                          ),
                         ),
                       ),
                     ),
@@ -240,13 +256,17 @@ class UiDock extends StatelessWidget {
                 ),
                 for (final item in rightItems)
                   Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: tabMaxW),
-                        child: DockTab(
-                          item: item,
-                          camera: camera,
-                          onAccent: onAccent,
+                    child: Transform.translate(
+                      offset: Offset(0, tabDy),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: tabMaxW),
+                          child: DockTab(
+                            item: item,
+                            camera: camera,
+                            onAccent: onAccent,
+                            labelFit: labelFit,
+                          ),
                         ),
                       ),
                     ),
@@ -262,10 +282,7 @@ class UiDock extends StatelessWidget {
     // the full available height (the dock filled the whole screen).
     final surface = Container(
       height: height,
-      padding: EdgeInsets.symmetric(
-        horizontal: camera ? 8 : _dockSideInset,
-        vertical: 6,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: _dockSideInset, vertical: 6),
       // Camera: the dark dock tint lives here so glass stays neutral.
       decoration: camera && !useLiquid
           ? const BoxDecoration(color: UiCamera.dock)
@@ -316,7 +333,9 @@ class UiDock extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(
         UiSpace.sm,
         UiSpace.xs,
-        UiSpace.sm + shadowOffset,
+        // Same right gutter in every mode (the shell dock's 4dp shadow), so
+        // the tabs keep their x when the camera dock swaps in.
+        UiSpace.sm + UiShadow.large,
         (bottom < UiSpace.sm ? UiSpace.sm : bottom) + shadowOffset,
       ),
       child: Center(
@@ -509,6 +528,9 @@ class UiShutter extends StatelessWidget {
         ),
       ),
     );
+    // Not ready (camera starting, no permission, busy): dim it so it does not
+    // look live while ignoring taps. The long press (journey wheel) still works.
+    if (onPressed == null) shutter = Opacity(opacity: 0.5, child: shutter);
     if (onLongPress != null) {
       shutter = _LongPress(onLongPress: onLongPress!, child: shutter);
     }

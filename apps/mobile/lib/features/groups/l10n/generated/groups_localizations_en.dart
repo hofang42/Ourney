@@ -10,14 +10,14 @@ class GroupsL10nEn extends GroupsL10n {
   GroupsL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get groups_title => 'Groups';
+  String get groups_title => 'Squad';
 
   @override
-  String get groups_emptyTitle => 'No groups yet';
+  String get groups_emptyTitle => 'No squads yet';
 
   @override
   String get groups_emptyMessage =>
-      'Enter a friend\'s invite code, or start a group journey from the Journeys tab.';
+      'Enter a friend\'s invite code, or start a squad journey from the Journeys tab.';
 
   @override
   String get groups_joinWithCode => 'Join with code';
@@ -32,7 +32,7 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_finishedSection => 'Finished';
 
   @override
-  String get groups_loadError => 'Couldn\'t load your groups.';
+  String get groups_loadError => 'Couldn\'t load your squads.';
 
   @override
   String get groups_statusEnded => 'Ended';
@@ -451,7 +451,7 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_emptyCardBody =>
-      'Enter an invite code to join a group or start a group journey.';
+      'Enter an invite code to join a squad or start a squad journey.';
 
   @override
   String groups_wallUpdated(String time) {

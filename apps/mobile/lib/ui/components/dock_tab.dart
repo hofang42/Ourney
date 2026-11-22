@@ -47,6 +47,54 @@ const double dockTabLift = 4;
 /// Largest text scale the tab label follows (Dynamic Type cap).
 const double dockLabelMaxScale = 1.35;
 
+/// Label font size at 1x text scale.
+const double dockLabelSize = 10.5;
+
+/// One shrink factor for all tab labels: the largest `f <= 1` at which the
+/// widest label still fits [maxWidth]. Labels used to scale down one by one
+/// (long ones to ~8dp, short ones left at ~14dp).
+double dockLabelFit(
+  BuildContext context,
+  Iterable<String> labels,
+  double maxWidth,
+) {
+  final scaler = MediaQuery.textScalerOf(context)
+      .clamp(maxScaleFactor: dockLabelMaxScale);
+  double widestAt(double fit) {
+    var widest = 0.0;
+    for (final label in labels) {
+      final tp = TextPainter(
+        text: TextSpan(
+          text: label,
+          // Same inheritance as the rendered Text (theme tracking etc.).
+          style: DefaultTextStyle.of(context).style.merge(
+            UiText.body(
+              size: dockLabelSize * fit,
+              weight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      if (tp.width > widest) widest = tp.width;
+      tp.dispose();
+    }
+    return widest;
+  }
+
+  // Width is not exactly linear in the font size (tracking), so converge.
+  var fit = 1.0;
+  for (var i = 0; i < 5; i++) {
+    final w = widestAt(fit);
+    if (w <= 0 || w <= maxWidth) break;
+    fit *= maxWidth / w * 0.995;
+  }
+  return fit;
+}
+
 /// Label line height at 1x (10.5 * 1.35).
 const double dockLabelLineHeight = 10.5 * 1.35;
 
@@ -64,8 +112,13 @@ class DockTab extends StatelessWidget {
     required this.item,
     required this.camera,
     this.onAccent,
+    this.labelFit = 1,
     super.key,
   });
+
+  /// Shared label shrink factor (<= 1), the same for every tab of the dock so
+  /// all labels render at one font size (see [dockLabelFit]).
+  final double labelFit;
 
   final UiDockItem item;
   final bool camera;
@@ -142,7 +195,7 @@ class DockTab extends StatelessWidget {
                       softWrap: false,
                       textAlign: TextAlign.center,
                       style: UiText.body(
-                        size: 10.5,
+                        size: dockLabelSize * labelFit,
                         weight: active ? FontWeight.w700 : FontWeight.w600,
                         height: 1.35,
                         color: labelColor,

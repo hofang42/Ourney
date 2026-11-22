@@ -100,8 +100,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
           glyph: const OurneyIcon(name: 'error', size: 30),
           title: groupErrorMessage(context, journeyAsync.error!),
           actionLabel: app.common_retry,
-          onAction: () =>
-              ref.invalidate(journeyByIdProvider(widget.journeyId)),
+          onAction: () => ref.invalidate(journeyByIdProvider(widget.journeyId)),
         ),
       );
     }
