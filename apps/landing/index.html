@@ -4,250 +4,812 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ourney · chụp một tấm. giữ một chuỗi.</title>
-  <meta name="description" content="Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay một thói quen nhỏ.">
-  <meta name="theme-color" content="#FFF8EE" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.">
+  <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="assets/brand/icon-camera.png">
   <link rel="preload" href="assets/fonts/SpaceGrotesk-Variable.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="preload" href="assets/fonts/BeVietnamPro-Regular.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <script>
-    document.documentElement.classList.add('js');
-    try { const t = localStorage.getItem('ourney-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+    (function () {
+      var d = document.documentElement;
+      d.classList.add('js');
+      try {
+        var t = localStorage.getItem('ourney-theme');
+        if (t === 'light' || t === 'dark') d.dataset.theme = t;
+        var q = new URLSearchParams(location.search).get('lang');
+        var l = (q === 'en' || q === 'vi') ? q : (localStorage.getItem('ourney-lang') || 'vi');
+        if (l === 'en' || l === 'vi') { d.lang = l; d.dataset.lang = l; }
+        if (sessionStorage.getItem('ourney-intro-seen') === '1') d.classList.add('intro-seen');
+      } catch (e) {}
+    })();
   </script>
 </head>
 <body>
-  <a class="skip" href="#main">Bỏ qua tới nội dung</a>
+  <a class="skip" href="#main" data-i18n="skip">Bỏ qua tới nội dung chính</a>
 
   <header class="nav" id="top">
     <div class="wrap nav-inner">
-      <a class="brand" href="#top" aria-label="Ourney, về đầu trang"><img src="assets/brand/wordmark.png" alt="ourney" width="122" height="45"></a>
-      <nav aria-label="Chính">
+      <a class="brand" href="#top" translate="no" aria-label="Ourney, về đầu trang" data-i18n-aria="nav_brand_aria">
+        <img src="assets/brand/wordmark.png" alt="ourney" width="122" height="45">
+      </a>
+      <nav aria-label="Chính" data-i18n-aria="nav_main_aria">
         <ul class="nav-links">
-          <li><a href="#journeys">hành trình</a></li>
-          <li><a href="#how">cách dùng</a></li>
-          <li><a href="#privacy">riêng tư</a></li>
-          <li><a href="#faq">hỏi đáp</a></li>
+          <li><a href="#journeys" data-i18n="nav_journeys">hành trình</a></li>
+          <li><a href="#how" data-i18n="nav_how">cách dùng</a></li>
+          <li><a href="#squad" data-i18n="nav_squad">nhóm</a></li>
+          <li><a href="#privacy" data-i18n="nav_privacy">riêng tư</a></li>
+          <li><a href="#faq" data-i18n="nav_faq">hỏi đáp</a></li>
         </ul>
       </nav>
       <div class="nav-actions">
-        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng/tối">
-          <svg class="tg-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1.5 12h3M19.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
-          <svg class="tg-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
+        <button class="lang-btn" id="lang-toggle" type="button" aria-label="Chuyển ngôn ngữ sang tiếng Anh" data-i18n-aria="nav_lang_aria">
+          <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h10M9 3v2M6 5c.5 4 3 7 6 8M12 5c-.5 4-3 7-7 9M13 20l4-10 4 10M14.5 17h5"/>
+          </svg>
+          <span class="lang-pill" data-lang-opt="vi">VI</span>
+          <span class="lang-pill" data-lang-opt="en">EN</span>
         </button>
-        <a class="btn btn-primary btn-sm" href="#beta">nhận lời mời<span class="hide-xs">&nbsp;beta</span></a>
+        <button class="icon-btn" id="theme-toggle" type="button" aria-label="Đổi giao diện sáng hoặc tối" data-i18n-aria="nav_theme_aria">
+          <svg class="tg-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+            <g class="o-fill"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></g>
+          </svg>
+          <svg class="tg-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <g class="o-halo"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+            <g class="o-fill"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></g>
+          </svg>
+        </button>
+        <a class="btn btn-primary btn-sm nav-cta" href="#beta" data-i18n="nav_cta">nhận lời mời</a>
       </div>
     </div>
   </header>
 
   <main id="main">
-    <!-- HERO -->
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div class="hero-copy">
-          <p class="chip reveal"><img src="assets/brand/icon-sparkle.png" alt="" width="22" height="22"> nhật ký ảnh mỗi ngày</p>
-          <h1 class="reveal">
-            <span class="hl"><img src="assets/brand/icon-camera.png" alt="" width="64" height="64">chụp một tấm.</span>
-            <span class="hl"><img src="assets/brand/icon-flame.png" alt="" width="64" height="64">giữ một chuỗi.</span>
-            <span class="hl"><img src="assets/brand/icon-squad.png" alt="" width="64" height="64">đi cùng nhau.</span>
-          </h1>
-          <p class="lede reveal">Ourney là nhật ký ảnh cho điều bạn muốn kiên trì: học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay một thói quen nhỏ. Mỗi ngày một tấm, app giữ chuỗi giúp bạn.</p>
-          <div class="hero-cta reveal">
-            <a class="btn btn-primary" href="#beta">nhận lời mời beta <img src="assets/brand/icon-arrow-right.png" alt="" width="24" height="24"></a>
-            <a class="btn btn-secondary" href="#journeys">xem app</a>
+    <!-- SECTION 1: CENTERED HERO STAGE WITH 3-BEAT STAMP INTRO -->
+    <section class="hero" id="hero">
+      <!-- Non-blocking choreographed first-load intro stamps -->
+      <div class="intro-stage" id="intro-stage" aria-hidden="true">
+        <div class="intro-stack">
+          <div class="intro-recoil-1">
+            <div class="intro-recoil-2">
+              <div class="intro-stamp stamp-1">
+                <img src="assets/brand/icon-camera.png" alt="" width="36" height="36">
+                <span data-i18n="stamp_1">chụp một tấm.</span>
+              </div>
+            </div>
+          </div>
+          <div class="intro-recoil-2">
+            <div class="intro-stamp stamp-2">
+              <img src="assets/brand/icon-flame.png" alt="" width="36" height="36">
+              <span data-i18n="stamp_2">giữ một chuỗi.</span>
+            </div>
+          </div>
+          <div class="intro-stamp stamp-3">
+            <img src="assets/brand/icon-squad.png" alt="" width="36" height="36">
+            <span data-i18n="stamp_3">đi cùng nhau.</span>
           </div>
         </div>
-        <div class="hero-stage">
-          <img class="sticker s1" src="assets/brand/icon-trophy.png" alt="" width="84" height="84">
-          <img class="sticker s2" src="assets/brand/icon-react-clap.png" alt="" width="76" height="76">
-          <img class="sticker s3" src="assets/brand/icon-heart.png" alt="" width="64" height="64">
-          <figure class="phone phone-hero" id="hero-phone">
-            <img class="scr-l" src="assets/screens/hub.webp" alt="Màn hành trình của app Ourney: thẻ vàng 'Còn 2 hành trình chờ ảnh hôm nay', thẻ Hôm nay của IELTS 7.5 ngày 21/30 với 20 ngày liên tiếp và nút Chụp hôm nay" width="390" height="844">
-            <img class="scr-d" src="assets/screens/hub-dark.webp" alt="" aria-hidden="true" width="390" height="844">
-          </figure>
-          <div class="float-card fc1" aria-hidden="true"><img src="assets/brand/icon-flame.png" alt="" width="34" height="34"><span><b class="ticker" data-to="20">20</b> ngày liên tiếp</span></div>
-          <div class="float-card fc2" aria-hidden="true"><img src="assets/brand/icon-bell.png" alt="" width="30" height="30"><span>còn 6 giờ để giữ chuỗi</span></div>
+      </div>
+
+      <div class="wrap hero-center">
+        <div class="hero-stage" id="hero-stage">
+          <!-- Radial Sticker Orbit (6 on desktop/tablet, 3 on standard mobile, 2 on compact <360px) -->
+          <div class="hero-orbit-item orbit-1" style="--ox:92px;--oy:68px;--ux:-1;--uy:-0.85;--rot:-9deg" aria-hidden="true">
+            <span class="orbit-tile tile-study"><img src="assets/brand/icon-type-study.png" alt="" width="38" height="38"></span>
+          </div>
+          <div class="hero-orbit-item orbit-2" style="--ox:-96px;--oy:64px;--ux:1;--uy:-0.8;--rot:8deg" aria-hidden="true">
+            <span class="orbit-tile tile-flame"><img src="assets/brand/icon-flame.png" alt="" width="38" height="38"></span>
+          </div>
+          <div class="hero-orbit-item orbit-3" style="--ox:88px;--oy:-54px;--ux:-0.95;--uy:0.75;--rot:7deg" aria-hidden="true">
+            <span class="orbit-tile tile-couple"><img src="assets/brand/icon-type-couple.png" alt="" width="36" height="36"></span>
+          </div>
+          <div class="hero-orbit-item orbit-4 orbit-desk" style="--ox:-92px;--oy:-58px;--ux:0.95;--uy:0.8;--rot:-7deg" aria-hidden="true">
+            <span class="orbit-tile tile-workout"><img src="assets/brand/icon-type-workout.png" alt="" width="36" height="36"></span>
+          </div>
+          <div class="hero-orbit-item orbit-5 orbit-desk" style="--ox:118px;--oy:8px;--ux:-1.15;--uy:0.1;--rot:-5deg" aria-hidden="true">
+            <span class="orbit-tile tile-trip"><img src="assets/brand/icon-type-trip.png" alt="" width="34" height="34"></span>
+          </div>
+          <div class="hero-orbit-item orbit-6 orbit-desk" style="--ox:-118px;--oy:10px;--ux:1.15;--uy:0.12;--rot:6deg" aria-hidden="true">
+            <span class="orbit-tile tile-trophy"><img src="assets/brand/icon-trophy.png" alt="" width="36" height="36"></span>
+          </div>
+
+          <!-- Desktop Left-Shoulder Beta Departure Ticket Stub -->
+          <a class="hero-ticket" href="#beta" aria-label="Vé khởi hành Beta cho iOS và Android" data-i18n-aria="hero_ticket_aria">
+            <div class="ht-top">
+              <img src="assets/brand/icon-sparkle.png" alt="" width="20" height="20">
+              <span class="ht-kicker" data-i18n="ticket_kicker">VÉ KHỞI HÀNH · BETA</span>
+            </div>
+            <div class="ht-body">
+              <svg class="ht-qr" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3h7v7H3ZM14 3h7v7h-7ZM3 14h7v7H3Z"/>
+                <path d="M14 14h3v3h-3M20 14v1M14 20h1M18 18h3v3"/>
+              </svg>
+              <div class="ht-txt">
+                <strong translate="no" data-i18n="ticket_title">iOS &amp; Android</strong>
+                <small data-i18n="ticket_sub">Bấm để giữ chỗ Ngày 1</small>
+              </div>
+            </div>
+          </a>
+
+          <!-- Masked Center Hero Phone (LCP Lead Element) -->
+          <div class="hero-phone-wrap" id="hero-phone-wrap">
+            <div class="hero-phone-mask">
+              <figure class="phone phone-hero" id="hero-phone">
+                <picture class="theme-pic">
+                  <source class="src-dark" srcset="assets/screens/hub-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="assets/screens/hub.webp" alt="Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay" data-i18n-alt="hero_phone_alt" width="390" height="844" fetchpriority="high" decoding="sync">
+                </picture>
+              </figure>
+            </div>
+          </div>
+
+          <!-- Right-Shoulder Dropping Live Check-In Polaroid Card -->
+          <div class="hero-checkin-card" id="hero-checkin-card" aria-hidden="true">
+            <div class="hcc-photo" id="hcc-photo" data-cycle="0">
+              <svg class="hcc-art art-0" viewBox="0 0 120 76" aria-hidden="true">
+                <rect width="120" height="76" rx="8" fill="#FFF3D1"/>
+                <rect x="14" y="14" width="54" height="48" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+                <path d="M22 26h30M22 36h38M22 46h24" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="92" cy="40" r="16" fill="#FF8A3D" stroke="#1A1A1A" stroke-width="2"/>
+                <path d="M86 40h12M92 34v12" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+              </svg>
+              <svg class="hcc-art art-1" viewBox="0 0 120 76" aria-hidden="true">
+                <rect width="120" height="76" rx="8" fill="#181B24"/>
+                <path d="M14 56 Q 36 48, 52 34 T 88 24 L 106 16" fill="none" stroke="#3DE88C" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="106" cy="16" r="5" fill="#FF4D6D" stroke="#FFFFFF" stroke-width="2"/>
+              </svg>
+              <svg class="hcc-art art-2" viewBox="0 0 120 76" aria-hidden="true">
+                <rect width="120" height="76" rx="8" fill="#F4EFE6"/>
+                <path d="M12 60 L42 26 L68 52 L88 34 L108 60 Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+                <circle cx="88" cy="20" r="7" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+              </svg>
+              <span class="hcc-pill">
+                <img class="hcc-flame" id="hcc-flame" src="assets/brand/icon-flame.png" alt="" width="18" height="18">
+                <b class="hcc-streak" id="hcc-streak">20</b>
+              </span>
+            </div>
+            <div class="hcc-meta">
+              <strong id="hcc-title" data-i18n="hcc_t0">IELTS 7.5 · Ngày 21/30</strong>
+              <div class="hcc-row">
+                <span class="hcc-badge" id="hcc-badge" data-i18n="hcc_b0">chuỗi 21 ngày</span>
+                <span class="hcc-reacts">
+                  <img src="assets/brand/icon-react-fire.png" alt="" width="16" height="16"><b>4</b>
+                  <img src="assets/brand/icon-react-clap.png" alt="" width="16" height="16"><b>3</b>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Headline, Lede & Dual CTAs overlapping bottom fade of masked phone -->
+        <div class="hero-copy-stack">
+          <h1 data-i18n="hero_h1">chụp một tấm. giữ một chuỗi.</h1>
+          <p class="lede" data-i18n="hero_lede">Nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì — học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay thói quen nhỏ. Đi một mình hoặc rủ cả nhóm.</p>
+          <div class="hero-cta" id="hero-cta">
+            <a class="btn btn-primary" href="#beta">
+              <img src="assets/brand/icon-camera.png" alt="" width="24" height="24">
+              <span data-i18n="hero_cta_primary">nhận lời mời beta</span>
+            </a>
+            <a class="btn btn-secondary" href="#journeys">
+              <span data-i18n="hero_cta_secondary">xem 6 giao diện</span>
+              <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
+            </a>
+          </div>
+          <a class="hero-scroll-cue" id="hero-scroll-cue" href="#journeys" aria-label="Cuộn xuống xem 6 giao diện" data-i18n-aria="hero_scroll_aria">
+            <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
+          </a>
         </div>
       </div>
     </section>
 
-    <!-- TICKER -->
-    <section class="band" aria-label="Khẩu hiệu">
-      <div class="marquee" id="marquee"><div class="marquee-track" id="marquee-track"></div></div>
-      <button type="button" class="pause-btn" id="marquee-toggle" aria-pressed="false">tạm dừng</button>
-    </section>
-
-    <!-- JOURNEYS -->
+    <!-- SECTION 2: 6-PERSONA CHAMELEON STAGE -->
     <section class="journeys" id="journeys">
-      <div class="wrap j-layout">
-        <div class="j-side">
-          <p class="eyebrow reveal">mỗi hành trình một thế giới</p>
-          <h2 class="section-h reveal">bước vào là<br>đổi hẳn chất liệu.</h2>
-          <p class="muted reveal j-intro">Không còn một lưới lịch dùng chung. Học tiếng Anh là con đường tới chiếc cúp, chạy bộ là biểu đồ km, chuyến đi là cuộn phim dán băng keo. Ảnh chụp bên cạnh lấy từ app thật.</p>
-          <div class="j-tabs" role="tablist" aria-label="Chọn hành trình" id="j-tabs"></div>
-          <div class="j-info card" role="tabpanel" id="j-panel" tabindex="0">
-            <p class="j-kind" id="j-kind"></p>
-            <h3 id="j-title"></h3>
-            <p id="j-desc" class="muted"></p>
+      <div class="wrap">
+        <div class="journeys-stage" id="journeys-stage" data-skin="squad">
+          <div class="j-layout">
+            <div class="j-side">
+              <p class="eyebrow" data-i18n="j_eyebrow">mỗi hành trình một thế giới</p>
+              <h2 class="section-h" data-i18n="j_h2">bước vào là đổi hẳn chất liệu.</h2>
+              <p class="j-intro" data-i18n="j_intro">Không nhốt mọi mục tiêu vào một lưới lịch giống hệt nhau. Học tiếng Anh là đường quest tới chiếc cúp, chạy bộ là biểu đồ km, chuyến đi là cuộn phim dán băng keo. Chạm thử từng kiểu bên dưới.</p>
+
+              <!-- 6 Tactile Persona Tabs (2x3 mobile, 3x2 desktop) -->
+              <div class="j-tabs" role="tablist" aria-label="Chọn giao diện hành trình" data-i18n-aria="j_tablist_aria" id="j-tabs">
+                <button class="j-tab" type="button" role="tab" id="tab-squad" aria-controls="j-panel" aria-selected="true" tabindex="0" data-idx="0" style="--c:#FFD84D">
+                  <span class="j-tab-badge"><img src="assets/brand/icon-type-study.png" alt="" width="24" height="24"></span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_0">IELTS 7.5</span>
+                </button>
+                <button class="j-tab" type="button" role="tab" id="tab-flexer" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="1" style="--c:#CF9FFF">
+                  <span class="j-tab-badge"><img src="assets/brand/icon-type-workout.png" alt="" width="24" height="24"></span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_1">Chạy sáng</span>
+                </button>
+                <button class="j-tab" type="button" role="tab" id="tab-memory" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="2" style="--c:#FFB347">
+                  <span class="j-tab-badge"><img src="assets/brand/icon-type-trip.png" alt="" width="24" height="24"></span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_2">Đà Lạt 7 ngày</span>
+                </button>
+                <button class="j-tab" type="button" role="tab" id="tab-quiet" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="3" style="--c:#7EE8A2">
+                  <span class="j-tab-badge"><img src="assets/brand/icon-type-weight.png" alt="" width="24" height="24"></span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_3">30 ngày cơ thể</span>
+                </button>
+                <button class="j-tab" type="button" role="tab" id="tab-couple" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="4" style="--c:#FF7E7E">
+                  <span class="j-tab-badge"><img src="assets/brand/icon-type-couple.png" alt="" width="24" height="24"></span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_4">Tụi mình</span>
+                </button>
+                <button class="j-tab" type="button" role="tab" id="tab-minimal" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="5" style="--c:#7EC8E3">
+                  <span class="j-tab-badge"><img src="assets/brand/icon-type-custom.png" alt="" width="24" height="24"></span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_5">Đọc 10 trang</span>
+                </button>
+              </div>
+
+              <!-- Journey DNA Departure Ticket Card -->
+              <div class="dna-ticket" role="tabpanel" id="j-panel" aria-labelledby="tab-squad" tabindex="0">
+                <div class="dna-main">
+                  <p class="j-kind" id="j-kind">học tiếng Anh · Accountability Squad</p>
+                  <h3 id="j-title">hôm nay học bao lâu.</h3>
+                  <p class="j-desc" id="j-desc">Đường quest uốn lượn dẫn tới chiếc cúp ngày 30 do bạn tự đặt tên. Mỗi buổi học đính thêm một tấm ảnh lên đường đi.</p>
+                  <div class="dna-chips" id="j-chips">
+                    <span class="dna-chip">Con đường cúp</span>
+                    <span class="dna-chip">45 phút/ngày</span>
+                    <span class="dna-chip">Nhóm 5 người</span>
+                  </div>
+                </div>
+                <div class="dna-stub" aria-hidden="true">
+                  <span class="dna-no" id="j-no">01</span>
+                  <small>DNA</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Real App Screen or Built-In Couple Diptych Screen -->
+            <div class="j-phone-stage">
+              <figure class="phone phone-j" id="phone-j">
+                <picture class="theme-pic" id="j-pic">
+                  <source class="src-dark" id="j-src-d" srcset="assets/screens/j-ielts-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" id="j-img" src="assets/screens/j-ielts.webp" alt="Trang hành trình IELTS 7.5 trong app Ourney" width="390" height="844" loading="lazy" decoding="async">
+                </picture>
+
+                <!-- Built-in HTML/CSS Couple Rituals duoSplitTimeline screen (Tab 5) -->
+                <div class="couple-screen" id="j-couple-screen" hidden aria-hidden="true">
+                  <div class="cs-status">
+                    <span>9:41</span>
+                    <span class="cs-pill-top" data-i18n="cs_pill">CẶP ĐÔI · RIÊNG TƯ</span>
+                  </div>
+                  <div class="cs-header">
+                    <div>
+                      <small data-i18n="cs_sub">mỗi ngày hai nửa ghép lại.</small>
+                      <strong data-i18n="cs_title">tụi mình.</strong>
+                    </div>
+                    <span class="cs-streak">
+                      <img src="assets/brand/icon-flame.png" alt="" width="16" height="16">
+                      <b>18</b>
+                    </span>
+                  </div>
+                  <div class="cs-banner">
+                    <img src="assets/brand/icon-type-couple.png" alt="" width="24" height="24">
+                    <div>
+                      <b data-i18n="cs_stat">18 NGÀY BÊN NHAU · 36 KHOẢNH KHẮC</b>
+                      <small data-i18n="cs_stat_sub">Cả hai đã chụp đủ hôm nay</small>
+                    </div>
+                  </div>
+
+                  <!-- Day 18 Paired Diptych -->
+                  <div class="cs-day-card">
+                    <div class="cs-day-head">
+                      <b data-i18n="cs_d18">NGÀY 18 · HÔM NAY</b>
+                      <span>07:30 · 08:12</span>
+                    </div>
+                    <div class="cs-diptych">
+                      <div class="cs-half cs-half-a">
+                        <svg viewBox="0 0 120 132" aria-hidden="true">
+                          <rect width="120" height="132" fill="#F5E1DA"/>
+                          <circle cx="60" cy="58" r="28" fill="#FFFFFF" stroke="#261F22" stroke-width="2.5"/>
+                          <circle cx="60" cy="58" r="18" fill="#8C583A"/>
+                          <path d="M88 52h10a6 6 0 0 1 0 12H88" fill="none" stroke="#261F22" stroke-width="2.5"/>
+                          <rect x="14" y="96" width="92" height="22" rx="6" fill="#FFFFFF" stroke="#261F22" stroke-width="1.8"/>
+                        </svg>
+                        <span class="cs-tag" data-i18n="cs_nam">Nam · 07:30</span>
+                      </div>
+                      <span class="cs-heart-node">
+                        <img src="assets/brand/icon-heart.png" alt="" width="20" height="20">
+                      </span>
+                      <div class="cs-half cs-half-b">
+                        <svg viewBox="0 0 120 132" aria-hidden="true">
+                          <rect width="120" height="132" fill="#FFE8EE"/>
+                          <circle cx="82" cy="36" r="14" fill="#FFD84D" stroke="#261F22" stroke-width="2"/>
+                          <path d="M12 94 Q 44 68, 72 84 T 108 74 L 108 120 L 12 120 Z" fill="#7EE8A2" stroke="#261F22" stroke-width="2"/>
+                        </svg>
+                        <span class="cs-tag" data-i18n="cs_linh">Linh · 08:12</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Day 17 Paired Diptych -->
+                  <div class="cs-day-card cs-day-prev">
+                    <div class="cs-day-head">
+                      <b data-i18n="cs_d17">NGÀY 17 · HÔM QUA</b>
+                      <span>19:20 · 19:24</span>
+                    </div>
+                    <div class="cs-diptych">
+                      <div class="cs-half cs-half-a">
+                        <svg viewBox="0 0 120 86" aria-hidden="true">
+                          <rect width="120" height="86" fill="#E8E4F8"/>
+                          <rect x="20" y="18" width="80" height="50" rx="8" fill="#FFFFFF" stroke="#261F22" stroke-width="2"/>
+                          <path d="M32 36h40M32 48h52" stroke="#261F22" stroke-width="2.5" stroke-linecap="round"/>
+                        </svg>
+                        <span class="cs-tag">Nam · 19:20</span>
+                      </div>
+                      <span class="cs-heart-node">
+                        <img src="assets/brand/icon-heart.png" alt="" width="18" height="18">
+                      </span>
+                      <div class="cs-half cs-half-b">
+                        <svg viewBox="0 0 120 86" aria-hidden="true">
+                          <rect width="120" height="86" fill="#FCE7F3"/>
+                          <circle cx="60" cy="42" r="22" fill="#FF7E7E" stroke="#261F22" stroke-width="2"/>
+                        </svg>
+                        <span class="cs-tag">Linh · 19:24</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Ourney Unified 5-Tab Bottom Dock -->
+                  <div class="cs-dock">
+                    <span class="cs-dock-item active">
+                      <svg viewBox="0 0 24 24"><path d="M3.5 5.5 9 3l6 2.5L20.5 3v15.5L15 21l-6-2.5L3.5 21Z"/></svg>
+                    </span>
+                    <span class="cs-dock-item">
+                      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6"/></svg>
+                    </span>
+                    <span class="cs-dock-shutter">
+                      <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                    </span>
+                    <span class="cs-dock-item">
+                      <svg viewBox="0 0 24 24"><path d="M6.5 17.5h11l-1.5-2V11c0-2.7-1.5-4.6-4-4.8C9.5 6.4 8 8.3 8 11v4.5Z"/></svg>
+                    </span>
+                    <span class="cs-dock-item">
+                      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-4.6 2.8-7 7-7s6.5 2.4 7 7"/></svg>
+                    </span>
+                  </div>
+                </div>
+              </figure>
+            </div>
           </div>
-        </div>
-        <div class="j-stage">
-          <figure class="phone phone-j">
-            <img class="scr-l" id="j-img" src="assets/screens/j-ielts.webp" alt="" width="390" height="844">
-            <img class="scr-d" id="j-img-d" src="assets/screens/j-ielts-dark.webp" alt="" aria-hidden="true" width="390" height="844">
-          </figure>
         </div>
       </div>
     </section>
 
-    <!-- HOW -->
+    <!-- SECTION 3: 3-STEP DAILY LOOP SCROLLYTELLING -->
     <section class="how" id="how">
       <div class="wrap">
-        <p class="eyebrow reveal">cách dùng</p>
-        <h2 class="section-h reveal">ba bước, mỗi ngày.</h2>
+        <p class="eyebrow" data-i18n="how_eyebrow">cách dùng</p>
+        <h2 class="section-h" data-i18n="how_h2">ba bước, chưa tới mười giây.</h2>
       </div>
       <div class="wrap how-grid">
-        <ol class="steps">
-          <li class="step" data-step="0">
-            <span class="step-num">1</span>
-            <h3>chọn kiểu hành trình.</h3>
-            <p>Vuốt qua các thẻ: giảm cân, học tiếng Anh, tập luyện, chuyến đi, nghi thức của hai đứa hay một thói quen tự đặt. Mỗi kiểu hỏi bạn vài câu riêng rồi mới bắt đầu.</p>
-            <figure class="phone phone-step"><img class="scr-l" src="assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/create-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
-          </li>
-          <li class="step" data-step="1">
-            <span class="step-num">2</span>
-            <h3>chụp một tấm.</h3>
-            <p>Nút chụp nằm giữa dock. Mở camera là thấy ngay các hành trình chưa có ảnh hôm nay, chạm để chuyển. Ảnh chỉ được đăng khi bạn bấm Đăng.</p>
-            <figure class="phone phone-step"><img class="scr-l" src="assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30, hàng hành trình chờ chụp" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/capture-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
-          </li>
-          <li class="step" data-step="2">
-            <span class="step-num">3</span>
-            <h3>nhìn lại, rồi khoe.</h3>
-            <p>Mỗi ảnh nối thêm một ngày vào chuỗi. Khi muốn, xuất một thẻ Story 9:16 có sẵn số liệu của bạn để đăng ở đâu cũng được.</p>
-            <figure class="phone phone-step"><img class="scr-l" src="assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/share-run-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
-          </li>
-        </ol>
+        <div class="steps-col">
+          <div class="steps-track" aria-hidden="true"><div class="steps-fill" id="steps-fill"></div></div>
+          <ol class="steps">
+            <li class="step active" data-step="0">
+              <div class="step-head">
+                <span class="step-num">1</span>
+                <h3 data-i18n="how_s1_t">chọn kiểu, đúc vé khởi hành.</h3>
+              </div>
+              <p data-i18n="how_s1_d">Vuốt 6 mẫu hành trình, trả lời 2–3 câu ngắn để app tạo màu sắc, tên cột mốc và tấm vé khởi hành mang dấu ấn riêng của bạn.</p>
+              <figure class="phone phone-step">
+                <picture class="theme-pic">
+                  <source class="src-dark" srcset="assets/screens/create-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" data-i18n-alt="how_s1_alt" loading="lazy" decoding="async" width="390" height="844">
+                </picture>
+              </figure>
+            </li>
+            <li class="step" data-step="1">
+              <div class="step-head">
+                <span class="step-num">2</span>
+                <h3 data-i18n="how_s2_t">mở nút giữa, chụp một tấm.</h3>
+              </div>
+              <p data-i18n="how_s2_d">Nút chụp nằm ngay giữa thanh dưới. Nhấn giữ để xoay vòng chọn hành trình chưa chụp hôm nay, bấm chụp rồi bấm Đăng — xong trong 3 chạm.</p>
+              <figure class="phone phone-step">
+                <picture class="theme-pic">
+                  <source class="src-dark" srcset="assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
+                </picture>
+              </figure>
+            </li>
+            <li class="step" data-step="2">
+              <div class="step-head">
+                <span class="step-num">3</span>
+                <h3 data-i18n="how_s3_t">giữ liền chuỗi, khoe khi muốn.</h3>
+              </div>
+              <p data-i18n="how_s3_d">Mỗi ngày nối thêm một mắt xích vào hành trình. Bất cứ lúc nào, xuất ngay thẻ Story 9:16 hoặc 4:5 có sẵn số liệu của bạn.</p>
+              <figure class="phone phone-step">
+                <picture class="theme-pic">
+                  <source class="src-dark" srcset="assets/screens/share-run-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" data-i18n-alt="how_s3_alt" loading="lazy" decoding="async" width="390" height="844">
+                </picture>
+              </figure>
+            </li>
+          </ol>
+        </div>
+
         <div class="how-visual" aria-hidden="true">
-          <div class="phone phone-how" data-screen="0">
-            <img class="swap" data-scr="0" src="assets/screens/create.webp" alt="" width="390" height="844">
-            <img class="swap" data-scr="1" src="assets/screens/capture.webp" alt="" width="390" height="844">
-            <img class="swap" data-scr="2" src="assets/screens/share-run.webp" alt="" width="390" height="844">
+          <div class="phone phone-how" id="phone-how" data-screen="0">
+            <picture class="swap theme-pic" data-scr="0">
+              <source class="src-dark" srcset="assets/screens/create-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="assets/screens/create.webp" alt="" loading="lazy" decoding="async" width="390" height="844">
+            </picture>
+            <picture class="swap theme-pic" data-scr="1">
+              <source class="src-dark" srcset="assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="assets/screens/capture.webp" alt="" loading="lazy" decoding="async" width="390" height="844">
+            </picture>
+            <picture class="swap theme-pic" data-scr="2">
+              <source class="src-dark" srcset="assets/screens/share-run-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="assets/screens/share-run.webp" alt="" loading="lazy" decoding="async" width="390" height="844">
+            </picture>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- FINISH LINE -->
-    <section class="finish">
+    <!-- SECTION 4: INTERACTIVE SQUAD POLAROID WALL -->
+    <section class="squad" id="squad">
+      <div class="wrap squad-grid">
+        <div class="squad-copy">
+          <p class="eyebrow" data-i18n="squad_eyebrow">đi cùng nhóm</p>
+          <h2 class="section-h" data-i18n="squad_h2">một mình dễ quên. có hội thì giữ được.</h2>
+          <p class="muted" data-i18n="squad_desc">Mời tối đa 10 người bạn thân bằng mã 8 ký tự — không bảng xếp hạng độc hại, không đếm người theo dõi. Mở app là thấy tường Polaroid hôm nay ai đã điểm danh, thả cảm xúc hoặc nhắc nhẹ đứa còn thiếu.</p>
+          <div class="squad-badges">
+            <span class="chip"><img src="assets/brand/icon-squad.png" alt="" width="22" height="22"><span data-i18n="squad_chip_1">Tối đa 10 bạn · Mã mời 8 ký tự</span></span>
+            <span class="chip"><img src="assets/brand/icon-react-fire.png" alt="" width="22" height="22"><span data-i18n="squad_chip_2">Chạm thả cảm xúc trực tiếp bên cạnh</span></span>
+          </div>
+        </div>
+
+        <div class="squad-wall card" id="squad-wall">
+          <div class="squad-head">
+            <div class="squad-title-wrap">
+              <span class="squad-badge-icon"><img src="assets/brand/icon-type-study.png" alt="" width="22" height="22"></span>
+              <strong data-i18n="squad_wall_title">IELTS 7.5 · HỘI 4 NGƯỜI</strong>
+            </div>
+            <span class="squad-prog-pill">
+              <img src="assets/brand/icon-flame.png" alt="" width="18" height="18">
+              <b id="squad-prog-txt" data-i18n="squad_wall_prog">3/4 đã chụp hôm nay</b>
+            </span>
+          </div>
+
+          <div class="squad-meter" aria-hidden="true">
+            <i class="done"></i><i class="done"></i><i class="done"></i><i class="wait" id="squad-meter-4"></i>
+          </div>
+
+          <div class="polaroid-grid">
+            <!-- Member 1: Linh -->
+            <article class="squad-polaroid">
+              <div class="sp-thumb">
+                <svg viewBox="0 0 160 104" aria-hidden="true">
+                  <rect width="160" height="104" fill="#FFF3D1"/>
+                  <rect x="18" y="16" width="76" height="72" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+                  <path d="M30 32h44M30 46h52M30 60h34" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+                  <circle cx="122" cy="58" r="20" fill="#FF8A3D" stroke="#1A1A1A" stroke-width="2"/>
+                  <circle cx="122" cy="58" r="11" fill="#5A3825"/>
+                </svg>
+                <span class="sp-time">06:40</span>
+              </div>
+              <div class="sp-body">
+                <div class="sp-meta"><b>Linh</b><span class="sp-streak"><img src="assets/brand/icon-flame.png" alt="" width="14" height="14">21</span></div>
+                <p data-i18n="sq_c1_cap">“45 phút Reading xong!”</p>
+                <div class="sp-reacts">
+                  <button type="button" class="react-chip" aria-pressed="false" data-count="4" aria-label="Thả lửa cho ảnh của Linh">
+                    <img src="assets/brand/icon-react-fire.png" alt="" width="18" height="18"><span class="rc-num">4</span>
+                  </button>
+                  <button type="button" class="react-chip" aria-pressed="false" data-count="2" aria-label="Thả tim cho ảnh của Linh">
+                    <img src="assets/brand/icon-react-heart.png" alt="" width="18" height="18"><span class="rc-num">2</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <!-- Member 2: Nam -->
+            <article class="squad-polaroid">
+              <div class="sp-thumb">
+                <svg viewBox="0 0 160 104" aria-hidden="true">
+                  <rect width="160" height="104" fill="#E6F7EE"/>
+                  <rect x="24" y="18" width="112" height="68" rx="8" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+                  <rect x="36" y="30" width="38" height="44" rx="4" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="1.8"/>
+                  <path d="M84 38h38M84 52h28M84 66h34" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+                </svg>
+                <span class="sp-time">07:15</span>
+              </div>
+              <div class="sp-body">
+                <div class="sp-meta"><b>Nam</b><span class="sp-streak"><img src="assets/brand/icon-flame.png" alt="" width="14" height="14">21</span></div>
+                <p data-i18n="sq_c2_cap">“Ngày 21 không gãy chuỗi”</p>
+                <div class="sp-reacts">
+                  <button type="button" class="react-chip" aria-pressed="true" data-count="3" aria-label="Vỗ tay cho ảnh của Nam">
+                    <img src="assets/brand/icon-react-clap.png" alt="" width="18" height="18"><span class="rc-num">3</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <!-- Member 3: Ha -->
+            <article class="squad-polaroid">
+              <div class="sp-thumb">
+                <svg viewBox="0 0 160 104" aria-hidden="true">
+                  <rect width="160" height="104" fill="#F3E8FF"/>
+                  <circle cx="52" cy="52" r="26" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2"/>
+                  <path d="M44 52l6 6 12-13" fill="none" stroke="#1A1A1A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="90" y="24" width="48" height="56" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
+                  <path d="M100 40h28M100 52h22M100 64h26" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
+                </svg>
+                <span class="sp-time">12:05</span>
+              </div>
+              <div class="sp-body">
+                <div class="sp-meta"><b>Hà</b><span class="sp-streak"><img src="assets/brand/icon-flame.png" alt="" width="14" height="14">19</span></div>
+                <p data-i18n="sq_c3_cap">“Thêm 30 từ mới vào sổ”</p>
+                <div class="sp-reacts">
+                  <button type="button" class="react-chip" aria-pressed="false" data-count="5" aria-label="Thả cơ bắp cho ảnh của Hà">
+                    <img src="assets/brand/icon-react-flex.png" alt="" width="18" height="18"><span class="rc-num">5</span>
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <!-- Member 4: Minh (Waiting / Interactive Nudge) -->
+            <article class="squad-polaroid polaroid-waiting" id="polaroid-minh">
+              <div class="sp-wait-top">
+                <span class="sp-clock-pill">
+                  <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3.5 2M9 2h6"/></svg>
+                  <span data-i18n="sq_c4_time">còn 4 giờ</span>
+                </span>
+              </div>
+              <div class="sp-wait-mid">
+                <b>Minh</b>
+                <p id="minh-status" data-i18n="sq_c4_wait">chưa có ảnh hôm nay</p>
+              </div>
+              <button type="button" class="btn-nudge" id="nudge-btn">
+                <svg class="nudge-svg o-svg-flat" id="nudge-svg" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 12V7a2 2 0 0 1 4 0v3M12 10V5a2 2 0 0 1 4 0v6M16 9a2 2 0 0 1 4 0v4c0 5-3 8-7 8h-1c-3 0-5-1.5-7-4l-2-3c-1-2 1.5-3.5 3-2l2 2"/>
+                </svg>
+                <img class="nudge-check" id="nudge-check" src="assets/brand/icon-check.png" alt="" width="20" height="20" hidden>
+                <span id="nudge-label" data-i18n="sq_nudge_btn">Nhắc Minh</span>
+              </button>
+              <p class="sr" id="squad-nudge-msg" role="status" aria-live="polite"></p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: FINISH LINE ARTIFACTS -->
+    <section class="finish" id="finish">
       <div class="wrap finish-grid">
         <div class="finish-copy">
-          <p class="eyebrow reveal">về đích</p>
-          <h2 class="section-h reveal">hết hành trình,<br>có một tấm thiệp.</h2>
-          <p class="muted reveal">Chuyến đi được gói lại thành một poster có cuộn phim. Ba mươi ngày chạy bộ thành một câu chuyện ngắn: bao nhiêu khoảnh khắc, trong bao nhiêu ngày.</p>
-          <ul class="ticks reveal">
-            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28">khổ Story 9:16 hoặc 4:5</li>
-            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28">chọn chuỗi ngày hay số ngày để in lên thẻ</li>
-            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28">bạn quyết định con số nào được hiện</li>
+          <p class="eyebrow" data-i18n="finish_eyebrow">về đích</p>
+          <h2 class="section-h" data-i18n="finish_h2">hết chặng đường, cầm về một kỷ vật.</h2>
+          <p class="muted" data-i18n="finish_desc">Chuyến đi khép lại thành tấm poster cuộn phim 35mm. Ba mươi ngày chạy bộ mở ra câu chuyện tổng kết Wrapped nhìn lại trọn vẹn từng ngày bạn đã không bỏ cuộc.</p>
+          <ul class="ticks">
+            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28"><span data-i18n="finish_tick_1">Khổ Story 9:16 và bài đăng 4:5 sắc nét</span></li>
+            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28"><span data-i18n="finish_tick_2">Tự chọn in chuỗi liên tiếp hay tổng số ngày</span></li>
+            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28"><span data-i18n="finish_tick_3">Ẩn bất kỳ con số nhạy cảm nào trước khi xuất</span></li>
           </ul>
         </div>
-        <div class="finish-phones">
-          <figure class="phone phone-a"><img class="scr-l" src="assets/screens/share-travel.webp" alt="Poster chuyến đi Đà Lạt 7 ngày với cuộn phim các ngày" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/share-travel-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
-          <figure class="phone phone-b"><img class="scr-l" src="assets/screens/wrapped-run.webp" alt="Hành trình đã về đích: 20 khoảnh khắc trong 20 ngày" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/wrapped-run-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+        <div class="finish-phones" id="finish-phones">
+          <figure class="phone phone-a">
+            <picture class="theme-pic">
+              <source class="src-dark" srcset="assets/screens/share-travel-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="assets/screens/share-travel.webp" alt="Poster chuyến đi Đà Lạt 7 ngày với cuộn phim các ngày" data-i18n-alt="finish_a_alt" loading="lazy" decoding="async" width="390" height="844">
+            </picture>
+          </figure>
+          <figure class="phone phone-b">
+            <picture class="theme-pic">
+              <source class="src-dark" srcset="assets/screens/wrapped-run-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="assets/screens/wrapped-run.webp" alt="Hành trình đã về đích: 20 khoảnh khắc trong 20 ngày" data-i18n-alt="finish_b_alt" loading="lazy" decoding="async" width="390" height="844">
+            </picture>
+          </figure>
         </div>
       </div>
     </section>
 
-    <!-- GROUPS -->
-    <section class="groups">
-      <div class="wrap">
-        <div class="group-card card reveal">
-          <div class="gc-icons" aria-hidden="true">
-            <img src="assets/brand/icon-squad.png" alt="" width="72" height="72">
-            <img src="assets/brand/icon-react-fire.png" alt="" width="56" height="56">
-            <img src="assets/brand/icon-react-flex.png" alt="" width="56" height="56">
-            <img src="assets/brand/icon-react-clap.png" alt="" width="56" height="56">
-          </div>
-          <div>
-            <p class="eyebrow">nhóm</p>
-            <h2 class="section-h sm">rủ cả nhóm cùng giữ chuỗi.</h2>
-            <p class="muted">Một hành trình nhóm có tối đa 10 người, vào bằng mã mời. Mỗi ngày mở app là biết ai đã chụp, ai chưa, và thả cảm xúc cho nhau. Tiến độ của người mới tính từ ngày họ tham gia.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PRIVACY -->
+    <!-- SECTION 6: PRIVACY BY DESIGN & LOCAL-FIRST SOLO MODE -->
     <section class="privacy" id="privacy">
       <div class="wrap privacy-grid">
         <div class="privacy-copy">
-          <p class="eyebrow reveal">riêng tư</p>
-          <h2 class="section-h reveal">có những hành trình<br>chỉ dành cho bạn.</h2>
-          <p class="muted reveal">Hành trình giảm cân hiện cân nặng thành dấu chấm, giữ ngón tay lên mới thấy. Mỗi hành trình có chế độ xem riêng.</p>
-          <div class="vis-row reveal">
-            <span class="chip"><img src="assets/brand/icon-lock.png" alt="" width="22" height="22">Chỉ mình tôi</span>
-            <span class="chip"><img src="assets/brand/icon-link.png" alt="" width="22" height="22">Ai có link</span>
-            <span class="chip"><img src="assets/brand/icon-squad.png" alt="" width="22" height="22">Thành viên trong nhóm</span>
+          <p class="eyebrow" data-i18n="priv_eyebrow">riêng tư &amp; trên máy</p>
+          <h2 class="section-h" data-i18n="priv_h2">có những hành trình chỉ dành cho riêng bạn.</h2>
+          <p class="muted" data-i18n="priv_desc">Bạn chọn quyền xem riêng cho từng hành trình. Với hành trình giảm cân, số kg luôn được che thành dấu chấm — nhấn giữ bên dưới để thử.</p>
+
+          <div class="vis-row">
+            <span class="chip"><img src="assets/brand/icon-lock.png" alt="" width="22" height="22"><span data-i18n="priv_vis_1">Chỉ mình tôi</span></span>
+            <span class="chip"><img src="assets/brand/icon-link.png" alt="" width="22" height="22"><span data-i18n="priv_vis_2">Ai có link</span></span>
+            <span class="chip"><img src="assets/brand/icon-squad.png" alt="" width="22" height="22"><span data-i18n="priv_vis_3">Thành viên nhóm</span></span>
           </div>
-          <ul class="toggles reveal">
+
+          <!-- Interactive Hold-to-Reveal Metric Demo -->
+          <div class="hold-demo card" id="hold-demo">
+            <div class="hold-info">
+              <span class="hold-label" data-i18n="priv_hold_label">Cân nặng hôm nay</span>
+              <strong class="hold-val" id="hold-val" aria-live="polite">
+                <span class="hold-masked" id="hold-masked">
+                  <span class="dot-mask" aria-hidden="true"><i></i><i></i><span>,</span><i></i></span>
+                  <span class="sr" data-i18n="priv_masked_sr">Đã ẩn số cân</span>
+                  <span>kg</span>
+                </span>
+                <span class="hold-revealed" id="hold-revealed" hidden data-i18n="priv_hold_revealed">62,0 kg (-3,2 kg so với Ngày 1)</span>
+              </strong>
+            </div>
+            <button type="button" class="btn-hold" id="hold-btn" aria-pressed="false">
+              <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/>
+                <circle cx="12" cy="12" r="2.8"/>
+              </svg>
+              <span data-i18n="priv_hold_btn">Giữ để xem</span>
+            </button>
+          </div>
+
+          <!-- Accessible Privacy Switches + Live Link Preview -->
+          <ul class="toggles">
             <li class="card">
               <img src="assets/brand/icon-eye-off.png" alt="" width="40" height="40">
-              <span class="grow"><b>Ẩn con số với người khác</b><small>Người khác chỉ thấy ảnh, không thấy cân nặng hay số phút.</small></span>
-              <label class="switch"><input type="checkbox" checked><span aria-hidden="true"></span><span class="sr">Ẩn con số với người khác</span></label>
+              <span class="grow">
+                <b data-i18n="priv_tg1_t">Ẩn con số với người khác</b>
+                <small data-i18n="priv_tg1_d">Chỉ hiện ảnh check-in, giấu số kg hoặc số phút.</small>
+              </span>
+              <label class="switch">
+                <input type="checkbox" id="tg-hide-num" checked>
+                <span aria-hidden="true"></span>
+                <span class="sr" data-i18n="priv_tg1_t">Ẩn con số với người khác</span>
+              </label>
             </li>
             <li class="card">
               <img src="assets/brand/icon-drop.png" alt="" width="40" height="40">
-              <span class="grow"><b>Làm mờ ảnh khi chia sẻ ra ngoài</b><small>Ảnh xem trước của link được làm mờ.</small></span>
-              <label class="switch"><input type="checkbox"><span aria-hidden="true"></span><span class="sr">Làm mờ ảnh khi chia sẻ ra ngoài</span></label>
+              <span class="grow">
+                <b data-i18n="priv_tg2_t">Làm mờ ảnh khi chia sẻ link</b>
+                <small data-i18n="priv_tg2_d">Ảnh xem trước bên ngoài được làm mờ tự động.</small>
+              </span>
+              <label class="switch">
+                <input type="checkbox" id="tg-blur-img">
+                <span aria-hidden="true"></span>
+                <span class="sr" data-i18n="priv_tg2_t">Làm mờ ảnh khi chia sẻ link</span>
+              </label>
             </li>
           </ul>
+
+          <!-- Live Share Link Preview Strip -->
+          <div class="share-preview card" id="share-preview" data-hide-num="true" data-blur-img="false">
+            <div class="sp-mini-thumb" aria-hidden="true">
+              <svg viewBox="0 0 48 48">
+                <rect width="48" height="48" rx="10" fill="#7EE8A2"/>
+                <path d="M10 34 Q 20 28, 28 20 T 38 14" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="sp-mini-txt">
+              <small data-i18n="priv_preview_kicker">Xem trước thẻ chia sẻ ra ngoài</small>
+              <strong>
+                <span data-i18n="priv_preview_title">30 ngày cơ thể · Ngày 21</span>
+                <span class="sp-metric-pill" id="sp-metric-pill" data-i18n="priv_preview_hidden">Đã ẩn số kg</span>
+              </strong>
+            </div>
+          </div>
+
+          <!-- Local-First Solo Mode Guarantee -->
+          <div class="local-chip card">
+            <img src="assets/brand/icon-shield.png" alt="" width="32" height="32">
+            <p data-i18n="priv_local_chip">Chế độ chỉ trên máy: dùng trọn vẹn hành trình cá nhân khi mất mạng, không cần tạo tài khoản.</p>
+          </div>
         </div>
-        <figure class="phone phone-privacy reveal"><img class="scr-l" src="assets/screens/j-weight.webp" alt="Hành trình 30 ngày cơ thể: Nhìn lại từng chút một, biểu đồ cân nặng với con số bị ẩn, Giữ để xem" loading="lazy" width="390" height="844"><img class="scr-d" src="assets/screens/j-weight-dark.webp" alt="" aria-hidden="true" loading="lazy" width="390" height="844"></figure>
+
+        <figure class="phone phone-privacy">
+          <picture class="theme-pic">
+            <source class="src-dark" srcset="assets/screens/j-weight-dark.webp" media="(prefers-color-scheme: dark)">
+            <img class="scr-img" src="assets/screens/j-weight.webp" alt="Hành trình 30 ngày cơ thể: Nhìn lại từng chút một, biểu đồ cân nặng với con số bị ẩn, Giữ để xem" data-i18n-alt="priv_phone_alt" loading="lazy" decoding="async" width="390" height="844">
+          </picture>
+        </figure>
       </div>
     </section>
 
-    <!-- FAQ -->
+    <!-- SECTION 7: FAQ -->
     <section class="faq" id="faq">
       <div class="wrap faq-grid">
-        <div>
-          <p class="eyebrow reveal">hỏi đáp</p>
-          <h2 class="section-h reveal">vài điều<br>bạn sẽ hỏi.</h2>
+        <div class="faq-head">
+          <p class="eyebrow" data-i18n="faq_eyebrow">hỏi đáp</p>
+          <h2 class="section-h" data-i18n="faq_h2">vài câu chắc bạn sẽ hỏi.</h2>
         </div>
         <div class="faq-list">
-          <details name="faq" open><summary>Không có mạng thì dùng được không?<i aria-hidden="true"></i></summary><div class="ans"><p>Được. Ourney có chế độ chỉ trên máy: dữ liệu nằm trên máy của bạn, hành trình một mình dùng đầy đủ. Đăng nhập và hành trình nhóm thì cần máy chủ.</p></div></details>
-          <details name="faq"><summary>Nhóm có bao nhiêu người?<i aria-hidden="true"></i></summary><div class="ans"><p>Tối đa 10 người, tham gia bằng mã mời. Tiến độ của bạn tính từ ngày tham gia, và bạn vẫn xem được lịch sử của nhóm.</p></div></details>
-          <details name="faq"><summary>Ai xem được ảnh của tôi?<i aria-hidden="true"></i></summary><div class="ans"><p>Bạn chọn cho từng hành trình: chỉ mình tôi, ai có link, hoặc thành viên trong nhóm. Bạn có thể ẩn con số theo dõi và làm mờ ảnh khi chia sẻ ra ngoài.</p></div></details>
-          <details name="faq"><summary>Một ngày chụp nhiều tấm được không?<i aria-hidden="true"></i></summary><div class="ans"><p>Được. Chụp thêm trong cùng ngày sẽ thêm ảnh vào ngày đó, còn chuỗi vẫn chỉ tính ngày đó một lần.</p></div></details>
-          <details name="faq"><summary>Ourney có trên iOS và Android không?<i aria-hidden="true"></i></summary><div class="ans"><p>Ourney được làm cho cả iOS và Android. Để lại email để nhận tin khi bản beta mở.</p></div></details>
+          <details name="faq" open>
+            <summary>
+              <span data-i18n="faq_q1">Không có mạng hay chưa muốn đăng ký thì dùng được không?</span>
+              <span class="faq-disc" aria-hidden="true">
+                <svg class="o-svg-flat" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+            </summary>
+            <div class="ans"><p data-i18n="faq_a1">Được ngay. Ourney có chế độ chỉ trên máy: ảnh và chuỗi nằm ngay trên điện thoại của bạn, hành trình một mình hoạt động đầy đủ. Bạn chỉ cần đăng nhập khi muốn đồng bộ đám mây hoặc đi cùng nhóm.</p></div>
+          </details>
+          <details name="faq">
+            <summary>
+              <span data-i18n="faq_q2">Một nhóm tối đa bao nhiêu người? Vào muộn có thiệt không?</span>
+              <span class="faq-disc" aria-hidden="true">
+                <svg class="o-svg-flat" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+            </summary>
+            <div class="ans"><p data-i18n="faq_a2">Mỗi hành trình nhóm tối đa 10 người, tham gia bằng mã mời 8 ký tự. Tiến độ của người vào sau được tính công bằng từ ngày họ tham gia, đồng thời vẫn xem lại được toàn bộ kỷ niệm trước đó của nhóm.</p></div>
+          </details>
+          <details name="faq">
+            <summary>
+              <span data-i18n="faq_q3">Ai có thể xem ảnh và chỉ số của tôi?</span>
+              <span class="faq-disc" aria-hidden="true">
+                <svg class="o-svg-flat" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+            </summary>
+            <div class="ans"><p data-i18n="faq_a3">Mỗi hành trình có cài đặt riêng: Chỉ mình tôi, Ai có link, hoặc Thành viên trong nhóm. Ngay cả khi chia sẻ, bạn vẫn bật tắt được việc ẩn con số theo dõi và làm mờ ảnh xem trước.</p></div>
+          </details>
+          <details name="faq">
+            <summary>
+              <span data-i18n="faq_q4">Một ngày chụp nhiều tấm hay nhập hành trình cũ có được không?</span>
+              <span class="faq-disc" aria-hidden="true">
+                <svg class="o-svg-flat" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+            </summary>
+            <div class="ans"><p data-i18n="faq_a4">Chụp nhiều tấm trong ngày sẽ gom gọn vào ngày hôm đó (chuỗi vẫn tính 1 ngày). Bạn cũng có thể nhập ảnh từ chuyến đi đã qua theo ngày chụp — app sẽ xếp thành timeline kỷ niệm mà không làm sai lệch chuỗi ngày thực tế.</p></div>
+          </details>
+          <details name="faq">
+            <summary>
+              <span data-i18n="faq_q5">Khi nào Ourney mở tải trên iOS và Android?</span>
+              <span class="faq-disc" aria-hidden="true">
+                <svg class="o-svg-flat" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+              </span>
+            </summary>
+            <div class="ans"><p data-i18n="faq_a5">Ourney được phát triển đồng thời bằng Flutter cho cả iOS và Android. Để lại email ở vé bên dưới để nhận lời mời thử nghiệm beta đợt đầu tiên cho iOS và Android.</p></div>
+          </details>
         </div>
       </div>
     </section>
 
-    <!-- CTA -->
+    <!-- SECTION 8: DEPARTURE TICKET BETA WAITLIST -->
     <section class="cta" id="beta">
       <div class="wrap cta-inner">
-        <div class="cta-card card">
+        <div class="cta-ticket card">
           <img class="cta-sticker" src="assets/brand/icon-star.png" alt="" width="80" height="80">
-          <p class="eyebrow">beta sắp mở</p>
-          <h2 class="cta-h">ngày 1 của bạn<br>bắt đầu từ hôm nay.</h2>
-          <form class="beta-form" id="beta-form" novalidate>
-            <label for="email" class="sr">Email</label>
-            <input id="email" name="email" type="email" inputmode="email" autocomplete="email" placeholder="email@cua-ban.vn" required aria-describedby="form-msg">
-            <button class="btn btn-primary" type="submit">nhận lời mời</button>
-          </form>
-          <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+          <div class="cta-main">
+            <p class="eyebrow" data-i18n="beta_eyebrow">beta sắp mở cửa</p>
+            <h2 class="cta-h" data-i18n="beta_h2">ngày 1 của bạn bắt đầu từ hôm nay.</h2>
+            <div class="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria">
+              <button type="button" class="plat-pill" aria-pressed="true" data-plat="ios">
+                <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
+                <span translate="no">iOS</span>
+              </button>
+              <button type="button" class="plat-pill" aria-pressed="true" data-plat="android">
+                <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
+                <span translate="no">Android</span>
+              </button>
+            </div>
+            <form class="beta-form" id="beta-form" novalidate>
+              <label for="email" class="sr" data-i18n="beta_email_label">Email</label>
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn…" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
+              <button class="btn btn-ticket" type="submit" data-i18n="beta_submit">nhận lời mời</button>
+            </form>
+            <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+          </div>
+          <div class="cta-stub" aria-hidden="true">
+            <span class="cta-stub-kicker">DAY 01</span>
+            <strong>BETA PASS</strong>
+            <span class="cta-stub-code">OURNEY · V3</span>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
+  <!-- Mobile Thumb-Zone Floating CTA Pill (<768px only) -->
+  <aside class="mobile-dock-cta" id="mobile-dock-cta" aria-label="Nhận lời mời beta" data-i18n-aria="dock_cta_aria" hidden>
+    <span class="mdc-text" data-i18n="dock_cta_text">Ngày 1 bắt đầu hôm nay.</span>
+    <a class="btn btn-primary btn-sm" href="#beta" data-i18n="dock_cta_btn">nhận lời mời</a>
+  </aside>
+
   <footer class="footer">
     <div class="wrap footer-inner">
       <img src="assets/brand/wordmark.png" alt="ourney" width="98" height="36">
-      <p class="muted">chụp một tấm. giữ một chuỗi. đi cùng nhau.</p>
+      <p class="muted" data-i18n="footer_tagline">chụp một tấm. giữ một chuỗi. đi cùng nhau.</p>
       <ul>
-        <li><a href="#privacy">riêng tư</a></li>
-        <li><a href="#faq">hỏi đáp</a></li>
-        <li><a href="#beta">nhận lời mời</a></li>
+        <li><a href="#journeys" data-i18n="footer_journeys">hành trình</a></li>
+        <li><a href="#privacy" data-i18n="footer_privacy">riêng tư</a></li>
+        <li><a href="#faq" data-i18n="footer_faq">hỏi đáp</a></li>
+        <li><a href="#beta" data-i18n="footer_beta">nhận lời mời</a></li>
       </ul>
     </div>
   </footer>
