@@ -2,7 +2,7 @@
 -- (FS-01, FS-07, FS-08, FS-09, FS-20, FS-21, FS-22, FS-23, FS-24, FS-25, FS-38).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(37);
+select plan(40);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -32,6 +32,8 @@ returns void language sql as $$
           format('checkins/%s/%s/%s_t.jpg', j, auth.uid(), cid), lib) $$;
 create function tests.code(n int) returns text language sql security definer as $$
   select invite_code from public.journeys where id = tests.j(n) $$;
+create function tests.conv(j uuid, member uuid, viewer uuid) returns uuid language sql security definer as $$
+  select id from public.conversations where journey_id = j and member_id = member and viewer_id = viewer $$;
 create function tests.befriend(a uuid, b uuid) returns void language plpgsql as $$
 begin
   perform tests.as_user(a); perform public.send_friend_request(b);
@@ -58,8 +60,6 @@ do $$ begin
   perform public.open_conversation(tests.j(1), tests.c(1));
 end $$;
 
-select (select id from public.conversations where journey_id = tests.j(1)) as cv1 \gset
-
 -- Pre-send_message upload with ON CONFLICT DO UPDATE (x-upsert) as sender u(2)
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
 select lives_ok(
@@ -68,8 +68,8 @@ select lives_ok(
     values ('messages', %L), ('messages', %L)
     on conflict (bucket_id, name) do update set updated_at = now()
   $f$,
-  format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(1)),
-  format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(2))),
+  format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
+  format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
   'FS-01: sender pre-uploads chat photos with ON CONFLICT DO UPDATE before send_message'
 );
 
@@ -86,8 +86,10 @@ select lives_ok(
     select public.send_message(%L, %L, 'photo', 'pic 1', %L),
            public.send_message(%L, %L, 'photo', 'pic 2', %L)
   $f$,
-  tests.m(1), :'cv1', format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(1)),
-  tests.m(2), :'cv1', format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(2))),
+  tests.m(1), tests.conv(tests.j(1), tests.u(1), tests.u(2)),
+  format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
+  tests.m(2), tests.conv(tests.j(1), tests.u(1), tests.u(2)),
+  format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
   'FS-01: sender commits both photo messages'
 );
 
@@ -109,7 +111,7 @@ do $$ begin perform tests.as_user(tests.u(1));
   perform public.report_content(null, null, 'spam', 'bad photo', tests.m(2)); end $$;
 select is(
   (select count(*)::int from storage.objects where bucket_id = 'messages')
-  + (select count(*)::int from public.conversation_messages(:'cv1'::uuid))
+  + (select count(*)::int from public.conversation_messages(tests.conv(tests.j(1), tests.u(1), tests.u(2))))
   + (select coalesce(sum((c->>'unread_count')::int), 0)::int from public.my_conversations() c)
   + (public.inbox_counts()->>'unread_messages')::int,
   0,
@@ -118,11 +120,13 @@ select is(
 
 do $$ begin
   perform tests.as_postgres();
-  update public.messages set created_at = now() - interval '5 minutes' where conversation_id = :'cv1'::uuid;
+  update public.messages
+     set created_at = now() - interval '5 minutes'
+   where conversation_id = tests.conv(tests.j(1), tests.u(1), tests.u(2));
   perform tests.as_user(tests.u(1));
-  perform public.clear_conversation(:'cv1'::uuid);
+  perform public.clear_conversation(tests.conv(tests.j(1), tests.u(1), tests.u(2)));
   perform tests.as_user(tests.u(2));
-  perform public.clear_conversation(:'cv1'::uuid);
+  perform public.clear_conversation(tests.conv(tests.j(1), tests.u(1), tests.u(2)));
 end $$;
 select is(
   (select count(*)::int from storage.objects where bucket_id = 'messages'),
@@ -135,8 +139,8 @@ select is(
   (select count(*)::int from public.claim_storage_purge(10)
     where bucket = 'messages'
       and path in (
-        format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(1)),
-        format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(2))
+        format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
+        format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
       )),
   2,
   'FS-07: clear_conversation enqueues hard-deleted message media_paths for immediate storage-purge-sweep claim'
@@ -202,7 +206,10 @@ select throws_ok(
 
 do $$ begin
   perform tests.as_postgres();
-  update public.journeys set start_date = current_date - 40, duration_days = 10, max_members = 10 where id = tests.j(2);
+  update public.journeys
+     set start_date = current_date - 40, duration_days = 10,
+         couple_self_name = null, couple_partner_name = null, max_members = 10
+   where id = tests.j(2);
   perform tests.as_user(tests.u(1));
 end $$;
 select throws_ok(
@@ -296,10 +303,10 @@ select throws_ok(
 -- ============================================================================
 do $$ begin
   perform tests.as_user(tests.u(2));
-  perform public.send_message(tests.m(10), :'cv1'::uuid, 'photo', 'before block',
-                              format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(10)));
+  perform public.send_message(tests.m(10), tests.conv(tests.j(1), tests.u(1), tests.u(2)), 'photo', 'before block',
+                              format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(10)));
   insert into storage.objects (bucket_id, name)
-  values ('messages', format('messages/%s/%s/%s.jpg', :'cv1', tests.u(2), tests.m(10)))
+  values ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(10)))
   on conflict (bucket_id, name) do nothing;
   perform tests.as_user(tests.u(1));
   perform public.block_user(tests.u(2));
@@ -381,10 +388,14 @@ select throws_ok(
   'P0001', 'invalid',
   'FS-22 (S9): active continuing imported journey cannot be followed before ending'
 );
-select throws_ok(
+select lives_ok(
   $$ select tests.checkin(tests.c(220), tests.j(22), now() - interval '10 days', true) $$,
+  'FS-22: active continuing imported journey allows initial historical library photos inside [p_first, p_last]'
+);
+select throws_ok(
+  $$ select tests.checkin(tests.c(222), tests.j(22), now() - interval '9 days', false) $$,
   '22008', 'invalid_captured_at',
-  'FS-22: active continuing imported journey enforces the 3-day anti-backdating rule'
+  'FS-22: active continuing imported journey enforces the 3-day anti-backdating rule on non-library / post-import days'
 );
 
 do $$ begin
@@ -423,7 +434,9 @@ do $$ begin
                                 current_date - 20, 30, 'UTC');
   perform public.update_journey(tests.j(30), null, 'aesthetic_flexer', 1, 2);
   perform public.create_journey(tests.j(31), 'group', 'custom', 'Ended Group', '🤝', null, null, false,
-                                current_date - 20, 30, 'UTC');
+                                current_date - 20, 30, 'UTC', 2, 'private', 'An', 'Binh');
+  perform tests.as_user(tests.u(3));
+  perform public.join_by_code(tests.code(31));
   perform tests.as_postgres();
   -- Simulate check-ins from 10 and 11 days ago on both journeys, then end both journeys
   insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path) values
@@ -443,6 +456,9 @@ do $$ begin
     (tests.c(312), tests.j(31), tests.u(1), current_date - 10, now() - interval '10 days',
      format('checkins/%s/%s/%s.jpg', tests.j(31), tests.u(1), tests.c(312)),
      format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(312)));
+  update public.check_ins
+     set partner_photo_path = format('checkins/%s/%s/%s_p.jpg', tests.j(31), tests.u(1), tests.c(311))
+   where id = tests.c(311);
   update public.memberships set joined_at = now() - interval '20 days'
    where journey_id in (tests.j(30), tests.j(31));
   update public.memberships set blur_media = true
@@ -466,6 +482,13 @@ select is(
   (public.shared_journey(tests.j(31))->>'current_streak')::int,
   2,
   'FS-23: ended group journey preserves its final group_streak in shared_journey days after ending'
+);
+select is(
+  coalesce(public.shared_journey(tests.j(31))->>'couple_self_name', '')
+  || coalesce(public.shared_journey(tests.j(31))->>'couple_partner_name', '')
+  || coalesce(public.shared_journey(tests.j(31))->'photos'->0->>'partner_photo_path', ''),
+  '',
+  'FS-23 (S29/S30): couple names and partner_photo_path are hidden when a partner co-member has not consented'
 );
 select results_eq(
   $$ select v->>'layout', (v->>'color')::int, (v->>'cover')::int, (v->>'cover_blurred')::boolean,
@@ -492,6 +515,7 @@ select is(
         'memberships_user_all_idx',
         'journeys_cover_checkin_idx',
         'messages_reply_to_checkin_idx',
+        'messages_media_path_idx',
         'saved_journeys_journey_idx',
         'journey_share_consents_user_idx',
         'journey_share_consents_requested_by_idx',
@@ -504,8 +528,8 @@ select is(
         'journey_shares_viewer_all_idx',
         'group_invitations_invitee_all_idx'
       )),
-  21,
-  'FS-24: all 21 reports RLS hot-path and FK indexes are present'
+  22,
+  'FS-24: all 22 reports RLS hot-path, message media_path, and FK indexes are present'
 );
 
 -- ============================================================================
@@ -556,12 +580,41 @@ select throws_ok(
   'FS-38: profiles.display_name rejects whitespace-only strings'
 );
 
-do $$ begin perform tests.as_user(tests.u(2)); end $$;
+do $$ begin
+  perform tests.as_user(tests.u(1));
+  if public.report_content(null, null, 'spam', 'msg first', tests.m(10))
+     <> public.report_content(null, null, 'harassment', 'msg duplicate', tests.m(10)) then
+    raise exception 'expected message report deduplication to return the existing open report id';
+  end if;
+  perform tests.as_user(tests.u(2));
+end $$;
 select is(
   public.report_content(tests.c(20), null, 'spam', 'first')
   = public.report_content(tests.c(20), null, 'harassment', 'duplicate'),
   true,
-  'FS-38: report_content deduplicates repeated reports on the same target by the same reporter'
+  'FS-38: report_content deduplicates repeated open reports on the same message or check-in target'
+);
+
+do $$ declare
+  r1 uuid;
+  r2 uuid;
+begin
+  perform tests.as_user(tests.u(2));
+  r1 := public.report_content(null, tests.u(1), 'spam', 'first user report');
+  perform tests.as_postgres();
+  update public.reports set status = 'dismissed' where id = r1;
+  perform tests.as_user(tests.u(2));
+  r2 := public.report_content(null, tests.u(1), 'harassment', 'new user report after dismissal');
+  if r1 = r2 then
+    raise exception 'expected new report id after prior user report was dismissed';
+  end if;
+end $$;
+select is(
+  (select count(*)::int from public.reports
+    where reporter_id = tests.u(2) and target_user_id = tests.u(1)
+      and target_checkin_id is null and target_message_id is null),
+  2,
+  'FS-38: report_content allows a fresh user report after a prior report was dismissed'
 );
 
 do $$ begin

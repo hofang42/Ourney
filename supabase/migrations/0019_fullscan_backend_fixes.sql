@@ -159,9 +159,126 @@ begin
 end;
 $$;
 
+create or replace function public.send_message(p_id uuid, p_conversation uuid, p_kind text, p_body text, p_media_path text,
+                                               p_reply_to uuid default null)
+returns json
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  c public.conversations%rowtype;
+  m public.messages%rowtype;
+  v_body text := nullif(btrim(p_body), '');
+  v_media text;
+begin
+  if p_id is null then
+    raise exception 'invalid';
+  end if;
+  select * into c from public.conversations where id = p_conversation for update;
+  if not found then
+    raise exception 'not_found';
+  end if;
+  if uid not in (c.member_id, c.viewer_id) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  select * into m from public.messages where id = p_id;
+  if found then
+    if m.sender_id = uid and m.conversation_id = p_conversation then
+      return private.message_json(m); -- idempotent retry
+    end if;
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if private.conversation_read_only(p_conversation) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if p_kind = 'text' then
+    if v_body is null or char_length(v_body) > 500 then
+      raise exception 'invalid';
+    end if;
+  elsif p_kind = 'photo' then
+    v_media := p_media_path;
+    if v_media is null
+       or v_media <> ('messages/' || p_conversation::text || '/' || uid::text || '/' || p_id::text || '.jpg')
+       or char_length(v_body) > 500 then
+      raise exception 'invalid';
+    end if;
+  else
+    raise exception 'invalid'; -- 'clip' ships with v0.2
+  end if;
+  if p_reply_to is not null and not exists (
+       select 1 from public.check_ins where id = p_reply_to and journey_id = c.journey_id) then
+    raise exception 'invalid';
+  end if;
+  if (select count(*) from public.messages
+       where sender_id = uid and created_at > now() - interval '1 minute') >= 60 then
+    raise exception 'rate_limited';
+  end if;
+
+  insert into public.messages (id, conversation_id, sender_id, kind, body, media_path, reply_to_checkin_id)
+  values (p_id, p_conversation, uid, p_kind, v_body, v_media, p_reply_to)
+  returning * into m;
+  update public.conversations
+     set last_message_at = m.created_at,
+         member_read_at = case when member_id = uid then m.created_at else member_read_at end,
+         viewer_read_at = case when viewer_id = uid then m.created_at else viewer_read_at end
+   where id = p_conversation;
+  return private.message_json(m);
+end;
+$$;
+
 -- ---------------------------------------------------------------------------
--- FS-08: atomic storage purge queueing inside purge_account_data
+-- FS-08: atomic storage purge queueing inside purge_account_data & lock order
 -- ---------------------------------------------------------------------------
+create or replace function public._leave_journey(p_journey uuid, p_user uuid) returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  was_owner boolean;
+  next_owner uuid;
+begin
+  perform 1 from public.journeys where id = p_journey for update;
+  select (role = 'owner') into was_owner
+    from public.memberships
+   where journey_id = p_journey and user_id = p_user and status = 'active' and deleted_at is null
+   for update;
+  if was_owner is null then
+    raise exception 'not_found';
+  end if;
+
+  update public.memberships set status = 'left', role = 'member'
+   where journey_id = p_journey and user_id = p_user;
+  update public.check_ins set deleted_at = now(), hidden_by_leave = true
+   where journey_id = p_journey and user_id = p_user and deleted_at is null;
+  -- A-B7: invitations sent by someone who is no longer in the group stop working.
+  update public.group_invitations set status = 'revoked', responded_at = now()
+   where journey_id = p_journey and inviter_id = p_user and status = 'pending';
+
+  if was_owner then
+    -- Lock candidate next_owner profile FOR KEY SHARE SKIP LOCKED so concurrent RPCs holding
+    -- FOR NO KEY UPDATE on profiles never block ownership transfer, and a co-member whose account
+    -- is simultaneously mid-DELETE is skipped rather than deadlocking.
+    select m.user_id into next_owner
+      from public.memberships m
+      join public.profiles p on p.id = m.user_id and p.deleted_at is null
+     where m.journey_id = p_journey and m.status = 'active' and m.deleted_at is null
+     order by m.joined_at, m.user_id
+     limit 1
+     for key share of p skip locked;
+    if next_owner is null then
+      update public.journeys set status = 'archived' where id = p_journey;
+    else
+      update public.memberships set role = 'owner'
+       where journey_id = p_journey and user_id = next_owner;
+      update public.journeys set owner_id = next_owner where id = p_journey;
+    end if;
+  end if;
+end;
+$$;
+
+revoke all on function public._leave_journey(uuid, uuid) from public, anon, authenticated;
+
 create or replace function public.purge_account_data(p_user uuid) returns void
 language plpgsql
 security definer
@@ -170,11 +287,17 @@ as $$
 declare
   r record;
 begin
-  -- Lock every journey the user owns or belongs to so concurrent joins cannot race _journeys_dying_with.
-  perform 1 from public.journeys j
-   where j.owner_id = p_user
-      or exists (select 1 from public.memberships m where m.journey_id = j.id and m.user_id = p_user)
-   for update;
+  -- Consistent lock hierarchy (profiles -> journeys ordered by id) matching join_by_code / send_group_invitation.
+  perform 1 from public.profiles where id = p_user for no key update;
+  perform 1
+    from (
+      select j.id
+        from public.journeys j
+       where j.owner_id = p_user
+          or exists (select 1 from public.memberships m where m.journey_id = j.id and m.user_id = p_user)
+       order by j.id
+       for update
+    ) s;
 
   -- Drop any stale pre-delete snapshot rows for this user and record the exact paths dying in this tx.
   delete from private.pending_storage_purge where user_id = p_user;
@@ -207,6 +330,7 @@ begin
     select m.journey_id from public.memberships m
      where m.user_id = p_user and m.status = 'active' and m.deleted_at is null
        and m.journey_id not in (select public._journeys_dying_with(p_user))
+     order by m.journey_id
   loop
     perform public._leave_journey(r.journey_id, p_user);
   end loop;
@@ -219,6 +343,224 @@ $$;
 
 revoke all on function public.purge_account_data(uuid) from public, anon, authenticated;
 grant execute on function public.purge_account_data(uuid) to service_role;
+
+create or replace function public.create_journey(
+  p_id uuid,
+  p_kind public.journey_kind,
+  p_template_id public.template_id,
+  p_title text,
+  p_emoji text,
+  p_metric_name text,
+  p_metric_unit text,
+  p_hide_metric_default boolean,
+  p_start_date date,
+  p_duration_days int,
+  p_timezone text,
+  p_max_members int default 10,
+  p_visibility public.journey_visibility default 'private',
+  p_couple_self_name text default null,
+  p_couple_partner_name text default null
+) returns public.journeys
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  j public.journeys%rowtype;
+  v_visibility public.journey_visibility;
+  v_code text;
+  v_token text;
+  v_self text := nullif(btrim(p_couple_self_name), '');
+  v_partner text := nullif(btrim(p_couple_partner_name), '');
+begin
+  if p_id is null or p_kind is null or p_start_date is null or p_timezone is null then
+    raise exception 'invalid';
+  end if;
+  if (p_kind = 'group' and p_visibility = 'link')
+     or (p_kind = 'solo' and p_visibility = 'group') then
+    raise exception 'invalid';
+  end if;
+  if (v_self is null) <> (v_partner is null)
+     or char_length(coalesce(v_self, '')) > 24 or char_length(coalesce(v_partner, '')) > 24 then
+    raise exception 'invalid';
+  end if;
+
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
+  if not found then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  select * into j from public.journeys where id = p_id;
+  if found then
+    if j.owner_id = uid then
+      return j;
+    end if;
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  if p_kind = 'group' then
+    v_visibility := 'group';
+    loop
+      v_code := public.random_token(8, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789');
+      exit when not exists (select 1 from public.journeys where invite_code = v_code);
+    end loop;
+  elsif p_visibility = 'link' then
+    v_visibility := 'link';
+    v_token := public.random_token(40, 'abcdefghijklmnopqrstuvwxyz0123456789');
+  else
+    v_visibility := 'private';
+  end if;
+
+  insert into public.journeys (
+    id, owner_id, kind, template_id, title, emoji, metric_name, metric_unit,
+    hide_metric_default, start_date, duration_days, timezone, visibility, status,
+    invite_code, max_members, public_token, couple_self_name, couple_partner_name)
+  values (
+    p_id, uid, p_kind, coalesce(p_template_id, 'custom'), btrim(p_title), btrim(p_emoji),
+    p_metric_name, p_metric_unit, coalesce(p_hide_metric_default, false), p_start_date,
+    p_duration_days, p_timezone, v_visibility, 'active', v_code,
+    case when p_kind = 'solo' then 1
+         when v_self is not null then 2
+         else coalesce(p_max_members, 10) end,
+    v_token, v_self, v_partner)
+  returning * into j;
+
+  insert into public.memberships (journey_id, user_id, role, hide_metric)
+  values (j.id, uid, 'owner', j.hide_metric_default);
+
+  return j;
+end;
+$$;
+
+create or replace function public.join_by_code(code text) returns public.journeys
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  v_code text := upper(btrim(code));
+  j public.journeys%rowtype;
+  m public.memberships%rowtype;
+  v_rejoin boolean;
+begin
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
+  if not found then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  delete from private.join_attempts
+   where user_id = uid and attempted_at < now() - interval '1 hour';
+  if (select count(*) from private.join_attempts where user_id = uid and not success) >= 10 then
+    raise exception 'rate_limited';
+  end if;
+
+  if v_code is not null and v_code ~ '^[A-Z0-9]{8}$' then
+    select * into j from public.journeys
+     where invite_code = v_code and kind = 'group' and deleted_at is null
+     for update;
+  end if;
+  if j.id is null then
+    insert into private.join_attempts (user_id, success) values (uid, false);
+    return null; -- not_found
+  end if;
+
+  if j.status <> 'active' then
+    raise exception 'ended';
+  end if;
+  if j.duration_days is not null
+     and public.local_date(now(), j.timezone) > j.start_date + j.duration_days - 1 then
+    raise exception 'ended';
+  end if;
+
+  select * into m from public.memberships where journey_id = j.id and user_id = uid;
+  v_rejoin := found;
+  if v_rejoin and m.status = 'active' then
+    return j; -- idempotent
+  end if;
+  if v_rejoin and m.removed_at is not null then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+      from public.memberships am
+      join public.blocks b
+        on b.deleted_at is null
+       and ((b.blocker_id = uid and b.blocked_id = am.user_id)
+         or (b.blocked_id = uid and b.blocker_id = am.user_id))
+     where am.journey_id = j.id and am.status = 'active' and am.deleted_at is null
+  ) then
+    raise exception 'blocked';
+  end if;
+
+  if (select count(*) from public.memberships
+       where journey_id = j.id and status = 'active' and deleted_at is null) >= j.max_members then
+    raise exception 'full';
+  end if;
+
+  if v_rejoin then
+    update public.memberships set status = 'active', role = 'member', deleted_at = null
+     where journey_id = j.id and user_id = uid;
+    update public.check_ins set deleted_at = null, hidden_by_leave = false
+     where journey_id = j.id and user_id = uid and hidden_by_leave and moderated_at is null;
+  else
+    insert into public.memberships (journey_id, user_id, role, hide_metric)
+    values (j.id, uid, 'member', j.hide_metric_default);
+  end if;
+  update public.group_invitations set status = 'accepted', responded_at = now()
+   where journey_id = j.id and invitee_id = uid and status = 'pending';
+  return j;
+end;
+$$;
+
+create or replace function public.find_user_by_username(p_username text) returns json
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  v_name text := lower(ltrim(btrim(coalesce(p_username, '')), '@'));
+  v_out json;
+begin
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
+  if not found then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  delete from private.rate_events where user_id = uid and at < now() - interval '1 day';
+  if (select count(*) from private.rate_events
+       where user_id = uid and kind = 'username_lookup' and at > now() - interval '1 hour') >= 30 then
+    raise exception 'rate_limited';
+  end if;
+  insert into private.rate_events (user_id, kind) values (uid, 'username_lookup');
+  select private.person(p.id) into v_out
+    from public.profiles p
+   where p.username = v_name and p.id <> uid and p.deleted_at is null
+     and not private.blocked_between(uid, p.id);
+  return v_out;
+end;
+$$;
+
+create or replace function public.create_friend_invite() returns text
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  v_token text;
+begin
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
+  if not found then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  loop
+    v_token := public.random_token(12, 'abcdefghijklmnopqrstuvwxyz0123456789');
+    exit when not exists (select 1 from public.friend_invites where token = v_token);
+  end loop;
+  insert into public.friend_invites (user_id, token) values (uid, v_token)
+  on conflict (user_id) do update set token = excluded.token, created_at = now();
+  return v_token;
+end;
+$$;
 
 -- ---------------------------------------------------------------------------
 -- FS-09 + FS-21: send_group_invitation, my_group_invitations, preview_group_by_code
@@ -236,7 +578,7 @@ declare
   v_kind text;
   v_id uuid;
 begin
-  perform 1 from public.profiles where id = uid and deleted_at is null for update;
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
   if not found then
     raise exception 'forbidden' using errcode = '42501';
   end if;
@@ -362,9 +704,11 @@ begin
       'created_at', i.created_at,
       'expires_at', i.expires_at) order by i.created_at desc)
       from public.group_invitations i
-      join public.journeys j on j.id = i.journey_id and j.deleted_at is null
+      join public.journeys j on j.id = i.journey_id and j.deleted_at is null and j.status = 'active'
      where i.journey_id = p_journey and i.status = 'pending' and i.expires_at > now()
        and private.is_active_member(j.id, i.inviter_id)
+       and (j.duration_days is null
+            or public.local_date(now(), j.timezone) <= j.start_date + j.duration_days - 1)
        and not private.blocked_between(uid, i.invitee_id)
        and not private.blocked_between(uid, i.inviter_id)
        and not exists (select 1 from public.memberships am
@@ -389,7 +733,7 @@ declare
   v_owner json;
   v_members json;
 begin
-  perform 1 from public.profiles where id = uid and deleted_at is null for update;
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
   if not found then
     raise exception 'forbidden' using errcode = '42501';
   end if;
@@ -476,6 +820,12 @@ $$;
 -- FS-09 + FS-22: check_ins_before_write, check_in_metrics_before_write,
 --                create_imported_journey, set_public_link, follow_frame
 -- ---------------------------------------------------------------------------
+alter table public.journeys add column if not exists import_end_date date;
+
+update public.journeys
+   set import_end_date = coalesce(start_date + duration_days - 1, public.local_date(created_at, timezone))
+ where origin = 'imported' and import_end_date is null;
+
 create or replace function public.check_ins_before_write() returns trigger
 language plpgsql
 set search_path = ''
@@ -504,10 +854,20 @@ begin
 
   new.local_date := public.local_date(new.captured_at, j.timezone);
   new.metric_value := null;
-  -- FS-22 (stricter safe behaviour): only finished retold journeys (duration_days is not null)
-  -- bypass the 3-day anti-backdating rule. Continuing imported journeys (status = 'active',
-  -- duration_days is null) enforce the normal active-journey 3-day window.
-  v_imported := j.origin = 'imported' and new.user_id = j.owner_id and j.duration_days is not null;
+  -- FS-22: finished retold journeys (duration_days is not null) allow historical dates in
+  -- [start_date, start_date + duration_days - 1]; active continuing imported journeys
+  -- (p_continues = true, status = 'active', duration_days is null) allow initial library
+  -- photos (from_library = true) within the declared pre-creation range [start_date, import_end_date],
+  -- while ongoing days (local_date > import_end_date or not from_library) enforce the 3-day window.
+  v_imported := j.origin = 'imported' and new.user_id = j.owner_id and (
+    j.duration_days is not null
+    or (
+      j.status = 'active'
+      and new.from_library
+      and new.local_date between j.start_date
+                             and coalesce(j.import_end_date, public.local_date(j.created_at, j.timezone))
+    )
+  );
 
   if current_user in ('authenticated', 'anon') then
     if tg_op = 'UPDATE' and old.moderated_at is not null then
@@ -521,7 +881,7 @@ begin
         raise exception 'ended' using errcode = 'P0001';
       end if;
       if new.local_date < j.start_date
-         or new.local_date > j.start_date + j.duration_days - 1 then
+         or (j.duration_days is not null and new.local_date > j.start_date + j.duration_days - 1) then
         raise exception 'invalid_captured_at' using errcode = '22008';
       end if;
     else
@@ -529,7 +889,8 @@ begin
         raise exception 'ended' using errcode = 'P0001';
       end if;
       if (tg_op = 'INSERT' or new.captured_at is distinct from old.captured_at)
-         and new.local_date < public.local_date(now(), j.timezone) - 3 then
+         and (new.local_date < public.local_date(now(), j.timezone) - 3
+              or new.local_date < j.start_date) then
         raise exception 'invalid_captured_at' using errcode = '22008';
       end if;
       if j.duration_days is not null and new.local_date > j.start_date + j.duration_days - 1 then
@@ -611,7 +972,7 @@ begin
     raise exception 'invalid';
   end if;
 
-  perform 1 from public.profiles where id = uid and deleted_at is null for update;
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
   if not found then
     raise exception 'forbidden' using errcode = '42501';
   end if;
@@ -626,13 +987,13 @@ begin
   insert into public.journeys (
     id, owner_id, kind, template_id, title, emoji, metric_name, metric_unit,
     hide_metric_default, start_date, duration_days, timezone, visibility, status,
-    max_members, origin, layout)
+    max_members, origin, layout, import_end_date)
   values (
-    p_id, uid, 'solo', coalesce(p_template, 'custom'), btrim(p_title), p_emoji,
+    p_id, uid, 'solo', coalesce(p_template, 'custom'), btrim(p_title), btrim(p_emoji),
     p_metric_name, p_metric_unit, coalesce(p_template, 'custom') = 'weight_loss', p_first,
     case when coalesce(p_continues, false) then null else v_days end, p_timezone, 'private',
     case when coalesce(p_continues, false) then 'active' else 'ended' end::public.journey_status,
-    1, 'imported', p_layout)
+    1, 'imported', p_layout, p_last)
   returning * into j;
   -- FS-22: anchor joined_at to p_first in the journey's timezone so journey_streak counts imported days.
   insert into public.memberships (journey_id, user_id, role, hide_metric, joined_at)
@@ -748,7 +1109,7 @@ begin
   if p_user is null or p_user = uid then
     raise exception 'invalid';
   end if;
-  perform 1 from public.profiles where id = uid and deleted_at is null for update;
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
   if not found then
     raise exception 'forbidden' using errcode = '42501';
   end if;
@@ -1066,6 +1427,53 @@ create policy memberships_select on public.memberships for select to authenticat
     or (private.is_member(journey_id) and not private.is_blocked_pair(user_id))
   );
 
+create or replace function public.my_pending_consents() returns setof json
+language plpgsql stable security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+begin
+  return query
+  select private.consent_json(c)
+    from public.journey_share_consents c
+    join public.journeys j on j.id = c.journey_id and j.deleted_at is null
+   where c.user_id = uid and c.status = 'pending' and private.is_active_member(c.journey_id, uid)
+     and not private.blocked_between(uid, j.owner_id)
+   order by c.created_at desc, c.journey_id;
+end;
+$$;
+
+create or replace function public.request_share_consent(p_journey uuid) returns void
+language plpgsql security definer set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  j public.journeys%rowtype;
+begin
+  select * into j from public.journeys where id = p_journey and deleted_at is null for update;
+  if not found then
+    raise exception 'not_found';
+  end if;
+  if not private.is_member(p_journey) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  if j.kind <> 'group' then
+    raise exception 'invalid';
+  end if;
+  insert into public.journey_share_consents (journey_id, user_id, status, requested_by, decided_at)
+  values (p_journey, uid, 'accepted', uid, now())
+  on conflict (journey_id, user_id) do update
+    set status = 'accepted', decided_at = now();
+  insert into public.journey_share_consents (journey_id, user_id, status, requested_by)
+  select m.journey_id, m.user_id, 'pending', uid
+    from public.memberships m
+   where m.journey_id = p_journey and m.user_id <> uid and m.status = 'active' and m.deleted_at is null
+     and not private.blocked_between(uid, m.user_id)
+     and not private.blocked_between(m.user_id, j.owner_id)
+  on conflict (journey_id, user_id) do nothing;
+end;
+$$;
+
 -- ---------------------------------------------------------------------------
 -- FS-22 + FS-23: group_streak & journey_view parity
 -- ---------------------------------------------------------------------------
@@ -1105,6 +1513,7 @@ declare
   v_streak int;
   v_sharer uuid;
   v_show_metric boolean;
+  v_show_couple boolean;
   v_eval_today date;
   v_cover_id uuid;
   v_cover_blurred boolean := false;
@@ -1114,6 +1523,16 @@ begin
   v_show_metric := v_member or exists (
     select 1 from public.memberships m
      where m.journey_id = j.id and m.user_id = j.owner_id and not m.hide_metric);
+  -- S29/S30: couple names and partner photo on a group journey require every active member
+  -- to have accepted share consent and not be in a blocked pair with the viewer.
+  v_show_couple := v_member or j.kind = 'solo' or (
+    private.consent_accepted(j.id, j.owner_id)
+    and not exists (
+      select 1 from public.memberships cm
+       where cm.journey_id = j.id and cm.status = 'active' and cm.deleted_at is null
+         and (not private.consent_accepted(j.id, cm.user_id) or private.is_blocked_pair(cm.user_id))
+    )
+  );
 
   select coalesce(json_agg(json_build_object(
            'checkin_id', ph.id,
@@ -1121,7 +1540,7 @@ begin
            'local_date', ph.local_date,
            'photo_path', case when not v_member and ph.blur_media then '' else ph.photo_path end,
            'thumb_path', case when not v_member and ph.blur_media then '' else ph.thumb_path end,
-           'partner_photo_path', case when not v_member and ph.blur_media then null else ph.partner_photo_path end,
+           'partner_photo_path', case when (not v_member and ph.blur_media) or not v_show_couple then null else ph.partner_photo_path end,
            'caption', ph.caption,
            'metric_value', case when ph.user_id = uid or not ph.hide_metric then cm.metric_value end,
            'like_count', case when v_counts then rc.cnt else 0 end,
@@ -1203,8 +1622,8 @@ begin
     'layout', j.layout,
     'color', j.color,
     'cover', j.cover,
-    'couple_self_name', j.couple_self_name,
-    'couple_partner_name', j.couple_partner_name,
+    'couple_self_name', case when v_show_couple then j.couple_self_name end,
+    'couple_partner_name', case when v_show_couple then j.couple_partner_name end,
     'cover_blurred', v_cover_blurred,
     'owner', private.owner_for_viewer(j.id),
     'members', v_members,
@@ -1281,6 +1700,8 @@ create index if not exists friendships_source_journey_idx
   on public.friendships (source_journey_id) where source_journey_id is not null;
 create index if not exists journey_shares_viewer_all_idx on public.journey_shares (viewer_id);
 create index if not exists group_invitations_invitee_all_idx on public.group_invitations (invitee_id);
+create index if not exists messages_media_path_idx
+  on public.messages (media_path) where media_path is not null;
 
 -- ---------------------------------------------------------------------------
 -- FS-25: profile_stats() Rule S12 & ended/completed parity
@@ -1374,13 +1795,28 @@ as $$
   end, false);
 $$;
 
+update public.journeys
+   set title = case when btrim(title) = '' then 'Journey' else title end,
+       emoji = case when btrim(emoji) = '' then '✨' else emoji end
+ where btrim(title) = '' or btrim(emoji) = '';
+
+update public.journeys
+   set dna = null
+ where dna is not null and not public.journey_dna_valid(dna);
+
+update public.profiles
+   set display_name = username
+ where btrim(display_name) = '';
+
 alter table public.journeys drop constraint if exists journeys_title_not_blank;
 alter table public.journeys add constraint journeys_title_not_blank
-  check (char_length(btrim(title)) between 1 and 60 and char_length(btrim(emoji)) between 1 and 16);
+  check (char_length(btrim(title)) between 1 and 60 and char_length(btrim(emoji)) between 1 and 16) not valid;
+alter table public.journeys validate constraint journeys_title_not_blank;
 
 alter table public.profiles drop constraint if exists profiles_display_name_not_blank;
 alter table public.profiles add constraint profiles_display_name_not_blank
-  check (char_length(btrim(display_name)) between 1 and 40);
+  check (char_length(btrim(display_name)) between 1 and 40) not valid;
+alter table public.profiles validate constraint profiles_display_name_not_blank;
 
 create or replace function public.report_content(
   p_checkin uuid,
@@ -1401,17 +1837,38 @@ begin
   if (p_checkin is null and p_user is null and p_message is null) or p_reason is null then
     raise exception 'invalid';
   end if;
-  perform 1 from public.profiles where id = uid and deleted_at is null for update;
+  perform 1 from public.profiles where id = uid and deleted_at is null for no key update;
   if not found then
     raise exception 'forbidden' using errcode = '42501';
   end if;
   if p_message is not null then
-    if not private.can_read_message(p_message) then
+    select m.sender_id into v_target_user
+      from public.messages m
+      join public.conversations c on c.id = m.conversation_id
+     where m.id = p_message and m.deleted_at is null
+       and uid in (c.member_id, c.viewer_id)
+       and not private.blocked_between(c.member_id, c.viewer_id)
+       and m.created_at > coalesce(
+             case when c.member_id = uid then c.member_cleared_at else c.viewer_cleared_at end,
+             '-infinity'::timestamptz)
+       and not exists (select 1 from public.message_hides h
+                        where h.message_id = m.id and h.user_id = uid);
+    if v_target_user is null then
       raise exception 'not_found';
     end if;
-    select m.sender_id into v_target_user from public.messages m where m.id = p_message;
   elsif p_checkin is not null then
-    if not (private.can_see_checkin(p_checkin) or private.viewer_can_see_checkin(p_checkin)) then
+    if not (
+      private.can_see_checkin(p_checkin)
+      or exists (
+        select 1 from public.check_ins c
+          join public.journeys j on j.id = c.journey_id
+         where c.id = p_checkin
+           and private.checkin_shareable(c.id)
+           and not private.is_blocked_pair(c.user_id)
+           and not private.is_blocked_pair(j.owner_id)
+           and (private.has_active_share(j.id, uid) or j.public_token is not null)
+      )
+    ) then
       raise exception 'not_found';
     end if;
     select c.user_id into v_target_user from public.check_ins c where c.id = p_checkin;
@@ -1428,11 +1885,12 @@ begin
     raise exception 'invalid';
   end if;
 
-  -- FS-38: deduplicate repeated reports on the same target by the same reporter.
+  -- FS-38: deduplicate repeated open reports on the same target by the same reporter.
   select r.id into v_id
     from public.reports r
    where r.reporter_id = uid
      and r.deleted_at is null
+     and r.status = 'open'
      and r.target_checkin_id is not distinct from p_checkin
      and r.target_message_id is not distinct from p_message
      and r.target_user_id is not distinct from v_target_user
@@ -1440,6 +1898,13 @@ begin
    limit 1;
   if v_id is not null then
     return v_id;
+  end if;
+
+  -- If a prior report on this specific message or check-in was already resolved/dismissed,
+  -- the content remains hidden from the caller (FR-F2) and cannot be reported again.
+  if (p_message is not null and not private.can_read_message(p_message))
+     or (p_checkin is not null and private.has_reported(p_checkin)) then
+    raise exception 'not_found';
   end if;
 
   if (select count(*) from public.reports

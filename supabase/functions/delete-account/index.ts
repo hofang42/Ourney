@@ -227,10 +227,10 @@ export async function handle(req: Request): Promise<Response> {
       console.warn("delete code check failed", error ? `${error.status ?? "?"} ${error.message}` : "user mismatch");
       return authFailure(error?.message, error?.status);
     }
-    // FS-02: revoke the temporary session minted by verifyOtp so a transient deleteUser error
-    // never leaves an extra active session behind.
+    // FS-02: revoke only the temporary local session minted by verifyOtp on `anon` (never
+    // `scope: "global"`, which would revoke the caller's mobile session before deleteUser succeeds).
     try {
-      await anon.auth.signOut();
+      await anon.auth.signOut({ scope: "local" });
     } catch {
       // Best-effort cleanup before deleteUser removes all sessions.
     }

@@ -200,15 +200,34 @@ export async function handle(req: Request): Promise<Response> {
   }
 
   // Solo streak only (S12: never for imported; S34: no group streak for outsiders).
-  // FS-23: anchor ended/archived journeys to the last check-in day so streak does not decay to 0 after 2 days.
+  // FS-23: anchor ended/archived journeys to the owner's last non-deleted check-in day (matching
+  // private.journey_view, even when trailing check-ins use hidden_in_share = true).
   let streak: { current: number; best: number; completed: number } | null = null;
   if (journey.kind === "solo" && journey.origin !== "imported") {
     const ended = journey.status === "ended" || journey.status === "archived";
-    const lastCheckInDate = rows.length > 0 ? rows[rows.length - 1].local_date : journey.start_date;
+    let evalToday: string | undefined;
+    if (ended) {
+      const { data: latestRow, error: latestError } = await admin
+        .from("check_ins")
+        .select("local_date")
+        .eq("journey_id", journey.id)
+        .eq("user_id", journey.owner_id)
+        .is("deleted_at", null)
+        .order("local_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestError) {
+        console.error("latest check-in lookup failed", latestError.message);
+        return json({ error: "internal" }, 500, cors);
+      }
+      const maxDate = (latestRow as { local_date?: string } | null)?.local_date ?? journey.start_date;
+      const localToday = journeyLocalDay(journey.timezone);
+      evalToday = maxDate < localToday ? maxDate : localToday;
+    }
     const res = await admin.rpc("journey_streak", {
       journey: journey.id,
       member: journey.owner_id,
-      ...(ended ? { today: lastCheckInDate } : {}),
+      ...(evalToday ? { today: evalToday } : {}),
     });
     if (res.error) {
       console.error("journey_streak failed", res.error.message);
