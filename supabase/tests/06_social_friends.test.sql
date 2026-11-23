@@ -2,7 +2,7 @@
 -- Users: 1..7 (see each block).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(43);
+select plan(45);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -76,7 +76,11 @@ select lives_ok($$ select public.send_friend_request(tests.u(2)) $$, 'u1 sends a
 select lives_ok($$ select public.send_friend_request(tests.u(2)) $$, 'sending again is idempotent');
 select is((select count(*)::int from public.friendships), 1, 'requester reads the pair row');
 select is((select f->>'direction' from public.my_friends() f), 'outgoing', 'my_friends: outgoing for the sender');
+select is((select count(*)::int from public.profiles where id = tests.u(2)), 0,
+  'FS-20: sender of an unaccepted friend request cannot read target profile directly');
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
+select is((select count(*)::int from public.profiles where id = tests.u(1)), 1,
+  'FS-20: recipient of a pending friend request can read requester profile');
 select results_eq($$ select f->>'status', f->>'direction', f->>'source', f->'person'->>'username' from public.my_friends() f $$,
   $$ values ('pending', 'incoming', 'direct', 'fuser1') $$, 'my_friends: incoming pending request');
 select is((public.inbox_counts()->>'friend_requests')::int, 1, 'inbox_counts.friend_requests counts it');
