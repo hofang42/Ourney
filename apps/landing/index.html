@@ -7,26 +7,240 @@
   <meta name="description" content="Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.">
   <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
-  <link rel="icon" href="assets/brand/icon-camera.png">
-  <link rel="preload" href="assets/fonts/SpaceGrotesk-Variable.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/fonts/BeVietnamPro-Regular.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="assets/brand/favicon.svg">
+  <link rel="preload" href="assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <script>
     (function () {
       var d = document.documentElement;
-      d.classList.add('js');
       try {
-        var t = localStorage.getItem('ourney-theme');
-        if (t === 'light' || t === 'dark') d.dataset.theme = t;
-        var q = new URLSearchParams(location.search).get('lang');
-        var l = (q === 'en' || q === 'vi') ? q : (localStorage.getItem('ourney-lang') || 'vi');
-        if (l === 'en' || l === 'vi') { d.lang = l; d.dataset.lang = l; }
         if (sessionStorage.getItem('ourney-intro-seen') === '1') d.classList.add('intro-seen');
+        var t = localStorage.getItem('ourney-theme');
+        if (t === 'light' || t === 'dark') {
+          d.dataset.theme = t;
+          var m = t === 'dark' ? 'all' : 'not all';
+          var mo = new MutationObserver(function () {
+            var s = d.querySelectorAll('source.src-dark');
+            for (var i = 0; i < s.length; i++) if (s[i].media !== m) s[i].media = m;
+          });
+          mo.observe(d, { childList: true, subtree: true });
+          addEventListener('DOMContentLoaded', function () { mo.disconnect(); }, { once: true });
+        }
       } catch (e) {}
     })();
   </script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Ourney Brand Sticker SVG Sprite (Geometry from apps/mobile/lib/ui/components/ourney_icons.dart & design/ourney-v2-app/src/app/icons.tsx) -->
+  <svg class="svg-sprite" aria-hidden="true">
+    <defs>
+      <!-- Camera with Lens (#10B981) -->
+      <symbol id="i-camera" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path class="s-ink" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="3.6" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="13" r="1.4" fill="#1A1A1A"/>
+        <circle cx="17" cy="10" r="1" fill="#FFF8EE"/>
+      </symbol>
+
+      <!-- Streak Flame with Inner Core (#E04F33 + #FFD84D) -->
+      <symbol id="i-flame" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path class="s-ink" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" fill="#E04F33" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Squad / Two Friends (#FF9F1C) -->
+      <symbol id="i-squad" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <g class="s-ink">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <circle cx="17" cy="9" r="2.5" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="9" cy="8" r="3" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Study / Open Book (Journey Type 1: Accountability Squad) -->
+      <symbol id="i-book" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5ZM20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z"/>
+        <path class="s-ink" d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5ZM20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z"/>
+        <path d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5Z" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M6 9h3.5M6 12.5h3.5M14.5 9H18M14.5 12.5H18" stroke="#1A1A1A" stroke-width="1.9" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Workout / Dumbbell (Journey Type 2: Aesthetic Flexer) -->
+      <symbol id="i-workout" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <rect x="2.8" y="9" width="2.8" height="6" rx="1.2"/><rect x="5.6" y="6.5" width="3.2" height="11" rx="1.4"/>
+          <rect x="15.2" y="6.5" width="3.2" height="11" rx="1.4"/><rect x="18.4" y="9" width="2.8" height="6" rx="1.2"/>
+          <path d="M8.8 12h6.4"/>
+        </g>
+        <g class="s-ink">
+          <rect x="2.8" y="9" width="2.8" height="6" rx="1.2"/><rect x="5.6" y="6.5" width="3.2" height="11" rx="1.4"/>
+          <rect x="15.2" y="6.5" width="3.2" height="11" rx="1.4"/><rect x="18.4" y="9" width="2.8" height="6" rx="1.2"/>
+          <path d="M8.8 12h6.4"/>
+        </g>
+        <path d="M8.5 12h7" stroke="#1A1A1A" stroke-width="3.2" stroke-linecap="round"/>
+        <rect x="2.8" y="9" width="2.8" height="6" rx="1.2" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="18.4" y="9" width="2.8" height="6" rx="1.2" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="5.6" y="6.5" width="3.2" height="11" rx="1.4" fill="#A13CC9" stroke="#1A1A1A" stroke-width="2"/>
+        <rect x="15.2" y="6.5" width="3.2" height="11" rx="1.4" fill="#A13CC9" stroke="#1A1A1A" stroke-width="2"/>
+      </symbol>
+
+      <!-- Trip / Luggage Suitcase (Journey Type 3: Memory Collectors) -->
+      <symbol id="i-trip" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M9 7V4.5h6V7"/><rect x="5.5" y="7" width="13" height="13" rx="2.4"/>
+          <path d="M8.5 20v1.5M15.5 20v1.5"/>
+        </g>
+        <g class="s-ink">
+          <path d="M9 7V4.5h6V7"/><rect x="5.5" y="7" width="13" height="13" rx="2.4"/>
+          <path d="M8.5 20v1.5M15.5 20v1.5"/>
+        </g>
+        <path d="M9 7V4.5h6V7" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="5.5" y="7" width="13" height="13" rx="2.4" fill="#E05A47" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M9 7v13M15 7v13" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="9" y="11.2" width="6" height="3.6" rx="1" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.6"/>
+        <path d="M8.5 20v1.5M15.5 20v1.5" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Weight & Body Balance Scales (Journey Type 4: Quiet Transformer) -->
+      <symbol id="i-scales" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M12 4v15.5M7 20h10M5 7h14M5 7l-2.6 6h5.2ZM19 7l-2.6 6h5.2Z"/>
+        </g>
+        <g class="s-ink">
+          <path d="M12 4v15.5M7 20h10M5 7h14M5 7l-2.6 6h5.2ZM19 7l-2.6 6h5.2Z"/>
+        </g>
+        <path d="M12 4.5v15M7 20h10M5 7h14" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M5 7l-2.6 6h5.2Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M19 7l-2.6 6h5.2Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="7" r="2.1" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="1.9"/>
+      </symbol>
+
+      <!-- Couple Rituals Heart (Journey Type 5: Couple Rituals) -->
+      <symbol id="i-couple" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z"/>
+        <path class="s-ink" d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z"/>
+        <path d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z" fill="#FF4D6D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M7.2 9.2a2.4 2.4 0 0 1 2.4-2" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Custom Habit Pencil (Journey Type 6: Minimalist Habit) -->
+      <symbol id="i-custom" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m5 16.8-1.2 4.4 4.4-1.2L20 8.2 15.8 4Z"/>
+        <path class="s-ink" d="m5 16.8-1.2 4.4 4.4-1.2L20 8.2 15.8 4Z"/>
+        <path d="m5 16.8-1.2 4.4 4.4-1.2L20 8.2 15.8 4Z" fill="#2AA7E0" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="m13.5 6.3 4.2 4.2" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="m5 16.8 3.2 3.2-4.4 1.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Day 30 Trophy (#FF9F1C / #FFD84D) -->
+      <symbol id="i-trophy" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <g class="s-ink">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Sticker Checkmark Disc (#7EE8A2) -->
+      <symbol id="i-check" viewBox="-2 -2 28 28">
+        <circle class="s-die" cx="12" cy="12" r="9.2"/>
+        <circle cx="12" cy="12" r="9.2" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2.2"/>
+        <path d="m7.8 12.3 3 3.1 5.6-6.2" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Padlock with Open Shackle & Keyhole (#2AA7E0) -->
+      <symbol id="i-lock" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <rect x="6" y="10" width="12" height="10" rx="2.2"/>
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
+        </g>
+        <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round"/>
+        <rect x="6" y="10" width="12" height="10" rx="2.2" fill="#2AA7E0" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="14.2" r="1.3" fill="#FFF8EE"/>
+        <path d="M12 15.2v2.2" stroke="#FFF8EE" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Chain Link with Open Loops (#2AA7E0) -->
+      <symbol id="i-link" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.4" stroke-linecap="round"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#2AA7E0" stroke-width="2.1" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Eye-Off with Pupil & Slash (#7EC8E3) -->
+      <symbol id="i-eye-off" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"/>
+          <path d="M4 4l16 16"/>
+        </g>
+        <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" fill="#7EC8E3" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="3.2" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="12" r="1.3" fill="#1A1A1A"/>
+        <path d="M4 4l16 16" stroke="#FFF8EE" stroke-width="4.4" stroke-linecap="round"/>
+        <path d="M4 4l16 16" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Blur Droplet (#CF9FFF) -->
+      <symbol id="i-drop" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
+        <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9.2 14.2a3.2 3.2 0 0 0 2.8 2.8" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Local-First Shield (#7EE8A2) -->
+      <symbol id="i-shield" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z"/>
+        <path d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="m8.8 12.2 2.2 2.2 4.4-4.6" fill="none" stroke="#1A1A1A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Sparkle (#FF9F1C) -->
+      <symbol id="i-sparkle" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Star Sticker (#FFD84D) -->
+      <symbol id="i-star" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z"/>
+        <path class="s-ink" d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z"/>
+        <path d="m12 3 2.6 5.4 5.9.8-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.9" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- Squad Reaction: Clap (#FF9F1C) -->
+      <symbol id="i-react-clap" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+        <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="m4 10-2-2M7 6 6 3M11 5l1-3" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
+      </symbol>
+
+      <!-- Squad Reaction: Flex (#CF9FFF) -->
+      <symbol id="i-react-flex" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z"/>
+        <path d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 11 5 9l-2 3 2 5" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
   <a class="skip" href="#main" data-i18n="skip">Bỏ qua tới nội dung chính</a>
 
   <header class="nav" id="top">
@@ -34,7 +248,7 @@
       <a class="brand" href="#top" translate="no" aria-label="Ourney, về đầu trang" data-i18n-aria="nav_brand_aria">
         <img src="assets/brand/wordmark.png" alt="ourney" width="122" height="45">
       </a>
-      <nav aria-label="Chính" data-i18n-aria="nav_main_aria">
+      <nav aria-label="Điều hướng chính" data-i18n-aria="nav_main_aria">
         <ul class="nav-links">
           <li><a href="#journeys" data-i18n="nav_journeys">hành trình</a></li>
           <li><a href="#how" data-i18n="nav_how">cách dùng</a></li>
@@ -75,19 +289,19 @@
           <div class="intro-recoil-1">
             <div class="intro-recoil-2">
               <div class="intro-stamp stamp-1">
-                <img src="assets/brand/icon-camera.png" alt="" width="36" height="36">
+                <svg class="o-sticker" width="36" height="36" aria-hidden="true"><use href="#i-camera"/></svg>
                 <span data-i18n="stamp_1">chụp một tấm.</span>
               </div>
             </div>
           </div>
           <div class="intro-recoil-2">
             <div class="intro-stamp stamp-2">
-              <img src="assets/brand/icon-flame.png" alt="" width="36" height="36">
+              <svg class="o-sticker" width="36" height="36" aria-hidden="true"><use href="#i-flame"/></svg>
               <span data-i18n="stamp_2">giữ một chuỗi.</span>
             </div>
           </div>
           <div class="intro-stamp stamp-3">
-            <img src="assets/brand/icon-squad.png" alt="" width="36" height="36">
+            <svg class="o-sticker" width="36" height="36" aria-hidden="true"><use href="#i-squad"/></svg>
             <span data-i18n="stamp_3">đi cùng nhau.</span>
           </div>
         </div>
@@ -95,30 +309,30 @@
 
       <div class="wrap hero-center">
         <div class="hero-stage" id="hero-stage">
-          <!-- Radial Sticker Orbit (6 on desktop/tablet, 3 on standard mobile, 2 on compact <360px) -->
-          <div class="hero-orbit-item orbit-1" style="--ox:92px;--oy:68px;--ux:-1;--uy:-0.85;--rot:-9deg" aria-hidden="true">
-            <span class="orbit-tile tile-study"><img src="assets/brand/icon-type-study.png" alt="" width="38" height="38"></span>
+          <!-- Radial Sticker Orbit -->
+          <div class="hero-orbit-item orbit-1" aria-hidden="true">
+            <span class="orbit-tile tile-study"><svg class="o-sticker" width="36" height="36"><use href="#i-book"/></svg></span>
           </div>
-          <div class="hero-orbit-item orbit-2" style="--ox:-96px;--oy:64px;--ux:1;--uy:-0.8;--rot:8deg" aria-hidden="true">
-            <span class="orbit-tile tile-flame"><img src="assets/brand/icon-flame.png" alt="" width="38" height="38"></span>
+          <div class="hero-orbit-item orbit-2" aria-hidden="true">
+            <span class="orbit-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-flame"/></svg></span>
           </div>
-          <div class="hero-orbit-item orbit-3" style="--ox:88px;--oy:-54px;--ux:-0.95;--uy:0.75;--rot:7deg" aria-hidden="true">
-            <span class="orbit-tile tile-couple"><img src="assets/brand/icon-type-couple.png" alt="" width="36" height="36"></span>
+          <div class="hero-orbit-item orbit-3" aria-hidden="true">
+            <span class="orbit-tile tile-couple"><svg class="o-sticker" width="36" height="36"><use href="#i-couple"/></svg></span>
           </div>
-          <div class="hero-orbit-item orbit-4 orbit-desk" style="--ox:-92px;--oy:-58px;--ux:0.95;--uy:0.8;--rot:-7deg" aria-hidden="true">
-            <span class="orbit-tile tile-workout"><img src="assets/brand/icon-type-workout.png" alt="" width="36" height="36"></span>
+          <div class="hero-orbit-item orbit-4 orbit-desk" aria-hidden="true">
+            <span class="orbit-tile tile-workout"><svg class="o-sticker" width="36" height="36"><use href="#i-workout"/></svg></span>
           </div>
-          <div class="hero-orbit-item orbit-5 orbit-desk" style="--ox:118px;--oy:8px;--ux:-1.15;--uy:0.1;--rot:-5deg" aria-hidden="true">
-            <span class="orbit-tile tile-trip"><img src="assets/brand/icon-type-trip.png" alt="" width="34" height="34"></span>
+          <div class="hero-orbit-item orbit-5 orbit-desk" aria-hidden="true">
+            <span class="orbit-tile tile-trip"><svg class="o-sticker" width="36" height="36"><use href="#i-trip"/></svg></span>
           </div>
-          <div class="hero-orbit-item orbit-6 orbit-desk" style="--ox:-118px;--oy:10px;--ux:1.15;--uy:0.12;--rot:6deg" aria-hidden="true">
-            <span class="orbit-tile tile-trophy"><img src="assets/brand/icon-trophy.png" alt="" width="36" height="36"></span>
+          <div class="hero-orbit-item orbit-6 orbit-desk" aria-hidden="true">
+            <span class="orbit-tile tile-trophy"><svg class="o-sticker" width="36" height="36"><use href="#i-trophy"/></svg></span>
           </div>
 
           <!-- Desktop Left-Shoulder Beta Departure Ticket Stub -->
           <a class="hero-ticket" href="#beta" aria-label="Vé khởi hành Beta cho iOS và Android" data-i18n-aria="hero_ticket_aria">
             <div class="ht-top">
-              <img src="assets/brand/icon-sparkle.png" alt="" width="20" height="20">
+              <svg class="o-sticker" width="20" height="20" aria-hidden="true"><use href="#i-sparkle"/></svg>
               <span class="ht-kicker" data-i18n="ticket_kicker">VÉ KHỞI HÀNH · BETA</span>
             </div>
             <div class="ht-body">
@@ -145,7 +359,7 @@
             </div>
           </div>
 
-          <!-- Right-Shoulder Dropping Live Check-In Polaroid Card -->
+          <!-- Live Check-In Card (Right shoulder on >=768px; compact dock pill below phone on <768px) -->
           <div class="hero-checkin-card" id="hero-checkin-card" aria-hidden="true">
             <div class="hcc-photo" id="hcc-photo" data-cycle="0">
               <svg class="hcc-art art-0" viewBox="0 0 120 76" aria-hidden="true">
@@ -166,8 +380,8 @@
                 <circle cx="88" cy="20" r="7" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
               </svg>
               <span class="hcc-pill">
-                <img class="hcc-flame" id="hcc-flame" src="assets/brand/icon-flame.png" alt="" width="18" height="18">
-                <b class="hcc-streak" id="hcc-streak">20</b>
+                <svg class="o-sticker hcc-flame" id="hcc-flame" width="18" height="18"><use href="#i-flame"/></svg>
+                <b class="hcc-streak" id="hcc-streak">21</b>
               </span>
             </div>
             <div class="hcc-meta">
@@ -175,21 +389,21 @@
               <div class="hcc-row">
                 <span class="hcc-badge" id="hcc-badge" data-i18n="hcc_b0">chuỗi 21 ngày</span>
                 <span class="hcc-reacts">
-                  <img src="assets/brand/icon-react-fire.png" alt="" width="16" height="16"><b>4</b>
-                  <img src="assets/brand/icon-react-clap.png" alt="" width="16" height="16"><b>3</b>
+                  <svg class="o-sticker" width="16" height="16"><use href="#i-flame"/></svg><b id="hcc-fire-cnt">4</b>
+                  <svg class="o-sticker" width="16" height="16"><use href="#i-react-clap"/></svg><b id="hcc-clap-cnt">3</b>
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Hero Headline, Lede & Dual CTAs overlapping bottom fade of masked phone -->
+        <!-- Hero Headline, Lede & Dual CTAs -->
         <div class="hero-copy-stack">
           <h1 data-i18n="hero_h1">chụp một tấm. giữ một chuỗi.</h1>
           <p class="lede" data-i18n="hero_lede">Nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì — học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay thói quen nhỏ. Đi một mình hoặc rủ cả nhóm.</p>
           <div class="hero-cta" id="hero-cta">
             <a class="btn btn-primary" href="#beta">
-              <img src="assets/brand/icon-camera.png" alt="" width="24" height="24">
+              <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
               <span data-i18n="hero_cta_primary">nhận lời mời beta</span>
             </a>
             <a class="btn btn-secondary" href="#journeys">
@@ -216,28 +430,28 @@
 
               <!-- 6 Tactile Persona Tabs (2x3 mobile, 3x2 desktop) -->
               <div class="j-tabs" role="tablist" aria-label="Chọn giao diện hành trình" data-i18n-aria="j_tablist_aria" id="j-tabs">
-                <button class="j-tab" type="button" role="tab" id="tab-squad" aria-controls="j-panel" aria-selected="true" tabindex="0" data-idx="0" style="--c:#FFD84D">
-                  <span class="j-tab-badge"><img src="assets/brand/icon-type-study.png" alt="" width="24" height="24"></span>
+                <button class="j-tab tab-c-squad" type="button" role="tab" id="tab-squad" aria-controls="j-panel" aria-selected="true" tabindex="0" data-idx="0">
+                  <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-book"/></svg></span>
                   <span class="j-tab-lbl" data-i18n="j_tab_0">IELTS 7.5</span>
                 </button>
-                <button class="j-tab" type="button" role="tab" id="tab-flexer" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="1" style="--c:#CF9FFF">
-                  <span class="j-tab-badge"><img src="assets/brand/icon-type-workout.png" alt="" width="24" height="24"></span>
+                <button class="j-tab tab-c-flexer" type="button" role="tab" id="tab-flexer" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="1">
+                  <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-workout"/></svg></span>
                   <span class="j-tab-lbl" data-i18n="j_tab_1">Chạy sáng</span>
                 </button>
-                <button class="j-tab" type="button" role="tab" id="tab-memory" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="2" style="--c:#FFB347">
-                  <span class="j-tab-badge"><img src="assets/brand/icon-type-trip.png" alt="" width="24" height="24"></span>
+                <button class="j-tab tab-c-memory" type="button" role="tab" id="tab-memory" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="2">
+                  <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-trip"/></svg></span>
                   <span class="j-tab-lbl" data-i18n="j_tab_2">Đà Lạt 7 ngày</span>
                 </button>
-                <button class="j-tab" type="button" role="tab" id="tab-quiet" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="3" style="--c:#7EE8A2">
-                  <span class="j-tab-badge"><img src="assets/brand/icon-type-weight.png" alt="" width="24" height="24"></span>
+                <button class="j-tab tab-c-quiet" type="button" role="tab" id="tab-quiet" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="3">
+                  <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-scales"/></svg></span>
                   <span class="j-tab-lbl" data-i18n="j_tab_3">30 ngày cơ thể</span>
                 </button>
-                <button class="j-tab" type="button" role="tab" id="tab-couple" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="4" style="--c:#FF7E7E">
-                  <span class="j-tab-badge"><img src="assets/brand/icon-type-couple.png" alt="" width="24" height="24"></span>
+                <button class="j-tab tab-c-couple" type="button" role="tab" id="tab-couple" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="4">
+                  <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-couple"/></svg></span>
                   <span class="j-tab-lbl" data-i18n="j_tab_4">Tụi mình</span>
                 </button>
-                <button class="j-tab" type="button" role="tab" id="tab-minimal" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="5" style="--c:#7EC8E3">
-                  <span class="j-tab-badge"><img src="assets/brand/icon-type-custom.png" alt="" width="24" height="24"></span>
+                <button class="j-tab tab-c-minimal" type="button" role="tab" id="tab-minimal" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="5">
+                  <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-custom"/></svg></span>
                   <span class="j-tab-lbl" data-i18n="j_tab_5">Đọc 10 trang</span>
                 </button>
               </div>
@@ -269,24 +483,24 @@
                   <img class="scr-img" id="j-img" src="assets/screens/j-ielts.webp" alt="Trang hành trình IELTS 7.5 trong app Ourney" width="390" height="844" loading="lazy" decoding="async">
                 </picture>
 
-                <!-- Built-in HTML/CSS Couple Rituals duoSplitTimeline screen (Tab 5) -->
-                <div class="couple-screen" id="j-couple-screen" hidden aria-hidden="true">
-                  <div class="cs-status">
+                <!-- Built-in HTML/CSS Couple Rituals duoSplitTimeline screen (Tab 5, accessible role="img") -->
+                <div class="couple-screen" id="j-couple-screen" role="img" aria-label="Trang hành trình Cặp đôi Tụi mình trong app Ourney: 18 ngày bên nhau, khung ảnh đôi của Nam và Linh" hidden>
+                  <div class="cs-status" aria-hidden="true">
                     <span>9:41</span>
                     <span class="cs-pill-top" data-i18n="cs_pill">CẶP ĐÔI · RIÊNG TƯ</span>
                   </div>
-                  <div class="cs-header">
+                  <div class="cs-header" aria-hidden="true">
                     <div>
                       <small data-i18n="cs_sub">mỗi ngày hai nửa ghép lại.</small>
                       <strong data-i18n="cs_title">tụi mình.</strong>
                     </div>
                     <span class="cs-streak">
-                      <img src="assets/brand/icon-flame.png" alt="" width="16" height="16">
+                      <svg class="o-sticker" width="16" height="16"><use href="#i-flame"/></svg>
                       <b>18</b>
                     </span>
                   </div>
-                  <div class="cs-banner">
-                    <img src="assets/brand/icon-type-couple.png" alt="" width="24" height="24">
+                  <div class="cs-banner" aria-hidden="true">
+                    <svg class="o-sticker" width="24" height="24"><use href="#i-couple"/></svg>
                     <div>
                       <b data-i18n="cs_stat">18 NGÀY BÊN NHAU · 36 KHOẢNH KHẮC</b>
                       <small data-i18n="cs_stat_sub">Cả hai đã chụp đủ hôm nay</small>
@@ -294,30 +508,30 @@
                   </div>
 
                   <!-- Day 18 Paired Diptych -->
-                  <div class="cs-day-card">
+                  <div class="cs-day-card" aria-hidden="true">
                     <div class="cs-day-head">
                       <b data-i18n="cs_d18">NGÀY 18 · HÔM NAY</b>
                       <span>07:30 · 08:12</span>
                     </div>
                     <div class="cs-diptych">
                       <div class="cs-half cs-half-a">
-                        <svg viewBox="0 0 120 132" aria-hidden="true">
-                          <rect width="120" height="132" fill="#F5E1DA"/>
-                          <circle cx="60" cy="58" r="28" fill="#FFFFFF" stroke="#261F22" stroke-width="2.5"/>
+                        <svg viewBox="0 0 120 132">
+                          <rect class="cs-art-bg-a" width="120" height="132"/>
+                          <circle class="cs-art-card" cx="60" cy="58" r="28" stroke-width="2.5"/>
                           <circle cx="60" cy="58" r="18" fill="#8C583A"/>
-                          <path d="M88 52h10a6 6 0 0 1 0 12H88" fill="none" stroke="#261F22" stroke-width="2.5"/>
-                          <rect x="14" y="96" width="92" height="22" rx="6" fill="#FFFFFF" stroke="#261F22" stroke-width="1.8"/>
+                          <path class="cs-art-stroke" d="M88 52h10a6 6 0 0 1 0 12H88" fill="none" stroke-width="2.5"/>
+                          <rect class="cs-art-card" x="14" y="96" width="92" height="22" rx="6" stroke-width="1.8"/>
                         </svg>
                         <span class="cs-tag" data-i18n="cs_nam">Nam · 07:30</span>
                       </div>
                       <span class="cs-heart-node">
-                        <img src="assets/brand/icon-heart.png" alt="" width="20" height="20">
+                        <svg class="o-sticker" width="18" height="18"><use href="#i-couple"/></svg>
                       </span>
                       <div class="cs-half cs-half-b">
-                        <svg viewBox="0 0 120 132" aria-hidden="true">
-                          <rect width="120" height="132" fill="#FFE8EE"/>
-                          <circle cx="82" cy="36" r="14" fill="#FFD84D" stroke="#261F22" stroke-width="2"/>
-                          <path d="M12 94 Q 44 68, 72 84 T 108 74 L 108 120 L 12 120 Z" fill="#7EE8A2" stroke="#261F22" stroke-width="2"/>
+                        <svg viewBox="0 0 120 132">
+                          <rect class="cs-art-bg-b" width="120" height="132"/>
+                          <circle class="cs-art-stroke" cx="82" cy="36" r="14" fill="#FFD84D" stroke-width="2"/>
+                          <path class="cs-art-stroke" d="M12 94 Q 44 68, 72 84 T 108 74 L 108 120 L 12 120 Z" fill="#7EE8A2" stroke-width="2"/>
                         </svg>
                         <span class="cs-tag" data-i18n="cs_linh">Linh · 08:12</span>
                       </div>
@@ -325,46 +539,46 @@
                   </div>
 
                   <!-- Day 17 Paired Diptych -->
-                  <div class="cs-day-card cs-day-prev">
+                  <div class="cs-day-card cs-day-prev" aria-hidden="true">
                     <div class="cs-day-head">
                       <b data-i18n="cs_d17">NGÀY 17 · HÔM QUA</b>
                       <span>19:20 · 19:24</span>
                     </div>
                     <div class="cs-diptych">
                       <div class="cs-half cs-half-a">
-                        <svg viewBox="0 0 120 86" aria-hidden="true">
-                          <rect width="120" height="86" fill="#E8E4F8"/>
-                          <rect x="20" y="18" width="80" height="50" rx="8" fill="#FFFFFF" stroke="#261F22" stroke-width="2"/>
-                          <path d="M32 36h40M32 48h52" stroke="#261F22" stroke-width="2.5" stroke-linecap="round"/>
+                        <svg viewBox="0 0 120 86">
+                          <rect class="cs-art-bg-c" width="120" height="86"/>
+                          <rect class="cs-art-card" x="20" y="18" width="80" height="50" rx="8" stroke-width="2"/>
+                          <path class="cs-art-stroke" d="M32 36h40M32 48h52" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
                         <span class="cs-tag">Nam · 19:20</span>
                       </div>
                       <span class="cs-heart-node">
-                        <img src="assets/brand/icon-heart.png" alt="" width="18" height="18">
+                        <svg class="o-sticker" width="16" height="16"><use href="#i-couple"/></svg>
                       </span>
                       <div class="cs-half cs-half-b">
-                        <svg viewBox="0 0 120 86" aria-hidden="true">
-                          <rect width="120" height="86" fill="#FCE7F3"/>
-                          <circle cx="60" cy="42" r="22" fill="#FF7E7E" stroke="#261F22" stroke-width="2"/>
+                        <svg viewBox="0 0 120 86">
+                          <rect class="cs-art-bg-d" width="120" height="86"/>
+                          <circle class="cs-art-stroke" cx="60" cy="42" r="22" fill="#FF7E7E" stroke-width="2"/>
                         </svg>
                         <span class="cs-tag">Linh · 19:24</span>
                       </div>
                     </div>
                   </div>
 
-                  <!-- Ourney Unified 5-Tab Bottom Dock -->
-                  <div class="cs-dock">
+                  <!-- Ourney Unified 5-Tab Bottom Dock (Full icons.tsx geometry) -->
+                  <div class="cs-dock" aria-hidden="true">
                     <span class="cs-dock-item active">
-                      <svg viewBox="0 0 24 24"><path d="M3.5 5.5 9 3l6 2.5L20.5 3v15.5L15 21l-6-2.5L3.5 21Z"/></svg>
+                      <svg viewBox="0 0 24 24"><path d="M3.5 5.5 9 3l6 2.5L20.5 3v15.5L15 21l-6-2.5L3.5 21Z"/><path d="M9 3v15.5M15 5.5V21"/><path d="m6 14 2-2 3 2 4-5 2 2"/></svg>
                     </span>
                     <span class="cs-dock-item">
-                      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6"/></svg>
+                      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6M14 14c3.7-.5 5.8 1.2 6.3 4.5"/></svg>
                     </span>
                     <span class="cs-dock-shutter">
                       <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/></svg>
                     </span>
                     <span class="cs-dock-item">
-                      <svg viewBox="0 0 24 24"><path d="M6.5 17.5h11l-1.5-2V11c0-2.7-1.5-4.6-4-4.8C9.5 6.4 8 8.3 8 11v4.5Z"/></svg>
+                      <svg viewBox="0 0 24 24"><path d="M6.5 17.5h11l-1.5-2V11c0-2.7-1.5-4.6-4-4.8C9.5 6.4 8 8.3 8 11v4.5Z"/><path d="M10 19.5c.8 1 3.2 1 4 0M10 4.5h4"/></svg>
                     </span>
                     <span class="cs-dock-item">
                       <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-4.6 2.8-7 7-7s6.5 2.4 7 7"/></svg>
@@ -457,19 +671,19 @@
           <h2 class="section-h" data-i18n="squad_h2">một mình dễ quên. có hội thì giữ được.</h2>
           <p class="muted" data-i18n="squad_desc">Mời tối đa 10 người bạn thân bằng mã 8 ký tự — không bảng xếp hạng độc hại, không đếm người theo dõi. Mở app là thấy tường Polaroid hôm nay ai đã điểm danh, thả cảm xúc hoặc nhắc nhẹ đứa còn thiếu.</p>
           <div class="squad-badges">
-            <span class="chip"><img src="assets/brand/icon-squad.png" alt="" width="22" height="22"><span data-i18n="squad_chip_1">Tối đa 10 bạn · Mã mời 8 ký tự</span></span>
-            <span class="chip"><img src="assets/brand/icon-react-fire.png" alt="" width="22" height="22"><span data-i18n="squad_chip_2">Chạm thả cảm xúc trực tiếp bên cạnh</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-squad"/></svg><span data-i18n="squad_chip_1">Tối đa 10 bạn · Mã mời 8 ký tự</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-flame"/></svg><span data-i18n="squad_chip_2">Chạm thả cảm xúc trực tiếp bên cạnh</span></span>
           </div>
         </div>
 
         <div class="squad-wall card" id="squad-wall">
           <div class="squad-head">
             <div class="squad-title-wrap">
-              <span class="squad-badge-icon"><img src="assets/brand/icon-type-study.png" alt="" width="22" height="22"></span>
+              <span class="squad-badge-icon"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-book"/></svg></span>
               <strong data-i18n="squad_wall_title">IELTS 7.5 · HỘI 4 NGƯỜI</strong>
             </div>
             <span class="squad-prog-pill">
-              <img src="assets/brand/icon-flame.png" alt="" width="18" height="18">
+              <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-flame"/></svg>
               <b id="squad-prog-txt" data-i18n="squad_wall_prog">3/4 đã chụp hôm nay</b>
             </span>
           </div>
@@ -492,14 +706,14 @@
                 <span class="sp-time">06:40</span>
               </div>
               <div class="sp-body">
-                <div class="sp-meta"><b>Linh</b><span class="sp-streak"><img src="assets/brand/icon-flame.png" alt="" width="14" height="14">21</span></div>
+                <div class="sp-meta"><b>Linh</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-flame"/></svg>21</span></div>
                 <p data-i18n="sq_c1_cap">“45 phút Reading xong!”</p>
                 <div class="sp-reacts">
-                  <button type="button" class="react-chip" aria-pressed="false" data-count="4" aria-label="Thả lửa cho ảnh của Linh">
-                    <img src="assets/brand/icon-react-fire.png" alt="" width="18" height="18"><span class="rc-num">4</span>
+                  <button type="button" class="react-chip" aria-pressed="false" data-count="4" data-rx-kind="fire" data-rx-who="Linh" aria-label="Thả lửa cho ảnh của Linh (4)">
+                    <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-flame"/></svg><span class="rc-num">4</span>
                   </button>
-                  <button type="button" class="react-chip" aria-pressed="false" data-count="2" aria-label="Thả tim cho ảnh của Linh">
-                    <img src="assets/brand/icon-react-heart.png" alt="" width="18" height="18"><span class="rc-num">2</span>
+                  <button type="button" class="react-chip" aria-pressed="false" data-count="2" data-rx-kind="heart" data-rx-who="Linh" aria-label="Thả tim cho ảnh của Linh (2)">
+                    <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-couple"/></svg><span class="rc-num">2</span>
                   </button>
                 </div>
               </div>
@@ -517,11 +731,11 @@
                 <span class="sp-time">07:15</span>
               </div>
               <div class="sp-body">
-                <div class="sp-meta"><b>Nam</b><span class="sp-streak"><img src="assets/brand/icon-flame.png" alt="" width="14" height="14">21</span></div>
+                <div class="sp-meta"><b>Nam</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-flame"/></svg>21</span></div>
                 <p data-i18n="sq_c2_cap">“Ngày 21 không gãy chuỗi”</p>
                 <div class="sp-reacts">
-                  <button type="button" class="react-chip" aria-pressed="true" data-count="3" aria-label="Vỗ tay cho ảnh của Nam">
-                    <img src="assets/brand/icon-react-clap.png" alt="" width="18" height="18"><span class="rc-num">3</span>
+                  <button type="button" class="react-chip" aria-pressed="true" data-count="3" data-rx-kind="clap" data-rx-who="Nam" aria-label="Vỗ tay cho ảnh của Nam (3)">
+                    <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-react-clap"/></svg><span class="rc-num">3</span>
                   </button>
                 </div>
               </div>
@@ -540,11 +754,11 @@
                 <span class="sp-time">12:05</span>
               </div>
               <div class="sp-body">
-                <div class="sp-meta"><b>Hà</b><span class="sp-streak"><img src="assets/brand/icon-flame.png" alt="" width="14" height="14">19</span></div>
+                <div class="sp-meta"><b>Hà</b><span class="sp-streak"><svg class="o-sticker" width="14" height="14" aria-hidden="true"><use href="#i-flame"/></svg>19</span></div>
                 <p data-i18n="sq_c3_cap">“Thêm 30 từ mới vào sổ”</p>
                 <div class="sp-reacts">
-                  <button type="button" class="react-chip" aria-pressed="false" data-count="5" aria-label="Thả cơ bắp cho ảnh của Hà">
-                    <img src="assets/brand/icon-react-flex.png" alt="" width="18" height="18"><span class="rc-num">5</span>
+                  <button type="button" class="react-chip" aria-pressed="false" data-count="5" data-rx-kind="flex" data-rx-who="Hà" aria-label="Thả cơ bắp cho ảnh của Hà (5)">
+                    <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-react-flex"/></svg><span class="rc-num">5</span>
                   </button>
                 </div>
               </div>
@@ -566,7 +780,7 @@
                 <svg class="nudge-svg o-svg-flat" id="nudge-svg" viewBox="0 0 24 24" aria-hidden="true">
                   <path d="M8 12V7a2 2 0 0 1 4 0v3M12 10V5a2 2 0 0 1 4 0v6M16 9a2 2 0 0 1 4 0v4c0 5-3 8-7 8h-1c-3 0-5-1.5-7-4l-2-3c-1-2 1.5-3.5 3-2l2 2"/>
                 </svg>
-                <img class="nudge-check" id="nudge-check" src="assets/brand/icon-check.png" alt="" width="20" height="20" hidden>
+                <svg class="o-sticker nudge-check" id="nudge-check" width="20" height="20" aria-hidden="true" hidden><use href="#i-check"/></svg>
                 <span id="nudge-label" data-i18n="sq_nudge_btn">Nhắc Minh</span>
               </button>
               <p class="sr" id="squad-nudge-msg" role="status" aria-live="polite"></p>
@@ -584,9 +798,9 @@
           <h2 class="section-h" data-i18n="finish_h2">hết chặng đường, cầm về một kỷ vật.</h2>
           <p class="muted" data-i18n="finish_desc">Chuyến đi khép lại thành tấm poster cuộn phim 35mm. Ba mươi ngày chạy bộ mở ra câu chuyện tổng kết Wrapped nhìn lại trọn vẹn từng ngày bạn đã không bỏ cuộc.</p>
           <ul class="ticks">
-            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28"><span data-i18n="finish_tick_1">Khổ Story 9:16 và bài đăng 4:5 sắc nét</span></li>
-            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28"><span data-i18n="finish_tick_2">Tự chọn in chuỗi liên tiếp hay tổng số ngày</span></li>
-            <li><img src="assets/brand/icon-check.png" alt="" width="28" height="28"><span data-i18n="finish_tick_3">Ẩn bất kỳ con số nhạy cảm nào trước khi xuất</span></li>
+            <li><svg class="o-sticker" width="28" height="28" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="finish_tick_1">Khổ Story 9:16 và bài đăng 4:5 sắc nét</span></li>
+            <li><svg class="o-sticker" width="28" height="28" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="finish_tick_2">Tự chọn in chuỗi liên tiếp hay tổng số ngày</span></li>
+            <li><svg class="o-sticker" width="28" height="28" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="finish_tick_3">Ẩn bất kỳ con số nhạy cảm nào trước khi xuất</span></li>
           </ul>
         </div>
         <div class="finish-phones" id="finish-phones">
@@ -615,9 +829,9 @@
           <p class="muted" data-i18n="priv_desc">Bạn chọn quyền xem riêng cho từng hành trình. Với hành trình giảm cân, số kg luôn được che thành dấu chấm — nhấn giữ bên dưới để thử.</p>
 
           <div class="vis-row">
-            <span class="chip"><img src="assets/brand/icon-lock.png" alt="" width="22" height="22"><span data-i18n="priv_vis_1">Chỉ mình tôi</span></span>
-            <span class="chip"><img src="assets/brand/icon-link.png" alt="" width="22" height="22"><span data-i18n="priv_vis_2">Ai có link</span></span>
-            <span class="chip"><img src="assets/brand/icon-squad.png" alt="" width="22" height="22"><span data-i18n="priv_vis_3">Thành viên nhóm</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-lock"/></svg><span data-i18n="priv_vis_1">Chỉ mình tôi</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-link"/></svg><span data-i18n="priv_vis_2">Ai có link</span></span>
+            <span class="chip"><svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-squad"/></svg><span data-i18n="priv_vis_3">Thành viên nhóm</span></span>
           </div>
 
           <!-- Interactive Hold-to-Reveal Metric Demo -->
@@ -645,7 +859,7 @@
           <!-- Accessible Privacy Switches + Live Link Preview -->
           <ul class="toggles">
             <li class="card">
-              <img src="assets/brand/icon-eye-off.png" alt="" width="40" height="40">
+              <svg class="o-sticker tg-icon" width="40" height="40" aria-hidden="true"><use href="#i-eye-off"/></svg>
               <span class="grow">
                 <b data-i18n="priv_tg1_t">Ẩn con số với người khác</b>
                 <small data-i18n="priv_tg1_d">Chỉ hiện ảnh check-in, giấu số kg hoặc số phút.</small>
@@ -657,7 +871,7 @@
               </label>
             </li>
             <li class="card">
-              <img src="assets/brand/icon-drop.png" alt="" width="40" height="40">
+              <svg class="o-sticker tg-icon" width="40" height="40" aria-hidden="true"><use href="#i-drop"/></svg>
               <span class="grow">
                 <b data-i18n="priv_tg2_t">Làm mờ ảnh khi chia sẻ link</b>
                 <small data-i18n="priv_tg2_d">Ảnh xem trước bên ngoài được làm mờ tự động.</small>
@@ -689,7 +903,7 @@
 
           <!-- Local-First Solo Mode Guarantee -->
           <div class="local-chip card">
-            <img src="assets/brand/icon-shield.png" alt="" width="32" height="32">
+            <svg class="o-sticker" width="32" height="32" aria-hidden="true"><use href="#i-shield"/></svg>
             <p data-i18n="priv_local_chip">Chế độ chỉ trên máy: dùng trọn vẹn hành trình cá nhân khi mất mạng, không cần tạo tài khoản.</p>
           </div>
         </div>
@@ -764,7 +978,7 @@
     <section class="cta" id="beta">
       <div class="wrap cta-inner">
         <div class="cta-ticket card">
-          <img class="cta-sticker" src="assets/brand/icon-star.png" alt="" width="80" height="80">
+          <svg class="o-sticker cta-sticker" width="78" height="78" aria-hidden="true"><use href="#i-star"/></svg>
           <div class="cta-main">
             <p class="eyebrow" data-i18n="beta_eyebrow">beta sắp mở cửa</p>
             <h2 class="cta-h" data-i18n="beta_h2">ngày 1 của bạn bắt đầu từ hôm nay.</h2>
@@ -780,7 +994,7 @@
             </div>
             <form class="beta-form" id="beta-form" novalidate>
               <label for="email" class="sr" data-i18n="beta_email_label">Email</label>
-              <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn…" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
               <button class="btn btn-ticket" type="submit" data-i18n="beta_submit">nhận lời mời</button>
             </form>
             <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
@@ -788,7 +1002,7 @@
           <div class="cta-stub" aria-hidden="true">
             <span class="cta-stub-kicker">DAY 01</span>
             <strong>BETA PASS</strong>
-            <span class="cta-stub-code">OURNEY · V3</span>
+            <span class="cta-stub-code" translate="no">IOS · ANDROID</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 (() => {
   const root = document.documentElement;
+  root.classList.add('js');
   const $ = (id) => document.getElementById(id);
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const darkMql = matchMedia('(prefers-color-scheme: dark)');
@@ -29,9 +30,10 @@
       ticket_sub: 'Bấm để giữ chỗ Ngày 1',
       hero_phone_alt: 'Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay',
       hcc_t0: 'IELTS 7.5 · Ngày 21/30',
+      hcc_b0_pre: 'chuỗi 20 ngày',
       hcc_b0: 'chuỗi 21 ngày',
       hcc_t1: 'Chạy sáng · 5,4 km',
-      hcc_b1: '21/30 buổi',
+      hcc_b1: '20/30 buổi',
       hcc_t2: 'Đà Lạt 7 ngày · Khung 14/24',
       hcc_b2: 'cả nhóm đã chụp',
       hero_h1: 'chụp một tấm. giữ một chuỗi.',
@@ -131,7 +133,7 @@
       beta_h2: 'ngày 1 của bạn bắt đầu từ hôm nay.',
       beta_plat_aria: 'Chọn nền tảng điện thoại',
       beta_email_label: 'Email',
-      beta_placeholder: 'ban@email-cua-ban.vn…',
+      beta_placeholder: 'ban@email-cua-ban.vn',
       beta_submit: 'nhận lời mời',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
       form_ok: 'Đã ghi nhận trên bản xem trước! Tụi mình sẽ mở cổng đăng ký beta chính thức cho iOS & Android thật sớm.',
@@ -164,9 +166,10 @@
       ticket_sub: 'Tap to claim your Day 1',
       hero_phone_alt: 'Ourney app Hub screen: 21-day streak card, IELTS 7.5 Day 21/30 card, and Snap Today CTA',
       hcc_t0: 'IELTS 7.5 · Day 21/30',
+      hcc_b0_pre: '20-day streak',
       hcc_b0: '21-day streak',
       hcc_t1: 'Morning Run · 5.4 km',
-      hcc_b1: '21/30 sessions',
+      hcc_b1: '20/30 sessions',
       hcc_t2: 'Da Lat 7 Days · Frame 14/24',
       hcc_b2: 'all 5 checked in',
       hero_h1: 'snap one photo. keep one streak.',
@@ -266,7 +269,7 @@
       beta_h2: 'your day 1 starts today.',
       beta_plat_aria: 'Select phone platform',
       beta_email_label: 'Email',
-      beta_placeholder: 'you@example.com…',
+      beta_placeholder: 'you@example.com',
       beta_submit: 'get beta invite',
       form_err: 'That email doesn’t look right — please check and try again.',
       form_ok: 'Noted in preview mode! Official iOS & Android beta waitlist storage opens very soon.',
@@ -355,14 +358,14 @@
         title: 'mỗi ngày hai nửa ghép lại.',
         desc: 'Mỗi ngày là một khung ảnh đôi đặt cạnh nhau: người chụp trước nằm chờ ở góc ống kính để người kia chụp nốt nửa còn lại.',
         chips: ['Khung ảnh đôi', 'Ảnh góc PiP', 'Chỉ hai người'],
-        alt: 'Trang hành trình Cặp đôi Tụi mình trong app Ourney'
+        alt: 'Trang hành trình Cặp đôi Tụi mình trong app Ourney: 18 ngày bên nhau, khung ảnh đôi của Nam và Linh'
       },
       en: {
         label: 'Just Us Two', kind: 'couple · Couple Rituals',
         title: 'two halves of the same day.',
         desc: 'Each day pairs both partners side by side: whoever snaps first appears as a corner picture-in-picture guide while the other completes the pair.',
         chips: ['Paired diptych', 'Partner PiP', '2-person vault'],
-        alt: 'Just Us Two couple journey screen in Ourney app'
+        alt: 'Just Us Two couple journey screen in Ourney app: 18 days together, paired daily photos from Nam and Linh'
       }
     },
     {
@@ -384,10 +387,25 @@
     }
   ];
 
-  let curLang = root.dataset.lang === 'en' ? 'en' : 'vi';
+  const HERO_CYCLES = [
+    { streak: '21', fire: '4', clap: '3' },
+    { streak: '20', fire: '6', clap: '2' },
+    { streak: '7',  fire: '5', clap: '4' }
+  ];
+
+  /* Resolve initial language strictly inside main.js so no-JS / failed-JS stays truthful to static VI HTML */
+  let curLang = 'vi';
+  try {
+    const q = new URLSearchParams(location.search).get('lang');
+    const saved = localStorage.getItem('ourney-lang');
+    if (q === 'en' || q === 'vi') curLang = q;
+    else if (saved === 'en' || saved === 'vi') curLang = saved;
+  } catch (e) {}
+
   let curTab = 0;
   let curHeroCycle = 0;
   let minhNudged = false;
+  let streakTicked = reduceMotion || root.classList.contains('intro-seen');
 
   /* --- 3. Theme Resolution & <picture> Source Media Sync --- */
   const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : darkMql.matches;
@@ -413,63 +431,97 @@
   darkMql.addEventListener('change', syncThemePictures);
   new MutationObserver(syncThemePictures).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
-  /* --- 4. First-Load Intro Skip & Session Memory --- */
+  /* --- 4. First-Load Intro Skip & Clean Settle Disarm --- */
   const markIntroSeen = () => {
     try { sessionStorage.setItem('ourney-intro-seen', '1'); } catch (e) {}
   };
-  if (!root.classList.contains('intro-seen') && !reduceMotion) {
-    const skipIntro = () => {
-      root.classList.add('intro-skip');
-      markIntroSeen();
-    };
-    ['wheel', 'touchmove', 'pointerdown', 'keydown'].forEach((ev) => {
-      addEventListener(ev, skipIntro, { once: true, passive: true });
-    });
-    setTimeout(markIntroSeen, 1400);
-  } else {
+  const settleHero = () => {
+    root.classList.add('hero-settled');
     markIntroSeen();
+  };
+
+  if (!root.classList.contains('intro-seen') && !reduceMotion) {
+    const skipEvents = ['wheel', 'touchmove', 'pointerdown', 'keydown'];
+    const disarmSkip = () => {
+      skipEvents.forEach((ev) => removeEventListener(ev, skipIntro));
+    };
+    function skipIntro() {
+      disarmSkip();
+      root.classList.add('intro-skip', 'hero-settled');
+      streakTicked = true;
+      renderHeroCycle(curHeroCycle);
+      markIntroSeen();
+    }
+    skipEvents.forEach((ev) => addEventListener(ev, skipIntro, { once: true, passive: true }));
+    setTimeout(disarmSkip, 1100);
+    setTimeout(settleHero, 2020);
+  } else {
+    setTimeout(settleHero, 420);
   }
 
   /* --- 5. Hero Live Check-In Card Streak Flip & 3.6s Cycle --- */
+  const heroSec = $('hero');
+  const checkinCard = $('hero-checkin-card');
   const hccPhoto = $('hcc-photo');
   const hccStreak = $('hcc-streak');
   const hccFlame = $('hcc-flame');
   const hccTitle = $('hcc-title');
   const hccBadge = $('hcc-badge');
+  const hccFireCnt = $('hcc-fire-cnt');
+  const hccClapCnt = $('hcc-clap-cnt');
 
-  const renderHeroCycle = (idx) => {
+  function renderHeroCycle(idx) {
     const dict = COPY[curLang];
+    const meta = HERO_CYCLES[idx] || HERO_CYCLES[0];
     hccPhoto.dataset.cycle = String(idx);
     hccTitle.textContent = dict[`hcc_t${idx}`];
-    hccBadge.textContent = dict[`hcc_b${idx}`];
-  };
+    if (idx === 0 && !streakTicked) {
+      hccStreak.textContent = '20';
+      hccBadge.textContent = dict.hcc_b0_pre;
+    } else {
+      hccStreak.textContent = meta.streak;
+      hccBadge.textContent = dict[`hcc_b${idx}`];
+    }
+    if (hccFireCnt) hccFireCnt.textContent = meta.fire;
+    if (hccClapCnt) hccClapCnt.textContent = meta.clap;
+  }
 
-  if (!reduceMotion) {
-    setTimeout(() => {
-      hccStreak.textContent = '21';
-      hccFlame.classList.add('pop');
-    }, 1780);
+  renderHeroCycle(0);
 
-    let heroVisible = true;
+  let heroVisible = true;
+  let heroHovered = false;
+  if (heroSec) {
+    heroSec.classList.add('in-view');
     const heroIO = new IntersectionObserver((entries) => {
       heroVisible = entries[0].isIntersecting;
-    }, { threshold: 0.2 });
-    heroIO.observe($('hero'));
+      heroSec.classList.toggle('in-view', heroVisible);
+    }, { threshold: 0.05 });
+    heroIO.observe(heroSec);
+  }
+  if (checkinCard) {
+    checkinCard.addEventListener('pointerenter', () => { heroHovered = true; });
+    checkinCard.addEventListener('pointerleave', () => { heroHovered = false; });
+  }
 
+  if (!reduceMotion) {
+    if (!streakTicked) {
+      setTimeout(() => {
+        streakTicked = true;
+        if (curHeroCycle === 0) renderHeroCycle(0);
+        if (hccFlame) hccFlame.classList.add('pop');
+      }, 1740);
+    }
     setInterval(() => {
-      if (!heroVisible || document.hidden) return;
+      if (!heroVisible || heroHovered || document.hidden) return;
       curHeroCycle = (curHeroCycle + 1) % 3;
       renderHeroCycle(curHeroCycle);
     }, 3600);
-  } else {
-    hccStreak.textContent = '21';
   }
 
   /* --- 6. Sticky Nav & Hero Scroll Dispersion --- */
   const nav = document.querySelector('.nav');
   const scrollCue = $('hero-scroll-cue');
   const orbitItems = [...document.querySelectorAll('.hero-orbit-item')];
-  const checkinCard = $('hero-checkin-card');
   let rafPending = false;
 
   const updateScroll = () => {
@@ -479,16 +531,31 @@
     if (scrollCue) scrollCue.classList.toggle('hide', y > 24);
 
     if (!reduceMotion && y <= innerHeight * 1.1) {
+      if (y > 4 && !root.classList.contains('hero-settled')) {
+        root.classList.add('hero-settled');
+      }
       const p = Math.min(1, Math.max(0, y / (innerHeight * 0.85)));
-      orbitItems.forEach((el) => {
-        const ux = parseFloat(el.style.getPropertyValue('--ux') || '0');
-        const uy = parseFloat(el.style.getPropertyValue('--uy') || '0');
-        const rot = el.style.getPropertyValue('--rot') || '0deg';
-        el.style.transform = `translate3d(${(ux * p * 84).toFixed(1)}px, ${(uy * p * 60).toFixed(1)}px, 0) rotate(${rot})`;
-        el.style.opacity = String(Math.max(0, 1 - p * 1.15).toFixed(2));
+      const csMap = [
+        [-1, -0.85, '-9deg'],
+        [1, -0.8, '8deg'],
+        [-0.95, 0.75, '7deg'],
+        [0.95, 0.8, '-7deg'],
+        [-1.15, 0.1, '-5deg'],
+        [1.15, 0.12, '6deg']
+      ];
+      orbitItems.forEach((el, idx) => {
+        const [ux, uy, rot] = csMap[idx] || [0, 0, '0deg'];
+        el.style.transform = p === 0
+          ? ''
+          : `translate3d(${(ux * p * 84).toFixed(1)}px, ${(uy * p * 60).toFixed(1)}px, 0) rotate(${rot})`;
+        el.style.opacity = p === 0 ? '' : String(Math.max(0, 1 - p * 1.15).toFixed(2));
       });
-      if (checkinCard) {
-        checkinCard.style.transform = `translate3d(${(p * 22).toFixed(1)}px, ${(p * -16).toFixed(1)}px, 0) rotate(4deg)`;
+      if (checkinCard && innerWidth >= 768) {
+        checkinCard.style.transform = p === 0
+          ? ''
+          : `translate3d(${(p * 22).toFixed(1)}px, ${(p * -16).toFixed(1)}px, 0) rotate(4deg)`;
+      } else if (checkinCard) {
+        checkinCard.style.transform = '';
       }
     }
   };
@@ -535,6 +602,7 @@
     jDesc.textContent = copy.desc;
     jNo.textContent = item.no;
     jChips.innerHTML = copy.chips.map((c) => `<span class="dna-chip">${c}</span>`).join('');
+    if (jCouple) jCouple.setAttribute('aria-label', JOURNEYS[4][curLang].alt);
 
     const swapScreen = () => {
       if (item.screen) {
@@ -579,9 +647,12 @@
     }
   });
 
-  /* Defer preloading remaining journey screenshots until 1.5s after window load */
-  addEventListener('load', () => {
-    setTimeout(() => {
+  /* Preload remaining journey screenshots only when #journeys approaches viewport */
+  const journeysSec = $('journeys');
+  if (journeysSec) {
+    const jPreloadIO = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      jPreloadIO.disconnect();
       const suffix = isDark() ? '-dark' : '';
       JOURNEYS.forEach((j) => {
         if (j.screen && j.screen !== 'j-ielts') {
@@ -589,8 +660,9 @@
           pre.src = `assets/screens/${j.screen}${suffix}.webp`;
         }
       });
-    }, 1500);
-  });
+    }, { rootMargin: '480px 0px' });
+    jPreloadIO.observe(journeysSec);
+  }
 
   /* --- 8. Section 3: 3-Step Daily Loop Scrollytelling --- */
   const steps = [...document.querySelectorAll('.step')];
@@ -609,7 +681,32 @@
   steps.forEach((s) => stepIO.observe(s));
 
   /* --- 9. Section 4: Interactive Squad Polaroid Wall --- */
-  document.querySelectorAll('.react-chip').forEach((chip) => {
+  const RX_LABELS = {
+    vi: {
+      fire: (who, n) => `Thả lửa cho ảnh của ${who} (${n})`,
+      heart: (who, n) => `Thả tim cho ảnh của ${who} (${n})`,
+      clap: (who, n) => `Vỗ tay cho ảnh của ${who} (${n})`,
+      flex: (who, n) => `Thả cơ bắp cho ảnh của ${who} (${n})`
+    },
+    en: {
+      fire: (who, n) => `Fire reaction for ${who}'s photo (${n})`,
+      heart: (who, n) => `Heart reaction for ${who}'s photo (${n})`,
+      clap: (who, n) => `Clap reaction for ${who}'s photo (${n})`,
+      flex: (who, n) => `Muscle reaction for ${who}'s photo (${n})`
+    }
+  };
+
+  const reactChips = [...document.querySelectorAll('.react-chip')];
+  const syncReactChipAria = (chip) => {
+    const kind = chip.dataset.rxKind || 'fire';
+    const who = (curLang === 'en' && chip.dataset.rxWho === 'Hà') ? 'Ha' : (chip.dataset.rxWho || '');
+    const count = chip.dataset.count || '1';
+    const fmt = (RX_LABELS[curLang] && RX_LABELS[curLang][kind]) || RX_LABELS.vi.fire;
+    chip.setAttribute('aria-label', fmt(who, count));
+  };
+
+  reactChips.forEach((chip) => {
+    syncReactChipAria(chip);
     chip.addEventListener('click', () => {
       const pressed = chip.getAttribute('aria-pressed') === 'true';
       const nextPressed = !pressed;
@@ -621,6 +718,7 @@
         chip.dataset.count = String(nextVal);
         numEl.textContent = String(nextVal);
       }
+      syncReactChipAria(chip);
       chip.classList.remove('pop');
       void chip.offsetWidth;
       chip.classList.add('pop');
@@ -642,7 +740,7 @@
       const dict = COPY[curLang];
       nudgeBtn.classList.add('done');
       nudgeSvg.setAttribute('hidden', '');
-      nudgeCheck.hidden = false;
+      nudgeCheck.removeAttribute('hidden');
       nudgeLabel.textContent = dict.sq_nudge_done;
       minhStatus.textContent = dict.sq_c4_nudged;
       squadMsg.textContent = dict.sq_nudge_done;
@@ -653,11 +751,28 @@
     });
   }
 
+  /* --- 9b. Section 5: Finish Line Fan-Open Observer --- */
+  const finishPhones = $('finish-phones');
+  if (finishPhones) {
+    if (reduceMotion) {
+      finishPhones.classList.add('in');
+    } else {
+      const finIO = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          finishPhones.classList.add('in');
+          finIO.disconnect();
+        }
+      }, { threshold: 0.2 });
+      finIO.observe(finishPhones);
+    }
+  }
+
   /* --- 10. Section 6: Hold-to-Reveal Metric & Live Share Preview Toggles --- */
   const holdBtn = $('hold-btn');
   const holdMasked = $('hold-masked');
   const holdRevealed = $('hold-revealed');
   let holdTimer = null;
+  let suppressClick = false;
 
   const setHoldReveal = (show) => {
     if (!holdBtn || !holdMasked || !holdRevealed) return;
@@ -669,23 +784,40 @@
   if (holdBtn) {
     holdBtn.addEventListener('pointerdown', () => {
       clearTimeout(holdTimer);
+      suppressClick = true;
       setHoldReveal(true);
     });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => {
-      holdBtn.addEventListener(ev, () => setHoldReveal(false));
+      holdBtn.addEventListener(ev, () => {
+        clearTimeout(holdTimer);
+        setHoldReveal(false);
+      });
     });
     holdBtn.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
+        clearTimeout(holdTimer);
+        suppressClick = true;
         setHoldReveal(true);
       }
     });
     holdBtn.addEventListener('keyup', (e) => {
-      if (e.key === ' ' || e.key === 'Enter') setHoldReveal(false);
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(holdTimer);
+        setHoldReveal(false);
+      }
     });
-    holdBtn.addEventListener('blur', () => setHoldReveal(false));
-    /* Tap/click fallback reveals for 2.5s on touch/switch devices */
+    holdBtn.addEventListener('blur', () => {
+      clearTimeout(holdTimer);
+      setHoldReveal(false);
+    });
+    /* Virtual assistive-tech click (where no pointerdown/keydown occurred) reveals for 2.5s */
     holdBtn.addEventListener('click', () => {
+      if (suppressClick) {
+        suppressClick = false;
+        return;
+      }
       clearTimeout(holdTimer);
       setHoldReveal(true);
       holdTimer = setTimeout(() => setHoldReveal(false), 2500);
@@ -734,24 +866,42 @@
     form.reset();
   });
 
-  /* Mobile Floating Thumb-Zone CTA visibility */
+  /* Mobile Floating Thumb-Zone CTA visibility & WCAG 2.4.11 Focus Not Obscured guard */
   const mobileDock = $('mobile-dock-cta');
   const heroCta = $('hero-cta');
   const betaSec = $('beta');
-  if (mobileDock && heroCta && betaSec) {
-    let heroCtaOut = false;
-    let betaIn = false;
-    const syncDock = () => { mobileDock.hidden = !(heroCtaOut && !betaIn); };
-    const dockIO = new IntersectionObserver((entries) => {
-      entries.forEach((en) => {
-        if (en.target === heroCta) heroCtaOut = !en.isIntersecting && en.boundingClientRect.top < 0;
-        if (en.target === betaSec) betaIn = en.isIntersecting;
-      });
-      syncDock();
-    }, { threshold: 0.05 });
-    dockIO.observe(heroCta);
-    dockIO.observe(betaSec);
-  }
+  const syncDock = () => {
+    if (!mobileDock || !heroCta || !betaSec) return;
+    if (innerWidth >= 768) {
+      mobileDock.hidden = true;
+      return;
+    }
+    const hRect = heroCta.getBoundingClientRect();
+    const bRect = betaSec.getBoundingClientRect();
+    mobileDock.hidden = !(hRect.bottom < 0 && bRect.top > innerHeight * 0.92);
+  };
+  addEventListener('scroll', () => requestAnimationFrame(syncDock), { passive: true });
+  addEventListener('resize', syncDock, { passive: true });
+  syncDock();
+
+  addEventListener('focusin', (e) => {
+    const t = e.target;
+    if (!t || !t.getBoundingClientRect || (nav && nav.contains(t)) || (mobileDock && mobileDock.contains(t))) return;
+    const r = t.getBoundingClientRect();
+    if (nav) {
+      const nr = nav.getBoundingClientRect();
+      if (r.top < nr.bottom + 8 && r.bottom > 0) {
+        scrollBy({ top: r.top - nr.bottom - 12, behavior: 'instant' });
+        return;
+      }
+    }
+    if (mobileDock && !mobileDock.hidden && innerWidth < 768) {
+      const dr = mobileDock.getBoundingClientRect();
+      if (r.bottom > dr.top - 8 && r.top < innerHeight) {
+        scrollBy({ top: r.bottom - dr.top + 16, behavior: 'instant' });
+      }
+    }
+  });
 
   /* --- 12. Bilingual VI / EN Switcher --- */
   const applyLanguage = (lang, persist) => {
@@ -783,6 +933,7 @@
     renderHeroCycle(curHeroCycle);
     applyJourneyTab(curTab, false);
     syncPrivacyPreview();
+    reactChips.forEach(syncReactChipAria);
     if (minhNudged && nudgeLabel && minhStatus) {
       nudgeLabel.textContent = dict.sq_nudge_done;
       minhStatus.textContent = dict.sq_c4_nudged;
