@@ -177,7 +177,8 @@ patch_auth_config() {
   fi
 }
 
-# PATCH the project's PostgREST config (db_schemas) using the same secret-safe curl pattern.
+# PATCH the project's PostgREST config (db_schema) using the same secret-safe curl pattern.
+# Official Supabase Management API docs: https://supabase.com/docs/reference/api/v1-update-postgrest-config
 patch_postgrest_config() {
   local response msg
   if ! response="$(
@@ -185,7 +186,7 @@ patch_postgrest_config() {
       --config <(printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_ACCESS_TOKEN") \
       -H 'Content-Type: application/json' \
       --data-binary @- \
-      "$SUPABASE_API_URL/v1/projects/$SUPABASE_PROJECT_REF/config/postgrest"
+      "$SUPABASE_API_URL/v1/projects/$SUPABASE_PROJECT_REF/postgrest"
   )"; then
     msg="$(printf '%s' "$response" | jq -r '.message // empty' 2> /dev/null || true)"
     echo "error: PostgREST config update failed${msg:+: $msg}" >&2
@@ -300,8 +301,8 @@ echo "Auth config applied."
 
 # --- 8. PostgREST config: expose RPC-only admin schema (always) -------------------------------
 # `supabase db push` does not push [api].schemas from supabase/config.toml to hosted PostgREST.
-echo "==> Applying PostgREST config (db_schemas: public, graphql_public, admin)"
-jq -n '{db_schemas: "public,graphql_public,admin"}' | patch_postgrest_config
+echo "==> Applying PostgREST config (db_schema: public, graphql_public, admin)"
+jq -n '{db_schema: "public,graphql_public,admin"}' | patch_postgrest_config
 echo "PostgREST config applied."
 
 echo "Deploy finished."

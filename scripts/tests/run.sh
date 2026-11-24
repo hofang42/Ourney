@@ -225,16 +225,16 @@ calls="$(cat "$LOG")"
   contains "$calls" "supabase functions deploy admin-action --project-ref abcdefghijklmnopqrst" &&
   [ "$(grep -c '^curl ' "$LOG")" -eq 2 ] && contains "$calls" "-X PATCH" &&
   contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/auth" &&
-  contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/postgrest"
-check "deploy without SMTP: db push + functions + Auth config PATCH + PostgREST db_schemas PATCH" $? "rc=$RC calls=$calls out=$OUT"
+  contains "$calls" "/v1/projects/abcdefghijklmnopqrst/postgrest"
+check "deploy without SMTP: db push + functions + Auth config PATCH + PostgREST db_schema PATCH" $? "rc=$RC calls=$calls out=$OUT"
 contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://ourney.tech)" &&
-  contains "$OUT" "==> Applying PostgREST config (db_schemas: public, graphql_public, admin)" &&
+  contains "$OUT" "==> Applying PostgREST config (db_schema: public, graphql_public, admin)" &&
   contains "$OUT" "==> SMTP_* not set: leaving Auth SMTP settings untouched"
 check "deploy without SMTP: prints the Auth config, PostgREST config, and untouched-SMTP lines" $? "$OUT"
 jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
   and .site_url == "https://ourney.tech"' "$BODY.1" > /dev/null
 check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY.1" 2> /dev/null)"
-jq -e '.db_schemas == "public,graphql_public,admin"' "$BODY.2" > /dev/null
+jq -e '.db_schema == "public,graphql_public,admin"' "$BODY.2" > /dev/null
 check "PostgREST config body: exposes public, graphql_public, and admin schemas" $? "$(cat "$BODY.2" 2> /dev/null)"
 jq -e 'has("uri_allow_list") | not' "$BODY.1" > /dev/null
 check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY.1" 2> /dev/null)"
@@ -334,8 +334,8 @@ unset SMTP_RATE_LIMIT SMTP_PORT SMTP_SENDER_NAME
 
 jq -e '.mailer_otp_length == 6 and .mailer_autoconfirm == true and (has("smtp_host") | not)' "$BODY.2" > /dev/null &&
   jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.1" > /dev/null &&
-  jq -e '.db_schemas == "public,graphql_public,admin"' "$BODY.3" > /dev/null
-check "SMTP: three PATCHes, SMTP first, Auth config second, PostgREST db_schemas third" $? "$(ls "$BODY".* 2> /dev/null)"
+  jq -e '.db_schema == "public,graphql_public,admin"' "$BODY.3" > /dev/null
+check "SMTP: three PATCHes, SMTP first, Auth config second, PostgREST db_schema third" $? "$(ls "$BODY".* 2> /dev/null)"
 auth_line="$(grep -n 'Applying Auth config' <<< "$OUT" | cut -d: -f1)"
 smtp_line="$(grep -n 'Applying custom SMTP' <<< "$OUT" | cut -d: -f1)"
 [ -n "$auth_line" ] && [ -n "$smtp_line" ] && [ "$smtp_line" -lt "$auth_line" ]

@@ -19,6 +19,8 @@ import { formatModerationDigest, type ModerationQueueItem } from "../notify-mode
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const RESEND_URL = "https://api.resend.com/emails";
 const RESEND_TIMEOUT_MS = 8000;
+const WEBHOOK_TIMEOUT_MS = 8000;
+const MAX_BODY_BYTES = 16 * 1024;
 const DEFAULT_ORIGINS = [
   "https://admin.ourney.tech",
   "http://localhost:5173",
@@ -267,9 +269,18 @@ export async function handle(
   }
   const caller = authResult.admin;
 
+  const contentLength = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(contentLength) && contentLength > MAX_BODY_BYTES) {
+    return json({ error: "payload_too_large" }, 413, cors);
+  }
+
   let body: Record<string, unknown> = {};
   try {
-    const parsed = await req.json();
+    const rawText = await req.text();
+    if (new TextEncoder().encode(rawText).byteLength > MAX_BODY_BYTES) {
+      return json({ error: "payload_too_large" }, 413, cors);
+    }
+    const parsed = JSON.parse(rawText);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
       return json({ error: "invalid_body" }, 400, cors);
     }
@@ -286,13 +297,29 @@ export async function handle(
   // 1. waitlist_resend / waitlist_resend_failed
   // -------------------------------------------------------------------------
   if (action === "waitlist_resend" || action === "waitlist_resend_failed") {
-    const waitlistId = typeof body.waitlist_id === "string" ? body.waitlist_id.trim() : null;
-    if (action === "waitlist_resend" && waitlistId !== null && !UUID_RE.test(waitlistId)) {
-      return json({ error: "invalid" }, 400, cors);
+    let waitlistId: string | null = null;
+    let rawLimit = 25;
+
+    if (action === "waitlist_resend") {
+      // P2-3: single-row resend strictly requires a valid UUID waitlist_id (never falls back to bulk).
+      const rawId = typeof body.waitlist_id === "string" ? body.waitlist_id.trim() : "";
+      if (!UUID_RE.test(rawId)) {
+        return json({ error: "invalid" }, 400, cors);
+      }
+      waitlistId = rawId;
+      rawLimit = 1;
+    } else {
+      // P2-3: bulk retry only via explicit waitlist_resend_failed; reject any non-null waitlist_id or invalid limit.
+      if (body.waitlist_id !== undefined && body.waitlist_id !== null) {
+        return json({ error: "invalid" }, 400, cors);
+      }
+      if (body.limit !== undefined && body.limit !== null) {
+        if (typeof body.limit !== "number" || !Number.isFinite(body.limit) || body.limit < 1) {
+          return json({ error: "invalid" }, 400, cors);
+        }
+        rawLimit = Math.max(1, Math.min(25, Math.trunc(body.limit)));
+      }
     }
-    const rawLimit = typeof body.limit === "number" && Number.isFinite(body.limit)
-      ? Math.max(1, Math.min(25, Math.trunc(body.limit)))
-      : 25;
 
     const { data, error } = await service.rpc("admin_service_get_waitlist_targets", {
       p_waitlist_id: waitlistId,
@@ -519,6 +546,7 @@ export async function handle(
             method: "POST",
             headers,
             body: JSON.stringify(webhookBody),
+            signal: AbortSignal.timeout(WEBHOOK_TIMEOUT_MS),
           });
           ok = resp.ok;
           await resp.body?.cancel();

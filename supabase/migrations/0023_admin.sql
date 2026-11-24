@@ -26,6 +26,7 @@
 create schema if not exists admin;
 revoke all on schema admin from public, anon;
 grant usage on schema admin to authenticated, service_role;
+alter default privileges in schema admin revoke all on functions from public, anon;
 
 -- ---------------------------------------------------------------------------
 -- 2. Admin tables in schema `private` (RLS enabled, no policies, service_role only)
@@ -45,7 +46,7 @@ grant select, insert, update, delete on private.admins to service_role;
 
 create table if not exists private.admin_audit (
   id bigint generated always as identity primary key,
-  admin_id uuid references auth.users (id) on delete set null,
+  admin_id uuid,
   admin_email text,
   action text not null check (char_length(btrim(action)) between 2 and 120),
   target_type text not null
@@ -58,6 +59,10 @@ create table if not exists private.admin_audit (
   meta jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
+
+-- P1-2: ensure no FK on admin_audit.admin_id so deleting an auth.users account never fires
+-- ON DELETE SET NULL UPDATE triggers on the immutable audit table.
+alter table private.admin_audit drop constraint if exists admin_audit_admin_id_fkey;
 
 create index if not exists admin_audit_created_idx on private.admin_audit (created_at desc, id desc);
 create index if not exists admin_audit_admin_idx on private.admin_audit (admin_id, id desc);
@@ -82,6 +87,11 @@ drop trigger if exists admin_audit_immutable on private.admin_audit;
 create trigger admin_audit_immutable
   before update or delete on private.admin_audit
   for each row execute function private.admin_audit_immutable();
+
+drop trigger if exists admin_audit_immutable_truncate on private.admin_audit;
+create trigger admin_audit_immutable_truncate
+  before truncate on private.admin_audit
+  for each statement execute function private.admin_audit_immutable();
 
 revoke all on function private.admin_audit_immutable() from public, anon, authenticated;
 
@@ -156,6 +166,489 @@ $$;
 
 revoke all on function private.is_user_banned(uuid) from public, anon, authenticated;
 grant execute on function private.is_user_banned(uuid) to service_role;
+
+-- Parameterless ban check for the current caller (safe for authenticated RLS policies and triggers
+-- without exposing an arbitrary-UUID ban oracle to clients).
+create or replace function private.caller_is_banned() returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select private.is_user_banned((select auth.uid()));
+$$;
+
+revoke all on function private.caller_is_banned() from public, anon;
+grant execute on function private.caller_is_banned() to authenticated, service_role;
+
+-- P1-1: Wire immediate ban check into public._uid() and RLS/trigger/Storage paths so banned users
+-- with a still-unexpired JWT (up to 60 min) lose access immediately even when profiles.deleted_at is NULL (A2).
+create or replace function public._uid() returns uuid
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  u uuid := (select auth.uid());
+begin
+  if u is null then
+    raise exception 'unauthenticated' using errcode = '28000';
+  end if;
+  if private.is_user_banned(u) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
+  return u;
+end;
+$$;
+
+revoke all on function public._uid() from public, anon, authenticated;
+grant execute on function public._uid() to service_role;
+
+create or replace function private.is_member(journey uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.memberships m
+      join public.profiles p on p.id = m.user_id and p.deleted_at is null
+     where m.journey_id = journey
+       and m.user_id = (select auth.uid())
+       and m.status = 'active'
+       and m.deleted_at is null
+       and not private.is_user_banned(m.user_id)
+  );
+$$;
+
+create or replace function private.is_owner(journey uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.memberships m
+      join public.profiles p on p.id = m.user_id and p.deleted_at is null
+     where m.journey_id = journey
+       and m.user_id = (select auth.uid())
+       and m.role = 'owner'
+       and m.status = 'active'
+       and m.deleted_at is null
+       and not private.is_user_banned(m.user_id)
+  );
+$$;
+
+create or replace function public.check_ins_before_write() returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  j public.journeys%rowtype;
+  v_imported boolean;
+begin
+  if current_user in ('authenticated', 'anon') then
+    -- CS-03 + P1-1: banned / soft-deleted profiles cannot insert or update check-ins.
+    -- Checked before the journey lookup so banned users always receive 42501 'forbidden'
+    -- even after their group memberships are transitioned to 'left' and journeys_select hides the row.
+    if not exists (
+      select 1 from public.profiles p
+       where p.id = coalesce((select auth.uid()), new.user_id)
+         and p.deleted_at is null
+    ) or private.caller_is_banned() then
+      raise exception 'forbidden' using errcode = '42501';
+    end if;
+  end if;
+
+  select * into j from public.journeys where id = new.journey_id;
+  if not found then
+    raise exception 'not_found' using errcode = 'P0001';
+  end if;
+
+  if tg_op = 'UPDATE' and (
+       new.id <> old.id
+    or new.journey_id <> old.journey_id
+    or new.user_id <> old.user_id
+    or new.captured_at <> old.captured_at
+    or new.photo_path <> old.photo_path
+    or new.thumb_path <> old.thumb_path
+    or new.partner_photo_path is distinct from old.partner_photo_path
+    or new.from_library is distinct from old.from_library
+  ) then
+    raise exception 'immutable_column' using errcode = '23514';
+  end if;
+
+  new.local_date := public.local_date(new.captured_at, j.timezone);
+  new.metric_value := null;
+  v_imported := j.origin = 'imported' and new.user_id = j.owner_id and (
+    (j.status in ('ended', 'archived') and j.duration_days is not null)
+    or (
+      j.status = 'active'
+      and new.from_library
+      and new.local_date between j.start_date
+                             and coalesce(j.import_end_date, public.local_date(j.created_at, j.timezone))
+    )
+  );
+
+  if current_user in ('authenticated', 'anon') then
+    if tg_op = 'UPDATE' and old.moderated_at is not null then
+      raise exception 'forbidden' using errcode = '42501';
+    end if;
+    if new.captured_at > now() + interval '10 minutes' then
+      raise exception 'invalid_captured_at' using errcode = '22008';
+    end if;
+    if v_imported then
+      if j.deleted_at is not null then
+        raise exception 'ended' using errcode = 'P0001';
+      end if;
+      if new.local_date < j.start_date
+         or (j.duration_days is not null and new.local_date > j.start_date + j.duration_days - 1) then
+        raise exception 'invalid_captured_at' using errcode = '22008';
+      end if;
+    else
+      if j.status <> 'active' or j.deleted_at is not null then
+        raise exception 'ended' using errcode = 'P0001';
+      end if;
+      if (tg_op = 'INSERT' or new.captured_at is distinct from old.captured_at)
+         and (new.local_date < public.local_date(now(), j.timezone) - 3
+              or (j.origin = 'imported' and new.local_date < j.start_date)) then
+        raise exception 'invalid_captured_at' using errcode = '22008';
+      end if;
+      if j.duration_days is not null and new.local_date > j.start_date + j.duration_days - 1 then
+        raise exception 'ended' using errcode = 'P0001';
+      end if;
+    end if;
+    if tg_op = 'INSERT' then
+      new.hidden_by_leave := false;
+      new.moderated_at := null;
+      new.hidden_in_share := false;
+    else
+      new.hidden_by_leave := old.hidden_by_leave;
+      new.moderated_at := old.moderated_at;
+      new.hidden_in_share := old.hidden_in_share;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.check_ins_before_write() from public, anon, authenticated;
+
+create or replace function private.conversation_read_only(p_conversation uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce((
+    select not private.are_friends(c.member_id, c.viewer_id)
+           or private.blocked_between(c.member_id, c.viewer_id)
+           or private.is_user_banned(c.member_id)
+           or private.is_user_banned(c.viewer_id)
+           or exists (
+             select 1 from public.profiles p
+              where p.id in (c.member_id, c.viewer_id)
+                and p.deleted_at is not null
+           )
+      from public.conversations c where c.id = p_conversation), true);
+$$;
+
+create or replace function private.can_see_profile(other uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not private.caller_is_banned()
+     and (
+       other = (select auth.uid())
+       or (not private.is_blocked_pair(other)
+           and (
+             exists (
+               select 1 from public.memberships a
+                 join public.memberships b on b.journey_id = a.journey_id
+                where a.user_id = (select auth.uid()) and b.user_id = other
+                  and a.status = 'active' and a.deleted_at is null
+                  and b.status = 'active' and b.deleted_at is null)
+             or exists (
+               select 1 from public.friendships f
+                where f.user_low = least(other, (select auth.uid()))
+                  and f.user_high = greatest(other, (select auth.uid()))
+                  and f.deleted_at is null
+                  and (f.status = 'accepted' or f.requested_by = other))
+             or exists (
+               select 1 from public.conversations c
+                where (c.member_id = other and c.viewer_id = (select auth.uid()))
+                   or (c.viewer_id = other and c.member_id = (select auth.uid())))
+             or exists (
+               select 1 from public.journeys j
+                where j.deleted_at is null
+                  and ((j.owner_id = other and (j.kind = 'solo' or private.consent_accepted(j.id, other)))
+                       or (private.is_active_member(j.id, other) and private.consent_accepted(j.id, other)))
+                  and (private.has_active_share(j.id, (select auth.uid()))
+                       or (j.public_token is not null
+                           and exists (select 1 from public.saved_journeys s
+                                        where s.journey_id = j.id and s.user_id = (select auth.uid())))))
+           ))
+     );
+$$;
+
+create or replace function private.viewer_can_see_checkin(p_checkin uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not private.caller_is_banned()
+     and exists (
+       select 1 from public.check_ins c
+         join public.journeys j on j.id = c.journey_id
+        where c.id = p_checkin
+          and private.checkin_shareable(c.id)
+          and not private.is_blocked_pair(c.user_id)
+          and not private.is_blocked_pair(j.owner_id)
+          and not private.has_reported(c.id)
+          and (private.has_active_share(j.id, (select auth.uid())) or j.public_token is not null)
+     );
+$$;
+
+create or replace function private.can_read_message(p_message uuid) returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select not private.caller_is_banned()
+     and exists (
+       select 1 from public.messages m
+         join public.conversations c on c.id = m.conversation_id
+        where m.id = p_message
+          and m.deleted_at is null
+          and m.moderated_at is null
+          and (select auth.uid()) in (c.member_id, c.viewer_id)
+          and not private.blocked_between(c.member_id, c.viewer_id)
+          and m.created_at > coalesce(
+                case when c.member_id = (select auth.uid()) then c.member_cleared_at else c.viewer_cleared_at end,
+                '-infinity'::timestamptz)
+          and not exists (select 1 from public.message_hides h
+                           where h.message_id = m.id and h.user_id = (select auth.uid()))
+          and not private.has_reported_message(m.id)
+     );
+$$;
+
+revoke all on function
+  private.is_member(uuid),
+  private.is_owner(uuid),
+  private.conversation_read_only(uuid),
+  private.can_see_profile(uuid),
+  private.viewer_can_see_checkin(uuid),
+  private.can_read_message(uuid)
+from public, anon;
+grant execute on function
+  private.is_member(uuid),
+  private.is_owner(uuid),
+  private.conversation_read_only(uuid),
+  private.can_see_profile(uuid),
+  private.viewer_can_see_checkin(uuid),
+  private.can_read_message(uuid)
+to authenticated, service_role;
+
+drop policy if exists profiles_insert on public.profiles;
+create policy profiles_insert on public.profiles for insert to authenticated
+  with check (id = (select auth.uid()) and not private.caller_is_banned());
+
+drop policy if exists profiles_update on public.profiles;
+create policy profiles_update on public.profiles for update to authenticated
+  using (id = (select auth.uid()) and not private.caller_is_banned())
+  with check (id = (select auth.uid()) and not private.caller_is_banned());
+
+drop policy if exists memberships_select on public.memberships;
+create policy memberships_select on public.memberships for select to authenticated
+  using (
+    (user_id = (select auth.uid()) and not private.caller_is_banned())
+    or (private.is_member(journey_id) and not private.is_blocked_pair(user_id))
+  );
+
+drop policy if exists memberships_update on public.memberships;
+create policy memberships_update on public.memberships for update to authenticated
+  using (user_id = (select auth.uid()) and status = 'active' and not private.caller_is_banned())
+  with check (user_id = (select auth.uid()) and not private.caller_is_banned());
+
+drop policy if exists check_ins_select on public.check_ins;
+create policy check_ins_select on public.check_ins for select to authenticated
+  using (
+    not private.caller_is_banned()
+    and (
+      user_id = (select auth.uid())
+      or (deleted_at is null
+          and moderated_at is null
+          and private.is_member(journey_id)
+          and not private.is_blocked_pair(user_id)
+          and not private.has_reported(id))
+    )
+  );
+
+drop policy if exists media_select on storage.objects;
+create policy media_select on storage.objects for select to authenticated
+using (
+  bucket_id = 'media'
+  and not private.caller_is_banned()
+  and (
+    (
+      (storage.foldername(name))[1] = 'checkins'
+      and array_length(storage.foldername(name), 1) = 3
+      and (
+        (storage.foldername(name))[3] = (select auth.uid())::text
+        or private.can_read_checkin_object(name)
+      )
+    )
+    or (
+      (storage.foldername(name))[1] = 'avatars'
+      and array_length(storage.foldername(name), 1) = 2
+      and (
+        (storage.foldername(name))[2] = (select auth.uid())::text
+        or (
+          private.can_see_profile(public.try_uuid((storage.foldername(name))[2]))
+          and exists (
+            select 1 from public.profiles p
+             where p.id = public.try_uuid((storage.foldername(name))[2])
+               and p.deleted_at is null
+               and p.avatar_path = name
+          )
+        )
+      )
+    )
+  )
+);
+
+drop policy if exists media_insert on storage.objects;
+create policy media_insert on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'media'
+  and not private.caller_is_banned()
+  and (
+    (
+      (storage.foldername(name))[1] = 'checkins'
+      and array_length(storage.foldername(name), 1) = 3
+      and (storage.foldername(name))[3] = (select auth.uid())::text
+      and private.is_member(public.try_uuid((storage.foldername(name))[2]))
+      and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(_[tp])?\.jpg$'
+    )
+    or (
+      (storage.foldername(name))[1] = 'avatars'
+      and array_length(storage.foldername(name), 1) = 2
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+      and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.deleted_at is null)
+      and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$'
+    )
+  )
+);
+
+drop policy if exists media_update on storage.objects;
+create policy media_update on storage.objects for update to authenticated
+using (
+  bucket_id = 'media'
+  and not private.caller_is_banned()
+  and (
+    (
+      (storage.foldername(name))[1] = 'checkins'
+      and array_length(storage.foldername(name), 1) = 3
+      and (storage.foldername(name))[3] = (select auth.uid())::text
+      and private.is_member(public.try_uuid((storage.foldername(name))[2]))
+      and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(_[tp])?\.jpg$'
+    )
+    or (
+      (storage.foldername(name))[1] = 'avatars'
+      and array_length(storage.foldername(name), 1) = 2
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+      and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.deleted_at is null)
+      and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$'
+    )
+  )
+)
+with check (
+  bucket_id = 'media'
+  and not private.caller_is_banned()
+  and (
+    (
+      (storage.foldername(name))[1] = 'checkins'
+      and array_length(storage.foldername(name), 1) = 3
+      and (storage.foldername(name))[3] = (select auth.uid())::text
+      and private.is_member(public.try_uuid((storage.foldername(name))[2]))
+      and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(_[tp])?\.jpg$'
+    )
+    or (
+      (storage.foldername(name))[1] = 'avatars'
+      and array_length(storage.foldername(name), 1) = 2
+      and (storage.foldername(name))[2] = (select auth.uid())::text
+      and exists (select 1 from public.profiles p where p.id = (select auth.uid()) and p.deleted_at is null)
+      and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$'
+    )
+  )
+);
+
+drop policy if exists media_delete on storage.objects;
+create policy media_delete on storage.objects for delete to authenticated
+using (
+  bucket_id = 'media'
+  and not private.caller_is_banned()
+  and (
+    ((storage.foldername(name))[1] = 'checkins'
+      and (storage.foldername(name))[3] = (select auth.uid())::text)
+    or ((storage.foldername(name))[1] = 'avatars'
+      and (storage.foldername(name))[2] = (select auth.uid())::text)
+  )
+);
+
+drop policy if exists messages_delete on storage.objects;
+create policy messages_delete on storage.objects for delete to authenticated
+using (
+  bucket_id = 'messages'
+  and not private.caller_is_banned()
+  and (storage.foldername(name))[1] = 'messages'
+  and (storage.foldername(name))[3] = (select auth.uid())::text
+);
+
+create or replace function public.accept_friend_invite(p_token text) returns json
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := public._uid();
+  v_inviter uuid;
+begin
+  select i.user_id into v_inviter
+    from public.friend_invites i
+    join public.profiles p on p.id = i.user_id and p.deleted_at is null
+   where i.token = lower(btrim(coalesce(p_token, '')))
+     and not private.is_user_banned(i.user_id);
+  if v_inviter is null then
+    raise exception 'not_found';
+  end if;
+  if v_inviter = uid then
+    raise exception 'invalid';
+  end if;
+  if private.blocked_between(uid, v_inviter) then
+    raise exception 'blocked';
+  end if;
+  if exists (select 1 from public.friendships f
+              where f.user_low = least(uid, v_inviter) and f.user_high = greatest(uid, v_inviter)
+                and f.deleted_at is not null) then
+    raise exception 'invalid';
+  end if;
+  insert into public.friendships (user_low, user_high, requested_by, status, source, accepted_at)
+  values (least(uid, v_inviter), greatest(uid, v_inviter), v_inviter, 'accepted', 'direct', now())
+  on conflict (user_low, user_high) do update
+    set status = 'accepted',
+        accepted_at = case when public.friendships.status = 'accepted' and public.friendships.deleted_at is null
+                           then public.friendships.accepted_at else now() end,
+        source = case when public.friendships.deleted_at is null then public.friendships.source else 'direct' end,
+        deleted_at = null;
+  return private.person(v_inviter);
+end;
+$$;
 
 -- Verifies caller is an active, unbanned admin with at least `p_min_role` ('moderator' or 'owner').
 -- Raises SQLSTATE 42501 ('forbidden') if unauthenticated, not in private.admins, banned, soft-deleted,
@@ -316,6 +809,7 @@ begin
   return exists (
     select 1
       from private.admin_media_grants g
+      join public.moderation_queue mq on mq.id = g.queue_id and mq.status = 'open'
      where g.admin_id = v_uid
        and g.bucket_id = p_bucket
        and g.object_path = p_name
@@ -459,6 +953,15 @@ begin
           next_attempt_at = now(),
           last_error = null;
 
+    -- P1-1: clear avatar_path (already queued for storage purge above) and revoke friend_invites
+    update public.profiles
+       set avatar_path = null
+     where id = p_user
+       and avatar_path is not null;
+
+    delete from public.friend_invites
+     where user_id = p_user;
+
     update public.check_ins
        set moderated_at = coalesce(moderated_at, now()),
            deleted_at = coalesce(deleted_at, now())
@@ -533,6 +1036,182 @@ grant execute on function
   private.revoke_user_sessions_internal(uuid),
   private.ban_user_internal(uuid, uuid, text, boolean)
 to service_role;
+
+-- P1-1 & A2: Unify 0020's service-role CLI moderation path (private.moderate_queue_item) with Amendment A2
+-- so `resolve_moderation_item(..., 'ban_user', ...)` delegates to `private.ban_user_internal` (leaving
+-- public.profiles.deleted_at NULL, clearing avatar_path, revoking friend_invites, and purging media grants).
+create or replace function private.moderate_queue_item(
+  p_queue_id uuid,
+  p_action text,
+  p_note text default null
+) returns json
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  q public.moderation_queue%rowtype;
+  v_action text := lower(btrim(coalesce(p_action, '')));
+  v_note text := left(nullif(btrim(p_note), ''), 500);
+  v_new_status text;
+  v_sentinel uuid := '00000000-0000-0000-0000-000000000000'::uuid;
+begin
+  perform private.assert_service_role();
+  if p_queue_id is null or v_action not in ('dismiss', 'remove_content', 'action', 'ban_user') then
+    raise exception 'invalid';
+  end if;
+
+  select * into q from public.moderation_queue where id = p_queue_id for update;
+  if not found then
+    raise exception 'not_found';
+  end if;
+
+  if v_action = 'dismiss' and q.status = 'actioned' then
+    raise exception 'invalid';
+  end if;
+
+  v_new_status := case when v_action = 'dismiss' then 'dismissed' else 'actioned' end;
+
+  update public.moderation_queue
+     set status = v_new_status,
+         handled_at = now(),
+         resolution_note = coalesce(v_note, resolution_note)
+   where id = q.id
+  returning * into q;
+
+  if q.report_id is not null then
+    update public.reports set status = v_new_status where id = q.report_id;
+  end if;
+
+  if q.target_checkin_id is not null then
+    update public.reports
+       set status = v_new_status
+     where target_checkin_id = q.target_checkin_id and status = 'open';
+    update public.moderation_queue
+       set status = v_new_status,
+           handled_at = coalesce(handled_at, now()),
+           resolution_note = coalesce(resolution_note, v_note)
+     where target_checkin_id = q.target_checkin_id and status = 'open';
+  end if;
+
+  if q.target_message_id is not null then
+    update public.reports
+       set status = v_new_status
+     where target_message_id = q.target_message_id and status = 'open';
+    update public.moderation_queue
+       set status = v_new_status,
+           handled_at = coalesce(handled_at, now()),
+           resolution_note = coalesce(resolution_note, v_note)
+     where target_message_id = q.target_message_id and status = 'open';
+  end if;
+
+  if v_action = 'dismiss' then
+    if q.target_checkin_id is not null then
+      update public.check_ins c
+         set moderated_at = null
+       where c.id = q.target_checkin_id
+         and c.moderated_at is not null
+         and c.deleted_at is null
+         and not exists (
+           select 1 from public.reports r
+            where r.target_checkin_id = q.target_checkin_id
+              and r.deleted_at is null
+              and r.status = 'actioned'
+         )
+         and not exists (
+           select 1 from public.moderation_queue mq
+            where mq.target_checkin_id = q.target_checkin_id
+              and mq.status = 'actioned'
+         );
+    end if;
+    if q.target_message_id is not null then
+      update public.messages m
+         set moderated_at = null
+       where m.id = q.target_message_id
+         and m.moderated_at is not null
+         and m.deleted_at is null
+         and not exists (
+           select 1 from public.reports r
+            where r.target_message_id = q.target_message_id
+              and r.deleted_at is null
+              and r.status = 'actioned'
+         )
+         and not exists (
+           select 1 from public.moderation_queue mq
+            where mq.target_message_id = q.target_message_id
+              and mq.status = 'actioned'
+         );
+    end if;
+  else
+    if q.target_checkin_id is not null then
+      insert into private.pending_storage_purge (bucket, path, user_id)
+      select distinct 'media', p, v_sentinel
+        from public.check_ins c
+        cross join lateral unnest(array[c.photo_path, c.thumb_path, c.partner_photo_path]) as p
+       where c.id = q.target_checkin_id
+         and p is not null and length(p) between 1 and 1024
+      on conflict (bucket, path) do update
+        set user_id = v_sentinel,
+            attempts = 0,
+            next_attempt_at = now(),
+            last_error = null;
+
+      update public.check_ins
+         set moderated_at = coalesce(moderated_at, now()),
+             deleted_at = coalesce(deleted_at, now())
+       where id = q.target_checkin_id;
+    end if;
+
+    if q.target_message_id is not null then
+      insert into private.pending_storage_purge (bucket, path, user_id)
+      select distinct 'messages', m.media_path, v_sentinel
+        from public.messages m
+       where m.id = q.target_message_id
+         and m.media_path is not null and length(m.media_path) between 1 and 1024
+      on conflict (bucket, path) do update
+        set user_id = v_sentinel,
+            attempts = 0,
+            next_attempt_at = now(),
+            last_error = null;
+
+      update public.messages
+         set moderated_at = coalesce(moderated_at, now()),
+             deleted_at = coalesce(deleted_at, now())
+       where id = q.target_message_id;
+    end if;
+
+    if v_action = 'ban_user' and q.target_user_id is not null then
+      perform private.ban_user_internal(
+        q.target_user_id,
+        null,
+        coalesce(v_note, 'Moderation queue ban_user'),
+        true
+      );
+    end if;
+  end if;
+
+  delete from private.admin_media_grants g
+   where g.queue_id = q.id
+      or exists (
+        select 1 from public.moderation_queue mq
+         where mq.id = g.queue_id
+           and mq.status <> 'open'
+      );
+
+  return json_build_object(
+    'id', q.id,
+    'status', q.status,
+    'action', v_action,
+    'handled_at', q.handled_at,
+    'target_user_id', q.target_user_id,
+    'target_checkin_id', q.target_checkin_id,
+    'target_message_id', q.target_message_id
+  );
+end;
+$$;
+
+revoke all on function private.moderate_queue_item(uuid, text, text) from public, anon, authenticated;
+grant execute on function private.moderate_queue_item(uuid, text, text) to service_role;
 
 -- ---------------------------------------------------------------------------
 -- 6. RPC 1: Auth / Self (`admin.me`)
@@ -1482,6 +2161,11 @@ begin
     raise exception 'not_found' using errcode = 'P0001';
   end if;
 
+  -- P2-2: never mint media grants on closed or dismissed moderation queue items.
+  if q.status <> 'open' then
+    raise exception 'invalid' using errcode = 'P0001';
+  end if;
+
   -- Prune expired grants
   delete from private.admin_media_grants where expires_at <= now();
 
@@ -1762,11 +2446,18 @@ begin
        where id = q.target_message_id;
     end if;
 
-    -- A2: ban_user in admin console uses private.ban_user_internal (wiping UGC without setting profiles.deleted_at)
+    -- A2 + P2-1: ban_user in admin console uses private.ban_user_internal (wiping UGC without setting profiles.deleted_at).
+    -- Moderators cannot ban other admins; only owners can act on moderators, and nobody can ban an owner.
     if v_action = 'ban_user' and q.target_user_id is not null then
-      if q.target_user_id = v_uid or exists (
-        select 1 from private.admins a where a.user_id = q.target_user_id and a.role = 'owner'
-      ) then
+      if q.target_user_id = v_uid
+         or exists (
+           select 1 from private.admins a
+            where a.user_id = q.target_user_id
+              and (
+                a.role = 'owner'
+                or not exists (select 1 from private.admins ca where ca.user_id = v_uid and ca.role = 'owner')
+              )
+         ) then
         raise exception 'forbidden' using errcode = '42501';
       end if;
       perform private.ban_user_internal(
@@ -1777,6 +2468,15 @@ begin
       );
     end if;
   end if;
+
+  -- P2-2: resolving a queue item immediately purges active media grants for it and any closed sibling items.
+  delete from private.admin_media_grants g
+   where g.queue_id = q.id
+      or exists (
+        select 1 from public.moderation_queue mq
+         where mq.id = g.queue_id
+           and mq.status <> 'open'
+      );
 
   perform private.admin_log(
     v_uid,
@@ -2327,10 +3027,10 @@ begin
   v_uid := private.require_admin('owner');
   with rows as (
     select
-      w.email,
-      w.lang,
-      array_to_string(w.platforms, ';') as platforms,
-      regexp_replace(coalesce(w.source, ''), '^[=+@-]+', '', '') as source,
+      regexp_replace(translate(coalesce(w.email, ''), E'\r\n', '  '), E'^[=+@\\-\t]+', '', '') as email,
+      regexp_replace(translate(coalesce(w.lang, ''), E'\r\n', '  '), E'^[=+@\\-\t]+', '', '') as lang,
+      regexp_replace(translate(array_to_string(w.platforms, ';'), E'\r\n', '  '), E'^[=+@\\-\t]+', '', '') as platforms,
+      regexp_replace(translate(coalesce(w.source, ''), E'\r\n', '  '), E'^[=+@\\-\t]+', '', '') as source,
       to_char(w.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as created_at,
       coalesce(to_char(w.confirmation_sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'), '') as confirmation_sent_at,
       case when exists (select 1 from auth.users u where lower(u.email) = w.email)
@@ -2421,7 +3121,7 @@ begin
     raise exception 'not_found' using errcode = 'P0001';
   end if;
 
-  v_hash := encode(extensions.digest(v_email, 'sha256'), 'hex');
+  v_hash := encode(pg_catalog.sha256(convert_to(v_email, 'UTF8')), 'hex');
 
   perform private.admin_log(
     v_uid,
@@ -2775,7 +3475,8 @@ begin
 end;
 $$;
 
--- A2: Ban user without setting public.profiles.deleted_at.
+-- A2 + P2-1: Ban user without setting public.profiles.deleted_at.
+-- Moderators cannot ban other admins; only owners can act on moderators, and nobody can ban an owner.
 create or replace function admin.ban_user(
   p_user uuid,
   p_reason text,
@@ -2787,6 +3488,8 @@ set search_path = ''
 as $$
 declare
   v_uid uuid;
+  v_caller_role text;
+  v_target_role text;
   v_reason text := left(nullif(btrim(p_reason), ''), 500);
   v_res jsonb;
 begin
@@ -2795,9 +3498,12 @@ begin
     raise exception 'invalid' using errcode = 'P0001';
   end if;
 
-  if p_user = v_uid or exists (
-    select 1 from private.admins a where a.user_id = p_user and a.role = 'owner'
-  ) then
+  select a.role into v_caller_role from private.admins a where a.user_id = v_uid;
+  select a.role into v_target_role from private.admins a where a.user_id = p_user;
+
+  if p_user = v_uid
+     or v_target_role = 'owner'
+     or (v_target_role is not null and v_caller_role <> 'owner') then
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
@@ -2820,7 +3526,8 @@ begin
 end;
 $$;
 
--- A2: Unban reverses only the ban state (banned_until + private.user_moderation), never profiles.deleted_at.
+-- A2 + P2-1: Unban reverses only the ban state (banned_until + private.user_moderation), never profiles.deleted_at.
+-- Moderators cannot unban other admins; only owners can unban a suspended admin.
 create or replace function admin.unban_user(
   p_user uuid,
   p_reason text default null
@@ -2831,11 +3538,21 @@ set search_path = ''
 as $$
 declare
   v_uid uuid;
+  v_caller_role text;
+  v_target_role text;
   v_reason text := left(nullif(btrim(p_reason), ''), 500);
 begin
   v_uid := private.require_admin('moderator');
   if p_user is null then
     raise exception 'invalid' using errcode = 'P0001';
+  end if;
+
+  select a.role into v_caller_role from private.admins a where a.user_id = v_uid;
+  select a.role into v_target_role from private.admins a where a.user_id = p_user;
+
+  if p_user = v_uid
+     or (v_target_role is not null and v_caller_role <> 'owner') then
+    raise exception 'forbidden' using errcode = '42501';
   end if;
 
   if not exists (select 1 from auth.users u where u.id = p_user) then
@@ -2879,6 +3596,7 @@ begin
 end;
 $$;
 
+-- P2-1: Moderators cannot revoke sessions of other admins; only owners can revoke an admin's sessions.
 create or replace function admin.revoke_user_sessions(
   p_user uuid,
   p_reason text default null
@@ -2889,11 +3607,20 @@ set search_path = ''
 as $$
 declare
   v_uid uuid;
+  v_caller_role text;
+  v_target_role text;
   v_deleted int := 0;
 begin
   v_uid := private.require_admin('moderator');
   if p_user is null then
     raise exception 'invalid' using errcode = 'P0001';
+  end if;
+
+  select a.role into v_caller_role from private.admins a where a.user_id = v_uid;
+  select a.role into v_target_role from private.admins a where a.user_id = p_user;
+
+  if v_target_role is not null and v_caller_role <> 'owner' then
+    raise exception 'forbidden' using errcode = '42501';
   end if;
 
   if not exists (select 1 from auth.users u where u.id = p_user) then

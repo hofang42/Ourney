@@ -8,7 +8,7 @@
 -- inside pgTAP assertions, writes run in separate statements before assertion queries.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(56);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -185,10 +185,11 @@ select is(
   or has_function_privilege('authenticated', 'private.require_admin(text)', 'execute')
   or has_function_privilege('anon', 'private.admin_log(text, text, text, text, jsonb)', 'execute')
   or has_function_privilege('authenticated', 'private.admin_log(text, text, text, text, jsonb)', 'execute')
+  or has_function_privilege('authenticated', 'private.is_user_banned(uuid)', 'execute')
   or has_function_privilege('authenticated', 'public.admin_service_get_waitlist_targets(uuid, int)', 'execute')
   or has_function_privilege('authenticated', 'public.admin_service_record_audit(uuid, text, text, text, text, jsonb)', 'execute'),
   false,
-  'private.require_admin, private.admin_log, and admin_service_* helpers are not directly callable by clients'
+  'private.require_admin, private.admin_log, private.is_user_banned, and admin_service_* helpers are not directly callable by clients'
 );
 
 -- ============================================================================
@@ -360,21 +361,32 @@ select is(
   'waitlist_summary and list_waitlist report signups, filters, and registered conversion count'
 );
 
--- [Test 21] Owner exports CSV and deletes waitlist entry (logging only sha256(email))
-do $$ begin perform tests.as_user(tests.u(1)); end $$;
+-- [Test 21] Owner exports CSV (P2-4: formula-leading characters stripped on email and source) and deletes waitlist entry
+do $$ begin
+  perform tests.as_service_role();
+  perform public.waitlist_signup('=cmd@example.test', 'en', array['ios'], '=evil_source', null);
+  perform tests.as_user(tests.u(1));
+end $$;
 select ok(
-  position('beta_waiter@example.test' in admin.export_waitlist()) > 0,
-  'owner can export waitlist CSV via admin.export_waitlist'
+  position('beta_waiter@example.test' in admin.export_waitlist()) > 0
+  and position('"cmd@example.test"' in admin.export_waitlist()) > 0
+  and position('"evil_source"' in admin.export_waitlist()) > 0
+  and position('"=cmd@example.test"' in admin.export_waitlist()) = 0
+  and position('"=evil_source"' in admin.export_waitlist()) = 0,
+  'P2-4: admin.export_waitlist exports CSV and strips leading formula characters from email and source'
 );
 
 do $$
 declare
   v_wid uuid;
+  v_evil_wid uuid;
 begin
   perform tests.as_postgres();
   select id into v_wid from private.waitlist where email = 'beta_waiter@example.test';
+  select id into v_evil_wid from private.waitlist where email = '=cmd@example.test';
   perform tests.as_user(tests.u(1));
   perform admin.delete_waitlist_entry(v_wid, 'GDPR erasure test');
+  perform admin.delete_waitlist_entry(v_evil_wid, 'cleanup formula test');
   perform tests.as_postgres();
 end $$;
 
@@ -435,13 +447,17 @@ select is(
 -- ============================================================================
 -- 7. Moderation Queue, Scoped Content Excerpt & 5-Minute Audited Media Grants
 -- ============================================================================
-do $$ begin
-  -- Re-enable public link on j(2) so u(3) and u(4) can interact, create group journey j(3)
+do $$
+declare
+  v_code text;
+begin
+  -- u(3) creates group journey j(3) and captures its invite_code BEFORE switching to u(4)
+  -- (journeys_select RLS only lets members read public.journeys).
   perform tests.as_user(tests.u(3));
-  perform public.create_journey(tests.j(3), 'group', 'custom', 'Squad Habit', '🔥',
-                                null, null, false, current_date - 3, 30, 'UTC');
+  v_code := (public.create_journey(tests.j(3), 'group', 'custom', 'Squad Habit', '🔥',
+                                   null, null, false, current_date - 3, 30, 'UTC')).invite_code;
   perform tests.as_user(tests.u(4));
-  perform public.join_by_code((select invite_code from public.journeys where id = tests.j(3)));
+  perform public.join_by_code(v_code);
 
   -- u(3) posts an unreported check-in c(1) with private media
   perform tests.as_user(tests.u(3));
@@ -570,15 +586,32 @@ begin
   select (item ->> 'id')::uuid into v_qid
     from jsonb_array_elements(admin.list_moderation_queue('open', 'report', 'nudity', 50, 0) -> 'items') item
    where (item ->> 'target_checkin_id')::uuid = tests.c(2);
+  -- Mint a fresh 5-minute grant right before resolving to verify resolve_moderation purges active grants (P2-2)
+  perform admin.reveal_reported_media(v_qid, 're-verify before resolve');
   perform admin.resolve_moderation(v_qid, 'dismiss', 'false alarm');
   perform tests.as_postgres();
 end $$;
 
--- [Test 30] Dismissing restores moderated_at = null
+-- [Test 30] Dismissing restores moderated_at = null and immediately purges active admin_media_grants (P2-2)
 select is(
-  (select moderated_at is null and deleted_at is null from public.check_ins where id = tests.c(2)),
+  (select moderated_at is null and deleted_at is null from public.check_ins where id = tests.c(2))
+  and (select count(*)::int = 0 from private.admin_media_grants),
   true,
-  'resolve_moderation(dismiss) clears moderated_at and closes the report'
+  'P2-2: resolve_moderation(dismiss) clears moderated_at, closes the report, and purges active media grants'
+);
+
+-- [Test 30b] P2-2: reveal_reported_media rejects closed / dismissed moderation queue items
+do $$ begin perform tests.as_user(tests.u(2)); end $$;
+select throws_ok(
+  $$ select admin.reveal_reported_media(
+       (select (item ->> 'id')::uuid
+          from jsonb_array_elements(admin.list_moderation_queue('dismissed', 'report', 'nudity', 50, 0) -> 'items') item
+         where (item ->> 'target_checkin_id')::uuid = tests.c(2)
+         limit 1),
+       'attempt reveal on dismissed item'
+     ) $$,
+  'P0001', 'invalid',
+  'P2-2: reveal_reported_media rejects closed/dismissed moderation queue items'
 );
 
 -- ============================================================================
@@ -607,6 +640,41 @@ select is(
   'A2: reversible ban_user(p_wipe_ugc=false) leaves profiles.deleted_at NULL and check-ins intact while setting banned_until + user_moderation + revoking public_token'
 );
 
+-- [Tests 31b..31e] P1-1: Banned user u(3) with an existing unexpired JWT (profiles.deleted_at IS NULL)
+--                        immediately loses write and read access across RPCs, triggers, and RLS.
+do $$ begin perform tests.as_user(tests.u(3)); end $$;
+
+select throws_ok(
+  $$ select public.create_journey(tests.j(99), 'solo', 'custom', 'Banned Try', '🔥',
+                                  null, null, false, current_date, 30, 'UTC') $$,
+  '42501', 'forbidden',
+  'P1-1: banned user with active JWT is immediately denied (42501) on public.create_journey'
+);
+
+select throws_ok(
+  $$ insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path, caption)
+     values (
+       tests.c(99), tests.j(1), tests.u(3), current_date, now(),
+       format('checkins/%s/%s/%s.jpg', tests.j(1), tests.u(3), tests.c(99)),
+       format('checkins/%s/%s/%s_t.jpg', tests.j(1), tests.u(3), tests.c(99)),
+       'Banned direct insert'
+     ) $$,
+  '42501', 'forbidden',
+  'P1-1: banned user with active JWT is immediately denied (42501) on direct check_ins INSERT'
+);
+
+select throws_ok(
+  $$ select public.set_public_link(tests.j(2), true) $$,
+  '42501', 'forbidden',
+  'P1-1: banned user with active JWT cannot re-enable public_token via set_public_link'
+);
+
+select is(
+  (select count(*)::int from public.journeys) + (select count(*)::int from public.check_ins),
+  0,
+  'P1-1: banned user with active JWT sees zero journeys and zero check_ins via RLS'
+);
+
 -- [Test 32] A2: Unban clears auth.users.banned_until and marks unbanned_at in private.user_moderation
 do $$ begin
   perform tests.as_user(tests.u(2));
@@ -622,30 +690,84 @@ select is(
   'A2: unban_user clears banned_until and updates private.user_moderation without touching profiles.deleted_at'
 );
 
--- [Test 33] A2: Severe ban (p_wipe_ugc = true) wipes UGC, queues storage purge, leaves groups, and STILL leaves profiles.deleted_at NULL
+-- [Test 33] A2 & P1-1: Severe ban (p_wipe_ugc = true) wipes UGC, clears avatar_path, revokes friend_invites,
+--           queues storage purge, leaves groups, and STILL leaves profiles.deleted_at NULL
 do $$ begin
+  -- Give u(4) an avatar_path and an active friend_invite before wipe-banning
+  perform tests.as_user(tests.u(4));
+  update public.profiles
+     set avatar_path = format('avatars/%s/%s.jpg', tests.u(4), tests.c(2))
+   where id = tests.u(4);
+  perform public.create_friend_invite();
   perform tests.as_user(tests.u(2));
   perform admin.ban_user(tests.u(4), 'severe repeat abuse takedown', true);
   perform tests.as_postgres();
 end $$;
 select is(
-  (select deleted_at is null from public.profiles where id = tests.u(4))
+  (select deleted_at is null and avatar_path is null from public.profiles where id = tests.u(4))
+  and (select count(*)::int = 0 from public.friend_invites where user_id = tests.u(4))
   and (select banned_until > now() from auth.users where id = tests.u(4))
   and (select wiped_ugc from private.user_moderation where user_id = tests.u(4))
   and (select moderated_at is not null and deleted_at is not null from public.check_ins where id = tests.c(2))
   and (select status = 'left' and removed_at is not null from public.memberships where journey_id = tests.j(3) and user_id = tests.u(4))
-  and (select count(*)::int >= 2 from private.pending_storage_purge where path like format('checkins/%s/%s/%%', tests.j(3), tests.u(4))),
+  and (select count(*)::int >= 2 from private.pending_storage_purge where path like format('checkins/%s/%s/%%', tests.j(3), tests.u(4)))
+  and (select count(*)::int = 1 from private.pending_storage_purge where path = format('avatars/%s/%s.jpg', tests.u(4), tests.c(2))),
   true,
-  'A2: ban_user(p_wipe_ugc=true) runs 0020 UGC takedown and storage purge while keeping public.profiles.deleted_at NULL'
+  'A2 & P1-1: ban_user(p_wipe_ugc=true) wipes UGC, clears avatar_path, revokes friend_invites, and queues storage purge while keeping profiles.deleted_at NULL'
 );
 
--- [Test 34] Moderator cannot ban themselves or an owner admin
-do $$ begin perform tests.as_user(tests.u(2)); end $$;
+-- [Tests 34..34e] P2-1: Admin-target guards (moderators cannot ban/wipe/unban/revoke other admins;
+--                       only owners can act on moderators; nobody can ban the last owner)
+do $$ begin
+  perform tests.as_user(tests.u(1));
+  perform admin.upsert_admin_user('owner2@ourney.tech', 'moderator', 'second moderator for P2-1 test');
+  perform tests.as_user(tests.u(2));
+end $$;
+
 select throws_ok(
   $$ select admin.ban_user(tests.u(1), 'try ban owner', false) $$,
   '42501', 'forbidden',
-  'moderator cannot ban an owner admin'
+  'P2-1: moderator cannot ban an owner admin'
 );
+
+select throws_ok(
+  $$ select admin.ban_user(tests.u(5), 'try ban peer moderator', true) $$,
+  '42501', 'forbidden',
+  'P2-1: moderator cannot ban or wipe another moderator'
+);
+
+select throws_ok(
+  $$ select admin.revoke_user_sessions(tests.u(1), 'try revoke owner sessions') $$,
+  '42501', 'forbidden',
+  'P2-1: moderator cannot revoke an owner or peer admin sessions'
+);
+
+do $$ begin
+  -- Owner u(1) suspends moderator u(5), then moderator u(2) tries to unban u(5)
+  perform tests.as_user(tests.u(1));
+  perform admin.ban_user(tests.u(5), 'owner suspends moderator u5', false);
+  perform tests.as_user(tests.u(2));
+end $$;
+
+select throws_ok(
+  $$ select admin.unban_user(tests.u(5), 'colluding mod unban attempt') $$,
+  '42501', 'forbidden',
+  'P2-1: moderator cannot unban another admin'
+);
+
+do $$ begin perform tests.as_user(tests.u(1)); end $$;
+select throws_ok(
+  $$ select admin.ban_user(tests.u(1), 'owner self ban', false) $$,
+  '42501', 'forbidden',
+  'P2-1: nobody can ban the last owner'
+);
+
+do $$ begin
+  perform tests.as_user(tests.u(1));
+  perform admin.unban_user(tests.u(5), 'owner restores u5');
+  perform admin.remove_admin_user(tests.u(5), 'cleanup u5 mod role');
+  perform tests.as_user(tests.u(2));
+end $$;
 
 -- [Test 35] admin.list_users and admin.get_user_detail reflect banned status and log users.view_detail
 select is(
@@ -733,6 +855,34 @@ select throws_ok(
   $$ delete from private.admin_audit $$,
   '42501', 'immutable_audit_log',
   'DELETE on private.admin_audit is blocked by immutable_audit_log trigger'
+);
+
+-- [Test 42b] TRUNCATE on private.admin_audit raises 42501 immutable_audit_log even for postgres
+select throws_ok(
+  $$ truncate private.admin_audit $$,
+  '42501', 'immutable_audit_log',
+  'TRUNCATE on private.admin_audit is blocked by immutable_audit_log trigger'
+);
+
+-- [Test 43] P1-2: Deleting an auth.users account that previously wrote admin_audit entries succeeds
+--           without triggering immutable_audit_log, and preserves historical admin_id attribution
+do $$ begin
+  perform tests.as_postgres();
+  perform private.admin_log(
+    tests.u(5),
+    'moderation.view_item',
+    'moderation_queue',
+    'u5-audit-entry',
+    'offboarded admin prior action',
+    '{}'::jsonb
+  );
+  delete from auth.users where id = tests.u(5);
+end $$;
+select is(
+  (select count(*)::int = 0 from auth.users where id = tests.u(5))
+  and (select count(*)::int >= 1 from private.admin_audit where admin_id = tests.u(5) and target_id = 'u5-audit-entry'),
+  true,
+  'P1-2: deleting an offboarded admin from auth.users succeeds and preserves immutable admin_audit attribution'
 );
 
 select * from finish();

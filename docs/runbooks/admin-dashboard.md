@@ -69,7 +69,7 @@ end $$;
   schemas = ["public", "graphql_public", "admin"]
   ```
 - **Hosted Supabase (`deploy-hosted.sh`):** Because `supabase db push` does not push `config.toml`'s `[api].schemas` to a hosted project, [`scripts/supabase/deploy-hosted.sh`](../../scripts/supabase/deploy-hosted.sh) automatically runs:
-  - `PATCH /v1/projects/$SUPABASE_PROJECT_REF/config/postgrest` with `{"db_schemas":"public,graphql_public,admin"}`
+  - `PATCH /v1/projects/$SUPABASE_PROJECT_REF/postgrest` with `{"db_schema":"public,graphql_public,admin"}`
   - `supabase functions deploy admin-action --project-ref "$SUPABASE_PROJECT_REF"` (with JWT verification enabled)
 - **Manual Dashboard verification:** In **Supabase Dashboard → Project Settings → Data API → Exposed schemas**, confirm `admin` is listed alongside `public` and `graphql_public`.
 

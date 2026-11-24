@@ -180,6 +180,47 @@ Deno.test("admin-action: waitlist_resend sends Resend email, marks confirmation,
   assertEquals(auditCall.args.p_action, "waitlist.resend_confirmation");
 });
 
+Deno.test("admin-action: waitlist_resend rejects missing or invalid UUID waitlist_id (400) and never runs bulk", async () => {
+  const mock = makeMockService();
+
+  for (const badPayload of [
+    { action: "waitlist_resend" },
+    { action: "waitlist_resend", waitlist_id: null },
+    { action: "waitlist_resend", waitlist_id: "not-a-uuid" },
+    { action: "waitlist_resend_failed", waitlist_id: "not-a-uuid" },
+    { action: "waitlist_resend_failed", limit: 0 },
+  ]) {
+    const req = new Request("https://example.supabase.co/functions/v1/admin-action", {
+      method: "POST",
+      headers: { Authorization: "Bearer mod-jwt" },
+      body: JSON.stringify(badPayload),
+    });
+    const res = await handle(req, {
+      verifyAdmin: () => Promise.resolve({ admin: MOD_ADMIN }),
+      serviceClient: () => mock.client,
+    });
+    assertEquals(res.status, 400, `expected 400 for ${JSON.stringify(badPayload)}`);
+    assertEquals(await res.json(), { error: "invalid" });
+  }
+  assertEquals(mock.rpcs.length, 0, "no RPC should be called on invalid input");
+});
+
+Deno.test("admin-action: rejects oversized request body with 413 payload_too_large", async () => {
+  const mock = makeMockService();
+  const huge = "x".repeat(20 * 1024);
+  const req = new Request("https://example.supabase.co/functions/v1/admin-action", {
+    method: "POST",
+    headers: { Authorization: "Bearer mod-jwt" },
+    body: JSON.stringify({ action: "run_storage_sweep", pad: huge }),
+  });
+  const res = await handle(req, {
+    verifyAdmin: () => Promise.resolve({ admin: MOD_ADMIN }),
+    serviceClient: () => mock.client,
+  });
+  assertEquals(res.status, 413);
+  assertEquals(await res.json(), { error: "payload_too_large" });
+});
+
 Deno.test("admin-action: moderator is denied (403) on owner-only delete_user", async () => {
   const mock = makeMockService();
   const req = new Request("https://example.supabase.co/functions/v1/admin-action", {
