@@ -2,7 +2,6 @@ import 'package:go_router/go_router.dart';
 
 import 'ui/follow_journey_screen.dart';
 import 'ui/insights_screen.dart';
-import 'ui/retell_screen.dart';
 import 'ui/share_journey_sheet.dart';
 import 'ui/shared_journey_screen.dart';
 import 'ui/story_editor_screen.dart';
@@ -15,7 +14,6 @@ import 'ui/story_editor_screen.dart';
 /// * `/shared/:journeyId`            shared journey, friend / member (SCR-84)
 /// * `/p/:token`                     public journey in the app (SCR-84)
 /// * `/follow/:journeyId`            do this journey (SCR-87)
-/// * `/retell`                       retell a past journey (SCR-28)
 final List<RouteBase> sharingRoutes = [
   GoRoute(
     path: '/sharing/:journeyId',
@@ -49,5 +47,4 @@ final List<RouteBase> sharingRoutes = [
     builder: (context, state) =>
         FollowJourneyScreen(journeyId: state.pathParameters['journeyId']!),
   ),
-  GoRoute(path: '/retell', builder: (context, state) => const RetellScreen()),
 ];

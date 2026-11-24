@@ -4,7 +4,7 @@
 --        5 E group member, 6 F friend of D and E (grants from both).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(48);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -38,6 +38,15 @@ create function tests.befriend(a uuid, b uuid) returns void language plpgsql as 
 begin
   perform tests.as_user(a); perform public.send_friend_request(b);
   perform tests.as_user(b); perform public.respond_friend_request(a, true);
+end $$;
+create function tests.touch_storage_object(p_bucket text, p_name text) returns int language plpgsql as $$
+declare
+  n int;
+begin
+  update storage.objects set updated_at = now()
+   where bucket_id = p_bucket and name = p_name;
+  get diagnostics n = row_count;
+  return n;
 end $$;
 grant execute on all functions in schema tests to authenticated;
 
@@ -131,9 +140,19 @@ select throws_ok(format('select * from public.conversation_messages(%L)', :'cv')
   'outsider cannot list messages');
 
 -- ===== storage bucket messages =================================================
-do $$ begin perform tests.as_postgres();
-  insert into storage.objects (bucket_id, name)
-  values ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))); end $$;
+do $$ begin perform tests.as_user(tests.u(2)); end $$;
+select lives_ok(
+  format($f$ insert into storage.objects (bucket_id, name) values ('messages', %L) $f$,
+         format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
+  'FS-01: authenticated sender inserts chat photo into messages bucket (messages_insert)');
+select is(
+  tests.touch_storage_object(
+    'messages',
+    format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
+  ),
+  1,
+  'FS-01: authenticated sender updates existing chat photo on x-upsert retry (messages_update)');
+do $$ begin perform tests.as_postgres(); end $$;
 select is((select public from storage.buckets where id = 'messages'), false, 'bucket messages is private');
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is((select count(*)::int from storage.objects where bucket_id = 'messages'), 1, 'participant reads the photo');
@@ -144,8 +163,11 @@ select is((select count(*)::int from storage.objects where bucket_id = 'messages
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select isnt(public.report_content(null, null, 'harassment', 'rude', tests.m(1)), null, 'report_content(p_message)');
 select is((select target_message_id from public.reports), tests.m(1), 'report keeps the message target');
+select is((select count(*)::int from public.messages), 2, 'FS-07: reported message is hidden from the reporter at once');
 select throws_ok(format($f$ select public.report_content(null, null, 'spam', null, %L) $f$, tests.m(3)), 'P0001', 'invalid',
   'cannot report your own message');
+do $$ begin perform tests.as_postgres();
+  delete from public.reports where target_message_id = tests.m(1); end $$;
 
 -- ===== hide / clear (S37) =====================================================
 do $$ begin perform tests.as_user(tests.u(2)); end $$;

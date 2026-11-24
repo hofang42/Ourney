@@ -5,8 +5,10 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../ui/ui.dart';
 import '../../domain/journey_progress.dart';
+import '../../domain/timeline_window.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_photo.dart';
+import 'timeline_cards.dart';
 import 'timeline_common.dart';
 
 String _dayText(BuildContext context, TimelineDay d) =>
@@ -22,10 +24,24 @@ DateTime displayDateOf(TimelineDay d) =>
 /// a vertical rail of nodes captioned like the Figma timeline, and a
 /// milestones row.
 class QuietTimeline extends StatefulWidget {
-  const QuietTimeline({required this.days, required this.onTapDay, super.key});
+  const QuietTimeline({
+    required this.days,
+    required this.onTapDay,
+    this.summary,
+    this.short,
+    this.onShortChanged,
+    super.key,
+  });
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
+
+  /// Whole-journey numbers when [days] is only a window of the journey.
+  final TimelineSummary? summary;
+
+  /// The 30D / All choice when the screen keeps it (else kept here).
+  final bool? short;
+  final ValueChanged<bool>? onShortChanged;
 
   @override
   State<QuietTimeline> createState() => _QuietTimelineState();
@@ -33,6 +49,9 @@ class QuietTimeline extends StatefulWidget {
 
 class _QuietTimelineState extends State<QuietTimeline> {
   bool _revealed = false;
+
+  /// Long journeys: the curve shows the last 30 days instead of all of it.
+  bool _range30 = false;
 
   void _reveal(bool v) {
     if (_revealed != v) setState(() => _revealed = v);
@@ -44,19 +63,28 @@ class _QuietTimelineState extends State<QuietTimeline> {
     final l10n = JourneysL10n.of(context);
     final accent = timelineAccent(context);
     final days = widget.days;
-    final metric = <double>[for (final d in days) ?d.metricValue];
-    final series = metric.length >= 2 ? metric : cumulativeSeries(days);
+    final sum = widget.summary ?? TimelineSummary.fromDays(days);
+    final ranged = sum.curve30 != null;
+    final short = ranged && (widget.short ?? _range30);
+    void setShort(bool v) {
+      if (widget.onShortChanged != null) {
+        widget.onShortChanged!(v);
+      } else {
+        setState(() => _range30 = v);
+      }
+    }
+
+    final series = short ? sum.curve30! : sum.curve;
+    final metricCount = short ? sum.metric30Count : sum.metricCount;
     String axis(int i) {
-      if (!_revealed || metric.length < 2) return '••,•';
+      if (!_revealed || metricCount < 2) return '••,•';
       return l10n.journeys_quietAxis(
-        (i == 0 ? metric.first : metric.last).toStringAsFixed(1),
+        (i == 0 ? series.first : series.last).toStringAsFixed(1),
       );
     }
 
-    final total = days.last.dayNumber;
-    final current = days
-        .where((d) => d.state != DayState.future)
-        .fold<int>(1, (m, d) => math.max(m, d.dayNumber));
+    final total = sum.totalDays;
+    final current = sum.currentDay;
     final marks = <int>{7, total ~/ 2, total}.where((d) => d <= total).toList()
       ..sort();
     String markLabel(int d) => d == total
@@ -83,6 +111,44 @@ class _QuietTimelineState extends State<QuietTimeline> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (ranged) ...[
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: Wrap(
+                    spacing: UiSpace.sm,
+                    children: [
+                      UiChip(
+                        key: const ValueKey('quiet-range-30'),
+                        label: l10n.journeys_range30,
+                        selected: short,
+                        onPressed: () => setShort(true),
+                      ),
+                      UiChip(
+                        key: const ValueKey('quiet-range-all'),
+                        label: l10n.journeys_rangeAll,
+                        selected: !short,
+                        onPressed: () => setShort(false),
+                      ),
+                    ],
+                  ),
+                ),
+                if (short && metricCount < 2 && sum.metricCount >= 2)
+                  Padding(
+                    key: const ValueKey('quiet-range-fallback'),
+                    padding: const EdgeInsets.only(top: UiSpace.xs),
+                    child: Text(
+                      l10n.journeys_range30Pace,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: UiText.body(
+                        size: 12,
+                        height: 1.4,
+                        color: ui.inkMuted,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: UiSpace.xs),
+              ],
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -107,13 +173,15 @@ class _QuietTimelineState extends State<QuietTimeline> {
               ExcludeSemantics(
                 child: SizedBox(
                   height: 84,
-                  child: CustomPaint(
-                    painter: CurvePainter(
-                      values: series,
-                      color: accent,
-                      fillColor: accent.withValues(alpha: 0.12),
-                      endDotsOnly: true,
-                      dotColor: accent,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: CurvePainter(
+                        values: series,
+                        color: accent,
+                        fillColor: accent.withValues(alpha: 0.12),
+                        endDotsOnly: true,
+                        dotColor: accent,
+                      ),
                     ),
                   ),
                 ),
@@ -275,7 +343,7 @@ class _QuietRow extends StatelessWidget {
                       shape: BoxShape.circle,
                       color: done ? accent : ui.bg,
                       border: Border.all(
-                        color: day.isToday ? accent : ui.ink,
+                        color: day.isToday ? accent : ui.outline,
                         width: 2,
                       ),
                     ),
@@ -334,10 +402,21 @@ class _QuietRow extends StatelessWidget {
 
 /// Accountability squad: stepping stones on an S-path up to the trophy.
 class SquadTimeline extends StatelessWidget {
-  const SquadTimeline({required this.days, required this.onTapDay, super.key});
+  const SquadTimeline({
+    required this.days,
+    required this.onTapDay,
+    this.window,
+    this.onOpenEarlier,
+    super.key,
+  });
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
+
+  /// Long journeys: [days] is the Recent window and the path starts with a
+  /// "section start" stone that stands for every earlier day.
+  final TimelineWindow? window;
+  final VoidCallback? onOpenEarlier;
 
   static const double _row = 76;
   static const double _stone = 56;
@@ -346,7 +425,9 @@ class SquadTimeline extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final accent = timelineAccent(context);
-    final total = days.length + 1; // + trophy
+    final section = window != null && window!.hasEarlier;
+    final skip = section ? 1 : 0;
+    final total = days.length + 1 + skip; // + section stone + trophy
     return LayoutBuilder(
       key: const ValueKey('journey-timeline'),
       builder: (context, c) {
@@ -361,19 +442,31 @@ class SquadTimeline extends StatelessWidget {
             children: [
               Positioned.fill(
                 child: ExcludeSemantics(
-                  child: CustomPaint(
-                    painter: DashedPathPainter(
-                      points: points,
-                      color: ui.border,
-                      curved: true,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: DashedPathPainter(
+                        points: points,
+                        color: ui.border,
+                        curved: true,
+                      ),
                     ),
                   ),
                 ),
               ),
+              if (section)
+                Positioned(
+                  left: points[0].dx - _stone / 2,
+                  top: points[0].dy - _stone / 2,
+                  child: TimelineSectionStone(
+                    window: window!,
+                    size: _stone,
+                    onPressed: onOpenEarlier,
+                  ),
+                ),
               for (var i = 0; i < days.length; i++)
                 Positioned(
-                  left: points[i].dx - _stone / 2,
-                  top: points[i].dy - _stone / 2,
+                  left: points[i + skip].dx - _stone / 2,
+                  top: points[i + skip].dy - _stone / 2,
                   child: TimelineDayTap(
                     day: days[i],
                     onTap: onTapDay,
@@ -392,7 +485,7 @@ class SquadTimeline extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: accent.withValues(alpha: 0.2),
-                      border: Border.all(color: ui.ink, width: 2),
+                      border: Border.all(color: ui.outline, width: 2),
                     ),
                     child: const Center(
                       child: OurneyIcon(name: 'trophy', size: 30),
@@ -447,11 +540,15 @@ class MemoryTimeline extends StatelessWidget {
     required this.days,
     required this.onTapDay,
     this.showOfflineStamps = false,
+    this.summary,
     super.key,
   });
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
+
+  /// Whole-journey numbers when [days] is only a window of the journey.
+  final TimelineSummary? summary;
 
   /// Only with a backend: local-only check-ins are never uploaded.
   final bool showOfflineStamps;
@@ -459,12 +556,14 @@ class MemoryTimeline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = timelineAccent(context);
-    final frames = days
-        .where(
-          (d) => d.state == DayState.checkedIn || d.state == DayState.today,
-        )
-        // Every photo is a frame (several a day since `0014`, B-B5).
-        .fold<int>(0, (n, d) => n + d.photoCount);
+    final frames =
+        summary?.frames ??
+        days
+            .where(
+              (d) => d.state == DayState.checkedIn || d.state == DayState.today,
+            )
+            // Every photo is a frame (several a day since `0014`, B-B5).
+            .fold<int>(0, (n, d) => n + d.photoCount);
     final roll = Padding(
       padding: const EdgeInsets.only(bottom: UiSpace.sm),
       child: Align(
@@ -500,15 +599,17 @@ class MemoryTimeline extends StatelessWidget {
                 return Stack(
                   children: [
                     Positioned.fill(
-                      child: CustomPaint(
-                        painter: DashedPathPainter(
-                          // Scrapbook thread: weaves between the polaroids.
-                          points: pts,
-                          curved: true,
-                          color: accent,
-                          width: 2,
-                          dash: 6,
-                          gap: 5,
+                      child: RepaintBoundary(
+                        child: CustomPaint(
+                          painter: DashedPathPainter(
+                            // Scrapbook thread: weaves between the polaroids.
+                            points: pts,
+                            curved: true,
+                            color: accent,
+                            width: 2,
+                            dash: 6,
+                            gap: 5,
+                          ),
                         ),
                       ),
                     ),
@@ -1010,7 +1111,7 @@ class MinimalTimeline extends StatelessWidget {
                                 dimension: pitch,
                                 child: cells[r * 7 + i] == null
                                     ? null
-                                    : _MinimalCell(
+                                    : TimelineGridCell(
                                         day: cells[r * 7 + i]!,
                                         size: tile,
                                         hit: pitch,
@@ -1031,84 +1132,28 @@ class MinimalTimeline extends StatelessWidget {
   }
 }
 
-class _MinimalCell extends StatelessWidget {
-  const _MinimalCell({
-    required this.day,
-    required this.size,
-    required this.hit,
-    required this.onTap,
-  });
-
-  final TimelineDay day;
-  final double size;
-
-  /// Side of the (>= 48dp) tap box; the tile sits in its top-left corner.
-  final double hit;
-  final ValueChanged<TimelineDay> onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final ui = context.ui;
-    final photo = day.state == DayState.checkedIn;
-    final color = photo
-        ? UiCamera.ink
-        : day.state == DayState.today
-        ? timelineAccent(context)
-        : day.state == DayState.missed
-        ? ui.ink
-        : ui.inkMuted;
-    return TimelineDayTap(
-      day: day,
-      onTap: onTap,
-      minSize: hit,
-      child: Align(
-        alignment: Alignment.topLeft,
-        child: SizedBox.square(
-          dimension: size,
-          child: Stack(
-            children: [
-              TimelineTile(day: day, size: size),
-              Positioned(
-                left: 3,
-                top: 2,
-                child: ExcludeSemantics(
-                  child: Text(
-                    '${day.date.day}',
-                    textScaler: MediaQuery.textScalerOf(context)
-                        .clamp(maxScaleFactor: 1.35),
-                    style:
-                        UiText.body(
-                          size: 10,
-                          weight: FontWeight.w700,
-                          height: 1.3,
-                          color: color,
-                        ).copyWith(
-                          shadows: photo ? const [Shadow(blurRadius: 3)] : null,
-                        ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Aesthetic flexer: telemetry pace sparkline above mono run nodes.
 class FlexerTimeline extends StatelessWidget {
-  const FlexerTimeline({required this.days, required this.onTapDay, super.key});
+  const FlexerTimeline({
+    required this.days,
+    required this.onTapDay,
+    this.summary,
+    super.key,
+  });
 
   final List<TimelineDay> days;
   final ValueChanged<TimelineDay> onTapDay;
+
+  /// Whole-journey numbers when [days] is only a window of the journey.
+  final TimelineSummary? summary;
 
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
     final accent = timelineAccent(context);
-    final series = cumulativeSeries(days);
-    final done = days.where((d) => d.state == DayState.checkedIn).length;
+    final sum = summary ?? TimelineSummary.fromDays(days);
+    final series = sum.pace;
+    final done = sum.done;
     return Column(
       key: const ValueKey('journey-timeline'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1127,19 +1172,21 @@ class FlexerTimeline extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: CurvePainter(
-                      values: series,
-                      color: accent,
-                      smooth: false,
-                      strokeWidth: 3,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: CurvePainter(
+                        values: series,
+                        color: accent,
+                        smooth: false,
+                        strokeWidth: 3,
+                      ),
                     ),
                   ),
                 ),
                 Align(
                   alignment: AlignmentDirectional.topStart,
                   child: TimelineNumber(
-                    '$done/${days.length}',
+                    '$done/${sum.totalDays}',
                     mono: true,
                     size: 13,
                     color: accent,

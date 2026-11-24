@@ -21,6 +21,7 @@ export 'components/journey_wheel.dart';
 export 'components/journey_widgets.dart';
 export 'components/layout.dart';
 export 'components/memory_widgets.dart';
+export 'components/month_nav.dart';
 export 'components/ourney_icons.dart';
 export 'components/person_widgets.dart';
 export 'components/pressable.dart';

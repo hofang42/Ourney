@@ -146,7 +146,7 @@ class _RetellTile extends StatelessWidget {
     final label = JourneysL10n.of(context).journeys_retell;
     return UiPressable(
       key: const ValueKey('journeys-retell'),
-      onPressed: () => context.push(AppRoutes.retell),
+      onPressed: () => context.push(AppRoutes.importJourney),
       semanticLabel: label,
       excludeChildSemantics: true,
       borderRadius: _albumRadius,

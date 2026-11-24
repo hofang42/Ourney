@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show PathMetric;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../../../../ui/ui.dart';
@@ -8,6 +9,8 @@ import '../../domain/journey_progress.dart';
 import '../../domain/journey_time.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_photo.dart';
+
+export '../../domain/timeline_window.dart' show cumulativeSeries;
 
 /// Accent of the journey skin in scope (the selected variant).
 Color timelineAccent(BuildContext context) =>
@@ -81,12 +84,16 @@ class TimelineTile extends StatelessWidget {
     required this.day,
     required this.size,
     this.round = false,
+    this.cacheWidth = 200,
     super.key,
   });
 
   final TimelineDay day;
   final double size;
   final bool round;
+
+  /// Decode width of the photo: grid cells pass cell size x pixel ratio.
+  final int cacheWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +111,7 @@ class TimelineTile extends StatelessWidget {
                   child: OurneyIcon(name: 'check', size: size * 0.5),
                 ),
               )
-            : JourneyPhoto(checkIn: day.checkIn!, cacheWidth: 200),
+            : JourneyPhoto(checkIn: day.checkIn!, cacheWidth: cacheWidth),
       DayState.today => CustomPaint(
         key: const ValueKey('journey-today-ring'),
         foregroundPainter: DashedOutlinePainter(
@@ -217,18 +224,6 @@ class DashedOutlinePainter extends CustomPainter {
       old.color != color || old.width != width || old.radius != radius;
 }
 
-/// Cumulative check-in count per day up to today (the "pace" series).
-List<double> cumulativeSeries(List<TimelineDay> days) {
-  var n = 0;
-  final out = <double>[];
-  for (final d in days) {
-    if (d.state == DayState.future) break;
-    if (d.state == DayState.checkedIn) n++;
-    out.add(n.toDouble());
-  }
-  return out;
-}
-
 /// Smooth (or straight) line through [values] scaled to the box.
 class CurvePainter extends CustomPainter {
   const CurvePainter({
@@ -303,7 +298,7 @@ class CurvePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CurvePainter old) =>
-      old.values != values ||
+      !listEquals(old.values, values) ||
       old.color != color ||
       old.dotColor != dotColor ||
       old.fillColor != fillColor ||
@@ -358,7 +353,12 @@ class DashedPathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(DashedPathPainter old) =>
-      old.points != points || old.color != color || old.curved != curved;
+      !listEquals(old.points, points) ||
+      old.color != color ||
+      old.curved != curved ||
+      old.width != width ||
+      old.dash != dash ||
+      old.gap != gap;
 }
 
 /// Vertical solid rail (quiet / couple spines).
@@ -456,8 +456,160 @@ class ChainLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(ChainLinePainter old) =>
-      old.runs != runs ||
+      !_sameRuns(old.runs, runs) ||
       old.cell != cell ||
       old.gap != gap ||
       old.color != color;
+}
+
+bool _sameRuns(List<List<int>> a, List<List<int>> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (!listEquals(a[i], b[i])) return false;
+  }
+  return true;
+}
+
+/// The accent line of one week row of the month grid: through the centre of
+/// every pair of neighbouring checked-in days, with a stub leaving the right
+/// edge when the run goes on in the next week ([joinsNext]) and one entering
+/// from the left when it came from the previous week ([joinsPrevious]).
+/// Same look as [ChainLinePainter], drawn per row so rows can be lazy.
+class ChainRowPainter extends CustomPainter {
+  const ChainRowPainter({
+    required this.checked,
+    required this.joinsPrevious,
+    required this.joinsNext,
+    required this.cell,
+    required this.pitch,
+    required this.color,
+  });
+
+  /// Seven flags, one per column.
+  final List<bool> checked;
+  final bool joinsPrevious;
+  final bool joinsNext;
+  final double cell;
+  final double pitch;
+  final Color color;
+
+  Offset _at(int i) => Offset(i * pitch + cell / 2, cell / 2);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 6; i++) {
+      if (checked[i] && checked[i + 1]) {
+        canvas.drawLine(_at(i), _at(i + 1), paint);
+      }
+    }
+    if (joinsNext && checked[6]) {
+      canvas.drawLine(_at(6), Offset(7 * pitch + 5, _at(6).dy), paint);
+    }
+    if (joinsPrevious && checked[0]) {
+      canvas.drawLine(Offset(-5, _at(0).dy), _at(0), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(ChainRowPainter old) =>
+      !listEquals(old.checked, checked) ||
+      old.joinsPrevious != joinsPrevious ||
+      old.joinsNext != joinsNext ||
+      old.cell != cell ||
+      old.pitch != pitch ||
+      old.color != color;
+}
+
+/// One day of a 7-column grid (minimal calendar, month archive): the tile
+/// with the date number on top of it, in a [hit] x [hit] (>= 48dp) tap box.
+/// [partner] adds a small heart where the partner's half exists (couple).
+class TimelineGridCell extends StatelessWidget {
+  const TimelineGridCell({
+    required this.day,
+    required this.size,
+    required this.hit,
+    required this.onTap,
+    this.partner = false,
+    this.cacheWidth = 200,
+    super.key,
+  });
+
+  final TimelineDay day;
+  final double size;
+
+  /// Side of the (>= 48dp) tap box; the tile sits in its top-left corner.
+  final double hit;
+  final ValueChanged<TimelineDay> onTap;
+  final bool partner;
+  final int cacheWidth;
+
+  @override
+  Widget build(BuildContext context) {
+    final ui = context.ui;
+    final photo = day.state == DayState.checkedIn;
+    final color = photo
+        ? UiCamera.onPhoto
+        : day.state == DayState.today
+        ? timelineAccent(context)
+        : day.state == DayState.missed
+        ? ui.ink
+        : ui.inkMuted;
+    return TimelineDayTap(
+      day: day,
+      onTap: onTap,
+      minSize: hit,
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox.square(
+          dimension: size,
+          child: Stack(
+            children: [
+              TimelineTile(day: day, size: size, cacheWidth: cacheWidth),
+              Positioned(
+                left: 3,
+                top: 2,
+                child: ExcludeSemantics(
+                  child: Text(
+                    '${day.date.day}',
+                    textScaler: MediaQuery.textScalerOf(
+                      context,
+                    ).clamp(maxScaleFactor: 1.35),
+                    style: UiText.body(
+                      size: 10,
+                      weight: FontWeight.w700,
+                      height: 1.3,
+                      color: color,
+                    ).copyWith(shadows: photo
+                          ? const [
+                              Shadow(color: UiCamera.shadow, blurRadius: 3),
+                            ]
+                          : null),
+                  ),
+                ),
+              ),
+              if (partner)
+                Positioned(
+                  right: 3,
+                  bottom: 3,
+                  child: ExcludeSemantics(
+                    child: OurneyIcon(
+                      key: const ValueKey('grid-partner-dot'),
+                      name: 'heart',
+                      size: 12,
+                      color: timelineAccent(context),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

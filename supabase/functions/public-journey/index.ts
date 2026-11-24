@@ -17,6 +17,7 @@ import { adminClient, chunk, json } from "../_shared/admin.ts";
 const TOKEN_RE = /^[a-z0-9]{40}$/;
 const SIGNED_URL_TTL_SECONDS = 600;
 const MAX_CHECKINS = 4000; // up to 10 members x 366 days
+const SIGN_BATCH_SIZE = 200;
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -38,6 +39,9 @@ type JourneyRow = {
   timezone: string;
   status: string;
   origin: "live" | "imported";
+  layout: string | null;
+  color: number | null;
+  cover: number | null;
   story_title: string | null;
   story_intro: string | null;
   story_lessons: string | null;
@@ -49,6 +53,7 @@ type CheckInRow = {
   id: string;
   user_id: string;
   local_date: string;
+  captured_at: string;
   caption: string | null;
   from_library: boolean;
   photo_path: string;
@@ -62,7 +67,21 @@ async function sha256Hex(input: string): Promise<string> {
   return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function handle(req: Request): Promise<Response> {
+/** Formats `now` as `YYYY-MM-DD` in the journey's IANA timezone (fallback to UTC). */
+export function journeyLocalDay(timezone: string, now: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(now);
+  } catch {
+    return now.toISOString().slice(0, 10);
+  }
+}
+
+export async function handle(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
   if (req.method !== "GET") return json({ error: "method_not_allowed" }, 405, { ...cors, Allow: "GET" });
 
@@ -76,7 +95,7 @@ async function handle(req: Request): Promise<Response> {
     .from("journeys")
     .select(
       "id, owner_id, kind, template_id, title, emoji, metric_name, metric_unit, start_date, duration_days, " +
-        "timezone, status, origin, story_title, story_intro, story_lessons, cover_checkin_id, show_counts",
+        "timezone, status, origin, layout, color, cover, story_title, story_intro, story_lessons, cover_checkin_id, show_counts",
     )
     .eq("public_token", token)
     .is("deleted_at", null)
@@ -96,15 +115,19 @@ async function handle(req: Request): Promise<Response> {
       .eq("journey_id", journey.id).eq("status", "accepted"),
     admin.from("profiles").select("display_name").eq("id", journey.owner_id).maybeSingle(),
     admin.from("check_ins")
-      .select("id, user_id, local_date, caption, from_library, photo_path, thumb_path")
+      .select("id, user_id, local_date, captured_at, caption, from_library, photo_path, thumb_path")
       .eq("journey_id", journey.id).is("deleted_at", null).is("moderated_at", null)
       .eq("hidden_in_share", false)
-      // Newest first so a journey over MAX_CHECKINS drops its oldest photos; restored below.
-      .order("local_date", { ascending: false }).order("id", { ascending: false }).limit(MAX_CHECKINS),
+      // FS-23: newest first by (local_date, captured_at, id) so multi-photo days sort deterministically.
+      .order("local_date", { ascending: false })
+      .order("captured_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(MAX_CHECKINS),
+    // FS-23: distinct owner_id count so one follower with multiple journeys cannot inflate follow_count.
     journey.show_counts
-      ? admin.from("journeys").select("id", { count: "exact", head: true })
+      ? admin.from("journeys").select("owner_id")
         .eq("followed_from", journey.id).is("deleted_at", null)
-      : Promise.resolve({ data: null, error: null, count: null }),
+      : Promise.resolve({ data: null, error: null }),
   ]);
   for (const r of [members, consents, owner, checkIns, followers]) {
     if (r.error) {
@@ -123,6 +146,9 @@ async function handle(req: Request): Promise<Response> {
     }
   }
   const rows = ((checkIns.data ?? []) as CheckInRow[]).filter((c) => visibleAuthors.has(c.user_id)).reverse();
+  const followCount = journey.show_counts
+    ? new Set(((followers.data ?? []) as { owner_id: string }[]).map((f) => f.owner_id)).size
+    : 0;
 
   // Metrics only for the returned check-ins (not a second, independently truncated list).
   const metricById = new Map<string, number | null>();
@@ -160,9 +186,10 @@ async function handle(req: Request): Promise<Response> {
 
   const paths = rows.flatMap((c) => (visibleAuthors.get(c.user_id)?.blur_media ? [] : [c.thumb_path, c.photo_path]));
   const signed = new Map<string, string>();
-  if (paths.length > 0) {
+  // FS-23: chunk createSignedUrls in batches of 200 so 4,000-photo journeys do not exceed Storage payload limits.
+  for (const part of chunk(paths, SIGN_BATCH_SIZE)) {
     const { data, error: signError } = await admin.storage.from("media")
-      .createSignedUrls(paths, SIGNED_URL_TTL_SECONDS);
+      .createSignedUrls(part, SIGNED_URL_TTL_SECONDS);
     if (signError) {
       console.error("createSignedUrls failed", signError.message);
       return json({ error: "internal" }, 500, cors);
@@ -173,9 +200,35 @@ async function handle(req: Request): Promise<Response> {
   }
 
   // Solo streak only (S12: never for imported; S34: no group streak for outsiders).
+  // FS-23: anchor ended/archived journeys to the owner's last non-deleted check-in day (matching
+  // private.journey_view, even when trailing check-ins use hidden_in_share = true).
   let streak: { current: number; best: number; completed: number } | null = null;
   if (journey.kind === "solo" && journey.origin !== "imported") {
-    const res = await admin.rpc("journey_streak", { journey: journey.id, member: journey.owner_id });
+    const ended = journey.status === "ended" || journey.status === "archived";
+    let evalToday: string | undefined;
+    if (ended) {
+      const { data: latestRow, error: latestError } = await admin
+        .from("check_ins")
+        .select("local_date")
+        .eq("journey_id", journey.id)
+        .eq("user_id", journey.owner_id)
+        .is("deleted_at", null)
+        .order("local_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestError) {
+        console.error("latest check-in lookup failed", latestError.message);
+        return json({ error: "internal" }, 500, cors);
+      }
+      const maxDate = (latestRow as { local_date?: string } | null)?.local_date ?? journey.start_date;
+      const localToday = journeyLocalDay(journey.timezone);
+      evalToday = maxDate < localToday ? maxDate : localToday;
+    }
+    const res = await admin.rpc("journey_streak", {
+      journey: journey.id,
+      member: journey.owner_id,
+      ...(evalToday ? { today: evalToday } : {}),
+    });
     if (res.error) {
       console.error("journey_streak failed", res.error.message);
       return json({ error: "internal" }, 500, cors);
@@ -184,9 +237,8 @@ async function handle(req: Request): Promise<Response> {
     streak = { current: s?.current_streak ?? 0, best: s?.best_streak ?? 0, completed: s?.completed_days ?? 0 };
   }
 
-  // One anonymous view per browser per day (S19). The salt changes daily, so keys cannot be
-  // linked across days; VIEW_SALT (optional secret) prevents offline guessing of the hash.
-  const day = new Date().toISOString().slice(0, 10);
+  // One anonymous view per browser per journey-local day (S19, FS-23).
+  const day = journeyLocalDay(journey.timezone);
   const salt = `${day}|${Deno.env.get("VIEW_SALT") ?? ""}`;
   const viewerKey = await sha256Hex(`${token}|${req.headers.get("user-agent") ?? ""}|${salt}`);
   const view = await admin.rpc("record_journey_view", { p_journey: journey.id, p_viewer_key: `web:${viewerKey}` });
@@ -194,8 +246,11 @@ async function handle(req: Request): Promise<Response> {
 
   const ownerVisible = journey.kind === "solo" || consented.has(journey.owner_id);
   const ownerHides = visibleAuthors.get(journey.owner_id)?.hide_metric ?? true;
-  const canFollow = journey.status === "ended" || journey.status === "archived" || journey.origin === "imported";
-  const coverVisible = rows.some((c) => c.id === journey.cover_checkin_id);
+  // FS-22 (S9): only finished journeys (ended/archived) can be followed along.
+  const canFollow = journey.status === "ended" || journey.status === "archived";
+  const coverRow = rows.find((c) => c.id === journey.cover_checkin_id);
+  const coverVisible = coverRow !== undefined;
+  const coverBlurred = coverRow ? (visibleAuthors.get(coverRow.user_id)?.blur_media ?? true) : false;
 
   return json({
     journey: {
@@ -208,6 +263,9 @@ async function handle(req: Request): Promise<Response> {
       duration_days: journey.duration_days,
       timezone: journey.timezone,
       status: journey.status,
+      layout: journey.layout,
+      color: journey.color,
+      cover: journey.cover,
       metric_name: ownerHides ? null : journey.metric_name,
       metric_unit: ownerHides ? null : journey.metric_unit,
       // A group owner who has not consented stays anonymous (S29/S30).
@@ -219,6 +277,7 @@ async function handle(req: Request): Promise<Response> {
       intro: journey.story_intro,
       lessons: journey.story_lessons,
       cover_checkin_id: coverVisible ? journey.cover_checkin_id : null,
+      cover_blurred: coverBlurred,
     },
     streak,
     can_follow: canFollow,
@@ -235,8 +294,9 @@ async function handle(req: Request): Promise<Response> {
         metric_unit: ownerHides ? null : journey.metric_unit,
       }
       : null,
-    ...(journey.show_counts ? { like_count: likeCount ?? 0, follow_count: followers.count ?? 0 } : {}),
+    ...(journey.show_counts ? { like_count: likeCount ?? 0, follow_count: followCount } : {}),
     media_blurred: visibleAuthors.get(journey.owner_id)?.blur_media ?? true,
+    cover_blurred: coverBlurred,
     signed_url_ttl_seconds: SIGNED_URL_TTL_SECONDS,
     check_ins: rows.map((c) => {
       const author = visibleAuthors.get(c.user_id);
@@ -254,12 +314,14 @@ async function handle(req: Request): Promise<Response> {
   }, 200, cors);
 }
 
-Deno.serve(async (req: Request): Promise<Response> => {
-  try {
-    return await handle(req);
-  } catch (e) {
-    // adminClient() throws when the environment is incomplete; never leak it as a bare 500.
-    console.error("public-journey failed", e instanceof Error ? e.message : String(e));
-    return json({ error: "internal" }, 500, cors);
-  }
-});
+if (import.meta.main) {
+  Deno.serve(async (req: Request): Promise<Response> => {
+    try {
+      return await handle(req);
+    } catch (e) {
+      // adminClient() throws when the environment is incomplete; never leak it as a bare 500.
+      console.error("public-journey failed", e instanceof Error ? e.message : String(e));
+      return json({ error: "internal" }, 500, cors);
+    }
+  });
+}

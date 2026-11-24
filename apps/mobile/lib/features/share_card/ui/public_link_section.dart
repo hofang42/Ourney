@@ -232,6 +232,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     return switch (error.error) {
       OurneyErrorCode.ended => l10n.share_card_linkErrorEnded,
       OurneyErrorCode.forbidden => l10n.share_card_linkErrorForbidden,
+      OurneyErrorCode.serverOutdated => app.common_serverOutdated,
       OurneyErrorCode.offline => app.common_offline,
       _ => app.common_errorGeneric,
     };

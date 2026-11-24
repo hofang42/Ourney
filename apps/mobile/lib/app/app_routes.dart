@@ -80,9 +80,11 @@ abstract final class AppRoutes {
   static const shared = '/shared';
   static const publicJourney = '/p';
   static const follow = '/follow';
+
+  /// Legacy alias of [importJourney] (redirects).
   static const retell = '/retell';
 
-  /// Import a past journey (Figma `/import`), full screen.
+  /// Retell a past journey (Figma `/import`), full screen.
   static const importJourney = '/import';
 
   /// Share this journey (SCR-82, full-screen version of the sheet).
@@ -125,9 +127,8 @@ const Map<String, List<String>> featureRoutePrefixes = {
     AppRoutes.shared,
     AppRoutes.publicJourney,
     AppRoutes.follow,
-    AppRoutes.retell,
   ],
-  'import': [AppRoutes.importJourney],
+  'import': [AppRoutes.importJourney, AppRoutes.retell],
 };
 
 /// Paths reachable before onboarding/sign-in is complete. Everything else is

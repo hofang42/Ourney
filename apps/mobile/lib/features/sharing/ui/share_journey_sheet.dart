@@ -126,7 +126,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
       if (sharingErrorCode(e) == OurneyErrorCode.consentRequired) {
         setState(() => _consentNeeded = true);
       }
-      _snack(sharingErrorMessage(context, e));
+      _snack(sharingFailure(context, e));
     } finally {
       if (mounted) setState(() => _sharing = false);
     }
@@ -139,7 +139,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           .read(sharingRepositoryProvider)
           .unshare(_journey.id, friendId: friend.userId);
     } on Object catch (e) {
-      if (mounted) _snack(sharingErrorMessage(context, e));
+      if (mounted) _snack(sharingFailure(context, e));
     } finally {
       if (mounted) setState(() => _removing.remove(friend.userId));
     }
@@ -153,7 +153,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
       setState(() => _consentNeeded = false);
       _snack(l10n.sharing_askedSnack);
     } on Object catch (e) {
-      if (mounted) _snack(sharingErrorMessage(context, e));
+      if (mounted) _snack(sharingFailure(context, e));
     }
   }
 
@@ -182,7 +182,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
         setState(() => _under18 = true);
         _snack(l10n.sharing_under18);
       } else {
-        _snack(sharingErrorMessage(context, e));
+        _snack(sharingFailure(context, e));
       }
     } finally {
       if (mounted) setState(() => _linkBusy = false);
@@ -201,7 +201,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           .read(sharingRepositoryProvider)
           .updatePublicSettings(_journey.id, next);
     } on Object catch (e) {
-      if (mounted) _snack(sharingErrorMessage(context, e));
+      if (mounted) _snack(sharingFailure(context, e));
     }
   }
 
@@ -219,7 +219,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
           .read(sharingRepositoryProvider)
           .unshare(_journey.id, all: owner);
     } on Object catch (e) {
-      if (mounted) _snack(sharingErrorMessage(context, e));
+      if (mounted) _snack(sharingFailure(context, e));
     }
   }
 
@@ -235,7 +235,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
     try {
       await ref.read(shareConsentRepositoryProvider).withdraw(_journey.id);
     } on Object catch (e) {
-      if (mounted) _snack(sharingErrorMessage(context, e));
+      if (mounted) _snack(sharingFailure(context, e));
     }
   }
 

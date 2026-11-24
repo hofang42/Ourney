@@ -70,7 +70,7 @@ Widget _pill(BuildContext context, Widget child, {Key? key}) {
     decoration: BoxDecoration(
       color: ui.surface,
       borderRadius: BorderRadius.circular(UiRadius.capsule),
-      border: Border.all(color: ui.ink, width: 1.5),
+      border: Border.all(color: ui.outline, width: 1.5),
     ),
     child: child,
   );
@@ -115,7 +115,7 @@ class JourneyAvatarStack extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: ui.fill,
                   shape: BoxShape.circle,
-                  border: Border.all(color: ui.ink, width: 1.5),
+                  border: Border.all(color: ui.outline, width: 1.5),
                 ),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
@@ -227,7 +227,7 @@ class _Squad extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: ui.surface,
                 borderRadius: BorderRadius.circular(UiRadius.menu),
-                border: Border.all(color: ui.ink, width: 2),
+                border: Border.all(color: ui.outline, width: 2),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

@@ -53,14 +53,32 @@ final profileStatsProvider = FutureProvider.autoDispose<ProfileStats>((
   }
   final journeyRepo = ref.watch(journeyRepositoryProvider);
   final checkIns = ref.watch(checkInRepositoryProvider);
-  final journeys = await journeyRepo.watchActive().first;
-  final byJourney = <String, List<CheckIn>>{
-    for (final j in journeys) j.id: await checkIns.watchForJourney(j.id).first,
-  };
+  final userId = ref.watch(currentUserIdProvider);
+  // Same set as the server's `profile_stats` (every active membership,
+  // archived and ended journeys included).
+  // Remaining gap: the server's `total_snaps` counts all my check-ins in
+  // any journey, even one I left; here only journeys I am still in count.
+  final journeys = await journeyRepo.allMine();
+  final byJourney = <String, List<CheckIn>>{};
+  final joined = <String, LocalDate>{};
+  for (final j in journeys) {
+    final m = await journeyRepo.watchMyMembership(j.id).first;
+    // Own check-ins only: group journeys also hold other members' photos.
+    byJourney[j.id] = await checkIns
+        .watchForJourney(j.id, userId: userId ?? m?.userId)
+        .first;
+    if (m != null) {
+      joined[j.id] = localDateOf(
+        m.joinedAt,
+        timeZoneOffsetAt(j.timezone, m.joinedAt),
+      );
+    }
+  }
   final now = DateTime.now().toUtc();
   return computeLocalProfileStats(
     journeys: journeys,
     checkInsByJourney: byJourney,
+    joinedLocalDateByJourney: joined,
     today: (tz) => localDateOf(now, timeZoneOffsetAt(tz, now)),
   );
 });

@@ -1,116 +1,69 @@
 {
   "@@locale": "en",
-  "import_headerTitle": "import a past journey.",
+  "import_headerTitle": "Retell a past journey",
   "@import_headerTitle": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
   "import_back": "Back",
   "@import_back": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
-  "import_setupTitle": "Pick a type and layout.",
-  "@import_setupTitle": {
-    "description": "Import past journey flow."
+  "import_stepOf": "Step {n} of 3",
+  "@import_stepOf": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
-  "import_type_weight": "Weight loss",
-  "@import_type_weight": {
-    "description": "Import past journey flow."
+  "import_photosTitle": "Choose your photos.",
+  "@import_photosTitle": {
+    "description": "Retell a past journey flow."
   },
-  "import_type_study": "English",
-  "@import_type_study": {
-    "description": "Import past journey flow."
-  },
-  "import_type_trip": "Trip",
-  "@import_type_trip": {
-    "description": "Import past journey flow."
-  },
-  "import_type_couple": "Couple",
-  "@import_type_couple": {
-    "description": "Import past journey flow."
-  },
-  "import_type_workout": "Workout",
-  "@import_type_workout": {
-    "description": "Import past journey flow."
-  },
-  "import_type_custom": "Custom",
-  "@import_type_custom": {
-    "description": "Import past journey flow."
-  },
-  "import_placeLabel": "Name or place",
-  "@import_placeLabel": {
-    "description": "Import past journey flow."
-  },
-  "import_placeHint": "A past journey",
-  "@import_placeHint": {
-    "description": "Import past journey flow."
-  },
-  "import_layoutHeading": "Layout",
-  "@import_layoutHeading": {
-    "description": "Import past journey flow."
-  },
-  "import_layout_quiet": "Quiet",
-  "@import_layout_quiet": {
-    "description": "Import past journey flow."
-  },
-  "import_layout_memory": "Memory",
-  "@import_layout_memory": {
-    "description": "Import past journey flow."
-  },
-  "import_layout_flexer": "Flexer",
-  "@import_layout_flexer": {
-    "description": "Import past journey flow."
-  },
-  "import_layout_minimal": "Minimalist",
-  "@import_layout_minimal": {
-    "description": "Import past journey flow."
-  },
-  "import_layoutNote": "Some layouts need more data, so they are hidden.",
-  "@import_layoutNote": {
-    "description": "Import past journey flow."
-  },
-  "import_previewLabel": "PREVIEW",
-  "@import_previewLabel": {
-    "description": "Import past journey flow."
-  },
-  "import_previewHud": "Camera HUD",
-  "@import_previewHud": {
-    "description": "Import past journey flow."
-  },
-  "import_pickOld": "Choose old photos",
-  "@import_pickOld": {
-    "description": "Import past journey flow."
-  },
-  "import_libraryTitle": "Choose old photos.",
-  "@import_libraryTitle": {
-    "description": "Import past journey flow."
-  },
-  "import_libraryIntro": "Pick several photos. Ourney reads the date taken to place them in the journey.",
-  "@import_libraryIntro": {
-    "description": "Import past journey flow."
+  "import_photosIntro": "Pick the photos of the journey you want to retell. Ourney reads the date each photo was taken to place it on the timeline.",
+  "@import_photosIntro": {
+    "description": "Retell a past journey flow."
   },
   "import_openLibrary": "Open photo library",
   "@import_openLibrary": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
   "import_addMore": "Add photos",
   "@import_addMore": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
   "import_libraryEmptyTitle": "No photos yet",
   "@import_libraryEmptyTitle": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
   "import_libraryEmptyBody": "Pick old photos from your library to rebuild the journey.",
   "@import_libraryEmptyBody": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
-  "import_noDate": "No date",
-  "@import_noDate": {
-    "description": "Import past journey flow."
+  "import_selectedCount": "{selected} of {total} selected",
+  "@import_selectedCount": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "selected": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "import_selectAll": "Select all",
+  "@import_selectAll": {
+    "description": "Retell a past journey flow."
+  },
+  "import_selectNone": "Select none",
+  "@import_selectNone": {
+    "description": "Retell a past journey flow."
   },
   "import_selectPhoto": "Select photo {date}",
   "@import_selectPhoto": {
-    "description": "Import past journey flow.",
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "date": {
         "type": "String"
@@ -119,91 +72,291 @@
   },
   "import_deselectPhoto": "Deselect photo {date}",
   "@import_deselectPhoto": {
-    "description": "Import past journey flow.",
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "date": {
         "type": "String"
       }
     }
   },
-  "import_reviewButton": "Review {count, plural, =1{1 photo} other{{count} photos}}",
-  "@import_reviewButton": {
-    "description": "Import past journey flow.",
+  "import_nextTimeline": "Next · {count, plural, =1{1 photo} other{{count} photos}}",
+  "@import_nextTimeline": {
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "import_reviewTitle": "Review on the timeline.",
-  "@import_reviewTitle": {
-    "description": "Import past journey flow."
+  "import_pickLimit": "A journey takes up to {max} photos. The extra photos were left out.",
+  "@import_pickLimit": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "import_duplicatesSkipped": "{count, plural, =1{1 duplicate photo was skipped} other{{count} duplicate photos were skipped}}",
+  "@import_duplicatesSkipped": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_pickFailed": "Could not open the photo library.",
+  "@import_pickFailed": {
+    "description": "Retell a past journey flow."
+  },
+  "import_maxReached": "You have reached {max} photos.",
+  "@import_maxReached": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "import_timelineTitle": "Check the timeline.",
+  "@import_timelineTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_timelineIntro": "Dates come from the photos. Tap a photo to change its date.",
+  "@import_timelineIntro": {
+    "description": "Retell a past journey flow."
+  },
+  "import_rangeLine": "{range} · {days}",
+  "@import_rangeLine": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "range": {
+        "type": "String"
+      },
+      "days": {
+        "type": "String"
+      }
+    }
+  },
+  "import_days": "{count, plural, =1{1 day} other{{count} days}}",
+  "@import_days": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "import_dayLabel": "Day {day}",
   "@import_dayLabel": {
-    "description": "Import past journey flow.",
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "day": {
         "type": "int"
       }
     }
   },
-  "import_noPhotos": "No photo yet",
-  "@import_noPhotos": {
-    "description": "Import past journey flow."
+  "import_dayCount": "{count, plural, =1{1 photo} other{{count} photos}}",
+  "@import_dayCount": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-  "import_fromLibrary": "{date} · from library",
-  "@import_fromLibrary": {
-    "description": "Import past journey flow.",
+  "import_gapRow": "{count, plural, =1{1 day with no photos} other{{count} days with no photos}}",
+  "@import_gapRow": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "import_undatedTitle": "No date yet",
+  "@import_undatedTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_undatedBody": "Give these photos a date, or remove them, to go on.",
+  "@import_undatedBody": {
+    "description": "Retell a past journey flow."
+  },
+  "import_setDateAllUndated": "Set a date for all",
+  "@import_setDateAllUndated": {
+    "description": "Retell a past journey flow."
+  },
+  "import_editDate": "Change the date of this photo, now {date}",
+  "@import_editDate": {
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "date": {
         "type": "String"
       }
     }
   },
-  "import_extraInDay": "extra photo that day",
-  "@import_extraInDay": {
-    "description": "Import past journey flow."
+  "import_noDate": "No date",
+  "@import_noDate": {
+    "description": "Retell a past journey flow."
   },
-  "import_undatedTitle": "No date yet",
-  "@import_undatedTitle": {
-    "description": "Import past journey flow."
+  "import_selectMode": "Select",
+  "@import_selectMode": {
+    "description": "Retell a past journey flow."
   },
-  "import_assignDate": "Set date",
-  "@import_assignDate": {
-    "description": "Import past journey flow."
+  "import_selectDone": "Done",
+  "@import_selectDone": {
+    "description": "Retell a past journey flow."
   },
-  "import_drop": "Remove",
-  "@import_drop": {
-    "description": "Import past journey flow."
+  "import_bulkSetDate": "Set date · {count}",
+  "@import_bulkSetDate": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-  "import_startLabel": "Start",
-  "@import_startLabel": {
-    "description": "Import past journey flow."
+  "import_bulkRemove": "Remove · {count}",
+  "@import_bulkRemove": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
-  "import_endLabel": "End",
-  "@import_endLabel": {
-    "description": "Import past journey flow."
+  "import_removePhoto": "Remove photo",
+  "@import_removePhoto": {
+    "description": "Retell a past journey flow."
   },
-  "import_continueTitle": "Keep shooting",
+  "import_sourceExif": "Date taken",
+  "@import_sourceExif": {
+    "description": "Retell a past journey flow."
+  },
+  "import_sourceFile": "File date",
+  "@import_sourceFile": {
+    "description": "Retell a past journey flow."
+  },
+  "import_sourceManual": "Set by you",
+  "@import_sourceManual": {
+    "description": "Retell a past journey flow."
+  },
+  "import_errorRange": "A journey can last at most 366 days. Change some dates or remove photos.",
+  "@import_errorRange": {
+    "description": "Retell a past journey flow."
+  },
+  "import_next": "Next",
+  "@import_next": {
+    "description": "Retell a past journey flow."
+  },
+  "import_detailsTitle": "Name your journey.",
+  "@import_detailsTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_nameLabel": "Name or place",
+  "@import_nameLabel": {
+    "description": "Retell a past journey flow."
+  },
+  "import_nameHint": "A past journey",
+  "@import_nameHint": {
+    "description": "Retell a past journey flow."
+  },
+  "import_errorTitle": "Enter a name for the journey.",
+  "@import_errorTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_typeHeading": "Type",
+  "@import_typeHeading": {
+    "description": "Retell a past journey flow."
+  },
+  "import_type_weight": "Weight loss",
+  "@import_type_weight": {
+    "description": "Retell a past journey flow."
+  },
+  "import_type_study": "English",
+  "@import_type_study": {
+    "description": "Retell a past journey flow."
+  },
+  "import_type_trip": "Trip",
+  "@import_type_trip": {
+    "description": "Retell a past journey flow."
+  },
+  "import_type_workout": "Workout",
+  "@import_type_workout": {
+    "description": "Retell a past journey flow."
+  },
+  "import_type_custom": "Custom",
+  "@import_type_custom": {
+    "description": "Retell a past journey flow."
+  },
+  "import_layoutHeading": "Layout",
+  "@import_layoutHeading": {
+    "description": "Retell a past journey flow."
+  },
+  "import_layout_quiet": "Quiet",
+  "@import_layout_quiet": {
+    "description": "Retell a past journey flow."
+  },
+  "import_layout_memory": "Memory",
+  "@import_layout_memory": {
+    "description": "Retell a past journey flow."
+  },
+  "import_layout_flexer": "Flexer",
+  "@import_layout_flexer": {
+    "description": "Retell a past journey flow."
+  },
+  "import_layout_minimal": "Minimalist",
+  "@import_layout_minimal": {
+    "description": "Retell a past journey flow."
+  },
+  "import_layoutNote": "Some layouts need more data, so they only show for the type that uses them.",
+  "@import_layoutNote": {
+    "description": "Retell a past journey flow."
+  },
+  "import_previewLabel": "PREVIEW",
+  "@import_previewLabel": {
+    "description": "Retell a past journey flow."
+  },
+  "import_previewHud": "Camera HUD",
+  "@import_previewHud": {
+    "description": "Retell a past journey flow."
+  },
+  "import_continueTitle": "Still going?",
   "@import_continueTitle": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
-  "import_continueBody": "The streak starts from the first real photo; imported photos do not count.",
+  "import_continueBody": "Keeps the journey open so you can add new photos. The streak starts from your first live photo; retold photos do not count.",
   "@import_continueBody": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
-  "import_privateNote": "Weight stays hidden and photos stay blurred when shared.",
-  "@import_privateNote": {
-    "description": "Import past journey flow."
+  "import_privacyNote": "Only you can see this journey until you share it. Hiding weight and blurring photos on share follow your Settings.",
+  "@import_privacyNote": {
+    "description": "Retell a past journey flow."
   },
   "import_save": "Save journey",
   "@import_save": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
-  "import_saving": "Saving {done}/{total} photos…",
-  "@import_saving": {
-    "description": "Import past journey flow.",
+  "import_summaryLine": "{count, plural, =1{1 photo} other{{count} photos}} · {range}",
+  "@import_summaryLine": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "range": {
+        "type": "String"
+      }
+    }
+  },
+  "import_savingTitle": "Saving your journey.",
+  "@import_savingTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_preparing": "Preparing your photos… {done}/{total}",
+  "@import_preparing": {
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "done": {
         "type": "int"
@@ -213,54 +366,190 @@
       }
     }
   },
-  "import_failed": "{count, plural, =1{1 photo could not be saved} other{{count} photos could not be saved}}",
-  "@import_failed": {
-    "description": "Import past journey flow.",
+  "import_creating": "Creating the journey…",
+  "@import_creating": {
+    "description": "Retell a past journey flow."
+  },
+  "import_saving": "Saving {done}/{total} photos…",
+  "@import_saving": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "import_pause": "Pause",
+  "@import_pause": {
+    "description": "Retell a past journey flow."
+  },
+  "import_pauseHint": "You can pause. The photos left stay on this device until you continue.",
+  "@import_pauseHint": {
+    "description": "Retell a past journey flow."
+  },
+  "import_pausedTitle": "Paused.",
+  "@import_pausedTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_pausedBody": "Saving is paused. The photos left stay on this device until you continue.",
+  "@import_pausedBody": {
+    "description": "Retell a past journey flow."
+  },
+  "import_resume": "Continue saving",
+  "@import_resume": {
+    "description": "Retell a past journey flow."
+  },
+  "import_partialTitle": "Some photos are not saved.",
+  "@import_partialTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_dateSheetTitle": "Pick a date",
+  "@import_dateSheetTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_dateDay": "Day",
+  "@import_dateDay": {
+    "description": "Retell a past journey flow."
+  },
+  "import_dateMonth": "Month",
+  "@import_dateMonth": {
+    "description": "Retell a past journey flow."
+  },
+  "import_dateYear": "Year",
+  "@import_dateYear": {
+    "description": "Retell a past journey flow."
+  },
+  "import_dateCancel": "Cancel",
+  "@import_dateCancel": {
+    "description": "Retell a past journey flow."
+  },
+  "import_createMaybeLanded": "The journey may already have been created. Try again to finish it, or leave: your photos stay on this device and saving continues later.",
+  "@import_createMaybeLanded": {
+    "description": "Retell a past journey flow."
+  },
+  "import_abandon": "Discard this journey",
+  "@import_abandon": {
+    "description": "Retell a past journey flow."
+  },
+  "import_abandonTitle": "Discard this journey?",
+  "@import_abandonTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_abandonBody": "Nothing more will be saved and the photos kept on this device are deleted. The journey may still appear in your list, empty.",
+  "@import_abandonBody": {
+    "description": "Retell a past journey flow."
+  },
+  "import_abandonConfirm": "Discard",
+  "@import_abandonConfirm": {
+    "description": "Retell a past journey flow."
+  },
+  "import_signedOutTitle": "Signed out.",
+  "@import_signedOutTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_signedOutBody": "Sign in again to keep saving. Your photos stay on this device.",
+  "@import_signedOutBody": {
+    "description": "Retell a past journey flow."
+  },
+  "import_dateConfirm": "Use this date",
+  "@import_dateConfirm": {
+    "description": "Retell a past journey flow."
+  },
+  "import_cancelling": "Stopping…",
+  "@import_cancelling": {
+    "description": "Retell a past journey flow."
+  },
+  "import_photoPending": "Waiting",
+  "@import_photoPending": {
+    "description": "Retell a past journey flow."
+  },
+  "import_photoSaved": "Saved",
+  "@import_photoSaved": {
+    "description": "Retell a past journey flow."
+  },
+  "import_photoFailed": "Not saved",
+  "@import_photoFailed": {
+    "description": "Retell a past journey flow."
+  },
+  "import_reason_unreadable": "The file cannot be read any more",
+  "@import_reason_unreadable": {
+    "description": "Retell a past journey flow."
+  },
+  "import_reason_offline": "No connection",
+  "@import_reason_offline": {
+    "description": "Retell a past journey flow."
+  },
+  "import_reason_badDate": "The date does not fit the journey",
+  "@import_reason_badDate": {
+    "description": "Retell a past journey flow."
+  },
+  "import_reason_unknown": "Something went wrong",
+  "@import_reason_unknown": {
+    "description": "Retell a past journey flow."
+  },
+  "import_doneTitle": "Done.",
+  "@import_doneTitle": {
+    "description": "Retell a past journey flow."
+  },
+  "import_savedSummary": "{count, plural, =1{1 photo saved} other{{count} photos saved}}",
+  "@import_savedSummary": {
+    "description": "Retell a past journey flow.",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
   },
-  "import_retry": "Try again",
-  "@import_retry": {
-    "description": "Import past journey flow."
+  "import_notSaved": "{count, plural, =1{1 photo not saved} other{{count} photos not saved}}",
+  "@import_notSaved": {
+    "description": "Retell a past journey flow.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "import_openJourney": "Open journey",
   "@import_openJourney": {
-    "description": "Import past journey flow."
+    "description": "Retell a past journey flow."
   },
-  "import_errorNoPhotos": "Pick at least one photo with a date.",
-  "@import_errorNoPhotos": {
-    "description": "Import past journey flow."
+  "import_retryFailed": "Retry failed photos",
+  "@import_retryFailed": {
+    "description": "Retell a past journey flow."
   },
-  "import_errorUndated": "Set a date for, or remove, the undated photos.",
-  "@import_errorUndated": {
-    "description": "Import past journey flow."
+  "import_leaveRest": "Leave the rest out",
+  "@import_leaveRest": {
+    "description": "Retell a past journey flow."
   },
-  "import_errorTitle": "Enter a name or place.",
-  "@import_errorTitle": {
-    "description": "Import past journey flow."
+  "import_tryAgain": "Try again",
+  "@import_tryAgain": {
+    "description": "Retell a past journey flow."
   },
-  "import_errorOutside": "Some photos fall outside the chosen dates.",
-  "@import_errorOutside": {
-    "description": "Import past journey flow."
+  "import_editDetails": "Edit details",
+  "@import_editDetails": {
+    "description": "Retell a past journey flow."
   },
-  "import_errorFuture": "The end date cannot be in the future.",
-  "@import_errorFuture": {
-    "description": "Import past journey flow."
+  "import_errorInvalid": "The journey details were refused. Check the name and the dates.",
+  "@import_errorInvalid": {
+    "description": "Retell a past journey flow."
   },
-  "import_errorRange": "A journey can last at most 366 days.",
-  "@import_errorRange": {
-    "description": "Import past journey flow."
+  "import_discardTitle": "Leave without saving?",
+  "@import_discardTitle": {
+    "description": "Retell a past journey flow."
   },
-  "import_errorGeneric": "Could not save the journey. Try again.",
-  "@import_errorGeneric": {
-    "description": "Import past journey flow."
+  "import_discardBody": "The copies Ourney keeps on this device will be deleted (photos in your library stay).",
+  "@import_discardBody": {
+    "description": "Retell a past journey flow."
   },
-  "import_pickFailed": "Could not open the photo library.",
-  "@import_pickFailed": {
-    "description": "Import past journey flow."
+  "import_discardConfirm": "Leave",
+  "@import_discardConfirm": {
+    "description": "Retell a past journey flow."
   },
-  "import_failedWithReason": "{count} photos could not be saved ({reason})"
+  "import_discardKeep": "Keep going",
+  "@import_discardKeep": {
+    "description": "Retell a past journey flow."
+  }
 }

@@ -51,7 +51,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
     super.dispose();
   }
 
-  static const _muted = UiCamera.muted;
+  static final _muted = UiCamera.onPhoto.withValues(alpha: 0.64);
 
   @override
   Widget build(BuildContext context) {
@@ -97,10 +97,10 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
                   name: 'back',
                   size: 21,
                   flat: true,
-                  color: UiCamera.ink,
+                  color: UiCamera.onPhoto,
                 ),
                 label: l10n.journeys_back,
-                color: UiCamera.ink,
+                color: UiCamera.onPhoto,
                 onPressed: () => context.canPop()
                     ? context.pop()
                     : context.go(AppRoutes.journey(widget.journeyId)),
@@ -115,7 +115,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
                     size: 14,
                     weight: FontWeight.w700,
                     height: 1.4,
-                    color: UiCamera.ink,
+                    color: UiCamera.onPhoto,
                   ),
                 ),
               ),
@@ -138,7 +138,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
                         style: UiText.body(
                           size: 16,
                           height: 1.5,
-                          color: UiCamera.ink,
+                          color: UiCamera.onPhoto,
                         ),
                       ),
               ),
@@ -205,7 +205,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
                                 size: 12,
                                 weight: FontWeight.w700,
                                 height: 1.3,
-                                color: UiCamera.ink,
+                                color: UiCamera.onPhoto,
                               ),
                             ),
                           ),
@@ -239,7 +239,7 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
               Text(
                 checkIn.caption!,
                 key: const ValueKey('journey-day-caption'),
-                style: UiText.body(size: 16, height: 1.5, color: UiCamera.ink),
+                style: UiText.body(size: 16, height: 1.5, color: UiCamera.onPhoto),
               ),
             ],
             if (journeyExtrasParts(context, checkIn.extras) case final parts
@@ -294,7 +294,7 @@ class _MetricRow extends StatelessWidget {
       size: 16,
       weight: FontWeight.w700,
       height: 1.4,
-      color: UiCamera.ink,
+      color: UiCamera.onPhoto,
     );
     return Wrap(
       key: const ValueKey('journey-day-metric'),
@@ -305,7 +305,7 @@ class _MetricRow extends StatelessWidget {
         if (name != null)
           Text(
             '$name:',
-            style: UiText.body(size: 14, height: 1.4, color: UiCamera.muted),
+            style: UiText.body(size: 14, height: 1.4, color: UiCamera.onPhoto.withValues(alpha: 0.64)),
           ),
         if (hidden) ...[
           Row(
@@ -315,7 +315,7 @@ class _MetricRow extends StatelessWidget {
                 name: 'eye-off',
                 size: 18,
                 flat: true,
-                color: UiCamera.ink,
+                color: UiCamera.onPhoto,
               ),
               const SizedBox(width: UiSpace.xs),
               Text(l10n.journeys_metricHidden, style: strong),
@@ -324,7 +324,7 @@ class _MetricRow extends StatelessWidget {
           UiTextAction(
             key: const ValueKey('journey-day-reveal'),
             label: l10n.journeys_showMetric,
-            color: UiCamera.ink,
+            color: UiCamera.onPhoto,
             underline: true,
             onPressed: onReveal,
           ),

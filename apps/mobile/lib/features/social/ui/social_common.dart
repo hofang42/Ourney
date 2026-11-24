@@ -235,6 +235,7 @@ String socialErrorMessage(BuildContext context, Object error) {
     OurneyErrorCode.blocked => l10n.social_errorBlocked,
     OurneyErrorCode.forbidden => l10n.social_errorForbidden,
     OurneyErrorCode.rateLimited => l10n.social_rateLimited,
+    OurneyErrorCode.serverOutdated => app.common_serverOutdated,
     OurneyErrorCode.offline => app.common_offline,
     _ => app.common_errorGeneric,
   };

@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport, RenderBox;
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -16,9 +18,10 @@ import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
+import '../data/long_timeline_state.dart';
 import '../domain/journey_progress.dart';
 import '../domain/journey_time.dart';
-import '../domain/wrapped_story.dart';
+import '../domain/timeline_window.dart';
 import '../journeys_paths.dart';
 import '../l10n/generated/journeys_localizations.dart';
 import 'couple_rename_sheet.dart';
@@ -32,6 +35,7 @@ import 'journey_errors.dart';
 import 'journey_row.dart';
 import 'journey_style.dart';
 import 'widgets/journey_timeline.dart';
+import 'widgets/timeline_archive.dart';
 
 enum _Action { edit, wrapped, pin, invite, renameCouple, end, archive, delete }
 
@@ -51,6 +55,21 @@ class JourneyDetailScreen extends ConsumerStatefulWidget {
 
 class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
   bool _menuOpen = false;
+
+  // Long journeys (more than 31 days passed): the choices live in
+  // `longTimelineProvider`; the scroll state is per screen.
+  final _topKey = GlobalKey();
+  final _scroll = ScrollController();
+
+  /// Bumped by every jump: a stale jump never moves the list or announces.
+  int _jumpToken = 0;
+  final _headerKeys = <int, GlobalKey>{};
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   String get journeyId => widget.journeyId;
 
@@ -112,19 +131,14 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
 
     final membership = ref.watch(myMembershipProvider(journeyId)).value;
     final checkIns = ref.watch(myCheckInsProvider(journeyId));
+    final index = ref.watch(journeyTimelineIndexProvider(journeyId));
     final perms = JourneyPermissions(
       journey: journey,
       membership: membership,
       currentUserId: ref.watch(currentUserIdProvider),
     );
-    final progress = checkIns.hasValue
-        ? JourneyProgress.compute(
-            journey: journey,
-            membership: membership,
-            checkIns: checkIns.value!,
-            now: ref.watch(journeysNowProvider),
-          )
-        : null;
+    final progress = index?.progress;
+    final long = index?.isLong ?? false;
 
     final actions = [
       if (perms.isOwner && perms.isActive) _Action.edit,
@@ -152,13 +166,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           final ui = context.ui;
           final pal = JourneyPalette.of(context, styleOfJourney(journey));
           final skin = uiSkinIdFor(skinOfJourney(journey));
-          final missedDay = progress
-              ?.timeline()
-              .where((d) => d.state == DayState.missed)
-              .map((d) => d.dayNumber)
-              .fold<int?>(null, (a, b) => a == null || b > a ? b : a);
+          final missedDay = index?.lastMissedDay;
           final showMissedChip =
-              missedDay != null && (skin == 'quiet' || skin == 'squad');
+              perms.isActive &&
+              missedDay != null &&
+              (skin == 'quiet' || skin == 'squad');
           final showBottomOverlay = showMissedChip || perms.canCheckIn;
           final bottomInset = MediaQuery.paddingOf(context).bottom;
           // U15: at large text the chip and the button no longer share a row
@@ -166,183 +178,202 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           final bigText = MediaQuery.textScalerOf(context).scale(10) > 13;
           final stackOverlay = bigText && showMissedChip && perms.canCheckIn;
           final screenWidth = MediaQuery.sizeOf(context).width;
+          // Fixed-term journey longer than 31 days, 31 or fewer passed: the
+          // elapsed days, two upcoming ones and the finish card, never the
+          // whole term.
+          final shortWindow =
+              !long &&
+                  index != null &&
+                  (journey.durationDays ?? 0) > longJourneyDays
+              ? index.shortWindow
+              : null;
+          final topChildren = <Widget>[
+            UiMenuAnchor(
+              open: _menuOpen && actions.isNotEmpty,
+              onClose: () => setState(() => _menuOpen = false),
+              anchor: _Header(
+                journey: journey,
+                canMore: actions.isNotEmpty,
+                onBack: _back,
+                onShare: () => _share(context, journey),
+                onMore: () => setState(() => _menuOpen = !_menuOpen),
+              ),
+              menu: UiMenuSurface(
+                children: [
+                  for (final a in actions)
+                    UiMenuItem(
+                      key: ValueKey('journey-action-${a.name}'),
+                      glyph: switch (a) {
+                        _Action.edit => 'pencil',
+                        _Action.wrapped => 'trophy',
+                        _Action.pin => 'star',
+                        _Action.invite => 'squad',
+                        _Action.renameCouple => 'edit',
+                        _Action.end => 'flag',
+                        _Action.archive => 'inbox',
+                        _Action.delete => 'trash',
+                      },
+                      destructive: a == _Action.delete,
+                      label: switch (a) {
+                        _Action.edit => l10n.journeys_edit_menu,
+                        _Action.wrapped => l10n.journeys_wrapped_menu,
+                        _Action.pin =>
+                          (membership?.pinned ?? false)
+                              ? l10n.journeys_unpin
+                              : l10n.journeys_pin,
+                        _Action.invite => l10n.journeys_inviteAction,
+                        _Action.renameCouple => l10n.journeys_renameCouple,
+                        _Action.end => l10n.journeys_endJourney,
+                        _Action.archive => l10n.journeys_archive,
+                        _Action.delete => l10n.journeys_delete,
+                      },
+                      onPressed: () {
+                        setState(() => _menuOpen = false);
+                        unawaited(_run(context, journey, a));
+                      },
+                    ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: ui.border),
+            const SizedBox(height: 22),
+            if (progress != null)
+              JourneyHomeIntro(
+                skin: uiSkinIdFor(skinOfJourney(journey)),
+                day: progress.dayNumber,
+                total: journey.durationDays,
+                streak: progress.summary.current,
+                today: progress.today,
+                offline: ref.watch(journeyHomeOfflineProvider).value ?? false,
+                readOnly: !perms.isActive,
+              ),
+            if (progress != null) const SizedBox(height: UiSpace.lg),
+            DeadUploadsBanner(journeyId: journey.id),
+            UiEyebrow(_dateRange(context, journey).toUpperCase()),
+            const SizedBox(height: 4),
+            Semantics(
+              header: true,
+              child: Text(journey.title, style: UiText.h1(color: ui.ink)),
+            ),
+            const SizedBox(height: 22),
+            if (progress != null) ...[
+              if (skin != 'quiet') ...[
+                JourneyHomeSkinHeader(
+                  journey: journey,
+                  skin: skinOfJourney(journey),
+                  day: progress.dayNumber,
+                  streak: progress.summary.current,
+                  stats: index!.wrapped,
+                  now: ref.watch(journeysNowProvider),
+                  onTrophy: () => context.push(
+                    perms.isActive
+                        ? AppRoutes.share(journey.id)
+                        : JourneysPaths.wrapped(journey.id),
+                  ),
+                ),
+                const SizedBox(height: UiSpace.lg),
+              ],
+              if (skin == 'quiet' || skin == 'flexer') ...[
+                JourneyHomeChart(
+                  skin: skin,
+                  values: index!.metricSeries,
+                  accent: pal.accent,
+                  unit: journey.metricUnit ?? '',
+                  maskable: skin == 'quiet',
+                ),
+                const SizedBox(height: UiSpace.lg),
+              ],
+            ],
+            _SectionTab(title: l10n.journeys_timelineTitle, accent: pal.accent),
+            const SizedBox(height: UiSpace.xl),
+          ];
+          final timelineChildren = <Widget>[
+            if (checkIns.hasError && progress == null)
+              UiEmptyState(
+                key: const ValueKey('journey-detail-checkins-error'),
+                glyph: const OurneyIcon(name: 'error', size: 30),
+                title: app.common_errorGeneric,
+                actionLabel: app.common_retry,
+                onAction: () => ref.invalidate(myCheckInsProvider(journeyId)),
+              )
+            else if (progress == null)
+              Padding(
+                padding: const EdgeInsets.all(UiSpace.xl),
+                child: Center(
+                  child: UiSpinner(semanticsLabel: app.common_loading),
+                ),
+              )
+            else if (!long)
+              JourneyTimeline(
+                skinId: uiSkinIdFor(skinOfJourney(journey)),
+                days: shortWindow?.days ?? progress.timeline(),
+                summary: shortWindow == null ? null : index!.summary,
+                window: shortWindow,
+                pal: pal,
+                selfName: journey.coupleSelfName,
+                partnerName: journey.couplePartnerName,
+                showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
+                onTapDay: (d) =>
+                    context.push(JourneysPaths.day(journey.id, d.date)),
+              ),
+          ];
+          final bottomChildren = <Widget>[
+            if (progress != null) ...[
+              const SizedBox(height: UiSpace.xl),
+              JourneyHomeMilestones(
+                day: progress.dayNumber,
+                total: journey.durationDays,
+                accent: pal.accent,
+                onAccent: pal.onAccent,
+              ),
+            ],
+            const SizedBox(height: UiSpace.xl),
+            JourneyHomeActions(
+              onWrapped: perms.isActive
+                  ? null
+                  : () => context.push(JourneysPaths.wrapped(journey.id)),
+              onShare: () => _share(context, journey),
+              onSquad: journey.kind == JourneyKind.group
+                  ? () => context.go(AppRoutes.groups)
+                  : null,
+            ),
+            const SizedBox(height: UiSpace.lg),
+            if (membership != null && perms.isActive)
+              _PrivacySection(journey: journey, membership: membership),
+          ];
+          // The overlay text is clamped to 1.35x (below), so its height
+          // is bounded and this reserve keeps it off the content.
+          final double padBottom = showBottomOverlay
+              ? (stackOverlay ? 180 : (bigText ? 130 : 96))
+              : UiSpace.xxl;
           final home = DayTicker(
             child: ActiveJourneyScope(
               journeyId: journey.id,
-              child: UiScaffold(
-                key: const ValueKey('journey-detail'),
-                background: pal.paper,
-                padTop: 0,
-                // The overlay text is clamped to 1.35x (below), so its height
-                // is bounded and this reserve keeps it off the content.
-                padBottom: showBottomOverlay
-                    ? (stackOverlay ? 180 : (bigText ? 130 : 96))
-                    : UiSpace.xxl,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    UiMenuAnchor(
-                      open: _menuOpen && actions.isNotEmpty,
-                      onClose: () => setState(() => _menuOpen = false),
-                      anchor: _Header(
-                        journey: journey,
-                        canMore: actions.isNotEmpty,
-                        onBack: _back,
-                        onShare: () => _share(context, journey),
-                        onMore: () => setState(() => _menuOpen = !_menuOpen),
-                      ),
-                      menu: UiMenuSurface(
+              child: long
+                  ? _longScaffold(
+                      context: context,
+                      index: index!,
+                      skin: skin,
+                      journey: journey,
+                      pal: pal,
+                      padBottom: padBottom,
+                      top: topChildren,
+                      bottom: bottomChildren,
+                    )
+                  : UiScaffold(
+                      key: const ValueKey('journey-detail'),
+                      background: pal.paper,
+                      padTop: 0,
+                      padBottom: padBottom,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          for (final a in actions)
-                            UiMenuItem(
-                              key: ValueKey('journey-action-${a.name}'),
-                              glyph: switch (a) {
-                                _Action.edit => 'pencil',
-                                _Action.wrapped => 'trophy',
-                                _Action.pin => 'star',
-                                _Action.invite => 'squad',
-                                _Action.renameCouple => 'edit',
-                                _Action.end => 'flag',
-                                _Action.archive => 'inbox',
-                                _Action.delete => 'trash',
-                              },
-                              destructive: a == _Action.delete,
-                              label: switch (a) {
-                                _Action.edit => l10n.journeys_edit_menu,
-                                _Action.wrapped => l10n.journeys_wrapped_menu,
-                                _Action.pin =>
-                                  (membership?.pinned ?? false)
-                                      ? l10n.journeys_unpin
-                                      : l10n.journeys_pin,
-                                _Action.invite => l10n.journeys_inviteAction,
-                                _Action.renameCouple =>
-                                  l10n.journeys_renameCouple,
-                                _Action.end => l10n.journeys_endJourney,
-                                _Action.archive => l10n.journeys_archive,
-                                _Action.delete => l10n.journeys_delete,
-                              },
-                              onPressed: () {
-                                setState(() => _menuOpen = false);
-                                unawaited(_run(context, journey, a));
-                              },
-                            ),
+                          ...topChildren,
+                          ...timelineChildren,
+                          ...bottomChildren,
                         ],
                       ),
                     ),
-                    Divider(height: 1, color: ui.border),
-                    const SizedBox(height: 22),
-                    if (progress != null)
-                      JourneyHomeIntro(
-                        skin: uiSkinIdFor(skinOfJourney(journey)),
-                        day: progress.dayNumber,
-                        total: journey.durationDays,
-                        streak: progress.summary.current,
-                        today: progress.today,
-                        offline:
-                            ref.watch(journeyHomeOfflineProvider).value ??
-                            false,
-                        readOnly: !perms.isActive,
-                      ),
-                    if (progress != null) const SizedBox(height: UiSpace.lg),
-                    DeadUploadsBanner(journeyId: journey.id),
-                    UiEyebrow(_dateRange(context, journey).toUpperCase()),
-                    const SizedBox(height: 4),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        journey.title,
-                        style: UiText.h1(color: ui.ink),
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    if (progress != null) ...[
-                      if (skin != 'quiet') ...[
-                        JourneyHomeSkinHeader(
-                          journey: journey,
-                          skin: skinOfJourney(journey),
-                          day: progress.dayNumber,
-                          streak: progress.summary.current,
-                          stats: WrappedStats.from(progress),
-                          now: ref.watch(journeysNowProvider),
-                          onTrophy: () => context.push(
-                            perms.isActive
-                                ? AppRoutes.share(journey.id)
-                                : JourneysPaths.wrapped(journey.id),
-                          ),
-                        ),
-                        const SizedBox(height: UiSpace.lg),
-                      ],
-                      if (skin == 'quiet' || skin == 'flexer') ...[
-                        JourneyHomeChart(
-                          skin: skin,
-                          values: _metricSeries(progress),
-                          accent: pal.accent,
-                          unit: journey.metricUnit ?? '',
-                          maskable: skin == 'quiet',
-                        ),
-                        const SizedBox(height: UiSpace.lg),
-                      ],
-                    ],
-                    _SectionTab(
-                      title: l10n.journeys_timelineTitle,
-                      accent: pal.accent,
-                    ),
-                    const SizedBox(height: UiSpace.xl),
-                    if (checkIns.hasError && progress == null)
-                      UiEmptyState(
-                        key: const ValueKey('journey-detail-checkins-error'),
-                        glyph: const OurneyIcon(name: 'error', size: 30),
-                        title: app.common_errorGeneric,
-                        actionLabel: app.common_retry,
-                        onAction: () =>
-                            ref.invalidate(myCheckInsProvider(journeyId)),
-                      )
-                    else if (progress == null)
-                      Padding(
-                        padding: const EdgeInsets.all(UiSpace.xl),
-                        child: Center(
-                          child: UiSpinner(semanticsLabel: app.common_loading),
-                        ),
-                      )
-                    else
-                      JourneyTimeline(
-                        skinId: uiSkinIdFor(skinOfJourney(journey)),
-                        days: progress.timeline(),
-                        pal: pal,
-                        selfName: journey.coupleSelfName,
-                        partnerName: journey.couplePartnerName,
-                        showOfflineStamps: !ref
-                            .watch(appConfigProvider)
-                            .localOnly,
-                        onTapDay: (d) =>
-                            context.push(JourneysPaths.day(journey.id, d.date)),
-                      ),
-                    if (progress != null) ...[
-                      const SizedBox(height: UiSpace.xl),
-                      JourneyHomeMilestones(
-                        day: progress.dayNumber,
-                        total: journey.durationDays,
-                        accent: pal.accent,
-                        onAccent: pal.onAccent,
-                      ),
-                    ],
-                    const SizedBox(height: UiSpace.xl),
-                    JourneyHomeActions(
-                      onWrapped: perms.isActive
-                          ? null
-                          : () =>
-                                context.push(JourneysPaths.wrapped(journey.id)),
-                      onShare: () => _share(context, journey),
-                      onSquad: journey.kind == JourneyKind.group
-                          ? () => context.go(AppRoutes.groups)
-                          : null,
-                    ),
-                    const SizedBox(height: UiSpace.lg),
-                    if (membership != null && perms.isActive)
-                      _PrivacySection(journey: journey, membership: membership),
-                  ],
-                ),
-              ),
             ),
           );
           return Stack(
@@ -451,10 +482,242 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     );
   }
 
-  /// Metric values of the journey, oldest first.
-  List<double> _metricSeries(JourneyProgress p) {
-    final days = p.checkInsByDate.keys.toList()..sort((a, b) => a.compareTo(b));
-    return [for (final d in days) ?latestMetric(p.checkInsOn(d))];
+  /// The page of a long journey: header, pinned mode bar, then either the
+  /// Recent window or the lazily built month archive, then the footer.
+  Widget _longScaffold({
+    required BuildContext context,
+    required TimelineIndex index,
+    required String skin,
+    required Journey journey,
+    required JourneyPalette pal,
+    required double padBottom,
+    required List<Widget> top,
+    required List<Widget> bottom,
+  }) {
+    final l10n = JourneysL10n.of(context);
+    final st = ref.watch(longTimelineProvider(journey.id));
+    final notifier = ref.read(longTimelineProvider(journey.id).notifier);
+    final byMonth = st.mode == LongTimelineMode.month;
+    final current = index.months.isEmpty ? null : index.months.last.id;
+    final open = st.open ?? {?current};
+    final window = skin == 'minimal' ? index.recentMinimal : index.recent;
+    void openDay(TimelineDay d) =>
+        context.push(JourneysPaths.day(journey.id, d.date));
+    return UiScaffold.slivers(
+      key: const ValueKey('journey-detail'),
+      controller: _scroll,
+      background: pal.paper,
+      padTop: 0,
+      padBottom: padBottom,
+      slivers: [
+        SliverToBoxAdapter(
+          child: Column(
+            key: _topKey,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: top,
+          ),
+        ),
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _ModeBarDelegate(
+            extent: _barExtent(byMonth),
+            background: pal.paper,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                UiSegmented<LongTimelineMode>(
+                  value: st.mode,
+                  onChanged: (m) {
+                    _jumpToken++;
+                    notifier.setMode(m);
+                    if (m == LongTimelineMode.recent) _toTimelineTop();
+                  },
+                  segments: [
+                    UiSegment(
+                      key: const ValueKey('timeline-mode-recent'),
+                      value: LongTimelineMode.recent,
+                      label: l10n.journeys_timelineRecent,
+                    ),
+                    UiSegment(
+                      key: const ValueKey('timeline-mode-month'),
+                      value: LongTimelineMode.month,
+                      label: l10n.journeys_timelineByMonth,
+                    ),
+                  ],
+                ),
+                if (byMonth) ...[
+                  const SizedBox(height: 4),
+                  UiJumpChips(chips: _chips(context, index, st)),
+                ],
+              ],
+            ),
+          ),
+        ),
+        if (byMonth)
+          ...buildArchiveSlivers(
+            context: context,
+            index: index,
+            open: open,
+            headerKeys: _headerKeys,
+            skinId: skin,
+            paper: pal.paper,
+            accent: pal.accent,
+            onToggle: (id) => notifier.toggleMonth(id, current: current),
+            onTapDay: openDay,
+          )
+        else
+          SliverToBoxAdapter(
+            child: JourneyTimeline(
+              skinId: skin,
+              days: window.days,
+              summary: index.summary,
+              window: window,
+              rangeShort: st.range30,
+              onRangeChanged: (v) => notifier.setRange30(value: v),
+              pal: pal,
+              selfName: journey.coupleSelfName,
+              partnerName: journey.couplePartnerName,
+              showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
+              onTapDay: openDay,
+              onOpenEarlier: () =>
+                  _jumpTo(context, index, window.earlierMonthId),
+            ),
+          ),
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: bottom,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Pinned mode bar: 8dp air, 48dp switch, and in By month a 52dp chip row.
+  static double _barExtent(bool byMonth) =>
+      8 + UiSize.tap + (byMonth ? 4 + UiJumpChips.height : 0);
+
+  /// Month chips (newest first); years first when the journey spans more
+  /// than 12 months, a tap on a year filters that year's months.
+  List<UiJumpChip> _chips(
+    BuildContext context,
+    TimelineIndex index,
+    LongTimelineState st,
+  ) {
+    final l10n = JourneysL10n.of(context);
+    final months = index.months.reversed.toList();
+    UiJumpChip monthChip(MonthBucket m) => UiJumpChip(
+      key: ValueKey('jump-month-${m.id}'),
+      label: monthShort(context, m),
+      semanticHint: l10n.journeys_jumpToMonth(monthPlain(context, m)),
+      onPressed: () => _jumpTo(context, index, m.id),
+    );
+    if (months.length <= 12) return [for (final m in months) monthChip(m)];
+    final notifier = ref.read(longTimelineProvider(journeyId).notifier);
+    final year = st.chipYear;
+    if (year == null) {
+      final years = <int>{for (final m in months) m.year};
+      return [
+        for (final y in years)
+          UiJumpChip(
+            key: ValueKey('jump-year-$y'),
+            label: '$y',
+            semanticHint: l10n.journeys_jumpToYear(y),
+            onPressed: () {
+              notifier.setChipYear(y);
+              _jumpTo(context, index, months.firstWhere((m) => m.year == y).id);
+            },
+          ),
+      ];
+    }
+    return [
+      UiJumpChip(
+        key: ValueKey('jump-year-$year'),
+        label: '$year',
+        selected: true,
+        semanticHint: l10n.journeys_clearYear(year),
+        onPressed: () => notifier.setChipYear(null),
+      ),
+      for (final m in months)
+        if (m.year == year) monthChip(m),
+    ];
+  }
+
+  /// Back to Recent: scroll to the top of the timeline section.
+  void _toTimelineTop() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = _topKey.currentContext?.findRenderObject();
+      if (!mounted || box is! RenderBox || !_scroll.hasClients) return;
+      final pos = _scroll.position;
+      _scroll.jumpTo(box.size.height.clamp(0, pos.maxScrollExtent));
+    });
+  }
+
+  /// Shows By month, scrolls month [id] under the pinned bar (a jump, not an
+  /// animation, with reduce motion) and announces it.
+  void _jumpTo(BuildContext context, TimelineIndex index, int? id) {
+    if (id == null) return;
+    final month = index.monthById(id);
+    if (month == null) return;
+    final notifier = ref.read(longTimelineProvider(journeyId).notifier);
+    if (ref.read(longTimelineProvider(journeyId)).mode !=
+        LongTimelineMode.month) {
+      notifier.setMode(LongTimelineMode.month);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_scrollToMonth(index, month));
+      });
+    } else {
+      unawaited(_scrollToMonth(index, month));
+    }
+  }
+
+  Future<void> _scrollToMonth(TimelineIndex index, MonthBucket month) async {
+    final token = ++_jumpToken;
+    final ro = _headerKeys[month.id]?.currentContext?.findRenderObject();
+    if (ro == null || !_scroll.hasClients) return;
+    final viewport = RenderAbstractViewport.of(ro);
+    // Read the position when used: it can change across the awaits below.
+    double clamp(double v) {
+      final pos = _scroll.position;
+      return v.clamp(pos.minScrollExtent, pos.maxScrollExtent);
+    }
+
+    // The reveal offset already clears the pinned bar; the settle step
+    // below is only a safety net.
+    final target = clamp(viewport.getOffsetToReveal(ro, 0).offset);
+    final text = JourneysL10n.of(context)
+        .journeys_jumpAnnounce(monthPlain(context, month));
+    final view = View.of(context);
+    final dir = Directionality.of(context);
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scroll.jumpTo(target);
+    } else {
+      await _scroll.animateTo(
+        target,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeOutCubic,
+      );
+    }
+    if (!mounted || token != _jumpToken || !_scroll.hasClients) return;
+    // Settle exactly: the header's top must meet the bottom of the pinned
+    // bar, whatever the sliver estimates were.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted || token != _jumpToken) return;
+    final box = _headerKeys[month.id]?.currentContext?.findRenderObject();
+    if (box is RenderBox &&
+        box.attached &&
+        viewport is RenderBox &&
+        _scroll.hasClients) {
+      final top = box.localToGlobal(Offset.zero).dy;
+      final bar =
+          (viewport as RenderBox).localToGlobal(Offset.zero).dy +
+          _barExtent(true);
+      final delta = top - bar;
+      if (delta.abs() > 1) _scroll.jumpTo(clamp(_scroll.offset + delta));
+    }
+    if (!ro.attached) return;
+    unawaited(SemanticsService.sendAnnouncement(view, text, dir));
+    ro.sendSemanticsEvent(const FocusSemanticEvent());
   }
 
   void _back() {
@@ -821,4 +1084,36 @@ class _PrivacySection extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// Fixed-height pinned bar of the long timeline (mode switch + chips).
+class _ModeBarDelegate extends SliverPersistentHeaderDelegate {
+  const _ModeBarDelegate({
+    required this.extent,
+    required this.background,
+    required this.child,
+  });
+
+  final double extent;
+  final Color background;
+  final Widget child;
+
+  @override
+  double get minExtent => extent;
+
+  @override
+  double get maxExtent => extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) => ColoredBox(
+    color: background,
+    child: Padding(padding: const EdgeInsets.only(top: 8), child: child),
+  );
+
+  @override
+  bool shouldRebuild(_ModeBarDelegate old) => true;
 }

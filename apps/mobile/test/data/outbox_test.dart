@@ -26,6 +26,7 @@ void main() {
       expect(isTransient(OurneyErrorCode.offline), isTrue);
       expect(isTransient(OurneyErrorCode.internal), isTrue);
       expect(isTransient(OurneyErrorCode.unauthenticated), isTrue);
+      expect(isTransient(OurneyErrorCode.serverOutdated), isTrue);
       expect(isTransient(OurneyErrorCode.ended), isFalse);
       expect(isTransient(OurneyErrorCode.forbidden), isFalse);
       expect(isTransient(OurneyErrorCode.invalidCapturedAt), isFalse);
