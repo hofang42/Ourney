@@ -194,10 +194,20 @@ class SupabaseAuthRepository implements AuthRepository {
     if (remote.currentUserId == null) {
       throw const OurneyException(OurneyErrorCode.unauthenticated);
     }
-    await remote.invokeFunction(
-      deleteAccountFunction,
-      body: {'action': 'delete', 'code': code ?? ''},
-    );
+    try {
+      await remote.invokeFunction(
+        deleteAccountFunction,
+        body: {'action': 'delete', 'code': code ?? ''},
+      );
+    } on OurneyException catch (e) {
+      // Only the server's explicit "that account no longer exists" (410) is
+      // read as success: a retry after a lost response, or a deletion made
+      // on another device. A plain 401 (revoked or expired session), a wrong
+      // code or any other failure stays an error, so local data is never
+      // wiped while the account may still exist.
+      if (e.error != OurneyErrorCode.alreadyDeleted) rethrow;
+      debugPrint('auth: account already deleted on the server');
+    }
     // Sign out first: a sync starting between the wipe and the sign-out
     // would pull the deleted account's rows back into the cache.
     await remote.signOut();

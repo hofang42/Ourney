@@ -150,6 +150,7 @@ class UiCameraTool extends StatelessWidget {
     required this.onPressed,
     this.emphasis = UiCameraToolEmphasis.none,
     this.accent,
+    this.onAccent,
     super.key,
   }) : assert(icon != null || glyph != null, 'icon or glyph is required');
 
@@ -165,8 +166,13 @@ class UiCameraTool extends StatelessWidget {
   final UiCameraToolEmphasis emphasis;
 
   /// Journey accent: fills the disc of a [UiCameraToolEmphasis.filled] tool
-  /// (flash on, grid on) instead of white. The glyph turns dark on it.
+  /// (flash on, grid on) instead of white. The glyph uses [onAccent].
   final Color? accent;
+
+  /// Glyph colour on the [accent] disc (the journey style's `onAccent`);
+  /// defaults to the dark camera bg, which fails contrast on accents whose
+  /// label colour is white.
+  final Color? onAccent;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +180,7 @@ class UiCameraTool extends StatelessWidget {
     final color = onPressed == null
         ? const Color(0x66FFFFFF)
         : filled
-        ? UiCamera.bg
+        ? (accent == null ? UiCamera.bg : (onAccent ?? UiCamera.bg))
         : UiCamera.ink;
     final glyphWidget = glyph != null
         ? OurneyIcon(name: glyph!, size: 22, flat: true, color: color)
@@ -215,10 +221,11 @@ enum UiCameraStatusTone { neutral, danger }
 /// capture failed). It replaces the toast, which landed on the shutter: it
 /// sits at the top of the preview, never near the dock.
 ///
-/// Glass dark capsule, 32dp tall, glyph plus one line of text. Fades in over
-/// 150ms and out over 200ms (no fade under Reduce Motion). It is a live
-/// region; callers also announce the message with
-/// `SemanticsService.sendAnnouncement`. The caller owns the hold timer
+/// Glass dark capsule, at least 32dp tall, glyph plus up to two lines of text. Fades in over
+/// 150ms and out over 200ms (no fade under Reduce Motion). It is
+/// hidden from the semantics tree: callers announce the message with
+/// `SemanticsService.sendAnnouncement` (not a live region, which can move
+/// VoiceOver focus) on every show, repeats included. The caller owns the hold timer
 /// (1.2s, 1.5s under Reduce Motion) and flips [visible].
 class UiCameraStatusPill extends StatelessWidget {
   const UiCameraStatusPill({
@@ -249,53 +256,48 @@ class UiCameraStatusPill extends StatelessWidget {
           context,
           Duration(milliseconds: visible ? 150 : 200),
         ),
-        child: Semantics(
-          liveRegion: true,
-          container: true,
-          label: visible ? message : null,
-          child: ExcludeSemantics(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(UiRadius.capsule),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                child: Container(
-                  key: const ValueKey('ui-camera-status-pill'),
-                  constraints: const BoxConstraints(minHeight: height),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xB3000000),
-                    borderRadius: BorderRadius.circular(UiRadius.capsule),
-                    border: Border.all(
-                      color: danger ? color : UiCamera.dockBorder,
-                    ),
+        child: ExcludeSemantics(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(UiRadius.capsule),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+              child: Container(
+                key: const ValueKey('ui-camera-status-pill'),
+                constraints: const BoxConstraints(minHeight: height),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xB3000000),
+                  borderRadius: BorderRadius.circular(UiRadius.capsule),
+                  border: Border.all(
+                    color: danger ? color : UiCamera.dockBorder,
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (glyph != null) ...[
-                        OurneyIcon(
-                          name: glyph!,
-                          size: 16,
-                          flat: true,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (glyph != null) ...[
+                      OurneyIcon(
+                        name: glyph!,
+                        size: 16,
+                        flat: true,
+                        color: color,
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Text(
+                        message,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: UiText.body(
+                          size: 13,
+                          weight: FontWeight.w600,
+                          height: 1.3,
                           color: color,
                         ),
-                        const SizedBox(width: 6),
-                      ],
-                      Flexible(
-                        child: Text(
-                          message,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: UiText.body(
-                            size: 13,
-                            weight: FontWeight.w600,
-                            height: 1.3,
-                            color: color,
-                          ),
-                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

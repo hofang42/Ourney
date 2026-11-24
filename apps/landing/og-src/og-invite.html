@@ -66,6 +66,27 @@
       position: relative;
       overflow: hidden;
     }
+    .it-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .it-art-tag {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: #FFF8EE;
+      border: 1.8px solid #1A1A1A;
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 #1A1A1A;
+      font: 700 11.5px/1 var(--heading);
+      color: #1A1A1A;
+    }
     .it-meta {
       margin-top: 9px;
       display: flex;
@@ -188,12 +209,8 @@
 
         <div class="it-pair">
           <div class="it-polaroid">
-            <div class="it-art" style="background: #E6F7EE;">
-              <svg viewBox="0 0 120 84" width="140" height="98">
-                <rect x="16" y="12" width="88" height="60" rx="8" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2.2"/>
-                <rect x="26" y="22" width="30" height="40" rx="4" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2"/>
-                <path d="M64 30h28M64 42h22M64 54h26" stroke="#1A1A1A" stroke-width="2.4" stroke-linecap="round"/>
-              </svg>
+            <div class="it-art">
+              <img src="photos/run-01.webp" alt="">
             </div>
             <div class="it-meta">
               <span>Linh · 06:40</span>
@@ -202,9 +219,12 @@
           </div>
 
           <div class="it-polaroid it-you">
-            <div class="it-art" style="background: #FFF8EE;">
-              <svg class="o-sticker" width="44" height="44"><use href="#i-camera"/></svg>
-              <span style="font: 700 13px/1 var(--heading); color: #3F3A34;">Chỗ của bạn</span>
+            <div class="it-art">
+              <img src="photos/run-02.webp" alt="">
+              <span class="it-art-tag">
+                <svg class="o-sticker" width="14" height="14"><use href="#i-camera"/></svg>
+                <span>Chỗ của bạn</span>
+              </span>
             </div>
             <div class="it-meta">
               <span>Bạn · Ngày 1</span>

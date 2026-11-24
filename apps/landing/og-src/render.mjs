@@ -37,10 +37,24 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
+const PHOTO_MAP = {
+  '/og-src/photos/ielts-cover.webp': 'E:/Ourney/agy-work/photos/ielts_study/cover.webp',
+  '/og-src/photos/ielts-01.webp': 'E:/Ourney/agy-work/photos/ielts_study/01.webp',
+  '/og-src/photos/ielts-03.webp': 'E:/Ourney/agy-work/photos/ielts_study/03.webp',
+  '/og-src/photos/ielts-04.webp': 'E:/Ourney/agy-work/photos/ielts_study/04.webp',
+  '/og-src/photos/run-01.webp': 'E:/Ourney/agy-work/photos/morning_run/01.webp',
+  '/og-src/photos/run-02.webp': 'E:/Ourney/agy-work/photos/morning_run/02.webp',
+};
+
 function startServer(rootDir) {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const urlPath = decodeURIComponent(req.url.split('?')[0]);
+      if (PHOTO_MAP[urlPath] && fs.existsSync(PHOTO_MAP[urlPath])) {
+        res.writeHead(200, { 'Content-Type': 'image/webp' });
+        fs.createReadStream(PHOTO_MAP[urlPath]).pipe(res);
+        return;
+      }
       const rel = urlPath === '/' ? '/index.html' : urlPath;
       const filePath = path.join(rootDir, rel);
       if (!filePath.startsWith(rootDir) || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/import/data/import_providers.dart';
 import '../features/journeys/data/create_progress.dart';
 import '../features/onboarding/onboarding_providers.dart';
 import '../features/profile/settings_providers.dart';
@@ -58,6 +59,14 @@ Future<void> resetAccountLocalState(Ref ref) async {
     ..invalidate(hideWeightOnShareProvider)
     ..invalidate(blurPhotosOnShareProvider)
     ..invalidate(reminderSettingsProvider);
+  // Import job folders nobody owns any more (the rows go with the database
+  // wipe on sign-out). A job whose rows survive, such as an expired session's,
+  // keeps its files; a running job stops on its own when the account changes.
+  try {
+    await ref.read(importJobRunnerProvider).sweepOrphans();
+  } on Object {
+    // Not wired (no data layer): nothing to clean.
+  }
   // Signed out: the plan is empty, so every pending reminder is cancelled.
   await ref.read(reminderSchedulerProvider).reschedule();
 }

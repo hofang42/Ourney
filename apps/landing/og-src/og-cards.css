@@ -42,8 +42,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-variant-ligatures: none;
-  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "calt" 0, "hlig" 0;
+  font-variant-ligatures: no-common-ligatures;
+  font-feature-settings: "liga" 0, "clig" 0;
 }
 
 html, body {
@@ -53,8 +53,8 @@ html, body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--body);
-  font-variant-ligatures: none;
-  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0, "calt" 0, "hlig" 0;
+  font-variant-ligatures: no-common-ligatures;
+  font-feature-settings: "liga" 0, "clig" 0;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -285,6 +285,13 @@ body.og-square, html.og-square {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.og-fc-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .og-fc-pill {

@@ -27,7 +27,7 @@ apps/mobile/lib/personas/
 ├── persona_contract.dart     # F: dữ liệu đầu vào cho dòng thời gian, màn hình chụp, thiệp chia sẻ
 ├── quiet_transformer/        # @hofang42
 │   ├── timeline.dart         #   connectedWeightCurve
-│   ├── camera_hud.dart       #   ghostAlignVault
+│   ├── camera_hud.dart       #   ghostAlignVault   (đã thay thế 2026-11-20: camera chung, xem camera-compose-redesign-2026-11-20.md)
 │   ├── share_card.dart       #   sideBySideArchive
 │   └── l10n/                 #   bản dịch vi/en riêng của phong cách
 ├── accountability_squad/     # @nguyenductien-qnm
@@ -65,21 +65,21 @@ Bộ chuyển giao diện trong các tính năng `journeys`, `camera`, `share_ca
 | ID | Việc | Bản thiết kế | Xong khi | Phụ thuộc |
 |---|---|---|---|---|
 | Q1 | Dòng thời gian `connectedWeightCurve`: đường cong cân nặng lấy từ `metricValue`, nối vào trục dọc gồm ảnh các mốc (ngày 1, 7, 14 và hôm nay). Ẩn số khi hành trình ẩn chỉ số (FR-B7). Viết phần vẽ đường cong để R1 dùng lại | P1 · giữa | Đúng khi chưa có, có một và có nhiều điểm số liệu | Không |
-| Q2 | Màn hình chụp `ghostAlignVault`: ảnh ngày đầu hiện mờ 30% (bật tắt được) để đứng đúng tư thế, nhãn `Private Vault · Day N` có biểu tượng khoá dạng vector, thanh trượt cân nặng ghi vào `metricValue` | P1 · trái | Check-in vẫn tối đa 3 chạm (FR-C4); ảnh mờ không rời khỏi máy | Không |
+| Q2 | Màn hình chụp `ghostAlignVault`: ảnh ngày đầu hiện mờ 30% (bật tắt được) để đứng đúng tư thế, nhãn `Private Vault · Day N` có biểu tượng khoá dạng vector, thanh trượt cân nặng ghi vào `metricValue` | P1 · trái | Check-in vẫn tối đa 3 chạm (FR-C4); ảnh mờ không rời khỏi máy | Không | _Đã thay thế 2026-11-20: một camera chung cho mọi persona (chỉ đổi màu nhấn, cộng bóng mờ ngày đầu và ảnh đối phương); xem `docs/design-v2/camera-compose-redesign-2026-11-20.md`._
 | Q3 | Thiệp chia sẻ `sideBySideArchive`: ảnh ngày đầu đặt cạnh ảnh hôm nay, công tắc "Ẩn số cân". Xuất qua bộ xuất ảnh hiện có (1080×1920 và 1080×1350) | P1 · phải | Mặc định ẩn số cân và làm mờ ảnh khi chia sẻ (FR-B7), người dùng tự tắt được | Không |
 
 #### @hofang42 — R: phong cách 5 Aesthetic Flexer (30 ngày tập luyện)
 | ID | Việc | Bản thiết kế | Xong khi | Phụ thuộc |
 |---|---|---|---|---|
 | R1 | Dòng thời gian `athleticTelemetry`: biểu đồ phát sáng và trục dọc gồm ảnh các mốc, dùng lại phần vẽ của Q1. Mẫu `workout30` không có chỉ số mặc định thì không vẽ quãng đường, chỉ vẽ trục ngày | P5 · trái | Đúng cả khi hành trình có và không có chỉ số | Q1 |
-| R2 | Màn hình chụp `stravaStickerStudio`: sau khi chụp, chọn một trong ba kiểu lớp phủ (Bold HUD, Minimal Stamp, Film Strip) hiển thị ngày thứ N, chuỗi ngày và chỉ số nếu có | P5 · giữa | Đổi kiểu bằng nhãn bấm; lớp phủ không in vào ảnh gốc | Không |
+| R2 | Màn hình chụp `stravaStickerStudio`: sau khi chụp, chọn một trong ba kiểu lớp phủ (Bold HUD, Minimal Stamp, Film Strip) hiển thị ngày thứ N, chuỗi ngày và chỉ số nếu có | P5 · giữa | Đổi kiểu bằng nhãn bấm; lớp phủ không in vào ảnh gốc | Không | _Đã thay thế 2026-11-20: một camera chung cho mọi persona (chỉ đổi màu nhấn, cộng bóng mờ ngày đầu và ảnh đối phương); xem `docs/design-v2/camera-compose-redesign-2026-11-20.md`._
 | R3 | Thiệp chia sẻ `transparentStorySticker`: ảnh story dọc 9:16 kèm dải màu những ngày đã tập. Nút chia sẻ dùng bảng chia sẻ của hệ thống (đăng thẳng lên Instagram Stories là FR-E4, để sau) | P5 · phải | Dải màu đúng ngày có và không có check-in, không chỉ phân biệt bằng màu | Không |
 
 #### @nguyenductien-qnm — S: phong cách 2 Accountability Squad (học tiếng Anh)
 | ID | Việc | Bản thiết kế | Xong khi | Phụ thuộc |
 |---|---|---|---|---|
 | S1 | Dòng thời gian `steppingStoneQuest`: con đường chữ S dẫn tới chiếc cúp ngày cuối, ảnh Polaroid nghiêng ở các mốc. Viết phần vẽ con đường để M1 dùng lại | P2 · trái | Cuộn mượt với hơn 30 ngày; mốc 7, 14 và hôm nay hiện đúng | Không |
-| S2 | Màn hình chụp `studyTimerSnap`: nhãn `số phút học · 🔥 chuỗi ngày` (số phút lấy từ chỉ số "Thời gian học") và nhãn giờ chụp | P2 · giữa | Hiện đúng số phút và chuỗi ngày; hành trình không có chỉ số thì ẩn phần số phút | Không |
+| S2 | Màn hình chụp `studyTimerSnap`: nhãn `số phút học · 🔥 chuỗi ngày` (số phút lấy từ chỉ số "Thời gian học") và nhãn giờ chụp | P2 · giữa | Hiện đúng số phút và chuỗi ngày; hành trình không có chỉ số thì ẩn phần số phút | Không | _Đã thay thế 2026-11-20: một camera chung cho mọi persona (chỉ đổi màu nhấn, cộng bóng mờ ngày đầu và ảnh đối phương); xem `docs/design-v2/camera-compose-redesign-2026-11-20.md`._
 | S3 | Bức tường ảnh `squadPolaroidWall`, hiện ở màn Squad hôm nay và dùng làm thiệp chia sẻ của phong cách 2: thanh `x/y đã check-in hôm nay`, lưới ảnh Polaroid 2 cột co giãn theo độ rộng, cảm xúc dùng `reaction_bar`, ô viền nét đứt "đang chờ" cho người chưa chụp. **Bản đầu chưa có nút Nudge** (FR-G3 để sau) | P2 · phải | Nhóm từ 1 đến 10 người hiện đúng; chế độ không máy chủ hiện `NeedsServerView` | Không (cần F3 để hiện trong ứng dụng) |
 
 #### @nguyenductien-qnm — M: phong cách 3 Memory Collectors (du lịch)

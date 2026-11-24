@@ -117,6 +117,7 @@ class _JourneyPickerSheetState extends State<JourneyPickerSheet> {
           fieldKey: const ValueKey('journey-picker-search'),
           label: l10n.camera_pickerSearch,
           controller: _query,
+          pill: true,
           textInputAction: TextInputAction.search,
           onChanged: (_) => setState(() {}),
         ),

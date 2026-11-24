@@ -317,7 +317,7 @@ class _CodeBoxes extends StatelessWidget {
                               color: ui.fill,
                               borderRadius: BorderRadius.circular(UiRadius.otp),
                               border: Border.all(
-                                color: i == active ? ui.accent : ui.border,
+                                color: i == active ? ui.accent : ui.fieldBorder,
                                 width: i == active
                                     ? UiBorder.standard
                                     : UiBorder.thin,

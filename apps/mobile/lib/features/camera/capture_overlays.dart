@@ -111,6 +111,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
             child: Semantics(
               button: true,
               label: l10n.camera_partnerPhoto,
+              hint: l10n.camera_partnerPhotoShrinkHint,
               excludeSemantics: true,
               child: ColoredBox(color: UiCamera.bg, child: image),
             ),
@@ -127,6 +128,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
         key: const ValueKey('overlay-partner-pip'),
         onPressed: _enlarge,
         semanticLabel: l10n.camera_partnerPhoto,
+        semanticHint: l10n.camera_partnerPhotoEnlargeHint,
         excludeChildSemantics: true,
         borderRadius: BorderRadius.circular(UiRadius.thumb),
         minSize: const Size(UiSize.tap, UiSize.tap),

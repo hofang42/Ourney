@@ -284,12 +284,6 @@ abstract class CameraL10n {
   /// **'Bóng ngày 1 · Tắt'**
   String get camera_ghostOff;
 
-  /// No description provided for @camera_allJourneys.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tất cả hành trình'**
-  String get camera_allJourneys;
-
   /// No description provided for @camera_pickerTitle.
   ///
   /// In vi, this message translates to:
@@ -307,12 +301,6 @@ abstract class CameraL10n {
   /// In vi, this message translates to:
   /// **'Không có hành trình nào khớp.'**
   String get camera_pickerEmpty;
-
-  /// No description provided for @camera_pickerClose.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đóng'**
-  String get camera_pickerClose;
 
   /// No description provided for @camera_pickerNotShot.
   ///
@@ -353,8 +341,20 @@ abstract class CameraL10n {
   /// No description provided for @camera_partnerPhoto.
   ///
   /// In vi, this message translates to:
-  /// **'Ảnh của người ấy, chạm để phóng to'**
+  /// **'Ảnh của người ấy'**
   String get camera_partnerPhoto;
+
+  /// No description provided for @camera_partnerPhotoEnlargeHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm để phóng to'**
+  String get camera_partnerPhotoEnlargeHint;
+
+  /// No description provided for @camera_partnerPhotoShrinkHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chạm để thu nhỏ'**
+  String get camera_partnerPhotoShrinkHint;
 }
 
 class _CameraL10nDelegate extends LocalizationsDelegate<CameraL10n> {

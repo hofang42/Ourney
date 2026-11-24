@@ -48,7 +48,7 @@ Shared components in `app.css` (class families): `app-dock`/`shell-dock`/`dock-p
 | `FloatingDock` (5 tabs, centre snap pill, long-press wheel, per-skin `*-dock`, camera dark dock) | `app/app_dock.dart`, `ui/components/dock.dart`, `journey_wheel.dart` | PARTIAL: 5 tabs, accent pill, wheel and camera dock are present. Per-skin dock chrome (quiet/squad/memory/couple/flexer/minimal CSS variants, selection capsule, readonly dock) not verified; wheel/dock labels not diffed. |
 | `Root` theme variables (`--bg/--surface/--ink/--muted`, skin variables, `largeType`/`reduceMotion`/`reduceTransparency` classes) | `ui/skins.dart`, `ui/components/skin_scope.dart`, `app/theme/*`; `MediaQuery` accessibility flags | PARTIAL: `themeMode` is hard-wired to `ThemeMode.system` (`app/app.dart:39`); no in-app light/dark/system preference (see Settings). |
 | `ReminderNotification` (in-app banner, 6 skin tones) | none (OS local notifications only, `features/reminders`) | MISSING |
-| `MissedDayOverlay` ("NGÀY 9 - NGHỈ/LỠ" chip + action sheet "ngày nghỉ./ngày lỡ.") | none (`journey_chain.dart`/`today_card.dart` render a missed state only) | MISSING |
+| `MissedDayOverlay` ("NGÀY 9 - NGHỈ/LỠ" chip + action sheet "ngày nghỉ./ngày lỡ.") | none (the month grid (`widgets/timeline_archive.dart`) and `today_card.dart` render a missed state only) | MISSING |
 | "Chụp thêm ảnh hôm nay" floating retake hero (`today-retake-hero`) | none on journey home (`checkin_screen` supports extra photos) | MISSING |
 | `system-toast` (global toast) | ad-hoc SnackBars per screen | PARTIAL (shallow) |
 | `CreateSheet` (the "+" sheet) | `journeys_list_screen.dart` `_menuOpen` add menu | PARTIAL (shallow): menu instead of Figma's drag-to-close create sheet |

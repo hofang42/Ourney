@@ -49,6 +49,7 @@ bool isTransient(OurneyErrorCode code) => switch (code) {
   OurneyErrorCode.unknown ||
   OurneyErrorCode.internal ||
   OurneyErrorCode.unauthenticated ||
+  OurneyErrorCode.serverOutdated ||
   OurneyErrorCode.rateLimited ||
   OurneyErrorCode.storageListingFailed ||
   OurneyErrorCode.storageCleanupFailed ||
@@ -68,6 +69,7 @@ class Outbox {
     DateTime Function()? now,
     Timer Function(Duration, void Function())? timer,
     this.maxAttempts = 50,
+    this.onDead,
   }) : _now = now ?? DateTime.now,
        _timer = timer ?? Timer.new;
 
@@ -79,9 +81,62 @@ class Outbox {
   /// Non-`offline` failures after which an item is given up.
   final int maxAttempts;
 
+  /// Called after an item was marked dead.
+  final void Function(OutboxRow row)? onDead;
+
   Timer? _retry;
   Future<void>? _running;
+
+  /// Calls of [exclusive] that are waiting or running.
+  int _exclusive = 0;
+
+  /// Tail of the [exclusive] queue: a mutex, calls run one after another.
+  Future<void> _lockTail = Future<void>.value();
+
+  /// Flushes asked while the lock is held: they run (and complete) once it
+  /// is free, with the strongest `force` among them.
+  final List<Completer<void>> _blockedFlushes = [];
+  bool _blockedForce = false;
+
+  /// Runs [fn] while no pass is running and none can start. Calls queue up
+  /// one behind the other (a mutex); flushes asked meanwhile wait for the lock
+  /// and then run. For read-modify-write on queued rows, e.g. merging a queued
+  /// update into a new one.
+  ///
+  /// Deadlocks: [fn] must not await [flush], must not call [exclusive] again
+  /// (nested calls wait for themselves), and [exclusive] must never be called
+  /// from inside an executor (the pass it waits for is the caller). It must
+  /// never be called inside a `db.transaction` either: the lock holder may
+  /// wait for the database while the transaction waits for the lock.
+  Future<T> exclusive<T>(Future<T> Function() fn) async {
+    _exclusive++;
+    final prev = _lockTail;
+    final release = Completer<void>();
+    _lockTail = release.future;
+    try {
+      await prev;
+      while (_running != null) {
+        await _running;
+      }
+      return await fn();
+    } finally {
+      _exclusive--;
+      release.complete();
+      if (_exclusive == 0 && _blockedFlushes.isNotEmpty) {
+        final waiting = List.of(_blockedFlushes);
+        _blockedFlushes.clear();
+        final force = _blockedForce;
+        _blockedForce = false;
+        final run = flush(force: force);
+        for (final c in waiting) {
+          unawaited(run.whenComplete(c.complete));
+        }
+      }
+    }
+  }
+
   bool _again = false;
+  bool _forceAgain = false;
   bool _disposed = false;
 
   /// Consecutive failed passes (database errors); drives the retry backoff.
@@ -198,8 +253,17 @@ class Outbox {
   /// app resumed). Concurrent calls coalesce into one extra pass.
   Future<void> flush({bool force = false}) {
     if (_disposed) return Future.value();
+    if (_exclusive > 0) {
+      // Held by [exclusive]: run (and complete) once it is over.
+      _blockedForce = _blockedForce || force;
+      final c = Completer<void>();
+      _blockedFlushes.add(c);
+      return c.future;
+    }
     if (_running != null) {
       _again = true;
+      // A forced flush asked while one is running must still ignore backoff.
+      if (force) _forceAgain = true;
       return _running!;
     }
     final run = _runGuarded(force).whenComplete(() => _running = null);
@@ -237,8 +301,10 @@ class Outbox {
     var forceNow = force;
     do {
       _again = false;
-      await _pass(forceNow);
+      final forced = forceNow || _forceAgain;
+      _forceAgain = false;
       forceNow = false;
+      await _pass(forced);
     } while (_again && !_disposed);
   }
 
@@ -277,10 +343,13 @@ class Outbox {
           continue;
         }
         final attempts = head.attempts + 1;
-        // Waiting for the network or a fresh sign-in never kills an item.
+        // Waiting for the network, a fresh sign-in or a server migration
+        // (serverOutdated) never kills an item: dead items get re-pulled
+        // over and can lose unsynced photos.
         final waiting =
             error.error == OurneyErrorCode.offline ||
-            error.error == OurneyErrorCode.unauthenticated;
+            error.error == OurneyErrorCode.unauthenticated ||
+            error.error == OurneyErrorCode.serverOutdated;
         if (!waiting && attempts >= maxAttempts) {
           await _markDead(head, error.toString());
           continue;
@@ -305,13 +374,14 @@ class Outbox {
     }
   }
 
-  Future<void> _markDead(OutboxRow row, String reason) {
+  Future<void> _markDead(OutboxRow row, String reason) async {
     debugPrint('outbox: giving up on ${row.kind} ${row.entityKey}: $reason');
-    return (_db.update(
+    await (_db.update(
       _db.uploadQueue,
     )..where((t) => t.id.equals(row.id))).write(
       UploadQueueCompanion(dead: const Value(true), lastError: Value(reason)),
     );
+    onDead?.call(row);
   }
 
   void _schedule(Duration delay) {

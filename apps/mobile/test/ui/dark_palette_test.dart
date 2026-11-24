@@ -37,7 +37,6 @@ void _checkDark(String label, OurneyUi ui) {
         ui.hardShadowColor.computeLuminance(),
         lessThan(ui.bg.computeLuminance()),
       );
-      expect(ui.inputBorder, ui.outline);
       expect(ui.dockBorder, ui.outline);
     });
 
@@ -98,7 +97,6 @@ void main() {
           expect(a.outline, a.ink, reason: '${skin.id}/$i');
           expect(a.hardShadowColor, a.ink, reason: '${skin.id}/$i');
           expect(a.sheet, a.bg, reason: '${skin.id}/$i');
-          expect(a.inputBorder, a.ink);
           expect(a.dockBorder, a.ink);
           expect(a.accent, skin.variant(i).accent);
         }

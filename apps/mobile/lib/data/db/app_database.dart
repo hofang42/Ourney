@@ -182,6 +182,10 @@ class UploadQueue extends Table {
 
 /// Pull-sync cursors: server `updated_at` (exact string) per table, plus
 /// bookkeeping keys such as `_owner` (user the cache belongs to).
+/// DB cursor holding the JSON list of committed, deletable media trash paths
+/// (see `MediaWipe`).
+const String pendingTrashCursorKey = 'media.pendingTrash';
+
 @DataClassName('SyncCursorRow')
 class SyncCursor extends Table {
   TextColumn get tableKey => text()();
@@ -189,6 +193,65 @@ class SyncCursor extends Table {
 
   @override
   Set<Column> get primaryKey => {tableKey};
+}
+
+/// A durable "retell a past journey" job (schema version 7, not released yet:
+/// these tables may still change in place): the draft, so a
+/// kill mid-import is finished at the next launch. `id` is the journey's
+/// client id, so a resume never creates a second journey.
+@DataClassName('ImportJobRow')
+class ImportJobs extends Table {
+  TextColumn get id => text()();
+  TextColumn get title => text()();
+  TextColumn get emoji => text()();
+  TextColumn get templateId => text()();
+  TextColumn get layout => text().nullable()();
+  TextColumn get startDate => text().map(const LocalDateConverter())();
+  TextColumn get endDate => text().map(const LocalDateConverter())();
+  TextColumn get timezone => text()();
+  BoolColumn get continues => boolean().withDefault(const Constant(false))();
+
+  /// `ImportPhase.wire`.
+  TextColumn get phase => text()();
+
+  /// The account that started the job; no other account may run it.
+  TextColumn get ownerId => text()();
+
+  /// Saving was paused by the person; the launch resume leaves it alone.
+  BoolColumn get paused => boolean().withDefault(const Constant(false))();
+
+  /// `ImportFailure.wire` of the last failed create (null: none).
+  TextColumn get createFailure => text().nullable()();
+  IntColumn get createdAt => integer().map(const UtcMicrosConverter())();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One photo of an [ImportJobs] row. `id` is also the check-in id.
+@DataClassName('ImportJobPhotoRow')
+class ImportJobPhotos extends Table {
+  TextColumn get id => text()();
+  TextColumn get jobId => text()();
+  IntColumn get position => integer()();
+  TextColumn get sourcePath => text().nullable()();
+  TextColumn get photoFile => text().nullable()();
+  TextColumn get thumbFile => text().nullable()();
+  TextColumn get localDate => text().map(const LocalDateConverter())();
+  IntColumn get secondsOfDay => integer()();
+  IntColumn get offsetMinutes => integer().nullable()();
+
+  /// Content key of the picked photo (so "Edit details" still recognises it).
+  TextColumn get dedupeKey => text().nullable()();
+
+  /// `ImportPhotoState.wire`.
+  TextColumn get state => text()();
+
+  /// `ImportFailure.wire`.
+  TextColumn get failure => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
 }
 
 @DriftDatabase(
@@ -201,13 +264,15 @@ class SyncCursor extends Table {
     Blocks,
     UploadQueue,
     SyncCursor,
+    ImportJobs,
+    ImportJobPhotos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -251,12 +316,26 @@ class AppDatabase extends _$AppDatabase {
           'ON check_ins (journey_id, local_date)',
         );
       }
+      if (from < 7) {
+        // Durable retell (import) jobs. Schema 7 is unreleased: its tables can
+        // still change in place until it ships.
+        await m.createTable(importJobs);
+        await m.createTable(importJobPhotos);
+      }
     },
   );
 
   /// Removes every cached row (sign-out, account deletion, user switch).
+  /// Keeps [pendingTrashCursorKey]: the media-wipe record must survive the
+  /// wipe it is written alongside.
   Future<void> wipe() => transaction(() async {
     for (final table in allTables) {
+      if (table.actualTableName == syncCursor.actualTableName) {
+        await (delete(
+          syncCursor,
+        )..where((t) => t.tableKey.equals(pendingTrashCursorKey).not())).go();
+        continue;
+      }
       await delete(table).go();
     }
   });

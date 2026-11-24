@@ -8,11 +8,14 @@ import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/checkin/photo_compressor.dart';
+import 'package:ourney/features/import/data/import_files.dart';
+import 'package:ourney/features/import/data/import_job_store.dart';
+import 'package:ourney/features/import/data/import_photo_picker.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
-import 'package:ourney/features/sharing/data/sharing_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../import/import_fakes.dart';
 import '../journeys/journeys_fakes.dart';
 
 export '../journeys/journeys_fakes.dart';
@@ -314,6 +317,7 @@ class FakeChatRepository implements ChatRepository {
     String conversationId,
     String body, {
     String? replyToCheckInId,
+    String? draftId,
   }) => throw UnimplementedError();
   @override
   Future<ChatMessage> sendPhoto(
@@ -360,13 +364,6 @@ class NoopDrafts implements DraftFiles {
   Future<void> discard(Iterable<String> paths) async {}
 }
 
-class FakeRetellPicker implements RetellPhotoPicker {
-  FakeRetellPicker(this.photos);
-  final List<RetellPhoto> photos;
-  @override
-  Future<List<RetellPhoto>> pickPhotos() async => photos;
-}
-
 class SharingHarness {
   SharingHarness(this.container);
   final ProviderContainer container;
@@ -389,7 +386,9 @@ Future<SharingHarness> pumpSharing(
   FakeInsightsRepository? insights,
   FakeChatRepository? chat,
   FakeFriendRepository? friendRepo,
-  RetellPhotoPicker? picker,
+  ImportPhotoPicker? picker,
+  ImportJobStore? importStore,
+  ImportFiles? importFiles,
   AppConfig config = testBackendConfig,
   Locale locale = const Locale('en'),
   Size size = const Size(420, 1800),
@@ -439,8 +438,12 @@ Future<SharingHarness> pumpSharing(
       deviceTimezoneProvider.overrideWith((ref) => timezone ?? testTz),
       photoCompressorProvider.overrideWithValue(FakeCompressor()),
       draftFilesProvider.overrideWithValue(NoopDrafts()),
-      retellPhotoPickerProvider.overrideWithValue(
-        picker ?? FakeRetellPicker(const []),
+      importPhotoPickerProvider.overrideWithValue(
+        picker ?? FakeImportPicker(const []),
+      ),
+      importFilesProvider.overrideWithValue(importFiles ?? FakeImportFiles()),
+      importJobStoreProvider.overrideWithValue(
+        importStore ?? InMemoryImportJobStore(),
       ),
     ],
   );

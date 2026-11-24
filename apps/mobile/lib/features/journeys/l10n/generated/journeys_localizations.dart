@@ -404,11 +404,17 @@ abstract class JourneysL10n {
   /// **'Nhập tên chỉ số.'**
   String get journeys_errorMetricName;
 
-  /// No description provided for @journeys_errorVisibility.
+  /// No description provided for @journeys_errorInvalid.
   ///
   /// In vi, this message translates to:
-  /// **'Kiểu hiển thị này không dùng được cho hành trình này.'**
-  String get journeys_errorVisibility;
+  /// **'Dữ liệu chưa hợp lệ. Kiểm tra lại rồi thử lại nhé.'**
+  String get journeys_errorInvalid;
+
+  /// No description provided for @journeys_errorLimit.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.'**
+  String get journeys_errorLimit;
 
   /// No description provided for @journeys_errorNotAlone.
   ///
@@ -2069,7 +2075,7 @@ abstract class JourneysL10n {
   /// No description provided for @journeys_dna_import_link.
   ///
   /// In vi, this message translates to:
-  /// **'Nhập hành trình đã qua'**
+  /// **'Kể lại hành trình đã qua'**
   String get journeys_dna_import_link;
 
   /// No description provided for @journeys_home_introQuiet.
@@ -3187,6 +3193,120 @@ abstract class JourneysL10n {
   /// In vi, this message translates to:
   /// **'Một vài cài đặt chưa lưu được'**
   String get journeys_createSettingsNotSaved;
+
+  /// Confirm sheet title before discarding failed uploads.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ ảnh chưa gửi được?'**
+  String get journeys_deadDiscardTitle;
+
+  /// Confirm sheet body: how many photos are deleted.
+  ///
+  /// In vi, this message translates to:
+  /// **'{count, plural, other{{count} ảnh sẽ bị xóa khỏi máy này và không gửi lên được nữa. Không hoàn tác được.}}'**
+  String journeys_deadDiscardBody(int count);
+
+  /// No description provided for @journeys_timelineRecent.
+  ///
+  /// In vi, this message translates to:
+  /// **'Gần đây'**
+  String get journeys_timelineRecent;
+
+  /// No description provided for @journeys_timelineByMonth.
+  ///
+  /// In vi, this message translates to:
+  /// **'Theo tháng'**
+  String get journeys_timelineByMonth;
+
+  /// No description provided for @journeys_monthSummary.
+  ///
+  /// In vi, this message translates to:
+  /// **'{checked}/{days} ngày · {photos} ảnh'**
+  String journeys_monthSummary(int checked, int days, int photos);
+
+  /// No description provided for @journeys_monthA11y.
+  ///
+  /// In vi, this message translates to:
+  /// **'{month}, {checked} trên {days} ngày đã check-in, {photos} ảnh'**
+  String journeys_monthA11y(String month, int checked, int days, int photos);
+
+  /// No description provided for @journeys_monthExpandHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở rộng'**
+  String get journeys_monthExpandHint;
+
+  /// No description provided for @journeys_monthCollapseHint.
+  ///
+  /// In vi, this message translates to:
+  /// **'Thu gọn'**
+  String get journeys_monthCollapseHint;
+
+  /// No description provided for @journeys_jumpToMonth.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đi tới {month}'**
+  String journeys_jumpToMonth(String month);
+
+  /// No description provided for @journeys_jumpToYear.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem năm {year}'**
+  String journeys_jumpToYear(int year);
+
+  /// No description provided for @journeys_jumpAnnounce.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đang ở {month}'**
+  String journeys_jumpAnnounce(String month);
+
+  /// No description provided for @journeys_earlierLink.
+  ///
+  /// In vi, this message translates to:
+  /// **'Trước đó: ngày 1–{to}, {checked} ngày đã check-in'**
+  String journeys_earlierLink(int to, int checked);
+
+  /// No description provided for @journeys_earlierView.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem'**
+  String get journeys_earlierView;
+
+  /// No description provided for @journeys_daysToGo.
+  ///
+  /// In vi, this message translates to:
+  /// **'Còn {days} ngày · Đích là ngày {finish}'**
+  String journeys_daysToGo(int days, int finish);
+
+  /// No description provided for @journeys_range30.
+  ///
+  /// In vi, this message translates to:
+  /// **'30 ngày'**
+  String get journeys_range30;
+
+  /// No description provided for @journeys_rangeAll.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tất cả'**
+  String get journeys_rangeAll;
+
+  /// No description provided for @journeys_clearYear.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bỏ lọc năm {year}'**
+  String journeys_clearYear(int year);
+
+  /// No description provided for @journeys_range30Pace.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ít số liệu trong 30 ngày, đang hiện số ngày check-in'**
+  String get journeys_range30Pace;
+
+  /// No description provided for @journeys_startsIn.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bắt đầu sau {days} ngày · {total} ngày'**
+  String journeys_startsIn(int days, int total);
 }
 
 class _JourneysL10nDelegate extends LocalizationsDelegate<JourneysL10n> {

@@ -84,6 +84,9 @@ class DataLayer {
       executor: sync.execute,
       now: journeyClock.now,
       timer: timer,
+      onDead: (row) => unawaited(
+        sync.repullAfterDrop(OutboxKind.fromWire(row.kind), row.entityKey),
+      ),
     );
     sync.outbox = outbox;
     final ctx = DataContext(

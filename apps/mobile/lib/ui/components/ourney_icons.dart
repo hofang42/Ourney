@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../contrast.dart';
 import '../tokens.dart';
 
 /// One drawn primitive of an Ourney sticker icon (24x24 viewBox).
@@ -653,11 +654,7 @@ class OurneyIconPainter extends CustomPainter {
   final Color? haloFallback;
 
   /// WCAG-style luminance ratio of two colors (>= 1).
-  static double contrast(Color a, Color b) {
-    final x = a.computeLuminance() + 0.05;
-    final y = b.computeLuminance() + 0.05;
-    return x > y ? x / y : y / x;
-  }
+  static double contrast(Color a, Color b) => uiContrast(a, b);
 
   static List<double> _oklab(Color c) {
     double lin(double v) =>

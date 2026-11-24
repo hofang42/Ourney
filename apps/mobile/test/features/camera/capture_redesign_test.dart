@@ -148,7 +148,7 @@ void main() {
       expect(fade().opacity, 0);
     });
 
-    testWidgets('the state is announced to screen readers', (tester) async {
+    testWidgets('the state is announced through the service', (tester) async {
       await pump(tester);
       await tester.tap(find.byKey(const ValueKey('capture-flash')));
       await tester.pump();

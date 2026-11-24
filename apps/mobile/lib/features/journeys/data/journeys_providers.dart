@@ -11,6 +11,8 @@ import '../../../app/providers.dart';
 import '../../../data/sync/outbox.dart' show isTransient;
 
 import '../../../shared/time_zones.dart';
+import '../domain/journey_progress.dart';
+import '../domain/timeline_window.dart';
 
 export '../../../app/journey_clock.dart';
 
@@ -184,6 +186,25 @@ final myCheckInsProvider = StreamProvider.autoDispose
           .watch(checkInRepositoryProvider)
           .watchForJourney(id, userId: userId);
     }, retry: _noRetry);
+
+/// The caller's progress in a journey plus the month index of its timeline,
+/// computed once per change of the journey, the membership, the check-ins or
+/// of today (the 15-minute day ticker) instead of on every build of the
+/// detail screen. Null until the check-ins have loaded.
+final journeyTimelineIndexProvider = Provider.autoDispose
+    .family<TimelineIndex?, String>((ref, id) {
+      final journey = ref.watch(journeyByIdProvider(id)).value;
+      final checkIns = ref.watch(myCheckInsProvider(id));
+      if (journey == null || !checkIns.hasValue) return null;
+      return TimelineIndex.build(
+        JourneyProgress.compute(
+          journey: journey,
+          membership: ref.watch(myMembershipProvider(id)).value,
+          checkIns: checkIns.value!,
+          now: ref.watch(journeysNowProvider),
+        ),
+      );
+    });
 
 /// Unwraps Riverpod's [ProviderException] (a dependency in error state).
 Object rootError(Object error) {

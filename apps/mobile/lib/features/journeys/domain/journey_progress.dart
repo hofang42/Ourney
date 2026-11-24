@@ -82,6 +82,7 @@ class JourneyProgress {
     required this.summary,
     required this.checkInsByDate,
     this._checkInsOnDate,
+    this._lastDay,
   });
 
   factory JourneyProgress.compute({
@@ -118,6 +119,7 @@ class JourneyProgress {
       memberStart: effectiveStreakStart(journey.startDate, joined),
       summary: summary,
       checkInsByDate: byDate,
+      lastDay: _lastDayOf(journey, today, byDate.keys),
       checkInsOnDate: onDate,
     );
   }
@@ -133,6 +135,7 @@ class JourneyProgress {
   final Map<LocalDate, CheckIn> checkInsByDate;
 
   final Map<LocalDate, List<CheckIn>>? _checkInsOnDate;
+  final LocalDate? _lastDay;
 
   /// Every check-in of [date], oldest first.
   List<CheckIn> checkInsOn(LocalDate date) {
@@ -175,7 +178,11 @@ class JourneyProgress {
     final start = journey.startDate;
     LocalDate last;
     final end = journey.endDate;
-    if (end != null) {
+    if (!isActive) {
+      // Ended: never past its last day (see [lastDay]).
+      last = lastDay;
+      if (last.isBefore(start)) last = start;
+    } else if (end != null) {
       last = end;
     } else {
       last = today;
@@ -186,6 +193,59 @@ class JourneyProgress {
     }
     final count = start.daysUntil(last) + 1;
     return [for (var i = 0; i < count; i++) _day(start.addDays(i), i + 1)];
+  }
+
+  /// The calendar cell of one [date] (1-based day number from the journey
+  /// start), built on demand so long journeys never materialise every day.
+  TimelineDay dayAt(LocalDate date) =>
+      _day(date, journey.startDate.daysUntil(date) + 1);
+
+  /// The calendar cells from [from] to [to], both inclusive (empty when
+  /// [to] is before [from]).
+  List<TimelineDay> range(LocalDate from, LocalDate to) {
+    final count = from.daysUntil(to) + 1;
+    return [for (var i = 0; i < count; i++) dayAt(from.addDays(i))];
+  }
+
+  /// Days of the journey that have started, today included (0 before the
+  /// start). Journeys longer than 31 get the windowed timeline.
+  int get elapsedDays {
+    final n = journey.startDate.daysUntil(lastDay) + 1;
+    final total = journey.durationDays;
+    if (total != null && n > total) return total;
+    return n < 0 ? 0 : n;
+  }
+
+  /// The last day the timeline counts: today, but never past the end of a
+  /// fixed term, and for a journey that was ended early (status not active,
+  /// today still inside its term or open-ended) the day of its last
+  /// check-in, since the end date is not stored.
+  LocalDate get lastDay =>
+      _lastDay ?? _lastDayOf(journey, today, checkInsByDate.keys);
+
+  static LocalDate _lastDayOf(
+    Journey journey,
+    LocalDate today,
+    Iterable<LocalDate> checkInDates,
+  ) {
+    final end = journey.endDate;
+    var last = end != null && end.isBefore(today) ? end : today;
+    final endedEarly =
+        journey.status != JourneyStatus.active &&
+        (end == null || !today.isAfter(end));
+    if (endedEarly) {
+      // The journey row carries no "ended at" (only a server `updated_at`
+      // that any edit moves), so the last check-in, or the start day when
+      // there is none, is the last day.
+      LocalDate? latest;
+      for (final d in checkInDates) {
+        if (!d.isAfter(last) && (latest == null || d.isAfter(latest))) {
+          latest = d;
+        }
+      }
+      last = latest ?? (journey.startDate.isAfter(last) ? last : journey.startDate);
+    }
+    return last;
   }
 
   TimelineDay _day(LocalDate date, int number) {

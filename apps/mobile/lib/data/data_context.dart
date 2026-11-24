@@ -34,7 +34,7 @@ class DataContext {
   }) : store = LocalStore(db, files),
        newId = newId ?? const Uuid().v4 {
     // Leftovers of wipes that were interrupted before deleting their trash.
-    unawaited(MediaWipe.sweep([files.root, _draftsDir]));
+    unawaited(MediaWipe.recover(db, [files.root, _draftsDir]));
   }
 
   /// Check-in drafts folder (next to the media root).
@@ -90,7 +90,8 @@ class DataContext {
     // a failure anywhere keeps rows and files together, and the trash is only
     // deleted after the commit. The marker survives a late in-flight write:
     // the next user to sign in finds an owner that is not them and wipes again.
-    await MediaWipe.run(
+    Future<void> wipe() => MediaWipe.run(
+      db,
       [files.root, _draftsDir],
       (moveMedia) => db.transaction(() async {
         await db.wipe();
@@ -98,6 +99,10 @@ class DataContext {
         await moveMedia();
       }),
     );
+    // Never while a queue read-modify-write runs: its restore path would
+    // write rows into the wiped outbox.
+    final queue = outbox;
+    await (queue == null ? wipe() : queue.exclusive(wipe));
     sync?.notifyChanged();
   }
 }

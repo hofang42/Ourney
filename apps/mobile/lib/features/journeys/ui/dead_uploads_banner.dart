@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../data/data_providers.dart';
 import '../../../data/dead_uploads.dart';
+import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../l10n/generated/journeys_localizations.dart';
 
@@ -49,8 +50,19 @@ class DeadUploadsBanner extends ConsumerWidget {
               label: l10n.journeys_deadDiscard,
               compact: true,
               expand: false,
-              onPressed: () =>
-                  unawaited(dead?.discard(items) ?? Future.value()),
+              onPressed: () async {
+                final ok = await showUiConfirmSheet(
+                  context: context,
+                  title: l10n.journeys_deadDiscardTitle,
+                  message: l10n.journeys_deadDiscardBody(items.length),
+                  confirmLabel: l10n.journeys_deadDiscard,
+                  cancelLabel: AppLocalizations.of(context).common_cancel,
+                  destructive: true,
+                  sheetKey: const ValueKey('dead-uploads-confirm-sheet'),
+                  confirmKey: const ValueKey('dead-uploads-confirm'),
+                );
+                if (ok) await dead?.discard(items);
+              },
             ),
           ),
         ],

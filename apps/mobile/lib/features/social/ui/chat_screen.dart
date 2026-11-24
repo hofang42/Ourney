@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../data/repositories/chat_repository.dart' show messageLength;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../safety/data/safety_providers.dart';
@@ -38,7 +40,14 @@ class ChatScreen extends ConsumerStatefulWidget {
 
 class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _controller = TextEditingController();
+  final _inputFocus = FocusNode();
   bool _sending = false;
+
+  /// Identity of the text being composed: a retry of the same text reuses it
+  /// (idempotent send); editing the text or a success starts a new one.
+  String? _draftId;
+  String? _draftText;
+  int _draftSeq = 0;
 
   /// Pending photo context for the next message; cleared once sent.
   String? _replyTo;
@@ -50,13 +59,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     _replyTo = widget.replyToCheckInId;
+    _inputFocus.addListener(_onInputFocus);
     if (!ref.read(appConfigProvider).localOnly) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _markRead());
     }
   }
 
+  void _onInputFocus() => setState(() {});
+
   @override
   void dispose() {
+    _inputFocus
+      ..removeListener(_onInputFocus)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -75,12 +90,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (body.isEmpty || _sending) return;
     setState(() => _sending = true);
     final replyTo = _replyTo;
+    if (_draftId == null || _draftText != body) {
+      _draftId = '${DateTime.now().microsecondsSinceEpoch}-${_draftSeq++}';
+      _draftText = body;
+    }
+    final draftId = _draftId;
     final ok = await runSocialAction(
       context,
       () => ref
           .read(chatRepositoryProvider)
-          .sendText(widget.conversationId, body, replyToCheckInId: replyTo),
+          .sendText(
+            widget.conversationId,
+            body,
+            replyToCheckInId: replyTo,
+            draftId: draftId,
+          ),
     );
+    if (ok) {
+      _draftId = null;
+      _draftText = null;
+    }
     if (!mounted) return;
     setState(() {
       _sending = false;
@@ -395,14 +424,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             decoration: BoxDecoration(
               color: ui.fill,
               borderRadius: BorderRadius.circular(UiRadius.capsule),
-              border: Border.all(color: ui.border, width: UiBorder.thin),
+              // Rest: 3:1 field outline; focus: the 2dp accent like UiTextField.
+              border: Border.all(
+                color: _inputFocus.hasFocus ? ui.accent : ui.fieldBorder,
+                width: _inputFocus.hasFocus ? UiBorder.standard : UiBorder.thin,
+              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16),
             alignment: Alignment.center,
             child: TextField(
               key: const ValueKey('chat-input'),
               controller: _controller,
-              maxLength: kChatMessageMaxLength,
+              focusNode: _inputFocus,
+              inputFormatters: [ChatLengthFormatter(kChatMessageMaxLength)],
               minLines: 1,
               maxLines: 4,
               buildCounter:
@@ -412,14 +446,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     required isFocused,
                     maxLength,
                   }) {
-                    final max = maxLength ?? kChatMessageMaxLength;
-                    if (max - currentLength > 50) return null;
+                    // Same unit as the repository and the server (code points).
+                    final used = messageLength(_controller.text);
+                    const max = kChatMessageMaxLength;
+                    if (max - used > 50) return null;
                     return Text(
-                      l10n.social_messageCounter(currentLength, max),
+                      l10n.social_messageCounter(used, max),
                       style: UiText.body(
                         size: 11,
                         height: 1.4,
-                        color: currentLength >= max ? ui.danger : ui.inkMuted,
+                        color: used >= max ? ui.danger : ui.inkMuted,
                       ),
                     );
                   },
@@ -756,6 +792,49 @@ class _MediaImage extends ConsumerWidget {
               height: double.infinity,
               errorBuilder: (_, _, _) => placeholder,
             ),
+    );
+  }
+}
+
+/// Caps the text at [max] Unicode code points (what the server counts), not
+/// UTF-16 units or grapheme clusters.
+///
+/// - While an IME composition is active (Vietnamese Telex rewrites the
+///   composing text in place) nothing is cut: the commit that follows is
+///   checked instead, so a half-typed syllable is never destroyed.
+/// - A typed character that would overflow is rejected (the old value comes
+///   back, so the caret and the rest of the text stay put).
+/// - Only a larger insertion (a paste) is truncated to fit.
+class ChatLengthFormatter extends TextInputFormatter {
+  const ChatLengthFormatter(this.max);
+
+  final int max;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (messageLength(newValue.text) <= max) return newValue;
+    final composing = newValue.composing;
+    if (composing.isValid && !composing.isCollapsed) return newValue;
+    final added = messageLength(newValue.text) - messageLength(oldValue.text);
+    final oldComposing = oldValue.composing;
+    final committed = oldComposing.isValid && !oldComposing.isCollapsed;
+    // A composition that just committed over the limit (Telex) is trimmed
+    // whatever its net length change was: the syllable is kept, the overflow
+    // is not. Otherwise:
+    if (!committed) {
+      // Deletions are always allowed, even while the text is still over the
+      // limit (e.g. a long paste into a draft that was already full).
+      if (added <= 0) return newValue;
+      // One typed character over the limit is rejected.
+      if (added <= 1) return oldValue;
+    }
+    final cut = String.fromCharCodes(newValue.text.runes.take(max));
+    return TextEditingValue(
+      text: cut,
+      selection: TextSelection.collapsed(offset: cut.length),
     );
   }
 }

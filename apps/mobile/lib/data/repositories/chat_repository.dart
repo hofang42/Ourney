@@ -7,6 +7,10 @@ import '../social_mapping.dart';
 /// Longest text message (`send_message` checks 1..500 chars).
 const int maxMessageLength = 500;
 
+/// Message length as the server counts it (`char_length`: Unicode code
+/// points), also used by the composer so both agree.
+int messageLength(String text) => text.runes.length;
+
 /// [ChatRepository] over the v1.3 RPCs (S16–S17, S37). Message ids are
 /// client-generated so a retried send is idempotent.
 class DataChatRepository implements ChatRepository {
@@ -16,10 +20,18 @@ class DataChatRepository implements ChatRepository {
 
   /// Message id per draft, kept until the send succeeds: a retry after a lost
   /// response reuses it, so the server never stores the message twice.
+  /// Bounded: the oldest drafts are forgotten first.
   final Map<String, String> _draftIds = {};
+  static const _maxDrafts = 32;
 
-  String _idFor(String draftKey) =>
-      _draftIds.putIfAbsent(draftKey, social.data.newId);
+  String _idFor(String draftKey) {
+    final known = _draftIds[draftKey];
+    if (known != null) return known;
+    if (_draftIds.length >= _maxDrafts) {
+      _draftIds.remove(_draftIds.keys.first);
+    }
+    return _draftIds[draftKey] = social.data.newId();
+  }
 
   void refresh() => social.changed();
 
@@ -73,20 +85,34 @@ class DataChatRepository implements ChatRepository {
     String conversationId,
     String body, {
     String? replyToCheckInId,
+    String? draftId,
   }) async {
     final text = body.trim();
-    if (text.isEmpty || text.length > maxMessageLength) {
+    if (text.isEmpty || messageLength(text) > maxMessageLength) {
       throw const OurneyException(OurneyErrorCode.invalid, 'message length');
     }
-    final draftKey = 'text|$conversationId|$replyToCheckInId|$text';
+    // A resend from a new screen (no draft id) after a lost response still
+    // finds the id through the text key; a draft id pins it on the same
+    // screen. Both keys point at one id and are cleared together.
+    final textKey = 'text|$conversationId|$replyToCheckInId|$text';
+    final draftKey = draftId == null ? null : 'draft|$conversationId|$draftId';
+    final id =
+        (draftKey == null ? null : _draftIds[draftKey]) ?? _idFor(textKey);
+    if (draftKey != null) {
+      _draftIds[draftKey] = id;
+      while (_draftIds.length > _maxDrafts) {
+        _draftIds.remove(_draftIds.keys.first);
+      }
+    }
     final sent = await _send(
-      id: _idFor(draftKey),
+      id: id,
       conversationId: conversationId,
       kind: MessageKind.text,
       body: text,
       replyToCheckInId: replyToCheckInId,
     );
-    _draftIds.remove(draftKey);
+    _draftIds.remove(textKey);
+    if (draftKey != null) _draftIds.remove(draftKey);
     return sent;
   }
 
@@ -101,7 +127,7 @@ class DataChatRepository implements ChatRepository {
       throw const OurneyException(OurneyErrorCode.invalid, 'empty photo');
     }
     final caption = body?.trim();
-    if (caption != null && caption.length > maxMessageLength) {
+    if (caption != null && messageLength(caption) > maxMessageLength) {
       throw const OurneyException(OurneyErrorCode.invalid, 'message length');
     }
     final me = social.requireUserId();
@@ -129,17 +155,26 @@ class DataChatRepository implements ChatRepository {
       _draftIds.remove(draftKey);
       return sent;
     } on Object catch (e) {
-      // Do not leave an orphan object in the bucket; the retry uploads it
-      // again (upsert) under the same id.
-      debugPrint('chat: send failed, removing uploaded photo: $e');
-      try {
-        await social.remote.removeFiles([path]);
-      } on Object catch (cleanup) {
-        debugPrint('chat: photo cleanup failed: $cleanup');
+      debugPrint('chat: photo send failed: $e');
+      // Only a definite rejection means the message will never exist. On a
+      // transport or unknown error the server may have stored it (lost
+      // response): keep the object, the retry reuses the same id and path.
+      if (e is OurneyException && _isRejection(e.error)) {
+        _draftIds.remove(draftKey);
+        try {
+          await social.remote.removeFiles([path]);
+        } on Object catch (cleanup) {
+          debugPrint('chat: photo cleanup failed: $cleanup');
+        }
       }
       rethrow;
     }
   }
+
+  static bool _isRejection(OurneyErrorCode code) =>
+      code == OurneyErrorCode.invalid ||
+      code == OurneyErrorCode.forbidden ||
+      code == OurneyErrorCode.notFound;
 
   Future<ChatMessage> _send({
     required String id,

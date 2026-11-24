@@ -125,7 +125,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      showSharingSnack(context, sharingErrorMessage(context, e));
+      showSharingSnack(context, sharingFailure(context, e));
     }
   }
 
@@ -189,7 +189,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _hidden = {..._hidden!}..let(!hide, checkIn.id));
-      showSharingSnack(context, sharingErrorMessage(context, e));
+      showSharingSnack(context, sharingFailure(context, e));
     }
   }
 

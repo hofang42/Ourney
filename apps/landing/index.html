@@ -34,7 +34,7 @@
   <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/brand/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
-  <link rel="preload" href="assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -113,7 +113,7 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <!-- Ourney Brand Sticker SVG Sprite (Geometry from apps/mobile/lib/ui/components/ourney_icons.dart & design/ourney-v2-app/src/app/icons.tsx) -->
@@ -246,6 +246,7 @@
       <!-- Sticker Checkmark Disc (#7EE8A2) -->
       <symbol id="i-check" viewBox="-2 -2 28 28">
         <circle class="s-die" cx="12" cy="12" r="9.2"/>
+        <circle class="s-ink" cx="12" cy="12" r="9.2"/>
         <circle cx="12" cy="12" r="9.2" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2.2"/>
         <path d="m7.8 12.3 3 3.1 5.6-6.2" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
@@ -253,6 +254,10 @@
       <!-- Padlock with Open Shackle & Keyhole (#2AA7E0) -->
       <symbol id="i-lock" viewBox="-2 -2 28 28">
         <g class="s-die">
+          <rect x="6" y="10" width="12" height="10" rx="2.2"/>
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
+        </g>
+        <g class="s-ink">
           <rect x="6" y="10" width="12" height="10" rx="2.2"/>
           <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
         </g>
@@ -265,13 +270,18 @@
       <!-- Chain Link with Open Loops (#2AA7E0) -->
       <symbol id="i-link" viewBox="-2 -2 28 28">
         <path class="s-die" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
-        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.4" stroke-linecap="round"/>
+        <path class="s-ink" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
         <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#2AA7E0" stroke-width="2.1" stroke-linecap="round"/>
       </symbol>
 
       <!-- Eye-Off with Pupil & Slash (#7EC8E3) -->
       <symbol id="i-eye-off" viewBox="-2 -2 28 28">
         <g class="s-die">
+          <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"/>
+          <path d="M4 4l16 16"/>
+        </g>
+        <g class="s-ink">
           <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"/>
           <path d="M4 4l16 16"/>
         </g>
@@ -285,6 +295,7 @@
       <!-- Blur Droplet (#CF9FFF) -->
       <symbol id="i-drop" viewBox="-2 -2 28 28">
         <path class="s-die" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
+        <path class="s-ink" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
         <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="M9.2 14.2a3.2 3.2 0 0 0 2.8 2.8" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
       </symbol>
@@ -292,6 +303,7 @@
       <!-- Local-First Shield (#7EE8A2) -->
       <symbol id="i-shield" viewBox="-2 -2 28 28">
         <path class="s-die" d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z"/>
+        <path class="s-ink" d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z"/>
         <path d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="m8.8 12.2 2.2 2.2 4.4-4.6" fill="none" stroke="#1A1A1A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
@@ -299,6 +311,7 @@
       <!-- Sparkle (#FF9F1C) -->
       <symbol id="i-sparkle" viewBox="-2 -2 28 28">
         <path class="s-die" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path class="s-ink" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
         <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
         <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
       </symbol>
@@ -312,7 +325,14 @@
 
       <!-- Squad Reaction: Clap (#FF9F1C) -->
       <symbol id="i-react-clap" viewBox="-2 -2 28 28">
-        <path class="s-die" d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+        <g class="s-die">
+          <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+          <path d="m4 10-2-2M7 6 6 3M11 5l1-3"/>
+        </g>
+        <g class="s-ink">
+          <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+          <path d="m4 10-2-2M7 6 6 3M11 5l1-3"/>
+        </g>
         <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="m4 10-2-2M7 6 6 3M11 5l1-3" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
       </symbol>
@@ -320,6 +340,7 @@
       <!-- Squad Reaction: Flex (#CF9FFF) -->
       <symbol id="i-react-flex" viewBox="-2 -2 28 28">
         <path class="s-die" d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z"/>
+        <path class="s-ink" d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z"/>
         <path d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="M8 11 5 9l-2 3 2 5" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
@@ -331,7 +352,7 @@
   <header class="nav" id="top">
     <div class="wrap nav-inner">
       <a class="brand" href="#top" translate="no" aria-label="Ourney, về đầu trang" data-i18n-aria="nav_brand_aria">
-        <img src="assets/brand/wordmark.png" alt="ourney" width="122" height="45">
+        <img src="/assets/brand/wordmark.png" alt="ourney" width="122" height="45">
       </a>
       <nav aria-label="Điều hướng chính" data-i18n-aria="nav_main_aria">
         <ul class="nav-links">
@@ -427,7 +448,7 @@
               </svg>
               <div class="ht-txt">
                 <strong translate="no" data-i18n="ticket_title">iOS &amp; Android</strong>
-                <small data-i18n="ticket_sub">Bấm để giữ chỗ Ngày 1</small>
+                <small data-i18n="ticket_sub">Bấm để giữ chỗ Ngày&nbsp;1</small>
               </div>
             </div>
           </a>
@@ -437,8 +458,8 @@
             <div class="hero-phone-mask">
               <figure class="phone phone-hero" id="hero-phone">
                 <picture class="theme-pic">
-                  <source class="src-dark" srcset="assets/screens/hub-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" src="assets/screens/hub.webp" alt="Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay" data-i18n-alt="hero_phone_alt" width="390" height="844" fetchpriority="high" decoding="sync">
+                  <source class="src-dark" srcset="/assets/screens/hub-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="/assets/screens/hub.webp" alt="Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay" data-i18n-alt="hero_phone_alt" width="390" height="844" fetchpriority="high" decoding="sync">
                 </picture>
               </figure>
             </div>
@@ -525,11 +546,11 @@
                 </button>
                 <button class="j-tab tab-c-memory" type="button" role="tab" id="tab-memory" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="2">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-trip"/></svg></span>
-                  <span class="j-tab-lbl" data-i18n="j_tab_2">Đà Lạt 7 ngày</span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_2">Đà Lạt 7&nbsp;ngày</span>
                 </button>
                 <button class="j-tab tab-c-quiet" type="button" role="tab" id="tab-quiet" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="3">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-scales"/></svg></span>
-                  <span class="j-tab-lbl" data-i18n="j_tab_3">30 ngày cơ thể</span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_3">30&nbsp;ngày cơ thể</span>
                 </button>
                 <button class="j-tab tab-c-couple" type="button" role="tab" id="tab-couple" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="4">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-couple"/></svg></span>
@@ -537,7 +558,7 @@
                 </button>
                 <button class="j-tab tab-c-minimal" type="button" role="tab" id="tab-minimal" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="5">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-custom"/></svg></span>
-                  <span class="j-tab-lbl" data-i18n="j_tab_5">Đọc 10 trang</span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_5">Đọc 10&nbsp;trang</span>
                 </button>
               </div>
 
@@ -564,8 +585,8 @@
             <div class="j-phone-stage">
               <figure class="phone phone-j" id="phone-j">
                 <picture class="theme-pic" id="j-pic">
-                  <source class="src-dark" id="j-src-d" srcset="assets/screens/j-ielts-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" id="j-img" src="assets/screens/j-ielts.webp" alt="Trang hành trình IELTS 7.5 trong app Ourney" width="390" height="844" loading="lazy" decoding="async">
+                  <source class="src-dark" id="j-src-d" srcset="/assets/screens/j-ielts-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" id="j-img" src="/assets/screens/j-ielts.webp" alt="Trang hành trình IELTS 7.5 trong app Ourney" width="390" height="844" loading="lazy" decoding="async">
                 </picture>
 
                 <!-- Built-in HTML/CSS Couple Rituals duoSplitTimeline screen (Tab 5, accessible role="img") -->
@@ -695,8 +716,8 @@
               <p data-i18n="how_s1_d">Vuốt 6 mẫu hành trình, trả lời 2–3 câu ngắn để app tạo màu sắc, tên cột mốc và tấm vé khởi hành mang dấu ấn riêng của bạn.</p>
               <figure class="phone phone-step">
                 <picture class="theme-pic">
-                  <source class="src-dark" srcset="assets/screens/create-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" src="assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" data-i18n-alt="how_s1_alt" loading="lazy" decoding="async" width="390" height="844">
+                  <source class="src-dark" srcset="/assets/screens/create-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="/assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" data-i18n-alt="how_s1_alt" loading="lazy" decoding="async" width="390" height="844">
                 </picture>
               </figure>
             </li>
@@ -708,8 +729,8 @@
               <p data-i18n="how_s2_d">Nút chụp nằm ngay giữa thanh dưới. Nhấn giữ để xoay vòng chọn hành trình chưa chụp hôm nay, bấm chụp rồi bấm Đăng — xong trong 3 chạm.</p>
               <figure class="phone phone-step">
                 <picture class="theme-pic">
-                  <source class="src-dark" srcset="assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" src="assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
+                  <source class="src-dark" srcset="/assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="/assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
                 </picture>
               </figure>
             </li>
@@ -721,8 +742,8 @@
               <p data-i18n="how_s3_d">Mỗi ngày nối thêm một mắt xích vào hành trình. Bất cứ lúc nào, xuất ngay thẻ Story 9:16 hoặc 4:5 có sẵn số liệu của bạn.</p>
               <figure class="phone phone-step">
                 <picture class="theme-pic">
-                  <source class="src-dark" srcset="assets/screens/share-run-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" src="assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" data-i18n-alt="how_s3_alt" loading="lazy" decoding="async" width="390" height="844">
+                  <source class="src-dark" srcset="/assets/screens/share-run-dark.webp" media="(prefers-color-scheme: dark)">
+                  <img class="scr-img" src="/assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" data-i18n-alt="how_s3_alt" loading="lazy" decoding="async" width="390" height="844">
                 </picture>
               </figure>
             </li>
@@ -732,16 +753,16 @@
         <div class="how-visual" aria-hidden="true">
           <div class="phone phone-how" id="phone-how" data-screen="0">
             <picture class="swap theme-pic" data-scr="0">
-              <source class="src-dark" srcset="assets/screens/create-dark.webp" media="(prefers-color-scheme: dark)">
-              <img class="scr-img" src="assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" data-i18n-alt="how_s1_alt" loading="lazy" decoding="async" width="390" height="844">
+              <source class="src-dark" srcset="/assets/screens/create-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="/assets/screens/create.webp" alt="Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân" data-i18n-alt="how_s1_alt" loading="lazy" decoding="async" width="390" height="844">
             </picture>
             <picture class="swap theme-pic" data-scr="1">
-              <source class="src-dark" srcset="assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
-              <img class="scr-img" src="assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
+              <source class="src-dark" srcset="/assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="/assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
             </picture>
             <picture class="swap theme-pic" data-scr="2">
-              <source class="src-dark" srcset="assets/screens/share-run-dark.webp" media="(prefers-color-scheme: dark)">
-              <img class="scr-img" src="assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" data-i18n-alt="how_s3_alt" loading="lazy" decoding="async" width="390" height="844">
+              <source class="src-dark" srcset="/assets/screens/share-run-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="/assets/screens/share-run.webp" alt="Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21" data-i18n-alt="how_s3_alt" loading="lazy" decoding="async" width="390" height="844">
             </picture>
           </div>
         </div>
@@ -891,14 +912,14 @@
         <div class="finish-phones" id="finish-phones">
           <figure class="phone phone-a">
             <picture class="theme-pic">
-              <source class="src-dark" srcset="assets/screens/share-travel-dark.webp" media="(prefers-color-scheme: dark)">
-              <img class="scr-img" src="assets/screens/share-travel.webp" alt="Poster chuyến đi Đà Lạt 7 ngày với cuộn phim các ngày" data-i18n-alt="finish_a_alt" loading="lazy" decoding="async" width="390" height="844">
+              <source class="src-dark" srcset="/assets/screens/share-travel-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="/assets/screens/share-travel.webp" alt="Poster chuyến đi Đà Lạt 7 ngày với cuộn phim các ngày" data-i18n-alt="finish_a_alt" loading="lazy" decoding="async" width="390" height="844">
             </picture>
           </figure>
           <figure class="phone phone-b">
             <picture class="theme-pic">
-              <source class="src-dark" srcset="assets/screens/wrapped-run-dark.webp" media="(prefers-color-scheme: dark)">
-              <img class="scr-img" src="assets/screens/wrapped-run.webp" alt="Hành trình đã về đích: 20 khoảnh khắc trong 20 ngày" data-i18n-alt="finish_b_alt" loading="lazy" decoding="async" width="390" height="844">
+              <source class="src-dark" srcset="/assets/screens/wrapped-run-dark.webp" media="(prefers-color-scheme: dark)">
+              <img class="scr-img" src="/assets/screens/wrapped-run.webp" alt="Hành trình đã về đích: 20 khoảnh khắc trong 20 ngày" data-i18n-alt="finish_b_alt" loading="lazy" decoding="async" width="390" height="844">
             </picture>
           </figure>
         </div>
@@ -925,7 +946,7 @@
               <span class="hold-label" data-i18n="priv_hold_label">Cân nặng hôm nay</span>
               <strong class="hold-val" id="hold-val" aria-live="polite">
                 <span class="hold-masked" id="hold-masked">
-                  <span class="dot-mask" aria-hidden="true"><i></i><i></i><span>,</span><i></i></span>
+                  <span class="dot-mask" aria-hidden="true"><i></i><i></i><span data-i18n="priv_dec_sep">,</span><i></i></span>
                   <span class="sr" data-i18n="priv_masked_sr">Đã ẩn số cân</span>
                   <span>kg</span>
                 </span>
@@ -995,8 +1016,8 @@
 
         <figure class="phone phone-privacy">
           <picture class="theme-pic">
-            <source class="src-dark" srcset="assets/screens/j-weight-dark.webp" media="(prefers-color-scheme: dark)">
-            <img class="scr-img" src="assets/screens/j-weight.webp" alt="Hành trình 30 ngày cơ thể: Nhìn lại từng chút một, biểu đồ cân nặng với con số bị ẩn, Giữ để xem" data-i18n-alt="priv_phone_alt" loading="lazy" decoding="async" width="390" height="844">
+            <source class="src-dark" srcset="/assets/screens/j-weight-dark.webp" media="(prefers-color-scheme: dark)">
+            <img class="scr-img" src="/assets/screens/j-weight.webp" alt="Hành trình 30 ngày cơ thể: Nhìn lại từng chút một, biểu đồ cân nặng với con số bị ẩn, Giữ để xem" data-i18n-alt="priv_phone_alt" loading="lazy" decoding="async" width="390" height="844">
           </picture>
         </figure>
       </div>
@@ -1085,8 +1106,8 @@
             <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
           </div>
           <div class="cta-stub" aria-hidden="true">
-            <span class="cta-stub-kicker">DAY 01</span>
-            <strong>BETA PASS</strong>
+            <span class="cta-stub-kicker" data-i18n="beta_stub_kicker">NGÀY 01</span>
+            <strong data-i18n="beta_stub_title">VÉ BETA</strong>
             <span class="cta-stub-code" translate="no">IOS · ANDROID</span>
           </div>
         </div>
@@ -1102,7 +1123,7 @@
 
   <footer class="footer">
     <div class="wrap footer-inner">
-      <img src="assets/brand/wordmark.png" alt="ourney" width="98" height="36">
+      <img src="/assets/brand/wordmark.png" alt="ourney" width="98" height="36">
       <p class="muted" data-i18n="footer_tagline">chụp một tấm. giữ một chuỗi. đi cùng nhau.</p>
       <ul>
         <li><a href="#journeys" data-i18n="footer_journeys">hành trình</a></li>
@@ -1113,6 +1134,6 @@
     </div>
   </footer>
 
-  <script src="main.js" defer></script>
+  <script src="/main.js" defer></script>
 </body>
 </html>
