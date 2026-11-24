@@ -41,5 +41,6 @@
   "onboarding_splashOpening": "Opening",
   "onboarding_resultCouple": "the two of us.",
   "onboarding_permissionClose": "Close",
-  "onboarding_nudgeBody": "Turn on reminders and we will nudge you at {time}. It may run late on some phones."
+  "onboarding_nudgeBody": "Turn on reminders and we will nudge you at {time}. It may run late on some phones.",
+  "onboarding_haveAccount": "Already have an account? Sign in"
 }

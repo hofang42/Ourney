@@ -7,17 +7,22 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
+import '../../app/redirect.dart' show safeFrom;
 import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import '../onboarding/onboarding_providers.dart';
 import '../profile/routes.dart' show profileSetupPath;
+import '../safety/data/safety_providers.dart';
 import '../safety/safety_paths.dart';
 import 'auth_errors.dart';
+import 'auth_providers.dart';
 import 'l10n/generated/auth_localizations.dart';
 import 'phone_format.dart';
 
-/// Sign-in (FR-A1): emailed code (default), phone SMS code, email + password
-/// (sign in / create account) and "forgot password".
+/// Sign-in (FR-A1): one flow for new and existing accounts. Emailed code
+/// (default) or, when the server has it enabled, a phone SMS code; email +
+/// password is an optional method for accounts that set one; plus "forgot
+/// password". An account is created by the first verified code.
 ///
 /// Everything goes through `AuthRepository`. On success the repository's
 /// `watchUserId()` emits and the router leaves `/auth` by itself. If
@@ -46,7 +51,7 @@ class AuthScreen extends ConsumerStatefulWidget {
 enum _Tab { email, phone }
 
 /// Which form is showing / which flow the code step belongs to.
-enum _Flow { emailCode, phoneCode, password, signUp, reset }
+enum _Flow { emailCode, phoneCode, password, reset }
 
 final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 final RegExp _codePattern = RegExp(r'^\d{6}$');
@@ -65,6 +70,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String? _error;
   bool _offline = false;
   bool _success = false;
+
+  /// The server said phone sign-in is off (despite the settings probe).
+  bool _phoneDisabled = false;
   int _cooldown = 0;
   Timer? _timer;
 
@@ -72,8 +80,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String get _normalizedEmail => _email.text.trim().toLowerCase();
   String? get _e164 => toE164Vietnam(_phone.text);
   bool get _isPhone => _flow == _Flow.phoneCode;
-  bool get _needsPasswordField =>
-      _flow == _Flow.password || _flow == _Flow.signUp;
+  bool get _needsPasswordField => _flow == _Flow.password;
 
   @override
   void dispose() {
@@ -118,8 +125,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (_isPhone) return _e164 != null;
     if (!_emailPattern.hasMatch(_normalizedEmail)) return false;
     if (_needsPasswordField) {
-      return _password.text.length >= AuthScreen.minPassword ||
-          (_flow == _Flow.password && _password.text.isNotEmpty);
+      return _password.text.isNotEmpty;
     }
     return true;
   }
@@ -137,6 +143,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final router = GoRouter.of(context);
     final profiles = _profiles();
     final quiz = ref.read(onboardingQuizProvider.notifier);
+    final eula = ref.read(eulaAcceptedProvider.notifier);
     final from = widget.from;
     setState(() => _busy = true);
     var step = AuthStep.sendOtp;
@@ -153,25 +160,31 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         case _Flow.password:
           step = AuthStep.passwordSignIn;
           await auth.signInWithPassword(_normalizedEmail, _password.text);
-          await _finishSignIn(router, profiles, quiz, from);
-          return;
-        case _Flow.signUp:
-          step = AuthStep.signUp;
-          final needsCode = await auth.signUpWithPassword(
-            _normalizedEmail,
-            _password.text,
+          await _finishSignIn(
+            router,
+            auth,
+            profiles,
+            quiz,
+            eula,
+            from,
+            recordInitialTerms: true,
           );
-          if (!needsCode) {
-            await _finishSignIn(router, profiles, quiz, from);
-            return;
-          }
+          return;
       }
     } on Object catch (e) {
       if (!mounted) return;
+      final unavailable =
+          e is OurneyException && e.error == OurneyErrorCode.unavailable;
       setState(() {
         _busy = false;
         _offline = _isOffline(e);
         _error = _offline ? null : authErrorMessage(l10n, e, step);
+        if (unavailable && _flow == _Flow.phoneCode) {
+          // SMS is off on the server: hide Phone and go back to email.
+          _phoneDisabled = true;
+          _flow = _Flow.emailCode;
+          _submitted = false;
+        }
       });
       return;
     }
@@ -179,6 +192,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _busy = false;
       _codeStep = true;
+      _submitted = false;
       if (resend) _code.clear();
     });
     _startCooldown();
@@ -188,9 +202,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _verify() async {
     final l10n = AuthL10n.of(context);
-    setState(() {
-      _error = null;
-    });
     setState(() {
       _error = null;
       _offline = false;
@@ -209,6 +220,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final auth = ref.read(authRepositoryProvider);
     final profiles = _profiles();
     final quiz = ref.read(onboardingQuizProvider.notifier);
+    final eula = ref.read(eulaAcceptedProvider.notifier);
     final from = widget.from;
 
     setState(() => _busy = true);
@@ -218,9 +230,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         case _Flow.phoneCode:
           step = AuthStep.verifyPhone;
           await auth.verifyPhoneOtp(_e164!, code);
-        case _Flow.signUp:
-          step = AuthStep.confirmSignUp;
-          await auth.confirmSignUp(_normalizedEmail, code);
         case _Flow.reset:
           step = AuthStep.resetConfirm;
           await auth.resetPassword(_normalizedEmail, code, _password.text);
@@ -236,8 +245,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       });
       return;
     }
+    final recordInitialTerms = _flow != _Flow.reset;
     if (mounted) setState(() => _success = true);
-    await _finishSignIn(router, profiles, quiz, from);
+    await _finishSignIn(
+      router,
+      auth,
+      profiles,
+      quiz,
+      eula,
+      from,
+      recordInitialTerms: recordInitialTerms,
+    );
   }
 
   ProfileRepository? _profiles() {
@@ -250,34 +268,85 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _finishSignIn(
     GoRouter router,
+    AuthRepository auth,
     ProfileRepository? profiles,
     OnboardingQuizNotifier quiz,
-    String? from,
-  ) async {
+    EulaAccepted eula,
+    String? from, {
+    required bool recordInitialTerms,
+  }) async {
     OurneyHaptics.success();
-    // Push the locally stored onboarding answers to the new account (best
-    // effort, never blocks sign-in). No `ref` here: the router may already
-    // have unmounted this screen after the sign-in await.
-    unawaited(quiz.syncToServer());
-    if (profiles != null && await _needsProfileSetup(profiles)) {
-      router.go(
-        Uri(
-          path: profileSetupPath,
-          queryParameters: from == null ? null : {AppRoutes.fromParam: from},
-        ).toString(),
-      );
+    final result = profiles == null
+        ? (profile: null, loaded: true)
+        : await _loadProfile(profiles);
+    final needsSetup = profiles != null && (!result.loaded || result.profile == null);
+    if (!needsSetup) {
+      // Push the locally stored onboarding answers once the account has a
+      // profile row (`ProfileSetupScreen._save` syncs after `upsertMe` for new
+      // accounts, H1).
+      unawaited(quiz.syncToServer());
+    }
+    // §4.4: record initial terms consent only on clickwrap flows (`_flow !=
+    // _Flow.reset`, M2) when the account is confirmed to have no recorded
+    // version yet (0, or brand-new account with `profile == null`). If the
+    // profile fetch failed/timed out and `acceptedTermsVersion` is still null
+    // (unknown), defer recording until the profile loads so a returning user
+    // on an older version still sees TermsUpdateSheet (H2).
+    if (recordInitialTerms) {
+      final authVer = auth.acceptedTermsVersion;
+      final profileVer = result.profile?.termsVersion;
+      final int? knownVer;
+      if (authVer != null && profileVer != null) {
+        knownVer = authVer > profileVer ? authVer : profileVer;
+      } else {
+        knownVer = authVer ?? profileVer;
+      }
+      if (result.loaded) {
+        if ((knownVer ?? 0) <= 0) {
+          unawaited(eula.accept());
+        }
+      } else if (knownVer != null) {
+        if (knownVer <= 0) {
+          unawaited(eula.accept());
+        }
+      } else {
+        eula.deferInitialClickwrap(auth.currentUserId);
+      }
+    }
+    if (needsSetup) {
+      final safeTarget = from == null
+          ? null
+          : safeFrom(
+              Uri(
+                path: AppRoutes.auth,
+                queryParameters: {AppRoutes.fromParam: from},
+              ),
+            );
+      final targetUri = Uri(
+        path: profileSetupPath,
+        queryParameters: safeTarget == null
+            ? null
+            : {AppRoutes.fromParam: safeTarget},
+      ).toString();
+      if (router.state.uri.toString() != targetUri) {
+        router.go(targetUri);
+      }
     }
     if (mounted) setState(() => _busy = false);
   }
 
-  static Future<bool> _needsProfileSetup(ProfileRepository repo) async {
+  static Future<({Profile? profile, bool loaded})> _loadProfile(
+    ProfileRepository repo,
+  ) async {
     try {
       final profile = await repo.watchMe().first.timeout(
         AuthScreen.profileCheckTimeout,
       );
-      return profile == null;
+      return (profile: profile, loaded: true);
     } on Object {
-      return false;
+      // No local profile could be confirmed: go to `/profile/setup` so its
+      // offline/error retry and sign-out state handles recovery (DE-04/DE-07).
+      return (profile: null, loaded: false);
     }
   }
 
@@ -294,7 +363,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String _title(AuthL10n l10n) => _codeStep
       ? l10n.auth_codeTitle
       : switch (_flow) {
-          _Flow.signUp => l10n.auth_signUpTitle,
+          _Flow.password => l10n.auth_passwordTitle,
           _Flow.reset => l10n.auth_resetTitle,
           _ => l10n.auth_title,
         };
@@ -302,7 +371,6 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String _subtitle(AuthL10n l10n) {
     return switch (_flow) {
       _Flow.phoneCode => l10n.auth_phoneSubtitle,
-      _Flow.signUp => l10n.auth_signUpSubtitle,
       _Flow.reset => l10n.auth_resetSubtitle,
       _ => l10n.auth_subtitle,
     };
@@ -311,25 +379,30 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String _primaryLabel(AuthL10n l10n) {
     if (_busy) return l10n.auth_sending;
     return switch (_flow) {
-      _Flow.phoneCode => l10n.auth_sendSms,
       _Flow.password => l10n.auth_signIn,
-      _Flow.signUp => l10n.auth_signUpButton,
       _ => l10n.auth_sendCode,
     };
   }
+
+  /// Phone is offered only when the server reports it as enabled.
+  bool get _phoneAvailable =>
+      !_phoneDisabled &&
+      (ref.watch(phoneAuthAvailableProvider).asData?.value ?? false);
+
+  /// Password / reset forms sit under a back header to the start form.
+  bool get _subForm => _flow == _Flow.password || _flow == _Flow.reset;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AuthL10n.of(context);
     final ui = context.ui;
     final codeStep = _codeStep;
-    final noSubtitle = _flow == _Flow.emailCode || _flow == _Flow.phoneCode;
+    final showLegal = !codeStep && _flow != _Flow.reset;
 
     return UiScaffold(
       key: const ValueKey('auth-screen'),
-      // `.login-flow .flow-scroll`: 42dp; the code step starts under a back
-      // header (`.simple-flow-header`).
-      padTop: codeStep ? 4 : 42,
+      // The code step and the sub-forms start under a back header.
+      padTop: codeStep || _subForm ? 4 : 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -343,6 +416,20 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 onPressed: _busy ? null : _backToForm,
               ),
             )
+          else if (_subForm)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: UiIconButton(
+                key: const ValueKey('auth-flow-back'),
+                glyph: OurneyIcon(name: 'back', flat: true, color: ui.ink),
+                label: l10n.auth_back,
+                onPressed: _busy
+                    ? null
+                    : () => _goFlow(
+                        _flow == _Flow.reset ? _Flow.password : _Flow.emailCode,
+                      ),
+              ),
+            )
           else
             Align(
               alignment: Alignment.centerLeft,
@@ -352,7 +439,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 child: UiRansomWordmark(size: _wordmarkSize),
               ),
             ),
-          SizedBox(height: codeStep ? 12 : 10),
+          SizedBox(height: codeStep || _subForm ? 12 : 10),
           AnimatedSwitcher(
             duration: UiMotion.of(context, const Duration(milliseconds: 240)),
             child: Column(
@@ -398,10 +485,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     alignment: Alignment.centerLeft,
                     onPressed: _busy ? null : _backToForm,
                   ),
-                ] else if (!noSubtitle) ...[
+                ] else if (_flow != _Flow.password) ...[
                   const SizedBox(height: 10),
                   Text(
                     _subtitle(l10n),
+                    key: const ValueKey('auth-subtitle'),
                     style: UiText.muted(color: ui.inkMuted),
                   ),
                 ],
@@ -411,34 +499,26 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     key: const ValueKey('auth-offline'),
                     message: l10n.auth_offlineBanner,
                     retryLabel: l10n.auth_retry,
-                    onRetry: () => setState(() => _offline = false),
+                    onRetry: () {
+                      ref.invalidate(phoneAuthAvailableProvider);
+                      setState(() => _offline = false);
+                    },
                   ),
                 ],
                 SizedBox(height: codeStep ? 14 : 18),
                 if (codeStep)
                   ..._codeChildren(l10n, ui)
                 else
-                  ..._formChildren(l10n, ui),
+                  ..._formChildren(l10n, ui, showLegal: showLegal),
               ],
             ),
           ),
-          if (!codeStep) ...[
-            const SizedBox(height: 22),
-            _Legal(
-              intro: l10n.auth_legalIntro,
-              and: l10n.auth_legalAnd,
-              terms: l10n.auth_terms,
-              privacy: l10n.auth_privacy,
-              onTerms: () => context.push(SafetyPaths.eula),
-              onPrivacy: () => context.push(SafetyPaths.privacy),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  double get _wordmarkSize => 116;
+  double get _wordmarkSize => 64;
 
   /// `.flow-screen h1`: Space Grotesk 32 / 700 / -0.045em, lowercase copy.
   TextStyle _h1Style(Color color) => UiText.heading(
@@ -453,7 +533,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String get _destination =>
       _isPhone ? formatPhoneForDisplay(_e164 ?? _phone.text) : _normalizedEmail;
 
-  List<Widget> _formChildren(AuthL10n l10n, OurneyUi ui) {
+  List<Widget> _formChildren(
+    AuthL10n l10n,
+    OurneyUi ui, {
+    required bool showLegal,
+  }) {
     final emailError =
         _submitted && !_isPhone && !_emailPattern.hasMatch(_normalizedEmail)
         ? l10n.auth_emailInvalid
@@ -461,37 +545,33 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final phoneError = _submitted && _isPhone && _e164 == null
         ? l10n.auth_phoneInvalid
         : null;
-    final passwordError =
-        _submitted &&
-            _flow == _Flow.signUp &&
-            _password.text.length < AuthScreen.minPassword
-        ? l10n.auth_passwordShort
-        : null;
-    final showTabs =
-        _flow == _Flow.emailCode ||
-        _flow == _Flow.phoneCode ||
-        _flow == _Flow.password;
+    final showSwitch =
+        (_flow == _Flow.emailCode || _flow == _Flow.phoneCode) &&
+        _phoneAvailable;
     return [
-      if (showTabs) ...[
-        UiFlowTabs<_Tab>(
-          value: _tab,
-          tabs: [
-            UiFlowTab(
-              key: const ValueKey('auth-tab-email'),
-              value: _Tab.email,
-              label: l10n.auth_tabEmail,
-            ),
-            UiFlowTab(
-              key: const ValueKey('auth-tab-phone'),
-              value: _Tab.phone,
-              label: l10n.auth_tabPhone,
-            ),
-          ],
-          onChanged: _busy
-              ? (_) {}
-              : (t) => _goFlow(
-                  t == _Tab.phone ? _Flow.phoneCode : _Flow.emailCode,
-                ),
+      if (showSwitch) ...[
+        Semantics(
+          container: true,
+          label: l10n.auth_methodLabel,
+          child: UiSegmented<_Tab>(
+            value: _tab,
+            segments: [
+              UiSegment(
+                key: const ValueKey('auth-tab-email'),
+                value: _Tab.email,
+                label: l10n.auth_tabEmail,
+              ),
+              UiSegment(
+                key: const ValueKey('auth-tab-phone'),
+                value: _Tab.phone,
+                label: l10n.auth_tabPhone,
+              ),
+            ],
+            onChanged: (t) {
+              if (_busy) return;
+              _goFlow(t == _Tab.phone ? _Flow.phoneCode : _Flow.emailCode);
+            },
+          ),
         ),
         const SizedBox(height: 14),
       ],
@@ -549,12 +629,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         ),
       if (_needsPasswordField) ...[
         const SizedBox(height: UiSpace.md),
-        _passwordField(
-          l10n,
-          label: l10n.auth_passwordLabel,
-          error: passwordError,
-          signUp: _flow == _Flow.signUp,
-        ),
+        _passwordField(l10n, label: l10n.auth_passwordLabel),
       ],
       if (_error != null)
         UiFlowError(key: const ValueKey('auth-error'), message: _error!),
@@ -564,6 +639,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         label: _primaryLabel(l10n),
         onPressed: _busy ? null : _submitForm,
       ),
+      if (showLegal) ...[
+        const SizedBox(height: 14),
+        _Legal(
+          intro: l10n.auth_legalIntro,
+          and: l10n.auth_legalAnd,
+          terms: l10n.auth_terms,
+          privacy: l10n.auth_privacy,
+          onTerms: () => context.push(SafetyPaths.eula),
+          onPrivacy: () => context.push(SafetyPaths.privacy),
+        ),
+      ],
       const SizedBox(height: 4),
       _links(l10n),
     ];
@@ -573,7 +659,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     AuthL10n l10n, {
     required String label,
     String? error,
-    bool signUp = false,
+    bool newPassword = false,
     ValueKey<String> fieldKey = const ValueKey('auth-password'),
   }) => UiTextField(
     fieldKey: fieldKey,
@@ -584,35 +670,39 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     autocorrect: false,
     keyboardType: TextInputType.visiblePassword,
     autofillHints: [
-      signUp ? AutofillHints.newPassword : AutofillHints.password,
+      newPassword ? AutofillHints.newPassword : AutofillHints.password,
     ],
     textInputAction: TextInputAction.done,
     error: error,
     onChanged: (_) => setState(() {}),
     onSubmitted: (_) => _busy ? null : (_codeStep ? _verify() : _submitForm()),
-    trailing: IconButton(
+    trailing: UiIconButton(
       key: const ValueKey('auth-password-toggle'),
-      tooltip: _showPassword ? l10n.auth_hidePassword : l10n.auth_showPassword,
-      onPressed: () => setState(() => _showPassword = !_showPassword),
-      icon: OurneyIcon(
+      glyph: OurneyIcon(
         name: _showPassword ? 'eye-off' : 'eye',
         size: 20,
         flat: true,
         color: context.ui.ink,
       ),
+      label: _showPassword ? l10n.auth_hidePassword : l10n.auth_showPassword,
+      onPressed: _busy
+          ? null
+          : () => setState(() => _showPassword = !_showPassword),
     ),
   );
 
-  /// `.login-method-links`: 12dp bold underlined actions, space-between.
+  /// Secondary method actions: 14dp bold underlined, 48dp targets, left
+  /// aligned (one per line so none of them reads as body text).
   Widget _links(AuthL10n l10n) {
     final ink = context.ui.ink;
-    UiTextAction link(String key, String label, VoidCallback onPressed) =>
+    Widget link(String key, String label, VoidCallback onPressed) =>
         UiTextAction(
           key: ValueKey(key),
           label: label,
-          size: 12,
+          size: 14,
           underline: true,
           color: ink,
+          alignment: Alignment.centerLeft,
           onPressed: _busy ? null : onPressed,
         );
     final links = switch (_flow) {
@@ -624,23 +714,11 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         ),
       ],
       _Flow.password => [
+        link('auth-forgot', l10n.auth_forgot, () => _goFlow(_Flow.reset)),
         link(
           'auth-use-code',
           l10n.auth_useCode,
           () => _goFlow(_Flow.emailCode),
-        ),
-        link('auth-forgot', l10n.auth_forgot, () => _goFlow(_Flow.reset)),
-        link(
-          'auth-create-account',
-          l10n.auth_createAccount,
-          () => _goFlow(_Flow.signUp),
-        ),
-      ],
-      _Flow.signUp => [
-        link(
-          'auth-have-account',
-          l10n.auth_haveAccount,
-          () => _goFlow(_Flow.password),
         ),
       ],
       _Flow.reset => [
@@ -652,9 +730,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       ],
       _Flow.phoneCode => <Widget>[],
     };
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: links,
     );
   }
@@ -711,7 +788,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         _passwordField(
           l10n,
           label: l10n.auth_newPasswordLabel,
-          signUp: true,
+          newPassword: true,
           fieldKey: const ValueKey('auth-new-password'),
           error: _submitted && _password.text.length < AuthScreen.minPassword
               ? l10n.auth_passwordShort
@@ -740,6 +817,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       key: const ValueKey('auth-resend'),
                       size: 13,
                       color: ui.inkMuted,
+                      expand: false,
                       label: l10n.auth_resendIn(_cooldown),
                       onPressed: null,
                     ),
@@ -756,7 +834,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       ),
       const SizedBox(height: UiSpace.sm),
       Text(
-        l10n.auth_otpHelper,
+        _isPhone ? l10n.auth_otpHelperSms : l10n.auth_otpHelperEmail,
         textAlign: TextAlign.center,
         style: UiText.muted(color: ui.inkMuted, size: 13),
       ),
@@ -796,6 +874,7 @@ class _Legal extends StatelessWidget {
           key: const ValueKey('auth-terms'),
           label: terms,
           size: 13,
+          underline: true,
           color: ui.ink,
           expand: false,
           onPressed: onTerms,
@@ -805,6 +884,7 @@ class _Legal extends StatelessWidget {
           key: const ValueKey('auth-privacy'),
           label: privacy,
           size: 13,
+          underline: true,
           color: ui.ink,
           expand: false,
           onPressed: onPrivacy,

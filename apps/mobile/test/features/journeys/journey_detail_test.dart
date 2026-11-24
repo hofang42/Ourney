@@ -624,11 +624,11 @@ void main() {
           lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
         );
 
-        // 4. Profile tab: final `profile-safety` row sits above the dock.
+        // 4. Profile tab: the last section (badges) sits above the dock.
         await h.go(tester, AppRoutes.profile);
         await scrollToEnd(_key('profile-screen'));
         expect(
-          tester.getRect(_key('profile-safety')).bottom,
+          tester.getRect(_key('profile-stats')).bottom,
           lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
         );
       },

@@ -45,7 +45,11 @@ class OnboardingScreen extends ConsumerWidget {
         child: Center(
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: UiSpace.maxContent(width)),
-            child: OnboardingQuizStage(onDone: finish, gutter: gutter),
+            child: OnboardingQuizStage(
+              onDone: finish,
+              gutter: gutter,
+              showSignIn: !ref.watch(appConfigProvider).localOnly,
+            ),
           ),
         ),
       ),

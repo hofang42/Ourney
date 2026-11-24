@@ -207,20 +207,6 @@ class SafetyL10nEn extends SafetyL10n {
       'Couldn\'t open a mail app. Copy the address and write from the app you use.';
 
   @override
-  String get safety_eulaAcceptTitle => 'Before you start';
-
-  @override
-  String get safety_eulaAcceptIntro =>
-      'Ourney has zero tolerance for objectionable content or abusive users. Please read and accept the terms of use to continue.';
-
-  @override
-  String get safety_eulaAcceptCheckbox =>
-      'I have read and agree to the Terms of use and the Privacy policy.';
-
-  @override
-  String get safety_eulaAcceptButton => 'Agree and continue';
-
-  @override
   String safety_lastUpdated(String date) {
     return 'Last updated: $date';
   }
@@ -258,7 +244,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_eula5Body =>
-      'We may suspend or delete accounts that break these terms without notice. You can delete your account at any time from your Profile.';
+      'We may suspend or delete accounts that break these terms without notice. You can delete your account at any time in Profile > Settings > Delete account.';
 
   @override
   String get safety_eula6Title => '6. Disclaimer and changes';
@@ -272,7 +258,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_privacy1Body =>
-      'Your email (to sign in); display name, username and avatar; the journeys you create; check-ins with their photo, caption, numbers (for example weight) and time taken; reactions; your reports and block list.';
+      'Your email or phone number (to sign in); display name, username and avatar; the journeys you create; check-ins with their photo, caption, numbers (for example weight) and time taken; reactions; your reports and block list.';
 
   @override
   String get safety_privacy2Title => 'Who can see it';
@@ -300,12 +286,33 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_privacy5Body =>
-      'Go to Profile > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a squad, ownership passes to the earliest-joined member.';
+      'Go to Profile > Settings > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a squad, ownership passes to the earliest-joined member.';
 
   @override
   String get safety_privacy6Title => 'Contact';
 
   @override
   String get safety_privacy6Body =>
-      'Questions about privacy? See the Contact page under Safety & support.';
+      'Questions about privacy? Open Profile > Settings > Contact.';
+
+  @override
+  String get safety_termsUpdateTitle => 'Updated terms';
+
+  @override
+  String get safety_termsUpdateIntro =>
+      'We updated our Terms of Use and Privacy Policy to make how Ourney protects you clearer:';
+
+  @override
+  String get safety_termsUpdateBullet1 =>
+      'Zero tolerance for objectionable content or abusive users; reports are reviewed within 24 hours.';
+
+  @override
+  String get safety_termsUpdateBullet2 =>
+      'Your photos and data stay yours — no ads, no data selling, and you can delete your account anytime.';
+
+  @override
+  String get safety_termsUpdateAccept => 'Agree and continue';
+
+  @override
+  String get safety_termsUpdateLater => 'Later';
 }

@@ -1,21 +1,16 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
-import '../../app/locale_override.dart';
 import '../../app/providers.dart';
-import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../ui/ui.dart';
 import '../social/social.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
 import 'settings_screen.dart' show profileSettingsPath;
-import 'widgets/delete_account_dialog.dart';
 import 'widgets/profile_avatar.dart';
 import 'widgets/profile_stats_section.dart';
 
@@ -25,9 +20,9 @@ const String profileSetupPath = '${AppRoutes.profile}/setup';
 /// Route of the edit profile screen (sub-path of `/profile`).
 const String profileEditPath = '${AppRoutes.profile}/edit';
 
-/// `/profile` (App.tsx `ProfileSheet`): who I am, friends, settings links,
-/// sign out and account deletion. In local-only mode (FR-A5) it shows a
-/// guest state without account actions.
+/// `/profile` (App.tsx `ProfileSheet`): who I am, friends, stats and badges.
+/// Everything configurable lives in Settings, one gear away (top right). In
+/// local-only mode (FR-A5) it shows a guest state.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
@@ -36,6 +31,12 @@ class ProfileScreen extends ConsumerWidget {
     final l10n = ProfileL10n.of(context);
     final localOnly = ref.watch(appConfigProvider).localOnly;
     final profile = localOnly ? null : ref.watch(myProfileProvider);
+    final gear = UiBarIconButton(
+      key: const ValueKey('profile-settings'),
+      glyph: const OurneyIcon(name: 'settings', size: 21),
+      label: l10n.profile_settingsEntry,
+      onPressed: () => context.push(profileSettingsPath),
+    );
 
     return UiScaffold(
       key: const ValueKey('profile-screen'),
@@ -49,11 +50,13 @@ class ProfileScreen extends ConsumerWidget {
               onBack: context.pop,
               backLabel: MaterialLocalizations.of(context).backButtonTooltip,
               title: l10n.profile_title,
+              trailing: gear,
             )
           else
             UiTopBar(
               key: const ValueKey('profile-top-bar'),
               title: l10n.profile_title,
+              actions: [gear],
             ),
           const SizedBox(height: UiSpace.lg),
           if (profile == null)
@@ -66,14 +69,6 @@ class ProfileScreen extends ConsumerWidget {
           ],
           const SizedBox(height: UiSpace.xl),
           const ProfileStatsSection(),
-          const SizedBox(height: UiSpace.xl),
-          UiListHeading(title: l10n.profile_sectionSettings),
-          const _SettingsSection(),
-          if (!localOnly) ...[
-            const SizedBox(height: UiSpace.xl),
-            UiListHeading(title: l10n.profile_sectionAccount),
-            _AccountSection(),
-          ],
         ],
       ),
     );
@@ -244,114 +239,6 @@ class _ProfileCard extends StatelessWidget {
           compact: true,
           expand: false,
           onPressed: () => context.push(profileEditPath),
-        ),
-      ],
-    );
-  }
-}
-
-/// `.settings-card`: grouped rows in one sticker card.
-class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.child, this.borderColor});
-
-  final Widget child;
-  final Color? borderColor;
-
-  @override
-  Widget build(BuildContext context) => UiCard(
-    radius: UiRadius.card,
-    borderColor: borderColor,
-    shadowOffset: UiShadow.small,
-    padding: const EdgeInsets.symmetric(horizontal: UiSpace.md),
-    child: child,
-  );
-}
-
-class _SettingsSection extends ConsumerWidget {
-  const _SettingsSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ProfileL10n.of(context);
-    final haptics = ref.watch(hapticsEnabledProvider);
-    final language = ref.watch(localeOverrideProvider);
-    return _GroupCard(
-      child: Column(
-        children: [
-          UiRow(
-            key: const ValueKey('profile-settings'),
-            leading: const OurneyIcon(name: 'settings', flat: true),
-            title: l10n.profile_settingsEntry,
-            subtitle: _sub(context, l10n.profile_settingsEntrySub),
-            onPressed: () => context.push(profileSettingsPath),
-          ),
-          UiSwitchRow(
-            key: const ValueKey('profile-haptics'),
-            label: l10n.profile_haptics,
-            value: haptics,
-            onChanged: (v) {
-              unawaited(
-                ref.read(hapticsEnabledProvider.notifier).set(enabled: v),
-              );
-              if (v) OurneyHaptics.selection();
-            },
-          ),
-          UiRow(
-            key: const ValueKey('profile-language'),
-            leading: const OurneyIcon(name: 'translate', flat: true),
-            title: l10n.profile_language,
-            // Shows the language actually in use; Settings owns the picker.
-            subtitle: _sub(context, switch (language?.languageCode) {
-              null => l10n.profile_languageNote,
-              'en' => l10n.profile_languageEn,
-              _ => l10n.profile_languageVi,
-            }),
-            onPressed: () => context.push(profileSettingsPath),
-          ),
-          UiRow(
-            key: const ValueKey('profile-safety'),
-            leading: const OurneyIcon(name: 'shield', flat: true),
-            title: l10n.profile_safety,
-            divider: false,
-            onPressed: () => context.push(AppRoutes.safety),
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _sub(BuildContext context, String text) => Text(
-    text,
-    maxLines: 2,
-    overflow: TextOverflow.ellipsis,
-    style: UiText.body(size: 12, height: 1.4, color: context.ui.inkMuted),
-  );
-}
-
-class _AccountSection extends ConsumerWidget {
-  const _AccountSection();
-
-  Future<void> _delete(BuildContext context) async {
-    OurneyHaptics.warning();
-    await DeleteAccountDialog.show(context);
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ProfileL10n.of(context);
-    final ui = context.ui;
-    return Column(
-      children: [
-        _GroupCard(
-          borderColor: ui.danger,
-          child: UiRow(
-            key: const ValueKey('profile-delete'),
-            leading: OurneyIcon(name: 'trash', flat: true, color: ui.danger),
-            title: l10n.profile_deleteAccount,
-            divider: false,
-            showChevron: false,
-            onPressed: () => _delete(context),
-          ),
         ),
       ],
     );

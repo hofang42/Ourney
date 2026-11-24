@@ -8,8 +8,10 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
+import '../../../app/redirect.dart' show ProfileGateStatus;
 import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart' show rootError;
+import '../../profile/profile_providers.dart' show profileGateStatusProvider;
 import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../data/groups_providers.dart';
@@ -206,7 +208,9 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       );
     }
     final code = _normalized;
-    final async = isValidInviteCode(code)
+    final gateReady =
+        ref.watch(profileGateStatusProvider) == ProfileGateStatus.ready;
+    final async = gateReady && isValidInviteCode(code)
         ? ref.watch(groupPreviewProvider(code))
         : null;
     final preview = async?.asData?.value;

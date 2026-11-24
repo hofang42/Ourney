@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney/app/localization.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
-import 'package:ourney/features/safety/data/safety_providers.dart';
 
 import '../features/journeys/journeys_fakes.dart';
 import 'test_helpers.dart';
@@ -165,52 +164,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.safety);
     });
-  });
 
-  group('EULA gate (signed in only, FR-F3)', () {
-    testWidgets('signed in without acceptance goes to the gate, then back', (
-      tester,
-    ) async {
-      final c = await pumpOurneyApp(
-        tester,
-        config: testBackendConfig,
-        auth: FakeAuthRepository(userId: 'u1'),
-        eulaAccepted: false,
-      );
-      // Initial /capture -> EULA gate.
-      expect(location(c), startsWith('/safety/eula/accept'));
-      c.read(routerProvider).go(AppRoutes.groups);
-      await tester.pumpAndSettle();
-      expect(location(c), '/safety/eula/accept?from=%2Fgroups');
-      expect(find.byKey(const ValueKey('safety-eula-accept')), findsOneWidget);
-
-      await tester.tap(find.byKey(const ValueKey('safety-eula-checkbox')));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(
-        find.byKey(const ValueKey('safety-eula-accept-button')),
-      );
-      await tester.tap(find.byKey(const ValueKey('safety-eula-accept-button')));
-      await tester.pumpAndSettle();
-      expect(location(c), AppRoutes.groups);
-      expect(c.read(eulaAcceptedProvider), isTrue);
-    });
-
-    testWidgets('resetting the acceptance gates again', (tester) async {
-      final c = await pumpOurneyApp(
-        tester,
-        config: testBackendConfig,
-        auth: FakeAuthRepository(userId: 'u1'),
-      );
-      expect(location(c), AppRoutes.capture);
-      await c.read(eulaAcceptedProvider.notifier).reset();
-      await tester.pumpAndSettle();
-      expect(location(c), startsWith('/safety/eula/accept'));
-    });
-
-    testWidgets('local-only users are never gated', (tester) async {
-      final c = await pumpOurneyApp(tester, eulaAccepted: false);
-      expect(location(c), AppRoutes.capture);
-    });
+    testWidgets(
+      'signed-in users never see a post-login EULA redirect gate (§4.1)',
+      (tester) async {
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: FakeAuthRepository(userId: 'u1'),
+          eulaAccepted: false,
+        );
+        expect(location(c), AppRoutes.capture);
+      },
+    );
   });
 
   group('profile entry point (local-only guest too)', () {
@@ -220,7 +186,7 @@ void main() {
     }
 
     testWidgets('the dock opens /profile from every tab; reminders and '
-        'safety are reachable from there', (tester) async {
+        'terms are reachable from there', (tester) async {
       final c = await pumpJourneys(tester);
 
       // Journeys tab.
@@ -245,14 +211,15 @@ void main() {
       c.container.read(routerProvider).pop();
       await tester.pumpAndSettle();
 
-      await tester.scrollUntilVisible(
-        find.byKey(const ValueKey('profile-safety')),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.byKey(const ValueKey('profile-safety')));
+      // Terms, privacy and contact are one gear away, under Settings.
+      await tester.tap(find.byKey(const ValueKey('profile-settings')));
       await tester.pumpAndSettle();
-      expect(c.container.read(routerProvider).state.uri.path, AppRoutes.safety);
+      await tester.ensureVisible(find.byKey(const ValueKey('settings-eula')));
+      await tester.tap(find.byKey(const ValueKey('settings-eula')));
+      await tester.pumpAndSettle();
+      expect(c.container.read(routerProvider).state.uri.path, '/safety/eula');
+      c.container.read(routerProvider).pop();
+      await tester.pumpAndSettle();
       c.container.read(routerProvider).pop();
       await tester.pumpAndSettle();
       expect(location(c.container), AppRoutes.profile);
