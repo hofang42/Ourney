@@ -71,11 +71,15 @@ jobs:
               if s.startswith((" ", "\t", "\f")):
                   s = "\\" + s
               return s
+          rt = esc(os.environ["RUNNER_TEMP"])
+          sp = esc(os.environ.get("ANDROID_KEYSTORE_PASSWORD", ""))
+          ka = esc(os.environ.get("ANDROID_KEY_ALIAS", ""))
+          kp = esc(os.environ.get("ANDROID_KEY_PASSWORD", ""))
           lines = [
-              f"storeFile={esc(os.environ[\"RUNNER_TEMP\"])}/release.jks",
-              f"storePassword={esc(os.environ.get(\"ANDROID_KEYSTORE_PASSWORD\", \"\"))}",
-              f"keyAlias={esc(os.environ.get(\"ANDROID_KEY_ALIAS\", \"\"))}",
-              f"keyPassword={esc(os.environ.get(\"ANDROID_KEY_PASSWORD\", \"\"))}",
+              f"storeFile={rt}/release.jks",
+              f"storePassword={sp}",
+              f"keyAlias={ka}",
+              f"keyPassword={kp}",
           ]
           pathlib.Path("apps/mobile/android/key.properties").write_text("\n".join(lines) + "\n", encoding="utf-8")
           '
@@ -132,3 +136,25 @@ jobs:
         with:
           files: Ourney.apk
           generate_release_notes: true
+
+      # Mirrors the APK to the public repo so ourney.tech/Ourney.apk works while
+      # this repo stays private. Needs a PUBLIC_RELEASE_TOKEN secret with write
+      # access to hofang42/ourney-releases; skipped with a warning when unset.
+      - name: Publish APK to public release repo (hofang42/ourney-releases)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -z "${GH_TOKEN//[[:space:]]/}" ]; then
+            echo "::warning::PUBLIC_RELEASE_TOKEN not set; skipping mirror to hofang42/ourney-releases."
+            exit 0
+          fi
+          if gh release view "$TAG_NAME" --repo hofang42/ourney-releases >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" Ourney.apk --repo hofang42/ourney-releases --clobber
+          else
+            gh release create "$TAG_NAME" Ourney.apk \
+              --repo hofang42/ourney-releases \
+              --title "Ourney $TAG_NAME" \
+              --notes "Ourney Android Release ($TAG_NAME). Tải và mở file Ourney.apk để cài đặt."
+          fi
