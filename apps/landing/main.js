@@ -2,7 +2,8 @@
   const root = document.documentElement;
   root.classList.add('js');
   const $ = (id) => document.getElementById(id);
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotionMql = matchMedia('(prefers-reduced-motion: reduce)');
+  const isReducedMotion = () => reduceMotionMql.matches;
   const darkMql = matchMedia('(prefers-color-scheme: dark)');
 
   /* --- 1. Bilingual Copy Dictionary (vi default + en) --- */
@@ -104,6 +105,7 @@
       priv_vis_2: 'Ai có link',
       priv_vis_3: 'Thành viên nhóm',
       priv_hold_label: 'Cân nặng hôm nay',
+      priv_dec_sep: ',',
       priv_masked_sr: 'Đã ẩn số cân',
       priv_hold_revealed: '62,0 kg (-3,2 kg so với Ngày 1)',
       priv_hold_btn: 'Giữ để xem',
@@ -135,13 +137,21 @@
       beta_email_label: 'Email',
       beta_placeholder: 'ban@email-cua-ban.vn',
       beta_submit: 'nhận lời mời',
+      beta_stub_kicker: 'NGÀY 01',
+      beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
       form_ok: 'Đã ghi nhận trên bản xem trước! Tụi mình sẽ mở cổng đăng ký beta chính thức cho iOS & Android thật sớm.',
       footer_tagline: 'chụp một tấm. giữ một chuỗi. đi cùng nhau.',
       footer_journeys: 'hành trình',
       footer_privacy: 'riêng tư',
       footer_faq: 'hỏi đáp',
-      footer_beta: 'nhận lời mời'
+      footer_beta: 'nhận lời mời',
+      nf_title: 'ourney · 404 — lạc đường một nhịp.',
+      nf_brand_aria: 'Ourney, về trang chủ',
+      nf_eyebrow: '404 · không tìm thấy trang',
+      nf_h1: 'lạc đường một nhịp.',
+      nf_lede: 'Trang bạn mở không tồn tại hoặc đã đổi địa chỉ. Quay về trang chủ để tiếp tục hành trình Ngày\u00A01 cùng Ourney.',
+      nf_cta: 'về trang chủ ourney'
     },
     en: {
       title: 'ourney · snap one photo. keep one streak.',
@@ -240,6 +250,7 @@
       priv_vis_2: 'Anyone with link',
       priv_vis_3: 'Squad members',
       priv_hold_label: 'Today’s weight',
+      priv_dec_sep: '.',
       priv_masked_sr: 'Weight number masked',
       priv_hold_revealed: '62.0 kg (-3.2 kg since Day 1)',
       priv_hold_btn: 'Hold to reveal',
@@ -271,13 +282,21 @@
       beta_email_label: 'Email',
       beta_placeholder: 'you@example.com',
       beta_submit: 'get beta invite',
+      beta_stub_kicker: 'DAY 01',
+      beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
       form_ok: 'Noted in preview mode! Official iOS & Android beta waitlist storage opens very soon.',
       footer_tagline: 'snap one photo. keep one streak. go together.',
       footer_journeys: 'journeys',
       footer_privacy: 'privacy',
       footer_faq: 'faq',
-      footer_beta: 'get invite'
+      footer_beta: 'get invite',
+      nf_title: 'ourney · 404 — off the trail for a beat.',
+      nf_brand_aria: 'Ourney, back to home',
+      nf_eyebrow: '404 · page not found',
+      nf_h1: 'off the trail for a beat.',
+      nf_lede: 'The page you opened doesn’t exist or has moved. Head back home to continue your Day\u00A01 journey with Ourney.',
+      nf_cta: 'back to ourney home'
     }
   };
 
@@ -402,10 +421,11 @@
     else if (saved === 'en' || saved === 'vi') curLang = saved;
   } catch (e) {}
 
+  const is404 = Boolean(document.querySelector('.notfound-stage'));
   let curTab = 0;
   let curHeroCycle = 0;
   let minhNudged = false;
-  let streakTicked = reduceMotion || root.classList.contains('intro-seen');
+  let streakTicked = isReducedMotion() || root.classList.contains('intro-seen');
 
   /* --- 3. Theme Resolution & <picture> Source Media Sync --- */
   const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : darkMql.matches;
@@ -414,24 +434,32 @@
     const mediaVal = root.dataset.theme ? (dark ? 'all' : 'not all') : '(prefers-color-scheme: dark)';
     document.querySelectorAll('source.src-dark').forEach((s) => { s.media = mediaVal; });
     const metaL = $('meta-theme-light'), metaD = $('meta-theme-dark');
-    if (metaL && metaD && root.dataset.theme) {
-      const hex = dark ? '#1B1916' : '#FFF8EE';
-      metaL.content = hex;
-      metaD.content = hex;
+    if (metaL && metaD) {
+      if (root.dataset.theme) {
+        const hex = dark ? '#1B1916' : '#FFF8EE';
+        metaL.content = hex;
+        metaD.content = hex;
+      } else {
+        metaL.content = '#FFF8EE';
+        metaD.content = '#1B1916';
+      }
     }
   };
   syncThemePictures();
 
-  $('theme-toggle').addEventListener('click', () => {
-    const next = isDark() ? 'light' : 'dark';
-    root.dataset.theme = next;
-    try { localStorage.setItem('ourney-theme', next); } catch (e) {}
-    syncThemePictures();
-  });
+  const themeToggle = $('theme-toggle');
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const next = isDark() ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try { localStorage.setItem('ourney-theme', next); } catch (e) {}
+      syncThemePictures();
+    });
+  }
   darkMql.addEventListener('change', syncThemePictures);
-  new MutationObserver(syncThemePictures).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 
   /* --- 4. First-Load Intro Skip & Clean Settle Disarm --- */
+  let streakTickTimer = null;
   const markIntroSeen = () => {
     try { sessionStorage.setItem('ourney-intro-seen', '1'); } catch (e) {}
   };
@@ -440,13 +468,14 @@
     markIntroSeen();
   };
 
-  if (!root.classList.contains('intro-seen') && !reduceMotion) {
+  if (!is404 && !root.classList.contains('intro-seen') && !isReducedMotion()) {
     const skipEvents = ['wheel', 'touchmove', 'pointerdown', 'keydown'];
     const disarmSkip = () => {
       skipEvents.forEach((ev) => removeEventListener(ev, skipIntro));
     };
     function skipIntro() {
       disarmSkip();
+      clearTimeout(streakTickTimer);
       root.classList.add('intro-skip', 'hero-settled');
       streakTicked = true;
       renderHeroCycle(curHeroCycle);
@@ -455,7 +484,7 @@
     skipEvents.forEach((ev) => addEventListener(ev, skipIntro, { once: true, passive: true }));
     setTimeout(disarmSkip, 1100);
     setTimeout(settleHero, 2020);
-  } else {
+  } else if (!is404) {
     setTimeout(settleHero, 420);
   }
 
@@ -471,17 +500,17 @@
   const hccClapCnt = $('hcc-clap-cnt');
 
   function renderHeroCycle(idx) {
+    if (!hccPhoto || !hccTitle || !hccStreak || !hccBadge) return;
     const dict = COPY[curLang];
     const meta = HERO_CYCLES[idx] || HERO_CYCLES[0];
+    const titleKey = `hcc_t${idx}`;
+    const badgeKey = (idx === 0 && !streakTicked) ? 'hcc_b0_pre' : `hcc_b${idx}`;
     hccPhoto.dataset.cycle = String(idx);
-    hccTitle.textContent = dict[`hcc_t${idx}`];
-    if (idx === 0 && !streakTicked) {
-      hccStreak.textContent = '20';
-      hccBadge.textContent = dict.hcc_b0_pre;
-    } else {
-      hccStreak.textContent = meta.streak;
-      hccBadge.textContent = dict[`hcc_b${idx}`];
-    }
+    hccTitle.dataset.i18n = titleKey;
+    hccTitle.textContent = dict[titleKey];
+    hccStreak.textContent = (idx === 0 && !streakTicked) ? '20' : meta.streak;
+    hccBadge.dataset.i18n = badgeKey;
+    hccBadge.textContent = dict[badgeKey];
     if (hccFireCnt) hccFireCnt.textContent = meta.fire;
     if (hccClapCnt) hccClapCnt.textContent = meta.clap;
   }
@@ -502,35 +531,66 @@
     checkinCard.addEventListener('pointerenter', () => { heroHovered = true; });
     checkinCard.addEventListener('pointerleave', () => { heroHovered = false; });
   }
+  if (hccFlame) {
+    hccFlame.addEventListener('animationend', () => hccFlame.classList.remove('pop'));
+  }
 
-  if (!reduceMotion) {
+  if (!is404 && !isReducedMotion()) {
     if (!streakTicked) {
-      setTimeout(() => {
+      streakTickTimer = setTimeout(() => {
         streakTicked = true;
         if (curHeroCycle === 0) renderHeroCycle(0);
-        if (hccFlame) hccFlame.classList.add('pop');
+        if (hccFlame && !isReducedMotion()) hccFlame.classList.add('pop');
       }, 1740);
     }
     setInterval(() => {
-      if (!heroVisible || heroHovered || document.hidden) return;
+      if (isReducedMotion() || !heroVisible || heroHovered || document.hidden) return;
       curHeroCycle = (curHeroCycle + 1) % 3;
       renderHeroCycle(curHeroCycle);
     }, 3600);
   }
 
-  /* --- 6. Sticky Nav & Hero Scroll Dispersion --- */
+  /* --- 6. Sticky Nav, Hero Scroll Dispersion & Mobile Thumb-Zone CTA --- */
   const nav = document.querySelector('.nav');
   const scrollCue = $('hero-scroll-cue');
   const orbitItems = [...document.querySelectorAll('.hero-orbit-item')];
+  const mobileDock = $('mobile-dock-cta');
+  const heroCta = $('hero-cta');
+  const betaSec = $('beta');
   let rafPending = false;
+
+  const resetHeroTransforms = () => {
+    orbitItems.forEach((el) => {
+      el.style.transform = '';
+      el.style.opacity = '';
+    });
+    if (checkinCard) checkinCard.style.transform = '';
+  };
+
+  const syncDock = () => {
+    if (!mobileDock || !heroCta || !betaSec) return;
+    if (innerWidth >= 768) {
+      mobileDock.hidden = true;
+      return;
+    }
+    const hRect = heroCta.getBoundingClientRect();
+    const bRect = betaSec.getBoundingClientRect();
+    mobileDock.hidden = !(hRect.bottom < 0 && bRect.top > innerHeight * 0.92);
+  };
 
   const updateScroll = () => {
     rafPending = false;
     const y = scrollY;
-    nav.classList.toggle('scrolled', y > 12);
+    if (nav) nav.classList.toggle('scrolled', y > 12);
     if (scrollCue) scrollCue.classList.toggle('hide', y > 24);
+    syncDock();
 
-    if (!reduceMotion && y <= innerHeight * 1.1) {
+    if (isReducedMotion()) {
+      resetHeroTransforms();
+      return;
+    }
+
+    if (y <= innerHeight * 1.1) {
       if (y > 4 && !root.classList.contains('hero-settled')) {
         root.classList.add('hero-settled');
       }
@@ -557,15 +617,20 @@
       } else if (checkinCard) {
         checkinCard.style.transform = '';
       }
+    } else if (checkinCard && innerWidth < 768) {
+      checkinCard.style.transform = '';
     }
   };
 
-  addEventListener('scroll', () => {
+  const scheduleScrollUpdate = () => {
     if (!rafPending) {
       rafPending = true;
       requestAnimationFrame(updateScroll);
     }
-  }, { passive: true });
+  };
+
+  addEventListener('scroll', scheduleScrollUpdate, { passive: true });
+  addEventListener('resize', scheduleScrollUpdate, { passive: true });
   updateScroll();
 
   /* --- 7. Section 2: 6-Persona Chameleon Switcher --- */
@@ -582,8 +647,11 @@
   const jImg = $('j-img');
   const jSrcD = $('j-src-d');
   const jCouple = $('j-couple-screen');
+  let swapTimer = null;
 
-  const applyJourneyTab = (idx, moveFocus) => {
+  const applyJourneyTab = (idx, moveFocus, animate = true) => {
+    if (!jStage || !jTabs || !jPanel) return;
+    const prevTab = curTab;
     curTab = idx;
     const item = JOURNEYS[idx];
     const copy = item[curLang];
@@ -593,23 +661,24 @@
       btn.setAttribute('aria-selected', String(active));
       btn.tabIndex = active ? 0 : -1;
     });
-    if (moveFocus) tabBtns[idx].focus();
+    if (moveFocus && tabBtns[idx]) tabBtns[idx].focus();
 
     jStage.dataset.skin = item.skin;
     jPanel.setAttribute('aria-labelledby', `tab-${item.skin}`);
-    jKind.textContent = copy.kind;
-    jTitle.textContent = copy.title;
-    jDesc.textContent = copy.desc;
-    jNo.textContent = item.no;
-    jChips.innerHTML = copy.chips.map((c) => `<span class="dna-chip">${c}</span>`).join('');
+    if (jKind) jKind.textContent = copy.kind;
+    if (jTitle) jTitle.textContent = copy.title;
+    if (jDesc) jDesc.textContent = copy.desc;
+    if (jNo) jNo.textContent = item.no;
+    if (jChips) jChips.innerHTML = copy.chips.map((c) => `<span class="dna-chip">${c}</span>`).join('');
     if (jCouple) jCouple.setAttribute('aria-label', JOURNEYS[4][curLang].alt);
 
     const swapScreen = () => {
+      if (!jPic || !jImg || !jSrcD || !jCouple || !phoneJ) return;
       if (item.screen) {
         jCouple.hidden = true;
         jPic.hidden = false;
-        jImg.src = `assets/screens/${item.screen}.webp`;
-        jSrcD.srcset = `assets/screens/${item.screen}-dark.webp`;
+        jImg.src = `/assets/screens/${item.screen}.webp`;
+        jSrcD.srcset = `/assets/screens/${item.screen}-dark.webp`;
         jImg.alt = copy.alt;
       } else {
         jPic.hidden = true;
@@ -618,34 +687,37 @@
       phoneJ.classList.remove('swapping');
     };
 
-    if (reduceMotion) {
+    clearTimeout(swapTimer);
+    if (!animate || isReducedMotion() || idx === prevTab || !phoneJ) {
       swapScreen();
     } else {
       phoneJ.classList.add('swapping');
-      setTimeout(swapScreen, 130);
+      swapTimer = setTimeout(swapScreen, 130);
     }
   };
 
-  jTabs.addEventListener('click', (e) => {
-    const btn = e.target.closest('.j-tab');
-    if (!btn) return;
-    const idx = Number(btn.dataset.idx);
-    if (!Number.isNaN(idx)) applyJourneyTab(idx, false);
-  });
+  if (jTabs) {
+    jTabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('.j-tab');
+      if (!btn) return;
+      const idx = Number(btn.dataset.idx);
+      if (!Number.isNaN(idx)) applyJourneyTab(idx, false, true);
+    });
 
-  jTabs.addEventListener('keydown', (e) => {
-    const delta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
-    if (delta) {
-      e.preventDefault();
-      applyJourneyTab((curTab + delta + JOURNEYS.length) % JOURNEYS.length, true);
-    } else if (e.key === 'Home') {
-      e.preventDefault();
-      applyJourneyTab(0, true);
-    } else if (e.key === 'End') {
-      e.preventDefault();
-      applyJourneyTab(JOURNEYS.length - 1, true);
-    }
-  });
+    jTabs.addEventListener('keydown', (e) => {
+      const delta = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      if (delta) {
+        e.preventDefault();
+        applyJourneyTab((curTab + delta + JOURNEYS.length) % JOURNEYS.length, true, true);
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        applyJourneyTab(0, true, true);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        applyJourneyTab(JOURNEYS.length - 1, true, true);
+      }
+    });
+  }
 
   /* Preload remaining journey screenshots only when #journeys approaches viewport */
   const journeysSec = $('journeys');
@@ -657,7 +729,7 @@
       JOURNEYS.forEach((j) => {
         if (j.screen && j.screen !== 'j-ielts') {
           const pre = new Image();
-          pre.src = `assets/screens/${j.screen}${suffix}.webp`;
+          pre.src = `/assets/screens/${j.screen}${suffix}.webp`;
         }
       });
     }, { rootMargin: '480px 0px' });
@@ -673,12 +745,14 @@
     if (howPhone) howPhone.dataset.screen = String(n);
     if (stepsFill) stepsFill.style.transform = `scaleY(${((n + 1) / 3).toFixed(2)})`;
   };
-  const stepIO = new IntersectionObserver((entries) => {
-    entries.forEach((en) => {
-      if (en.isIntersecting) setStep(Number(en.target.dataset.step));
-    });
-  }, { rootMargin: '-42% 0px -42% 0px' });
-  steps.forEach((s) => stepIO.observe(s));
+  if (steps.length) {
+    const stepIO = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) setStep(Number(en.target.dataset.step));
+      });
+    }, { rootMargin: '-42% 0px -42% 0px' });
+    steps.forEach((s) => stepIO.observe(s));
+  }
 
   /* --- 9. Section 4: Interactive Squad Polaroid Wall --- */
   const RX_LABELS = {
@@ -719,9 +793,11 @@
         numEl.textContent = String(nextVal);
       }
       syncReactChipAria(chip);
-      chip.classList.remove('pop');
-      void chip.offsetWidth;
-      chip.classList.add('pop');
+      if (!isReducedMotion()) {
+        chip.classList.remove('pop');
+        void chip.offsetWidth;
+        chip.classList.add('pop');
+      }
     });
   });
 
@@ -739,22 +815,30 @@
       minhNudged = true;
       const dict = COPY[curLang];
       nudgeBtn.classList.add('done');
-      nudgeSvg.setAttribute('hidden', '');
-      nudgeCheck.removeAttribute('hidden');
-      nudgeLabel.textContent = dict.sq_nudge_done;
-      minhStatus.textContent = dict.sq_c4_nudged;
-      squadMsg.textContent = dict.sq_nudge_done;
+      if (nudgeSvg) nudgeSvg.setAttribute('hidden', '');
+      if (nudgeCheck) nudgeCheck.removeAttribute('hidden');
+      if (nudgeLabel) {
+        nudgeLabel.dataset.i18n = 'sq_nudge_done';
+        nudgeLabel.textContent = dict.sq_nudge_done;
+      }
+      if (minhStatus) {
+        minhStatus.dataset.i18n = 'sq_c4_nudged';
+        minhStatus.textContent = dict.sq_c4_nudged;
+      }
+      if (squadMsg) squadMsg.textContent = dict.sq_nudge_done;
       if (meter4) meter4.classList.add('nudged');
-      minhCard.classList.remove('wiggle');
-      void minhCard.offsetWidth;
-      minhCard.classList.add('wiggle');
+      if (minhCard && !isReducedMotion()) {
+        minhCard.classList.remove('wiggle');
+        void minhCard.offsetWidth;
+        minhCard.classList.add('wiggle');
+      }
     });
   }
 
   /* --- 9b. Section 5: Finish Line Fan-Open Observer --- */
   const finishPhones = $('finish-phones');
   if (finishPhones) {
-    if (reduceMotion) {
+    if (isReducedMotion()) {
       finishPhones.classList.add('in');
     } else {
       const finIO = new IntersectionObserver((entries) => {
@@ -766,6 +850,22 @@
       finIO.observe(finishPhones);
     }
   }
+
+  reduceMotionMql.addEventListener('change', () => {
+    if (isReducedMotion()) {
+      clearTimeout(streakTickTimer);
+      clearTimeout(swapTimer);
+      streakTicked = true;
+      settleHero();
+      renderHeroCycle(curHeroCycle);
+      resetHeroTransforms();
+      if (hccFlame) hccFlame.classList.remove('pop');
+      reactChips.forEach((c) => c.classList.remove('pop'));
+      if (minhCard) minhCard.classList.remove('wiggle');
+      if (phoneJ) phoneJ.classList.remove('swapping');
+      if (finishPhones) finishPhones.classList.add('in');
+    }
+  });
 
   /* --- 10. Section 6: Hold-to-Reveal Metric & Live Share Preview Toggles --- */
   const holdBtn = $('hold-btn');
@@ -796,12 +896,11 @@
       clearTimeout(suppressTimer);
       const heldMs = pointerDownAt > 0 ? performance.now() - pointerDownAt : 0;
       pointerDownAt = 0;
+      suppressClick = true;
+      suppressTimer = setTimeout(() => { suppressClick = false; }, 120);
       if (heldMs >= 180) {
-        suppressClick = true;
-        suppressTimer = setTimeout(() => { suppressClick = false; }, 120);
         setHoldReveal(false);
       } else {
-        suppressClick = false;
         setHoldReveal(true);
         holdTimer = setTimeout(() => setHoldReveal(false), 2500);
       }
@@ -818,6 +917,7 @@
     holdBtn.addEventListener('keydown', (e) => {
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
+        if (e.repeat) return;
         clearTimeout(holdTimer);
         clearTimeout(suppressTimer);
         suppressClick = false;
@@ -862,14 +962,16 @@
     if (!sharePreview || !spMetricPill) return;
     const hideNum = tgHideNum ? tgHideNum.checked : true;
     const blurImg = tgBlurImg ? tgBlurImg.checked : false;
+    const pillKey = hideNum ? 'priv_preview_hidden' : 'priv_preview_shown';
     sharePreview.dataset.hideNum = String(hideNum);
     sharePreview.dataset.blurImg = String(blurImg);
-    spMetricPill.textContent = hideNum ? COPY[curLang].priv_preview_hidden : COPY[curLang].priv_preview_shown;
+    spMetricPill.dataset.i18n = pillKey;
+    spMetricPill.textContent = COPY[curLang][pillKey];
   };
   if (tgHideNum) tgHideNum.addEventListener('change', syncPrivacyPreview);
   if (tgBlurImg) tgBlurImg.addEventListener('change', syncPrivacyPreview);
 
-  /* --- 11. Section 8: Platform Pills, Beta Form & Mobile Sticky CTA --- */
+  /* --- 11. Section 8: Platform Pills, Beta Form & Focus Not Obscured Guard --- */
   document.querySelectorAll('.plat-pill').forEach((pill) => {
     pill.addEventListener('click', () => {
       const cur = pill.getAttribute('aria-pressed') === 'true';
@@ -878,40 +980,31 @@
   });
 
   const form = $('beta-form'), msg = $('form-msg'), email = $('email');
-  const announce = (text) => {
+  let formMsgKey = '';
+  let announceRaf = 0;
+  const announce = (key) => {
+    formMsgKey = key;
+    if (!msg) return;
+    cancelAnimationFrame(announceRaf);
     msg.textContent = '';
-    requestAnimationFrame(() => { msg.textContent = text; });
+    announceRaf = requestAnimationFrame(() => {
+      msg.textContent = (formMsgKey && COPY[curLang][formMsgKey]) || '';
+    });
   };
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const ok = Boolean(email.value.trim()) && email.checkValidity();
-    email.setAttribute('aria-invalid', ok ? 'false' : 'true');
-    if (!ok) {
-      announce(COPY[curLang].form_err);
-      email.focus();
-      return;
-    }
-    announce(COPY[curLang].form_ok);
-    form.reset();
-  });
-
-  /* Mobile Floating Thumb-Zone CTA visibility & WCAG 2.4.11 Focus Not Obscured guard */
-  const mobileDock = $('mobile-dock-cta');
-  const heroCta = $('hero-cta');
-  const betaSec = $('beta');
-  const syncDock = () => {
-    if (!mobileDock || !heroCta || !betaSec) return;
-    if (innerWidth >= 768) {
-      mobileDock.hidden = true;
-      return;
-    }
-    const hRect = heroCta.getBoundingClientRect();
-    const bRect = betaSec.getBoundingClientRect();
-    mobileDock.hidden = !(hRect.bottom < 0 && bRect.top > innerHeight * 0.92);
-  };
-  addEventListener('scroll', () => requestAnimationFrame(syncDock), { passive: true });
-  addEventListener('resize', syncDock, { passive: true });
-  syncDock();
+  if (form && email) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const ok = Boolean(email.value.trim()) && email.checkValidity();
+      email.setAttribute('aria-invalid', ok ? 'false' : 'true');
+      if (!ok) {
+        announce('form_err');
+        email.focus();
+        return;
+      }
+      announce('form_ok');
+      form.reset();
+    });
+  }
 
   addEventListener('focusin', (e) => {
     const t = e.target;
@@ -938,9 +1031,9 @@
     const dict = COPY[curLang];
     root.lang = curLang;
     root.dataset.lang = curLang;
-    document.title = dict.title;
+    document.title = (is404 && dict.nf_title) ? dict.nf_title : dict.title;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.content = dict.meta_desc;
+    if (metaDesc && !is404) metaDesc.content = dict.meta_desc;
 
     document.querySelectorAll('[data-i18n]').forEach((el) => {
       const k = el.dataset.i18n;
@@ -958,14 +1051,22 @@
       const k = el.dataset.i18nAlt;
       if (dict[k]) el.alt = dict[k];
     });
+    document.querySelectorAll('[data-home-link]').forEach((el) => {
+      el.setAttribute('href', curLang === 'en' ? '/?lang=en' : '/');
+    });
 
     renderHeroCycle(curHeroCycle);
-    applyJourneyTab(curTab, false);
+    applyJourneyTab(curTab, false, false);
     syncPrivacyPreview();
     reactChips.forEach(syncReactChipAria);
-    if (minhNudged && nudgeLabel && minhStatus) {
-      nudgeLabel.textContent = dict.sq_nudge_done;
-      minhStatus.textContent = dict.sq_c4_nudged;
+    if (minhNudged) {
+      if (nudgeLabel) nudgeLabel.textContent = dict.sq_nudge_done;
+      if (minhStatus) minhStatus.textContent = dict.sq_c4_nudged;
+      if (squadMsg) squadMsg.textContent = dict.sq_nudge_done;
+    }
+    if (msg && formMsgKey && dict[formMsgKey]) {
+      cancelAnimationFrame(announceRaf);
+      msg.textContent = dict[formMsgKey];
     }
 
     if (persist) {
@@ -979,9 +1080,12 @@
     }
   };
 
-  $('lang-toggle').addEventListener('click', () => {
-    applyLanguage(curLang === 'vi' ? 'en' : 'vi', true);
-  });
+  const langToggle = $('lang-toggle');
+  if (langToggle) {
+    langToggle.addEventListener('click', () => {
+      applyLanguage(curLang === 'vi' ? 'en' : 'vi', true);
+    });
+  }
 
   if (curLang === 'en') applyLanguage('en', false);
 })();

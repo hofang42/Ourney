@@ -2,19 +2,19 @@
    Synchronized with apps/mobile/lib/ui/tokens.dart, skins.dart, typography.dart, ourney_icons.dart. */
 @font-face {
   font-family: 'Space Grotesk';
-  src: url(assets/fonts/SpaceGrotesk-Variable.woff2) format('woff2');
+  src: url(/assets/fonts/SpaceGrotesk-Variable.woff2) format('woff2');
   font-weight: 500 700;
   font-display: swap;
 }
 @font-face {
   font-family: 'Be Vietnam Pro';
-  src: url(assets/fonts/BeVietnamPro-Regular.woff2) format('woff2');
+  src: url(/assets/fonts/BeVietnamPro-Regular.woff2) format('woff2');
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: 'Be Vietnam Pro';
-  src: url(assets/fonts/BeVietnamPro-SemiBold.woff2) format('woff2');
+  src: url(/assets/fonts/BeVietnamPro-SemiBold.woff2) format('woff2');
   font-weight: 600 700;
   font-display: swap;
 }
@@ -2199,6 +2199,12 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .intro-stage { display: none !important; }
+  .intro-stage,
+  .intro-stack,
+  .intro-stamp,
+  .intro-recoil-1,
+  .intro-recoil-2,
+  .hero-stage,
   .hero-phone-wrap,
   .hero-orbit-item,
   .orbit-tile,
@@ -2206,7 +2212,11 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   .hero-ticket,
   .hero-checkin-card,
   .hero-scroll-cue,
-  .nav-inner > * {
+  .nav-inner > *,
+  .hcc-flame,
+  .hcc-flame.pop,
+  .react-chip.pop .o-sticker,
+  .polaroid-waiting.wiggle {
     animation: none !important;
   }
   .phone-j,
@@ -2217,5 +2227,11 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
     transition-duration: 150ms !important;
     transition-property: opacity !important;
     transform: none !important;
+  }
+  .faq-disc,
+  .steps-fill,
+  .switch span[aria-hidden]::after,
+  .mobile-dock-cta {
+    transition: none !important;
   }
 }
