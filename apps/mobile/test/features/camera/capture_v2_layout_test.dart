@@ -111,7 +111,16 @@ void main() {
           findsOneWidget,
         );
         expect(find.byKey(const ValueKey('capture-title')), findsNothing);
-        expect(cutTexts(tester), isEmpty);
+        // The chip may end in an ellipsis (decision 2026-11-22); nothing else
+        // is cut and the full name stays in the semantics label.
+        expect(
+          cutTexts(tester).where((c) => !c.contains('capture-journey-chip')),
+          isEmpty,
+        );
+        expect(
+          find.bySemanticsLabel(RegExp('${RegExp.escape(_long)}.*')),
+          findsWidgets,
+        );
         // Discs are images: no Text inside a journey disc.
         for (final id in ['j1', 'j2']) {
           expect(

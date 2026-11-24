@@ -215,7 +215,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen> {
       key: ValueKey('request-${p.userId}'),
       person: p,
       extraLine: l10n.social_requested,
-      trailing: [
+      actions: [
         UiButton.secondary(
           key: ValueKey('cancel-${p.userId}'),
           label: l10n.social_cancelRequest,

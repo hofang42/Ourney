@@ -122,10 +122,18 @@ class UiStreakHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // U15: at large text, or on a narrow card (320dp), the key message (how
+    // many are left today) must not be cropped: stack the number above the
+    // full title instead of squeezing it beside the number.
+    final bigText = MediaQuery.textScalerOf(context).scale(10) > 13;
+    return LayoutBuilder(
+      builder: (context, box) =>
+          _build(context, large: bigText || box.maxWidth < 300),
+    );
+  }
+
+  Widget _build(BuildContext context, {required bool large}) {
     final label = semanticLabel;
-    // U15: at large text the key message (how many are left today) must not be
-    // cropped: stack the number above the full title instead of squeezing it.
-    final large = MediaQuery.textScalerOf(context).scale(10) > 13;
     final texts = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
