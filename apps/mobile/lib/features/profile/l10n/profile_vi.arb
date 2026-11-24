@@ -387,6 +387,8 @@
   "profile_settings_blocked": "Người bị chặn",
   "profile_settings_blockedSub": "Xem và bỏ chặn",
   "profile_settings_secInfo": "thông tin",
+  "profile_settings_featureRequests": "Góp ý & đề xuất tính năng",
+  "profile_settings_featureRequestsSub": "Bình chọn ý tưởng hoặc gửi đề xuất mới",
   "profile_settings_eula": "Điều khoản sử dụng (EULA)",
   "profile_settings_privacyPolicy": "Chính sách riêng tư",
   "profile_settings_contact": "Liên hệ",
