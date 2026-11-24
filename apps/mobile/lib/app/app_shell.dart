@@ -9,7 +9,6 @@ import '../features/safety/ui/legal_screens.dart';
 import '../ui/ui.dart';
 import 'app_dock.dart';
 import 'providers.dart';
-import 'theme/motion.dart';
 
 /// Bottom shell: Journeys · Squad · [Capture] · Activity · Profile, drawn by [AppDock]. Branch
 /// order = tab order, so branch 2 (Capture) is the center button and the
@@ -39,7 +38,6 @@ class _AppShellState extends ConsumerState<AppShell> {
       navigationShell.goBranch(index, initialLocation: true);
       return;
     }
-    OurneyHaptics.selection();
     navigationShell.goBranch(index);
   }
 
@@ -70,6 +68,130 @@ class _AppShellState extends ConsumerState<AppShell> {
       bottomNavigationBar: onCamera
           ? null
           : AppDock(currentIndex: navigationShell.currentIndex, onSelect: _go),
+    );
+  }
+}
+
+/// Animated branch container for [StatefulShellRoute] that immediately places
+/// inactive branches inside `Offstage(offstage: true)` and
+/// `TickerMode(enabled: false)` (so Tab 2 `CaptureScreen` stops/releases the
+/// camera sensor on the very frame the user leaves Tab 2) while animating only
+/// the newly active branch over [UiMotion.fast] (`160ms`,
+/// [UiCurves.easeOutStrong]): [FadeTransition] (`0.0 -> 1.0`) + subtle
+/// directional horizontal translate (`±6dp`, `0dp` when entering or leaving
+/// Tab 2 Camera, `0dp` under Reduce Motion).
+class UiShellBranchContainer extends StatefulWidget {
+  const UiShellBranchContainer({
+    required this.currentIndex,
+    required this.children,
+    super.key,
+  });
+
+  final int currentIndex;
+  final List<Widget> children;
+
+  static const double slideDistance = 6.0;
+
+  @override
+  State<UiShellBranchContainer> createState() => _UiShellBranchContainerState();
+}
+
+class _UiShellBranchContainerState extends State<UiShellBranchContainer>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: UiMotion.fast,
+    value: 1.0,
+  );
+  late final CurvedAnimation _curved = CurvedAnimation(
+    parent: _ctrl,
+    curve: UiCurves.easeOutStrong,
+  );
+
+  double _slideDx = 0.0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (UiMotion.reduced(context) && _ctrl.isAnimating) {
+      _ctrl.stop();
+      _ctrl.value = 1.0;
+      _slideDx = 0.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant UiShellBranchContainer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.currentIndex == oldWidget.currentIndex) return;
+    if (UiMotion.reduced(context)) {
+      _ctrl.stop();
+      _ctrl.value = 1.0;
+      _slideDx = 0.0;
+      return;
+    }
+    final enteringOrLeavingCamera =
+        oldWidget.currentIndex == AppShell.captureIndex ||
+        widget.currentIndex == AppShell.captureIndex;
+    if (enteringOrLeavingCamera) {
+      _slideDx = 0.0;
+    } else {
+      final isRtl = Directionality.maybeOf(context) == TextDirection.rtl;
+      final dir = widget.currentIndex.compareTo(oldWidget.currentIndex);
+      final sign = isRtl ? -dir.toDouble() : dir.toDouble();
+      _slideDx = sign * UiShellBranchContainer.slideDistance;
+    }
+    _ctrl
+      ..duration = UiMotion.fast
+      ..forward(from: 0.0);
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = UiMotion.reduced(context);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          Offstage(
+            offstage: i != widget.currentIndex,
+            child: TickerMode(
+              enabled: i == widget.currentIndex,
+              child: IgnorePointer(
+                ignoring: i != widget.currentIndex,
+                child: FadeTransition(
+                  opacity: (!reduced && i == widget.currentIndex)
+                      ? _curved
+                      : kAlwaysCompleteAnimation,
+                  child: AnimatedBuilder(
+                    animation: (!reduced && i == widget.currentIndex)
+                        ? _curved
+                        : kAlwaysCompleteAnimation,
+                    child: widget.children[i],
+                    builder: (context, child) {
+                      final active = !reduced && i == widget.currentIndex;
+                      final dx = active
+                          ? (1.0 - _curved.value) * _slideDx
+                          : 0.0;
+                      return Transform.translate(
+                        key: ValueKey('shell-branch-translate-$i'),
+                        offset: Offset(dx, 0.0),
+                        child: child,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

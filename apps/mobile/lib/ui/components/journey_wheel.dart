@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui_;
 
@@ -17,6 +18,7 @@ const double _edge = 8;
 const double _firstRadius = 108;
 const double _ringGap = 88;
 const Duration _inDuration = Duration(milliseconds: 240);
+const Duration _outDuration = Duration(milliseconds: 170);
 
 /// One journey on the [showUiJourneyWheel] wheel.
 class UiJourneyWheelItem {
@@ -46,8 +48,9 @@ class UiJourneyWheelItem {
 /// navigates, so the camera underneath keeps running.
 ///
 /// Opens on the root navigator, so it floats over the shell and the camera.
-/// Honors Reduce Motion (no animation) and [reduceTransparency] / high
-/// contrast (solid scrim, no blur).
+/// Bidirectional transition (`240ms` fan-out / `170ms` fan-in), honoring
+/// Reduce Motion (`150ms` opacity-only fade with zero arc translation) and
+/// [reduceTransparency] / high contrast (solid scrim, no blur).
 Future<void> showUiJourneyWheel(
   BuildContext context, {
   required List<UiJourneyWheelItem> items,
@@ -59,28 +62,67 @@ Future<void> showUiJourneyWheel(
   String closeLabel = 'Đóng',
   String activeHint = 'đang chọn',
 }) {
-  return showGeneralDialog<void>(
-    context: context,
-    useRootNavigator: true,
-    barrierDismissible: true,
-    barrierLabel: closeLabel,
-    barrierColor: Colors.transparent,
-    transitionDuration: Duration.zero,
-    pageBuilder: (ctx, _, _) => UiJourneyWheel(
-      items: items,
-      activeId: activeId,
-      anchor: anchor,
-      reduceTransparency: reduceTransparency,
-      semanticLabel: semanticLabel,
-      closeLabel: closeLabel,
-      activeHint: activeHint,
-      onDismiss: () => Navigator.of(ctx, rootNavigator: true).pop(),
-      onSelect: (id) {
-        Navigator.of(ctx, rootNavigator: true).pop();
-        onSelect(id);
-      },
+  final enterDuration = UiMotion.fadeOf(context, _inDuration);
+  final exitDuration = UiMotion.fadeOf(context, _outDuration);
+  return Navigator.of(context, rootNavigator: true).push<void>(
+    _UiJourneyWheelRoute(
+      enterDuration: enterDuration,
+      exitDuration: exitDuration,
+      barrierLabel: closeLabel,
+      pageBuilder: (ctx, animation, _) => UiJourneyWheel(
+        items: items,
+        activeId: activeId,
+        anchor: anchor,
+        routeAnimation: animation,
+        reduceTransparency: reduceTransparency,
+        semanticLabel: semanticLabel,
+        closeLabel: closeLabel,
+        activeHint: activeHint,
+        onDismiss: () => Navigator.of(ctx, rootNavigator: true).pop(),
+        onSelect: (id) {
+          Navigator.of(ctx, rootNavigator: true).pop();
+          onSelect(id);
+        },
+      ),
     ),
   );
+}
+
+class _UiJourneyWheelRoute extends PopupRoute<void> {
+  _UiJourneyWheelRoute({
+    required this.enterDuration,
+    required this.exitDuration,
+    required this.barrierLabel,
+    required this.pageBuilder,
+  });
+
+  final Duration enterDuration;
+  final Duration exitDuration;
+  final RoutePageBuilder pageBuilder;
+
+  @override
+  Duration get transitionDuration => enterDuration;
+
+  @override
+  Duration get reverseTransitionDuration => exitDuration;
+
+  @override
+  bool get barrierDismissible => true;
+
+  @override
+  final String? barrierLabel;
+
+  @override
+  Color? get barrierColor => null;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
+    return pageBuilder(context, animation, secondaryAnimation);
+  }
 }
 
 /// The wheel surface itself (use [showUiJourneyWheel] in the app).
@@ -91,6 +133,7 @@ class UiJourneyWheel extends StatefulWidget {
     required this.anchor,
     required this.onSelect,
     required this.onDismiss,
+    this.routeAnimation,
     this.reduceTransparency = false,
     this.semanticLabel = 'Chọn hành trình',
     this.closeLabel = 'Đóng',
@@ -105,6 +148,7 @@ class UiJourneyWheel extends StatefulWidget {
   final Offset anchor;
   final ValueChanged<String> onSelect;
   final VoidCallback onDismiss;
+  final Animation<double>? routeAnimation;
   final bool reduceTransparency;
   final String semanticLabel;
   final String closeLabel;
@@ -152,26 +196,100 @@ class UiJourneyWheel extends StatefulWidget {
 
 class _UiJourneyWheelState extends State<UiJourneyWheel>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this);
+  AnimationController? _fallbackCtrl;
+  CurvedAnimation? _fadeCurved;
+  CurvedAnimation? _arcCurved;
+  Animation<double>? _boundParent;
   bool _started = false;
+  int? _dragHoveredIndex;
+
+  Animation<double> get _anim => widget.routeAnimation ?? _ensureFallback();
+
+  AnimationController _ensureFallback() {
+    return _fallbackCtrl ??= AnimationController(
+      vsync: this,
+      duration: _inDuration,
+      reverseDuration: _outDuration,
+    );
+  }
+
+  void _syncCurvedAnimations() {
+    final parent = _anim;
+    if (identical(parent, _boundParent) &&
+        _fadeCurved != null &&
+        _arcCurved != null) {
+      return;
+    }
+    _fadeCurved?.dispose();
+    _arcCurved?.dispose();
+    _boundParent = parent;
+    _fadeCurved = CurvedAnimation(
+      parent: parent,
+      curve: UiCurves.easeOutStrong,
+      reverseCurve: UiCurves.easeOutStrong.flipped,
+    );
+    _arcCurved = CurvedAnimation(
+      parent: parent,
+      curve: UiCurves.dockOvershoot,
+      reverseCurve: UiCurves.easeOutStrong.flipped,
+    );
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-    _c.duration = UiMotion.of(context, _inDuration);
-    if (_c.duration == Duration.zero) {
-      _c.value = 1;
-    } else {
-      _c.forward();
+    if (!_started) {
+      _started = true;
+      if (widget.routeAnimation == null) {
+        final ctrl = _ensureFallback();
+        ctrl.duration = UiMotion.fadeOf(context, _inDuration);
+        ctrl.reverseDuration = UiMotion.fadeOf(context, _outDuration);
+        ctrl.forward();
+      }
+    }
+    _syncCurvedAnimations();
+  }
+
+  @override
+  void didUpdateWidget(covariant UiJourneyWheel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.routeAnimation != widget.routeAnimation) {
+      _syncCurvedAnimations();
     }
   }
 
   @override
   void dispose() {
-    _c.dispose();
+    _fadeCurved?.dispose();
+    _arcCurved?.dispose();
+    _fallbackCtrl?.dispose();
     super.dispose();
+  }
+
+  int? _hitIndex(Offset localPos, List<Offset> centers) {
+    for (var i = 0; i < centers.length; i++) {
+      final c = centers[i];
+      final rect = Rect.fromLTWH(
+        c.dx - _cellW / 2,
+        c.dy - _badge / 2,
+        _cellW,
+        _cellH,
+      );
+      if (rect.contains(localPos)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  void _handlePointerMove(Offset localPos, List<Offset> centers) {
+    final hit = _hitIndex(localPos, centers);
+    if (hit != null && hit != _dragHoveredIndex) {
+      _dragHoveredIndex = hit;
+      unawaited(UiHaptics.selection());
+    } else if (hit == null) {
+      _dragHoveredIndex = null;
+    }
   }
 
   @override
@@ -179,6 +297,7 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
     final ui = context.ui;
     final media = MediaQuery.of(context);
     final size = media.size;
+    final reduced = UiMotion.reduced(context);
     final solid = widget.reduceTransparency || media.highContrast;
     final centers = UiJourneyWheel.layout(
       widget.items.length,
@@ -186,6 +305,10 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
       size,
       topInset: media.padding.top,
     );
+    _syncCurvedAnimations();
+    final anim = _anim;
+    final fadeAnim = reduced ? anim : _fadeCurved!;
+    final arcAnim = _arcCurved!;
     final scrim = solid
         ? ui.bg.withValues(alpha: 0.94)
         : Colors.black.withValues(alpha: 0.5);
@@ -196,6 +319,8 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
         child: backdrop,
       );
     }
+    backdrop = FadeTransition(opacity: fadeAnim, child: backdrop);
+
     return Semantics(
       scopesRoute: true,
       explicitChildNodes: true,
@@ -203,77 +328,110 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
       label: widget.semanticLabel,
       child: MediaQuery.withClampedTextScaling(
         maxScaleFactor: 1.3,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: ExcludeSemantics(
-                child: GestureDetector(
-                  key: const ValueKey('journey-wheel-backdrop'),
-                  behavior: HitTestBehavior.opaque,
-                  onTap: widget.onDismiss,
-                  child: backdrop,
-                ),
-              ),
-            ),
-            for (var i = 0; i < widget.items.length; i++)
-              AnimatedBuilder(
-                animation: _c,
-                builder: (context, child) {
-                  final t = Curves.easeOutBack.transform(_c.value);
-                  final p = Offset.lerp(widget.anchor, centers[i], t)!;
-                  return Positioned(
-                    left: p.dx - _cellW / 2,
-                    top: p.dy - _badge / 2,
-                    width: _cellW,
-                    child: Opacity(
-                      opacity: _c.value.clamp(0.0, 1.0),
-                      child: child,
-                    ),
-                  );
-                },
-                child: _LiftOnPress(
-                  child: _WheelItem(
-                    key: ValueKey('journey-wheel-${widget.items[i].id}'),
-                    item: widget.items[i],
-                    active: widget.items[i].id == widget.activeId,
-                    activeHint: widget.activeHint,
-                    onTap: () => widget.onSelect(widget.items[i].id),
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (e) =>
+              _dragHoveredIndex = _hitIndex(e.localPosition, centers),
+          onPointerMove: (e) => _handlePointerMove(e.localPosition, centers),
+          onPointerUp: (_) => _dragHoveredIndex = null,
+          onPointerCancel: (_) => _dragHoveredIndex = null,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: ExcludeSemantics(
+                  child: GestureDetector(
+                    key: const ValueKey('journey-wheel-backdrop'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.onDismiss,
+                    child: backdrop,
                   ),
                 ),
               ),
-            Positioned(
-              left: widget.anchor.dx - UiSize.tap / 2,
-              top: widget.anchor.dy - UiSize.tap / 2,
-              child: UiGlass(
-                borderRadius: BorderRadius.circular(UiRadius.capsule),
-                blur: 16,
-                tint: ui.surface.withValues(alpha: 0.82),
-                fallback: ui.surface,
-                borderColor: ui.outline,
-                hardShadow: UiShadow.tiny,
-                hardShadowColor: ui.hardShadowColor,
-                reduceTransparency: widget.reduceTransparency,
-                child: UiPressable(
-                  key: const ValueKey('journey-wheel-close'),
-                  onPressed: widget.onDismiss,
-                  semanticLabel: widget.closeLabel,
-                  excludeChildSemantics: true,
-                  minSize: const Size.square(UiSize.tap),
-                  child: SizedBox.square(
-                    dimension: UiSize.tap,
-                    child: Center(
-                      child: OurneyIcon(
-                        name: 'close',
-                        size: 22,
-                        color: ui.ink,
-                        inkColor: ui.ink,
+              for (var i = 0; i < widget.items.length; i++)
+                if (reduced)
+                  Positioned(
+                    left: centers[i].dx - _cellW / 2,
+                    top: centers[i].dy - _badge / 2,
+                    width: _cellW,
+                    child: FadeTransition(
+                      opacity: fadeAnim,
+                      child: _LiftOnPress(
+                        child: _WheelItem(
+                          key: ValueKey('journey-wheel-${widget.items[i].id}'),
+                          item: widget.items[i],
+                          active: widget.items[i].id == widget.activeId,
+                          activeHint: widget.activeHint,
+                          onTap: () => widget.onSelect(widget.items[i].id),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  AnimatedBuilder(
+                    animation: arcAnim,
+                    child: FadeTransition(
+                      opacity: fadeAnim,
+                      child: _LiftOnPress(
+                        child: _WheelItem(
+                          key: ValueKey('journey-wheel-${widget.items[i].id}'),
+                          item: widget.items[i],
+                          active: widget.items[i].id == widget.activeId,
+                          activeHint: widget.activeHint,
+                          onTap: () => widget.onSelect(widget.items[i].id),
+                        ),
+                      ),
+                    ),
+                    builder: (context, child) {
+                      final p = Offset.lerp(
+                        widget.anchor,
+                        centers[i],
+                        arcAnim.value,
+                      )!;
+                      return Positioned(
+                        left: p.dx - _cellW / 2,
+                        top: p.dy - _badge / 2,
+                        width: _cellW,
+                        child: child!,
+                      );
+                    },
+                  ),
+              Positioned(
+                left: widget.anchor.dx - UiSize.tap / 2,
+                top: widget.anchor.dy - UiSize.tap / 2,
+                child: FadeTransition(
+                  opacity: fadeAnim,
+                  child: UiGlass(
+                    borderRadius: BorderRadius.circular(UiRadius.capsule),
+                    blur: 16,
+                    tint: ui.surface.withValues(alpha: 0.82),
+                    fallback: ui.surface,
+                    borderColor: ui.outline,
+                    hardShadow: UiShadow.tiny,
+                    hardShadowColor: ui.hardShadowColor,
+                    reduceTransparency: widget.reduceTransparency,
+                    child: UiPressable(
+                      key: const ValueKey('journey-wheel-close'),
+                      onPressed: widget.onDismiss,
+                      semanticLabel: widget.closeLabel,
+                      excludeChildSemantics: true,
+                      minSize: const Size.square(UiSize.tap),
+                      child: SizedBox.square(
+                        dimension: UiSize.tap,
+                        child: Center(
+                          child: OurneyIcon(
+                            name: 'close',
+                            size: 22,
+                            color: ui.ink,
+                            inkColor: ui.ink,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -300,7 +458,6 @@ class _LiftOnPressState extends State<_LiftOnPress> {
 
   @override
   Widget build(BuildContext context) {
-    final reduced = MediaQuery.disableAnimationsOf(context);
     return Listener(
       key: const ValueKey('journey-wheel-lift'),
       onPointerDown: (_) => _lift(true),
@@ -308,8 +465,8 @@ class _LiftOnPressState extends State<_LiftOnPress> {
       onPointerCancel: (_) => _lift(false),
       child: AnimatedSlide(
         offset: _lifted ? const Offset(0, -0.1) : Offset.zero,
-        duration: reduced ? Duration.zero : const Duration(milliseconds: 110),
-        curve: Curves.easeOut,
+        duration: UiMotion.of(context, UiMotion.press),
+        curve: UiCurves.easeOutStrong,
         child: widget.child,
       ),
     );

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -7,7 +9,6 @@ import '../l10n/generated/app_localizations.dart';
 import '../personas/persona_contract.dart';
 import '../ui/ui.dart';
 import 'providers.dart';
-import 'theme/motion.dart';
 
 /// The 5-tab dock of every primary screen (V2 `Dock`, CLAUDE.md §2):
 /// Journeys · Squad ("Nhóm") · the quick-snap pill (filled with the active
@@ -68,7 +69,7 @@ class _AppDockState extends ConsumerState<AppDock> {
         ? stored
         : active.first.id;
     final l10n = AppLocalizations.of(context);
-    OurneyHaptics.selection();
+    unawaited(UiHaptics.selection());
     showUiJourneyWheel(
       context,
       items: [
@@ -86,7 +87,7 @@ class _AppDockState extends ConsumerState<AppDock> {
       closeLabel: l10n.common_close,
       activeHint: l10n.nav_journeySelected,
       onSelect: (id) {
-        OurneyHaptics.selection();
+        unawaited(UiHaptics.selection());
         ref.read(activeJourneyIdProvider.notifier).select(id);
       },
     );
