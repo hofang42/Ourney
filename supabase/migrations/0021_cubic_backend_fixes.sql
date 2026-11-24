@@ -7,7 +7,7 @@
 --          `private.can_see_profile`, `public.send_friend_request`, and `private.journey_view`
 --          require `private.is_active_member(j.id, j.owner_id)`.
 --   CB-02  `public.accept_friend_invite` locks/verifies the caller's active `public.profiles` row,
---          throttles lookups in `private.rate_events` (`<= 30/hour`), and only rejects
+--          throttles invite redemptions in `private.rate_events` (`<= 30/hour`), and only rejects
 --          soft-deleted `friendships` when the invite pre-dates the removal/decline.
 --   CB-21  `public.create_journey` rejects `p_visibility = 'link'` on live creation (Rule S9);
 --          `public.create_journey` and `public.create_imported_journey` reject soft-deleted
@@ -240,6 +240,14 @@ update public.group_invitations i
    set status = 'revoked', responded_at = coalesce(i.responded_at, j.deleted_at)
   from public.journeys j
  where j.id = i.journey_id and j.deleted_at is not null and i.status = 'pending';
+
+update public.messages m
+   set deleted_at = coalesce(m.deleted_at, j.deleted_at)
+  from public.conversations c
+  join public.journeys j on j.id = c.journey_id
+ where c.id = m.conversation_id
+   and j.deleted_at is not null
+   and m.deleted_at is null;
 
 -- ---------------------------------------------------------------------------
 -- CB-01: leave_journey, _leave_journey, memberships_consent_pending,
@@ -782,7 +790,6 @@ begin
        where user_id = uid and kind = 'friend_invite' and at > now() - interval '1 hour') >= 30 then
     raise exception 'rate_limited';
   end if;
-  insert into private.rate_events (user_id, kind) values (uid, 'friend_invite');
 
   select i.user_id, i.created_at into v_inviter, v_invite_created
     from public.friend_invites i
@@ -805,6 +812,9 @@ begin
                 and v_invite_created <= greatest(f.updated_at, f.deleted_at)) then
     raise exception 'invalid';
   end if;
+  -- Caps successful friend-invite redemptions at <= 30/hour per caller (12-char alphanumeric tokens
+  -- carry ~59 bits of entropy against enumeration, while failed lookups raise per client contract).
+  insert into private.rate_events (user_id, kind) values (uid, 'friend_invite');
   insert into public.friendships (user_low, user_high, requested_by, status, source, accepted_at)
   values (least(uid, v_inviter), greatest(uid, v_inviter), v_inviter, 'accepted', 'direct', now())
   on conflict (user_low, user_high) do update
@@ -1485,7 +1495,9 @@ begin
     return null;
   end if;
   if new.deleted_at is null then
-    if j.public_token is not null and not private.has_active_share(j.id, new.user_id) then
+    if j.public_token is not null
+       and private.checkin_shareable(new.checkin_id)
+       and not private.has_active_share(j.id, new.user_id) then
       insert into public.saved_journeys (user_id, journey_id) values (new.user_id, j.id)
       on conflict do nothing;
     end if;
@@ -1616,6 +1628,12 @@ as $$
         join storage.objects o
           on o.bucket_id = 'media'
          and o.name like ('checkins/' || dj::text || '/%')
+      union all
+      select o.name
+        from storage.objects o
+       where o.bucket_id = 'media'
+         and o.name >= 'checkins/' and o.name < 'checkins0'
+         and o.name like ('checkins/%/' || p_user::text || '/%')
     ) p
    order by p.name;
 $$;
@@ -1626,17 +1644,26 @@ stable
 security definer
 set search_path = ''
 as $$
-  select distinct o.name
+  select distinct p.name
     from (
-      select c.id
-        from public.conversations c
-       where p_user in (c.member_id, c.viewer_id)
-          or c.journey_id in (select public._journeys_dying_with(p_user))
-    ) conv
-    join storage.objects o
-      on o.bucket_id = 'messages'
-     and o.name like ('messages/' || conv.id::text || '/%')
-   order by o.name;
+      select o.name
+        from (
+          select c.id
+            from public.conversations c
+           where p_user in (c.member_id, c.viewer_id)
+              or c.journey_id in (select public._journeys_dying_with(p_user))
+        ) conv
+        join storage.objects o
+          on o.bucket_id = 'messages'
+         and o.name like ('messages/' || conv.id::text || '/%')
+      union all
+      select o.name
+        from storage.objects o
+       where o.bucket_id = 'messages'
+         and o.name >= 'messages/' and o.name < 'messages0'
+         and o.name like ('messages/%/' || p_user::text || '/%')
+    ) p
+   order by p.name;
 $$;
 
 create or replace function public.claim_storage_purge(p_limit int default 200)
@@ -1824,6 +1851,11 @@ update public.journeys
        couple_partner_name = left(nullif(btrim(couple_partner_name), ''), 24)
  where couple_self_name is distinct from left(nullif(btrim(couple_self_name), ''), 24)
     or couple_partner_name is distinct from left(nullif(btrim(couple_partner_name), ''), 24);
+
+update public.journeys
+   set layout = null
+ where layout = 'couple_rituals'
+   and (couple_self_name is null or couple_partner_name is null);
 
 alter table public.journeys drop constraint if exists journeys_couple_names;
 alter table public.journeys

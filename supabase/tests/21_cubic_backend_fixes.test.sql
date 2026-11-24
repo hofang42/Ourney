@@ -38,6 +38,13 @@ create function tests.friend_token(u uuid) returns text language sql security de
   select token from public.friend_invites where user_id = u $$;
 create function tests.conv(j uuid, member uuid, viewer uuid) returns uuid language sql security definer as $$
   select id from public.conversations where journey_id = j and member_id = member and viewer_id = viewer $$;
+create function tests.journey_state(j uuid) returns text language sql security definer as $$
+  select status::text || ':' || coalesce(public_token::text, 'null')
+    from public.journeys where id = j $$;
+create function tests.saved_count(j uuid) returns int language sql security definer as $$
+  select count(*)::int from public.saved_journeys where journey_id = j $$;
+create function tests.checkin_updated_at(cid uuid) returns timestamptz language sql security definer as $$
+  select updated_at from public.check_ins where id = cid $$;
 create function tests.befriend(a uuid, b uuid) returns void language plpgsql as $$
 begin
   perform tests.as_user(a); perform public.send_friend_request(b);
@@ -78,12 +85,14 @@ do $$ begin
   perform tests.checkin(tests.c(22), tests.j(2), now() - interval '1 day');
   perform tests.as_user(tests.u(1));
   perform public.end_journey(tests.j(2));
-  perform public.set_journey_public_link(tests.j(2), true);
+  perform public.request_share_consent(tests.j(2));
+  perform public.set_public_link(tests.j(2), true);
   perform tests.as_user(tests.u(2));
   perform public.respond_share_consent(tests.j(2), true);
   perform public.share_journey(tests.j(2), array[tests.u(3)]);
   perform tests.as_user(tests.u(4));
-  perform public.save_shared_journey(tests.j(2), tests.pub(2));
+  insert into public.reactions (checkin_id, user_id, emoji)
+  values (tests.c(21), tests.u(4), '🔥');
   perform tests.as_user(tests.u(2));
   perform public.leave_journey(tests.j(2));
   perform tests.as_postgres();
@@ -125,10 +134,9 @@ end $$;
 
 -- [4]
 select is(
-  (select j.status::text || ':' || coalesce(j.public_token::text, 'null')
-     from public.journeys j where j.id = tests.j(2))
+  tests.journey_state(tests.j(2))
   || ':' ||
-  (select count(*)::text from public.saved_journeys where journey_id = tests.j(2))
+  tests.saved_count(tests.j(2))::text
   || ':' ||
   (private.owner_for_viewer(tests.j(2))->>'user_id')
   || ':' ||
@@ -196,15 +204,17 @@ do $$ begin
   update public.profiles set deleted_at = null where id = tests.u(9);
   insert into private.rate_events (user_id, kind, at)
   select tests.u(9), 'friend_invite', now() - (n || ' seconds')::interval
-    from generate_series(1, 30) n;
+    from generate_series(1, 29) n;
   perform tests.as_user(tests.u(9));
+  -- 30th redemption succeeds and records the 30th friend_invite rate_events row.
+  perform public.accept_friend_invite(tests.friend_token(tests.u(5)));
 end $$;
 
 -- [8]
 select throws_ok(
   $$ select public.accept_friend_invite(tests.friend_token(tests.u(5))) $$,
   'P0001', 'rate_limited',
-  'CB-02: accept_friend_invite enforces <= 30/hour rate limit in private.rate_events'
+  'CB-02: accept_friend_invite enforces <= 30/hour redemption rate limit in private.rate_events'
 );
 
 do $$ begin
@@ -389,6 +399,8 @@ begin
   update public.conversations set last_message_at = now() - interval '2 minutes' where id = v_conv;
   perform tests.as_user(tests.u(1));
   perform public.clear_conversation(v_conv);
+  perform tests.as_postgres();
+  update public.conversations set member_cleared_at = now() - interval '1 minute' where id = v_conv;
   perform tests.as_user(tests.u(2));
   perform public.send_message(tests.m(251), v_conv, 'text', 'second msg hidden', null);
   perform tests.as_user(tests.u(1));
@@ -452,7 +464,8 @@ do $$ begin
   perform tests.as_user(tests.u(1));
   insert into public.reactions (checkin_id, user_id, emoji) values (tests.c(260), tests.u(1), '💪');
   perform public.end_journey(tests.j(26));
-  perform public.set_journey_public_link(tests.j(26), true);
+  perform public.request_share_consent(tests.j(26));
+  perform public.set_public_link(tests.j(26), true);
   perform public.share_journey(tests.j(26), array[tests.u(2)]);
   perform tests.as_user(tests.u(2));
   insert into public.reactions (checkin_id, user_id, emoji) values (tests.c(260), tests.u(2), '❤️');
@@ -499,14 +512,15 @@ do $$ begin
   perform tests.checkin(tests.c(270), tests.j(27), now() - interval '2 days');
   perform tests.checkin(tests.c(271), tests.j(27), now() - interval '1 day');
   perform public.end_journey(tests.j(27));
-  perform public.set_journey_public_link(tests.j(27), true, true, true);
+  perform public.set_public_link(tests.j(27), true);
+  perform public.update_public_settings(tests.j(27), true, true, true);
   perform tests.as_user(tests.u(4));
   insert into public.reactions (checkin_id, user_id, emoji) values
     (tests.c(270), tests.u(4), '🔥'),
     (tests.c(271), tests.u(4), '👏');
   perform tests.as_user(tests.u(1));
   perform public.set_hidden_in_share(tests.c(270), true);
-  perform public.set_journey_public_link(tests.j(27), true, false, false);
+  perform public.update_public_settings(tests.j(27), true, false, false);
   perform tests.as_user(tests.u(4));
 end $$;
 
@@ -559,9 +573,12 @@ do $$ declare
   v_conv uuid := tests.conv(tests.j(25), tests.u(1), tests.u(2));
 begin
   perform tests.as_postgres();
+  delete from auth.users where id = tests.u(7);
   insert into storage.objects (bucket_id, name) values
     ('media', format('avatars/%s/avatar.jpg', tests.u(2))),
-    ('messages', format('messages/%s/%s/chat.jpg', v_conv, tests.u(2)));
+    ('messages', format('messages/%s/%s/chat.jpg', v_conv, tests.u(2))),
+    ('media', format('checkins/%s/%s/race.jpg', tests.j(25), tests.u(7))),
+    ('messages', format('messages/%s/%s/race.jpg', v_conv, tests.u(7)));
   delete from private.pending_storage_purge;
   insert into private.pending_storage_purge (bucket, path, user_id)
   values ('media', 'avatars/00000000-0000-0000-0000-000000000000/test.jpg', '00000000-0000-0000-0000-000000000000'::uuid);
@@ -573,9 +590,15 @@ select is(
     where account_media_paths = format('avatars/%s/avatar.jpg', tests.u(2)))
   +
   (select count(*)::int from public.account_message_paths(tests.u(2))
-    where account_message_paths = format('messages/%s/%s/chat.jpg', tests.conv(tests.j(25), tests.u(1), tests.u(2)), tests.u(2))),
-  2,
-  'CB-27: account_media_paths and account_message_paths match prefix paths accurately'
+    where account_message_paths = format('messages/%s/%s/chat.jpg', tests.conv(tests.j(25), tests.u(1), tests.u(2)), tests.u(2)))
+  +
+  (select count(*)::int from public.account_media_paths(tests.u(7))
+    where account_media_paths = format('checkins/%s/%s/race.jpg', tests.j(25), tests.u(7)))
+  +
+  (select count(*)::int from public.account_message_paths(tests.u(7))
+    where account_message_paths = format('messages/%s/%s/race.jpg', tests.conv(tests.j(25), tests.u(1), tests.u(2)), tests.u(7))),
+  4,
+  'CB-27: account_media_paths and account_message_paths match prefix paths before and after auth.users deletion'
 );
 
 -- [29]
@@ -593,18 +616,19 @@ do $$ begin perform tests.as_postgres(); delete from private.pending_storage_pur
 -- ============================================================================
 -- [30]
 select is(
-  public.check_in_extras_valid(
-    jsonb_build_object(
-      'place', repeat('Đà Nẵng ', 7),
-      'dish', repeat('Bánh xèo miền Trung ', 3),
-      'mood', 'Tuyệt vời lắm luôn',
-      'cook', 'Mẹ nấu ngon nhất',
-      'minutes', 120,
-      'hearts', 5,
-      'pace', '05:30',
-      'km', 12.5
-    )
-  ),
+  (select (octet_length(x::text) between 513 and 1024) and public.check_in_extras_valid(x)
+     from (
+       select jsonb_build_object(
+         'place', repeat('ệữấ', 20),
+         'dish', repeat('ẫộợ', 20),
+         'mood', repeat('ửựệ', 8),
+         'cook', repeat('ữấẫ', 8),
+         'minutes', 120,
+         'hearts', 5,
+         'pace', '05:30',
+         'km', 12.5
+       ) as x
+     ) s),
   true,
   'CB-28: check_in_extras_valid accepts multibyte Vietnamese extras between 513 and 1024 UTF-8 bytes'
 );
@@ -693,7 +717,7 @@ do $$ begin perform tests.as_user(tests.u(1)); end $$;
 -- [38]
 select is(
   (select id from public.checkin_tombstones(
-     (select updated_at from public.check_ins where id = tests.c(291)),
+     tests.checkin_updated_at(tests.c(291)),
      1,
      tests.c(291)
    )),
@@ -717,6 +741,7 @@ begin
   perform tests.checkin(tests.c(302), tests.j(30), (v_yesterday::text || ' 09:00:00+00')::timestamptz);
   perform tests.as_user(tests.u(1));
   perform public.end_journey(tests.j(30));
+  perform public.request_share_consent(tests.j(30));
   perform public.share_journey(tests.j(30), array[tests.u(2)]);
   perform tests.as_user(tests.u(3));
   perform public.respond_share_consent(tests.j(30), true);

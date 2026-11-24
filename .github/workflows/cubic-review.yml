@@ -26,7 +26,7 @@ jobs:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          pr=$(gh pr list --repo "$REPO" --state open \
+          pr=$(gh pr list --repo "$REPO" --state open --limit 100 \
             --json number,headRefOid,isDraft,labels \
             --jq '[.[] | select(.headRefOid == env.HEAD_SHA and (.isDraft | not) and ([.labels[].name] | index("skip-review") | not))][0].number // empty')
           if [ -z "$pr" ]; then
