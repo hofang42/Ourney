@@ -731,7 +731,7 @@ abstract class ProfileL10n {
   /// No description provided for @profile_settings_appIconNote.
   ///
   /// In vi, this message translates to:
-  /// **'Icon trên màn hình chính đổi được trong bản sau; lựa chọn của bạn được lưu.'**
+  /// **'Đổi icon trên màn hình chính. Trên một số máy Android, ứng dụng có thể tự đóng hoặc tải lại khi đổi icon.'**
   String get profile_settings_appIconNote;
 
   /// No description provided for @profile_settings_iconDefault.
@@ -740,35 +740,41 @@ abstract class ProfileL10n {
   /// **'Mặc định'**
   String get profile_settings_iconDefault;
 
-  /// No description provided for @profile_settings_iconQuiet.
+  /// No description provided for @profile_settings_iconYellow.
   ///
   /// In vi, this message translates to:
-  /// **'Giảm cân'**
-  String get profile_settings_iconQuiet;
+  /// **'Vàng hội'**
+  String get profile_settings_iconYellow;
 
-  /// No description provided for @profile_settings_iconSquad.
+  /// No description provided for @profile_settings_iconGreen.
   ///
   /// In vi, this message translates to:
-  /// **'Nhóm'**
-  String get profile_settings_iconSquad;
+  /// **'Xanh ngọc'**
+  String get profile_settings_iconGreen;
 
-  /// No description provided for @profile_settings_iconMemory.
+  /// No description provided for @profile_settings_iconCoral.
   ///
   /// In vi, this message translates to:
-  /// **'Ký ức'**
-  String get profile_settings_iconMemory;
+  /// **'Hồng đôi'**
+  String get profile_settings_iconCoral;
 
-  /// No description provided for @profile_settings_iconCouple.
+  /// No description provided for @profile_settings_iconViolet.
   ///
   /// In vi, this message translates to:
-  /// **'Hai đứa'**
-  String get profile_settings_iconCouple;
+  /// **'Tím tập'**
+  String get profile_settings_iconViolet;
 
-  /// No description provided for @profile_settings_iconFlexer.
+  /// No description provided for @profile_settings_iconSky.
   ///
   /// In vi, this message translates to:
-  /// **'Tập luyện'**
-  String get profile_settings_iconFlexer;
+  /// **'Xanh trời'**
+  String get profile_settings_iconSky;
+
+  /// No description provided for @profile_settings_iconDark.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đêm tối'**
+  String get profile_settings_iconDark;
 
   /// No description provided for @profile_settings_iconMinimal.
   ///

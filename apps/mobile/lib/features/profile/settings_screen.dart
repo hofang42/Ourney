@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -80,7 +81,6 @@ class SettingsScreen extends ConsumerWidget {
           const _ThemePicker(),
           const SizedBox(height: UiSpace.md),
           const _LanguagePicker(),
-          const SizedBox(height: UiSpace.md),
           const _AppIconPicker(),
           UiListHeading(title: l10n.profile_settings_secPrivacy),
           _Card(
@@ -293,159 +293,196 @@ class _LanguagePicker extends ConsumerWidget {
   }
 }
 
-/// `.app-icon-picker`: 7 tiles. Selection is stored only; no plugin switches
-/// the launcher icon yet (see [appIconProvider]).
+/// `.app-icon-picker`: 8 Ourney V2 icon variants rendered inside a [UiCard]
+/// grid with bundled `180x180` previews, localized names (vi/en), current
+/// selection badge, 48dp touch targets, and platform channel switching.
+/// Gracefully hidden on platforms without launcher icon support.
 class _AppIconPicker extends ConsumerWidget {
   const _AppIconPicker();
 
+  static String _labelFor(ProfileL10n l10n, String id) => switch (id) {
+    'default' => l10n.profile_settings_iconDefault,
+    'yellow' => l10n.profile_settings_iconYellow,
+    'green' => l10n.profile_settings_iconGreen,
+    'coral' => l10n.profile_settings_iconCoral,
+    'violet' => l10n.profile_settings_iconViolet,
+    'sky' => l10n.profile_settings_iconSky,
+    'dark' => l10n.profile_settings_iconDark,
+    'minimal' => l10n.profile_settings_iconMinimal,
+    _ => id,
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final supported = ref.watch(appIconSwitcherProvider).supported;
+    if (!supported) return const SizedBox.shrink();
+
     final l10n = ProfileL10n.of(context);
     final ui = context.ui;
+    final boldText = MediaQuery.boldTextOf(context);
     final selected = ref.watch(appIconProvider);
-    // Marks use the ink token on the light tiles (U14: the brand greens and
-    // oranges were 1.3-2:1); only the dark flexer tile keeps its neon mark.
-    final items = <(String, Color, Color, String)>[
-      (
-        'default',
-        const Color(0xFFFF4D6D),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconDefault,
-      ),
-      (
-        'quiet',
-        const Color(0xFFDFF7EC),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconQuiet,
-      ),
-      (
-        'squad',
-        const Color(0xFFFFF0C7),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconSquad,
-      ),
-      (
-        'memory',
-        const Color(0xFFF3E3C3),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconMemory,
-      ),
-      (
-        'couple',
-        const Color(0xFFFFE0E9),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconCouple,
-      ),
-      (
-        'flexer',
-        const Color(0xFF14161F),
-        const Color(0xFF3DE88C),
-        l10n.profile_settings_iconFlexer,
-      ),
-      (
-        'minimal',
-        const Color(0xFFF4F4F5),
-        UiFlowColors.onPastel,
-        l10n.profile_settings_iconMinimal,
-      ),
-    ];
-    return Column(
-      key: const ValueKey('settings-app-icons'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.profile_settings_appIcon,
-          style: UiText.body(size: 14, weight: FontWeight.w700, color: ui.ink),
-        ),
-        const SizedBox(height: UiSpace.sm),
-        Wrap(
-          spacing: UiSpace.sm,
-          runSpacing: UiSpace.sm,
+
+    return Padding(
+      padding: const EdgeInsets.only(top: UiSpace.md),
+      child: UiCard(
+        key: const ValueKey('settings-app-icons'),
+        radius: UiRadius.card,
+        shadowOffset: UiShadow.small,
+        padding: const EdgeInsets.all(UiSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final (id, tile, mark, label) in items)
-              UiPressable(
-                key: ValueKey('settings-icon-$id'),
-                selected: id == selected,
-                semanticLabel: l10n.profile_settings_iconSemantic(label),
-                excludeChildSemantics: true,
-                borderRadius: BorderRadius.circular(UiRadius.menu),
-                onPressed: () =>
-                    unawaited(ref.read(appIconProvider.notifier).set(id)),
-                child: SizedBox(
-                  width: 72,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: tile,
+            Text(
+              l10n.profile_settings_appIcon,
+              style: UiText.body(
+                size: 14,
+                weight: FontWeight.w700,
+                color: ui.ink,
+              ),
+            ),
+            const SizedBox(height: UiSpace.xs),
+            Text(
+              l10n.profile_settings_appIconNote,
+              key: const ValueKey('settings-app-icon-note'),
+              style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+            ),
+            const SizedBox(height: UiSpace.md),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cols = constraints.maxWidth < 230 ? 2 : 4;
+                const spacing = UiSpace.sm;
+                final rawWidth =
+                    (constraints.maxWidth - spacing * (cols - 1)) / cols;
+                final itemWidth = rawWidth < UiSize.tap ? UiSize.tap : rawWidth;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: UiSpace.md,
+                  children: [
+                    for (final (index, variant)
+                        in AppIconController.variants.indexed)
+                      Builder(
+                        builder: (context) {
+                          final id = variant.id;
+                          final isSelected = id == selected;
+                          final label = _labelFor(l10n, id);
+                          return Semantics(
+                            sortKey: OrdinalSortKey(index.toDouble()),
+                            child: UiPressable(
+                              key: ValueKey('settings-icon-$id'),
+                              selected: isSelected,
+                              semanticLabel: l10n.profile_settings_iconSemantic(
+                                label,
+                              ),
+                              excludeChildSemantics: true,
+                              minSize: const Size(UiSize.tap, UiSize.tap),
                               borderRadius: BorderRadius.circular(
                                 UiRadius.menu,
                               ),
-                              border: Border.all(
-                                color: id == selected ? ui.focus : ui.outline,
-                                width: id == selected ? 3 : UiBorder.thin,
+                              onPressed: () {
+                                OurneyHaptics.selection();
+                                unawaited(
+                                  ref.read(appIconProvider.notifier).set(id),
+                                );
+                              },
+                              child: SizedBox(
+                                width: itemWidth,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Container(
+                                          width: 52,
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? ui.focus
+                                                  : ui.outline,
+                                              width: isSelected
+                                                  ? 3
+                                                  : UiBorder.standard,
+                                            ),
+                                            boxShadow: isSelected
+                                                ? ui.hardShadow(2)
+                                                : null,
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              11,
+                                            ),
+                                            child: Image.asset(
+                                              variant.previewAsset,
+                                              width: 52,
+                                              height: 52,
+                                              fit: BoxFit.cover,
+                                              cacheWidth: 180,
+                                              filterQuality:
+                                                  FilterQuality.medium,
+                                              excludeFromSemantics: true,
+                                            ),
+                                          ),
+                                        ),
+                                        if (isSelected)
+                                          PositionedDirectional(
+                                            top: -6,
+                                            end: -6,
+                                            child: Container(
+                                              key: const ValueKey(
+                                                'settings-icon-check',
+                                              ),
+                                              width: 22,
+                                              height: 22,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: ui.ink,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: ui.surface,
+                                                  width: UiBorder.thin,
+                                                ),
+                                              ),
+                                              child: OurneyIcon(
+                                                name: 'check',
+                                                size: 12,
+                                                flat: true,
+                                                color: ui.surface,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      label,
+                                      textAlign: TextAlign.center,
+                                      style: UiText.body(
+                                        size: 11,
+                                        height: 1.3,
+                                        weight: isSelected || boldText
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: isSelected ? ui.ink : ui.inkSoft,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            child: Text(
-                              'O',
-                              style: UiText.h1(size: 24, color: mark),
-                            ),
-                          ),
-                          // Not by border color alone (U14): a check badge.
-                          if (id == selected)
-                            Positioned(
-                              top: -6,
-                              right: -6,
-                              child: Container(
-                                key: const ValueKey('settings-icon-check'),
-                                width: 22,
-                                height: 22,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: ui.ink,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: ui.bg,
-                                    width: UiBorder.thin,
-                                  ),
-                                ),
-                                child: OurneyIcon(
-                                  name: 'check',
-                                  size: 12,
-                                  flat: true,
-                                  color: ui.bg,
-                                ),
-                              ),
-                            ),
-                        ],
+                          );
+                        },
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: UiText.body(size: 11, color: ui.ink),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
-        const SizedBox(height: UiSpace.xs),
-        Text(
-          l10n.profile_settings_appIconNote,
-          style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
-        ),
-      ],
+      ),
     );
   }
 }
