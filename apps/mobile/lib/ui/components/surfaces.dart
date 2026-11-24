@@ -105,6 +105,8 @@ class UiRow extends StatelessWidget {
     this.meta,
     this.trailing,
     this.onPressed,
+    this.selected,
+    this.inMutuallyExclusiveGroup,
     this.showChevron = true,
     this.minHeight = 64,
     this.divider = true,
@@ -118,6 +120,8 @@ class UiRow extends StatelessWidget {
   final Widget? meta;
   final Widget? trailing;
   final VoidCallback? onPressed;
+  final bool? selected;
+  final bool? inMutuallyExclusiveGroup;
   final bool showChevron;
   final double minHeight;
   final bool divider;
@@ -191,6 +195,8 @@ class UiRow extends StatelessWidget {
     if (onPressed == null) return row;
     return UiPressable(
       onPressed: onPressed,
+      selected: selected,
+      inMutuallyExclusiveGroup: inMutuallyExclusiveGroup,
       semanticLabel: trailing == null ? null : title,
       borderRadius: sticker ? shape : BorderRadius.zero,
       shadowOffset: sticker ? UiShadow.large : 0,

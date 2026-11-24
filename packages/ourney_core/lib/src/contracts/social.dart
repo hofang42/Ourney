@@ -671,6 +671,7 @@ class InboxCounts {
     required this.unreadMessages,
     required this.consentRequests,
     this.groupInvitations = 0,
+    this.shippedRequests = 0,
   });
 
   final int friendRequests;
@@ -682,12 +683,16 @@ class InboxCounts {
   /// Pending group invitations (migration 0010).
   final int groupInvitations;
 
+  /// Unseen shipped feature requests the user voted for or authored (0024).
+  final int shippedRequests;
+
   bool get hasDot =>
       friendRequests +
           newShares +
           unreadMessages +
           consentRequests +
-          groupInvitations >
+          groupInvitations +
+          shippedRequests >
       0;
 }
 

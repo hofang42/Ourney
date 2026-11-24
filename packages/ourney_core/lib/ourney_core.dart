@@ -2,6 +2,7 @@
 /// validation, templates). Runs on the Dart VM so it is testable on Linux.
 library;
 
+export 'src/contracts/feature_requests.dart';
 export 'src/contracts/group_invite_admin.dart';
 export 'src/contracts/group_invites.dart';
 export 'src/account.dart';

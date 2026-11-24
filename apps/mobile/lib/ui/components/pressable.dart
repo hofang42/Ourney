@@ -35,6 +35,7 @@ class UiPressable extends StatefulWidget {
     ),
     this.excludeChildSemantics = false,
     this.selected,
+    this.inMutuallyExclusiveGroup,
     this.centerChild = false,
     this.shadowColor,
     this.shadowOffset = 0,
@@ -54,6 +55,7 @@ class UiPressable extends StatefulWidget {
   final BorderRadius borderRadius;
   final bool excludeChildSemantics;
   final bool? selected;
+  final bool? inMutuallyExclusiveGroup;
 
   /// Center [child] inside the (>= 48dp) hit area instead of stretching it
   /// to fill it: a 44dp button or 40dp pill keeps its visual size.
@@ -332,6 +334,7 @@ class _UiPressableState extends State<UiPressable>
       button: true,
       enabled: _enabled,
       selected: widget.selected,
+      inMutuallyExclusiveGroup: widget.inMutuallyExclusiveGroup,
       label: widget.semanticLabel,
       hint: widget.semanticHint,
       excludeSemantics: widget.excludeChildSemantics,
