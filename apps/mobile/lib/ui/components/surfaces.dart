@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
@@ -328,21 +329,62 @@ class _UiMenuAnchorState extends State<UiMenuAnchor>
     duration: _kMenuEnter,
     reverseDuration: _kMenuExit,
     value: widget.open ? 1.0 : 0.0,
-  );
+  )..addStatusListener(_onStatusChanged);
   late final CurvedAnimation _curved = CurvedAnimation(
     parent: _ctrl,
     curve: UiCurves.easeOutStrong,
-    reverseCurve: UiCurves.easeOutStrong,
+    reverseCurve: UiCurves.easeOutStrong.flipped,
   );
   late final Animation<double> _scale = Tween<double>(
     begin: UiMotion.popMinScale,
     end: 1.0,
   ).animate(_curved);
 
+  void _onStatusChanged(AnimationStatus status) {
+    if (status == AnimationStatus.dismissed &&
+        mounted &&
+        !widget.open &&
+        _portal.isShowing) {
+      _hidePortalSafely();
+    }
+  }
+
+  void _showPortalSafely({required bool animateForward}) {
+    if (_portal.isShowing) {
+      if (animateForward) _ctrl.forward();
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.open) return;
+      if (!_portal.isShowing) {
+        _portal.show();
+      }
+      if (animateForward) {
+        _ctrl.forward(from: 0.0);
+      }
+    });
+  }
+
+  void _hidePortalSafely() {
+    if (!_portal.isShowing) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !widget.open && _portal.isShowing) {
+          _portal.hide();
+        }
+      });
+    } else {
+      _portal.hide();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _ensurePortalShown();
+    if (widget.open) {
+      _showPortalSafely(animateForward: false);
+    }
   }
 
   @override
@@ -357,28 +399,22 @@ class _UiMenuAnchorState extends State<UiMenuAnchor>
   void didUpdateWidget(UiMenuAnchor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.open == widget.open) return;
-    _ensurePortalShown();
     final reduced = UiMotion.reduced(context);
     _ctrl.duration = reduced ? UiMotion.reducedFade : _kMenuEnter;
     _ctrl.reverseDuration = reduced ? UiMotion.reducedFade : _kMenuExit;
     if (widget.open) {
       unawaited(UiHaptics.selection());
-      _ctrl.forward();
+      _showPortalSafely(animateForward: true);
+    } else if (_ctrl.isDismissed) {
+      _hidePortalSafely();
     } else {
       _ctrl.reverse();
     }
   }
 
-  void _ensurePortalShown() {
-    if (_portal.isShowing) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!_portal.isShowing) _portal.show();
-    });
-  }
-
   @override
   void dispose() {
+    _ctrl.removeStatusListener(_onStatusChanged);
     _curved.dispose();
     _ctrl.dispose();
     super.dispose();
@@ -396,60 +432,57 @@ class _UiMenuAnchorState extends State<UiMenuAnchor>
       },
       child: OverlayPortal(
         controller: _portal,
-        overlayChildBuilder: (context) => AnimatedBuilder(
-          animation: _ctrl,
-          builder: (context, _) {
-            if (!widget.open && !_ctrl.isAnimating && _ctrl.value == 0.0) {
-              return const SizedBox.shrink();
-            }
-            Widget menuSurface = Material(
-              type: MaterialType.transparency,
-              child: widget.menu,
-            );
-            if (!reduced) {
-              menuSurface = ScaleTransition(
-                key: const ValueKey('ui-menu-scale'),
-                alignment: triggerAlignment,
-                scale: _scale,
-                child: menuSurface,
-              );
-            }
-            menuSurface = FadeTransition(
-              key: const ValueKey('ui-menu-fade'),
-              opacity: reduced ? _ctrl : _curved,
+        overlayChildBuilder: (context) {
+          Widget menuSurface = Material(
+            type: MaterialType.transparency,
+            child: widget.menu,
+          );
+          if (!reduced) {
+            menuSurface = ScaleTransition(
+              key: const ValueKey('ui-menu-scale'),
+              alignment: triggerAlignment,
+              scale: _scale,
               child: menuSurface,
             );
-            return Stack(
-              children: [
-                if (widget.open)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      key: const ValueKey('ui-menu-barrier'),
-                      behavior: HitTestBehavior.opaque,
-                      onTap: widget.onClose,
-                    ),
+          }
+          menuSurface = FadeTransition(
+            key: const ValueKey('ui-menu-fade'),
+            opacity: reduced ? _ctrl : _curved,
+            child: menuSurface,
+          );
+          return Stack(
+            children: [
+              if (widget.open)
+                Positioned.fill(
+                  child: GestureDetector(
+                    key: const ValueKey('ui-menu-barrier'),
+                    behavior: HitTestBehavior.opaque,
+                    onTap: widget.onClose,
                   ),
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  child: CompositedTransformFollower(
-                    link: _link,
-                    showWhenUnlinked: false,
-                    targetAnchor: rtl
-                        ? Alignment.bottomLeft
-                        : Alignment.bottomRight,
-                    followerAnchor: triggerAlignment,
-                    offset: Offset(0, widget.gap),
+                ),
+              Positioned(
+                left: 0,
+                top: 0,
+                child: CompositedTransformFollower(
+                  link: _link,
+                  showWhenUnlinked: false,
+                  targetAnchor: rtl
+                      ? Alignment.bottomLeft
+                      : Alignment.bottomRight,
+                  followerAnchor: triggerAlignment,
+                  offset: Offset(0, widget.gap),
+                  child: ExcludeSemantics(
+                    excluding: !widget.open,
                     child: IgnorePointer(
                       ignoring: !widget.open,
                       child: menuSurface,
                     ),
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ],
+          );
+        },
         child: CompositedTransformTarget(link: _link, child: widget.anchor),
       ),
     );

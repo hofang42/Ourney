@@ -288,27 +288,15 @@ class UiDock extends StatelessWidget {
               ],
             ),
             Center(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(end: camera ? 1.0 : 0.0),
-                duration: UiMotion.of(context, UiMotion.medium),
-                curve: UiCurves.easeOutStrong,
+              child: _UiDockCenterMorph(
+                camera: camera,
+                accent: accent ?? ui.accent,
+                onAccent: onAccent ?? ui.onBrand,
+                outlineColor: outline,
+                outlineWidth: stroke,
+                shadowOffset: shadowOffset,
+                shadowColor: shadowColor,
                 child: centerSlot,
-                builder: (context, t, child) {
-                  final target = camera ? 1.0 : 0.0;
-                  if ((t - target).abs() < 0.001) return child!;
-                  final sx = camera
-                      ? lerpDouble(UiSize.snapPillW / UiSize.shutter, 1.0, t)!
-                      : lerpDouble(1.0, UiSize.shutter / UiSize.snapPillW, t)!;
-                  final sy = camera
-                      ? lerpDouble(UiSize.snapPillH / UiSize.shutter, 1.0, t)!
-                      : lerpDouble(1.0, UiSize.shutter / UiSize.snapPillH, t)!;
-                  return Transform.scale(
-                    key: const ValueKey('dock-center-morph'),
-                    scaleX: sx,
-                    scaleY: sy,
-                    child: child,
-                  );
-                },
               ),
             ),
           ],
@@ -514,6 +502,245 @@ class UiSnapPill extends StatelessWidget {
       pill = _LongPress(onLongPress: onLongPress!, child: pill);
     }
     return pill;
+  }
+}
+
+/// Animates the center dock trigger between the `56×40` [UiSnapPill] and the
+/// `76×76` [UiShutter] over [UiMotion.medium] (`220ms`, [UiCurves.easeOutStrong])
+/// without non-uniformly scaling the `2dp` Neo-Brutalist border or warping the
+/// `1:1` camera glyph.
+///
+/// Triggers when:
+/// 1. [camera] flips on a mounted [UiDock],
+/// 2. [TickerMode] transitions `false -> true` on an offstage tab branch
+///    (entering Tab 2 Camera in `UiShellBranchContainer`), or
+/// 3. Another active [UiDock] with the opposite [camera] mode hands off within
+///    the same frame (leaving Tab 2 Camera back to the shell dock).
+class _UiDockCenterMorph extends StatefulWidget {
+  const _UiDockCenterMorph({
+    required this.camera,
+    required this.accent,
+    required this.onAccent,
+    required this.outlineColor,
+    required this.outlineWidth,
+    required this.shadowOffset,
+    required this.shadowColor,
+    required this.child,
+  });
+
+  final bool camera;
+  final Color accent;
+  final Color onAccent;
+  final Color outlineColor;
+  final double outlineWidth;
+  final double shadowOffset;
+  final Color shadowColor;
+  final Widget child;
+
+  @override
+  State<_UiDockCenterMorph> createState() => _UiDockCenterMorphState();
+}
+
+class _UiDockCenterMorphState extends State<_UiDockCenterMorph>
+    with SingleTickerProviderStateMixin {
+  static bool? _pendingHandoffFromCamera;
+  static bool _handoffClearScheduled = false;
+
+  static void _recordHandoff(bool fromCamera) {
+    _pendingHandoffFromCamera = fromCamera;
+    if (!_handoffClearScheduled) {
+      _handoffClearScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pendingHandoffFromCamera = null;
+        _handoffClearScheduled = false;
+      });
+    }
+  }
+
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  bool _didInit = false;
+  bool _lastTickerEnabled = true;
+  late double _fromT = widget.camera ? 1.0 : 0.0;
+  late double _toT = widget.camera ? 1.0 : 0.0;
+
+  double get _currentT {
+    final curved = _curved;
+    if (curved == null || !(_ctrl?.isAnimating ?? false)) {
+      return _toT;
+    }
+    return lerpDouble(_fromT, _toT, curved.value)!;
+  }
+
+  AnimationController _ensureController() {
+    var ctrl = _ctrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController(
+      vsync: this,
+      duration: UiMotion.medium,
+    );
+    _ctrl = ctrl;
+    _curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeOutStrong,
+    );
+    return ctrl;
+  }
+
+  void _startMorph({required double from, required double to}) {
+    if (UiMotion.reduced(context) || (from - to).abs() < 0.001) {
+      _ctrl?.stop();
+      _fromT = to;
+      _toT = to;
+      return;
+    }
+    _fromT = from;
+    _toT = to;
+    final ctrl = _ensureController();
+    ctrl
+      ..duration = UiMotion.of(context, UiMotion.medium)
+      ..forward(from: 0.0);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final tickerEnabled = TickerMode.valuesOf(context).enabled;
+    final reduced = UiMotion.reduced(context);
+    final target = widget.camera ? 1.0 : 0.0;
+
+    if (!_didInit) {
+      _didInit = true;
+      _lastTickerEnabled = tickerEnabled;
+      final handoffFromCamera = _pendingHandoffFromCamera;
+      if (tickerEnabled &&
+          handoffFromCamera != null &&
+          handoffFromCamera != widget.camera) {
+        _pendingHandoffFromCamera = null;
+        _startMorph(from: handoffFromCamera ? 1.0 : 0.0, to: target);
+      } else {
+        _fromT = target;
+        _toT = target;
+      }
+      return;
+    }
+
+    if (reduced && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.stop();
+      _fromT = target;
+      _toT = target;
+    } else if (!_lastTickerEnabled && tickerEnabled) {
+      _pendingHandoffFromCamera = null;
+      _startMorph(from: widget.camera ? 0.0 : 1.0, to: target);
+    } else if (_lastTickerEnabled && !tickerEnabled) {
+      _recordHandoff(widget.camera);
+      _ctrl?.stop();
+      _fromT = target;
+      _toT = target;
+    }
+    _lastTickerEnabled = tickerEnabled;
+  }
+
+  @override
+  void didUpdateWidget(covariant _UiDockCenterMorph oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.camera != widget.camera) {
+      final target = widget.camera ? 1.0 : 0.0;
+      _startMorph(from: _currentT, to: target);
+    }
+  }
+
+  @override
+  void deactivate() {
+    if (_lastTickerEnabled) {
+      _recordHandoff(widget.camera);
+    }
+    _ctrl?.stop();
+    super.deactivate();
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = _ctrl;
+    final curved = _curved;
+    if (UiMotion.reduced(context) ||
+        ctrl == null ||
+        curved == null ||
+        (!ctrl.isAnimating && (_fromT - _toT).abs() < 0.001)) {
+      return widget.child;
+    }
+
+    final ui = context.ui;
+    return AnimatedBuilder(
+      animation: curved,
+      child: widget.child,
+      builder: (context, settledChild) {
+        final t = lerpDouble(_fromT, _toT, curved.value)!;
+        if (!ctrl.isAnimating || (t - _toT).abs() < 0.001) {
+          return settledChild!;
+        }
+        final width = lerpDouble(UiSize.snapPillW, UiSize.shutter, t)!;
+        final height = lerpDouble(UiSize.snapPillH, UiSize.shutter, t)!;
+        final radius = BorderRadius.circular(height / 2);
+        final iconSize = lerpDouble(24.0, 30.0, t)!;
+        final outline = Color.lerp(ui.outline, UiCamera.outline, t)!;
+        final shadowColor = Color.lerp(ui.hardShadowColor, UiCamera.shadow, t)!;
+        final shellShadow = widget.camera ? UiShadow.large : widget.shadowOffset;
+        final shadowOff = lerpDouble(shellShadow, UiShadow.small, t)!;
+
+        return SizedBox(
+          key: const ValueKey('dock-center-morph'),
+          width: width,
+          height: height,
+          child: Stack(
+            clipBehavior: Clip.none,
+            fit: StackFit.expand,
+            children: [
+              if (shadowOff > 0)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Transform.translate(
+                      offset: Offset(shadowOff, shadowOff),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: shadowColor,
+                          borderRadius: radius,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              DecoratedBox(
+                key: const ValueKey('dock-center-morph-box'),
+                decoration: BoxDecoration(
+                  color: widget.accent,
+                  borderRadius: radius,
+                  border: Border.all(
+                    color: outline,
+                    width: widget.outlineWidth,
+                  ),
+                ),
+                child: Center(
+                  child: OurneyIcon(
+                    name: 'camera',
+                    size: iconSize,
+                    color: widget.onAccent,
+                    inkColor: widget.onAccent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

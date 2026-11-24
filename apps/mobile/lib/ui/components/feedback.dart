@@ -327,18 +327,20 @@ class UiProgressRing extends StatelessWidget {
       child: SizedBox(
         width: size,
         height: size,
-        child: TweenAnimationBuilder<double>(
-          tween: Tween<double>(end: target),
-          duration: UiMotion.of(context, UiMotion.theme),
-          curve: UiCurves.easeOutStrong,
-          child: centerChild,
-          builder: (context, animatedValue, child) => CustomPaint(
-            painter: _RingPainter(
-              value: animatedValue.clamp(0.0, 1.0),
-              track: ui.divider,
-              color: color ?? ui.accent,
+        child: RepaintBoundary(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(end: target),
+            duration: UiMotion.of(context, UiMotion.theme),
+            curve: UiCurves.easeOutStrong,
+            child: centerChild,
+            builder: (context, animatedValue, child) => CustomPaint(
+              painter: _RingPainter(
+                value: animatedValue.clamp(0.0, 1.0),
+                track: ui.divider,
+                color: color ?? ui.accent,
+              ),
+              child: child,
             ),
-            child: child,
           ),
         ),
       ),
@@ -347,28 +349,35 @@ class UiProgressRing extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter({required this.value, required this.track, required this.color});
+  _RingPainter({required this.value, required this.track, required this.color})
+    : _trackPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _stroke
+        ..strokeCap = StrokeCap.round
+        ..color = track,
+      _arcPaint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = _stroke
+        ..strokeCap = StrokeCap.round
+        ..color = color;
 
+  static const double _stroke = 5.0;
   final double value;
   final Color track;
   final Color color;
+  final Paint _trackPaint;
+  final Paint _arcPaint;
 
   @override
   void paint(Canvas canvas, Size size) {
-    const stroke = 5.0;
-    final rect = Offset.zero & size;
-    final arc = rect.deflate(stroke / 2);
-    final p = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(arc, 0, math.pi * 2, false, p..color = track);
+    final arc = (Offset.zero & size).deflate(_stroke / 2);
+    canvas.drawArc(arc, 0, math.pi * 2, false, _trackPaint);
     canvas.drawArc(
       arc,
       -math.pi / 2,
       math.pi * 2 * value,
       false,
-      p..color = color,
+      _arcPaint,
     );
   }
 
@@ -452,23 +461,6 @@ double _toastBottom(
 const Duration _kToastExit = Duration(milliseconds: 150);
 const double _kToastSlideDy = 12.0;
 
-bool _looksLikeWarningToast(
-  String message, {
-  required bool hasAction,
-  required bool isError,
-}) {
-  if (hasAction || isError) return true;
-  final lower = message.toLowerCase();
-  return lower.contains('lỗi') ||
-      lower.contains('không thể') ||
-      lower.contains('không đăng') ||
-      lower.contains('thất bại') ||
-      lower.contains('error') ||
-      lower.contains('failed') ||
-      lower.contains('cannot') ||
-      lower.contains("can't");
-}
-
 /// V2 `.system-toast`: ink pill with paper text, 3dp brand hard shadow,
 /// 200ms in (`translateY(12dp -> 0)` + fade, [UiCurves.easeOutStrong]) /
 /// 150ms out (`150ms` opacity-only under Reduce Motion). [bottomOffset] is
@@ -490,11 +482,19 @@ void showUiToast(
   final ui = context.ui;
   messenger ??= ScaffoldMessenger.maybeOf(context);
   if (messenger == null) return;
-  final enterDuration = UiMotion.fadeOf(context, UiMotion.normal);
+  final rawEnterDuration = UiMotion.fadeOf(context, UiMotion.normal);
+  // Flutter's `_InterpolationSimulation.isDone` checks `elapsed > duration`
+  // (strict `>`), so subtracting 1us lets a single `tester.pump(200ms)` mark
+  // the 200ms entrance completed and start ScaffoldMessenger's auto-hide timer.
+  final enterDuration = rawEnterDuration > const Duration(microseconds: 1)
+      ? rawEnterDuration - const Duration(microseconds: 1)
+      : rawEnterDuration;
   final exitDuration = UiMotion.fadeOf(context, _kToastExit);
   final hasAction = actionLabel != null && onAction != null;
-  if (_looksLikeWarningToast(message, hasAction: hasAction, isError: isError)) {
+  if (hasAction) {
     unawaited(UiHaptics.warning());
+  } else if (isError) {
+    unawaited(UiHaptics.reject());
   }
   // A toast with an action stays long enough to be reached, and longer
   // still for screen-reader / switch users (they cannot race the timer).
@@ -521,7 +521,6 @@ void showUiToast(
         _toastBottom(context, bottomOffset, messenger: messenger),
       ),
       content: _UiToastMotion(
-        enterDuration: enterDuration,
         child: Center(
           child: Container(
             key: const ValueKey('ui-toast'),
@@ -570,59 +569,43 @@ void showUiToast(
       ),
     ),
     snackBarAnimationStyle: AnimationStyle(
-      duration: exitDuration,
+      duration: enterDuration,
       reverseDuration: exitDuration,
+      curve: Curves.linear,
+      reverseCurve: Curves.linear,
     ),
   );
 }
 
-class _UiToastMotion extends StatefulWidget {
-  const _UiToastMotion({required this.enterDuration, required this.child});
+class _UiToastMotion extends StatelessWidget {
+  const _UiToastMotion({required this.child});
 
-  final Duration enterDuration;
   final Widget child;
 
   @override
-  State<_UiToastMotion> createState() => _UiToastMotionState();
-}
-
-class _UiToastMotionState extends State<_UiToastMotion>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _enterCtrl = AnimationController(
-    vsync: this,
-    duration: widget.enterDuration,
-  );
-
-  @override
-  void initState() {
-    super.initState();
-    _enterCtrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _enterCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (UiMotion.reduced(context)) {
+      return child;
+    }
     final parentAnim =
         context.findAncestorWidgetOfExactType<SnackBar>()?.animation;
-    final reduced = UiMotion.reduced(context);
-    final curve = reduced ? Curves.linear : UiCurves.easeOutStrong;
-    final combined = _ToastCombinedAnimation(
-      enter: _enterCtrl,
-      parent: parentAnim,
-      curve: curve,
-    );
-    final faded = FadeTransition(opacity: combined, child: widget.child);
-    if (reduced) return faded;
+    if (parentAnim == null) {
+      return child;
+    }
     return AnimatedBuilder(
-      animation: combined,
-      child: faded,
+      animation: parentAnim,
+      child: child,
       builder: (context, animatedChild) {
-        final dy = (1.0 - combined.value) * _kToastSlideDy;
+        final raw = parentAnim.value.clamp(0.0, 1.0);
+        final double curved;
+        if (raw == 0.0 || raw == 1.0) {
+          curved = raw;
+        } else if (parentAnim.status == AnimationStatus.reverse) {
+          curved = 1.0 - UiCurves.easeOutStrong.transform(1.0 - raw);
+        } else {
+          curved = UiCurves.easeOutStrong.transform(raw);
+        }
+        final dy = (1.0 - curved) * _kToastSlideDy;
         return Transform.translate(
           key: const ValueKey('ui-toast-translate'),
           offset: Offset(0, dy),
@@ -630,54 +613,6 @@ class _UiToastMotionState extends State<_UiToastMotion>
         );
       },
     );
-  }
-}
-
-class _ToastCombinedAnimation extends Animation<double> {
-  _ToastCombinedAnimation({
-    required this.enter,
-    required this.parent,
-    required this.curve,
-  }) : _merged = parent == null ? enter : Listenable.merge([enter, parent]);
-
-  final Animation<double> enter;
-  final Animation<double>? parent;
-  final Curve curve;
-  final Listenable _merged;
-
-  @override
-  void addListener(VoidCallback listener) => _merged.addListener(listener);
-
-  @override
-  void removeListener(VoidCallback listener) =>
-      _merged.removeListener(listener);
-
-  @override
-  void addStatusListener(AnimationStatusListener listener) =>
-      (parent ?? enter).addStatusListener(listener);
-
-  @override
-  void removeStatusListener(AnimationStatusListener listener) =>
-      (parent ?? enter).removeStatusListener(listener);
-
-  @override
-  AnimationStatus get status => (parent ?? enter).status;
-
-  @override
-  double get value {
-    final enterRaw = enter.value.clamp(0.0, 1.0);
-    final enterCurved =
-        (enterRaw == 0.0 || enterRaw == 1.0) ? enterRaw : curve.transform(enterRaw);
-    final p = parent;
-    if (p == null) return enterCurved;
-    if (p.status == AnimationStatus.reverse ||
-        p.status == AnimationStatus.dismissed) {
-      final exitRaw = p.value.clamp(0.0, 1.0);
-      final exitCurved =
-          (exitRaw == 0.0 || exitRaw == 1.0) ? exitRaw : curve.transform(exitRaw);
-      return math.min(enterCurved, exitCurved);
-    }
-    return enterCurved;
   }
 }
 
@@ -751,9 +686,16 @@ class _UiSpinnerState extends State<UiSpinner>
 }
 
 class _SpinnerPainter extends CustomPainter {
-  const _SpinnerPainter({required this.color, required this.stroke});
+  _SpinnerPainter({required this.color, required this.stroke})
+    : _paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..color = color;
+
   final Color color;
   final double stroke;
+  final Paint _paint;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -763,11 +705,7 @@ class _SpinnerPainter extends CustomPainter {
       -math.pi / 2,
       math.pi * 1.5,
       false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round
-        ..color = color,
+      _paint,
     );
   }
 

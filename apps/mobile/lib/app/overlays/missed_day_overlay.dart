@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
@@ -39,26 +40,49 @@ class MissedDayOverlay extends StatefulWidget {
 
 class _MissedDayOverlayState extends State<MissedDayOverlay>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: UiMotion.normal,
-    reverseDuration: UiMotion.fast,
-  )..addStatusListener(_onStatusChanged);
-  late final CurvedAnimation _curved = CurvedAnimation(
-    parent: _ctrl,
-    curve: UiCurves.easeOutStrong,
-    reverseCurve: UiCurves.easeOutStrong,
-  );
+  static const double _kEnterOffsetDy = 6.0;
+  static const double _kExitOffsetDy = -16.0;
+
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
 
   String? _activeSkinId;
   int? _activeDay;
   bool _didInit = false;
+  double _lastDy = 0.0;
+  double _reverseStartT = 1.0;
+  double _reverseStartDy = 0.0;
 
   bool get _shouldShow =>
       widget.visible && MissedDayOverlay.isSupportedSkin(widget.skinId);
 
+  AnimationController _ensureController() {
+    var ctrl = _ctrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController(
+      vsync: this,
+      duration: UiMotion.fadeOf(context, UiMotion.normal),
+      reverseDuration: UiMotion.fadeOf(context, UiMotion.fast),
+    )..addStatusListener(_onStatusChanged);
+    _ctrl = ctrl;
+    _curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeOutStrong,
+      reverseCurve: UiCurves.easeOutStrong.flipped,
+    );
+    return ctrl;
+  }
+
   void _onStatusChanged(AnimationStatus status) {
-    if (status == AnimationStatus.dismissed && mounted && !_shouldShow) {
+    if (status == AnimationStatus.reverse) {
+      _reverseStartT = _curved?.value ?? _ctrl?.value ?? 1.0;
+      _reverseStartDy = _lastDy;
+    } else if (status == AnimationStatus.forward) {
+      _reverseStartT = 1.0;
+      _reverseStartDy = 0.0;
+    } else if (status == AnimationStatus.dismissed &&
+        mounted &&
+        !_shouldShow) {
       setState(() {
         _activeSkinId = null;
         _activeDay = null;
@@ -68,28 +92,32 @@ class _MissedDayOverlayState extends State<MissedDayOverlay>
   }
 
   void _syncDurations() {
-    _ctrl.duration = UiMotion.fadeOf(context, UiMotion.normal);
-    _ctrl.reverseDuration = UiMotion.fadeOf(context, UiMotion.fast);
+    final ctrl = _ctrl;
+    if (ctrl == null) return;
+    ctrl.duration = UiMotion.fadeOf(context, UiMotion.normal);
+    ctrl.reverseDuration = UiMotion.fadeOf(context, UiMotion.fast);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncDurations();
+    final reduced = UiMotion.reduced(context);
     if (!_didInit) {
       _didInit = true;
       if (_shouldShow) {
         _activeSkinId = widget.skinId;
         _activeDay = widget.day;
-        if (UiMotion.reduced(context)) {
-          _ctrl.value = 1.0;
-        } else {
-          _ctrl.forward(from: 0.0);
+        if (!reduced) {
+          _lastDy = _kEnterOffsetDy;
+          _ensureController().forward(from: 0.0);
         }
       }
-    } else if (UiMotion.reduced(context) && _ctrl.isAnimating) {
+    } else if (reduced && (_ctrl?.isAnimating ?? false)) {
       if (_shouldShow) {
-        _ctrl.value = 1.0;
+        _ctrl?.stop();
+        _ctrl?.value = 1.0;
+        _lastDy = 0.0;
       }
     }
   }
@@ -101,29 +129,44 @@ class _MissedDayOverlayState extends State<MissedDayOverlay>
     final wasShowing =
         oldWidget.visible && MissedDayOverlay.isSupportedSkin(oldWidget.skinId);
     final nowShowing = _shouldShow;
+    final reduced = UiMotion.reduced(context);
     if (nowShowing) {
       _activeSkinId = widget.skinId;
       _activeDay = widget.day;
       if (!wasShowing) {
-        _ctrl.forward(from: 0.0);
+        if (reduced) {
+          _ctrl?.stop();
+          _ctrl?.value = 1.0;
+          _lastDy = 0.0;
+        } else {
+          _lastDy = _kEnterOffsetDy;
+          _ensureController().forward(from: 0.0);
+        }
       }
     } else if (wasShowing && _activeSkinId != null) {
       if (!MissedDayOverlay.isSupportedSkin(widget.skinId)) {
-        _ctrl.stop();
-        _ctrl.value = 0.0;
+        _ctrl?.stop();
+        _ctrl?.value = 0.0;
         _activeSkinId = null;
         _activeDay = null;
       } else {
-        _ctrl.reverse();
+        final ctrl = _ensureController();
+        _syncDurations();
+        if (ctrl.value == 0.0 && !ctrl.isAnimating) {
+          ctrl.value = 1.0;
+        }
+        _reverseStartT = _curved?.value ?? ctrl.value;
+        _reverseStartDy = _lastDy;
+        ctrl.reverse();
       }
     }
   }
 
   @override
   void dispose() {
-    _ctrl.removeStatusListener(_onStatusChanged);
-    _curved.dispose();
-    _ctrl.dispose();
+    _ctrl?.removeStatusListener(_onStatusChanged);
+    _curved?.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
@@ -192,19 +235,31 @@ class _MissedDayOverlayState extends State<MissedDayOverlay>
     final Widget rotated = squad
         ? Transform.rotate(angle: -3 * math.pi / 180, child: chip)
         : chip;
+    final opacityAnim = reduced
+        ? (_ctrl ?? kAlwaysCompleteAnimation)
+        : (_curved ?? kAlwaysCompleteAnimation);
     final Widget faded = FadeTransition(
-      opacity: reduced ? _ctrl : _curved,
+      opacity: opacityAnim,
       child: rotated,
     );
-    if (reduced) return faded;
+    final curved = _curved;
+    final ctrl = _ctrl;
+    if (reduced || curved == null || ctrl == null) return faded;
     return AnimatedBuilder(
-      animation: _curved,
+      animation: curved,
       child: faded,
       builder: (context, child) {
-        final isReverse = _ctrl.status == AnimationStatus.reverse;
-        final dy = isReverse
-            ? (1.0 - _curved.value) * -16.0
-            : (1.0 - _curved.value) * 6.0;
+        final t = curved.value;
+        final double dy;
+        if (ctrl.status == AnimationStatus.reverse) {
+          final progress = _reverseStartT > 1e-4
+              ? (1.0 - (t / _reverseStartT)).clamp(0.0, 1.0)
+              : 1.0;
+          dy = lerpDouble(_reverseStartDy, _kExitOffsetDy, progress)!;
+        } else {
+          dy = (1.0 - t) * _kEnterOffsetDy;
+        }
+        _lastDy = dy;
         return Transform.translate(
           key: const ValueKey('missed-day-translate'),
           offset: Offset(0, dy),

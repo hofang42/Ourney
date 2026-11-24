@@ -8,7 +8,9 @@ import 'buttons.dart';
 
 /// V2 `.app-sheet`: 24dp top radius, 2dp outline on top/left/right only,
 /// hard `0 -4px 0` top shadow in [accent], grabber, solid `ui.bg` body.
-/// Enter motion (190ms ease-out) is supplied by [showUiSheet]. Content scrolls
+/// Enter motion (260ms [UiCurves.drawer]) and exit motion (190ms
+/// [UiCurves.easeOutStrong], 0ms under Reduce Motion) are supplied by
+/// [showUiSheet]. Content scrolls
 /// when taller than the available height, so large text never overflows.
 class UiSheet extends StatelessWidget {
   const UiSheet({

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -65,7 +66,7 @@ class UiSegmented<T> extends StatelessWidget {
 
     double tabHeight(UiSegment<T> s) {
       final selected = s.value == value;
-      final border = selected ? UiBorder.thin * 2 : 0.0;
+      final border = selected ? UiBorder.standard * 2 : 0.0;
       final dot = s.showDot ? 14.0 : 0.0;
       final avail =
           (stacked ? trackWidth : segWidth) - hPad * 2 - border - dot;
@@ -84,7 +85,9 @@ class UiSegmented<T> extends StatelessWidget {
         textHeightBehavior: defaultStyle.textHeightBehavior,
         textWidthBasis: defaultStyle.textWidthBasis,
       )..layout(maxWidth: avail);
-      final pill = (tp.height + 12 + border).clamp(
+      final tpHeight = tp.height;
+      tp.dispose();
+      final pill = (tpHeight + 12 + border).clamp(
         UiSize.tap - _inset * 2,
         double.infinity,
       );
@@ -144,7 +147,7 @@ class UiSegmented<T> extends StatelessWidget {
     final locale = Localizations.maybeLocaleOf(context);
     for (final s in segments) {
       final avail =
-          segWidth - hPad * 2 - UiBorder.thin * 2 - (s.showDot ? 14 : 0);
+          segWidth - hPad * 2 - UiBorder.standard * 2 - (s.showDot ? 14 : 0);
       if (avail <= 0) return true;
       final tp = TextPainter(
         text: TextSpan(text: s.label, style: boldStyle),
@@ -155,7 +158,9 @@ class UiSegmented<T> extends StatelessWidget {
         textHeightBehavior: defaultStyle.textHeightBehavior,
         textWidthBasis: defaultStyle.textWidthBasis,
       )..layout(maxWidth: avail);
-      if (tp.didExceedMaxLines) return true;
+      final exceeded = tp.didExceedMaxLines;
+      tp.dispose();
+      if (exceeded) return true;
       for (final word in s.label.trim().split(RegExp(r'\s+'))) {
         if (word.isEmpty) continue;
         final wp = TextPainter(
@@ -167,10 +172,42 @@ class UiSegmented<T> extends StatelessWidget {
           textHeightBehavior: defaultStyle.textHeightBehavior,
           textWidthBasis: defaultStyle.textWidthBasis,
         )..layout();
-        if (wp.width > avail) return true;
+        final wordW = wp.width;
+        wp.dispose();
+        if (wordW > avail) return true;
       }
     }
     return false;
+  }
+
+  List<double> _measureScrollableWidths(
+    BuildContext context,
+    OurneyUi ui, {
+    required double hPad,
+  }) {
+    final boldStyle = _effectiveLabelStyle(context, ui, selected: true);
+    final scaler = MediaQuery.textScalerOf(context);
+    final dir = Directionality.of(context);
+    final defaultStyle = DefaultTextStyle.of(context);
+    final locale = Localizations.maybeLocaleOf(context);
+    return <double>[
+      for (final s in segments)
+        () {
+          final tp = TextPainter(
+            text: TextSpan(text: s.label, style: boldStyle),
+            textScaler: scaler,
+            textDirection: dir,
+            maxLines: 1,
+            locale: locale,
+            textHeightBehavior: defaultStyle.textHeightBehavior,
+            textWidthBasis: defaultStyle.textWidthBasis,
+          )..layout();
+          final textW = tp.width.ceilToDouble();
+          tp.dispose();
+          final dotW = s.showDot ? 14.0 : 0.0;
+          return math.max(92.0, textW + hPad * 2 + dotW);
+        }(),
+    ];
   }
 
   @override
@@ -179,6 +216,35 @@ class UiSegmented<T> extends StatelessWidget {
     final borderColor = ui.isDark ? ui.fieldBorder : ui.outline;
     final isRtl = Directionality.of(context) == TextDirection.rtl;
     final selectedIndex = segments.indexWhere((s) => s.value == value);
+
+    Widget slidingPill({required double left, required double width}) {
+      return AnimatedPositioned(
+        key: const ValueKey('ui-segmented-pill'),
+        duration: UiMotion.of(context, UiMotion.medium),
+        curve: UiCurves.easeInOutStrong,
+        left: left,
+        top: _inset,
+        bottom: _inset,
+        width: width,
+        child: IgnorePointer(
+          child: DecoratedBox(
+            key: const ValueKey('ui-segmented-pill-box'),
+            decoration: BoxDecoration(
+              color: ui.fillSelected,
+              borderRadius: BorderRadius.circular(UiRadius.capsule),
+              border: Border.all(
+                color: borderColor,
+                width: UiBorder.standard,
+              ),
+              boxShadow: UiShadow.hard(
+                ui.hardShadowColor,
+                UiShadow.tiny,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     Widget tab(
       UiSegment<T> s, {
@@ -211,7 +277,7 @@ class UiSegmented<T> extends StatelessWidget {
           border: selected
               ? Border.all(
                   color: borderColor,
-                  width: hasSlidingPill ? 0 : UiBorder.thin,
+                  width: hasSlidingPill ? 0 : UiBorder.standard,
                   style: hasSlidingPill ? BorderStyle.none : BorderStyle.solid,
                 )
               : null,
@@ -239,6 +305,8 @@ class UiSegmented<T> extends StatelessWidget {
         selected: selected,
         semanticLabel: s.label,
         excludeChildSemantics: true,
+        pressOffset: (!hasSlidingPill && selected) ? UiShadow.tiny : 0,
+        pressScale: selected ? 1.0 : UiMotion.pressScale,
         // The 40dp pill sits inside a full 48dp-tall hit area (U5): the
         // track's vertical inset belongs to the tap target.
         child: Padding(
@@ -251,12 +319,49 @@ class UiSegmented<T> extends StatelessWidget {
     }
 
     if (scrollable) {
-      final row = IntrinsicHeight(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [for (final s in segments) tab(s, stacked: false, hPad: 12)],
-        ),
+      const hPad = 12.0;
+      final segWidths = _measureScrollableWidths(context, ui, hPad: hPad);
+      var pillLeft = 0.0;
+      final pillWidth =
+          (selectedIndex >= 0 && selectedIndex < segWidths.length)
+          ? segWidths[selectedIndex]
+          : 0.0;
+      if (selectedIndex >= 0 && selectedIndex < segWidths.length) {
+        if (isRtl) {
+          for (var i = selectedIndex + 1; i < segWidths.length; i++) {
+            pillLeft += segWidths[i];
+          }
+        } else {
+          for (var i = 0; i < selectedIndex; i++) {
+            pillLeft += segWidths[i];
+          }
+        }
+      }
+      final trackStack = Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.centerLeft,
+        children: [
+          if (selectedIndex >= 0 && segments.isNotEmpty)
+            slidingPill(left: pillLeft, width: pillWidth),
+          IntrinsicHeight(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (var i = 0; i < segments.length; i++)
+                  SizedBox(
+                    width: segWidths[i],
+                    child: tab(
+                      segments[i],
+                      stacked: false,
+                      hPad: hPad,
+                      hasSlidingPill: true,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       );
       return Container(
         constraints: const BoxConstraints(minHeight: UiSize.tap),
@@ -267,7 +372,8 @@ class UiSegmented<T> extends StatelessWidget {
         ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: row,
+          padding: const EdgeInsets.only(right: UiShadow.tiny),
+          child: trackStack,
         ),
       );
     }
@@ -305,38 +411,15 @@ class UiSegmented<T> extends StatelessWidget {
                   ],
                 )
               : Stack(
+                  clipBehavior: Clip.none,
                   alignment: Alignment.centerLeft,
                   children: [
                     if (selectedIndex >= 0 && segments.isNotEmpty)
-                      AnimatedPositioned(
-                        key: const ValueKey('ui-segmented-pill'),
-                        duration: UiMotion.of(context, UiMotion.medium),
-                        curve: UiCurves.easeInOutStrong,
+                      slidingPill(
                         left: isRtl
                             ? (segments.length - 1 - selectedIndex) * segWidth
                             : selectedIndex * segWidth,
-                        top: _inset,
-                        bottom: _inset,
                         width: segWidth,
-                        child: IgnorePointer(
-                          child: DecoratedBox(
-                            key: const ValueKey('ui-segmented-pill-box'),
-                            decoration: BoxDecoration(
-                              color: ui.fillSelected,
-                              borderRadius: BorderRadius.circular(
-                                UiRadius.capsule,
-                              ),
-                              border: Border.all(
-                                color: borderColor,
-                                width: UiBorder.standard,
-                              ),
-                              boxShadow: UiShadow.hard(
-                                ui.hardShadowColor,
-                                UiShadow.tiny,
-                              ),
-                            ),
-                          ),
-                        ),
                       ),
                     IntrinsicHeight(
                       child: Row(

@@ -1,3 +1,5 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -109,8 +111,16 @@ class ReminderBanner extends StatefulWidget {
 
 class _ReminderBannerState extends State<ReminderBanner>
     with SingleTickerProviderStateMixin {
+  static const double _kEnterOffsetDy = -28.0;
+  static const double _kExitOffsetDy = -16.0;
+
   AnimationController? _fallbackCtrl;
+  CurvedAnimation? _curved;
+  Animation<double>? _boundParent;
   bool _started = false;
+  double _lastDy = _kEnterOffsetDy;
+  double _reverseStartT = 1.0;
+  double _reverseStartDy = 0.0;
 
   Animation<double> get _anim => widget.animation ?? _ensureFallback();
 
@@ -122,21 +132,59 @@ class _ReminderBannerState extends State<ReminderBanner>
     );
   }
 
+  void _onAnimStatusChanged(AnimationStatus status) {
+    if (status == AnimationStatus.reverse) {
+      _reverseStartT = _curved?.value ?? _anim.value;
+      _reverseStartDy = _lastDy;
+    } else if (status == AnimationStatus.forward) {
+      _reverseStartT = 1.0;
+      _reverseStartDy = 0.0;
+    }
+  }
+
+  void _syncCurvedAnimation() {
+    final parent = _anim;
+    if (identical(parent, _boundParent) && _curved != null) {
+      return;
+    }
+    _boundParent?.removeStatusListener(_onAnimStatusChanged);
+    _curved?.dispose();
+    _boundParent = parent;
+    parent.addStatusListener(_onAnimStatusChanged);
+    _curved = CurvedAnimation(
+      parent: parent,
+      curve: UiCurves.easeOutStrong,
+      reverseCurve: UiCurves.easeOutStrong.flipped,
+    );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-    if (widget.animation == null) {
-      final ctrl = _ensureFallback();
-      ctrl.duration = UiMotion.fadeOf(context, UiMotion.medium);
-      ctrl.reverseDuration = UiMotion.fadeOf(context, UiMotion.fast);
-      ctrl.forward();
+    if (!_started) {
+      _started = true;
+      if (widget.animation == null) {
+        final ctrl = _ensureFallback();
+        ctrl.duration = UiMotion.fadeOf(context, UiMotion.medium);
+        ctrl.reverseDuration = UiMotion.fadeOf(context, UiMotion.fast);
+        ctrl.forward();
+      }
+    }
+    _syncCurvedAnimation();
+  }
+
+  @override
+  void didUpdateWidget(covariant ReminderBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.animation != widget.animation) {
+      _syncCurvedAnimation();
     }
   }
 
   @override
   void dispose() {
+    _boundParent?.removeStatusListener(_onAnimStatusChanged);
+    _curved?.dispose();
     _fallbackCtrl?.dispose();
     super.dispose();
   }
@@ -150,11 +198,9 @@ class _ReminderBannerState extends State<ReminderBanner>
         ? l.reminderBanner_appName
         : data.journeyName;
     final reduced = UiMotion.reduced(context);
+    _syncCurvedAnimation();
     final anim = _anim;
-    final curved = _BannerCurvedAnimation(
-      parent: anim,
-      curve: reduced ? Curves.linear : UiCurves.easeOutStrong,
-    );
+    final curved = _curved!;
 
     final Widget cardContent = Semantics(
       container: true,
@@ -289,16 +335,27 @@ class _ReminderBannerState extends State<ReminderBanner>
       ),
     );
 
-    final faded = FadeTransition(opacity: curved, child: cardContent);
+    final faded = FadeTransition(
+      opacity: reduced ? anim : curved,
+      child: cardContent,
+    );
     final Widget animatedCard = reduced
         ? faded
         : AnimatedBuilder(
             animation: curved,
             child: faded,
             builder: (context, child) {
-              final isReverse = anim.status == AnimationStatus.reverse;
-              final distance = isReverse ? -16.0 : -28.0;
-              final dy = (1.0 - curved.value) * distance;
+              final t = curved.value;
+              final double dy;
+              if (anim.status == AnimationStatus.reverse) {
+                final progress = _reverseStartT > 1e-4
+                    ? (1.0 - (t / _reverseStartT)).clamp(0.0, 1.0)
+                    : 1.0;
+                dy = lerpDouble(_reverseStartDy, _kExitOffsetDy, progress)!;
+              } else {
+                dy = (1.0 - t) * _kEnterOffsetDy;
+              }
+              _lastDy = dy;
               return Transform.translate(
                 key: const ValueKey('reminder-banner-translate'),
                 offset: Offset(0, dy),
@@ -320,22 +377,6 @@ class _ReminderBannerState extends State<ReminderBanner>
         child: animatedCard,
       ),
     );
-  }
-}
-
-class _BannerCurvedAnimation extends Animation<double>
-    with AnimationWithParentMixin<double> {
-  const _BannerCurvedAnimation({required this.parent, required this.curve});
-
-  @override
-  final Animation<double> parent;
-  final Curve curve;
-
-  @override
-  double get value {
-    final v = parent.value.clamp(0.0, 1.0);
-    if (v == 0.0 || v == 1.0) return v;
-    return curve.transform(v);
   }
 }
 
@@ -409,7 +450,9 @@ class _ReminderBannerHostState extends ConsumerState<ReminderBannerHost>
   }
 
   void _handleDismiss() {
-    ref.read(reminderBannerProvider.notifier).dismiss();
+    if (ref.read(reminderBannerProvider) != null) {
+      ref.read(reminderBannerProvider.notifier).dismiss();
+    }
     _syncDurations();
     _ctrl.reverse();
   }
@@ -425,6 +468,7 @@ class _ReminderBannerHostState extends ConsumerState<ReminderBannerHost>
 
   @override
   Widget build(BuildContext context) {
+    final liveData = ref.watch(reminderBannerProvider);
     ref.listen<ReminderBannerData?>(reminderBannerProvider, (prev, next) {
       _syncDurations();
       if (next != null) {
@@ -446,16 +490,20 @@ class _ReminderBannerHostState extends ConsumerState<ReminderBannerHost>
             top: MediaQuery.paddingOf(context).top + 10,
             left: 10,
             right: 10,
-            child: ReminderBanner(
-              data: activeData,
-              animation: _ctrl,
-              onOpen: () {
-                final journeyId = activeData.journeyId;
-                _handleDismiss();
-                widget.onOpenJourneyCamera(journeyId);
-              },
-              onDismiss: _handleDismiss,
-              onSwipeDismissed: _handleSwipeDismiss,
+            child: IgnorePointer(
+              ignoring: liveData == null,
+              child: ReminderBanner(
+                data: activeData,
+                animation: _ctrl,
+                onOpen: () {
+                  if (ref.read(reminderBannerProvider) == null) return;
+                  final journeyId = activeData.journeyId;
+                  _handleDismiss();
+                  widget.onOpenJourneyCamera(journeyId);
+                },
+                onDismiss: _handleDismiss,
+                onSwipeDismissed: _handleSwipeDismiss,
+              ),
             ),
           ),
       ],

@@ -197,6 +197,9 @@ class UiJourneyWheel extends StatefulWidget {
 class _UiJourneyWheelState extends State<UiJourneyWheel>
     with SingleTickerProviderStateMixin {
   AnimationController? _fallbackCtrl;
+  CurvedAnimation? _fadeCurved;
+  CurvedAnimation? _arcCurved;
+  Animation<double>? _boundParent;
   bool _started = false;
   int? _dragHoveredIndex;
 
@@ -210,27 +213,60 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
     );
   }
 
+  void _syncCurvedAnimations() {
+    final parent = _anim;
+    if (identical(parent, _boundParent) &&
+        _fadeCurved != null &&
+        _arcCurved != null) {
+      return;
+    }
+    _fadeCurved?.dispose();
+    _arcCurved?.dispose();
+    _boundParent = parent;
+    _fadeCurved = CurvedAnimation(
+      parent: parent,
+      curve: UiCurves.easeOutStrong,
+      reverseCurve: UiCurves.easeOutStrong.flipped,
+    );
+    _arcCurved = CurvedAnimation(
+      parent: parent,
+      curve: UiCurves.dockOvershoot,
+      reverseCurve: UiCurves.easeOutStrong.flipped,
+    );
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_started) return;
-    _started = true;
-    if (widget.routeAnimation == null) {
-      final ctrl = _ensureFallback();
-      ctrl.duration = UiMotion.fadeOf(context, _inDuration);
-      ctrl.reverseDuration = UiMotion.fadeOf(context, _outDuration);
-      ctrl.forward();
+    if (!_started) {
+      _started = true;
+      if (widget.routeAnimation == null) {
+        final ctrl = _ensureFallback();
+        ctrl.duration = UiMotion.fadeOf(context, _inDuration);
+        ctrl.reverseDuration = UiMotion.fadeOf(context, _outDuration);
+        ctrl.forward();
+      }
+    }
+    _syncCurvedAnimations();
+  }
+
+  @override
+  void didUpdateWidget(covariant UiJourneyWheel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.routeAnimation != widget.routeAnimation) {
+      _syncCurvedAnimations();
     }
   }
 
   @override
   void dispose() {
+    _fadeCurved?.dispose();
+    _arcCurved?.dispose();
     _fallbackCtrl?.dispose();
     super.dispose();
   }
 
-  void _handlePointerMove(Offset localPos, List<Offset> centers) {
-    int? hit;
+  int? _hitIndex(Offset localPos, List<Offset> centers) {
     for (var i = 0; i < centers.length; i++) {
       final c = centers[i];
       final rect = Rect.fromLTWH(
@@ -240,10 +276,14 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
         _cellH,
       );
       if (rect.contains(localPos)) {
-        hit = i;
-        break;
+        return i;
       }
     }
+    return null;
+  }
+
+  void _handlePointerMove(Offset localPos, List<Offset> centers) {
+    final hit = _hitIndex(localPos, centers);
     if (hit != null && hit != _dragHoveredIndex) {
       _dragHoveredIndex = hit;
       unawaited(UiHaptics.selection());
@@ -265,11 +305,10 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
       size,
       topInset: media.padding.top,
     );
+    _syncCurvedAnimations();
     final anim = _anim;
-    final fadeAnim = _WheelFadeAnimation(
-      parent: anim,
-      curve: reduced ? Curves.linear : UiCurves.easeOutStrong,
-    );
+    final fadeAnim = reduced ? anim : _fadeCurved!;
+    final arcAnim = _arcCurved!;
     final scrim = solid
         ? ui.bg.withValues(alpha: 0.94)
         : Colors.black.withValues(alpha: 0.5);
@@ -291,6 +330,8 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
         maxScaleFactor: 1.3,
         child: Listener(
           behavior: HitTestBehavior.translucent,
+          onPointerDown: (e) =>
+              _dragHoveredIndex = _hitIndex(e.localPosition, centers),
           onPointerMove: (e) => _handlePointerMove(e.localPosition, centers),
           onPointerUp: (_) => _dragHoveredIndex = null,
           onPointerCancel: (_) => _dragHoveredIndex = null,
@@ -307,40 +348,53 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
                 ),
               ),
               for (var i = 0; i < widget.items.length; i++)
-                AnimatedBuilder(
-                  animation: anim,
-                  child: FadeTransition(
-                    opacity: fadeAnim,
-                    child: _LiftOnPress(
-                      child: _WheelItem(
-                        key: ValueKey('journey-wheel-${widget.items[i].id}'),
-                        item: widget.items[i],
-                        active: widget.items[i].id == widget.activeId,
-                        activeHint: widget.activeHint,
-                        onTap: () => widget.onSelect(widget.items[i].id),
+                if (reduced)
+                  Positioned(
+                    left: centers[i].dx - _cellW / 2,
+                    top: centers[i].dy - _badge / 2,
+                    width: _cellW,
+                    child: FadeTransition(
+                      opacity: fadeAnim,
+                      child: _LiftOnPress(
+                        child: _WheelItem(
+                          key: ValueKey('journey-wheel-${widget.items[i].id}'),
+                          item: widget.items[i],
+                          active: widget.items[i].id == widget.activeId,
+                          activeHint: widget.activeHint,
+                          onTap: () => widget.onSelect(widget.items[i].id),
+                        ),
                       ),
                     ),
+                  )
+                else
+                  AnimatedBuilder(
+                    animation: arcAnim,
+                    child: FadeTransition(
+                      opacity: fadeAnim,
+                      child: _LiftOnPress(
+                        child: _WheelItem(
+                          key: ValueKey('journey-wheel-${widget.items[i].id}'),
+                          item: widget.items[i],
+                          active: widget.items[i].id == widget.activeId,
+                          activeHint: widget.activeHint,
+                          onTap: () => widget.onSelect(widget.items[i].id),
+                        ),
+                      ),
+                    ),
+                    builder: (context, child) {
+                      final p = Offset.lerp(
+                        widget.anchor,
+                        centers[i],
+                        arcAnim.value,
+                      )!;
+                      return Positioned(
+                        left: p.dx - _cellW / 2,
+                        top: p.dy - _badge / 2,
+                        width: _cellW,
+                        child: child!,
+                      );
+                    },
                   ),
-                  builder: (context, child) {
-                    final Offset p;
-                    if (reduced) {
-                      p = centers[i];
-                    } else {
-                      final raw = anim.value.clamp(0.0, 1.0);
-                      final curve = anim.status == AnimationStatus.reverse
-                          ? UiCurves.easeOutStrong
-                          : UiCurves.dockOvershoot;
-                      final t = curve.transform(raw);
-                      p = Offset.lerp(widget.anchor, centers[i], t)!;
-                    }
-                    return Positioned(
-                      left: p.dx - _cellW / 2,
-                      top: p.dy - _badge / 2,
-                      width: _cellW,
-                      child: child!,
-                    );
-                  },
-                ),
               Positioned(
                 left: widget.anchor.dx - UiSize.tap / 2,
                 top: widget.anchor.dy - UiSize.tap / 2,
@@ -381,24 +435,6 @@ class _UiJourneyWheelState extends State<UiJourneyWheel>
         ),
       ),
     );
-  }
-}
-
-/// Listener-free curved animation wrapper for [UiJourneyWheel] so `build()`
-/// never allocates a disposable [CurvedAnimation].
-class _WheelFadeAnimation extends Animation<double>
-    with AnimationWithParentMixin<double> {
-  const _WheelFadeAnimation({required this.parent, required this.curve});
-
-  @override
-  final Animation<double> parent;
-  final Curve curve;
-
-  @override
-  double get value {
-    final v = parent.value.clamp(0.0, 1.0);
-    if (v == 0.0 || v == 1.0) return v;
-    return curve.transform(v);
   }
 }
 

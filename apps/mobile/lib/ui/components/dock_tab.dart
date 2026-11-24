@@ -186,7 +186,7 @@ class DockTab extends StatelessWidget {
     return UiPressable(
       key: item.itemKey,
       onPressed: () {
-        if (!active) {
+        if (!active && !camera) {
           unawaited(UiHaptics.selection());
         }
         item.onPressed();
