@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,8 @@ import '../typography.dart';
 import 'dock.dart' show UiDockItem;
 import 'ourney_icons.dart';
 import 'pressable.dart';
+
+const Duration _kDockGlyphDuration = Duration(milliseconds: 180);
 
 /// Internal parts of [UiDock] (`dock.dart`): one tab and the selection pill
 /// look. Not exported from `ui.dart`.
@@ -175,13 +178,19 @@ class DockTab extends StatelessWidget {
       // palette and the ink outline in every state.
       glyph = AnimatedScale(
         scale: active ? 1.08 : 1,
-        duration: UiMotion.of(context, UiMotion.press),
+        duration: UiMotion.of(context, _kDockGlyphDuration),
+        curve: UiCurves.dockOvershoot,
         child: OurneyIcon(name: item.glyph!, active: active),
       );
     }
     return UiPressable(
       key: item.itemKey,
-      onPressed: item.onPressed,
+      onPressed: () {
+        if (!active && !camera) {
+          unawaited(UiHaptics.selection());
+        }
+        item.onPressed();
+      },
       selected: active,
       semanticLabel: item.label,
       excludeChildSemantics: true,
