@@ -134,6 +134,8 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
   late int _focused = widget.initial;
   double _cardWidth = 240;
   bool _placed = false;
+  int _programmaticScrollToken = 0;
+  bool _isProgrammaticScrolling = false;
 
   @override
   void initState() {
@@ -159,7 +161,7 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
   }
 
   void _onScroll() {
-    if (!mounted || !_scroll.hasClients) return;
+    if (!mounted || !_scroll.hasClients || _isProgrammaticScrolling) return;
     _setFocus(_nearest());
   }
 
@@ -171,11 +173,19 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
     if (still) {
       _scroll.jumpTo(_offsetOf(target));
     } else {
-      await _scroll.animateTo(
-        _offsetOf(target),
-        duration: UiMotion.medium,
-        curve: UiCurves.easeOutStrong,
-      );
+      final token = ++_programmaticScrollToken;
+      _isProgrammaticScrolling = true;
+      try {
+        await _scroll.animateTo(
+          _offsetOf(target),
+          duration: UiMotion.medium,
+          curve: UiCurves.easeOutStrong,
+        );
+      } finally {
+        if (_programmaticScrollToken == token) {
+          _isProgrammaticScrolling = false;
+        }
+      }
     }
   }
 
@@ -189,7 +199,6 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
-    final ui = context.ui;
     final reduced = UiMotion.reduced(context);
     final n = widget.items.length;
     final cardHeight = (MediaQuery.sizeOf(context).height * 0.52).clamp(
@@ -213,118 +222,134 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
                 }
               });
             }
-            return SingleChildScrollView(
-              key: const ValueKey('create-deck-scroll'),
-              controller: _scroll,
-              scrollDirection: Axis.horizontal,
-              physics: _DeckSnapScrollPhysics(
-                itemExtent: stepExtent,
-                itemCount: n,
-              ),
-              padding: EdgeInsets.symmetric(horizontal: side),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var i = 0; i < n; i++) ...[
-                    if (i > 0) const SizedBox(width: _gap),
-                    SizedBox(
-                      width: _cardWidth,
-                      height: cardHeight,
-                      child: AnimatedBuilder(
-                        animation: _scroll,
-                        child: _DeckCard(
-                          item: widget.items[i],
-                          focused: i == _focused,
-                          semantic: l10n.journeys_createDeckCard(
-                            i + 1,
-                            n,
-                            widget.items[i].title,
+            return NotificationListener<ScrollStartNotification>(
+              onNotification: (notification) {
+                if (notification.dragDetails != null &&
+                    _isProgrammaticScrolling) {
+                  _programmaticScrollToken++;
+                  _isProgrammaticScrolling = false;
+                }
+                return false;
+              },
+              child: SingleChildScrollView(
+                key: const ValueKey('create-deck-scroll'),
+                controller: _scroll,
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                physics: _DeckSnapScrollPhysics(
+                  itemExtent: stepExtent,
+                  itemCount: n,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: side),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (var i = 0; i < n; i++) ...[
+                      if (i > 0) const SizedBox(width: _gap),
+                      SizedBox(
+                        width: _cardWidth,
+                        height: cardHeight,
+                        child: AnimatedBuilder(
+                          animation: _scroll,
+                          child: _DeckCard(
+                            item: widget.items[i],
+                            focused: i == _focused,
+                            semantic: l10n.journeys_createDeckCard(
+                              i + 1,
+                              n,
+                              widget.items[i].title,
+                            ),
+                            chosenLabel: l10n.journeys_createDeckChosen,
+                            onTap: () => widget.onChoose(i),
                           ),
-                          chosenLabel: l10n.journeys_createDeckChosen,
-                          onTap: () => widget.onChoose(i),
-                        ),
-                        builder: (context, cardChild) {
-                          final currentPage =
-                              _scroll.hasClients &&
-                                  _scroll.position.hasContentDimensions &&
-                                  stepExtent > 0
-                              ? (_scroll.offset / stepExtent)
-                              : _focused.toDouble();
-                          final signedDist = i - currentPage;
-                          final dist = signedDist.abs().clamp(0.0, 1.0);
-                          final opacity = reduced
-                              ? (i == _focused ? 1.0 : 0.66)
-                              : lerpDouble(1.0, 0.66, dist)!;
-                          Widget transformed = FadeTransition(
-                            opacity: AlwaysStoppedAnimation<double>(opacity),
-                            child: cardChild,
-                          );
-                          if (!reduced && dist > 0.0001) {
-                            final scale = lerpDouble(1.0, 0.90, dist)!;
-                            final dy = dist * 6.0;
-                            final tilt =
-                                signedDist.clamp(-1.5, 1.5) * 0.022;
-                            transformed = Transform.translate(
-                              offset: Offset(0, dy),
-                              child: Transform.rotate(
-                                angle: tilt,
-                                child: Transform.scale(
-                                  scale: scale,
-                                  child: transformed,
-                                ),
-                              ),
+                          builder: (context, cardChild) {
+                            final currentPage =
+                                _scroll.hasClients &&
+                                    _scroll.position.hasContentDimensions &&
+                                    stepExtent > 0
+                                ? (_scroll.offset / stepExtent)
+                                : _focused.toDouble();
+                            final signedDist = i - currentPage;
+                            final dist = signedDist.abs().clamp(0.0, 1.0);
+                            final opacity = reduced
+                                ? (i == _focused ? 1.0 : 0.66)
+                                : lerpDouble(1.0, 0.66, dist)!;
+                            Widget transformed = FadeTransition(
+                              opacity: AlwaysStoppedAnimation<double>(opacity),
+                              child: cardChild,
                             );
-                          }
-                          return transformed;
-                        },
+                            if (!reduced && dist > 0.0001) {
+                              final scale = lerpDouble(1.0, 0.90, dist)!;
+                              final dy = dist * 6.0;
+                              final tilt =
+                                  signedDist.clamp(-1.5, 1.5) * 0.022;
+                              transformed = Transform.translate(
+                                offset: Offset(0, dy),
+                                child: Transform.rotate(
+                                  angle: tilt,
+                                  child: Transform.scale(
+                                    scale: scale,
+                                    child: transformed,
+                                  ),
+                                ),
+                              );
+                            }
+                            return transformed;
+                          },
+                        ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             );
           },
         ),
         const SizedBox(height: UiSpace.md),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            UiIconButton(
-              key: const ValueKey('create-deck-prev'),
-              glyph: OurneyIcon(
-                name: 'chevron-left',
-                size: 20,
-                flat: true,
-                color: _focused == 0 ? ui.inkMuted : ui.ink,
-              ),
-              label: l10n.journeys_createDeckPrev,
-              onPressed: _focused == 0 ? null : () => _go(_focused - 1),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: UiSpace.lg),
-              child: Text(
-                l10n.journeys_createDeckCounter(_focused + 1, n),
-                key: const ValueKey('create-deck-counter'),
-                style: UiText.body(
-                  size: 15,
-                  weight: FontWeight.w800,
-                  height: 1.4,
-                  color: ui.ink,
+        Builder(
+          builder: (context) {
+            final ui = context.ui;
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                UiIconButton(
+                  key: const ValueKey('create-deck-prev'),
+                  glyph: OurneyIcon(
+                    name: 'chevron-left',
+                    size: 20,
+                    flat: true,
+                    color: _focused == 0 ? ui.inkMuted : ui.ink,
+                  ),
+                  label: l10n.journeys_createDeckPrev,
+                  onPressed: _focused == 0 ? null : () => _go(_focused - 1),
                 ),
-              ),
-            ),
-            UiIconButton(
-              key: const ValueKey('create-deck-next'),
-              glyph: OurneyIcon(
-                name: 'chevron-right',
-                size: 20,
-                flat: true,
-                color: _focused == n - 1 ? ui.inkMuted : ui.ink,
-              ),
-              label: l10n.journeys_createDeckNext,
-              onPressed: _focused == n - 1 ? null : () => _go(_focused + 1),
-            ),
-          ],
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: UiSpace.lg),
+                  child: Text(
+                    l10n.journeys_createDeckCounter(_focused + 1, n),
+                    key: const ValueKey('create-deck-counter'),
+                    style: UiText.body(
+                      size: 15,
+                      weight: FontWeight.w800,
+                      height: 1.4,
+                      color: ui.ink,
+                    ),
+                  ),
+                ),
+                UiIconButton(
+                  key: const ValueKey('create-deck-next'),
+                  glyph: OurneyIcon(
+                    name: 'chevron-right',
+                    size: 20,
+                    flat: true,
+                    color: _focused == n - 1 ? ui.inkMuted : ui.ink,
+                  ),
+                  label: l10n.journeys_createDeckNext,
+                  onPressed: _focused == n - 1 ? null : () => _go(_focused + 1),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );

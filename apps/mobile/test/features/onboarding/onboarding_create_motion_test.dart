@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/journeys/ui/create/dna_pages.dart';
 import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
 import 'package:ourney/ui/ui.dart';
@@ -188,6 +192,130 @@ void main() {
         tester.platformDispatcher.clearAllTestValues();
       },
     );
+
+    testWidgets(
+      '3-point _SplashGate tap-to-skip FadeTransition (zero Opacity saveLayer) & Reduce-Motion parity (Android + iOS)',
+      (tester) async {
+        addTearDown(tester.platformDispatcher.clearAllTestValues);
+        final prefs = await testPrefs();
+        final container = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(const AppConfig.localOnly()),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const OurneyApp(key: ValueKey('app-normal')),
+          ),
+        );
+        await tester.pump();
+
+        // 1. Start: splash is visible at opacity 1.0 with zero Opacity widgets.
+        expect(_key('ui-splash'), findsOneWidget);
+        expect(
+          find.ancestor(
+            of: _key('ui-splash'),
+            matching: find.byType(Opacity),
+          ),
+          findsNothing,
+        );
+        final gateFadeFinder = find.ancestor(
+          of: _key('ui-splash'),
+          matching: find.byType(FadeTransition),
+        );
+        expect(
+          tester.widget<FadeTransition>(gateFadeFinder.first).opacity.value,
+          closeTo(1.0, 0.001),
+        );
+
+        // Tap splash to skip hold and start 300ms fade-out.
+        await tester.tap(_key('ui-splash'));
+        await tester.pump();
+
+        // 2. Mid-flight (t = 120ms of 300ms fade): opacity is strictly in (0, 1).
+        await tester.pump(const Duration(milliseconds: 120));
+        final midOpacity = tester
+            .widget<FadeTransition>(gateFadeFinder.first)
+            .opacity
+            .value;
+        expect(midOpacity, greaterThan(0.0));
+        expect(midOpacity, lessThan(1.0));
+
+        // 3. Settled: splash unmounts completely and zero tickers remain.
+        await tester.pumpAndSettle();
+        expect(_key('ui-splash'), findsNothing);
+        expect(tester.binding.transientCallbackCount, 0);
+
+        // 4. Reduce-Motion parity (Android disableAnimations & iOS reduceMotion):
+        // 4a. Android disableAnimations: true (SemanticsBinding scales normal
+        // AnimationController duration to 5%, so tap-to-skip completes within 75ms).
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        final rmAndroidContainer = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(const AppConfig.localOnly()),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(rmAndroidContainer.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: rmAndroidContainer,
+            child: const OurneyApp(key: ValueKey('app-rm-android')),
+          ),
+        );
+        await tester.pump();
+        expect(_key('ui-splash'), findsOneWidget);
+        await tester.tap(_key('ui-splash'));
+        await tester.pumpAndSettle();
+        expect(_key('ui-splash'), findsNothing);
+
+        // 4b. iOS reduceMotion: true (runs 150ms UiMotion.reducedFade linear fade-out).
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(reduceMotion: true);
+        final rmIosContainer = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(const AppConfig.localOnly()),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+          ],
+        );
+        addTearDown(rmIosContainer.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: rmIosContainer,
+            child: const OurneyApp(key: ValueKey('app-rm-ios')),
+          ),
+        );
+        await tester.pump();
+        expect(_key('ui-splash'), findsOneWidget);
+
+        await tester.tap(_key('ui-splash'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 75));
+        final rmMid = tester
+            .widget<FadeTransition>(gateFadeFinder.first)
+            .opacity
+            .value;
+        expect(rmMid, closeTo(0.5, 0.05));
+
+        await tester.pumpAndSettle();
+        expect(_key('ui-splash'), findsNothing);
+        tester.platformDispatcher.clearAllTestValues();
+      },
+    );
   });
 
   group('Rank #13.2 — Direction-aware OnboardingQuizStage & AnimatedSize previews', () {
@@ -288,36 +416,44 @@ void main() {
     );
 
     testWidgets(
-      'OnboardingQuizStage under Reduce Motion uses opacity-only crossfade with zero horizontal slide offset',
+      'OnboardingQuizStage under Reduce Motion (Android disableAnimations & iOS reduceMotion) uses opacity-only crossfade with zero horizontal slide offset',
       (tester) async {
-        tester.platformDispatcher.accessibilityFeaturesTestValue =
-            const FakeAccessibilityFeatures(disableAnimations: true);
         addTearDown(
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
         );
 
-        await pumpOurneyApp(tester, onboarded: false);
-        final originX = tester.getTopLeft(_key('onboarding-quiz-0')).dx;
+        for (final features in const [
+          FakeAccessibilityFeatures(disableAnimations: true),
+          FakeAccessibilityFeatures(reduceMotion: true),
+        ]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
 
-        await tester.tap(_key('onboarding-goal-english'));
-        await tester.pump();
-        await tester.tap(_key('onboarding-quiz-next'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 60));
+          tester.platformDispatcher.accessibilityFeaturesTestValue = features;
+          await pumpOurneyApp(tester, onboarded: false);
+          final originX = tester.getTopLeft(_key('onboarding-quiz-0')).dx;
 
-        expect(
-          tester.getTopLeft(_key('onboarding-quiz-1')).dx,
-          closeTo(originX, 0.01),
-        );
-        await tester.pumpAndSettle();
-        expect(tester.binding.transientCallbackCount, 0);
+          await tester.tap(_key('onboarding-goal-english'));
+          await tester.pump();
+          await tester.tap(_key('onboarding-quiz-next'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 60));
+
+          expect(
+            tester.getTopLeft(_key('onboarding-quiz-1')).dx,
+            closeTo(originX, 0.01),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.binding.transientCallbackCount, 0);
+        }
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
       },
     );
   });
 
   group('Rank #13.3 — AuthScreen AnimatedSize morph & 280ms 4-oscillation OTP error shake', () {
     testWidgets(
-      '3-point choreography on AuthScreen mode morph and damped horizontal 4-oscillation OTP error shake (±6dp) + warning haptic',
+      '3-point choreography on AuthScreen mode morph, incomplete & invalid OTP error shake (±6dp) + reject (lightImpact) haptic',
       (tester) async {
         final haptics = _recordHaptics();
         final auth = RecordingAuthRepository()
@@ -352,11 +488,30 @@ void main() {
         expect(otpShakeDx(), 0.0);
         haptics.clear();
 
-        // Enter invalid 6-digit OTP to trigger verify error + 280ms 4-oscillation shake.
+        // 1. Incomplete (< 6 digits) OTP submitted via soft-keyboard action sets
+        // visible error + liveRegion, fires lightImpact (reject, never heavyImpact),
+        // and shakes horizontally.
+        await tester.enterText(_key('auth-code'), '123');
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pump();
+
+        expect(haptics, contains('HapticFeedbackType.lightImpact'));
+        expect(haptics, isNot(contains('HapticFeedbackType.heavyImpact')));
+        expect(_key('auth-error'), findsOneWidget);
+        expect(tester.widget<UiOtpField>(_key('auth-code')).hasError, isTrue);
+
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(otpShakeDx().abs(), greaterThan(0.1));
+        await tester.pumpAndSettle();
+        expect(otpShakeDx(), closeTo(0.0, 0.001));
+        haptics.clear();
+
+        // 2. Enter invalid 6-digit OTP to trigger server verify error + 280ms 4-oscillation shake.
         await tester.enterText(_key('auth-code'), '123456');
         await tester.pump();
 
-        expect(haptics, contains('HapticFeedbackType.heavyImpact'));
+        expect(haptics, contains('HapticFeedbackType.lightImpact'));
+        expect(haptics, isNot(contains('HapticFeedbackType.heavyImpact')));
         expect(_key('auth-error'), findsOneWidget);
 
         // Mid-flight sample 1 (t = 40ms) and sample 2 (t = 80ms) prove active oscillation within ±6dp.
@@ -378,32 +533,62 @@ void main() {
     );
 
     testWidgets(
-      'AuthScreen under Reduce Motion skips OTP horizontal shake while keeping red error state and warning haptic',
+      'AuthScreen under Reduce Motion (Android disableAnimations & iOS reduceMotion) skips OTP horizontal shake while keeping red error state, liveRegion & reject haptic on incomplete/invalid codes',
       (tester) async {
-        tester.platformDispatcher.accessibilityFeaturesTestValue =
-            const FakeAccessibilityFeatures(disableAnimations: true);
         addTearDown(
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
         );
 
         final haptics = _recordHaptics();
-        final auth = RecordingAuthRepository()
-          ..verifyOtpError = const OurneyException(OurneyErrorCode.invalid);
-        await pumpBackendApp(tester, auth: auth);
+        for (final features in const [
+          FakeAccessibilityFeatures(disableAnimations: true),
+          FakeAccessibilityFeatures(reduceMotion: true),
+        ]) {
+          await tester.pumpWidget(const SizedBox.shrink());
+          await tester.pumpAndSettle();
 
-        await tester.enterText(_key('auth-email'), 'a@b.co');
-        await tester.tap(_key('auth-send'));
-        await tester.pumpAndSettle();
+          tester.platformDispatcher.accessibilityFeaturesTestValue = features;
+          final auth = RecordingAuthRepository()
+            ..verifyOtpError = const OurneyException(OurneyErrorCode.invalid);
+          await pumpBackendApp(tester, auth: auth);
 
-        haptics.clear();
-        await tester.enterText(_key('auth-code'), '123456');
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 40));
+          await tester.enterText(_key('auth-email'), 'a@b.co');
+          await tester.tap(_key('auth-send'));
+          await tester.pumpAndSettle();
 
-        final t = tester.widget<Transform>(_key('auth-otp-shake'));
-        expect(t.transform.getTranslation().x, 0.0);
-        expect(haptics, contains('HapticFeedbackType.heavyImpact'));
-        expect(_key('auth-error'), findsOneWidget);
+          // Incomplete (< 6 digits) soft-keyboard submit under Reduce Motion:
+          // must still show red error outline + UiFlowError liveRegion + lightImpact.
+          haptics.clear();
+          await tester.enterText(_key('auth-code'), '12');
+          await tester.testTextInput.receiveAction(TextInputAction.done);
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 40));
+          expect(
+            tester
+                .widget<Transform>(_key('auth-otp-shake'))
+                .transform
+                .getTranslation()
+                .x,
+            0.0,
+          );
+          expect(haptics, contains('HapticFeedbackType.lightImpact'));
+          expect(haptics, isNot(contains('HapticFeedbackType.heavyImpact')));
+          expect(_key('auth-error'), findsOneWidget);
+          expect(tester.widget<UiOtpField>(_key('auth-code')).hasError, isTrue);
+
+          // Invalid 6-digit code under Reduce Motion:
+          haptics.clear();
+          await tester.enterText(_key('auth-code'), '123456');
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 40));
+
+          final t = tester.widget<Transform>(_key('auth-otp-shake'));
+          expect(t.transform.getTranslation().x, 0.0);
+          expect(haptics, contains('HapticFeedbackType.lightImpact'));
+          expect(haptics, isNot(contains('HapticFeedbackType.heavyImpact')));
+          expect(_key('auth-error'), findsOneWidget);
+        }
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
       },
     );
   });
@@ -486,10 +671,113 @@ void main() {
     );
 
     testWidgets(
-      'CreateTypeDeck under Reduce Motion disables tilt/scale interpolation and jumps cleanly on Prev/Next',
+      '3-point programmatic Prev/Next button choreography: fires exactly 1 selectionClick haptic without mid-flight focus/counter flicker and caches _DeckCard subtrees during 320ms UiSkinScope morph',
       (tester) async {
-        tester.platformDispatcher.accessibilityFeaturesTestValue =
-            const FakeAccessibilityFeatures(disableAnimations: true);
+        final haptics = _recordHaptics();
+        await pumpJourneys(
+          tester,
+          location: AppRoutes.journeyNew,
+          locale: const Locale('en'),
+        );
+        // Re-enable normal motion (pumpJourneys defaults to disableAnimations).
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+        await tester.pump();
+
+        // Verify SingleChildScrollView uses Clip.none so bottom 4dp hard shadows never clip.
+        final scrollView = tester.widget<SingleChildScrollView>(
+          _key('create-deck-scroll'),
+        );
+        expect(scrollView.clipBehavior, Clip.none);
+
+        FadeTransition cardFade(String keyName) =>
+            tester.widget<FadeTransition>(
+              find
+                  .ancestor(
+                    of: _key('template-$keyName'),
+                    matching: find.byType(FadeTransition),
+                  )
+                  .first,
+            );
+
+        haptics.clear();
+
+        // 1. Start (t = 0ms): tap Next (card 0 -> card 1).
+        await tester.tap(_key('create-deck-next'));
+        await tester.pump();
+
+        expect(find.text('2/6'), findsOneWidget);
+        expect(find.text('1/6'), findsNothing);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+        expect(
+          UiSkinScope.of(tester.element(_key('journeys-create-flow'))).skin.id,
+          'squad',
+        );
+
+        // Capture the SingleChildScrollView widget identity after the focus state
+        // update to prove that subsequent 320ms UiSkinScope theme-morph ticks do
+        // NOT rebuild CreateTypeDeck.build or LayoutBuilder.
+        final deckScrollAtStart = tester.widget(_key('create-deck-scroll'));
+
+        // 2. Early & mid-flight ticks (t = 16ms, 48ms, 110ms of 220ms animateTo):
+        // At t = 16ms, scroll offset is still < 0.5 * step (nearest == 0),
+        // which must NEVER flip _focused back to 0 or fire extra selection haptics.
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(find.text('2/6'), findsOneWidget);
+        expect(find.text('1/6'), findsNothing);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+        expect(
+          tester.widget(_key('create-deck-scroll')),
+          same(deckScrollAtStart),
+        );
+
+        await tester.pump(const Duration(milliseconds: 32));
+        expect(find.text('2/6'), findsOneWidget);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+        final midOpacity0 = cardFade('weight_loss').opacity.value;
+        final midOpacity1 = cardFade('english_daily').opacity.value;
+        expect(midOpacity0, greaterThan(0.66));
+        expect(midOpacity0, lessThan(1.0));
+        expect(midOpacity1, greaterThan(0.66));
+        expect(midOpacity1, lessThan(1.0));
+        expect(
+          tester.widget(_key('create-deck-scroll')),
+          same(deckScrollAtStart),
+        );
+
+        await tester.pump(const Duration(milliseconds: 62));
+        expect(find.text('2/6'), findsOneWidget);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+
+        // 3. Settled: card 1 rests at opacity 1.0, total haptics == 1.
+        await tester.pumpAndSettle();
+        expect(find.text('2/6'), findsOneWidget);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+        expect(cardFade('english_daily').opacity.value, closeTo(1.0, 0.001));
+        expect(cardFade('weight_loss').opacity.value, closeTo(0.66, 0.001));
+
+        // Now tap Prev (card 1 -> card 0) and verify 3-point stability in reverse.
+        haptics.clear();
+        await tester.tap(_key('create-deck-prev'));
+        await tester.pump();
+        expect(find.text('1/6'), findsOneWidget);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+
+        await tester.pump(const Duration(milliseconds: 16));
+        expect(find.text('1/6'), findsOneWidget);
+        expect(find.text('2/6'), findsNothing);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+
+        await tester.pumpAndSettle();
+        expect(find.text('1/6'), findsOneWidget);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+        expect(cardFade('weight_loss').opacity.value, closeTo(1.0, 0.001));
+        expect(tester.binding.transientCallbackCount, 0);
+      },
+    );
+
+    testWidgets(
+      'CreateTypeDeck under Reduce Motion (Android disableAnimations & iOS reduceMotion) disables tilt/scale interpolation and jumps cleanly on Prev/Next',
+      (tester) async {
         addTearDown(
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
         );
@@ -501,13 +789,32 @@ void main() {
           locale: const Locale('en'),
         );
 
+        // 1. Android disableAnimations: true
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        await tester.pump();
+
         haptics.clear();
         await tester.tap(_key('create-deck-next'));
         await tester.pumpAndSettle();
 
         expect(find.text('2/6'), findsOneWidget);
-        expect(haptics, contains('HapticFeedbackType.selectionClick'));
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
         expect(tester.binding.transientCallbackCount, 0);
+
+        // 2. iOS reduceMotion: true
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(reduceMotion: true);
+        await tester.pump();
+
+        haptics.clear();
+        await tester.tap(_key('create-deck-prev'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('1/6'), findsOneWidget);
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+        expect(tester.binding.transientCallbackCount, 0);
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
       },
     );
   });
@@ -685,7 +992,8 @@ void main() {
         );
         expect(tester.binding.transientCallbackCount, 0);
 
-        // 4. Reduce-Motion parity: mounts directly at resting state with zero ScaleTransition/tickers.
+        // 4. Reduce-Motion parity (Android disableAnimations & iOS reduceMotion):
+        // mounts directly at resting state with zero ScaleTransition/tickers.
         await tester.pumpWidget(
           _host(
             disableAnimations: true,
@@ -708,6 +1016,95 @@ void main() {
           findsNothing,
         );
         expect(tester.binding.transientCallbackCount, 0);
+
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(reduceMotion: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await tester.pumpWidget(
+          _host(
+            const DepartureTicket(
+              key: ValueKey('rm-ios-ticket'),
+              skinId: 'couple',
+              title: 'Hai đứa mình',
+              goalLine: 'Mỗi ngày một tấm',
+              durationLabel: '21 ngày',
+              leftName: 'An',
+              rightName: 'Bình',
+            ),
+          ),
+        );
+        expect(
+          find.descendant(
+            of: _key('rm-ios-ticket'),
+            matching: find.byType(ScaleTransition),
+          ),
+          findsNothing,
+        );
+        expect(tester.binding.transientCallbackCount, 0);
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
+      },
+    );
+
+    testWidgets(
+      '3-point DnaForge seal breathing pulse & Reduce-Motion parity (Android disableAnimations + iOS reduceMotion at resting scale 1.0 with zero tickers)',
+      (tester) async {
+        await tester.pumpWidget(_host(const DnaForge()));
+
+        final scaleFinder = find.descendant(
+          of: _key('dna-forge'),
+          matching: find.byType(ScaleTransition),
+        );
+
+        // 1. Start (t = 0ms): begins at 0.9 scale.
+        expect(
+          tester.widget<ScaleTransition>(scaleFinder).scale.value,
+          closeTo(0.9, 0.001),
+        );
+
+        // 2. Mid-flight (t = 600ms of 1200ms): passes through 1.0.
+        await tester.pump(const Duration(milliseconds: 600));
+        final midScale = tester.widget<ScaleTransition>(scaleFinder).scale.value;
+        expect(midScale, greaterThan(0.95));
+        expect(midScale, lessThan(1.05));
+
+        // 3. Peak (t = 1200ms): reaches 1.1.
+        await tester.pump(const Duration(milliseconds: 600));
+        expect(
+          tester.widget<ScaleTransition>(scaleFinder).scale.value,
+          closeTo(1.1, 0.001),
+        );
+
+        // 4. Reduce-Motion parity (Android disableAnimations & iOS reduceMotion):
+        // omits ScaleTransition (resting scale 1.0) and allocates zero tickers.
+        await tester.pumpWidget(
+          _host(disableAnimations: true, const DnaForge()),
+        );
+        expect(
+          find.descendant(
+            of: _key('dna-forge'),
+            matching: find.byType(ScaleTransition),
+          ),
+          findsNothing,
+        );
+        expect(tester.binding.transientCallbackCount, 0);
+
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(reduceMotion: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await tester.pumpWidget(_host(const DnaForge()));
+        expect(
+          find.descendant(
+            of: _key('dna-forge'),
+            matching: find.byType(ScaleTransition),
+          ),
+          findsNothing,
+        );
+        expect(tester.binding.transientCallbackCount, 0);
+        tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
       },
     );
   });

@@ -738,18 +738,27 @@ class DnaForge extends StatefulWidget {
 
 class _DnaForgeState extends State<DnaForge>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  );
-  late final CurvedAnimation _curved = CurvedAnimation(
-    parent: _c,
-    curve: UiCurves.easeInOutStrong,
-  );
-  late final Animation<double> _scale = Tween<double>(
-    begin: 0.9,
-    end: 1.1,
-  ).animate(_curved);
+  AnimationController? _c;
+  CurvedAnimation? _curved;
+  Animation<double>? _scale;
+
+  Animation<double> _ensureScale() {
+    var scale = _scale;
+    if (scale != null) return scale;
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    final curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeInOutStrong,
+    );
+    scale = Tween<double>(begin: 0.9, end: 1.1).animate(curved);
+    _c = ctrl;
+    _curved = curved;
+    _scale = scale;
+    return scale;
+  }
 
   @override
   void didChangeDependencies() {
@@ -757,16 +766,19 @@ class _DnaForgeState extends State<DnaForge>
     final shouldAnimate =
         !UiMotion.reduced(context) && TickerMode.valuesOf(context).enabled;
     if (!shouldAnimate) {
-      _c.stop();
-    } else if (!_c.isAnimating) {
-      _c.repeat(reverse: true);
+      _c?.stop();
+    } else {
+      _ensureScale();
+      if (!_c!.isAnimating) {
+        _c!.repeat(reverse: true);
+      }
     }
   }
 
   @override
   void dispose() {
-    _curved.dispose();
-    _c.dispose();
+    _curved?.dispose();
+    _c?.dispose();
     super.dispose();
   }
 
@@ -774,6 +786,19 @@ class _DnaForgeState extends State<DnaForge>
   Widget build(BuildContext context) {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
+    final reduced = UiMotion.reduced(context);
+    final seal = Container(
+      key: const ValueKey('dna-forge-seal'),
+      width: 96,
+      height: 96,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: ui.accent,
+        shape: BoxShape.circle,
+        border: Border.all(color: ui.outline, width: 3),
+      ),
+      child: OurneyIcon(name: 'trophy', size: 44),
+    );
     return Semantics(
       liveRegion: true,
       label: l10n.journeys_dna_forge_a11y,
@@ -785,20 +810,12 @@ class _DnaForgeState extends State<DnaForge>
             mainAxisSize: MainAxisSize.min,
             children: [
               RepaintBoundary(
-                child: ScaleTransition(
-                  scale: _scale,
-                  child: Container(
-                    width: 96,
-                    height: 96,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: ui.accent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: ui.outline, width: 3),
-                    ),
-                    child: OurneyIcon(name: 'trophy', size: 44),
-                  ),
-                ),
+                child: reduced
+                    ? seal
+                    : ScaleTransition(
+                        scale: _ensureScale(),
+                        child: seal,
+                      ),
               ),
               const SizedBox(height: UiSpace.lg),
               Padding(

@@ -65,10 +65,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   final _password = TextEditingController();
   final _code = TextEditingController();
   final _codeFocus = FocusNode();
-  late final AnimationController _otpShakeCtrl = AnimationController(
-    vsync: this,
-    duration: _kOtpShakeDuration,
-  );
+  AnimationController? _otpShakeCtrl;
   _Flow _flow = _Flow.emailCode;
   bool _codeStep = false;
   bool _busy = false;
@@ -89,6 +86,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   bool get _isPhone => _flow == _Flow.phoneCode;
   bool get _needsPasswordField => _flow == _Flow.password;
 
+  AnimationController _ensureOtpShakeCtrl() =>
+      _otpShakeCtrl ??= AnimationController(
+        vsync: this,
+        duration: _kOtpShakeDuration,
+      );
+
   /// 4-oscillation damped horizontal shake (`±6dp`) over `280ms`.
   static double _otpShakeDx(double t) {
     if (t <= 0.0 || t >= 1.0) return 0.0;
@@ -97,16 +100,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
   }
 
   void _triggerOtpErrorShake() {
-    unawaited(UiHaptics.warning());
+    unawaited(UiHaptics.reject());
     if (!UiMotion.reduced(context)) {
-      _otpShakeCtrl.forward(from: 0.0);
+      _ensureOtpShakeCtrl().forward(from: 0.0);
     }
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    _otpShakeCtrl.dispose();
+    _otpShakeCtrl?.dispose();
     _email.dispose();
     _phone.dispose();
     _password.dispose();
@@ -224,15 +227,19 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
 
   Future<void> _verify() async {
     final l10n = AuthL10n.of(context);
+    final code = _code.text.trim();
+    if (!_codePattern.hasMatch(code)) {
+      setState(() {
+        _offline = false;
+        _error = l10n.auth_errorWrongCode;
+      });
+      _triggerOtpErrorShake();
+      return;
+    }
     setState(() {
       _error = null;
       _offline = false;
     });
-    final code = _code.text.trim();
-    if (!_codePattern.hasMatch(code)) {
-      _triggerOtpErrorShake();
-      return;
-    }
     if (_flow == _Flow.reset &&
         _password.text.length < AuthScreen.minPassword) {
       setState(() => _submitted = true);
@@ -791,9 +798,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
     final reset = _flow == _Flow.reset;
     final hasError = _error != null;
     final complete = _codePattern.hasMatch(_code.text.trim());
+    final reduced = UiMotion.reduced(context);
+    final shakeAnim = reduced
+        ? kAlwaysDismissedAnimation
+        : _ensureOtpShakeCtrl();
     return [
       AnimatedBuilder(
-        animation: _otpShakeCtrl,
+        animation: shakeAnim,
         child: AnimatedOpacity(
           opacity: _busy ? 0.48 : 1,
           duration: UiMotion.of(context, UiMotion.fast),
@@ -817,7 +828,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen>
         builder: (context, child) {
           final dx = UiMotion.reduced(context)
               ? 0.0
-              : _otpShakeDx(_otpShakeCtrl.value);
+              : _otpShakeDx(shakeAnim.value);
           return Transform.translate(
             key: const ValueKey('auth-otp-shake'),
             offset: Offset(dx, 0),
