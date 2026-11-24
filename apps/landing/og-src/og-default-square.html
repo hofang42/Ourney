@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="vi" class="og-square">
+<head>
+  <meta charset="utf-8">
+  <title>og-default-square (1200x1200)</title>
+  <link rel="stylesheet" href="og-cards.css">
+  <style>
+    .sq-canvas {
+      position: relative;
+      width: 1200px;
+      height: 1200px;
+      padding: 64px 72px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      background: var(--bg);
+    }
+    .sq-stage::before {
+      content: '';
+      position: absolute;
+      width: 680px;
+      height: 540px;
+      background: #FFF0C9;
+      border: 3px solid var(--ink);
+      border-radius: 40px;
+      z-index: 0;
+    }
+    .sq-phone {
+      position: relative;
+      z-index: 2;
+      width: 340px;
+      height: 590px;
+      background: #1A1A1A;
+      border: 3.5px solid #1A1A1A;
+      border-radius: 42px;
+      padding: 10px;
+      box-shadow: 12px 12px 0 #1A1A1A;
+      overflow: hidden;
+      transform: rotate(-1.5deg);
+    }
+    .sq-top {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      z-index: 5;
+    }
+    .sq-headline {
+      font: 700 66px/1.13 var(--heading);
+      letter-spacing: -0.035em;
+    }
+    .sq-sub {
+      font: 400 24px/1.45 var(--body);
+      color: var(--soft);
+      max-width: 860px;
+    }
+    .sq-stage {
+      position: relative;
+      width: 100%;
+      height: 610px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sq-phone-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 31px;
+      overflow: hidden;
+      background: #FFF8EE;
+    }
+    .sq-phone-inner img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body class="og-square">
+  <svg class="svg-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-camera" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path class="s-ink" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="3.6" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="13" r="1.4" fill="#1A1A1A"/>
+        <circle cx="17" cy="10" r="1" fill="#FFF8EE"/>
+      </symbol>
+      <symbol id="i-flame" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path class="s-ink" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" fill="#E04F33" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-squad" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <g class="s-ink">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <circle cx="17" cy="9" r="2.5" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="9" cy="8" r="3" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-sparkle" viewBox="-2 -2 28 28">
+        <path class="s-die" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path class="s-ink" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="sq-canvas">
+    <div class="og-frame-border"></div>
+
+    <div class="sq-top">
+      <div class="og-brand-row">
+        <img class="og-wordmark" style="height: 54px;" src="../assets/brand/wordmark.png" alt="ourney">
+        <span class="og-kicker-pill kicker-study">
+          <svg class="o-sticker" width="18" height="18"><use href="#i-sparkle"/></svg>
+          <span>iOS &amp; ANDROID</span>
+        </span>
+      </div>
+      <h1 class="sq-headline">
+        chụp một tấm. <span class="hl-pill">giữ một chuỗi.</span><br>đi cùng nhau.
+      </h1>
+      <p class="sq-sub">
+        Nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì — học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ.
+      </p>
+    </div>
+
+    <div class="sq-stage">
+      <div class="sq-phone">
+        <div class="sq-phone-inner">
+          <img src="photos/hub.webp" alt="Ourney Hub">
+        </div>
+      </div>
+    </div>
+
+    <div class="og-chips" style="justify-content: center; z-index: 5;">
+      <span class="og-chip c-warm">
+        <svg class="o-sticker" width="24" height="24"><use href="#i-camera"/></svg>
+        <span>6 giao diện riêng</span>
+      </span>
+      <span class="og-chip c-peach">
+        <svg class="o-sticker" width="24" height="24"><use href="#i-flame"/></svg>
+        <span>Chuỗi 21 ngày</span>
+      </span>
+      <span class="og-chip c-mint">
+        <svg class="o-sticker" width="24" height="24"><use href="#i-squad"/></svg>
+        <span>ourney.tech</span>
+      </span>
+    </div>
+  </div>
+</body>
+</html>

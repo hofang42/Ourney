@@ -265,9 +265,9 @@ class DnaGhostPage extends StatelessWidget {
                     const IgnorePointer(
                       child: ColoredBox(color: Color(0x24000000)),
                     ),
-                  CustomPaint(
-                    key: const ValueKey('dna-ghost-silhouette'),
-                    painter: _SilhouettePainter(ui.ink),
+                  const CustomPaint(
+                    key: ValueKey('dna-ghost-silhouette'),
+                    painter: _SilhouettePainter(),
                   ),
                 ],
               ),
@@ -291,8 +291,7 @@ class DnaGhostPage extends StatelessWidget {
 }
 
 class _SilhouettePainter extends CustomPainter {
-  const _SilhouettePainter(this.color);
-  final Color color;
+  const _SilhouettePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -336,7 +335,7 @@ class _SilhouettePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_SilhouettePainter old) => old.color != color;
+  bool shouldRepaint(_SilhouettePainter old) => false;
 }
 
 /// Place search with suggestion rows (`place-question`).

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>og-join (/j/code)</title>
+  <link rel="stylesheet" href="og-cards.css">
+  <style>
+    .squad-board {
+      width: 460px;
+      background: #FFFFFF;
+      border: 3px solid #1A1A1A;
+      border-radius: 24px;
+      box-shadow: 10px 10px 0 #1A1A1A;
+      padding: 18px 20px;
+      transform: rotate(-1.6deg);
+    }
+    .sb-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .sb-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font: 700 15px/1 var(--heading);
+    }
+    .sb-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 11px;
+      background: #FFF3D1;
+      border: 2px solid #1A1A1A;
+      border-radius: 999px;
+      font: 700 13px/1 var(--heading);
+    }
+    .sb-meter {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .sb-meter i {
+      height: 8px;
+      border: 1.8px solid #1A1A1A;
+      border-radius: 999px;
+      background: #7EE8A2;
+    }
+    .sb-meter i.open { background: #FFD84D; }
+    .sb-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .sb-card {
+      background: #FFF8EE;
+      border: 2px solid #1A1A1A;
+      border-radius: 14px;
+      padding: 8px 10px;
+      box-shadow: 3px 3px 0 #1A1A1A;
+    }
+    .sb-card.sb-slot {
+      background: #FFF3D1;
+      border-style: dashed;
+    }
+    .sb-thumb {
+      position: relative;
+      height: 62px;
+      border: 1.8px solid #1A1A1A;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .sb-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .sb-thumb-tag {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 7px;
+      background: #FFF8EE;
+      border: 1.6px solid #1A1A1A;
+      border-radius: 999px;
+      box-shadow: 1.5px 1.5px 0 #1A1A1A;
+      font: 700 10.5px/1 var(--heading);
+    }
+    .sb-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font: 700 13.5px/1.2 var(--heading);
+    }
+    .sb-cap {
+      font: 400 12px/1.3 var(--body);
+      color: #3F3A34;
+      margin-top: 3px;
+    }
+  </style>
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-camera" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path class="s-ink" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="3.6" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="13" r="1.4" fill="#1A1A1A"/>
+        <circle cx="17" cy="10" r="1" fill="#FFF8EE"/>
+      </symbol>
+      <symbol id="i-flame" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path class="s-ink" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" fill="#E04F33" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-squad" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <g class="s-ink">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <circle cx="17" cy="9" r="2.5" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="9" cy="8" r="3" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-book" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5ZM20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z"/>
+        <path class="s-ink" d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5ZM20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z"/>
+        <path d="M3.5 4.5h6.3c1.3 0 2.2.9 2.2 2.2v13c-.6-.8-1.4-1.2-2.4-1.2H3.5Z" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M20.5 4.5h-6.3c-1.3 0-2.2.9-2.2 2.2v13c.6-.8 1.4-1.2 2.4-1.2h6.1Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M6 9h3.5M6 12.5h3.5M14.5 9H18M14.5 12.5H18" stroke="#1A1A1A" stroke-width="1.9" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-trophy" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <g class="s-ink">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="og-canvas">
+    <div class="og-frame-border"></div>
+
+    <div class="og-left" style="flex: 0 0 568px;">
+      <div class="og-brand-row">
+        <img class="og-wordmark" src="../assets/brand/wordmark.png" alt="ourney">
+        <span class="og-kicker-pill kicker-join">
+          <svg class="o-sticker" width="18" height="18"><use href="#i-trophy"/></svg>
+          <span>LỜI MỜI VÀO NHÓM · TỐI ĐA 10 BẠN</span>
+        </span>
+      </div>
+
+      <div>
+        <h1 class="og-headline" style="font-size: 52px;">
+          một mình dễ quên.<br>
+          <span class="hl-pill">có hội thì giữ được.</span>
+        </h1>
+        <p class="og-sub">
+          Tham gia hành trình nhóm bằng mã mời 8 ký tự trên Ourney — mở app là thấy tường Polaroid hôm nay ai đã điểm danh và thả cảm xúc.
+        </p>
+      </div>
+
+      <div class="og-chips">
+        <span class="og-chip c-primary">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-squad"/></svg>
+          <span>Mã mời 8 ký tự · Vào nhóm ngay</span>
+        </span>
+        <span class="og-chip c-warm">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-flame"/></svg>
+          <span>Tường Polaroid mỗi ngày</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="og-right">
+      <div class="squad-board">
+        <div class="sb-head">
+          <span class="sb-title">
+            <svg class="o-sticker" width="22" height="22"><use href="#i-book"/></svg>
+            <span>IELTS 7.5 · HỘI 4 NGƯỜI</span>
+          </span>
+          <span class="sb-pill">
+            <svg class="o-sticker" width="16" height="16"><use href="#i-flame"/></svg>
+            <span>3/4 đã chụp hôm nay</span>
+          </span>
+        </div>
+
+        <div class="sb-meter">
+          <i></i><i></i><i></i><i class="open"></i>
+        </div>
+
+        <div class="sb-grid">
+          <div class="sb-card">
+            <div class="sb-thumb">
+              <img src="photos/ielts-cover.webp" alt="">
+            </div>
+            <div class="sb-row"><span>Linh</span><span>21 ngày</span></div>
+            <p class="sb-cap">“45 phút Reading xong!”</p>
+          </div>
+
+          <div class="sb-card">
+            <div class="sb-thumb">
+              <img src="photos/ielts-01.webp" alt="">
+            </div>
+            <div class="sb-row"><span>Nam</span><span>21 ngày</span></div>
+            <p class="sb-cap">“Ngày 21 không gãy chuỗi”</p>
+          </div>
+
+          <div class="sb-card">
+            <div class="sb-thumb">
+              <img src="photos/ielts-04.webp" alt="">
+            </div>
+            <div class="sb-row"><span>Hà</span><span>19 ngày</span></div>
+            <p class="sb-cap">“Thêm 30 từ mới vào sổ”</p>
+          </div>
+
+          <div class="sb-card sb-slot">
+            <div class="sb-thumb">
+              <img src="photos/ielts-03.webp" alt="">
+              <span class="sb-thumb-tag">
+                <svg class="o-sticker" width="12" height="12"><use href="#i-camera"/></svg>
+                <span>Chỗ của bạn</span>
+              </span>
+            </div>
+            <div class="sb-row"><span>Bạn</span><span>Ngày 1</span></div>
+            <p class="sb-cap">“Chạm mở link để vào nhóm”</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="og-domain-badge">
+      <span>ourney.tech</span>
+    </div>
+  </div>
+</body>
+</html>

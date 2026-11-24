@@ -41,11 +41,12 @@ final Map<String, Path> _inkStrokes = {
   'trip': parseSvgPath('M9 11h6'),
   'type-trip': parseSvgPath('M9 11h6'),
   'lock': parseSvgPath('M12 14v2.5'),
+  'clock': parseSvgPath('M12 7v5l3.5 2'),
+  'timer': parseSvgPath('M12 7v5l3.5 2'),
   'camera': Path()
     ..addOval(Rect.fromCircle(center: const Offset(12, 13), radius: 3.2)),
   'edit': parseSvgPath('m14 6 4 4'),
   'pencil': parseSvgPath('m14 8 3 3'),
-  'custom': parseSvgPath('m14 8 3 3'),
 };
 
 /// Path data of the icons used by the dock and reaction bar, copied from
@@ -730,6 +731,15 @@ class OurneyIconPainter extends CustomPainter {
   /// with the ink halo but with [haloFallback] so it stays readable.
   static bool lowContrast(Color color, Color ink) => contrast(color, ink) < 1.6;
 
+  /// Die-cut ring width (logical px) of the active full-tier icon: scales
+  /// with the icon (about 0.35x its size, 6 to 12) so a 24dp tab glyph gets a
+  /// ring thin enough to stay near its box, while the artwork itself is never
+  /// resized.
+  static double dieCutStrokeFor(double size) => (size * 0.35).clamp(6.0, 12.0);
+
+  /// Hard-shadow offset (logical px) of the active full-tier icon.
+  static const double activeShadowOffset = 2;
+
   @override
   void paint(Canvas canvas, Size size) {
     final prims = _drawings[name];
@@ -774,10 +784,15 @@ class OurneyIconPainter extends CustomPainter {
       return;
     }
     if (active && full) {
+      final dieCutStroke = dieCutStrokeFor(size.width);
       if (shadow != null) {
-        layer(shadow!, 12, shift: Offset(2 / scale, 2 / scale));
+        layer(
+          shadow!,
+          dieCutStroke,
+          shift: Offset(activeShadowOffset / scale, activeShadowOffset / scale),
+        );
       }
-      layer(dieCut, 12);
+      layer(dieCut, dieCutStroke);
     }
     // The ink halo scales with the icon so it stays crisp at 12-29px and
     // never drops out on tiny badges.

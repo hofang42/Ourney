@@ -223,12 +223,14 @@ void main() {
 
         // Tiny icons (< 16dp) must still paint their ink halo outline so e.g.
         // a 12dp trophy on an orange (#FF9F1C) badge is never 1.00:1 invisible,
-        // and a 14dp book / 15dp lock keeps its interior detail.
+        // and a 14dp book / 15dp lock / 13dp clock & timer keep interior detail.
         for (final (name, sz, bg) in const [
           ('trophy', 12.0, Color(0xFFFF9F1C)),
           ('book', 14.0, Color(0xFFFFFDF9)),
           ('flame', 14.0, Color(0xFFFFFDF9)),
           ('lock', 15.0, Color(0xFFEFF3F0)),
+          ('clock', 13.0, Color(0xFFFFFDF9)),
+          ('timer', 13.0, Color(0xFFFFFDF9)),
         ]) {
           final interior = await sampleIconColors(
             name: name,
@@ -247,6 +249,93 @@ void main() {
             reason: 'tiny $name (${sz}dp) collapsed into a single color',
           );
         }
+
+        // R2-F1: clock and timer must paint their interior hands in the halo
+        // (ink) color inside the central dial disc across 13..48dp in both
+        // light and dark modes (never a blank solid circle).
+        Future<bool> centerDialHasInk({
+          required String name,
+          required double size,
+          required Color ink,
+        }) async {
+          const dpr = 3;
+          final px = (size * dpr).toInt();
+          final recorder = ui.PictureRecorder();
+          final canvas = Canvas(recorder)..scale(dpr.toDouble());
+          OurneyIconPainter(
+            name: name,
+            color: ourneyIconColor(name),
+            ink: ink,
+          ).paint(canvas, Size(size, size));
+          final image = await recorder.endRecording().toImage(px, px);
+          final bytes = (await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+          final targetRgb =
+              ((ink.r * 255).round() << 16) |
+              ((ink.g * 255).round() << 8) |
+              (ink.b * 255).round();
+          // Sample strict inner disc (radius <= 0.18 * px, well inside the
+          // outer r=8/24 circle outline) where the hands (12,7 -> 12,12 -> 15.5,14) live.
+          final cx = px / 2;
+          final cy = px / 2;
+          final maxR2 = (px * 0.18) * (px * 0.18);
+          for (var y = 0; y < px; y++) {
+            for (var x = 0; x < px; x++) {
+              final dx = x - cx;
+              final dy = y - cy;
+              if (dx * dx + dy * dy <= maxR2) {
+                final idx = (y * px + x) * 4;
+                final rgb =
+                    (bytes.getUint8(idx) << 16) |
+                    (bytes.getUint8(idx + 1) << 8) |
+                    bytes.getUint8(idx + 2);
+                if (rgb == targetRgb) return true;
+              }
+            }
+          }
+          return false;
+        }
+
+        for (final name in const ['clock', 'timer']) {
+          for (final sz in const [13.0, 16.0, 24.0, 28.0, 48.0]) {
+            for (final ink in const [Color(0xFF1A1A1A), Color(0xFFF5F2EB)]) {
+              expect(
+                await centerDialHasInk(name: name, size: sz, ink: ink),
+                isTrue,
+                reason: '$name at ${sz}dp (ink=$ink) is missing interior hands',
+              );
+            }
+          }
+        }
+
+        // R2-F2: 'custom' shorthand alias must render identically to
+        // 'type-custom' without any stray pencil-collar stroke.
+        Future<List<int>> renderRgba(String name, double size) async {
+          const dpr = 3;
+          final px = (size * dpr).toInt();
+          final recorder = ui.PictureRecorder();
+          final canvas = Canvas(recorder)..scale(dpr.toDouble());
+          OurneyIconPainter(
+            name: name,
+            color: ourneyIconColor(name),
+            ink: const Color(0xFF1A1A1A),
+            active: true,
+            shadow: const Color(0xFF1A1A1A),
+            dieCut: const Color(0xFFFFFFFF),
+          ).paint(canvas, Size(size, size));
+          final image = await recorder.endRecording().toImage(px, px);
+          final bytes = (await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+          return bytes.buffer.asUint8List().toList();
+        }
+
+        expect(
+          await renderRgba('custom', 29),
+          equals(await renderRgba('type-custom', 29)),
+          reason: 'custom and type-custom must render identical sparkle pixels',
+        );
       },
     );
   });

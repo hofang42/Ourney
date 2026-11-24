@@ -13,17 +13,7 @@ class GroupsL10nVi extends GroupsL10n {
   String get groups_title => 'Nhóm';
 
   @override
-  String get groups_emptyTitle => 'Chưa có nhóm nào';
-
-  @override
-  String get groups_emptyMessage =>
-      'Nhập mã mời của bạn bè, hoặc tạo hành trình nhóm ở tab Journeys.';
-
-  @override
   String get groups_joinWithCode => 'Nhập mã mời';
-
-  @override
-  String get groups_createGroup => 'Tạo hành trình nhóm';
 
   @override
   String get groups_activeSection => 'Đang chạy';
@@ -272,9 +262,6 @@ class GroupsL10nVi extends GroupsL10n {
   @override
   String get groups_inviteClosed =>
       'Hành trình đã kết thúc nên không mời thêm được.';
-
-  @override
-  String get groups_eyebrow => 'Những người đồng hành';
 
   @override
   String groups_joinCodeBoxesSemantics(int count) {
