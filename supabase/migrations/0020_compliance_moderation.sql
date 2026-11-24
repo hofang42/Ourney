@@ -984,6 +984,19 @@ declare
   j public.journeys%rowtype;
   v_imported boolean;
 begin
+  if current_user in ('authenticated', 'anon') then
+    -- CS-03: banned / soft-deleted profiles cannot insert or update check-ins.
+    -- Checked before the journey lookup so banned users always receive 42501 'forbidden'
+    -- even after their group memberships are transitioned to 'left' and journeys_select hides the row.
+    if not exists (
+      select 1 from public.profiles p
+       where p.id = coalesce((select auth.uid()), new.user_id)
+         and p.deleted_at is null
+    ) then
+      raise exception 'forbidden' using errcode = '42501';
+    end if;
+  end if;
+
   select * into j from public.journeys where id = new.journey_id;
   if not found then
     raise exception 'not_found' using errcode = 'P0001';
@@ -1016,10 +1029,6 @@ begin
   );
 
   if current_user in ('authenticated', 'anon') then
-    -- CS-03: banned / soft-deleted profiles cannot insert or update check-ins.
-    if not exists (select 1 from public.profiles p where p.id = new.user_id and p.deleted_at is null) then
-      raise exception 'forbidden' using errcode = '42501';
-    end if;
     if tg_op = 'UPDATE' and old.moderated_at is not null then
       raise exception 'forbidden' using errcode = '42501';
     end if;
