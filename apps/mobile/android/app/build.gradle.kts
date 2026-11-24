@@ -4,6 +4,7 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 val keystoreProperties = Properties().apply {
@@ -19,8 +20,12 @@ fun signingProp(propKey: String, envKey: String): String? =
 
 android {
     namespace = "com.hofang42.ourney"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = maxOf(flutter.compileSdkVersion, 36)
     ndkVersion = flutter.ndkVersion
+
+    buildFeatures {
+        compose = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -99,4 +104,9 @@ flutter {
 dependencies {
     // flutter_local_notifications 22.x: https://pub.dev/packages/flutter_local_notifications
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("androidx.glance:glance:1.2.0")
+    implementation("androidx.glance:glance-appwidget:1.2.0")
+    implementation("androidx.core:core-ktx:1.16.0")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }

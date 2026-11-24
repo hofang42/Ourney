@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_today_name">Ourney · Hôm nay</string>
+    <string name="widget_today_desc">Theo dõi check-in hôm nay, chuỗi ngày và nút chụp nhanh từ màn hình chính.</string>
+    <string name="widget_streak_name">Ourney · Chuỗi ngày</string>
+    <string name="widget_streak_desc">Nhãn dán chuỗi ngày lớn và lịch 7 ngày gần nhất.</string>
+    <string name="widget_squad_name">Ourney · Đồng đội</string>
+    <string name="widget_squad_desc">Xem ai đã check-in hôm nay trong nhóm hoặc hành trình cặp đôi.</string>
+    <string name="widget_loading">Ourney</string>
+    <string name="widget_snap_cta">Chụp ngay</string>
+    <string name="widget_snap_short">Chụp</string>
+    <string name="widget_checked_in">Đã check-in hôm nay</string>
+    <string name="widget_checked_in_short">Đã xong</string>
+    <string name="widget_pending_today">Chưa check-in hôm nay</string>
+    <string name="widget_evening_nudge">Đến giờ lưu khoảnh khắc hôm nay</string>
+    <string name="widget_streak_at_risk">Chuỗi %1$d ngày sắp hết hạn</string>
+    <string name="widget_streak_days">Chuỗi %1$d ngày</string>
+    <string name="widget_best_streak">Kỷ lục %1$d ngày</string>
+    <string name="widget_day_progress">Ngày %1$d/%2$d</string>
+    <string name="widget_day_only">Ngày %1$d</string>
+    <string name="widget_cycle_next">Đổi hành trình (%1$d/%2$d)</string>
+    <string name="widget_empty_title">Bắt đầu hành trình đầu tiên</string>
+    <string name="widget_empty_subtitle">Chạm để tạo hành trình 30 ngày trên Ourney</string>
+    <string name="widget_empty_cta">Mở Ourney</string>
+    <string name="widget_signed_out_title">Đăng nhập Ourney</string>
+    <string name="widget_signed_out_subtitle">Mở ứng dụng để đồng bộ tiện ích của bạn</string>
+    <string name="widget_squad_progress">%1$d/%2$d đã check-in</string>
+    <string name="widget_squad_couple_badge">Cặp đôi · Ngày %1$d</string>
+    <string name="widget_squad_empty_title">Chưa có hành trình đồng đội</string>
+    <string name="widget_squad_empty_subtitle">Tham gia cùng bạn bè hoặc người thương trên Ourney</string>
+    <string name="widget_squad_me_done">Bạn đã xong</string>
+    <string name="widget_squad_me_pending">Đến lượt bạn</string>
+    <string name="widget_live_channel_name">Khung giờ check-in trực tiếp</string>
+    <string name="widget_live_channel_desc">Đếm ngược khung giờ check-in buổi tối để giữ chuỗi ngày.</string>
+    <string name="widget_live_public_title">Ourney · Khung giờ check-in</string>
+    <string name="widget_live_public_body">Mở Ourney để hoàn thành check-in hôm nay.</string>
+    <string name="widget_live_title_at_risk">Giữ chuỗi %1$d ngày · %2$s</string>
+    <string name="widget_live_title_window">Đến giờ check-in · %1$s</string>
+    <string name="widget_live_body_progress">Đã xong %1$d/%2$d hành trình hôm nay</string>
+    <string name="widget_live_celebrate_title">Đã hoàn thành tất cả hôm nay</string>
+    <string name="widget_live_celebrate_body">Chuỗi %1$d ngày được giữ vững</string>
+    <string name="widget_live_dismiss">Ẩn hôm nay</string>
+    <string name="widget_live_chip_hours">Còn %1$dg</string>
+    <string name="widget_live_chip_mins">Còn %1$dp</string>
+</resources>
