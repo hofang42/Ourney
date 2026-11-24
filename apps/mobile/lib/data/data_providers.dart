@@ -165,6 +165,13 @@ List<Override> socialOverrides() => [
       'insightsRepositoryProvider',
     ),
   ),
+  featureRequestRepositoryProvider.overrideWith(
+    (ref) => _socialOf(
+      ref.watch(dataLayerProvider),
+      (l) => l.featureRequests,
+      'featureRequestRepositoryProvider',
+    ),
+  ),
 ];
 
 /// Overrides for the placeholder repository providers of lib/app/providers.dart.

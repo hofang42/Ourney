@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../features/auth/l10n/generated/auth_localizations.dart';
 import '../features/camera/l10n/generated/camera_localizations.dart';
 import '../features/checkin/l10n/generated/checkin_localizations.dart';
+import '../features/feedback/l10n/generated/feedback_localizations.dart';
 import '../features/groups/l10n/generated/groups_localizations.dart';
 import '../features/import/l10n/generated/import_localizations.dart';
 import '../features/journeys/l10n/generated/journeys_localizations.dart';
@@ -47,6 +48,7 @@ const List<LocalizationsDelegate<Object?>> ourneyLocalizationsDelegates = [
   SocialL10n.delegate,
   SharingL10n.delegate,
   ImportL10n.delegate,
+  FeedbackL10n.delegate,
   QuietTransformerL10n.delegate,
   AccountabilitySquadL10n.delegate,
   MemoryCollectorsL10n.delegate,

@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart' show OnboardingQuiz;
 
 import '../../app/providers.dart';
-import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import 'onboarding_providers.dart';
 import 'onboarding_quiz.dart';
@@ -30,7 +29,7 @@ class OnboardingScreen extends ConsumerWidget {
     final gutter = width < 360 ? UiSpace.gutter(width) : 24.0;
 
     Future<void> finish(OnboardingQuiz? quiz) async {
-      OurneyHaptics.success();
+      unawaited(UiHaptics.success());
       if (quiz != null) {
         // Local save is immediate; the server copy is best effort.
         unawaited(ref.read(onboardingQuizProvider.notifier).save(quiz));

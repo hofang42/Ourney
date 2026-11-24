@@ -113,6 +113,10 @@ InsightsRepository insightsRepository(Ref ref) =>
     _notWired('insightsRepositoryProvider');
 
 @Riverpod(keepAlive: true)
+FeatureRequestRepository featureRequestRepository(Ref ref) =>
+    _notWired('featureRequestRepositoryProvider');
+
+@Riverpod(keepAlive: true)
 MediaStore mediaStore(Ref ref) => _notWired('mediaStoreProvider');
 
 /// Resolves a storage path to a local file (`MediaStore` disk cache, keyed
