@@ -96,7 +96,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   - Light: Bg `#EFF3F0`, Surface `#FFFFFF`, Ink `#0F172A`, Primary `#10B981` (Emerald), Secondary `#FF4D6D`
   - Dark: Bg `#0B0F12`, Surface `#151C21`, Ink `#F1F5F9`, Primary `#10B981`, Secondary `#FF6B88`
 - **Signature Screens**:
-  1. **Camera (`ghostAlignVault`)**: Translucent Day 1 silhouette alignment overlay (`30%` opacity toggle), top `Private Vault · Day X` pill, bottom horizontal weight slider (`62.0 KG (-3.2 KG)`).
+  1. **Camera (`ghostAlignVault`)**: Translucent Day 1 silhouette alignment overlay (`30%` opacity toggle), top `Private Vault · Day X` pill, bottom horizontal weight slider (`62.0 KG (-3.2 KG)`). _Superseded 2026-11-20: one shared camera for all personas (accent colour only, plus the ghost silhouette and the partner thumbnail); see `docs/design-v2/camera-compose-redesign-2026-11-20.md`._
   2. **Timeline (`connectedWeightCurve`)**: Top smooth weight trend curve (`65.2 KG ➔ 62.0 KG`) connected directly into a vertical photo milestone spine (`DAY 01`, `DAY 07 ★`, `DAY 14 ★`, `DAY 21 · TODAY`).
   3. **Archive / Share (`sideBySideArchive`)**: Side-by-side `DAY 01` vs `DAY 21` split comparison frame + `SwitchListTile` for **`Hide Exact Weight: ON (-3.2 KG Transformation)`** + `Export Progress Card` CTA.
 
@@ -107,7 +107,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   - Dark: Bg `#12131A`, Surface `#1D1F2B`, Ink `#F8FAFC`, Primary `#FFB547`, Secondary `#9D85FF`.
 - **Signature Screens**:
   1. **Timeline (`steppingStoneQuest`)**: Vertical S-curve winding stepping-stone trail leading up to the `DAY 30 GOAL` trophy, with tilted Polaroid study checkpoints along the path.
-  2. **Camera (`studyTimerSnap`)**: Top tactile pill `45 MIN STUDY · 🔥 21 STREAK`, bottom timestamp pill `06:15 AM`.
+  2. **Camera (`studyTimerSnap`)**: Top tactile pill `45 MIN STUDY · 🔥 21 STREAK`, bottom timestamp pill `06:15 AM`. _Superseded 2026-11-20: one shared camera for all personas (accent colour only, plus the ghost silhouette and the partner thumbnail); see `docs/design-v2/camera-compose-redesign-2026-11-20.md`._
   3. **Squad / Share (`squadPolaroidWall`)**: Top progress bar `4/5 CHECKED IN TODAY`, `2x2` Polaroid grid of member check-ins with emoji reaction counters (`🔥 4`, `👏 3`), and a dashed waiting card (`MINH · WAITING`) with a violet `Nudge Minh 👋` button.
 
 ### Persona 3: `PersonaSkinId.memoryCollectors` (`TemplateId.travel`)
@@ -137,7 +137,7 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
   - Light: Bg `#F3F4F6`, Surface `#FFFFFF`, Ink `#090A0F`, Primary `#FF4D6D`, Secondary `#10B981`.
 - **Signature Screens**:
   1. **Timeline (`athleticTelemetry`)**: Top neon green pace/distance sparkline card (`92.4 KM TOTAL · 5:04 AVG PACE`) + vertical glowing green spine connecting daily workout photo cards (`DAY 01`, `DAY 07 ★`, `DAY 14 ★`, `DAY 21 · 5.42 KM`).
-  2. **Camera / Studio (`stravaStickerStudio`)**: Full-bleed workout photo with bold Bricolage Grotesque transparent telemetry overlay (`DAY 21 · 🔥 21 STREAK · 5.42 KM · 5:04 /KM`) and style selector pills (`Bold HUD`, `Minimal Stamp`, `Film Strip`).
+  2. **Camera / Studio (`stravaStickerStudio`)**: Full-bleed workout photo with bold Bricolage Grotesque transparent telemetry overlay (`DAY 21 · 🔥 21 STREAK · 5.42 KM · 5:04 /KM`) and style selector pills (`Bold HUD`, `Minimal Stamp`, `Film Strip`). _Superseded 2026-11-20: one shared camera for all personas (accent colour only, plus the ghost silhouette and the partner thumbnail); see `docs/design-v2/camera-compose-redesign-2026-11-20.md`._
   3. **Share (`transparentStorySticker`)**: 9:16 Story export preview with a 21-bar active streak heatmap at bottom (`21 DAYS ACTIVE`) + Electric Coral `Share to Instagram Story` button.
 
 ### Persona 6: `PersonaSkinId.minimalistHabit` (`TemplateId.custom`)

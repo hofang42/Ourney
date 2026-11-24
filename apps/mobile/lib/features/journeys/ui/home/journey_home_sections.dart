@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../../../../ui/ui.dart';
@@ -404,5 +405,5 @@ class _LinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LinePainter old) =>
-      old.values != values || old.color != color || old.fill != fill;
+      !listEquals(old.values, values) || old.color != color || old.fill != fill;
 }

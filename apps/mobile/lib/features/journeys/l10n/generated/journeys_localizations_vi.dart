@@ -184,8 +184,12 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_errorMetricName => 'Nhập tên chỉ số.';
 
   @override
-  String get journeys_errorVisibility =>
-      'Kiểu hiển thị này không dùng được cho hành trình này.';
+  String get journeys_errorInvalid =>
+      'Dữ liệu chưa hợp lệ. Kiểm tra lại rồi thử lại nhé.';
+
+  @override
+  String get journeys_errorLimit =>
+      'Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.';
 
   @override
   String get journeys_errorNotAlone =>
@@ -1117,7 +1121,7 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_dna_forge_a11y => 'Đang tạo hành trình của bạn';
 
   @override
-  String get journeys_dna_import_link => 'Nhập hành trình đã qua';
+  String get journeys_dna_import_link => 'Kể lại hành trình đã qua';
 
   @override
   String get journeys_home_introQuiet => 'Nhìn lại từng chút một.';
@@ -1781,4 +1785,88 @@ class JourneysL10nVi extends JourneysL10n {
 
   @override
   String get journeys_createSettingsNotSaved => 'Một vài cài đặt chưa lưu được';
+
+  @override
+  String get journeys_deadDiscardTitle => 'Bỏ ảnh chưa gửi được?';
+
+  @override
+  String journeys_deadDiscardBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count ảnh sẽ bị xóa khỏi máy này và không gửi lên được nữa. Không hoàn tác được.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get journeys_timelineRecent => 'Gần đây';
+
+  @override
+  String get journeys_timelineByMonth => 'Theo tháng';
+
+  @override
+  String journeys_monthSummary(int checked, int days, int photos) {
+    return '$checked/$days ngày · $photos ảnh';
+  }
+
+  @override
+  String journeys_monthA11y(String month, int checked, int days, int photos) {
+    return '$month, $checked trên $days ngày đã check-in, $photos ảnh';
+  }
+
+  @override
+  String get journeys_monthExpandHint => 'Mở rộng';
+
+  @override
+  String get journeys_monthCollapseHint => 'Thu gọn';
+
+  @override
+  String journeys_jumpToMonth(String month) {
+    return 'Đi tới $month';
+  }
+
+  @override
+  String journeys_jumpToYear(int year) {
+    return 'Xem năm $year';
+  }
+
+  @override
+  String journeys_jumpAnnounce(String month) {
+    return 'Đang ở $month';
+  }
+
+  @override
+  String journeys_earlierLink(int to, int checked) {
+    return 'Trước đó: ngày 1–$to, $checked ngày đã check-in';
+  }
+
+  @override
+  String get journeys_earlierView => 'Xem';
+
+  @override
+  String journeys_daysToGo(int days, int finish) {
+    return 'Còn $days ngày · Đích là ngày $finish';
+  }
+
+  @override
+  String get journeys_range30 => '30 ngày';
+
+  @override
+  String get journeys_rangeAll => 'Tất cả';
+
+  @override
+  String journeys_clearYear(int year) {
+    return 'Bỏ lọc năm $year';
+  }
+
+  @override
+  String get journeys_range30Pace =>
+      'Ít số liệu trong 30 ngày, đang hiện số ngày check-in';
+
+  @override
+  String journeys_startsIn(int days, int total) {
+    return 'Bắt đầu sau $days ngày · $total ngày';
+  }
 }

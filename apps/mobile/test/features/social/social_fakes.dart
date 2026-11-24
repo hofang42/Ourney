@@ -188,6 +188,7 @@ class FakeChatRepository implements ChatRepository {
     String conversationId,
     String body, {
     String? replyToCheckInId,
+    String? draftId,
   }) async {
     calls.add('text:$body');
     replyTo.add(replyToCheckInId);

@@ -113,9 +113,6 @@ class CameraL10nVi extends CameraL10n {
   String get camera_ghostOff => 'Bóng ngày 1 · Tắt';
 
   @override
-  String get camera_allJourneys => 'Tất cả hành trình';
-
-  @override
   String get camera_pickerTitle => 'Tất cả hành trình';
 
   @override
@@ -123,9 +120,6 @@ class CameraL10nVi extends CameraL10n {
 
   @override
   String get camera_pickerEmpty => 'Không có hành trình nào khớp.';
-
-  @override
-  String get camera_pickerClose => 'Đóng';
 
   @override
   String get camera_pickerNotShot => 'Chưa chụp hôm nay';
@@ -150,5 +144,11 @@ class CameraL10nVi extends CameraL10n {
   }
 
   @override
-  String get camera_partnerPhoto => 'Ảnh của người ấy, chạm để phóng to';
+  String get camera_partnerPhoto => 'Ảnh của người ấy';
+
+  @override
+  String get camera_partnerPhotoEnlargeHint => 'Chạm để phóng to';
+
+  @override
+  String get camera_partnerPhotoShrinkHint => 'Chạm để thu nhỏ';
 }

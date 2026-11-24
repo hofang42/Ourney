@@ -617,8 +617,12 @@ abstract interface class ChatRepository {
   /// journey; the recipient follows S33. Friends only → `forbidden`.
   Future<String> openForReply(String journeyId, {String? checkInId});
 
+  ///
+  /// [draftId] identifies the composer draft: a retry of the same draft
+  /// (after a lost response) reuses one message id, so the server never
+  /// stores the message twice.
   Future<ChatMessage> sendText(String conversationId, String body,
-      {String? replyToCheckInId});
+      {String? replyToCheckInId, String? draftId});
 
   /// Uploads [jpegBytes] then sends a photo message.
   Future<ChatMessage> sendPhoto(String conversationId, List<int> jpegBytes,

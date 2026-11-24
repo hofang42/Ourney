@@ -62,7 +62,9 @@ void main() {
   }
 
   group('settings sign out (C-B6 / U6)', () {
-    Future<(RecordingAuthRepository, ProviderContainer)> open(WidgetTester tester) async {
+    Future<(RecordingAuthRepository, ProviderContainer)> open(
+      WidgetTester tester,
+    ) async {
       final auth = RecordingAuthRepository(userId: 'u1');
       final c = await pumpBackendApp(
         tester,
@@ -85,6 +87,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(auth.calls, isEmpty);
       expect(byKey('settings-screen'), findsOneWidget);
+    });
+
+    testWidgets('the sheet ignores a barrier tap', (tester) async {
+      final (auth, _) = await open(tester);
+      await tester.tapAt(const Offset(4, 4));
+      await tester.pumpAndSettle();
+      expect(byKey('profile-signout-dialog'), findsOneWidget);
+      expect(auth.calls, isEmpty);
     });
 
     testWidgets('confirm signs out and leaves for /auth', (tester) async {

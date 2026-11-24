@@ -3,50 +3,50 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../../ui/ui.dart';
+import '../data/import_types.dart';
 
-/// Figma `.library-scene` gradients (placeholder art when a photo cannot be
-/// decoded). Index wraps over the six scenes.
-const List<List<Color>> _scenes = [
-  [Color(0xFF9DC6DF), Color(0xFFF3D8AC)],
-  [Color(0xFFB8A9D5), Color(0xFFF0D89D)],
-  [Color(0xFF9FC9D6), Color(0xFFE9C0A9)],
-  [Color(0xFF8FB996), Color(0xFFE7C89B)],
-  [Color(0xFFC9C9C9), Color(0xFFF5F5F5)],
-  [Color(0xFFCC8B86), Color(0xFFF1D7B4)],
-];
-
-/// Fixed light ink for fills that stay light in both themes.
-const Color importInkOnLight = Color(0xFF1A1A1A);
-
-/// `.import-type-grid button.selected` fill (sticker yellow).
-const Color importSelectedYellow = Color(0xFFFFD84D);
-
-/// `.import-photo-grid i` check badge.
-const Color importCheckGreen = Color(0xFF3DE88C);
-
-/// A photo thumbnail: the file when it decodes, else a Figma scene gradient.
+/// A photo thumbnail: the file when it decodes, else a broken-image state
+/// (never fake art that looks like a real photo).
 class ImportThumb extends StatelessWidget {
   const ImportThumb({
     required this.path,
-    required this.index,
     this.height = 112,
     this.radius = 8,
     super.key,
   });
 
   final String? path;
-  final int index;
   final double height;
   final double radius;
 
-  Widget _scene() {
-    final c = _scenes[index % _scenes.length];
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: c,
+  Widget _broken(BuildContext context) {
+    final ui = context.ui;
+    return ColoredBox(
+      key: const ValueKey('import-thumb-broken'),
+      color: ui.fill,
+      child: Center(
+        child: OurneyIcon(
+          name: 'image-off',
+          size: (height * 0.4).clamp(16, 28),
+          flat: true,
+          color: ui.inkMuted,
+        ),
+      ),
+    );
+  }
+
+  /// No file to show (a saved photo's copies are deleted): a plain tile.
+  Widget _empty(BuildContext context) {
+    final ui = context.ui;
+    return ColoredBox(
+      key: const ValueKey('import-thumb-empty'),
+      color: ui.fill,
+      child: Center(
+        child: OurneyIcon(
+          name: 'image',
+          size: (height * 0.4).clamp(16, 28),
+          flat: true,
+          color: ui.inkMuted,
         ),
       ),
     );
@@ -54,19 +54,20 @@ class ImportThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = path;
     return ExcludeSemantics(
       child: ClipRRect(
         borderRadius: BorderRadius.circular(radius),
         child: SizedBox(
           height: height,
           width: double.infinity,
-          child: path == null
-              ? _scene()
+          child: p == null
+              ? _empty(context)
               : Image.file(
-                  File(path!),
+                  File(p),
                   fit: BoxFit.cover,
                   cacheWidth: 300,
-                  errorBuilder: (context, error, stack) => _scene(),
+                  errorBuilder: (context, error, stack) => _broken(context),
                 ),
         ),
       ),
@@ -156,14 +157,9 @@ class ImportLayoutPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dark = skin == 'flexer';
-    final fg = dark ? Colors.white : importInkOnLight;
-    final bg = switch (skin) {
-      'quiet' => const Color(0xFFEFF3F0),
-      'memory' => const Color(0xFFF4EFE6),
-      'flexer' => const Color(0xFF14161F),
-      _ => const Color(0xFFFFF8EE),
-    };
+    final style = uiStyleForSkin(importSkinId(skin));
+    final fg = style.ink;
+    final bg = style.paper;
     final radius = switch (skin) {
       'memory' => 2.0,
       'minimal' => 0.0,
@@ -217,9 +213,9 @@ class ImportLayoutPreview extends StatelessWidget {
               ),
               Expanded(
                 child: Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     border: Border(
-                      bottom: BorderSide(color: Color(0xFFFF8A3D), width: 2),
+                      bottom: BorderSide(color: style.accent, width: 2),
                     ),
                   ),
                   child: Row(
@@ -231,7 +227,7 @@ class ImportLayoutPreview extends StatelessWidget {
                           height: 16,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: importSelectedYellow,
+                            color: style.accent,
                             border: Border.all(color: fg, width: 2),
                           ),
                         ),

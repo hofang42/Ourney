@@ -22,9 +22,6 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_captionLabel => 'Caption';
 
   @override
-  String get checkin_captionHint => 'Write a few words (optional)';
-
-  @override
   String checkin_captionCounter(int count, int max) {
     return '$count/$max';
   }
@@ -72,12 +69,6 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_missingJourney => 'This journey wasn\'t found.';
-
-  @override
-  String get checkin_stamp => 'Checked in!';
-
-  @override
-  String get checkin_streakPlusOne => '+1 day';
 
   @override
   String checkin_photoAdded(int n) {
@@ -166,13 +157,7 @@ class CheckinL10nEn extends CheckinL10n {
   String get checkin_done_minimalFull => 'ALL 30 DAYS';
 
   @override
-  String get checkin_done_chainLabel => 'Streak';
-
-  @override
   String get checkin_done => 'Done';
-
-  @override
-  String get checkin_posted => 'Moment posted';
 
   @override
   String get checkin_chainKept => 'Chain kept.';
@@ -310,4 +295,14 @@ class CheckinL10nEn extends CheckinL10n {
 
   @override
   String get checkin_details => 'Details';
+
+  @override
+  String checkin_captionLimitReached(int max) {
+    return 'Limit reached: $max characters';
+  }
+
+  @override
+  String checkin_metricLast(String value) {
+    return 'Last time: $value';
+  }
 }

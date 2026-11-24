@@ -29,6 +29,10 @@ OurneyException mapRemoteError(Object error) {
       return OurneyException(OurneyErrorCode.offline, error.toString());
     case AuthException(:final statusCode, :final message):
       return OurneyException(_authCode(statusCode), '$statusCode: $message');
+    case FormatException() || TypeError():
+      // A server row that does not parse (schema drift): report it, with the
+      // cause, instead of letting a raw error escape.
+      return OurneyException(OurneyErrorCode.unknown, 'bad data: $error');
     case SocketException() ||
         HttpException() ||
         TimeoutException() ||
@@ -51,6 +55,7 @@ OurneyErrorCode _functionCode(int status, Object? details) {
     401 => OurneyErrorCode.unauthenticated,
     403 => OurneyErrorCode.forbidden,
     404 => OurneyErrorCode.notFound,
+    410 => OurneyErrorCode.alreadyDeleted,
     405 => OurneyErrorCode.methodNotAllowed,
     >= 500 => OurneyErrorCode.internal,
     _ => OurneyErrorCode.unknown,

@@ -324,6 +324,8 @@ Worker tự chấm: 4 cao, 10 vừa, 1 thấp. 15 lỗi, đều có test tạm f
 
 #### B-B1. Số cân vừa chọn trên thanh trượt Camera bị ghi đè bởi số cân của lần điểm danh trước khi sang màn đăng ảnh
 
+> **Đã thay thế 2026-11-20 (thiết kế lại camera/caption):** thanh trượt cân nặng và `pendingWeightProvider` đã bị bỏ khỏi màn camera; cân nặng nhập ở màn đăng ảnh, số lần trước chỉ hiện dạng gợi ý ("Lần trước: 72,5"), không điền sẵn vào ô. Mục này không còn áp dụng.
+
 - **Vị trí:** `apps/mobile/lib/features/camera/capture_screen.dart:378` (kèm `apps/mobile/lib/features/camera/capture_screen.dart:401`, `apps/mobile/lib/features/checkin/checkin_screen.dart:65-69`)
 - **Mức độ:** cao
 - **Độ chắc:** chắc chắn
@@ -1098,6 +1100,7 @@ Worker đếm: Tài liệu 13, Asset 5, Code 12, Cấu hình 4. Đây là việc
 - **Cái gì đã lỗi thời:** Lớp `JourneyChain` (lưới lịch 7 cột `.chain-grid` của bản V1.0) đã bị thay thế hoàn toàn bởi `widgets/journey_timeline.dart` và 6 biến thể timeline trong `widgets/timeline_variants.dart`, không còn file nào trong `lib/` lẫn `test/` gọi tới.
 - **Bằng chứng:** - `git grep -n journey_chain` chỉ ra tài liệu cũ; `git grep -n JourneyChain` chỉ khớp đúng định nghĩa lớp ở `journey_chain.dart:17-18` (0 import toàn repo).
 - **Đề xuất xử lý:** **Xóa** `apps/mobile/lib/features/journeys/ui/journey_chain.dart`.
+- **Trạng thái:** **Đã xử lý** trên nhánh `feat/long-journey-timeline`: file đã bị xóa; lưới tháng 7 cột nay là `TimelineGridCell` + `ChainRowPainter` (`widgets/timeline_common.dart`, `widgets/timeline_archive.dart`).
 - **Rủi ro khi xử lý:** **an toàn**
 - **Độ chắc:** **chắc chắn**
 

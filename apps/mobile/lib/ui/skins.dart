@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'contrast.dart';
 import 'tokens.dart';
 
 /// One accent variant of a [UiSkin] (`skin.variants[n]` in the V2 StyleGuide).
@@ -113,6 +114,16 @@ class UiSkin {
   /// the skin does not define (fills, hairlines, grabber, dock) are derived
   /// from the skin's own bg/surface/ink so a cool skin never shows warm-beige
   /// leftovers from the shell.
+  /// Lightest blend of [ink] over [bg] that keeps >= 3:1 against both field
+  /// fills (WCAG 1.4.11).
+  static Color _fieldBorder(Color ink, Color bg, Color fill, Color surface) {
+    for (var t = 0.3; t < 1; t += 0.05) {
+      final c = Color.lerp(bg, ink, t)!;
+      if (uiContrast(c, fill) >= 3.1 && uiContrast(c, surface) >= 3.1) return c;
+    }
+    return ink;
+  }
+
   OurneyUi apply(OurneyUi base, {int variantIndex = 0}) {
     final p = palette(base.brightness);
     final v = resolvedVariant(variantIndex, base.brightness);
@@ -137,7 +148,12 @@ class UiSkin {
       inkMuted: p.muted,
       inkSoft: Color.lerp(p.ink, p.muted, 0.35),
       border: tint(p.ink, p.bg, 0.16),
-      inputBorder: outline,
+      fieldBorder: _fieldBorder(
+        p.ink,
+        p.bg,
+        tint(p.ink, p.bg, 0.06),
+        p.surface,
+      ),
       divider: tint(p.ink, p.bg, 0.10),
       brand: v.button,
       onBrand: v.buttonLabel,

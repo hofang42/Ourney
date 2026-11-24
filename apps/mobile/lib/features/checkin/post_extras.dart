@@ -176,10 +176,18 @@ class PostExtrasSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                CheckinL10n.of(context).checkin_details,
-                key: const ValueKey('checkin-details'),
-                style: UiText.fieldLabel(color: ui.inkMuted),
+              Semantics(
+                header: true,
+                child: Text(
+                  CheckinL10n.of(context).checkin_details,
+                  key: const ValueKey('checkin-details'),
+                  style: UiText.body(
+                    size: 14,
+                    weight: FontWeight.w700,
+                    height: 1.4,
+                    color: ui.ink,
+                  ),
+                ),
               ),
               const SizedBox(height: UiSpace.md),
               child,

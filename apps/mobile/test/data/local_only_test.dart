@@ -539,4 +539,46 @@ void main() {
     final active = await layer2.journeys.watchActive().first;
     expect(active.single.id, j.id);
   });
+
+  test(
+    'a check-in with a client id is submitted once, however often',
+    () async {
+      final layer = localLayer(db: db, media: media, clock: clock);
+      clock.value = DateTime.utc(2026, 10, 14, 2);
+      final journey = await layer.journeys.create(
+        soloDraft(start: const LocalDate(2026, 10, 14)),
+      );
+      clock.value = DateTime.utc(2026, 10, 16, 2);
+      const id = 'bbbbbbbb-0000-4000-8000-00000000000a';
+      CheckInDraft draft(String name) {
+        final shot = fakeCapture(camera, name);
+        return CheckInDraft(
+          id: id,
+          journeyId: journey.id,
+          capturedAt: DateTime.utc(2026, 10, 15, 3),
+          photoFile: shot.photo,
+          thumbFile: shot.thumb,
+        );
+      }
+
+      final first = await layer.checkIns.submit(draft('one'));
+      // A retry (the app died before it noted the first one): same row back.
+      final again = await layer.checkIns.submit(draft('two'));
+      expect(first.id, id);
+      expect(again.id, id);
+      expect(await db.select(db.checkIns).get(), hasLength(1));
+      // Another id on the same day is a second photo, as before.
+      final other = await layer.checkIns.submit(
+        CheckInDraft(
+          id: 'bbbbbbbb-0000-4000-8000-00000000000b',
+          journeyId: journey.id,
+          capturedAt: DateTime.utc(2026, 10, 15, 4),
+          photoFile: fakeCapture(camera, 'three').photo,
+          thumbFile: fakeCapture(camera, 'three').thumb,
+        ),
+      );
+      expect(other.id, isNot(id));
+      expect(await db.select(db.checkIns).get(), hasLength(2));
+    },
+  );
 }

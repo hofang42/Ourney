@@ -7,6 +7,7 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 ## 1. Mandatory Quality Gates & Anti-AI-Slop Policy
 1. **Lint Check First**: Always run `dart analyze` (in `packages/ourney_core`) and `flutter analyze` (in `apps/mobile`) after creating or modifying any file. Fix all errors and warnings before finishing.
 2. **Dark & Light Theme Mandatory**: Every screen, sheet, dialog, timeline, camera HUD, and widget MUST support both **Light Mode** and **Dark Mode** via the V1.0 UI kit tokens (`context.ui`, `apps/mobile/lib/ui/`, see its README; design source `design/figma-v1/`). Build UI only from `lib/ui` components. Never hardcode static light-only or dark-only colors inside widgets.
+   - **Exception (owner decision 2026-11-20): the camera is dark-only.** The camera screen, its viewfinder chrome and the Post-screen photo frame use the fixed `UiCamera` palette in both themes; everything else still follows light and dark.
 3. **Zero Hardcoded Text Icons / Zero AI Slop**:
    - Never use placeholder text (`"..."`, `"3-tab"`, `"icon"`, `"[+]"`) in place of icons. Always use the Ourney icon set (next bullet) drawn as SVG paths or `CustomPainter`.
    - No system/default icons anywhere in the app (owner decision 2026-11-11): no emoji and no Unicode symbol glyphs (`●`, `★`, `♥`, `✓`…) as icons, including journey type badges, streak (`flame` icon), reactions and HUD text. Use only the Ourney designed icon set (prototype: `design/ourney-v2-app/src/app/icons.tsx`) or custom SVG/`CustomPainter` illustrations. Emoji typed by users in captions stay as user content. Material `Icons` and `CupertinoIcons` count as default icons too. The Flutter port of the icon set is not built yet; until it lands, new Flutter UI must not add more default icons.
@@ -43,6 +44,8 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 
 ## 4. The 6 Adaptive Persona UI Styles (`PersonaSkinId`)
 Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board in `apps/mobile/assets/design_personas/`:
+
+> The camera panels (HUD, stamps, clocks, sliders) on those reference boards are superseded by the 2026-11-20 camera decision below; the timeline and share/squad panels still apply.
 
 | # | `PersonaSkinId` | `TemplateId` | Visual Reference Asset | Timeline Variant | Camera | Share / Squad Variant |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |

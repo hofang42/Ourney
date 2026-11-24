@@ -21,7 +21,7 @@ OutlineInputBorder uiFieldBorder(
 const double _otpGap = 8;
 
 /// `.flow-field`: bold label always visible above a 52dp field (16dp radius,
-/// 1.5dp `ui.border` outline, `ui.fill` background, no shadow). Focus swaps
+/// 1.5dp `ui.fieldBorder` outline (3:1), `ui.fill` background, no shadow). Focus swaps
 /// the outline to a 2dp accent border, [error] to `danger`, and prints the
 /// message under the field. [helper] sits below; [prefixText] and [trailing]
 /// are inside the field.
@@ -96,7 +96,7 @@ class _UiTextFieldState extends State<UiTextField> {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final hasError = widget.error != null || widget.invalid;
-    final edge = hasError ? ui.danger : ui.border;
+    final edge = hasError ? ui.danger : ui.fieldBorder;
     final focusEdge = hasError ? ui.danger : ui.accent;
     final radius = widget.pill ? UiRadius.capsule : UiRadius.field;
     return Column(
@@ -220,7 +220,7 @@ class _UiTextFieldState extends State<UiTextField> {
 }
 
 /// `.otp-boxes`: [length] digit boxes (48x52, 8dp gap, 10dp radius, 1.5dp
-/// `ui.border` outline, no shadow) driven by ONE real text field, so paste,
+/// `ui.fieldBorder` outline, no shadow) driven by ONE real text field, so paste,
 /// SMS autofill (`oneTimeCode`) and `enterText` all work. The active box gets
 /// a 2dp accent border; [hasError] swaps the outline to `danger`. Boxes
 /// shrink evenly when the row is narrower than 328dp (320dp phones).
@@ -308,7 +308,7 @@ class _UiOtpFieldState extends State<UiOtpField> {
                                   ? ui.danger
                                   : focused && i == active
                                   ? ui.accent
-                                  : ui.border,
+                                  : ui.fieldBorder,
                               width: focused && i == active
                                   ? UiBorder.standard
                                   : UiBorder.thin,

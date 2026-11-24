@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart'
@@ -25,6 +26,7 @@ void main() {
       expect(isTransient(OurneyErrorCode.offline), isTrue);
       expect(isTransient(OurneyErrorCode.internal), isTrue);
       expect(isTransient(OurneyErrorCode.unauthenticated), isTrue);
+      expect(isTransient(OurneyErrorCode.serverOutdated), isTrue);
       expect(isTransient(OurneyErrorCode.ended), isFalse);
       expect(isTransient(OurneyErrorCode.forbidden), isFalse);
       expect(isTransient(OurneyErrorCode.invalidCapturedAt), isFalse);
@@ -100,6 +102,50 @@ void main() {
         outboxBackoff(2),
         outboxBackoff(3),
       ]);
+    });
+
+    test(
+      'a flush blocked by exclusive waits, keeps force, then runs',
+      () async {
+        final outbox = build(db);
+        await outbox.enqueue(OutboxKind.createJourney, 'journey:1', {'n': 1});
+        failures = [const OurneyException(OurneyErrorCode.offline)];
+        await outbox.flush(); // fails: the item is now in backoff
+        expect(executed, isEmpty);
+        final gate = Completer<void>();
+        final held = outbox.exclusive(() => gate.future);
+        var normalDone = false;
+        var forcedDone = false;
+        unawaited(outbox.flush().then((_) => normalDone = true));
+        unawaited(outbox.flush(force: true).then((_) => forcedDone = true));
+        await Future<void>.delayed(Duration.zero);
+        expect(normalDone || forcedDone, isFalse); // waits for the lock
+        gate.complete();
+        await held;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        // `force` survived: the backed-off item went out.
+        expect(executed, ['create_journey:1']);
+        expect(normalDone && forcedDone, isTrue);
+      },
+    );
+
+    test('exclusive calls run one after another', () async {
+      final outbox = build(db);
+      final order = <String>[];
+      final gate = Completer<void>();
+      final a = outbox.exclusive(() async {
+        order.add('a-start');
+        await gate.future;
+        order.add('a-end');
+      });
+      final b = outbox.exclusive(() async {
+        order.add('b-start');
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(order, ['a-start']);
+      gate.complete();
+      await Future.wait([a, b]);
+      expect(order, ['a-start', 'a-end', 'b-start']);
     });
 
     test('runs items in FIFO order and removes them', () async {

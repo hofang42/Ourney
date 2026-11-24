@@ -236,7 +236,7 @@ void main() {
               t.widget<TextField>(find.byType(TextField)).decoration!;
           expect(t.getSize(find.byType(TextField)).height, 52);
           final rest = deco().enabledBorder! as OutlineInputBorder;
-          expect(rest.borderSide.color, ui.border);
+          expect(rest.borderSide.color, ui.fieldBorder);
           expect(rest.borderSide.width, 1.5);
           final focus = deco().focusedBorder! as OutlineInputBorder;
           expect(focus.borderSide.color, ui.accent);
@@ -347,7 +347,7 @@ void main() {
         expect((d(2).border! as Border).top.color, ui.accent);
         expect((d(2).border! as Border).top.width, 2);
         expect(d(0).boxShadow, isNull);
-        expect((d(0).border! as Border).top.color, ui.border);
+        expect((d(0).border! as Border).top.color, ui.fieldBorder);
         expect((d(0).border! as Border).top.width, 1.5);
         expect(d(0).borderRadius, BorderRadius.circular(10));
         set(() => error = true);

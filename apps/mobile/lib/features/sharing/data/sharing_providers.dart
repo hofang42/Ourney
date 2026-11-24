@@ -1,9 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../shared/time_zones.dart';
 
 /// Repository streams handle offline/sync themselves; Riverpod must not
 /// retry (timers would also leak into widget tests).
@@ -88,63 +86,3 @@ final storageFileProvider = FutureProvider.autoDispose.family<String, String>(
   (ref, path) => ref.watch(mediaStoreProvider).localFileFor(path),
   retry: _noRetry,
 );
-
-// --- retell (SCR-28) ---------------------------------------------------------
-
-/// A photo picked from the library for a retold journey.
-class RetellPhoto {
-  const RetellPhoto({required this.path, required this.modified});
-
-  /// Original file on local disk (the picker's copy).
-  final String path;
-
-  /// File last-modified time: the default day of the photo.
-  final DateTime modified;
-}
-
-/// Multi-select library picker. Injectable so widget tests need no plugin.
-abstract interface class RetellPhotoPicker {
-  /// Empty when the user cancels.
-  Future<List<RetellPhoto>> pickPhotos();
-}
-
-class ImagePickerRetellPicker implements RetellPhotoPicker {
-  ImagePickerRetellPicker([ImagePicker? picker])
-    : _picker = picker ?? ImagePicker();
-
-  final ImagePicker _picker;
-
-  @override
-  Future<List<RetellPhoto>> pickPhotos() async {
-    // Compression to 1080px/q70 happens before each submit; the picker only
-    // bounds very large originals.
-    final files = await _picker.pickMultiImage(
-      maxWidth: 4096,
-      maxHeight: 4096,
-      requestFullMetadata: false,
-    );
-    return [
-      for (final f in files)
-        RetellPhoto(path: f.path, modified: await f.lastModified()),
-    ];
-  }
-}
-
-final retellPhotoPickerProvider = Provider<RetellPhotoPicker>(
-  (ref) => ImagePickerRetellPicker(),
-);
-
-/// `captured_at` of a retold photo: noon of [date] in the journey's time
-/// zone, so the server derives exactly that `local_date`.
-///
-/// Never later than [now] (bug C-B12): a photo from this morning would be
-/// "captured" in the future at noon, which the server rejects
-/// (`invalid_captured_at`); it is stamped [now] instead, still on [date].
-DateTime noonInZone(LocalDate date, String timezone, {DateTime? now}) {
-  final naive = DateTime.utc(date.year, date.month, date.day, 12);
-  final noon = naive.subtract(timeZoneOffsetAt(timezone, naive));
-  if (now == null || !noon.isAfter(now)) return noon;
-  final clamped = now.toUtc();
-  // Only today's photos move; a later date stays as asked (and is refused).
-  return journeyLocalDate(timezone, clamped) == date ? clamped : noon;
-}

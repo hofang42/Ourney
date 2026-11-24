@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/journey_clock.dart';
+import 'package:ourney/data/media_store.dart' show MediaWipe;
 import 'package:ourney/data/remote/remote_api.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -38,7 +39,11 @@ String Function() sequentialIds([String prefix = '0000']) {
 AppDatabase memoryDb() {
   driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
   final db = AppDatabase(NativeDatabase.memory());
-  addTearDown(db.close);
+  // Background media-trash jobs use the database: let them finish first.
+  addTearDown(() async {
+    await MediaWipe.settled();
+    await db.close();
+  });
   return db;
 }
 

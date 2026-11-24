@@ -114,9 +114,6 @@ class CameraL10nEn extends CameraL10n {
   String get camera_ghostOff => 'Day 1 ghost · Off';
 
   @override
-  String get camera_allJourneys => 'All journeys';
-
-  @override
   String get camera_pickerTitle => 'All journeys';
 
   @override
@@ -124,9 +121,6 @@ class CameraL10nEn extends CameraL10n {
 
   @override
   String get camera_pickerEmpty => 'No journey matches your search.';
-
-  @override
-  String get camera_pickerClose => 'Close';
 
   @override
   String get camera_pickerNotShot => 'Not shot today';
@@ -151,5 +145,11 @@ class CameraL10nEn extends CameraL10n {
   }
 
   @override
-  String get camera_partnerPhoto => 'Partner\'s photo, tap to enlarge';
+  String get camera_partnerPhoto => 'Partner\'s photo';
+
+  @override
+  String get camera_partnerPhotoEnlargeHint => 'Tap to enlarge';
+
+  @override
+  String get camera_partnerPhotoShrinkHint => 'Tap to shrink';
 }

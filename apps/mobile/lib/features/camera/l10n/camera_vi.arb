@@ -80,11 +80,9 @@
   },
   "camera_ghostOn": "Bóng ngày 1 · Bật",
   "camera_ghostOff": "Bóng ngày 1 · Tắt",
-  "camera_allJourneys": "Tất cả hành trình",
   "camera_pickerTitle": "Tất cả hành trình",
   "camera_pickerSearch": "Tìm hành trình",
   "camera_pickerEmpty": "Không có hành trình nào khớp.",
-  "camera_pickerClose": "Đóng",
   "camera_pickerNotShot": "Chưa chụp hôm nay",
   "camera_pickerShot": "Đã chụp hôm nay",
   "camera_pickerEnded": "Đã kết thúc",
@@ -108,5 +106,7 @@
       }
     }
   },
-  "camera_partnerPhoto": "Ảnh của người ấy, chạm để phóng to"
+  "camera_partnerPhoto": "Ảnh của người ấy",
+  "camera_partnerPhotoEnlargeHint": "Chạm để phóng to",
+  "camera_partnerPhotoShrinkHint": "Chạm để thu nhỏ"
 }

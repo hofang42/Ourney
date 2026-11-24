@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,6 +16,8 @@ import '../journeys/journeys_fakes.dart';
 class _User extends CurrentUserId {
   @override
   String? build() => 'user-a';
+
+  void switchTo(String id) => state = id;
 }
 
 void main() {
@@ -279,5 +283,107 @@ void main() {
     repo.listError = null;
     await pushSharePrivacyToMemberships(container, blur: true);
     expect(pendingSharePrivacy(container), isEmpty);
+  });
+
+  testWidgets('a hand-set choice during a failing full push stays protected', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    // Full push starts (marks "in flight"); the user sets 'min' by hand
+    // before it finishes; then its update of 'min' fails.
+    repo.prefErrorFor['min'] = const OurneyException(OurneyErrorCode.offline);
+    final push = pushSharePrivacyToMemberships(container, blur: true);
+    forgetSharePrivacyHeal(ref, 'min', blur: true);
+    await push;
+    repo.prefErrorFor.clear();
+    repo.prefUpdates.clear();
+    await healSharePrivacy(container);
+    expect(repo.prefUpdates.map((u) => u.id), isNot(contains('min')));
+  });
+
+  testWidgets('blur on, off, on: a real later failure still heals', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    final blurSwitch = ref.read(blurPhotosOnShareProvider.notifier);
+    await tester.runAsync(() => blurSwitch.set(true));
+    await pushSharePrivacyToMemberships(container, blur: true); // push 1 ok
+    await tester.runAsync(() => blurSwitch.set(false));
+    await tester.runAsync(() => blurSwitch.set(true));
+    repo.prefErrorFor['min'] = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToMemberships(container, blur: true); // push 2 fails
+    expect(pendingSharePrivacy(container).keys, ['min']);
+    repo.prefErrorFor.clear();
+    repo.prefUpdates.clear();
+    await healSharePrivacy(container);
+    expect(repo.prefUpdates.map((u) => u.id), ['min']);
+  });
+
+  testWidgets('another account never clears this record', (tester) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.prefError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToJourney(ref, 'min');
+    expect(pendingSharePrivacy(container), isNotEmpty);
+    final prefs = container.read(sharedPreferencesProvider);
+    final before = prefs.getString(SharePrivacyPrefs.pendingHeal);
+    // Another user acts: their clears must not touch the stored record.
+    (container.read(currentUserIdProvider.notifier) as _User).switchTo(
+      'user-b',
+    );
+    forgetSharePrivacyHeal(ref, 'min', blur: true);
+    repo.prefError = null;
+    await pushSharePrivacyToJourney(ref, 'kg');
+    expect(prefs.getString(SharePrivacyPrefs.pendingHeal), before);
+  });
+
+  testWidgets('a hand-set choice during a heal is not overwritten', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(
+      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+    );
+    repo.prefError = const OurneyException(OurneyErrorCode.offline);
+    await pushSharePrivacyToJourney(ref, 'kg');
+    await pushSharePrivacyToJourney(ref, 'min');
+    repo.prefError = null;
+    repo.prefUpdates.clear();
+    final gate = repo.prefGate = Completer<void>();
+    final heal = healSharePrivacy(container);
+    await tester.pump(); // the heal is now stuck on its first update
+    forgetSharePrivacyHeal(ref, 'min', blur: true);
+    repo.prefGate = null;
+    gate.complete();
+    await heal;
+    expect(repo.prefUpdates.map((u) => u.id), ['kg']);
+    expect(pendingSharePrivacy(container), isEmpty);
+  });
+
+  testWidgets('overlapping pushes: a later push failure is still recorded', (
+    tester,
+  ) async {
+    final (ref, repo, container) = await pump(tester);
+    await tester.runAsync(() async {
+      await ref.read(blurPhotosOnShareProvider.notifier).set(true);
+      await ref.read(hideWeightOnShareProvider.notifier).set(true);
+    });
+    repo.prefErrorFor['min'] = const OurneyException(OurneyErrorCode.offline);
+    final first = pushSharePrivacyToMemberships(container, blur: true);
+    // Hand-set during push 1; push 2 (mixed flags) starts afterwards.
+    forgetSharePrivacyHeal(ref, 'min', blur: true);
+    final second = pushSharePrivacyToMemberships(
+      container,
+      hideWeight: true,
+      blur: true,
+    );
+    await Future.wait([first, second]);
+    // Push 1's failure is superseded by the hand-set; push 2's is real.
+    expect(pendingSharePrivacy(container)['min'], (hide: false, blur: true));
   });
 }

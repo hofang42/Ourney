@@ -757,15 +757,95 @@ void main() {
       expect(ids[2], isNot(ids[0]));
     });
 
-    test('L9 a photo whose send failed is removed from storage', () async {
+    test('L9 a definite rejection removes the uploaded photo', () async {
       remote.rpcHandlers['send_message'] = (_) =>
-          throw const OurneyException(OurneyErrorCode.offline);
+          throw const OurneyException(OurneyErrorCode.forbidden);
       await expectLater(
         layer.chat!.sendPhoto('conv', [5, 5]),
         throwsA(isA<OurneyException>()),
       );
       expect(remote.removed, hasLength(1));
       expect(remote.removed.single, startsWith('messages/conv/$me/'));
+    });
+
+    test(
+      'L9 a lost response keeps the photo and the retry reuses it',
+      () async {
+        final ids = <String>[];
+        remote.rpcHandlers['send_message'] = (p) {
+          ids.add(p['p_id'] as String);
+          if (ids.length == 1) {
+            throw const OurneyException(OurneyErrorCode.offline);
+          }
+          return null;
+        };
+        await expectLater(
+          layer.chat!.sendPhoto('conv', [5, 5]),
+          throwsA(isA<OurneyException>()),
+        );
+        expect(remote.removed, isEmpty);
+        final m = await layer.chat!.sendPhoto('conv', [5, 5]);
+        expect(ids[1], ids[0]);
+        expect(m.id, ids[0]);
+        expect(remote.uploaded.keys, hasLength(1));
+      },
+    );
+
+    test(
+      'L9 a composer draft id keeps the id across retries and edits',
+      () async {
+        final ids = <String>[];
+        remote.rpcHandlers['send_message'] = (p) {
+          ids.add(p['p_id'] as String);
+          if (ids.length == 1) {
+            throw const OurneyException(OurneyErrorCode.offline);
+          }
+          return null;
+        };
+        await expectLater(
+          layer.chat!.sendText('conv', 'hi', draftId: 'd1'),
+          throwsA(isA<OurneyException>()),
+        );
+        await layer.chat!.sendText('conv', 'hi', draftId: 'd1');
+        expect(ids[1], ids[0]);
+      },
+    );
+
+    test('L7 a resend without a draft id still reuses the id', () async {
+      final ids = <String>[];
+      remote.rpcHandlers['send_message'] = (p) {
+        ids.add(p['p_id'] as String);
+        if (ids.length == 1) {
+          throw const OurneyException(OurneyErrorCode.offline);
+        }
+        return null;
+      };
+      await expectLater(
+        layer.chat!.sendText('conv', 'hi', draftId: 'screen-1'),
+        throwsA(isA<OurneyException>()),
+      );
+      await layer.chat!.sendText('conv', 'hi');
+      expect(ids[1], ids[0]);
+    });
+
+    test('L8 not_found also removes the uploaded photo', () async {
+      remote.rpcHandlers['send_message'] = (_) =>
+          throw const OurneyException(OurneyErrorCode.notFound);
+      await expectLater(
+        layer.chat!.sendPhoto('conv', [4, 4]),
+        throwsA(isA<OurneyException>()),
+      );
+      expect(remote.removed, hasLength(1));
+    });
+
+    test('L9 the length limit counts code points like the server', () async {
+      remote.rpcHandlers['send_message'] = (_) => null;
+      // 400 emoji = 400 code points but 800 UTF-16 units: allowed.
+      await layer.chat!.sendText('conv', '😀' * 400);
+      await expectLater(
+        layer.chat!.sendText('conv', '😀' * 501),
+        throwsA(isA<OurneyException>()),
+      );
     });
 
     test('open / read / clear / hide', () async {

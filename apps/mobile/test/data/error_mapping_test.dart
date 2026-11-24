@@ -97,6 +97,26 @@ void main() {
       );
     });
 
+    test('410 already_deleted is distinct from a 401', () {
+      expect(
+        codeOf(
+          const FunctionsHttpException(
+            status: 410,
+            details: {'error': 'already_deleted'},
+          ),
+        ),
+        OurneyErrorCode.alreadyDeleted,
+      );
+      expect(
+        codeOf(const FunctionsHttpException(status: 410)),
+        OurneyErrorCode.alreadyDeleted,
+      );
+      expect(
+        codeOf(const FunctionsHttpException(status: 401)),
+        OurneyErrorCode.unauthenticated,
+      );
+    });
+
     test('falls back to the HTTP status', () {
       expect(
         codeOf(const FunctionsHttpException(status: 404)),
@@ -197,4 +217,28 @@ void main() {
       ),
     );
   });
+
+  test('PGRST202 / PGRST203 mean the server is outdated', () {
+    for (final code in ['PGRST202', 'PGRST203']) {
+      final e = mapRemoteError(
+        PostgrestException(message: 'Could not find the function', code: code),
+      );
+      expect(e.error, OurneyErrorCode.serverOutdated);
+      expect(e.detail, contains(code));
+    }
+  });
+
+  test(
+    'FormatException from row mapping becomes unknown with detail',
+    () async {
+      final e = mapRemoteError(const FormatException('bad enum "x"'));
+      expect(e.error, OurneyErrorCode.unknown);
+      expect(e.detail, startsWith('bad data:'));
+      expect(e.detail, contains('bad enum'));
+      await expectLater(
+        guardRemote<void>(() async => throw const FormatException('row')),
+        throwsA(isA<OurneyException>()),
+      );
+    },
+  );
 }

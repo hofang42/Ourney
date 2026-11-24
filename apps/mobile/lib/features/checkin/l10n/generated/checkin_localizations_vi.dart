@@ -22,9 +22,6 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_captionLabel => 'Chú thích';
 
   @override
-  String get checkin_captionHint => 'Viết vài dòng (không bắt buộc)';
-
-  @override
   String checkin_captionCounter(int count, int max) {
     return '$count/$max';
   }
@@ -72,12 +69,6 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_missingJourney => 'Không tìm thấy hành trình này.';
-
-  @override
-  String get checkin_stamp => 'Đã check-in!';
-
-  @override
-  String get checkin_streakPlusOne => '+1 ngày';
 
   @override
   String checkin_photoAdded(int n) {
@@ -166,13 +157,7 @@ class CheckinL10nVi extends CheckinL10n {
   String get checkin_done_minimalFull => 'ĐỦ 30 NGÀY';
 
   @override
-  String get checkin_done_chainLabel => 'Chuỗi';
-
-  @override
   String get checkin_done => 'Xong';
-
-  @override
-  String get checkin_posted => 'Đã đăng khoảnh khắc';
 
   @override
   String get checkin_chainKept => 'Giữ được chuỗi.';
@@ -308,4 +293,14 @@ class CheckinL10nVi extends CheckinL10n {
 
   @override
   String get checkin_details => 'Chi tiết';
+
+  @override
+  String checkin_captionLimitReached(int max) {
+    return 'Đã đạt giới hạn $max ký tự';
+  }
+
+  @override
+  String checkin_metricLast(String value) {
+    return 'Lần trước: $value';
+  }
 }

@@ -136,6 +136,9 @@ class FakeJourneyRepository implements JourneyRepository {
   /// When set, allMine throws it.
   Object? listError;
 
+  /// When set, updateMyMembership waits for it (to force races).
+  Completer<void>? prefGate;
+
   /// Per-journey updateMyMembership errors.
   final Map<String, Object> prefErrorFor = {};
 
@@ -295,6 +298,7 @@ class FakeJourneyRepository implements JourneyRepository {
     bool? pinned,
   }) async {
     calls.add('updateMyMembership:$journeyId');
+    await prefGate?.future;
     if (prefError case final e?) throw e;
     if (prefErrorFor[journeyId] case final e?) throw e;
     if (hideExtras != null || pinned != null) {
@@ -378,6 +382,7 @@ Future<JourneysHarness> pumpJourneys(
   String? userId,
   Locale locale = const Locale('vi'),
   List<Override> extraOverrides = const [],
+  MediaStore? mediaStore,
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -396,7 +401,7 @@ Future<JourneysHarness> pumpJourneys(
     overrides: [
       journeyRepositoryProvider.overrideWithValue(repo),
       checkInRepositoryProvider.overrideWithValue(ci),
-      mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+      mediaStoreProvider.overrideWithValue(mediaStore ?? FakeMediaStore()),
       journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
       deviceTimezoneProvider.overrideWith((ref) => testTz),
       ...extraOverrides,

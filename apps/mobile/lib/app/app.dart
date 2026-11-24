@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/import/data/import_providers.dart'
+    show importResumeProvider;
 import '../features/journeys/data/journeys_providers.dart'
     show timeZoneWarmupProvider;
 import '../features/journeys/journeys_paths.dart';
@@ -30,6 +32,8 @@ class OurneyApp extends ConsumerWidget {
     ref.watch(hapticsEnabledProvider);
     // Sign-out / account deletion clears the previous account's local state.
     ref.watch(accountSessionResetProvider);
+    // A retold journey a kill interrupted is finished in the background.
+    ref.watch(importResumeProvider);
     // tz database decoded after the first frame (camera ready < 1 s).
     ref.watch(timeZoneWarmupProvider);
     // The active journey's persona colors the whole app; the router is not

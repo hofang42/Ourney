@@ -71,7 +71,6 @@ void main() {
       expect(minimal.onBrand, const Color(0xFF18181A));
       // Derived neutrals follow the skin, not the warm shell.
       expect(quiet.surfaceInput, quiet.surface);
-      expect(quiet.inputBorder, quiet.ink);
       expect(quiet.fill, isNot(OurneyUi.light.fill));
       expect(quiet.divider, isNot(OurneyUi.light.divider));
       expect(uiSkinById('quiet').borderWidth, UiBorder.thin);

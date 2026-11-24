@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:ourney/data/local_store.dart' show journeyKey;
 import 'package:ourney/data/mapping.dart' show updateJourneyParams;
 import 'package:ourney/data/media_store.dart' show MediaWipe;
 import 'package:ourney/data/remote/remote_api.dart';
+import 'package:ourney/data/repositories/journey_repository.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney/data/sync/sync_engine.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -365,42 +367,148 @@ void main() {
     late Directory dir;
     setUp(() {
       dir = Directory('${media.path}/wipe-me')..createSync();
-      File('${dir.path}/a.jpg').writeAsStringSync('x');
+      File('${dir.path}/a.jpg').writeAsStringSync('old');
+      File('${dir.path}/old.jpg').writeAsStringSync('old-only');
     });
 
-    test('a failing transaction restores the folders', () async {
+    List<Directory> siblings(String marker) => media
+        .listSync()
+        .whereType<Directory>()
+        .where((d) => d.path.contains('wipe-me$marker'))
+        .toList();
+
+    Future<void> wipe(Future<void> Function() inside, {bool fail = false}) =>
+        MediaWipe.run(
+          db,
+          [dir],
+          (move) => db.transaction(() async {
+            await db.wipe();
+            await move();
+            await inside();
+            if (fail) throw StateError('commit failed');
+          }),
+        );
+
+    test('commit: the recorded trash is deleted, the record cleared', () async {
+      await wipe(() async {
+        expect(siblings('.trash-'), hasLength(1));
+      });
+      await MediaWipe.settled();
+      expect(siblings('.trash-'), isEmpty);
+      expect(dir.existsSync(), isFalse);
+      expect(await db.readCursor(pendingTrashCursorKey), '[]');
+    });
+
+    test('crash before commit: recover merges the unrecorded trash', () async {
+      dir.renameSync('${dir.path}.trash-1');
+      await MediaWipe.recover(db, [dir]);
+      expect(File('${dir.path}/a.jpg').readAsStringSync(), 'old');
+      expect(siblings('.trash-'), isEmpty);
+    });
+
+    test('rollback with the dir re-created mid-transaction merges', () async {
       await expectLater(
-        MediaWipe.run([dir], (move) async {
-          await move();
-          expect(dir.existsSync(), isFalse);
-          throw StateError('commit failed');
-        }),
+        wipe(() async {
+          Directory(dir.path).createSync();
+          File('${dir.path}/b.jpg').writeAsStringSync('fresh');
+          File('${dir.path}/a.jpg').writeAsStringSync('newer');
+        }, fail: true),
         throwsStateError,
       );
-      expect(File('${dir.path}/a.jpg').existsSync(), isTrue);
+      expect(File('${dir.path}/b.jpg').readAsStringSync(), 'fresh');
+      expect(File('${dir.path}/a.jpg').readAsStringSync(), 'newer');
+      // The old-only file is merged back, not lost.
+      expect(File('${dir.path}/old.jpg').readAsStringSync(), 'old-only');
+      expect(siblings('.trash-'), isEmpty);
+      expect(await db.readCursor(pendingTrashCursorKey), isNull);
     });
 
-    test('the trash is deleted only after the commit', () async {
-      late Directory trash;
-      await MediaWipe.run([dir], (move) async {
-        await move();
-        trash = media.listSync().whereType<Directory>().firstWhere(
-          (d) => d.path.contains('wipe-me.trash-'),
-        );
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        expect(trash.existsSync(), isTrue);
-      });
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-      expect(trash.existsSync(), isFalse);
+    test('a file/folder conflict keeps the old one as .restore', () async {
+      final trash = Directory('${dir.path}.trash-1')..createSync();
+      File('${trash.path}/x').writeAsStringSync('old-file');
+      Directory('${dir.path}/x').createSync();
+      await MediaWipe.recover(db, [dir]);
+      final parked = siblings('.restore-');
+      expect(parked, hasLength(1));
+      expect(File('${parked.single.path}/x').readAsStringSync(), 'old-file');
+      expect(siblings('.trash-'), isEmpty);
+    });
+
+    test('the record survives db.wipe()', () async {
+      await db.writeCursor(pendingTrashCursorKey, '["x"]');
+      await db.writeCursor('other', 'v');
+      await db.wipe();
+      expect(await db.readCursor(pendingTrashCursorKey), '["x"]');
+      expect(await db.readCursor('other'), isNull);
+    });
+
+    test('recovery started first (non-empty record) then the wipe', () async {
+      final committed = Directory('${dir.path}.trash-5')..createSync();
+      File('${committed.path}/c.jpg').writeAsStringSync('c');
+      await db.writeCursor(pendingTrashCursorKey, jsonEncode([committed.path]));
+      // Recovery holds the lock first; the wipe queues behind it.
+      final recovery = MediaWipe.recover(db, [dir]);
+      final wiping = wipe(() async {});
+      await Future.wait([recovery, wiping]);
+      await MediaWipe.settled();
+      expect(committed.existsSync(), isFalse);
+      expect(dir.existsSync(), isFalse);
+      expect(siblings('.trash-'), isEmpty);
+      expect(await db.readCursor(pendingTrashCursorKey), '[]');
+    });
+
+    test('leftover trash/restore of another account is deleted', () async {
+      final left = Directory('${dir.path}.restore-9')..createSync();
+      File('${left.path}/other-account.jpg').writeAsStringSync('A');
+      await wipe(() async {});
+      await MediaWipe.settled();
+      expect(left.existsSync(), isFalse);
+      // The new account starts empty; recovery restores nothing.
+      await MediaWipe.recover(db, [dir]);
       expect(dir.existsSync(), isFalse);
     });
 
-    test('sweep removes leftover trash siblings', () async {
-      final left = Directory('${dir.path}.trash-123')..createSync();
-      await MediaWipe.sweep([dir]);
-      expect(left.existsSync(), isFalse);
-      expect(dir.existsSync(), isTrue);
+    test(
+      'recover leaves an unreadable record alone, a wipe repairs it',
+      () async {
+        await db.writeCursor(pendingTrashCursorKey, 'not json');
+        await MediaWipe.recover(db, [dir]);
+        expect(await db.readCursor(pendingTrashCursorKey), 'not json');
+        await wipe(() async {});
+        await MediaWipe.settled();
+        expect(dir.existsSync(), isFalse);
+        expect(await db.readCursor(pendingTrashCursorKey), '[]');
+      },
+    );
+
+    test('inside an outer transaction the delete still completes', () async {
+      await db.transaction(() async {
+        await wipe(() async {});
+      });
+      await MediaWipe.settled();
+      expect(siblings('.trash-'), isEmpty);
+      expect(await db.readCursor(pendingTrashCursorKey), '[]');
     });
+
+    test(
+      'two ensureOwner calls at once, with trash already recorded',
+      () async {
+        final committed = Directory('${media.path}.trash-7')..createSync();
+        File('${committed.path}/c.jpg').writeAsStringSync('c');
+        await db.writeCursor(
+          pendingTrashCursorKey,
+          jsonEncode([committed.path]),
+        );
+        final sync = layer.ctx.sync!;
+        await Future.wait([sync.ensureOwner('u-1'), sync.ensureOwner('u-1')]);
+        await MediaWipe.settled();
+        expect(await db.readCursor(ownerCursorKey), 'u-1');
+        expect(File('${dir.path}/a.jpg').existsSync(), isFalse);
+        expect(media.existsSync(), isFalse);
+        expect(committed.existsSync(), isFalse);
+        expect(await db.readCursor(pendingTrashCursorKey), '[]');
+      },
+    );
   });
 
   group('wipeLocal media', () {
@@ -750,17 +858,213 @@ void main() {
       expect(await layer.ctx.outbox!.pendingKeys(), isEmpty);
     });
 
-    test('a transient failure re-queues the merged group edit once', () async {
+    test(
+      'a transient error keeps the merged edit queued and is shown',
+      () async {
+        await queueGroupExtras();
+        var calls = 0;
+        remote.rpcHandlers['update_journey'] = (p) {
+          if (++calls == 1) throw offline; // the flush before the edit
+          // The server may have committed before this error arrived.
+          throw const OurneyException(OurneyErrorCode.unknown, 'boom');
+        };
+        await expectLater(
+          layer.journeys.update(jid, const JourneyUpdate(title: 'Mới')),
+          throwsA(isA<OurneyException>()),
+        );
+        final rows = await layer.ctx.outbox!.pendingRows();
+        // One merged item (stale + the edit); a replay never undoes the edit.
+        // It keeps the key the create-retry check looks for.
+        expect(rows.single.entityKey, '${journeyKey(jid)}:extras');
+        expect(rows.single.payload, contains('"p_color":1'));
+        expect(rows.single.payload, contains('Mới'));
+      },
+    );
+
+    test(
+      'the merged item is queued before the call and dropped after',
+      () async {
+        await queueGroupExtras();
+        var calls = 0;
+        List<OutboxRow>? during;
+        remote.rpcHandlers['update_journey'] = (p) async {
+          if (++calls == 1) throw offline; // the flush before the edit
+          during = await layer.ctx.outbox!.pendingRows();
+          return journeyRow(
+            jid,
+            ownerId: me,
+            kind: 'group',
+            visibility: 'group',
+          )..['title'] = p['p_title'];
+        };
+        await layer.journeys.update(jid, const JourneyUpdate(title: 'Mới'));
+        // A crash mid-call would find exactly one merged item, no stale rows.
+        expect(during, hasLength(1));
+        expect(during!.single.payload, contains('"p_color":1'));
+        expect(during!.single.payload, contains('Mới'));
+        expect(await layer.ctx.outbox!.pendingKeys(), isEmpty);
+      },
+    );
+
+    test('a non-Ourney error restores the stale items', () async {
       await queueGroupExtras();
+      var calls = 0;
+      remote.rpcHandlers['update_journey'] = (p) {
+        if (++calls == 1) throw offline;
+        throw StateError('boom');
+      };
+      await expectLater(
+        layer.journeys.update(jid, const JourneyUpdate(title: 'Mới')),
+        throwsA(isA<StateError>()),
+      );
+      final rows = await layer.ctx.outbox!.pendingRows();
+      expect(rows.single.entityKey, '${journeyKey(jid)}:extras');
+      expect(rows.single.payload, isNot(contains('Mới')));
+    });
+
+    test('a flush during the RPC waits and sends nothing extra', () async {
+      await queueGroupExtras();
+      final gate = Completer<void>();
+      final sent = <Map<String, dynamic>>[];
+      var calls = 0;
+      remote.rpcHandlers['update_journey'] = (p) async {
+        if (++calls == 1) throw offline;
+        sent.add(p);
+        await gate.future;
+        return journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group')
+          ..['title'] = p['p_title'];
+      };
+      final edit = layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Mới'),
+      );
+      while (sent.isEmpty) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      // A flush while the call is in flight must not replay the queue.
+      final blocked = layer.ctx.outbox!.flush(force: true);
+      await Future<void>.delayed(Duration.zero);
+      expect(sent, hasLength(1));
+      gate.complete();
+      await edit;
+      await blocked; // runs after the lock is free
+      expect(sent, hasLength(1));
+    });
+
+    test('concurrent group edits never revert each other', () async {
+      await queueGroupExtras(); // stale extras: color 1
+      var serverColor = 0;
+      remote.rpcHandlers['update_journey'] = (p) async {
+        // The queued extras alone fail (still queued); anything else lands.
+        if (p['p_color'] == 1 && p['p_title'] == null) throw offline;
+        await Future<void>.delayed(Duration.zero);
+        serverColor = (p['p_color'] as int?) ?? serverColor;
+        return journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group')
+          ..['color'] = serverColor;
+      };
+      // A changes the colour, B only the title, at the same time.
+      await Future.wait([
+        layer.journeys.update(jid, const JourneyUpdate(color: 2)),
+        layer.journeys.update(jid, const JourneyUpdate(title: 'Mới')),
+      ]);
+      expect(serverColor, 2);
+      expect(await layer.ctx.outbox!.pendingKeys(), isEmpty);
+    });
+
+    test(
+      'an applied row failing after the RPC keeps the merged item',
+      () async {
+        await queueGroupExtras();
+        var calls = 0;
+        remote.rpcHandlers['update_journey'] = (p) {
+          if (++calls == 1) throw offline;
+          return {'id': jid}; // answered, but not a usable row
+        };
+        Object? thrown;
+        try {
+          await layer.journeys.update(jid, const JourneyUpdate(title: 'Mới'));
+        } on Object catch (e) {
+          thrown = e;
+        }
+        expect(thrown, isNotNull);
+        final rows = await layer.ctx.outbox!.pendingRows();
+        // The merged item stays; the original stale (colour only) is not back.
+        expect(rows, hasLength(1));
+        expect(rows.single.payload, contains('Mới'));
+        expect(rows.single.payload, contains('"p_color":1'));
+      },
+    );
+
+    test('a stalled group RPC times out and keeps the merged item', () async {
+      await queueGroupExtras();
+      DataJourneyRepository.groupUpdateTimeout = const Duration(
+        milliseconds: 50,
+      );
+      addTearDown(
+        () => DataJourneyRepository.groupUpdateTimeout = const Duration(
+          seconds: 20,
+        ),
+      );
+      var calls = 0;
+      remote.rpcHandlers['update_journey'] = (p) async {
+        if (++calls == 1) throw offline;
+        await Completer<void>().future; // never answers
+        return null;
+      };
       await expectLater(
         layer.journeys.update(jid, const JourneyUpdate(title: 'Mới')),
         throwsA(isA<OurneyException>()),
       );
-      final keys = await layer.ctx.outbox!.pendingKeys();
-      expect(keys, {'${journeyKey(jid)}:edit'});
       final rows = await layer.ctx.outbox!.pendingRows();
-      expect(rows.single.payload, contains('"p_color":1'));
       expect(rows.single.payload, contains('Mới'));
+    });
+
+    test('wipeLocal waits behind a held exclusive', () async {
+      final gate = Completer<void>();
+      final held = layer.ctx.outbox!.exclusive(() => gate.future);
+      var wiped = false;
+      final wipe = layer.ctx.wipeLocal().then((_) => wiped = true);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(wiped, isFalse);
+      gate.complete();
+      await held;
+      await wipe;
+      expect(wiped, isTrue);
+    });
+
+    test('sign-out flush completes after the lock is released', () async {
+      final gate = Completer<void>();
+      final held = layer.ctx.outbox!.exclusive(() => gate.future);
+      final out = layer.auth.signOut();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(remote.callsOf('signOut'), isEmpty);
+      gate.complete();
+      await held;
+      await out;
+      expect(remote.callsOf('signOut').single.target, 'global');
+    });
+
+    test('a bad stale item does not fail a valid edit', () async {
+      await queueGroupExtras();
+      final sent = <Map<String, dynamic>>[];
+      remote.rpcHandlers['update_journey'] = (p) {
+        sent.add(p);
+        if (sent.length == 1) throw offline; // the flush before the edit
+        if (p['p_color'] != null) {
+          throw const OurneyException(OurneyErrorCode.invalid);
+        }
+        return journeyRow(jid, ownerId: me, kind: 'group', visibility: 'group')
+          ..['title'] = p['p_title'];
+      };
+      final j = await layer.journeys.update(
+        jid,
+        const JourneyUpdate(title: 'Mới'),
+      );
+      expect(j.title, 'Mới');
+      expect(sent, hasLength(3));
+      // The bad item is back in the queue as it was.
+      final rows = await layer.ctx.outbox!.pendingRows();
+      expect(rows.single.entityKey, '${journeyKey(jid)}:extras');
     });
 
     test('end is refused with syncPending while an upload is queued', () async {

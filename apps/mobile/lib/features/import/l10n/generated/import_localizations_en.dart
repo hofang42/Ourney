@@ -10,13 +10,209 @@ class ImportL10nEn extends ImportL10n {
   ImportL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get import_headerTitle => 'import a past journey.';
+  String get import_headerTitle => 'Retell a past journey';
 
   @override
   String get import_back => 'Back';
 
   @override
-  String get import_setupTitle => 'Pick a type and layout.';
+  String import_stepOf(int n) {
+    return 'Step $n of 3';
+  }
+
+  @override
+  String get import_photosTitle => 'Choose your photos.';
+
+  @override
+  String get import_photosIntro =>
+      'Pick the photos of the journey you want to retell. Ourney reads the date each photo was taken to place it on the timeline.';
+
+  @override
+  String get import_openLibrary => 'Open photo library';
+
+  @override
+  String get import_addMore => 'Add photos';
+
+  @override
+  String get import_libraryEmptyTitle => 'No photos yet';
+
+  @override
+  String get import_libraryEmptyBody =>
+      'Pick old photos from your library to rebuild the journey.';
+
+  @override
+  String import_selectedCount(int selected, int total) {
+    return '$selected of $total selected';
+  }
+
+  @override
+  String get import_selectAll => 'Select all';
+
+  @override
+  String get import_selectNone => 'Select none';
+
+  @override
+  String import_selectPhoto(String date) {
+    return 'Select photo $date';
+  }
+
+  @override
+  String import_deselectPhoto(String date) {
+    return 'Deselect photo $date';
+  }
+
+  @override
+  String import_nextTimeline(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos',
+      one: '1 photo',
+    );
+    return 'Next · $_temp0';
+  }
+
+  @override
+  String import_pickLimit(int max) {
+    return 'A journey takes up to $max photos. The extra photos were left out.';
+  }
+
+  @override
+  String import_duplicatesSkipped(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count duplicate photos were skipped',
+      one: '1 duplicate photo was skipped',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get import_pickFailed => 'Could not open the photo library.';
+
+  @override
+  String import_maxReached(int max) {
+    return 'You have reached $max photos.';
+  }
+
+  @override
+  String get import_timelineTitle => 'Check the timeline.';
+
+  @override
+  String get import_timelineIntro =>
+      'Dates come from the photos. Tap a photo to change its date.';
+
+  @override
+  String import_rangeLine(String range, String days) {
+    return '$range · $days';
+  }
+
+  @override
+  String import_days(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String import_dayLabel(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String import_dayCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos',
+      one: '1 photo',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String import_gapRow(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days with no photos',
+      one: '1 day with no photos',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get import_undatedTitle => 'No date yet';
+
+  @override
+  String get import_undatedBody =>
+      'Give these photos a date, or remove them, to go on.';
+
+  @override
+  String get import_setDateAllUndated => 'Set a date for all';
+
+  @override
+  String import_editDate(String date) {
+    return 'Change the date of this photo, now $date';
+  }
+
+  @override
+  String get import_noDate => 'No date';
+
+  @override
+  String get import_selectMode => 'Select';
+
+  @override
+  String get import_selectDone => 'Done';
+
+  @override
+  String import_bulkSetDate(int count) {
+    return 'Set date · $count';
+  }
+
+  @override
+  String import_bulkRemove(int count) {
+    return 'Remove · $count';
+  }
+
+  @override
+  String get import_removePhoto => 'Remove photo';
+
+  @override
+  String get import_sourceExif => 'Date taken';
+
+  @override
+  String get import_sourceFile => 'File date';
+
+  @override
+  String get import_sourceManual => 'Set by you';
+
+  @override
+  String get import_errorRange =>
+      'A journey can last at most 366 days. Change some dates or remove photos.';
+
+  @override
+  String get import_next => 'Next';
+
+  @override
+  String get import_detailsTitle => 'Name your journey.';
+
+  @override
+  String get import_nameLabel => 'Name or place';
+
+  @override
+  String get import_nameHint => 'A past journey';
+
+  @override
+  String get import_errorTitle => 'Enter a name for the journey.';
+
+  @override
+  String get import_typeHeading => 'Type';
 
   @override
   String get import_type_weight => 'Weight loss';
@@ -28,19 +224,10 @@ class ImportL10nEn extends ImportL10n {
   String get import_type_trip => 'Trip';
 
   @override
-  String get import_type_couple => 'Couple';
-
-  @override
   String get import_type_workout => 'Workout';
 
   @override
   String get import_type_custom => 'Custom';
-
-  @override
-  String get import_placeLabel => 'Name or place';
-
-  @override
-  String get import_placeHint => 'A past journey';
 
   @override
   String get import_layoutHeading => 'Layout';
@@ -59,7 +246,7 @@ class ImportL10nEn extends ImportL10n {
 
   @override
   String get import_layoutNote =>
-      'Some layouts need more data, so they are hidden.';
+      'Some layouts need more data, so they only show for the type that uses them.';
 
   @override
   String get import_previewLabel => 'PREVIEW';
@@ -68,99 +255,40 @@ class ImportL10nEn extends ImportL10n {
   String get import_previewHud => 'Camera HUD';
 
   @override
-  String get import_pickOld => 'Choose old photos';
+  String get import_continueTitle => 'Still going?';
 
   @override
-  String get import_libraryTitle => 'Choose old photos.';
+  String get import_continueBody =>
+      'Keeps the journey open so you can add new photos. The streak starts from your first live photo; retold photos do not count.';
 
   @override
-  String get import_libraryIntro =>
-      'Pick several photos. Ourney reads the date taken to place them in the journey.';
+  String get import_privacyNote =>
+      'Only you can see this journey until you share it. Hiding weight and blurring photos on share follow your Settings.';
 
   @override
-  String get import_openLibrary => 'Open photo library';
+  String get import_save => 'Save journey';
 
   @override
-  String get import_addMore => 'Add photos';
-
-  @override
-  String get import_libraryEmptyTitle => 'No photos yet';
-
-  @override
-  String get import_libraryEmptyBody =>
-      'Pick old photos from your library to rebuild the journey.';
-
-  @override
-  String get import_noDate => 'No date';
-
-  @override
-  String import_selectPhoto(String date) {
-    return 'Select photo $date';
-  }
-
-  @override
-  String import_deselectPhoto(String date) {
-    return 'Deselect photo $date';
-  }
-
-  @override
-  String import_reviewButton(int count) {
+  String import_summaryLine(int count, String range) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
       other: '$count photos',
       one: '1 photo',
     );
-    return 'Review $_temp0';
+    return '$_temp0 · $range';
   }
 
   @override
-  String get import_reviewTitle => 'Review on the timeline.';
+  String get import_savingTitle => 'Saving your journey.';
 
   @override
-  String import_dayLabel(int day) {
-    return 'Day $day';
+  String import_preparing(int done, int total) {
+    return 'Preparing your photos… $done/$total';
   }
 
   @override
-  String get import_noPhotos => 'No photo yet';
-
-  @override
-  String import_fromLibrary(String date) {
-    return '$date · from library';
-  }
-
-  @override
-  String get import_extraInDay => 'extra photo that day';
-
-  @override
-  String get import_undatedTitle => 'No date yet';
-
-  @override
-  String get import_assignDate => 'Set date';
-
-  @override
-  String get import_drop => 'Remove';
-
-  @override
-  String get import_startLabel => 'Start';
-
-  @override
-  String get import_endLabel => 'End';
-
-  @override
-  String get import_continueTitle => 'Keep shooting';
-
-  @override
-  String get import_continueBody =>
-      'The streak starts from the first real photo; imported photos do not count.';
-
-  @override
-  String get import_privateNote =>
-      'Weight stays hidden and photos stay blurred when shared.';
-
-  @override
-  String get import_save => 'Save journey';
+  String get import_creating => 'Creating the journey…';
 
   @override
   String import_saving(int done, int total) {
@@ -168,50 +296,145 @@ class ImportL10nEn extends ImportL10n {
   }
 
   @override
-  String import_failed(int count) {
+  String get import_pause => 'Pause';
+
+  @override
+  String get import_pauseHint =>
+      'You can pause. The photos left stay on this device until you continue.';
+
+  @override
+  String get import_pausedTitle => 'Paused.';
+
+  @override
+  String get import_pausedBody =>
+      'Saving is paused. The photos left stay on this device until you continue.';
+
+  @override
+  String get import_resume => 'Continue saving';
+
+  @override
+  String get import_partialTitle => 'Some photos are not saved.';
+
+  @override
+  String get import_dateSheetTitle => 'Pick a date';
+
+  @override
+  String get import_dateDay => 'Day';
+
+  @override
+  String get import_dateMonth => 'Month';
+
+  @override
+  String get import_dateYear => 'Year';
+
+  @override
+  String get import_dateCancel => 'Cancel';
+
+  @override
+  String get import_createMaybeLanded =>
+      'The journey may already have been created. Try again to finish it, or leave: your photos stay on this device and saving continues later.';
+
+  @override
+  String get import_abandon => 'Discard this journey';
+
+  @override
+  String get import_abandonTitle => 'Discard this journey?';
+
+  @override
+  String get import_abandonBody =>
+      'Nothing more will be saved and the photos kept on this device are deleted. The journey may still appear in your list, empty.';
+
+  @override
+  String get import_abandonConfirm => 'Discard';
+
+  @override
+  String get import_signedOutTitle => 'Signed out.';
+
+  @override
+  String get import_signedOutBody =>
+      'Sign in again to keep saving. Your photos stay on this device.';
+
+  @override
+  String get import_dateConfirm => 'Use this date';
+
+  @override
+  String get import_cancelling => 'Stopping…';
+
+  @override
+  String get import_photoPending => 'Waiting';
+
+  @override
+  String get import_photoSaved => 'Saved';
+
+  @override
+  String get import_photoFailed => 'Not saved';
+
+  @override
+  String get import_reason_unreadable => 'The file cannot be read any more';
+
+  @override
+  String get import_reason_offline => 'No connection';
+
+  @override
+  String get import_reason_badDate => 'The date does not fit the journey';
+
+  @override
+  String get import_reason_unknown => 'Something went wrong';
+
+  @override
+  String get import_doneTitle => 'Done.';
+
+  @override
+  String import_savedSummary(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count photos could not be saved',
-      one: '1 photo could not be saved',
+      other: '$count photos saved',
+      one: '1 photo saved',
     );
     return '$_temp0';
   }
 
   @override
-  String get import_retry => 'Try again';
+  String import_notSaved(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos not saved',
+      one: '1 photo not saved',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get import_openJourney => 'Open journey';
 
   @override
-  String get import_errorNoPhotos => 'Pick at least one photo with a date.';
+  String get import_retryFailed => 'Retry failed photos';
 
   @override
-  String get import_errorUndated =>
-      'Set a date for, or remove, the undated photos.';
+  String get import_leaveRest => 'Leave the rest out';
 
   @override
-  String get import_errorTitle => 'Enter a name or place.';
+  String get import_tryAgain => 'Try again';
 
   @override
-  String get import_errorOutside =>
-      'Some photos fall outside the chosen dates.';
+  String get import_editDetails => 'Edit details';
 
   @override
-  String get import_errorFuture => 'The end date cannot be in the future.';
+  String get import_errorInvalid =>
+      'The journey details were refused. Check the name and the dates.';
 
   @override
-  String get import_errorRange => 'A journey can last at most 366 days.';
+  String get import_discardTitle => 'Leave without saving?';
 
   @override
-  String get import_errorGeneric => 'Could not save the journey. Try again.';
+  String get import_discardBody =>
+      'The copies Ourney keeps on this device will be deleted (photos in your library stay).';
 
   @override
-  String get import_pickFailed => 'Could not open the photo library.';
+  String get import_discardConfirm => 'Leave';
 
   @override
-  String import_failedWithReason(int count, String reason) {
-    return '$count photos could not be saved ($reason)';
-  }
+  String get import_discardKeep => 'Keep going';
 }

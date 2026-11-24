@@ -8,6 +8,7 @@ import '../data_context.dart';
 import '../db/app_database.dart';
 import '../local_store.dart';
 import '../mapping.dart';
+import '../remote/remote_api.dart';
 import '../sync/outbox.dart';
 
 class DataJourneyRepository implements JourneyRepository {
@@ -235,6 +236,10 @@ class DataJourneyRepository implements JourneyRepository {
     }
   }
 
+  /// Client timeout of the group `update_journey` call made under the outbox
+  /// lock.
+  static Duration groupUpdateTimeout = const Duration(seconds: 20);
+
   static const Duration _extrasReplayDelay = Duration(seconds: 30);
 
   /// Puts the create-flow columns back to what [row] held (rejected extras),
@@ -353,43 +358,27 @@ class DataJourneyRepository implements JourneyRepository {
           !group &&
           outboxForEdit != null &&
           await _hasPendingFor(outboxForEdit, journeyId);
-      // A queued extras/edit of a group journey would replay after (and
-      // overwrite) this edit: take it out and merge it under the new values.
-      final stale = group && outboxForEdit != null
-          ? await _takeQueuedUpdates(outboxForEdit, journeyId)
-          : const <_QueuedUpdate>[];
-      var params = updateJourneyParams(journeyId, update);
-      for (final q in stale.reversed) {
-        params = _mergeUpdateParams(q.params, params);
-      }
-      try {
-        if (blocked) throw const OurneyException(OurneyErrorCode.offline);
-        final res = await remote.rpc('update_journey', params);
-        if (res is Map) {
-          await ctx.store.applyJourney(res.cast<String, dynamic>());
-          return journeyFromRow(await _requireLocal(journeyId));
-        }
-      } on OurneyException catch (e) {
-        if (stale.isNotEmpty) {
-          // Transient: one merged item replays later; otherwise the taken
-          // items go back as they were.
-          if (isTransient(e.error)) {
-            await outboxForEdit!.enqueue(
-              OutboxKind.updateJourney,
-              '${journeyKey(journeyId)}:edit',
-              params,
-            );
-          } else {
-            for (final q in stale) {
-              await outboxForEdit!.enqueue(
-                OutboxKind.updateJourney,
-                q.key,
-                q.params,
-              );
-            }
+      if (group && outboxForEdit != null) {
+        // A queued extras/edit of a group journey would replay after (and
+        // overwrite) this edit: merge it under the new values.
+        final done = await outboxForEdit.exclusive(
+          () => _groupUpdate(remote, outboxForEdit, journeyId, update),
+        );
+        if (done != null) return done;
+      } else {
+        try {
+          if (blocked) throw const OurneyException(OurneyErrorCode.offline);
+          final res = await remote.rpc(
+            'update_journey',
+            updateJourneyParams(journeyId, update),
+          );
+          if (res is Map) {
+            await ctx.store.applyJourney(res.cast<String, dynamic>());
+            return journeyFromRow(await _requireLocal(journeyId));
           }
+        } on OurneyException catch (e) {
+          if (e.error != OurneyErrorCode.offline || group) rethrow;
         }
-        if (e.error != OurneyErrorCode.offline || group) rethrow;
       }
     } else if (group) {
       ctx.requireRemote();
@@ -408,32 +397,94 @@ class DataJourneyRepository implements JourneyRepository {
     return journeyFromRow(await _requireLocal(journeyId));
   }
 
-  /// Removes and returns the live queued `:extras` / `:edit` items of
-  /// [journeyId] (oldest first).
-  Future<List<_QueuedUpdate>> _takeQueuedUpdates(
+  /// Group `update_journey` with the journey's queued `:extras` / `:edit`
+  /// merged under [update]. Runs inside [Outbox.exclusive].
+  ///
+  /// Known race (accepted): a call that timed out client side may still land
+  /// on the server after a newer edit and overwrite it; no server change. Crash safe: the
+  /// merged item is queued (not delayed: nothing flushes while the lock is
+  /// held, and a delayed head would block the queue after a crash) in the same
+  /// transaction that removes the stale rows, and dropped once the RPC
+  /// succeeded. A transient failure leaves it queued (the server may have
+  /// committed before the error: replay is harmless and never undoes the
+  /// edit); the user still gets the error.
+  ///
+  /// Returns null when the server answered without a row (caller falls back
+  /// to the local write).
+  Future<Journey?> _groupUpdate(
+    RemoteApi remote,
     Outbox outbox,
     String journeyId,
+    JourneyUpdate update,
   ) async {
-    final keys = [
-      '${journeyKey(journeyId)}:extras',
-      '${journeyKey(journeyId)}:edit',
-    ];
-    final taken = <_QueuedUpdate>[];
-    for (final row in await outbox.pendingRows()) {
-      if (row.kind == OutboxKind.updateJourney.wire &&
-          keys.contains(row.entityKey)) {
-        taken.add(
+    final editKey = '${journeyKey(journeyId)}:edit';
+    final extrasKey = '${journeyKey(journeyId)}:extras';
+    final keys = {extrasKey, editKey};
+    final stale = <_QueuedUpdate>[
+      for (final row in await outbox.pendingRows())
+        if (row.kind == OutboxKind.updateJourney.wire &&
+            keys.contains(row.entityKey))
           _QueuedUpdate(
+            row.id,
             row.entityKey,
             (jsonDecode(row.payload) as Map).cast<String, dynamic>(),
           ),
-        );
-      }
+    ];
+    final own = updateJourneyParams(journeyId, update);
+
+    // Set once the server answered: from then on nothing is restored.
+    var sent = false;
+    Future<Journey?> send(Map<String, dynamic> params) async {
+      // A stalled call must not hold the outbox lock (and with it sign-out)
+      // for ever: a timeout counts as offline, the merged item stays queued.
+      final res = await remote
+          .rpc('update_journey', params)
+          .timeout(
+            groupUpdateTimeout,
+            onTimeout: () => throw const OurneyException(
+              OurneyErrorCode.offline,
+              'update_journey timed out',
+            ),
+          );
+      sent = true;
+      if (res is! Map) return null;
+      await ctx.store.applyJourney(res.cast<String, dynamic>());
+      return journeyFromRow(await _requireLocal(journeyId));
     }
-    for (final k in keys) {
-      await outbox.cancel(k, kind: OutboxKind.updateJourney);
+
+    if (stale.isEmpty) return send(own);
+
+    var staleMerged = stale.first.params;
+    for (final q in stale.skip(1)) {
+      staleMerged = _mergeUpdateParams(staleMerged, q.params);
     }
-    return taken;
+    final merged = _mergeUpdateParams(staleMerged, own);
+    final staleIds = [for (final q in stale) q.id];
+    // The key `_ensureExtras` looks for survives the merge.
+    final key = stale.any((q) => q.key == extrasKey) ? extrasKey : editKey;
+    final mergedId = await _db.transaction(() async {
+      final id = await outbox.enqueue(OutboxKind.updateJourney, key, merged);
+      await outbox.deleteItems(staleIds);
+      return id;
+    });
+    try {
+      final done = await send(merged);
+      await outbox.deleteItems([mergedId]);
+      return done;
+    } on Object catch (e) {
+      // The server answered (then applying or dropping failed) or may have
+      // committed before a transient error: keep the merged item queued.
+      if (sent || (e is OurneyException && isTransient(e.error))) rethrow;
+      await _db.transaction(() async {
+        await outbox.deleteItems([mergedId]);
+        for (final q in stale) {
+          await outbox.enqueue(OutboxKind.updateJourney, q.key, q.params);
+        }
+      });
+      if (e is! OurneyException) rethrow;
+      // A bad queued item must not make a valid edit fail: try it alone.
+      return send(own);
+    }
   }
 
   static const _fieldOfParam = {
@@ -759,7 +810,8 @@ class DataJourneyRepository implements JourneyRepository {
 }
 
 class _QueuedUpdate {
-  const _QueuedUpdate(this.key, this.params);
+  const _QueuedUpdate(this.id, this.key, this.params);
+  final int id;
   final String key;
   final Map<String, dynamic> params;
 }

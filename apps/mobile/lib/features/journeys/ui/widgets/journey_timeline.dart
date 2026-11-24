@@ -1,13 +1,19 @@
 import 'package:flutter/widgets.dart';
 
 import '../../domain/journey_progress.dart';
+import '../../domain/timeline_window.dart';
 import '../journey_style.dart';
+import 'timeline_cards.dart';
 import 'timeline_variants.dart';
 
 /// The journey detail timeline in the variant of [skinId] (`quiet`, `squad`,
 /// `memory`, `couple`, `flexer`, `minimal`; V2 skin ids). Every variant keeps
 /// the `journey-timeline` key, one `day-<date>` node per day and opens
 /// [onTapDay] for checked-in days. Colors come from the `UiSkinScope` above.
+///
+/// Long journeys pass the Recent [window] (and the whole-journey [summary]):
+/// [days] is then only the window, with an "Earlier" link above it and the
+/// finish card below.
 class JourneyTimeline extends StatelessWidget {
   const JourneyTimeline({
     required this.skinId,
@@ -17,6 +23,11 @@ class JourneyTimeline extends StatelessWidget {
     this.selfName,
     this.partnerName,
     this.showOfflineStamps = false,
+    this.summary,
+    this.window,
+    this.onOpenEarlier,
+    this.rangeShort,
+    this.onRangeChanged,
     super.key,
   });
 
@@ -32,16 +43,47 @@ class JourneyTimeline extends StatelessWidget {
   final JourneyPalette pal;
   final ValueChanged<TimelineDay> onTapDay;
 
+  /// Whole-journey curves and totals (long journeys).
+  final TimelineSummary? summary;
+
+  /// The Recent window (long journeys).
+  final TimelineWindow? window;
+
+  /// Switches to the By month archive at the month before the window.
+  final VoidCallback? onOpenEarlier;
+
+  /// Quiet curve range kept by the screen (null: the widget keeps it).
+  final bool? rangeShort;
+  final ValueChanged<bool>? onRangeChanged;
+
   @override
   Widget build(BuildContext context) {
-    if (days.isEmpty) return const SizedBox.shrink();
-    return switch (skinId) {
-      'quiet' => QuietTimeline(days: days, onTapDay: onTapDay),
-      'squad' => SquadTimeline(days: days, onTapDay: onTapDay),
+    if (days.isEmpty) {
+      // Nothing to list, but the finish card still tells the way.
+      final w = window;
+      return w != null && w.hasEndCap
+          ? TimelineEndCap(window: w)
+          : const SizedBox.shrink();
+    }
+    final core = switch (skinId) {
+      'quiet' => QuietTimeline(
+        days: days,
+        onTapDay: onTapDay,
+        summary: summary,
+        short: rangeShort,
+        onShortChanged: onRangeChanged,
+      ),
+      'squad' => SquadTimeline(
+        days: days,
+        onTapDay: onTapDay,
+        window: window,
+        onOpenEarlier: onOpenEarlier,
+      ),
       'memory' => MemoryTimeline(
         days: days,
         onTapDay: onTapDay,
         showOfflineStamps: showOfflineStamps,
+        summary: summary,
       ),
       'couple' => CoupleTimeline(
         days: days,
@@ -49,8 +91,23 @@ class JourneyTimeline extends StatelessWidget {
         selfName: selfName,
         partnerName: partnerName,
       ),
-      'flexer' => FlexerTimeline(days: days, onTapDay: onTapDay),
+      'flexer' => FlexerTimeline(
+        days: days,
+        onTapDay: onTapDay,
+        summary: summary,
+      ),
       _ => MinimalTimeline(days: days, onTapDay: onTapDay),
     };
+    final w = window;
+    if (w == null) return core;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (w.hasEarlier && skinId != 'squad' && onOpenEarlier != null)
+          TimelineEarlierLink(window: w, onPressed: onOpenEarlier!),
+        core,
+        if (w.hasEndCap) TimelineEndCap(window: w),
+      ],
+    );
   }
 }
