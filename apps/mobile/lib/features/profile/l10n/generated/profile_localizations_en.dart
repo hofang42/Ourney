@@ -293,6 +293,13 @@ class ProfileL10nEn extends ProfileL10n {
       'Per-journey times and the streak-saver alert';
 
   @override
+  String get profile_settings_widgetsRow => 'Widgets & Live Activities';
+
+  @override
+  String get profile_settings_widgetsSub =>
+      'Home Screen widgets, Lock Screen widgets, and evening countdown';
+
+  @override
   String get profile_settings_themeLight => 'Light';
 
   @override

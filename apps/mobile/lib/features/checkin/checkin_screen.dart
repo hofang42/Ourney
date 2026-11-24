@@ -17,6 +17,7 @@ import '../../ui/ui.dart';
 import '../camera/capture_services.dart' show galleryPickerProvider;
 import '../reminders/data/reminder_scheduler.dart';
 import '../reminders/ui/reminder_permission_prompt.dart';
+import '../widgets/data/widget_sync_controller.dart' show syncWidgetsNow;
 import 'captured_photo.dart';
 import 'checkin_controller.dart';
 import 'checkin_progress.dart';
@@ -267,6 +268,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
       if (!mounted) return;
       // Today is done: skip its reminder, move the 21:00 alert (FR-G1/G2).
       unawaited(rescheduleReminders(ref));
+      unawaited(syncWidgetsNow(ref));
       // V2: the first check-in offers notifications once, so the 21:00
       // streak alert (on by default) can reach the person (bug #7).
       final offer = offerReminderPermission(

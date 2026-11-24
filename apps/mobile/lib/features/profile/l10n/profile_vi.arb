@@ -357,6 +357,8 @@
   "profile_settings_secReminders": "nhắc nhở",
   "profile_settings_remindersRow": "Nhắc nhở hằng ngày",
   "profile_settings_remindersSub": "Giờ nhắc từng hành trình và báo trước khi chuỗi đứt",
+  "profile_settings_widgetsRow": "Tiện ích & Live Activity",
+  "profile_settings_widgetsSub": "Tiện ích màn hình chính, màn hình khóa và đếm ngược cuối ngày",
   "profile_settings_themeLight": "Sáng",
   "profile_settings_themeDark": "Tối",
   "profile_settings_themeSystem": "Theo máy",
