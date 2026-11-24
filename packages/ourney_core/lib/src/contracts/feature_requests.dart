@@ -23,7 +23,7 @@ const int featureRequestPageSize = 30;
 
 /// Matches raw URLs rejected by the `0024` trigger (`links_not_allowed`).
 final RegExp _disallowedUrlPattern = RegExp(
-  r'(?:https?://|www\.[a-z0-9-]+|\b[a-z0-9-]+\.(?:com|net|org|io|vn|xyz|me|app|gg)/)',
+  r'(?:https?://|www\.[a-z0-9-]+|\b[a-z0-9-]+\.(?:com|net|org|io|vn|xyz|me|app|gg)(?:[/?#]|\b))',
   caseSensitive: false,
 );
 
