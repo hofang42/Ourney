@@ -492,7 +492,7 @@ class _BoardBody extends ConsumerWidget {
             ),
           ),
         Expanded(
-          child: data.items.isEmpty
+          child: data.items.isEmpty && !data.hasMore
               ? UiFillScroll(child: _buildEmpty(l10n, query))
               : ListView.separated(
                   key: const ValueKey('feedback-list'),
