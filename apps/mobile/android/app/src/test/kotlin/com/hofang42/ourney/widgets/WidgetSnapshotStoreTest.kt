@@ -178,6 +178,21 @@ class WidgetSnapshotStoreTest {
         val ielts = snapshot.journeys.first { it.id == "6f8c9a10-0001" }
         assertTrue("Unchecked streak after 21:00 must escalate to atRisk", ielts.atRisk)
         assertTrue(ielts.isEveningCueActive(at2105Utc))
+        assertTrue(ielts.isStreakAlertActive(at2105Utc))
+
+        // Before 18:00 local (10:00 UTC), neither evening cue nor 21:00 streak alert is active
+        val at1700Local = Instant.parse("2026-11-24T10:00:00.000Z").toEpochMilli()
+        val morningSnapshot = store.readSnapshot(at1700Local)!!
+        val morningIelts = morningSnapshot.journeys.first { it.id == "6f8c9a10-0001" }
+        assertFalse(morningIelts.isEveningCueActive(at1700Local))
+        assertFalse(morningIelts.isStreakAlertActive(at1700Local))
+
+        // Between 18:00 and 21:00 local (12:00 UTC = 19:00 local), evening cue is active but streak alert is not
+        val at1900Local = Instant.parse("2026-11-24T12:00:00.000Z").toEpochMilli()
+        val eveningSnapshot = store.readSnapshot(at1900Local)!!
+        val eveningIelts = eveningSnapshot.journeys.first { it.id == "6f8c9a10-0001" }
+        assertTrue(eveningIelts.isEveningCueActive(at1900Local))
+        assertFalse(eveningIelts.isStreakAlertActive(at1900Local))
     }
 
     @Test
@@ -196,7 +211,9 @@ class WidgetSnapshotStoreTest {
         assertFalse(missedJourney.checkedInToday)
         assertFalse(missedJourney.atRisk)
         assertEquals("missed", missedJourney.weekStrip[5].state)
+        assertEquals("T3", missedJourney.weekStrip[5].label)
         assertEquals("today", missedJourney.weekStrip[6].state)
+        assertEquals("HN", missedJourney.weekStrip[6].label)
 
         // Journey 2 (Running) WAS checked in before midnight -> streak 10 survives, unchecked for new day
         val survivedJourney = rolled.journeys.first { it.id == "6f8c9a10-0002" }
@@ -204,8 +221,11 @@ class WidgetSnapshotStoreTest {
         assertEquals(10, survivedJourney.currentStreak)
         assertFalse(survivedJourney.checkedInToday)
         assertTrue(survivedJourney.atRisk)
+        assertFalse("00:05 morning should stay calm before 21:00", survivedJourney.isStreakAlertActive(postMidnightUtc))
         assertEquals("done", survivedJourney.weekStrip[5].state)
+        assertEquals("T3", survivedJourney.weekStrip[5].label)
         assertEquals("today", survivedJourney.weekStrip[6].state)
+        assertEquals("HN", survivedJourney.weekStrip[6].label)
 
         // Squad resets daily counts and clears stale todayThumbFile after midnight
         val squad = rolled.squads.first()
@@ -262,11 +282,37 @@ class WidgetSnapshotStoreTest {
                     maxSide = 320,
                     blur = false,
                 ),
+                ThumbSpec(
+                    id = "77d21f0091ab34ef.jpg",
+                    sourcePath = srcThumb.absolutePath,
+                    maxSide = 160,
+                    blur = true,
+                ),
             ),
             referencedRelPaths = rolled.referencedThumbPaths(),
         )
         assertFalse("Orphan thumb must be swept", orphanFile.exists())
         assertNotNull(store.resolveThumbFile("thumbs/a91f4c82b011e3d4.jpg"))
+        assertNull(
+            "When blur=true and BitmapFactory cannot decode/blur, must fail closed and not copy raw unblurred file",
+            store.resolveThumbFile("thumbs/77d21f0091ab34ef.jpg"),
+        )
+
+        // Verify WidgetLiveWindow.fromMap handles both flat and nested liveWindow maps
+        val nestedWindow = WidgetLiveWindow.fromMap(
+            mapOf(
+                "liveWindow" to mapOf(
+                    "windowKey" to "2026-11-24:6f8c9a10-0001",
+                    "journeyId" to "6f8c9a10-0001",
+                    "journeyTitle" to "IELTS",
+                    "deadlineUtc" to "2026-11-24T17:00:00.000Z",
+                    "pendingCount" to 1,
+                ),
+                "celebrateAndDismiss" to true,
+            ),
+        )
+        assertEquals("6f8c9a10-0001", nestedWindow.journeyId)
+        assertTrue(nestedWindow.celebrateAndDismiss)
 
         // ClearAll wipes snapshot, state, and thumbs
         assertTrue(store.clearAll())

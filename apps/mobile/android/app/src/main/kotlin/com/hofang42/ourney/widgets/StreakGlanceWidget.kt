@@ -61,7 +61,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
                 context = context,
                 streakCount = it.currentStreak,
                 palette = palette,
-                atRisk = it.atRisk && !it.checkedInToday,
+                atRisk = it.isStreakAlertActive(nowMs),
                 checkedInToday = it.checkedInToday,
                 compact = false,
             )
@@ -91,6 +91,7 @@ class StreakGlanceWidget : GlanceAppWidget() {
                     l10n = l10n,
                     journey = journey,
                     palette = palette,
+                    nowMs = nowMs,
                     heroBitmap = heroBitmap,
                     weekBitmap = weekBitmap,
                 )
@@ -104,10 +105,11 @@ class StreakGlanceWidget : GlanceAppWidget() {
         l10n: Context,
         journey: WidgetJourneyItem,
         palette: OurneyWidgetPalette,
+        nowMs: Long,
         heroBitmap: android.graphics.Bitmap?,
         weekBitmap: android.graphics.Bitmap?,
     ) {
-        val urgent = journey.atRisk && !journey.checkedInToday
+        val urgent = journey.isStreakAlertActive(nowMs)
         val tapAction = if (journey.checkedInToday) {
             WidgetActions.journeyDetailAction(context, journey.id)
         } else {

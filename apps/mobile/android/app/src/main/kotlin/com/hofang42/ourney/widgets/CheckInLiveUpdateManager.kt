@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.drawable.Icon
 import android.os.Build
+import android.os.Bundle
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
@@ -31,6 +32,8 @@ object CheckInLiveUpdateManager {
 
     const val NOTIFICATION_ID = 42000
     const val CHANNEL_ID = "checkin_window_live"
+    const val EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing"
+    const val EXTRA_SHORT_CRITICAL_TEXT = "android.shortCriticalText"
 
     fun canPostPromotedLiveUpdates(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < 36) return false
@@ -126,8 +129,8 @@ object CheckInLiveUpdateManager {
         ensureSilentChannel(nm, l10n)
 
         val deadlineMs = WidgetSnapshot.parseIsoEpochMs(window.deadlineUtc) ?: return
-        val remainingMs = (deadlineMs - nowEpochMs).coerceAtLeast(60_000L)
-        val remainingMinutes = (remainingMs / 60_000L).coerceAtLeast(1L)
+        val timeoutAfterMs = (deadlineMs - nowEpochMs).coerceAtLeast(1_000L)
+        val remainingMinutes = ((deadlineMs - nowEpochMs).coerceAtLeast(60_000L) / 60_000L).coerceAtLeast(1L)
         val rawChipText = if (remainingMinutes >= 60L) {
             l10n.getString(R.string.widget_live_chip_hours, (remainingMinutes / 60L).toInt())
         } else {
@@ -157,7 +160,7 @@ object CheckInLiveUpdateManager {
                 snapLabel = snapLabel,
                 dismissLabel = dismissLabel,
                 deadlineMs = deadlineMs,
-                remainingMs = remainingMs,
+                remainingMs = timeoutAfterMs,
                 redactLockScreenTitles = redactLockScreenTitles,
             )
         } else {
@@ -170,7 +173,7 @@ object CheckInLiveUpdateManager {
                 snapLabel = snapLabel,
                 dismissLabel = dismissLabel,
                 deadlineMs = deadlineMs,
-                remainingMs = remainingMs,
+                remainingMs = timeoutAfterMs,
                 redactLockScreenTitles = redactLockScreenTitles,
             )
         }
@@ -314,20 +317,23 @@ object CheckInLiveUpdateManager {
         ): Notification {
             val total = window.totalActiveCount.coerceAtLeast(1)
             val done = window.completedCount.coerceIn(0, total)
-            val pending = (total - done).coerceAtLeast(1)
-            val progressValue = ((done * 1000) / total).coerceIn(120, 1000)
+            val pending = (total - done).coerceAtLeast(0)
+            val totalSegmentLength = total * 1000
+            val progressValue = (done * 1000).coerceIn(120, totalSegmentLength)
 
             val segments = buildList {
-                if (done > 0) {
+                repeat(done) {
                     add(
-                        Notification.ProgressStyle.Segment(done * 1000)
+                        Notification.ProgressStyle.Segment(1000)
                             .setColor(0xFFFF8A3D.toInt()),
                     )
                 }
-                add(
-                    Notification.ProgressStyle.Segment(pending * 1000)
-                        .setColor(0xFF79756D.toInt()),
-                )
+                repeat(pending.coerceAtLeast(if (done == 0) 1 else 0)) {
+                    add(
+                        Notification.ProgressStyle.Segment(1000)
+                            .setColor(0xFF79756D.toInt()),
+                    )
+                }
             }
 
             val progressStyle = Notification.ProgressStyle()
@@ -365,8 +371,13 @@ object CheckInLiveUpdateManager {
                 dismissPi,
             ).build()
 
+            val promotedExtras = Bundle().apply {
+                putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true)
+                putString(EXTRA_SHORT_CRITICAL_TEXT, shortChipText)
+            }
+
             // Qualification rules on Android 16:
-            // - ongoing = true, requestPromotedOngoing = true, ProgressStyle, contentTitle set
+            // - ongoing = true, EXTRA_REQUEST_PROMOTED_ONGOING = true, ProgressStyle, contentTitle set
             // - shortCriticalText <= 7 chars
             // - NO RemoteViews, NO setColorized(true), NO group summary
             return Notification.Builder(context, CHANNEL_ID)
@@ -375,7 +386,7 @@ object CheckInLiveUpdateManager {
                 .setContentText(body)
                 .setStyle(progressStyle)
                 .setOngoing(true)
-                .setRequestPromotedOngoing(true)
+                .addExtras(promotedExtras)
                 .setShortCriticalText(shortChipText)
                 .setOnlyAlertOnce(true)
                 .setUsesChronometer(true)

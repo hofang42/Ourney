@@ -169,8 +169,8 @@ class WidgetSnapshotStore(val rootDir: File) {
     }
 
     /**
-     * Wipes `snapshot_v1.json`, `state.json`, and all `thumbs/*.jpg` on sign-out,
-     * account switch, or account deletion.
+     * Wipes `snapshot_v1.json`, `state.json`, and all cached `thumbs/<id>.jpg` files on
+     * sign-out, account switch, or account deletion.
      */
     @Synchronized
     fun clearAll(): Boolean {
@@ -199,7 +199,9 @@ class WidgetSnapshotStore(val rootDir: File) {
             val srcW = boundsOpts.outWidth
             val srcH = boundsOpts.outHeight
             if (srcW <= 0 || srcH <= 0) {
-                copyRawFileAtomically(sourceFile, destFile)
+                if (!blur) {
+                    copyRawFileAtomically(sourceFile, destFile)
+                }
                 return
             }
 
@@ -215,7 +217,9 @@ class WidgetSnapshotStore(val rootDir: File) {
             }
             val decoded = BitmapFactory.decodeFile(sourceFile.absolutePath, decodeOpts)
             if (decoded == null) {
-                copyRawFileAtomically(sourceFile, destFile)
+                if (!blur) {
+                    copyRawFileAtomically(sourceFile, destFile)
+                }
                 return
             }
 
@@ -240,10 +244,14 @@ class WidgetSnapshotStore(val rootDir: File) {
             processed.recycle()
             atomicMove(tmpFile, destFile)
         } catch (_: Throwable) {
-            // In pure-JVM unit tests (where Android BitmapFactory is stubbed) or fallback:
-            try {
-                copyRawFileAtomically(sourceFile, destFile)
-            } catch (_: Exception) {
+            // Fail closed when blur == true so an unblurred sensitive photo is never written.
+            // When blur == false (or in pure-JVM unit tests where BitmapFactory is stubbed),
+            // fall back to atomic file copy.
+            if (!blur) {
+                try {
+                    copyRawFileAtomically(sourceFile, destFile)
+                } catch (_: Exception) {
+                }
             }
         }
     }
@@ -269,7 +277,7 @@ class WidgetSnapshotStore(val rootDir: File) {
         val smallW = (src.width / scale).coerceAtLeast(8)
         val smallH = (src.height / scale).coerceAtLeast(8)
         val small = Bitmap.createScaledBitmap(src, smallW, smallH, true)
-        val work = small.copy(Bitmap.Config.ARGB_8888, true)
+        val work = small.copy(Bitmap.Config.ARGB_8888, true) ?: return src
         if (small !== src) small.recycle()
 
         val w = work.width
@@ -388,7 +396,7 @@ class WidgetSnapshotStore(val rootDir: File) {
                 .digest(text.toByteArray(StandardCharsets.UTF_8))
             val sb = StringBuilder(digest.size * 2)
             for (b in digest) {
-                sb.append(String.format("%02x", b))
+                sb.append(String.format(java.util.Locale.ROOT, "%02x", b))
             }
             return sb.toString()
         }

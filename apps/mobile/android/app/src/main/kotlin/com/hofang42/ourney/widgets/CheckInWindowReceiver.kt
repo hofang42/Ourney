@@ -6,6 +6,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.Keep
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Handles inexact window/midnight rollover alarms (`setAndAllowWhileIdle` —
@@ -18,17 +22,40 @@ class CheckInWindowReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent?) {
         val action = intent?.action ?: return
+        val appContext = context.applicationContext
+        val windowKeyExtra = intent.getStringExtra(EXTRA_WINDOW_KEY)
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                withTimeoutOrNull(8_000L) {
+                    handleAction(appContext, action, windowKeyExtra)
+                }
+            } catch (_: Exception) {
+            } finally {
+                try {
+                    pendingResult.finish()
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
+    private suspend fun handleAction(
+        context: Context,
+        action: String,
+        windowKeyExtra: String?,
+    ) {
         val store = WidgetSnapshotStore.fromContext(context)
         val nowMs = System.currentTimeMillis()
 
         if (action == ACTION_DISMISS_WINDOW) {
-            val windowKey = intent.getStringExtra(EXTRA_WINDOW_KEY)
+            val windowKey = windowKeyExtra
                 ?: store.readSnapshot(nowMs)?.liveWindow?.windowKey
             if (!windowKey.isNullOrBlank()) {
                 store.markWindowDismissed(windowKey, nowMs)
             }
             CheckInLiveUpdateManager.cancel(context)
-            WidgetActions.refreshAllWidgetsAsync(context)
+            WidgetActions.refreshAllWidgets(context)
             return
         }
 
@@ -36,7 +63,7 @@ class CheckInWindowReceiver : BroadcastReceiver() {
             val snapshot = store.readSnapshot(nowMs)
             CheckInLiveUpdateManager.syncFromStore(context, nowMs)
             scheduleNextRollover(context, snapshot, nowMs)
-            WidgetActions.refreshAllWidgetsAsync(context)
+            WidgetActions.refreshAllWidgets(context)
         }
     }
 

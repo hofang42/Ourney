@@ -69,7 +69,9 @@ class SquadGlanceWidget : GlanceAppWidget() {
             )
         }
 
-        val memberPolaroids = if (squad != null && snapshot.privacy.photoMode != "off") {
+        val photoMode = snapshot?.privacy?.photoMode
+        val showMemberPhotos = photoMode == "blurred" || photoMode == "clear"
+        val memberPolaroids = if (squad != null && showMemberPhotos) {
             squad.members
                 .filter { it.checkedInToday && !it.todayThumbFile.isNullOrBlank() }
                 .take(2)
@@ -241,7 +243,7 @@ class SquadGlanceWidget : GlanceAppWidget() {
                         Text(
                             text = l10n.getString(R.string.widget_snap_cta),
                             style = TextStyle(
-                                color = OurneyGlanceTheme.neutralShellPalette(isDark = false).inkProvider,
+                                color = OurneyGlanceTheme.neutralShellPalette(isDark = false).buttonLabelProvider,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                             ),

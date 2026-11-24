@@ -74,7 +74,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                 context = context,
                 streakCount = it.currentStreak,
                 palette = palette,
-                atRisk = it.atRisk && !it.checkedInToday,
+                atRisk = it.isStreakAlertActive(nowMs),
                 checkedInToday = it.checkedInToday,
                 compact = true,
             )
@@ -93,6 +93,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         val framedHeroPhoto = if (
             journey != null &&
             journey.checkedInToday &&
+            snapshot != null &&
             snapshot.privacy.photoMode != "off" &&
             !journey.heroThumbFile.isNullOrBlank()
         ) {
@@ -136,6 +137,8 @@ class TodayGlanceWidget : GlanceAppWidget() {
                         l10n = l10n,
                         journey = journey,
                         palette = palette,
+                        nowMs = nowMs,
+                        pendingIndex = pendingIndex,
                         pendingCount = pendingJourneys.size,
                         streakBitmap = streakHeroBitmap,
                     )
@@ -177,22 +180,18 @@ class TodayGlanceWidget : GlanceAppWidget() {
         l10n: Context,
         journey: WidgetJourneyItem,
         palette: OurneyWidgetPalette,
+        nowMs: Long,
+        pendingIndex: Int,
         pendingCount: Int,
         streakBitmap: android.graphics.Bitmap?,
     ) {
-        val urgent = journey.atRisk && !journey.checkedInToday
+        val urgent = journey.isStreakAlertActive(nowMs)
         val primaryAction = if (journey.checkedInToday) {
             WidgetActions.journeyDetailAction(context, journey.id)
         } else {
             WidgetActions.captureAction(context, journey.id)
         }
-        val statusDesc = if (journey.checkedInToday) {
-            l10n.getString(R.string.widget_checked_in)
-        } else if (urgent) {
-            l10n.getString(R.string.widget_streak_at_risk, journey.currentStreak)
-        } else {
-            l10n.getString(R.string.widget_pending_today)
-        }
+        val statusDesc = resolveStatusCopy(l10n, journey, nowMs)
         val a11yDescription =
             "${journey.title}, ${l10n.getString(R.string.widget_streak_days, journey.currentStreak)}, $statusDesc"
 
@@ -239,7 +238,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
                             provider = ImageProvider(R.drawable.ic_ourney_sticker_chevron_right),
                             contentDescription = l10n.getString(
                                 R.string.widget_cycle_next,
-                                1,
+                                pendingIndex,
                                 pendingCount,
                             ),
                             modifier = GlanceModifier.size(18.dp),
@@ -300,7 +299,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         streakBitmap: android.graphics.Bitmap?,
         framedPhoto: android.graphics.Bitmap?,
     ) {
-        val urgent = journey.atRisk && !journey.checkedInToday
+        val urgent = journey.isStreakAlertActive(nowMs)
         val primaryAction = if (journey.checkedInToday) {
             WidgetActions.journeyDetailAction(context, journey.id)
         } else {
@@ -436,7 +435,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         weekStripBitmap: android.graphics.Bitmap?,
         framedPhoto: android.graphics.Bitmap?,
     ) {
-        val urgent = journey.atRisk && !journey.checkedInToday
+        val urgent = journey.isStreakAlertActive(nowMs)
         val primaryAction = if (journey.checkedInToday) {
             WidgetActions.journeyDetailAction(context, journey.id)
         } else {
@@ -599,6 +598,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         } else {
             GlanceModifier.height(48.dp).padding(horizontal = 14.dp)
         }
+        val ctaLabelColor = OurneyGlanceTheme.neutralShellPalette(isDark = false).buttonLabelProvider
         Row(
             modifier = baseModifier
                 .background(ImageProvider(R.drawable.bg_widget_cta))
@@ -616,7 +616,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
             Text(
                 text = label,
                 style = TextStyle(
-                    color = OurneyGlanceTheme.neutralShellPalette(isDark = false).inkProvider,
+                    color = ctaLabelColor,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                 ),
@@ -767,7 +767,7 @@ class TodayGlanceWidget : GlanceAppWidget() {
         nowMs: Long,
     ): String = when {
         journey.checkedInToday -> l10n.getString(R.string.widget_checked_in)
-        journey.atRisk && journey.currentStreak > 0 ->
+        journey.isStreakAlertActive(nowMs) ->
             l10n.getString(R.string.widget_streak_at_risk, journey.currentStreak)
         journey.isEveningCueActive(nowMs) ->
             l10n.getString(R.string.widget_evening_nudge)

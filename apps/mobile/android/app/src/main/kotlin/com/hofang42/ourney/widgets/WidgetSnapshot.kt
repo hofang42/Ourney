@@ -2,6 +2,7 @@ package com.hofang42.ourney.widgets
 
 import org.json.JSONArray
 import org.json.JSONObject
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -270,7 +271,31 @@ data class WidgetJourneyItem(
     fun isEveningCueActive(nowEpochMs: Long): Boolean {
         if (checkedInToday) return false
         val cueMs = WidgetSnapshot.parseIsoEpochMs(eveningCueAtUtc) ?: return false
+        val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
+        if (midnightMs != null && nowEpochMs >= midnightMs) {
+            val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L) + 1L
+            return nowEpochMs >= (cueMs + daysPassed * 86_400_000L)
+        }
         return nowEpochMs >= cueMs
+    }
+
+    /**
+     * Returns `true` when the 21:00 streak-at-risk alert threshold (`streakAlertAtUtc`)
+     * has been reached for an unchecked active streak, keeping morning/afternoon (`00:00–17:59`)
+     * calm and preserving the 18:00–20:59 evening nudge window (`[P2-3]`).
+     */
+    fun isStreakAlertActive(nowEpochMs: Long): Boolean {
+        if (checkedInToday || currentStreak <= 0) return false
+        val alertMs = WidgetSnapshot.parseIsoEpochMs(streakAlertAtUtc)
+        if (alertMs != null) {
+            val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
+            if (midnightMs != null && nowEpochMs >= midnightMs) {
+                val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L) + 1L
+                return nowEpochMs >= (alertMs + daysPassed * 86_400_000L)
+            }
+            return nowEpochMs >= alertMs
+        }
+        return atRisk
     }
 
     fun evaluateAt(nowEpochMs: Long): WidgetJourneyItem {
@@ -309,37 +334,99 @@ data class WidgetJourneyItem(
             wasCheckedInBeforeMidnight: Boolean,
         ): List<WidgetWeekDay> {
             if (strip.isEmpty() || daysPassed <= 0) return strip
+            val isViStrip = strip.any {
+                it.label == "HN" || it.label == "CN" || (it.label.length == 2 && it.label.startsWith("T"))
+            }
+            val todayLabel = strip.last().label.ifBlank { if (isViStrip) "HN" else "TD" }
+
             val finalized = strip.mapIndexed { index, item ->
+                val parsedDate = parseLocalDate(item.date)
+                val updatedLabel = if (item.label == "HN" || item.label == "TD" || item.label.equals("Today", ignoreCase = true)) {
+                    parsedDate?.let { weekdayLabelFor(it.dayOfWeek, isViStrip) } ?: item.label
+                } else {
+                    item.label
+                }
                 if (index == strip.lastIndex && (item.state == "today" || item.state == "done")) {
-                    item.copy(state = if (wasCheckedInBeforeMidnight) "done" else "missed")
+                    item.copy(
+                        label = updatedLabel,
+                        state = if (wasCheckedInBeforeMidnight) "done" else "missed",
+                    )
+                } else if (updatedLabel != item.label) {
+                    item.copy(label = updatedLabel)
                 } else {
                     item
                 }
             }
             if (daysPassed >= strip.size) {
+                val baseDate = parseLocalDate(strip.last().date)
                 return finalized.mapIndexed { idx, item ->
-                    item.copy(state = if (idx == finalized.lastIndex) "today" else "missed")
+                    val isTodaySlot = idx == finalized.lastIndex
+                    val slotDate = baseDate?.plusDays((daysPassed - (finalized.lastIndex - idx)).toLong())
+                    item.copy(
+                        date = slotDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: item.date,
+                        day = slotDate?.dayOfMonth ?: item.day,
+                        label = if (isTodaySlot) {
+                            todayLabel
+                        } else {
+                            slotDate?.let { weekdayLabelFor(it.dayOfWeek, isViStrip) } ?: item.label
+                        },
+                        state = if (isTodaySlot) "today" else "missed",
+                    )
                 }
             }
-            val lastDate = try {
-                LocalDate.parse(strip.last().date, DateTimeFormatter.ISO_LOCAL_DATE)
-            } catch (_: Exception) {
-                null
-            }
+            val lastDate = parseLocalDate(strip.last().date)
             val kept = finalized.drop(daysPassed).toMutableList()
             for (step in 1..daysPassed) {
                 val nextDate = lastDate?.plusDays(step.toLong())
                 val isTodaySlot = step == daysPassed
+                val slotLabel = if (isTodaySlot) {
+                    todayLabel
+                } else {
+                    nextDate?.let { weekdayLabelFor(it.dayOfWeek, isViStrip) } ?: todayLabel
+                }
                 kept.add(
                     WidgetWeekDay(
                         date = nextDate?.format(DateTimeFormatter.ISO_LOCAL_DATE) ?: "",
                         day = nextDate?.dayOfMonth ?: ((strip.last().day + step - 1) % 31 + 1),
-                        label = strip.last().label,
+                        label = slotLabel,
                         state = if (isTodaySlot) "today" else "missed",
                     ),
                 )
             }
             return kept
+        }
+
+        private fun parseLocalDate(raw: String): LocalDate? {
+            if (raw.isBlank()) return null
+            return try {
+                LocalDate.parse(raw, DateTimeFormatter.ISO_LOCAL_DATE)
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        private fun weekdayLabelFor(dayOfWeek: DayOfWeek, isVi: Boolean): String {
+            return if (isVi) {
+                when (dayOfWeek) {
+                    DayOfWeek.MONDAY -> "T2"
+                    DayOfWeek.TUESDAY -> "T3"
+                    DayOfWeek.WEDNESDAY -> "T4"
+                    DayOfWeek.THURSDAY -> "T5"
+                    DayOfWeek.FRIDAY -> "T6"
+                    DayOfWeek.SATURDAY -> "T7"
+                    DayOfWeek.SUNDAY -> "CN"
+                }
+            } else {
+                when (dayOfWeek) {
+                    DayOfWeek.MONDAY -> "Mon"
+                    DayOfWeek.TUESDAY -> "Tue"
+                    DayOfWeek.WEDNESDAY -> "Wed"
+                    DayOfWeek.THURSDAY -> "Thu"
+                    DayOfWeek.FRIDAY -> "Fri"
+                    DayOfWeek.SATURDAY -> "Sat"
+                    DayOfWeek.SUNDAY -> "Sun"
+                }
+            }
         }
 
         fun fromJson(obj: JSONObject): WidgetJourneyItem {
@@ -534,7 +621,16 @@ data class WidgetLiveWindow(
             )
         }
 
-        fun fromMap(map: Map<*, *>): WidgetLiveWindow {
+        fun fromMap(rawMap: Map<*, *>): WidgetLiveWindow {
+            val nested = rawMap["liveWindow"] as? Map<*, *>
+            val map: Map<*, *> = if (nested != null) {
+                buildMap<Any?, Any?> {
+                    putAll(rawMap)
+                    putAll(nested)
+                }
+            } else {
+                rawMap
+            }
             val json = JSONObject()
             for ((k, v) in map) {
                 if (k is String && v != null) {
