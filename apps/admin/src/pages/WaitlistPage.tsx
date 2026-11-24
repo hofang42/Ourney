@@ -4,6 +4,7 @@ import {
   adminApi,
   handleRpcError,
   type AdminIdentity,
+  type WaitlistResendResponse,
   type WaitlistRow,
   type WaitlistSummary,
 } from '../lib/adminRpc'
@@ -12,14 +13,21 @@ import {
   sanitizeRawCsvString,
   triggerCsvDownload,
 } from '../lib/csv'
-import { useI18n } from '../lib/i18n'
+import {
+  fmtDateTime,
+  formatAdminError,
+  formatPlatformLabel,
+  formatWaitlistSource,
+  formatWordLang,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal, PaginationBar } from '../ui/Modal'
 
 const PAGE_LIMIT = 50
 
 export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [langFilter, setLangFilter] = useState('all')
@@ -35,11 +43,11 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
   const [rows, setRows] = useState<WaitlistRow[]>([])
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [failedRows, setFailedRows] = useState<Record<string, string>>({})
   const [deleteTarget, setDeleteTarget] = useState<WaitlistRow | null>(null)
   const [deleteReason, setDeleteReason] = useState('')
 
   const loadData = async (nextOffset = offset) => {
-    setErrorMsg(null)
     try {
       const [sum, listRes] = await Promise.all([
         adminApi.waitlistSummary(30),
@@ -57,13 +65,14 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
       setTotal(listRes.total)
       setRows(listRes.items)
     } catch (err) {
-      const msg = await handleRpcError(err, 'list_waitlist')
+      const msg = await handleRpcError(err, 'list_waitlist', lang)
       setErrorMsg(msg)
     }
   }
 
   useEffect(() => {
     setOffset(0)
+    setErrorMsg(null)
     void loadData(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, langFilter, platformFilter, mailFilter, convertedFilter])
@@ -85,52 +94,132 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
       triggerCsvDownload(csv, 'ourney-waitlist.csv')
       setStatusMsg(
         t(
-          'Đã xuất tệp CSV danh sách chờ (UTF-8 BOM, đã ghi waitlist.export_csv).',
-          'Exported waitlist to UTF-8 BOM CSV (logged waitlist.export_csv).',
+          'Đã xuất tệp CSV danh sách chờ (UTF-8 BOM, đã ghi nhật ký kiểm toán).',
+          'Exported waitlist to UTF-8 BOM CSV (recorded in audit log).',
         ),
       )
     } catch (err) {
-      const msg = await handleRpcError(err, 'export_waitlist')
+      const msg = await handleRpcError(err, 'export_waitlist', lang)
       setErrorMsg(msg)
     }
   }
 
   const handleResendRow = async (id: string) => {
     setErrorMsg(null)
+    setStatusMsg(null)
     try {
-      await adminApi.invokeAdminAction({
+      const res = await adminApi.invokeAdminAction<WaitlistResendResponse>({
         action: 'waitlist_resend',
         waitlist_id: id,
       })
-      setStatusMsg(
-        t(
-          'Đã gửi lại email xác nhận qua Resend.',
-          'Re-sent confirmation email via Resend.',
-        ),
-      )
+      const hasCounts =
+        typeof res?.sent === 'number' || typeof res?.failed === 'number'
+      const failed = typeof res?.failed === 'number' ? res.failed : 0
+      const sent =
+        typeof res?.sent === 'number'
+          ? res.sent
+          : hasCounts
+            ? 0
+            : failed > 0
+              ? 0
+              : 1
+      const errs = Array.isArray(res?.errors) ? res.errors : []
+
+      if (failed > 0 || sent === 0) {
+        const rawErr = errs[0]?.error || 'resend_failed'
+        const mappedReason = formatAdminError(rawErr, lang)
+        setFailedRows((prev) => ({
+          ...prev,
+          [id]: mappedReason,
+        }))
+        setErrorMsg(
+          t(
+            `Không gửi được email xác nhận (Đã gửi ${sent}, lỗi ${failed}): ${mappedReason}`,
+            `Failed to send confirmation email (Sent ${sent}, failed ${failed}): ${mappedReason}`,
+          ),
+        )
+      } else {
+        setFailedRows((prev) => {
+          const next = { ...prev }
+          delete next[id]
+          return next
+        })
+        setStatusMsg(
+          t(
+            `Đã gửi lại email xác nhận thành công (Đã gửi ${sent}, lỗi 0).`,
+            `Re-sent confirmation email via Resend (Sent ${sent}, failed 0).`,
+          ),
+        )
+      }
       await loadData(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'waitlist_resend')
+      const msg = await handleRpcError(err, 'waitlist_resend', lang)
+      setFailedRows((prev) => ({ ...prev, [id]: msg }))
       setErrorMsg(msg)
     }
   }
 
   const handleBulkRetryFailed = async () => {
     setErrorMsg(null)
+    setStatusMsg(null)
     try {
-      await adminApi.invokeAdminAction({
+      const res = await adminApi.invokeAdminAction<WaitlistResendResponse>({
         action: 'waitlist_resend_failed',
         limit: 25,
       })
-      setStatusMsg(
-        t(
-          'Đã kích hoạt gửi lại tối đa 25 email bị lỗi.',
-          'Triggered bulk retry for up to 25 failed emails.',
-        ),
-      )
+      const hasCounts =
+        typeof res?.sent === 'number' || typeof res?.failed === 'number'
+      const failed = typeof res?.failed === 'number' ? res.failed : 0
+      const sent =
+        typeof res?.sent === 'number'
+          ? res.sent
+          : hasCounts
+            ? 0
+            : failed > 0
+              ? 0
+              : 1
+      const errs = Array.isArray(res?.errors) ? res.errors : []
+
+      const nextFailed: Record<string, string> = {}
+      for (const item of errs) {
+        if (item && item.id) {
+          nextFailed[item.id] = formatAdminError(
+            item.error || 'resend_failed',
+            lang,
+          )
+        }
+      }
+      setFailedRows(nextFailed)
+
+      if (failed > 0) {
+        const firstReason = formatAdminError(
+          errs[0]?.error || 'resend_failed',
+          lang,
+        )
+        setErrorMsg(
+          t(
+            `Gửi lại hàng loạt có lỗi: Đã gửi ${sent}, lỗi ${failed}. Lý do: ${firstReason}`,
+            `Bulk retry finished with errors: Sent ${sent}, failed ${failed}. Reason: ${firstReason}`,
+          ),
+        )
+      } else if (hasCounts && sent === 0) {
+        setStatusMsg(
+          t(
+            'Không có email lỗi nào cần gửi lại (Đã gửi 0, lỗi 0).',
+            'No failed emails needed retrying (Sent 0, failed 0).',
+          ),
+        )
+      } else {
+        setStatusMsg(
+          t(
+            `Đã gửi lại thành công ${sent} email xác nhận (Đã gửi ${sent}, lỗi 0).`,
+            `Triggered bulk retry: Sent ${sent}, failed 0.`,
+          ),
+        )
+      }
       await loadData(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'waitlist_resend_failed')
+      const msg = await handleRpcError(err, 'waitlist_resend_failed', lang)
       setErrorMsg(msg)
     }
   }
@@ -145,15 +234,15 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
       )
       setStatusMsg(
         t(
-          'Đã xóa mục danh sách chờ (lưu mã băm sha256 trong nhật ký).',
-          'Deleted waitlist entry (logged with sha256 email digest).',
+          'Đã xóa mục danh sách chờ (email đã được ẩn danh trong nhật ký kiểm toán).',
+          'Deleted waitlist entry (email anonymized in audit log).',
         ),
       )
       setDeleteTarget(null)
       setDeleteReason('')
       await loadData(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'delete_waitlist_entry')
+      const msg = await handleRpcError(err, 'delete_waitlist_entry', lang)
       setErrorMsg(msg)
     }
   }
@@ -167,8 +256,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           </h1>
           <p className="page-subtitle">
             {t(
-              'Phân tích nền tảng iOS/Android, ngôn ngữ VI/EN, xuất CSV cho TestFlight/Play Testing và gửi lại email xác nhận Resend.',
-              'Segment iOS/Android and VI/EN signups, export UTF-8 BOM CSV for TestFlight waves, and retry failed Resend confirmation emails.',
+              'Phân tích nền tảng iOS/Android, ngôn ngữ VI/EN, xuất CSV và gửi lại email xác nhận cho các mục bị lỗi.',
+              'Segment iOS/Android and VI/EN signups, export UTF-8 BOM CSV, and retry failed confirmation emails.',
             )}
           </p>
         </div>
@@ -219,7 +308,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             <div className="kpi-value">{summary.total}</div>
             <div className="kpi-sub">
               <span className="badge badge-primary">
-                +{summary.new_7d} (7d)
+                +{summary.new_7d} ({t('7 ngày', '7d')})
               </span>
               <span>VI: {summary.lang_vi}</span>
               <span>EN: {summary.lang_en}</span>
@@ -242,7 +331,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
 
           <div className="kpi-card">
             <span className="kpi-label">
-              {t('Trạng thái Email Resend', 'Confirmation Emails')}
+              {t('Trạng thái Email xác nhận', 'Confirmation Emails')}
             </span>
             <div className="kpi-value">{summary.mail_sent}</div>
             <div className="kpi-sub">
@@ -266,7 +355,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
               </span>
               {summary.by_source.slice(0, 2).map((s) => (
                 <span key={s.source} className="badge">
-                  {s.source}: {s.count}
+                  {formatWaitlistSource(s.source, lang)}: {s.count}
                 </span>
               ))}
             </div>
@@ -283,7 +372,7 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             'Search waitlist email or source',
           )}
           placeholder={t(
-            'Tìm email hoặc nguồn (source)...',
+            'Tìm email hoặc nguồn đăng ký...',
             'Search email or source...',
           )}
           value={search}
@@ -308,8 +397,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           onChange={(e) => setLangFilter(e.target.value)}
         >
           <option value="all">{t('Mọi ngôn ngữ', 'All languages')}</option>
-          <option value="vi">VI</option>
-          <option value="en">EN</option>
+          <option value="vi">{formatWordLang('vi', lang)}</option>
+          <option value="en">{formatWordLang('en', lang)}</option>
         </select>
 
         <select
@@ -321,9 +410,9 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           <option value="all">
             {t('Mọi trạng thái email', 'All mail status')}
           </option>
-          <option value="sent">{t('Đã gửi (Sent)', 'Sent')}</option>
-          <option value="failed">{t('Gửi lỗi (Failed)', 'Failed')}</option>
-          <option value="unsent">{t('Chưa gửi (Unsent)', 'Unsent')}</option>
+          <option value="sent">{t('Đã gửi', 'Sent')}</option>
+          <option value="failed">{t('Gửi lỗi', 'Failed')}</option>
+          <option value="unsent">{t('Chưa gửi', 'Unsent')}</option>
         </select>
 
         <select
@@ -356,58 +445,104 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={r.id}>
-                <td style={{ fontWeight: 700 }}>{r.email}</td>
-                <td>
-                  <span className="badge">{r.lang.toUpperCase()}</span>
-                </td>
-                <td>{r.platforms.join(', ')}</td>
-                <td>{r.source || 'landing'}</td>
-                <td>
-                  {r.confirmation_error ? (
-                    <span className="badge badge-danger">
-                      Failed: {r.confirmation_error}
-                    </span>
-                  ) : r.confirmation_sent_at ? (
-                    <span className="badge badge-success">Sent</span>
-                  ) : (
-                    <span className="badge badge-warn">Pending</span>
-                  )}
-                </td>
-                <td>
-                  {r.registered_in_app ? (
-                    <span className="badge badge-primary">Registered</span>
-                  ) : (
-                    <span className="badge">Waiting</span>
-                  )}
-                </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      className="btn"
-                      aria-label={`${t('Gửi lại', 'Resend')} ${r.email}`}
-                      onClick={() => void handleResendRow(r.id)}
+            {rows.map((r) => {
+              const isRowHighlightedFailed = Boolean(failedRows[r.id])
+              const rowErrorText =
+                failedRows[r.id] ||
+                (r.confirmation_error
+                  ? formatAdminError(r.confirmation_error, lang)
+                  : null)
+              const isSent =
+                !rowErrorText &&
+                (r.mail_status === 'sent' ||
+                  Boolean(r.confirmation_sent_at && !r.confirmation_error))
+              const canResend = !r.registered_in_app && !isSent
+
+              return (
+                <tr
+                  key={r.id}
+                  className={isRowHighlightedFailed ? 'failed-row' : undefined}
+                  data-failed={isRowHighlightedFailed ? 'true' : undefined}
+                >
+                  <td style={{ fontWeight: 700 }}>
+                    <div>{r.email}</div>
+                    <div
+                      className="tabular"
+                      style={{ fontSize: '0.75rem', color: 'var(--muted)' }}
                     >
-                      <OIcon name="paper-plane" size={16} />
-                      <span>{t('Gửi lại', 'Resend')}</span>
-                    </button>
-                    {admin.role === 'owner' && (
-                      <button
-                        type="button"
-                        className="btn btn-danger"
-                        aria-label={`${t('Xóa', 'Delete')} ${r.email}`}
-                        onClick={() => setDeleteTarget(r)}
-                      >
-                        <OIcon name="trash" size={16} />
-                        <span>{t('Xóa', 'Delete')}</span>
-                      </button>
+                      {fmtDateTime(r.created_at, lang)}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="badge">{formatWordLang(r.lang, lang)}</span>
+                  </td>
+                  <td>
+                    {r.platforms.map((p) => formatPlatformLabel(p)).join(', ')}
+                  </td>
+                  <td>{formatWaitlistSource(r.source, lang)}</td>
+                  <td>
+                    {rowErrorText ? (
+                      <span className="badge badge-danger">
+                        {t('Gửi lỗi', 'Failed')}: {rowErrorText}
+                      </span>
+                    ) : isSent ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span className="badge badge-success">
+                          {t('Đã gửi', 'Sent')}
+                        </span>
+                        {r.confirmation_sent_at && (
+                          <span
+                            className="tabular"
+                            style={{ fontSize: '0.72rem', color: 'var(--muted)' }}
+                          >
+                            {fmtDateTime(r.confirmation_sent_at, lang)}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="badge badge-warn">
+                        {t('Chờ gửi', 'Pending')}
+                      </span>
                     )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td>
+                    {r.registered_in_app ? (
+                      <span className="badge badge-primary">
+                        {t('Đã đăng ký App', 'Registered')}
+                      </span>
+                    ) : (
+                      <span className="badge">{t('Đang chờ', 'Waiting')}</span>
+                    )}
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {canResend && (
+                        <button
+                          type="button"
+                          className="btn"
+                          aria-label={`${t('Gửi lại', 'Resend')} ${r.email}`}
+                          onClick={() => void handleResendRow(r.id)}
+                        >
+                          <OIcon name="paper-plane" size={16} />
+                          <span>{t('Gửi lại', 'Resend')}</span>
+                        </button>
+                      )}
+                      {admin.role === 'owner' && (
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          aria-label={`${t('Xóa', 'Delete')} ${r.email}`}
+                          onClick={() => setDeleteTarget(r)}
+                        >
+                          <OIcon name="trash" size={16} />
+                          <span>{t('Xóa', 'Delete')}</span>
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
@@ -436,8 +571,8 @@ export function WaitlistPage({ admin }: { admin: AdminIdentity }) {
           <p className="page-subtitle">
             {deleteTarget.email} —{' '}
             {t(
-              'Nhật ký kiểm toán sẽ chỉ lưu mã băm sha256(email) để tôn trọng quyền xóa dữ liệu.',
-              'Audit log stores only sha256(email) to respect privacy erasure.',
+              'Nhật ký kiểm toán sẽ chỉ lưu mã ẩn danh để tôn trọng quyền xóa dữ liệu của người dùng.',
+              'The audit log stores only an anonymized email digest to respect privacy erasure.',
             )}
           </p>
           <label className="field-group">

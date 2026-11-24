@@ -13,7 +13,7 @@ import {
   SQL_FIXTURE_WAITLIST_SUMMARY,
 } from './fixtures'
 
-describe('WaitlistPage & CSV Formula Injection Protection', () => {
+describe('WaitlistPage, Per-Row Resend Feedback (UX-11), and CSV Protection', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.spyOn(adminApi, 'waitlistSummary').mockResolvedValue(
@@ -52,10 +52,28 @@ describe('WaitlistPage & CSV Formula Injection Protection', () => {
     expect(sanitized).toContain("'@attacker")
   })
 
-  it('renders SQL waitlist_summary KPIs, triggers Resend retry, and hides owner-only Export/Delete for moderators', async () => {
+  it('hides Resend on already sent/registered rows, shows true sent/failed counts & highlights failed rows on Resend failure, and hides owner-only Export/Delete for moderators (UX-11)', async () => {
     const actionSpy = vi
       .spyOn(adminApi, 'invokeAdminAction')
-      .mockResolvedValue({ ok: true })
+      .mockResolvedValueOnce({
+        ok: true,
+        attempted: 1,
+        sent: 0,
+        failed: 1,
+        errors: [
+          {
+            id: 'wl-2',
+            error: 'mail_not_configured: RESEND_API_KEY missing',
+          },
+        ],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        attempted: 1,
+        sent: 1,
+        failed: 0,
+        errors: [],
+      })
     const deleteSpy = vi
       .spyOn(adminApi, 'deleteWaitlistEntry')
       .mockResolvedValue()
@@ -76,15 +94,45 @@ describe('WaitlistPage & CSV Formula Injection Protection', () => {
       expect(screen.getByText('1274')).toBeInTheDocument()
     })
 
-    const user = userEvent.setup()
-    await user.click(
-      screen.getByRole('button', {
+    // UX-11: wl-1 (minh.nguyen@example.com) is sent & registered -> Resend button must be hidden
+    expect(
+      screen.queryByRole('button', {
         name: /Resend minh\.nguyen@example\.com/i,
       }),
-    )
+    ).toBeNull()
+
+    // UX-11: wl-2 (retry.me@example.com) is failed & waiting -> Resend button is visible
+    const resendBtn = screen.getByRole('button', {
+      name: /Resend retry\.me@example\.com/i,
+    })
+
+    const user = userEvent.setup()
+    // 1st click: returns sent: 0, failed: 1 -> error alert + failed row highlighted
+    await user.click(resendBtn)
     expect(actionSpy).toHaveBeenCalledWith({
       action: 'waitlist_resend',
-      waitlist_id: 'wl-1',
+      waitlist_id: 'wl-2',
+    })
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /Sent 0, failed 1/i,
+      )
+    })
+    const failedRowEl = screen
+      .getByText('retry.me@example.com')
+      .closest('tr')
+    expect(failedRowEl).toHaveClass('failed-row')
+
+    // 2nd click: returns sent: 1, failed: 0 -> success status banner + highlight cleared
+    await user.click(
+      screen.getByRole('button', {
+        name: /Resend retry\.me@example\.com/i,
+      }),
+    )
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toHaveTextContent(
+        /Sent 1, failed 0/i,
+      )
     })
 
     await user.click(

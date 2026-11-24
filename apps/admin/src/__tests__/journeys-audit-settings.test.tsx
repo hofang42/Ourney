@@ -21,7 +21,7 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders JourneysPage with SQL journey_stats, redacted private titles, null max_members on solo journeys, and public link revocation', async () => {
+  it('renders JourneysPage with SQL journey_stats, human redacted private titles, compact Open public page CTA, null max_members on solo journeys, and public link revocation (UX-42)', async () => {
     vi.spyOn(adminApi, 'journeyStats').mockResolvedValue(
       SQL_FIXTURE_JOURNEY_STATS,
     )
@@ -47,8 +47,11 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
         screen.getByText('30 Ngày Cày IELTS 7.5 Cùng Squad'),
       ).toBeInTheDocument()
       expect(
-        screen.getByText('[Private Journey — Redacted in SQL]'),
+        screen.getByText('[Private Journey — Title Hidden]'),
       ).toBeInTheDocument()
+      expect(
+        screen.getByRole('link', { name: /Open public page/i }),
+      ).toHaveAttribute('href', 'https://ourney.tech/p/pub_ielts_30d')
       // Solo journey with max_members: null renders "1 · 21 snaps" (not "1/")
       expect(screen.getByText('1 · 21 snaps')).toBeInTheDocument()
     })
@@ -69,7 +72,7 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
     )
   })
 
-  it('renders AuditPage with checkin/message target types, keyset pagination (next_before_id), and JSON copy', async () => {
+  it('renders AuditPage with localized action and target labels, formatted timestamps, keyset pagination (next_before_id), and JSON copy (UX-42)', async () => {
     const listSpy = vi
       .spyOn(adminApi, 'listAuditLog')
       .mockResolvedValueOnce({
@@ -91,7 +94,7 @@ describe('JourneysPage, AuditPage, and SettingsPage', () => {
 
     await waitFor(() => {
       expect(screen.getByText('#1042')).toBeInTheDocument()
-      expect(screen.getByText('feature_requests.update')).toBeInTheDocument()
+      expect(screen.getByText('Update Feature Request')).toBeInTheDocument()
     })
 
     const user = userEvent.setup()

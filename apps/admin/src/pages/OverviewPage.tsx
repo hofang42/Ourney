@@ -6,7 +6,11 @@ import {
   type OverviewFeatureRequestTopItem,
   type OverviewStats,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  formatFeatureRequestCategory,
+  formatFeatureRequestStatus,
+  useI18n,
+} from '../lib/i18n'
 import {
   BarTrendChart,
   CohortHeatmap,
@@ -511,8 +515,8 @@ export function OverviewPage() {
                   <p className="page-subtitle">
                     {frKpis === null
                       ? t(
-                          'Chưa cài đặt bảng đề xuất tính năng (Migration 0024).',
-                          'Feature requests table not installed yet (Migration 0024).',
+                          'Tính năng đề xuất chưa được kích hoạt trên hệ thống.',
+                          'Feature requests are not enabled on this system yet.',
                         )
                       : t(
                           'Chưa có đề xuất tính năng nào đang mở.',
@@ -540,7 +544,7 @@ export function OverviewPage() {
                         }}
                       >
                         <span className="badge badge-primary tabular">
-                          {fr.vote_count} votes
+                          {fr.vote_count} {t('phiếu', 'votes')}
                         </span>
                         <div>
                           <div style={{ fontWeight: 700 }}>{fr.title}</div>
@@ -552,8 +556,12 @@ export function OverviewPage() {
                               fontSize: '0.75rem',
                             }}
                           >
-                            <span className="badge">{fr.category}</span>
-                            <span className="badge badge-sky">{fr.status}</span>
+                            <span className="badge">
+                              {formatFeatureRequestCategory(fr.category, lang)}
+                            </span>
+                            <span className="badge badge-sky">
+                              {formatFeatureRequestStatus(fr.status, lang)}
+                            </span>
                           </div>
                         </div>
                       </div>

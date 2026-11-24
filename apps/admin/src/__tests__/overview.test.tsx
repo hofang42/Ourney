@@ -65,7 +65,7 @@ describe('OverviewPage', () => {
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
-  it('renders clean zero/uninstalled state when Migration 0024 is absent (kpis.feature_requests: null)', async () => {
+  it('renders clean zero/uninstalled state without leaking migration numbers when feature_requests is null', async () => {
     vi.spyOn(adminApi, 'overviewStats').mockResolvedValue({
       ...SQL_FIXTURE_OVERVIEW,
       alerts: {
@@ -93,10 +93,9 @@ describe('OverviewPage', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(
-          /Feature requests table not installed yet \(Migration 0024\)/i,
-        ),
+        screen.getByText(/Feature requests are not enabled on this system yet/i),
       ).toBeInTheDocument()
     })
+    expect(screen.queryByText(/Migration 0024/i)).toBeNull()
   })
 })

@@ -10,7 +10,13 @@ import {
   type FeatureRequestStats,
   type FeatureRequestStatus,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  fmtDateTime,
+  formatFeatureRequestCategory,
+  formatFeatureRequestStatus,
+  formatWordCategory,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal, PaginationBar } from '../ui/Modal'
 
@@ -70,6 +76,15 @@ const CATEGORIES: FeatureRequestCategory[] = [
   'other',
 ]
 
+const STATUSES: FeatureRequestStatus[] = [
+  'new',
+  'under_review',
+  'planned',
+  'in_progress',
+  'shipped',
+  'declined',
+]
+
 export function FeatureRequestsPage() {
   const { lang, t } = useI18n()
   const [searchParams] = useSearchParams()
@@ -102,6 +117,12 @@ export function FeatureRequestsPage() {
   const [editHidden, setEditHidden] = useState(false)
   const [editReason, setEditReason] = useState('')
   const [saving, setSaving] = useState(false)
+
+  const [hideModalOpen, setHideModalOpen] = useState(false)
+  const [hideReason, setHideReason] = useState('')
+
+  const [clearReplyModalOpen, setClearReplyModalOpen] = useState(false)
+  const [clearReplyReason, setClearReplyReason] = useState('')
 
   const [mergeModalOpen, setMergeModalOpen] = useState(false)
   const [mergeSearch, setMergeSearch] = useState('')
@@ -152,7 +173,7 @@ export function FeatureRequestsPage() {
       if (isFeatureRequestsNotInstalledError(err)) {
         setNotInstalled(true)
       } else {
-        const msg = await handleRpcError(err, 'list_feature_requests')
+        const msg = await handleRpcError(err, 'list_feature_requests', lang)
         setErrorMsg(msg)
       }
     } finally {
@@ -185,11 +206,16 @@ export function FeatureRequestsPage() {
         if (isFeatureRequestsNotInstalledError(err)) {
           setNotInstalled(true)
         } else {
-          const msg = await handleRpcError(err, 'get_feature_request_detail')
+          const msg = await handleRpcError(
+            err,
+            'get_feature_request_detail',
+            lang,
+          )
           setErrorMsg(msg)
         }
       }
     })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId, notInstalled])
 
   useEffect(() => {
@@ -235,14 +261,14 @@ export function FeatureRequestsPage() {
           <div>
             <h2>
               {t(
-                'Tính năng Đề xuất chưa cài đặt (Migration 0024)',
-                'Feature Requests Not Installed Yet (Migration 0024)',
+                'Tính năng Đề xuất chưa được kích hoạt',
+                'Feature Requests Not Enabled Yet',
               )}
             </h2>
             <p className="page-subtitle">
               {t(
-                'Bảng public.feature_requests và các RPC admin.*_feature_request* chưa được cài đặt trên cơ sở dữ liệu này (404 / PGRST202). Trang sẽ tự động hoạt động ngay khi migration 0024_feature_requests.sql được áp dụng.',
-                'The public.feature_requests schema and admin.*_feature_request* RPCs returned 404 / PGRST202. This page will activate automatically once migration 0024_feature_requests.sql is applied.',
+                'Hệ thống đề xuất tính năng chưa được kích hoạt trên môi trường này. Trang sẽ tự động hoạt động sau khi cập nhật hệ thống hoàn tất.',
+                'The feature requests module is not yet active in this environment. This page will activate automatically once the system update is applied.',
               )}
             </p>
           </div>
@@ -258,39 +284,34 @@ export function FeatureRequestsPage() {
       const res = await adminApi.testContentFilter(editReply)
       setFilterCheckMsg(
         !res.blocked
-          ? t('PASS: Nội dung phản hồi hợp lệ.', 'PASS: Reply text is clean.')
+          ? t('HỢP LỆ: Nội dung phản hồi hợp lệ.', 'PASS: Reply text is clean.')
           : t(
-              `BLOCKED: Khớp từ khóa "${res.term}" (${res.category})`,
-              `BLOCKED: Matched "${res.term}" (${res.category})`,
+              `BỊ CHẶN: Khớp từ khóa "${res.term}" (${formatWordCategory(res.category, lang)})`,
+              `BLOCKED: Matched "${res.term}" (${formatWordCategory(res.category, lang)})`,
             ),
       )
     } catch (err) {
-      const msg = await handleRpcError(err, 'test_content_filter')
+      const msg = await handleRpcError(err, 'test_content_filter', lang)
       setErrorMsg(msg)
     }
   }
 
-  const handleSaveUpdate = async (
-    clearReply = false,
-    nextHidden = editHidden,
-  ) => {
+  const handleSaveUpdate = async () => {
     if (!detail) return
     setSaving(true)
     setErrorMsg(null)
     try {
-      const replyVal = clearReply ? null : editReply.trim() || null
+      const replyVal = editReply.trim() || null
       await adminApi.updateFeatureRequest({
         p_id: detail.id,
         p_status: editStatus,
         p_category: editCategory,
         p_admin_reply: replyVal,
-        p_hidden: nextHidden,
+        p_hidden: editHidden,
         p_reason:
           editReason.trim() ||
-          `Updated status=${editStatus}, category=${editCategory}, hidden=${String(nextHidden)}`,
+          `Updated status=${editStatus}, category=${editCategory}, hidden=${String(editHidden)}`,
       })
-      if (clearReply) setEditReply('')
-      setEditHidden(nextHidden)
       setBannerMsg(
         t(
           'Đã cập nhật đề xuất tính năng và phản hồi công khai.',
@@ -299,7 +320,105 @@ export function FeatureRequestsPage() {
       )
       await loadList(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'update_feature_request')
+      const msg = await handleRpcError(err, 'update_feature_request', lang)
+      setErrorMsg(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleConfirmHide = async () => {
+    if (!detail) return
+    setSaving(true)
+    setErrorMsg(null)
+    try {
+      // Preserve persisted status/category/reply so hiding does not silently commit unsaved drafts
+      await adminApi.updateFeatureRequest({
+        p_id: detail.id,
+        p_status: detail.status,
+        p_category: detail.category,
+        p_admin_reply: detail.admin_reply,
+        p_hidden: true,
+        p_reason:
+          hideReason.trim() || 'Hidden from public roadmap via Admin Console',
+      })
+      setEditHidden(true)
+      setDetail({ ...detail, hidden: true })
+      setHideModalOpen(false)
+      setHideReason('')
+      setBannerMsg(
+        t(
+          'Đã ẩn đề xuất tính năng khỏi bảng công khai.',
+          'Hidden feature request from the public board.',
+        ),
+      )
+      await loadList(offset)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'update_feature_request', lang)
+      setErrorMsg(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleUnhide = async () => {
+    if (!detail) return
+    setSaving(true)
+    setErrorMsg(null)
+    try {
+      await adminApi.updateFeatureRequest({
+        p_id: detail.id,
+        p_status: detail.status,
+        p_category: detail.category,
+        p_admin_reply: detail.admin_reply,
+        p_hidden: false,
+        p_reason: 'Restored visibility on public roadmap via Admin Console',
+      })
+      setEditHidden(false)
+      setDetail({ ...detail, hidden: false })
+      setBannerMsg(
+        t(
+          'Đã hiển thị lại đề xuất tính năng trên bảng công khai.',
+          'Restored feature request visibility on the public board.',
+        ),
+      )
+      await loadList(offset)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'update_feature_request', lang)
+      setErrorMsg(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleConfirmClearReply = async () => {
+    if (!detail) return
+    setSaving(true)
+    setErrorMsg(null)
+    try {
+      await adminApi.updateFeatureRequest({
+        p_id: detail.id,
+        p_status: detail.status,
+        p_category: detail.category,
+        p_admin_reply: null,
+        p_hidden: detail.hidden,
+        p_reason:
+          clearReplyReason.trim() ||
+          'Cleared official public reply via Admin Console',
+      })
+      setEditReply('')
+      setDetail({ ...detail, admin_reply: null, admin_replied_at: null })
+      setClearReplyModalOpen(false)
+      setClearReplyReason('')
+      setBannerMsg(
+        t(
+          'Đã xóa phản hồi công khai từ Ourney.',
+          'Cleared official Ourney public reply.',
+        ),
+      )
+      await loadList(offset)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'update_feature_request', lang)
       setErrorMsg(msg)
     } finally {
       setSaving(false)
@@ -327,7 +446,7 @@ export function FeatureRequestsPage() {
       )
       await loadList(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'merge_feature_request')
+      const msg = await handleRpcError(err, 'merge_feature_request', lang)
       setErrorMsg(msg)
     }
   }
@@ -384,7 +503,7 @@ export function FeatureRequestsPage() {
           <div style={{ display: 'flex', gap: 10 }}>
             <span className="badge badge-primary tabular">
               +{stats.new_this_week}{' '}
-              {t('tuần này (7d)', 'new this week (7d)')}
+              {t('tuần này (7 ngày)', 'new this week (7d)')}
             </span>
           </div>
         )}
@@ -464,7 +583,7 @@ export function FeatureRequestsPage() {
           <option value="all">{t('Mọi danh mục', 'All categories')}</option>
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
-              {c}
+              {formatFeatureRequestCategory(c, lang)}
             </option>
           ))}
         </select>
@@ -475,16 +594,10 @@ export function FeatureRequestsPage() {
           value={visibilityFilter}
           onChange={(e) => setVisibilityFilter(e.target.value)}
         >
-          <option value="active">
-            {t('Đang hiển thị (Visible)', 'Visible')}
-          </option>
-          <option value="hidden">
-            {t('Đã ẩn / Tạm khóa (Hidden)', 'Hidden / Quarantined')}
-          </option>
-          <option value="merged">
-            {t('Trùng lặp đã gộp (Merged)', 'Merged Duplicates')}
-          </option>
-          <option value="all">{t('Tất cả (All)', 'All')}</option>
+          <option value="active">{t('Đang hiển thị', 'Visible')}</option>
+          <option value="hidden">{t('Đã ẩn / Tạm khóa', 'Hidden / Quarantined')}</option>
+          <option value="merged">{t('Trùng lặp đã gộp', 'Merged Duplicates')}</option>
+          <option value="all">{t('Tất cả', 'All')}</option>
         </select>
 
         <select
@@ -494,14 +607,14 @@ export function FeatureRequestsPage() {
           onChange={(e) => setSortBy(e.target.value)}
         >
           <option value="votes_desc">
-            {t('Nhiều bình chọn nhất (Most Voted)', 'Most Voted')}
+            {t('Nhiều bình chọn nhất', 'Most Voted')}
           </option>
-          <option value="newest">{t('Mới nhất (Newest)', 'Newest')}</option>
+          <option value="newest">{t('Mới nhất', 'Newest')}</option>
           <option value="updated_desc">
-            {t('Mới cập nhật (Recently Updated)', 'Recently Updated')}
+            {t('Mới cập nhật', 'Recently Updated')}
           </option>
           <option value="reports_desc">
-            {t('Nhiều báo cáo nhất (Most Reported)', 'Most Reported')}
+            {t('Nhiều báo cáo nhất', 'Most Reported')}
           </option>
         </select>
       </div>
@@ -583,25 +696,37 @@ export function FeatureRequestsPage() {
                               </span>
                             )}
                             {r.hidden && (
-                              <span className="badge badge-danger">Hidden</span>
+                              <span className="badge badge-danger">
+                                {t('Đã ẩn', 'Hidden')}
+                              </span>
                             )}
                             {r.merged_children_count > 0 && (
                               <span className="badge badge-purple">
-                                Merged ({r.merged_children_count})
+                                {t(
+                                  `Đã gộp (${r.merged_children_count})`,
+                                  `Merged (${r.merged_children_count})`,
+                                )}
                               </span>
                             )}
                             {r.open_reports_count > 0 && (
                               <span className="badge badge-danger">
-                                {r.open_reports_count} reports
+                                {t(
+                                  `${r.open_reports_count} báo cáo`,
+                                  `${r.open_reports_count} reports`,
+                                )}
                               </span>
                             )}
                           </div>
                         </td>
                         <td>
-                          <span className="badge">{r.category}</span>
+                          <span className="badge">
+                            {formatFeatureRequestCategory(r.category, lang)}
+                          </span>
                         </td>
                         <td>
-                          <span className="badge badge-success">{r.status}</span>
+                          <span className="badge badge-success">
+                            {formatFeatureRequestStatus(r.status, lang)}
+                          </span>
                         </td>
                         <td>
                           {r.author_username
@@ -644,20 +769,27 @@ export function FeatureRequestsPage() {
                     {detail.author_username
                       ? `@${detail.author_username}`
                       : t('Thành viên Ourney', 'Ourney member')}{' '}
-                    · {detail.vote_count} votes
+                    · {detail.vote_count} {t('phiếu bầu', 'votes')}
                   </p>
                 </div>
                 <button
                   type="button"
                   className="btn"
-                  aria-pressed={editHidden}
-                  onClick={() => void handleSaveUpdate(false, !editHidden)}
+                  aria-pressed={detail.hidden}
+                  disabled={saving}
+                  onClick={() => {
+                    if (detail.hidden) {
+                      void handleUnhide()
+                    } else {
+                      setHideModalOpen(true)
+                    }
+                  }}
                 >
-                  <OIcon name={editHidden ? 'eye' : 'eye-off'} size={18} />
+                  <OIcon name={detail.hidden ? 'eye' : 'eye-off'} size={18} />
                   <span>
-                    {editHidden
-                      ? t('Hiện lại (Unhide)', 'Unhide')
-                      : t('Ẩn bài (Hide)', 'Hide Request')}
+                    {detail.hidden
+                      ? t('Hiện lại', 'Unhide')
+                      : t('Ẩn bài', 'Hide Request')}
                   </span>
                 </button>
               </div>
@@ -671,7 +803,7 @@ export function FeatureRequestsPage() {
                   <OIcon name="trophy" size={20} />
                   <span>
                     {t(
-                      `Lưu ở trạng thái Đã ra mắt (Shipped) sẽ thông báo tới tất cả ${detail.vote_count} người bình chọn trong hộp thư Hoạt động của ứng dụng.`,
+                      `Lưu ở trạng thái Đã ra mắt sẽ thông báo tới tất cả ${detail.vote_count} người bình chọn trong hộp thư Hoạt động của ứng dụng.`,
                       `Saving as Shipped will notify all ${detail.vote_count} voters in their in-app Activity inbox.`,
                     )}
                   </span>
@@ -694,12 +826,11 @@ export function FeatureRequestsPage() {
                       setEditStatus(e.target.value as FeatureRequestStatus)
                     }
                   >
-                    <option value="new">new</option>
-                    <option value="under_review">under_review</option>
-                    <option value="planned">planned</option>
-                    <option value="in_progress">in_progress</option>
-                    <option value="shipped">shipped</option>
-                    <option value="declined">declined</option>
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {formatFeatureRequestStatus(s, lang)}
+                      </option>
+                    ))}
                   </select>
                 </label>
 
@@ -717,7 +848,7 @@ export function FeatureRequestsPage() {
                   >
                     {CATEGORIES.map((c) => (
                       <option key={c} value={c}>
-                        {c}
+                        {formatFeatureRequestCategory(c, lang)}
                       </option>
                     ))}
                   </select>
@@ -795,8 +926,8 @@ export function FeatureRequestsPage() {
                   type="text"
                   className="input"
                   placeholder={t(
-                    'Ghi chú ngắn gọn cho private.admin_audit...',
-                    'Brief reason for private.admin_audit...',
+                    'Ghi chú ngắn gọn cho nhật ký kiểm toán...',
+                    'Brief reason for the audit log...',
                   )}
                   value={editReason}
                   onChange={(e) => setEditReason(e.target.value)}
@@ -807,7 +938,7 @@ export function FeatureRequestsPage() {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() => void handleSaveUpdate(false, editHidden)}
+                  onClick={() => void handleSaveUpdate()}
                   disabled={saving}
                 >
                   <OIcon name="check" size={18} />
@@ -819,8 +950,8 @@ export function FeatureRequestsPage() {
                 {detail.admin_reply && (
                   <button
                     type="button"
-                    className="btn"
-                    onClick={() => void handleSaveUpdate(true, editHidden)}
+                    className="btn btn-danger"
+                    onClick={() => setClearReplyModalOpen(true)}
                     disabled={saving}
                   >
                     <OIcon name="trash" size={18} />
@@ -837,7 +968,7 @@ export function FeatureRequestsPage() {
                     <OIcon name="merge" size={18} />
                     <span>
                       {t(
-                        'Gộp vào đề xuất gốc... / Merge Duplicate',
+                        'Gộp vào đề xuất gốc...',
                         'Merge into Canonical Request...',
                       )}
                     </span>
@@ -908,7 +1039,7 @@ export function FeatureRequestsPage() {
                         className="tabular"
                         style={{ fontSize: '0.78rem', color: 'var(--muted)' }}
                       >
-                        {v.voted_at}
+                        {fmtDateTime(v.voted_at, lang)}
                       </div>
                     </div>
                   ))}
@@ -918,6 +1049,126 @@ export function FeatureRequestsPage() {
           )}
         </div>
       </div>
+
+      {hideModalOpen && detail && (
+        <AccessibleModal
+          title={t(
+            'Xác nhận ẩn đề xuất tính năng',
+            'Confirm Hide Feature Request',
+          )}
+          onClose={() => {
+            setHideModalOpen(false)
+            setHideReason('')
+          }}
+        >
+          <h3>
+            {t('Xác nhận ẩn đề xuất tính năng', 'Confirm Hide Feature Request')}
+          </h3>
+          <p className="page-subtitle">
+            <strong>{detail.title}</strong> —{' '}
+            {t(
+              'Đề xuất này sẽ bị ẩn khỏi bảng lộ trình công khai trong ứng dụng. Các thay đổi chưa lưu trong biểu mẫu bên dưới sẽ không bị tự động áp dụng.',
+              'This request will be hidden from the in-app public roadmap board. Unsaved form edits in the detail panel will not be committed.',
+            )}
+          </p>
+          <label className="field-group">
+            <span className="field-label">
+              {t('Lý do ẩn bài', 'Hide Reason')}
+            </span>
+            <input
+              type="text"
+              className="input"
+              value={hideReason}
+              onChange={(e) => setHideReason(e.target.value)}
+              placeholder={t(
+                'Nội dung spam hoặc không phù hợp...',
+                'Spam or inappropriate content...',
+              )}
+            />
+          </label>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setHideModalOpen(false)
+                setHideReason('')
+              }}
+            >
+              {t('Hủy', 'Cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={saving}
+              onClick={() => void handleConfirmHide()}
+            >
+              {t('Xác nhận ẩn bài', 'Confirm Hide Request')}
+            </button>
+          </div>
+        </AccessibleModal>
+      )}
+
+      {clearReplyModalOpen && detail && (
+        <AccessibleModal
+          title={t(
+            'Xác nhận xóa phản hồi công khai',
+            'Confirm Clear Official Reply',
+          )}
+          onClose={() => {
+            setClearReplyModalOpen(false)
+            setClearReplyReason('')
+          }}
+        >
+          <h3>
+            {t(
+              'Xác nhận xóa phản hồi công khai',
+              'Confirm Clear Official Reply',
+            )}
+          </h3>
+          <p className="page-subtitle">
+            {t(
+              'Phản hồi chính thức từ Ourney trên đề xuất này sẽ bị gỡ bỏ khỏi ứng dụng.',
+              'The published official Ourney response on this feature request will be removed from the app.',
+            )}
+          </p>
+          <label className="field-group">
+            <span className="field-label">
+              {t('Lý do xóa phản hồi', 'Clear Reason')}
+            </span>
+            <input
+              type="text"
+              className="input"
+              value={clearReplyReason}
+              onChange={(e) => setClearReplyReason(e.target.value)}
+              placeholder={t(
+                'Cập nhật lại thông tin phản hồi...',
+                'Replacing or retracting outdated response...',
+              )}
+            />
+          </label>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setClearReplyModalOpen(false)
+                setClearReplyReason('')
+              }}
+            >
+              {t('Hủy', 'Cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              disabled={saving}
+              onClick={() => void handleConfirmClearReply()}
+            >
+              {t('Xác nhận xóa phản hồi', 'Confirm Clear Reply')}
+            </button>
+          </div>
+        </AccessibleModal>
+      )}
 
       {mergeModalOpen && detail && (
         <AccessibleModal
@@ -965,7 +1216,7 @@ export function FeatureRequestsPage() {
 
           <label className="field-group">
             <span className="field-label">
-              {t('Chọn đề xuất gốc (Canonical Target)', 'Canonical Target')}
+              {t('Chọn đề xuất gốc', 'Canonical Target')}
             </span>
             <select
               aria-label={t('Chọn đề xuất đích', 'Select canonical target')}
@@ -978,7 +1229,7 @@ export function FeatureRequestsPage() {
               </option>
               {mergeCandidates.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.title} ({c.vote_count} votes)
+                  {c.title} ({c.vote_count} {t('phiếu bầu', 'votes')})
                 </option>
               ))}
             </select>
@@ -992,7 +1243,7 @@ export function FeatureRequestsPage() {
                   'Estimated Net Unique Votes after merge:',
                 )}{' '}
                 <span className="badge badge-primary tabular">
-                  {computeEstimatedNetVotes()} votes
+                  {computeEstimatedNetVotes()} {t('phiếu bầu', 'votes')}
                 </span>
               </div>
             </div>
@@ -1000,7 +1251,7 @@ export function FeatureRequestsPage() {
 
           <label className="field-group">
             <span className="field-label">
-              {t('Lý do gộp (p_reason)', 'Merge Reason')}
+              {t('Lý do gộp', 'Merge Reason')}
             </span>
             <input
               type="text"

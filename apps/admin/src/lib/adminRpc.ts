@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { WaitlistExportRow } from './csv'
+import { formatAdminError, getCurrentLang, type Lang } from './i18n'
 
 export type AdminRole = 'owner' | 'moderator'
 
@@ -407,6 +408,14 @@ export interface WaitlistListResponse {
   items: WaitlistRow[]
 }
 
+export interface WaitlistResendResponse {
+  ok: boolean
+  attempted?: number
+  sent?: number
+  failed?: number
+  errors?: Array<{ id: string; error: string }>
+}
+
 export interface AdminUserRow {
   id: string
   username: string | null
@@ -701,15 +710,14 @@ async function verifySessionAfterError(err: unknown, fnName?: string): Promise<v
   }
 }
 
-export async function handleRpcError(err: unknown, fnName?: string): Promise<string> {
+export async function handleRpcError(
+  err: unknown,
+  fnName?: string,
+  lang: Lang = getCurrentLang(),
+): Promise<string> {
+  console.debug('[OurneyAdmin RPC Error]', fnName ?? 'rpc', err)
   await verifySessionAfterError(err, fnName)
-  if (err instanceof Error && err.message) {
-    return err.message
-  }
-  if (err && typeof err === 'object' && 'message' in err) {
-    return String((err as { message: unknown }).message)
-  }
-  return 'Unexpected RPC error'
+  return formatAdminError(err, lang)
 }
 
 async function callAdminRpc<T>(

@@ -5,14 +5,20 @@ import {
   type AdminJourneyRow,
   type JourneyStats,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  formatJourneyKind,
+  formatJourneyStatus,
+  formatJourneyTemplate,
+  formatJourneyVisibility,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 import { AccessibleModal, PaginationBar } from '../ui/Modal'
 
 const PAGE_LIMIT = 50
 
 export function JourneysPage() {
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const [stats, setStats] = useState<JourneyStats | null>(null)
   const [total, setTotal] = useState(0)
   const [rows, setRows] = useState<AdminJourneyRow[]>([])
@@ -47,7 +53,7 @@ export function JourneysPage() {
       setTotal(listRes.total)
       setRows(listRes.items)
     } catch (err) {
-      const msg = await handleRpcError(err, 'list_journeys')
+      const msg = await handleRpcError(err, 'list_journeys', lang)
       setErrorMsg(msg)
     }
   }
@@ -85,7 +91,7 @@ export function JourneysPage() {
       setRevokeReason('')
       await loadData(offset)
     } catch (err) {
-      const msg = await handleRpcError(err, 'revoke_journey_public_link')
+      const msg = await handleRpcError(err, 'revoke_journey_public_link', lang)
       setErrorMsg(msg)
     }
   }
@@ -102,8 +108,8 @@ export function JourneysPage() {
           </h1>
           <p className="page-subtitle">
             {t(
-              'Tiêu đề hành trình riêng tư hoặc nhóm đều được ẩn thành NULL ngay từ SQL — chỉ hiển thị tiêu đề khi người dùng bật liên kết công khai /p/<token>.',
-              'Private and group journey titles are redacted to NULL in SQL — titles only appear when visibility is public link.',
+              'Tiêu đề hành trình riêng tư hoặc nhóm đều được ẩn tự động để bảo vệ quyền riêng tư — chỉ hiển thị tiêu đề khi người dùng bật liên kết chia sẻ công khai.',
+              'Private and group journey titles are automatically hidden to protect user privacy — titles only appear when visibility is public link.',
             )}
           </p>
         </div>
@@ -153,7 +159,7 @@ export function JourneysPage() {
           <div className="kpi-card">
             <span className="kpi-label">
               {t(
-                'Liên kết /p/ đang mở & Lượt xem',
+                'Liên kết công khai đang mở & Lượt xem',
                 'Active Public Links & Views',
               )}
             </span>
@@ -170,8 +176,8 @@ export function JourneysPage() {
           className="input search-input"
           aria-label={t('Tìm kiếm hành trình', 'Search journeys')}
           placeholder={t(
-            'Tìm theo @username chủ sở hữu hoặc Journey UUID...',
-            'Search owner @username or Journey UUID...',
+            'Tìm theo @username chủ sở hữu hoặc mã hành trình...',
+            'Search owner @username or Journey ID...',
           )}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -184,9 +190,9 @@ export function JourneysPage() {
           onChange={(e) => setKindFilter(e.target.value)}
         >
           <option value="all">{t('Mọi loại', 'All kinds')}</option>
-          <option value="solo">solo</option>
-          <option value="group">group</option>
-          <option value="couple">couple</option>
+          <option value="solo">{formatJourneyKind('solo', lang)}</option>
+          <option value="group">{formatJourneyKind('group', lang)}</option>
+          <option value="couple">{formatJourneyKind('couple', lang)}</option>
         </select>
 
         <select
@@ -195,13 +201,25 @@ export function JourneysPage() {
           value={templateFilter}
           onChange={(e) => setTemplateFilter(e.target.value)}
         >
-          <option value="all">{t('Mọi mẫu Persona', 'All templates')}</option>
-          <option value="weight_loss">weight_loss</option>
-          <option value="english_daily">english_daily</option>
-          <option value="travel">travel</option>
-          <option value="couple">couple</option>
-          <option value="workout_30">workout_30</option>
-          <option value="custom">custom</option>
+          <option value="all">{t('Mọi mẫu giao diện', 'All templates')}</option>
+          <option value="weight_loss">
+            {formatJourneyTemplate('weight_loss', lang)}
+          </option>
+          <option value="english_daily">
+            {formatJourneyTemplate('english_daily', lang)}
+          </option>
+          <option value="travel">
+            {formatJourneyTemplate('travel', lang)}
+          </option>
+          <option value="couple">
+            {formatJourneyTemplate('couple', lang)}
+          </option>
+          <option value="workout_30">
+            {formatJourneyTemplate('workout_30', lang)}
+          </option>
+          <option value="custom">
+            {formatJourneyTemplate('custom', lang)}
+          </option>
         </select>
 
         <select
@@ -211,9 +229,11 @@ export function JourneysPage() {
           onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="all">{t('Mọi trạng thái', 'All statuses')}</option>
-          <option value="active">active</option>
-          <option value="ended">ended</option>
-          <option value="archived">archived</option>
+          <option value="active">{formatJourneyStatus('active', lang)}</option>
+          <option value="ended">{formatJourneyStatus('ended', lang)}</option>
+          <option value="archived">
+            {formatJourneyStatus('archived', lang)}
+          </option>
         </select>
 
         <button
@@ -238,7 +258,7 @@ export function JourneysPage() {
               <th>
                 {t(
                   'Tiêu đề (Đã bảo vệ quyền riêng tư)',
-                  'Title (Privacy-Redacted)',
+                  'Title (Privacy-Protected)',
                 )}
               </th>
               <th>{t('Thành viên & Check-ins', 'Members & Check-ins')}</th>
@@ -266,8 +286,12 @@ export function JourneysPage() {
                     </div>
                   </td>
                   <td>
-                    <span className="badge">{kindLabel}</span>{' '}
-                    <span className="badge badge-sky">{j.template_id}</span>
+                    <span className="badge">
+                      {formatJourneyKind(kindLabel, lang)}
+                    </span>{' '}
+                    <span className="badge badge-sky">
+                      {formatJourneyTemplate(j.template_id, lang)}
+                    </span>
                   </td>
                   <td>
                     {j.public_token && j.title ? (
@@ -277,14 +301,14 @@ export function JourneysPage() {
                         style={{ color: 'var(--muted)', fontStyle: 'italic' }}
                       >
                         {t(
-                          '[Hành trình riêng tư — Đã ẩn SQL]',
-                          '[Private Journey — Redacted in SQL]',
+                          '[Hành trình riêng tư — Đã ẩn tiêu đề]',
+                          '[Private Journey — Title Hidden]',
                         )}
                       </span>
                     )}
                   </td>
                   <td className="tabular">
-                    {membersLabel} · {j.checkin_count} snaps
+                    {membersLabel} · {j.checkin_count} {t('ảnh', 'snaps')}
                   </td>
                   <td className="tabular">{j.public_views}</td>
                   <td>
@@ -295,9 +319,12 @@ export function JourneysPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn"
+                          title={`/p/${j.public_token}`}
                         >
                           <OIcon name="external" size={16} />
-                          <span>/p/{j.public_token}</span>
+                          <span>
+                            {t('Mở trang công khai', 'Open public page')}
+                          </span>
                         </a>
                         <button
                           type="button"
@@ -310,7 +337,9 @@ export function JourneysPage() {
                         </button>
                       </div>
                     ) : (
-                      <span className="badge">{j.visibility}</span>
+                      <span className="badge">
+                        {formatJourneyVisibility(j.visibility, lang)}
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -333,17 +362,20 @@ export function JourneysPage() {
       {revokeTarget && (
         <AccessibleModal
           title={t(
-            'Thu hồi liên kết công khai /p/',
+            'Thu hồi liên kết công khai',
             'Revoke Public Journey Link',
           )}
           onClose={() => setRevokeTarget(null)}
         >
           <h3>
-            {t('Thu hồi liên kết công khai /p/', 'Revoke Public Journey Link')}
+            {t('Thu hồi liên kết công khai', 'Revoke Public Journey Link')}
           </h3>
           <label className="field-group">
             <span className="field-label">
-              {t('Lý do thu hồi (tối thiểu 3 ký tự)', 'Revocation Reason (min 3 chars)')}
+              {t(
+                'Lý do thu hồi (tối thiểu 3 ký tự)',
+                'Revocation Reason (min 3 chars)',
+              )}
             </span>
             <input
               type="text"

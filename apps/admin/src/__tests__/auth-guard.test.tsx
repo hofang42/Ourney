@@ -3,16 +3,32 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminApi, handleRpcError } from '../lib/adminRpc'
-import { I18nProvider } from '../lib/i18n'
+import {
+  fmtDateShort,
+  fmtDateTime,
+  formatAdminError,
+  formatAuditAction,
+  formatFeatureRequestCategory,
+  formatFeatureRequestStatus,
+  formatJourneyKind,
+  formatJourneyVisibility,
+  formatModerationReason,
+  formatPlatformLabel,
+  formatTargetType,
+  formatUserStatus,
+  formatWordCategory,
+  formatWordMatchMode,
+  I18nProvider,
+} from '../lib/i18n'
 import { AdminAuthGuard } from '../ui/Shell'
 import { SQL_FIXTURE_MODERATOR, SQL_FIXTURE_OWNER } from './fixtures'
 
-describe('AdminAuthGuard & Mid-Session 42501 Handling', () => {
+describe('AdminAuthGuard, Central Error Mapper (UX-10), and Localization Helpers (UX-42)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('auto-signs out and displays error when admin.me() returns 42501 forbidden', async () => {
+  it('auto-signs out and displays human message without leaking raw 42501 when admin.me() returns forbidden', async () => {
     const forbiddenErr = Object.assign(new Error('forbidden'), {
       code: '42501',
     })
@@ -32,9 +48,120 @@ describe('AdminAuthGuard & Mid-Session 42501 Handling', () => {
     await waitFor(() => {
       expect(signOutSpy).toHaveBeenCalledTimes(1)
     })
-    expect(
-      screen.getByText(/does not have admin privileges \(42501\)/i),
-    ).toBeInTheDocument()
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent(/does not have admin privileges/i)
+    expect(alert.textContent).not.toContain('42501')
+  })
+
+  it('maps raw SQLSTATE, PostgREST, Auth, and Edge Function errors to human VI/EN messages without leaking internal codes', async () => {
+    const cases: Array<{ err: unknown; viMatch: RegExp; enMatch: RegExp }> = [
+      {
+        err: { code: '42501', message: 'permission denied for schema private' },
+        viMatch: /không có quyền thực hiện/i,
+        enMatch: /do not have permission/i,
+      },
+      {
+        err: {
+          code: 'PGRST202',
+          message: 'Could not find the function admin.list_feature_requests',
+        },
+        viMatch: /chưa được kích hoạt trên máy chủ/i,
+        enMatch: /not yet enabled on the database server/i,
+      },
+      {
+        err: { code: '28000', message: 'JWT expired' },
+        viMatch: /Phiên đăng nhập đã hết hạn/i,
+        enMatch: /session has expired/i,
+      },
+      {
+        err: { code: 'P0001', message: 'rate_limited' },
+        viMatch: /giới hạn tần suất/i,
+        enMatch: /Rate limit exceeded/i,
+      },
+      {
+        err: { code: 'P0001', message: 'not_found' },
+        viMatch: /Không tìm thấy mục dữ liệu/i,
+        enMatch: /requested record was not found/i,
+      },
+      {
+        err: { code: 'P0001', message: 'cannot_remove_last_owner' },
+        viMatch: /Chủ sở hữu cuối cùng/i,
+        enMatch: /last remaining Owner/i,
+      },
+      {
+        err: { code: '23514', message: 'links_not_allowed' },
+        viMatch: /không được chứa đường dẫn/i,
+        enMatch: /cannot contain web links/i,
+      },
+      {
+        err: { code: 'P0001', message: 'invalid' },
+        viMatch: /Dữ liệu nhập vào không hợp lệ/i,
+        enMatch: /provided input is invalid/i,
+      },
+      {
+        err: new Error('mail_not_configured: RESEND_API_KEY missing'),
+        viMatch: /Dịch vụ gửi email chưa được cấu hình/i,
+        enMatch: /email delivery service is not configured/i,
+      },
+      {
+        err: new Error('Token has expired or is invalid'),
+        viMatch: /Không thể xác thực mã OTP/i,
+        enMatch: /Could not verify the OTP code/i,
+      },
+    ]
+
+    for (const c of cases) {
+      const viText = formatAdminError(c.err, 'vi')
+      const enText = formatAdminError(c.err, 'en')
+      expect(viText).toMatch(c.viMatch)
+      expect(enText).toMatch(c.enMatch)
+      for (const leaked of [
+        '42501',
+        'PGRST202',
+        '28000',
+        'P0001',
+        '23514',
+        'private.',
+        'admin.',
+        'RESEND_API_KEY',
+      ]) {
+        expect(viText).not.toContain(leaked)
+        expect(enText).not.toContain(leaked)
+      }
+    }
+
+    const debugSpy = vi.spyOn(console, 'debug').mockImplementation(() => {})
+    const mappedViaRpc = await handleRpcError(
+      { code: 'PGRST202', message: 'Could not find the function' },
+      'feature_request_stats',
+      'vi',
+    )
+    expect(mappedViaRpc).toMatch(/chưa được kích hoạt/i)
+    expect(mappedViaRpc).not.toContain('PGRST202')
+    expect(debugSpy).toHaveBeenCalled()
+  })
+
+  it('formats enums and ISO timestamps into localized human labels (UX-42)', () => {
+    expect(formatFeatureRequestStatus('under_review', 'vi')).toBe('Đang xem xét')
+    expect(formatFeatureRequestStatus('in_progress', 'en')).toBe('In Progress')
+    expect(formatFeatureRequestCategory('squad', 'vi')).toBe('Nhóm bạn (Squad)')
+    expect(formatModerationReason('self_harm', 'vi')).toBe('Tự gây hại')
+    expect(formatTargetType('feature_request', 'vi')).toBe('Đề xuất tính năng')
+    expect(formatWordMatchMode('diacritic_word', 'vi')).toBe('Từ có dấu chính xác')
+    expect(formatWordCategory('csae', 'en')).toBe('Child Safety (CSAE)')
+    expect(formatUserStatus('incomplete_onboarding', 'vi')).toBe(
+      'Chưa hoàn tất hồ sơ',
+    )
+    expect(formatJourneyKind('group', 'vi')).toBe('Nhóm bạn')
+    expect(formatJourneyVisibility('private', 'vi')).toBe('Riêng tư')
+    expect(formatPlatformLabel('ios')).toBe('iOS')
+    expect(formatPlatformLabel('android')).toBe('Android')
+    expect(formatAuditAction('users.view_detail', 'en')).toBe('View User Detail')
+
+    const formattedVi = fmtDateTime('2026-11-24T06:15:00Z', 'vi')
+    expect(formattedVi).not.toContain('2026-11-24T06:15:00Z')
+    expect(formattedVi).toContain('2026')
+    expect(fmtDateShort('2026-10-21', 'vi')).toBe('21/10/2026')
   })
 
   it('completes 6-digit OTP login flow, clears OTP on Back button, and renders protected content', async () => {
@@ -94,11 +221,8 @@ describe('AdminAuthGuard & Mid-Session 42501 Handling', () => {
     const signOutSpy = vi.spyOn(adminApi, 'signOut').mockResolvedValue()
     const meSpy = vi
       .spyOn(adminApi, 'me')
-      // Initial mount succeeds as moderator
       .mockResolvedValueOnce(SQL_FIXTURE_MODERATOR)
-      // First 42501 check: moderator is still valid in private.admins
       .mockResolvedValueOnce(SQL_FIXTURE_MODERATOR)
-      // Second 42501 check: moderator was removed/banned -> 42501
       .mockRejectedValueOnce(
         Object.assign(new Error('forbidden'), { code: '42501' }),
       )
@@ -119,7 +243,6 @@ describe('AdminAuthGuard & Mid-Session 42501 Handling', () => {
       ).toBeInTheDocument()
     })
 
-    // 1. Moderator hits owner-only RPC (42501), but me() still resolves -> stays signed in
     await act(async () => {
       await handleRpcError(
         Object.assign(new Error('forbidden'), { code: '42501' }),
@@ -131,7 +254,6 @@ describe('AdminAuthGuard & Mid-Session 42501 Handling', () => {
     ).toBeInTheDocument()
     expect(signOutSpy).not.toHaveBeenCalled()
 
-    // 2. Admin is removed from private.admins -> me() rejects with 42501 -> signs out immediately
     await act(async () => {
       await handleRpcError(
         Object.assign(new Error('forbidden'), { code: '42501' }),

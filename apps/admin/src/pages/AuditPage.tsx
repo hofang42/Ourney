@@ -4,11 +4,29 @@ import {
   handleRpcError,
   type AuditLogRow,
 } from '../lib/adminRpc'
-import { useI18n } from '../lib/i18n'
+import {
+  fmtDateTime,
+  formatAuditAction,
+  formatTargetType,
+  useI18n,
+} from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 
+const AUDIT_TARGET_TYPES = [
+  'moderation_queue',
+  'checkin',
+  'message',
+  'feature_request',
+  'user',
+  'journey',
+  'waitlist',
+  'word',
+  'admin',
+  'system',
+] as const
+
 export function AuditPage() {
-  const { t } = useI18n()
+  const { lang, t } = useI18n()
   const [rows, setRows] = useState<AuditLogRow[]>([])
   const [actionPrefix, setActionPrefix] = useState('')
   const [targetType, setTargetType] = useState('all')
@@ -31,7 +49,7 @@ export function AuditPage() {
       setRows(res.items)
       setNextBeforeId(res.next_before_id)
     } catch (err) {
-      const msg = await handleRpcError(err, 'list_audit_log')
+      const msg = await handleRpcError(err, 'list_audit_log', lang)
       setErrorMsg(msg)
     }
   }
@@ -56,15 +74,12 @@ export function AuditPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">
-            {t(
-              'Nhật ký Kiểm toán Bất biến (private.admin_audit)',
-              'Immutable Audit Log (private.admin_audit)',
-            )}
+            {t('Nhật ký Kiểm toán Bất biến', 'Immutable Audit Log')}
           </h1>
           <p className="page-subtitle">
             {t(
-              'Sổ cái chỉ-thêm (append-only) ghi lại mọi thao tác thay đổi và mọi lần mở xem nội dung nhạy cảm (trigger immutable_audit_log chặn UPDATE/DELETE).',
-              'Append-only ledger of every admin mutation and privacy-sensitive read (protected by immutable_audit_log BEFORE UPDATE OR DELETE trigger).',
+              'Sổ cái chỉ-thêm ghi lại mọi thao tác thay đổi và mọi lần mở xem nội dung nhạy cảm (được bảo vệ chống chỉnh sửa hoặc xóa).',
+              'Append-only ledger of every admin action and privacy-sensitive inspection (protected against modification or deletion).',
             )}
           </p>
         </div>
@@ -81,12 +96,12 @@ export function AuditPage() {
           type="search"
           className="input search-input"
           aria-label={t(
-            'Lọc theo tiền tố hành động kiểm toán',
+            'Lọc theo nhóm hành động kiểm toán',
             'Filter audit log by action prefix',
           )}
           placeholder={t(
-            'Lọc theo tiền tố hành động (vd: moderation., feature_requests., users.)...',
-            'Filter by action prefix (e.g. moderation., feature_requests., users.)...',
+            'Tìm theo nhóm hành động (kiểm duyệt, người dùng, đề xuất)...',
+            'Filter by action group (moderation, users, feature requests)...',
           )}
           value={actionPrefix}
           onChange={(e) => setActionPrefix(e.target.value)}
@@ -99,23 +114,18 @@ export function AuditPage() {
           onChange={(e) => setTargetType(e.target.value)}
         >
           <option value="all">{t('Mọi đối tượng', 'All target types')}</option>
-          <option value="moderation_queue">moderation_queue</option>
-          <option value="checkin">checkin</option>
-          <option value="message">message</option>
-          <option value="feature_request">feature_request</option>
-          <option value="user">user</option>
-          <option value="journey">journey</option>
-          <option value="waitlist">waitlist</option>
-          <option value="word">word</option>
-          <option value="admin">admin</option>
-          <option value="system">system</option>
+          {AUDIT_TARGET_TYPES.map((tt) => (
+            <option key={tt} value={tt}>
+              {formatTargetType(tt, lang)}
+            </option>
+          ))}
         </select>
 
         <input
           type="text"
           className="input"
           aria-label={t('Mã đối tượng đích chính xác', 'Exact target ID')}
-          placeholder={t('Target ID chính xác...', 'Exact target_id...')}
+          placeholder={t('Mã đối tượng chính xác...', 'Exact target ID...')}
           value={targetId}
           onChange={(e) => setTargetId(e.target.value)}
         />
@@ -129,7 +139,7 @@ export function AuditPage() {
               <th>{t('Quản trị viên', 'Admin')}</th>
               <th>{t('Hành động', 'Action')}</th>
               <th>{t('Đối tượng', 'Target')}</th>
-              <th>{t('Lý do & Meta JSON', 'Reason & Meta')}</th>
+              <th>{t('Lý do & Chi tiết', 'Reason & Details')}</th>
               <th>JSON</th>
             </tr>
           </thead>
@@ -139,15 +149,21 @@ export function AuditPage() {
                 <td className="tabular">
                   <div style={{ fontWeight: 700 }}>#{r.id}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                    {r.created_at}
+                    {fmtDateTime(r.created_at, lang)}
                   </div>
                 </td>
-                <td style={{ fontWeight: 700 }}>{r.admin_email || 'system'}</td>
-                <td>
-                  <span className="badge badge-primary">{r.action}</span>
+                <td style={{ fontWeight: 700 }}>
+                  {r.admin_email || t('Hệ thống', 'System')}
                 </td>
                 <td>
-                  <span className="badge">{r.target_type}</span>{' '}
+                  <span className="badge badge-primary">
+                    {formatAuditAction(r.action, lang)}
+                  </span>
+                </td>
+                <td>
+                  <span className="badge">
+                    {formatTargetType(r.target_type, lang)}
+                  </span>{' '}
                   <span style={{ fontSize: '0.8rem' }}>{r.target_id}</span>
                 </td>
                 <td>

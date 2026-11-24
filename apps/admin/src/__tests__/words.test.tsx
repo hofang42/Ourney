@@ -11,7 +11,7 @@ import {
   SQL_FIXTURE_WORDS,
 } from './fixtures'
 
-describe('WordsPage', () => {
+describe('WordsPage & Filter Word Deletion Confirmation (UX-28)', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.spyOn(adminApi, 'listObjectionableWords').mockResolvedValue(
@@ -19,7 +19,7 @@ describe('WordsPage', () => {
     )
   })
 
-  it('evaluates live dry-run tester using SQL { blocked, term } contract and supports add/toggle/delete word flows', async () => {
+  it('evaluates live dry-run tester using SQL { blocked, term } contract, supports add/toggle, and requires confirmation before deleting a word (UX-28)', async () => {
     vi.spyOn(adminApi, 'testContentFilter')
       .mockResolvedValueOnce(SQL_FIXTURE_FILTER_PASS)
       .mockResolvedValueOnce(SQL_FIXTURE_FILTER_BLOCKED)
@@ -28,6 +28,9 @@ describe('WordsPage', () => {
       .mockResolvedValue()
     const toggleSpy = vi
       .spyOn(adminApi, 'setObjectionableWordEnabled')
+      .mockResolvedValue()
+    const deleteSpy = vi
+      .spyOn(adminApi, 'deleteObjectionableWord')
       .mockResolvedValue()
 
     render(
@@ -59,7 +62,7 @@ describe('WordsPage', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText(/BLOCKED \(content_policy\) · scam link/i),
+        screen.getByText(/BLOCKED · scam link \(Substring \/ Profanity\)/i),
       ).toBeInTheDocument()
     })
 
@@ -77,5 +80,17 @@ describe('WordsPage', () => {
       screen.getByRole('button', { name: /Enabled scam link/i }),
     )
     expect(toggleSpy).toHaveBeenCalledWith('scam link', false)
+
+    // UX-28: Clicking Delete opens confirmation modal first
+    await user.click(
+      screen.getByRole('button', { name: /Delete scam link/i }),
+    )
+    expect(deleteSpy).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Confirm Delete/i }))
+    expect(deleteSpy).toHaveBeenCalledWith(
+      'scam link',
+      'Deleted from Words page',
+    )
   })
 })
