@@ -448,3 +448,7 @@ verify_jwt = false
 [functions.storage-purge-sweep]
 # Gated by the SWEEP_TOKEN secret (x-sweep-token header), not by a user JWT.
 verify_jwt = false
+
+[functions.notify-moderation]
+# Gated by MODERATION_WEBHOOK_TOKEN / SWEEP_TOKEN / service_role key, not by a user JWT.
+verify_jwt = false
