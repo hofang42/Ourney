@@ -1,0 +1,300 @@
+import { useEffect, useState } from 'react'
+import {
+  adminApi,
+  type AdminJourneyRow,
+  type JourneyStats,
+} from '../lib/adminRpc'
+import { useI18n } from '../lib/i18n'
+import { OIcon } from '../ui/Icon'
+
+export function JourneysPage() {
+  const { t } = useI18n()
+  const [stats, setStats] = useState<JourneyStats | null>(null)
+  const [rows, setRows] = useState<AdminJourneyRow[]>([])
+  const [search, setSearch] = useState('')
+  const [kindFilter, setKindFilter] = useState('all')
+  const [templateFilter, setTemplateFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [publicOnly, setPublicOnly] = useState(false)
+
+  const [revokeTarget, setRevokeTarget] = useState<AdminJourneyRow | null>(null)
+  const [revokeReason, setRevokeReason] = useState('')
+  const [bannerMsg, setBannerMsg] = useState<string | null>(null)
+
+  const loadData = async () => {
+    const [st, list] = await Promise.all([
+      adminApi.journeyStats(),
+      adminApi.listJourneys({
+        p_search: search,
+        p_kind: kindFilter,
+        p_template: templateFilter,
+        p_status: statusFilter,
+        p_public_only: publicOnly,
+      }),
+    ])
+    setStats(st)
+    setRows(list)
+  }
+
+  useEffect(() => {
+    void loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, kindFilter, templateFilter, statusFilter, publicOnly])
+
+  const handleConfirmRevoke = async () => {
+    if (!revokeTarget) return
+    await adminApi.revokeJourneyPublicLink(
+      revokeTarget.id,
+      revokeReason.trim() || 'Revoked abused public link',
+    )
+    setBannerMsg(
+      t(
+        `Đã thu hồi liên kết công khai của hành trình ${revokeTarget.id}`,
+        `Revoked public link for journey ${revokeTarget.id}`,
+      ),
+    )
+    setRevokeTarget(null)
+    setRevokeReason('')
+    await loadData()
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            {t(
+              'Thống kê Hành trình & Kiểm soát Liên kết Công khai',
+              'Journeys & Public Link Controls',
+            )}
+          </h1>
+          <p className="page-subtitle">
+            {t(
+              'Tiêu đề hành trình riêng tư hoặc nhóm đều được ẩn thành NULL ngay từ SQL — chỉ hiển thị tiêu đề khi người dùng bật liên kết công khai /p/<token>.',
+              'Private and group journey titles are redacted to NULL in SQL — titles only appear when visibility is public link.',
+            )}
+          </p>
+        </div>
+      </div>
+
+      {bannerMsg && (
+        <div className="status-banner success" role="status">
+          <span>{bannerMsg}</span>
+        </div>
+      )}
+
+      {stats && (
+        <div className="kpi-grid">
+          <div className="kpi-card">
+            <span className="kpi-label">
+              {t('Trạng thái hành trình', 'Active / Ended / Archived')}
+            </span>
+            <div className="kpi-value">
+              {stats.total_active} / {stats.total_ended} / {stats.total_archived}
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <span className="kpi-label">
+              {t('Phân loại Cá nhân / Nhóm / Cặp đôi', 'Solo / Group / Couple')}
+            </span>
+            <div className="kpi-value">
+              {stats.solo_count} / {stats.group_count} / {stats.couple_count}
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <span className="kpi-label">
+              {t('Nguồn tạo (Trực tiếp vs Nhập lại)', 'Live vs Imported')}
+            </span>
+            <div className="kpi-value">
+              {stats.live_count} / {stats.imported_count}
+            </div>
+          </div>
+
+          <div className="kpi-card">
+            <span className="kpi-label">
+              {t('Liên kết /p/ đang mở & Lượt xem', 'Active Public Links & Views')}
+            </span>
+            <div className="kpi-value">
+              {stats.active_public_links} ({stats.total_public_views} views)
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="filter-bar">
+        <input
+          type="search"
+          className="input search-input"
+          placeholder={t(
+            'Tìm theo @username chủ sở hữu hoặc Journey UUID...',
+            'Search owner @username or Journey UUID...',
+          )}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <select
+          aria-label={t('Loại hành trình', 'Journey kind')}
+          className="select"
+          value={kindFilter}
+          onChange={(e) => setKindFilter(e.target.value)}
+        >
+          <option value="all">{t('Mọi loại', 'All kinds')}</option>
+          <option value="solo">solo</option>
+          <option value="group">group</option>
+          <option value="couple">couple</option>
+        </select>
+
+        <select
+          aria-label={t('Mẫu giao diện', 'Persona template')}
+          className="select"
+          value={templateFilter}
+          onChange={(e) => setTemplateFilter(e.target.value)}
+        >
+          <option value="all">{t('Mọi mẫu Persona', 'All templates')}</option>
+          <option value="weight_loss">weight_loss</option>
+          <option value="english_daily">english_daily</option>
+          <option value="travel">travel</option>
+          <option value="couple">couple</option>
+          <option value="workout_30">workout_30</option>
+          <option value="custom">custom</option>
+        </select>
+
+        <select
+          aria-label={t('Trạng thái hành trình', 'Journey status')}
+          className="select"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="all">{t('Mọi trạng thái', 'All statuses')}</option>
+          <option value="active">active</option>
+          <option value="ended">ended</option>
+          <option value="archived">archived</option>
+        </select>
+
+        <button
+          type="button"
+          className={`btn ${publicOnly ? 'btn-primary' : ''}`}
+          onClick={() => setPublicOnly((prev) => !prev)}
+        >
+          <OIcon name="share" size={18} />
+          <span>
+            {t('Chỉ hiện có liên kết công khai', 'Public Links Only')}
+          </span>
+        </button>
+      </div>
+
+      <div className="table-wrap">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>ID & {t('Chủ sở hữu', 'Owner')}</th>
+              <th>{t('Loại & Mẫu', 'Kind & Template')}</th>
+              <th>{t('Tiêu đề (Đã bảo vệ quyền riêng tư)', 'Title (Privacy-Redacted)')}</th>
+              <th>{t('Thành viên & Check-ins', 'Members & Check-ins')}</th>
+              <th>{t('Lượt xem công khai', 'Public Views')}</th>
+              <th>{t('Thao tác', 'Actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((j) => (
+              <tr key={j.id}>
+                <td>
+                  <div style={{ fontWeight: 700 }}>@{j.owner_username}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                    {j.id}
+                  </div>
+                </td>
+                <td>
+                  <span className="badge">{j.kind}</span>{' '}
+                  <span className="badge badge-sky">{j.template_id}</span>
+                </td>
+                <td>
+                  {j.public_token && j.title ? (
+                    <span style={{ fontWeight: 700 }}>{j.title}</span>
+                  ) : (
+                    <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>
+                      {t('[Hành trình riêng tư — Đã ẩn SQL]', '[Private Journey — Redacted in SQL]')}
+                    </span>
+                  )}
+                </td>
+                <td className="tabular">
+                  {j.active_members}/{j.max_members} · {j.checkin_count} snaps
+                </td>
+                <td className="tabular">{j.public_views}</td>
+                <td>
+                  {j.public_token ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <a
+                        href={`https://ourney.tech/p/${j.public_token}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn"
+                      >
+                        <OIcon name="external" size={16} />
+                        <span>/p/{j.public_token}</span>
+                      </a>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={() => setRevokeTarget(j)}
+                      >
+                        <OIcon name="ban" size={16} />
+                        <span>{t('Thu hồi link', 'Revoke Link')}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="badge">{j.visibility}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {revokeTarget && (
+        <div className="modal-scrim" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <h3>
+              {t('Thu hồi liên kết công khai /p/', 'Revoke Public Journey Link')}
+            </h3>
+            <label className="field-group">
+              <span className="field-label">
+                {t('Lý do thu hồi', 'Revocation Reason')}
+              </span>
+              <input
+                type="text"
+                className="input"
+                value={revokeReason}
+                onChange={(e) => setRevokeReason(e.target.value)}
+                placeholder={t(
+                  'Liên kết bị báo cáo lạm dụng...',
+                  'Public link reported for abuse...',
+                )}
+              />
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => setRevokeTarget(null)}
+              >
+                {t('Hủy', 'Cancel')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={() => void handleConfirmRevoke()}
+              >
+                {t('Xác nhận thu hồi', 'Confirm Revoke')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

@@ -137,3 +137,32 @@ jobs:
         run: dart analyze
       - name: Test
         run: flutter test
+
+  admin:
+    name: apps/admin (typecheck + lint + test + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/admin
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/admin/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unit & component tests (Vitest)
+        run: npm test
+      - name: Production build
+        env:
+          VITE_SUPABASE_URL: https://example.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_ci_placeholder
+        run: npm run build
+
