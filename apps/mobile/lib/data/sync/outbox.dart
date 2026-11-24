@@ -138,6 +138,17 @@ class Outbox {
   bool _again = false;
   bool _forceAgain = false;
   bool _disposed = false;
+  int _abortEpoch = 0;
+
+  /// Cancels any running pass after its current step so a session wipe
+  /// (`signOut`, `deleteAccount`) does not wait for the whole queue or write
+  /// stale attempt updates back into the wiped table (FS-27).
+  void abortCurrentPass() {
+    _abortEpoch++;
+    _again = false;
+    _forceAgain = false;
+    _retry?.cancel();
+  }
 
   /// Consecutive failed passes (database errors); drives the retry backoff.
   int _passFailures = 0;
@@ -309,14 +320,15 @@ class Outbox {
   }
 
   Future<void> _pass(bool force) async {
-    while (!_disposed) {
+    final epoch = _abortEpoch;
+    while (!_disposed && _abortEpoch == epoch) {
       final head =
           await (_db.select(_db.uploadQueue)
                 ..where((t) => t.dead.equals(false))
                 ..orderBy([(t) => OrderingTerm.asc(t.id)])
                 ..limit(1))
               .getSingleOrNull();
-      if (head == null) return;
+      if (head == null || _abortEpoch != epoch) return;
 
       final nowUs = _now().toUtc().microsecondsSinceEpoch;
       if (!force && head.nextAttemptAt > nowUs) {
@@ -335,6 +347,7 @@ class Outbox {
           (jsonDecode(head.payload) as Map).cast<String, dynamic>(),
         );
       } on Object catch (e) {
+        if (_disposed || _abortEpoch != epoch) return;
         final error = e is OurneyException
             ? e
             : OurneyException(OurneyErrorCode.unknown, e.toString());
@@ -367,6 +380,7 @@ class Outbox {
         _schedule(delay);
         return;
       }
+      if (_disposed || _abortEpoch != epoch) return;
       await (_db.delete(
         _db.uploadQueue,
       )..where((t) => t.id.equals(head.id))).go();

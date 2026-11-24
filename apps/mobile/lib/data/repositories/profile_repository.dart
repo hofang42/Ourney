@@ -8,6 +8,9 @@ import '../db/app_database.dart';
 import '../mapping.dart';
 import '../remote/remote_api.dart';
 
+/// Maximum size of an uploaded avatar JPEG (5 MB, matches server bucket limit).
+const int maxAvatarBytes = 5 * 1024 * 1024;
+
 /// The caller's profile. Local-only: kept in drift only. Supabase: written to
 /// `profiles` online (username uniqueness needs the server) and mirrored in
 /// drift; pull sync keeps it fresh.
@@ -125,6 +128,9 @@ class DataProfileRepository implements ProfileRepository {
   /// Requires a profile (call [upsertMe] first), else `notFound`.
   @override
   Future<void> setAvatar(List<int> jpegBytes) async {
+    if (jpegBytes.isEmpty || jpegBytes.length > maxAvatarBytes) {
+      throw const OurneyException(OurneyErrorCode.invalid, 'avatar size');
+    }
     final me = await ctx.claimUserId();
     final existing = await _local(me);
     if (existing == null) throw const OurneyException(OurneyErrorCode.notFound);

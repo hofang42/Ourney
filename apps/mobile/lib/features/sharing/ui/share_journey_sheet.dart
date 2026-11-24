@@ -245,7 +245,7 @@ class _ShareJourneyPanelState extends ConsumerState<ShareJourneyPanel> {
   Uri? _linkUri(String token) {
     final base = Uri.tryParse(ref.read(appConfigProvider).supabaseUrl);
     if (base == null || !base.hasScheme) return null;
-    return publicJourneyUri(base, token);
+    return publicJourneyShareUri(token);
   }
 
   @override

@@ -51,7 +51,7 @@ class _PublicLinkSectionState extends ConsumerState<PublicLinkSection> {
     if (token == null) return null;
     final base = Uri.tryParse(ref.read(appConfigProvider).supabaseUrl);
     if (base == null || !base.hasScheme) return null;
-    return publicJourneyUri(base, token);
+    return publicJourneyShareUri(token);
   }
 
   @override

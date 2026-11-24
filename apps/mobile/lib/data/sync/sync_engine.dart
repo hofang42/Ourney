@@ -290,6 +290,11 @@ class SyncEngine {
     return result;
   }
 
+  static bool _hasPendingJourneyWrite(Set<String> pending, String id) =>
+      pending.contains(journeyKey(id)) ||
+      pending.contains('${journeyKey(id)}:edit') ||
+      pending.contains('${journeyKey(id)}:extras');
+
   Future<SyncResult> _pullOnce() async {
     final me = remote.currentUserId;
     if (me == null) return const SyncFailed('signed out');
@@ -307,8 +312,8 @@ class SyncEngine {
       await _pullTable('journeys', (r) async {
         final id = r['id'];
         if (id is String &&
-            (pending.contains(journeyKey(id)) ||
-                pending.contains('${journeyKey(id)}:edit'))) {
+            !isTombstone(r) &&
+            _hasPendingJourneyWrite(pending, id)) {
           return;
         }
         await store.applyJourney(r);
@@ -319,7 +324,7 @@ class SyncEngine {
         // (leaving/removal on the server wins and purges the journey).
         // Other members' rows always apply.
         final mine = r['user_id'] == me;
-        final left = r['status'] == MemberStatus.left.wireName;
+        final left = r['status'] == MemberStatus.left.wireName || isTombstone(r);
         if (id is String &&
             mine &&
             !left &&
@@ -329,13 +334,21 @@ class SyncEngine {
         await store.applyMembership(r, me: me);
       }, onPage: () async => pending = await outbox.pendingKeys());
       pending = await outbox.pendingKeys();
-      await _pullTable('check_ins', (r) => store.applyCheckIn(r, pending));
+      await _pullTable(
+        'check_ins',
+        (r) => store.applyCheckIn(r, pending),
+        onPage: () async => pending = await outbox.pendingKeys(),
+      );
       await _pullTombstones();
+      pending = await outbox.pendingKeys();
       await _pullMetrics(pending);
+      pending = await outbox.pendingKeys();
       await _pullExtras(pending, me);
+      pending = await outbox.pendingKeys();
       await _pullTable(
         'reactions',
         (r) => store.applyReaction(r, pending, me: me),
+        onPage: () async => pending = await outbox.pendingKeys(),
       );
       await _pullTable(
         'blocks',
@@ -564,7 +577,6 @@ class SyncEngine {
   }
 
   Future<void> _pullJourney(String journeyId, String me, int epoch) async {
-    final pending = await outbox.pendingKeys();
     final journeys = await remote.select('journeys', eq: {'id': journeyId});
     if (journeys.isEmpty) {
       // Never purge a journey that exists only here: any queue row (live or
@@ -610,8 +622,22 @@ class SyncEngine {
 
     await db.transaction(() async {
       _checkSession(epoch, me);
-      await store.applyJourney(journeys.first);
+      // Read pending inside the transaction so edits, membership toggles,
+      // check-ins or reactions queued while the 6 HTTP calls were in flight
+      // are never overwritten or deleted (FS-10).
+      final freshPending = await outbox.pendingKeys();
+      final journeyRow = journeys.first;
+      if (isTombstone(journeyRow) ||
+          !_hasPendingJourneyWrite(freshPending, journeyId)) {
+        await store.applyJourney(journeyRow);
+      }
       for (final m in members) {
+        final mine = m['user_id'] == me;
+        final left =
+            m['status'] == MemberStatus.left.wireName || isTombstone(m);
+        if (mine && !left && freshPending.contains(membershipKey(journeyId))) {
+          continue;
+        }
         await store.applyMembership(m, me: me);
       }
       final live = ids.toSet();
@@ -628,7 +654,7 @@ class SyncEngine {
                 .get();
       await store.deleteCheckIns(stale);
       for (final c in checkIns) {
-        await store.applyCheckIn(c, pending);
+        await store.applyCheckIn(c, freshPending);
       }
       for (final m in metrics) {
         await store.applyMetric(m);
@@ -644,7 +670,7 @@ class SyncEngine {
       )..where((t) => t.checkInId.isIn(ids))).get();
       for (final r in local) {
         final mine =
-            r.userId == me && pending.contains(reactionKey(r.checkInId));
+            r.userId == me && freshPending.contains(reactionKey(r.checkInId));
         if (!mine && !liveReactions.contains('${r.checkInId}|${r.userId}')) {
           await (db.delete(db.reactions)..where(
                 (t) =>
@@ -654,7 +680,7 @@ class SyncEngine {
         }
       }
       for (final r in reactions) {
-        await store.applyReaction(r, pending, me: me);
+        await store.applyReaction(r, freshPending, me: me);
       }
     });
     notifyChanged();
