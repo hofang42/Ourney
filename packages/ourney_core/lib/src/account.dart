@@ -163,11 +163,14 @@ class ProfileStats {
 
 /// Local-only fallback for [ProfileStats]: derived from the journeys and
 /// check-ins on this device. [today] resolves a journey's timezone to its
-/// current local date.
+/// current local date. [joinedLocalDateByJourney] is the member's join date per
+/// journey (defaults to the journey start); [checkInsByJourney] must hold the
+/// caller's own check-ins only.
 ProfileStats computeLocalProfileStats({
   required Iterable<Journey> journeys,
   required Map<String, List<CheckIn>> checkInsByJourney,
   required LocalDate Function(String timezone) today,
+  Map<String, LocalDate> joinedLocalDateByJourney = const {},
 }) {
   var snaps = 0;
   var longest = 0;
@@ -185,10 +188,12 @@ ProfileStats computeLocalProfileStats({
     snaps += mine.length;
     if (isFinished) completed++;
     // S12: imported journeys do not count toward live streaks.
+    // Like the server's `journey_streak`: counted from the member's join date.
     if (j.origin != JourneyOrigin.imported) {
-      final s = computeStreak(
-        start: j.startDate,
+      final s = computeMemberStreak(
+        journeyStart: j.startDate,
         durationDays: j.durationDays,
+        joinedLocalDate: joinedLocalDateByJourney[j.id] ?? j.startDate,
         today: localToday,
         dates: [for (final c in mine) c.localDate],
       );

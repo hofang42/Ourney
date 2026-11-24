@@ -17,9 +17,34 @@ class UiScaffold extends StatefulWidget {
     this.padBottom = 28,
     this.gutter = true,
     super.key,
-  });
+  }) : slivers = null,
+       controller = null;
+
+  /// Sliver version of the page frame for long, lazily built lists (the
+  /// long-journey timeline): same paper background, safe area, responsive
+  /// gutter and centered max width, but the page is a [CustomScrollView] of
+  /// [slivers] so off-screen rows are never built. Pinned headers inside
+  /// [slivers] stack below each other (they share one [SliverMainAxisGroup]).
+  const UiScaffold.slivers({
+    required List<Widget> this.slivers,
+    this.controller,
+    this.background,
+    this.safeBottom,
+    this.padTop = 12,
+    this.padBottom = 28,
+    this.gutter = true,
+    super.key,
+  }) : child = const SizedBox.shrink(),
+       bottom = null,
+       scroll = true;
 
   final Widget child;
+
+  /// The page's slivers (see [UiScaffold.slivers]); null for a box page.
+  final List<Widget>? slivers;
+
+  /// Scroll controller of a sliver page.
+  final ScrollController? controller;
   final Color? background;
 
   /// Pinned below the content, above the keyboard / safe area
@@ -103,6 +128,8 @@ class _UiScaffoldState extends State<UiScaffold> {
     final padTop = widget.padTop;
     final padBottom = widget.padBottom;
     final child = widget.child;
+    final slivers = widget.slivers;
+    final controller = widget.controller;
     final ui = context.ui;
     final width = MediaQuery.sizeOf(context).width;
     final h = widget.gutter ? UiSpace.gutter(width) : 0.0;
@@ -123,9 +150,25 @@ class _UiScaffoldState extends State<UiScaffold> {
               h,
               padBottom + (scroll ? bottomInset : 0),
             ),
-            child: child,
+            child: slivers == null ? child : const SizedBox.shrink(),
           );
-          if (scroll) {
+          if (slivers case final list?) {
+            body = CustomScrollView(
+              controller: controller,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    h,
+                    padTop,
+                    h,
+                    padBottom + bottomInset,
+                  ),
+                  sliver: SliverMainAxisGroup(slivers: list),
+                ),
+              ],
+            );
+          } else if (scroll) {
             body = SingleChildScrollView(
               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: body,

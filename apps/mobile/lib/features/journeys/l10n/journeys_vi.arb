@@ -114,7 +114,8 @@
     }
   },
   "journeys_errorMetricName": "Nhập tên chỉ số.",
-  "journeys_errorVisibility": "Kiểu hiển thị này không dùng được cho hành trình này.",
+  "journeys_errorInvalid": "Dữ liệu chưa hợp lệ. Kiểm tra lại rồi thử lại nhé.",
+  "journeys_errorLimit": "Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.",
   "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.",
   "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
   "journeys_errorEnded": "Hành trình này đã kết thúc.",
@@ -1604,5 +1605,31 @@
         "type": "int"
       }
     }
-  }
+  },
+  "journeys_timelineRecent": "Gần đây",
+  "journeys_timelineByMonth": "Theo tháng",
+  "journeys_monthSummary": "{checked}/{days} ngày · {photos} ảnh",
+  "@journeys_monthSummary": {"placeholders": {"checked": {"type": "int"}, "days": {"type": "int"}, "photos": {"type": "int"}}},
+  "journeys_monthA11y": "{month}, {checked} trên {days} ngày đã check-in, {photos} ảnh",
+  "@journeys_monthA11y": {"placeholders": {"month": {"type": "String"}, "checked": {"type": "int"}, "days": {"type": "int"}, "photos": {"type": "int"}}},
+  "journeys_monthExpandHint": "Mở rộng",
+  "journeys_monthCollapseHint": "Thu gọn",
+  "journeys_jumpToMonth": "Đi tới {month}",
+  "@journeys_jumpToMonth": {"placeholders": {"month": {"type": "String"}}},
+  "journeys_jumpToYear": "Xem năm {year}",
+  "@journeys_jumpToYear": {"placeholders": {"year": {"type": "int"}}},
+  "journeys_jumpAnnounce": "Đang ở {month}",
+  "@journeys_jumpAnnounce": {"placeholders": {"month": {"type": "String"}}},
+  "journeys_earlierLink": "Trước đó: ngày 1–{to}, {checked} ngày đã check-in",
+  "@journeys_earlierLink": {"placeholders": {"to": {"type": "int"}, "checked": {"type": "int"}}},
+  "journeys_earlierView": "Xem",
+  "journeys_daysToGo": "Còn {days} ngày · Đích là ngày {finish}",
+  "@journeys_daysToGo": {"placeholders": {"days": {"type": "int"}, "finish": {"type": "int"}}},
+  "journeys_range30": "30 ngày",
+  "journeys_rangeAll": "Tất cả",
+  "journeys_clearYear": "Bỏ lọc năm {year}",
+  "@journeys_clearYear": {"placeholders": {"year": {"type": "int"}}},
+  "journeys_range30Pace": "Ít số liệu trong 30 ngày, đang hiện số ngày check-in",
+  "journeys_startsIn": "Bắt đầu sau {days} ngày · {total} ngày",
+  "@journeys_startsIn": {"placeholders": {"days": {"type": "int"}, "total": {"type": "int"}}}
 }
