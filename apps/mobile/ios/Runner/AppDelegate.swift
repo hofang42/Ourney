@@ -8,9 +8,29 @@ import flutter_local_notifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    Self.excludeApplicationSupportFromBackup()
     // flutter_local_notifications README, "General setup": show notifications via the plugin.
     UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  /// Excludes `Application Support` (SQLite database, private check-in drafts
+  /// and cached media) from iCloud/iTunes backups (FS-11, mirrors Android
+  /// `android:allowBackup="false"`).
+  private static func excludeApplicationSupportFromBackup() {
+    guard let url = FileManager.default.urls(
+      for: .applicationSupportDirectory,
+      in: .userDomainMask
+    ).first else { return }
+    try? FileManager.default.createDirectory(
+      at: url,
+      withIntermediateDirectories: true,
+      attributes: nil
+    )
+    var resourceUrl = url
+    var values = URLResourceValues()
+    values.isExcludedFromBackup = true
+    try? resourceUrl.setResourceValues(values)
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {

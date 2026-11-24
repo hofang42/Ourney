@@ -374,14 +374,19 @@ class SafetyActions {
   Future<void> report({
     String? checkInId,
     String? userId,
+    String? messageId,
     required ReportReason reason,
     String? note,
   }) async {
-    assert(checkInId != null || userId != null, 'report needs a target');
+    assert(
+      checkInId != null || userId != null || messageId != null,
+      'report needs a target',
+    );
     final trimmed = note?.trim();
     await _repo.report(
       checkInId: checkInId,
-      userId: checkInId == null ? userId : null,
+      userId: checkInId == null && messageId == null ? userId : null,
+      messageId: messageId,
       reason: reason,
       note: (trimmed == null || trimmed.isEmpty) ? null : trimmed,
     );

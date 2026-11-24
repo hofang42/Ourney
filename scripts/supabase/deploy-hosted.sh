@@ -2,10 +2,14 @@
 # Deploys the Ourney backend to a HOSTED Supabase project (docs/runbooks/hosted-supabase.md).
 #
 #   SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... SUPABASE_DB_PASSWORD=... \
-#     bash scripts/supabase/deploy-hosted.sh [--dry-run]
+#     bash scripts/supabase/deploy-hosted.sh [--dry-run] [--include-all]
 #
 # Steps: link -> db push (supabase/migrations) -> functions deploy -> optional SMTP (H2) -> Auth config -> PostgREST db_schemas.
 # --dry-run only links and runs `supabase db push --dry-run`; nothing is changed on the project.
+# --include-all passes `--include-all` to db push, so local migrations numbered BELOW the newest one
+#   already on the remote (merged out of order) are applied too. Without it db push refuses with
+#   "Found local migration files to be inserted before the last migration on remote database".
+#   Check those migrations are safe to run after the newer ones before using it.
 # Idempotent: db push applies only new migrations, functions deploy overwrites, the Auth config and
 # SMTP PATCHes set the same values again.
 #
@@ -29,13 +33,15 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [--dry-run]" >&2
+  echo "Usage: $0 [--dry-run] [--include-all]" >&2
 }
 
 DRY_RUN=0
+PUSH_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    --include-all) PUSH_ARGS+=(--include-all) ;;
     -h | --help)
       usage
       exit 0
@@ -234,13 +240,13 @@ supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "==> Dry run: migrations that would be applied"
-  supabase db push --dry-run
+  supabase db push --dry-run ${PUSH_ARGS[@]+"${PUSH_ARGS[@]}"}
   echo "Dry run finished. Nothing was changed on the project."
   exit 0
 fi
 
 echo "==> Applying migrations (db push)"
-supabase db push --yes
+supabase db push --yes ${PUSH_ARGS[@]+"${PUSH_ARGS[@]}"}
 
 # --- 5. Edge functions ------------------------------------------------------------------------
 # delete-account: needs the caller's JWT (it authenticates the user itself and deletes THAT user),

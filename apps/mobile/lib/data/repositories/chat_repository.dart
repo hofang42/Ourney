@@ -7,6 +7,24 @@ import '../social_mapping.dart';
 /// Longest text message (`send_message` checks 1..500 chars).
 const int maxMessageLength = 500;
 
+/// Maximum size of an uploaded chat photo JPEG (5 MB, matches server bucket limit).
+const int maxChatPhotoBytes = 5 * 1024 * 1024;
+
+/// Bounded O(1) fingerprint of [bytes] (samples up to 64 positions: head,
+/// middle, tail) so the UI isolate never iterates millions of ints while
+/// retries of the same photo still produce the same draft key (FS-28).
+int _photoFingerprint(List<int> bytes) {
+  final len = bytes.length;
+  if (len <= 64) return Object.hashAll(bytes);
+  final samples = <int>[
+    len,
+    for (var i = 0; i < 24; i++) bytes[i],
+    for (var i = 0; i < 16; i++) bytes[(len >> 1) - 8 + i],
+    for (var i = len - 24; i < len; i++) bytes[i],
+  ];
+  return Object.hashAll(samples);
+}
+
 /// Message length as the server counts it (`char_length`: Unicode code
 /// points), also used by the composer so both agree.
 int messageLength(String text) => text.runes.length;
@@ -123,8 +141,8 @@ class DataChatRepository implements ChatRepository {
     String? body,
     String? replyToCheckInId,
   }) async {
-    if (jpegBytes.isEmpty) {
-      throw const OurneyException(OurneyErrorCode.invalid, 'empty photo');
+    if (jpegBytes.isEmpty || jpegBytes.length > maxChatPhotoBytes) {
+      throw const OurneyException(OurneyErrorCode.invalid, 'photo size');
     }
     final caption = body?.trim();
     if (caption != null && messageLength(caption) > maxMessageLength) {
@@ -133,7 +151,7 @@ class DataChatRepository implements ChatRepository {
     final me = social.requireUserId();
     final draftKey =
         'photo|$conversationId|$replyToCheckInId|$caption|'
-        '${jpegBytes.length}|${Object.hashAll(jpegBytes)}';
+        '${jpegBytes.length}|${_photoFingerprint(jpegBytes)}';
     final id = _idFor(draftKey);
     final path = messagePhotoPath(conversationId, me, id);
     await social.remote.uploadBytes(path, jpegBytes);

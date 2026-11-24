@@ -4,6 +4,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/account_reset.dart';
+import 'package:ourney/app/overlays/reminder_banner.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/onboarding/onboarding_providers.dart';
@@ -48,6 +49,8 @@ void main() {
       ActiveJourneyId.prefsKey: journeyId,
       CreateProgressPrefs.key: 3,
       ReminderPrefs.journey(journeyId): '{"on":true,"time":"20:00"}',
+      ReminderPrefs.streakAlerts: false,
+      ReminderPrefs.promptOffered: true,
       // Device settings survive.
       ThemeModeController.prefsKey: 'dark',
       OnboardingComplete.prefsKey: true,
@@ -84,7 +87,18 @@ void main() {
     expect(container.read(onboardingQuizProvider), isNotNull);
     expect(container.read(eulaAcceptedProvider), isTrue);
     expect(container.read(blockedNamesProvider), isNotEmpty);
+    expect(container.read(streakAlertsEnabledProvider), isFalse);
     container.read(hiddenCheckInIdsProvider.notifier).hide('c1');
+    container
+        .read(reminderBannerProvider.notifier)
+        .show(
+          const ReminderBannerData(
+            journeyId: journeyId,
+            journeyName: 'A',
+            skinId: 'quiet',
+            kind: ReminderBannerKind.daily,
+          ),
+        );
 
     (container.read(currentUserIdProvider.notifier) as _SignedInUser).signOut();
     await pumpEventQueue();
@@ -96,6 +110,9 @@ void main() {
     expect(container.read(activeJourneyIdProvider), isNull);
     expect(container.read(createProgressProvider), isNull);
     expect(container.read(reminderSettingsProvider), isEmpty);
+    expect(container.read(streakAlertsEnabledProvider), isTrue);
+    expect(container.read(reminderBannerProvider), isNull);
+    expect(prefs.containsKey(ReminderPrefs.promptOffered), isFalse);
     expect(gateway.scheduled, isEmpty, reason: 'old reminders cancelled');
 
     expect(prefs.getString(ThemeModeController.prefsKey), 'dark');
@@ -180,9 +197,13 @@ void main() {
         ..termsVersion = null;
       (container.read(currentUserIdProvider.notifier) as _SignedInUser)
           .switchTo('user-b');
-      // Even synchronously (before resetAccountLocalState's Future runs),
-      // user-b must not inherit user-a's consent or trigger recordTermsAccepted.
+      // Providers are invalidated synchronously on user switch (no Timer.run gap, FS-26),
+      // while accountOwnerPrefsKey is only updated after per-account key removals flush,
+      // and user-b must not inherit user-a's consent or trigger recordTermsAccepted.
       expect(container.read(eulaAcceptedProvider), isFalse);
+      expect(container.read(blurPhotosOnShareProvider), isFalse);
+      expect(prefs.containsKey(SafetyPrefs.eulaAccepted), isFalse);
+      expect(prefs.containsKey(SharePrivacyPrefs.blurPhotos), isFalse);
       expect(auth.recordedTerms, isEmpty);
 
       await pumpEventQueue();

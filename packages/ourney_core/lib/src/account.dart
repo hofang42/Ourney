@@ -1,3 +1,4 @@
+import 'contracts/social.dart' show JourneyOrigin;
 import 'models.dart';
 import 'streak.dart';
 import 'templates.dart';
@@ -178,19 +179,27 @@ ProfileStats computeLocalProfileStats({
   var total = 0;
   for (final j in journeys) {
     final mine = checkInsByJourney[j.id] ?? const <CheckIn>[];
+    final localToday = today(j.timezone);
+    final isFinished =
+        j.status == JourneyStatus.ended ||
+        j.status == JourneyStatus.archived ||
+        j.isPastEndOn(localToday);
     total++;
     snaps += mine.length;
-    if (j.status == JourneyStatus.ended) completed++;
+    if (isFinished) completed++;
+    // S12: imported journeys do not count toward live streaks.
     // Like the server's `journey_streak`: counted from the member's join date.
-    final s = computeMemberStreak(
-      journeyStart: j.startDate,
-      durationDays: j.durationDays,
-      joinedLocalDate: joinedLocalDateByJourney[j.id] ?? j.startDate,
-      today: today(j.timezone),
-      dates: [for (final c in mine) c.localDate],
-    );
-    if (s.best > longest) longest = s.best;
-    if (s.current > current) current = s.current;
+    if (j.origin != JourneyOrigin.imported) {
+      final s = computeMemberStreak(
+        journeyStart: j.startDate,
+        durationDays: j.durationDays,
+        joinedLocalDate: joinedLocalDateByJourney[j.id] ?? j.startDate,
+        today: localToday,
+        dates: [for (final c in mine) c.localDate],
+      );
+      if (s.best > longest) longest = s.best;
+      if (!isFinished && s.current > current) current = s.current;
+    }
   }
   return ProfileStats(
     totalSnaps: snaps,

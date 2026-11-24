@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show jsonEncode;
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/data/data_layer.dart';
 import 'package:ourney/data/db/app_database.dart';
 import 'package:ourney/data/local_store.dart';
+import 'package:ourney/data/media_store.dart';
 import 'package:ourney/data/sync/outbox.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -445,6 +447,213 @@ void main() {
       remote.tables['journeys'] = [];
       await layer.ctx.sync!.pullJourney(jid);
       expect(await db.select(db.journeys).get(), isEmpty);
+    });
+  });
+
+  group('Fullscan Batch B regressions (FS-10, FS-11, FS-27, FS-28, FS-34, FS-37)', () {
+    test('FS-10: _pullOnce and _pullJourney preserve queued :extras and membership toggles', () async {
+      await (db.update(db.journeys)..where((t) => t.id.equals(jid))).write(
+        const JourneysCompanion(
+          layout: Value('aesthetic_flexer'),
+          color: Value(2),
+          reminderTime: Value('06:45'),
+        ),
+      );
+      await layer.ctx.outbox!.enqueue(
+        OutboxKind.updateJourney,
+        '${journeyKey(jid)}:extras',
+        {'p_journey': jid, 'p_layout': 'aesthetic_flexer', 'p_color': 2},
+      );
+      await (db.update(db.memberships)..where((t) => t.journeyId.equals(jid))).write(
+        const MembershipsCompanion(
+          hideMetric: Value(true),
+          blurMedia: Value(true),
+        ),
+      );
+      await layer.ctx.outbox!.enqueue(
+        OutboxKind.updateMembership,
+        membershipKey(jid),
+        {'journey_id': jid, 'user_id': me, 'hide_metric': true, 'blur_media': true},
+      );
+
+      remote.tables['journeys'] = [
+        journeyRow(
+          jid,
+          ownerId: me,
+          updatedAt: '2026-10-18T01:00:00.000000+00:00',
+        ),
+      ];
+      remote.tables['memberships'] = [
+        membershipRow(
+          jid,
+          me,
+          updatedAt: '2026-10-18T01:00:00.000000+00:00',
+        )..['hide_metric'] = false
+         ..['blur_media'] = false,
+      ];
+
+      await layer.ctx.sync!.syncNow();
+      var j = await (db.select(db.journeys)..where((t) => t.id.equals(jid))).getSingle();
+      expect(j.layout, 'aesthetic_flexer');
+      expect(j.color, 2);
+      expect(j.reminderTime, '06:45');
+
+      await layer.ctx.sync!.pullJourney(jid);
+      j = await (db.select(db.journeys)..where((t) => t.id.equals(jid))).getSingle();
+      final m = await (db.select(db.memberships)..where((t) => t.journeyId.equals(jid))).getSingle();
+      expect(j.layout, 'aesthetic_flexer');
+      expect(j.color, 2);
+      expect(m.hideMetric, isTrue);
+      expect(m.blurMedia, isTrue);
+    });
+
+    test('FS-11: MediaWipe stores relative basenames and deletes trash after iOS container UUID rotation', () async {
+      final container1 = tempDir();
+      final container2 = tempDir();
+      final media1 = Directory('${container1.path}/media')..createSync();
+      File('${media1.path}/secret.jpg').writeAsStringSync('user-a-photo');
+
+      // Record trash under container 1 (as if MediaWipe.run committed before app kill).
+      final trashName = 'media.trash-1700000000';
+      final trashInContainer2 = Directory('${container2.path}/$trashName')..createSync();
+      File('${trashInContainer2.path}/secret.jpg').writeAsStringSync('user-a-photo');
+      await db.writeCursor(
+        pendingTrashCursorKey,
+        jsonEncode(['${container1.path}/$trashName']),
+      );
+
+      final media2 = Directory('${container2.path}/media');
+      await layer.ctx.files.delete(const []);
+      // Recover under container 2 (simulating iOS app update assigning a new container UUID).
+      await MediaWipe.recover(db, [media2]);
+      expect(trashInContainer2.existsSync(), isFalse);
+      expect(
+        File('${media2.path}/secret.jpg').existsSync(),
+        isFalse,
+        reason: 'wiped User A photo must never be merged back into User B live media/',
+      );
+      expect(await db.readCursor(pendingTrashCursorKey), '[]');
+    });
+
+    test('FS-27: DeadUploads.watch skips already-uploaded check-ins and retry submit deduplicates queue', () async {
+      remote.failure = offline;
+      final shot = fakeCapture(camera, 'd1');
+      const cid = 'eeeeeeee-0000-4000-8000-000000000099';
+      final c = await layer.checkIns.submit(
+        CheckInDraft(
+          id: cid,
+          journeyId: jid,
+          capturedAt: DateTime.utc(2026, 10, 16, 1),
+          photoFile: shot.photo,
+          thumbFile: shot.thumb,
+        ),
+      );
+      await (db.update(db.uploadQueue)..where((t) => t.entityKey.equals(checkInKey(c.id)))).write(
+        const UploadQueueCompanion(dead: Value(true), lastError: Value('err')),
+      );
+      expect(await layer.deadUploads!.watch(journeyId: jid).first, hasLength(1));
+
+      // Retrying submit with the same clientId replaces the dead row instead of duplicating it.
+      await layer.checkIns.submit(
+        CheckInDraft(
+          id: cid,
+          journeyId: jid,
+          capturedAt: DateTime.utc(2026, 10, 16, 1),
+          photoFile: shot.photo,
+          thumbFile: shot.thumb,
+        ),
+      );
+      final rowsForCheckIn = await (db.select(db.uploadQueue)
+            ..where((t) => t.entityKey.equals(checkInKey(c.id))))
+          .get();
+      expect(rowsForCheckIn, hasLength(1));
+
+      // If the check-in is already marked uploaded, DeadUploads.watch never surfaces a stale dead row.
+      await (db.update(db.uploadQueue)..where((t) => t.entityKey.equals(checkInKey(c.id)))).write(
+        const UploadQueueCompanion(dead: Value(true), lastError: Value('err')),
+      );
+      await (db.update(db.checkIns)..where((t) => t.id.equals(c.id))).write(
+        const CheckInsCompanion(uploaded: Value(true)),
+      );
+      expect(await layer.deadUploads!.watch(journeyId: jid).first, isEmpty);
+    });
+
+    test('FS-28: setAvatar and sendPhoto reject empty or > 5 MB payloads', () async {
+      await layer.profiles.upsertMe(username: 'linh', displayName: 'Linh');
+      await expectLater(
+        layer.profiles.setAvatar(const []),
+        throwsA(
+          isA<OurneyException>().having((e) => e.error, 'error', OurneyErrorCode.invalid),
+        ),
+      );
+      final oversized = List<int>.filled(5 * 1024 * 1024 + 1, 1);
+      await expectLater(
+        layer.profiles.setAvatar(oversized),
+        throwsA(
+          isA<OurneyException>().having((e) => e.error, 'error', OurneyErrorCode.invalid),
+        ),
+      );
+      await expectLater(
+        layer.chat!.sendPhoto('conv-1', oversized),
+        throwsA(
+          isA<OurneyException>().having((e) => e.error, 'error', OurneyErrorCode.invalid),
+        ),
+      );
+    });
+
+    test('FS-34: AppDatabase sets foreign_keys and busy_timeout pragmas and creates import_job_photos index', () async {
+      final fk = await db.customSelect('PRAGMA foreign_keys').getSingle();
+      expect(fk.data.values.single, 1);
+      final bt = await db.customSelect('PRAGMA busy_timeout').getSingle();
+      expect(bt.data.values.single, 5000);
+      final idx = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'index' "
+            "AND name = 'import_job_photos_job_pos'",
+          )
+          .get();
+      expect(idx, hasLength(1));
+    });
+
+    test('FS-37: MediaFiles.deleteFolder rejects path traversal and empty prefixes', () async {
+      await expectLater(
+        layer.ctx.files.deleteFolder(''),
+        throwsA(isA<OurneyException>()),
+      );
+      await expectLater(
+        layer.ctx.files.deleteFolder('../outside'),
+        throwsA(isA<OurneyException>()),
+      );
+      await expectLater(
+        layer.ctx.files.deleteFolder('checkins/../../outside'),
+        throwsA(isA<OurneyException>()),
+      );
+    });
+
+    test('FS-07: DataSafetyRepository.report forwards optional messageId to report_content RPC', () async {
+      await layer.safety.report(
+        messageId: 'msg-123',
+        reason: ReportReason.harassment,
+        note: 'abusive',
+      );
+      final rpcs = {for (final c in remote.callsOf('rpc')) c.target: c.args};
+      expect(rpcs['report_content'], {
+        'p_checkin': null,
+        'p_user': null,
+        'p_reason': 'harassment',
+        'p_note': 'abusive',
+        'p_message': 'msg-123',
+      });
+    });
+
+    test('FS-27: signOut falls back to local sign-out and wipes local data when global signOut times out', () async {
+      remote.hangGlobalSignOut = true;
+      await layer.auth.signOut();
+      expect(await db.select(db.journeys).get(), isEmpty);
+      expect(
+        [for (final c in remote.callsOf('signOut')) c.target],
+        ['global', 'local'],
+      );
     });
   });
 }

@@ -10,6 +10,15 @@ import 'remote_api.dart';
 /// Signed URL lifetime (NFR-3).
 const Duration signedUrlTtl = Duration(hours: 1);
 
+/// Default network timeout for RPCs, queries and storage metadata calls (FS-27).
+const Duration remoteRequestTimeout = Duration(seconds: 30);
+
+/// Default network timeout for storage binary uploads (FS-27).
+const Duration remoteUploadTimeout = Duration(seconds: 45);
+
+/// Network timeout for global sign-out before falling back to local sign-out (FS-27).
+const Duration remoteSignOutTimeout = Duration(seconds: 5);
+
 /// [RemoteApi] backed by a real [SupabaseClient]. Kept deliberately thin: all
 /// decisions live in the sync/repository layer, which is tested with a fake.
 class SupabaseRemoteApi implements RemoteApi {
@@ -78,66 +87,82 @@ class SupabaseRemoteApi implements RemoteApi {
 
   @override
   Future<void> sendOtp(String email) => guardRemote(
-    () =>
-        _client.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true),
+    () => _client.auth
+        .signInWithOtp(email: email.trim(), shouldCreateUser: true)
+        .timeout(remoteRequestTimeout),
   );
 
   @override
   Future<void> verifyOtp(String email, String code) => guardRemote(() async {
-    await _client.auth.verifyOTP(
-      email: email.trim(),
-      token: code.trim(),
-      type: OtpType.email,
-    );
+    await _client.auth
+        .verifyOTP(
+          email: email.trim(),
+          token: code.trim(),
+          type: OtpType.email,
+        )
+        .timeout(remoteRequestTimeout);
   });
 
   @override
   Future<void> sendPhoneOtp(String e164Phone) => guardRemote(
-    () => _client.auth.signInWithOtp(phone: e164Phone, shouldCreateUser: true),
+    () => _client.auth
+        .signInWithOtp(phone: e164Phone, shouldCreateUser: true)
+        .timeout(remoteRequestTimeout),
   );
 
   @override
   Future<void> verifyPhoneOtp(String e164Phone, String code) =>
       guardRemote(() async {
-        await _client.auth.verifyOTP(
-          phone: e164Phone,
-          token: code.trim(),
-          type: OtpType.sms,
-        );
+        await _client.auth
+            .verifyOTP(
+              phone: e164Phone,
+              token: code.trim(),
+              type: OtpType.sms,
+            )
+            .timeout(remoteRequestTimeout);
       });
 
   @override
   Future<bool> signUpWithPassword(String email, String password) =>
       guardRemote(() async {
-        final res = await _client.auth.signUp(
-          email: email.trim(),
-          password: password,
-        );
+        final res = await _client.auth
+            .signUp(
+              email: email.trim(),
+              password: password,
+            )
+            .timeout(remoteRequestTimeout);
         return res.session == null;
       });
 
   @override
   Future<void> confirmSignUp(String email, String code) =>
       guardRemote(() async {
-        await _client.auth.verifyOTP(
-          email: email.trim(),
-          token: code.trim(),
-          type: OtpType.signup,
-        );
+        await _client.auth
+            .verifyOTP(
+              email: email.trim(),
+              token: code.trim(),
+              type: OtpType.signup,
+            )
+            .timeout(remoteRequestTimeout);
       });
 
   @override
   Future<void> signInWithPassword(String email, String password) =>
       guardRemote(() async {
-        await _client.auth.signInWithPassword(
-          email: email.trim(),
-          password: password,
-        );
+        await _client.auth
+            .signInWithPassword(
+              email: email.trim(),
+              password: password,
+            )
+            .timeout(remoteRequestTimeout);
       });
 
   @override
-  Future<void> sendPasswordReset(String email) =>
-      guardRemote(() => _client.auth.resetPasswordForEmail(email.trim()));
+  Future<void> sendPasswordReset(String email) => guardRemote(
+    () => _client.auth
+        .resetPasswordForEmail(email.trim())
+        .timeout(remoteRequestTimeout),
+  );
 
   @override
   Future<void> resetPassword(String email, String code, String newPassword) =>
@@ -146,13 +171,17 @@ class SupabaseRemoteApi implements RemoteApi {
         final currentEmail = _client.auth.currentUser?.email;
         if (currentEmail == null ||
             currentEmail.toLowerCase() != trimmedEmail.toLowerCase()) {
-          await _client.auth.verifyOTP(
-            email: trimmedEmail,
-            token: code.trim(),
-            type: OtpType.recovery,
-          );
+          await _client.auth
+              .verifyOTP(
+                email: trimmedEmail,
+                token: code.trim(),
+                type: OtpType.recovery,
+              )
+              .timeout(remoteRequestTimeout);
         }
-        await _client.auth.updateUser(UserAttributes(password: newPassword));
+        await _client.auth
+            .updateUser(UserAttributes(password: newPassword))
+            .timeout(remoteRequestTimeout);
       });
 
   @override
@@ -161,14 +190,18 @@ class SupabaseRemoteApi implements RemoteApi {
     _acceptedTermsVersion = null;
     if (global) {
       try {
-        await _client.auth.signOut(scope: SignOutScope.global);
+        await _client.auth
+            .signOut(scope: SignOutScope.global)
+            .timeout(remoteSignOutTimeout);
         return;
       } on Object {
-        // Offline or server error: still end the session on this device.
+        // Offline, timed out, or server error: still end the session on this device.
       }
     }
     try {
-      await _client.auth.signOut(scope: SignOutScope.local);
+      await _client.auth
+          .signOut(scope: SignOutScope.local)
+          .timeout(remoteSignOutTimeout);
     } on Object {
       // Local sign-out only clears the stored session; ignore server errors.
     }
@@ -193,9 +226,10 @@ class SupabaseRemoteApi implements RemoteApi {
     if (updatedSince != null) q = q.gte('updated_at', updatedSince);
     if (onlyLive) q = q.isFilter('deleted_at', null);
     final ordered = q.order('updated_at', ascending: true);
-    final List<RemoteRow> rows = limit == null
-        ? await ordered
-        : await ordered.limit(limit);
+    final List<RemoteRow> rows = await (limit == null
+            ? ordered
+            : ordered.limit(limit))
+        .timeout(remoteRequestTimeout);
     if (table == 'profiles') _rememberTermsFromProfiles(rows);
     return rows;
   });
@@ -206,18 +240,25 @@ class SupabaseRemoteApi implements RemoteApi {
     RemoteRow row, {
     required String onConflict,
   }) => guardRemote(() async {
-    await _client.from(table).upsert(row, onConflict: onConflict);
+    await _client
+        .from(table)
+        .upsert(row, onConflict: onConflict)
+        .timeout(remoteRequestTimeout);
   });
 
   @override
   Future<void> insert(String table, RemoteRow row) => guardRemote(() async {
-    await _client.from(table).insert(row);
+    await _client.from(table).insert(row).timeout(remoteRequestTimeout);
   });
 
   @override
   Future<void> delete(String table, {required Map<String, Object> match}) =>
       guardRemote(() async {
-        await _client.from(table).delete().match(match);
+        await _client
+            .from(table)
+            .delete()
+            .match(match)
+            .timeout(remoteRequestTimeout);
       });
 
   @override
@@ -230,7 +271,8 @@ class SupabaseRemoteApi implements RemoteApi {
         .from(table)
         .update(values)
         .match(match)
-        .select();
+        .select()
+        .timeout(remoteRequestTimeout);
     if (table == 'profiles') _rememberTermsFromProfiles(rows);
     return rows;
   });
@@ -238,14 +280,18 @@ class SupabaseRemoteApi implements RemoteApi {
   @override
   Future<Object?> rpc(String fn, [Map<String, dynamic> params = const {}]) =>
       guardRemote(() async {
-        final Object? result = await _client.rpc<Object?>(fn, params: params);
+        final Object? result = await _client
+            .rpc<Object?>(fn, params: params)
+            .timeout(remoteRequestTimeout);
         return result;
       });
 
   @override
   Future<Object?> invokeFunction(String name, {Object? body}) =>
       guardRemote(() async {
-        final res = await _client.functions.invoke(name, body: body);
+        final res = await _client.functions
+            .invoke(name, body: body)
+            .timeout(remoteRequestTimeout);
         return res.data;
       });
 
@@ -309,14 +355,17 @@ class SupabaseRemoteApi implements RemoteApi {
 
   @override
   Future<void> uploadFile(String path, File file) => guardRemote(() async {
-    await _bucket(path).upload(path, file, fileOptions: _jpeg);
+    await _bucket(
+      path,
+    ).upload(path, file, fileOptions: _jpeg).timeout(remoteUploadTimeout);
   });
 
   @override
   Future<void> uploadBytes(String path, List<int> bytes) =>
       guardRemote(() async {
         await _bucket(path)
-            .uploadBinary(path, Uint8List.fromList(bytes), fileOptions: _jpeg);
+            .uploadBinary(path, Uint8List.fromList(bytes), fileOptions: _jpeg)
+            .timeout(remoteUploadTimeout);
       });
 
   @override
@@ -325,10 +374,12 @@ class SupabaseRemoteApi implements RemoteApi {
     const page = 100;
     final names = <String>[];
     for (var offset = 0; ; offset += page) {
-      final objects = await _bucket(prefix).list(
-        path: prefix,
-        searchOptions: SearchOptions(limit: page, offset: offset),
-      );
+      final objects = await _bucket(prefix)
+          .list(
+            path: prefix,
+            searchOptions: SearchOptions(limit: page, offset: offset),
+          )
+          .timeout(remoteRequestTimeout);
       names.addAll([
         for (final o in objects)
           if (o.id != null) '$prefix/${o.name}',
@@ -348,7 +399,10 @@ class SupabaseRemoteApi implements RemoteApi {
         (byBucket[storageBucketFor(path)] ??= []).add(path);
       }
       for (final e in byBucket.entries) {
-        await _client.storage.from(e.key).remove(e.value);
+        await _client.storage
+            .from(e.key)
+            .remove(e.value)
+            .timeout(remoteRequestTimeout);
       }
     }
   });
@@ -359,7 +413,8 @@ class SupabaseRemoteApi implements RemoteApi {
         // Readable when RLS allows it: own media, a group's media, a journey
         // shared with the caller (0006) or a conversation's photos.
         final url = await _bucket(path)
-            .createSignedUrl(path, signedUrlTtl.inSeconds);
+            .createSignedUrl(path, signedUrlTtl.inSeconds)
+            .timeout(remoteRequestTimeout);
         final request = await _http
             .getUrl(Uri.parse(url))
             .timeout(const Duration(seconds: 20));
