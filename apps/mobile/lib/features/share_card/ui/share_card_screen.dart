@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -9,7 +10,6 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
-import '../../../app/theme/motion.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
 import '../../journeys/domain/journey_progress.dart';
@@ -320,42 +320,102 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     (ShareCardFormat.feed, '4:5'),
                   ],
                   value: _format,
-                  onChanged: (f) => setState(() => _format = f),
+                  onChanged: (f) {
+                    if (_format != f) {
+                      unawaited(UiHaptics.selection());
+                      setState(() => _format = f);
+                    }
+                  },
                 ),
                 const SizedBox(height: UiSpace.lg),
                 SizedBox(
                   height: previewHeight,
-                  child: AnimatedSwitcher(
-                    duration: UiMotion.of(context, UiMotion.sheet),
-                    child: KeyedSubtree(
-                      key: ValueKey('share-card-preview-${_format.name}'),
-                      child: Semantics(
-                        image: true,
-                        label: previewLabel,
-                        excludeSemantics: true,
-                        child: Center(
-                          child: FittedBox(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: ui.shadow,
-                                    blurRadius: 24,
-                                    offset: const Offset(0, 8),
+                  child: Center(
+                    child: UiHero(
+                      tag: UiHeroTags.sharePreview(journey.id),
+                      borderRadiusBegin: BorderRadius.circular(UiRadius.card),
+                      borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+                      child: TweenAnimationBuilder<double>(
+                        key: const ValueKey('share-card-aspect-morph'),
+                        tween: Tween<double>(
+                          end: _format == ShareCardFormat.story ? 9 / 16 : 4 / 5,
+                        ),
+                        duration: UiMotion.of(
+                          context,
+                          const Duration(milliseconds: 240),
+                        ),
+                        curve: UiCurves.easeInOutStrong,
+                        builder: (context, aspectRatio, child) => AspectRatio(
+                          aspectRatio: aspectRatio,
+                          child: child,
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: UiMotion.of(
+                            context,
+                            const Duration(milliseconds: 240),
+                          ),
+                          switchInCurve: UiCurves.easeInOutStrong,
+                          switchOutCurve: UiCurves.easeInOutStrong,
+                          child: KeyedSubtree(
+                            key: ValueKey('share-card-preview-${_format.name}'),
+                            child: Semantics(
+                              image: true,
+                              label: previewLabel,
+                              excludeSemantics: true,
+                              child: Center(
+                                child: TweenAnimationBuilder<double>(
+                                  key: const ValueKey('share-card-blur-tween'),
+                                  tween: Tween<double>(
+                                    end: (quiet || blur) ? 14.0 : 0.0,
                                   ),
-                                ],
-                              ),
-                              child: RepaintBoundary(
-                                key: _boundaryKeys[_format],
-                                child: ShareCard(
-                                  content: content,
-                                  format: _format,
-                                  // The quiet card always blurs its portrait.
-                                  blur: quiet ? true : blur,
-                                  photo: photo,
-                                  gallery: gallery,
-                                  skinId: skinId,
-                                  hideBrand: hideBrand,
+                                  duration: UiMotion.of(
+                                    context,
+                                    const Duration(milliseconds: 180),
+                                  ),
+                                  curve: UiCurves.easeOutStrong,
+                                  builder: (context, sigma, child) {
+                                    // Apply transition blur only mid-flight
+                                    // (0 < sigma < 14); resting blur is applied
+                                    // inside ShareCard so export boundaries stay
+                                    // identical.
+                                    final midFlight =
+                                        sigma > 0.01 && sigma < 13.99;
+                                    if (!midFlight) return child!;
+                                    return ImageFiltered(
+                                      imageFilter: ImageFilter.blur(
+                                        sigmaX: sigma,
+                                        sigmaY: sigma,
+                                        tileMode: TileMode.decal,
+                                      ),
+                                      child: child,
+                                    );
+                                  },
+                                  child: FittedBox(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: ui.shadow,
+                                            blurRadius: 24,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
+                                      ),
+                                      child: RepaintBoundary(
+                                        key: _boundaryKeys[_format],
+                                        child: ShareCard(
+                                          content: content,
+                                          format: _format,
+                                          // The quiet card always blurs its portrait.
+                                          blur: quiet ? true : blur,
+                                          photo: photo,
+                                          gallery: gallery,
+                                          skinId: skinId,
+                                          hideBrand: hideBrand,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -438,7 +498,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     ],
                     value: _number,
                     onChanged: (n) {
-                      OurneyHaptics.selection();
+                      unawaited(UiHaptics.selection());
                       setState(() => _number = n);
                     },
                   ),
@@ -475,7 +535,10 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                     divider: false,
                     onChanged: quiet
                         ? null
-                        : (v) => setState(() => _blurOverride = v),
+                        : (v) {
+                            unawaited(UiHaptics.selection());
+                            setState(() => _blurOverride = v);
+                          },
                   ),
                 ],
                 if (content.metricHidden && !quiet)

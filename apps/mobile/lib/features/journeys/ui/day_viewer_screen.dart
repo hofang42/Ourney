@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -39,24 +44,121 @@ class DayViewerScreen extends ConsumerStatefulWidget {
   ConsumerState<DayViewerScreen> createState() => _DayViewerScreenState();
 }
 
-class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
+class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
+    with SingleTickerProviderStateMixin {
   bool _revealMetric = false;
   // Created once the day's photos are known: it opens on the latest one.
   PageController? _pages;
   int _page = 0;
 
+  /// Interactive vertical drag-to-dismiss state. Updates [_dragOffset] directly
+  /// without full-screen [setState] and rebounds via [UiSprings.snappy].
+  final ValueNotifier<Offset> _dragOffset = ValueNotifier<Offset>(Offset.zero);
+  late final AnimationController _reboundCtrl = AnimationController.unbounded(
+    vsync: this,
+  )..addListener(_onReboundTick);
+  Offset _dragStartLocal = Offset.zero;
+  Offset _reboundFrom = Offset.zero;
+
+  Animation<double>? _routeAnim;
+  CurvedAnimation? _chromeFade;
+
+  void _onReboundTick() {
+    if (!mounted) return;
+    if (!_reboundCtrl.isAnimating) {
+      _dragOffset.value = Offset.zero;
+      return;
+    }
+    _dragOffset.value =
+        Offset.lerp(_reboundFrom, Offset.zero, _reboundCtrl.value) ??
+        Offset.zero;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final routeAnim = ModalRoute.of(context)?.animation;
+    if (!identical(routeAnim, _routeAnim)) {
+      _chromeFade?.dispose();
+      _routeAnim = routeAnim;
+      _chromeFade = routeAnim == null
+          ? null
+          : CurvedAnimation(
+              parent: routeAnim,
+              curve: const Interval(
+                0.45,
+                1.0,
+                curve: UiCurves.easeOutStrong,
+              ),
+            );
+    }
+  }
+
   @override
   void dispose() {
+    _reboundCtrl.removeListener(_onReboundTick);
+    _reboundCtrl.dispose();
+    _dragOffset.dispose();
+    _chromeFade?.dispose();
     _pages?.dispose();
     super.dispose();
   }
 
   static final _muted = UiCamera.onPhoto.withValues(alpha: 0.64);
 
+  void _close() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.journey(widget.journeyId));
+    }
+  }
+
+  void _onVerticalDragStart(DragStartDetails details) {
+    _reboundCtrl.stop();
+    final current = _dragOffset.value;
+    _dragStartLocal =
+        details.localPosition - Offset(current.dx / 0.35, current.dy);
+  }
+
+  void _onVerticalDragUpdate(DragUpdateDetails details) {
+    final raw = details.localPosition - _dragStartLocal;
+    _dragOffset.value = Offset(raw.dx * 0.35, raw.dy);
+  }
+
+  void _onVerticalDragEnd(DragEndDetails details) {
+    final current = _dragOffset.value;
+    final dy = current.dy.abs();
+    final velocityY = details.velocity.pixelsPerSecond.dy.abs();
+    if (dy > 110.0 || velocityY > 750.0) {
+      _close();
+      return;
+    }
+    if (UiMotion.reduced(context) || current == Offset.zero) {
+      _dragOffset.value = Offset.zero;
+      return;
+    }
+    _reboundFrom = current;
+    final unitVel =
+        details.velocity.pixelsPerSecond.dy / math.max(dy, 110.0);
+    final sim = SpringSimulation(UiSprings.snappy, 0.0, 1.0, unitVel);
+    unawaited(
+      _reboundCtrl.animateWith(sim).then((_) {
+        if (mounted) _dragOffset.value = Offset.zero;
+      }),
+    );
+  }
+
+  void _onVerticalDragCancel() {
+    if (_dragOffset.value == Offset.zero) return;
+    _dragOffset.value = Offset.zero;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final app = AppLocalizations.of(context);
+    final reduced = UiMotion.reduced(context);
     final journey = ref.watch(journeyByIdProvider(widget.journeyId)).value;
     final membership = ref.watch(myMembershipProvider(widget.journeyId)).value;
     final checkIns = ref.watch(myCheckInsProvider(widget.journeyId));
@@ -83,187 +185,267 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
         ? ''
         : MaterialLocalizations.of(context).formatFullDate(displayDate(date));
 
-    return UiScaffold(
-      key: const ValueKey('journey-day-viewer'),
-      background: UiCamera.bg,
-      padTop: 0,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    Widget? photoFrame;
+    if (checkIn != null) {
+      final rawFrame = ClipRRect(
+        borderRadius: BorderRadius.circular(UiRadius.card),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Stack(
+            fit: StackFit.expand,
             children: [
-              UiIconButton(
-                glyph: const OurneyIcon(
-                  name: 'back',
-                  size: 21,
-                  flat: true,
-                  color: UiCamera.onPhoto,
-                ),
-                label: l10n.journeys_back,
-                color: UiCamera.onPhoto,
-                onPressed: () => context.canPop()
-                    ? context.pop()
-                    : context.go(AppRoutes.journey(widget.journeyId)),
+              PageView.builder(
+                key: const ValueKey('journey-day-pages'),
+                controller: _pages,
+                itemCount: count,
+                onPageChanged: (i) {
+                  if (i != _page) {
+                    unawaited(UiHaptics.selection());
+                    setState(() => _page = i);
+                  }
+                },
+                itemBuilder: (_, i) {
+                  final c = dayCheckIns[i];
+                  return Semantics(
+                    image: true,
+                    label: c.caption ?? dateText,
+                    child: JourneyPhoto(
+                      key: i == index
+                          ? const ValueKey('journey-day-photo')
+                          : null,
+                      checkIn: c,
+                      thumbnail: false,
+                      fallback: Center(
+                        child: Text(
+                          l10n.journeys_photoUnavailable,
+                          style: UiText.body(size: 14, color: _muted),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-              Expanded(
-                child: Text(
-                  dateText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: UiText.body(
-                    size: 14,
-                    weight: FontWeight.w700,
-                    height: 1.4,
-                    color: UiCamera.onPhoto,
-                  ),
-                ),
-              ),
-              const SizedBox(width: UiSize.tap),
-            ],
-          ),
-          const SizedBox(height: UiSpace.sm),
-          if (checkIn == null)
-            Padding(
-              padding: const EdgeInsets.only(top: 120),
-              child: Center(
-                child: checkIns.isLoading
-                    ? UiSpinner(
-                        color: UiCamera.ink,
-                        semanticsLabel: app.common_loading,
-                      )
-                    : Text(
-                        l10n.journeys_noCheckIn,
-                        textAlign: TextAlign.center,
+              if (count > 1)
+                Positioned(
+                  right: UiSpace.sm,
+                  bottom: UiSpace.sm,
+                  child: Semantics(
+                    label: l10n.journeys_dayPhotoCountSemantics(
+                      index + 1,
+                      count,
+                    ),
+                    excludeSemantics: true,
+                    child: Container(
+                      key: const ValueKey('journey-day-counter'),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: UiSpace.sm,
+                        vertical: UiSpace.xs,
+                      ),
+                      decoration: BoxDecoration(
+                        color: UiCamera.bg.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(
+                          UiRadius.capsule,
+                        ),
+                      ),
+                      child: Text(
+                        l10n.journeys_dayPhotoCount(index + 1, count),
                         style: UiText.body(
-                          size: 16,
-                          height: 1.5,
+                          size: 12,
+                          weight: FontWeight.w700,
+                          height: 1.3,
                           color: UiCamera.onPhoto,
                         ),
                       ),
-              ),
-            )
-          else ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(UiRadius.card),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    PageView.builder(
-                      key: const ValueKey('journey-day-pages'),
-                      controller: _pages,
-                      itemCount: count,
-                      onPageChanged: (i) => setState(() => _page = i),
-                      itemBuilder: (_, i) {
-                        final c = dayCheckIns[i];
-                        return Semantics(
-                          image: true,
-                          label: c.caption ?? dateText,
-                          child: JourneyPhoto(
-                            key: i == index
-                                ? const ValueKey('journey-day-photo')
-                                : null,
-                            checkIn: c,
-                            thumbnail: false,
-                            fallback: Center(
-                              child: Text(
-                                l10n.journeys_photoUnavailable,
-                                style: UiText.body(size: 14, color: _muted),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
                     ),
-                    if (count > 1)
-                      Positioned(
-                        right: UiSpace.sm,
-                        bottom: UiSpace.sm,
-                        child: Semantics(
-                          label: l10n.journeys_dayPhotoCountSemantics(
-                            index + 1,
-                            count,
-                          ),
-                          excludeSemantics: true,
-                          child: Container(
-                            key: const ValueKey('journey-day-counter'),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: UiSpace.sm,
-                              vertical: UiSpace.xs,
-                            ),
-                            decoration: BoxDecoration(
-                              color: UiCamera.bg.withValues(alpha: 0.6),
-                              borderRadius: BorderRadius.circular(
-                                UiRadius.capsule,
-                              ),
-                            ),
-                            child: Text(
-                              l10n.journeys_dayPhotoCount(index + 1, count),
-                              style: UiText.body(
-                                size: 12,
-                                weight: FontWeight.w700,
-                                height: 1.3,
-                                color: UiCamera.onPhoto,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+
+      final heroFrame = UiHero(
+        tag: UiHeroTags.dayPhoto(checkIn.id),
+        borderRadiusBegin: BorderRadius.circular(UiRadius.otp),
+        borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+        child: rawFrame,
+      );
+
+      photoFrame = GestureDetector(
+        key: const ValueKey('journey-day-drag-surface'),
+        behavior: HitTestBehavior.translucent,
+        onVerticalDragStart: _onVerticalDragStart,
+        onVerticalDragUpdate: _onVerticalDragUpdate,
+        onVerticalDragEnd: _onVerticalDragEnd,
+        onVerticalDragCancel: _onVerticalDragCancel,
+        child: ValueListenableBuilder<Offset>(
+          valueListenable: _dragOffset,
+          child: heroFrame,
+          builder: (context, offset, child) {
+            if (reduced || offset == Offset.zero) return child!;
+            final progress = (offset.dy.abs() / 260.0).clamp(0.0, 1.0);
+            final scale = lerpDouble(1.0, 0.84, progress)!;
+            return Transform.translate(
+              key: const ValueKey('journey-day-drag-transform'),
+              offset: offset,
+              child: Transform.scale(
+                key: const ValueKey('journey-day-drag-scale'),
+                scale: scale,
+                child: child,
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    Widget? metadataChrome;
+    if (checkIn != null) {
+      final chromeColumn = Column(
+        key: const ValueKey('journey-day-chrome'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: UiSpace.lg),
+          if (checkIn.fromLibrary)
+            Row(
+              children: [
+                OurneyIcon(
+                  name: 'gallery',
+                  size: 18,
+                  flat: true,
+                  color: _muted,
+                ),
+                const SizedBox(width: UiSpace.xs),
+                Flexible(
+                  child: Text(
+                    l10n.journeys_fromLibrary,
+                    style: UiText.body(size: 12, color: _muted),
+                  ),
+                ),
+              ],
+            ),
+          if (checkIn.caption != null && checkIn.caption!.isNotEmpty) ...[
+            const SizedBox(height: UiSpace.sm),
+            Text(
+              checkIn.caption!,
+              key: const ValueKey('journey-day-caption'),
+              style: UiText.body(
+                size: 16,
+                height: 1.5,
+                color: UiCamera.onPhoto,
+              ),
+            ),
+          ],
+          if (journeyExtrasParts(context, checkIn.extras) case final parts
+              when parts.isNotEmpty) ...[
+            const SizedBox(height: UiSpace.sm),
+            Text(
+              parts.join(' · '),
+              key: const ValueKey('journey-day-extras'),
+              style: UiText.body(size: 14, height: 1.45, color: _muted),
+            ),
+          ],
+          if (checkIn.metricValue != null) ...[
+            const SizedBox(height: UiSpace.md),
+            _MetricRow(
+              name: journey?.metricName,
+              unit: journey?.metricUnit,
+              value: checkIn.metricValue!,
+              hidden: hidden,
+              onReveal: () {
+                unawaited(UiHaptics.selection());
+                setState(() => _revealMetric = true);
+              },
+            ),
+          ],
+        ],
+      );
+      final chromeFade = _chromeFade;
+      metadataChrome = (!reduced && chromeFade != null)
+          ? FadeTransition(
+              key: const ValueKey('journey-day-chrome-fade'),
+              opacity: chromeFade,
+              child: chromeColumn,
+            )
+          : chromeColumn;
+    }
+
+    final contentColumn = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            UiIconButton(
+              glyph: const OurneyIcon(
+                name: 'back',
+                size: 21,
+                flat: true,
+                color: UiCamera.onPhoto,
+              ),
+              label: l10n.journeys_back,
+              color: UiCamera.onPhoto,
+              onPressed: _close,
+            ),
+            Expanded(
+              child: Text(
+                dateText,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: UiText.body(
+                  size: 14,
+                  weight: FontWeight.w700,
+                  height: 1.4,
+                  color: UiCamera.onPhoto,
                 ),
               ),
             ),
-            const SizedBox(height: UiSpace.lg),
-            if (checkIn.fromLibrary)
-              Row(
-                children: [
-                  OurneyIcon(
-                    name: 'gallery',
-                    size: 18,
-                    flat: true,
-                    color: _muted,
-                  ),
-                  const SizedBox(width: UiSpace.xs),
-                  Flexible(
-                    child: Text(
-                      l10n.journeys_fromLibrary,
-                      style: UiText.body(size: 12, color: _muted),
-                    ),
-                  ),
-                ],
-              ),
-            if (checkIn.caption != null && checkIn.caption!.isNotEmpty) ...[
-              const SizedBox(height: UiSpace.sm),
-              Text(
-                checkIn.caption!,
-                key: const ValueKey('journey-day-caption'),
-                style: UiText.body(size: 16, height: 1.5, color: UiCamera.onPhoto),
-              ),
-            ],
-            if (journeyExtrasParts(context, checkIn.extras) case final parts
-                when parts.isNotEmpty) ...[
-              const SizedBox(height: UiSpace.sm),
-              Text(
-                parts.join(' · '),
-                key: const ValueKey('journey-day-extras'),
-                style: UiText.body(size: 14, height: 1.45, color: _muted),
-              ),
-            ],
-            if (checkIn.metricValue != null) ...[
-              const SizedBox(height: UiSpace.md),
-              _MetricRow(
-                name: journey?.metricName,
-                unit: journey?.metricUnit,
-                value: checkIn.metricValue!,
-                hidden: hidden,
-                onReveal: () => setState(() => _revealMetric = true),
-              ),
-            ],
+            const SizedBox(width: UiSize.tap),
           ],
+        ),
+        const SizedBox(height: UiSpace.sm),
+        if (checkIn == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 120),
+            child: Center(
+              child: checkIns.isLoading
+                  ? UiSpinner(
+                      color: UiCamera.ink,
+                      semanticsLabel: app.common_loading,
+                    )
+                  : Text(
+                      l10n.journeys_noCheckIn,
+                      textAlign: TextAlign.center,
+                      style: UiText.body(
+                        size: 16,
+                        height: 1.5,
+                        color: UiCamera.onPhoto,
+                      ),
+                    ),
+            ),
+          )
+        else ...[
+          ?photoFrame,
+          ?metadataChrome,
         ],
-      ),
+      ],
+    );
+
+    return ValueListenableBuilder<Offset>(
+      valueListenable: _dragOffset,
+      child: contentColumn,
+      builder: (context, offset, child) {
+        final progress = reduced
+            ? 0.0
+            : (offset.dy.abs() / 260.0).clamp(0.0, 1.0);
+        final backdropAlpha = lerpDouble(1.0, 0.0, progress)!;
+        return UiScaffold(
+          key: const ValueKey('journey-day-viewer'),
+          background: UiCamera.bg.withValues(alpha: backdropAlpha),
+          padTop: 0,
+          child: child!,
+        );
+      },
     );
   }
 }
@@ -305,31 +487,45 @@ class _MetricRow extends StatelessWidget {
         if (name != null)
           Text(
             '$name:',
-            style: UiText.body(size: 14, height: 1.4, color: UiCamera.onPhoto.withValues(alpha: 0.64)),
+            style: UiText.body(
+              size: 14,
+              height: 1.4,
+              color: UiCamera.onPhoto.withValues(alpha: 0.64),
+            ),
           ),
-        if (hidden) ...[
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const OurneyIcon(
-                name: 'eye-off',
-                size: 18,
-                flat: true,
-                color: UiCamera.onPhoto,
-              ),
-              const SizedBox(width: UiSpace.xs),
-              Text(l10n.journeys_metricHidden, style: strong),
-            ],
-          ),
-          UiTextAction(
-            key: const ValueKey('journey-day-reveal'),
-            label: l10n.journeys_showMetric,
-            color: UiCamera.onPhoto,
-            underline: true,
-            onPressed: onReveal,
-          ),
-        ] else
-          Text(shown, style: strong),
+        AnimatedSwitcher(
+          duration: UiMotion.of(context, const Duration(milliseconds: 140)),
+          switchInCurve: UiCurves.easeOutStrong,
+          switchOutCurve: Curves.easeOut,
+          child: hidden
+              ? Row(
+                  key: const ValueKey('journey-day-metric-hidden'),
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const OurneyIcon(
+                      name: 'eye-off',
+                      size: 18,
+                      flat: true,
+                      color: UiCamera.onPhoto,
+                    ),
+                    const SizedBox(width: UiSpace.xs),
+                    Text(l10n.journeys_metricHidden, style: strong),
+                    const SizedBox(width: UiSpace.sm),
+                    UiTextAction(
+                      key: const ValueKey('journey-day-reveal'),
+                      label: l10n.journeys_showMetric,
+                      color: UiCamera.onPhoto,
+                      underline: true,
+                      onPressed: onReveal,
+                    ),
+                  ],
+                )
+              : Text(
+                  shown,
+                  key: const ValueKey('journey-day-metric-shown'),
+                  style: strong,
+                ),
+        ),
       ],
     );
   }

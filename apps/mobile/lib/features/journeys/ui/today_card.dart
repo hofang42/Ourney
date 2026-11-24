@@ -73,73 +73,79 @@ class TodayCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 9),
-          Container(
-            height: 148,
-            decoration: BoxDecoration(
-              color: UiCamera.bg,
-              border: Border.all(color: pal.outline),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (latest != null)
-                  JourneyPhoto(checkIn: latest, thumbnail: false)
-                else
-                  ColoredBox(
-                    color: pal.accent.withValues(alpha: 0.32),
-                    child: Center(
-                      child: UiTypeBadge(
-                        type: journeyTypeId(journey),
-                        size: 56,
+          UiHero(
+            tag: UiHeroTags.journeyCover(journey.id),
+            borderRadiusBegin: BorderRadius.zero,
+            borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+            borderSide: BorderSide(color: pal.outline, width: UiBorder.standard),
+            child: Container(
+              height: 148,
+              decoration: BoxDecoration(
+                color: UiCamera.bg,
+                border: Border.all(color: pal.outline),
+              ),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (latest != null)
+                    JourneyPhoto(checkIn: latest, thumbnail: false)
+                  else
+                    ColoredBox(
+                      color: pal.accent.withValues(alpha: 0.32),
+                      child: Center(
+                        child: UiTypeBadge(
+                          type: journeyTypeId(journey),
+                          size: 56,
+                        ),
+                      ),
+                    ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.45, 1],
+                        colors: [
+                          Colors.transparent,
+                          UiCamera.bg.withValues(alpha: 0.8),
+                        ],
                       ),
                     ),
                   ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.45, 1],
-                      colors: [
-                        Colors.transparent,
-                        UiCamera.bg.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 12,
-                  right: 12,
-                  bottom: 10,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          journey.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: UiText.display(
-                            size: 20,
-                            height: 1.25,
+                  Positioned(
+                    left: 12,
+                    right: 12,
+                    bottom: 10,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            journey.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: UiText.display(
+                              size: 20,
+                              height: 1.25,
+                              color: UiCamera.onPhoto,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          journeyDayShort(l10n, progress),
+                          style: UiText.body(
+                            size: 12,
+                            weight: FontWeight.w700,
+                            height: 1.3,
                             color: UiCamera.onPhoto,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        journeyDayShort(l10n, progress),
-                        style: UiText.body(
-                          size: 12,
-                          weight: FontWeight.w700,
-                          height: 1.3,
-                          color: UiCamera.onPhoto,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           Container(

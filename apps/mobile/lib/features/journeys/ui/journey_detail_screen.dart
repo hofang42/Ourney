@@ -88,7 +88,15 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         ),
       );
     }
-    final journey = journeyAsync.value;
+    final journey =
+        journeyAsync.value ??
+        (journeyAsync.isLoading
+            ? ref
+                  .watch(journeysListProvider)
+                  .value
+                  ?.where((j) => j.id == journeyId)
+                  .firstOrNull
+            : null);
     if (journey == null) {
       return UiScaffold(
         key: const ValueKey('journey-detail-empty'),
@@ -249,11 +257,29 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               ),
             if (progress != null) const SizedBox(height: UiSpace.lg),
             DeadUploadsBanner(journeyId: journey.id),
-            UiEyebrow(_dateRange(context, journey).toUpperCase()),
+            UiHero(
+              tag: UiHeroTags.journeyCover(journey.id),
+              borderRadiusBegin: BorderRadius.zero,
+              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+              borderSide: BorderSide(
+                color: pal.outline,
+                width: UiBorder.standard,
+              ),
+              child: UiEyebrow(_dateRange(context, journey).toUpperCase()),
+            ),
             const SizedBox(height: 4),
-            Semantics(
-              header: true,
-              child: Text(journey.title, style: UiText.h1(color: ui.ink)),
+            UiHero(
+              tag: UiHeroTags.journeyBadge(journey.id),
+              borderRadiusBegin: BorderRadius.circular(UiRadius.thumb),
+              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+              borderSide: BorderSide(
+                color: pal.outline,
+                width: UiBorder.standard,
+              ),
+              child: Semantics(
+                header: true,
+                child: Text(journey.title, style: UiText.h1(color: ui.ink)),
+              ),
             ),
             const SizedBox(height: 22),
             if (progress != null) ...[
@@ -709,13 +735,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         .journeys_jumpAnnounce(monthPlain(context, month));
     final view = View.of(context);
     final dir = Directionality.of(context);
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (UiMotion.reduced(context)) {
       _scroll.jumpTo(target);
     } else {
       await _scroll.animateTo(
         target,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
+        duration: UiMotion.page,
+        curve: UiCurves.easeOutStrong,
       );
     }
     if (!mounted || token != _jumpToken || !_scroll.hasClients) return;

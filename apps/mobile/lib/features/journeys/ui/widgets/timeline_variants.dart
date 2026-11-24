@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show PathMetric;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -8,6 +11,7 @@ import '../../domain/journey_progress.dart';
 import '../../domain/timeline_window.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_photo.dart';
+import 'journey_timeline.dart' show wrapTimelineDayHero;
 import 'timeline_cards.dart';
 import 'timeline_common.dart';
 
@@ -54,7 +58,10 @@ class _QuietTimelineState extends State<QuietTimeline> {
   bool _range30 = false;
 
   void _reveal(bool v) {
-    if (_revealed != v) setState(() => _revealed = v);
+    if (_revealed != v) {
+      if (v) unawaited(UiHaptics.selection());
+      setState(() => _revealed = v);
+    }
   }
 
   @override
@@ -153,19 +160,41 @@ class _QuietTimelineState extends State<QuietTimeline> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Flexible(
-                    child: TimelineNumber(
-                      axis(0),
-                      mono: true,
-                      size: 12,
-                      color: ui.inkMuted,
+                    child: AnimatedSwitcher(
+                      duration: UiMotion.of(
+                        context,
+                        const Duration(milliseconds: 140),
+                      ),
+                      switchInCurve: UiCurves.easeOutStrong,
+                      switchOutCurve: Curves.easeOut,
+                      child: TimelineNumber(
+                        axis(0),
+                        key: ValueKey(
+                          'quiet-axis-0-${_revealed ? 'shown' : 'masked'}',
+                        ),
+                        mono: true,
+                        size: 12,
+                        color: ui.inkMuted,
+                      ),
                     ),
                   ),
                   Flexible(
-                    child: TimelineNumber(
-                      axis(1),
-                      mono: true,
-                      size: 12,
-                      color: ui.inkMuted,
+                    child: AnimatedSwitcher(
+                      duration: UiMotion.of(
+                        context,
+                        const Duration(milliseconds: 140),
+                      ),
+                      switchInCurve: UiCurves.easeOutStrong,
+                      switchOutCurve: Curves.easeOut,
+                      child: TimelineNumber(
+                        axis(1),
+                        key: ValueKey(
+                          'quiet-axis-1-${_revealed ? 'shown' : 'masked'}',
+                        ),
+                        mono: true,
+                        size: 12,
+                        color: ui.inkMuted,
+                      ),
                     ),
                   ),
                 ],
@@ -174,14 +203,12 @@ class _QuietTimelineState extends State<QuietTimeline> {
                 child: SizedBox(
                   height: 84,
                   child: RepaintBoundary(
-                    child: CustomPaint(
-                      painter: CurvePainter(
-                        values: series,
-                        color: accent,
-                        fillColor: accent.withValues(alpha: 0.12),
-                        endDotsOnly: true,
-                        dotColor: accent,
-                      ),
+                    child: _AnimatedTimelineCurve(
+                      values: series,
+                      color: accent,
+                      fillColor: accent.withValues(alpha: 0.12),
+                      endDotsOnly: true,
+                      dotColor: accent,
                     ),
                   ),
                 ),
@@ -388,7 +415,10 @@ class _QuietRow extends StatelessWidget {
                     ),
                     if (day.state == DayState.checkedIn ||
                         day.state == DayState.today)
-                      TimelineTile(day: day, size: 44),
+                      wrapTimelineDayHero(
+                        day,
+                        TimelineTile(day: day, size: 44),
+                      ),
                   ],
                 ),
               ),
@@ -512,7 +542,11 @@ class _Stone extends StatelessWidget {
     final ui = context.ui;
     final accent = timelineAccent(context);
     if (day.state == DayState.checkedIn || day.state == DayState.today) {
-      return TimelineTile(day: day, size: size, round: true);
+      return wrapTimelineDayHero(
+        day,
+        TimelineTile(day: day, size: size, round: true),
+        borderRadiusBegin: BorderRadius.circular(size),
+      );
     }
     return Container(
       width: size,
@@ -714,7 +748,10 @@ class _ScrapRow extends StatelessWidget {
               tilt: left ? -1 : 1.2,
               photo: AspectRatio(
                 aspectRatio: 1,
-                child: TimelineTile(day: day, size: 96),
+                child: wrapTimelineDayHero(
+                  day,
+                  TimelineTile(day: day, size: 96),
+                ),
               ),
               footer: Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -882,7 +919,10 @@ class _CouplePair extends StatelessWidget {
                         Expanded(
                           child: _CoupleHalf(
                             label: selfName ?? l10n.journeys_coupleYou,
-                            child: TimelineTile(day: day, size: s),
+                            child: wrapTimelineDayHero(
+                              day,
+                              TimelineTile(day: day, size: s),
+                            ),
                           ),
                         ),
                         SizedBox(
@@ -1111,11 +1151,14 @@ class MinimalTimeline extends StatelessWidget {
                                 dimension: pitch,
                                 child: cells[r * 7 + i] == null
                                     ? null
-                                    : TimelineGridCell(
-                                        day: cells[r * 7 + i]!,
-                                        size: tile,
-                                        hit: pitch,
-                                        onTap: onTapDay,
+                                    : wrapTimelineDayHero(
+                                        cells[r * 7 + i]!,
+                                        TimelineGridCell(
+                                          day: cells[r * 7 + i]!,
+                                          size: tile,
+                                          hit: pitch,
+                                          onTap: onTapDay,
+                                        ),
                                       ),
                               ),
                           ],
@@ -1173,13 +1216,11 @@ class FlexerTimeline extends StatelessWidget {
               children: [
                 Positioned.fill(
                   child: RepaintBoundary(
-                    child: CustomPaint(
-                      painter: CurvePainter(
-                        values: series,
-                        color: accent,
-                        smooth: false,
-                        strokeWidth: 3,
-                      ),
+                    child: _AnimatedTimelineCurve(
+                      values: series,
+                      color: accent,
+                      smooth: false,
+                      strokeWidth: 3,
                     ),
                   ),
                 ),
@@ -1228,7 +1269,7 @@ class FlexerTimeline extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: UiSpace.sm),
-                  TimelineTile(day: d, size: 40),
+                  wrapTimelineDayHero(d, TimelineTile(day: d, size: 40)),
                 ],
               ),
             ),
@@ -1236,4 +1277,203 @@ class FlexerTimeline extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Progressive stroke-reveal curve for [QuietTimeline] and [FlexerTimeline].
+/// Drives [CustomPaint] directly via `repaint: _curved` with zero widget
+/// rebuilds per tick and renders immediately at `t = 1.0` under Reduce Motion.
+class _AnimatedTimelineCurve extends StatefulWidget {
+  const _AnimatedTimelineCurve({
+    required this.values,
+    required this.color,
+    this.dotColor,
+    this.strokeWidth = 2.5,
+    this.smooth = true,
+    this.fillColor,
+    this.endDotsOnly = false,
+  });
+
+  final List<double> values;
+  final Color color;
+  final Color? dotColor;
+  final double strokeWidth;
+  final bool smooth;
+  final Color? fillColor;
+  final bool endDotsOnly;
+
+  @override
+  State<_AnimatedTimelineCurve> createState() => _AnimatedTimelineCurveState();
+}
+
+class _AnimatedTimelineCurveState extends State<_AnimatedTimelineCurve>
+    with SingleTickerProviderStateMixin {
+  static const Duration _kRevealDuration = Duration(milliseconds: 680);
+
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  bool _started = false;
+
+  CurvedAnimation _ensureAnimation() {
+    var curved = _curved;
+    if (curved != null) return curved;
+    final ctrl = AnimationController(vsync: this, duration: _kRevealDuration);
+    _ctrl = ctrl;
+    curved = CurvedAnimation(parent: ctrl, curve: UiCurves.easeOutStrong);
+    _curved = curved;
+    return curved;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_started) {
+      _started = true;
+      if (!UiMotion.reduced(context) && widget.values.length >= 2) {
+        _ensureAnimation();
+        _ctrl!.forward(from: 0.0);
+      }
+    } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final reduced = UiMotion.reduced(context);
+    final progress = reduced
+        ? const AlwaysStoppedAnimation<double>(1.0)
+        : (_curved ?? const AlwaysStoppedAnimation<double>(1.0));
+    return CustomPaint(
+      painter: _AnimatedTimelineCurvePainter(
+        values: widget.values,
+        color: widget.color,
+        dotColor: widget.dotColor,
+        strokeWidth: widget.strokeWidth,
+        smooth: widget.smooth,
+        fillColor: widget.fillColor,
+        endDotsOnly: widget.endDotsOnly,
+        progress: progress,
+      ),
+    );
+  }
+}
+
+class _AnimatedTimelineCurvePainter extends CustomPainter {
+  _AnimatedTimelineCurvePainter({
+    required this.values,
+    required this.color,
+    required this.strokeWidth,
+    required this.smooth,
+    required this.endDotsOnly,
+    required this.progress,
+    this.dotColor,
+    this.fillColor,
+  }) : _strokePaint = Paint()
+         ..color = color
+         ..style = PaintingStyle.stroke
+         ..strokeWidth = strokeWidth
+         ..strokeCap = StrokeCap.round
+         ..strokeJoin = StrokeJoin.round,
+       _fillPaint = fillColor == null ? null : (Paint()..color = fillColor),
+       _dotPaint = dotColor == null ? null : (Paint()..color = dotColor),
+       super(repaint: progress);
+
+  final List<double> values;
+  final Color color;
+  final Color? dotColor;
+  final double strokeWidth;
+  final bool smooth;
+  final Color? fillColor;
+  final bool endDotsOnly;
+  final Animation<double> progress;
+
+  final Paint _strokePaint;
+  final Paint? _fillPaint;
+  final Paint? _dotPaint;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+    final t = progress.value.clamp(0.0, 1.0);
+    if (t <= 0.0) return;
+
+    final lo = values.reduce(math.min);
+    final hi = values.reduce(math.max);
+    final span = hi - lo == 0 ? 1.0 : hi - lo;
+    const pad = 6.0;
+    Offset at(int i) => Offset(
+      pad + (size.width - pad * 2) * i / (values.length - 1),
+      size.height - pad - (size.height - pad * 2) * (values[i] - lo) / span,
+    );
+    final path = Path()..moveTo(at(0).dx, at(0).dy);
+    for (var i = 1; i < values.length; i++) {
+      final a = at(i - 1);
+      final b = at(i);
+      if (smooth) {
+        final mx = (a.dx + b.dx) / 2;
+        path.cubicTo(mx, a.dy, mx, b.dy, b.dx, b.dy);
+      } else {
+        path.lineTo(b.dx, b.dy);
+      }
+    }
+
+    if (t >= 1.0) {
+      if (_fillPaint != null) {
+        final fill = Path.from(path)
+          ..lineTo(at(values.length - 1).dx, size.height)
+          ..lineTo(at(0).dx, size.height)
+          ..close();
+        canvas.drawPath(fill, _fillPaint);
+      }
+      canvas.drawPath(path, _strokePaint);
+      if (_dotPaint != null) {
+        for (var i = 0; i < values.length; i++) {
+          if (endDotsOnly && i != 0 && i != values.length - 1) continue;
+          canvas.drawCircle(at(i), endDotsOnly ? 5 : 3, _dotPaint);
+        }
+      }
+      return;
+    }
+
+    final drawnPath = Path();
+    for (final PathMetric m in path.computeMetrics()) {
+      drawnPath.addPath(m.extractPath(0.0, m.length * t), Offset.zero);
+    }
+    if (_fillPaint != null && fillColor != null) {
+      _fillPaint.color = fillColor!.withValues(alpha: fillColor!.a * t);
+      final fill = Path.from(path)
+        ..lineTo(at(values.length - 1).dx, size.height)
+        ..lineTo(at(0).dx, size.height)
+        ..close();
+      canvas.drawPath(fill, _fillPaint);
+    }
+    canvas.drawPath(drawnPath, _strokePaint);
+    if (_dotPaint != null) {
+      canvas.drawCircle(at(0), endDotsOnly ? 5 : 3, _dotPaint);
+      if (t >= 0.85) {
+        final endScale = ((t - 0.85) / 0.15).clamp(0.0, 1.0);
+        canvas.drawCircle(
+          at(values.length - 1),
+          (endDotsOnly ? 5.0 : 3.0) * endScale,
+          _dotPaint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_AnimatedTimelineCurvePainter old) =>
+      !listEquals(old.values, values) ||
+      old.color != color ||
+      old.dotColor != dotColor ||
+      old.fillColor != fillColor ||
+      old.endDotsOnly != endDotsOnly ||
+      old.progress != progress;
 }

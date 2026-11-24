@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -161,23 +162,104 @@ class _WrappedBody extends StatefulWidget {
 
 enum _Ratio { story, feed }
 
-class _WrappedBodyState extends State<_WrappedBody> {
+class _WrappedBodyState extends State<_WrappedBody>
+    with SingleTickerProviderStateMixin {
+  static const Duration _kSlideDuration = Duration(seconds: 5);
+
   int _page = 0;
+  int _direction = 1;
+  int _storyPageCount = 0;
+  bool _holding = false;
   _Ratio _ratio = _Ratio.story;
   bool _hideKg = true;
   late bool _hideBrand =
       personaSkinOf(widget.journey) == PersonaSkinId.quietTransformer;
 
-  void _move(int dir, int count) =>
-      setState(() => _page = (_page + dir).clamp(0, count));
+  late final AnimationController _segmentCtrl = AnimationController(
+    vsync: this,
+    duration: _kSlideDuration,
+  )..addStatusListener(_onSegmentStatus);
+
+  void _onSegmentStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed || !mounted) return;
+    if (UiMotion.reduced(context)) return;
+    if (_page < _storyPageCount) {
+      _move(1, _storyPageCount);
+    }
+  }
+
+  void _syncSegmentTimer({required bool reduced, required int storyCount}) {
+    _storyPageCount = storyCount;
+    final onSummary = _page >= storyCount;
+    if (reduced || onSummary || !TickerMode.valuesOf(context).enabled) {
+      if (_segmentCtrl.isAnimating) _segmentCtrl.stop();
+      _segmentCtrl.value = 1.0;
+    } else if (!_holding && !_segmentCtrl.isAnimating) {
+      _segmentCtrl.forward(from: 0.0);
+    }
+  }
+
+  void _restartSegmentTimer({required bool reduced, required int storyCount}) {
+    _storyPageCount = storyCount;
+    _holding = false;
+    final onSummary = _page >= storyCount;
+    if (reduced || onSummary || !TickerMode.valuesOf(context).enabled) {
+      _segmentCtrl.stop();
+      _segmentCtrl.value = 1.0;
+    } else {
+      _segmentCtrl.forward(from: 0.0);
+    }
+  }
+
+  void _setHolding(bool holding) {
+    if (_holding == holding) return;
+    _holding = holding;
+    if (UiMotion.reduced(context) || _page >= _storyPageCount) return;
+    if (holding) {
+      _segmentCtrl.stop();
+    } else if (_segmentCtrl.value < 1.0) {
+      _segmentCtrl.forward();
+    }
+  }
+
+  void _move(int dir, int count) {
+    final next = (_page + dir).clamp(0, count);
+    if (next == _page) return;
+    final reduced = UiMotion.reduced(context);
+    setState(() {
+      _direction = dir >= 0 ? 1 : -1;
+      _page = next;
+    });
+    _restartSegmentTimer(reduced: reduced, storyCount: count);
+  }
+
+  void _jumpTo(int target, int count) {
+    final next = target.clamp(0, count);
+    if (next == _page) return;
+    final reduced = UiMotion.reduced(context);
+    setState(() {
+      _direction = next >= _page ? 1 : -1;
+      _page = next;
+    });
+    _restartSegmentTimer(reduced: reduced, storyCount: count);
+  }
+
+  @override
+  void dispose() {
+    _segmentCtrl.removeStatusListener(_onSegmentStatus);
+    _segmentCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
+    final reduced = UiMotion.reduced(context);
     final j = widget.journey;
     final skin = personaSkinOf(j);
     final pages = wrappedPagesFor(l10n, j, skin, widget.stats);
     final summary = _page >= pages.length;
+    _syncSegmentTimer(reduced: reduced, storyCount: pages.length);
 
     return UiSkinScope(
       skinId: uiSkinIdFor(skin),
@@ -216,38 +298,53 @@ class _WrappedBodyState extends State<_WrappedBody> {
                   // One extra segment for the summary page (U4).
                   count: pages.length + 1,
                   selected: _page.clamp(0, pages.length),
+                  progress: _segmentCtrl,
+                  animateActive: !reduced && !summary,
                   labelOf: l10n.journeys_wrapped_step,
-                  onTap: (i) => setState(() => _page = i),
+                  onTap: (i) => _jumpTo(i, pages.length),
                 ),
                 const SizedBox(height: UiSpace.lg),
                 Expanded(
-                  child: summary
-                      ? _Summary(
-                          journey: j,
-                          skin: skin,
-                          stats: widget.stats,
-                          ratio: _ratio,
-                          hideKg: _hideKg,
-                          hideBrand: _hideBrand,
-                          onRatio: (r) => setState(() => _ratio = r),
-                          onHideKg: () => setState(() => _hideKg = !_hideKg),
-                          onHideBrand: (v) => setState(() => _hideBrand = v),
-                        )
-                      : _Story(
-                          key: ValueKey('wrapped-page-$_page'),
-                          skin: skin,
-                          stats: widget.stats,
-                          page: _page,
-                          headline: pages[_page],
-                          footnote:
-                              skin == PersonaSkinId.memoryCollectors &&
-                                  _page == pages.length - 1
-                              ? l10n.journeys_wrapped_memoryEnd
-                              : null,
-                          color: ui.ink,
-                          onTapSide: (forward) =>
-                              _move(forward ? 1 : -1, pages.length),
-                        ),
+                  child: UiDirectionalSwitcher(
+                    step: _page,
+                    direction: _direction,
+                    duration: UiMotion.medium,
+                    alignment: Alignment.center,
+                    child: summary
+                        ? _Summary(
+                            key: const ValueKey('wrapped-page-summary'),
+                            journey: j,
+                            skin: skin,
+                            stats: widget.stats,
+                            ratio: _ratio,
+                            hideKg: _hideKg,
+                            hideBrand: _hideBrand,
+                            onRatio: (r) {
+                              if (_ratio != r) {
+                                unawaited(UiHaptics.selection());
+                                setState(() => _ratio = r);
+                              }
+                            },
+                            onHideKg: () => setState(() => _hideKg = !_hideKg),
+                            onHideBrand: (v) => setState(() => _hideBrand = v),
+                          )
+                        : _Story(
+                            key: ValueKey('wrapped-page-$_page'),
+                            skin: skin,
+                            stats: widget.stats,
+                            page: _page,
+                            headline: pages[_page],
+                            footnote:
+                                skin == PersonaSkinId.memoryCollectors &&
+                                    _page == pages.length - 1
+                                ? l10n.journeys_wrapped_memoryEnd
+                                : null,
+                            color: ui.ink,
+                            onTapSide: (forward) =>
+                                _move(forward ? 1 : -1, pages.length),
+                            onHoldChanged: _setHolding,
+                          ),
+                  ),
                 ),
               ],
             ),
@@ -258,17 +355,22 @@ class _WrappedBodyState extends State<_WrappedBody> {
   }
 }
 
-/// `.wrapped-progress`: one segment per page, tappable.
+/// `.wrapped-progress`: one segment per page, tappable, with a 5.0s linear
+/// fill bar on the active story segment.
 class _Segments extends StatelessWidget {
   const _Segments({
     required this.count,
     required this.selected,
+    required this.progress,
+    required this.animateActive,
     required this.labelOf,
     required this.onTap,
   });
 
   final int count;
   final int selected;
+  final Animation<double> progress;
+  final bool animateActive;
   final String Function(int n) labelOf;
   final ValueChanged<int> onTap;
 
@@ -294,11 +396,29 @@ class _Segments extends StatelessWidget {
                 ),
                 child: Container(
                   height: 6,
+                  clipBehavior: Clip.antiAlias,
                   decoration: BoxDecoration(
-                    color: i <= selected ? ui.accent : ui.fill,
+                    color: i < selected || (i == selected && !animateActive)
+                        ? ui.accent
+                        : ui.fill,
                     borderRadius: BorderRadius.circular(3),
                     border: Border.all(color: ui.outline, width: 1.5),
                   ),
+                  child: (i == selected && animateActive)
+                      ? AnimatedBuilder(
+                          animation: progress,
+                          child: ColoredBox(color: ui.accent),
+                          builder: (context, fillChild) => Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: FractionallySizedBox(
+                              key: ValueKey('wrapped-segment-fill-$i'),
+                              widthFactor: progress.value.clamp(0.0, 1.0),
+                              heightFactor: 1.0,
+                              child: fillChild,
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
               ),
             ),
@@ -316,6 +436,7 @@ class _Story extends StatelessWidget {
     required this.headline,
     required this.color,
     required this.onTapSide,
+    this.onHoldChanged,
     this.footnote,
     super.key,
   });
@@ -327,6 +448,7 @@ class _Story extends StatelessWidget {
   final String? footnote;
   final Color color;
   final ValueChanged<bool> onTapSide;
+  final ValueChanged<bool>? onHoldChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -346,6 +468,9 @@ class _Story extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTapUp: (d) => onTapSide(d.localPosition.dx >= c.maxWidth / 2),
+          onLongPressStart: (_) => onHoldChanged?.call(true),
+          onLongPressEnd: (_) => onHoldChanged?.call(false),
+          onLongPressCancel: () => onHoldChanged?.call(false),
           onHorizontalDragEnd: (d) {
             final v = d.primaryVelocity ?? 0;
             if (v.abs() > 200) onTapSide(v < 0);
@@ -398,6 +523,7 @@ class _Summary extends ConsumerWidget {
     required this.onRatio,
     required this.onHideKg,
     required this.onHideBrand,
+    super.key,
   });
 
   final Journey journey;
@@ -475,13 +601,33 @@ class _Summary extends ConsumerWidget {
           ),
           const SizedBox(height: UiSpace.lg),
           Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: ratio == _Ratio.story ? 230 : 290,
-              ),
-              child: AspectRatio(
-                key: ValueKey('wrapped-card-${ratio.name}'),
-                aspectRatio: ratio == _Ratio.story ? 9 / 16 : 4 / 5,
+            child: UiHero(
+              tag: UiHeroTags.sharePreview(journey.id),
+              borderRadiusBegin: BorderRadius.circular(UiRadius.card),
+              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+              child: TweenAnimationBuilder<double>(
+                key: const ValueKey('wrapped-aspect-morph'),
+                tween: Tween<double>(
+                  end: ratio == _Ratio.story ? 9 / 16 : 4 / 5,
+                ),
+                duration: UiMotion.of(
+                  context,
+                  const Duration(milliseconds: 240),
+                ),
+                curve: UiCurves.easeInOutStrong,
+                builder: (context, aspect, child) {
+                  final t = ((aspect - (9 / 16)) / ((4 / 5) - (9 / 16)))
+                      .clamp(0.0, 1.0);
+                  final maxW = lerpDouble(230, 290, t)!;
+                  return ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: maxW),
+                    child: AspectRatio(
+                      key: ValueKey('wrapped-card-${ratio.name}'),
+                      aspectRatio: aspect,
+                      child: child,
+                    ),
+                  );
+                },
                 child: Container(
                   padding: const EdgeInsets.all(UiSpace.md),
                   decoration: BoxDecoration(
