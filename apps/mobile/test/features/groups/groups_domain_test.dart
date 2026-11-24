@@ -10,13 +10,20 @@ void main() {
     test('normalises typed and pasted codes', () {
       expect(parseInviteInput(' abcd-1234 '), 'ABCD1234');
       expect(parseInviteInput('ourney://join/xy12ab34'), 'XY12AB34');
+      expect(parseInviteInput('https://ourney.tech/j/xy12ab34'), 'XY12AB34');
+      expect(parseInviteInput('https://ourney.tech/join/xy12-ab34'), 'XY12AB34');
+      expect(
+        parseInviteInput('Join our squad: https://ourney.tech/j/abcd1234!'),
+        'ABCD1234',
+      );
+      expect(parseInviteInput('https://evil.com/j/xy12ab34'), isEmpty);
       expect(isValidInviteCode('ABCD1234'), isTrue);
       expect(isValidInviteCode('ABCD123'), isFalse);
       expect(isValidInviteCode('ABCD123!'), isFalse);
     });
 
-    test('share link', () {
-      expect(inviteLink('ABCD1234'), 'ourney://join/ABCD1234');
+    test('share link uses https://ourney.tech/j/<code> (DE-03)', () {
+      expect(inviteLink('ABCD1234'), 'https://ourney.tech/j/ABCD1234');
     });
   });
 

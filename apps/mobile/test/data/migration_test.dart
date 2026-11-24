@@ -195,6 +195,33 @@ void main() {
       tables.map((r) => r.data['name']),
       unorderedEquals(['import_jobs', 'import_job_photos']),
     );
+    final idx = await db
+        .customSelect(
+          "select name from sqlite_master where type = 'index' "
+          "and name = 'import_job_photos_job_pos'",
+        )
+        .get();
+    expect(idx, hasLength(1));
+  });
+
+  test('existing v7 database without import_job_photos_job_pos index receives it on open (FS-34)', () async {
+    final dir = Directory.systemTemp.createTempSync('ourney_mig_v7_idx');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final file = File('${dir.path}/db.sqlite');
+    final initial = AppDatabase(NativeDatabase(file));
+    await initial.customStatement('drop index if exists import_job_photos_job_pos');
+    await initial.customStatement('pragma user_version = 7');
+    await initial.close();
+
+    final reopened = AppDatabase(NativeDatabase(file));
+    addTearDown(reopened.close);
+    final idx = await reopened
+        .customSelect(
+          "select name from sqlite_master where type = 'index' "
+          "and name = 'import_job_photos_job_pos'",
+        )
+        .get();
+    expect(idx, hasLength(1));
   });
 }
 

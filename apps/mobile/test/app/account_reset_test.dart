@@ -177,9 +177,12 @@ void main() {
     (container.read(currentUserIdProvider.notifier) as _SignedInUser).switchTo(
       'user-b',
     );
-    // Providers are invalidated synchronously on user switch (no Timer.run gap, FS-26).
+    // Providers are invalidated synchronously on user switch (no Timer.run gap, FS-26),
+    // while accountOwnerPrefsKey is only updated after per-account key removals flush.
     expect(container.read(eulaAcceptedProvider), isFalse);
     expect(container.read(blurPhotosOnShareProvider), isFalse);
+    expect(prefs.containsKey(SafetyPrefs.eulaAccepted), isFalse);
+    expect(prefs.containsKey(SharePrivacyPrefs.blurPhotos), isFalse);
     await pumpEventQueue();
     expect(prefs.getString(accountOwnerPrefsKey), 'user-b');
   });

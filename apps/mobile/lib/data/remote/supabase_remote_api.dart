@@ -16,6 +16,9 @@ const Duration remoteRequestTimeout = Duration(seconds: 30);
 /// Default network timeout for storage binary uploads (FS-27).
 const Duration remoteUploadTimeout = Duration(seconds: 45);
 
+/// Network timeout for global sign-out before falling back to local sign-out (FS-27).
+const Duration remoteSignOutTimeout = Duration(seconds: 5);
+
 /// [RemoteApi] backed by a real [SupabaseClient]. Kept deliberately thin: all
 /// decisions live in the sync/repository layer, which is tested with a fake.
 class SupabaseRemoteApi implements RemoteApi {
@@ -37,90 +40,114 @@ class SupabaseRemoteApi implements RemoteApi {
 
   @override
   Future<void> sendOtp(String email) => guardRemote(
-    () =>
-        _client.auth.signInWithOtp(email: email.trim(), shouldCreateUser: true),
+    () => _client.auth
+        .signInWithOtp(email: email.trim(), shouldCreateUser: true)
+        .timeout(remoteRequestTimeout),
   );
 
   @override
   Future<void> verifyOtp(String email, String code) => guardRemote(() async {
-    await _client.auth.verifyOTP(
-      email: email.trim(),
-      token: code.trim(),
-      type: OtpType.email,
-    );
+    await _client.auth
+        .verifyOTP(
+          email: email.trim(),
+          token: code.trim(),
+          type: OtpType.email,
+        )
+        .timeout(remoteRequestTimeout);
   });
 
   @override
   Future<void> sendPhoneOtp(String e164Phone) => guardRemote(
-    () => _client.auth.signInWithOtp(phone: e164Phone, shouldCreateUser: true),
+    () => _client.auth
+        .signInWithOtp(phone: e164Phone, shouldCreateUser: true)
+        .timeout(remoteRequestTimeout),
   );
 
   @override
   Future<void> verifyPhoneOtp(String e164Phone, String code) =>
       guardRemote(() async {
-        await _client.auth.verifyOTP(
-          phone: e164Phone,
-          token: code.trim(),
-          type: OtpType.sms,
-        );
+        await _client.auth
+            .verifyOTP(
+              phone: e164Phone,
+              token: code.trim(),
+              type: OtpType.sms,
+            )
+            .timeout(remoteRequestTimeout);
       });
 
   @override
   Future<bool> signUpWithPassword(String email, String password) =>
       guardRemote(() async {
-        final res = await _client.auth.signUp(
-          email: email.trim(),
-          password: password,
-        );
+        final res = await _client.auth
+            .signUp(
+              email: email.trim(),
+              password: password,
+            )
+            .timeout(remoteRequestTimeout);
         return res.session == null;
       });
 
   @override
   Future<void> confirmSignUp(String email, String code) =>
       guardRemote(() async {
-        await _client.auth.verifyOTP(
-          email: email.trim(),
-          token: code.trim(),
-          type: OtpType.signup,
-        );
+        await _client.auth
+            .verifyOTP(
+              email: email.trim(),
+              token: code.trim(),
+              type: OtpType.signup,
+            )
+            .timeout(remoteRequestTimeout);
       });
 
   @override
   Future<void> signInWithPassword(String email, String password) =>
       guardRemote(() async {
-        await _client.auth.signInWithPassword(
-          email: email.trim(),
-          password: password,
-        );
+        await _client.auth
+            .signInWithPassword(
+              email: email.trim(),
+              password: password,
+            )
+            .timeout(remoteRequestTimeout);
       });
 
   @override
-  Future<void> sendPasswordReset(String email) =>
-      guardRemote(() => _client.auth.resetPasswordForEmail(email.trim()));
+  Future<void> sendPasswordReset(String email) => guardRemote(
+    () => _client.auth
+        .resetPasswordForEmail(email.trim())
+        .timeout(remoteRequestTimeout),
+  );
 
   @override
   Future<void> resetPassword(String email, String code, String newPassword) =>
       guardRemote(() async {
-        await _client.auth.verifyOTP(
-          email: email.trim(),
-          token: code.trim(),
-          type: OtpType.recovery,
-        );
-        await _client.auth.updateUser(UserAttributes(password: newPassword));
+        await _client.auth
+            .verifyOTP(
+              email: email.trim(),
+              token: code.trim(),
+              type: OtpType.recovery,
+            )
+            .timeout(remoteRequestTimeout);
+        await _client.auth
+            .updateUser(UserAttributes(password: newPassword))
+            .timeout(remoteRequestTimeout);
       });
 
   @override
   Future<void> signOut({bool global = false}) async {
     if (global) {
       try {
-        await _client.auth.signOut(scope: SignOutScope.global);
+        await _client.auth
+            .signOut(scope: SignOutScope.global)
+            .timeout(remoteSignOutTimeout);
         return;
       } on Object {
-        // Offline or server error: still end the session on this device.
+        // Offline, timed out, or server error: still end the session on this device.
       }
     }
     try {
-      await _client.auth.signOut(scope: SignOutScope.local);
+      await _client.auth
+          .signOut(scope: SignOutScope.local)
+          .timeout(remoteSignOutTimeout);
     } on Object {
       // Local sign-out only clears the stored session; ignore server errors.
     }

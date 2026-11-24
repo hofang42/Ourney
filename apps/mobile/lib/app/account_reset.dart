@@ -36,7 +36,11 @@ const String accountOwnerPrefsKey = 'account.ownerUserId';
 /// Forgets every per-account value kept outside the database (which
 /// `AuthRepository.signOut` / `deleteAccount` wipe) and cancels the
 /// reminders of the previous account. Never throws.
-Future<void> resetAccountLocalState(Ref ref) async {
+Future<void> resetAccountLocalState(
+  Ref ref, {
+  String? nextOwner,
+  bool updateOwner = false,
+}) async {
   final prefs = ref.read(sharedPreferencesProvider);
   final keys = {
     ...accountPrefsKeys,
@@ -70,6 +74,13 @@ Future<void> resetAccountLocalState(Ref ref) async {
     ..invalidate(reminderBannerProvider);
   try {
     await Future.wait(removals);
+    if (updateOwner) {
+      if (nextOwner == null) {
+        await prefs.remove(accountOwnerPrefsKey);
+      } else {
+        await prefs.setString(accountOwnerPrefsKey, nextOwner);
+      }
+    }
   } on Object {
     // Storage failure: in-memory cache and providers are already reset.
   }
@@ -96,18 +107,32 @@ final accountSessionResetProvider = Provider<void>((ref) {
     final changed = next == null
         ? owner != null
         : owner != null && owner != next;
-    if (next == null) {
-      unawaited(prefs.remove(accountOwnerPrefsKey));
-    } else if (owner != next) {
-      unawaited(prefs.setString(accountOwnerPrefsKey, next));
+    if (!changed) {
+      if (next != null && owner != next) {
+        unawaited(prefs.setString(accountOwnerPrefsKey, next));
+      }
+      return;
     }
-    if (!changed) return;
     if (inBuild) {
       // During initial provider build, defer to the next microtask.
-      unawaited(Future.microtask(() => resetAccountLocalState(ref)));
+      unawaited(
+        Future.microtask(
+          () => resetAccountLocalState(
+            ref,
+            nextOwner: next,
+            updateOwner: true,
+          ),
+        ),
+      );
     } else {
       // On live user change, invalidate per-account providers synchronously.
-      unawaited(resetAccountLocalState(ref));
+      unawaited(
+        resetAccountLocalState(
+          ref,
+          nextOwner: next,
+          updateOwner: true,
+        ),
+      );
     }
   }
 

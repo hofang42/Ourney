@@ -181,7 +181,12 @@ class SupabaseAuthRepository implements AuthRepository {
         debugPrint('auth: outbox flush before sign-out skipped: $e');
       }
     }
-    await remote.signOut(global: true);
+    try {
+      await remote.signOut(global: true).timeout(signOutFlushTimeout);
+    } on Object catch (e) {
+      debugPrint('auth: global sign-out timed out or failed ($e); falling back to local sign-out');
+      await remote.signOut();
+    }
     await ctx.wipeLocal();
   }
 

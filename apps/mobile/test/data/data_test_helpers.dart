@@ -123,6 +123,7 @@ class FakeRemoteApi implements RemoteApi {
   final storageObjects = <String, List<int>>{};
   OurneyException? failure;
   final failOnce = <OurneyException>[];
+  bool hangGlobalSignOut = false;
   final _auth = StreamController<String?>.broadcast();
 
   void emitUser(String? id) {
@@ -189,6 +190,9 @@ class FakeRemoteApi implements RemoteApi {
   @override
   Future<void> signOut({bool global = false}) async {
     calls.add(RemoteCall('signOut', global ? 'global' : 'local'));
+    if (global && hangGlobalSignOut) {
+      await Completer<void>().future;
+    }
     emitUser(null);
   }
 

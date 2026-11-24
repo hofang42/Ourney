@@ -112,6 +112,8 @@ void main() {
         AppRoutes.auth,
         AppRoutes.profile,
         '/share/:journeyId',
+        '/f/:token',
+        '/p/:token',
         AppRoutes.safety,
         AppRoutes.reminders,
       ]),

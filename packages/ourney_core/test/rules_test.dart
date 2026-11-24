@@ -83,6 +83,24 @@ void main() {
         isNull,
       );
     });
+
+    test('rejects payloads whose Postgres jsonb::text exceeds 960 bytes (FS-37)', () {
+      // Multi-byte UTF-8 emojis (4 bytes per rune) + all choice fields can push
+      // formatted jsonb::text past the server 1024-byte limit even when compact
+      // jsonEncode is just under 1024 bytes.
+      final oversized = <String, Object?>{
+        'trophy': '\u{1F3C6}' * 24,
+        'place': '\u{1F30D}' * 60,
+        'habit': '\u{1F525}' * 40,
+        'reason': '\u{1F4AA}' * 80,
+        'goal': 'a' * 24,
+        'minutes': 'b' * 24,
+        'sport': 'c' * 24,
+        'measure': 'd' * 24,
+        'dates': {'start': '2026-05-01', 'end': '2026-05-10'},
+      };
+      expect(sanitizeJourneyDna(oversized), isNull);
+    });
   });
 
   group('rollingReminderTimes', () {

@@ -56,7 +56,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [[ "${GITHUB_REF:-}" == refs/tags/v* ]]; then
-            if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            if [ -z "${ANDROID_KEYSTORE_BASE64//[[:space:]]/}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD//[[:space:]]/}" ] || [ -z "${ANDROID_KEY_ALIAS//[[:space:]]/}" ] || [ -z "${ANDROID_KEY_PASSWORD//[[:space:]]/}" ]; then
               echo "::error::Release tag builds (v*) require ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD secrets."
               exit 1
             fi
@@ -67,7 +67,10 @@ jobs:
             python3 -c '
           import os, pathlib
           def esc(s):
-              return s.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r")
+              s = s.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r")
+              if s.startswith((" ", "\t", "\f")):
+                  s = "\\" + s
+              return s
           lines = [
               f"storeFile={esc(os.environ[\"RUNNER_TEMP\"])}/release.jks",
               f"storePassword={esc(os.environ.get(\"ANDROID_KEYSTORE_PASSWORD\", \"\"))}",
@@ -100,6 +103,10 @@ jobs:
 
       - name: Build APK (release)
         working-directory: apps/mobile
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           args=(--release)
           if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then

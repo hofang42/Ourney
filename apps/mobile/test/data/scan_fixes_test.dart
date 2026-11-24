@@ -629,5 +629,31 @@ void main() {
         throwsA(isA<OurneyException>()),
       );
     });
+
+    test('FS-07: DataSafetyRepository.report forwards optional messageId to report_content RPC', () async {
+      await layer.safety.report(
+        messageId: 'msg-123',
+        reason: ReportReason.harassment,
+        note: 'abusive',
+      );
+      final rpcs = {for (final c in remote.callsOf('rpc')) c.target: c.args};
+      expect(rpcs['report_content'], {
+        'p_checkin': null,
+        'p_user': null,
+        'p_reason': 'harassment',
+        'p_note': 'abusive',
+        'p_message': 'msg-123',
+      });
+    });
+
+    test('FS-27: signOut falls back to local sign-out and wipes local data when global signOut times out', () async {
+      remote.hangGlobalSignOut = true;
+      await layer.auth.signOut();
+      expect(await db.select(db.journeys).get(), isEmpty);
+      expect(
+        [for (final c in remote.callsOf('signOut')) c.target],
+        ['global', 'local'],
+      );
+    });
   });
 }

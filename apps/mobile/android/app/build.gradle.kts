@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -10,7 +9,7 @@ plugins {
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("key.properties")
     if (file.isFile) {
-        FileInputStream(file).use { load(it) }
+        file.reader(Charsets.UTF_8).use { load(it) }
     }
 }
 
@@ -51,7 +50,7 @@ android {
         val alias = signingProp("keyAlias", "ANDROID_KEY_ALIAS")
         val keyPass = signingProp("keyPassword", "ANDROID_KEY_PASSWORD")
         if (storePath != null && storePass != null && alias != null && keyPass != null) {
-            val keystoreFile = file(storePath)
+            val keystoreFile = file(storePath).takeIf { it.isFile } ?: rootProject.file(storePath)
             if (keystoreFile.isFile) {
                 create("release") {
                     storeFile = keystoreFile
@@ -60,6 +59,18 @@ android {
                     keyPassword = keyPass
                 }
             }
+        }
+        val isReleaseTag = System.getenv("GITHUB_REF")?.startsWith("refs/tags/v") == true
+        val anySigningInput = listOf(storePath, storePass, alias, keyPass).any { it != null }
+        if (isReleaseTag && findByName("release") == null) {
+            throw GradleException(
+                "Release tag build requires a valid release signingConfig (keystore file missing or credentials blank).",
+            )
+        }
+        if (anySigningInput && findByName("release") == null) {
+            logger.warn(
+                "WARNING: Partial or invalid Android release signing credentials; falling back to debug keystore.",
+            )
         }
     }
 

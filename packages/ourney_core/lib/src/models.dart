@@ -414,8 +414,19 @@ Map<String, Object?>? sanitizeJourneyDna(Map<String, Object?> answers) {
     }
   }
   if (out.isEmpty) return null;
-  if (utf8.encode(jsonEncode(out)).length > 1024) return null;
+  if (_jsonbTextOctetLength(out) > 960) return null;
   return out;
+}
+
+/// Upper bound of Postgres `octet_length(x::jsonb::text)`: Postgres formats
+/// `jsonb::text` with a space after every `:` and `,`.
+int _jsonbTextOctetLength(Map<String, Object?> map) {
+  var extraSpaces = map.length + (map.length > 1 ? map.length - 1 : 0);
+  final dates = map['dates'];
+  if (dates is Map) {
+    extraSpaces += dates.length + (dates.length > 1 ? dates.length - 1 : 0);
+  }
+  return utf8.encode(jsonEncode(map)).length + extraSpaces;
 }
 
 final RegExp _dnaChoicePattern = RegExp(r'^[a-z0-9_]{1,24}$');

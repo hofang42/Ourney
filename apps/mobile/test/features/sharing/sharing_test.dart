@@ -226,7 +226,7 @@ void main() {
         friends: _friends,
       );
       final url = tester.widget<Text>(_key('share-link-url'));
-      expect(url.data, contains('token=tok'));
+      expect(url.data, 'https://ourney.tech/p/tok${'0' * 37}');
       expect(url.maxLines, 1);
       expect(url.overflow, TextOverflow.ellipsis);
       expect(

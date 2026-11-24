@@ -30,7 +30,11 @@ GoRouter createRouter({
     observers: observers,
     errorBuilder: (context, state) => const NotFoundRedirect(),
     refreshListenable: refreshListenable,
-    redirect: redirect ?? (context, state) => normalizeDeepLink(state.uri),
+    redirect:
+        redirect ??
+        (context, state) => (state.uri.hasScheme || state.uri.hasAuthority)
+            ? (normalizeDeepLink(state.uri) ?? AppRoutes.capture)
+            : null,
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(navigationShell: shell),

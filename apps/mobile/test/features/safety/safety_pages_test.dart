@@ -194,7 +194,7 @@ void main() {
     });
 
     testWidgets('unsafe from target falls back to the camera', (tester) async {
-      final c = await pumpOurneyApp(tester);
+      final c = await pumpSignedInApp(tester, eulaAccepted: false);
       await goTo(
         tester,
         c,
