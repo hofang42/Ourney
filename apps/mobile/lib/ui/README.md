@@ -24,6 +24,8 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | `.secondary-wide` | `UiButton.secondary` |
 | `.text-action`, `.auth-link` | `UiTextAction`, `UiButton.ghost` |
 | `.icon-button`, `IconButton` | `UiIconButton` |
+| `components/month_nav.dart` | `UiMonthHeader` (pinned month heading: heading + button + `expanded`, height `extentOf`), `UiJumpChips` (48dp month / year chips) for long timelines |
+| `components/layout.dart` | `UiScaffold.slivers`: sliver page frame (gutter, max width, pinned headers stack inside one group) for lazily built lists |
 | `.segments`, `.hub-segments` | `UiSegmented<T>` (`scrollable`), `UiSegment` (optional `key` per tab) |
 | `.language-chip`, `.inbox-filters button` | `UiChip` |
 | `.imported-badge`, `.add-more-label` | `UiTag` |
@@ -74,7 +76,7 @@ The reminders permission prompt also uses `showUiPermissionSheet`.
 Journeys (`features/journeys/ui/`): Hub (`journeys_list_screen.dart`, `journey_row.dart`,
 `today_card.dart`, `shelf_view.dart`, day-zero), Today sheet (`today_sheet.dart`,
 `showTodaySheet`), template grid, quick setup, journey detail (hero, stats,
-`journey_chain.dart` calendar) and the day viewer. Journey-style screens use
+timeline with the Recent window and By month archive) and the day viewer. Journey-style screens use
 `JourneyPalette.of(context, style)` (`journey_style.dart`).
 Also rebuilt on the kit: Camera (`features/camera/capture_screen.dart`, dark chrome, hero shutter
 in `AppDock(shutter: ...)`), Compose + Posted (`features/checkin`), Squad tab, Squad wall, invite and

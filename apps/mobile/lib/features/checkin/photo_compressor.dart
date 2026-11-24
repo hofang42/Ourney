@@ -99,18 +99,23 @@ abstract interface class DraftFiles {
 /// picker output) or the check-in draft folder, never anything else (a
 /// picker could in theory hand back an original from the user's library).
 class LocalDraftFiles implements DraftFiles {
-  const LocalDraftFiles();
+  /// [rootsOf] replaces the folders files may be deleted from (tests).
+  const LocalDraftFiles({this.rootsOf});
+
+  final Future<List<String>> Function()? rootsOf;
 
   @override
   Future<void> discard(Iterable<String> paths) async {
     try {
-      final roots = [
-        (await getTemporaryDirectory()).path,
-        p.join(
-          (await getApplicationSupportDirectory()).path,
-          checkinDraftDirName,
-        ),
-      ];
+      final roots =
+          await rootsOf?.call() ??
+          [
+            (await getTemporaryDirectory()).path,
+            p.join(
+              (await getApplicationSupportDirectory()).path,
+              checkinDraftDirName,
+            ),
+          ];
       for (final path in paths) {
         if (!roots.any((r) => p.isWithin(r, path))) continue;
         final f = File(path);

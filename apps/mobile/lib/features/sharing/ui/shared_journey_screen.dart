@@ -141,7 +141,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _likes[p.checkInId] = before);
-      showSharingSnack(context, sharingErrorMessage(context, e));
+      showSharingSnack(context, sharingFailure(context, e));
     }
   }
 
@@ -156,7 +156,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
     } on Object catch (e) {
       if (!mounted) return;
       setState(() => _requested = false);
-      showSharingSnack(context, sharingErrorMessage(context, e));
+      showSharingSnack(context, sharingFailure(context, e));
     }
   }
 
@@ -173,7 +173,7 @@ class _SharedJourneyBodyState extends ConsumerState<_SharedJourneyBody> {
         await context.push(SharingPaths.chat(id, replyTo: p.checkInId));
       }
     } on Object catch (e) {
-      if (mounted) showSharingSnack(context, sharingErrorMessage(context, e));
+      if (mounted) showSharingSnack(context, sharingFailure(context, e));
     } finally {
       if (mounted) setState(() => _replying = false);
     }

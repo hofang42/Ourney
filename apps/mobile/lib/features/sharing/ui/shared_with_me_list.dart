@@ -130,7 +130,7 @@ class _SharedJourneyRowState extends ConsumerState<SharedJourneyRow> {
           .read(sharingRepositoryProvider)
           .unsave(widget.summary.journeyId);
     } on Object catch (e) {
-      if (mounted) showSharingSnack(context, sharingErrorMessage(context, e));
+      if (mounted) showSharingSnack(context, sharingFailure(context, e));
     } finally {
       if (mounted) setState(() => _removing = false);
     }

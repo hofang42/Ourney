@@ -75,6 +75,18 @@ void main() {
           OurneyErrorCode.invalid);
       expect(OurneyErrorCode.fromServer(sqlstate: '23514'),
           OurneyErrorCode.invalid);
+      expect(
+          OurneyErrorCode.fromServer(
+              message: 'Could not find the function public.create_journey',
+              sqlstate: 'PGRST202'),
+          OurneyErrorCode.serverOutdated);
+      expect(
+          OurneyErrorCode.fromServer(
+              message: 'Could not choose the best candidate function',
+              sqlstate: 'PGRST203'),
+          OurneyErrorCode.serverOutdated);
+      expect(OurneyErrorCode.fromWire('server_outdated'),
+          OurneyErrorCode.serverOutdated);
       expect(OurneyErrorCode.fromServer(sqlstate: 'XX000'),
           OurneyErrorCode.unknown);
       expect(OurneyErrorCode.fromServer(), OurneyErrorCode.unknown);

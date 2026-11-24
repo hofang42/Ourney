@@ -272,6 +272,9 @@ enum OurneyErrorCode {
   alreadyDeleted('already_deleted'),
   internal('internal'),
   // Client-side.
+  // PostgREST PGRST202/PGRST203: the RPC is missing or ambiguous, so the
+  // server lacks a migration (the app is newer than the backend).
+  serverOutdated('server_outdated'),
   offline('offline'),
   syncPending('sync_pending'), // queued uploads of the journey are not sent yet
   unknown('unknown');
@@ -289,7 +292,7 @@ enum OurneyErrorCode {
   }
 
   /// Maps a PostgREST/Postgres error: the raised message wins; otherwise the
-  /// SQLSTATE decides (42501 forbidden, 28000 unauthenticated, 22008
+  /// SQLSTATE decides (PGRST202/203 serverOutdated, 42501 forbidden, 28000 unauthenticated, 22008
   /// invalidCapturedAt, other 22xxx/23xxx invalid, e.g. a bad timezone or a
   /// CHECK violation).
   static OurneyErrorCode fromServer({String? message, String? sqlstate}) {
@@ -298,6 +301,8 @@ enum OurneyErrorCode {
       if (byMessage != unknown) return byMessage;
     }
     switch (sqlstate) {
+      case 'PGRST202' || 'PGRST203':
+        return serverOutdated;
       case '42501':
         return forbidden;
       case '28000':

@@ -4656,6 +4656,1546 @@ class SyncCursorCompanion extends UpdateCompanion<SyncCursorRow> {
   }
 }
 
+class $ImportJobsTable extends ImportJobs
+    with TableInfo<$ImportJobsTable, ImportJobRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImportJobsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _emojiMeta = const VerificationMeta('emoji');
+  @override
+  late final GeneratedColumn<String> emoji = GeneratedColumn<String>(
+    'emoji',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateIdMeta = const VerificationMeta(
+    'templateId',
+  );
+  @override
+  late final GeneratedColumn<String> templateId = GeneratedColumn<String>(
+    'template_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _layoutMeta = const VerificationMeta('layout');
+  @override
+  late final GeneratedColumn<String> layout = GeneratedColumn<String>(
+    'layout',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<LocalDate, String> startDate =
+      GeneratedColumn<String>(
+        'start_date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<LocalDate>($ImportJobsTable.$converterstartDate);
+  @override
+  late final GeneratedColumnWithTypeConverter<LocalDate, String> endDate =
+      GeneratedColumn<String>(
+        'end_date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<LocalDate>($ImportJobsTable.$converterendDate);
+  static const VerificationMeta _timezoneMeta = const VerificationMeta(
+    'timezone',
+  );
+  @override
+  late final GeneratedColumn<String> timezone = GeneratedColumn<String>(
+    'timezone',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _continuesMeta = const VerificationMeta(
+    'continues',
+  );
+  @override
+  late final GeneratedColumn<bool> continues = GeneratedColumn<bool>(
+    'continues',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("continues" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _phaseMeta = const VerificationMeta('phase');
+  @override
+  late final GeneratedColumn<String> phase = GeneratedColumn<String>(
+    'phase',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pausedMeta = const VerificationMeta('paused');
+  @override
+  late final GeneratedColumn<bool> paused = GeneratedColumn<bool>(
+    'paused',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("paused" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createFailureMeta = const VerificationMeta(
+    'createFailure',
+  );
+  @override
+  late final GeneratedColumn<String> createFailure = GeneratedColumn<String>(
+    'create_failure',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<DateTime, int> createdAt =
+      GeneratedColumn<int>(
+        'created_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<DateTime>($ImportJobsTable.$convertercreatedAt);
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    title,
+    emoji,
+    templateId,
+    layout,
+    startDate,
+    endDate,
+    timezone,
+    continues,
+    phase,
+    ownerId,
+    paused,
+    createFailure,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'import_jobs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImportJobRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('emoji')) {
+      context.handle(
+        _emojiMeta,
+        emoji.isAcceptableOrUnknown(data['emoji']!, _emojiMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_emojiMeta);
+    }
+    if (data.containsKey('template_id')) {
+      context.handle(
+        _templateIdMeta,
+        templateId.isAcceptableOrUnknown(data['template_id']!, _templateIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_templateIdMeta);
+    }
+    if (data.containsKey('layout')) {
+      context.handle(
+        _layoutMeta,
+        layout.isAcceptableOrUnknown(data['layout']!, _layoutMeta),
+      );
+    }
+    if (data.containsKey('timezone')) {
+      context.handle(
+        _timezoneMeta,
+        timezone.isAcceptableOrUnknown(data['timezone']!, _timezoneMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneMeta);
+    }
+    if (data.containsKey('continues')) {
+      context.handle(
+        _continuesMeta,
+        continues.isAcceptableOrUnknown(data['continues']!, _continuesMeta),
+      );
+    }
+    if (data.containsKey('phase')) {
+      context.handle(
+        _phaseMeta,
+        phase.isAcceptableOrUnknown(data['phase']!, _phaseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_phaseMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('paused')) {
+      context.handle(
+        _pausedMeta,
+        paused.isAcceptableOrUnknown(data['paused']!, _pausedMeta),
+      );
+    }
+    if (data.containsKey('create_failure')) {
+      context.handle(
+        _createFailureMeta,
+        createFailure.isAcceptableOrUnknown(
+          data['create_failure']!,
+          _createFailureMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ImportJobRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportJobRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      emoji: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}emoji'],
+      )!,
+      templateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_id'],
+      )!,
+      layout: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}layout'],
+      ),
+      startDate: $ImportJobsTable.$converterstartDate.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}start_date'],
+        )!,
+      ),
+      endDate: $ImportJobsTable.$converterendDate.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}end_date'],
+        )!,
+      ),
+      timezone: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone'],
+      )!,
+      continues: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}continues'],
+      )!,
+      phase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phase'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      paused: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}paused'],
+      )!,
+      createFailure: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}create_failure'],
+      ),
+      createdAt: $ImportJobsTable.$convertercreatedAt.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}created_at'],
+        )!,
+      ),
+    );
+  }
+
+  @override
+  $ImportJobsTable createAlias(String alias) {
+    return $ImportJobsTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<LocalDate, String> $converterstartDate =
+      const LocalDateConverter();
+  static TypeConverter<LocalDate, String> $converterendDate =
+      const LocalDateConverter();
+  static TypeConverter<DateTime, int> $convertercreatedAt =
+      const UtcMicrosConverter();
+}
+
+class ImportJobRow extends DataClass implements Insertable<ImportJobRow> {
+  final String id;
+  final String title;
+  final String emoji;
+  final String templateId;
+  final String? layout;
+  final LocalDate startDate;
+  final LocalDate endDate;
+  final String timezone;
+  final bool continues;
+
+  /// `ImportPhase.wire`.
+  final String phase;
+
+  /// The account that started the job; no other account may run it.
+  final String ownerId;
+
+  /// Saving was paused by the person; the launch resume leaves it alone.
+  final bool paused;
+
+  /// `ImportFailure.wire` of the last failed create (null: none).
+  final String? createFailure;
+  final DateTime createdAt;
+  const ImportJobRow({
+    required this.id,
+    required this.title,
+    required this.emoji,
+    required this.templateId,
+    this.layout,
+    required this.startDate,
+    required this.endDate,
+    required this.timezone,
+    required this.continues,
+    required this.phase,
+    required this.ownerId,
+    required this.paused,
+    this.createFailure,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['title'] = Variable<String>(title);
+    map['emoji'] = Variable<String>(emoji);
+    map['template_id'] = Variable<String>(templateId);
+    if (!nullToAbsent || layout != null) {
+      map['layout'] = Variable<String>(layout);
+    }
+    {
+      map['start_date'] = Variable<String>(
+        $ImportJobsTable.$converterstartDate.toSql(startDate),
+      );
+    }
+    {
+      map['end_date'] = Variable<String>(
+        $ImportJobsTable.$converterendDate.toSql(endDate),
+      );
+    }
+    map['timezone'] = Variable<String>(timezone);
+    map['continues'] = Variable<bool>(continues);
+    map['phase'] = Variable<String>(phase);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['paused'] = Variable<bool>(paused);
+    if (!nullToAbsent || createFailure != null) {
+      map['create_failure'] = Variable<String>(createFailure);
+    }
+    {
+      map['created_at'] = Variable<int>(
+        $ImportJobsTable.$convertercreatedAt.toSql(createdAt),
+      );
+    }
+    return map;
+  }
+
+  ImportJobsCompanion toCompanion(bool nullToAbsent) {
+    return ImportJobsCompanion(
+      id: Value(id),
+      title: Value(title),
+      emoji: Value(emoji),
+      templateId: Value(templateId),
+      layout: layout == null && nullToAbsent
+          ? const Value.absent()
+          : Value(layout),
+      startDate: Value(startDate),
+      endDate: Value(endDate),
+      timezone: Value(timezone),
+      continues: Value(continues),
+      phase: Value(phase),
+      ownerId: Value(ownerId),
+      paused: Value(paused),
+      createFailure: createFailure == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createFailure),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ImportJobRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportJobRow(
+      id: serializer.fromJson<String>(json['id']),
+      title: serializer.fromJson<String>(json['title']),
+      emoji: serializer.fromJson<String>(json['emoji']),
+      templateId: serializer.fromJson<String>(json['templateId']),
+      layout: serializer.fromJson<String?>(json['layout']),
+      startDate: serializer.fromJson<LocalDate>(json['startDate']),
+      endDate: serializer.fromJson<LocalDate>(json['endDate']),
+      timezone: serializer.fromJson<String>(json['timezone']),
+      continues: serializer.fromJson<bool>(json['continues']),
+      phase: serializer.fromJson<String>(json['phase']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      paused: serializer.fromJson<bool>(json['paused']),
+      createFailure: serializer.fromJson<String?>(json['createFailure']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'title': serializer.toJson<String>(title),
+      'emoji': serializer.toJson<String>(emoji),
+      'templateId': serializer.toJson<String>(templateId),
+      'layout': serializer.toJson<String?>(layout),
+      'startDate': serializer.toJson<LocalDate>(startDate),
+      'endDate': serializer.toJson<LocalDate>(endDate),
+      'timezone': serializer.toJson<String>(timezone),
+      'continues': serializer.toJson<bool>(continues),
+      'phase': serializer.toJson<String>(phase),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'paused': serializer.toJson<bool>(paused),
+      'createFailure': serializer.toJson<String?>(createFailure),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ImportJobRow copyWith({
+    String? id,
+    String? title,
+    String? emoji,
+    String? templateId,
+    Value<String?> layout = const Value.absent(),
+    LocalDate? startDate,
+    LocalDate? endDate,
+    String? timezone,
+    bool? continues,
+    String? phase,
+    String? ownerId,
+    bool? paused,
+    Value<String?> createFailure = const Value.absent(),
+    DateTime? createdAt,
+  }) => ImportJobRow(
+    id: id ?? this.id,
+    title: title ?? this.title,
+    emoji: emoji ?? this.emoji,
+    templateId: templateId ?? this.templateId,
+    layout: layout.present ? layout.value : this.layout,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    timezone: timezone ?? this.timezone,
+    continues: continues ?? this.continues,
+    phase: phase ?? this.phase,
+    ownerId: ownerId ?? this.ownerId,
+    paused: paused ?? this.paused,
+    createFailure: createFailure.present
+        ? createFailure.value
+        : this.createFailure,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ImportJobRow copyWithCompanion(ImportJobsCompanion data) {
+    return ImportJobRow(
+      id: data.id.present ? data.id.value : this.id,
+      title: data.title.present ? data.title.value : this.title,
+      emoji: data.emoji.present ? data.emoji.value : this.emoji,
+      templateId: data.templateId.present
+          ? data.templateId.value
+          : this.templateId,
+      layout: data.layout.present ? data.layout.value : this.layout,
+      startDate: data.startDate.present ? data.startDate.value : this.startDate,
+      endDate: data.endDate.present ? data.endDate.value : this.endDate,
+      timezone: data.timezone.present ? data.timezone.value : this.timezone,
+      continues: data.continues.present ? data.continues.value : this.continues,
+      phase: data.phase.present ? data.phase.value : this.phase,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      paused: data.paused.present ? data.paused.value : this.paused,
+      createFailure: data.createFailure.present
+          ? data.createFailure.value
+          : this.createFailure,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportJobRow(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('emoji: $emoji, ')
+          ..write('templateId: $templateId, ')
+          ..write('layout: $layout, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('timezone: $timezone, ')
+          ..write('continues: $continues, ')
+          ..write('phase: $phase, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('paused: $paused, ')
+          ..write('createFailure: $createFailure, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    title,
+    emoji,
+    templateId,
+    layout,
+    startDate,
+    endDate,
+    timezone,
+    continues,
+    phase,
+    ownerId,
+    paused,
+    createFailure,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportJobRow &&
+          other.id == this.id &&
+          other.title == this.title &&
+          other.emoji == this.emoji &&
+          other.templateId == this.templateId &&
+          other.layout == this.layout &&
+          other.startDate == this.startDate &&
+          other.endDate == this.endDate &&
+          other.timezone == this.timezone &&
+          other.continues == this.continues &&
+          other.phase == this.phase &&
+          other.ownerId == this.ownerId &&
+          other.paused == this.paused &&
+          other.createFailure == this.createFailure &&
+          other.createdAt == this.createdAt);
+}
+
+class ImportJobsCompanion extends UpdateCompanion<ImportJobRow> {
+  final Value<String> id;
+  final Value<String> title;
+  final Value<String> emoji;
+  final Value<String> templateId;
+  final Value<String?> layout;
+  final Value<LocalDate> startDate;
+  final Value<LocalDate> endDate;
+  final Value<String> timezone;
+  final Value<bool> continues;
+  final Value<String> phase;
+  final Value<String> ownerId;
+  final Value<bool> paused;
+  final Value<String?> createFailure;
+  final Value<DateTime> createdAt;
+  final Value<int> rowid;
+  const ImportJobsCompanion({
+    this.id = const Value.absent(),
+    this.title = const Value.absent(),
+    this.emoji = const Value.absent(),
+    this.templateId = const Value.absent(),
+    this.layout = const Value.absent(),
+    this.startDate = const Value.absent(),
+    this.endDate = const Value.absent(),
+    this.timezone = const Value.absent(),
+    this.continues = const Value.absent(),
+    this.phase = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.paused = const Value.absent(),
+    this.createFailure = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImportJobsCompanion.insert({
+    required String id,
+    required String title,
+    required String emoji,
+    required String templateId,
+    this.layout = const Value.absent(),
+    required LocalDate startDate,
+    required LocalDate endDate,
+    required String timezone,
+    this.continues = const Value.absent(),
+    required String phase,
+    required String ownerId,
+    this.paused = const Value.absent(),
+    this.createFailure = const Value.absent(),
+    required DateTime createdAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       title = Value(title),
+       emoji = Value(emoji),
+       templateId = Value(templateId),
+       startDate = Value(startDate),
+       endDate = Value(endDate),
+       timezone = Value(timezone),
+       phase = Value(phase),
+       ownerId = Value(ownerId),
+       createdAt = Value(createdAt);
+  static Insertable<ImportJobRow> custom({
+    Expression<String>? id,
+    Expression<String>? title,
+    Expression<String>? emoji,
+    Expression<String>? templateId,
+    Expression<String>? layout,
+    Expression<String>? startDate,
+    Expression<String>? endDate,
+    Expression<String>? timezone,
+    Expression<bool>? continues,
+    Expression<String>? phase,
+    Expression<String>? ownerId,
+    Expression<bool>? paused,
+    Expression<String>? createFailure,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (title != null) 'title': title,
+      if (emoji != null) 'emoji': emoji,
+      if (templateId != null) 'template_id': templateId,
+      if (layout != null) 'layout': layout,
+      if (startDate != null) 'start_date': startDate,
+      if (endDate != null) 'end_date': endDate,
+      if (timezone != null) 'timezone': timezone,
+      if (continues != null) 'continues': continues,
+      if (phase != null) 'phase': phase,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (paused != null) 'paused': paused,
+      if (createFailure != null) 'create_failure': createFailure,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImportJobsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? title,
+    Value<String>? emoji,
+    Value<String>? templateId,
+    Value<String?>? layout,
+    Value<LocalDate>? startDate,
+    Value<LocalDate>? endDate,
+    Value<String>? timezone,
+    Value<bool>? continues,
+    Value<String>? phase,
+    Value<String>? ownerId,
+    Value<bool>? paused,
+    Value<String?>? createFailure,
+    Value<DateTime>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return ImportJobsCompanion(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      emoji: emoji ?? this.emoji,
+      templateId: templateId ?? this.templateId,
+      layout: layout ?? this.layout,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      timezone: timezone ?? this.timezone,
+      continues: continues ?? this.continues,
+      phase: phase ?? this.phase,
+      ownerId: ownerId ?? this.ownerId,
+      paused: paused ?? this.paused,
+      createFailure: createFailure ?? this.createFailure,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (emoji.present) {
+      map['emoji'] = Variable<String>(emoji.value);
+    }
+    if (templateId.present) {
+      map['template_id'] = Variable<String>(templateId.value);
+    }
+    if (layout.present) {
+      map['layout'] = Variable<String>(layout.value);
+    }
+    if (startDate.present) {
+      map['start_date'] = Variable<String>(
+        $ImportJobsTable.$converterstartDate.toSql(startDate.value),
+      );
+    }
+    if (endDate.present) {
+      map['end_date'] = Variable<String>(
+        $ImportJobsTable.$converterendDate.toSql(endDate.value),
+      );
+    }
+    if (timezone.present) {
+      map['timezone'] = Variable<String>(timezone.value);
+    }
+    if (continues.present) {
+      map['continues'] = Variable<bool>(continues.value);
+    }
+    if (phase.present) {
+      map['phase'] = Variable<String>(phase.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (paused.present) {
+      map['paused'] = Variable<bool>(paused.value);
+    }
+    if (createFailure.present) {
+      map['create_failure'] = Variable<String>(createFailure.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(
+        $ImportJobsTable.$convertercreatedAt.toSql(createdAt.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportJobsCompanion(')
+          ..write('id: $id, ')
+          ..write('title: $title, ')
+          ..write('emoji: $emoji, ')
+          ..write('templateId: $templateId, ')
+          ..write('layout: $layout, ')
+          ..write('startDate: $startDate, ')
+          ..write('endDate: $endDate, ')
+          ..write('timezone: $timezone, ')
+          ..write('continues: $continues, ')
+          ..write('phase: $phase, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('paused: $paused, ')
+          ..write('createFailure: $createFailure, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ImportJobPhotosTable extends ImportJobPhotos
+    with TableInfo<$ImportJobPhotosTable, ImportJobPhotoRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ImportJobPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _jobIdMeta = const VerificationMeta('jobId');
+  @override
+  late final GeneratedColumn<String> jobId = GeneratedColumn<String>(
+    'job_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourcePathMeta = const VerificationMeta(
+    'sourcePath',
+  );
+  @override
+  late final GeneratedColumn<String> sourcePath = GeneratedColumn<String>(
+    'source_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _photoFileMeta = const VerificationMeta(
+    'photoFile',
+  );
+  @override
+  late final GeneratedColumn<String> photoFile = GeneratedColumn<String>(
+    'photo_file',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _thumbFileMeta = const VerificationMeta(
+    'thumbFile',
+  );
+  @override
+  late final GeneratedColumn<String> thumbFile = GeneratedColumn<String>(
+    'thumb_file',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<LocalDate, String> localDate =
+      GeneratedColumn<String>(
+        'local_date',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      ).withConverter<LocalDate>($ImportJobPhotosTable.$converterlocalDate);
+  static const VerificationMeta _secondsOfDayMeta = const VerificationMeta(
+    'secondsOfDay',
+  );
+  @override
+  late final GeneratedColumn<int> secondsOfDay = GeneratedColumn<int>(
+    'seconds_of_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _offsetMinutesMeta = const VerificationMeta(
+    'offsetMinutes',
+  );
+  @override
+  late final GeneratedColumn<int> offsetMinutes = GeneratedColumn<int>(
+    'offset_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dedupeKeyMeta = const VerificationMeta(
+    'dedupeKey',
+  );
+  @override
+  late final GeneratedColumn<String> dedupeKey = GeneratedColumn<String>(
+    'dedupe_key',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _failureMeta = const VerificationMeta(
+    'failure',
+  );
+  @override
+  late final GeneratedColumn<String> failure = GeneratedColumn<String>(
+    'failure',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    jobId,
+    position,
+    sourcePath,
+    photoFile,
+    thumbFile,
+    localDate,
+    secondsOfDay,
+    offsetMinutes,
+    dedupeKey,
+    state,
+    failure,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'import_job_photos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ImportJobPhotoRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('job_id')) {
+      context.handle(
+        _jobIdMeta,
+        jobId.isAcceptableOrUnknown(data['job_id']!, _jobIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_jobIdMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('source_path')) {
+      context.handle(
+        _sourcePathMeta,
+        sourcePath.isAcceptableOrUnknown(data['source_path']!, _sourcePathMeta),
+      );
+    }
+    if (data.containsKey('photo_file')) {
+      context.handle(
+        _photoFileMeta,
+        photoFile.isAcceptableOrUnknown(data['photo_file']!, _photoFileMeta),
+      );
+    }
+    if (data.containsKey('thumb_file')) {
+      context.handle(
+        _thumbFileMeta,
+        thumbFile.isAcceptableOrUnknown(data['thumb_file']!, _thumbFileMeta),
+      );
+    }
+    if (data.containsKey('seconds_of_day')) {
+      context.handle(
+        _secondsOfDayMeta,
+        secondsOfDay.isAcceptableOrUnknown(
+          data['seconds_of_day']!,
+          _secondsOfDayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_secondsOfDayMeta);
+    }
+    if (data.containsKey('offset_minutes')) {
+      context.handle(
+        _offsetMinutesMeta,
+        offsetMinutes.isAcceptableOrUnknown(
+          data['offset_minutes']!,
+          _offsetMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('dedupe_key')) {
+      context.handle(
+        _dedupeKeyMeta,
+        dedupeKey.isAcceptableOrUnknown(data['dedupe_key']!, _dedupeKeyMeta),
+      );
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stateMeta);
+    }
+    if (data.containsKey('failure')) {
+      context.handle(
+        _failureMeta,
+        failure.isAcceptableOrUnknown(data['failure']!, _failureMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ImportJobPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ImportJobPhotoRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      jobId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}job_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      sourcePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_path'],
+      ),
+      photoFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_file'],
+      ),
+      thumbFile: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thumb_file'],
+      ),
+      localDate: $ImportJobPhotosTable.$converterlocalDate.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}local_date'],
+        )!,
+      ),
+      secondsOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seconds_of_day'],
+      )!,
+      offsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}offset_minutes'],
+      ),
+      dedupeKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dedupe_key'],
+      ),
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      failure: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}failure'],
+      ),
+    );
+  }
+
+  @override
+  $ImportJobPhotosTable createAlias(String alias) {
+    return $ImportJobPhotosTable(attachedDatabase, alias);
+  }
+
+  static TypeConverter<LocalDate, String> $converterlocalDate =
+      const LocalDateConverter();
+}
+
+class ImportJobPhotoRow extends DataClass
+    implements Insertable<ImportJobPhotoRow> {
+  final String id;
+  final String jobId;
+  final int position;
+  final String? sourcePath;
+  final String? photoFile;
+  final String? thumbFile;
+  final LocalDate localDate;
+  final int secondsOfDay;
+  final int? offsetMinutes;
+
+  /// Content key of the picked photo (so "Edit details" still recognises it).
+  final String? dedupeKey;
+
+  /// `ImportPhotoState.wire`.
+  final String state;
+
+  /// `ImportFailure.wire`.
+  final String? failure;
+  const ImportJobPhotoRow({
+    required this.id,
+    required this.jobId,
+    required this.position,
+    this.sourcePath,
+    this.photoFile,
+    this.thumbFile,
+    required this.localDate,
+    required this.secondsOfDay,
+    this.offsetMinutes,
+    this.dedupeKey,
+    required this.state,
+    this.failure,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['job_id'] = Variable<String>(jobId);
+    map['position'] = Variable<int>(position);
+    if (!nullToAbsent || sourcePath != null) {
+      map['source_path'] = Variable<String>(sourcePath);
+    }
+    if (!nullToAbsent || photoFile != null) {
+      map['photo_file'] = Variable<String>(photoFile);
+    }
+    if (!nullToAbsent || thumbFile != null) {
+      map['thumb_file'] = Variable<String>(thumbFile);
+    }
+    {
+      map['local_date'] = Variable<String>(
+        $ImportJobPhotosTable.$converterlocalDate.toSql(localDate),
+      );
+    }
+    map['seconds_of_day'] = Variable<int>(secondsOfDay);
+    if (!nullToAbsent || offsetMinutes != null) {
+      map['offset_minutes'] = Variable<int>(offsetMinutes);
+    }
+    if (!nullToAbsent || dedupeKey != null) {
+      map['dedupe_key'] = Variable<String>(dedupeKey);
+    }
+    map['state'] = Variable<String>(state);
+    if (!nullToAbsent || failure != null) {
+      map['failure'] = Variable<String>(failure);
+    }
+    return map;
+  }
+
+  ImportJobPhotosCompanion toCompanion(bool nullToAbsent) {
+    return ImportJobPhotosCompanion(
+      id: Value(id),
+      jobId: Value(jobId),
+      position: Value(position),
+      sourcePath: sourcePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourcePath),
+      photoFile: photoFile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(photoFile),
+      thumbFile: thumbFile == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thumbFile),
+      localDate: Value(localDate),
+      secondsOfDay: Value(secondsOfDay),
+      offsetMinutes: offsetMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(offsetMinutes),
+      dedupeKey: dedupeKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dedupeKey),
+      state: Value(state),
+      failure: failure == null && nullToAbsent
+          ? const Value.absent()
+          : Value(failure),
+    );
+  }
+
+  factory ImportJobPhotoRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ImportJobPhotoRow(
+      id: serializer.fromJson<String>(json['id']),
+      jobId: serializer.fromJson<String>(json['jobId']),
+      position: serializer.fromJson<int>(json['position']),
+      sourcePath: serializer.fromJson<String?>(json['sourcePath']),
+      photoFile: serializer.fromJson<String?>(json['photoFile']),
+      thumbFile: serializer.fromJson<String?>(json['thumbFile']),
+      localDate: serializer.fromJson<LocalDate>(json['localDate']),
+      secondsOfDay: serializer.fromJson<int>(json['secondsOfDay']),
+      offsetMinutes: serializer.fromJson<int?>(json['offsetMinutes']),
+      dedupeKey: serializer.fromJson<String?>(json['dedupeKey']),
+      state: serializer.fromJson<String>(json['state']),
+      failure: serializer.fromJson<String?>(json['failure']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'jobId': serializer.toJson<String>(jobId),
+      'position': serializer.toJson<int>(position),
+      'sourcePath': serializer.toJson<String?>(sourcePath),
+      'photoFile': serializer.toJson<String?>(photoFile),
+      'thumbFile': serializer.toJson<String?>(thumbFile),
+      'localDate': serializer.toJson<LocalDate>(localDate),
+      'secondsOfDay': serializer.toJson<int>(secondsOfDay),
+      'offsetMinutes': serializer.toJson<int?>(offsetMinutes),
+      'dedupeKey': serializer.toJson<String?>(dedupeKey),
+      'state': serializer.toJson<String>(state),
+      'failure': serializer.toJson<String?>(failure),
+    };
+  }
+
+  ImportJobPhotoRow copyWith({
+    String? id,
+    String? jobId,
+    int? position,
+    Value<String?> sourcePath = const Value.absent(),
+    Value<String?> photoFile = const Value.absent(),
+    Value<String?> thumbFile = const Value.absent(),
+    LocalDate? localDate,
+    int? secondsOfDay,
+    Value<int?> offsetMinutes = const Value.absent(),
+    Value<String?> dedupeKey = const Value.absent(),
+    String? state,
+    Value<String?> failure = const Value.absent(),
+  }) => ImportJobPhotoRow(
+    id: id ?? this.id,
+    jobId: jobId ?? this.jobId,
+    position: position ?? this.position,
+    sourcePath: sourcePath.present ? sourcePath.value : this.sourcePath,
+    photoFile: photoFile.present ? photoFile.value : this.photoFile,
+    thumbFile: thumbFile.present ? thumbFile.value : this.thumbFile,
+    localDate: localDate ?? this.localDate,
+    secondsOfDay: secondsOfDay ?? this.secondsOfDay,
+    offsetMinutes: offsetMinutes.present
+        ? offsetMinutes.value
+        : this.offsetMinutes,
+    dedupeKey: dedupeKey.present ? dedupeKey.value : this.dedupeKey,
+    state: state ?? this.state,
+    failure: failure.present ? failure.value : this.failure,
+  );
+  ImportJobPhotoRow copyWithCompanion(ImportJobPhotosCompanion data) {
+    return ImportJobPhotoRow(
+      id: data.id.present ? data.id.value : this.id,
+      jobId: data.jobId.present ? data.jobId.value : this.jobId,
+      position: data.position.present ? data.position.value : this.position,
+      sourcePath: data.sourcePath.present
+          ? data.sourcePath.value
+          : this.sourcePath,
+      photoFile: data.photoFile.present ? data.photoFile.value : this.photoFile,
+      thumbFile: data.thumbFile.present ? data.thumbFile.value : this.thumbFile,
+      localDate: data.localDate.present ? data.localDate.value : this.localDate,
+      secondsOfDay: data.secondsOfDay.present
+          ? data.secondsOfDay.value
+          : this.secondsOfDay,
+      offsetMinutes: data.offsetMinutes.present
+          ? data.offsetMinutes.value
+          : this.offsetMinutes,
+      dedupeKey: data.dedupeKey.present ? data.dedupeKey.value : this.dedupeKey,
+      state: data.state.present ? data.state.value : this.state,
+      failure: data.failure.present ? data.failure.value : this.failure,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportJobPhotoRow(')
+          ..write('id: $id, ')
+          ..write('jobId: $jobId, ')
+          ..write('position: $position, ')
+          ..write('sourcePath: $sourcePath, ')
+          ..write('photoFile: $photoFile, ')
+          ..write('thumbFile: $thumbFile, ')
+          ..write('localDate: $localDate, ')
+          ..write('secondsOfDay: $secondsOfDay, ')
+          ..write('offsetMinutes: $offsetMinutes, ')
+          ..write('dedupeKey: $dedupeKey, ')
+          ..write('state: $state, ')
+          ..write('failure: $failure')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    jobId,
+    position,
+    sourcePath,
+    photoFile,
+    thumbFile,
+    localDate,
+    secondsOfDay,
+    offsetMinutes,
+    dedupeKey,
+    state,
+    failure,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ImportJobPhotoRow &&
+          other.id == this.id &&
+          other.jobId == this.jobId &&
+          other.position == this.position &&
+          other.sourcePath == this.sourcePath &&
+          other.photoFile == this.photoFile &&
+          other.thumbFile == this.thumbFile &&
+          other.localDate == this.localDate &&
+          other.secondsOfDay == this.secondsOfDay &&
+          other.offsetMinutes == this.offsetMinutes &&
+          other.dedupeKey == this.dedupeKey &&
+          other.state == this.state &&
+          other.failure == this.failure);
+}
+
+class ImportJobPhotosCompanion extends UpdateCompanion<ImportJobPhotoRow> {
+  final Value<String> id;
+  final Value<String> jobId;
+  final Value<int> position;
+  final Value<String?> sourcePath;
+  final Value<String?> photoFile;
+  final Value<String?> thumbFile;
+  final Value<LocalDate> localDate;
+  final Value<int> secondsOfDay;
+  final Value<int?> offsetMinutes;
+  final Value<String?> dedupeKey;
+  final Value<String> state;
+  final Value<String?> failure;
+  final Value<int> rowid;
+  const ImportJobPhotosCompanion({
+    this.id = const Value.absent(),
+    this.jobId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.sourcePath = const Value.absent(),
+    this.photoFile = const Value.absent(),
+    this.thumbFile = const Value.absent(),
+    this.localDate = const Value.absent(),
+    this.secondsOfDay = const Value.absent(),
+    this.offsetMinutes = const Value.absent(),
+    this.dedupeKey = const Value.absent(),
+    this.state = const Value.absent(),
+    this.failure = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ImportJobPhotosCompanion.insert({
+    required String id,
+    required String jobId,
+    required int position,
+    this.sourcePath = const Value.absent(),
+    this.photoFile = const Value.absent(),
+    this.thumbFile = const Value.absent(),
+    required LocalDate localDate,
+    required int secondsOfDay,
+    this.offsetMinutes = const Value.absent(),
+    this.dedupeKey = const Value.absent(),
+    required String state,
+    this.failure = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       jobId = Value(jobId),
+       position = Value(position),
+       localDate = Value(localDate),
+       secondsOfDay = Value(secondsOfDay),
+       state = Value(state);
+  static Insertable<ImportJobPhotoRow> custom({
+    Expression<String>? id,
+    Expression<String>? jobId,
+    Expression<int>? position,
+    Expression<String>? sourcePath,
+    Expression<String>? photoFile,
+    Expression<String>? thumbFile,
+    Expression<String>? localDate,
+    Expression<int>? secondsOfDay,
+    Expression<int>? offsetMinutes,
+    Expression<String>? dedupeKey,
+    Expression<String>? state,
+    Expression<String>? failure,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (jobId != null) 'job_id': jobId,
+      if (position != null) 'position': position,
+      if (sourcePath != null) 'source_path': sourcePath,
+      if (photoFile != null) 'photo_file': photoFile,
+      if (thumbFile != null) 'thumb_file': thumbFile,
+      if (localDate != null) 'local_date': localDate,
+      if (secondsOfDay != null) 'seconds_of_day': secondsOfDay,
+      if (offsetMinutes != null) 'offset_minutes': offsetMinutes,
+      if (dedupeKey != null) 'dedupe_key': dedupeKey,
+      if (state != null) 'state': state,
+      if (failure != null) 'failure': failure,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ImportJobPhotosCompanion copyWith({
+    Value<String>? id,
+    Value<String>? jobId,
+    Value<int>? position,
+    Value<String?>? sourcePath,
+    Value<String?>? photoFile,
+    Value<String?>? thumbFile,
+    Value<LocalDate>? localDate,
+    Value<int>? secondsOfDay,
+    Value<int?>? offsetMinutes,
+    Value<String?>? dedupeKey,
+    Value<String>? state,
+    Value<String?>? failure,
+    Value<int>? rowid,
+  }) {
+    return ImportJobPhotosCompanion(
+      id: id ?? this.id,
+      jobId: jobId ?? this.jobId,
+      position: position ?? this.position,
+      sourcePath: sourcePath ?? this.sourcePath,
+      photoFile: photoFile ?? this.photoFile,
+      thumbFile: thumbFile ?? this.thumbFile,
+      localDate: localDate ?? this.localDate,
+      secondsOfDay: secondsOfDay ?? this.secondsOfDay,
+      offsetMinutes: offsetMinutes ?? this.offsetMinutes,
+      dedupeKey: dedupeKey ?? this.dedupeKey,
+      state: state ?? this.state,
+      failure: failure ?? this.failure,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (jobId.present) {
+      map['job_id'] = Variable<String>(jobId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (sourcePath.present) {
+      map['source_path'] = Variable<String>(sourcePath.value);
+    }
+    if (photoFile.present) {
+      map['photo_file'] = Variable<String>(photoFile.value);
+    }
+    if (thumbFile.present) {
+      map['thumb_file'] = Variable<String>(thumbFile.value);
+    }
+    if (localDate.present) {
+      map['local_date'] = Variable<String>(
+        $ImportJobPhotosTable.$converterlocalDate.toSql(localDate.value),
+      );
+    }
+    if (secondsOfDay.present) {
+      map['seconds_of_day'] = Variable<int>(secondsOfDay.value);
+    }
+    if (offsetMinutes.present) {
+      map['offset_minutes'] = Variable<int>(offsetMinutes.value);
+    }
+    if (dedupeKey.present) {
+      map['dedupe_key'] = Variable<String>(dedupeKey.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (failure.present) {
+      map['failure'] = Variable<String>(failure.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ImportJobPhotosCompanion(')
+          ..write('id: $id, ')
+          ..write('jobId: $jobId, ')
+          ..write('position: $position, ')
+          ..write('sourcePath: $sourcePath, ')
+          ..write('photoFile: $photoFile, ')
+          ..write('thumbFile: $thumbFile, ')
+          ..write('localDate: $localDate, ')
+          ..write('secondsOfDay: $secondsOfDay, ')
+          ..write('offsetMinutes: $offsetMinutes, ')
+          ..write('dedupeKey: $dedupeKey, ')
+          ..write('state: $state, ')
+          ..write('failure: $failure, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4667,6 +6207,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $BlocksTable blocks = $BlocksTable(this);
   late final $UploadQueueTable uploadQueue = $UploadQueueTable(this);
   late final $SyncCursorTable syncCursor = $SyncCursorTable(this);
+  late final $ImportJobsTable importJobs = $ImportJobsTable(this);
+  late final $ImportJobPhotosTable importJobPhotos = $ImportJobPhotosTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4680,6 +6224,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     blocks,
     uploadQueue,
     syncCursor,
+    importJobs,
+    importJobPhotos,
   ];
 }
 
@@ -7016,6 +8562,746 @@ typedef $$SyncCursorTableProcessedTableManager =
       SyncCursorRow,
       PrefetchHooks Function()
     >;
+typedef $$ImportJobsTableCreateCompanionBuilder = ImportJobsCompanion Function({
+  required String id,
+  required String title,
+  required String emoji,
+  required String templateId,
+  Value<String?> layout,
+  required LocalDate startDate,
+  required LocalDate endDate,
+  required String timezone,
+  Value<bool> continues,
+  required String phase,
+  required String ownerId,
+  Value<bool> paused,
+  Value<String?> createFailure,
+  required DateTime createdAt,
+  Value<int> rowid,
+});
+typedef $$ImportJobsTableUpdateCompanionBuilder = ImportJobsCompanion Function({
+  Value<String> id,
+  Value<String> title,
+  Value<String> emoji,
+  Value<String> templateId,
+  Value<String?> layout,
+  Value<LocalDate> startDate,
+  Value<LocalDate> endDate,
+  Value<String> timezone,
+  Value<bool> continues,
+  Value<String> phase,
+  Value<String> ownerId,
+  Value<bool> paused,
+  Value<String?> createFailure,
+  Value<DateTime> createdAt,
+  Value<int> rowid,
+});
+
+class $$ImportJobsTableFilterComposer
+    extends Composer<_$AppDatabase, $ImportJobsTable> {
+  $$ImportJobsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get emoji => $composableBuilder(
+    column: $table.emoji,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get layout => $composableBuilder(
+    column: $table.layout,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<LocalDate, LocalDate, String> get startDate =>
+      $composableBuilder(
+        column: $table.startDate,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnWithTypeConverterFilters<LocalDate, LocalDate, String> get endDate =>
+      $composableBuilder(
+        column: $table.endDate,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<String> get timezone => $composableBuilder(
+    column: $table.timezone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get continues => $composableBuilder(
+    column: $table.continues,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get paused => $composableBuilder(
+    column: $table.paused,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createFailure => $composableBuilder(
+    column: $table.createFailure,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<DateTime, DateTime, int> get createdAt =>
+      $composableBuilder(
+        column: $table.createdAt,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+}
+
+class $$ImportJobsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ImportJobsTable> {
+  $$ImportJobsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get emoji => $composableBuilder(
+    column: $table.emoji,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get layout => $composableBuilder(
+    column: $table.layout,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get startDate => $composableBuilder(
+    column: $table.startDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get endDate => $composableBuilder(
+    column: $table.endDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timezone => $composableBuilder(
+    column: $table.timezone,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get continues => $composableBuilder(
+    column: $table.continues,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phase => $composableBuilder(
+    column: $table.phase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get paused => $composableBuilder(
+    column: $table.paused,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createFailure => $composableBuilder(
+    column: $table.createFailure,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ImportJobsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ImportJobsTable> {
+  $$ImportJobsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get emoji =>
+      $composableBuilder(column: $table.emoji, builder: (column) => column);
+
+  GeneratedColumn<String> get templateId => $composableBuilder(
+    column: $table.templateId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get layout =>
+      $composableBuilder(column: $table.layout, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<LocalDate, String> get startDate =>
+      $composableBuilder(column: $table.startDate, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<LocalDate, String> get endDate =>
+      $composableBuilder(column: $table.endDate, builder: (column) => column);
+
+  GeneratedColumn<String> get timezone =>
+      $composableBuilder(column: $table.timezone, builder: (column) => column);
+
+  GeneratedColumn<bool> get continues =>
+      $composableBuilder(column: $table.continues, builder: (column) => column);
+
+  GeneratedColumn<String> get phase =>
+      $composableBuilder(column: $table.phase, builder: (column) => column);
+
+  GeneratedColumn<String> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<bool> get paused =>
+      $composableBuilder(column: $table.paused, builder: (column) => column);
+
+  GeneratedColumn<String> get createFailure => $composableBuilder(
+    column: $table.createFailure,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<DateTime, int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$ImportJobsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ImportJobsTable,
+          ImportJobRow,
+          $$ImportJobsTableFilterComposer,
+          $$ImportJobsTableOrderingComposer,
+          $$ImportJobsTableAnnotationComposer,
+          $$ImportJobsTableCreateCompanionBuilder,
+          $$ImportJobsTableUpdateCompanionBuilder,
+          (
+            ImportJobRow,
+            BaseReferences<_$AppDatabase, $ImportJobsTable, ImportJobRow>,
+          ),
+          ImportJobRow,
+          PrefetchHooks Function()
+        > {
+  $$ImportJobsTableTableManager(_$AppDatabase db, $ImportJobsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImportJobsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImportJobsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImportJobsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> emoji = const Value.absent(),
+                Value<String> templateId = const Value.absent(),
+                Value<String?> layout = const Value.absent(),
+                Value<LocalDate> startDate = const Value.absent(),
+                Value<LocalDate> endDate = const Value.absent(),
+                Value<String> timezone = const Value.absent(),
+                Value<bool> continues = const Value.absent(),
+                Value<String> phase = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<bool> paused = const Value.absent(),
+                Value<String?> createFailure = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportJobsCompanion(
+                id: id,
+                title: title,
+                emoji: emoji,
+                templateId: templateId,
+                layout: layout,
+                startDate: startDate,
+                endDate: endDate,
+                timezone: timezone,
+                continues: continues,
+                phase: phase,
+                ownerId: ownerId,
+                paused: paused,
+                createFailure: createFailure,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String title,
+                required String emoji,
+                required String templateId,
+                Value<String?> layout = const Value.absent(),
+                required LocalDate startDate,
+                required LocalDate endDate,
+                required String timezone,
+                Value<bool> continues = const Value.absent(),
+                required String phase,
+                required String ownerId,
+                Value<bool> paused = const Value.absent(),
+                Value<String?> createFailure = const Value.absent(),
+                required DateTime createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ImportJobsCompanion.insert(
+                id: id,
+                title: title,
+                emoji: emoji,
+                templateId: templateId,
+                layout: layout,
+                startDate: startDate,
+                endDate: endDate,
+                timezone: timezone,
+                continues: continues,
+                phase: phase,
+                ownerId: ownerId,
+                paused: paused,
+                createFailure: createFailure,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ImportJobsTable, ImportJobRow>(table),
+                  BaseReferences<_$AppDatabase, $ImportJobsTable, ImportJobRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ImportJobsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ImportJobsTable,
+      ImportJobRow,
+      $$ImportJobsTableFilterComposer,
+      $$ImportJobsTableOrderingComposer,
+      $$ImportJobsTableAnnotationComposer,
+      $$ImportJobsTableCreateCompanionBuilder,
+      $$ImportJobsTableUpdateCompanionBuilder,
+      (
+        ImportJobRow,
+        BaseReferences<_$AppDatabase, $ImportJobsTable, ImportJobRow>,
+      ),
+      ImportJobRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ImportJobPhotosTableCreateCompanionBuilder =
+    ImportJobPhotosCompanion Function({
+      required String id,
+      required String jobId,
+      required int position,
+      Value<String?> sourcePath,
+      Value<String?> photoFile,
+      Value<String?> thumbFile,
+      required LocalDate localDate,
+      required int secondsOfDay,
+      Value<int?> offsetMinutes,
+      Value<String?> dedupeKey,
+      required String state,
+      Value<String?> failure,
+      Value<int> rowid,
+    });
+typedef $$ImportJobPhotosTableUpdateCompanionBuilder =
+    ImportJobPhotosCompanion Function({
+      Value<String> id,
+      Value<String> jobId,
+      Value<int> position,
+      Value<String?> sourcePath,
+      Value<String?> photoFile,
+      Value<String?> thumbFile,
+      Value<LocalDate> localDate,
+      Value<int> secondsOfDay,
+      Value<int?> offsetMinutes,
+      Value<String?> dedupeKey,
+      Value<String> state,
+      Value<String?> failure,
+      Value<int> rowid,
+    });
+
+class $$ImportJobPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $ImportJobPhotosTable> {
+  $$ImportJobPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get jobId => $composableBuilder(
+    column: $table.jobId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get photoFile => $composableBuilder(
+    column: $table.photoFile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get thumbFile => $composableBuilder(
+    column: $table.thumbFile,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<LocalDate, LocalDate, String> get localDate =>
+      $composableBuilder(
+        column: $table.localDate,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<int> get secondsOfDay => $composableBuilder(
+    column: $table.secondsOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get offsetMinutes => $composableBuilder(
+    column: $table.offsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dedupeKey => $composableBuilder(
+    column: $table.dedupeKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get failure => $composableBuilder(
+    column: $table.failure,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ImportJobPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $ImportJobPhotosTable> {
+  $$ImportJobPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get jobId => $composableBuilder(
+    column: $table.jobId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get photoFile => $composableBuilder(
+    column: $table.photoFile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get thumbFile => $composableBuilder(
+    column: $table.thumbFile,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localDate => $composableBuilder(
+    column: $table.localDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get secondsOfDay => $composableBuilder(
+    column: $table.secondsOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get offsetMinutes => $composableBuilder(
+    column: $table.offsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dedupeKey => $composableBuilder(
+    column: $table.dedupeKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get failure => $composableBuilder(
+    column: $table.failure,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ImportJobPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ImportJobPhotosTable> {
+  $$ImportJobPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get jobId =>
+      $composableBuilder(column: $table.jobId, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<String> get sourcePath => $composableBuilder(
+    column: $table.sourcePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get photoFile =>
+      $composableBuilder(column: $table.photoFile, builder: (column) => column);
+
+  GeneratedColumn<String> get thumbFile =>
+      $composableBuilder(column: $table.thumbFile, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<LocalDate, String> get localDate =>
+      $composableBuilder(column: $table.localDate, builder: (column) => column);
+
+  GeneratedColumn<int> get secondsOfDay => $composableBuilder(
+    column: $table.secondsOfDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get offsetMinutes => $composableBuilder(
+    column: $table.offsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get dedupeKey =>
+      $composableBuilder(column: $table.dedupeKey, builder: (column) => column);
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<String> get failure =>
+      $composableBuilder(column: $table.failure, builder: (column) => column);
+}
+
+class $$ImportJobPhotosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ImportJobPhotosTable,
+          ImportJobPhotoRow,
+          $$ImportJobPhotosTableFilterComposer,
+          $$ImportJobPhotosTableOrderingComposer,
+          $$ImportJobPhotosTableAnnotationComposer,
+          $$ImportJobPhotosTableCreateCompanionBuilder,
+          $$ImportJobPhotosTableUpdateCompanionBuilder,
+          (
+            ImportJobPhotoRow,
+            BaseReferences<
+              _$AppDatabase,
+              $ImportJobPhotosTable,
+              ImportJobPhotoRow
+            >,
+          ),
+          ImportJobPhotoRow,
+          PrefetchHooks Function()
+        > {
+  $$ImportJobPhotosTableTableManager(
+    _$AppDatabase db,
+    $ImportJobPhotosTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ImportJobPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ImportJobPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ImportJobPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> jobId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<String?> sourcePath = const Value.absent(),
+                Value<String?> photoFile = const Value.absent(),
+                Value<String?> thumbFile = const Value.absent(),
+                Value<LocalDate> localDate = const Value.absent(),
+                Value<int> secondsOfDay = const Value.absent(),
+                Value<int?> offsetMinutes = const Value.absent(),
+                Value<String?> dedupeKey = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<String?> failure = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportJobPhotosCompanion(
+                id: id,
+                jobId: jobId,
+                position: position,
+                sourcePath: sourcePath,
+                photoFile: photoFile,
+                thumbFile: thumbFile,
+                localDate: localDate,
+                secondsOfDay: secondsOfDay,
+                offsetMinutes: offsetMinutes,
+                dedupeKey: dedupeKey,
+                state: state,
+                failure: failure,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String jobId,
+                required int position,
+                Value<String?> sourcePath = const Value.absent(),
+                Value<String?> photoFile = const Value.absent(),
+                Value<String?> thumbFile = const Value.absent(),
+                required LocalDate localDate,
+                required int secondsOfDay,
+                Value<int?> offsetMinutes = const Value.absent(),
+                Value<String?> dedupeKey = const Value.absent(),
+                required String state,
+                Value<String?> failure = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ImportJobPhotosCompanion.insert(
+                id: id,
+                jobId: jobId,
+                position: position,
+                sourcePath: sourcePath,
+                photoFile: photoFile,
+                thumbFile: thumbFile,
+                localDate: localDate,
+                secondsOfDay: secondsOfDay,
+                offsetMinutes: offsetMinutes,
+                dedupeKey: dedupeKey,
+                state: state,
+                failure: failure,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ImportJobPhotosTable, ImportJobPhotoRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $ImportJobPhotosTable,
+                    ImportJobPhotoRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ImportJobPhotosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ImportJobPhotosTable,
+      ImportJobPhotoRow,
+      $$ImportJobPhotosTableFilterComposer,
+      $$ImportJobPhotosTableOrderingComposer,
+      $$ImportJobPhotosTableAnnotationComposer,
+      $$ImportJobPhotosTableCreateCompanionBuilder,
+      $$ImportJobPhotosTableUpdateCompanionBuilder,
+      (
+        ImportJobPhotoRow,
+        BaseReferences<_$AppDatabase, $ImportJobPhotosTable, ImportJobPhotoRow>,
+      ),
+      ImportJobPhotoRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7036,4 +9322,8 @@ class $AppDatabaseManager {
       $$UploadQueueTableTableManager(_db, _db.uploadQueue);
   $$SyncCursorTableTableManager get syncCursor =>
       $$SyncCursorTableTableManager(_db, _db.syncCursor);
+  $$ImportJobsTableTableManager get importJobs =>
+      $$ImportJobsTableTableManager(_db, _db.importJobs);
+  $$ImportJobPhotosTableTableManager get importJobPhotos =>
+      $$ImportJobPhotosTableTableManager(_db, _db.importJobPhotos);
 }

@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../app/providers.dart';
+import '../features/import/data/import_job_store.dart';
 import '../features/profile/profile_providers.dart'
     show accountInsightsRepositoryProvider;
 import 'data_layer.dart';
@@ -190,6 +191,9 @@ List<Override> dataOverrides(DataEnvironment env, {bool? social}) => [
     (ref) => ref.watch(dataLayerProvider).safety,
   ),
   mediaStoreProvider.overrideWith((ref) => ref.watch(dataLayerProvider).media),
+  importJobStoreProvider.overrideWith(
+    (ref) => DriftImportJobStore(ref.watch(dataEnvironmentProvider).db),
+  ),
   accountInsightsRepositoryProvider.overrideWith((ref) {
     final remote = ref.watch(dataLayerProvider).ctx.remote;
     return remote == null ? null : SupabaseAccountInsightsRepository(remote);

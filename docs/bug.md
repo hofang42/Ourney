@@ -1100,6 +1100,7 @@ Worker đếm: Tài liệu 13, Asset 5, Code 12, Cấu hình 4. Đây là việc
 - **Cái gì đã lỗi thời:** Lớp `JourneyChain` (lưới lịch 7 cột `.chain-grid` của bản V1.0) đã bị thay thế hoàn toàn bởi `widgets/journey_timeline.dart` và 6 biến thể timeline trong `widgets/timeline_variants.dart`, không còn file nào trong `lib/` lẫn `test/` gọi tới.
 - **Bằng chứng:** - `git grep -n journey_chain` chỉ ra tài liệu cũ; `git grep -n JourneyChain` chỉ khớp đúng định nghĩa lớp ở `journey_chain.dart:17-18` (0 import toàn repo).
 - **Đề xuất xử lý:** **Xóa** `apps/mobile/lib/features/journeys/ui/journey_chain.dart`.
+- **Trạng thái:** **Đã xử lý** trên nhánh `feat/long-journey-timeline`: file đã bị xóa; lưới tháng 7 cột nay là `TimelineGridCell` + `ChainRowPainter` (`widgets/timeline_common.dart`, `widgets/timeline_archive.dart`).
 - **Rủi ro khi xử lý:** **an toàn**
 - **Độ chắc:** **chắc chắn**
 

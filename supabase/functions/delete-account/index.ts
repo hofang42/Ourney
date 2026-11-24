@@ -1,18 +1,12 @@
 // delete-account (FR-A4, NFR-4): permanently deletes the caller's account.
 //   1. authenticate the caller from their own JWT (Authorization: Bearer <access token>)
-//   2. remove every storage object of the user (public.account_media_paths lists the real
-//      objects in bucket `media`: avatars/{uid}/*, checkins/*/{uid}/*, and all media of
-//      journeys that die with the account), then every chat image in bucket `messages`
-//      (public.account_message_paths: images the user sent, every image of the user's
-//      conversations, and of conversations of journeys that die with the account).
-//      The lists are captured first (they depend on rows that cascade away) and every path is
-//      queued in private.pending_storage_purge (migration 0017); then the auth user is deleted
-//      (after detaching storage.objects.owner), the objects are removed and dequeued one by one,
-//      and a second listing pass runs. Whatever is left stays queued for the storage-purge-sweep
-//      function. Deploy migrations 0016 (adds account_message_paths) and 0017 before this function.
-//   3. auth.admin.deleteUser -> cascades to public.profiles; the profiles BEFORE DELETE trigger
-//      hands group ownership to the earliest joined member / archives empty groups and
-//      deletes journeys nobody else is active in. Everything else cascades.
+//   2. detach storage.objects.owner, then delete the auth user (auth.admin.deleteUser).
+//      Inside the BEFORE DELETE ON public.profiles trigger, public.purge_account_data locks the
+//      user's journeys FOR UPDATE and atomically queues every dying media/message path into
+//      private.pending_storage_purge (migrations 0017, 0019), hands over / archives surviving
+//      group journeys, and deletes journeys nobody else is active in.
+//   3. drain claim_storage_purge (plus a second listing pass for any racing direct upload) and
+//      remove the objects via the Storage API. Whatever fails stays queued for storage-purge-sweep.
 // The service key comes only from the function environment.
 //
 // v2: deletion is gated by a one-time code (3-step flow: confirm -> OTP -> final). The request body
@@ -46,8 +40,14 @@ function authFailure(message: string | undefined, status: number | undefined): R
   return rate ? json({ error: "rate_limited" }, 429) : json({ error: "invalid" }, 400);
 }
 
-/** Lists every object the RPC reports for the user. Must run BEFORE the auth user is deleted:
- *  the listing joins tables (journeys dying with the account, conversations) that cascade away. */
+/** Normalizes a GoTrue user.phone (which may omit the leading '+') to E.164 (`+<digits>`). */
+export function normalizeE164Phone(raw: string | undefined | null): string {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("+") ? trimmed : `+${trimmed}`;
+}
+
+/** Lists every object the RPC reports for the user. */
 async function listPaths(
   admin: SupabaseClient,
   rpc: string,
@@ -91,18 +91,6 @@ async function dequeuePaths(admin: SupabaseClient, bucket: string, paths: string
   }
 }
 
-/** The deletion was abandoned before the account was touched: drop only THIS user's queued paths. */
-async function abortPaths(admin: SupabaseClient, bucket: string, userId: string, paths: string[]) {
-  for (const part of chunk(paths, 500)) {
-    try {
-      const { error } = await admin.rpc("abort_storage_purge", { p_bucket: bucket, p_user: userId, p_paths: part });
-      if (error) console.error(`abort_storage_purge failed (${bucket}, ${part.length} paths)`, error.message);
-    } catch (e) {
-      console.error("abort_storage_purge threw", e instanceof Error ? e.message : String(e));
-    }
-  }
-}
-
 /** Removal after the account is gone. Every path is already queued: a removed one is dequeued, a
  *  failed one stays queued with its attempt counted (the sweep retries it). Failures are never
  *  returned (the user no longer exists, so the client could not retry). Returns the removed count. */
@@ -132,6 +120,31 @@ async function removePaths(admin: SupabaseClient, bucket: string, list: string[]
   return removed;
 }
 
+/** Claims and removes queued storage paths for deleted accounts (queued by purge_account_data). */
+async function drainClaimedPurge(admin: SupabaseClient): Promise<number> {
+  let removed = 0;
+  for (let pass = 0; pass < 10; pass++) {
+    const { data, error } = await admin.rpc("claim_storage_purge", { p_limit: 500 });
+    if (error) {
+      console.error("claim_storage_purge failed", error.message);
+      break;
+    }
+    const rows = (data ?? []) as { bucket: string; path: string }[];
+    if (rows.length === 0) break;
+    const byBucket = new Map<string, string[]>();
+    for (const r of rows) {
+      const list = byBucket.get(r.bucket) ?? [];
+      list.push(r.path);
+      byBucket.set(r.bucket, list);
+    }
+    for (const [bucket, paths] of byBucket) {
+      removed += await removePaths(admin, bucket, paths);
+    }
+    if (rows.length < 500) break;
+  }
+  return removed;
+}
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The `sub` claim of a JWT (payload only; the signature was verified by the gateway). */
@@ -147,7 +160,7 @@ function jwtSub(token: string): string | null {
   }
 }
 
-Deno.serve(async (req: Request): Promise<Response> => {
+export async function handle(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
 
   const auth = req.headers.get("Authorization") ?? "";
@@ -186,8 +199,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch {
     body = {};
   }
-  const email = userData.user?.email ?? "";
-  const phone = userData.user?.phone ?? "";
+  const email = (userData.user?.email ?? "").trim();
+  // FS-02: GoTrue persists user.phone without a leading '+', whereas OTP endpoints expect E.164.
+  const phone = normalizeE164Phone(userData.user?.phone);
   if (!email && !phone) return json({ error: "invalid" }, 400);
 
   if (body.action === "send") {
@@ -213,34 +227,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       console.warn("delete code check failed", error ? `${error.status ?? "?"} ${error.message}` : "user mismatch");
       return authFailure(error?.message, error?.status);
     }
-  }
-
-  const lists: [string, string[]][] = [];
-  for (const [rpc, bucket] of [
-    ["account_media_paths", "media"],
-    ["account_message_paths", "messages"],
-  ] as const) {
-    const result = await listPaths(admin, rpc, userId);
-    if ("error" in result) return result.error;
-    lists.push([bucket, result.paths]);
-  }
-
-  // getUser just proved the account is alive, so any queued row stamped with this user is stale
-  // (an earlier aborted run) and must not become claimable later: start from a clean slate.
-  {
-    const cleared = await admin.rpc("clear_storage_purge_for_user", { p_user: userId });
-    if (cleared.error) {
-      console.error("clear_storage_purge_for_user failed", cleared.error.message);
-      return json({ error: "storage_cleanup_failed" }, 500);
-    }
-  }
-
-  // Queue EVERY listed path before touching the account: a crash or timeout from here on leaves
-  // all of them for the sweep (which only claims paths of accounts that no longer exist).
-  for (const [bucket, list] of lists) {
-    if (!(await queuePaths(admin, bucket, userId, list))) {
-      for (const [b, l] of lists) await abortPaths(admin, b, userId, l);
-      return json({ error: "storage_cleanup_failed" }, 500);
+    // FS-02: revoke only the temporary local session minted by verifyOtp on `anon` (never
+    // `scope: "global"`, which would revoke the caller's mobile session before deleteUser succeeds).
+    try {
+      await anon.auth.signOut({ scope: "local" });
+    } catch {
+      // Best-effort cleanup before deleteUser removes all sessions.
     }
   }
 
@@ -249,20 +241,34 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const detach = await admin.rpc("detach_account_storage_owner", { p_user: userId });
   if (detach.error) console.error("detach_account_storage_owner failed", detach.error.message);
 
-  // Delete the auth user before removing storage. If it fails nothing was removed and a retry is
-  // safe; the queued paths stay (the sweep never claims paths of an account that still exists, and
-  // the retry re-stamps them), so a deleteUser that actually went through despite the error still
-  // gets its storage purged.
-  const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  // FS-08: deleteUser triggers profiles_before_delete -> purge_account_data(userId) inside the
+  // same DB transaction, locking journeys FOR UPDATE and queueing only the paths of journeys and
+  // conversations that truly die with the account.
+  let { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  if (deleteError) {
+    // Retry once after a short delay in case a simultaneous co-member deleteUser hit a transient
+    // lock/deadlock rollback during group ownership handover.
+    await new Promise((r) => setTimeout(r, 150));
+    try {
+      const check = await admin.auth.admin.getUserById(userId);
+      if (!check.error && check.data?.user) {
+        ({ error: deleteError } = await admin.auth.admin.deleteUser(userId));
+      } else if (check.error?.status === 404 || check.error?.code === "user_not_found") {
+        deleteError = null;
+      }
+    } catch {
+      // Keep original deleteError if lookup threw.
+    }
+  }
   if (deleteError) {
     console.error("deleteUser failed", deleteError.message);
     return json({ error: "delete_failed" }, 500);
   }
-  let removed = 0;
-  for (const [bucket, list] of lists) removed += await removePaths(admin, bucket, list);
 
-  // Second pass: files uploaded between the first listing and deleteUser. The folder-based
-  // listings (avatars/{uid}, checkins/*/{uid}) still resolve after the user is gone.
+  let removed = await drainClaimedPurge(admin);
+
+  // Second pass: folder-based objects (avatars/{uid}, checkins/*/{uid}, messages/*/{uid}) uploaded
+  // in a racing request right around deleteUser.
   for (const [rpc, bucket] of [
     ["account_media_paths", "media"],
     ["account_message_paths", "messages"],
@@ -279,4 +285,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     removed += await removePaths(admin, bucket, again.paths);
   }
   return json({ deleted: true, removed_objects: removed });
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(async (req: Request): Promise<Response> => {
+    try {
+      return await handle(req);
+    } catch (e) {
+      console.error("delete-account failed", e instanceof Error ? e.message : String(e));
+      return json({ error: "internal" }, 500);
+    }
+  });
+}
