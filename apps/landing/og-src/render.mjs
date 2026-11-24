@@ -37,6 +37,10 @@ const MIME = {
   '.txt': 'text/plain; charset=utf-8',
 };
 
+const NEW_SCREENS_DIR = fs.existsSync('E:/Ourney/Ourney/.claude/worktrees/landing-screens/apps/landing/assets/screens/hub.webp')
+  ? 'E:/Ourney/Ourney/.claude/worktrees/landing-screens/apps/landing/assets/screens'
+  : path.join(LANDING_DIR, 'assets', 'screens');
+
 const PHOTO_MAP = {
   '/og-src/photos/ielts-cover.webp': 'E:/Ourney/agy-work/photos/ielts_study/cover.webp',
   '/og-src/photos/ielts-01.webp': 'E:/Ourney/agy-work/photos/ielts_study/01.webp',
@@ -44,6 +48,12 @@ const PHOTO_MAP = {
   '/og-src/photos/ielts-04.webp': 'E:/Ourney/agy-work/photos/ielts_study/04.webp',
   '/og-src/photos/run-01.webp': 'E:/Ourney/agy-work/photos/morning_run/01.webp',
   '/og-src/photos/run-02.webp': 'E:/Ourney/agy-work/photos/morning_run/02.webp',
+  '/og-src/photos/hub.webp': path.join(NEW_SCREENS_DIR, 'hub.webp'),
+  '/og-src/photos/share-travel.webp': path.join(NEW_SCREENS_DIR, 'share-travel.webp'),
+  '/og-src/photos/wrapped-run.webp': path.join(NEW_SCREENS_DIR, 'wrapped-run.webp'),
+  '/assets/screens/hub.webp': path.join(NEW_SCREENS_DIR, 'hub.webp'),
+  '/assets/screens/share-travel.webp': path.join(NEW_SCREENS_DIR, 'share-travel.webp'),
+  '/assets/screens/wrapped-run.webp': path.join(NEW_SCREENS_DIR, 'wrapped-run.webp'),
 };
 
 function startServer(rootDir) {
