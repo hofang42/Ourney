@@ -163,26 +163,52 @@ void main() {
         host(UiButton.ghost(label: 'Go', onPressed: () {})),
       );
       final g = await tester.startGesture(tester.getCenter(find.text('Go')));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
-      final scale = tester.widget<AnimatedScale>(find.byType(AnimatedScale));
-      expect(scale.scale, UiMotion.pressScale);
+      final scaleTransform = tester.widget<Transform>(
+        find.byKey(const ValueKey('ui-pressable-surface-scale')),
+      );
+      expect(
+        scaleTransform.transform.storage[0],
+        closeTo(UiMotion.pressScale, 0.001),
+      );
       await g.up();
+      await tester.pumpAndSettle();
     });
 
     testWidgets('primary button uses the sticker press', (tester) async {
       await tester.pumpWidget(host(UiButton(label: 'Go', onPressed: () {})));
-      AnimatedContainer sticker() => tester.widget<AnimatedContainer>(
-        find.byType(AnimatedContainer).first,
+      final shadowFinder = find.byKey(
+        const ValueKey('ui-pressable-static-shadow'),
       );
-      expect(sticker().decoration, isA<BoxDecoration>());
-      expect((sticker().decoration! as BoxDecoration).boxShadow, hasLength(1));
+      expect(shadowFinder, findsOneWidget);
+      final surfaceTransformFinder = find.byKey(
+        const ValueKey('ui-pressable-surface-translate'),
+      );
+      expect(
+        tester
+            .widget<Transform>(surfaceTransformFinder)
+            .transform
+            .getTranslation()
+            .x,
+        0,
+      );
       final g = await tester.startGesture(tester.getCenter(find.text('Go')));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
-      // Pressed: no scale, shadow gone, translated by the 4dp offset.
-      expect(tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale, 1);
-      expect((sticker().decoration! as BoxDecoration).boxShadow, isEmpty);
-      expect(sticker().transform!.getTranslation().x, UiShadow.large);
+      // Pressed: no scale, translated flush over the 4dp static shadow.
+      expect(
+        find.byKey(const ValueKey('ui-pressable-surface-scale')),
+        findsNothing,
+      );
+      final t = tester
+          .widget<Transform>(surfaceTransformFinder)
+          .transform
+          .getTranslation();
+      expect(t.x, closeTo(UiShadow.large, 0.01));
+      expect(t.y, closeTo(UiShadow.large, 0.01));
       await g.up();
+      await tester.pumpAndSettle();
     });
 
     testWidgets(

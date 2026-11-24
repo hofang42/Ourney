@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -12,21 +14,41 @@ Widget _host(
   Widget child, {
   bool disableAnimations = false,
   Brightness brightness = Brightness.light,
+  TextDirection textDirection = TextDirection.ltr,
+  EdgeInsets padding = EdgeInsets.zero,
 }) {
   return MaterialApp(
     theme: OurneyTheme.build(brightness),
-    themeAnimationDuration: disableAnimations
-        ? Duration.zero
-        : kThemeAnimationDuration,
+    themeAnimationDuration: Duration.zero,
     builder: (context, appChild) => MediaQuery(
       data: MediaQuery.of(context).copyWith(
         size: const Size(390, 844),
         disableAnimations: disableAnimations,
+        padding: padding,
       ),
-      child: appChild!,
+      child: Directionality(
+        textDirection: textDirection,
+        child: appChild!,
+      ),
     ),
     home: Scaffold(body: Center(child: child)),
   );
+}
+
+Future<Uint8List> _captureBoundaryRgba(
+  WidgetTester tester,
+  GlobalKey boundaryKey,
+) async {
+  final boundary =
+      boundaryKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+  Uint8List? bytes;
+  await tester.runAsync(() async {
+    final image = await boundary.toImage(pixelRatio: 1.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+    image.dispose();
+    bytes = byteData!.buffer.asUint8List();
+  });
+  return bytes!;
 }
 
 void main() {
@@ -151,51 +173,63 @@ void main() {
       tester.platformDispatcher.clearAllTestValues();
     });
 
-    testWidgets('UiHaptics and OurneyHaptics share enabled flag and invoke channel', (
-      tester,
-    ) async {
-      final calls = <String>[];
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-            if (call.method == 'HapticFeedback.vibrate') {
-              calls.add(call.arguments as String? ?? '');
-            }
-            return null;
-          });
-      addTearDown(() {
-        UiHaptics.enabled = true;
+    testWidgets(
+      'UiHaptics and OurneyHaptics share enabled flag, invoke channel, and OurneyHaptics.success() spawns no delayed timer',
+      (tester) async {
+        final calls = <String>[];
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(SystemChannels.platform, null);
-      });
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'HapticFeedback.vibrate') {
+                calls.add(call.arguments as String? ?? '');
+              }
+              return null;
+            });
+        addTearDown(() {
+          UiHaptics.enabled = true;
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
 
-      await UiHaptics.selection();
-      await UiHaptics.pressLight();
-      await UiHaptics.shutterMedium();
-      await UiHaptics.stampImpact();
-      await UiHaptics.warning();
-      expect(calls, [
-        'HapticFeedbackType.selectionClick',
-        'HapticFeedbackType.lightImpact',
-        'HapticFeedbackType.mediumImpact',
-        'HapticFeedbackType.mediumImpact',
-        'HapticFeedbackType.heavyImpact',
-      ]);
+        await UiHaptics.selection();
+        await UiHaptics.pressLight();
+        await UiHaptics.reject();
+        await UiHaptics.shutterMedium();
+        await UiHaptics.stampImpact();
+        await UiHaptics.success();
+        await UiHaptics.warning();
+        expect(calls, [
+          'HapticFeedbackType.selectionClick',
+          'HapticFeedbackType.lightImpact',
+          'HapticFeedbackType.lightImpact',
+          'HapticFeedbackType.mediumImpact',
+          'HapticFeedbackType.mediumImpact',
+          'HapticFeedbackType.mediumImpact',
+          'HapticFeedbackType.heavyImpact',
+        ]);
 
-      calls.clear();
-      OurneyHaptics.enabled = false;
-      expect(UiHaptics.enabled, isFalse);
-      await UiHaptics.pressLight();
-      await UiHaptics.milestoneSuccess();
-      expect(calls, isEmpty);
+        // OurneyHaptics.success() routes to single-beat UiHaptics.success()
+        // without spawning a 110ms Timer that would fail widget tests.
+        calls.clear();
+        OurneyHaptics.success();
+        await tester.pump();
+        expect(calls, ['HapticFeedbackType.mediumImpact']);
 
-      OurneyHaptics.enabled = true;
-      expect(UiHaptics.enabled, isTrue);
-    });
+        calls.clear();
+        OurneyHaptics.enabled = false;
+        expect(UiHaptics.enabled, isFalse);
+        await UiHaptics.pressLight();
+        await UiHaptics.milestoneSuccess();
+        expect(calls, isEmpty);
+
+        OurneyHaptics.enabled = true;
+        expect(UiHaptics.enabled, isTrue);
+      },
+    );
   });
 
   group('UiPressable, UiButton & UiBarIconButton Soft Neo-Brutalism physics', () {
     testWidgets(
-      '3-point pump choreography on primary UiButton: t=0, t=55ms mid-flight, t=settled (no scale-down, static shadow, haptics)',
+      '3-point pump choreography on primary UiButton: t=0, t=55ms mid-flight, t=settled (no scale-down, static shadow, haptics, zero test shims)',
       (tester) async {
         final haptics = <String>[];
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -221,10 +255,24 @@ void main() {
           ),
         );
 
-        // Static shadow box is mounted once.
+        // Static shadow box is mounted once; no AnimatedContainer or AnimatedScale shim exists.
         expect(
           find.byKey(const ValueKey('ui-pressable-static-shadow')),
           findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(UiPressable),
+            matching: find.byType(AnimatedContainer),
+          ),
+          findsNothing,
+        );
+        expect(
+          find.descendant(
+            of: find.byType(UiPressable),
+            matching: find.byType(AnimatedScale),
+          ),
+          findsNothing,
         );
 
         final textFinder = find.text('Chụp ngay');
@@ -234,10 +282,6 @@ void main() {
         final gesture = await tester.startGesture(tester.getCenter(textFinder));
         await tester.pump();
         expect(tester.getTopLeft(textFinder) - origin, Offset.zero);
-        expect(
-          tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale,
-          1.0,
-        );
 
         // 2. Mid-flight (t = 55ms)
         await tester.pump(const Duration(milliseconds: 55));
@@ -245,10 +289,6 @@ void main() {
         expect(midDelta.dx, greaterThan(0.0));
         expect(midDelta.dx, lessThan(UiShadow.large));
         expect(midDelta.dy, closeTo(midDelta.dx, 0.001));
-        expect(
-          tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale,
-          1.0,
-        );
 
         // 3. Settled hold (t >= 110ms)
         await tester.pumpAndSettle();
@@ -273,7 +313,7 @@ void main() {
     );
 
     testWidgets(
-      'UiBarIconButton uses 2dp (UiShadow.tiny) sticker press instead of 0.96 scale-down',
+      'UiBarIconButton has NO shadow at idle (pixel-identical to main) and uses 2dp flat translate press without 0.96 scale-down',
       (tester) async {
         var tapped = 0;
         await tester.pumpWidget(
@@ -286,6 +326,16 @@ void main() {
           ),
         );
 
+        // No static shadow block at idle.
+        expect(
+          find.byKey(const ValueKey('ui-pressable-static-shadow')),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const ValueKey('ui-pressable-surface-scale')),
+          findsNothing,
+        );
+
         final btn = find.byKey(const ValueKey('ui-bar-icon-button'));
         final origin = tester.getTopLeft(btn);
 
@@ -295,10 +345,6 @@ void main() {
         final mid = tester.getTopLeft(btn) - origin;
         expect(mid.dx, greaterThan(0.0));
         expect(mid.dx, lessThan(UiShadow.tiny));
-        expect(
-          tester.widget<AnimatedScale>(find.byType(AnimatedScale)).scale,
-          1.0,
-        );
 
         await tester.pumpAndSettle();
         expect(
@@ -310,6 +356,218 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.getTopLeft(btn), origin);
         expect(tapped, 1);
+        expect(tester.binding.transientCallbackCount, 0);
+      },
+    );
+
+    testWidgets(
+      'golden-free idle-pixel test: UiButton and UiBarIconButton RGBA renders are byte-identical before press and after press settle (and UiBarIconButton idle matches shadowless reference)',
+      (tester) async {
+        final btnBoundary = GlobalKey();
+        final barBtnBoundary = GlobalKey();
+        final refBarBtnBoundary = GlobalKey();
+
+        await tester.pumpWidget(
+          _host(
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RepaintBoundary(
+                  key: btnBoundary,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: UiButton(
+                      label: 'Tiếp tục',
+                      expand: false,
+                      onPressed: () {},
+                    ),
+                  ),
+                ),
+                RepaintBoundary(
+                  key: barBtnBoundary,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: UiBarIconButton(
+                      glyph: const OurneyIcon(name: 'back', size: 21),
+                      label: 'Back',
+                      onPressed: () {},
+                    ),
+                  ),
+                ),
+                RepaintBoundary(
+                  key: refBarBtnBoundary,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: SizedBox(
+                      width: UiSize.tap,
+                      height: UiSize.tap,
+                      child: Center(
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: OurneyUi.light.surface,
+                            shape: BoxShape.circle,
+                            border: OurneyUi.light.stickerBorder(UiBorder.thin),
+                          ),
+                          child: const OurneyIcon(name: 'back', size: 21),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+        final btnIdleBefore = await _captureBoundaryRgba(tester, btnBoundary);
+        final barIdleBefore = await _captureBoundaryRgba(tester, barBtnBoundary);
+        final refBarIdle = await _captureBoundaryRgba(tester, refBarBtnBoundary);
+
+        // 1. UiBarIconButton at idle is byte-for-byte identical to the
+        // pre-M0 flat 44dp shadowless reference circle.
+        expect(barIdleBefore, equals(refBarIdle));
+
+        // 2. Press UiButton, verify mid-flight pixels change, release and
+        // verify settled pixels match idle before press byte-for-byte.
+        final btnGesture = await tester.startGesture(
+          tester.getCenter(find.text('Tiếp tục')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
+        final btnMidPress = await _captureBoundaryRgba(tester, btnBoundary);
+        expect(btnMidPress, isNot(equals(btnIdleBefore)));
+
+        await btnGesture.up();
+        await tester.pumpAndSettle();
+        final btnIdleAfter = await _captureBoundaryRgba(tester, btnBoundary);
+        expect(btnIdleAfter, equals(btnIdleBefore));
+
+        // 3. Press UiBarIconButton, verify mid-flight pixels change, release
+        // and verify settled pixels match idle before press byte-for-byte.
+        final barGesture = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey('ui-bar-icon-button'))),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
+        final barMidPress = await _captureBoundaryRgba(tester, barBtnBoundary);
+        expect(barMidPress, isNot(equals(barIdleBefore)));
+
+        await barGesture.up();
+        await tester.pumpAndSettle();
+        final barIdleAfter = await _captureBoundaryRgba(tester, barBtnBoundary);
+        expect(barIdleAfter, equals(barIdleBefore));
+      },
+    );
+
+    testWidgets(
+      'shadowOffset == 0 ghost control animates 0.96 scale mid-flight at 55ms; stationary >= 48x48 hit box and tap-to-loading reset work cleanly',
+      (tester) async {
+        // 1. Mid-flight scale on shadowOffset == 0 ghost button
+        await tester.pumpWidget(
+          _host(UiButton.ghost(label: 'Bỏ qua', onPressed: () {})),
+        );
+        final scaleFinder = find.byKey(
+          const ValueKey('ui-pressable-surface-scale'),
+        );
+        double currentScale() =>
+            tester.widget<Transform>(scaleFinder).transform.storage[0];
+
+        expect(currentScale(), 1.0);
+        final ghostGesture = await tester.startGesture(
+          tester.getCenter(find.text('Bỏ qua')),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
+        expect(currentScale(), greaterThan(UiMotion.pressScale));
+        expect(currentScale(), lessThan(1.0));
+
+        await tester.pumpAndSettle();
+        expect(currentScale(), closeTo(UiMotion.pressScale, 0.001));
+
+        await ghostGesture.up();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
+        expect(currentScale(), greaterThan(UiMotion.pressScale));
+        expect(currentScale(), lessThan(1.0));
+
+        await tester.pumpAndSettle();
+        expect(currentScale(), closeTo(1.0, 0.001));
+
+        // 2. Stationary >= 48x48 hit-test box while visual surface shifts (+4, +4)
+        // and immediate controller reset when tapping transitions into disabled state.
+        var isDisabled = false;
+        var taps = 0;
+        late StateSetter setHost;
+        await tester.pumpWidget(
+          _host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setHost = setState;
+                return UiButton(
+                  compact: true,
+                  expand: false,
+                  label: 'Gửi',
+                  onPressed: isDisabled
+                      ? null
+                      : () {
+                          taps++;
+                          setHost(() => isDisabled = true);
+                        },
+                );
+              },
+            ),
+          ),
+        );
+
+        final pressableFinder = find.byType(UiPressable);
+        final hitRectBefore = tester.getRect(pressableFinder);
+        expect(hitRectBefore.width, greaterThanOrEqualTo(48));
+        expect(hitRectBefore.height, greaterThanOrEqualTo(48));
+
+        // Start press near top-left edge (origin + (2, 2)): even after the
+        // visual surface shifts (+4, +4), the outer GestureDetector hit box
+        // remains stationary at hitRectBefore and commits the tap on release.
+        final edgePoint = hitRectBefore.topLeft + const Offset(2, 2);
+        final edgeGesture = await tester.startGesture(edgePoint);
+        await tester.pump();
+        await tester.pumpAndSettle();
+        expect(tester.getRect(pressableFinder), hitRectBefore);
+
+        await edgeGesture.up();
+        await tester.pump();
+
+        // Tapping immediately transitioned UiButton into disabled state.
+        // _ctrl must be stopped and reset to 0.0 immediately with zero
+        // lingering transient callbacks and static shadow unmounted.
+        expect(taps, 1);
+        expect(isDisabled, isTrue);
+        expect(tester.binding.transientCallbackCount, 0);
+        expect(
+          find.byKey(const ValueKey('ui-pressable-static-shadow')),
+          findsNothing,
+        );
+
+        // 3. No-motion configuration (shadowOffset: 0, pressOffset: 0, pressScale: 1.0)
+        // allocates zero controllers/tickers on press.
+        await tester.pumpWidget(
+          _host(
+            UiPressable(
+              pressScale: 1.0,
+              onPressed: () {},
+              child: const Text('Static Tap'),
+            ),
+          ),
+        );
+        final staticGesture = await tester.startGesture(
+          tester.getCenter(find.text('Static Tap')),
+        );
+        await tester.pump();
+        expect(tester.binding.transientCallbackCount, 0);
+        await staticGesture.up();
+        await tester.pump();
         expect(tester.binding.transientCallbackCount, 0);
       },
     );
@@ -343,9 +601,9 @@ void main() {
     );
   });
 
-  group('UiDirectionalSwitcher choreography & Reduce Motion parity', () {
+  group('UiDirectionalSwitcher choreography, RTL & Reduce Motion parity', () {
     testWidgets(
-      'Next (direction: +1) slides incoming from +dx; Back (direction: -1) slides incoming from -dx',
+      'Next (direction: +1) slides incoming from +18dp; Back (direction: -1) slides incoming from -18dp; RTL flips horizontal direction',
       (tester) async {
         var step = 1;
         var dir = 1;
@@ -373,15 +631,20 @@ void main() {
 
         final originX = tester.getTopLeft(find.text('Step 1')).dx;
 
-        // 1. Advance Step 1 -> Step 2 (direction: +1)
+        // 1. Advance Step 1 -> Step 2 (direction: +1, LTR)
         setHost(() {
           step = 2;
           dir = 1;
         });
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 80));
+        // At t = 1ms, incoming offset is <= 18.0dp (never 22.5dp double-translated).
+        await tester.pump(const Duration(milliseconds: 1));
+        final step2StartDelta =
+            tester.getTopLeft(find.text('Step 2')).dx - originX;
+        expect(step2StartDelta, greaterThan(15.0));
+        expect(step2StartDelta, lessThanOrEqualTo(18.0));
 
-        // Incoming Step 2 is at dx > 0 relative to resting originX.
+        await tester.pump(const Duration(milliseconds: 79));
         final step2MidX = tester.getTopLeft(find.text('Step 2')).dx;
         expect(step2MidX - originX, greaterThan(0.0));
         expect(step2MidX - originX, lessThan(18.0));
@@ -389,7 +652,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(tester.getTopLeft(find.text('Step 2')).dx, closeTo(originX, 0.01));
 
-        // 2. Go Back Step 2 -> Step 1 (direction: -1)
+        // 2. Go Back Step 2 -> Step 1 (direction: -1, LTR)
         setHost(() {
           step = 1;
           dir = -1;
@@ -397,19 +660,51 @@ void main() {
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 80));
 
-        // Incoming Step 1 is at dx < 0 relative to resting originX.
         final step1MidX = tester.getTopLeft(find.text('Step 1')).dx;
         expect(step1MidX - originX, lessThan(0.0));
         expect(step1MidX - originX, greaterThan(-18.0));
 
         await tester.pumpAndSettle();
         expect(tester.getTopLeft(find.text('Step 1')).dx, closeTo(originX, 0.01));
+
+        // 3. RTL flips direction (+1 Next enters from -dx in RTL)
+        await tester.pumpWidget(
+          _host(
+            textDirection: TextDirection.rtl,
+            StatefulBuilder(
+              builder: (context, setState) {
+                setHost = setState;
+                return UiDirectionalSwitcher(
+                  step: step,
+                  direction: dir,
+                  child: SizedBox(
+                    width: 200,
+                    height: 60,
+                    child: Text('RTL $step'),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+        final rtlOriginX = tester.getTopLeft(find.text('RTL 1')).dx;
+        setHost(() {
+          step = 2;
+          dir = 1;
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 80));
+        final rtlStep2MidX = tester.getTopLeft(find.text('RTL 2')).dx;
+        expect(rtlStep2MidX - rtlOriginX, lessThan(0.0));
+        expect(rtlStep2MidX - rtlOriginX, greaterThan(-18.0));
+
+        await tester.pumpAndSettle();
         expect(tester.binding.transientCallbackCount, 0);
       },
     );
 
     testWidgets(
-      'UiDirectionalSwitcher under Reduce Motion has zero horizontal offset',
+      'UiDirectionalSwitcher under Reduce Motion has zero horizontal offset and mounts no SlideTransition',
       (tester) async {
         var step = 1;
         late StateSetter setHost;
@@ -440,6 +735,13 @@ void main() {
         await tester.pump(const Duration(milliseconds: 80));
 
         expect(tester.getTopLeft(find.text('Step 2')).dx, closeTo(originX, 0.01));
+        expect(
+          find.descendant(
+            of: find.byType(UiDirectionalSwitcher),
+            matching: find.byType(SlideTransition),
+          ),
+          findsNothing,
+        );
         await tester.pump(const Duration(milliseconds: 100));
         expect(find.text('Step 2'), findsOneWidget);
         expect(tester.binding.transientCallbackCount, 0);
@@ -458,7 +760,7 @@ void main() {
     });
 
     testWidgets(
-      '3-point pump choreography on UiStaggerItem and Reduce Motion parity',
+      '3-point pump choreography on UiStaggerItem, disabled fast path, and Reduce Motion parity',
       (tester) async {
         await tester.pumpWidget(
           _host(
@@ -467,6 +769,11 @@ void main() {
               children: const [
                 UiStaggerItem(index: 0, child: Text('Card 0')),
                 UiStaggerItem(index: 2, child: Text('Card 2')),
+                UiStaggerItem(
+                  index: 1,
+                  enabled: false,
+                  child: Text('Disabled Card'),
+                ),
               ],
             ),
           ),
@@ -482,6 +789,7 @@ void main() {
               ),
             )
             .toList();
+        expect(fades, hasLength(2));
         expect(fades[0].opacity.value, greaterThan(0.0));
         expect(fades[0].opacity.value, lessThan(1.0));
         expect(fades[1].opacity.value, 0.0);
@@ -497,7 +805,7 @@ void main() {
         expect(fades[1].opacity.value, 1.0);
         expect(tester.binding.transientCallbackCount, 0);
 
-        // Reduce Motion: renders at Offset.zero immediately with 0 pending timers.
+        // Reduce Motion: returns child directly with zero Transform wrapper or pending timers.
         await tester.pumpWidget(
           _host(
             disableAnimations: true,
@@ -505,13 +813,14 @@ void main() {
           ),
         );
         await tester.pump();
-        final t = tester.widget<Transform>(
+        expect(find.text('Reduced Card'), findsOneWidget);
+        expect(
           find.descendant(
             of: find.byType(UiStaggerItem),
             matching: find.byType(Transform),
           ),
+          findsNothing,
         );
-        expect(t.transform.getTranslation().y, 0.0);
         expect(tester.binding.transientCallbackCount, 0);
       },
     );
@@ -519,7 +828,7 @@ void main() {
 
   group('UiCountRoll odometer choreography & Reduce Motion parity', () {
     testWidgets(
-      'rolls from initialValue and on value updates with 3-point mid-flight verification',
+      'rolls from initialValue and on value updates with 3-point mid-flight dy/opacity verification and single-line ellipsis',
       (tester) async {
         var count = 21;
         late StateSetter setHost;
@@ -533,32 +842,75 @@ void main() {
                   value: count,
                   initialValue: 20,
                   duration: UiMotion.normal,
+                  format: (v) => '$v ngày liên tiếp',
                 );
               },
             ),
           ),
         );
 
-        // Mid-flight on initial roll (20 -> 21): both '20' and '21' are present.
+        // Mid-flight on initial roll (20 -> 21): both texts are present with
+        // strictly interpolated FadeTransition opacities and vertical dy offsets.
         await tester.pump(const Duration(milliseconds: 80));
-        expect(find.text('20'), findsOneWidget);
-        expect(find.text('21'), findsOneWidget);
+        expect(find.text('20 ngày liên tiếp'), findsOneWidget);
+        expect(find.text('21 ngày liên tiếp'), findsOneWidget);
 
-        // Settled: only '21' remains.
+        final fades = tester
+            .widgetList<FadeTransition>(
+              find.descendant(
+                of: find.byType(UiCountRoll),
+                matching: find.byType(FadeTransition),
+              ),
+            )
+            .toList();
+        expect(fades, hasLength(2));
+        expect(fades[0].opacity.value, greaterThan(0.0));
+        expect(fades[0].opacity.value, lessThan(1.0));
+        expect(fades[1].opacity.value, greaterThan(0.0));
+        expect(fades[1].opacity.value, lessThan(1.0));
+
+        final transforms = tester
+            .widgetList<Transform>(
+              find.descendant(
+                of: find.byType(UiCountRoll),
+                matching: find.byType(Transform),
+              ),
+            )
+            .toList();
+        expect(transforms, hasLength(2));
+        final outDy = transforms[0].transform.getTranslation().y;
+        final inDy = transforms[1].transform.getTranslation().y;
+        expect(outDy, lessThan(0.0));
+        expect(outDy, greaterThan(-14.0));
+        expect(inDy, greaterThan(0.0));
+        expect(inDy, lessThan(14.0));
+
+        // Settled: only '21 ngày liên tiếp' remains with single-line overflow safety.
         await tester.pumpAndSettle();
-        expect(find.text('20'), findsNothing);
-        expect(find.text('21'), findsOneWidget);
+        expect(find.text('20 ngày liên tiếp'), findsNothing);
+        final settledText = tester.widget<Text>(find.text('21 ngày liên tiếp'));
+        expect(settledText.maxLines, 1);
+        expect(settledText.softWrap, isFalse);
+        expect(settledText.overflow, TextOverflow.ellipsis);
 
-        // Increment 21 -> 22.
-        setHost(() => count = 22);
+        // Decrement 21 -> 20 reverses vertical roll sign.
+        setHost(() => count = 20);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 80));
-        expect(find.text('21'), findsOneWidget);
-        expect(find.text('22'), findsOneWidget);
+        final decTransforms = tester
+            .widgetList<Transform>(
+              find.descendant(
+                of: find.byType(UiCountRoll),
+                matching: find.byType(Transform),
+              ),
+            )
+            .toList();
+        expect(decTransforms[0].transform.getTranslation().y, greaterThan(0.0));
+        expect(decTransforms[1].transform.getTranslation().y, lessThan(0.0));
 
         await tester.pumpAndSettle();
-        expect(find.text('21'), findsNothing);
-        expect(find.text('22'), findsOneWidget);
+        expect(find.text('21 ngày liên tiếp'), findsNothing);
+        expect(find.text('20 ngày liên tiếp'), findsOneWidget);
         expect(tester.binding.transientCallbackCount, 0);
       },
     );
@@ -582,25 +934,49 @@ void main() {
 
   group('UiRefreshScaffold pull-to-refresh choreography & Reduce Motion', () {
     testWidgets(
-      'overscroll pulls sticker badge, crosses threshold, spins during refresh, and collapses',
+      'overscroll pulls sticker badge below top safe area, fires single-shot haptic, obeys TickerMode, and collapses',
       (tester) async {
+        final haptics = <String>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'HapticFeedback.vibrate') {
+                haptics.add(call.arguments as String? ?? '');
+              }
+              return null;
+            });
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+
         final completer = Completer<void>();
         var refreshCalls = 0;
+        var tickerEnabled = true;
+        late StateSetter setHost;
 
         await tester.pumpWidget(
           _host(
-            UiRefreshScaffold(
-              onRefresh: () {
-                refreshCalls++;
-                return completer.future;
+            padding: const EdgeInsets.only(top: 44),
+            StatefulBuilder(
+              builder: (context, setState) {
+                setHost = setState;
+                return TickerMode(
+                  enabled: tickerEnabled,
+                  child: UiRefreshScaffold(
+                    onRefresh: () {
+                      refreshCalls++;
+                      return completer.future;
+                    },
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: const [
+                        SizedBox(height: 120, child: Center(child: Text('Row 1'))),
+                        SizedBox(height: 120, child: Center(child: Text('Row 2'))),
+                      ],
+                    ),
+                  ),
+                );
               },
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 120, child: Center(child: Text('Row 1'))),
-                  SizedBox(height: 120, child: Center(child: Text('Row 2'))),
-                ],
-              ),
             ),
           ),
         );
@@ -611,32 +987,105 @@ void main() {
         final gesture = await tester.startGesture(const Offset(195, 200));
         await gesture.moveBy(const Offset(0, 40));
         await tester.pump();
-        // Mid-pull: badge is visible.
-        expect(find.byKey(const ValueKey('ui-refresh-badge')), findsOneWidget);
+        final badgeFinder = find.byKey(const ValueKey('ui-refresh-badge'));
+        expect(badgeFinder, findsOneWidget);
+        // Respects top safe area (44dp + >= 8dp = >= 52dp).
+        expect(tester.getTopLeft(badgeFinder).dy, greaterThanOrEqualTo(52.0));
+        expect(haptics, isEmpty);
 
-        await gesture.moveBy(const Offset(0, 60));
+        // Cross threshold once -> fires selectionClick exactly once even as drag continues.
+        await gesture.moveBy(const Offset(0, 45));
         await tester.pump();
+        await gesture.moveBy(const Offset(0, 20));
+        await tester.pump();
+        expect(haptics, ['HapticFeedbackType.selectionClick']);
+
         await gesture.up();
         await tester.pump();
 
         expect(refreshCalls, 1);
         expect(
           find.descendant(
-            of: find.byKey(const ValueKey('ui-refresh-badge')),
+            of: badgeFinder,
             matching: find.byType(RotationTransition),
           ),
-          findsOneWidget,
+        findsOneWidget,
         );
+
+        // Toggling TickerMode(enabled: false) while refreshing stops _spinCtrl.
+        setHost(() => tickerEnabled = false);
+        await tester.pump();
+        expect(tester.binding.transientCallbackCount, 0);
+
+        setHost(() => tickerEnabled = true);
+        await tester.pump();
+        expect(tester.binding.transientCallbackCount, greaterThan(0));
 
         // Complete refresh and verify 180ms collapse.
         completer.complete();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 90));
-        expect(find.byKey(const ValueKey('ui-refresh-badge')), findsOneWidget);
+        expect(badgeFinder, findsOneWidget);
 
         await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('ui-refresh-badge')), findsNothing);
+        expect(badgeFinder, findsNothing);
         expect(tester.binding.transientCallbackCount, 0);
+      },
+    );
+
+    testWidgets(
+      'passive ballistic scroll-to-top fling never triggers refresh or haptics',
+      (tester) async {
+        final haptics = <String>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+              if (call.method == 'HapticFeedback.vibrate') {
+                haptics.add(call.arguments as String? ?? '');
+              }
+              return null;
+            });
+        addTearDown(() {
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(SystemChannels.platform, null);
+        });
+
+        var refreshCalls = 0;
+        final controller = ScrollController(initialScrollOffset: 400);
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          _host(
+            UiRefreshScaffold(
+              onRefresh: () async {
+                refreshCalls++;
+              },
+              child: ListView.builder(
+                controller: controller,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                itemCount: 30,
+                itemBuilder: (_, i) => SizedBox(
+                  height: 60,
+                  child: Center(child: Text('Item $i')),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(controller.offset, 400);
+        // Fling rapidly upward from mid-list so ballistic momentum overshoots the top edge.
+        await tester.fling(
+          find.byType(ListView),
+          const Offset(0, 500),
+          3000,
+        );
+        await tester.pumpAndSettle();
+
+        expect(refreshCalls, 0);
+        expect(haptics, isEmpty);
+        expect(find.byKey(const ValueKey('ui-refresh-badge')), findsNothing);
       },
     );
 
@@ -680,37 +1129,161 @@ void main() {
     );
   });
 
-  group('buildUiPage (CustomTransitionPage) & UiHero Reduce Motion parity', () {
+  group('buildUiPage (CustomTransitionPage) & UiHero flight shuttle + Reduce Motion parity', () {
     for (final kind in UiPageTransition.values) {
-      testWidgets('buildUiPage animates ${kind.name} and respects Reduce Motion', (
-        tester,
-      ) async {
+      testWidgets(
+        'buildUiPage animates ${kind.name} mid-flight and settles in <= 160ms under Reduce Motion',
+        (tester) async {
+          var disableAnimations = false;
+          late StateSetter setAppState;
+
+          final router = GoRouter(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => Scaffold(
+                  body: Center(
+                    child: GestureDetector(
+                      onTap: () => context.push('/detail'),
+                      child: const Text('Open'),
+                    ),
+                  ),
+                ),
+              ),
+              GoRoute(
+                path: '/detail',
+                pageBuilder: (context, state) => buildUiPage<void>(
+                  context: context,
+                  state: state,
+                  kind: kind,
+                  opaque: false,
+                  fullscreenDialog: true,
+                  child: Scaffold(
+                    body: Center(
+                      child: GestureDetector(
+                        onTap: () => context.pop(),
+                        child: const Text('Detail Page'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+          addTearDown(router.dispose);
+
+          final appTheme = OurneyTheme.build(Brightness.light);
+          await tester.pumpWidget(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setAppState = setState;
+                return MaterialApp.router(
+                  theme: appTheme,
+                  themeAnimationDuration: Duration.zero,
+                  routerConfig: router,
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      disableAnimations: disableAnimations,
+                    ),
+                    child: child!,
+                  ),
+                );
+              },
+            ),
+          );
+
+          // 1. Normal motion (320ms): mid-flight at 120ms still has active transition ticker.
+          await tester.tap(find.text('Open'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 120));
+          expect(find.text('Detail Page'), findsOneWidget);
+          expect(tester.binding.transientCallbackCount, greaterThan(0));
+
+          await tester.pumpAndSettle();
+          expect(find.text('Detail Page'), findsOneWidget);
+          expect(tester.binding.transientCallbackCount, 0);
+
+          // Pop back to root.
+          await tester.tap(find.text('Detail Page'));
+          await tester.pumpAndSettle();
+          expect(find.text('Open'), findsOneWidget);
+
+          // 2. Reduce Motion (150ms fade): mid-flight at 75ms, completely settled by 160ms!
+          setAppState(() => disableAnimations = true);
+          await tester.pump();
+
+          await tester.tap(find.text('Open'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 75));
+          final fade = tester.widget<FadeTransition>(
+            find
+                .ancestor(
+                  of: find.text('Detail Page'),
+                  matching: find.byType(FadeTransition),
+                )
+                .first,
+          );
+          expect(fade.opacity.value, greaterThan(0.0));
+          expect(fade.opacity.value, lessThan(1.0));
+
+          // Advance to 160ms total (>= 150ms UiMotion.reducedFade): transition is 100% settled.
+          await tester.pump(const Duration(milliseconds: 85));
+          expect(fade.opacity.value, 1.0);
+          await tester.pump();
+          expect(tester.binding.transientCallbackCount, 0);
+        },
+      );
+    }
+
+    testWidgets(
+      'UiHero flight shuttle tweens borderRadiusBegin -> borderRadiusEnd without mounting a nested Hero or clipping the 2dp border',
+      (tester) async {
         final router = GoRouter(
           routes: [
             GoRoute(
               path: '/',
               builder: (context, state) => Scaffold(
                 body: Center(
-                  child: UiHero(
-                    tag: UiHeroTags.journeyBadge('j1'),
-                    child: TextButton(
-                      onPressed: () => context.push('/detail'),
-                      child: const Text('Open'),
+                  child: GestureDetector(
+                    onTap: () => context.push('/photo'),
+                    child: UiHero(
+                      tag: UiHeroTags.dayPhoto('e1'),
+                      borderRadiusBegin: BorderRadius.circular(12),
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: OurneyUi.light.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: OurneyUi.light.stickerBorder(UiBorder.standard),
+                        ),
+                        child: const Center(child: Text('Thumb')),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
             GoRoute(
-              path: '/detail',
+              path: '/photo',
               pageBuilder: (context, state) => buildUiPage<void>(
+                context: context,
                 state: state,
-                kind: kind,
-                child: const Scaffold(
+                child: Scaffold(
                   body: Center(
                     child: UiHero(
-                      tag: 'journey-badge-j1',
-                      child: Text('Detail Page'),
+                      tag: UiHeroTags.dayPhoto('e1'),
+                      borderRadiusEnd: BorderRadius.circular(24),
+                      child: Container(
+                        width: 240,
+                        height: 240,
+                        decoration: BoxDecoration(
+                          color: OurneyUi.light.surface,
+                          borderRadius: BorderRadius.circular(24),
+                          border: OurneyUi.light.stickerBorder(UiBorder.standard),
+                        ),
+                        child: const Center(child: Text('Full')),
+                      ),
                     ),
                   ),
                 ),
@@ -727,16 +1300,49 @@ void main() {
           ),
         );
 
-        await tester.tap(find.text('Open'));
+        await tester.tap(find.text('Thumb'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 120));
-        expect(find.text('Detail Page'), findsOneWidget);
+
+        final shuttleFinder = find.byKey(const ValueKey('ui-hero-shuttle'));
+        expect(shuttleFinder, findsOneWidget);
+
+        // 1. Flight shuttle must NOT contain a nested Hero widget.
+        expect(
+          find.descendant(of: shuttleFinder, matching: find.byType(Hero)),
+          findsNothing,
+        );
+
+        // 2. BorderRadius is interpolated mid-flight between 12 and 24, and the
+        // 2dp border is painted in the foreground DecoratedBox outside ClipRRect.
+        final clip = tester.widget<ClipRRect>(
+          find.descendant(of: shuttleFinder, matching: find.byType(ClipRRect)),
+        );
+        final midRadius = (clip.borderRadius as BorderRadius).topLeft.x;
+        expect(midRadius, greaterThan(12.0));
+        expect(midRadius, lessThan(24.0));
+
+        final fgBox = tester.widget<DecoratedBox>(
+          find
+              .descendant(
+                of: shuttleFinder,
+                matching: find.byWidgetPredicate(
+                  (w) =>
+                      w is DecoratedBox &&
+                      w.position == DecorationPosition.foreground,
+                ),
+              )
+              .first,
+        );
+        final fgDeco = fgBox.decoration as BoxDecoration;
+        expect(fgDeco.borderRadius, clip.borderRadius);
+        expect((fgDeco.border! as Border).top.width, UiBorder.standard);
 
         await tester.pumpAndSettle();
-        expect(find.text('Detail Page'), findsOneWidget);
+        expect(find.text('Full'), findsOneWidget);
         expect(tester.binding.transientCallbackCount, 0);
-      });
-    }
+      },
+    );
 
     testWidgets('UiHero disables HeroMode when Reduce Motion is enabled', (
       tester,

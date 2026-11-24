@@ -35,6 +35,7 @@ export 'components/text_area.dart';
 export 'journey_icons.dart';
 export 'journey_style_for.dart';
 export 'journey_styles.dart';
+export 'motion.dart';
 export 'skins.dart';
 export 'theme.dart';
 export 'tokens.dart';

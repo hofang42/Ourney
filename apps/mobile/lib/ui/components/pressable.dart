@@ -1,36 +1,28 @@
 import 'dart:async';
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 
-class _NoOpBoxPainter extends BoxPainter {
-  const _NoOpBoxPainter();
-
-  @override
-  void paint(Canvas canvas, Offset offset, ImageConfiguration configuration) {}
-}
-
-class _NoPaintBoxDecoration extends BoxDecoration {
-  const _NoPaintBoxDecoration({super.borderRadius, super.boxShadow});
-
-  @override
-  BoxPainter createBoxPainter([VoidCallback? onChanged]) =>
-      const _NoOpBoxPainter();
-}
-
 /// Soft Neo-Brutalism tactile press (`CLAUDE.md` §2.2) + `:focus-visible` 3px
 /// ring. Every tappable surface in the kit is built on this. Guarantees a
 /// 48x48 hit area.
 ///
-/// - When [shadowOffset] > 0 (sticker surfaces: buttons, cards, chips, bar icon
-///   buttons), renders a static background hard-shadow block offset by
+/// - When [shadowOffset] > 0 (sticker surfaces: buttons, cards, chips,
+///   shutters), renders a static background hard-shadow block offset by
 ///   `([shadowOffset], [shadowOffset])` and translates the foreground surface
 ///   by `([shadowOffset], [shadowOffset])` over [UiMotion.press] (`110ms`,
 ///   [UiCurves.easeOutStrong]) with **zero scale-down** and **zero per-frame
 ///   `BoxShadow` lerp**.
-/// - When [shadowOffset] == 0 (shadowless ghost/chromeless targets), scales to
-///   [UiMotion.pressScale] (`0.96`) over [UiMotion.press] (`110ms`).
+/// - When [shadowOffset] == 0 and [pressOffset] > 0 (flat outlined controls
+///   like [UiBarIconButton] that have no idle shadow), renders **no shadow at
+///   idle** and translates the foreground surface by `([pressOffset],
+///   [pressOffset])` on press without scaling down.
+/// - When [shadowOffset] == 0 and [pressOffset] == 0 (shadowless ghost /
+///   chromeless targets), scales to [pressScale] (`0.96` default) over
+///   [UiMotion.press] (`110ms`). If [pressScale] == `1.0`, no
+///   [AnimationController] or [Ticker] is allocated.
 class UiPressable extends StatefulWidget {
   const UiPressable({
     required this.child,
@@ -46,6 +38,8 @@ class UiPressable extends StatefulWidget {
     this.centerChild = false,
     this.shadowColor,
     this.shadowOffset = 0,
+    this.pressOffset = 0,
+    this.pressScale = UiMotion.pressScale,
     this.haptic = false,
     super.key,
   });
@@ -68,10 +62,18 @@ class UiPressable extends StatefulWidget {
   /// V2 sticker press: a hard offset shadow of [shadowOffset] dp in
   /// [shadowColor]. On press the child translates by the offset and the
   /// visible shadow collapses to 0 (`translate(4px,4px); box-shadow: none`)
-  /// instead of scaling. Leave [shadowOffset] at 0 for the plain 0.96 scale
-  /// press.
+  /// instead of scaling. Leave [shadowOffset] at 0 for flat controls.
   final Color? shadowColor;
   final double shadowOffset;
+
+  /// Optional flat press translation (in dp) when [shadowOffset] == 0 (e.g.
+  /// header icon buttons that remain shadowless at idle but translate slightly
+  /// on press instead of shrinking).
+  final double pressOffset;
+
+  /// Press scale factor when both [shadowOffset] and [pressOffset] are 0
+  /// (`0.96` default; pass `1.0` to disable scaling).
+  final double pressScale;
 
   /// Whether tapping fires [UiHaptics.pressLight] (enabled on primary
   /// [UiButton]s and hero triggers; off by default on generic list rows).
@@ -85,17 +87,11 @@ class _UiPressableState extends State<UiPressable>
     with SingleTickerProviderStateMixin {
   bool _down = false;
   bool _focused = false;
+  bool _reduced = false;
+  bool _active = false;
 
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: UiMotion.press,
-    reverseDuration: UiMotion.press,
-  );
-  late final CurvedAnimation _curved = CurvedAnimation(
-    parent: _ctrl,
-    curve: UiCurves.easeOutStrong,
-    reverseCurve: UiCurves.easeOutStrong,
-  );
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
 
   /// A pressable nested inside this one is being pressed: it owns the touch,
   /// so this one must not show its pressed state too (a member chip inside a
@@ -104,15 +100,58 @@ class _UiPressableState extends State<UiPressable>
   final Set<int> _claimedPointers = <int>{};
   _UiPressableState? _claimedAncestor;
 
+  bool get _enabled => widget.onPressed != null;
+
+  double get _translateDistance =>
+      widget.shadowOffset > 0 ? widget.shadowOffset : widget.pressOffset;
+
+  bool get _hasPressMotion =>
+      _translateDistance > 0 || widget.pressScale != 1.0;
+
+  CurvedAnimation _ensureAnimation() {
+    var curved = _curved;
+    if (curved != null) return curved;
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: UiMotion.press,
+      reverseDuration: UiMotion.press,
+    );
+    _ctrl = ctrl;
+    curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeOutStrong,
+      reverseCurve: UiCurves.easeOutStrong,
+    );
+    _curved = curved;
+    return curved;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _active = true;
+    _reduced = UiMotion.reduced(context);
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _active = true;
+  }
+
   void _syncPressAnimation() {
+    if (!_hasPressMotion) return;
     final pressed = _down && _enabled;
-    final reduced = mounted && UiMotion.reduced(context);
-    if (reduced) {
-      _ctrl.value = pressed ? 1.0 : 0.0;
-    } else if (pressed) {
-      _ctrl.forward();
+    if (_reduced) {
+      _ctrl?.stop();
+      _ctrl?.value = pressed ? 1.0 : 0.0;
+      return;
+    }
+    if (pressed) {
+      _ensureAnimation();
+      _ctrl!.forward();
     } else {
-      _ctrl.reverse();
+      _ctrl?.reverse();
     }
   }
 
@@ -158,31 +197,36 @@ class _UiPressableState extends State<UiPressable>
     super.didUpdateWidget(oldWidget);
     if (!_enabled) {
       _releaseAllAncestorPointers();
-      if (_down) {
+      if (_down ||
+          (_ctrl?.value ?? 0.0) > 0.0 ||
+          (_ctrl?.isAnimating ?? false)) {
         _down = false;
-        _ctrl.value = 0.0;
+        _ctrl?.stop();
+        _ctrl?.value = 0.0;
       }
     }
   }
 
   @override
   void deactivate() {
+    _active = false;
+    _down = false;
+    _ctrl?.stop();
     _releaseAllAncestorPointers();
     super.deactivate();
   }
 
   @override
   void dispose() {
-    _curved.dispose();
-    _ctrl.dispose();
+    _curved?.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
-  bool get _enabled => widget.onPressed != null;
-
   void _setDown(bool v) {
+    if (!_active || !mounted) return;
     if (v && _childPointers > 0) return;
-    if (_down != v && mounted) {
+    if (_down != v) {
       setState(() {
         _down = v;
         _syncPressAnimation();
@@ -203,29 +247,56 @@ class _UiPressableState extends State<UiPressable>
   Widget build(BuildContext context) {
     final ui = context.ui;
     final sticker = widget.shadowOffset > 0;
+    final translateDist = _translateDistance;
     final pressed = _down && _enabled;
-    final pressDuration = UiMotion.of(context, UiMotion.press);
+    final reduced = UiMotion.reduced(context);
 
-    Widget content = AnimatedScale(
-      scale: pressed && !sticker ? UiMotion.pressScale : 1,
-      duration: sticker ? Duration.zero : pressDuration,
-      curve: UiCurves.easeOutStrong,
-      child: DecoratedBox(
-        position: DecorationPosition.foreground,
-        decoration: BoxDecoration(
-          borderRadius: widget.borderRadius,
-          border: _focused
-              ? Border.all(color: ui.focus, width: 3)
-              : const Border.fromBorderSide(BorderSide.none),
-        ),
-        child: widget.child,
+    Widget content = DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: widget.borderRadius,
+        border: _focused
+            ? Border.all(color: ui.focus, width: 3)
+            : const Border.fromBorderSide(BorderSide.none),
       ),
+      child: widget.child,
     );
+
+    if (translateDist > 0) {
+      content = AnimatedBuilder(
+        animation: _curved ?? kAlwaysDismissedAnimation,
+        child: content,
+        builder: (context, child) {
+          final t = reduced ? (pressed ? 1.0 : 0.0) : (_curved?.value ?? 0.0);
+          final d = t * translateDist;
+          return Transform.translate(
+            key: const ValueKey('ui-pressable-surface-translate'),
+            offset: Offset(d, d),
+            child: child,
+          );
+        },
+      );
+    } else if (widget.pressScale != 1.0) {
+      content = AnimatedBuilder(
+        animation: _curved ?? kAlwaysDismissedAnimation,
+        child: content,
+        builder: (context, child) {
+          final t = reduced ? (pressed ? 1.0 : 0.0) : (_curved?.value ?? 0.0);
+          final scale = lerpDouble(1.0, widget.pressScale, t)!;
+          return Transform.scale(
+            key: const ValueKey('ui-pressable-surface-scale'),
+            scale: scale,
+            child: child,
+          );
+        },
+      );
+    }
 
     if (sticker) {
       final offset = widget.shadowOffset;
       final shadowColor = widget.shadowColor ?? ui.hardShadowColor;
       content = Stack(
+        clipBehavior: Clip.none,
         fit: StackFit.passthrough,
         children: [
           if (_enabled)
@@ -243,35 +314,7 @@ class _UiPressableState extends State<UiPressable>
                 ),
               ),
             ),
-          AnimatedBuilder(
-            animation: _curved,
-            child: content,
-            builder: (context, child) {
-              final d = _curved.value * offset;
-              return Transform.translate(
-                offset: Offset(d, d),
-                child: child,
-              );
-            },
-          ),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: AnimatedContainer(
-                duration: Duration.zero,
-                transform: Matrix4.translationValues(
-                  pressed ? offset : 0,
-                  pressed ? offset : 0,
-                  0,
-                ),
-                decoration: _NoPaintBoxDecoration(
-                  borderRadius: widget.borderRadius,
-                  boxShadow: pressed || !_enabled
-                      ? const []
-                      : UiShadow.hard(shadowColor, offset),
-                ),
-              ),
-            ),
-          ),
+          content,
         ],
       );
     }

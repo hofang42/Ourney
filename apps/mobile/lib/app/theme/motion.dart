@@ -33,18 +33,13 @@ abstract final class OurneyMotion {
     if (reduced(context)) {
       return FadeTransition(opacity: animation, child: child);
     }
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: UiCurves.easeOutStrong,
-      reverseCurve: UiCurves.m3Accelerate,
-    );
     return FadeTransition(
       opacity: animation,
       child: ScaleTransition(
         scale: Tween<double>(
           begin: UiMotion.popMinScale,
           end: 1,
-        ).animate(curved),
+        ).chain(CurveTween(curve: UiCurves.easeOutStrong)).animate(animation),
         child: child,
       ),
     );
@@ -60,6 +55,6 @@ abstract final class OurneyHaptics {
   static void selection() => unawaited(UiHaptics.selection());
   static void light() => unawaited(UiHaptics.pressLight());
   static void medium() => unawaited(UiHaptics.shutterMedium());
-  static void success() => unawaited(UiHaptics.milestoneSuccess());
+  static void success() => unawaited(UiHaptics.success());
   static void warning() => unawaited(UiHaptics.warning());
 }

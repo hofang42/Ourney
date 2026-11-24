@@ -78,14 +78,31 @@ abstract final class UiSprings {
 abstract final class UiHaptics {
   static bool enabled = true;
 
+  /// Picker detents, segmented tabs, card selections, pull-to-refresh threshold.
   static Future<void> selection() => _safe(HapticFeedback.selectionClick);
+
+  /// Primary button tap acknowledgment and reaction pill tap.
   static Future<void> pressLight() => _safe(HapticFeedback.lightImpact);
+
+  /// Routine input validation or OTP typo rejection (`lightImpact`; never
+  /// escalate routine input errors to `heavyImpact`).
   static Future<void> reject() => _safe(HapticFeedback.lightImpact);
+
+  /// Camera hero shutter press.
   static Future<void> shutterMedium() => _safe(HapticFeedback.mediumImpact);
+
+  /// Check-in rubber stamp contact frame.
   static Future<void> stampImpact() => _safe(HapticFeedback.mediumImpact);
+
+  /// Standard form / task completion acknowledgment (`mediumImpact`, single
+  /// beat with no delayed timer).
+  static Future<void> success() => _safe(HapticFeedback.mediumImpact);
+
+  /// Destructive confirmation warning (`heavyImpact`).
   static Future<void> warning() => _safe(HapticFeedback.heavyImpact);
 
-  /// Double-beat celebratory Taptic pattern for Check-in Milestone seals.
+  /// Double-beat celebratory Taptic pattern reserved strictly for rare
+  /// Check-in Milestone seals (Days 7 / 14 / 21 / 30 / Finish).
   static Future<void> milestoneSuccess() async {
     if (!enabled) return;
     await _safe(HapticFeedback.mediumImpact);
@@ -115,8 +132,8 @@ abstract final class UiHeroTags {
 
 /// Shared-element [Hero] wrapper that automatically disables flight under
 /// Reduce Motion (`MediaQuery.disableAnimations` or iOS `reduceMotion`) and
-/// optionally tweens [BorderRadius] in flight so Neo-Brutalist borders stay
-/// crisp.
+/// optionally tweens [BorderRadius] in flight so Neo-Brutalist `2dp` borders
+/// stay crisp and unclipped.
 class UiHero extends StatelessWidget {
   const UiHero({
     required this.tag,
@@ -126,6 +143,7 @@ class UiHero extends StatelessWidget {
     this.transitionOnUserGestures = false,
     this.borderRadiusBegin,
     this.borderRadiusEnd,
+    this.borderSide,
     super.key,
   });
 
@@ -137,24 +155,124 @@ class UiHero extends StatelessWidget {
   final BorderRadius? borderRadiusBegin;
   final BorderRadius? borderRadiusEnd;
 
+  /// Optional sticker outline painted in the foreground at the tweened
+  /// [BorderRadius] during Hero flight so `2dp` corner borders never clip.
+  /// If omitted, [UiHero] inspects the endpoint child's [BoxDecoration.border]
+  /// and preserves any uniform [Border] automatically.
+  final BorderSide? borderSide;
+
+  static ({Widget child, BorderSide? borderSide}) _unwrapEndpointChild(
+    Widget rawChild,
+    BorderSide? explicitSide,
+  ) {
+    if (rawChild is Container) {
+      final deco = rawChild.decoration;
+      if (deco is BoxDecoration && deco.border is Border) {
+        final border = deco.border! as Border;
+        final detected = explicitSide ?? border.top;
+        return (
+          child: Container(
+            key: rawChild.key,
+            alignment: rawChild.alignment,
+            padding: rawChild.padding,
+            color: null,
+            decoration: deco.copyWith(
+              border: const Border.fromBorderSide(BorderSide.none),
+              borderRadius: BorderRadius.zero,
+            ),
+            foregroundDecoration: rawChild.foregroundDecoration,
+            constraints: rawChild.constraints,
+            margin: rawChild.margin,
+            transform: rawChild.transform,
+            transformAlignment: rawChild.transformAlignment,
+            clipBehavior: rawChild.clipBehavior,
+            child: rawChild.child,
+          ),
+          borderSide: detected.style == BorderStyle.none ? null : detected,
+        );
+      }
+    } else if (rawChild is DecoratedBox) {
+      final deco = rawChild.decoration;
+      if (deco is BoxDecoration && deco.border is Border) {
+        final border = deco.border! as Border;
+        final detected = explicitSide ?? border.top;
+        return (
+          child: DecoratedBox(
+            key: rawChild.key,
+            position: rawChild.position,
+            decoration: deco.copyWith(
+              border: const Border.fromBorderSide(BorderSide.none),
+              borderRadius: BorderRadius.zero,
+            ),
+            child: rawChild.child,
+          ),
+          borderSide: detected.style == BorderStyle.none ? null : detected,
+        );
+      }
+    }
+    return (child: rawChild, borderSide: explicitSide);
+  }
+
   @override
   Widget build(BuildContext context) {
     HeroFlightShuttleBuilder? shuttle = flightShuttleBuilder;
     if (shuttle == null &&
-        (borderRadiusBegin != null || borderRadiusEnd != null)) {
-      final begin = borderRadiusBegin ?? borderRadiusEnd ?? BorderRadius.zero;
-      final end = borderRadiusEnd ?? borderRadiusBegin ?? BorderRadius.zero;
-      final tween = BorderRadiusTween(begin: begin, end: end);
+        (borderRadiusBegin != null ||
+            borderRadiusEnd != null ||
+            borderSide != null)) {
       shuttle = (flightContext, animation, direction, fromContext, toContext) {
-        final target = direction == HeroFlightDirection.push
-            ? toContext.widget
-            : fromContext.widget;
-        return AnimatedBuilder(
-          animation: animation,
-          child: target,
-          builder: (context, child) => ClipRRect(
-            borderRadius: tween.evaluate(animation) ?? end,
-            child: child,
+        final fromUiHero = fromContext.findAncestorWidgetOfExactType<UiHero>();
+        final toUiHero = toContext.findAncestorWidgetOfExactType<UiHero>();
+
+        final begin =
+            fromUiHero?.borderRadiusBegin ??
+            borderRadiusBegin ??
+            fromUiHero?.borderRadiusEnd ??
+            toUiHero?.borderRadiusBegin ??
+            borderRadiusEnd ??
+            BorderRadius.zero;
+        final end =
+            toUiHero?.borderRadiusEnd ??
+            borderRadiusEnd ??
+            toUiHero?.borderRadiusBegin ??
+            fromUiHero?.borderRadiusEnd ??
+            borderRadiusBegin ??
+            BorderRadius.zero;
+        final tween = BorderRadiusTween(begin: begin, end: end);
+
+        // Unwrap the destination Hero's child so we never mount a duplicate
+        // nested Hero inside the OverlayEntry during flight.
+        final toHero = toContext.widget as Hero;
+        final explicitSide =
+            toUiHero?.borderSide ?? fromUiHero?.borderSide ?? borderSide;
+        final unwrapped = _unwrapEndpointChild(toHero.child, explicitSide);
+        final effectiveBorder =
+            unwrapped.borderSide != null &&
+                unwrapped.borderSide!.style != BorderStyle.none &&
+                unwrapped.borderSide!.width > 0
+            ? Border.fromBorderSide(unwrapped.borderSide!)
+            : null;
+
+        return DefaultTextStyle(
+          style: DefaultTextStyle.of(toContext).style,
+          child: AnimatedBuilder(
+            key: const ValueKey('ui-hero-shuttle'),
+            animation: animation,
+            child: unwrapped.child,
+            builder: (context, shuttleChild) {
+              final radius = tween.evaluate(animation) ?? end;
+              return DecoratedBox(
+                position: DecorationPosition.foreground,
+                decoration: BoxDecoration(
+                  borderRadius: radius,
+                  border: effectiveBorder,
+                ),
+                child: ClipRRect(
+                  borderRadius: radius,
+                  child: shuttleChild,
+                ),
+              );
+            },
           ),
         );
       };
@@ -172,28 +290,183 @@ class UiHero extends StatelessWidget {
   }
 }
 
+/// Listener-free directional curved animation that delegates listener
+/// registration directly to [parent] via [AnimationWithParentMixin] without
+/// allocating a disposable [CurvedAnimation] in stateless builders.
+class _DirectionalCurvedAnimation extends Animation<double>
+    with AnimationWithParentMixin<double> {
+  const _DirectionalCurvedAnimation({
+    required this.parent,
+    required this.curve,
+    this.reverseCurve,
+  });
+
+  @override
+  final Animation<double> parent;
+  final Curve curve;
+  final Curve? reverseCurve;
+
+  @override
+  double get value {
+    final v = parent.value;
+    if (v == 0.0 || v == 1.0) return v;
+    final activeCurve = parent.status == AnimationStatus.reverse
+        ? (reverseCurve ?? curve)
+        : curve;
+    return activeCurve.transform(v);
+  }
+}
+
+class _UiTransitionPage<T> extends CustomTransitionPage<T> {
+  const _UiTransitionPage({
+    required super.child,
+    required super.transitionsBuilder,
+    required super.transitionDuration,
+    required super.reverseTransitionDuration,
+    required this.initiallyReduced,
+    super.key,
+    super.name,
+    super.arguments,
+    super.restorationId,
+    super.maintainState = true,
+    super.fullscreenDialog = false,
+    super.opaque = true,
+    super.barrierDismissible = false,
+    super.barrierColor,
+    super.barrierLabel,
+  });
+
+  final bool initiallyReduced;
+
+  @override
+  Route<T> createRoute(BuildContext context) {
+    return _UiTransitionPageRoute<T>(
+      this,
+      reduced: initiallyReduced || UiMotion.reduced(context),
+    );
+  }
+}
+
+class _UiTransitionPageRoute<T> extends PageRoute<T> {
+  _UiTransitionPageRoute(this._page, {required this.reduced})
+    : super(settings: _page);
+
+  final _UiTransitionPage<T> _page;
+  final bool reduced;
+
+  @override
+  Color? get barrierColor => _page.barrierColor;
+
+  @override
+  String? get barrierLabel => _page.barrierLabel;
+
+  @override
+  bool get barrierDismissible => _page.barrierDismissible;
+
+  @override
+  Duration get transitionDuration =>
+      reduced ? UiMotion.reducedFade : _page.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration => reduced
+      ? (_page.reverseTransitionDuration < UiMotion.reducedFade
+            ? _page.reverseTransitionDuration
+            : UiMotion.reducedFade)
+      : _page.reverseTransitionDuration;
+
+  @override
+  bool get maintainState => _page.maintainState;
+
+  @override
+  bool get fullscreenDialog => _page.fullscreenDialog;
+
+  @override
+  bool get opaque => _page.opaque;
+
+  @override
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) => Semantics(
+    scopesRoute: true,
+    explicitChildNodes: true,
+    child: _page.child,
+  );
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) => _page.transitionsBuilder(
+    context,
+    animation,
+    secondaryAnimation,
+    child,
+  );
+}
+
 /// GoRouter page transition kinds.
 enum UiPageTransition { sharedZ, sharedX, verticalSheet, fadeThrough }
 
 /// Reduce-motion-aware `CustomTransitionPage` factory for `GoRoute.pageBuilder`.
+///
+/// Automatically resolves `transitionDuration` to [UiMotion.reducedFade]
+/// (`150ms`) when Reduce Motion is enabled (via [context] or the enclosing
+/// [Navigator] context in `createRoute`), and exposes [opaque],
+/// [fullscreenDialog], [barrierDismissible], [barrierColor], [barrierLabel],
+/// and [name] for interactive sheets and viewers in M2–M5.
 CustomTransitionPage<T> buildUiPage<T>({
   required GoRouterState state,
   required Widget child,
+  BuildContext? context,
   UiPageTransition kind = UiPageTransition.sharedZ,
   Duration transitionDuration = UiMotion.page,
   Duration reverseTransitionDuration = UiMotion.sheetExit,
+  bool opaque = true,
+  bool fullscreenDialog = false,
+  bool maintainState = true,
+  bool barrierDismissible = false,
+  Color? barrierColor,
+  String? barrierLabel,
+  String? name,
+  Object? arguments,
+  String? restorationId,
 }) {
-  return CustomTransitionPage<T>(
+  final initiallyReduced =
+      (context != null && UiMotion.reduced(context)) ||
+      WidgetsBinding
+          .instance
+          .platformDispatcher
+          .accessibilityFeatures
+          .reduceMotion;
+
+  return _UiTransitionPage<T>(
     key: state.pageKey,
+    name: name ?? state.name ?? state.fullPath,
+    arguments: arguments ?? state.extra,
+    restorationId: restorationId ?? state.pageKey.value,
+    maintainState: maintainState,
+    fullscreenDialog: fullscreenDialog,
+    opaque: opaque,
+    barrierDismissible: barrierDismissible,
+    barrierColor: barrierColor,
+    barrierLabel: barrierLabel,
+    transitionDuration: initiallyReduced
+        ? UiMotion.reducedFade
+        : transitionDuration,
+    reverseTransitionDuration: initiallyReduced
+        ? (reverseTransitionDuration < UiMotion.reducedFade
+              ? reverseTransitionDuration
+              : UiMotion.reducedFade)
+        : reverseTransitionDuration,
+    initiallyReduced: initiallyReduced,
     child: child,
-    transitionDuration: transitionDuration,
-    reverseTransitionDuration: reverseTransitionDuration,
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       if (UiMotion.reduced(context)) {
-        return FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: Curves.linear),
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       }
       return switch (kind) {
         UiPageTransition.sharedZ => SharedAxisTransition(
@@ -220,7 +493,13 @@ CustomTransitionPage<T> buildUiPage<T>({
           position: Tween<Offset>(
             begin: const Offset(0, 0.08),
             end: Offset.zero,
-          ).animate(CurvedAnimation(parent: animation, curve: UiCurves.drawer)),
+          ).animate(
+            _DirectionalCurvedAnimation(
+              parent: animation,
+              curve: UiCurves.drawer,
+              reverseCurve: UiCurves.m3Accelerate,
+            ),
+          ),
           child: FadeTransition(opacity: animation, child: child),
         ),
       };
@@ -233,10 +512,11 @@ CustomTransitionPage<T> buildUiPage<T>({
 /// Camera viewfinder journey swipe).
 ///
 /// When [direction] >= 0 (Next / forward), the incoming child slides in from
-/// the right (`+slideOffset -> 0`) while the outgoing child slides left
-/// (`0 -> -slideOffset`). When [direction] < 0 (Back / reverse), the directions
-/// invert. Under Reduce Motion, spatial sliding collapses to an opacity-only
-/// crossfade over [UiMotion.reducedFade] (`150ms`).
+/// the trailing edge (`+slideOffset -> 0` in LTR, `-slideOffset -> 0` in RTL)
+/// while the outgoing child slides toward the leading edge. When
+/// [direction] < 0 (Back / reverse), the directions invert. Under Reduce
+/// Motion, spatial sliding collapses to an opacity-only crossfade over
+/// [UiMotion.reducedFade] (`150ms`).
 class UiDirectionalSwitcher extends StatelessWidget {
   const UiDirectionalSwitcher({
     required this.child,
@@ -275,7 +555,9 @@ class UiDirectionalSwitcher extends StatelessWidget {
         ? KeyedSubtree(key: ValueKey<Object?>(step), child: child)
         : child;
     final activeKey = keyedChild.key;
-    final sign = direction >= 0 ? 1.0 : -1.0;
+    final isRtl = Directionality.maybeOf(context) == TextDirection.rtl;
+    final dirSign = direction >= 0 ? 1.0 : -1.0;
+    final sign = isRtl ? -dirSign : dirSign;
 
     Widget switcher = AnimatedSwitcher(
       duration: effectiveDuration,
@@ -291,35 +573,21 @@ class UiDirectionalSwitcher extends StatelessWidget {
       ),
       transitionBuilder: (widgetChild, animation) {
         if (reduced) {
-          return SlideTransition(
-            position: const AlwaysStoppedAnimation<Offset>(Offset.zero),
-            child: Transform.translate(
-              offset: Offset.zero,
-              child: FadeTransition(opacity: animation, child: widgetChild),
-            ),
-          );
+          return FadeTransition(opacity: animation, child: widgetChild);
         }
         final isIncoming = widgetChild.key == activeKey;
         final itemSign = isIncoming ? sign : -sign;
-        final slideFraction = (slideOffset / 360.0).clamp(0.01, 0.25);
-        final posAnim = Tween<Offset>(
-          begin: Offset(itemSign * slideFraction * 0.25, 0),
-          end: Offset.zero,
-        ).animate(animation);
         final faded = FadeTransition(opacity: animation, child: widgetChild);
-        return SlideTransition(
-          position: posAnim,
-          child: AnimatedBuilder(
-            animation: animation,
-            child: faded,
-            builder: (context, child) {
-              final dx = (1.0 - animation.value) * itemSign * slideOffset;
-              return Transform.translate(
-                offset: Offset(dx, 0),
-                child: child,
-              );
-            },
-          ),
+        return AnimatedBuilder(
+          animation: animation,
+          child: faded,
+          builder: (context, child) {
+            final dx = (1.0 - animation.value) * itemSign * slideOffset;
+            return Transform.translate(
+              offset: Offset(dx, 0),
+              child: child,
+            );
+          },
         );
       },
       child: keyedChild,
@@ -342,8 +610,8 @@ class UiDirectionalSwitcher extends StatelessWidget {
 ///
 /// Slides upward by [offsetY] (`8dp -> 0`) + [FadeTransition] over [duration]
 /// (`200ms`, [UiCurves.easeOutStrong]). Under Reduce Motion (or when
-/// `enabled: false`), renders immediately at resting position with zero delay
-/// and zero spatial offset.
+/// `enabled: false`), renders immediately at resting position with zero delay,
+/// zero spatial offset, and zero allocated tickers.
 class UiStaggerItem extends StatefulWidget {
   const UiStaggerItem({
     required this.index,
@@ -381,16 +649,26 @@ class UiStaggerItem extends StatefulWidget {
 
 class _UiStaggerItemState extends State<UiStaggerItem>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: widget.duration,
-  );
-  late final CurvedAnimation _curved = CurvedAnimation(
-    parent: _ctrl,
-    curve: UiCurves.easeOutStrong,
-  );
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
   Timer? _delayTimer;
   bool _started = false;
+
+  CurvedAnimation _ensureAnimation() {
+    var curved = _curved;
+    if (curved != null) return curved;
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    _ctrl = ctrl;
+    curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeOutStrong,
+    );
+    _curved = curved;
+    return curved;
+  }
 
   @override
   void didChangeDependencies() {
@@ -398,24 +676,24 @@ class _UiStaggerItemState extends State<UiStaggerItem>
     if (!_started) {
       _started = true;
       _startIfNeeded();
-    } else if (UiMotion.reduced(context) && _ctrl.value < 1.0) {
+    } else if (UiMotion.reduced(context) && (_ctrl?.value ?? 1.0) < 1.0) {
       _delayTimer?.cancel();
       _delayTimer = null;
-      _ctrl.value = 1.0;
+      _ctrl?.value = 1.0;
     }
   }
 
   void _startIfNeeded() {
     if (!widget.enabled || UiMotion.reduced(context)) {
-      _ctrl.value = 1.0;
       return;
     }
+    _ensureAnimation();
     final delay = UiStaggerItem.delayFor(widget.index);
     if (delay == Duration.zero) {
-      _ctrl.forward();
+      _ctrl!.forward();
     } else {
       _delayTimer = Timer(delay, () {
-        if (mounted) _ctrl.forward();
+        if (mounted) _ctrl?.forward();
       });
     }
   }
@@ -424,34 +702,35 @@ class _UiStaggerItemState extends State<UiStaggerItem>
   void didUpdateWidget(covariant UiStaggerItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.duration != oldWidget.duration) {
-      _ctrl.duration = widget.duration;
+      _ctrl?.duration = widget.duration;
     }
-    if (!widget.enabled && _ctrl.value < 1.0) {
+    if (!widget.enabled && (_ctrl?.value ?? 1.0) < 1.0) {
       _delayTimer?.cancel();
       _delayTimer = null;
-      _ctrl.value = 1.0;
+      _ctrl?.value = 1.0;
     }
   }
 
   @override
   void dispose() {
     _delayTimer?.cancel();
-    _curved.dispose();
-    _ctrl.dispose();
+    _curved?.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.enabled || UiMotion.reduced(context)) {
-      return Transform.translate(offset: Offset.zero, child: widget.child);
+    final curved = _curved;
+    if (!widget.enabled || UiMotion.reduced(context) || curved == null) {
+      return widget.child;
     }
-    final faded = FadeTransition(opacity: _curved, child: widget.child);
+    final faded = FadeTransition(opacity: curved, child: widget.child);
     return AnimatedBuilder(
-      animation: _curved,
+      animation: curved,
       child: faded,
       builder: (context, child) {
-        final dy = (1.0 - _curved.value) * widget.offsetY;
+        final dy = (1.0 - curved.value) * widget.offsetY;
         return Transform.translate(
           offset: Offset(0, dy),
           child: child,
@@ -466,8 +745,8 @@ class _UiStaggerItemState extends State<UiStaggerItem>
 ///
 /// If [initialValue] is provided and differs from [value], rolls immediately on
 /// first mount from [initialValue] to [value]. Also rolls automatically
-/// whenever [value] updates. Under Reduce Motion, renders the final text
-/// immediately with zero ticker or translation.
+/// whenever [value] updates. Under Reduce Motion (or while static), renders the
+/// final single-line text immediately with zero allocated tickers.
 class UiCountRoll extends StatefulWidget {
   const UiCountRoll({
     required this.value,
@@ -498,19 +777,30 @@ class UiCountRoll extends StatefulWidget {
 
 class _UiCountRollState extends State<UiCountRoll>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(
-    vsync: this,
-    duration: widget.duration,
-  );
-  late CurvedAnimation _curved = CurvedAnimation(
-    parent: _ctrl,
-    curve: widget.curve,
-  );
-  late Animation<double> _outOpacity = ReverseAnimation(_curved);
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  Animation<double>? _outOpacity;
 
   late int _fromValue;
   late int _toValue;
   bool _didInit = false;
+
+  AnimationController _ensureController() {
+    var ctrl = _ctrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+    _ctrl = ctrl;
+    final curved = CurvedAnimation(
+      parent: ctrl,
+      curve: widget.curve,
+    );
+    _curved = curved;
+    _outOpacity = ReverseAnimation(curved);
+    return ctrl;
+  }
 
   @override
   void initState() {
@@ -525,14 +815,13 @@ class _UiCountRollState extends State<UiCountRoll>
     if (!_didInit) {
       _didInit = true;
       if (_fromValue != _toValue && !UiMotion.reduced(context)) {
-        _ctrl.forward(from: 0.0);
+        _ensureController().forward(from: 0.0);
       } else {
         _fromValue = _toValue;
-        _ctrl.value = 1.0;
       }
-    } else if (UiMotion.reduced(context) && _ctrl.isAnimating) {
+    } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
       _fromValue = _toValue;
-      _ctrl.value = 1.0;
+      _ctrl?.value = 1.0;
     }
   }
 
@@ -540,45 +829,58 @@ class _UiCountRollState extends State<UiCountRoll>
   void didUpdateWidget(covariant UiCountRoll oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.duration != oldWidget.duration) {
-      _ctrl.duration = widget.duration;
+      _ctrl?.duration = widget.duration;
     }
-    if (widget.curve != oldWidget.curve) {
-      _curved.dispose();
-      _curved = CurvedAnimation(parent: _ctrl, curve: widget.curve);
-      _outOpacity = ReverseAnimation(_curved);
+    if (widget.curve != oldWidget.curve && _ctrl != null) {
+      _curved?.dispose();
+      final curved = CurvedAnimation(parent: _ctrl!, curve: widget.curve);
+      _curved = curved;
+      _outOpacity = ReverseAnimation(curved);
     }
     if (widget.value != _toValue) {
       _fromValue = _toValue;
       _toValue = widget.value;
       if (UiMotion.reduced(context)) {
         _fromValue = _toValue;
-        _ctrl.value = 1.0;
+        _ctrl?.value = 1.0;
       } else {
-        _ctrl.forward(from: 0.0);
+        _ensureController().forward(from: 0.0);
       }
     }
   }
 
   @override
   void dispose() {
-    _curved.dispose();
-    _ctrl.dispose();
+    _curved?.dispose();
+    _ctrl?.dispose();
     super.dispose();
   }
 
   String _format(int v) => widget.format != null ? widget.format!(v) : '$v';
 
+  Widget _buildText(String text, {String? semanticsLabel}) {
+    return Text(
+      text,
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: widget.style,
+      textAlign: widget.textAlign,
+      semanticsLabel: semanticsLabel,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final reduced = UiMotion.reduced(context);
     final currentText = _format(_toValue);
-    if (reduced || _fromValue == _toValue) {
-      return Text(
-        currentText,
-        style: widget.style,
-        textAlign: widget.textAlign,
-        semanticsLabel: widget.semanticsLabel,
-      );
+    final curved = _curved;
+    final outOpacity = _outOpacity;
+    if (reduced ||
+        _fromValue == _toValue ||
+        curved == null ||
+        outOpacity == null) {
+      return _buildText(currentText, semanticsLabel: widget.semanticsLabel);
     }
 
     final previousText = _format(_fromValue);
@@ -587,37 +889,20 @@ class _UiCountRollState extends State<UiCountRoll>
     final dist = widget.slideDistance;
 
     final outgoingChild = FadeTransition(
-      opacity: _outOpacity,
-      child: Text(
-        previousText,
-        style: widget.style,
-        textAlign: widget.textAlign,
-      ),
+      opacity: outOpacity,
+      child: _buildText(previousText),
     );
     final incomingChild = FadeTransition(
-      opacity: _curved,
-      child: Text(
-        currentText,
-        style: widget.style,
-        textAlign: widget.textAlign,
-        semanticsLabel: widget.semanticsLabel,
-      ),
+      opacity: curved,
+      child: _buildText(currentText, semanticsLabel: widget.semanticsLabel),
     );
 
     return AnimatedBuilder(
-      animation: _curved,
+      animation: curved,
       builder: (context, _) {
-        final t = _curved.value;
-        if (t >= 1.0 && !_ctrl.isAnimating) {
-          return Transform.translate(
-            offset: Offset.zero,
-            child: Text(
-              currentText,
-              style: widget.style,
-              textAlign: widget.textAlign,
-              semanticsLabel: widget.semanticsLabel,
-            ),
-          );
+        final t = curved.value;
+        if (t >= 1.0 && !(_ctrl?.isAnimating ?? false)) {
+          return _buildText(currentText, semanticsLabel: widget.semanticsLabel);
         }
         return ClipRect(
           child: Stack(
@@ -645,8 +930,10 @@ class _UiCountRollState extends State<UiCountRoll>
 /// sticker badge with `2dp` `ui.outline`, `2dp` hard shadow, `ui.surface` fill,
 /// and custom `OurneyIcon(name: 'refresh')` stroke).
 ///
-/// - **Pull phase:** Rotates `OurneyIcon` proportionally to overscroll
-///   (`0 -> 0.75` turns) and scales `0.85 -> 1.0`.
+/// - **Pull phase:** Accumulates only on an active user drag over-pull from the
+///   top edge (never on passive ballistic fling-to-top momentum), updates a
+///   [ValueNotifier] without rebuilding the child tree per frame, and offsets
+///   below `MediaQuery.paddingOf(context).top` when [safeArea] is `true`.
 /// - **Threshold crossing (`pull >= 1.0`):** Fires [UiHaptics.selection] once
 ///   as the sticker snaps `scale(1.08 -> 1.0)` (`140ms`).
 /// - **Refreshing phase:** Smooth `750ms` continuous rotation wrapped in
@@ -658,6 +945,7 @@ class UiRefreshScaffold extends StatefulWidget {
     required this.child,
     this.triggerOffset = 72.0,
     this.maxPullExtent = 108.0,
+    this.safeArea = true,
     this.notificationPredicate = defaultScrollNotificationPredicate,
     this.semanticsLabel,
     super.key,
@@ -667,6 +955,11 @@ class UiRefreshScaffold extends StatefulWidget {
   final Widget child;
   final double triggerOffset;
   final double maxPullExtent;
+
+  /// Offsets the pull badge below `MediaQuery.paddingOf(context).top` so it
+  /// never overlaps the status bar or Dynamic Island.
+  final bool safeArea;
+
   final ScrollNotificationPredicate notificationPredicate;
   final String? semanticsLabel;
 
@@ -680,10 +973,11 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
   static const Duration _kSpinDuration = Duration(milliseconds: 750);
   static const Duration _kCollapseDuration = Duration(milliseconds: 180);
 
-  double _pullExtent = 0.0;
+  final ValueNotifier<double> _pullExtent = ValueNotifier<double>(0.0);
   double _collapseStartExtent = 0.0;
   bool _thresholdCrossed = false;
   bool _refreshing = false;
+  bool _draggingFromTop = false;
 
   late final AnimationController _spinCtrl = AnimationController(
     vsync: this,
@@ -704,9 +998,11 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
 
   void _onCollapseTick() {
     if (!mounted) return;
-    setState(() {
-      _pullExtent = lerpDouble(_collapseStartExtent, 0.0, _collapseCurved.value)!;
-    });
+    _pullExtent.value = lerpDouble(
+      _collapseStartExtent,
+      0.0,
+      _collapseCurved.value,
+    )!;
   }
 
   @override
@@ -730,11 +1026,9 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
     _collapseCtrl.dispose();
     _snapCtrl.dispose();
     _spinCtrl.dispose();
+    _pullExtent.dispose();
     super.dispose();
   }
-
-  double get _progress =>
-      (_pullExtent / widget.triggerOffset).clamp(0.0, 1.0);
 
   void _updatePull(double nextExtent) {
     final clamped = nextExtent.clamp(0.0, widget.maxPullExtent);
@@ -748,18 +1042,19 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
     } else if (nextProgress < 1.0 && _thresholdCrossed) {
       _thresholdCrossed = false;
     }
-    if (_pullExtent != clamped && mounted) {
-      setState(() => _pullExtent = clamped);
+    if (_pullExtent.value != clamped && mounted) {
+      _pullExtent.value = clamped;
     }
   }
 
   Future<void> _triggerRefresh() async {
     if (_refreshing) return;
+    _draggingFromTop = false;
     final reduced = UiMotion.reduced(context);
     setState(() {
       _refreshing = true;
-      _pullExtent = widget.triggerOffset;
     });
+    _pullExtent.value = widget.triggerOffset;
     if (!reduced && TickerMode.valuesOf(context).enabled) {
       _spinCtrl.repeat();
     }
@@ -770,22 +1065,35 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
         _spinCtrl.stop();
         _spinCtrl.value = 0.0;
         _thresholdCrossed = false;
-        _refreshing = false;
+        setState(() {
+          _refreshing = false;
+        });
         await _collapseToZero();
       }
     }
   }
 
   Future<void> _collapseToZero() async {
+    _draggingFromTop = false;
     if (!mounted) return;
-    if (UiMotion.reduced(context) || _pullExtent <= 0.0) {
-      setState(() => _pullExtent = 0.0);
+    if (UiMotion.reduced(context) || _pullExtent.value <= 0.0) {
+      _pullExtent.value = 0.0;
       return;
     }
-    _collapseStartExtent = _pullExtent;
+    _collapseStartExtent = _pullExtent.value;
     await _collapseCtrl.forward(from: 0.0);
     if (mounted) {
-      setState(() => _pullExtent = 0.0);
+      _pullExtent.value = 0.0;
+    }
+  }
+
+  void _finishPullIfNeeded() {
+    if (!_draggingFromTop && _pullExtent.value <= 0.0) return;
+    _draggingFromTop = false;
+    if (_thresholdCrossed) {
+      unawaited(_triggerRefresh());
+    } else if (_pullExtent.value > 0.0) {
+      unawaited(_collapseToZero());
     }
   }
 
@@ -797,27 +1105,37 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
       if (_collapseCtrl.isAnimating) {
         _collapseCtrl.stop();
       }
+      _draggingFromTop =
+          notification.dragDetails != null &&
+          notification.metrics.extentBefore == 0.0;
     } else if (notification is OverscrollNotification) {
-      if (notification.metrics.extentBefore == 0.0 &&
-          (notification.overscroll < 0.0 || _pullExtent > 0.0)) {
-        _updatePull(_pullExtent - notification.overscroll);
+      if (notification.dragDetails != null) {
+        if (notification.metrics.extentBefore == 0.0 &&
+            (notification.overscroll < 0.0 || _pullExtent.value > 0.0)) {
+          _draggingFromTop = true;
+          _updatePull(_pullExtent.value - notification.overscroll);
+        }
+      } else if (_draggingFromTop) {
+        _finishPullIfNeeded();
       }
     } else if (notification is ScrollUpdateNotification) {
       final pixels = notification.metrics.pixels;
       final minExtent = notification.metrics.minScrollExtent;
-      if (pixels < minExtent) {
-        _updatePull(minExtent - pixels);
-      } else if (_pullExtent > 0.0 && (notification.scrollDelta ?? 0.0) > 0.0) {
-        _updatePull(_pullExtent - notification.scrollDelta!);
+      if (notification.dragDetails != null) {
+        if (pixels < minExtent) {
+          _draggingFromTop = true;
+          _updatePull(minExtent - pixels);
+        } else if (_pullExtent.value > 0.0 &&
+            (notification.scrollDelta ?? 0.0) > 0.0) {
+          _updatePull(_pullExtent.value - notification.scrollDelta!);
+        }
+      } else if (_draggingFromTop) {
+        _finishPullIfNeeded();
       }
     } else if (notification is ScrollEndNotification ||
         (notification is UserScrollNotification &&
             notification.direction == ScrollDirection.idle)) {
-      if (_thresholdCrossed) {
-        unawaited(_triggerRefresh());
-      } else if (_pullExtent > 0.0) {
-        unawaited(_collapseToZero());
-      }
+      _finishPullIfNeeded();
     }
     return false;
   }
@@ -826,8 +1144,7 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
   Widget build(BuildContext context) {
     final ui = context.ui;
     final reduced = UiMotion.reduced(context);
-    final showBadge =
-        _pullExtent > 0.5 || _refreshing || _collapseCtrl.isAnimating;
+    final topInset = widget.safeArea ? MediaQuery.paddingOf(context).top : 0.0;
 
     return NotificationListener<ScrollNotification>(
       onNotification: _handleScrollNotification,
@@ -835,31 +1152,38 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
         fit: StackFit.passthrough,
         children: [
           widget.child,
-          if (showBadge)
-            Positioned(
-              top: math.max(8.0, (_pullExtent * 0.55) - 20.0),
-              left: 0,
-              right: 0,
-              child: IgnorePointer(
-                child: Center(
-                  child: RepaintBoundary(
-                    key: const ValueKey('ui-refresh-badge'),
-                    child: Semantics(
-                      label: widget.semanticsLabel,
-                      liveRegion: _refreshing,
-                      child: _buildBadge(ui, reduced),
+          ValueListenableBuilder<double>(
+            valueListenable: _pullExtent,
+            builder: (context, pullExtent, _) {
+              final showBadge =
+                  pullExtent > 0.5 || _refreshing || _collapseCtrl.isAnimating;
+              if (!showBadge) return const SizedBox.shrink();
+              return Positioned(
+                top: topInset + math.max(8.0, (pullExtent * 0.55) - 20.0),
+                left: 0,
+                right: 0,
+                child: IgnorePointer(
+                  child: Center(
+                    child: RepaintBoundary(
+                      key: const ValueKey('ui-refresh-badge'),
+                      child: Semantics(
+                        label: widget.semanticsLabel,
+                        liveRegion: _refreshing,
+                        child: _buildBadge(ui, reduced, pullExtent),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBadge(OurneyUi ui, bool reduced) {
-    final progress = _progress;
+  Widget _buildBadge(OurneyUi ui, bool reduced, double pullExtent) {
+    final progress = (pullExtent / widget.triggerOffset).clamp(0.0, 1.0);
     final baseScale = reduced ? 1.0 : lerpDouble(0.85, 1.0, progress)!;
 
     Widget icon = OurneyIcon(name: 'refresh', size: 18, color: ui.ink);
@@ -881,6 +1205,7 @@ class _UiRefreshScaffoldState extends State<UiRefreshScaffold>
       width: 36,
       height: 36,
       child: Stack(
+        clipBehavior: Clip.none,
         fit: StackFit.passthrough,
         children: [
           Positioned.fill(

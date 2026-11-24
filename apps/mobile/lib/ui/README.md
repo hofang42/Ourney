@@ -11,7 +11,7 @@ Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/
 | --- | --- |
 | `journey_style_for.dart` | `uiStyleForSkin(PersonaSkinId)` -> `UiJourneyStyle` |
 | `tokens.dart` | `OurneyUi` (ThemeExtension, `context.ui`: bg, surface, fill, ink, inkMuted, border, brand, success, warn, danger...), `UiRadius`, `UiSpace` (`gutter(width)`, `maxContent`), `UiSize`, `UiMotion` (durations + `reduced`/`of`/`fadeOf`), `UiCurves` (`easeOutStrong`, `easeInOutStrong`, `drawer`, `dockOvershoot`, `stampDecel`, `m3Decelerate`, `m3Accelerate`), `UiCamera` |
-| `motion.dart` | `UiSprings` (`snappy`, `bouncy`, `gentle`, `forSkin`), `UiHaptics` (`selection`, `pressLight`, `shutterMedium`, `stampImpact`, `warning`, `milestoneSuccess`), `UiHeroTags`, `UiHero` (reduce-motion safe), `UiPageTransition` + `buildUiPage` (`CustomTransitionPage`), `UiDirectionalSwitcher`, `UiStaggerItem`, `UiCountRoll`, `UiRefreshScaffold` |
+| `motion.dart` | `UiSprings` (`snappy`, `bouncy`, `gentle`, `forSkin`), `UiHaptics` (`selection`, `pressLight`, `reject`, `shutterMedium`, `stampImpact`, `success`, `warning`, `milestoneSuccess`), `UiHeroTags`, `UiHero` (reduce-motion safe), `UiPageTransition` + `buildUiPage` (`CustomTransitionPage`), `UiDirectionalSwitcher`, `UiStaggerItem`, `UiCountRoll`, `UiRefreshScaffold` |
 | `typography.dart` | `UiText.h1/h2/eyebrow/muted/button/fieldLabel/wordmark/body/display`, `UiFonts` |
 | `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs the `OurneyUi` extension |
 | `journey_styles.dart` | `uiJourneyStyles` (10 styles: accent, paper, ink, onAccent) |
