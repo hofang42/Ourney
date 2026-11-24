@@ -4,6 +4,8 @@ import flutter_local_notifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
+  private let widgetBridge = OurneyWidgetBridge()
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -47,6 +49,8 @@ import flutter_local_notifications
     appIconChannel.setMethodCallHandler { [weak self] call, result in
       self?.handleAppIconCall(call, result: result)
     }
+
+    widgetBridge.register(with: engineBridge.applicationRegistrar.messenger())
   }
 
   private static let alternateIconsById: [String: String?] = [

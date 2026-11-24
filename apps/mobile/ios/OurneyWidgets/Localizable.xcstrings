@@ -1,0 +1,198 @@
+{
+  "sourceLanguage" : "vi",
+  "strings" : {
+    "Cycle Next Journey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cycle Next Journey"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đổi hành trình tiếp theo"
+          }
+        }
+      }
+    },
+    "Dismiss Check-In Window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss Check-In Window"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ẩn khung giờ nhắc hôm nay"
+          }
+        }
+      }
+    },
+    "Select Journey" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Journey"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chọn hành trình"
+          }
+        }
+      }
+    },
+    "Select Squad" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Squad"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chọn nhóm đồng hành"
+          }
+        }
+      }
+    },
+    "widget.lock.gallery.desc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ambient streak and remaining check-ins on your Lock Screen."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Theo dõi chuỗi ngày và số hành trình còn lại ngay trên Màn hình khóa."
+          }
+        }
+      }
+    },
+    "widget.lock.gallery.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lock Screen Streak"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chuỗi trên Màn hình khóa"
+          }
+        }
+      }
+    },
+    "widget.squad.gallery.desc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See who in your Squad or Couple journey has checked in today."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xem ai trong nhóm hoặc cặp đôi đã chụp ảnh check-in hôm nay."
+          }
+        }
+      }
+    },
+    "widget.squad.gallery.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Squad & Couple Today"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đồng đội & Cặp đôi"
+          }
+        }
+      }
+    },
+    "widget.streak.gallery.desc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bold streak counter, flame sticker, and 7-day chain."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con số chuỗi ngày nổi bật cùng biểu tượng ngọn lửa và lịch 7 ngày."
+          }
+        }
+      }
+    },
+    "widget.streak.gallery.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Streak Sticker"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhãn dán Chuỗi ngày"
+          }
+        }
+      }
+    },
+    "widget.today.gallery.desc" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "One-tap camera shortcut for today's pending check-in and daily Polaroid reward."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm để chụp ảnh check-in hôm nay và xem khung ảnh Polaroid khi hoàn thành."
+          }
+        }
+      }
+    },
+    "widget.today.gallery.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today Check-In"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check-in Hôm nay"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

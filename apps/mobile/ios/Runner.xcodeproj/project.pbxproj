@@ -18,6 +18,34 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		7C0A00012F00000100000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7C0A00012F00000100000001 /* InfoPlist.strings */; };
 		7C0A00012F00000100000006 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7C0A00012F00000100000005 /* PrivacyInfo.xcprivacy */; };
+		7D0B00202F10000100000001 /* OurneyWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00022F10000100000001 /* OurneyWidgetBridge.swift */; };
+		7D0B00212F10000100000001 /* OurneyCheckInAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */; };
+		7D0B00222F10000100000001 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00052F10000100000001 /* WidgetSnapshot.swift */; };
+		7D0B00232F10000100000001 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001A2F10000100000001 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		7D0B00242F10000100000001 /* OurneyWidgetsExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 7D0B00012F10000100000001 /* OurneyWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7D0B00252F10000100000001 /* WidgetSnapshotRolloverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */; };
+		7D0B00262F10000100000001 /* OurneyCheckInAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */; };
+		7D0B00272F10000100000001 /* OurneyWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00042F10000100000001 /* OurneyWidgetsBundle.swift */; };
+		7D0B00282F10000100000001 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00052F10000100000001 /* WidgetSnapshot.swift */; };
+		7D0B00292F10000100000001 /* OurneyWidgetTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00062F10000100000001 /* OurneyWidgetTokens.swift */; };
+		7D0B002A2F10000100000001 /* OurneyWidgetIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00072F10000100000001 /* OurneyWidgetIcons.swift */; };
+		7D0B002B2F10000100000001 /* WidgetL10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00082F10000100000001 /* WidgetL10n.swift */; };
+		7D0B002C2F10000100000001 /* TodayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B00092F10000100000001 /* TodayWidget.swift */; };
+		7D0B002D2F10000100000001 /* StreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000A2F10000100000001 /* StreakWidget.swift */; };
+		7D0B002E2F10000100000001 /* SquadWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000B2F10000100000001 /* SquadWidget.swift */; };
+		7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000C2F10000100000001 /* LockScreenWidget.swift */; };
+		7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */; };
+		7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000E2F10000100000001 /* WidgetIntents.swift */; };
+		7D0B00322F10000100000001 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B00182F10000100000001 /* WidgetKit.framework */; };
+		7D0B00332F10000100000001 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B00192F10000100000001 /* SwiftUI.framework */; };
+		7D0B00342F10000100000001 /* ActivityKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001A2F10000100000001 /* ActivityKit.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		7D0B00352F10000100000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001B2F10000100000001 /* AppIntents.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
+		7D0B00362F10000100000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B000F2F10000100000001 /* Localizable.xcstrings */; };
+		7D0B00372F10000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00102F10000100000001 /* Assets.xcassets */; };
+		7D0B00382F10000100000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */; };
+		7D0B00392F10000100000001 /* BeVietnamPro-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00152F10000100000001 /* BeVietnamPro-SemiBold.ttf */; };
+		7D0B003A2F10000100000001 /* BeVietnamPro-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00162F10000100000001 /* BeVietnamPro-Bold.ttf */; };
+		7D0B003B2F10000100000001 /* BricolageGrotesque-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00172F10000100000001 /* BricolageGrotesque-Variable.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -28,9 +56,27 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
+		7D0B00412F10000100000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7D0B00462F10000100000001;
+			remoteInfo = OurneyWidgetsExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		7D0B00402F10000100000001 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7D0B00242F10000100000001 /* OurneyWidgetsExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -65,14 +111,53 @@
 		7C0A00012F00000100000003 /* en */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		7C0A00012F00000100000005 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7C0A00012F00000100000007 /* Runner.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		7D0B00012F10000100000001 /* OurneyWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OurneyWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		7D0B00022F10000100000001 /* OurneyWidgetBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OurneyWidgetBridge.swift; sourceTree = "<group>"; };
+		7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OurneyCheckInAttributes.swift; sourceTree = "<group>"; };
+		7D0B00042F10000100000001 /* OurneyWidgetsBundle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OurneyWidgetsBundle.swift; sourceTree = "<group>"; };
+		7D0B00052F10000100000001 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Models/WidgetSnapshot.swift; sourceTree = "<group>"; };
+		7D0B00062F10000100000001 /* OurneyWidgetTokens.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Theme/OurneyWidgetTokens.swift; sourceTree = "<group>"; };
+		7D0B00072F10000100000001 /* OurneyWidgetIcons.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Theme/OurneyWidgetIcons.swift; sourceTree = "<group>"; };
+		7D0B00082F10000100000001 /* WidgetL10n.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Theme/WidgetL10n.swift; sourceTree = "<group>"; };
+		7D0B00092F10000100000001 /* TodayWidget.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/TodayWidget.swift; sourceTree = "<group>"; };
+		7D0B000A2F10000100000001 /* StreakWidget.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/StreakWidget.swift; sourceTree = "<group>"; };
+		7D0B000B2F10000100000001 /* SquadWidget.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/SquadWidget.swift; sourceTree = "<group>"; };
+		7D0B000C2F10000100000001 /* LockScreenWidget.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/LockScreenWidget.swift; sourceTree = "<group>"; };
+		7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Views/CheckInLiveActivity.swift; sourceTree = "<group>"; };
+		7D0B000E2F10000100000001 /* WidgetIntents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Intents/WidgetIntents.swift; sourceTree = "<group>"; };
+		7D0B000F2F10000100000001 /* Localizable.xcstrings */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		7D0B00102F10000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7D0B00122F10000100000001 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		7D0B00132F10000100000001 /* OurneyWidgets.entitlements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.entitlements; path = OurneyWidgets.entitlements; sourceTree = "<group>"; };
+		7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WidgetSnapshotRolloverTests.swift; sourceTree = "<group>"; };
+		7D0B00152F10000100000001 /* BeVietnamPro-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BeVietnamPro-SemiBold.ttf"; path = "../../assets/fonts/BeVietnamPro-SemiBold.ttf"; sourceTree = "<group>"; };
+		7D0B00162F10000100000001 /* BeVietnamPro-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BeVietnamPro-Bold.ttf"; path = "../../assets/fonts/BeVietnamPro-Bold.ttf"; sourceTree = "<group>"; };
+		7D0B00172F10000100000001 /* BricolageGrotesque-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "BricolageGrotesque-Variable.ttf"; path = "../../assets/fonts/BricolageGrotesque-Variable.ttf"; sourceTree = "<group>"; };
+		7D0B00182F10000100000001 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		7D0B00192F10000100000001 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		7D0B001A2F10000100000001 /* ActivityKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ActivityKit.framework; path = System/Library/Frameworks/ActivityKit.framework; sourceTree = SDKROOT; };
+		7D0B001B2F10000100000001 /* AppIntents.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppIntents.framework; path = System/Library/Frameworks/AppIntents.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7D0B00442F10000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D0B00322F10000100000001 /* WidgetKit.framework in Frameworks */,
+				7D0B00332F10000100000001 /* SwiftUI.framework in Frameworks */,
+				7D0B00342F10000100000001 /* ActivityKit.framework in Frameworks */,
+				7D0B00352F10000100000001 /* AppIntents.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EB1CF9000F007C117D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
+				7D0B00232F10000100000001 /* ActivityKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,8 +168,54 @@
 			isa = PBXGroup;
 			children = (
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
+				7D0B00142F10000100000001 /* WidgetSnapshotRolloverTests.swift */,
 			);
 			path = RunnerTests;
+			sourceTree = "<group>";
+		};
+		7D0B003C2F10000100000001 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				7D0B00032F10000100000001 /* OurneyCheckInAttributes.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		7D0B003D2F10000100000001 /* OurneyWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				7D0B00042F10000100000001 /* OurneyWidgetsBundle.swift */,
+				7D0B00052F10000100000001 /* WidgetSnapshot.swift */,
+				7D0B00062F10000100000001 /* OurneyWidgetTokens.swift */,
+				7D0B00072F10000100000001 /* OurneyWidgetIcons.swift */,
+				7D0B00082F10000100000001 /* WidgetL10n.swift */,
+				7D0B00092F10000100000001 /* TodayWidget.swift */,
+				7D0B000A2F10000100000001 /* StreakWidget.swift */,
+				7D0B000B2F10000100000001 /* SquadWidget.swift */,
+				7D0B000C2F10000100000001 /* LockScreenWidget.swift */,
+				7D0B000D2F10000100000001 /* CheckInLiveActivity.swift */,
+				7D0B000E2F10000100000001 /* WidgetIntents.swift */,
+				7D0B000F2F10000100000001 /* Localizable.xcstrings */,
+				7D0B00102F10000100000001 /* Assets.xcassets */,
+				7D0B00112F10000100000001 /* PrivacyInfo.xcprivacy */,
+				7D0B00122F10000100000001 /* Info.plist */,
+				7D0B00132F10000100000001 /* OurneyWidgets.entitlements */,
+				7D0B00152F10000100000001 /* BeVietnamPro-SemiBold.ttf */,
+				7D0B00162F10000100000001 /* BeVietnamPro-Bold.ttf */,
+				7D0B00172F10000100000001 /* BricolageGrotesque-Variable.ttf */,
+			);
+			path = OurneyWidgets;
+			sourceTree = "<group>";
+		};
+		7D0B003E2F10000100000001 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7D0B00182F10000100000001 /* WidgetKit.framework */,
+				7D0B00192F10000100000001 /* SwiftUI.framework */,
+				7D0B001A2F10000100000001 /* ActivityKit.framework */,
+				7D0B001B2F10000100000001 /* AppIntents.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -104,6 +235,9 @@
 			children = (
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
+				7D0B003C2F10000100000001 /* Shared */,
+				7D0B003D2F10000100000001 /* OurneyWidgets */,
+				7D0B003E2F10000100000001 /* Frameworks */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 			);
@@ -114,6 +248,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
+				7D0B00012F10000100000001 /* OurneyWidgetsExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -132,6 +267,7 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */,
+				7D0B00022F10000100000001 /* OurneyWidgetBridge.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -157,6 +293,23 @@
 			productReference = 331C8081294A63A400263BE5 /* RunnerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		7D0B00462F10000100000001 /* OurneyWidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D0B00472F10000100000001 /* Build configuration list for PBXNativeTarget "OurneyWidgetsExtension" */;
+			buildPhases = (
+				7D0B00432F10000100000001 /* Sources */,
+				7D0B00442F10000100000001 /* Frameworks */,
+				7D0B00452F10000100000001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = OurneyWidgetsExtension;
+			productName = OurneyWidgetsExtension;
+			productReference = 7D0B00012F10000100000001 /* OurneyWidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -166,11 +319,13 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				7D0B00402F10000100000001 /* Embed App Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7D0B00422F10000100000001 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -193,6 +348,9 @@
 					331C8080294A63A400263BE5 = {
 						CreatedOnToolsVersion = 14.0;
 						TestTargetID = 97C146ED1CF9000F007C117D;
+					};
+					7D0B00462F10000100000001 = {
+						CreatedOnToolsVersion = 15.0;
 					};
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -219,6 +377,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
+				7D0B00462F10000100000001 /* OurneyWidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -228,6 +387,19 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D0B00452F10000100000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D0B00362F10000100000001 /* Localizable.xcstrings in Resources */,
+				7D0B00372F10000100000001 /* Assets.xcassets in Resources */,
+				7D0B00382F10000100000001 /* PrivacyInfo.xcprivacy in Resources */,
+				7D0B00392F10000100000001 /* BeVietnamPro-SemiBold.ttf in Resources */,
+				7D0B003A2F10000100000001 /* BeVietnamPro-Bold.ttf in Resources */,
+				7D0B003B2F10000100000001 /* BricolageGrotesque-Variable.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -286,6 +458,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
+				7D0B00252F10000100000001 /* WidgetSnapshotRolloverTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D0B00432F10000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D0B00262F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
+				7D0B00272F10000100000001 /* OurneyWidgetsBundle.swift in Sources */,
+				7D0B00282F10000100000001 /* WidgetSnapshot.swift in Sources */,
+				7D0B00292F10000100000001 /* OurneyWidgetTokens.swift in Sources */,
+				7D0B002A2F10000100000001 /* OurneyWidgetIcons.swift in Sources */,
+				7D0B002B2F10000100000001 /* WidgetL10n.swift in Sources */,
+				7D0B002C2F10000100000001 /* TodayWidget.swift in Sources */,
+				7D0B002D2F10000100000001 /* StreakWidget.swift in Sources */,
+				7D0B002E2F10000100000001 /* SquadWidget.swift in Sources */,
+				7D0B002F2F10000100000001 /* LockScreenWidget.swift in Sources */,
+				7D0B00302F10000100000001 /* CheckInLiveActivity.swift in Sources */,
+				7D0B00312F10000100000001 /* WidgetIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -296,6 +488,9 @@
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
+				7D0B00202F10000100000001 /* OurneyWidgetBridge.swift in Sources */,
+				7D0B00212F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
+				7D0B00222F10000100000001 /* WidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -306,6 +501,11 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
+		};
+		7D0B00422F10000100000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7D0B00462F10000100000001 /* OurneyWidgetsExtension */;
+			targetProxy = 7D0B00412F10000100000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -467,6 +667,99 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Runner";
+			};
+			name = Profile;
+		};
+		7D0B00482F10000100000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = OurneyWidgets/OurneyWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OurneyWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hofang42.ourney.OurneyWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		7D0B00492F10000100000001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = OurneyWidgets/OurneyWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OurneyWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hofang42.ourney.OurneyWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		7D0B004A2F10000100000001 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = OurneyWidgets/OurneyWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				ENABLE_BITCODE = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = OurneyWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.hofang42.ourney.OurneyWidgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Profile;
 		};
@@ -657,6 +950,16 @@
 				331C8088294A63A400263BE5 /* Debug */,
 				331C8089294A63A400263BE5 /* Release */,
 				331C808A294A63A400263BE5 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7D0B00472F10000100000001 /* Build configuration list for PBXNativeTarget "OurneyWidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7D0B00482F10000100000001 /* Debug */,
+				7D0B00492F10000100000001 /* Release */,
+				7D0B004A2F10000100000001 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
