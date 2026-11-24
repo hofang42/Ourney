@@ -13,6 +13,7 @@
         android:name="${applicationName}"
         android:allowBackup="false"
         android:fullBackupContent="false"
+        android:usesCleartextTraffic="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -32,6 +33,16 @@
                 <data android:scheme="ourney" android:host="join" />
                 <data android:scheme="ourney" android:host="journey" />
                 <data android:scheme="ourney" android:host="friend" />
+            </intent-filter>
+            <!-- Android App Links: https://ourney.tech/f/*, /j/*, /join/*, /p/* (FS-05). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="ourney.tech" android:pathPrefix="/f/" />
+                <data android:scheme="https" android:host="ourney.tech" android:pathPrefix="/j/" />
+                <data android:scheme="https" android:host="ourney.tech" android:pathPrefix="/join/" />
+                <data android:scheme="https" android:host="ourney.tech" android:pathPrefix="/p/" />
             </intent-filter>
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user

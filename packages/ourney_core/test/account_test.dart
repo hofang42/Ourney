@@ -109,7 +109,77 @@ void localStatsTests() {
     );
     expect(stats.totalSnaps, 4);
     expect(stats.longestStreak, 3);
+    expect(stats.currentStreak, 0, reason: 'ended journey has 0 live streak');
     expect(stats.journeysCompleted, 1);
     expect(stats.journeysTotal, 1);
+  });
+
+  test(
+      'computeLocalProfileStats excludes imported journeys from streaks (S12 / FS-25) '
+      'and counts archived or elapsed journeys as completed', () {
+    final start = LocalDate(2026, 1, 1);
+    final imported = Journey(
+      id: 'imp',
+      ownerId: 'u',
+      kind: JourneyKind.solo,
+      templateId: TemplateId.travel,
+      title: 'Trip',
+      emoji: '✈️',
+      startDate: start,
+      timezone: 'UTC',
+      visibility: JourneyVisibility.private,
+      status: JourneyStatus.ended,
+      origin: JourneyOrigin.imported,
+      durationDays: 10,
+    );
+    final elapsedActive = Journey(
+      id: 'elapsed',
+      ownerId: 'u',
+      kind: JourneyKind.solo,
+      templateId: TemplateId.custom,
+      title: 'Elapsed',
+      emoji: '🔥',
+      startDate: start,
+      timezone: 'UTC',
+      visibility: JourneyVisibility.private,
+      status: JourneyStatus.active,
+      durationDays: 7,
+    );
+    final liveActive = Journey(
+      id: 'live',
+      ownerId: 'u',
+      kind: JourneyKind.solo,
+      templateId: TemplateId.custom,
+      title: 'Live',
+      emoji: '🔥',
+      startDate: start.addDays(8),
+      timezone: 'UTC',
+      visibility: JourneyVisibility.private,
+      status: JourneyStatus.active,
+      durationDays: 30,
+    );
+    CheckIn c(String jid, int day) => CheckIn(
+          id: '$jid-$day',
+          journeyId: jid,
+          userId: 'u',
+          localDate: start.addDays(day),
+          capturedAt: DateTime.utc(2026, 1, 1 + day),
+          photoPath: 'p',
+          thumbPath: 't',
+        );
+    final stats = computeLocalProfileStats(
+      journeys: [imported, elapsedActive, liveActive],
+      checkInsByJourney: {
+        'imp': [for (var i = 0; i < 10; i++) c('imp', i)],
+        'elapsed': [c('elapsed', 0), c('elapsed', 1), c('elapsed', 2)],
+        'live': [c('live', 9), c('live', 10)],
+      },
+      today: (_) => start.addDays(10),
+    );
+    expect(stats.totalSnaps, 15);
+    expect(stats.longestStreak, 3, reason: 'imported 10-day run ignored (S12)');
+    expect(stats.currentStreak, 2, reason: 'only active unelapsed journey');
+    expect(stats.journeysCompleted, 2, reason: 'ended + elapsed active');
+    expect(stats.journeysTotal, 3);
   });
 }

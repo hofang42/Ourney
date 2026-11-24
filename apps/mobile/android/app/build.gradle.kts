@@ -1,8 +1,22 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.isFile) {
+        FileInputStream(file).use { load(it) }
+    }
+}
+
+fun signingProp(propKey: String, envKey: String): String? =
+    System.getenv(envKey)?.takeIf { it.isNotBlank() }
+        ?: keystoreProperties.getProperty(propKey)?.takeIf { it.isNotBlank() }
 
 android {
     namespace = "com.hofang42.ourney"
@@ -31,11 +45,34 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        val storePath = signingProp("storeFile", "ANDROID_KEYSTORE_PATH")
+        val storePass = signingProp("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+        val alias = signingProp("keyAlias", "ANDROID_KEY_ALIAS")
+        val keyPass = signingProp("keyPassword", "ANDROID_KEY_PASSWORD")
+        if (storePath != null && storePass != null && alias != null && keyPass != null) {
+            val keystoreFile = file(storePath)
+            if (keystoreFile.isFile) {
+                create("release") {
+                    storeFile = keystoreFile
+                    storePassword = storePass
+                    keyAlias = alias
+                    keyPassword = keyPass
+                }
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Uses release signing from key.properties / env when configured;
+            // falls back to debug signing only for local `flutter run --release`.
+            signingConfig =
+                signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

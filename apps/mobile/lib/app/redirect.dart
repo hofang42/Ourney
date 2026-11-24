@@ -15,19 +15,32 @@ enum AuthStatus {
   signedOut,
 }
 
-/// Maps `ourney://join/<code>` and `ourney://journey/<id>` (host = first
-/// segment) to an in-app path. Returns null for non-deep-link URIs.
+/// Allowed hosts for custom-scheme deep links (`ourney://<host>/<id>`).
+const Set<String> _allowedDeepLinkHosts = {'join', 'journey', 'friend'};
+
+/// Maps `ourney://join/<code>`, `ourney://journey/<id>`, and
+/// `ourney://friend/<token>` (host = first segment) to an in-app path.
+/// Returns null for non-deep-link URIs or unallowlisted `ourney://` hosts.
 String? normalizeDeepLink(Uri uri) {
   if (uri.scheme != kDeepLinkScheme) return null;
   final host = uri.host;
   final rest = uri.path; // "/<code>" or ""
+  if (host.isEmpty) {
+    if (rest.isEmpty || rest == '/') return AppRoutes.capture;
+    return null;
+  }
+  if (!_allowedDeepLinkHosts.contains(host)) return null;
   // `ourney://friend/<token>` is the friend invite link (`/f/<token>`).
   final segment = host == 'friend' ? 'f' : host;
-  var path = host.isEmpty ? rest : '/$segment$rest';
-  if (path.isEmpty) path = AppRoutes.capture;
+  final path = '/$segment$rest';
   final query = uri.hasQuery ? '?${uri.query}' : '';
   return '$path$query';
 }
+
+String _normalizeWebInvitePath(String path) =>
+    path.startsWith('/j/') && path.length > 3
+    ? '/join/${path.substring(3)}'
+    : path;
 
 /// Paths reachable before onboarding is finished.
 const List<String> _preOnboardingPrefixes = [
@@ -53,11 +66,13 @@ String? resolveRedirect({
   required AuthStatus auth,
   bool eulaAccepted = true,
 }) {
-  final deepLink = normalizeDeepLink(uri);
-  if (deepLink != null) return deepLink;
+  if (uri.scheme == kDeepLinkScheme) {
+    return normalizeDeepLink(uri) ?? AppRoutes.capture;
+  }
 
-  final path = uri.path.isEmpty ? '/' : uri.path;
-  if (path == '/') return AppRoutes.capture;
+  final rawPath = uri.path.isEmpty ? '/' : uri.path;
+  if (rawPath == '/') return AppRoutes.capture;
+  final path = _normalizeWebInvitePath(rawPath);
 
   bool under(List<String> prefixes) =>
       prefixes.any((p) => pathHasPrefix(path, p));
@@ -95,10 +110,14 @@ String? resolveRedirect({
     ).toString();
   }
 
-  // Gates already satisfied: leave onboarding/auth for the saved target.
+  // Gates already satisfied: leave onboarding/auth/EULA gate for the saved target.
   if (pathHasPrefix(path, AppRoutes.onboarding) ||
-      pathHasPrefix(path, AppRoutes.auth)) {
+      pathHasPrefix(path, AppRoutes.auth) ||
+      (auth == AuthStatus.signedIn && pathHasPrefix(path, kEulaAcceptPath))) {
     return safeFrom(uri) ?? AppRoutes.capture;
+  }
+  if (path != rawPath) {
+    return uri.hasQuery ? '$path?${uri.query}' : path;
   }
   return null;
 }
@@ -112,7 +131,8 @@ String? safeFrom(Uri uri) {
   final target = Uri.tryParse(from);
   if (target == null || target.hasScheme || target.hasAuthority) return null;
   if (pathHasPrefix(target.path, AppRoutes.onboarding) ||
-      pathHasPrefix(target.path, AppRoutes.auth)) {
+      pathHasPrefix(target.path, AppRoutes.auth) ||
+      pathHasPrefix(target.path, kEulaAcceptPath)) {
     return null;
   }
   return from;
@@ -122,8 +142,11 @@ String? safeFrom(Uri uri) {
 /// `https://ourney.tech/f/<token>` reaches the router with scheme and host;
 /// keeping them in `?from=` would make [safeFrom] reject the target later.
 String _inAppTarget(Uri uri) {
-  if (!uri.hasScheme && !uri.hasAuthority) return uri.toString();
-  final path = uri.path.isEmpty ? '/' : uri.path;
+  final rawPath = uri.path.isEmpty ? '/' : uri.path;
+  final path = _normalizeWebInvitePath(rawPath);
+  if (!uri.hasScheme && !uri.hasAuthority && path == rawPath) {
+    return uri.toString();
+  }
   return uri.hasQuery ? '$path?${uri.query}' : path;
 }
 

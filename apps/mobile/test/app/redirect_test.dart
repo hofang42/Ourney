@@ -25,9 +25,32 @@ void main() {
         normalizeDeepLink(Uri.parse('ourney://journey/j-42?x=1')),
         '/journey/j-42?x=1',
       );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://friend/tok123')),
+        '/f/tok123',
+      );
       expect(normalizeDeepLink(Uri.parse('ourney://')), AppRoutes.capture);
       expect(normalizeDeepLink(Uri.parse('/capture')), isNull);
       expect(normalizeDeepLink(Uri.parse('https://x.dev/join/A')), isNull);
+    });
+
+    test('rejects unallowlisted custom-scheme hosts and paths (FS-05)', () {
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://profile/delete-account')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://safety/eula/accept')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney:///profile/delete-account')),
+        isNull,
+      );
+      expect(
+        r('ourney://profile/delete-account', auth: AuthStatus.signedIn),
+        AppRoutes.capture,
+      );
     });
   });
 
@@ -98,8 +121,13 @@ void main() {
         isNull,
       );
       expect(r('/safety/privacy', auth: inn, eula: false), isNull);
-      // Accepted: no gate.
+      // Accepted: no gate, and kEulaAcceptPath bounces away (FS-05).
       expect(r('/groups', auth: inn), isNull);
+      expect(r(kEulaAcceptPath, auth: inn), AppRoutes.capture);
+      expect(
+        r('$kEulaAcceptPath?from=%2Fgroups', auth: inn),
+        AppRoutes.groups,
+      );
     });
 
     test('EULA gate never applies to local-only or signed-out users', () {
@@ -130,6 +158,15 @@ void main() {
         r(link, auth: AuthStatus.signedIn, eula: false),
         '$kEulaAcceptPath?from=%2Ff%2Ftok123456',
       );
+      // Group universal link /j/<code> normalises to /join/<code> (FS-05).
+      expect(
+        r('https://ourney.tech/j/ABCD1234', auth: AuthStatus.signedIn),
+        '/join/ABCD1234',
+      );
+      expect(
+        r('https://ourney.tech/j/ABCD1234', onboarded: false),
+        '/onboarding?from=%2Fjoin%2FABCD1234',
+      );
     });
   });
 
@@ -144,6 +181,7 @@ void main() {
       expect(safeFrom(u('journey/1')), isNull);
       expect(safeFrom(u('/auth')), isNull);
       expect(safeFrom(u('/onboarding')), isNull);
+      expect(safeFrom(u(kEulaAcceptPath)), isNull);
       expect(safeFrom(Uri.parse('/auth')), isNull);
     });
   });

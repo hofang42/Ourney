@@ -31,12 +31,57 @@ void main() {
     );
   });
 
-  group('sanitizeJourneyDna (A-B11)', () {
+  group('sanitizeJourneyDna (A-B11, FS-37)', () {
     test('clips by code points, never inside a surrogate pair', () {
       final trophy = '${'a' * 23}\u{1F3C6}';
       expect(sanitizeJourneyDna({'trophy': trophy})!['trophy'], trophy);
       final long = '${'a' * 23}\u{1F3C6}\u{1F3C6}';
       expect(sanitizeJourneyDna({'trophy': long})!['trophy'], trophy);
+    });
+
+    test('validates nested dates and choice format', () {
+      expect(
+        sanitizeJourneyDna({
+          'dates': {'start': '2026-05-01', 'end': '2026-05-10'},
+          'goal': 'lose',
+        }),
+        {
+          'dates': {'start': '2026-05-01', 'end': '2026-05-10'},
+          'goal': 'lose',
+        },
+      );
+      // Null end is omitted so SQL journey_dna_valid never sees JSON null.
+      expect(
+        sanitizeJourneyDna({
+          'dates': {'start': '2026-05-01', 'end': null},
+        }),
+        {
+          'dates': {'start': '2026-05-01'},
+        },
+      );
+      // Invalid dates or end < start are dropped.
+      expect(
+        sanitizeJourneyDna({
+          'dates': {'start': '2026-05-10', 'end': '2026-05-01'},
+        }),
+        isNull,
+      );
+      expect(
+        sanitizeJourneyDna({
+          'dates': {'start': 'not-a-date'},
+        }),
+        isNull,
+      );
+      expect(
+        sanitizeJourneyDna({
+          'dates': {'start': '2026-05-01', 'extra': '1'},
+        }),
+        isNull,
+      );
+      expect(
+        sanitizeJourneyDna({'goal': 'INVALID CHOICE!'}),
+        isNull,
+      );
     });
   });
 

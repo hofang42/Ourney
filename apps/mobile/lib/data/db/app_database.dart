@@ -229,6 +229,7 @@ class ImportJobs extends Table {
 }
 
 /// One photo of an [ImportJobs] row. `id` is also the check-in id.
+@TableIndex(name: 'import_job_photos_job_pos', columns: {#jobId, #position})
 @DataClassName('ImportJobPhotoRow')
 class ImportJobPhotos extends Table {
   TextColumn get id => text()();
@@ -276,10 +277,19 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+      await customStatement('PRAGMA busy_timeout = 5000');
+    },
     onCreate: (m) async {
       await m.createAll();
       await customStatement(
-        'CREATE INDEX check_ins_journey_idx ON check_ins (journey_id, local_date)',
+        'CREATE INDEX IF NOT EXISTS check_ins_journey_idx '
+        'ON check_ins (journey_id, local_date)',
+      );
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS import_job_photos_job_pos '
+        'ON import_job_photos (job_id, position)',
       );
     },
     onUpgrade: (m, from, to) async {
@@ -321,6 +331,10 @@ class AppDatabase extends _$AppDatabase {
         // still change in place until it ships.
         await m.createTable(importJobs);
         await m.createTable(importJobPhotos);
+        await customStatement(
+          'CREATE INDEX IF NOT EXISTS import_job_photos_job_pos '
+          'ON import_job_photos (job_id, position)',
+        );
       }
     },
   );
