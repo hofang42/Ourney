@@ -1,5 +1,7 @@
 // Camera redesign (2026-11-20): one shared camera, a large preview, and a
 // status pill instead of a toast (the toast covered the shutter).
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +19,13 @@ class _FailingShotCamera extends FakeCameraSession {
   @override
   Future<String> takePicture() =>
       throw const CameraStartException(CameraFailure.failed);
+}
+
+class _SlowShotCamera extends FakeCameraSession {
+  final Completer<String> shot = Completer<String>();
+
+  @override
+  Future<String> takePicture() => shot.future;
 }
 
 void main() {
@@ -220,4 +229,59 @@ void main() {
       expect(find.byKey(const ValueKey('overlay-none')), findsOneWidget);
     });
   });
+
+  testWidgets(
+    'shutter dims only while camera is starting, not while capture is in flight',
+    (tester) async {
+      final slow = _SlowShotCamera()..startGate = Completer<void>();
+      final prefs = await testPrefs({CameraPrefs.permissionAsked: true});
+      final container = ProviderContainer(
+        overrides: [
+          ...baseOverrides(
+            prefs: prefs,
+            journeys: FakeJourneyRepository(journeys: [testJourney()]),
+          ),
+          cameraSessionFactoryProvider.overrideWithValue(() => slow),
+          galleryPickerProvider.overrideWithValue(FakeGalleryPicker()),
+          appSettingsOpenerProvider.overrideWithValue(FakeSettingsOpener()),
+        ],
+      );
+      addTearDown(container.dispose);
+      await tester.pumpWidget(
+        routedTestApp(
+          container: container,
+          routes: cameraRoutes,
+          initialLocation: '/capture',
+          log: RouteLog(),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      double shutterOpacity() => tester
+          .widget<AnimatedOpacity>(
+            find.descendant(
+              of: find.byKey(const ValueKey('capture-shutter')),
+              matching: find.byType(AnimatedOpacity),
+            ),
+          )
+          .opacity;
+
+      // Starting: shutter is dimmed to 0.5.
+      expect(shutterOpacity(), 0.5);
+
+      // Ready: shutter animates to full opacity.
+      slow.startGate!.complete();
+      await tester.pumpAndSettle();
+      expect(shutterOpacity(), 1.0);
+
+      // Capture in flight (_busy): shutter must not dim back to 0.5.
+      await tester.tap(find.byKey(const ValueKey('capture-shutter')));
+      await tester.pump();
+      expect(shutterOpacity(), 1.0);
+
+      slow.shot.complete('/tmp/shot1.jpg');
+      await tester.pumpAndSettle();
+    },
+  );
 }

@@ -164,7 +164,6 @@ Future<ReminderHarness> reminderHarness({
   Map<String, Object> prefs = const {},
   bool failJourneys = false,
   bool unwiredJourneys = false,
-
   /// Null keeps the real provider (in-app language, then device).
   Locale? locale = const Locale('vi'),
   List<Override> overrides = const [],

@@ -42,7 +42,7 @@ BoxDecoration dockSelectionDecoration({
 );
 
 /// How far the tab content sits above the pill's centre (dp).
-const double dockTabLift = 4;
+const double dockTabLift = 6;
 
 /// Largest text scale the tab label follows (Dynamic Type cap).
 const double dockLabelMaxScale = 1.35;

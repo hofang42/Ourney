@@ -199,7 +199,7 @@ void main() {
       await _tap(tester, _key('journey-visibility-link'));
       await _tap(tester, _key('journey-kind-group'));
       expect(_key('journey-visibility-link'), findsNothing);
-      expect(find.text('Group members'), findsOneWidget);
+      expect(find.text('Squad members'), findsOneWidget);
       await _tap(tester, _key('journey-create'));
       final draft = h.journeys.created.single;
       expect(draft.kind, JourneyKind.group);

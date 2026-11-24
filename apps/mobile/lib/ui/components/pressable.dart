@@ -53,9 +53,20 @@ class _UiPressableState extends State<UiPressable> {
   bool _down = false;
   bool _focused = false;
 
+  /// A pressable nested inside this one is being pressed: it owns the touch,
+  /// so this one must not show its pressed state too (a member chip inside a
+  /// tappable card).
+  int _childPointers = 0;
+
+  void _childPointer(bool down) {
+    _childPointers = (_childPointers + (down ? 1 : -1)).clamp(0, 1 << 20);
+    if (down && _down && mounted) setState(() => _down = false);
+  }
+
   bool get _enabled => widget.onPressed != null;
 
   void _setDown(bool v) {
+    if (v && _childPointers > 0) return;
     if (_down != v && mounted) setState(() => _down = v);
   }
 
@@ -129,13 +140,25 @@ class _UiPressableState extends State<UiPressable> {
             },
           ),
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: _enabled ? (_) => _setDown(true) : null,
-          onTapUp: _enabled ? (_) => _setDown(false) : null,
-          onTapCancel: () => _setDown(false),
-          onTap: widget.onPressed,
-          child: content,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => context
+              .findAncestorStateOfType<_UiPressableState>()
+              ?._childPointer(true),
+          onPointerUp: (_) => context
+              .findAncestorStateOfType<_UiPressableState>()
+              ?._childPointer(false),
+          onPointerCancel: (_) => context
+              .findAncestorStateOfType<_UiPressableState>()
+              ?._childPointer(false),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: _enabled ? (_) => _setDown(true) : null,
+            onTapUp: _enabled ? (_) => _setDown(false) : null,
+            onTapCancel: () => _setDown(false),
+            onTap: widget.onPressed,
+            child: content,
+          ),
         ),
       ),
     );

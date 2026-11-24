@@ -12,7 +12,11 @@ const _margin = 24;
 
 /// Pixel bounds of everything the painter draws for [name] in a 24dp box
 /// (offset by [_margin] inside a larger canvas so overflow is measurable).
-Future<Rect> paintedBounds(String name, {required bool active}) async {
+Future<Rect> paintedBounds(
+  String name, {
+  required bool active,
+  bool ring = true,
+}) async {
   final rec = ui.PictureRecorder();
   final canvas = Canvas(rec);
   canvas.translate(_margin.toDouble(), _margin.toDouble());
@@ -21,8 +25,8 @@ Future<Rect> paintedBounds(String name, {required bool active}) async {
     color: ourneyIconColor(name),
     ink: const Color(0xFF000000),
     active: active,
-    shadow: const Color(0xFF000000),
-    dieCut: const Color(0xFFFFFFFF),
+    shadow: ring ? const Color(0xFF000000) : null,
+    dieCut: ring ? const Color(0xFFFFFFFF) : const Color(0x00000000),
   ).paint(canvas, const Size(24, 24));
   const side = _box + 2 * _margin;
   final image = await rec.endRecording().toImage(side, side);
@@ -46,41 +50,46 @@ Future<Rect> paintedBounds(String name, {required bool active}) async {
   );
 }
 
+/// The sticker may spill this far past the 24dp glyph box (the dock keeps
+/// the artwork at full size and gives the die-cut ring this much room).
+const _spill = 4.0;
+
 void main() {
   for (final active in [false, true]) {
-    testWidgets('dock tab icons stay inside their 24dp box (active=$active)', (
-      tester,
-    ) async {
-      final bounds = <String, Rect>{};
-      await tester.runAsync(() async {
-        for (final name in _tabs) {
-          bounds[name] = await paintedBounds(name, active: active);
+    final spill = active ? _spill : 0.0;
+    testWidgets(
+      'dock tab icons stay within the glyph slot + $spill (active=$active)',
+      (tester) async {
+        final bounds = <String, Rect>{};
+        await tester.runAsync(() async {
+          for (final name in _tabs) {
+            bounds[name] = await paintedBounds(name, active: active);
+          }
+        });
+        for (final e in bounds.entries) {
+          final r = e.value;
+          String reason() => '${e.key} $r';
+          expect(r.left, greaterThanOrEqualTo(-spill), reason: reason());
+          expect(r.top, greaterThanOrEqualTo(-spill), reason: reason());
+          expect(r.right, lessThanOrEqualTo(_box + spill), reason: reason());
+          expect(r.bottom, lessThanOrEqualTo(_box + spill), reason: reason());
         }
-      });
-      for (final e in bounds.entries) {
-        final r = e.value;
-        expect(r.left, greaterThanOrEqualTo(0), reason: '${e.key} $r');
-        expect(r.top, greaterThanOrEqualTo(0), reason: '${e.key} $r');
-        expect(r.right, lessThanOrEqualTo(_box), reason: '${e.key} $r');
-        expect(r.bottom, lessThanOrEqualTo(_box), reason: '${e.key} $r');
-      }
-      // The map no longer dwarfs the other tabs: its painted extent is
-      // within 6dp of every other tab icon.
-      final map = bounds['journeys']!;
-      for (final e in bounds.entries) {
-        expect(
-          (map.width - e.value.width).abs(),
-          lessThanOrEqualTo(6),
-          reason: 'width of journeys vs ${e.key}',
-        );
-        expect(
-          (map.height - e.value.height).abs(),
-          lessThanOrEqualTo(6),
-          reason: 'height of journeys vs ${e.key}',
-        );
+      },
+    );
+  }
+
+  testWidgets('active artwork is never smaller than inactive', (tester) async {
+    await tester.runAsync(() async {
+      for (final name in [..._tabs, 'camera', 'react-heart', 'flame']) {
+        final off = await paintedBounds(name, active: false, ring: false);
+        final on = await paintedBounds(name, active: true, ring: false);
+        expect(on.width, greaterThanOrEqualTo(off.width - 0.5), reason: name);
+        expect(on.height, greaterThanOrEqualTo(off.height - 0.5), reason: name);
+        // With the ring off, the active glyph is exactly the inactive one.
+        expect(on, off, reason: name);
       }
     });
-  }
+  });
 
   testWidgets('camera and shell docks keep the tabs where they are', (
     tester,

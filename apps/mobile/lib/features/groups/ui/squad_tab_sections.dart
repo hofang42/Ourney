@@ -280,13 +280,18 @@ class SquadTodayCard extends ConsumerWidget {
                     if (members.length > 5)
                       Padding(
                         padding: const EdgeInsets.only(left: 4),
-                        child: Text(
-                          l10n.groups_overflowMore(members.length - 5),
-                          style: UiText.body(
-                            size: 12,
-                            weight: FontWeight.w800,
-                            height: 1.3,
-                            color: ui.inkMuted,
+                        // Part of the card's tap area, but kept out of its
+                        // spoken label (the label names the group only).
+                        child: ExcludeSemantics(
+                          child: Text(
+                            l10n.groups_overflowMore(members.length - 5),
+                            key: ValueKey('squad-overflow-${journey.id}'),
+                            style: UiText.body(
+                              size: 12,
+                              weight: FontWeight.w800,
+                              height: 1.3,
+                              color: ui.inkMuted,
+                            ),
                           ),
                         ),
                       ),

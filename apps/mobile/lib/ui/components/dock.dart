@@ -27,7 +27,10 @@ const double _cameraDockH = 92;
 // One center slot width for both docks: the camera route swaps the snap pill
 // for the 76dp hero shutter, and the four tabs must not slide sideways when
 // that happens (they used to move 3-7dp because the slots were 64 vs 82).
-const double _centerSlot = 82;
+// One center slot width for the tab row in both docks so the four tabs never
+// slide sideways when the camera route swaps the 56dp snap pill for the 76dp
+// hero shutter (the center widget itself is centered in the Stack).
+const double _centerSlot = UiSize.snapPillW;
 const double _dockSideInset = 10;
 
 /// One tab of the [UiDock]. Give it a drawn [glyph] (an [OurneyIcon] name such
@@ -194,7 +197,7 @@ class UiDock extends StatelessWidget {
         final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
         final tabMaxW = math.min(
           slotW,
-          math.max(UiSize.tap, pillW - 2 * inset - 5),
+          math.max(UiSize.tap, pillW - 2 * inset - 3.0),
         );
         final labelFit = dockLabelFit(context, [
           for (final e in items) e.label,
@@ -250,10 +253,7 @@ class UiDock extends StatelessWidget {
                       ),
                     ),
                   ),
-                SizedBox(
-                  width: centerSlotWidth,
-                  child: Center(child: centerSlot),
-                ),
+                const SizedBox(width: centerSlotWidth),
                 for (final item in rightItems)
                   Expanded(
                     child: Transform.translate(
@@ -273,6 +273,7 @@ class UiDock extends StatelessWidget {
                   ),
               ],
             ),
+            Center(child: centerSlot),
           ],
         );
       },
@@ -489,8 +490,13 @@ class UiShutter extends StatelessWidget {
     this.onAccent,
     this.onLongPress,
     this.outlineColor,
+    this.dimmed = false,
     super.key,
   });
+
+  /// Fades the shutter (animated) while the camera is not ready. A momentary
+  /// busy state (a capture in flight) must not dim it.
+  final bool dimmed;
 
   final String label;
   final VoidCallback? onPressed;
@@ -528,9 +534,14 @@ class UiShutter extends StatelessWidget {
         ),
       ),
     );
-    // Not ready (camera starting, no permission, busy): dim it so it does not
-    // look live while ignoring taps. The long press (journey wheel) still works.
-    if (onPressed == null) shutter = Opacity(opacity: 0.5, child: shutter);
+    // Camera not ready (starting, no permission): [dimmed] fades it so it
+    // does not look live while ignoring taps. The long press (journey wheel)
+    // still works.
+    shutter = AnimatedOpacity(
+      opacity: dimmed ? 0.5 : 1,
+      duration: UiMotion.of(context, UiMotion.press),
+      child: shutter,
+    );
     if (onLongPress != null) {
       shutter = _LongPress(onLongPress: onLongPress!, child: shutter);
     }

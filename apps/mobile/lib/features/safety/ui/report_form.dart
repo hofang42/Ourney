@@ -28,7 +28,12 @@ Future<bool> showReportSheet(
   final sent = await showUiSheet<bool>(
     context: context,
     builder: (context) => SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(UiSpace.xl, 0, UiSpace.xl, UiSpace.xl),
+      padding: const EdgeInsets.fromLTRB(
+        UiSpace.xl,
+        0,
+        UiSpace.xl,
+        UiSpace.xl,
+      ),
       child: ReportForm(
         checkInId: checkInId,
         userId: userId,

@@ -38,9 +38,11 @@ void main() {
       );
       expect(find.text('no squads yet.'), findsOneWidget);
       expect(
-        find.textContaining('group'),
+        find.byWidgetPredicate(
+          (w) => w is Text && (w.data ?? '').toLowerCase().contains('group'),
+        ),
         findsNothing,
-        reason: 'no "group(s)" wording left on the empty tab',
+        reason: 'no "group(s)" wording left on the empty tab (any case)',
       );
     });
 
@@ -56,31 +58,53 @@ void main() {
   });
 
   group('Squad card is one big button', () {
+    // Six members: five chips and a "+1" overflow text.
     Future<GroupsHarness> pump(WidgetTester tester) => pumpGroups(
       tester,
       journeys: FakeJourneyRepository(journeys: [groupJourney()]),
       groups: FakeGroupRepository(
         today: {
-          'g1': [memberToday(me, 'Linh'), memberToday('u2', 'An')],
+          'g1': [
+            memberToday(me, 'Linh'),
+            for (var i = 2; i <= 6; i++) memberToday('u$i', 'An $i'),
+          ],
         },
       ),
     );
 
-    testWidgets('tapping empty card space (not the name) opens it', (
-      tester,
-    ) async {
+    testWidgets('the bottom padding opens it', (tester) async {
       final h = await pump(tester);
-      final card = find.byKey(const ValueKey('squad-today-open-g1'));
-      final r = tester.getRect(card);
-      // Far right of the title row: nowhere near the name text.
-      await tester.tapAt(Offset(r.right - 8, r.top + 30));
+      final r = tester.getRect(
+        find.byKey(const ValueKey('squad-today-open-g1')),
+      );
+      await tester.tapAt(Offset(r.center.dx, r.bottom - 3));
       await tester.pumpAndSettle();
       expect(h.location, '/groups/g1');
     });
 
-    testWidgets('member chips still open their own sheet, not the group', (
+    testWidgets('the member strip margin around chips opens it', (
       tester,
     ) async {
+      final h = await pump(tester);
+      final r = tester.getRect(
+        find.byKey(const ValueKey('squad-today-open-g1')),
+      );
+      final chipY = tester
+          .getCenter(find.byKey(const ValueKey('squad-member-u2')))
+          .dy;
+      await tester.tapAt(Offset(r.left + 3, chipY));
+      await tester.pumpAndSettle();
+      expect(h.location, '/groups/g1');
+    });
+
+    testWidgets('the "+N" text opens it', (tester) async {
+      final h = await pump(tester);
+      await tester.tap(find.byKey(const ValueKey('squad-overflow-g1')));
+      await tester.pumpAndSettle();
+      expect(h.location, '/groups/g1');
+    });
+
+    testWidgets('member chips open their sheet, not the group', (tester) async {
       final h = await pump(tester);
       await tester.tap(find.byKey(const ValueKey('squad-member-u2')));
       await tester.pumpAndSettle();
@@ -88,45 +112,69 @@ void main() {
       expect(find.byKey(const ValueKey('squad-member-sheet')), findsOneWidget);
     });
 
-    testWidgets('button semantics named after the group, >= 48dp', (
+    testWidgets('card button + separate chip nodes; "+N" not in the label', (
       tester,
     ) async {
       final handle = tester.ensureSemantics();
       await pump(tester);
       final card = find.byKey(const ValueKey('squad-today-open-g1'));
       final node = tester.getSemantics(card);
-      expect(node.getSemanticsData().flagsCollection.isButton, isTrue);
-      expect(node.label, contains('Chạy bộ cùng nhau'));
-      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      final data = node.getSemanticsData();
+      expect(data.flagsCollection.isButton, isTrue);
+      expect(data.label, contains('Chạy bộ cùng nhau'));
+      expect(data.label, isNot(contains('+1')));
+      expect(data.hasAction(SemanticsAction.tap), isTrue);
       final size = tester.getSize(card);
       expect(size.height, greaterThanOrEqualTo(48));
-      expect(size.width, greaterThanOrEqualTo(48));
+      for (var i = 2; i <= 5; i++) {
+        final chip = tester
+            .getSemantics(find.byKey(ValueKey('squad-member-u$i')))
+            .getSemanticsData();
+        expect(chip.flagsCollection.isButton, isTrue, reason: 'u$i');
+        expect(chip.label, contains('An $i'), reason: 'u$i');
+        expect(chip.label, isNot(contains('Chạy bộ')), reason: 'u$i');
+      }
       handle.dispose();
     });
 
-    testWidgets('shows a pressed state (sticker moves toward its shadow)', (
-      tester,
-    ) async {
+    Offset translation(WidgetTester tester, Finder within) {
+      final c = tester.widget<AnimatedContainer>(
+        find
+            .descendant(of: within, matching: find.byType(AnimatedContainer))
+            .first,
+      );
+      final t = c.transform?.getTranslation();
+      return Offset(t?.x ?? 0, t?.y ?? 0);
+    }
+
+    testWidgets('pressing the card shows its pressed state', (tester) async {
       await pump(tester);
       final card = find.byKey(const ValueKey('squad-today-open-g1'));
-      final moving = find.descendant(
-        of: card,
-        matching: find.byType(AnimatedContainer),
-      );
-      Offset offset() {
-        final c = tester.widget<AnimatedContainer>(moving.first);
-        return Offset(
-          c.transform?.getTranslation().x ?? 0,
-          c.transform?.getTranslation().y ?? 0,
-        );
-      }
-
-      expect(offset(), Offset.zero);
+      expect(translation(tester, card), Offset.zero);
       final g = await tester.startGesture(
         tester.getRect(card).topRight - const Offset(8, -30),
       );
       await tester.pump();
-      expect(offset().dx, greaterThan(0));
+      expect(translation(tester, card).dx, greaterThan(0));
+      await g.up();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('pressing a member chip does not press the card', (
+      tester,
+    ) async {
+      await pump(tester);
+      final card = find.byKey(const ValueKey('squad-today-open-g1'));
+      final chip = find.byKey(const ValueKey('squad-member-u2'));
+      final g = await tester.startGesture(tester.getCenter(chip));
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(translation(tester, card), Offset.zero);
+      final chipScale = tester
+          .widget<AnimatedScale>(
+            find.descendant(of: chip, matching: find.byType(AnimatedScale)),
+          )
+          .scale;
+      expect(chipScale, lessThan(1));
       await g.up();
       await tester.pumpAndSettle();
     });

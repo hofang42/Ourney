@@ -4,15 +4,9 @@
   "@groups_title": {
     "description": "Title of the groups feature's main screen."
   },
-  "groups_emptyTitle": "Chưa có nhóm nào",
-  "groups_emptyMessage": "Nhập mã mời của bạn bè, hoặc tạo hành trình nhóm ở tab Journeys.",
   "groups_joinWithCode": "Nhập mã mời",
   "@groups_joinWithCode": {
     "description": "Button opening the manual invite-code entry (FR-D1)."
-  },
-  "groups_createGroup": "Tạo hành trình nhóm",
-  "@groups_createGroup": {
-    "description": "Opens the journey create flow."
   },
   "groups_activeSection": "Đang chạy",
   "@groups_activeSection": {

@@ -13,17 +13,7 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_title => 'Squad';
 
   @override
-  String get groups_emptyTitle => 'No squads yet';
-
-  @override
-  String get groups_emptyMessage =>
-      'Enter a friend\'s invite code, or start a squad journey from the Journeys tab.';
-
-  @override
   String get groups_joinWithCode => 'Join with code';
-
-  @override
-  String get groups_createGroup => 'New group journey';
 
   @override
   String get groups_activeSection => 'Running';
@@ -327,7 +317,7 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_previewAlreadyMember => 'You are already in this group.';
 
   @override
-  String get groups_previewOpenGroup => 'Open group';
+  String get groups_previewOpenGroup => 'Open squad';
 
   @override
   String get groups_previewLoading => 'Looking up the code…';

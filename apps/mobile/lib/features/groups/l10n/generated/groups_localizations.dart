@@ -104,29 +104,11 @@ abstract class GroupsL10n {
   /// **'Nhóm'**
   String get groups_title;
 
-  /// No description provided for @groups_emptyTitle.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chưa có nhóm nào'**
-  String get groups_emptyTitle;
-
-  /// No description provided for @groups_emptyMessage.
-  ///
-  /// In vi, this message translates to:
-  /// **'Nhập mã mời của bạn bè, hoặc tạo hành trình nhóm ở tab Journeys.'**
-  String get groups_emptyMessage;
-
   /// Button opening the manual invite-code entry (FR-D1).
   ///
   /// In vi, this message translates to:
   /// **'Nhập mã mời'**
   String get groups_joinWithCode;
-
-  /// Opens the journey create flow.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tạo hành trình nhóm'**
-  String get groups_createGroup;
 
   /// List section header: running group journeys.
   ///

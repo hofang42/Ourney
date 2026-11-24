@@ -689,52 +689,14 @@ class OurneyIconPainter extends CustomPainter {
   /// with the ink halo but with [haloFallback] so it stays readable.
   static bool lowContrast(Color color, Color ink) => contrast(color, ink) < 1.6;
 
-  /// Die-cut ring width (logical px) of the active full-tier icon.
-  static const double dieCutStroke = 12;
+  /// Die-cut ring width (logical px) of the active full-tier icon: scales
+  /// with the icon (about 0.35x its size, 6 to 12) so a 24dp tab glyph gets a
+  /// ring thin enough to stay near its box, while the artwork itself is never
+  /// resized.
+  static double dieCutStrokeFor(double size) => (size * 0.35).clamp(6.0, 12.0);
 
   /// Hard-shadow offset (logical px) of the active full-tier icon.
   static const double activeShadowOffset = 2;
-
-  /// Where the active die-cut icon actually paints, in logical px inside a
-  /// [size] box: the artwork bounds grown by the die-cut ring and the hard
-  /// shadow, uniformly shrunk (and nudged) so the whole sticker stays inside
-  /// the box. Wide drawings such as the `journeys` map used to spill past the
-  /// tab icon box (dock bug: map icon overflowed).
-  static ({double scale, Offset shift, Rect painted}) activeFit(
-    Path path,
-    double size, {
-    bool shadow = true,
-  }) {
-    final b = path.getBounds();
-    final k = size / 24;
-    final ring = dieCutStroke / 2;
-    final o = shadow ? activeShadowOffset : 0.0;
-    final rect = Rect.fromLTRB(
-      b.left * k - ring,
-      b.top * k - ring,
-      b.right * k + ring + o,
-      b.bottom * k + ring + o,
-    );
-    final f = math.min(1.0, size / math.max(rect.width, rect.height));
-    final c = Offset(size / 2, size / 2);
-    var r = Rect.fromLTRB(
-      c.dx + (rect.left - c.dx) * f,
-      c.dy + (rect.top - c.dy) * f,
-      c.dx + (rect.right - c.dx) * f,
-      c.dy + (rect.bottom - c.dy) * f,
-    );
-    var dx = 0.0, dy = 0.0;
-    if (r.left < 0) dx = -r.left;
-    if (r.right > size) dx = size - r.right;
-    if (r.top < 0) dy = -r.top;
-    if (r.bottom > size) dy = size - r.bottom;
-    r = r.shift(Offset(dx, dy));
-    return (
-      scale: f,
-      shift: Offset(dx + c.dx * (1 - f), dy + c.dy * (1 - f)),
-      painted: r,
-    );
-  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -747,11 +709,6 @@ class OurneyIconPainter extends CustomPainter {
     final tiny = size.width < 16;
     final full = size.width >= 24;
     canvas.save();
-    if (active && full && !flat) {
-      final fit = activeFit(path, size.width, shadow: shadow != null);
-      canvas.translate(fit.shift.dx, fit.shift.dy);
-      canvas.scale(fit.scale);
-    }
     canvas.scale(scale);
 
     final open = _openIcons.contains(name);
@@ -777,9 +734,15 @@ class OurneyIconPainter extends CustomPainter {
     }
     if (active && full) {
       if (shadow != null) {
-        layer(path.shift(Offset(2 / scale, 2 / scale)), shadow!, 12);
+        layer(
+          path.shift(
+            Offset(activeShadowOffset / scale, activeShadowOffset / scale),
+          ),
+          shadow!,
+          dieCutStrokeFor(size.width),
+        );
       }
-      layer(path, dieCut, 12);
+      layer(path, dieCut, dieCutStrokeFor(size.width));
     }
     // The ink halo scales with the icon so it does not clump at 16-22px.
     final halo = haloFallback != null && lowContrast(color, ink)
