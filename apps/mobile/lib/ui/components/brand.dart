@@ -27,19 +27,39 @@ class UiWordmark extends StatelessWidget {
 
 /// V2 `SplashFlow`: the cream field with the ransom-note wordmark, centered.
 ///
-/// First launch ([returning] false): six tilted goal stickers scattered at
-/// the edges and a [tagline] under the wordmark (the caller rotates it; each
-/// new line fades in over 300ms). Returning person ([returning] true): the
-/// wordmark alone with a small spinner under it. Reduced motion stops the
-/// spinner and the tagline fade.
-class UiSplash extends StatelessWidget {
-  const UiSplash({this.tagline, this.returning = false, super.key});
+/// First launch ([returning] false / [firstLaunch] true): six tilted goal
+/// stickers scattered at the edges pop in with shrinking wave delays
+/// `[0, 40, 75, 105, 130, 150]ms` (`scale 0.88 -> 1.0` + fade, `220ms`,
+/// [UiCurves.dockOvershoot]), and a [tagline] under the wordmark rotates with
+/// a [FadeTransition]. Returning person ([returning] true): the wordmark alone
+/// with a small spinner under it. Reduced motion renders static stickers,
+/// stops the spinner, and skips tagline fades.
+class UiSplash extends StatefulWidget {
+  const UiSplash({
+    this.tagline,
+    this.returning = false,
+    bool? firstLaunch,
+    super.key,
+  }) : firstLaunch = firstLaunch ?? !returning;
 
   final String? tagline;
   final bool returning;
+  final bool firstLaunch;
 
   /// Design frame the sticker offsets were drawn on (V2 phone, 390x844).
   static const _frameH = 844.0;
+
+  /// Non-uniform shrinking wave delays for the 6 first-launch goal stickers.
+  static const List<Duration> stickerWaveDelays = <Duration>[
+    Duration.zero,
+    Duration(milliseconds: 40),
+    Duration(milliseconds: 75),
+    Duration(milliseconds: 105),
+    Duration(milliseconds: 130),
+    Duration(milliseconds: 150),
+  ];
+
+  static const Duration stickerPopDuration = UiMotion.medium;
 
   // (goal, left, right, top, bottom, degrees) from `.sticker-1..6`.
   static const _stickers =
@@ -53,10 +73,84 @@ class UiSplash extends StatelessWidget {
       ];
 
   @override
+  State<UiSplash> createState() => _UiSplashState();
+}
+
+class _UiSplashState extends State<UiSplash>
+    with SingleTickerProviderStateMixin {
+  static final Duration _kTotalWaveDuration =
+      UiSplash.stickerWaveDelays.last + UiSplash.stickerPopDuration;
+
+  AnimationController? _waveCtrl;
+  final List<CurvedAnimation> _scaleCurves = <CurvedAnimation>[];
+  final List<CurvedAnimation> _fadeCurves = <CurvedAnimation>[];
+  final List<Animation<double>> _scaleAnims = <Animation<double>>[];
+  bool _started = false;
+
+  bool get _showStickers => !widget.returning && widget.firstLaunch;
+
+  void _ensureWaveAnimations() {
+    if (_waveCtrl != null) return;
+    final totalMs = _kTotalWaveDuration.inMilliseconds.toDouble();
+    final popMs = UiSplash.stickerPopDuration.inMilliseconds.toDouble();
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: _kTotalWaveDuration,
+    );
+    _waveCtrl = ctrl;
+    for (var i = 0; i < UiSplash._stickers.length; i++) {
+      final startMs = UiSplash.stickerWaveDelays[i].inMilliseconds.toDouble();
+      final begin = (startMs / totalMs).clamp(0.0, 1.0);
+      final end = ((startMs + popMs) / totalMs).clamp(0.0, 1.0);
+      final scaleCurve = CurvedAnimation(
+        parent: ctrl,
+        curve: Interval(begin, end, curve: UiCurves.dockOvershoot),
+      );
+      final fadeCurve = CurvedAnimation(
+        parent: ctrl,
+        curve: Interval(begin, end, curve: UiCurves.easeOutStrong),
+      );
+      _scaleCurves.add(scaleCurve);
+      _fadeCurves.add(fadeCurve);
+      _scaleAnims.add(Tween<double>(begin: 0.88, end: 1.0).animate(scaleCurve));
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduce = UiMotion.reduced(context);
+    if (!_started) {
+      _started = true;
+      if (_showStickers && !reduce) {
+        _ensureWaveAnimations();
+        _waveCtrl!.forward();
+      }
+    } else if (reduce && (_waveCtrl?.isAnimating ?? false)) {
+      _waveCtrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final c in _scaleCurves) {
+      c.dispose();
+    }
+    for (final c in _fadeCurves) {
+      c.dispose();
+    }
+    _waveCtrl?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final reduce = UiMotion.reduced(context);
     const size = 174.0;
+    final animateStickers =
+        _showStickers && !reduce && _scaleAnims.length == UiSplash._stickers.length;
+
     return ColoredBox(
       key: const ValueKey('ui-splash'),
       color: ui.bg,
@@ -64,25 +158,37 @@ class UiSplash extends StatelessWidget {
         builder: (context, box) {
           // Vertical offsets follow the available height so the stickers
           // never crowd the wordmark on short screens.
-          final fy = math.min(1.0, box.maxHeight / _frameH);
+          final fy = math.min(1.0, box.maxHeight / UiSplash._frameH);
           return Stack(
             fit: StackFit.expand,
             children: [
-              if (!returning)
-                for (final (goal, l, r, t, b, deg) in _stickers)
-                  Positioned(
-                    left: l,
-                    right: r,
-                    top: t == null ? null : t * fy,
-                    bottom: b == null ? null : b * fy,
-                    child: ExcludeSemantics(
-                      child: UiStickerTile(
-                        color: goal.color,
-                        degrees: deg,
-                        child: UiGoalGlyph(goal: goal, size: 31),
-                      ),
-                    ),
-                  ),
+              if (_showStickers)
+                for (var i = 0; i < UiSplash._stickers.length; i++)
+                  () {
+                    final (goal, l, r, t, b, deg) = UiSplash._stickers[i];
+                    Widget tile = UiStickerTile(
+                      key: ValueKey('ui-splash-sticker-$i'),
+                      color: goal.color,
+                      degrees: deg,
+                      child: UiGoalGlyph(goal: goal, size: 31),
+                    );
+                    if (animateStickers) {
+                      tile = FadeTransition(
+                        opacity: _fadeCurves[i],
+                        child: ScaleTransition(
+                          scale: _scaleAnims[i],
+                          child: tile,
+                        ),
+                      );
+                    }
+                    return Positioned(
+                      left: l,
+                      right: r,
+                      top: t == null ? null : t * fy,
+                      bottom: b == null ? null : b * fy,
+                      child: ExcludeSemantics(child: tile),
+                    );
+                  }(),
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -94,30 +200,29 @@ class UiSplash extends StatelessWidget {
                         clipBehavior: Clip.none,
                         children: [
                           const UiRansomWordmark(size: size),
-                          if (returning)
+                          if (widget.returning)
                             Positioned(
                               left: size / 2 - 15,
                               top: 76,
-                              child: _Loader(animate: !reduce),
+                              child: RepaintBoundary(
+                                child: _Loader(animate: !reduce),
+                              ),
                             ),
                         ],
                       ),
                     ),
-                    if (tagline != null)
+                    if (widget.tagline != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
-                        child: TweenAnimationBuilder<double>(
-                          key: ValueKey(tagline),
-                          tween: Tween(begin: reduce ? 1 : 0, end: 1),
-                          duration: UiMotion.of(
-                            context,
-                            const Duration(milliseconds: 300),
-                          ),
-                          curve: Curves.easeOut,
-                          builder: (context, t, child) =>
-                              Opacity(opacity: t, child: child),
+                        child: AnimatedSwitcher(
+                          duration: UiMotion.of(context, UiMotion.normal),
+                          switchInCurve: UiCurves.easeOutStrong,
+                          switchOutCurve: UiCurves.easeOutStrong,
+                          layoutBuilder: (currentChild, _) =>
+                              currentChild ?? const SizedBox.shrink(),
                           child: Text(
-                            tagline!,
+                            widget.tagline!,
+                            key: ValueKey(widget.tagline),
                             textAlign: TextAlign.center,
                             style: UiText.body(
                               size: 18,

@@ -1,11 +1,89 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
 import '../../../../ui/ui.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import 'create_deck_previews.dart';
+
+/// Velocity-aware snapping scroll physics for [CreateTypeDeck] powered by
+/// [UiSprings.snappy]. Eliminates the post-stop `ScrollEndNotification`
+/// `animateTo` double-stop hitch by resolving the target card detent
+/// immediately on finger release.
+class _DeckSnapScrollPhysics extends ScrollPhysics {
+  const _DeckSnapScrollPhysics({
+    required this.itemExtent,
+    required this.itemCount,
+    super.parent,
+  });
+
+  final double itemExtent;
+  final int itemCount;
+
+  @override
+  _DeckSnapScrollPhysics applyTo(ScrollPhysics? ancestor) =>
+      _DeckSnapScrollPhysics(
+        itemExtent: itemExtent,
+        itemCount: itemCount,
+        parent: buildParent(ancestor),
+      );
+
+  @override
+  SpringDescription get spring => UiSprings.snappy;
+
+  double _getPage(ScrollMetrics position) =>
+      itemExtent > 0 ? position.pixels / itemExtent : 0.0;
+
+  double _getPixels(double page) => page * itemExtent;
+
+  double _getTargetPixels(
+    ScrollMetrics position,
+    Tolerance tolerance,
+    double velocity,
+  ) {
+    var page = _getPage(position);
+    if (velocity < -tolerance.velocity) {
+      page -= 0.5;
+    } else if (velocity > tolerance.velocity) {
+      page += 0.5;
+    }
+    final maxIndex = math.max(0, itemCount - 1).toDouble();
+    final targetPage = page.roundToDouble().clamp(0.0, maxIndex);
+    return _getPixels(targetPage).clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+  }
+
+  @override
+  Simulation? createBallisticSimulation(
+    ScrollMetrics position,
+    double velocity,
+  ) {
+    if ((velocity <= 0.0 && position.pixels <= position.minScrollExtent) ||
+        (velocity >= 0.0 && position.pixels >= position.maxScrollExtent)) {
+      return super.createBallisticSimulation(position, velocity);
+    }
+    final tolerance = toleranceFor(position);
+    final target = _getTargetPixels(position, tolerance, velocity);
+    if ((target - position.pixels).abs() > tolerance.distance ||
+        velocity.abs() > tolerance.velocity) {
+      return ScrollSpringSimulation(
+        spring,
+        position.pixels,
+        target,
+        velocity,
+        tolerance: tolerance,
+      );
+    }
+    return null;
+  }
+
+  @override
+  bool get allowImplicitScrolling => false;
+}
 
 /// One card of the type deck.
 @immutable
@@ -55,11 +133,17 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
   final _scroll = ScrollController();
   late int _focused = widget.initial;
   double _cardWidth = 240;
-  bool _snapping = false;
   bool _placed = false;
 
   @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_onScroll);
+  }
+
+  @override
   void dispose() {
+    _scroll.removeListener(_onScroll);
     _scroll.dispose();
     super.dispose();
   }
@@ -68,30 +152,36 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
 
   int _nearest() {
     if (!_scroll.hasClients) return _focused;
-    final i = (_scroll.offset / (_cardWidth + _gap)).round();
+    final step = _cardWidth + _gap;
+    if (step <= 0) return _focused;
+    final i = (_scroll.offset / step).round();
     return i.clamp(0, widget.items.length - 1);
+  }
+
+  void _onScroll() {
+    if (!mounted || !_scroll.hasClients) return;
+    _setFocus(_nearest());
   }
 
   Future<void> _go(int i) async {
     final target = i.clamp(0, widget.items.length - 1);
     _setFocus(target);
     if (!_scroll.hasClients) return;
-    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    _snapping = true;
+    final still = UiMotion.reduced(context);
     if (still) {
       _scroll.jumpTo(_offsetOf(target));
     } else {
       await _scroll.animateTo(
         _offsetOf(target),
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOut,
+        duration: UiMotion.medium,
+        curve: UiCurves.easeOutStrong,
       );
     }
-    _snapping = false;
   }
 
   void _setFocus(int i) {
     if (i == _focused) return;
+    unawaited(UiHaptics.selection());
     setState(() => _focused = i);
     widget.onFocus(i);
   }
@@ -100,6 +190,7 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
   Widget build(BuildContext context) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
+    final reduced = UiMotion.reduced(context);
     final n = widget.items.length;
     final cardHeight = (MediaQuery.sizeOf(context).height * 0.52).clamp(
       340.0,
@@ -113,6 +204,7 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
           builder: (context, c) {
             _cardWidth = math.min(300, math.max(200, c.maxWidth * 0.68));
             final side = (c.maxWidth - _cardWidth) / 2;
+            final stepExtent = _cardWidth + _gap;
             if (!_placed) {
               _placed = true;
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -121,28 +213,25 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
                 }
               });
             }
-            return NotificationListener<ScrollNotification>(
-              onNotification: (n) {
-                if (n is ScrollUpdateNotification && !_snapping) {
-                  _setFocus(_nearest());
-                } else if (n is ScrollEndNotification && !_snapping) {
-                  unawaited(_go(_nearest()));
-                }
-                return false;
-              },
-              child: SingleChildScrollView(
-                key: const ValueKey('create-deck-scroll'),
-                controller: _scroll,
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(horizontal: side),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    for (var i = 0; i < n; i++) ...[
-                      if (i > 0) const SizedBox(width: _gap),
-                      SizedBox(
-                        width: _cardWidth,
-                        height: cardHeight,
+            return SingleChildScrollView(
+              key: const ValueKey('create-deck-scroll'),
+              controller: _scroll,
+              scrollDirection: Axis.horizontal,
+              physics: _DeckSnapScrollPhysics(
+                itemExtent: stepExtent,
+                itemCount: n,
+              ),
+              padding: EdgeInsets.symmetric(horizontal: side),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < n; i++) ...[
+                    if (i > 0) const SizedBox(width: _gap),
+                    SizedBox(
+                      width: _cardWidth,
+                      height: cardHeight,
+                      child: AnimatedBuilder(
+                        animation: _scroll,
                         child: _DeckCard(
                           item: widget.items[i],
                           focused: i == _focused,
@@ -154,10 +243,44 @@ class _CreateTypeDeckState extends State<CreateTypeDeck> {
                           chosenLabel: l10n.journeys_createDeckChosen,
                           onTap: () => widget.onChoose(i),
                         ),
+                        builder: (context, cardChild) {
+                          final currentPage =
+                              _scroll.hasClients &&
+                                  _scroll.position.hasContentDimensions &&
+                                  stepExtent > 0
+                              ? (_scroll.offset / stepExtent)
+                              : _focused.toDouble();
+                          final signedDist = i - currentPage;
+                          final dist = signedDist.abs().clamp(0.0, 1.0);
+                          final opacity = reduced
+                              ? (i == _focused ? 1.0 : 0.66)
+                              : lerpDouble(1.0, 0.66, dist)!;
+                          Widget transformed = FadeTransition(
+                            opacity: AlwaysStoppedAnimation<double>(opacity),
+                            child: cardChild,
+                          );
+                          if (!reduced && dist > 0.0001) {
+                            final scale = lerpDouble(1.0, 0.90, dist)!;
+                            final dy = dist * 6.0;
+                            final tilt =
+                                signedDist.clamp(-1.5, 1.5) * 0.022;
+                            transformed = Transform.translate(
+                              offset: Offset(0, dy),
+                              child: Transform.rotate(
+                                angle: tilt,
+                                child: Transform.scale(
+                                  scale: scale,
+                                  child: transformed,
+                                ),
+                              ),
+                            );
+                          }
+                          return transformed;
+                        },
                       ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             );
           },
@@ -225,34 +348,23 @@ class _DeckCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final disableAnimations = MediaQuery.disableAnimationsOf(context);
-    final duration = disableAnimations
-        ? Duration.zero
-        : const Duration(milliseconds: 200);
     return UiSkinScope(
       skinId: item.skinId,
       child: Builder(
         builder: (context) {
           final ui = context.ui;
           final headingFont = UiSkinScope.of(context).headingFont;
-          return AnimatedScale(
-            scale: focused ? 1.0 : 0.88,
-            duration: duration,
-            curve: Curves.easeOut,
-            child: AnimatedOpacity(
-              opacity: focused ? 1.0 : 0.66,
-              duration: duration,
-              curve: Curves.easeOut,
-              child: UiPressable(
-                key: ValueKey('template-${item.keyName}'),
-                onPressed: onTap,
-                selected: focused,
-                semanticLabel: '$semantic, ${item.tagline}',
-                excludeChildSemantics: true,
-                borderRadius: BorderRadius.circular(UiRadius.card),
-                shadowColor: ui.hardShadowColor,
-                shadowOffset: focused ? 4 : 0,
-                child: Container(
+          return UiPressable(
+            key: ValueKey('template-${item.keyName}'),
+            onPressed: onTap,
+            selected: focused,
+            semanticLabel: '$semantic, ${item.tagline}',
+            excludeChildSemantics: true,
+            borderRadius: BorderRadius.circular(UiRadius.card),
+            shadowColor: ui.hardShadowColor,
+            shadowOffset: focused ? 4 : 0,
+            pressOffset: focused ? 0 : UiShadow.tiny,
+            child: Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: ui.surface,
@@ -379,9 +491,7 @@ class _DeckCard extends StatelessWidget {
                     },
                   ),
                 ),
-              ),
-            ),
-          );
+              );
         },
       ),
     );
