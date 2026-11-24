@@ -1021,6 +1021,7 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (sending) return;
+      if (betaFollow) betaFollow.hidden = true;
       const ok = Boolean(email.value.trim()) && email.checkValidity();
       email.setAttribute('aria-invalid', ok ? 'false' : 'true');
       if (!ok) {
@@ -1065,9 +1066,12 @@
       if (key === 'form_ok') {
         form.reset();
         if (betaFollow) betaFollow.hidden = false;
-      } else if (key === 'form_err') {
-        email.setAttribute('aria-invalid', 'true');
-        email.focus();
+      } else {
+        if (betaFollow) betaFollow.hidden = true;
+        if (key === 'form_err') {
+          email.setAttribute('aria-invalid', 'true');
+          email.focus();
+        }
       }
     });
   }
