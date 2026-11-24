@@ -673,6 +673,54 @@ final class InsightsRepositoryProvider
 String _$insightsRepositoryHash() =>
     r'e0b568bece448e8b1d5d3de43311c5283ddfcb7d';
 
+@ProviderFor(featureRequestRepository)
+final featureRequestRepositoryProvider = FeatureRequestRepositoryProvider._();
+
+final class FeatureRequestRepositoryProvider
+    extends
+        $FunctionalProvider<
+          FeatureRequestRepository,
+          FeatureRequestRepository,
+          FeatureRequestRepository
+        >
+    with $Provider<FeatureRequestRepository> {
+  FeatureRequestRepositoryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'featureRequestRepositoryProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$featureRequestRepositoryHash();
+
+  @$internal
+  @override
+  $ProviderElement<FeatureRequestRepository> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  FeatureRequestRepository create(Ref ref) {
+    return featureRequestRepository(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(FeatureRequestRepository value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<FeatureRequestRepository>(value),
+    );
+  }
+}
+
+String _$featureRequestRepositoryHash() =>
+    r'24d7f159712b6317488b80b52cbc168d2444677c';
+
 @ProviderFor(mediaStore)
 final mediaStoreProvider = MediaStoreProvider._();
 

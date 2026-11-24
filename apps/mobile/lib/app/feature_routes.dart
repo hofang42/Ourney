@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../features/auth/routes.dart';
 import '../features/camera/routes.dart';
 import '../features/checkin/routes.dart';
+import '../features/feedback/routes.dart';
 import '../features/groups/routes.dart';
 import '../features/import/routes.dart';
 import '../features/journeys/routes.dart';
@@ -42,6 +43,7 @@ abstract final class FeatureRoutes {
     ...socialRoutes,
     ...sharingRoutes,
     ...importRoutes,
+    ...feedbackRoutes,
   ];
 
   /// Every feature's routes keyed by folder name (used by tests to enforce
@@ -60,5 +62,6 @@ abstract final class FeatureRoutes {
     'social': [...socialRoutes, ...activityRoutes],
     'sharing': sharingRoutes,
     'import': importRoutes,
+    'feedback': feedbackRoutes,
   };
 }

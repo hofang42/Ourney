@@ -746,6 +746,18 @@ abstract class ProfileL10n {
   /// **'thông tin'**
   String get profile_settings_secInfo;
 
+  /// No description provided for @profile_settings_featureRequests.
+  ///
+  /// In vi, this message translates to:
+  /// **'Góp ý & đề xuất tính năng'**
+  String get profile_settings_featureRequests;
+
+  /// No description provided for @profile_settings_featureRequestsSub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bình chọn ý tưởng hoặc gửi đề xuất mới'**
+  String get profile_settings_featureRequestsSub;
+
   /// No description provided for @profile_settings_eula.
   ///
   /// In vi, this message translates to:

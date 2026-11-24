@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../feedback/data/feedback_providers.dart';
 import '../../groups/data/groups_providers.dart';
 import '../../groups/groups_paths.dart';
 import '../../safety/data/safety_providers.dart';
@@ -85,6 +88,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ..invalidate(friendshipsProvider)
       ..invalidate(pendingConsentsProvider)
       ..invalidate(groupInvitationsProvider)
+      ..invalidate(shippedRequestNotificationsProvider)
       ..invalidate(conversationsProvider)
       ..invalidate(rawInboxCountsProvider);
   }
@@ -217,6 +221,9 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       for (final c in convAsync.value ?? const <Conversation>[])
         if (!blocked.contains(c.other.userId)) c,
     ];
+    final shippedRequests =
+        ref.watch(shippedRequestNotificationsProvider).asData?.value ??
+            const <ShippedRequestNotification>[];
     final newShares = countsAsync.value?.newShares ?? 0;
 
     final showInvites = _filter != InboxFilter.replies;
@@ -233,6 +240,16 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       );
     }
     if (showInvites) {
+      for (final n in shippedRequests) {
+        items.add(
+          _FeedItem(
+            id: 'fr:${n.requestId}',
+            at: n.shippedAt ?? n.createdAt,
+            unread: !n.seen,
+            build: (unread) => _shippedRequestCard(n, unread),
+          ),
+        );
+      }
       for (final r in requests) {
         items.add(
           _FeedItem(
@@ -315,9 +332,25 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     ]..sort((a, b) => b.at!.compareTo(a.at!));
     if (!_autoRead && items.isNotEmpty) {
       _autoRead = true;
+      final unseenShippedIds = [
+        for (final n in shippedRequests)
+          if (!n.seen) n.requestId,
+      ];
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() => _seen.addAll([for (final i in items) i.id]));
+        if (unseenShippedIds.isNotEmpty) {
+          try {
+            unawaited(
+              ref
+                  .read(featureRequestRepositoryProvider)
+                  .markShippedSeen(requestIds: unseenShippedIds)
+                  .catchError((Object _) => 0),
+            );
+          } on Object {
+            // Ignore if featureRequestRepositoryProvider is not wired.
+          }
+        }
       });
     }
 
@@ -388,6 +421,31 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       actions: [
         UiButton.secondary(
           key: const ValueKey('inbox-shares-open'),
+          label: l10n.social_view,
+          compact: true,
+          expand: false,
+          onPressed: open,
+        ),
+      ],
+    );
+  }
+
+  Widget _shippedRequestCard(ShippedRequestNotification n, bool unread) {
+    final l10n = SocialL10n.of(context);
+    void open() => context.push(AppRoutes.featureRequest(n.requestId));
+    return _ActivityCard(
+      key: ValueKey('inbox-shipped-request-${n.requestId}'),
+      badge: const _Badge('sparkle', UiTypePastel.english),
+      title: n.isAuthor
+          ? l10n.social_shippedRequestAuthorTitle(n.title)
+          : l10n.social_shippedRequestTitle(n.title),
+      subtitle: n.adminReply,
+      time: feedTime(context, n.shippedAt ?? n.createdAt),
+      unread: unread,
+      onTap: open,
+      actions: [
+        UiButton.secondary(
+          key: ValueKey('inbox-shipped-view-${n.requestId}'),
           label: l10n.social_view,
           compact: true,
           expand: false,

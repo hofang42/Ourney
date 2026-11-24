@@ -98,6 +98,13 @@ abstract final class AppRoutes {
   static String followJourney(String journeyId) =>
       '/follow/${Uri.encodeComponent(journeyId)}';
 
+  // feedback — In-App Feature Requests & Roadmap Board (/feedback).
+  static const feedback = '/feedback';
+
+  /// Feature request detail screen (/feedback/:id).
+  static String featureRequest(String id) =>
+      '/feedback/${Uri.encodeComponent(id)}';
+
   /// Query parameter carrying the location to return to after onboarding or
   /// sign-in (set by the router redirect).
   static const fromParam = 'from';
@@ -119,6 +126,7 @@ const Map<String, List<String>> featureRoutePrefixes = {
   'social': [AppRoutes.friends, AppRoutes.inbox, '/chat', '/f'],
   'sharing': ['/sharing', '/shared', '/p', '/follow'],
   'import': [AppRoutes.importJourney, AppRoutes.retell],
+  'feedback': [AppRoutes.feedback],
 };
 
 /// Paths reachable before onboarding/sign-in is complete. Everything else is
