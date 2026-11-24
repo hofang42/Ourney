@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/navigator_keys.dart';
+import '../../ui/motion.dart';
 import 'ui/add_friends_screen.dart';
 import 'ui/chat_screen.dart';
 import 'ui/friends_screen.dart';
@@ -21,28 +22,47 @@ final List<RouteBase> socialRoutes = [
   GoRoute(
     path: AppRoutes.friends,
     parentNavigatorKey: rootNavigatorKey,
-    builder: (context, state) => const FriendsScreen(),
+    pageBuilder: (context, state) => buildUiPage<void>(
+      context: context,
+      state: state,
+      kind: UiPageTransition.sharedZ,
+      child: const FriendsScreen(),
+    ),
     routes: [
       GoRoute(
         path: 'add',
         parentNavigatorKey: rootNavigatorKey,
-        builder: (context, state) => const AddFriendsScreen(),
+        pageBuilder: (context, state) => buildUiPage<void>(
+          context: context,
+          state: state,
+          kind: UiPageTransition.verticalSheet,
+          child: const AddFriendsScreen(),
+        ),
       ),
     ],
   ),
   GoRoute(
     path: '/chat/:id',
     parentNavigatorKey: rootNavigatorKey,
-    builder: (context, state) => ChatScreen(
-      conversationId: state.pathParameters['id']!,
-      replyToCheckInId: state.uri.queryParameters['replyTo'],
+    pageBuilder: (context, state) => buildUiPage<void>(
+      context: context,
+      state: state,
+      kind: UiPageTransition.sharedX,
+      child: ChatScreen(
+        conversationId: state.pathParameters['id']!,
+        replyToCheckInId: state.uri.queryParameters['replyTo'],
+      ),
     ),
   ),
   GoRoute(
     path: '/f/:token',
     parentNavigatorKey: rootNavigatorKey,
-    builder: (context, state) =>
-        InviteAcceptScreen(token: state.pathParameters['token']!),
+    pageBuilder: (context, state) => buildUiPage<void>(
+      context: context,
+      state: state,
+      kind: UiPageTransition.verticalSheet,
+      child: InviteAcceptScreen(token: state.pathParameters['token']!),
+    ),
   ),
 ];
 
