@@ -108,52 +108,27 @@ class JourneyRow extends ConsumerWidget {
       final typeId = journeyTypeId(journey);
       return Padding(
         padding: const EdgeInsets.only(bottom: UiSpace.md),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            UiJourneyCard(
-              key: ValueKey('journey-card-${journey.id}'),
-              title: journey.title,
-              type: typeId,
-              day: progress.dayNumber,
-              totalDays: progress.totalDays!,
-              streak: progress.summary.current,
-              todayDone: done,
-              snapLabel: l10n.journeys_snapToday,
-              dayLabel: l10n.journeys_dayOf(
-                progress.dayNumber,
-                progress.totalDays!,
-              ),
-              streakLabel: l10n.journeys_cardStreak(progress.summary.current),
-              onTap: open,
-              onSnap: () {
-                unawaited(
-                  ref.read(activeJourneyIdProvider.notifier).select(journey.id),
-                );
-                unawaited(checkInNow(context, ref, journey.id));
-              },
-            ),
-            PositionedDirectional(
-              top: 16,
-              start: 16,
-              width: 44,
-              height: 44,
-              child: IgnorePointer(
-                child: ExcludeSemantics(
-                  child: UiHero(
-                    tag: UiHeroTags.journeyBadge(journey.id),
-                    borderRadiusBegin: BorderRadius.circular(44 * 0.3),
-                    borderRadiusEnd: BorderRadius.circular(UiRadius.card),
-                    borderSide: BorderSide(
-                      color: ui.outline,
-                      width: UiBorder.standard,
-                    ),
-                    child: UiTypeBadge(type: typeId, size: 44),
-                  ),
-                ),
-              ),
-            ),
-          ],
+        child: UiJourneyCard(
+          key: ValueKey('journey-card-${journey.id}'),
+          title: journey.title,
+          type: typeId,
+          day: progress.dayNumber,
+          totalDays: progress.totalDays!,
+          streak: progress.summary.current,
+          todayDone: done,
+          snapLabel: l10n.journeys_snapToday,
+          dayLabel: l10n.journeys_dayOf(
+            progress.dayNumber,
+            progress.totalDays!,
+          ),
+          streakLabel: l10n.journeys_cardStreak(progress.summary.current),
+          onTap: open,
+          onSnap: () {
+            unawaited(
+              ref.read(activeJourneyIdProvider.notifier).select(journey.id),
+            );
+            unawaited(checkInNow(context, ref, journey.id));
+          },
         ),
       );
     }
@@ -169,25 +144,19 @@ class JourneyRow extends ConsumerWidget {
       key: ValueKey('journey-card-${journey.id}'),
       title: journey.title,
       minHeight: 94,
-      leading: UiHero(
-        tag: UiHeroTags.journeyBadge(journey.id),
-        borderRadiusBegin: BorderRadius.circular(UiRadius.thumb),
-        borderRadiusEnd: BorderRadius.circular(UiRadius.card),
-        borderSide: BorderSide(color: ui.outline, width: UiBorder.standard),
-        child: ClipRRect(
-          key: ValueKey('journey-badge-${journey.id}'),
-          borderRadius: BorderRadius.circular(UiRadius.thumb),
-          child: SizedBox.square(
-            dimension: 66,
-            child: latest != null
-                ? JourneyPhoto(checkIn: latest, cacheWidth: 200)
-                : ColoredBox(
-                    color: pal.paper,
-                    child: Center(
-                      child: UiTypeBadge(type: journeyTypeId(journey), size: 44),
-                    ),
+      leading: ClipRRect(
+        key: ValueKey('journey-badge-${journey.id}'),
+        borderRadius: BorderRadius.circular(UiRadius.thumb),
+        child: SizedBox.square(
+          dimension: 66,
+          child: latest != null
+              ? JourneyPhoto(checkIn: latest, cacheWidth: 200)
+              : ColoredBox(
+                  color: pal.paper,
+                  child: Center(
+                    child: UiTypeBadge(type: journeyTypeId(journey), size: 44),
                   ),
-          ),
+                ),
         ),
       ),
       subtitle: UiStyleLabel(

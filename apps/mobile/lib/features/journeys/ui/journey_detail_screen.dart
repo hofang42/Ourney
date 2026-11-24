@@ -257,29 +257,11 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               ),
             if (progress != null) const SizedBox(height: UiSpace.lg),
             DeadUploadsBanner(journeyId: journey.id),
-            UiHero(
-              tag: UiHeroTags.journeyCover(journey.id),
-              borderRadiusBegin: BorderRadius.zero,
-              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
-              borderSide: BorderSide(
-                color: pal.outline,
-                width: UiBorder.standard,
-              ),
-              child: UiEyebrow(_dateRange(context, journey).toUpperCase()),
-            ),
+            UiEyebrow(_dateRange(context, journey).toUpperCase()),
             const SizedBox(height: 4),
-            UiHero(
-              tag: UiHeroTags.journeyBadge(journey.id),
-              borderRadiusBegin: BorderRadius.circular(UiRadius.thumb),
-              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
-              borderSide: BorderSide(
-                color: pal.outline,
-                width: UiBorder.standard,
-              ),
-              child: Semantics(
-                header: true,
-                child: Text(journey.title, style: UiText.h1(color: ui.ink)),
-              ),
+            Semantics(
+              header: true,
+              child: Text(journey.title, style: UiText.h1(color: ui.ink)),
             ),
             const SizedBox(height: 22),
             if (progress != null) ...[

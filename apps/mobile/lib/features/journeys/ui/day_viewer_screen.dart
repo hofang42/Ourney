@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
@@ -54,24 +53,32 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
   /// Interactive vertical drag-to-dismiss state. Updates [_dragOffset] directly
   /// without full-screen [setState] and rebounds via [UiSprings.snappy].
   final ValueNotifier<Offset> _dragOffset = ValueNotifier<Offset>(Offset.zero);
-  late final AnimationController _reboundCtrl = AnimationController.unbounded(
-    vsync: this,
-  )..addListener(_onReboundTick);
+  AnimationController? _reboundCtrl;
   Offset _dragStartLocal = Offset.zero;
+  Offset _rawDrag = Offset.zero;
   Offset _reboundFrom = Offset.zero;
 
   Animation<double>? _routeAnim;
   CurvedAnimation? _chromeFade;
 
+  AnimationController _ensureReboundController() {
+    var ctrl = _reboundCtrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController.unbounded(vsync: this)
+      ..addListener(_onReboundTick);
+    _reboundCtrl = ctrl;
+    return ctrl;
+  }
+
   void _onReboundTick() {
-    if (!mounted) return;
-    if (!_reboundCtrl.isAnimating) {
+    final ctrl = _reboundCtrl;
+    if (!mounted || ctrl == null) return;
+    if (!ctrl.isAnimating) {
       _dragOffset.value = Offset.zero;
       return;
     }
     _dragOffset.value =
-        Offset.lerp(_reboundFrom, Offset.zero, _reboundCtrl.value) ??
-        Offset.zero;
+        Offset.lerp(_reboundFrom, Offset.zero, ctrl.value) ?? Offset.zero;
   }
 
   @override
@@ -96,8 +103,8 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
 
   @override
   void dispose() {
-    _reboundCtrl.removeListener(_onReboundTick);
-    _reboundCtrl.dispose();
+    _reboundCtrl?.removeListener(_onReboundTick);
+    _reboundCtrl?.dispose();
     _dragOffset.dispose();
     _chromeFade?.dispose();
     _pages?.dispose();
@@ -115,41 +122,56 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen>
   }
 
   void _onVerticalDragStart(DragStartDetails details) {
-    _reboundCtrl.stop();
+    _reboundCtrl?.stop();
     final current = _dragOffset.value;
     _dragStartLocal =
         details.localPosition - Offset(current.dx / 0.35, current.dy);
+    _rawDrag = current;
   }
 
   void _onVerticalDragUpdate(DragUpdateDetails details) {
     final raw = details.localPosition - _dragStartLocal;
-    _dragOffset.value = Offset(raw.dx * 0.35, raw.dy);
+    _rawDrag = Offset(raw.dx * 0.35, raw.dy);
+    if (!UiMotion.reduced(context)) {
+      _dragOffset.value = _rawDrag;
+    }
   }
 
   void _onVerticalDragEnd(DragEndDetails details) {
-    final current = _dragOffset.value;
+    final reduced = UiMotion.reduced(context);
+    final current = reduced ? _rawDrag : _dragOffset.value;
+    _rawDrag = Offset.zero;
     final dy = current.dy.abs();
-    final velocityY = details.velocity.pixelsPerSecond.dy.abs();
-    if (dy > 110.0 || velocityY > 750.0) {
+    final vy = details.velocity.pixelsPerSecond.dy;
+    final sameDirectionFling =
+        (current.dy == 0.0 || (vy * current.dy) > 0.0) && vy.abs() > 750.0;
+    if (dy > 110.0 || sameDirectionFling) {
+      _dragOffset.value = Offset.zero;
       _close();
       return;
     }
-    if (UiMotion.reduced(context) || current == Offset.zero) {
+    if (reduced || current == Offset.zero) {
       _dragOffset.value = Offset.zero;
       return;
     }
     _reboundFrom = current;
-    final unitVel =
-        details.velocity.pixelsPerSecond.dy / math.max(dy, 110.0);
+    final unitVel = dy < 1.0
+        ? 0.0
+        : (-vy / current.dy).clamp(
+            -25.0,
+            25.0,
+          );
     final sim = SpringSimulation(UiSprings.snappy, 0.0, 1.0, unitVel);
+    final ctrl = _ensureReboundController();
     unawaited(
-      _reboundCtrl.animateWith(sim).then((_) {
+      ctrl.animateWith(sim).then((_) {
         if (mounted) _dragOffset.value = Offset.zero;
       }),
     );
   }
 
   void _onVerticalDragCancel() {
+    _rawDrag = Offset.zero;
     if (_dragOffset.value == Offset.zero) return;
     _dragOffset.value = Offset.zero;
   }
@@ -497,6 +519,13 @@ class _MetricRow extends StatelessWidget {
           duration: UiMotion.of(context, const Duration(milliseconds: 140)),
           switchInCurve: UiCurves.easeOutStrong,
           switchOutCurve: Curves.easeOut,
+          layoutBuilder: (currentChild, previousChildren) => Stack(
+            alignment: AlignmentDirectional.centerStart,
+            children: <Widget>[
+              ...previousChildren,
+              ?currentChild,
+            ],
+          ),
           child: hidden
               ? Row(
                   key: const ValueKey('journey-day-metric-hidden'),

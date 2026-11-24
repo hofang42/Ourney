@@ -15,11 +15,6 @@ import '../journey_photo.dart';
 import 'journey_timeline.dart' show wrapTimelineDayHero;
 import 'timeline_common.dart';
 
-/// Tracks month ids toggled interactively by the user so only user-initiated
-/// expand/collapse transitions play the 180ms accordion fade+size entrance
-/// (never lazy rows scrolling into view).
-final Set<int> _toggledArchiveMonths = <int>{};
-
 /// Exact extents of the By month archive. Every row has a known height (no
 /// measuring), so the lazy lists place month headers exactly and a jump to a
 /// month lands on its header.
@@ -111,110 +106,201 @@ List<Widget> buildArchiveSlivers({
       out.add(_YearDivider(year: m.year));
     }
     final isOpen = open.contains(m.id);
-    final animateToggle = _toggledArchiveMonths.contains(m.id);
     final title = monthTitle(context, m);
     final plain = monthPlain(context, m);
     final summary = l10n.journeys_monthSummary(m.checked, m.days, m.photos);
     final key = headerKeys.putIfAbsent(m.id, GlobalKey.new);
     out.add(
-      SliverMainAxisGroup(
+      _ArchiveMonthGroup(
         key: ValueKey('archive-month-${m.id}'),
-        slivers: [
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _FixedHeaderDelegate(
-              extent: headerExtent,
-              child: Stack(
-                fit: StackFit.passthrough,
-                children: [
-                  UiMonthHeader(
-                    key: key,
-                    title: title,
-                    summary: summary,
-                    expanded: isOpen,
-                    accent: accent,
-                    background: paper,
-                    semanticLabel: l10n.journeys_monthA11y(
-                      plain,
-                      m.checked,
-                      m.days,
-                      m.photos,
-                    ),
-                    semanticHint: isOpen
-                        ? l10n.journeys_monthCollapseHint
-                        : l10n.journeys_monthExpandHint,
-                    onPressed: () {
-                      unawaited(UiHaptics.selection());
-                      _toggledArchiveMonths.add(m.id);
-                      onToggle(m.id);
-                    },
+        month: m,
+        index: index,
+        isOpen: isOpen,
+        headerKey: key,
+        headerExtent: headerExtent,
+        title: title,
+        plain: plain,
+        summary: summary,
+        skinId: skinId,
+        paper: paper,
+        accent: accent,
+        pitch: pitch,
+        firstDay: firstDay,
+        dpr: dpr,
+        onToggle: onToggle,
+        onTapDay: onTapDay,
+      ),
+    );
+  }
+  return out;
+}
+
+class _ArchiveMonthGroup extends StatefulWidget {
+  const _ArchiveMonthGroup({
+    required this.month,
+    required this.index,
+    required this.isOpen,
+    required this.headerKey,
+    required this.headerExtent,
+    required this.title,
+    required this.plain,
+    required this.summary,
+    required this.skinId,
+    required this.paper,
+    required this.accent,
+    required this.pitch,
+    required this.firstDay,
+    required this.dpr,
+    required this.onToggle,
+    required this.onTapDay,
+    super.key,
+  });
+
+  final MonthBucket month;
+  final TimelineIndex index;
+  final bool isOpen;
+  final GlobalKey headerKey;
+  final double headerExtent;
+  final String title;
+  final String plain;
+  final String summary;
+  final String skinId;
+  final Color paper;
+  final Color accent;
+  final double pitch;
+  final int firstDay;
+  final double dpr;
+  final ValueChanged<int> onToggle;
+  final ValueChanged<TimelineDay> onTapDay;
+
+  @override
+  State<_ArchiveMonthGroup> createState() => _ArchiveMonthGroupState();
+}
+
+class _ArchiveMonthGroupState extends State<_ArchiveMonthGroup> {
+  bool _animateToggle = false;
+  Timer? _toggleTimer;
+
+  @override
+  void didUpdateWidget(covariant _ArchiveMonthGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isOpen != widget.isOpen) {
+      _toggleTimer?.cancel();
+      if (!UiMotion.reduced(context)) {
+        _animateToggle = true;
+        _toggleTimer = Timer(const Duration(milliseconds: 180), () {
+          _animateToggle = false;
+        });
+      } else {
+        _animateToggle = false;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _toggleTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    final m = widget.month;
+    final isOpen = widget.isOpen;
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _FixedHeaderDelegate(
+            extent: widget.headerExtent,
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                UiMonthHeader(
+                  key: widget.headerKey,
+                  title: widget.title,
+                  summary: widget.summary,
+                  expanded: isOpen,
+                  accent: widget.accent,
+                  background: widget.paper,
+                  semanticLabel: l10n.journeys_monthA11y(
+                    widget.plain,
+                    m.checked,
+                    m.days,
+                    m.photos,
                   ),
-                  PositionedDirectional(
-                    end: 0,
-                    top: 0,
-                    bottom: 1,
-                    width: UiSize.tap,
-                    child: IgnorePointer(
-                      child: ExcludeSemantics(
-                        child: ColoredBox(
-                          color: paper,
-                          child: Center(
-                            child: AnimatedRotation(
-                              key: ValueKey('archive-chevron-${m.id}'),
-                              turns: isOpen ? 0.25 : 0.0,
-                              duration: UiMotion.of(
-                                context,
-                                const Duration(milliseconds: 180),
-                              ),
-                              curve: UiCurves.easeOutStrong,
-                              child: OurneyIcon(
-                                name: 'chevron-right',
-                                size: 20,
-                                flat: true,
-                                color: context.ui.ink,
-                              ),
+                  semanticHint: isOpen
+                      ? l10n.journeys_monthCollapseHint
+                      : l10n.journeys_monthExpandHint,
+                  onPressed: () {
+                    unawaited(UiHaptics.selection());
+                    widget.onToggle(m.id);
+                  },
+                ),
+                PositionedDirectional(
+                  end: 0,
+                  top: 0,
+                  bottom: 1,
+                  width: UiSize.tap,
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: ColoredBox(
+                        color: widget.paper,
+                        child: Center(
+                          child: AnimatedRotation(
+                            key: ValueKey('archive-chevron-${m.id}'),
+                            turns: isOpen ? 0.25 : 0.0,
+                            duration: UiMotion.of(
+                              context,
+                              const Duration(milliseconds: 180),
+                            ),
+                            curve: UiCurves.easeOutStrong,
+                            child: OurneyIcon(
+                              name: 'chevron-right',
+                              size: 20,
+                              flat: true,
+                              color: context.ui.ink,
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isOpen)
+          _MonthGrid(
+            month: m,
+            index: widget.index,
+            skinId: widget.skinId,
+            accent: widget.accent,
+            pitch: widget.pitch,
+            firstDay: widget.firstDay,
+            dpr: widget.dpr,
+            animateEntrance: _animateToggle,
+            onTapDay: widget.onTapDay,
+          )
+        else
+          SliverFixedExtentList.builder(
+            itemExtent: ArchiveGeometry.collapsedExtent,
+            itemCount: 1,
+            itemBuilder: (context, _) => _ArchiveToggleAnimator(
+              key: ValueKey('archive-collapsed-anim-${m.id}'),
+              animate: _animateToggle,
+              child: _CollapsedMonth(
+                month: m,
+                accent: widget.accent,
+                dpr: widget.dpr,
               ),
             ),
           ),
-          if (isOpen)
-            _MonthGrid(
-              month: m,
-              index: index,
-              skinId: skinId,
-              accent: accent,
-              pitch: pitch,
-              firstDay: firstDay,
-              dpr: dpr,
-              animateEntrance: animateToggle,
-              onTapDay: onTapDay,
-            )
-          else
-            SliverFixedExtentList.builder(
-              itemExtent: ArchiveGeometry.collapsedExtent,
-              itemCount: 1,
-              itemBuilder: (context, _) => _ArchiveToggleAnimator(
-                key: ValueKey('archive-collapsed-anim-${m.id}'),
-                monthId: m.id,
-                animate: animateToggle,
-                child: _CollapsedMonth(
-                  month: m,
-                  accent: accent,
-                  dpr: dpr,
-                ),
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
-  return out;
 }
 
 class _FixedHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -458,7 +544,6 @@ class _MonthGrid extends StatelessWidget {
         if (!animateEntrance) return rowWidget;
         return _ArchiveToggleAnimator(
           key: ValueKey('archive-row-anim-${month.id}-$r'),
-          monthId: month.id,
           animate: animateEntrance,
           child: rowWidget,
         );
@@ -482,18 +567,16 @@ class _MonthGrid extends StatelessWidget {
   }
 }
 
-/// Plays a 180ms [FadeTransition] + [AnimatedSize] ([UiCurves.easeOutStrong])
-/// when a month is interactively toggled open or collapsed, while preserving
-/// exact sliver item extents for lazy scroll jumps.
+/// Plays a 180ms [FadeTransition] + subtle `-4dp -> 0` vertical slide
+/// ([UiCurves.easeOutStrong]) when a month is interactively toggled open or
+/// collapsed, while preserving exact sliver item extents for lazy scroll jumps.
 class _ArchiveToggleAnimator extends StatefulWidget {
   const _ArchiveToggleAnimator({
-    required this.monthId,
     required this.animate,
     required this.child,
     super.key,
   });
 
-  final int monthId;
   final bool animate;
   final Widget child;
 
@@ -518,15 +601,10 @@ class _ArchiveToggleAnimatorState extends State<_ArchiveToggleAnimator>
         final ctrl = AnimationController(vsync: this, duration: _kDuration);
         _ctrl = ctrl;
         _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.easeOutStrong);
-        ctrl.forward(from: 0.0).whenCompleteOrCancel(() {
-          _toggledArchiveMonths.remove(widget.monthId);
-        });
-      } else {
-        _toggledArchiveMonths.remove(widget.monthId);
+        ctrl.forward(from: 0.0);
       }
     } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
       _ctrl?.value = 1.0;
-      _toggledArchiveMonths.remove(widget.monthId);
     }
   }
 
@@ -543,14 +621,17 @@ class _ArchiveToggleAnimatorState extends State<_ArchiveToggleAnimator>
     if (UiMotion.reduced(context) || curved == null) {
       return widget.child;
     }
-    return AnimatedSize(
-      duration: UiMotion.of(context, _kDuration),
-      curve: UiCurves.easeOutStrong,
-      alignment: Alignment.topCenter,
-      child: FadeTransition(
-        opacity: curved,
-        child: widget.child,
-      ),
+    final faded = FadeTransition(opacity: curved, child: widget.child);
+    return AnimatedBuilder(
+      animation: curved,
+      child: faded,
+      builder: (context, child) {
+        final dy = (1.0 - curved.value) * -4.0;
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: child,
+        );
+      },
     );
   }
 }

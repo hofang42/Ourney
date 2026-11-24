@@ -167,6 +167,7 @@ final List<RouteBase> journeysRoutes = [
           context: context,
           state: _UriKeyedState(state),
           kind: UiPageTransition.sharedZ,
+          opaque: false,
           transitionDuration: const Duration(milliseconds: 300),
           reverseTransitionDuration: UiMotion.sheetExit,
           child: DayViewerScreen(

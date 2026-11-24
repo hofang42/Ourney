@@ -155,9 +155,12 @@ class _Trophy extends StatefulWidget {
 class _TrophyState extends State<_Trophy>
     with SingleTickerProviderStateMixin {
   static const Duration _kDuration = Duration(milliseconds: 560);
+  static const Duration _kFirstBeatDelay = Duration(milliseconds: 360);
+  static const Duration _kSecondBeatDelay = Duration(milliseconds: 470);
 
   AnimationController? _ctrl;
   CurvedAnimation? _curved;
+  Timer? _firstBeatTimer;
   Timer? _secondBeatTimer;
   bool _started = false;
 
@@ -171,25 +174,38 @@ class _TrophyState extends State<_Trophy>
         _ctrl = ctrl;
         _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.stampDecel);
         ctrl.forward(from: 0.0);
-        // Double-beat milestone haptic (mediumImpact + 110ms lightImpact) using
-        // a disposable Timer so widget disposal in tests never leaves a
-        // pending timer.
-        if (UiHaptics.enabled) {
-          unawaited(UiHaptics.stampImpact());
-          _secondBeatTimer = Timer(const Duration(milliseconds: 110), () {
-            if (mounted && UiHaptics.enabled) {
+        // Double-beat milestone haptic (mediumImpact + 110ms lightImpact) synced
+        // to the trophy rise settle / count climax (~360ms & ~470ms) via
+        // disposable Timers.
+        if (UiHaptics.enabled && TickerMode.valuesOf(context).enabled) {
+          _firstBeatTimer = Timer(_kFirstBeatDelay, () {
+            if (mounted &&
+                UiHaptics.enabled &&
+                TickerMode.valuesOf(context).enabled) {
+              unawaited(UiHaptics.stampImpact());
+            }
+          });
+          _secondBeatTimer = Timer(_kSecondBeatDelay, () {
+            if (mounted &&
+                UiHaptics.enabled &&
+                TickerMode.valuesOf(context).enabled) {
               unawaited(UiHaptics.pressLight());
             }
           });
         }
+      } else if (UiHaptics.enabled && TickerMode.valuesOf(context).enabled) {
+        unawaited(UiHaptics.stampImpact());
       }
     } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
+      _firstBeatTimer?.cancel();
+      _secondBeatTimer?.cancel();
       _ctrl?.value = 1.0;
     }
   }
 
   @override
   void dispose() {
+    _firstBeatTimer?.cancel();
     _secondBeatTimer?.cancel();
     _curved?.dispose();
     _ctrl?.dispose();
@@ -447,38 +463,65 @@ class _CurvePainter extends CustomPainter {
   final Paint _strokePaint;
   final Paint _dotPaint;
 
+  Size? _cachedSize;
+  final List<Offset> _pts = <Offset>[];
+  final Path _fullPath = Path();
+  final Path _partialPath = Path();
+  final List<ui_.PathMetric> _metrics = <ui_.PathMetric>[];
+
+  void _ensureGeometry(Size size) {
+    if (_cachedSize == size) return;
+    _cachedSize = size;
+    _pts
+      ..clear()
+      ..addAll([
+        for (final p in points)
+          Offset(6 + p.dx * (size.width - 12), 6 + p.dy * (size.height - 12)),
+      ]);
+    _fullPath
+      ..reset()
+      ..moveTo(_pts.first.dx, _pts.first.dy);
+    for (var i = 1; i < _pts.length; i++) {
+      if (smooth) {
+        final mid = (_pts[i - 1].dx + _pts[i].dx) / 2;
+        _fullPath.cubicTo(
+          mid,
+          _pts[i - 1].dy,
+          mid,
+          _pts[i].dy,
+          _pts[i].dx,
+          _pts[i].dy,
+        );
+      } else {
+        _fullPath.lineTo(_pts[i].dx, _pts[i].dy);
+      }
+    }
+    _metrics
+      ..clear()
+      ..addAll(_fullPath.computeMetrics());
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (points.isEmpty) return;
     final t = progress.value.clamp(0.0, 1.0);
     if (t <= 0.0) return;
 
-    final pts = [
-      for (final p in points)
-        Offset(6 + p.dx * (size.width - 12), 6 + p.dy * (size.height - 12)),
-    ];
-    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
-    for (var i = 1; i < pts.length; i++) {
-      if (smooth) {
-        final mid = (pts[i - 1].dx + pts[i].dx) / 2;
-        path.cubicTo(mid, pts[i - 1].dy, mid, pts[i].dy, pts[i].dx, pts[i].dy);
-      } else {
-        path.lineTo(pts[i].dx, pts[i].dy);
-      }
-    }
+    _ensureGeometry(size);
     if (t >= 1.0) {
-      canvas.drawPath(path, _strokePaint);
-      canvas.drawCircle(pts.last, 7, _dotPaint);
+      canvas.drawPath(_fullPath, _strokePaint);
+      canvas.drawCircle(_pts.last, 7, _dotPaint);
       return;
     }
 
-    final partial = Path();
-    for (final ui_.PathMetric m in path.computeMetrics()) {
-      partial.addPath(m.extractPath(0.0, m.length * t), Offset.zero);
+    _partialPath.reset();
+    for (final ui_.PathMetric m in _metrics) {
+      _partialPath.addPath(m.extractPath(0.0, m.length * t), Offset.zero);
     }
-    canvas.drawPath(partial, _strokePaint);
+    canvas.drawPath(_partialPath, _strokePaint);
     if (t >= 0.85) {
       final dotScale = ((t - 0.85) / 0.15).clamp(0.0, 1.0);
-      canvas.drawCircle(pts.last, 7.0 * dotScale, _dotPaint);
+      canvas.drawCircle(_pts.last, 7.0 * dotScale, _dotPaint);
     }
   }
 
@@ -539,53 +582,85 @@ class _BarsState extends State<_Bars> with SingleTickerProviderStateMixin {
     final reduced = UiMotion.reduced(context);
     final ctrl = _ctrl;
     final n = widget.total.clamp(1, 30);
-
-    Widget buildRow(double masterT) {
-      return Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < n; i++)
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1),
-                child: _buildBar(ui, i, n, masterT),
-              ),
-            ),
-        ],
-      );
-    }
+    final doneDecoration = BoxDecoration(
+      color: widget.color,
+      borderRadius: const BorderRadius.all(Radius.circular(3)),
+    );
+    final pendingDecoration = BoxDecoration(
+      color: ui.fill,
+      borderRadius: const BorderRadius.all(Radius.circular(3)),
+    );
 
     return ExcludeSemantics(
       child: SizedBox(
         height: 96,
-        child: (reduced || ctrl == null)
-            ? buildRow(1.0)
-            : AnimatedBuilder(
-                animation: ctrl,
-                builder: (context, _) => buildRow(ctrl.value),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (var i = 0; i < n; i++)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 1),
+                  child: _buildBarItem(
+                    i: i,
+                    n: n,
+                    reduced: reduced,
+                    ctrl: ctrl,
+                    decoration: i < widget.done
+                        ? doneDecoration
+                        : pendingDecoration,
+                  ),
+                ),
               ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildBar(OurneyUi ui, int i, int n, double masterT) {
+  Widget _buildBarItem({
+    required int i,
+    required int n,
+    required bool reduced,
+    required AnimationController? ctrl,
+    required BoxDecoration decoration,
+  }) {
     final fullHeight = 24 + ((i * 37) % 60).toDouble();
+    final staticBar = SizedBox(
+      width: double.infinity,
+      height: fullHeight,
+      child: DecoratedBox(decoration: decoration),
+    );
+    if (reduced || ctrl == null) {
+      return Align(
+        alignment: Alignment.bottomCenter,
+        child: Transform.scale(
+          key: ValueKey('wrapped-bar-scale-$i'),
+          scaleY: 1.0,
+          alignment: Alignment.bottomCenter,
+          child: staticBar,
+        ),
+      );
+    }
     final start = n <= 1 ? 0.0 : (i / (n - 1)) * 0.45;
-    final raw = ((masterT - start) / 0.55).clamp(0.0, 1.0);
-    final barT = masterT >= 1.0 ? 1.0 : UiCurves.easeOutStrong.transform(raw);
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Transform.scale(
-        key: ValueKey('wrapped-bar-scale-$i'),
-        scaleY: barT,
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          height: fullHeight,
-          decoration: BoxDecoration(
-            color: i < widget.done ? widget.color : ui.fill,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
+      child: AnimatedBuilder(
+        animation: ctrl,
+        child: staticBar,
+        builder: (context, child) {
+          final masterT = ctrl.value;
+          final raw = ((masterT - start) / 0.55).clamp(0.0, 1.0);
+          final barT = masterT >= 1.0
+              ? 1.0
+              : UiCurves.easeOutStrong.transform(raw);
+          return Transform.scale(
+            key: ValueKey('wrapped-bar-scale-$i'),
+            scaleY: barT,
+            alignment: Alignment.bottomCenter,
+            child: child,
+          );
+        },
       ),
     );
   }
@@ -641,60 +716,112 @@ class _ChainState extends State<_Chain> with SingleTickerProviderStateMixin {
     final ctrl = _ctrl;
     final n = widget.total.clamp(1, 60);
     final completed = widget.done.clamp(0, n);
+    final unreadBox = SizedBox(
+      width: 18,
+      height: 18,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: ui.border, width: 1.5),
+        ),
+      ),
+    );
+    final doneBox = SizedBox(
+      width: 18,
+      height: 18,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: widget.color,
+          shape: BoxShape.circle,
+          border: Border.all(color: widget.color, width: 1.5),
+        ),
+      ),
+    );
 
-    Widget buildWrap(double masterT) {
-      return Wrap(
+    return ExcludeSemantics(
+      child: Wrap(
         alignment: WrapAlignment.center,
         spacing: 6,
         runSpacing: 6,
         children: [
-          for (var i = 0; i < n; i++) _buildTile(ui, i, completed, masterT),
+          for (var i = 0; i < n; i++)
+            i >= completed
+                ? unreadBox
+                : _buildDoneTile(
+                    ui: ui,
+                    i: i,
+                    completed: completed,
+                    reduced: reduced,
+                    ctrl: ctrl,
+                    unreadBox: unreadBox,
+                    doneBox: doneBox,
+                  ),
         ],
-      );
-    }
-
-    return ExcludeSemantics(
-      child: (reduced || ctrl == null)
-          ? buildWrap(1.0)
-          : AnimatedBuilder(
-              animation: ctrl,
-              builder: (context, _) => buildWrap(ctrl.value),
-            ),
+      ),
     );
   }
 
-  Widget _buildTile(OurneyUi ui, int i, int completed, double masterT) {
-    final isDone = i < completed;
-    if (!isDone) {
-      return Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          shape: BoxShape.circle,
-          border: Border.all(color: ui.border, width: 1.5),
-        ),
+  Widget _buildDoneTile({
+    required OurneyUi ui,
+    required int i,
+    required int completed,
+    required bool reduced,
+    required AnimationController? ctrl,
+    required Widget unreadBox,
+    required Widget doneBox,
+  }) {
+    if (reduced || ctrl == null) {
+      return Transform.scale(
+        key: ValueKey('wrapped-chain-tile-$i'),
+        scale: 1.0,
+        child: doneBox,
       );
     }
     final start = completed <= 1 ? 0.0 : (i / (completed - 1)) * 0.72;
-    final raw = ((masterT - start) / 0.28).clamp(0.0, 1.0);
-    final tileT = masterT >= 1.0 ? 1.0 : UiCurves.easeOutStrong.transform(raw);
-    final scale = ui_.lerpDouble(0.86, 1.0, tileT)!;
-    final fillColor = Color.lerp(Colors.transparent, widget.color, tileT)!;
-    final borderColor = Color.lerp(ui.border, widget.color, tileT)!;
-
-    return Transform.scale(
-      key: ValueKey('wrapped-chain-tile-$i'),
-      scale: scale,
-      child: Container(
-        width: 18,
-        height: 18,
-        decoration: BoxDecoration(
-          color: fillColor,
-          shape: BoxShape.circle,
-          border: Border.all(color: borderColor, width: 1.5),
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: ctrl,
+      child: doneBox,
+      builder: (context, child) {
+        final masterT = ctrl.value;
+        final raw = ((masterT - start) / 0.28).clamp(0.0, 1.0);
+        if (raw <= 0.0) {
+          return Transform.scale(
+            key: ValueKey('wrapped-chain-tile-$i'),
+            scale: 0.86,
+            child: unreadBox,
+          );
+        }
+        if (raw >= 1.0 || masterT >= 1.0) {
+          return Transform.scale(
+            key: ValueKey('wrapped-chain-tile-$i'),
+            scale: 1.0,
+            child: child,
+          );
+        }
+        final tileT = UiCurves.easeOutStrong.transform(raw);
+        final scale = ui_.lerpDouble(0.86, 1.0, tileT)!;
+        final fillColor = Color.lerp(
+          Colors.transparent,
+          widget.color,
+          tileT,
+        )!;
+        final borderColor = Color.lerp(ui.border, widget.color, tileT)!;
+        return Transform.scale(
+          key: ValueKey('wrapped-chain-tile-$i'),
+          scale: scale,
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: fillColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: borderColor, width: 1.5),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

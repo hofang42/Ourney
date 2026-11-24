@@ -167,6 +167,13 @@ class _QuietTimelineState extends State<QuietTimeline> {
                       ),
                       switchInCurve: UiCurves.easeOutStrong,
                       switchOutCurve: Curves.easeOut,
+                      layoutBuilder: (currentChild, previousChildren) => Stack(
+                        alignment: AlignmentDirectional.centerStart,
+                        children: <Widget>[
+                          ...previousChildren,
+                          ?currentChild,
+                        ],
+                      ),
                       child: TimelineNumber(
                         axis(0),
                         key: ValueKey(
@@ -186,6 +193,13 @@ class _QuietTimelineState extends State<QuietTimeline> {
                       ),
                       switchInCurve: UiCurves.easeOutStrong,
                       switchOutCurve: Curves.easeOut,
+                      layoutBuilder: (currentChild, previousChildren) => Stack(
+                        alignment: AlignmentDirectional.centerEnd,
+                        children: <Widget>[
+                          ...previousChildren,
+                          ?currentChild,
+                        ],
+                      ),
                       child: TimelineNumber(
                         axis(1),
                         key: ValueKey(
@@ -1338,6 +1352,19 @@ class _AnimatedTimelineCurveState extends State<_AnimatedTimelineCurve>
   }
 
   @override
+  void didUpdateWidget(covariant _AnimatedTimelineCurve oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(oldWidget.values, widget.values)) {
+      if (!UiMotion.reduced(context) && widget.values.length >= 2) {
+        _ensureAnimation();
+        _ctrl!.forward(from: 0.0);
+      } else if (_ctrl != null) {
+        _ctrl!.value = 1.0;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _curved?.dispose();
     _ctrl?.dispose();
@@ -1398,69 +1425,93 @@ class _AnimatedTimelineCurvePainter extends CustomPainter {
   final Paint? _fillPaint;
   final Paint? _dotPaint;
 
+  Size? _cachedSize;
+  final List<Offset> _pts = <Offset>[];
+  final Path _fullPath = Path();
+  final Path _fillPath = Path();
+  final Path _partialPath = Path();
+  final List<PathMetric> _metrics = <PathMetric>[];
+
+  void _ensureGeometry(Size size) {
+    if (_cachedSize == size) return;
+    _cachedSize = size;
+    final lo = values.reduce(math.min);
+    final hi = values.reduce(math.max);
+    final span = hi - lo == 0 ? 1.0 : hi - lo;
+    const pad = 6.0;
+    _pts
+      ..clear()
+      ..addAll([
+        for (var i = 0; i < values.length; i++)
+          Offset(
+            pad + (size.width - pad * 2) * i / (values.length - 1),
+            size.height -
+                pad -
+                (size.height - pad * 2) * (values[i] - lo) / span,
+          ),
+      ]);
+    _fullPath
+      ..reset()
+      ..moveTo(_pts.first.dx, _pts.first.dy);
+    for (var i = 1; i < _pts.length; i++) {
+      final a = _pts[i - 1];
+      final b = _pts[i];
+      if (smooth) {
+        final mx = (a.dx + b.dx) / 2;
+        _fullPath.cubicTo(mx, a.dy, mx, b.dy, b.dx, b.dy);
+      } else {
+        _fullPath.lineTo(b.dx, b.dy);
+      }
+    }
+    _fillPath
+      ..reset()
+      ..addPath(_fullPath, Offset.zero)
+      ..lineTo(_pts.last.dx, size.height)
+      ..lineTo(_pts.first.dx, size.height)
+      ..close();
+    _metrics
+      ..clear()
+      ..addAll(_fullPath.computeMetrics());
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2) return;
     final t = progress.value.clamp(0.0, 1.0);
     if (t <= 0.0) return;
 
-    final lo = values.reduce(math.min);
-    final hi = values.reduce(math.max);
-    final span = hi - lo == 0 ? 1.0 : hi - lo;
-    const pad = 6.0;
-    Offset at(int i) => Offset(
-      pad + (size.width - pad * 2) * i / (values.length - 1),
-      size.height - pad - (size.height - pad * 2) * (values[i] - lo) / span,
-    );
-    final path = Path()..moveTo(at(0).dx, at(0).dy);
-    for (var i = 1; i < values.length; i++) {
-      final a = at(i - 1);
-      final b = at(i);
-      if (smooth) {
-        final mx = (a.dx + b.dx) / 2;
-        path.cubicTo(mx, a.dy, mx, b.dy, b.dx, b.dy);
-      } else {
-        path.lineTo(b.dx, b.dy);
-      }
-    }
+    _ensureGeometry(size);
 
     if (t >= 1.0) {
-      if (_fillPaint != null) {
-        final fill = Path.from(path)
-          ..lineTo(at(values.length - 1).dx, size.height)
-          ..lineTo(at(0).dx, size.height)
-          ..close();
-        canvas.drawPath(fill, _fillPaint);
+      if (_fillPaint != null && fillColor != null) {
+        _fillPaint.color = fillColor!;
+        canvas.drawPath(_fillPath, _fillPaint);
       }
-      canvas.drawPath(path, _strokePaint);
+      canvas.drawPath(_fullPath, _strokePaint);
       if (_dotPaint != null) {
-        for (var i = 0; i < values.length; i++) {
-          if (endDotsOnly && i != 0 && i != values.length - 1) continue;
-          canvas.drawCircle(at(i), endDotsOnly ? 5 : 3, _dotPaint);
+        for (var i = 0; i < _pts.length; i++) {
+          if (endDotsOnly && i != 0 && i != _pts.length - 1) continue;
+          canvas.drawCircle(_pts[i], endDotsOnly ? 5 : 3, _dotPaint);
         }
       }
       return;
     }
 
-    final drawnPath = Path();
-    for (final PathMetric m in path.computeMetrics()) {
-      drawnPath.addPath(m.extractPath(0.0, m.length * t), Offset.zero);
+    _partialPath.reset();
+    for (final PathMetric m in _metrics) {
+      _partialPath.addPath(m.extractPath(0.0, m.length * t), Offset.zero);
     }
     if (_fillPaint != null && fillColor != null) {
       _fillPaint.color = fillColor!.withValues(alpha: fillColor!.a * t);
-      final fill = Path.from(path)
-        ..lineTo(at(values.length - 1).dx, size.height)
-        ..lineTo(at(0).dx, size.height)
-        ..close();
-      canvas.drawPath(fill, _fillPaint);
+      canvas.drawPath(_fillPath, _fillPaint);
     }
-    canvas.drawPath(drawnPath, _strokePaint);
+    canvas.drawPath(_partialPath, _strokePaint);
     if (_dotPaint != null) {
-      canvas.drawCircle(at(0), endDotsOnly ? 5 : 3, _dotPaint);
+      canvas.drawCircle(_pts.first, endDotsOnly ? 5 : 3, _dotPaint);
       if (t >= 0.85) {
         final endScale = ((t - 0.85) / 0.15).clamp(0.0, 1.0);
         canvas.drawCircle(
-          at(values.length - 1),
+          _pts.last,
           (endDotsOnly ? 5.0 : 3.0) * endScale,
           _dotPaint,
         );

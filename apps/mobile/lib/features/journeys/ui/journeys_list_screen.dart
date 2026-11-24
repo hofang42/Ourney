@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -61,9 +62,10 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   bool _menuOpen = false;
 
   /// First-mount wave stagger tracking: populated once on initial cold data
-  /// arrival and cleared on segment switch or pull-to-refresh so staggers
-  /// never replay after the initial entrance.
+  /// arrival and cleared after the initial wave settles (or on segment switch /
+  /// pull-to-refresh) so staggers never replay after the initial entrance.
   final Set<String> _staggeredIds = <String>{};
+  Timer? _staggerCleanupTimer;
   bool _hasPlayedInitialEntrance = false;
 
   @override
@@ -82,7 +84,14 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _staggerCleanupTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> _handleRefresh() async {
+    _staggerCleanupTimer?.cancel();
     _staggeredIds.clear();
     _hasPlayedInitialEntrance = true;
     ref.invalidate(journeysListProvider);
@@ -177,15 +186,25 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
         !hasArchived &&
         !hasShared &&
         (_segment != HubSegment.shared || localOnly)) {
-      body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
+      body = _DayZero(
+        key: const ValueKey('hub-state-empty'),
+        onStart: () => JourneysListScreen.startCreate(context),
+      );
     } else if (buckets != null) {
       if (!_hasPlayedInitialEntrance) {
         _hasPlayedInitialEntrance = true;
-        _staggeredIds
-          ..add('hero')
-          ..add('today-or-done')
-          ..add('new-card')
-          ..addAll(buckets.active.map((j) => 'row-${j.id}'));
+        if (!UiMotion.reduced(context)) {
+          _staggeredIds
+            ..add('hero')
+            ..add('today-or-done')
+            ..add('new-card')
+            ..addAll(buckets.active.map((j) => 'row-${j.id}'));
+          _staggerCleanupTimer?.cancel();
+          _staggerCleanupTimer = Timer(
+            const Duration(milliseconds: 350),
+            _staggeredIds.clear,
+          );
+        }
       }
       body = _HubBody(
         key: const ValueKey('hub-state-content'),
@@ -200,6 +219,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
                 ? HubSegment.shared
                 : HubSegment.active),
         onSegment: (s) {
+          _staggerCleanupTimer?.cancel();
           _staggeredIds.clear();
           setState(() => _segment = s);
           if (widget.initialSegment != null && s != widget.initialSegment) {
@@ -459,7 +479,7 @@ class _HubSkeleton extends StatelessWidget {
 /// Figma empty Hub state: fanned Polaroid trio, "chưa có hành trình nào.", a
 /// one-line promise and the start button.
 class _DayZero extends StatelessWidget {
-  const _DayZero({required this.onStart});
+  const _DayZero({required this.onStart, super.key});
 
   final VoidCallback onStart;
 

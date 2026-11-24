@@ -244,6 +244,31 @@ class _WrappedBodyState extends State<_WrappedBody>
     _restartSegmentTimer(reduced: reduced, storyCount: count);
   }
 
+  int _currentStoryCount() {
+    final l10n = JourneysL10n.of(context);
+    final j = widget.journey;
+    final skin = personaSkinOf(j);
+    return wrappedPagesFor(l10n, j, skin, widget.stats).length;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncSegmentTimer(
+      reduced: UiMotion.reduced(context),
+      storyCount: _currentStoryCount(),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _WrappedBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _syncSegmentTimer(
+      reduced: UiMotion.reduced(context),
+      storyCount: _currentStoryCount(),
+    );
+  }
+
   @override
   void dispose() {
     _segmentCtrl.removeStatusListener(_onSegmentStatus);
@@ -258,8 +283,8 @@ class _WrappedBodyState extends State<_WrappedBody>
     final j = widget.journey;
     final skin = personaSkinOf(j);
     final pages = wrappedPagesFor(l10n, j, skin, widget.stats);
+    _storyPageCount = pages.length;
     final summary = _page >= pages.length;
-    _syncSegmentTimer(reduced: reduced, storyCount: pages.length);
 
     return UiSkinScope(
       skinId: uiSkinIdFor(skin),

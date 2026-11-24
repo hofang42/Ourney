@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -354,8 +353,8 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                             context,
                             const Duration(milliseconds: 240),
                           ),
-                          switchInCurve: UiCurves.easeInOutStrong,
-                          switchOutCurve: UiCurves.easeInOutStrong,
+                          switchInCurve: UiCurves.easeOutStrong,
+                          switchOutCurve: Curves.easeOut,
                           child: KeyedSubtree(
                             key: ValueKey('share-card-preview-${_format.name}'),
                             child: Semantics(
@@ -366,28 +365,54 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                                 child: TweenAnimationBuilder<double>(
                                   key: const ValueKey('share-card-blur-tween'),
                                   tween: Tween<double>(
-                                    end: (quiet || blur) ? 14.0 : 0.0,
+                                    end: (quiet || blur) ? 1.0 : 0.0,
                                   ),
                                   duration: UiMotion.of(
                                     context,
                                     const Duration(milliseconds: 180),
                                   ),
                                   curve: UiCurves.easeOutStrong,
-                                  builder: (context, sigma, child) {
-                                    // Apply transition blur only mid-flight
-                                    // (0 < sigma < 14); resting blur is applied
-                                    // inside ShareCard so export boundaries stay
-                                    // identical.
-                                    final midFlight =
-                                        sigma > 0.01 && sigma < 13.99;
-                                    if (!midFlight) return child!;
-                                    return ImageFiltered(
-                                      imageFilter: ImageFilter.blur(
-                                        sigmaX: sigma,
-                                        sigmaY: sigma,
-                                        tileMode: TileMode.decal,
+                                  builder: (context, blurT, baseChild) {
+                                    final targetBlur = quiet || blur;
+                                    final overlayAlpha = targetBlur
+                                        ? (1.0 - blurT)
+                                        : blurT;
+                                    if (overlayAlpha <= 0.001) {
+                                      return baseChild!;
+                                    }
+                                    return Stack(
+                                      key: const ValueKey(
+                                        'share-card-blur-crossfade',
                                       ),
-                                      child: child,
+                                      fit: StackFit.passthrough,
+                                      alignment: Alignment.center,
+                                      children: [
+                                        baseChild!,
+                                        IgnorePointer(
+                                          child: ExcludeSemantics(
+                                            child: FadeTransition(
+                                              key: const ValueKey(
+                                                'share-card-blur-overlay-fade',
+                                              ),
+                                              opacity:
+                                                  AlwaysStoppedAnimation<
+                                                    double
+                                                  >(overlayAlpha),
+                                              child: FittedBox(
+                                                child: ShareCard(
+                                                  content: content,
+                                                  format: _format,
+                                                  blur: !targetBlur,
+                                                  photo: photo,
+                                                  gallery: gallery,
+                                                  skinId: skinId,
+                                                  hideBrand: hideBrand,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     );
                                   },
                                   child: FittedBox(
