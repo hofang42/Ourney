@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.Settings
+import com.hofang42.ourney.widgets.OurneyWidgetBridge
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
@@ -37,6 +38,9 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 handleAppIconCall(call, result)
             }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, OurneyWidgetBridge.CHANNEL_NAME)
+            .setMethodCallHandler(OurneyWidgetBridge(applicationContext))
     }
 
     private fun handleAppIconCall(call: MethodCall, result: MethodChannel.Result) {

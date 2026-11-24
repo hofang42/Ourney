@@ -291,6 +291,13 @@ class ProfileL10nVi extends ProfileL10n {
       'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt';
 
   @override
+  String get profile_settings_widgetsRow => 'Tiện ích & Live Activity';
+
+  @override
+  String get profile_settings_widgetsSub =>
+      'Tiện ích màn hình chính, màn hình khóa và đếm ngược cuối ngày';
+
+  @override
   String get profile_settings_themeLight => 'Sáng';
 
   @override

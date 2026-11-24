@@ -10,6 +10,7 @@ import '../features/profile/settings_providers.dart';
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../features/reminders/data/reminder_settings.dart';
 import '../features/safety/data/safety_providers.dart';
+import '../features/widgets/data/widget_sync_controller.dart';
 import 'overlays/reminder_banner.dart';
 import 'providers.dart';
 
@@ -29,6 +30,7 @@ const List<String> accountPrefsKeys = [
   SharePrivacyPrefs.pendingHeal,
   ReminderPrefs.streakAlerts,
   ReminderPrefs.promptOffered,
+  ...WidgetPrefs.accountKeys,
 ];
 
 /// The user id the per-account prefs above were written for.
@@ -83,7 +85,13 @@ Future<void> resetAccountLocalState(
     ..invalidate(blurPhotosOnShareProvider)
     ..invalidate(reminderSettingsProvider)
     ..invalidate(streakAlertsEnabledProvider)
-    ..invalidate(reminderBannerProvider);
+    ..invalidate(reminderBannerProvider)
+    ..invalidate(widgetPhotoModeProvider)
+    ..invalidate(redactLockScreenTitlesPrefProvider)
+    ..invalidate(redactLockScreenTitlesProvider)
+    ..invalidate(liveActivityEnabledProvider)
+    ..invalidate(defaultWidgetJourneyIdProvider)
+    ..invalidate(dismissedLiveWindowKeyProvider);
   try {
     await Future.wait(removals);
     if (updateOwner) {
@@ -104,8 +112,11 @@ Future<void> resetAccountLocalState(
   } on Object {
     // Not wired (no data layer): nothing to clean.
   }
-  // Signed out: the plan is empty, so every pending reminder is cancelled.
+  // Signed out: the plan is empty, so every pending reminder is cancelled,
+  // and all home-screen / lock-screen widget snapshots and Live Activities
+  // are wiped from disk.
   await ref.read(reminderSchedulerProvider).reschedule();
+  await ref.read(widgetSyncControllerProvider).clearAll();
 }
 
 /// Watch once at the app root: resets the per-account local state whenever

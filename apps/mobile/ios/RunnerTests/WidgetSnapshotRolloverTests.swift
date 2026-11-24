@@ -1,0 +1,496 @@
+import Foundation
+import UIKit
+import XCTest
+@testable import Runner
+
+final class WidgetSnapshotRolloverTests: XCTestCase {
+  private let sampleJson = """
+  {
+    "schemaVersion": 1,
+    "generatedAtUtc": "2026-11-24T10:00:00.000Z",
+    "authState": "ready",
+    "locale": "vi",
+    "themeMode": "system",
+    "privacy": {
+      "photoMode": "smart",
+      "redactLockScreenTitles": false,
+      "liveActivityEnabled": true
+    },
+    "defaultJourneyId": "6f8c9a10-ielts",
+    "totals": {
+      "activeCount": 2,
+      "completedTodayCount": 1,
+      "pendingTodayCount": 1,
+      "atRiskCount": 1,
+      "bestActiveStreak": 21
+    },
+    "journeys": [
+      {
+        "id": "6f8c9a10-ielts",
+        "title": "Tự học IELTS 30 ngày",
+        "kind": "group",
+        "skinId": "squad",
+        "colorVariant": 0,
+        "typeIcon": "type-study",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "utcOffsetMinutes": 420,
+        "pinned": true,
+        "dayNumber": 15,
+        "totalDays": 30,
+        "currentStreak": 14,
+        "bestStreak": 14,
+        "checkedInToday": false,
+        "atRisk": false,
+        "eveningCueAtUtc": "2026-11-24T11:00:00.000Z",
+        "streakAlertAtUtc": "2026-11-24T14:00:00.000Z",
+        "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+        "reminderAtUtc": "2026-11-24T13:00:00.000Z",
+        "heroThumbFile": null,
+        "heroThumbBlurred": false,
+        "weekStrip": [
+          {"date": "2026-11-18", "day": 18, "label": "T4", "state": "done"},
+          {"date": "2026-11-19", "day": 19, "label": "T5", "state": "done"},
+          {"date": "2026-11-20", "day": 20, "label": "T6", "state": "done"},
+          {"date": "2026-11-21", "day": 21, "label": "T7", "state": "done"},
+          {"date": "2026-11-22", "day": 22, "label": "CN", "state": "done"},
+          {"date": "2026-11-23", "day": 23, "label": "T2", "state": "done"},
+          {"date": "2026-11-24", "day": 24, "label": "HN", "state": "today"}
+        ]
+      },
+      {
+        "id": "8a10b220-run",
+        "title": "Chạy bộ sáng 5km",
+        "kind": "solo",
+        "skinId": "flexer",
+        "colorVariant": 0,
+        "typeIcon": "type-workout",
+        "timezone": "Asia/Ho_Chi_Minh",
+        "utcOffsetMinutes": 420,
+        "pinned": false,
+        "dayNumber": 21,
+        "totalDays": 30,
+        "currentStreak": 21,
+        "bestStreak": 21,
+        "checkedInToday": true,
+        "atRisk": false,
+        "eveningCueAtUtc": "2026-11-24T11:00:00.000Z",
+        "streakAlertAtUtc": "2026-11-24T14:00:00.000Z",
+        "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+        "heroThumbFile": "thumbs/a91f4c82b011e3d4.jpg",
+        "heroThumbBlurred": false,
+        "weekStrip": [
+          {"date": "2026-11-18", "day": 18, "label": "T4", "state": "done"},
+          {"date": "2026-11-19", "day": 19, "label": "T5", "state": "done"},
+          {"date": "2026-11-20", "day": 20, "label": "T6", "state": "done"},
+          {"date": "2026-11-21", "day": 21, "label": "T7", "state": "done"},
+          {"date": "2026-11-22", "day": 22, "label": "CN", "state": "done"},
+          {"date": "2026-11-23", "day": 23, "label": "T2", "state": "done"},
+          {"date": "2026-11-24", "day": 24, "label": "HN", "state": "done"}
+        ]
+      }
+    ],
+    "squads": [
+      {
+        "journeyId": "6f8c9a10-ielts",
+        "title": "Tự học IELTS 30 ngày",
+        "skinId": "squad",
+        "colorVariant": 0,
+        "typeIcon": "type-study",
+        "isCouple": false,
+        "dayNumber": 15,
+        "totalDays": 30,
+        "doneCount": 1,
+        "memberCount": 2,
+        "meCheckedInToday": false,
+        "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+        "members": [
+          {
+            "displayName": "Minh",
+            "initial": "M",
+            "avatarColorIndex": 3,
+            "isMe": false,
+            "checkedInToday": true,
+            "streak": 14,
+            "avatarFile": "thumbs/04c81e9a22f109bc.jpg",
+            "todayThumbFile": "thumbs/77d21f0091ab34ef.jpg",
+            "todayThumbBlurred": true
+          },
+          {
+            "displayName": "Bạn",
+            "initial": "B",
+            "avatarColorIndex": 1,
+            "isMe": true,
+            "checkedInToday": false,
+            "streak": 14
+          }
+        ]
+      }
+    ],
+    "liveWindow": {
+      "windowKey": "2026-11-24:6f8c9a10-ielts",
+      "journeyId": "6f8c9a10-ielts",
+      "journeyTitle": "Tự học IELTS 30 ngày",
+      "skinId": "squad",
+      "colorVariant": 0,
+      "typeIcon": "type-study",
+      "currentStreak": 14,
+      "atRisk": true,
+      "pendingCount": 1,
+      "completedCount": 1,
+      "totalActiveCount": 2,
+      "windowStartUtc": "2026-11-24T12:30:00.000Z",
+      "deadlineUtc": "2026-11-24T17:00:00.000Z"
+    }
+  }
+  """
+
+  func testDecodeFrozenContractAndVerifyPrivacyByOmission() throws {
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
+
+    XCTAssertEqual(snapshot.schemaVersion, 1)
+    XCTAssertEqual(snapshot.authState, "ready")
+    XCTAssertEqual(snapshot.locale, "vi")
+    XCTAssertEqual(snapshot.privacy.photoMode, "smart")
+    XCTAssertFalse(snapshot.privacy.redactLockScreenTitles)
+    XCTAssertTrue(snapshot.privacy.liveActivityEnabled)
+    XCTAssertEqual(snapshot.journeys.count, 2)
+    XCTAssertEqual(snapshot.squads.count, 1)
+    XCTAssertEqual(snapshot.liveWindow?.windowKey, "2026-11-24:6f8c9a10-ielts")
+
+    let reEncoded = try String(data: JSONEncoder().encode(snapshot), encoding: .utf8) ?? ""
+    XCTAssertFalse(reEncoded.contains("metricValue"))
+    XCTAssertFalse(reEncoded.contains("metricUnit"))
+    XCTAssertFalse(reEncoded.contains("caption"))
+  }
+
+  func testTimePhasesAcrossDayEveningAndAtRisk() throws {
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
+    let pending = try XCTUnwrap(snapshot.journeys.first(where: { $0.id == "6f8c9a10-ielts" }))
+    let completed = try XCTUnwrap(snapshot.journeys.first(where: { $0.id == "8a10b220-run" }))
+
+    let daytime = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T10:30:00.000Z"))
+    let evening = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T11:30:00.000Z"))
+    let urgent = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T14:30:00.000Z"))
+
+    XCTAssertEqual(pending.phase(at: daytime), .daytime)
+    XCTAssertEqual(pending.phase(at: evening), .eveningCue)
+    XCTAssertEqual(pending.phase(at: urgent), .urgentAtRisk)
+    XCTAssertEqual(completed.phase(at: daytime), .completed)
+    XCTAssertEqual(completed.phase(at: urgent), .completed)
+  }
+
+  func testPostMidnightRolloverResetsCompletedAndBreaksMissedStreak() throws {
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
+
+    // 2026-11-24T17:05:00.000Z is 00:05 on 2026-11-25 in Asia/Ho_Chi_Minh (UTC+7).
+    let afterMidnight = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T17:05:00.000Z"))
+    let rolled = snapshot.evaluated(at: afterMidnight)
+
+    // 1. Journey that was NOT checked in before midnight ("6f8c9a10-ielts"):
+    //    streak breaks to 0, dayNumber increments 15 -> 16, atRisk becomes false.
+    let missedJourney = try XCTUnwrap(rolled.journeys.first(where: { $0.id == "6f8c9a10-ielts" }))
+    XCTAssertFalse(missedJourney.checkedInToday)
+    XCTAssertEqual(missedJourney.dayNumber, 16)
+    XCTAssertEqual(missedJourney.currentStreak, 0)
+    XCTAssertFalse(missedJourney.atRisk)
+    XCTAssertEqual(missedJourney.weekStrip.count, 7)
+    XCTAssertEqual(missedJourney.weekStrip[5].date, "2026-11-24")
+    XCTAssertEqual(missedJourney.weekStrip[5].state, "missed")
+    XCTAssertEqual(missedJourney.weekStrip[6].date, "2026-11-25")
+    XCTAssertEqual(missedJourney.weekStrip[6].state, "today")
+
+    // 2. Journey that WAS checked in before midnight ("8a10b220-run"):
+    //    checkedInToday resets to false for the new day, dayNumber increments 21 -> 22,
+    //    currentStreak survives at 21, atRisk is true, heroThumbFile clears.
+    let survivedJourney = try XCTUnwrap(rolled.journeys.first(where: { $0.id == "8a10b220-run" }))
+    XCTAssertFalse(survivedJourney.checkedInToday)
+    XCTAssertEqual(survivedJourney.dayNumber, 22)
+    XCTAssertEqual(survivedJourney.currentStreak, 21)
+    XCTAssertTrue(survivedJourney.atRisk)
+    XCTAssertNil(survivedJourney.heroThumbFile)
+    XCTAssertEqual(survivedJourney.weekStrip[5].date, "2026-11-24")
+    XCTAssertEqual(survivedJourney.weekStrip[5].state, "done")
+    XCTAssertEqual(survivedJourney.weekStrip[6].date, "2026-11-25")
+    XCTAssertEqual(survivedJourney.weekStrip[6].state, "today")
+
+    // 3. Totals recomputed for the new day: 0 completed, 2 pending, bestActiveStreak 21.
+    XCTAssertEqual(rolled.totals.activeCount, 2)
+    XCTAssertEqual(rolled.totals.completedTodayCount, 0)
+    XCTAssertEqual(rolled.totals.pendingTodayCount, 2)
+    XCTAssertEqual(rolled.totals.atRiskCount, 1)
+    XCTAssertEqual(rolled.totals.bestActiveStreak, 21)
+
+    // 4. Squad rolled over: doneCount -> 0, meCheckedInToday -> false, member thumbs cleared.
+    let rolledSquad = try XCTUnwrap(rolled.squads.first)
+    XCTAssertEqual(rolledSquad.dayNumber, 16)
+    XCTAssertEqual(rolledSquad.doneCount, 0)
+    XCTAssertFalse(rolledSquad.meCheckedInToday)
+    XCTAssertFalse(rolledSquad.members[0].checkedInToday)
+    XCTAssertEqual(rolledSquad.members[0].streak, 14) // Minh checked in yesterday
+    XCTAssertNil(rolledSquad.members[0].todayThumbFile)
+    XCTAssertEqual(rolledSquad.members[1].streak, 0) // Self missed yesterday
+
+    // 5. Live window expired at midnight deadline.
+    XCTAssertNil(rolled.liveWindow)
+  }
+
+  func testMultiDayClosedAppRolloverBreaksAllStreaks() throws {
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
+
+    // Two midnights later (2026-11-25T17:05:00.000Z = 00:05 on 2026-11-26 local):
+    // Even the journey that was checked in on 2026-11-24 missed 2026-11-25, so its streak resets to 0.
+    let twoMidnightsLater = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-25T17:05:00.000Z"))
+    let rolled = snapshot.evaluated(at: twoMidnightsLater)
+
+    for journey in rolled.journeys {
+      XCTAssertFalse(journey.checkedInToday)
+      XCTAssertEqual(journey.currentStreak, 0)
+      XCTAssertFalse(journey.atRisk)
+    }
+    XCTAssertEqual(rolled.totals.bestActiveStreak, 0)
+  }
+
+  func testScheduledTimelineDatesReturnsFourDeterministicEntries() throws {
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+    let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: data)
+    let now = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T10:00:00.000Z"))
+
+    let dates = snapshot.scheduledTimelineDates(from: now)
+    XCTAssertEqual(dates.count, 4)
+    XCTAssertEqual(dates[0], now)
+    XCTAssertEqual(dates[1], WidgetDateParser.parseISO8601("2026-11-24T11:00:00.000Z"))
+    XCTAssertEqual(dates[2], WidgetDateParser.parseISO8601("2026-11-24T14:00:00.000Z"))
+    XCTAssertEqual(dates[3], WidgetDateParser.parseISO8601("2026-11-24T17:00:00.000Z"))
+  }
+
+  func testCycleTodayJourneyAndBridgeAtomicWriteInTempDirectory() throws {
+    let tempRoot = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ourney_widget_tests_\(UUID().uuidString)", isDirectory: true)
+    defer {
+      try? FileManager.default.removeItem(at: tempRoot)
+    }
+
+    let bridge = OurneyWidgetBridge()
+    let data = try XCTUnwrap(sampleJson.data(using: .utf8))
+
+    // First write should report changed = true.
+    let firstWrite = bridge.writeSnapshotAndThumbs(
+      snapshotData: data,
+      thumbSpecs: [],
+      overrideRootDirectory: tempRoot
+    )
+    XCTAssertTrue(firstWrite)
+
+    // Duplicate write with identical payload should report changed = false (0 redundant reloads).
+    let secondWrite = bridge.writeSnapshotAndThumbs(
+      snapshotData: data,
+      thumbSpecs: [],
+      overrideRootDirectory: tempRoot
+    )
+    XCTAssertFalse(secondWrite)
+
+    // Roll past midnight so both journeys are pending, then cycle between them via state.json.
+    let afterMidnight = try XCTUnwrap(WidgetDateParser.parseISO8601("2026-11-24T17:05:00.000Z"))
+    let loaded = try XCTUnwrap(
+      WidgetSnapshotStore.loadSnapshot(at: afterMidnight, rootDirectory: tempRoot)
+    )
+    XCTAssertEqual(loaded.selectedTodayJourney(state: WidgetInteractiveState())?.id, "6f8c9a10-ielts")
+
+    let cycledState1 = WidgetSnapshotStore.cycleSelectedTodayJourney(
+      at: afterMidnight,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(cycledState1.selectedTodayIndex, 1)
+    XCTAssertEqual(loaded.selectedTodayJourney(state: cycledState1)?.id, "8a10b220-run")
+
+    let cycledState2 = WidgetSnapshotStore.cycleSelectedTodayJourney(
+      at: afterMidnight,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(cycledState2.selectedTodayIndex, 0)
+    XCTAssertEqual(loaded.selectedTodayJourney(state: cycledState2)?.id, "6f8c9a10-ielts")
+
+    // Dismiss window key persists in state.json.
+    let dismissed = WidgetSnapshotStore.recordDismissedWindow(
+      windowKey: "2026-11-24:6f8c9a10-ielts",
+      at: afterMidnight,
+      rootDirectory: tempRoot
+    )
+    XCTAssertEqual(dismissed.dismissedWindowKey, "2026-11-24:6f8c9a10-ielts")
+    XCTAssertEqual(dismissed.dismissedWindowDate, "2026-11-24")
+
+    // Clear all removes snapshot_v1.json and state.json.
+    bridge.clearAllFiles(overrideRootDirectory: tempRoot)
+    XCTAssertNil(WidgetSnapshotStore.loadSnapshot(at: afterMidnight, rootDirectory: tempRoot))
+  }
+
+  func testDeepLinkQueryEscapesReservedCharactersAndSingleBlurStagingAndAbsentOptionalKeys() throws {
+    let url = OurneyDeepLinks.capture(journeyId: "journey+1&mode=fast=true")
+    XCTAssertEqual(url.absoluteString, "ourney://capture?journeyId=journey%2B1%26mode%3Dfast%3Dtrue")
+
+    // (a) Verify OurneyWidgetBridge stages pre-blurred thumbnails under exact `thumbs/<id>.jpg`
+    //     without `_blur` filename mutation or native CIGaussianBlur re-blurring.
+    let tempRoot = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ourney_widget_thumb_tests_\(UUID().uuidString)", isDirectory: true)
+    defer {
+      try? FileManager.default.removeItem(at: tempRoot)
+    }
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+
+    let sourceImageURL = tempRoot.appendingPathComponent("source_preblurred.jpg")
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48))
+    let img = renderer.image { ctx in
+      UIColor.systemOrange.setFill()
+      ctx.fill(CGRect(x: 0, y: 0, width: 48, height: 48))
+    }
+    let jpegBytes = try XCTUnwrap(img.jpegData(compressionQuality: 0.85))
+    try jpegBytes.write(to: sourceImageURL)
+
+    // Minimal JSON with ABSENT optional keys (`defaultJourneyId`, `totalDays`, `reminderAtUtc`,
+    // `avatarFile`, `todayThumbFile`, `liveWindow`) and a pre-blurred `heroThumbFile`.
+    let minimalJson = """
+    {
+      "schemaVersion": 1,
+      "generatedAtUtc": "2026-11-24T10:00:00.000Z",
+      "authState": "ready",
+      "locale": "vi",
+      "themeMode": "system",
+      "privacy": {
+        "photoMode": "blurred",
+        "redactLockScreenTitles": true,
+        "liveActivityEnabled": true
+      },
+      "totals": {
+        "activeCount": 1,
+        "completedTodayCount": 1,
+        "pendingTodayCount": 0,
+        "atRiskCount": 0,
+        "bestActiveStreak": 15
+      },
+      "journeys": [
+        {
+          "id": "open-ended-1",
+          "title": "Đọc sách mỗi ngày",
+          "kind": "solo",
+          "skinId": "minimal",
+          "colorVariant": 0,
+          "typeIcon": "type-custom",
+          "timezone": "Asia/Ho_Chi_Minh",
+          "utcOffsetMinutes": 420,
+          "pinned": true,
+          "dayNumber": 15,
+          "currentStreak": 15,
+          "bestStreak": 15,
+          "checkedInToday": true,
+          "atRisk": false,
+          "heroThumbFile": "thumbs/a91f4c82b011e3d4.jpg",
+          "heroThumbBlurred": true
+        }
+      ],
+      "squads": [
+        {
+          "journeyId": "open-ended-1",
+          "title": "Đọc sách mỗi ngày",
+          "skinId": "squad",
+          "colorVariant": 0,
+          "typeIcon": "type-study",
+          "isCouple": false,
+          "dayNumber": 15,
+          "doneCount": 1,
+          "memberCount": 1,
+          "meCheckedInToday": true,
+          "members": [
+            {
+              "displayName": "Minh",
+              "initial": "M",
+              "avatarColorIndex": 2,
+              "isMe": true,
+              "checkedInToday": true,
+              "streak": 15
+            }
+          ]
+        }
+      ]
+    }
+    """
+
+    let minimalData = try XCTUnwrap(minimalJson.data(using: .utf8))
+    let decodedMinimal = try JSONDecoder().decode(WidgetSnapshot.self, from: minimalData)
+
+    // (b) Verify absent optional keys decode cleanly to nil (open-ended journey totalDays == nil).
+    XCTAssertNil(decodedMinimal.defaultJourneyId)
+    XCTAssertNil(decodedMinimal.liveWindow)
+    XCTAssertEqual(decodedMinimal.journeys.count, 1)
+    XCTAssertNil(decodedMinimal.journeys[0].totalDays)
+    XCTAssertNil(decodedMinimal.journeys[0].reminderAtUtc)
+    XCTAssertEqual(decodedMinimal.journeys[0].dayNumber, 15)
+    XCTAssertEqual(decodedMinimal.squads.count, 1)
+    XCTAssertNil(decodedMinimal.squads[0].totalDays)
+    XCTAssertNil(decodedMinimal.squads[0].members[0].avatarFile)
+    XCTAssertNil(decodedMinimal.squads[0].members[0].todayThumbFile)
+    XCTAssertFalse(decodedMinimal.squads[0].members[0].todayThumbBlurred)
+
+    let bridge = OurneyWidgetBridge()
+    let didWrite = bridge.writeSnapshotAndThumbs(
+      snapshotData: minimalData,
+      thumbSpecs: [
+        [
+          "id": "a91f4c82b011e3d4.jpg",
+          "sourcePath": sourceImageURL.path,
+          "maxSide": 320,
+          "blur": true,
+        ]
+      ],
+      overrideRootDirectory: tempRoot
+    )
+    XCTAssertTrue(didWrite)
+
+    let resolvedExactURL = WidgetSnapshotStore.thumbURL(
+      for: "thumbs/a91f4c82b011e3d4.jpg",
+      rootDirectory: tempRoot
+    )
+    XCTAssertNotNil(resolvedExactURL)
+    XCTAssertEqual(resolvedExactURL?.lastPathComponent, "a91f4c82b011e3d4.jpg")
+    XCTAssertNil(
+      WidgetSnapshotStore.thumbURL(
+        for: "thumbs/a91f4c82b011e3d4_blur.jpg",
+        rootDirectory: tempRoot
+      )
+    )
+
+    // (c) Verify canonical redactLockScreenTitles precedence over legacy redactTitleOnLockScreen.
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactTitleOnLockScreen": false,
+          "redactLockScreenTitles": true,
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactTitleOnLockScreen": false,
+          "liveWindow": ["redactLockScreenTitles": true],
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "liveWindow": ["journeyId": "open-ended-1"],
+          "privacy": ["redactLockScreenTitles": true],
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: ["redactTitleOnLockScreen": true]
+      )
+    )
+  }
+}

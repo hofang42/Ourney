@@ -29,17 +29,22 @@ rồi cài bằng công cụ cài `.ipa` bạn dùng (Sideloadly hoặc `idevice
 ### Cách C: MobAI re-sign
 Theo hướng dẫn của MobAI (bản free có thể có giới hạn, chưa kiểm chứng ở dự án này).
 
-## 3. Giới hạn của Apple ID miễn phí
+## 3. Giới hạn của Apple ID miễn phí & Hỗ trợ Widgets / Live Activities
 
 - **Hết hạn sau 7 ngày**: app ngừng mở được, cần **ký lại và cài đè** (dữ liệu giữ nguyên nếu cài đè cùng bundle ID `com.hofang42.ourney`). Nhắc nhau ký lại hằng tuần.
 - Giới hạn số App ID và số app sideload mỗi tuần trên mỗi Apple ID.
-- Không push notification từ server, không App Groups, không universal link. Thông báo **local** và URL scheme `ourney://` vẫn dùng được.
+- Không push notification từ server, không universal link. Thông báo **local** và URL scheme `ourney://` vẫn dùng được.
+- **Widgets (`OurneyWidgetsExtension`) & Live Activities (`ActivityKit`)**:
+  - **Tài khoản Apple Developer trả phí / TestFlight / App Store**: Đầy đủ Home Screen Widgets (`Today`, `Streak`, `Squad`), Lock Screen Widgets (`accessoryCircular`, `accessoryRectangular`, `accessoryInline`), đồng bộ App Group (`group.com.hofang42.ourney`) và Check-In Window Live Activities (Lock Screen + Dynamic Island).
+  - **Sideload bằng Apple ID miễn phí (Sideloadly / AltStore)**:
+    - **Live Activities (`ActivityKit`, iOS 16.2+)** hoạt động trực tiếp qua IPC nội bộ ngay cả khi không có App Group.
+    - **Home Screen & Lock Screen Widgets**: phụ thuộc vào việc công cụ sideload có đăng ký App Group (`group.com.hofang42.ourney`) và giữ lại `PlugIns/OurneyWidgetsExtension.appex` hay không (AltStore hỗ trợ đăng ký App Group trong giới hạn 10 App ID / 7 ngày; nếu dùng Sideloadly và chạm giới hạn App ID miễn phí, có thể bật tùy chọn *"Remove PlugIns"*). Khi không có App Group container, `OurneyWidgetBridge` tự động chuyển sang chế độ dự phòng an toàn (không bao giờ crash app), và widget hiển thị trạng thái mời mở Ourney thân thiện.
 
 ## 4. Cấu hình iOS hiện có (tóm tắt)
 
-- Bundle ID `com.hofang42.ourney`, tên hiển thị "Ourney", chỉ iPhone, chỉ dọc, iOS tối thiểu 15.0.
+- Bundle ID `com.hofang42.ourney` (extension: `com.hofang42.ourney.OurneyWidgets`), App Group `group.com.hofang42.ourney`, tên hiển thị "Ourney", chỉ iPhone (`TARGETED_DEVICE_FAMILY = 1`), chỉ dọc, iOS tối thiểu `15.0` (tự động bật Lock Screen Widgets trên iOS 16.0+, Live Activities trên iOS 16.2+, Interactive `AppIntents` & StandBy trên iOS 17.0+, và Tinted mode trên iOS 18.0+).
 - Quyền: camera, thư viện ảnh (chọn và lưu ảnh) với chuỗi tiếng Việt (mặc định) và tiếng Anh trong `Runner/vi.lproj` và `Runner/en.lproj/InfoPlist.strings`.
-- URL scheme `ourney`, `ITSAppUsesNonExemptEncryption = false`.
+- URL scheme `ourney` (`ourney://capture?journeyId=<id>`, `ourney://journey/<id>`, `ourney://journeys`, `ourney://groups/<id>`), `NSSupportsLiveActivities = true`, `ITSAppUsesNonExemptEncryption = false`.
 - Quyền thông báo được xin lúc chạy bởi `flutter_local_notifications`.
 
 ## 5. Secrets tùy chọn trong CI
@@ -48,4 +53,4 @@ Theo hướng dẫn của MobAI (bản free có thể có giới hạn, chưa ki
 
 ## 6. Đóng gói thủ công
 
-`scripts/ios/package_ipa.sh [đường-dẫn/Runner.app] [ra.ipa]` nén `Payload/Runner.app` thành `.ipa` (mặc định `apps/mobile/build/ios/iphoneos/Runner.app` → `Ourney-unsigned.ipa`).
+`scripts/ios/package_ipa.sh [đường-dẫn/Runner.app] [ra.ipa]` nén `Payload/Runner.app` (bao gồm cả `Runner.app/PlugIns/OurneyWidgetsExtension.appex`) thành `.ipa` (mặc định `apps/mobile/build/ios/iphoneos/Runner.app` → `Ourney-unsigned.ipa`).

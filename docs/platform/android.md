@@ -30,13 +30,33 @@ Unverified: supabase_flutter and drift_flutter transitive native dependencies ma
 ## 3. Permissions and manifest
 
 - `CAMERA`, `INTERNET`, `POST_NOTIFICATIONS` declared in the app manifest.
+- `POST_PROMOTED_NOTIFICATIONS` declared for Android 16 (API 36) Live Updates (`Notification.ProgressStyle` check-in window status-bar chip and lock-screen live progress). This is a normal install-time permission (`canPostPromotedNotifications()` checked at runtime; degrades to standard silent ongoing chronometer notification on API 26–35 or when toggled off by the user).
 - `RECEIVE_BOOT_COMPLETED` plus the two `ScheduledNotification*` receivers are declared because check-in reminders are scheduled. Source: flutter_local_notifications README, "To schedule notifications" section (https://github.com/MaikuB/flutter_local_notifications/blob/master/flutter_local_notifications/README.md).
 - No storage permissions. image_picker 1.2.4 uses the Android Photo Picker on Android 13+ and "No configuration required" (https://pub.dev/packages/image_picker). Do not add `READ_MEDIA_*` or `READ_EXTERNAL_STORAGE`.
-- No `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM`. Reminders use inexact scheduling (`docs/05` §5.2).
-- Not added (not needed by current features): `USE_FULL_SCREEN_INTENT`, `ACCESS_NOTIFICATION_POLICY`, notification action receiver. Add only if a feature needs them.
-- Deep links: custom scheme `ourney` with hosts `join` and `journey`, `VIEW` action, `DEFAULT` and `BROWSABLE` categories. Source: https://developer.android.com/training/app-links/deep-linking (custom-scheme example). Custom schemes are not App Links; no `autoVerify` and no `assetlinks.json` needed.
+- No `SCHEDULE_EXACT_ALARM` / `USE_EXACT_ALARM`. Reminders and widget midnight/window rollovers (`CheckInWindowReceiver`) use inexact scheduling (`AlarmManager.setAndAllowWhileIdle`, `docs/05` §5.2).
+- Not added (not needed by current features): `USE_FULL_SCREEN_INTENT`, `ACCESS_NOTIFICATION_POLICY`.
+- Deep links: custom scheme `ourney` with hosts `join`, `j`, `journey`, `friend`, `f`, `p`, `capture`, `journeys`, and `groups`, `VIEW` action, `DEFAULT` and `BROWSABLE` categories. Source: https://developer.android.com/training/app-links/deep-linking (custom-scheme example). Custom schemes are not App Links; no `autoVerify` and no `assetlinks.json` needed for custom schemes. All widget and Live Update `PendingIntent`s target `MainActivity` explicitly (`FLAG_UPDATE_CURRENT or FLAG_IMMUTABLE`).
 
-## 4. flutter_local_notifications Gradle setup
+## 4. Home-Screen Widgets (Jetpack Glance 1.2) & Android 16 Live Updates
+
+- **Jetpack Glance (`androidx.glance:glance-appwidget:1.2.0`):**
+  - Enabled with the Kotlin 2.4.0 Compose compiler plugin (`org.jetbrains.kotlin.plugin.compose`) and `buildFeatures { compose = true }`.
+  - Three widget receivers registered in `AndroidManifest.xml`:
+    1. `.widgets.OurneyTodayWidgetReceiver` (`TodayGlanceWidget` — responsive `2x2`, `4x2`, `4x4` with in-place `CycleTodayJourneyAction` when 2+ journeys are pending).
+    2. `.widgets.OurneyStreakWidgetReceiver` (`StreakGlanceWidget` — `2x2` Soft Neo-Brutalist streak counter + 7-day chain).
+    3. `.widgets.OurneySquadWidgetReceiver` (`SquadGlanceWidget` — `4x2`, `4x4` Squad & Couple Rituals status card).
+  - **Data Contract (`MethodChannel("ourney/widgets")`):**
+    - `OurneyWidgetBridge` reads/writes `<filesDir>/ourney_widgets/snapshot_v1.json` atomically (`snapshot_v1.json.tmp` -> rename), caches content-addressed thumbnails under `<filesDir>/ourney_widgets/thumbs/`, and stores interactive cycle/dismiss state in `<filesDir>/ourney_widgets/state.json`.
+    - `WidgetSnapshotStore` evaluates post-midnight rollover natively in Kotlin so widgets never show stale "checked in today" statuses on the next morning even if the app hasn't been opened.
+- **Check-In Window Live Updates (`CheckInLiveUpdateManager`):**
+  - Uses notification ID `42000` on silent channel `checkin_window_live` (disjoint from `ReminderScheduler`'s `41000..41063` on `checkin_reminders`).
+  - On **Android 16 (`API 36`)**: Builds `Notification.ProgressStyle` with per-journey segments, `setOngoing(true)`, `setRequestPromotedOngoing(true)`, and `setShortCriticalText(...)` (`<= 7` chars) for status-bar chip promotion.
+  - On **Android 8.0–15 (`API 26–35`)**: Falls back to a silent ongoing countdown chronometer notification (`setUsesChronometer(true)`, `setChronometerCountDown(true)`).
+  - Uses `VISIBILITY_PRIVATE` with a redacted `publicVersion` when `redactLockScreenTitles` is enabled.
+- **R8 / ProGuard (`android/app/proguard-rules.pro`):**
+  - Retains no-arg constructors for all `GlanceAppWidgetReceiver`, `GlanceAppWidget`, `ActionCallback`, and `CheckInWindowReceiver` classes.
+
+## 5. flutter_local_notifications Gradle setup
 
 Applied exactly as the README requires:
 - `compileOptions { isCoreLibraryDesugaringEnabled = true }`

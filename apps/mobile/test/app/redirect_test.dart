@@ -72,6 +72,31 @@ void main() {
         '/p/pubtok123',
       );
       expect(normalizeDeepLink(Uri.parse('ourney://')), AppRoutes.capture);
+      expect(normalizeDeepLink(Uri.parse('ourney://capture')), AppRoutes.capture);
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://capture?journeyId=j-42')),
+        '/capture?journeyId=j-42',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://capture/j-42')),
+        '/capture?journeyId=j-42',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://journeys')),
+        AppRoutes.journeys,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://journeys/new')),
+        AppRoutes.journeyNew,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://groups')),
+        AppRoutes.groups,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://groups/g-99')),
+        '/groups/g-99',
+      );
       expect(normalizeDeepLink(Uri.parse('/capture')), isNull);
       expect(normalizeDeepLink(Uri.parse('https://x.dev/join/A')), isNull);
     });
@@ -85,15 +110,32 @@ void main() {
         final declaredHosts = RegExp(
           r'<data\s+android:scheme="ourney"\s+android:host="([^"]+)"\s*/>',
         ).allMatches(manifest).map((m) => m.group(1)!).toSet();
-        const expectedHosts = {'join', 'j', 'journey', 'friend', 'f', 'p'};
-        for (final host in expectedHosts) {
+        const baseHosts = {'join', 'j', 'journey', 'friend', 'f', 'p'};
+        const widgetHosts = {'capture', 'journeys', 'groups'};
+        for (final host in baseHosts) {
           expect(
             normalizeDeepLink(Uri.parse('ourney://$host/test123')),
             isNotNull,
             reason: 'normalizeDeepLink must accept ourney://$host/<id>',
           );
         }
-        expect(declaredHosts, expectedHosts);
+        expect(
+          normalizeDeepLink(Uri.parse('ourney://capture/test123')),
+          '/capture?journeyId=test123',
+        );
+        expect(
+          normalizeDeepLink(Uri.parse('ourney://journeys/new')),
+          AppRoutes.journeyNew,
+        );
+        expect(
+          normalizeDeepLink(Uri.parse('ourney://groups/test123')),
+          '/groups/test123',
+        );
+        expect(declaredHosts, containsAll(baseHosts));
+        expect(
+          declaredHosts.difference({...baseHosts, ...widgetHosts}),
+          isEmpty,
+        );
       },
     );
 

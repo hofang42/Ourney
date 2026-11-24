@@ -15,6 +15,8 @@ import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
 import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/profile/share_privacy_sync.dart' show SharePrivacyHealHook;
 import '../features/reminders/data/reminder_scheduler.dart';
+import '../features/widgets/data/widget_sync_controller.dart'
+    show WidgetLifecycleHook;
 import '../l10n/generated/app_localizations.dart';
 import '../shared/time_zones.dart' show journeyLocalDate;
 import '../ui/ui.dart';
@@ -70,15 +72,17 @@ class OurneyApp extends ConsumerWidget {
           child: ReminderLifecycleHook(
             onOpenJourney: (id) =>
                 unawaited(_openReminderJourney(ref, router, id)),
-            child: OurneyTextScaleClamp(
-              // In-app reminder banner (V2 `ReminderNotification`): shown while
-              // `reminderBannerProvider` holds a value; a tap opens the camera.
-              child: ReminderBannerHost(
-                onOpenJourneyCamera: (id) =>
-                    unawaited(_openReminderJourney(ref, router, id)),
-                child: _SplashGate(
-                  returning: onboarded,
-                  child: child ?? const SizedBox.shrink(),
+            child: WidgetLifecycleHook(
+              child: OurneyTextScaleClamp(
+                // In-app reminder banner (V2 `ReminderNotification`): shown while
+                // `reminderBannerProvider` holds a value; a tap opens the camera.
+                child: ReminderBannerHost(
+                  onOpenJourneyCamera: (id) =>
+                      unawaited(_openReminderJourney(ref, router, id)),
+                  child: _SplashGate(
+                    returning: onboarded,
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ),

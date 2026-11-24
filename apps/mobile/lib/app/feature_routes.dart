@@ -14,6 +14,7 @@ import '../features/safety/routes.dart';
 import '../features/share_card/routes.dart';
 import '../features/sharing/routes.dart';
 import '../features/social/routes.dart';
+import '../features/widgets/routes.dart';
 
 /// Route registry. Each feature owns `lib/features/<name>/routes.dart`
 /// exporting `List<RouteBase> <name>Routes`; this file only wires them.
@@ -40,6 +41,7 @@ abstract final class FeatureRoutes {
     ...shareCardRoutes,
     ...safetyRoutes,
     ...remindersRoutes,
+    ...widgetsRoutes,
     ...socialRoutes,
     ...sharingRoutes,
     ...importRoutes,
@@ -59,6 +61,7 @@ abstract final class FeatureRoutes {
     'share_card': shareCardRoutes,
     'safety': safetyRoutes,
     'reminders': remindersRoutes,
+    'widgets': widgetsRoutes,
     'social': [...socialRoutes, ...activityRoutes],
     'sharing': sharingRoutes,
     'import': importRoutes,
