@@ -200,12 +200,14 @@ Future<ProviderContainer> pumpBackendApp(
   FakeProfileRepository? profiles,
   FakeAvatarPicker? picker,
   bool onboarded = true,
+  bool eulaAccepted = true,
   bool phoneAvailable = false,
 }) => pumpOurneyApp(
   tester,
   config: testBackendConfig,
   auth: auth,
   onboarded: onboarded,
+  eulaAccepted: eulaAccepted,
   overrides: [
     phoneAuthAvailableProvider.overrideWith((ref) async => phoneAvailable),
     profileRepositoryProvider.overrideWithValue(

@@ -62,6 +62,9 @@ abstract final class SafetyPrefs {
 /// so an existing account is never asked again after signing in on a new
 /// device, while account switches and [kTermsVersion] bumps re-ask.
 class EulaAccepted extends Notifier<bool> {
+  final Set<String> _inFlightRecords = {};
+  String? _deferredClickwrapUserId;
+
   @override
   bool build() {
     final prefs = ref.watch(sharedPreferencesProvider);
@@ -69,6 +72,7 @@ class EulaAccepted extends Notifier<bool> {
     // Recomputes when the session arrives or the account changes.
     final userId = ref.watch(currentUserIdProvider);
     if (userId == null) {
+      _deferredClickwrapUserId = null;
       return prefs.getBool(SafetyPrefs.eulaAccepted) ?? false;
     }
     final key = SafetyPrefs.termsVersionFor(userId);
@@ -80,18 +84,35 @@ class EulaAccepted extends Notifier<bool> {
     } on Object {
       return localOk; // Not wired.
     }
+    Profile? profile;
+    var profileLoaded = false;
     try {
       // Triggers the existing `profiles` select and rebuilds when it arrives.
       ref.watch(profileRepositoryProvider);
-      ref.watch(myProfileProvider);
+      final profileAsync = ref.watch(myProfileProvider);
+      if (profileAsync.hasValue) {
+        profileLoaded = true;
+        profile = profileAsync.value;
+      }
     } on Object {
       // ProfileRepository not wired in this test.
     }
-    final serverVer = auth.acceptedTermsVersion ?? 0;
+    final authVer = auth.acceptedTermsVersion ?? 0;
+    final profileVer = profile?.termsVersion ?? 0;
+    final serverVer = authVer > profileVer ? authVer : profileVer;
     final serverOk = serverVer >= requiredVersion;
+    if (_deferredClickwrapUserId == userId && profileLoaded) {
+      _deferredClickwrapUserId = null;
+      if (serverVer <= 0 && !localOk) {
+        // Initial profile fetch succeeded and confirmed no prior terms version
+        // (brand-new user or unaccepted profile): record clickwrap consent now.
+        unawaited(Future.microtask(accept));
+      }
+    }
     if (localOk && !serverOk) {
       // Accepted by this user for this version on this device, but the
-      // account record failed earlier: retry quietly.
+      // account record failed earlier: retry quietly (deduplicated while
+      // already in flight, M2).
       unawaited(_record(auth, userId, localVer));
     } else if (serverOk && localVer < serverVer) {
       // Cheap local cache of the server record for this user.
@@ -100,16 +121,31 @@ class EulaAccepted extends Notifier<bool> {
     return localOk || serverOk;
   }
 
+  /// Defers initial clickwrap consent recording when the post-sign-in profile
+  /// check failed or timed out while `acceptedTermsVersion` was still `null`
+  /// (unknown), so a returning account on an older terms version never has
+  /// bumped consent forged before `TermsUpdateSheet` can appear (H2).
+  void deferInitialClickwrap(String? userId) {
+    final uid = userId ?? ref.read(currentUserIdProvider);
+    if (uid == null) return;
+    _deferredClickwrapUserId = uid;
+  }
+
   Future<void> _record(
     AuthRepository auth,
     String expectedUserId,
     int version,
   ) async {
+    final flightKey = '$expectedUserId:$version';
+    if (_inFlightRecords.contains(flightKey)) return;
+    _inFlightRecords.add(flightKey);
     try {
       if (auth.currentUserId != expectedUserId) return;
       await auth.recordTermsAccepted(version);
     } on Object {
       // Offline: the next launch tries again; the gate stays satisfied.
+    } finally {
+      _inFlightRecords.remove(flightKey);
     }
   }
 
@@ -170,20 +206,26 @@ final needsTermsUpdateProvider = Provider<bool>((ref) {
   if (userId == null) return false;
   if (ref.watch(eulaAcceptedProvider)) return false;
   final requiredVersion = ref.watch(termsVersionProvider);
+  final prefs = ref.watch(sharedPreferencesProvider);
+  final localVer = prefs.getInt(SafetyPrefs.termsVersionFor(userId)) ?? 0;
   final AuthRepository auth;
   try {
     auth = ref.watch(authRepositoryProvider);
   } on Object {
     return false;
   }
+  Profile? profile;
   try {
     ref.watch(profileRepositoryProvider);
-    ref.watch(myProfileProvider);
+    profile = ref.watch(myProfileProvider).asData?.value;
   } on Object {
     // ProfileRepository not wired in this test.
   }
-  final serverVer = auth.acceptedTermsVersion ?? 0;
-  return serverVer > 0 && serverVer < requiredVersion;
+  final authVer = auth.acceptedTermsVersion ?? 0;
+  final profileVer = profile?.termsVersion ?? 0;
+  var knownVer = authVer > profileVer ? authVer : profileVer;
+  if (localVer > knownVer) knownVer = localVer;
+  return knownVer > 0 && knownVer < requiredVersion;
 });
 
 /// Ids the user has blocked (server truth, `SafetyRepository`).

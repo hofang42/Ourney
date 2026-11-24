@@ -6,10 +6,12 @@ String? r(
   String location, {
   bool onboarded = true,
   AuthStatus? auth,
+  ProfileGateStatus profileGate = ProfileGateStatus.ready,
 }) => resolveRedirect(
   uri: Uri.parse(location),
   onboarded: onboarded,
   auth: auth ?? AuthStatus.localOnly,
+  profileGate: profileGate,
 );
 
 void main() {
@@ -99,6 +101,62 @@ void main() {
         '/auth?from=%2Fjoin%2FX',
       );
     });
+
+    test(
+      'DE-04 / H1: signed in holds on /auth while profileGate is unknown, '
+      'and redirects to /profile/setup when profileGate is needsSetup',
+      () {
+        const inn = AuthStatus.signedIn;
+        expect(
+          r('/auth?from=%2Ff%2Ftok123', auth: inn, profileGate: ProfileGateStatus.unknown),
+          isNull,
+        );
+        expect(
+          r('/auth', auth: inn, profileGate: ProfileGateStatus.unknown),
+          isNull,
+        );
+        expect(
+          r(
+            '/auth?from=%2Ff%2Ftok123',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          '$kProfileSetupPath?from=%2Ff%2Ftok123',
+        );
+        expect(
+          r(
+            '/capture',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          kProfileSetupPath,
+        );
+        expect(
+          r(
+            '/join/ABCD1234',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          '$kProfileSetupPath?from=%2Fjoin%2FABCD1234',
+        );
+        expect(
+          r(
+            kProfileSetupPath,
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          isNull,
+        );
+        expect(
+          r(
+            '/safety/eula',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          isNull,
+        );
+      },
+    );
   });
 
   group('safeFrom', () {

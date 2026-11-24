@@ -7,11 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/safety/safety_paths.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../profile/fakes.dart' show FakeProfileRepository;
 import 'safety_fakes.dart';
 
 class _SlowTermsAuthRepository extends FakeAuthRepository {
@@ -214,7 +217,43 @@ void main() {
           kTermsVersion,
         );
         expect(auth.recordedTerms, [kTermsVersion]);
+        // Rebuilding eulaAcceptedProvider while the RPC is still in flight must
+        // not spawn a second concurrent accept_terms RPC (M2).
+        c.invalidate(myProfileProvider);
+        c.read(eulaAcceptedProvider);
+        expect(auth.recordedTerms, [kTermsVersion]);
         auth.blocker.complete();
+      },
+    );
+
+    testWidgets(
+      'H2: cold start with a cached local Profile(termsVersion: 1) and null '
+      'auth.acceptedTermsVersion shows TermsUpdateSheet when kTermsVersion '
+      'bumps to 2',
+      (tester) async {
+        // Simulate cold start: auth.acceptedTermsVersion is null (volatile RAM
+        // before any remote profile select), while Drift has the cached
+        // ProfileRow with termsVersion = 1.
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: null);
+        final profiles = FakeProfileRepository(
+          const Profile(
+            id: 'u1',
+            username: 'alice',
+            displayName: 'Alice',
+            termsVersion: 1,
+          ),
+        );
+        await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            termsVersionProvider.overrideWithValue(2),
+          ],
+        );
+        expect(byKey('safety-terms-update-sheet'), findsOneWidget);
+        expect(find.text('Điều khoản vừa cập nhật'), findsOneWidget);
       },
     );
 

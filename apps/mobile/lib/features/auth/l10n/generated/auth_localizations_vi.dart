@@ -79,7 +79,7 @@ class AuthL10nVi extends AuthL10n {
   String get auth_terms => 'Điều khoản sử dụng';
 
   @override
-  String get auth_privacy => 'Chính sách quyền riêng tư';
+  String get auth_privacy => 'Chính sách quyền riêng tư.';
 
   @override
   String get auth_tabEmail => 'Email';

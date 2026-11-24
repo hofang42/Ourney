@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';
 import '../db/app_database.dart';
 import '../mapping.dart';
+import '../remote/remote_api.dart';
 
 /// The caller's profile. Local-only: kept in drift only. Supabase: written to
 /// `profiles` online (username uniqueness needs the server) and mirrored in
@@ -28,15 +31,34 @@ class DataProfileRepository implements ProfileRepository {
       return;
     }
     final remote = ctx.remote;
-    if (remote != null && await _local(me) == null) {
+    final cached = await _local(me);
+    if (remote != null && cached == null) {
       final rows = await remote.select('profiles', eq: {'id': me});
       for (final r in rows) {
         await ctx.store.applyProfile(r);
       }
+    } else if (remote != null &&
+        (remote.acceptedTermsVersion == null || cached!.termsVersion <= 0)) {
+      // Cold start with a cached profile row: refresh own profile in the
+      // background so `terms_version` populates both `remote` and Drift
+      // without delaying the first cached emission (H2).
+      unawaited(_refreshOwnProfile(remote, me));
     }
     yield* (_db.select(_db.profiles)..where((t) => t.id.equals(me)))
         .watchSingleOrNull()
         .map((r) => r == null ? null : profileFromRow(r));
+  }
+
+  Future<void> _refreshOwnProfile(RemoteApi remote, String me) async {
+    try {
+      final rows = await remote.select('profiles', eq: {'id': me});
+      if (ctx.userId != me) return;
+      for (final r in rows) {
+        await ctx.store.applyProfile(r);
+      }
+    } on Object {
+      // Offline on cold start: cached `ProfileRow.termsVersion` still works.
+    }
   }
 
   Future<ProfileRow?> _local(String me) => (_db.select(
@@ -70,6 +92,8 @@ class DataProfileRepository implements ProfileRepository {
       }
     }
     final existing = await _local(me);
+    final serverTerms = remote?.acceptedTermsVersion ?? 0;
+    final currentTerms = existing?.termsVersion ?? 0;
     await _db
         .into(_db.profiles)
         .insertOnConflictUpdate(
@@ -78,8 +102,14 @@ class DataProfileRepository implements ProfileRepository {
             username: Value(username),
             displayName: Value(name),
             avatarPath: Value(existing?.avatarPath),
+            termsVersion: Value(
+              serverTerms > currentTerms ? serverTerms : currentTerms,
+            ),
           ),
         );
+    if (existing == null && ctx.sync != null) {
+      unawaited(ctx.sync!.syncNow());
+    }
   }
 
   /// Stores the JPEG at `avatars/{me}/{new uuid}.jpg` (a new path per upload

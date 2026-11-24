@@ -146,7 +146,7 @@ select throws_ok(
   'accept_terms rejects version > server max'
 );
 
--- 19-21: u4 accepts terms BEFORE creating a profile (/safety/eula/accept -> /profile/setup),
+-- 19-21: u4 accepts terms BEFORE creating a profile (inline /auth clickwrap -> /profile/setup),
 -- then creates the profile and reads own terms_version via the existing profile SELECT.
 select is(
   public.accept_terms(1),

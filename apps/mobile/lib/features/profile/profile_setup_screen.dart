@@ -59,7 +59,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     super.initState();
     // The profile may already exist (e.g. re-opened): prefill if untouched.
     ref.listenManual(myProfileProvider, (previous, next) {
-      final profile = next.value;
+      final profile = next.asData?.value;
       if (profile != null && !_edited) {
         _username.text = profile.username;
         _displayName.text = profile.displayName;
@@ -151,7 +151,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final username = _username.text;
     final displayName = _displayName.text.trim();
     final repo = ref.read(profileRepositoryProvider);
-    final initial = ref.read(myProfileProvider).value;
+    final initial = ref.read(myProfileProvider).asData?.value;
     final profileChanged =
         initial == null ||
         initial.username != username ||

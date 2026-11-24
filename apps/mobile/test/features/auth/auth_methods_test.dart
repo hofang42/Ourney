@@ -106,7 +106,7 @@ void main() {
 
     testWidgets('forgot password: code + new password (M2)', (tester) async {
       final auth = RecordingAuthRepository();
-      await pumpBackendApp(tester, auth: auth);
+      await pumpBackendApp(tester, auth: auth, eulaAccepted: false);
       await tapVisible(tester, 'auth-use-password');
       await tapVisible(tester, 'auth-forgot');
       await tester.enterText(byKey('auth-email'), 'a@b.co');
@@ -128,6 +128,7 @@ void main() {
       await tester.enterText(byKey('auth-new-password'), 'brandnewpass');
       await tapVisible(tester, 'auth-verify');
       expect(auth.calls.last, 'reset:a@b.co:123456');
+      expect(auth.recordedTerms, isEmpty);
     });
 
     testWidgets('phone option is hidden when the server has phone off', (

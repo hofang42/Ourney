@@ -15,6 +15,20 @@ enum AuthStatus {
   signedOut,
 }
 
+/// Whether the signed-in account has a row in `public.profiles` yet (DE-04 / H1).
+enum ProfileGateStatus {
+  /// Still checking `ProfileRepository.watchMe()` for the signed-in session.
+  unknown,
+
+  /// Confirmed no profile row yet (or initial profile fetch failed/timed out
+  /// with no local row): must complete `/profile/setup` before protected
+  /// routes or server RPCs run.
+  needsSetup,
+
+  /// Profile exists (or local-only / unwired in tests).
+  ready,
+}
+
 /// Maps `ourney://join/<code>` and `ourney://journey/<id>` (host = first
 /// segment) to an in-app path. Returns null for non-deep-link URIs.
 String? normalizeDeepLink(Uri uri) {
@@ -50,6 +64,7 @@ String? resolveRedirect({
   required Uri uri,
   required bool onboarded,
   required AuthStatus auth,
+  ProfileGateStatus profileGate = ProfileGateStatus.ready,
 }) {
   final deepLink = normalizeDeepLink(uri);
   if (deepLink != null) return deepLink;
@@ -77,6 +92,26 @@ String? resolveRedirect({
       return null;
     }
     return _withFrom(AppRoutes.auth, uri);
+  }
+
+  if (auth == AuthStatus.signedIn) {
+    if (profileGate == ProfileGateStatus.unknown) {
+      // Hold on the current screen (e.g. `/auth` spinner) while checking
+      // whether a profile row exists, so `<from>` or `/capture` never mounts
+      // or fires server RPCs before `/profile/setup` (DE-04 / H1).
+      return null;
+    }
+    if (profileGate == ProfileGateStatus.needsSetup) {
+      if (pathHasPrefix(path, kProfileSetupPath) ||
+          pathHasPrefix(path, AppRoutes.safety)) {
+        return null;
+      }
+      if (pathHasPrefix(path, AppRoutes.onboarding) ||
+          pathHasPrefix(path, AppRoutes.auth)) {
+        return _carryFrom(kProfileSetupPath, uri);
+      }
+      return _withFrom(kProfileSetupPath, uri);
+    }
   }
 
   // Gates already satisfied: leave onboarding/auth for the saved target.

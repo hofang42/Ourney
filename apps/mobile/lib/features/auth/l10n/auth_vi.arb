@@ -89,7 +89,7 @@
   "@auth_terms": {
     "description": "Footer link to the terms."
   },
-  "auth_privacy": "Chính sách quyền riêng tư",
+  "auth_privacy": "Chính sách quyền riêng tư.",
   "@auth_privacy": {
     "description": "Footer link to the privacy policy."
   },

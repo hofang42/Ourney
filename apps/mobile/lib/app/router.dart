@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/profile/profile_providers.dart'
+    show profileGateStatusProvider;
 import 'app_routes.dart';
 import 'app_shell.dart';
 import 'feature_routes.dart';
@@ -11,7 +13,8 @@ import 'providers.dart';
 import 'redirect.dart';
 
 export 'app_routes.dart';
-export 'redirect.dart' show AuthStatus, kDeepLinkScheme, normalizeDeepLink;
+export 'redirect.dart'
+    show AuthStatus, ProfileGateStatus, kDeepLinkScheme, normalizeDeepLink;
 
 /// Builds the app router from the per-feature route registry
 /// ([FeatureRoutes]). [redirect] defaults to deep-link normalisation only;
@@ -69,7 +72,8 @@ final routerProvider = Provider<GoRouter>((ref) {
   void bump(Object? _, Object? _) => refresh.value++;
   ref
     ..listen(onboardingCompleteProvider, bump)
-    ..listen(authStatusProvider, bump);
+    ..listen(authStatusProvider, bump)
+    ..listen(profileGateStatusProvider, bump);
 
   final router = createRouter(
     refreshListenable: refresh,
@@ -77,6 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       uri: state.uri,
       onboarded: ref.read(onboardingCompleteProvider),
       auth: ref.read(authStatusProvider),
+      profileGate: ref.read(profileGateStatusProvider),
     ),
   );
   ref.onDispose(() {

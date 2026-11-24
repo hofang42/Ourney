@@ -2,17 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/data/remote/error_mapping.dart';
 import 'package:ourney/features/auth/auth_errors.dart';
 import 'package:ourney/features/auth/auth_screen.dart';
 import 'package:ourney/features/auth/l10n/generated/auth_localizations_en.dart';
+import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
 
+import '../../app/test_helpers.dart' show pumpOurneyApp, testBackendConfig;
 import '../profile/fakes.dart';
 
 Future<void> enterEmail(WidgetTester tester, String email) async {
@@ -23,6 +26,59 @@ Future<void> enterEmail(WidgetTester tester, String email) async {
   await tester.pumpAndSettle();
 }
 
+/// Delays the initial `watchMe()` emission until [emit] or [emitError] is
+/// called, to verify no protected route or RPC runs while the profile check is
+/// in flight.
+class _DelayedProfileRepository extends FakeProfileRepository {
+  _DelayedProfileRepository();
+
+  final StreamController<Profile?> _controller =
+      StreamController<Profile?>.broadcast();
+
+  void emit(Profile? value) {
+    profile = value;
+    _controller.add(value);
+  }
+
+  void emitError(Object error) {
+    _controller.addError(error);
+  }
+
+  @override
+  Stream<Profile?> watchMe() => _controller.stream;
+}
+
+class _SpyFriendRepository implements FriendRepository {
+  final List<String> acceptedTokens = [];
+
+  @override
+  Future<PersonSummary> acceptInvite(String token) async {
+    acceptedTokens.add(token);
+    throw const OurneyException(OurneyErrorCode.invalid);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SpyAccountInsightsRepository implements AccountInsightsRepository {
+  int saveQuizCalls = 0;
+  int fetchQuizCalls = 0;
+
+  @override
+  Future<void> saveQuiz(OnboardingQuiz quiz) async {
+    saveQuizCalls++;
+  }
+
+  @override
+  Future<OnboardingQuiz?> fetchQuiz() async {
+    fetchQuizCalls++;
+    return null;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 /// Emits the user id, then holds `verifyOtp` open until [release], so the
 /// router can unmount `/auth` before the sign-in await returns.
 class _SlowVerifyAuth extends RecordingAuthRepository {
@@ -179,8 +235,8 @@ void main() {
       },
     );
 
-    testWidgets('returning user lands on the from target', (tester) async {
-      final auth = RecordingAuthRepository();
+    testWidgets('returning user lands on the from target without re-recording terms (M2)', (tester) async {
+      final auth = RecordingAuthRepository()..termsVersion = kTermsVersion;
       final c = await pumpBackendApp(
         tester,
         auth: auth,
@@ -190,7 +246,96 @@ void main() {
       await tester.enterText(byKey('auth-code'), '654321');
       await tester.pumpAndSettle();
       expect(location(c), AppRoutes.capture);
+      expect(auth.recordedTerms, isEmpty);
     });
+
+    testWidgets(
+      'H1: new user signing in from /f/<token> never mounts InviteAcceptScreen '
+      'or fires RPCs before /profile/setup',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        final profiles = _DelayedProfileRepository();
+        final friends = _SpyFriendRepository();
+        final insights = _SpyAccountInsightsRepository();
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: auth,
+          eulaAccepted: false,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            friendRepositoryProvider.overrideWithValue(friends),
+            accountInsightsRepositoryProvider.overrideWithValue(insights),
+          ],
+        );
+        const token = '0123456789abcdef0123456789abcdef';
+        await goTo(tester, c, '${AppRoutes.auth}?from=%2Ff%2F$token');
+        await enterEmail(tester, 'new@b.co');
+        await tester.enterText(byKey('auth-code'), '654321');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        // While watchMe() is in flight, the router must hold on /auth and
+        // never mount /f/<token> or fire acceptInvite / quiz sync.
+        expect(location(c), '${AppRoutes.auth}?from=%2Ff%2F$token');
+        expect(friends.acceptedTokens, isEmpty);
+        expect(insights.saveQuizCalls, 0);
+        expect(insights.fetchQuizCalls, 0);
+
+        // Profile check completes with null -> router transitions straight to
+        // /profile/setup?from=%2Ff%2F<token> without ever mounting /f/<token>.
+        profiles.emit(null);
+        await tester.pumpAndSettle();
+        expect(
+          location(c),
+          Uri(
+            path: profileSetupPath,
+            queryParameters: {AppRoutes.fromParam: '/f/$token'},
+          ).toString(),
+        );
+        expect(friends.acceptedTokens, isEmpty);
+        expect(insights.saveQuizCalls, 0);
+        expect(insights.fetchQuizCalls, 0);
+        expect(auth.recordedTerms, [kTermsVersion]);
+      },
+    );
+
+    testWidgets(
+      'H2: offline profile check during sign-in does not forge bumped terms '
+      'consent for a returning v1 user',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        final profiles = _DelayedProfileRepository();
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: auth,
+          eulaAccepted: false,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            termsVersionProvider.overrideWithValue(2),
+          ],
+        );
+        await enterEmail(tester, 'returning@b.co');
+        await tester.enterText(byKey('auth-code'), '654321');
+        await tester.pump();
+
+        // Simulate watchMe() failing offline before termsVersion is known.
+        profiles.emitError(
+          const OurneyException(OurneyErrorCode.offline),
+        );
+        await tester.pumpAndSettle();
+
+        expect(location(c), profileSetupPath);
+        expect(auth.recordedTerms, isEmpty);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getInt(SafetyPrefs.termsVersionFor('u1')),
+          isNull,
+        );
+      },
+    );
 
     testWidgets(
       'legal links show zero-tolerance clickwrap on email, phone and password '
@@ -211,7 +356,15 @@ void main() {
           findsOneWidget,
         );
         expect(find.text('Điều khoản sử dụng'), findsOneWidget);
-        expect(find.text('Chính sách quyền riêng tư'), findsOneWidget);
+        expect(find.text('Chính sách quyền riêng tư.'), findsOneWidget);
+        expect(
+          tester.widget<UiTextAction>(byKey('auth-terms')).underline,
+          isTrue,
+        );
+        expect(
+          tester.widget<UiTextAction>(byKey('auth-privacy')).underline,
+          isTrue,
+        );
 
         final screen = tester.getSize(find.byType(AuthScreen)).width;
         expect(

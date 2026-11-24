@@ -226,7 +226,7 @@ abstract class AuthL10n {
   /// Footer link to the privacy policy.
   ///
   /// In vi, this message translates to:
-  /// **'Chính sách quyền riêng tư'**
+  /// **'Chính sách quyền riêng tư.'**
   String get auth_privacy;
 
   /// Sign-in method tab.

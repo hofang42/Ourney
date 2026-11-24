@@ -160,7 +160,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         case _Flow.password:
           step = AuthStep.passwordSignIn;
           await auth.signInWithPassword(_normalizedEmail, _password.text);
-          await _finishSignIn(router, auth, profiles, quiz, eula, from);
+          await _finishSignIn(
+            router,
+            auth,
+            profiles,
+            quiz,
+            eula,
+            from,
+            recordInitialTerms: true,
+          );
           return;
       }
     } on Object catch (e) {
@@ -237,8 +245,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       });
       return;
     }
+    final recordInitialTerms = _flow != _Flow.reset;
     if (mounted) setState(() => _success = true);
-    await _finishSignIn(router, auth, profiles, quiz, eula, from);
+    await _finishSignIn(
+      router,
+      auth,
+      profiles,
+      quiz,
+      eula,
+      from,
+      recordInitialTerms: recordInitialTerms,
+    );
   }
 
   ProfileRepository? _profiles() {
@@ -255,19 +272,46 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     ProfileRepository? profiles,
     OnboardingQuizNotifier quiz,
     EulaAccepted eula,
-    String? from,
-  ) async {
+    String? from, {
+    required bool recordInitialTerms,
+  }) async {
     OurneyHaptics.success();
-    // Push the locally stored onboarding answers to the new account (best
-    // effort, never blocks sign-in). No `ref` here: the router may already
-    // have unmounted this screen after the sign-in await.
-    unawaited(quiz.syncToServer());
-    final needsSetup = profiles != null && await _needsProfileSetup(profiles);
-    // §4.4: record initial terms consent when the account has no recorded
-    // version yet (0 or null). Do not auto-bump when 0 < serverVer <
-    // kTermsVersion so returning users see TermsUpdateSheet on a version bump.
-    if ((auth.acceptedTermsVersion ?? 0) <= 0) {
-      unawaited(eula.accept());
+    final result = profiles == null
+        ? (profile: null, loaded: true)
+        : await _loadProfile(profiles);
+    final needsSetup = profiles != null && (!result.loaded || result.profile == null);
+    if (!needsSetup) {
+      // Push the locally stored onboarding answers once the account has a
+      // profile row (`ProfileSetupScreen._save` syncs after `upsertMe` for new
+      // accounts, H1).
+      unawaited(quiz.syncToServer());
+    }
+    // §4.4: record initial terms consent only on clickwrap flows (`_flow !=
+    // _Flow.reset`, M2) when the account is confirmed to have no recorded
+    // version yet (0, or brand-new account with `profile == null`). If the
+    // profile fetch failed/timed out and `acceptedTermsVersion` is still null
+    // (unknown), defer recording until the profile loads so a returning user
+    // on an older version still sees TermsUpdateSheet (H2).
+    if (recordInitialTerms) {
+      final authVer = auth.acceptedTermsVersion;
+      final profileVer = result.profile?.termsVersion;
+      final int? knownVer;
+      if (authVer != null && profileVer != null) {
+        knownVer = authVer > profileVer ? authVer : profileVer;
+      } else {
+        knownVer = authVer ?? profileVer;
+      }
+      if (result.loaded) {
+        if ((knownVer ?? 0) <= 0) {
+          unawaited(eula.accept());
+        }
+      } else if (knownVer != null) {
+        if (knownVer <= 0) {
+          unawaited(eula.accept());
+        }
+      } else {
+        eula.deferInitialClickwrap(auth.currentUserId);
+      }
     }
     if (needsSetup) {
       final safeTarget = from == null
@@ -278,28 +322,31 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 queryParameters: {AppRoutes.fromParam: from},
               ),
             );
-      router.go(
-        Uri(
-          path: profileSetupPath,
-          queryParameters: safeTarget == null
-              ? null
-              : {AppRoutes.fromParam: safeTarget},
-        ).toString(),
-      );
+      final targetUri = Uri(
+        path: profileSetupPath,
+        queryParameters: safeTarget == null
+            ? null
+            : {AppRoutes.fromParam: safeTarget},
+      ).toString();
+      if (router.state.uri.toString() != targetUri) {
+        router.go(targetUri);
+      }
     }
     if (mounted) setState(() => _busy = false);
   }
 
-  static Future<bool> _needsProfileSetup(ProfileRepository repo) async {
+  static Future<({Profile? profile, bool loaded})> _loadProfile(
+    ProfileRepository repo,
+  ) async {
     try {
       final profile = await repo.watchMe().first.timeout(
         AuthScreen.profileCheckTimeout,
       );
-      return profile == null;
+      return (profile: profile, loaded: true);
     } on Object {
       // No local profile could be confirmed: go to `/profile/setup` so its
       // offline/error retry and sign-out state handles recovery (DE-04/DE-07).
-      return true;
+      return (profile: null, loaded: false);
     }
   }
 
@@ -827,6 +874,7 @@ class _Legal extends StatelessWidget {
           key: const ValueKey('auth-terms'),
           label: terms,
           size: 13,
+          underline: true,
           color: ui.ink,
           expand: false,
           onPressed: onTerms,
@@ -836,6 +884,7 @@ class _Legal extends StatelessWidget {
           key: const ValueKey('auth-privacy'),
           label: privacy,
           size: 13,
+          underline: true,
           color: ui.ink,
           expand: false,
           onPressed: onPrivacy,

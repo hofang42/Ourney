@@ -5,14 +5,14 @@
 --   1. `public.profiles.terms_version` (`int not null default 0`) exposes the accepted version on
 --      the existing profile SELECT while revoking direct client INSERT/UPDATE on that column.
 --   2. `private.terms_acceptance` records `(user_id, terms_version, accepted_at)` even when a newly
---      signed-in account accepts the EULA on `/safety/eula/accept` before creating its profile row
---      on `/profile/setup`; a BEFORE INSERT trigger on `public.profiles` copies that version onto
---      the profile row when it is created.
+--      signed-in account accepts the terms via the inline `/auth` clickwrap before creating its
+--      profile row on `/profile/setup`; a BEFORE INSERT trigger on `public.profiles` copies that
+--      version onto the profile row when it is created.
 --   3. `public.accept_terms(p_version int)` (SECURITY DEFINER, `search_path = ''`) validates the
 --      signed-in caller (`public._uid()`) and version (`1..v_max`), stamps server `now()`, and only
 --      raises `terms_version` (never lowers a newer version).
---   4. Every existing profile row passed the EULA gate at least once (because `/profile/setup` sits
---      behind it) and is backfilled to version 1.
+--   4. Every existing profile row agreed to the terms at least once on sign-in and is backfilled to
+--      version 1.
 
 alter table public.profiles
   add column if not exists terms_version int not null default 0;
@@ -57,7 +57,7 @@ begin
   select t.terms_version into v_accepted
     from private.terms_acceptance t
    where t.user_id = new.id;
-  if current_user in ('authenticated', 'anon') then
+  if coalesce(nullif(current_setting('role', true), ''), session_user) in ('authenticated', 'anon') then
     new.terms_version := coalesce(v_accepted, 0);
   else
     new.terms_version := greatest(coalesce(new.terms_version, 0), coalesce(v_accepted, 0));

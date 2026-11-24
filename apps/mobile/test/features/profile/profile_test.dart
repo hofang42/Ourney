@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
+import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/features/profile/settings_screen.dart'
     show profileSettingsPath;
@@ -24,6 +26,11 @@ class _FailingProfileRepository extends FakeProfileRepository {
   @override
   Stream<Profile?> watchMe() =>
       Stream.error(const OurneyException(OurneyErrorCode.internal));
+}
+
+class _ReadyProfileGate extends ProfileGateNotifier {
+  @override
+  ProfileGateStatus build() => ProfileGateStatus.ready;
 }
 
 Future<void> tapVisible(WidgetTester tester, String key) async {
@@ -197,6 +204,20 @@ void main() {
         expect(byKey('profile-setup-sign-out'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'DE-04 / H1: cold restart while signed in without a profile redirects '
+      'to /profile/setup',
+      (tester) async {
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          profiles: FakeProfileRepository(),
+        );
+        expect(location(c), profileSetupPath);
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+      },
+    );
   });
 
   group('profile screen', () {
@@ -231,14 +252,38 @@ void main() {
     });
 
     testWidgets('missing profile offers setup', (tester) async {
-      final c = await signedIn(tester, profiles: FakeProfileRepository());
+      final c = await pumpOurneyApp(
+        tester,
+        config: testBackendConfig,
+        auth: RecordingAuthRepository(userId: 'u1'),
+        overrides: <Override>[
+          profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
+          profileGateStatusProvider.overrideWith(_ReadyProfileGate.new),
+          mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+          avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+        ],
+      );
+      await goTo(tester, c, AppRoutes.profile);
       expect(byKey('profile-incomplete'), findsOneWidget);
       await tapVisible(tester, 'profile-complete');
       expect(location(c), profileSetupPath);
     });
 
     testWidgets('load error offers retry', (tester) async {
-      await signedIn(tester, profiles: _FailingProfileRepository());
+      final c = await pumpOurneyApp(
+        tester,
+        config: testBackendConfig,
+        auth: RecordingAuthRepository(userId: 'u1'),
+        overrides: <Override>[
+          profileRepositoryProvider.overrideWithValue(
+            _FailingProfileRepository(),
+          ),
+          profileGateStatusProvider.overrideWith(_ReadyProfileGate.new),
+          mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+          avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+        ],
+      );
+      await goTo(tester, c, AppRoutes.profile);
       expect(byKey('profile-load-error'), findsOneWidget);
       expect(byKey('profile-retry'), findsOneWidget);
     });
