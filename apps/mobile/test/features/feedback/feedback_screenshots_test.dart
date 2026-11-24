@@ -53,12 +53,17 @@ Future<void> _loadBundledFonts() async {
   }
 }
 
+final String? _shotsDir = () {
+  final raw = Platform.environment['OURNEY_SHOTS_DIR']?.trim();
+  return (raw == null || raw.isEmpty) ? null : raw;
+}();
+
 Future<void> _captureShot(
-  WidgetTester tester,
   GlobalKey boundaryKey,
+  String outDir,
   String filename,
 ) async {
-  final dir = Directory('E:/Ourney/agy-work/reports/fr-app-shots');
+  final dir = Directory(outDir);
   if (!dir.existsSync()) {
     dir.createSync(recursive: true);
   }
@@ -74,7 +79,9 @@ Future<void> _captureShot(
 void main() {
   testWidgets(
     'renders light and dark screenshots of board, detail, and create sheet',
+    skip: _shotsDir == null,
     (tester) async {
+      final outDir = _shotsDir!;
       await _loadBundledFonts();
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
@@ -146,7 +153,7 @@ void main() {
           await interact();
         }
         await tester.runAsync(
-          () => _captureShot(tester, boundaryKey, filename),
+          () => _captureShot(boundaryKey, outDir, filename),
         );
         router.dispose();
         container.dispose();

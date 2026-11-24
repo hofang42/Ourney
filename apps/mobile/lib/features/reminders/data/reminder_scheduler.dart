@@ -7,9 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../app/overlays/reminder_banner.dart';
 import '../../../app/providers.dart';
 import '../../../app/redirect.dart' show AuthStatus;
+import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../shared/time_zones.dart';
+import '../../../ui/ui.dart' show uiSkinIdFor;
 import '../domain/reminder_plan.dart';
 import '../l10n/generated/reminders_localizations.dart';
 import 'notification_gateway.dart';
@@ -56,6 +59,12 @@ class ReminderScheduler {
   final Ref _ref;
   Future<void> _last = Future.value();
 
+  /// Latest planned notifications after [reschedule], observed by
+  /// [ReminderLifecycleHook] to trigger [ReminderBannerHost] in the foreground.
+  final ValueNotifier<List<PlannedNotification>> lastPlanned = ValueNotifier(
+    const [],
+  );
+
   NotificationGateway get _gateway => _ref.read(notificationGatewayProvider);
 
   Future<void> reschedule() {
@@ -72,6 +81,7 @@ class ReminderScheduler {
           ? await buildPlan()
           : const <PlannedNotification>[];
       await _apply(gateway, planned);
+      lastPlanned.value = List.unmodifiable(planned);
     } on Object catch (e, st) {
       debugPrint('reminders: reschedule skipped: $e');
       if (kDebugMode && e is! UnimplementedError) {
@@ -177,9 +187,11 @@ class ReminderScheduler {
   }
 }
 
-final reminderSchedulerProvider = Provider<ReminderScheduler>(
-  ReminderScheduler.new,
-);
+final reminderSchedulerProvider = Provider<ReminderScheduler>((ref) {
+  final scheduler = ReminderScheduler(ref);
+  ref.onDispose(scheduler.lastPlanned.dispose);
+  return scheduler;
+});
 
 /// Rebuilds the reminder schedule. Call after a check-in is saved (the day
 /// is then skipped and the 21:00 alert moves to tomorrow), and whenever
@@ -208,10 +220,16 @@ class ReminderLifecycleHook extends ConsumerStatefulWidget {
 
 class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
     with WidgetsBindingObserver {
+  Timer? _bannerTimer;
+  ValueNotifier<List<PlannedNotification>>? _plannedListenable;
+  bool _foreground = true;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _plannedListenable = ref.read(reminderSchedulerProvider).lastPlanned;
+    _plannedListenable!.addListener(_onPlanChanged);
     unawaited(_start());
   }
 
@@ -232,15 +250,106 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
     if (mounted) widget.onOpenJourney?.call(journeyId);
   }
 
+  void _onPlanChanged() => _armNextBanner();
+
+  void _armNextBanner([DateTime? afterUtc]) {
+    _bannerTimer?.cancel();
+    _bannerTimer = null;
+    if (!mounted || !_foreground) return;
+    final planned = _plannedListenable?.value ?? const <PlannedNotification>[];
+    if (planned.isEmpty) return;
+    final now = ref.read(remindersClockProvider).now().toUtc();
+    final cutoff = afterUtc != null && afterUtc.isAfter(now) ? afterUtc : now;
+    PlannedNotification? next;
+    for (final p in planned) {
+      final matches = afterUtc != null
+          ? p.fireAt.isAfter(cutoff)
+          : !p.fireAt.isBefore(cutoff);
+      if (matches) {
+        next = p;
+        break;
+      }
+    }
+    if (next == null) return;
+    final delay = next.fireAt.difference(now);
+    final target = next;
+    _bannerTimer = Timer(
+      delay.isNegative ? Duration.zero : delay,
+      () => unawaited(_showBannerFor(target)),
+    );
+  }
+
+  Future<void> _showBannerFor(PlannedNotification p) async {
+    if (!mounted || !_foreground) return;
+    var skinId = 'quiet';
+    var day = 1;
+    var name = p.journeyTitle;
+    try {
+      final activeJourneys = await ref
+          .read(journeyRepositoryProvider)
+          .watchActive()
+          .first
+          .timeout(_readTimeout);
+      if (!mounted) return;
+      final now = ref.read(remindersClockProvider).now();
+      Journey? journey;
+      for (final j in activeJourneys) {
+        if (j.id == p.journeyId) {
+          journey = j;
+          break;
+        }
+      }
+      if (journey == null ||
+          journey.status != JourneyStatus.active ||
+          journey.isPastEndOn(localDateIn(journey.timezone, now))) {
+        _armNextBanner(p.fireAt);
+        return;
+      }
+      name = journey.title;
+      skinId = uiSkinIdFor(personaSkinOf(journey));
+      final computedDay = journey.startDate.daysUntil(p.journeyDate) + 1;
+      if (computedDay > 0) day = computedDay;
+    } on Object {
+      if (!mounted) return;
+    }
+    ref
+        .read(reminderBannerProvider.notifier)
+        .show(
+          ReminderBannerData(
+            journeyId: p.journeyId,
+            journeyName: name,
+            skinId: skinId,
+            kind: p.kind == PlannedKind.streakAlert
+                ? ReminderBannerKind.streak
+                : ReminderBannerKind.daily,
+            streak: p.streak,
+            day: day,
+          ),
+        );
+    _armNextBanner(p.fireAt);
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      unawaited(ref.read(reminderSchedulerProvider).reschedule());
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _foreground = true;
+        unawaited(ref.read(reminderSchedulerProvider).reschedule());
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _foreground = false;
+        _bannerTimer?.cancel();
+        _bannerTimer = null;
+      case AppLifecycleState.inactive:
+        break;
     }
   }
 
   @override
   void dispose() {
+    _bannerTimer?.cancel();
+    _plannedListenable?.removeListener(_onPlanChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

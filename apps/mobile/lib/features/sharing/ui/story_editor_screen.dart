@@ -102,7 +102,7 @@ class _StoryEditorScreenState extends ConsumerState<StoryEditorScreen> {
     if (context.canPop()) {
       context.pop();
     } else {
-      context.go(AppRoutes.shareJourney(widget.journeyId));
+      context.go(AppRoutes.journey(widget.journeyId));
     }
   }
 

@@ -419,4 +419,7 @@ class SocialL10nEn extends SocialL10n {
   String social_shippedRequestAuthorTitle(String title) {
     return 'Your idea is now live: $title';
   }
+
+  @override
+  String get social_startJourneyTogether => 'Start a journey together';
 }

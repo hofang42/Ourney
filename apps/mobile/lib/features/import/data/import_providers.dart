@@ -19,7 +19,9 @@ final importJobRunnerProvider = Provider<ImportJobRunner>((ref) {
   final runner = ImportJobRunner(
     store: ref.watch(importJobStoreProvider),
     files: ref.watch(importFilesProvider),
-    currentUserId: () => ref.read(currentUserIdProvider),
+    currentUserId: () =>
+        ref.read(currentUserIdProvider) ??
+        (ref.read(appConfigProvider).localOnly ? 'local' : null),
     compress: (path) => ref.read(photoCompressorProvider).compress(path),
     createJourney: (draft) =>
         ref.read(sharingRepositoryProvider).createImported(draft),

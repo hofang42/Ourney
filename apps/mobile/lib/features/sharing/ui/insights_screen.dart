@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../ui/ui.dart';
@@ -42,9 +43,12 @@ class InsightsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SharingL10n.of(context);
+    void back() =>
+        sharingBack(context, fallback: AppRoutes.journey(journeyId));
     if (ref.watch(appConfigProvider).localOnly) {
       return SharingPage(
         title: l10n.sharing_insightsTitle,
+        onBack: back,
         children: const [SharingNeedsServer()],
       );
     }
@@ -60,6 +64,7 @@ class InsightsScreen extends ConsumerWidget {
       scaffoldKey: const ValueKey('insights'),
       title: journey?.title ?? l10n.sharing_insightsTitle,
       subtitle: subtitle,
+      onBack: back,
       children: [
         if (insights != null)
           _InsightsBody(

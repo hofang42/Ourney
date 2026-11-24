@@ -1,4 +1,5 @@
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show Offset, Rect, Size, WidgetsBinding;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show ProviderException;
@@ -114,12 +115,29 @@ class MyInviteToken extends Notifier<String?> {
   }
 }
 
+/// Fallback popover anchor for iPadOS `UIActivityViewController`, which
+/// throws a `PlatformException` when `sharePositionOrigin` is null or empty.
+Rect defaultSharePositionOrigin() {
+  final view = WidgetsBinding.instance.platformDispatcher.views.firstOrNull;
+  final dpr = view?.devicePixelRatio ?? 1.0;
+  final physical = view?.physicalSize ?? Size.zero;
+  final size = physical.isEmpty || dpr <= 0
+      ? const Size(320, 480)
+      : physical / dpr;
+  return Rect.fromCenter(center: size.center(Offset.zero), width: 1, height: 1);
+}
+
 /// Opens the system share sheet with [text]. Override in tests.
 typedef SocialShareLauncher = Future<void> Function(String text);
 
 final socialShareLauncherProvider = Provider<SocialShareLauncher>(
   (ref) => (text) async {
-    await SharePlus.instance.share(ShareParams(text: text));
+    await SharePlus.instance.share(
+      ShareParams(
+        text: text,
+        sharePositionOrigin: defaultSharePositionOrigin(),
+      ),
+    );
   },
 );
 

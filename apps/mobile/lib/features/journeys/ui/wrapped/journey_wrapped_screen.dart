@@ -1,17 +1,56 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../../app/app_routes.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
 import '../../../../ui/ui.dart';
+import '../../../share_card/domain/share_card_content.dart'
+    show activePublicToken;
+import '../../../social/data/social_providers.dart'
+    show socialShareLauncherProvider;
 import '../../data/journeys_providers.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/wrapped_story.dart';
 import '../../journeys_paths.dart';
 import '../../l10n/generated/journeys_localizations.dart';
+import '../journey_errors.dart';
 import 'wrapped_visuals.dart';
+
+/// Builds the text caption shared from the Wrapped summary sheet (DE-17).
+///
+/// Honors [hideKg] (for the quiet persona's weight range) and [hideBrand]
+/// (omitting the `ourney` wordmark / generic brand URL when enabled).
+String wrappedShareText(
+  JourneysL10n l10n,
+  Journey journey,
+  PersonaSkinId skin,
+  WrappedStats stats, {
+  bool hideKg = true,
+  bool hideBrand = false,
+}) {
+  final summary = wrappedSummaryTitle(l10n, journey, skin, stats);
+  final weights = skin == PersonaSkinId.quietTransformer && !hideKg
+      ? _Summary._weights(stats)
+      : null;
+  final token = activePublicToken(journey);
+  final String? footer;
+  if (token != null) {
+    final url = 'https://ourney.tech/p/$token';
+    footer = hideBrand ? url : 'ourney · $url';
+  } else {
+    footer = hideBrand ? null : 'ourney · https://ourney.tech';
+  }
+  return [
+    '${journey.emoji} ${journey.title} — $summary',
+    ?weights,
+    ?footer,
+  ].join('\n');
+}
 
 /// `/journey/:id/wrapped`, Figma `JourneyWrappedScreen` ("Hành trình đã về
 /// đích"): full-screen story pages (tap right / left half or swipe), segment
@@ -25,15 +64,70 @@ class JourneyWrappedScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
-    final journey = ref.watch(journeyByIdProvider(journeyId)).value;
-    final checkIns = ref.watch(myCheckInsProvider(journeyId)).value;
+    final app = AppLocalizations.of(context);
+    final journeyAsync = ref.watch(journeyByIdProvider(journeyId));
+    final checkInsAsync = ref.watch(myCheckInsProvider(journeyId));
+    final journey = journeyAsync.value;
+    final checkIns = checkInsAsync.value;
     if (journey == null || checkIns == null) {
+      final notFound =
+          !journeyAsync.isLoading && !journeyAsync.hasError && journey == null;
+      final hasError =
+          !notFound && (journeyAsync.hasError || checkInsAsync.hasError);
+      final error = journeyAsync.error ?? checkInsAsync.error;
+      final isLoading = !notFound && !hasError;
+      void back() {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(
+            journey != null ? JourneysPaths.home(journeyId) : AppRoutes.journeys,
+          );
+        }
+      }
+
       return UiScaffold(
         key: const ValueKey('journey-wrapped-empty'),
         padTop: 0,
-        child: UiBackHeader(
-          onBack: () => _close(context, journeyId),
-          backLabel: l10n.journeys_back,
+        child: Column(
+          children: [
+            UiBackHeader(
+              onBack: back,
+              backLabel: l10n.journeys_back,
+            ),
+            if (isLoading)
+              Padding(
+                padding: const EdgeInsets.only(top: 120),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    key: const ValueKey('journey-wrapped-loading'),
+                    semanticsLabel: app.common_loading,
+                  ),
+                ),
+              )
+            else
+              UiEmptyState(
+                key: ValueKey(
+                  hasError
+                      ? 'journey-wrapped-error'
+                      : 'journey-wrapped-not-found',
+                ),
+                glyph: OurneyIcon(
+                  name: hasError ? 'error' : 'search',
+                  size: 40,
+                ),
+                title: hasError
+                    ? journeyErrorMessage(context, error!)
+                    : l10n.journeys_errorNotFound,
+                actionLabel: hasError ? app.common_retry : l10n.journeys_title,
+                onAction: hasError
+                    ? () {
+                        ref.invalidate(journeyByIdProvider(journeyId));
+                        ref.invalidate(myCheckInsProvider(journeyId));
+                      }
+                    : () => context.go(AppRoutes.journeys),
+              ),
+          ],
         ),
       );
     }
@@ -293,7 +387,7 @@ class _Story extends StatelessWidget {
   }
 }
 
-class _Summary extends StatelessWidget {
+class _Summary extends ConsumerWidget {
   const _Summary({
     required this.journey,
     required this.skin,
@@ -333,7 +427,7 @@ class _Summary extends StatelessWidget {
   };
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
     final ui = context.ui;
     final quiet = skin == PersonaSkinId.quietTransformer;
@@ -347,6 +441,24 @@ class _Summary extends StatelessWidget {
         hideMetric: quiet ? hideKg : null,
       ),
     );
+    Future<void> shareNow(bool hideWordmark) async {
+      final launcher = ref.read(socialShareLauncherProvider);
+      final text = wrappedShareText(
+        l10n,
+        journey,
+        skin,
+        stats,
+        hideKg: hideKg,
+        hideBrand: hideWordmark,
+      );
+      try {
+        await launcher(text);
+      } on Object catch (e) {
+        if (context.mounted) {
+          showJourneySnack(context, journeyErrorMessage(context, e));
+        }
+      }
+    }
 
     return SingleChildScrollView(
       key: const ValueKey('wrapped-summary'),
@@ -470,7 +582,7 @@ class _Summary extends StatelessWidget {
                   key: const ValueKey('wrapped-share'),
                   label: l10n.journeys_wrapped_share,
                   glyph: const OurneyIcon(name: 'share', size: 18, flat: true),
-                  onPressed: () => _shareSheet(context, openShare),
+                  onPressed: () => _shareSheet(context, shareNow),
                 ),
               ),
               const SizedBox(width: UiSpace.sm),
@@ -490,7 +602,10 @@ class _Summary extends StatelessWidget {
     );
   }
 
-  Future<void> _shareSheet(BuildContext context, VoidCallback openShare) {
+  Future<void> _shareSheet(
+    BuildContext context,
+    Future<void> Function(bool hideBrand) onShare,
+  ) {
     final l10n = JourneysL10n.of(context);
     return showUiSheet<void>(
       context: context,
@@ -498,9 +613,9 @@ class _Summary extends StatelessWidget {
         l10n: l10n,
         hideBrand: hideBrand,
         onHideBrand: onHideBrand,
-        onOpen: () {
+        onShare: (hide) {
           Navigator.of(ctx).pop();
-          openShare();
+          unawaited(onShare(hide));
         },
       ),
     );
@@ -512,13 +627,13 @@ class _ShareSheet extends StatefulWidget {
     required this.l10n,
     required this.hideBrand,
     required this.onHideBrand,
-    required this.onOpen,
+    required this.onShare,
   });
 
   final JourneysL10n l10n;
   final bool hideBrand;
   final ValueChanged<bool> onHideBrand;
-  final VoidCallback onOpen;
+  final ValueChanged<bool> onShare;
 
   @override
   State<_ShareSheet> createState() => _ShareSheetState();
@@ -555,13 +670,15 @@ class _ShareSheetState extends State<_ShareSheet> {
         ),
         const SizedBox(height: UiSpace.md),
         UiButton(
+          key: const ValueKey('wrapped-share-messages'),
           label: l10n.journeys_wrapped_messages,
-          onPressed: widget.onOpen,
+          onPressed: () => widget.onShare(_hide),
         ),
         const SizedBox(height: UiSpace.sm),
         UiButton.secondary(
+          key: const ValueKey('wrapped-share-other'),
           label: l10n.journeys_wrapped_otherApps,
-          onPressed: widget.onOpen,
+          onPressed: () => widget.onShare(_hide),
         ),
       ],
     );

@@ -406,6 +406,10 @@ Future<GoRouter> pumpSocial(
         builder: (_, _) => const Scaffold(body: Text('hub-journeys')),
       ),
       GoRoute(
+        path: '/journeys/new',
+        builder: (_, _) => const Scaffold(body: Text('create-journey-screen')),
+      ),
+      GoRoute(
         path: '/hub',
         builder: (_, _) => const Scaffold(
           body: SafeArea(

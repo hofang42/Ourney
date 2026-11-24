@@ -574,10 +574,14 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
         format,
         baseName: shareCardBaseName(journey.id, format),
       );
+      final token = activePublicToken(journey);
+      final link = token != null
+          ? 'https://ourney.tech/p/$token'
+          : 'https://ourney.tech';
       await sharer.shareImage(
         path: file.path,
         mimeType: file.mimeType,
-        text: l10n.share_card_shareText(journey.emoji, journey.title),
+        text: '${l10n.share_card_shareText(journey.emoji, journey.title)}\n$link',
         origin: _shareOrigin(),
       );
     } on Object {

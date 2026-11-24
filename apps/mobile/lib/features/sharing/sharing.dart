@@ -2,6 +2,7 @@
 /// screen, shelf).
 library;
 
+export 'data/sharing_providers.dart' show sharedWithMeProvider;
 export 'routes.dart' show sharingRoutes;
 export 'sharing_paths.dart' show SharingPaths;
 export 'ui/share_journey_sheet.dart' show showShareJourneySheet;

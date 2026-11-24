@@ -415,4 +415,7 @@ class SocialL10nVi extends SocialL10n {
   String social_shippedRequestAuthorTitle(String title) {
     return 'Đề xuất của bạn đã ra mắt: $title';
   }
+
+  @override
+  String get social_startJourneyTogether => 'Cùng bắt đầu hành trình';
 }

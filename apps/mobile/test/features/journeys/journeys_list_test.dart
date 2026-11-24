@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../app/test_helpers.dart';
+import '../sharing/sharing_fakes.dart' show FakeSharingRepository;
 import 'journeys_fakes.dart';
 
 /// Repository whose streams fail like the A3 placeholders (not wired yet).
@@ -143,6 +146,104 @@ void main() {
       expect(h.location, AppRoutes.journey('j1'));
       handle.dispose();
     });
+
+    testWidgets(
+      '/journeys?segment=shared opens the Hub on the Shared segment and re-selects after switching to Active (DE-18)',
+      (tester) async {
+        final j = testJourney();
+        final h = await pumpJourneys(
+          tester,
+          config: testBackendConfig,
+          userId: 'u1',
+          locale: const Locale('en'),
+          location: '${AppRoutes.journeys}?segment=shared',
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          extraOverrides: [
+            sharingRepositoryProvider.overrideWithValue(
+              FakeSharingRepository(),
+            ),
+          ],
+        );
+        expect(
+          find.byKey(const ValueKey('shared-with-me-empty')),
+          findsOneWidget,
+        );
+
+        // Switching manually to Active clears `?segment=shared` so a second
+        // navigation to `/journeys?segment=shared` from Inbox re-selects Shared.
+        await tester.tap(find.byKey(const ValueKey('hub-segment-active')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('journey-card-j1')), findsOneWidget);
+        expect(h.location, AppRoutes.journeys);
+
+        await h.go(tester, '${AppRoutes.journeys}?segment=shared');
+        expect(
+          find.byKey(const ValueKey('shared-with-me-empty')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'zero-own-journeys user with shared journeys keeps Shared segment and segmented bar (DE-18)',
+      (tester) async {
+        const friend = PersonSummary(
+          userId: 'u2',
+          username: 'nam',
+          displayName: 'Nam Tran',
+        );
+        final shared = SharedJourneySummary(
+          journeyId: 'sh1',
+          title: 'Da Lat Trip',
+          emoji: '✈️',
+          templateId: TemplateId.travel,
+          kind: JourneyKind.solo,
+          origin: JourneyOrigin.live,
+          status: JourneyStatus.active,
+          owner: friend,
+          sharedBy: friend,
+          sharedAt: DateTime.utc(2026, 10, 15),
+          photoCount: 1,
+          unseen: false,
+          saved: false,
+        );
+        await pumpJourneys(
+          tester,
+          config: testBackendConfig,
+          userId: 'u1',
+          locale: const Locale('en'),
+          journeys: FakeJourneyRepository(),
+          extraOverrides: [
+            sharingRepositoryProvider.overrideWithValue(
+              FakeSharingRepository(sharedWithMe: [shared]),
+            ),
+          ],
+        );
+        expect(find.byKey(const ValueKey('journeys-empty')), findsNothing);
+        expect(find.byKey(const ValueKey('shared-row-sh1')), findsOneWidget);
+
+        // Switching to Active · 0 keeps the segmented bar so Shared remains reachable.
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('hub-segment-active')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('hub-segment-active')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('journeys-empty')), findsNothing);
+        expect(find.byKey(const ValueKey('hub-segment-shared')), findsOneWidget);
+
+        await tester.ensureVisible(
+          find.byKey(const ValueKey('hub-segment-shared')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey('hub-segment-shared')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('shared-row-sh1')), findsOneWidget);
+      },
+    );
 
     testWidgets('no cap: 3 running journeys still open create (FR-B3)', (
       tester,

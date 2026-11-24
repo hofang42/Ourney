@@ -745,6 +745,12 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'Đề xuất của bạn đã ra mắt: {title}'**
   String social_shippedRequestAuthorTitle(String title);
+
+  /// Friend sheet positive action (DE-20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Cùng bắt đầu hành trình'**
+  String get social_startJourneyTogether;
 }
 
 class _SocialL10nDelegate extends LocalizationsDelegate<SocialL10n> {

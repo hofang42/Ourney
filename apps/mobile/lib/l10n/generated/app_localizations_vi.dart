@@ -217,4 +217,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get nav_journeySelected => 'đang chọn';
+
+  @override
+  String get notFound_title => 'Không tìm thấy trang này';
+
+  @override
+  String get notFound_body => 'Liên kết này không tồn tại hoặc đã thay đổi.';
+
+  @override
+  String get notFound_action => 'Về màn hình chụp';
 }

@@ -1,9 +1,16 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
+import 'package:ourney/app/localization.dart';
+import 'package:ourney/app/providers.dart';
+import 'package:ourney/app/theme/app_theme.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
+import 'package:ourney/features/journeys/ui/create/create_flow_screen.dart';
 import 'package:ourney/features/journeys/ui/create/create_widgets.dart';
 import 'package:ourney/features/journeys/ui/create/dna_questions.dart';
 import 'package:ourney/features/journeys/ui/widgets/departure_ticket.dart';
@@ -772,5 +779,65 @@ void _dnaGroup() {
       await _open(tester);
       expect(_key('create-import-link'), findsOneWidget);
     });
+
+    testWidgets(
+      'back at step 1 when !canPop() falls back to /journeys safely (DE-21)',
+      (tester) async {
+        final prefs = await testPrefs();
+        final router = GoRouter(
+          initialLocation: '/create-flow',
+          routes: [
+            GoRoute(
+              path: '/create-flow',
+              builder: (_, _) => const CreateFlowScreen(),
+            ),
+            GoRoute(
+              path: AppRoutes.journeys,
+              builder: (_, _) => const Scaffold(body: Text('hub-root')),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              sharedPreferencesProvider.overrideWithValue(prefs),
+              journeyRepositoryProvider.overrideWithValue(
+                FakeJourneyRepository(),
+              ),
+              deviceTimezoneProvider.overrideWith((ref) => testTz),
+            ],
+            child: MaterialApp.router(
+              theme: buildAppTheme(Brightness.light),
+              locale: const Locale('en'),
+              localizationsDelegates: ourneyLocalizationsDelegates,
+              supportedLocales: ourneySupportedLocales,
+              routerConfig: router,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(router.canPop(), isFalse);
+        await _tap(tester, 'create-back');
+        expect(tester.takeException(), isNull);
+        expect(find.text('hub-root'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      '/journeys/new?who=group preselects Squad on step 3 (DE-20)',
+      (tester) async {
+        final h = await pumpJourneys(
+          tester,
+          location: '${AppRoutes.journeyNew}?who=group',
+          locale: const Locale('en'),
+          config: testBackendConfig,
+          userId: 'u1',
+        );
+        await _pick(tester, 'template-workout_30');
+        await finish(tester);
+        expect(h.journeys.created.single.kind, JourneyKind.group);
+      },
+    );
   });
 }

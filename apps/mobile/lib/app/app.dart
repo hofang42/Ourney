@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ourney_core/ourney_core.dart' show JourneyStatus;
 
 import '../features/import/data/import_providers.dart'
     show importResumeProvider;
 import '../features/journeys/data/journeys_providers.dart'
-    show timeZoneWarmupProvider;
+    show journeysClockProvider, timeZoneWarmupProvider;
 import '../features/journeys/journeys_paths.dart';
 import '../features/journeys/ui/day_ticker.dart';
 import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
@@ -12,6 +16,7 @@ import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/profile/share_privacy_sync.dart' show SharePrivacyHealHook;
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../shared/time_zones.dart' show journeyLocalDate;
 import '../ui/ui.dart';
 import 'account_reset.dart';
 import 'locale_override.dart';
@@ -60,18 +65,20 @@ class OurneyApp extends ConsumerWidget {
       themeAnimationCurve: Curves.easeOutCubic,
       supportedLocales: ourneySupportedLocales,
       localizationsDelegates: ourneyLocalizationsDelegates,
-      // Reminders: reschedule on start/resume, open the journey on a
-      // notification tap (FR-G1, FR-G2).
+      // Reminders: reschedule on start/resume, open the journey camera on a
+      // notification or banner tap (FR-G1, FR-G2), falling back gracefully if
+      // the journey was deleted.
       builder: (context, child) => DayTicker(
         child: SharePrivacyHealHook(
           child: ReminderLifecycleHook(
-            onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
+            onOpenJourney: (id) =>
+                unawaited(_openReminderJourney(ref, router, id)),
             child: OurneyTextScaleClamp(
               // In-app reminder banner (V2 `ReminderNotification`): shown while
               // `reminderBannerProvider` holds a value; a tap opens the camera.
               child: ReminderBannerHost(
                 onOpenJourneyCamera: (id) =>
-                    router.go(JourneysPaths.captureFor(id)),
+                    unawaited(_openReminderJourney(ref, router, id)),
                 child: _SplashGate(
                   returning: onboarded,
                   child: child ?? const SizedBox.shrink(),
@@ -82,6 +89,34 @@ class OurneyApp extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openReminderJourney(
+    WidgetRef ref,
+    GoRouter router,
+    String id,
+  ) async {
+    var active = true;
+    try {
+      final journeys = await ref
+          .read(journeyRepositoryProvider)
+          .watchActive()
+          .first
+          .timeout(const Duration(seconds: 2));
+      final now = ref.read(journeysClockProvider).now();
+      active = journeys.any(
+        (j) =>
+            j.id == id &&
+            j.status == JourneyStatus.active &&
+            !j.isPastEndOn(journeyLocalDate(j.timezone, now)),
+      );
+    } on Object {
+      active = true;
+    }
+    if (active) {
+      unawaited(ref.read(activeJourneyIdProvider.notifier).select(id));
+    }
+    router.go(active ? JourneysPaths.captureFor(id) : AppRoutes.capture);
   }
 }
 

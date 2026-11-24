@@ -13,10 +13,10 @@ import '../../../app/overlays/missed_day_overlay.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../groups/groups_paths.dart';
 import '../../groups/ui/invite_sheet.dart';
 import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
-import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
 import '../data/long_timeline_state.dart';
 import '../domain/journey_progress.dart';
@@ -334,7 +334,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                   : () => context.push(JourneysPaths.wrapped(journey.id)),
               onShare: () => _share(context, journey),
               onSquad: journey.kind == JourneyKind.group
-                  ? () => context.go(AppRoutes.groups)
+                  ? () => context.go(GroupsPaths.today(journey.id))
                   : null,
             ),
             const SizedBox(height: UiSpace.lg),
@@ -762,7 +762,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     if (choice) {
       unawaited(context.push(AppRoutes.share(journey.id)));
     } else {
-      await showShareJourneySheet(context, journey);
+      unawaited(context.push(AppRoutes.shareJourney(journey.id)));
     }
   }
 

@@ -411,7 +411,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   Widget _newSharesCard(int count, bool unread) {
     final l10n = SocialL10n.of(context);
-    void open() => context.go(AppRoutes.journeys);
+    void open() => context.go('${AppRoutes.journeys}?segment=shared');
     return _ActivityCard(
       key: const ValueKey('inbox-new-shares'),
       badge: const _Badge('journeys', UiTypePastel.weightLoss),
@@ -420,6 +420,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       onTap: open,
       actions: [
         UiButton.secondary(
+          key: const ValueKey('inbox-shares-open'),
           label: l10n.social_view,
           compact: true,
           expand: false,

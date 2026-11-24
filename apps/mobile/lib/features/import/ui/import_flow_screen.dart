@@ -12,6 +12,7 @@ import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../shared/time_zones.dart';
 import '../../../ui/ui.dart';
+import '../../auth/l10n/generated/auth_localizations.dart';
 import '../../checkin/photo_compressor.dart';
 import '../../journeys/data/journeys_providers.dart';
 import '../data/import_draft.dart';
@@ -71,10 +72,6 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   @override
   void initState() {
     super.initState();
-    if (ref.read(appConfigProvider).localOnly) {
-      _loading = false;
-      return;
-    }
     final runner = ref.read(importJobRunnerProvider);
     runner.active.addListener(_onActive);
     _runner = runner;
@@ -176,9 +173,11 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
   /// A stored job (a kill, or failures kept on exit) comes back first; then
   /// photos Android held for us; then the picker opens at once.
   Future<void> _bootstrap() async {
+    final localOnly = ref.read(appConfigProvider).localOnly;
     try {
       final store = ref.read(importJobStoreProvider);
-      final me = ref.read(currentUserIdProvider);
+      final me =
+          ref.read(currentUserIdProvider) ?? (localOnly ? 'local' : null);
       for (final job in await store.unfinished()) {
         // Another account's leftover, a finished job, or one whose photos all
         // failed before a journey existed: nothing to show.
@@ -207,6 +206,10 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
       }
     } on Object catch (e) {
       debugPrint('import: cannot read stored jobs: $e');
+    }
+    if (localOnly) {
+      if (mounted) setState(() => _loading = false);
+      return;
     }
     List<ImportPhoto> lost = const [];
     try {
@@ -319,7 +322,9 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     if (!_canSave || _running || _saving) return;
     setState(() => _saving = true);
     try {
-      final owner = ref.read(currentUserIdProvider);
+      final owner =
+          ref.read(currentUserIdProvider) ??
+          (ref.read(appConfigProvider).localOnly ? 'local' : null);
       if (owner == null) throw const OurneyException(OurneyErrorCode.unknown);
       final tz = await _timezone();
       if (!mounted) return;
@@ -508,7 +513,7 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     final l10n = ImportL10n.of(context);
     // Keeps the zone loading and rebuilds once it is known.
     ref.watch(deviceTimezoneProvider);
-    if (ref.watch(appConfigProvider).localOnly) {
+    if (ref.watch(appConfigProvider).localOnly && _stage != _Stage.job) {
       final app = AppLocalizations.of(context);
       return UiScaffold(
         scroll: false,
@@ -1108,7 +1113,10 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     final total = job.photos.length;
     final unsaved = total - job.saved;
     final signedOut =
-        !running && unsaved > 0 && ref.watch(currentUserIdProvider) == null;
+        !ref.watch(appConfigProvider).localOnly &&
+        !running &&
+        unsaved > 0 &&
+        ref.watch(currentUserIdProvider) == null;
     final createFailure = running || signedOut ? null : job.createFailure;
     final paused = !running && !signedOut && job.paused && unsaved > 0;
     final String title;
@@ -1217,8 +1225,19 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     final exists =
         job.phase == ImportPhase.uploading || job.phase == ImportPhase.done;
     // Signed out (an expired session): saving waits for the same person; the
-    // job and its photos are kept. Nothing to press here.
-    if (unsaved > 0 && ref.watch(currentUserIdProvider) == null) return null;
+    // job and its photos are kept. Offer a way back to sign in.
+    if (!ref.watch(appConfigProvider).localOnly &&
+        unsaved > 0 &&
+        ref.watch(currentUserIdProvider) == null) {
+      return UiButton(
+        key: const ValueKey('import-sign-in'),
+        label: AuthL10n.of(context).auth_signIn,
+        onPressed: () => context.go(
+          '${AppRoutes.auth}?${AppRoutes.fromParam}='
+          '${Uri.encodeQueryComponent(AppRoutes.importJourney)}',
+        ),
+      );
+    }
     if (job.createFailure != null) {
       // Only a refused create (nothing reached the server) can be edited. After
       // an offline or unknown failure the journey may already exist, and its

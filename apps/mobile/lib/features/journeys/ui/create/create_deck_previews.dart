@@ -19,16 +19,10 @@ class CreateDeckPreview extends StatelessWidget {
     return switch (skinId) {
       'quiet' => _QuietPreview(ui: ui, privateLabel: l10n.journeys_deckPrivate),
       'squad' => _SquadPreview(ui: ui),
-      'flexer' => CustomPaint(
-        painter: _FlexerPreviewPainter(accent: ui.accent, contrast: ui.brand),
-        child: const SizedBox.expand(),
-      ),
+      'flexer' => _FlexerPreview(ui: ui),
       'memory' => _MemoryPreview(ui: ui),
       'couple' => _CouplePreview(ui: ui),
-      _ => CustomPaint(
-        painter: _MinimalPreviewPainter(ink: ui.ink, accent: ui.accent),
-        child: const SizedBox.expand(),
-      ),
+      _ => _MinimalPreview(ui: ui),
     };
   }
 }
@@ -54,6 +48,20 @@ class _QuietPreview extends StatelessWidget {
         return Stack(
           fit: StackFit.expand,
           children: [
+            Image.asset(
+              'assets/samples/weight_loss/cover.webp',
+              key: const ValueKey('deck-photo-quiet'),
+              fit: BoxFit.cover,
+              cacheWidth: 960,
+              excludeFromSemantics: true,
+              errorBuilder: (context, error, stackTrace) =>
+                  ColoredBox(color: ui.ink.withValues(alpha: 0.05)),
+            ),
+            IgnorePointer(
+              child: ColoredBox(
+                color: ui.bg.withValues(alpha: ui.isDark ? 0.38 : 0.18),
+              ),
+            ),
             CustomPaint(painter: _QuietCurvePainter(accent: ui.accent)),
             for (final pt in points)
               Positioned(
@@ -141,17 +149,23 @@ class _SquadPreview extends StatelessWidget {
 
   final OurneyUi ui;
 
+  static const _photos = [
+    'assets/samples/ielts_study/08.webp',
+    'assets/samples/ielts_study/09.webp',
+    'assets/samples/ielts_study/10.webp',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
         final h = c.maxHeight;
-        final nodeSize = math.min(36.0, h * 0.36);
+        final nodeSize = math.min(40.0, h * 0.35);
         final points = [
-          Offset(w * 0.20, h * 0.72),
-          Offset(w * 0.50, h * 0.48),
-          Offset(w * 0.80, h * 0.26),
+          Offset(w * 0.20, h * 0.76),
+          Offset(w * 0.48, h * 0.56),
+          Offset(w * 0.76, h * 0.38),
         ];
         return Stack(
           fit: StackFit.expand,
@@ -161,18 +175,73 @@ class _SquadPreview extends StatelessWidget {
               Positioned(
                 left: points[i].dx - nodeSize / 2,
                 top: points[i].dy - nodeSize / 2,
-                child: Container(
+                child: SizedBox(
                   width: nodeSize,
                   height: nodeSize,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: ui.accent,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: ui.outline, width: 2),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        clipBehavior: Clip.antiAlias,
+                        decoration: BoxDecoration(
+                          color: ui.accent,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: ui.outline, width: 2),
+                        ),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.asset(
+                              _photos[i],
+                              key: ValueKey('deck-photo-squad-$i'),
+                              fit: BoxFit.cover,
+                              cacheWidth: 186,
+                              excludeFromSemantics: true,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  ColoredBox(
+                                    color: ui.accent,
+                                    child: i == points.length - 1
+                                        ? const Center(
+                                            child: OurneyIcon(
+                                              name: 'trophy',
+                                              size: 20,
+                                              active: true,
+                                              inkColor: UiFlowColors.onPastel,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                            ),
+                            if (ui.isDark)
+                              const IgnorePointer(
+                                child: ColoredBox(color: Color(0x22000000)),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (i == points.length - 1)
+                        Positioned(
+                          right: -4,
+                          bottom: -4,
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: ui.surface,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: ui.outline, width: 1.5),
+                            ),
+                            child: const OurneyIcon(
+                              name: 'trophy',
+                              size: 13,
+                              active: true,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  child: i == points.length - 1
-                      ? const OurneyIcon(name: 'trophy', size: 22, active: true)
-                      : null,
                 ),
               ),
           ],
@@ -190,22 +259,22 @@ class _SquadPathPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final path = Path()
-      ..moveTo(size.width * 0.20, size.height * 0.72)
+      ..moveTo(size.width * 0.20, size.height * 0.76)
       ..cubicTo(
-        size.width * 0.46,
-        size.height * 0.74,
-        size.width * 0.30,
-        size.height * 0.48,
-        size.width * 0.50,
-        size.height * 0.48,
+        size.width * 0.44,
+        size.height * 0.78,
+        size.width * 0.28,
+        size.height * 0.56,
+        size.width * 0.48,
+        size.height * 0.56,
       )
       ..cubicTo(
-        size.width * 0.70,
-        size.height * 0.48,
-        size.width * 0.54,
-        size.height * 0.24,
-        size.width * 0.80,
-        size.height * 0.26,
+        size.width * 0.68,
+        size.height * 0.56,
+        size.width * 0.52,
+        size.height * 0.36,
+        size.width * 0.76,
+        size.height * 0.38,
       );
     final paint = Paint()
       ..color = ink
@@ -224,6 +293,42 @@ class _SquadPathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_SquadPathPainter old) => old.ink != ink;
+}
+
+class _FlexerPreview extends StatelessWidget {
+  const _FlexerPreview({required this.ui});
+
+  final OurneyUi ui;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(
+          'assets/samples/morning_run/cover.webp',
+          key: const ValueKey('deck-photo-flexer'),
+          fit: BoxFit.cover,
+          cacheWidth: 540,
+          excludeFromSemantics: true,
+          errorBuilder: (context, error, stackTrace) =>
+              ColoredBox(color: ui.ink.withValues(alpha: 0.05)),
+        ),
+        IgnorePointer(
+          child: ColoredBox(
+            color: ui.bg.withValues(alpha: ui.isDark ? 0.32 : 0.14),
+          ),
+        ),
+        CustomPaint(
+          painter: _FlexerPreviewPainter(
+            accent: ui.accent,
+            contrast: ui.brand,
+          ),
+          child: const SizedBox.expand(),
+        ),
+      ],
+    );
+  }
 }
 
 class _FlexerPreviewPainter extends CustomPainter {
@@ -245,13 +350,13 @@ class _FlexerPreviewPainter extends CustomPainter {
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(
-      Offset(size.width * 0.12, size.height * 0.36),
-      Offset(size.width * 0.88, size.height * 0.54),
+      Offset(size.width * 0.12, size.height * 0.62),
+      Offset(size.width * 0.88, size.height * 0.75),
       p1,
     );
     canvas.drawLine(
-      Offset(size.width * 0.12, size.height * 0.54),
-      Offset(size.width * 0.88, size.height * 0.72),
+      Offset(size.width * 0.12, size.height * 0.74),
+      Offset(size.width * 0.88, size.height * 0.87),
       p2,
     );
   }
@@ -293,10 +398,31 @@ class _MemoryPreview extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Expanded(
-                          child: Container(
+                          child: ColoredBox(
                             color: ui.accent,
-                            alignment: Alignment.center,
-                            child: const OurneyIcon(name: 'trip', size: 42),
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                Image.asset(
+                                  'assets/samples/travel_dalat/02.webp',
+                                  key: const ValueKey('deck-photo-memory'),
+                                  fit: BoxFit.cover,
+                                  cacheWidth: 336,
+                                  excludeFromSemantics: true,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Center(
+                                        child: OurneyIcon(
+                                          name: 'trip',
+                                          size: 42,
+                                        ),
+                                      ),
+                                ),
+                                if (ui.isDark)
+                                  const IgnorePointer(
+                                    child: ColoredBox(color: Color(0x22000000)),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -365,6 +491,27 @@ class _CouplePreview extends StatelessWidget {
       end: Alignment.bottomRight,
       colors: [ui.accent, ui.surface],
     );
+    Widget pane(String asset, String key) => DecoratedBox(
+      decoration: BoxDecoration(gradient: gradient),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.asset(
+            asset,
+            key: ValueKey(key),
+            fit: BoxFit.cover,
+            cacheWidth: 360,
+            excludeFromSemantics: true,
+            errorBuilder: (context, error, stackTrace) =>
+                DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+          ),
+          if (ui.isDark)
+            const IgnorePointer(
+              child: ColoredBox(color: Color(0x24000000)),
+            ),
+        ],
+      ),
+    );
     return Stack(
       alignment: Alignment.center,
       children: [
@@ -372,14 +519,16 @@ class _CouplePreview extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: gradient),
+              child: pane(
+                'assets/samples/couple_rituals/01.webp',
+                'deck-photo-couple-0',
               ),
             ),
             const SizedBox(width: 3),
             Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(gradient: gradient),
+              child: pane(
+                'assets/samples/couple_rituals/02.webp',
+                'deck-photo-couple-1',
               ),
             ),
           ],
@@ -400,36 +549,120 @@ class _CouplePreview extends StatelessWidget {
   }
 }
 
+class _MinimalPreview extends StatelessWidget {
+  const _MinimalPreview({required this.ui});
+
+  final OurneyUi ui;
+
+  static const _photos = [
+    'assets/samples/reading_10_pages/01.webp',
+    'assets/samples/reading_10_pages/02.webp',
+    'assets/samples/reading_10_pages/03.webp',
+    'assets/samples/reading_10_pages/04.webp',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final h = c.maxHeight;
+        final hPad = w * 0.07;
+        final gridWidth = w - hPad * 2;
+        final colWidth = gridWidth / _photos.length;
+        final tileSize = math.min(36.0, math.min(colWidth - 6, h * 0.32));
+        final midY = h * 0.54;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomPaint(
+              painter: _MinimalPreviewPainter(
+                ink: ui.ink,
+                accent: ui.accent,
+                columns: _photos.length,
+                hPadFraction: 0.07,
+                midYFraction: 0.54,
+              ),
+              child: const SizedBox.expand(),
+            ),
+            for (var i = 0; i < _photos.length; i++)
+              Positioned(
+                left: hPad + colWidth * (i + 0.5) - tileSize / 2,
+                top: midY - tileSize / 2,
+                width: tileSize,
+                height: tileSize,
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: ui.surface,
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(color: ui.outline, width: 1.5),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(
+                        _photos[i],
+                        key: ValueKey('deck-photo-minimal-$i'),
+                        fit: BoxFit.cover,
+                        cacheWidth: 186,
+                        excludeFromSemantics: true,
+                        errorBuilder: (context, error, stackTrace) =>
+                            ColoredBox(color: ui.surface),
+                      ),
+                      if (ui.isDark)
+                        const IgnorePointer(
+                          child: ColoredBox(color: Color(0x22000000)),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _MinimalPreviewPainter extends CustomPainter {
-  const _MinimalPreviewPainter({required this.ink, required this.accent});
+  const _MinimalPreviewPainter({
+    required this.ink,
+    required this.accent,
+    this.columns = 4,
+    this.hPadFraction = 0.07,
+    this.midYFraction = 0.54,
+  });
 
   final Color ink;
   final Color accent;
+  final int columns;
+  final double hPadFraction;
+  final double midYFraction;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final hPad = size.width * 0.08;
-    final vPad = size.height * 0.22;
+    final hPad = size.width * hPadFraction;
+    final top = size.height * 0.25;
+    final bottom = size.height * 0.82;
     final left = hPad;
     final right = size.width - hPad;
-    final top = vPad;
-    final bottom = size.height - vPad;
     final gridWidth = right - left;
-    final colWidth = gridWidth / 7;
+    final colWidth = gridWidth / columns;
 
     final gridPaint = Paint()
-      ..color = ink
+      ..color = ink.withValues(alpha: 0.35)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
-    for (var i = 1; i <= 6; i++) {
+    for (var i = 1; i < columns; i++) {
       final x = left + colWidth * i;
       canvas.drawLine(Offset(x, top), Offset(x, bottom), gridPaint);
     }
 
-    final midY = size.height / 2;
+    final midY = size.height * midYFraction;
     final accentPaint = Paint()
       ..color = accent
-      ..strokeWidth = 3
+      ..strokeWidth = 3.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(left, midY), Offset(right, midY), accentPaint);
@@ -437,7 +670,11 @@ class _MinimalPreviewPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MinimalPreviewPainter old) =>
-      old.ink != ink || old.accent != accent;
+      old.ink != ink ||
+      old.accent != accent ||
+      old.columns != columns ||
+      old.hPadFraction != hPadFraction ||
+      old.midYFraction != midYFraction;
 }
 
 /// Mini HUD strip shown below the preview in a create-flow type deck card.
