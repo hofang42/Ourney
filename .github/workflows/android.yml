@@ -44,38 +44,60 @@ jobs:
       - name: Generate localizations
         working-directory: apps/mobile
         run: |
-          if [ -f l10n.yaml ]; then flutter gen-l10n; fi
+          dart run tool/gen_l10n.dart
+          git diff --exit-code
 
-      # Optional release signing. Without ANDROID_KEYSTORE_BASE64 the APK is signed with the debug key
-      # (fine for v1 sideloading). With it, we write android/key.properties (storeFile, storePassword,
-      # keyAlias, keyPassword); android/app/build.gradle.kts must read that file to use it
-      # (follow-up for the Android platform owner).
-      - name: Prepare release keystore (optional)
+      # Release signing: required on v* release tags (FS-04); optional on manual workflow_dispatch.
+      - name: Prepare release keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          if [[ "${GITHUB_REF:-}" == refs/tags/v* ]]; then
+            if [ -z "${ANDROID_KEYSTORE_BASE64//[[:space:]]/}" ] || [ -z "${ANDROID_KEYSTORE_PASSWORD//[[:space:]]/}" ] || [ -z "${ANDROID_KEY_ALIAS//[[:space:]]/}" ] || [ -z "${ANDROID_KEY_PASSWORD//[[:space:]]/}" ]; then
+              echo "::error::Release tag builds (v*) require ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD secrets."
+              exit 1
+            fi
+          fi
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
             echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-            {
-              echo "storeFile=$RUNNER_TEMP/release.jks"
-              echo "storePassword=$ANDROID_KEYSTORE_PASSWORD"
-              echo "keyAlias=$ANDROID_KEY_ALIAS"
-              echo "keyPassword=$ANDROID_KEY_PASSWORD"
-            } > apps/mobile/android/key.properties
+            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            python3 -c '
+          import os, pathlib
+          def esc(s):
+              s = s.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r")
+              if s.startswith((" ", "\t", "\f")):
+                  s = "\\" + s
+              return s
+          rt = esc(os.environ["RUNNER_TEMP"])
+          sp = esc(os.environ.get("ANDROID_KEYSTORE_PASSWORD", ""))
+          ka = esc(os.environ.get("ANDROID_KEY_ALIAS", ""))
+          kp = esc(os.environ.get("ANDROID_KEY_PASSWORD", ""))
+          lines = [
+              f"storeFile={rt}/release.jks",
+              f"storePassword={sp}",
+              f"keyAlias={ka}",
+              f"keyPassword={kp}",
+          ]
+          pathlib.Path("apps/mobile/android/key.properties").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          '
           else
             echo "ANDROID_KEYSTORE_BASE64 not set; APK will be debug-signed."
           fi
 
-      - name: Write dart-define file (optional)
+      - name: Write dart-define file
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPPORT_EMAIL: ${{ secrets.SUPPORT_EMAIL }}
         # SUPPORT_EMAIL is only added when set (the app falls back to its default otherwise).
         run: |
+          if [[ "${GITHUB_REF:-}" == refs/tags/v* ]] && { [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; }; then
+            echo "::error::Release tag builds (v*) require SUPABASE_URL and SUPABASE_ANON_KEY secrets so production APKs never ship in localOnly mode."
+            exit 1
+          fi
           if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ] || [ -n "$SUPPORT_EMAIL" ]; then
             jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" --arg e "$SUPPORT_EMAIL" \
               '(if $u != "" or $k != "" then {SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k} else {} end)
@@ -85,8 +107,14 @@ jobs:
 
       - name: Build APK (release)
         working-directory: apps/mobile
+        timeout-minutes: 25
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GRADLE_OPTS: -Dorg.gradle.workers.max=2
         run: |
-          args=(--release)
+          args=(--release --no-android-gradle-daemon --verbose)
           if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then
             args+=("--dart-define-from-file=$DART_DEFINES_FILE")
           fi
@@ -108,3 +136,25 @@ jobs:
         with:
           files: Ourney.apk
           generate_release_notes: true
+
+      # Mirrors the APK to the public repo so ourney.tech/Ourney.apk works while
+      # this repo stays private. Needs a PUBLIC_RELEASE_TOKEN secret with write
+      # access to hofang42/ourney-releases; skipped with a warning when unset.
+      - name: Publish APK to public release repo (hofang42/ourney-releases)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_RELEASE_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          if [ -z "${GH_TOKEN//[[:space:]]/}" ]; then
+            echo "::warning::PUBLIC_RELEASE_TOKEN not set; skipping mirror to hofang42/ourney-releases."
+            exit 0
+          fi
+          if gh release view "$TAG_NAME" --repo hofang42/ourney-releases >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" Ourney.apk --repo hofang42/ourney-releases --clobber
+          else
+            gh release create "$TAG_NAME" Ourney.apk \
+              --repo hofang42/ourney-releases \
+              --title "Ourney $TAG_NAME" \
+              --notes "Ourney Android Release ($TAG_NAME). Tải và mở file Ourney.apk để cài đặt."
+          fi

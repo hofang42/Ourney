@@ -8,7 +8,9 @@ import 'buttons.dart';
 
 /// V2 `.app-sheet`: 24dp top radius, 2dp outline on top/left/right only,
 /// hard `0 -4px 0` top shadow in [accent], grabber, solid `ui.bg` body.
-/// Enter motion (190ms ease-out) is supplied by [showUiSheet]. Content scrolls
+/// Enter motion (260ms [UiCurves.drawer]) and exit motion (190ms
+/// [UiCurves.easeOutStrong], 0ms under Reduce Motion) are supplied by
+/// [showUiSheet]. Content scrolls
 /// when taller than the available height, so large text never overflows.
 class UiSheet extends StatelessWidget {
   const UiSheet({
@@ -140,7 +142,8 @@ Future<T?> showUiSheet<T>({
   Color? accent,
 }) {
   final ui = context.ui;
-  final duration = UiMotion.of(context, const Duration(milliseconds: 190));
+  final enterDuration = UiMotion.of(context, UiMotion.sheetEnter);
+  final exitDuration = UiMotion.of(context, UiMotion.sheetExit);
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -153,9 +156,10 @@ Future<T?> showUiSheet<T>({
     barrierColor: ui.scrim,
     constraints: const BoxConstraints(maxWidth: double.infinity),
     sheetAnimationStyle: AnimationStyle(
-      duration: duration,
-      reverseDuration: duration,
-      curve: Curves.easeOut,
+      duration: enterDuration,
+      reverseDuration: exitDuration,
+      curve: UiCurves.drawer,
+      reverseCurve: UiCurves.easeOutStrong,
     ),
     builder: (context) => UiSheet(accent: accent, child: builder(context)),
   );

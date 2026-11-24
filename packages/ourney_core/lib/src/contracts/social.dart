@@ -256,6 +256,9 @@ class SharedJourneySummary {
     this.firstDate,
     this.lastDate,
     this.coverThumbPath,
+    this.layout,
+    this.color,
+    this.coverBlurred = false,
   });
 
   final String journeyId;
@@ -281,6 +284,9 @@ class SharedJourneySummary {
   final LocalDate? firstDate;
   final LocalDate? lastDate;
   final String? coverThumbPath;
+  final PersonaSkinId? layout;
+  final int? color;
+  final bool coverBlurred;
 }
 
 /// One photo as a viewer sees it (hidden-in-share and non-consenting
@@ -297,6 +303,7 @@ class SharedPhoto {
     this.caption,
     this.metricValue,
     this.blurred = false,
+    this.partnerPhotoPath,
   });
 
   final String checkInId;
@@ -316,6 +323,9 @@ class SharedPhoto {
 
   /// Author asked to blur photos on outside shares (`blur_media`).
   final bool blurred;
+
+  /// Optional second frame on couple journeys.
+  final String? partnerPhotoPath;
 }
 
 /// What can be copied by "Do this journey" (S15): never photos or values.
@@ -375,6 +385,9 @@ class SharedJourneyView {
     this.metricName,
     this.metricUnit,
     this.sharedBy,
+    this.layout,
+    this.color,
+    this.coverBlurred = false,
   });
 
   final String journeyId;
@@ -418,6 +431,15 @@ class SharedJourneyView {
 
   /// In the caller's Shared with me → Saved (S26).
   final bool saved;
+
+  /// Owner's skin override (`journeys.layout`, 0012).
+  final PersonaSkinId? layout;
+
+  /// Owner's colour variant (`journeys.color`, 0..2, 0012).
+  final int? color;
+
+  /// Whether the cover photo is blurred (`blur_media`, FS-23).
+  final bool coverBlurred;
 }
 
 /// Sharing, story, follow-along and retold journeys.
@@ -649,6 +671,7 @@ class InboxCounts {
     required this.unreadMessages,
     required this.consentRequests,
     this.groupInvitations = 0,
+    this.shippedRequests = 0,
   });
 
   final int friendRequests;
@@ -660,12 +683,16 @@ class InboxCounts {
   /// Pending group invitations (migration 0010).
   final int groupInvitations;
 
+  /// Unseen shipped feature requests the user voted for or authored (0024).
+  final int shippedRequests;
+
   bool get hasDot =>
       friendRequests +
           newShares +
           unreadMessages +
           consentRequests +
-          groupInvitations >
+          groupInvitations +
+          shippedRequests >
       0;
 }
 

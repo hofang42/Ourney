@@ -231,12 +231,13 @@ abstract interface class GroupRepository {
 }
 
 abstract interface class SafetyRepository {
-  /// `report_content`: at least one of [checkInId] / [userId]. The reported
-  /// check-in is hidden from the reporter at once. Throws `invalid`,
-  /// `notFound`, `rateLimited` (20 reports / 24 h).
+  /// `report_content`: at least one of [checkInId] / [userId] / [messageId].
+  /// The reported check-in or message is hidden from the reporter at once.
+  /// Throws `invalid`, `notFound`, `rateLimited` (20 reports / 24 h).
   Future<void> report(
       {String? checkInId,
       String? userId,
+      String? messageId,
       required ReportReason reason,
       String? note});
 
@@ -272,6 +273,8 @@ enum OurneyErrorCode {
   notAlone('not_alone'),
   rateLimited('rate_limited'),
   immutableColumn('immutable_column'), // 23514
+  contentPolicy('content_policy'), // 23514 (0020 objectionable_words filter)
+  linksNotAllowed('links_not_allowed'), // 23514 (0024 URL guard)
   invalidCapturedAt('invalid_captured_at'), // 22008
   consentRequired('consent_required'), // v1.3: group share needs consent first
   // Edge Function codes.
@@ -313,9 +316,12 @@ enum OurneyErrorCode {
     if (message != null) {
       final byMessage = fromWire(message);
       if (byMessage != unknown) return byMessage;
+      if (message.toLowerCase().contains('could not find the function')) {
+        return serverOutdated;
+      }
     }
     switch (sqlstate) {
-      case 'PGRST202' || 'PGRST203':
+      case 'PGRST202' || 'PGRST203' || '42883':
         return serverOutdated;
       case '42501':
         return forbidden;

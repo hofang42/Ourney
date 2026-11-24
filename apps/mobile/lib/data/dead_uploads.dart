@@ -44,7 +44,7 @@ class DeadUploads {
         final c = await (_ctx.db.select(
           _ctx.db.checkIns,
         )..where((t) => t.id.equals(id))).getSingleOrNull();
-        if (c == null) continue;
+        if (c == null || c.uploaded) continue;
         if (journeyId != null && c.journeyId != journeyId) continue;
         out.add(
           DeadUpload(

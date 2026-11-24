@@ -205,6 +205,16 @@ class SafetyL10nVi extends SafetyL10n {
       'Không mở được ứng dụng email. Hãy sao chép địa chỉ và gửi từ ứng dụng bạn dùng.';
 
   @override
+  String get safety_contactFeatureTitle => 'Muốn đề xuất tính năng mới?';
+
+  @override
+  String get safety_contactFeatureBody =>
+      'Xem bảng ý tưởng cộng đồng, bình chọn tính năng bạn cần và nhận thông báo khi ra mắt.';
+
+  @override
+  String get safety_contactFeatureCta => 'Mở bảng đề xuất';
+
+  @override
   String safety_lastUpdated(String date) {
     return 'Cập nhật lần cuối: $date';
   }

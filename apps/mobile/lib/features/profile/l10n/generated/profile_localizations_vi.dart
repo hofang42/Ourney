@@ -363,6 +363,13 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_secInfo => 'thông tin';
 
   @override
+  String get profile_settings_featureRequests => 'Góp ý & đề xuất tính năng';
+
+  @override
+  String get profile_settings_featureRequestsSub =>
+      'Bình chọn ý tưởng hoặc gửi đề xuất mới';
+
+  @override
   String get profile_settings_eula => 'Điều khoản sử dụng (EULA)';
 
   @override

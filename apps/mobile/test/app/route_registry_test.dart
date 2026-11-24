@@ -46,6 +46,7 @@ void main() {
     'social',
     'sharing',
     'import',
+    'feedback',
   ];
 
   test('every feature folder is registered with route prefixes', () {
@@ -112,8 +113,12 @@ void main() {
         AppRoutes.auth,
         AppRoutes.profile,
         '/share/:journeyId',
+        '/f/:token',
+        '/p/:token',
         AppRoutes.safety,
         AppRoutes.reminders,
+        AppRoutes.feedback,
+        '/feedback/:id',
       ]),
     );
     // Every static const route path declared on AppRoutes must resolve to a

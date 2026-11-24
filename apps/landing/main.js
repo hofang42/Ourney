@@ -47,6 +47,9 @@
       hero_lede: 'Nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì — học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay thói quen nhỏ. Đi một mình hoặc rủ cả nhóm.',
       hero_cta_primary: 'nhận lời mời beta',
       hero_cta_secondary: 'xem 6 giao diện',
+      hero_cta_android: 'tải ngay cho Android (APK)',
+      hero_cta_ios: 'iOS · nhận thông tin beta',
+      hero_apk_note: 'Android tải trực tiếp file .apk (nếu Play Protect hỏi, chạm “Vẫn cài đặt”). iOS điền email bên dưới để nhận thông tin beta.',
       hero_scroll_aria: 'Cuộn xuống xem 6 giao diện',
       dock_cta_aria: 'Nhận lời mời beta',
       dock_cta_text: 'Ngày 1 bắt đầu hôm nay.',
@@ -137,12 +140,16 @@
       faq_a4: 'Chụp nhiều tấm trong ngày sẽ gom gọn vào ngày hôm đó (chuỗi vẫn tính 1 ngày). Bạn cũng có thể nhập ảnh từ chuyến đi đã qua theo ngày chụp — app sẽ xếp thành timeline kỷ niệm mà không làm sai lệch chuỗi ngày thực tế.',
       faq_q5: 'Khi nào Ourney mở tải trên iOS và Android?',
       faq_a5: 'Ourney được phát triển đồng thời bằng Flutter cho cả iOS và Android. Để lại email ở vé bên dưới để nhận lời mời thử nghiệm beta đợt đầu tiên cho iOS và Android.',
-      beta_eyebrow: 'beta sắp mở cửa',
+      beta_eyebrow: 'tải bản beta · android & ios',
       beta_h2: 'ngày 1 của bạn bắt đầu từ hôm nay.',
+      beta_apk_kicker: 'Đã có bản cài đặt trực tiếp',
+      beta_apk_btn: 'tải xuống ngay cho Android (Ourney.apk)',
+      beta_apk_note: 'Mở file Ourney.apk vừa tải và cho phép cài từ trình duyệt. Nếu Google Play Protect cảnh báo (vì bản beta chưa lên Play Store), chọn “Chi tiết khác” → “Vẫn cài đặt”.',
+      beta_ios_lead: 'Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:',
       beta_plat_aria: 'Chọn nền tảng điện thoại',
       beta_email_label: 'Email',
       beta_placeholder: 'ban@email-cua-ban.vn',
-      beta_submit: 'nhận lời mời',
+      beta_submit: 'nhận thông tin beta',
       beta_stub_kicker: 'NGÀY 01',
       beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
@@ -202,6 +209,9 @@
       hero_lede: 'A daily photo journal for what you want to stick with — studying, running, body goals, a trip, or a tiny habit. Go solo or bring your squad.',
       hero_cta_primary: 'get beta invite',
       hero_cta_secondary: 'see 6 skins',
+      hero_cta_android: 'download for Android (APK)',
+      hero_cta_ios: 'iOS · get beta updates',
+      hero_apk_note: 'Android downloads the .apk directly (if Play Protect prompts, tap “Install anyway”). iOS can leave an email below for beta updates.',
       hero_scroll_aria: 'Scroll down to explore 6 skins',
       dock_cta_aria: 'Get beta invite',
       dock_cta_text: 'Day 1 starts today.',
@@ -292,12 +302,16 @@
       faq_a4: 'Multiple photos on the same day group cleanly into that day while counting once toward your streak. You can also import past trip photos by capture date into a keepsake timeline without inflating live streaks.',
       faq_q5: 'When will Ourney launch on iOS and Android?',
       faq_a5: 'Ourney is built for both iOS and Android. Drop your email on the ticket below to get first-wave iOS and Android beta invites.',
-      beta_eyebrow: 'beta opening soon',
+      beta_eyebrow: 'beta release · android & ios',
       beta_h2: 'your day 1 starts today.',
+      beta_apk_kicker: 'Direct install available now',
+      beta_apk_btn: 'download now for Android (Ourney.apk)',
+      beta_apk_note: 'Open the downloaded Ourney.apk and allow install from your browser. If Google Play Protect warns (pre-Play Store beta), tap “More details” → “Install anyway”.',
+      beta_ios_lead: 'Using iOS (iPhone) or want notifications when a new update drops? Leave your email for beta updates:',
       beta_plat_aria: 'Select phone platform',
       beta_email_label: 'Email',
       beta_placeholder: 'you@example.com',
-      beta_submit: 'get beta invite',
+      beta_submit: 'get beta updates',
       beta_stub_kicker: 'DAY 01',
       beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
@@ -996,6 +1010,20 @@
     pill.addEventListener('click', () => {
       const cur = pill.getAttribute('aria-pressed') === 'true';
       pill.setAttribute('aria-pressed', String(!cur));
+    });
+  });
+
+  document.querySelectorAll('[data-select-plat]').forEach((link) => {
+    link.addEventListener('click', () => {
+      const targetPlat = link.getAttribute('data-select-plat');
+      if (targetPlat) {
+        document.querySelectorAll('.plat-pill').forEach((pill) => {
+          pill.setAttribute('aria-pressed', String(pill.getAttribute('data-plat') === targetPlat));
+        });
+      }
+      setTimeout(() => {
+        if (email) email.focus({ preventScroll: true });
+      }, 320);
     });
   });
 

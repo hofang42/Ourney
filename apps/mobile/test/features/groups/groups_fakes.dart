@@ -218,6 +218,7 @@ class FakeSafetyRepository implements SafetyRepository {
   Future<void> report({
     String? checkInId,
     String? userId,
+    String? messageId,
     required ReportReason reason,
     String? note,
   }) async {}

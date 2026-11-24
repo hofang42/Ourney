@@ -74,6 +74,8 @@ export SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... SUPABASE_DB_PASSWORD=.
 bash scripts/supabase/deploy-hosted.sh --dry-run
 ```
 
+Nếu dry run báo *"Found local migration files to be inserted before the last migration on remote database"*: có migration số nhỏ hơn migration mới nhất trên remote (merge không theo thứ tự). Kiểm tra các file đó chạy sau migration mới hơn có an toàn không (idempotent, không ghi đè bản vá mới hơn), rồi chạy lại workflow với `include_all` = **true** (hoặc thêm `--include-all`).
+
 ### 4.2 Deploy thật
 Chạy lại workflow với `dry_run` = **false** (hoặc bỏ `--dry-run`). Script lần lượt:
 

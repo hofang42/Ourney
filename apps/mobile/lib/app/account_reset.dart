@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/feedback/data/feedback_providers.dart';
 import '../features/import/data/import_providers.dart';
 import '../features/journeys/data/create_progress.dart';
 import '../features/onboarding/onboarding_providers.dart';
@@ -9,6 +10,7 @@ import '../features/profile/settings_providers.dart';
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../features/reminders/data/reminder_settings.dart';
 import '../features/safety/data/safety_providers.dart';
+import 'overlays/reminder_banner.dart';
 import 'providers.dart';
 
 /// Shared-preferences keys that belong to the signed-in account rather than
@@ -25,6 +27,8 @@ const List<String> accountPrefsKeys = [
   SharePrivacyPrefs.hideWeight,
   SharePrivacyPrefs.blurPhotos,
   SharePrivacyPrefs.pendingHeal,
+  ReminderPrefs.streakAlerts,
+  ReminderPrefs.promptOffered,
 ];
 
 /// The user id the per-account prefs above were written for.
@@ -33,37 +37,65 @@ const String accountOwnerPrefsKey = 'account.ownerUserId';
 /// Forgets every per-account value kept outside the database (which
 /// `AuthRepository.signOut` / `deleteAccount` wipe) and cancels the
 /// reminders of the previous account. Never throws.
-Future<void> resetAccountLocalState(Ref ref) async {
+Future<void> resetAccountLocalState(
+  Ref ref, {
+  String? nextOwner,
+  bool updateOwner = false,
+}) async {
   final prefs = ref.read(sharedPreferencesProvider);
   final nextUserId = ref.read(currentUserIdProvider);
   final keys = {
     ...accountPrefsKeys,
-    // Per-journey reminder times of the previous account's journeys, and
-    // per-account EULA version records of previous accounts.
+    // Per-journey reminder times of the previous account's journeys,
+    // per-account EULA version records, and per-account feedback drafts
+    // and cached boards of previous accounts.
     for (final key in prefs.keys)
       if (ReminderPrefs.journeyIdOf(key) != null ||
           (SafetyPrefs.userIdOfTermsKey(key) != null &&
-              SafetyPrefs.userIdOfTermsKey(key) != nextUserId))
+              SafetyPrefs.userIdOfTermsKey(key) != nextUserId) ||
+          (FeedbackPrefs.userIdOfKey(key) != null &&
+              FeedbackPrefs.userIdOfKey(key) != nextUserId))
         key,
   };
+  final removals = <Future<void>>[];
   try {
     for (final key in keys) {
-      if (prefs.containsKey(key)) await prefs.remove(key);
+      // SharedPreferencesWithCache.remove updates the in-memory cache
+      // synchronously before returning its platform write Future.
+      if (prefs.containsKey(key)) removals.add(prefs.remove(key));
     }
   } on Object {
     // Storage failure: the in-memory reset below still applies.
   }
-  // Their values are read from the preferences in build().
+  // Invalidate synchronously before awaiting platform disk flushes so no
+  // microtask after sign-in reads the previous account's cached provider state.
   ref
     ..invalidate(onboardingQuizProvider)
     ..invalidate(eulaAcceptedProvider)
     ..invalidate(blockedNamesProvider)
     ..invalidate(hiddenCheckInIdsProvider)
+    ..invalidate(hiddenFeatureRequestIdsProvider)
+    ..invalidate(feedbackDraftProvider)
+    ..invalidate(feedbackVoteOverlayProvider)
     ..invalidate(activeJourneyIdProvider)
     ..invalidate(createProgressProvider)
     ..invalidate(hideWeightOnShareProvider)
     ..invalidate(blurPhotosOnShareProvider)
-    ..invalidate(reminderSettingsProvider);
+    ..invalidate(reminderSettingsProvider)
+    ..invalidate(streakAlertsEnabledProvider)
+    ..invalidate(reminderBannerProvider);
+  try {
+    await Future.wait(removals);
+    if (updateOwner) {
+      if (nextOwner == null) {
+        await prefs.remove(accountOwnerPrefsKey);
+      } else {
+        await prefs.setString(accountOwnerPrefsKey, nextOwner);
+      }
+    }
+  } on Object {
+    // Storage failure: in-memory cache and providers are already reset.
+  }
   // Import job folders nobody owns any more (the rows go with the database
   // wipe on sign-out). A job whose rows survive, such as an expired session's,
   // keeps its files; a running job stops on its own when the account changes.
@@ -81,23 +113,43 @@ Future<void> resetAccountLocalState(Ref ref) async {
 /// session revoked elsewhere or expired while the app was closed, and a
 /// different user signing in (the owner id is kept in the preferences).
 final accountSessionResetProvider = Provider<void>((ref) {
-  void apply(String? next) {
+  void apply(String? next, {required bool inBuild}) {
     final prefs = ref.read(sharedPreferencesProvider);
     final owner = prefs.getString(accountOwnerPrefsKey);
     final changed = next == null
         ? owner != null
         : owner != null && owner != next;
-    if (next == null) {
-      unawaited(prefs.remove(accountOwnerPrefsKey));
-    } else if (owner != next) {
-      unawaited(prefs.setString(accountOwnerPrefsKey, next));
+    if (!changed) {
+      if (next != null && owner != next) {
+        unawaited(prefs.setString(accountOwnerPrefsKey, next));
+      }
+      return;
     }
-    // Never reset synchronously: this may run while the provider builds.
-    if (changed) unawaited(Future(() => resetAccountLocalState(ref)));
+    if (inBuild) {
+      // During initial provider build, defer to the next microtask.
+      unawaited(
+        Future.microtask(
+          () => resetAccountLocalState(
+            ref,
+            nextOwner: next,
+            updateOwner: true,
+          ),
+        ),
+      );
+    } else {
+      // On live user change, invalidate per-account providers synchronously.
+      unawaited(
+        resetAccountLocalState(
+          ref,
+          nextOwner: next,
+          updateOwner: true,
+        ),
+      );
+    }
   }
 
-  apply(ref.read(currentUserIdProvider));
+  apply(ref.read(currentUserIdProvider), inBuild: true);
   ref.listen<String?>(currentUserIdProvider, (previous, next) {
-    if (next != previous) apply(next);
+    if (next != previous) apply(next, inBuild: false);
   });
 });

@@ -35,10 +35,11 @@ Future<List<Override>> createDataOverrides(AppConfig config) async {
   //
   // Private app data lives in Application Support, not Documents (Documents
   // is user-visible on iOS via Files/iTunes file sharing). Android backups
-  // are disabled in AndroidManifest.xml (allowBackup=false). iOS still
-  // includes Application Support in iCloud/device backups: excluding it
-  // needs NSURLIsExcludedFromBackupKey, which path_provider cannot set
-  // (documented in docs/contracts/schema.md, "Client storage").
+  // are disabled in AndroidManifest.xml (allowBackup=false), and iOS excludes
+  // Application Support from iCloud/device backups in AppDelegate.swift
+  // (`isExcludedFromBackup = true`, FS-11). SQLite per-connection pragmas
+  // (`foreign_keys = ON`, `busy_timeout = 5000`) are enforced in
+  // `AppDatabase.migration.beforeOpen` (FS-34).
   final support = await getApplicationSupportDirectory();
   return dataOverrides(
     DataEnvironment(

@@ -1,6 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "sh ../../scripts/vercel/vercel-ignore.sh",
   "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/Ourney.apk",
+      "destination": "https://github.com/hofang42/ourney-releases/releases/latest/download/Ourney.apk",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

@@ -24,10 +24,11 @@ class DataSafetyRepository implements SafetyRepository {
   Future<void> report({
     String? checkInId,
     String? userId,
+    String? messageId,
     required ReportReason reason,
     String? note,
   }) async {
-    if (checkInId == null && userId == null) {
+    if (checkInId == null && userId == null && messageId == null) {
       throw const OurneyException(OurneyErrorCode.invalid);
     }
     final remote = ctx.requireRemote();
@@ -36,6 +37,7 @@ class DataSafetyRepository implements SafetyRepository {
       'p_user': userId,
       'p_reason': reason.wireName,
       'p_note': note,
+      'p_message': ?messageId,
     });
     if (checkInId != null) {
       // RLS hides reported check-ins from the reporter: mirror it at once.
@@ -44,6 +46,9 @@ class DataSafetyRepository implements SafetyRepository {
       )..where((t) => t.id.equals(checkInId))).get();
       await ctx.store.deleteCheckIns(rows);
       ctx.sync?.notifyChanged();
+    }
+    if (messageId != null) {
+      social?.changed();
     }
   }
 

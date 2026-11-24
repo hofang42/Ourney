@@ -50,6 +50,14 @@ String? _text(Object? v) => switch (v) {
   _ => null,
 };
 
+PersonaSkinId? _layoutOrNull(Object? v) {
+  if (v is! String || v.isEmpty) return null;
+  for (final s in PersonaSkinId.values) {
+    if (s.wireName == v) return s;
+  }
+  return null;
+}
+
 // --- people / friends -------------------------------------------------------
 
 PersonSummary personFromJson(Object? json) {
@@ -156,6 +164,9 @@ SharedJourneySummary sharedSummaryFromJson(Object? json) {
     firstDate: _dateOrNull(r['first_date']),
     lastDate: _dateOrNull(r['last_date']),
     coverThumbPath: r['cover_thumb_path'] as String?,
+    layout: _layoutOrNull(r['layout']),
+    color: _intOrNull(r['color']),
+    coverBlurred: _bool(r['cover_blurred']),
   );
 }
 
@@ -172,6 +183,7 @@ SharedPhoto sharedPhotoFromJson(Object? json) {
     likeCount: _int(r['like_count']),
     likedByMe: _bool(r['liked_by_me']),
     blurred: _bool(r['blurred']),
+    partnerPhotoPath: _text(r['partner_photo_path']),
   );
 }
 
@@ -213,6 +225,9 @@ SharedJourneyView sharedViewFromJson(Object? json) {
     canFollow: _bool(r['can_follow']),
     canAddOwner: _bool(r['can_add_owner']),
     saved: _bool(r['saved']),
+    layout: _layoutOrNull(r['layout']),
+    color: _intOrNull(r['color']),
+    coverBlurred: _bool(r['cover_blurred']),
   );
 }
 
@@ -319,6 +334,7 @@ InboxCounts inboxCountsFromJson(Object? json) {
     unreadMessages: _int(r['unread_messages']),
     consentRequests: _int(r['consent_requests']),
     groupInvitations: _int(r['group_invitations']),
+    shippedRequests: _int(r['shipped_requests']),
   );
 }
 
