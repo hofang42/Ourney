@@ -339,28 +339,30 @@ void main() {
         )..reactGate = gate;
 
         final prefs = await testPrefs();
-        Widget buildBar({bool disableAnimations = false}) {
-          return ProviderScope(
-            overrides: [
-              sharedPreferencesProvider.overrideWithValue(prefs),
-              authRepositoryProvider.overrideWithValue(
-                FakeAuthRepository(userId: me),
+        Future<void> pumpBar({bool disableAnimations = false}) {
+          return tester.pumpWidget(
+            ProviderScope(
+              overrides: [
+                sharedPreferencesProvider.overrideWithValue(prefs),
+                authRepositoryProvider.overrideWithValue(
+                  FakeAuthRepository(userId: me),
+                ),
+                groupRepositoryProvider.overrideWithValue(repo),
+                safetyRepositoryProvider.overrideWithValue(
+                  FakeSafetyRepository(),
+                ),
+              ],
+              child: _host(
+                disableAnimations: disableAnimations,
+                const ReactionBar(checkInId: 'c1'),
               ),
-              groupRepositoryProvider.overrideWithValue(repo),
-              safetyRepositoryProvider.overrideWithValue(
-                FakeSafetyRepository(),
-              ),
-            ],
-            child: _host(
-              disableAnimations: disableAnimations,
-              const ReactionBar(checkInId: 'c1'),
             ),
           );
         }
 
         // 1. Initial mount + stream hydration when caller already reacted with 🔥 (count = 2):
         // must emit ZERO haptics, ZERO particle bursts, and ZERO 0 -> 2 digit roll.
-        await tester.pumpWidget(buildBar());
+        await pumpBar();
         await tester.pump();
         expect(haptics, isEmpty);
         expect(
@@ -443,7 +445,7 @@ void main() {
           ..reactError = null;
 
         // 5. Android Reduce-Motion parity (MediaQueryData.disableAnimations: true).
-        await tester.pumpWidget(buildBar(disableAnimations: true));
+        await pumpBar(disableAnimations: true);
         await tester.pump();
         await tester.tap(chip('🔥'));
         await tester.pump();
@@ -462,7 +464,7 @@ void main() {
         addTearDown(
           tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
         );
-        await tester.pumpWidget(buildBar(disableAnimations: false));
+        await pumpBar();
         await tester.pump();
         await tester.tap(chip('💪'));
         await tester.pump();
@@ -630,8 +632,8 @@ void main() {
         addTearDown(groupsController.close);
         final prefs = await testPrefs();
 
-        Widget buildGroupsList({bool disableAnimations = false}) {
-          return ProviderScope(
+        await tester.pumpWidget(
+          ProviderScope(
             overrides: [
               appConfigProvider.overrideWithValue(testBackendConfig),
               sharedPreferencesProvider.overrideWithValue(prefs),
@@ -646,14 +648,9 @@ void main() {
                 FakeSafetyRepository(),
               ),
             ],
-            child: _host(
-              disableAnimations: disableAnimations,
-              const GroupsListScreen(),
-            ),
-          );
-        }
-
-        await tester.pumpWidget(buildGroupsList());
+            child: _host(const GroupsListScreen()),
+          ),
+        );
         await tester.pump();
 
         // 1. Initially renders skeleton while stream is waiting.
