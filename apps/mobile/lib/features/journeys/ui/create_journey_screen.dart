@@ -317,41 +317,58 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       child: Semantics(
         container: true,
         label: l10n.journeys_ticketPreview,
-        child: AnimatedSwitcher(
-          duration: UiMotion.of(context, UiMotion.theme),
-          child: DepartureTicket(
-            key: ValueKey('ticket-$skinId'),
-            skinId: skinId,
-            variant: _variant,
-            title: form.title.trim().isEmpty
-                ? (Localizations.localeOf(context).languageCode == 'vi'
-                      ? form.template.titleVi
-                      : form.template.titleEn)
-                : form.title.trim(),
-            goalLine: goalLine,
-            durationLabel: hasDays
-                ? l10n.journeys_templateDays(days)
-                : l10n.journeys_ticketOpenEnded,
-            datesLabel: datesLabel,
-            milestones: milestones,
-            leftName: l10n.journeys_ticketYou,
-            rightName: l10n.journeys_ticketPartner,
-            privateLabel: l10n.journeys_ticketPrivate,
-            memoryLabel: l10n.journeys_ticketMemory,
-            tagline: switch (skinId) {
-              'quiet' => l10n.journeys_ticketTagQuiet,
-              'squad' => l10n.journeys_ticketTagSquad,
-              'memory' => l10n.journeys_ticketTagMemory,
-              'couple' => l10n.journeys_ticketTagCouple,
-              'flexer' => l10n.journeys_ticketTagFlexer,
-              _ => '',
-            },
-            changeVariantLabel: l10n.journeys_ticketChangeColor,
-            onChangeVariant: () =>
-                setState(() => _variant = (_variant + 1) % 3),
+        child: _maybeAnimatedSize(
+          context,
+          AnimatedSwitcher(
+            duration: UiMotion.fadeOf(context, UiMotion.theme),
+            switchInCurve: UiCurves.stampDecel,
+            switchOutCurve: UiCurves.easeOutStrong,
+            child: DepartureTicket(
+              key: ValueKey('ticket-$skinId'),
+              skinId: skinId,
+              variant: _variant,
+              title: form.title.trim().isEmpty
+                  ? (Localizations.localeOf(context).languageCode == 'vi'
+                        ? form.template.titleVi
+                        : form.template.titleEn)
+                  : form.title.trim(),
+              goalLine: goalLine,
+              durationLabel: hasDays
+                  ? l10n.journeys_templateDays(days)
+                  : l10n.journeys_ticketOpenEnded,
+              datesLabel: datesLabel,
+              milestones: milestones,
+              leftName: l10n.journeys_ticketYou,
+              rightName: l10n.journeys_ticketPartner,
+              privateLabel: l10n.journeys_ticketPrivate,
+              memoryLabel: l10n.journeys_ticketMemory,
+              tagline: switch (skinId) {
+                'quiet' => l10n.journeys_ticketTagQuiet,
+                'squad' => l10n.journeys_ticketTagSquad,
+                'memory' => l10n.journeys_ticketTagMemory,
+                'couple' => l10n.journeys_ticketTagCouple,
+                'flexer' => l10n.journeys_ticketTagFlexer,
+                _ => '',
+              },
+              changeVariantLabel: l10n.journeys_ticketChangeColor,
+              onChangeVariant: () {
+                unawaited(UiHaptics.selection());
+                setState(() => _variant = (_variant + 1) % 3);
+              },
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _maybeAnimatedSize(BuildContext context, Widget child) {
+    if (UiMotion.reduced(context)) return child;
+    return AnimatedSize(
+      duration: UiMotion.medium,
+      curve: UiCurves.easeOutStrong,
+      alignment: Alignment.topCenter,
+      child: child,
     );
   }
 
@@ -560,110 +577,130 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
           open: more,
           color: pal.ink,
           rule: pal.inkAt(0.22),
-          onPressed: () => setState(() => _moreOpen = !more),
+          onPressed: () {
+            unawaited(UiHaptics.selection());
+            setState(() => _moreOpen = !more);
+          },
         ),
-        if (more) ...[
-          label(l10n.journeys_fieldEmoji),
-          Wrap(
-            spacing: UiSpace.sm,
-            runSpacing: UiSpace.sm,
-            children: [
-              for (final e in {form.template.emoji, ...journeyEmojiChoices})
-                _EmojiChoice(
-                  emoji: e,
-                  template: form.template.id,
-                  selected: form.emoji == e,
-                  accent: pal.accent,
-                  onTap: () => _update((f) => f.emoji = e),
-                ),
-            ],
-          ),
-          label(l10n.journeys_fieldMetric),
-          UiSwitchRow(
-            key: const ValueKey('journey-metric'),
-            label: l10n.journeys_fieldMetric,
-            subtitle: l10n.journeys_fieldMetricHint,
-            value: form.trackMetric,
-            onChanged: (v) => _update((f) => f.trackMetric = v),
-          ),
-          if (form.trackMetric) ...[
-            const SizedBox(height: UiSpace.md),
-            UiTextField(
-              fieldKey: const ValueKey('journey-metric-name'),
-              label: l10n.journeys_metricName,
-              controller: _metricName,
-              error: show && errors.metricName == true
-                  ? l10n.journeys_errorMetricName
-                  : null,
-              onChanged: (v) => _update((f) => f.metricName = v),
-            ),
-            const SizedBox(height: UiSpace.md),
-            UiTextField(
-              fieldKey: const ValueKey('journey-metric-unit'),
-              label: l10n.journeys_metricUnit,
-              controller: _metricUnit,
-              onChanged: (v) => _update((f) => f.metricUnit = v),
-            ),
-            UiSwitchRow(
-              key: const ValueKey('journey-hide-metric'),
-              label: l10n.journeys_hideMetric,
-              value: form.hideMetric,
-              onChanged: (v) => _update((f) => f.hideMetric = v),
-            ),
-          ],
-          UiSwitchRow(
-            key: const ValueKey('journey-blur'),
-            label: l10n.journeys_blurOnShare,
-            value: form.blurOnShare,
-            onChanged: (v) => _update((f) => f.blurOnShare = v),
-          ),
-          label(l10n.journeys_fieldVisibility),
-          if (form.kind == JourneyKind.group)
-            note('lock', l10n.journeys_visibilityGroup)
-          else ...[
-            Wrap(
-              spacing: UiSpace.sm,
-              runSpacing: UiSpace.sm,
-              children: [
-                UiChip(
-                  key: const ValueKey('journey-visibility-private'),
-                  label: l10n.journeys_visibilityPrivate,
-                  glyph: const OurneyIcon(name: 'lock', size: 16),
-                  selected: form.soloVisibility == JourneyVisibility.private,
-                  onPressed: () => _update(
-                    (f) => f.soloVisibility = JourneyVisibility.private,
-                  ),
-                ),
-                UiChip(
-                  key: const ValueKey('journey-visibility-link'),
-                  label: l10n.journeys_visibilityLink,
-                  glyph: const OurneyIcon(name: 'share', size: 16),
-                  selected: form.soloVisibility == JourneyVisibility.link,
-                  onPressed: localOnly
-                      ? null
-                      : () => _update(
-                          (f) => f.soloVisibility = JourneyVisibility.link,
+        _maybeAnimatedSize(
+          context,
+          more
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    label(l10n.journeys_fieldEmoji),
+                    Wrap(
+                      spacing: UiSpace.sm,
+                      runSpacing: UiSpace.sm,
+                      children: [
+                        for (final e in {
+                          form.template.emoji,
+                          ...journeyEmojiChoices,
+                        })
+                          _EmojiChoice(
+                            emoji: e,
+                            template: form.template.id,
+                            selected: form.emoji == e,
+                            accent: pal.accent,
+                            onTap: () => _update((f) => f.emoji = e),
+                          ),
+                      ],
+                    ),
+                    label(l10n.journeys_fieldMetric),
+                    UiSwitchRow(
+                      key: const ValueKey('journey-metric'),
+                      label: l10n.journeys_fieldMetric,
+                      subtitle: l10n.journeys_fieldMetricHint,
+                      value: form.trackMetric,
+                      onChanged: (v) => _update((f) => f.trackMetric = v),
+                    ),
+                    if (form.trackMetric) ...[
+                      const SizedBox(height: UiSpace.md),
+                      UiTextField(
+                        fieldKey: const ValueKey('journey-metric-name'),
+                        label: l10n.journeys_metricName,
+                        controller: _metricName,
+                        error: show && errors.metricName == true
+                            ? l10n.journeys_errorMetricName
+                            : null,
+                        onChanged: (v) => _update((f) => f.metricName = v),
+                      ),
+                      const SizedBox(height: UiSpace.md),
+                      UiTextField(
+                        fieldKey: const ValueKey('journey-metric-unit'),
+                        label: l10n.journeys_metricUnit,
+                        controller: _metricUnit,
+                        onChanged: (v) => _update((f) => f.metricUnit = v),
+                      ),
+                      UiSwitchRow(
+                        key: const ValueKey('journey-hide-metric'),
+                        label: l10n.journeys_hideMetric,
+                        value: form.hideMetric,
+                        onChanged: (v) => _update((f) => f.hideMetric = v),
+                      ),
+                    ],
+                    UiSwitchRow(
+                      key: const ValueKey('journey-blur'),
+                      label: l10n.journeys_blurOnShare,
+                      value: form.blurOnShare,
+                      onChanged: (v) => _update((f) => f.blurOnShare = v),
+                    ),
+                    label(l10n.journeys_fieldVisibility),
+                    if (form.kind == JourneyKind.group)
+                      note('lock', l10n.journeys_visibilityGroup)
+                    else ...[
+                      Wrap(
+                        spacing: UiSpace.sm,
+                        runSpacing: UiSpace.sm,
+                        children: [
+                          UiChip(
+                            key: const ValueKey('journey-visibility-private'),
+                            label: l10n.journeys_visibilityPrivate,
+                            glyph: const OurneyIcon(name: 'lock', size: 16),
+                            selected:
+                                form.soloVisibility ==
+                                JourneyVisibility.private,
+                            onPressed: () => _update(
+                              (f) =>
+                                  f.soloVisibility = JourneyVisibility.private,
+                            ),
+                          ),
+                          UiChip(
+                            key: const ValueKey('journey-visibility-link'),
+                            label: l10n.journeys_visibilityLink,
+                            glyph: const OurneyIcon(name: 'share', size: 16),
+                            selected:
+                                form.soloVisibility == JourneyVisibility.link,
+                            onPressed: localOnly
+                                ? null
+                                : () => _update(
+                                    (f) => f.soloVisibility =
+                                        JourneyVisibility.link,
+                                  ),
+                          ),
+                        ],
+                      ),
+                      if (localOnly)
+                        note('cloud-off', l10n.journeys_linkNeedsServer),
+                    ],
+                    label(l10n.journeys_fieldTimezone),
+                    Row(
+                      children: [
+                        OurneyIcon(name: 'clock', size: 22),
+                        const SizedBox(width: UiSpace.sm),
+                        Expanded(
+                          child: Text(
+                            form.timezone,
+                            key: const ValueKey('journey-timezone'),
+                            style: UiText.body(size: 15, color: pal.ink),
+                          ),
                         ),
-                ),
-              ],
-            ),
-            if (localOnly) note('cloud-off', l10n.journeys_linkNeedsServer),
-          ],
-          label(l10n.journeys_fieldTimezone),
-          Row(
-            children: [
-              OurneyIcon(name: 'clock', size: 22),
-              const SizedBox(width: UiSpace.sm),
-              Expanded(
-                child: Text(
-                  form.timezone,
-                  key: const ValueKey('journey-timezone'),
-                  style: UiText.body(size: 15, color: pal.ink),
-                ),
-              ),
-            ],
-          ),
-        ],
+                      ],
+                    ),
+                  ],
+                )
+              : const SizedBox.shrink(),
+        ),
       ],
     );
   }
@@ -708,7 +745,8 @@ class _MoreOptionsToggle extends StatelessWidget {
               ),
               AnimatedRotation(
                 turns: open ? 0.25 : -0.25,
-                duration: UiMotion.of(context, UiMotion.press),
+                duration: UiMotion.of(context, UiMotion.fast),
+                curve: UiCurves.easeOutStrong,
                 child: OurneyIcon(name: 'back', size: 20),
               ),
             ],
@@ -739,8 +777,12 @@ class _EmojiChoice extends StatelessWidget {
     final ui = context.ui;
     return UiPressable(
       key: ValueKey('journey-emoji-$emoji'),
-      onPressed: onTap,
+      onPressed: () {
+        unawaited(UiHaptics.selection());
+        onTap();
+      },
       selected: selected,
+      pressOffset: UiShadow.tiny,
       semanticLabel: JourneysL10n.of(context).journeys_emojiSemantics(emoji),
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(UiRadius.input),

@@ -7,6 +7,7 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../feedback/data/feedback_providers.dart';
 import '../../onboarding/onboarding_providers.dart';
 import '../../safety/data/safety_providers.dart';
 import '../l10n/generated/profile_localizations.dart';
@@ -128,6 +129,8 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
     final onboarding = ref.read(onboardingCompleteProvider.notifier);
     final eula = ref.read(eulaAcceptedProvider.notifier);
     final quiz = ref.read(onboardingQuizProvider.notifier);
+    final feedbackDraft = ref.read(feedbackDraftProvider.notifier);
+    final feedbackCache = ref.read(feedbackCacheStoreProvider);
     setState(() {
       _stage = _Stage.progress;
       _result = _Result.deleting;
@@ -161,6 +164,8 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
     // A new account on this device must accept the terms again (FR-F3).
     await eula.reset();
     await quiz.clear();
+    await feedbackDraft.clearAll();
+    await feedbackCache.clearAll();
     // The router may already have replaced the stack (signed out), which
     // removes this sheet too; otherwise the "done" view has its own button.
     if (!mounted) return;
