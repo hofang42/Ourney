@@ -184,8 +184,12 @@ class JourneysL10nVi extends JourneysL10n {
   String get journeys_errorMetricName => 'Nhập tên chỉ số.';
 
   @override
-  String get journeys_errorVisibility =>
-      'Kiểu hiển thị này không dùng được cho hành trình này.';
+  String get journeys_errorInvalid =>
+      'Dữ liệu chưa hợp lệ. Kiểm tra lại rồi thử lại nhé.';
+
+  @override
+  String get journeys_errorLimit =>
+      'Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.';
 
   @override
   String get journeys_errorNotAlone =>

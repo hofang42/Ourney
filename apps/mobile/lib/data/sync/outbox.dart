@@ -49,6 +49,7 @@ bool isTransient(OurneyErrorCode code) => switch (code) {
   OurneyErrorCode.unknown ||
   OurneyErrorCode.internal ||
   OurneyErrorCode.unauthenticated ||
+  OurneyErrorCode.serverOutdated ||
   OurneyErrorCode.rateLimited ||
   OurneyErrorCode.storageListingFailed ||
   OurneyErrorCode.storageCleanupFailed ||
@@ -342,10 +343,13 @@ class Outbox {
           continue;
         }
         final attempts = head.attempts + 1;
-        // Waiting for the network or a fresh sign-in never kills an item.
+        // Waiting for the network, a fresh sign-in or a server migration
+        // (serverOutdated) never kills an item: dead items get re-pulled
+        // over and can lose unsynced photos.
         final waiting =
             error.error == OurneyErrorCode.offline ||
-            error.error == OurneyErrorCode.unauthenticated;
+            error.error == OurneyErrorCode.unauthenticated ||
+            error.error == OurneyErrorCode.serverOutdated;
         if (!waiting && attempts >= maxAttempts) {
           await _markDead(head, error.toString());
           continue;

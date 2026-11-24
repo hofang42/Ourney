@@ -114,7 +114,8 @@
     }
   },
   "journeys_errorMetricName": "Nhập tên chỉ số.",
-  "journeys_errorVisibility": "Kiểu hiển thị này không dùng được cho hành trình này.",
+  "journeys_errorInvalid": "Dữ liệu chưa hợp lệ. Kiểm tra lại rồi thử lại nhé.",
+  "journeys_errorLimit": "Bạn có quá nhiều hành trình đang chạy. Kết thúc bớt một hành trình rồi thử lại nhé.",
   "journeys_errorNotAlone": "Nhóm vẫn còn thành viên khác nên chưa xóa được. Bạn có thể kết thúc hành trình.",
   "journeys_errorForbidden": "Chỉ chủ hành trình làm được việc này.",
   "journeys_errorEnded": "Hành trình này đã kết thúc.",
