@@ -374,7 +374,7 @@
               <figure class="phone phone-hero" id="hero-phone">
                 <picture class="theme-pic">
                   <source class="src-dark" srcset="/assets/screens/hub-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" src="/assets/screens/hub.webp" alt="Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay" data-i18n-alt="hero_phone_alt" width="390" height="844" fetchpriority="high" decoding="sync">
+                  <img class="scr-img" src="/assets/screens/hub.webp" alt="Màn chính Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay" data-i18n-alt="hero_phone_alt" width="390" height="844" fetchpriority="high" decoding="sync">
                 </picture>
               </figure>
             </div>
@@ -383,23 +383,9 @@
           <!-- Live Check-In Card (Right shoulder on >=768px; compact dock pill below phone on <768px) -->
           <div class="hero-checkin-card" id="hero-checkin-card" aria-hidden="true">
             <div class="hcc-photo" id="hcc-photo" data-cycle="0">
-              <svg class="hcc-art art-0" viewBox="0 0 120 76" aria-hidden="true">
-                <rect width="120" height="76" rx="8" fill="#FFF3D1"/>
-                <rect x="14" y="14" width="54" height="48" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-                <path d="M22 26h30M22 36h38M22 46h24" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-                <circle cx="92" cy="40" r="16" fill="#FF8A3D" stroke="#1A1A1A" stroke-width="2"/>
-                <path d="M86 40h12M92 34v12" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-              </svg>
-              <svg class="hcc-art art-1" viewBox="0 0 120 76" aria-hidden="true">
-                <rect width="120" height="76" rx="8" fill="#181B24"/>
-                <path d="M14 56 Q 36 48, 52 34 T 88 24 L 106 16" fill="none" stroke="#3DE88C" stroke-width="3.5" stroke-linecap="round"/>
-                <circle cx="106" cy="16" r="5" fill="#FF4D6D" stroke="#FFFFFF" stroke-width="2"/>
-              </svg>
-              <svg class="hcc-art art-2" viewBox="0 0 120 76" aria-hidden="true">
-                <rect width="120" height="76" rx="8" fill="#F4EFE6"/>
-                <path d="M12 60 L42 26 L68 52 L88 34 L108 60 Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
-                <circle cx="88" cy="20" r="7" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
-              </svg>
+              <img class="hcc-art art-0" src="/assets/photos/hcc-ielts.webp" alt="" width="186" height="108" decoding="async">
+              <img class="hcc-art art-1" src="/assets/photos/hcc-run.webp" alt="" width="186" height="108" loading="lazy" decoding="async">
+              <img class="hcc-art art-2" src="/assets/photos/hcc-travel.webp" alt="" width="186" height="108" loading="lazy" decoding="async">
               <span class="hcc-pill">
                 <svg class="o-sticker hcc-flame" id="hcc-flame" width="18" height="18"><use href="#i-flame"/></svg>
                 <b class="hcc-streak" id="hcc-streak">21</b>
@@ -496,116 +482,13 @@
               </div>
             </div>
 
-            <!-- Right Column: Real App Screen or Built-In Couple Diptych Screen -->
+            <!-- Right Column: Real App Screen (all 6 persona skins) -->
             <div class="j-phone-stage">
               <figure class="phone phone-j" id="phone-j">
                 <picture class="theme-pic" id="j-pic">
                   <source class="src-dark" id="j-src-d" srcset="/assets/screens/j-ielts-dark.webp" media="(prefers-color-scheme: dark)">
                   <img class="scr-img" id="j-img" src="/assets/screens/j-ielts.webp" alt="Trang hành trình IELTS 7.5 trong app Ourney" width="390" height="844" loading="lazy" decoding="async">
                 </picture>
-
-                <!-- Built-in HTML/CSS Couple Rituals duoSplitTimeline screen (Tab 5, accessible role="img") -->
-                <div class="couple-screen" id="j-couple-screen" role="img" aria-label="Trang hành trình Cặp đôi Tụi mình trong app Ourney: 18 ngày bên nhau, khung ảnh đôi của Nam và Linh" hidden>
-                  <div class="cs-status" aria-hidden="true">
-                    <span>9:41</span>
-                    <span class="cs-pill-top" data-i18n="cs_pill">CẶP ĐÔI · RIÊNG TƯ</span>
-                  </div>
-                  <div class="cs-header" aria-hidden="true">
-                    <div>
-                      <small data-i18n="cs_sub">mỗi ngày hai nửa ghép lại.</small>
-                      <strong data-i18n="cs_title">tụi mình.</strong>
-                    </div>
-                    <span class="cs-streak">
-                      <svg class="o-sticker" width="16" height="16"><use href="#i-flame"/></svg>
-                      <b>18</b>
-                    </span>
-                  </div>
-                  <div class="cs-banner" aria-hidden="true">
-                    <svg class="o-sticker" width="24" height="24"><use href="#i-couple"/></svg>
-                    <div>
-                      <b data-i18n="cs_stat">18 NGÀY BÊN NHAU · 36 KHOẢNH KHẮC</b>
-                      <small data-i18n="cs_stat_sub">Cả hai đã chụp đủ hôm nay</small>
-                    </div>
-                  </div>
-
-                  <!-- Day 18 Paired Diptych -->
-                  <div class="cs-day-card" aria-hidden="true">
-                    <div class="cs-day-head">
-                      <b data-i18n="cs_d18">NGÀY 18 · HÔM NAY</b>
-                      <span>07:30 · 08:12</span>
-                    </div>
-                    <div class="cs-diptych">
-                      <div class="cs-half cs-half-a">
-                        <svg viewBox="0 0 120 132">
-                          <rect class="cs-art-bg-a" width="120" height="132"/>
-                          <circle class="cs-art-card" cx="60" cy="58" r="28" stroke-width="2.5"/>
-                          <circle cx="60" cy="58" r="18" fill="#8C583A"/>
-                          <path class="cs-art-stroke" d="M88 52h10a6 6 0 0 1 0 12H88" fill="none" stroke-width="2.5"/>
-                          <rect class="cs-art-card" x="14" y="96" width="92" height="22" rx="6" stroke-width="1.8"/>
-                        </svg>
-                        <span class="cs-tag" data-i18n="cs_nam">Nam · 07:30</span>
-                      </div>
-                      <span class="cs-heart-node">
-                        <svg class="o-sticker" width="18" height="18"><use href="#i-couple"/></svg>
-                      </span>
-                      <div class="cs-half cs-half-b">
-                        <svg viewBox="0 0 120 132">
-                          <rect class="cs-art-bg-b" width="120" height="132"/>
-                          <circle class="cs-art-stroke" cx="82" cy="36" r="14" fill="#FFD84D" stroke-width="2"/>
-                          <path class="cs-art-stroke" d="M12 94 Q 44 68, 72 84 T 108 74 L 108 120 L 12 120 Z" fill="#7EE8A2" stroke-width="2"/>
-                        </svg>
-                        <span class="cs-tag" data-i18n="cs_linh">Linh · 08:12</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Day 17 Paired Diptych -->
-                  <div class="cs-day-card cs-day-prev" aria-hidden="true">
-                    <div class="cs-day-head">
-                      <b data-i18n="cs_d17">NGÀY 17 · HÔM QUA</b>
-                      <span>19:20 · 19:24</span>
-                    </div>
-                    <div class="cs-diptych">
-                      <div class="cs-half cs-half-a">
-                        <svg viewBox="0 0 120 86">
-                          <rect class="cs-art-bg-c" width="120" height="86"/>
-                          <rect class="cs-art-card" x="20" y="18" width="80" height="50" rx="8" stroke-width="2"/>
-                          <path class="cs-art-stroke" d="M32 36h40M32 48h52" stroke-width="2.5" stroke-linecap="round"/>
-                        </svg>
-                        <span class="cs-tag">Nam · 19:20</span>
-                      </div>
-                      <span class="cs-heart-node">
-                        <svg class="o-sticker" width="16" height="16"><use href="#i-couple"/></svg>
-                      </span>
-                      <div class="cs-half cs-half-b">
-                        <svg viewBox="0 0 120 86">
-                          <rect class="cs-art-bg-d" width="120" height="86"/>
-                          <circle class="cs-art-stroke" cx="60" cy="42" r="22" fill="#FF7E7E" stroke-width="2"/>
-                        </svg>
-                        <span class="cs-tag">Linh · 19:24</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Ourney Unified 5-Tab Bottom Dock (Full icons.tsx geometry) -->
-                  <div class="cs-dock" aria-hidden="true">
-                    <span class="cs-dock-item active">
-                      <svg viewBox="0 0 24 24"><path d="M3.5 5.5 9 3l6 2.5L20.5 3v15.5L15 21l-6-2.5L3.5 21Z"/><path d="M9 3v15.5M15 5.5V21"/><path d="m6 14 2-2 3 2 4-5 2 2"/></svg>
-                    </span>
-                    <span class="cs-dock-item">
-                      <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6M14 14c3.7-.5 5.8 1.2 6.3 4.5"/></svg>
-                    </span>
-                    <span class="cs-dock-shutter">
-                      <svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/><circle cx="12" cy="13" r="3.5"/></svg>
-                    </span>
-                    <span class="cs-dock-item">
-                      <svg viewBox="0 0 24 24"><path d="M6.5 17.5h11l-1.5-2V11c0-2.7-1.5-4.6-4-4.8C9.5 6.4 8 8.3 8 11v4.5Z"/><path d="M10 19.5c.8 1 3.2 1 4 0M10 4.5h4"/></svg>
-                    </span>
-                    <span class="cs-dock-item">
-                      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.5-4.6 2.8-7 7-7s6.5 2.4 7 7"/></svg>
-                    </span>
-                  </div>
-                </div>
               </figure>
             </div>
           </div>
@@ -645,7 +528,7 @@
               <figure class="phone phone-step">
                 <picture class="theme-pic">
                   <source class="src-dark" srcset="/assets/screens/capture-dark.webp" media="(prefers-color-scheme: dark)">
-                  <img class="scr-img" src="/assets/screens/capture.webp" alt="Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
+                  <img class="scr-img" src="/assets/screens/capture.webp" alt="Màn camera trực tiếp: Đọc 10 trang · Ngày 24, chuỗi 8 ngày và nút chụp giữa thanh dưới" data-i18n-alt="how_s2_alt" loading="lazy" decoding="async" width="390" height="844">
                 </picture>
               </figure>
             </li>
@@ -717,13 +600,7 @@
             <!-- Member 1: Linh -->
             <article class="squad-polaroid">
               <div class="sp-thumb">
-                <svg viewBox="0 0 160 104" aria-hidden="true">
-                  <rect width="160" height="104" fill="#FFF3D1"/>
-                  <rect x="18" y="16" width="76" height="72" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-                  <path d="M30 32h44M30 46h52M30 60h34" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-                  <circle cx="122" cy="58" r="20" fill="#FF8A3D" stroke="#1A1A1A" stroke-width="2"/>
-                  <circle cx="122" cy="58" r="11" fill="#5A3825"/>
-                </svg>
+                <img src="/assets/photos/squad-linh.webp" alt="" width="160" height="104" loading="lazy" decoding="async">
                 <span class="sp-time">06:40</span>
               </div>
               <div class="sp-body">
@@ -743,12 +620,7 @@
             <!-- Member 2: Nam -->
             <article class="squad-polaroid">
               <div class="sp-thumb">
-                <svg viewBox="0 0 160 104" aria-hidden="true">
-                  <rect width="160" height="104" fill="#E6F7EE"/>
-                  <rect x="24" y="18" width="112" height="68" rx="8" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-                  <rect x="36" y="30" width="38" height="44" rx="4" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="1.8"/>
-                  <path d="M84 38h38M84 52h28M84 66h34" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-                </svg>
+                <img src="/assets/photos/squad-nam.webp" alt="" width="160" height="104" loading="lazy" decoding="async">
                 <span class="sp-time">07:15</span>
               </div>
               <div class="sp-body">
@@ -765,13 +637,7 @@
             <!-- Member 3: Ha -->
             <article class="squad-polaroid">
               <div class="sp-thumb">
-                <svg viewBox="0 0 160 104" aria-hidden="true">
-                  <rect width="160" height="104" fill="#F3E8FF"/>
-                  <circle cx="52" cy="52" r="26" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2"/>
-                  <path d="M44 52l6 6 12-13" fill="none" stroke="#1A1A1A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  <rect x="90" y="24" width="48" height="56" rx="6" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>
-                  <path d="M100 40h28M100 52h22M100 64h26" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
-                </svg>
+                <img src="/assets/photos/squad-ha.webp" alt="" width="160" height="104" loading="lazy" decoding="async">
                 <span class="sp-time">12:05</span>
               </div>
               <div class="sp-body">
@@ -908,10 +774,7 @@
           <!-- Live Share Link Preview Strip -->
           <div class="share-preview card" id="share-preview" data-hide-num="true" data-blur-img="false">
             <div class="sp-mini-thumb" aria-hidden="true">
-              <svg viewBox="0 0 48 48">
-                <rect width="48" height="48" rx="10" fill="#7EE8A2"/>
-                <path d="M10 34 Q 20 28, 28 20 T 38 14" fill="none" stroke="#1A1A1A" stroke-width="3" stroke-linecap="round"/>
-              </svg>
+              <img src="/assets/photos/priv-weight.webp" alt="" width="48" height="48" loading="lazy" decoding="async">
             </div>
             <div class="sp-mini-txt">
               <small data-i18n="priv_preview_kicker">Xem trước thẻ chia sẻ ra ngoài</small>
