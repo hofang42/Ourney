@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
+import '../../../app/redirect.dart' show ProfileGateStatus;
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../profile/profile_providers.dart' show profileGateStatusProvider;
 import '../data/social_providers.dart';
 import '../l10n/generated/social_localizations.dart';
 import '../social_paths.dart';
@@ -29,7 +31,14 @@ class _InviteAcceptState extends ConsumerState<InviteAcceptScreen> {
   @override
   void initState() {
     super.initState();
-    if (!ref.read(appConfigProvider).localOnly) _start();
+    if (!ref.read(appConfigProvider).localOnly) {
+      ref.listenManual(profileGateStatusProvider, (previous, next) {
+        if (next == ProfileGateStatus.ready && _future == null) {
+          _start();
+          if (previous != null && mounted) setState(() {});
+        }
+      }, fireImmediately: true);
+    }
   }
 
   void _start() {

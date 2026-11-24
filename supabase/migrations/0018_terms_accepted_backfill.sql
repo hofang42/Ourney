@@ -57,7 +57,7 @@ begin
   select t.terms_version into v_accepted
     from private.terms_acceptance t
    where t.user_id = new.id;
-  if coalesce(nullif(current_setting('role', true), ''), session_user) in ('authenticated', 'anon') then
+  if coalesce(nullif(nullif(current_setting('role', true), ''), 'none'), session_user) in ('authenticated', 'anon') then
     new.terms_version := coalesce(v_accepted, 0);
   else
     new.terms_version := greatest(coalesce(new.terms_version, 0), coalesce(v_accepted, 0));

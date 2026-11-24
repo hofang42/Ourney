@@ -96,10 +96,19 @@ String? resolveRedirect({
 
   if (auth == AuthStatus.signedIn) {
     if (profileGate == ProfileGateStatus.unknown) {
-      // Hold on the current screen (e.g. `/auth` spinner) while checking
-      // whether a profile row exists, so `<from>` or `/capture` never mounts
-      // or fires server RPCs before `/profile/setup` (DE-04 / H1).
-      return null;
+      // Hold on `/auth` (or `/capture`, `/onboarding`, `/profile/setup`,
+      // `/safety`) while checking whether a profile row exists, and redirect
+      // cold-start deep links (such as `/f/<token>` or `/join/<code>`) to
+      // `/auth?from=...` so target screens never mount or fire server RPCs
+      // before `/profile/setup` (DE-04 / H1 / P2).
+      if (path == AppRoutes.capture ||
+          pathHasPrefix(path, AppRoutes.auth) ||
+          pathHasPrefix(path, AppRoutes.onboarding) ||
+          pathHasPrefix(path, kProfileSetupPath) ||
+          pathHasPrefix(path, AppRoutes.safety)) {
+        return null;
+      }
+      return _withFrom(AppRoutes.auth, uri);
     }
     if (profileGate == ProfileGateStatus.needsSetup) {
       if (pathHasPrefix(path, kProfileSetupPath) ||

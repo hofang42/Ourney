@@ -103,7 +103,8 @@ void main() {
     });
 
     test(
-      'DE-04 / H1: signed in holds on /auth while profileGate is unknown, '
+      'DE-04 / H1 / P2: signed in holds on /auth and /capture while '
+      'profileGate is unknown, redirects cold-start deep links to /auth?from=, '
       'and redirects to /profile/setup when profileGate is needsSetup',
       () {
         const inn = AuthStatus.signedIn;
@@ -114,6 +115,20 @@ void main() {
         expect(
           r('/auth', auth: inn, profileGate: ProfileGateStatus.unknown),
           isNull,
+        );
+        expect(
+          r('/capture', auth: inn, profileGate: ProfileGateStatus.unknown),
+          isNull,
+        );
+        // P2: cold-start deep links while profileGate is unknown redirect to
+        // /auth?from=... instead of mounting /f or /join targets prematurely.
+        expect(
+          r('/f/tok123', auth: inn, profileGate: ProfileGateStatus.unknown),
+          '/auth?from=%2Ff%2Ftok123',
+        );
+        expect(
+          r('/join/ABCD1234', auth: inn, profileGate: ProfileGateStatus.unknown),
+          '/auth?from=%2Fjoin%2FABCD1234',
         );
         expect(
           r(

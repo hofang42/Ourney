@@ -8,6 +8,7 @@ import 'package:ourney/data/remote/error_mapping.dart';
 import 'package:ourney/features/auth/auth_errors.dart';
 import 'package:ourney/features/auth/auth_screen.dart';
 import 'package:ourney/features/auth/l10n/generated/auth_localizations_en.dart';
+import 'package:ourney/features/groups/data/groups_providers.dart';
 import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
@@ -28,7 +29,8 @@ Future<void> enterEmail(WidgetTester tester, String email) async {
 
 /// Delays the initial `watchMe()` emission until [emit] or [emitError] is
 /// called, to verify no protected route or RPC runs while the profile check is
-/// in flight.
+/// in flight. Once `upsertMe` saves a local profile row ([profile] != null),
+/// re-subscribing yields [profile] immediately just like Drift's `_local(me)`.
 class _DelayedProfileRepository extends FakeProfileRepository {
   _DelayedProfileRepository();
 
@@ -45,7 +47,8 @@ class _DelayedProfileRepository extends FakeProfileRepository {
   }
 
   @override
-  Stream<Profile?> watchMe() => _controller.stream;
+  Stream<Profile?> watchMe() =>
+      profile != null ? Stream<Profile?>.value(profile) : _controller.stream;
 }
 
 class _SpyFriendRepository implements FriendRepository {
@@ -55,6 +58,19 @@ class _SpyFriendRepository implements FriendRepository {
   Future<PersonSummary> acceptInvite(String token) async {
     acceptedTokens.add(token);
     throw const OurneyException(OurneyErrorCode.invalid);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _SpyGroupInviteRepository implements GroupInviteRepository {
+  final List<String> previewedCodes = [];
+
+  @override
+  Future<GroupPreview> previewByCode(String code) async {
+    previewedCodes.add(code);
+    throw const OurneyException(OurneyErrorCode.notFound);
   }
 
   @override
@@ -334,6 +350,179 @@ void main() {
               .getInt(SafetyPrefs.termsVersionFor('u1')),
           isNull,
         );
+      },
+    );
+
+    testWidgets(
+      'P1: saving /profile/setup after initial watchMe() error or timeout '
+      'marks gate ready, leaves /profile/setup without looping, and runs '
+      'deferred clickwrap consent',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        final profiles = _DelayedProfileRepository();
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: auth,
+          eulaAccepted: false,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+            avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+          ],
+        );
+        await goTo(tester, c, '${AppRoutes.auth}?from=%2Fjourneys');
+        await enterEmail(tester, 'new-offline@b.co');
+        await tester.enterText(byKey('auth-code'), '654321');
+        await tester.pump();
+
+        // Initial watchMe() errors offline -> routes to /profile/setup?from=/journeys
+        // and defers initial clickwrap consent.
+        profiles.emitError(
+          const OurneyException(OurneyErrorCode.offline),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          location(c),
+          Uri(
+            path: profileSetupPath,
+            queryParameters: {AppRoutes.fromParam: AppRoutes.journeys},
+          ).toString(),
+        );
+        expect(byKey('profile-offline-banner'), findsOneWidget);
+        expect(byKey('profile-retry'), findsOneWidget);
+        expect(auth.recordedTerms, isEmpty);
+
+        // User recovers connectivity and saves directly without tapping retry.
+        await tester.enterText(byKey('profile-display-name'), 'Alice');
+        await tester.enterText(byKey('profile-username'), 'alice');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(byKey('profile-save'));
+        await tester.tap(byKey('profile-save'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(profileGateStatusProvider), ProfileGateStatus.ready);
+        expect(location(c), AppRoutes.journeys);
+        expect(auth.recordedTerms, [kTermsVersion]);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getInt(SafetyPrefs.termsVersionFor('u1')),
+          kTermsVersion,
+        );
+      },
+    );
+
+    testWidgets(
+      'P1: watchMe() timeout surfaces retry UI on /profile/setup and saving '
+      'succeeds without bouncing back',
+      (tester) async {
+        final auth = RecordingAuthRepository(userId: 'u1');
+        final profiles = _DelayedProfileRepository();
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: auth,
+          eulaAccepted: false,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            profileGateTimeoutProvider.overrideWithValue(
+              const Duration(milliseconds: 50),
+            ),
+            mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+            avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+          ],
+        );
+        c.read(eulaAcceptedProvider.notifier).deferInitialClickwrap('u1');
+        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pumpAndSettle();
+
+        expect(location(c), profileSetupPath);
+        // Even while watchMe() has not emitted an error, the gate timeout
+        // surfaces the offline banner and retry button.
+        expect(byKey('profile-offline-banner'), findsOneWidget);
+        expect(byKey('profile-retry'), findsOneWidget);
+
+        await tester.enterText(byKey('profile-display-name'), 'Minh');
+        await tester.enterText(byKey('profile-username'), 'minh');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(byKey('profile-save'));
+        await tester.tap(byKey('profile-save'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(profileGateStatusProvider), ProfileGateStatus.ready);
+        expect(location(c), AppRoutes.capture);
+        expect(auth.recordedTerms, [kTermsVersion]);
+      },
+    );
+
+    testWidgets(
+      'P2: cold-start deep links (/f/<token>, /join/<code>) while signed in '
+      'without a profile do not mount target screens or fire RPCs during '
+      'ProfileGateStatus.unknown',
+      (tester) async {
+        final auth = RecordingAuthRepository(userId: 'u1');
+        final profiles = _DelayedProfileRepository();
+        final friends = _SpyFriendRepository();
+        final groupInvites = _SpyGroupInviteRepository();
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: auth,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            friendRepositoryProvider.overrideWithValue(friends),
+            groupInviteRepositoryProvider.overrideWithValue(groupInvites),
+            mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+            avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+          ],
+        );
+        expect(c.read(profileGateStatusProvider), ProfileGateStatus.unknown);
+
+        // 1. Cold-open /join/ABCD1234 while profileGate is unknown: held on
+        // /auth?from=%2Fjoin%2FABCD1234 without mounting JoinScreen or calling
+        // preview_group_by_code.
+        c.read(routerProvider).go('/join/ABCD1234');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(location(c), '${AppRoutes.auth}?from=%2Fjoin%2FABCD1234');
+        expect(byKey('groups-join-screen'), findsNothing);
+        expect(groupInvites.previewedCodes, isEmpty);
+
+        // 2. Cold-open /f/<token> while profileGate is unknown: held on
+        // /auth?from=%2Ff%2F<token> without mounting InviteAcceptScreen or
+        // calling accept_friend_invite.
+        const token = '0123456789abcdef0123456789abcdef';
+        c.read(routerProvider).go('/f/$token');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+        expect(location(c), '${AppRoutes.auth}?from=%2Ff%2F$token');
+        expect(byKey('invite-accept-screen'), findsNothing);
+        expect(friends.acceptedTokens, isEmpty);
+
+        // 3. watchMe() resolves to null -> transitions to
+        // /profile/setup?from=%2Ff%2F<token> without ever mounting /f/<token>.
+        profiles.emit(null);
+        await tester.pumpAndSettle();
+        expect(
+          location(c),
+          Uri(
+            path: profileSetupPath,
+            queryParameters: {AppRoutes.fromParam: '/f/$token'},
+          ).toString(),
+        );
+        expect(friends.acceptedTokens, isEmpty);
+
+        // 4. Completing profile setup finally navigates to /f/<token> and runs
+        // acceptInvite once the profile exists.
+        await tester.enterText(byKey('profile-display-name'), 'Alice');
+        await tester.enterText(byKey('profile-username'), 'alice');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(byKey('profile-save'));
+        await tester.tap(byKey('profile-save'));
+        await tester.pumpAndSettle();
+        expect(location(c), '/f/$token');
+        expect(friends.acceptedTokens, [token]);
       },
     );
 

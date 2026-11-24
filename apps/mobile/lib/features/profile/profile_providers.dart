@@ -72,6 +72,14 @@ class ProfileGateNotifier extends Notifier<ProfileGateStatus> {
     });
     return ProfileGateStatus.unknown;
   }
+
+  /// Marks the profile gate ready immediately after `ProfileSetupScreen`
+  /// persists the signed-in user's profile row (P1).
+  void markReady() {
+    _timeout?.cancel();
+    _timeout = null;
+    state = ProfileGateStatus.ready;
+  }
 }
 
 final profileGateStatusProvider =

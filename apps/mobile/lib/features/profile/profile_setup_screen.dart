@@ -8,11 +8,12 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
-import '../../app/redirect.dart' show safeFrom;
+import '../../app/redirect.dart' show ProfileGateStatus, safeFrom;
 import '../../app/theme/motion.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../ui/ui.dart';
 import '../onboarding/onboarding_providers.dart';
+import '../safety/data/safety_providers.dart' show eulaAcceptedProvider;
 import 'avatar_picker.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
@@ -205,6 +206,27 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
         return;
       }
     }
+    // P1: if the initial watchMe() failed or timed out before subscribing to
+    // local Drift updates, refresh myProfileProvider + profileGateStatusProvider
+    // and flush any deferred initial clickwrap consent before navigating away.
+    var refreshedProfile = ref.read(myProfileProvider).asData?.value;
+    if (ref.read(profileGateStatusProvider) != ProfileGateStatus.ready ||
+        refreshedProfile == null) {
+      ref.invalidate(myProfileProvider);
+      try {
+        refreshedProfile = await ref
+            .read(myProfileProvider.future)
+            .timeout(const Duration(seconds: 2));
+      } on Object {
+        // Best effort if a custom test stream stays silent on re-subscribe.
+      }
+      if (ref.read(profileGateStatusProvider) != ProfileGateStatus.ready) {
+        ref.read(profileGateStatusProvider.notifier).markReady();
+      }
+    }
+    await ref
+        .read(eulaAcceptedProvider.notifier)
+        .flushDeferredClickwrap(profile: refreshedProfile);
     if (!mounted) return;
     setState(() => _saving = false);
     OurneyHaptics.success();
@@ -225,7 +247,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _retry() {
     final profileState = ref.read(myProfileProvider);
-    if (profileState.hasError) {
+    if (profileState.hasError || profileState.isLoading) {
       ref.invalidate(myProfileProvider);
     }
     if (_error != null) {
@@ -243,8 +265,12 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     final l10n = ProfileL10n.of(context);
     final ui = context.ui;
     final profileState = ref.watch(myProfileProvider);
+    final gateTimedOut =
+        profileState.isLoading &&
+        ref.watch(profileGateStatusProvider) == ProfileGateStatus.needsSetup;
     final loadError = switch (profileState) {
       AsyncError(:final error) => error,
+      _ when gateTimedOut => const OurneyException(OurneyErrorCode.offline),
       _ => null,
     };
     final hasAvatar = _picked != null;

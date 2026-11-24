@@ -16,6 +16,8 @@ class DataProfileRepository implements ProfileRepository {
 
   final DataContext ctx;
 
+  static const Duration initialFetchTimeout = Duration(seconds: 10);
+
   AppDatabase get _db => ctx.db;
 
   /// Supabase mode: when the profile is not cached yet (first sign-in on
@@ -33,7 +35,13 @@ class DataProfileRepository implements ProfileRepository {
     final remote = ctx.remote;
     final cached = await _local(me);
     if (remote != null && cached == null) {
-      final rows = await remote.select('profiles', eq: {'id': me});
+      final rows = await remote
+          .select('profiles', eq: {'id': me})
+          .timeout(
+            initialFetchTimeout,
+            onTimeout: () =>
+                throw const OurneyException(OurneyErrorCode.offline),
+          );
       for (final r in rows) {
         await ctx.store.applyProfile(r);
       }

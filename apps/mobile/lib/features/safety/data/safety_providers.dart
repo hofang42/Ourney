@@ -131,16 +131,50 @@ class EulaAccepted extends Notifier<bool> {
     _deferredClickwrapUserId = uid;
   }
 
+  /// Resolves any pending [deferInitialClickwrap] once the signed-in account's
+  /// profile row has been loaded or created on `/profile/setup` (P1).
+  Future<void> flushDeferredClickwrap({Profile? profile}) async {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null || _deferredClickwrapUserId != userId) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final requiredVersion = ref.read(termsVersionProvider);
+    final localVer = prefs.getInt(SafetyPrefs.termsVersionFor(userId)) ?? 0;
+    final localOk = localVer >= requiredVersion;
+    AuthRepository? auth;
+    try {
+      auth = ref.read(authRepositoryProvider);
+    } on Object {
+      auth = null;
+    }
+    var resolvedProfile = profile;
+    if (resolvedProfile == null) {
+      try {
+        resolvedProfile = ref.read(myProfileProvider).asData?.value;
+      } on Object {
+        resolvedProfile = null;
+      }
+    }
+    final authVer = auth?.acceptedTermsVersion ?? 0;
+    final profileVer = resolvedProfile?.termsVersion ?? 0;
+    final serverVer = authVer > profileVer ? authVer : profileVer;
+    _deferredClickwrapUserId = null;
+    if (serverVer <= 0 && !localOk) {
+      await accept();
+    }
+  }
+
   Future<void> _record(
     AuthRepository auth,
     String expectedUserId,
     int version,
   ) async {
+    if ((auth.acceptedTermsVersion ?? 0) >= version) return;
     final flightKey = '$expectedUserId:$version';
     if (_inFlightRecords.contains(flightKey)) return;
     _inFlightRecords.add(flightKey);
     try {
       if (auth.currentUserId != expectedUserId) return;
+      if ((auth.acceptedTermsVersion ?? 0) >= version) return;
       await auth.recordTermsAccepted(version);
     } on Object {
       // Offline: the next launch tries again; the gate stays satisfied.
