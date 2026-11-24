@@ -14,11 +14,15 @@ class OnboardingQuizStage extends StatefulWidget {
   const OnboardingQuizStage({
     required this.onDone,
     required this.gutter,
+    this.showSignIn = false,
     super.key,
   });
 
   final ValueChanged<OnboardingQuiz?> onDone;
   final double gutter;
+
+  /// True when a backend is configured so `/auth` exists for returning users.
+  final bool showSignIn;
 
   static const questionCount = 3;
 
@@ -152,12 +156,28 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
             ),
             child: MediaQuery.withClampedTextScaling(
               maxScaleFactor: 1.35,
-              child: UiFlowButton(
-                key: const ValueKey('onboarding-quiz-next'),
-                label: _isLast && _answered
-                    ? l10n.onboarding_quizStart
-                    : l10n.onboarding_quizContinue,
-                onPressed: _answered ? _next : null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UiFlowButton(
+                    key: const ValueKey('onboarding-quiz-next'),
+                    label: _isLast && _answered
+                        ? l10n.onboarding_quizStart
+                        : l10n.onboarding_quizContinue,
+                    onPressed: _answered ? _next : null,
+                  ),
+                  // Returning users skip the quiz and go straight to sign-in.
+                  if (_step == 0 && widget.showSignIn)
+                    UiTextAction(
+                      key: const ValueKey('onboarding-have-account'),
+                      label: l10n.onboarding_haveAccount,
+                      size: 14,
+                      underline: true,
+                      color: ui.ink,
+                      onPressed: () => widget.onDone(null),
+                    ),
+                ],
               ),
             ),
           ),

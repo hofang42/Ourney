@@ -61,7 +61,10 @@ Future<ProviderContainer> pumpOurneyApp(
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   final prefs = await testPrefs({
     if (onboarded) OnboardingComplete.prefsKey: true,
-    if (eulaAccepted) SafetyPrefs.eulaAccepted: true,
+    if (eulaAccepted) ...{
+      SafetyPrefs.eulaAccepted: true,
+      SafetyPrefs.termsVersionFor(auth?.currentUserId ?? 'u1'): kTermsVersion,
+    },
   });
   final container = ProviderContainer(
     overrides: [
@@ -83,9 +86,14 @@ Future<ProviderContainer> pumpOurneyApp(
 
 /// Minimal controllable [AuthRepository] for router/provider tests.
 class FakeAuthRepository implements AuthRepository {
-  FakeAuthRepository({this.userId});
+  FakeAuthRepository({this.userId, this.termsVersion, this.identifier});
 
   String? userId;
+
+  /// Terms version recorded on the (fake) account.
+  int? termsVersion;
+  String? identifier;
+  final recordedTerms = <int>[];
   final _changes = StreamController<String?>.broadcast();
 
   void emit(String? userId) {
@@ -98,6 +106,19 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   bool get isLocalOnly => false;
+
+  @override
+  String? get signInIdentifier =>
+      userId == null ? null : (identifier ?? 'me@example.com');
+
+  @override
+  int? get acceptedTermsVersion => termsVersion;
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {
+    recordedTerms.add(version);
+    termsVersion = version;
+  }
 
   @override
   Stream<String?> watchUserId() => _changes.stream;

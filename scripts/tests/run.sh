@@ -242,8 +242,10 @@ jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" --rawfile c "$ROOT/
   "$BODY" > /dev/null
 check "Auth config body: both templates carry {{ .Token }} and no ConfirmationURL" $? "template mismatch"
 jq -e '.mailer_subjects_magic_link == "Mã đăng nhập Ourney / Your Ourney sign-in code"
-  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"' "$BODY" > /dev/null
-check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation]' "$BODY" 2> /dev/null)"
+  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"
+  and .sms_otp_length == 6
+  and .sms_template == "Ourney: ma xac nhan cua ban la {{ .Code }}. Khong chia se ma nay."' "$BODY" > /dev/null
+check "Auth config body: subjects and SMS template come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation,.sms_otp_length,.sms_template]' "$BODY" 2> /dev/null)"
 AUTH_SITE_URL="https://example.org/app/" run bash "$DEPLOY"
 jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY" > /dev/null
 check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY" 2> /dev/null)"

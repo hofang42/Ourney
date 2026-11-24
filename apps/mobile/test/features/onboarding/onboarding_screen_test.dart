@@ -108,6 +108,8 @@ void main() {
       }
       // No back button on question 1; Continue is disabled until a choice.
       expect(byKey('onboarding-quiz-back'), findsNothing);
+      // M1: local-only mode has no /auth, so "Have an account? Sign in" is hidden.
+      expect(byKey('onboarding-have-account'), findsNothing);
       expect(
         tester.widget<UiFlowButton>(byKey('onboarding-quiz-next')).onPressed,
         isNull,
@@ -302,6 +304,39 @@ void main() {
       expect(location(c), startsWith(AppRoutes.auth));
       expect(byKey('auth-screen'), findsOneWidget);
     });
+
+    testWidgets(
+      'have-account link shows only on Q1 with a backend and jumps to /auth '
+      '(M1)',
+      (tester) async {
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(),
+          onboarded: false,
+        );
+        expect(byKey('onboarding-have-account'), findsOneWidget);
+
+        // Hidden on question 2.
+        await tester.tap(byKey('onboarding-goal-english'));
+        await tester.pump();
+        await tester.tap(byKey('onboarding-quiz-next'));
+        await tester.pumpAndSettle();
+        expect(byKey('onboarding-have-account'), findsNothing);
+
+        // Back to question 1, then tap "Đã có tài khoản? Đăng nhập".
+        await tester.tap(byKey('onboarding-quiz-back'));
+        await tester.pumpAndSettle();
+        expect(byKey('onboarding-have-account'), findsOneWidget);
+        await tester.ensureVisible(byKey('onboarding-have-account'));
+        await tester.tap(byKey('onboarding-have-account'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(onboardingCompleteProvider), isTrue);
+        expect(c.read(onboardingQuizProvider), isNull);
+        expect(location(c), startsWith(AppRoutes.auth));
+        expect(byKey('auth-screen'), findsOneWidget);
+      },
+    );
 
     testWidgets('keeps the deep-link target in ?from=', (tester) async {
       final c = await pumpOurneyApp(tester, onboarded: false);

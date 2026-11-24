@@ -1,15 +1,91 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart'
-    show FutureProvider, Provider;
+    show
+        AsyncValue,
+        FutureProvider,
+        Notifier,
+        NotifierProvider,
+        Provider;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../app/providers.dart';
+import '../../app/redirect.dart' show ProfileGateStatus;
 import '../../shared/time_zones.dart';
 import 'avatar_picker.dart';
 
 part 'profile_providers.g.dart';
 
 Duration? _noRetry(int retryCount, Object error) => null;
+
+/// Bounded wait for `myProfileProvider` before falling back to
+/// [ProfileGateStatus.needsSetup] so a hung profile stream never traps `/auth`
+/// (DE-04 / H1).
+final profileGateTimeoutProvider = Provider<Duration>(
+  (ref) => const Duration(seconds: 10),
+);
+
+/// Session-scoped profile gate consumed by `routerProvider` (`resolveRedirect`).
+///
+/// - [ProfileGateStatus.ready]: local-only mode, signed out, unwired
+///   `ProfileRepository` in tests, or the signed-in account has a profile row.
+/// - [ProfileGateStatus.unknown]: signed in and awaiting the initial
+///   `myProfileProvider` emission (with a bounded timeout).
+/// - [ProfileGateStatus.needsSetup]: `myProfileProvider` yielded `null`,
+///   errored, or timed out with no profile row.
+class ProfileGateNotifier extends Notifier<ProfileGateStatus> {
+  Timer? _timeout;
+
+  @override
+  ProfileGateStatus build() {
+    _timeout?.cancel();
+    _timeout = null;
+    ref.onDispose(() {
+      _timeout?.cancel();
+      _timeout = null;
+    });
+    if (ref.watch(appConfigProvider).localOnly) {
+      return ProfileGateStatus.ready;
+    }
+    if (ref.watch(currentUserIdProvider) == null) {
+      return ProfileGateStatus.ready;
+    }
+    try {
+      ref.watch(profileRepositoryProvider);
+    } on Object {
+      // ProfileRepository not wired in this test: skip profile setup gate.
+      return ProfileGateStatus.ready;
+    }
+    final profileAsync = ref.watch(myProfileProvider);
+    if (profileAsync.hasValue) {
+      return profileAsync.value != null
+          ? ProfileGateStatus.ready
+          : ProfileGateStatus.needsSetup;
+    }
+    if (profileAsync.hasError) {
+      return ProfileGateStatus.needsSetup;
+    }
+    final duration = ref.watch(profileGateTimeoutProvider);
+    _timeout = Timer(duration, () {
+      state = ProfileGateStatus.needsSetup;
+    });
+    return ProfileGateStatus.unknown;
+  }
+
+  /// Marks the profile gate ready immediately after `ProfileSetupScreen`
+  /// persists the signed-in user's profile row (P1).
+  void markReady() {
+    _timeout?.cancel();
+    _timeout = null;
+    state = ProfileGateStatus.ready;
+  }
+}
+
+final profileGateStatusProvider =
+    NotifierProvider<ProfileGateNotifier, ProfileGateStatus>(
+      ProfileGateNotifier.new,
+    );
 
 /// The signed-in user's profile (null when none exists yet, signed out or
 /// local-only). Errors surface to the UI, which offers a retry button.

@@ -458,30 +458,6 @@ abstract class SafetyL10n {
   /// **'Mở bảng đề xuất'**
   String get safety_contactFeatureCta;
 
-  /// Title of the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Trước khi bắt đầu'**
-  String get safety_eulaAcceptTitle;
-
-  /// Intro of the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Hãy đọc và đồng ý với điều khoản sử dụng để tiếp tục.'**
-  String get safety_eulaAcceptIntro;
-
-  /// Checkbox label on the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Tôi đã đọc và đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.'**
-  String get safety_eulaAcceptCheckbox;
-
-  /// Accept button on the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đồng ý và tiếp tục'**
-  String get safety_eulaAcceptButton;
-
   /// Last updated line on legal pages.
   ///
   /// In vi, this message translates to:
@@ -545,7 +521,7 @@ abstract class SafetyL10n {
   /// EULA section body.
   ///
   /// In vi, this message translates to:
-  /// **'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào trong Hồ sơ.'**
+  /// **'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào tại Hồ sơ > Cài đặt > Xóa tài khoản.'**
   String get safety_eula5Body;
 
   /// EULA section heading.
@@ -569,7 +545,7 @@ abstract class SafetyL10n {
   /// Privacy section body: data stored.
   ///
   /// In vi, this message translates to:
-  /// **'Email (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.'**
+  /// **'Email hoặc số điện thoại (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.'**
   String get safety_privacy1Body;
 
   /// Privacy section heading.
@@ -617,7 +593,7 @@ abstract class SafetyL10n {
   /// Privacy section body: deletion.
   ///
   /// In vi, this message translates to:
-  /// **'Vào Hồ sơ > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.'**
+  /// **'Vào Hồ sơ > Cài đặt > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.'**
   String get safety_privacy5Body;
 
   /// Privacy section heading.
@@ -629,8 +605,44 @@ abstract class SafetyL10n {
   /// Privacy section body: contact.
   ///
   /// In vi, this message translates to:
-  /// **'Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.'**
+  /// **'Có câu hỏi về quyền riêng tư? Mở Hồ sơ > Cài đặt > Liên hệ.'**
   String get safety_privacy6Body;
+
+  /// Title of the compact terms update bottom sheet shown when kTermsVersion bumps.
+  ///
+  /// In vi, this message translates to:
+  /// **'Điều khoản vừa cập nhật'**
+  String get safety_termsUpdateTitle;
+
+  /// Intro of the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chúng mình vừa cập nhật Điều khoản sử dụng và Chính sách quyền riêng tư để giải thích rõ hơn cách Ourney bảo vệ bạn:'**
+  String get safety_termsUpdateIntro;
+
+  /// First bullet on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không dung thứ nội dung phản cảm hoặc người dùng lạm dụng; báo cáo được xử lý trong 24 giờ.'**
+  String get safety_termsUpdateBullet1;
+
+  /// Second bullet on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh và dữ liệu thuộc về bạn — không quảng cáo, không bán dữ liệu, có thể xóa tài khoản bất cứ lúc nào.'**
+  String get safety_termsUpdateBullet2;
+
+  /// Primary accept button on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đồng ý và tiếp tục'**
+  String get safety_termsUpdateAccept;
+
+  /// Dismiss button on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau'**
+  String get safety_termsUpdateLater;
 }
 
 class _SafetyL10nDelegate extends LocalizationsDelegate<SafetyL10n> {

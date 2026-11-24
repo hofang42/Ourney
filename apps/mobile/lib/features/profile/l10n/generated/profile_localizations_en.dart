@@ -129,37 +129,6 @@ class ProfileL10nEn extends ProfileL10n {
       'Your data stays on this device. Solo journeys work fully; sign-in and squads need a server.';
 
   @override
-  String get profile_sectionSettings => 'settings';
-
-  @override
-  String get profile_reminders => 'Reminders';
-
-  @override
-  String get profile_remindersSubtitle => 'Daily check-in reminder time';
-
-  @override
-  String get profile_haptics => 'Haptic feedback';
-
-  @override
-  String get profile_language => 'Language';
-
-  @override
-  String get profile_languageNote =>
-      'Follows your device language. Vietnamese by default.';
-
-  @override
-  String get profile_languageVi => 'Tiếng Việt';
-
-  @override
-  String get profile_languageEn => 'English';
-
-  @override
-  String get profile_safety => 'Terms, privacy & contact';
-
-  @override
-  String get profile_sectionAccount => 'account';
-
-  @override
   String get profile_signOut => 'Sign out';
 
   @override
@@ -167,10 +136,7 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_signOutMessage =>
-      'Photos and data saved on this phone are removed when you sign out, including check-ins that have not been sent yet. Everything already synced comes back when you sign in again with your email.';
-
-  @override
-  String get profile_deleteAccount => 'Delete account';
+      'Photos and data saved on this phone are removed when you sign out, including check-ins that have not been sent yet. Everything already synced comes back when you sign in again with this account.';
 
   @override
   String get profile_deleteTitle => 'Delete your account forever?';
@@ -327,9 +293,6 @@ class ProfileL10nEn extends ProfileL10n {
       'Per-journey times and the streak-saver alert';
 
   @override
-  String get profile_settings_secTheme => 'appearance';
-
-  @override
   String get profile_settings_themeLight => 'Light';
 
   @override
@@ -340,9 +303,6 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_settings_themeLabel => 'Theme';
-
-  @override
-  String get profile_settings_language => 'Language';
 
   @override
   String get profile_settings_langVi => 'Việt';
@@ -387,7 +347,7 @@ class ProfileL10nEn extends ProfileL10n {
   }
 
   @override
-  String get profile_settings_secPrivacy => 'privacy';
+  String get profile_settings_secPrivacy => 'privacy & safety';
 
   @override
   String get profile_settings_hideKg => 'Hide kg when sharing';
@@ -402,7 +362,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settings_blockedSub => 'View and unblock';
 
   @override
-  String get profile_settings_secInfo => 'info';
+  String get profile_settings_secInfo => 'about';
 
   @override
   String get profile_settings_featureRequests => 'Feedback & feature requests';
@@ -433,9 +393,6 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settingsEntry => 'Settings';
 
   @override
-  String get profile_settingsEntrySub => 'Appearance, language, privacy, info';
-
-  @override
   String profile_signOutPending(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -446,4 +403,22 @@ class ProfileL10nEn extends ProfileL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get profile_settings_secAppearance => 'appearance & language';
+
+  @override
+  String get profile_settings_signedInWith => 'Signed in with';
+
+  @override
+  String get profile_settings_haptics => 'Haptic feedback';
+
+  @override
+  String get profile_settings_shareNote => 'Applies to shared cards and squads';
+
+  @override
+  String get profile_settings_themeEyebrow => 'THEME';
+
+  @override
+  String get profile_settings_languageEyebrow => 'LANGUAGE';
 }

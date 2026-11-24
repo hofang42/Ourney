@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/locale_override.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
+import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/features/profile/settings_screen.dart'
     show profileSettingsPath;
@@ -25,6 +26,11 @@ class _FailingProfileRepository extends FakeProfileRepository {
   @override
   Stream<Profile?> watchMe() =>
       Stream.error(const OurneyException(OurneyErrorCode.internal));
+}
+
+class _ReadyProfileGate extends ProfileGateNotifier {
+  @override
+  ProfileGateStatus build() => ProfileGateStatus.ready;
 }
 
 Future<void> tapVisible(WidgetTester tester, String key) async {
@@ -133,16 +139,85 @@ void main() {
       expect(location(c), AppRoutes.journeys);
     });
 
-    testWidgets('offline save keeps the form with an error', (tester) async {
-      final profiles = FakeProfileRepository()
-        ..upsertError = const OurneyException(OurneyErrorCode.offline);
-      await signedIn(tester, profiles: profiles, path: profileSetupPath);
-      await tester.enterText(byKey('profile-username'), 'bob');
-      await tester.enterText(byKey('profile-display-name'), 'Bob');
-      await tapVisible(tester, 'profile-save');
-      expect(byKey('profile-form-error'), findsOneWidget);
-      expect(byKey('profile-setup-screen'), findsOneWidget);
-    });
+    testWidgets(
+      'DE-07: offline save keeps the form with an error and retry recovers',
+      (tester) async {
+        final profiles = FakeProfileRepository()
+          ..upsertError = const OurneyException(OurneyErrorCode.offline);
+        final c = await signedIn(
+          tester,
+          profiles: profiles,
+          path: '$profileSetupPath?from=%2Fjourneys',
+        );
+        await tester.enterText(byKey('profile-username'), 'bob');
+        await tester.enterText(byKey('profile-display-name'), 'Bob');
+        await tapVisible(tester, 'profile-save');
+        expect(byKey('profile-form-error'), findsOneWidget);
+        expect(byKey('profile-retry'), findsOneWidget);
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+
+        // Reconnect and tap retry.
+        profiles.upsertError = null;
+        await tapVisible(tester, 'profile-retry');
+        expect(profiles.calls, [
+          'upsertMe:bob:Bob',
+          'upsertMe:bob:Bob',
+        ]);
+        expect(location(c), AppRoutes.journeys);
+      },
+    );
+
+    testWidgets(
+      'DE-07: profile setup offers sign out to escape when offline or on wrong '
+      'account',
+      (tester) async {
+        final auth = RecordingAuthRepository(userId: 'u1');
+        final profiles = FakeProfileRepository()
+          ..upsertError = const OurneyException(OurneyErrorCode.offline);
+        final c = await signedIn(
+          tester,
+          auth: auth,
+          profiles: profiles,
+          path: '$profileSetupPath?from=%2Fjourneys',
+        );
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+        await tapVisible(tester, 'profile-setup-sign-out');
+        expect(byKey('profile-signout-dialog'), findsOneWidget);
+
+        await tester.tap(byKey('profile-signout-confirm'));
+        await tester.pumpAndSettle();
+        expect(auth.calls, ['signOut']);
+        expect(location(c), '${AppRoutes.auth}?from=%2Fjourneys');
+      },
+    );
+    testWidgets(
+      'DE-07: profile setup shows load/offline error with retry and sign out',
+      (tester) async {
+        await signedIn(
+          tester,
+          profiles: _FailingProfileRepository(),
+          path: profileSetupPath,
+        );
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+        expect(byKey('profile-load-error'), findsOneWidget);
+        expect(byKey('profile-retry'), findsOneWidget);
+        expect(byKey('profile-setup-sign-out'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'DE-04 / H1: cold restart while signed in without a profile redirects '
+      'to /profile/setup',
+      (tester) async {
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          profiles: FakeProfileRepository(),
+        );
+        expect(location(c), profileSetupPath);
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+      },
+    );
   });
 
   group('profile screen', () {
@@ -170,24 +245,45 @@ void main() {
       expect(find.text('Alice N.'), findsOneWidget);
     });
 
-    testWidgets('links to settings and safety', (tester) async {
+    testWidgets('the gear opens settings', (tester) async {
       final c = await signedIn(tester);
       await tapVisible(tester, 'profile-settings');
       expect(location(c), profileSettingsPath);
-      await goTo(tester, c, AppRoutes.profile);
-      await tapVisible(tester, 'profile-safety');
-      expect(location(c), AppRoutes.safety);
     });
 
     testWidgets('missing profile offers setup', (tester) async {
-      final c = await signedIn(tester, profiles: FakeProfileRepository());
+      final c = await pumpOurneyApp(
+        tester,
+        config: testBackendConfig,
+        auth: RecordingAuthRepository(userId: 'u1'),
+        overrides: <Override>[
+          profileRepositoryProvider.overrideWithValue(FakeProfileRepository()),
+          profileGateStatusProvider.overrideWith(_ReadyProfileGate.new),
+          mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+          avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+        ],
+      );
+      await goTo(tester, c, AppRoutes.profile);
       expect(byKey('profile-incomplete'), findsOneWidget);
       await tapVisible(tester, 'profile-complete');
       expect(location(c), profileSetupPath);
     });
 
     testWidgets('load error offers retry', (tester) async {
-      await signedIn(tester, profiles: _FailingProfileRepository());
+      final c = await pumpOurneyApp(
+        tester,
+        config: testBackendConfig,
+        auth: RecordingAuthRepository(userId: 'u1'),
+        overrides: <Override>[
+          profileRepositoryProvider.overrideWithValue(
+            _FailingProfileRepository(),
+          ),
+          profileGateStatusProvider.overrideWith(_ReadyProfileGate.new),
+          mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+          avatarPickerProvider.overrideWithValue(FakeAvatarPicker()),
+        ],
+      );
+      await goTo(tester, c, AppRoutes.profile);
       expect(byKey('profile-load-error'), findsOneWidget);
       expect(byKey('profile-retry'), findsOneWidget);
     });
@@ -200,28 +296,20 @@ void main() {
       expect(find.byType(UiBackHeader), findsNothing);
     });
 
-    testWidgets(
-      'language row shows the picked language, opens Settings (U18)',
-      (tester) async {
-        final c = await signedIn(tester);
-        expect(
-          find.text('Theo ngôn ngữ của máy. Mặc định là tiếng Việt.'),
-          findsOneWidget,
-        );
-        await c.read(localeOverrideProvider.notifier).set(const Locale('vi'));
-        await tester.pumpAndSettle();
-        expect(find.text('Tiếng Việt'), findsOneWidget);
-        await tapVisible(tester, 'profile-language');
-        expect(byKey('settings-screen'), findsOneWidget);
-      },
-    );
-
     testWidgets('U18: Profile does not repeat Settings rows (sign out, '
         'reminders); Settings owns them', (tester) async {
       await signedIn(tester);
       expect(byKey('profile-settings'), findsOneWidget);
-      expect(byKey('profile-signout'), findsNothing);
-      expect(byKey('profile-reminders'), findsNothing);
+      for (final key in [
+        'profile-signout',
+        'profile-reminders',
+        'profile-haptics',
+        'profile-language',
+        'profile-safety',
+        'profile-delete',
+      ]) {
+        expect(byKey(key), findsNothing, reason: key);
+      }
     });
 
     testWidgets('local-only: guest state, no account actions (FR-A5)', (
@@ -253,7 +341,8 @@ void main() {
 
   group('delete account (FR-A4, 3 steps: confirm, code, final)', () {
     Future<void> toCodeStep(WidgetTester tester) async {
-      await tapVisible(tester, 'profile-delete');
+      await tapVisible(tester, 'profile-settings');
+      await tapVisible(tester, 'settings-delete');
       expect(byKey('profile-delete-dialog'), findsOneWidget);
       UiButton next() =>
           tester.widget<UiButton>(byKey('profile-delete-continue'));
@@ -322,7 +411,8 @@ void main() {
     testWidgets('cancel does nothing', (tester) async {
       final auth = RecordingAuthRepository(userId: 'u1');
       await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-delete');
+      await tapVisible(tester, 'profile-settings');
+      await tapVisible(tester, 'settings-delete');
       await tapVisible(tester, 'profile-delete-cancel');
       await tester.pumpAndSettle();
       expect(byKey('profile-delete-dialog'), findsNothing);
@@ -335,7 +425,8 @@ void main() {
           OurneyErrorCode.unauthenticated,
         );
       await signedIn(tester, auth: auth);
-      await tapVisible(tester, 'profile-delete');
+      await tapVisible(tester, 'profile-settings');
+      await tapVisible(tester, 'settings-delete');
       await tapVisible(tester, 'profile-delete-understand');
       await tester.pump();
       await tapVisible(tester, 'profile-delete-continue');

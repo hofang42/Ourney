@@ -144,4 +144,7 @@ class OnboardingL10nVi extends OnboardingL10n {
   String onboarding_nudgeBody(String time) {
     return 'Bật nhắc để mình nhắc bạn lúc $time. Có thể trễ tuỳ máy.';
   }
+
+  @override
+  String get onboarding_haveAccount => 'Đã có tài khoản? Đăng nhập';
 }

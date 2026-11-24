@@ -160,46 +160,6 @@
   "@profile_guestMessage": {
     "description": "Local-only mode explanation."
   },
-  "profile_sectionSettings": "cài đặt",
-  "@profile_sectionSettings": {
-    "description": "Settings section header."
-  },
-  "profile_reminders": "Nhắc nhở",
-  "@profile_reminders": {
-    "description": "Link to the reminders screen."
-  },
-  "profile_remindersSubtitle": "Giờ nhắc check-in mỗi ngày",
-  "@profile_remindersSubtitle": {
-    "description": "Subtitle of the reminders link."
-  },
-  "profile_haptics": "Rung phản hồi",
-  "@profile_haptics": {
-    "description": "Haptics toggle."
-  },
-  "profile_language": "Ngôn ngữ",
-  "@profile_language": {
-    "description": "Language row title."
-  },
-  "profile_languageNote": "Theo ngôn ngữ của máy. Mặc định là tiếng Việt.",
-  "@profile_languageNote": {
-    "description": "The app follows the device language (vi default, en)."
-  },
-  "profile_languageVi": "Tiếng Việt",
-  "@profile_languageVi": {
-    "description": "Language row subtitle when Vietnamese was picked in Settings."
-  },
-  "profile_languageEn": "English",
-  "@profile_languageEn": {
-    "description": "Language row subtitle when English was picked in Settings."
-  },
-  "profile_safety": "Điều khoản, quyền riêng tư & liên hệ",
-  "@profile_safety": {
-    "description": "Link to the safety pages (EULA, privacy, contact)."
-  },
-  "profile_sectionAccount": "tài khoản",
-  "@profile_sectionAccount": {
-    "description": "Account section header."
-  },
   "profile_signOut": "Đăng xuất",
   "@profile_signOut": {
     "description": "Sign-out button and dialog action."
@@ -208,13 +168,9 @@
   "@profile_signOutTitle": {
     "description": "Sign-out confirmation title."
   },
-  "profile_signOutMessage": "Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.",
+  "profile_signOutMessage": "Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng tài khoản này.",
   "@profile_signOutMessage": {
     "description": "Sign-out confirmation message."
-  },
-  "profile_deleteAccount": "Xóa tài khoản",
-  "@profile_deleteAccount": {
-    "description": "Delete account button (FR-A4)."
   },
   "profile_deleteTitle": "Xóa tài khoản vĩnh viễn?",
   "@profile_deleteTitle": {
@@ -401,12 +357,10 @@
   "profile_settings_secReminders": "nhắc nhở",
   "profile_settings_remindersRow": "Nhắc nhở hằng ngày",
   "profile_settings_remindersSub": "Giờ nhắc từng hành trình và báo trước khi chuỗi đứt",
-  "profile_settings_secTheme": "giao diện",
   "profile_settings_themeLight": "Sáng",
   "profile_settings_themeDark": "Tối",
   "profile_settings_themeSystem": "Theo máy",
   "profile_settings_themeLabel": "Chế độ giao diện",
-  "profile_settings_language": "Ngôn ngữ",
   "profile_settings_langVi": "Việt",
   "profile_settings_langEn": "English",
   "profile_settings_appIcon": "Icon ứng dụng",
@@ -427,7 +381,7 @@
       }
     }
   },
-  "profile_settings_secPrivacy": "riêng tư",
+  "profile_settings_secPrivacy": "riêng tư & an toàn",
   "profile_settings_hideKg": "Ẩn số kg khi chia sẻ",
   "profile_settings_blurPhotos": "Làm mờ ảnh khi chia sẻ",
   "profile_settings_blocked": "Người bị chặn",
@@ -442,7 +396,6 @@
   "profile_settings_signOut": "Đăng xuất",
   "profile_settings_delete": "Xóa tài khoản",
   "profile_settingsEntry": "Cài đặt",
-  "profile_settingsEntrySub": "Giao diện, ngôn ngữ, riêng tư, thông tin",
   "profile_signOutPending": "{count, plural, other{Còn {count} ảnh chưa gửi lên. Ourney sẽ thử gửi trước khi đăng xuất; ảnh nào chưa gửi được sẽ mất.}}",
   "@profile_signOutPending": {
     "description": "Warning in the sign-out sheet when check-ins are still waiting to upload.",
@@ -451,5 +404,29 @@
         "type": "int"
       }
     }
+  },
+  "profile_settings_secAppearance": "giao diện & ngôn ngữ",
+  "@profile_settings_secAppearance": {
+    "description": "Settings group: theme, language, haptics."
+  },
+  "profile_settings_signedInWith": "Đăng nhập bằng",
+  "@profile_settings_signedInWith": {
+    "description": "Read-only settings row: the email or phone the account signs in with."
+  },
+  "profile_settings_haptics": "Rung phản hồi",
+  "@profile_settings_haptics": {
+    "description": "Haptic feedback switch."
+  },
+  "profile_settings_shareNote": "Áp dụng cho ảnh chia sẻ ra ngoài và trong nhóm",
+  "@profile_settings_shareNote": {
+    "description": "Subtitle of the share privacy switches."
+  },
+  "profile_settings_themeEyebrow": "GIAO DIỆN",
+  "@profile_settings_themeEyebrow": {
+    "description": "Small label above the theme control."
+  },
+  "profile_settings_languageEyebrow": "NGÔN NGỮ",
+  "@profile_settings_languageEyebrow": {
+    "description": "Small label above the language control."
   }
 }

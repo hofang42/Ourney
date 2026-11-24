@@ -13,15 +13,14 @@ class AuthL10nEn extends AuthL10n {
   String get auth_codeTitle => 'enter the code.';
 
   @override
-  String get auth_otpHelper =>
-      'Can\'t find the email? Check spam or promotions.';
+  String get auth_otpHelperEmail => 'No email? Check Spam or Promotions.';
 
   @override
-  String get auth_title => 'sign in.';
+  String get auth_title => 'get into ourney.';
 
   @override
   String get auth_subtitle =>
-      'Enter your email and Ourney sends you a 6-digit code. No password needed.';
+      'Enter your email and we\'ll send a 6-digit code. New here? We\'ll set up your account.';
 
   @override
   String get auth_emailLabel => 'Email';
@@ -41,9 +40,6 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_codeLabel => '6-digit code';
-
-  @override
-  String get auth_codeInvalidFormat => 'The code is exactly 6 digits.';
 
   @override
   String get auth_verify => 'Confirm';
@@ -67,7 +63,7 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_errorWrongCode =>
-      'That code isn\'t right. Check the 6 digits and try again.';
+      'That code is wrong or expired. Check it and try again.';
 
   @override
   String get auth_errorRateLimited =>
@@ -80,21 +76,10 @@ class AuthL10nEn extends AuthL10n {
   String get auth_errorGeneric => 'Something went wrong. Please try again.';
 
   @override
-  String get auth_eyebrow => 'OURNEY';
-
-  @override
-  String get auth_eyebrowCheck => 'CHECK YOUR EMAIL';
-
-  @override
   String get auth_terms => 'Terms of Use';
 
   @override
   String get auth_privacy => 'Privacy Policy.';
-
-  @override
-  String auth_digitSemantics(int n) {
-    return 'Digit $n of 6';
-  }
 
   @override
   String get auth_tabEmail => 'Email';
@@ -117,10 +102,7 @@ class AuthL10nEn extends AuthL10n {
 
   @override
   String get auth_phoneSubtitle =>
-      'Enter your phone number and Ourney texts you a 6-digit code.';
-
-  @override
-  String get auth_sendSms => 'Text me a code';
+      'Enter your number and we\'ll text a 6-digit code. New here? We\'ll set up your account.';
 
   @override
   String get auth_changePhone => 'Change phone number';
@@ -144,29 +126,13 @@ class AuthL10nEn extends AuthL10n {
   String get auth_signIn => 'Sign in';
 
   @override
-  String get auth_usePassword => 'Use a password';
+  String get auth_usePassword => 'Sign in with password';
 
   @override
-  String get auth_useCode => 'Use a sign-in code';
+  String get auth_useCode => 'Use a code instead';
 
   @override
   String get auth_forgot => 'Forgot password?';
-
-  @override
-  String get auth_createAccount => 'Create an account with a password';
-
-  @override
-  String get auth_haveAccount => 'Have an account? Sign in';
-
-  @override
-  String get auth_signUpTitle => 'create account.';
-
-  @override
-  String get auth_signUpSubtitle =>
-      'Use your email and a password. We may email you a code to confirm.';
-
-  @override
-  String get auth_signUpButton => 'Create account';
 
   @override
   String get auth_resetTitle => 'reset password.';
@@ -186,15 +152,11 @@ class AuthL10nEn extends AuthL10n {
       'Wrong password. Try again or sign in with a code.';
 
   @override
-  String get auth_errorEmailTaken =>
-      'That email already has an account. Sign in instead.';
-
-  @override
   String get auth_errorSendFailed =>
       'Couldn\'t send the code. Try again in a few minutes.';
 
   @override
-  String get auth_codeSentPrefix => 'The 6-digit code was just sent to';
+  String get auth_codeSentPrefix => 'We sent a 6-digit code to';
 
   @override
   String get auth_offlineBanner =>
@@ -207,11 +169,33 @@ class AuthL10nEn extends AuthL10n {
   String get auth_success => 'All done. Welcome.';
 
   @override
-  String get auth_legalIntro => 'By continuing you agree to the';
+  String get auth_legalIntro => 'By continuing, you agree to Ourney\'s';
 
   @override
-  String get auth_legalAnd => 'and';
+  String get auth_legalAnd => '(zero tolerance for objectionable content) and';
 
   @override
   String get auth_back => 'Back';
+
+  @override
+  String get auth_methodLabel => 'How to get your code';
+
+  @override
+  String get auth_passwordTitle => 'sign in with password.';
+
+  @override
+  String get auth_otpHelperSms =>
+      'No text yet? Wait a moment, then tap Resend code.';
+
+  @override
+  String get auth_errorPhoneUnavailable =>
+      'SMS sign-in isn\'t available right now. Please use email.';
+
+  @override
+  String get auth_errorSmsFailed =>
+      'Couldn\'t send the SMS. Check the number and try again in a few minutes.';
+
+  @override
+  String get auth_errorSamePassword =>
+      'New password must be different from your current password.';
 }

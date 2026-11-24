@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:ourney_core/ourney_core.dart';
 
 import '../data_context.dart';
+import '../db/app_database.dart' show ProfilesCompanion;
 import '../remote/remote_api.dart';
 
 /// How long sign-out waits for the outbox to drain before wiping.
@@ -26,6 +28,15 @@ class LocalAuthRepository implements AuthRepository {
 
   @override
   bool get isLocalOnly => true;
+
+  @override
+  String? get signInIdentifier => null;
+
+  @override
+  int? get acceptedTermsVersion => null;
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {}
 
   @override
   Stream<String?> watchUserId() => Stream<String?>.value(null);
@@ -95,6 +106,31 @@ class SupabaseAuthRepository implements AuthRepository {
   bool get isLocalOnly => false;
 
   @override
+  String? get signInIdentifier => remote.signInIdentifier;
+
+  @override
+  int? get acceptedTermsVersion => remote.acceptedTermsVersion;
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {
+    await remote.recordTermsAccepted(version);
+    final me = remote.currentUserId;
+    if (me != null) {
+      final recorded = remote.acceptedTermsVersion ?? version;
+      final existing = await (ctx.db.select(
+        ctx.db.profiles,
+      )..where((t) => t.id.equals(me))).getSingleOrNull();
+      if (existing != null && recorded > existing.termsVersion) {
+        await (ctx.db.update(
+          ctx.db.profiles,
+        )..where((t) => t.id.equals(me))).write(
+          ProfilesCompanion(termsVersion: Value(recorded)),
+        );
+      }
+    }
+  }
+
+  @override
   Stream<String?> watchUserId() => remote.watchUserId();
 
   @override
@@ -103,13 +139,41 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<void> verifyOtp(String email, String code) async {
     await remote.verifyOtp(email, code);
+    _syncSoon();
+  }
+
+  /// Runs pull sync only once the signed-in account has a `profiles` row
+  /// (returning account), deferring initial sync for brand-new accounts until
+  /// `DataProfileRepository.upsertMe` creates the profile on `/profile/setup`
+  /// (H1).
+  Future<void> syncWhenProfileReady() async {
     final sync = ctx.sync;
-    if (sync != null) unawaited(sync.syncNow());
+    final me = remote.currentUserId;
+    if (sync == null || me == null) return;
+    try {
+      await sync.ensureOwner(me);
+      var row = await (ctx.db.select(
+        ctx.db.profiles,
+      )..where((t) => t.id.equals(me))).getSingleOrNull();
+      if (row == null) {
+        final rows = await remote.select('profiles', eq: {'id': me});
+        for (final r in rows) {
+          await ctx.store.applyProfile(r);
+        }
+        row = await (ctx.db.select(
+          ctx.db.profiles,
+        )..where((t) => t.id.equals(me))).getSingleOrNull();
+      }
+      if (row != null && remote.currentUserId == me) {
+        await sync.syncNow();
+      }
+    } on Object {
+      // Offline or no profile yet: sync runs after profile setup or reconnect.
+    }
   }
 
   void _syncSoon() {
-    final sync = ctx.sync;
-    if (sync != null) unawaited(sync.syncNow());
+    unawaited(syncWhenProfileReady());
   }
 
   @override

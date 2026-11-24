@@ -22,6 +22,15 @@ abstract interface class RemoteApi {
   // --- Auth -----------------------------------------------------------------
   String? get currentUserId;
   Stream<String?> watchUserId();
+
+  /// Email, else phone, of the signed-in account (null when signed out).
+  String? get signInIdentifier;
+
+  /// `terms_version` of the signed-in account's profile (null when unknown
+  /// or signed out). Populated when the own `profiles` row is selected or
+  /// [recordTermsAccepted] succeeds.
+  int? get acceptedTermsVersion;
+  Future<void> recordTermsAccepted(int version);
   Future<void> sendOtp(String email);
   Future<void> verifyOtp(String email, String code);
   Future<void> sendPhoneOtp(String e164Phone);

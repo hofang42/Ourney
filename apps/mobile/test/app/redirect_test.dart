@@ -6,12 +6,12 @@ String? r(
   String location, {
   bool onboarded = true,
   AuthStatus? auth,
-  bool eula = true,
+  ProfileGateStatus profileGate = ProfileGateStatus.ready,
 }) => resolveRedirect(
   uri: Uri.parse(location),
   onboarded: onboarded,
   auth: auth ?? AuthStatus.localOnly,
-  eulaAccepted: eula,
+  profileGate: profileGate,
 );
 
 void main() {
@@ -79,42 +79,6 @@ void main() {
       expect(r('/groups', auth: inn), isNull);
     });
 
-    test('EULA gate: signed in without acceptance (FR-F3)', () {
-      const inn = AuthStatus.signedIn;
-      expect(r('/capture', auth: inn, eula: false), kEulaAcceptPath);
-      expect(
-        r('/groups', auth: inn, eula: false),
-        '$kEulaAcceptPath?from=%2Fgroups',
-      );
-      // Leaving /auth keeps the saved target.
-      expect(
-        r('/auth?from=%2Fjoin%2FX', auth: inn, eula: false),
-        '$kEulaAcceptPath?from=%2Fjoin%2FX',
-      );
-      expect(r('/auth', auth: inn, eula: false), kEulaAcceptPath);
-      // Safety pages (the gate itself, terms, privacy) stay reachable.
-      expect(
-        r('$kEulaAcceptPath?from=%2Fgroups', auth: inn, eula: false),
-        isNull,
-      );
-      expect(r('/safety/privacy', auth: inn, eula: false), isNull);
-      // Accepted: no gate.
-      expect(r('/groups', auth: inn), isNull);
-    });
-
-    test('EULA gate never applies to local-only or signed-out users', () {
-      expect(r('/capture', eula: false), isNull);
-      expect(r('/journey/1', eula: false), isNull);
-      expect(
-        r('/groups', auth: AuthStatus.signedOut, eula: false),
-        '/auth?from=%2Fgroups',
-      );
-      expect(
-        r('/capture', onboarded: false, eula: false),
-        AppRoutes.onboarding,
-      );
-    });
-
     test('deep links are normalised before any gate', () {
       expect(r('ourney://join/X', onboarded: false), '/join/X');
     });
@@ -126,11 +90,88 @@ void main() {
       final toAuth = r(gate, auth: AuthStatus.signedOut)!;
       expect(toAuth, '/auth?from=%2Ff%2Ftok123456');
       expect(r(toAuth, auth: AuthStatus.signedIn), '/f/tok123456');
+    });
+
+    test('DE-07: signing out on /profile/setup returns to /auth keeping ?from=',
+        () {
+      const out = AuthStatus.signedOut;
+      expect(r(kProfileSetupPath, auth: out), AppRoutes.auth);
       expect(
-        r(link, auth: AuthStatus.signedIn, eula: false),
-        '$kEulaAcceptPath?from=%2Ff%2Ftok123456',
+        r('$kProfileSetupPath?from=%2Fjoin%2FX', auth: out),
+        '/auth?from=%2Fjoin%2FX',
       );
     });
+
+    test(
+      'DE-04 / H1 / P2: signed in holds on /auth and /capture while '
+      'profileGate is unknown, redirects cold-start deep links to /auth?from=, '
+      'and redirects to /profile/setup when profileGate is needsSetup',
+      () {
+        const inn = AuthStatus.signedIn;
+        expect(
+          r('/auth?from=%2Ff%2Ftok123', auth: inn, profileGate: ProfileGateStatus.unknown),
+          isNull,
+        );
+        expect(
+          r('/auth', auth: inn, profileGate: ProfileGateStatus.unknown),
+          isNull,
+        );
+        expect(
+          r('/capture', auth: inn, profileGate: ProfileGateStatus.unknown),
+          isNull,
+        );
+        // P2: cold-start deep links while profileGate is unknown redirect to
+        // /auth?from=... instead of mounting /f or /join targets prematurely.
+        expect(
+          r('/f/tok123', auth: inn, profileGate: ProfileGateStatus.unknown),
+          '/auth?from=%2Ff%2Ftok123',
+        );
+        expect(
+          r('/join/ABCD1234', auth: inn, profileGate: ProfileGateStatus.unknown),
+          '/auth?from=%2Fjoin%2FABCD1234',
+        );
+        expect(
+          r(
+            '/auth?from=%2Ff%2Ftok123',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          '$kProfileSetupPath?from=%2Ff%2Ftok123',
+        );
+        expect(
+          r(
+            '/capture',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          kProfileSetupPath,
+        );
+        expect(
+          r(
+            '/join/ABCD1234',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          '$kProfileSetupPath?from=%2Fjoin%2FABCD1234',
+        );
+        expect(
+          r(
+            kProfileSetupPath,
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          isNull,
+        );
+        expect(
+          r(
+            '/safety/eula',
+            auth: inn,
+            profileGate: ProfileGateStatus.needsSetup,
+          ),
+          isNull,
+        );
+      },
+    );
   });
 
   group('safeFrom', () {
@@ -144,6 +185,7 @@ void main() {
       expect(safeFrom(u('journey/1')), isNull);
       expect(safeFrom(u('/auth')), isNull);
       expect(safeFrom(u('/onboarding')), isNull);
+      expect(safeFrom(u(kProfileSetupPath)), isNull);
       expect(safeFrom(Uri.parse('/auth')), isNull);
     });
   });

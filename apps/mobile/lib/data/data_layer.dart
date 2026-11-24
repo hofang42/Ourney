@@ -124,7 +124,12 @@ class DataLayer {
               debugPrintStack(stackTrace: st);
             }),
           );
-          unawaited(layer.syncNow());
+          final authRepo = layer.auth;
+          if (authRepo is SupabaseAuthRepository) {
+            unawaited(authRepo.syncWhenProfileReady());
+          } else {
+            unawaited(layer.syncNow());
+          }
         }
       });
     }
