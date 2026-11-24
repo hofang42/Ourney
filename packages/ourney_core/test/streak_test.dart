@@ -193,5 +193,18 @@ void main() {
       expect([m.current, m.best, m.completed, m.dayIndex],
           [j.current, j.best, j.completed, j.dayIndex]);
     });
+
+    test('joined after journey end clamps dayIndex to >= 1 (FS-37)', () {
+      final m = computeMemberStreak(
+        journeyStart: d('2026-10-01'),
+        durationDays: 7,
+        joinedLocalDate: d('2026-10-20'),
+        today: d('2026-10-21'),
+        dates: const [],
+      );
+      expect(m.dayIndex, greaterThanOrEqualTo(1));
+      expect(m.completed, 0);
+      expect(m.current, 0);
+    });
   });
 }

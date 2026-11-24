@@ -259,7 +259,10 @@ class DataSharingRepository implements SharingRepository {
     social.changed();
     final saved = await (_db.select(
       _db.journeys,
-    )..where((t) => t.id.equals(draft.id))).getSingle();
+    )..where((t) => t.id.equals(draft.id))).getSingleOrNull();
+    if (saved == null) {
+      throw const OurneyException(OurneyErrorCode.notFound);
+    }
     return journeyFromRow(saved);
   }
 }

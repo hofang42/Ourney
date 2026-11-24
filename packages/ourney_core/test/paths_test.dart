@@ -25,8 +25,10 @@ void main() {
     expect(isValidPublicToken('a' * 39), isFalse);
   });
 
-  test('publicJourneyUri', () {
+  test('publicJourneyUri and publicJourneyLink', () {
     final t = 'a' * 40;
+    expect(publicJourneyLink(t), 'https://ourney.tech/p/$t');
+    expect(publicJourneyShareUri(t).toString(), 'https://ourney.tech/p/$t');
     expect(publicJourneyUri(Uri.parse('https://x.supabase.co'), t).toString(),
         'https://x.supabase.co/functions/v1/public-journey?token=$t');
     expect(publicJourneyUri(Uri.parse('https://x.supabase.co/'), t).toString(),

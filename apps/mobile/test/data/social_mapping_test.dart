@@ -184,6 +184,26 @@ void main() {
     expect(v.sharedBy?.userId, bob);
     expect(v.canReply, isTrue);
     expect(v.canAddOwner, isFalse);
+    expect(v.layout, isNull);
+    expect(v.color, isNull);
+    expect(v.coverBlurred, isFalse);
+
+    final customized = sharedViewFromJson({
+      ...viewJson(),
+      'layout': 'memory_collectors',
+      'color': 2,
+      'cover_blurred': true,
+      'photos': [
+        {
+          ...(viewJson()['photos']! as List).first as Map<String, dynamic>,
+          'partner_photo_path': 'checkins/j1/$bob/c2_p.jpg',
+        },
+      ],
+    });
+    expect(customized.layout, PersonaSkinId.memoryCollectors);
+    expect(customized.color, 2);
+    expect(customized.coverBlurred, isTrue);
+    expect(customized.photos.single.partnerPhotoPath, 'checkins/j1/$bob/c2_p.jpg');
   });
 
   test('follow frame and imported params', () {

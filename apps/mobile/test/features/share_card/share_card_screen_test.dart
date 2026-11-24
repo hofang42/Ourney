@@ -508,14 +508,8 @@ void main() {
 
       await _tap(tester, _key('share-card-link-create'));
       expect(h.journeys.calls, ['setPublicLink:j1:true']);
-      final expected = publicJourneyUri(
-        Uri.parse(testBackendConfig.supabaseUrl),
-        testToken,
-      ).toString();
-      expect(
-        expected,
-        'https://example.supabase.co/functions/v1/public-journey?token=$testToken',
-      );
+      final expected = publicJourneyLink(testToken);
+      expect(expected, 'https://ourney.tech/p/$testToken');
       expect(h.clipboard, [expected]);
       expect(find.text('Đã sao chép link'), findsOneWidget);
       expect(
@@ -546,7 +540,7 @@ void main() {
       final h = await pumpShare(tester, journey: j, backend: true);
       await _tap(tester, _key('share-card-link-copy'));
       expect(h.journeys.calls, isEmpty);
-      expect(h.clipboard.single, contains('token=$testToken'));
+      expect(h.clipboard.single, 'https://ourney.tech/p/$testToken');
     });
 
     testWidgets('works even when the repository stream lags behind', (

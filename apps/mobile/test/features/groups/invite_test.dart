@@ -41,7 +41,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('group-invite-share')));
       await tester.pumpAndSettle();
-      expect(h.shared.single, contains('ourney://join/ABCD1234'));
+      expect(h.shared.single, contains('https://ourney.tech/j/ABCD1234'));
     });
 
     testWidgets('owner rotates the code', (tester) async {

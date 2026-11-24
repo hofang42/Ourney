@@ -88,7 +88,10 @@ StreakSummary computeStreak({
 
   var dayIndex = todayIdx + 1;
   if (dayIndex < 1) dayIndex = 1;
-  if (durationDays != null && dayIndex > durationDays) dayIndex = durationDays;
+  if (durationDays != null) {
+    final maxDay = durationDays < 1 ? 1 : durationDays;
+    if (dayIndex > maxDay) dayIndex = maxDay;
+  }
 
   return StreakSummary(
     current: current,

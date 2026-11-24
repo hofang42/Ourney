@@ -250,6 +250,12 @@ void main() {
     for (final entry in {
       'ourney://join/ABC123': '/join/ABC123',
       'ourney://journey/j-42': '/journey/j-42',
+      'ourney://friend/tok123': '/f/tok123',
+      'ourney://p/pubtok123': '/p/pubtok123',
+      'https://ourney.tech/f/tok123': '/f/tok123',
+      'https://ourney.tech/j/ABC123': '/join/ABC123',
+      'https://ourney.tech/p/pubtok123': '/p/pubtok123',
+      'ourney:///profile/delete-account': AppRoutes.capture,
     }.entries) {
       testWidgets('${entry.key} opens ${entry.value}', (tester) async {
         final router = createRouter(initialLocation: entry.key);

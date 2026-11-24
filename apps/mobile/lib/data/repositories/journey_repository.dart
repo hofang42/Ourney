@@ -118,11 +118,10 @@ class DataJourneyRepository implements JourneyRepository {
         // A-B12: the earlier attempt may have died between `create_journey`
         // and the extras; put back whatever the row is missing.
         await _reapplyMissingExtras(existing, draft, onExtrasRejected);
-        return journeyFromRow(
-          await (_db.select(
-            _db.journeys,
-          )..where((t) => t.id.equals(clientId))).getSingle(),
-        );
+        final refreshed = await (_db.select(
+          _db.journeys,
+        )..where((t) => t.id.equals(clientId))).getSingleOrNull();
+        return journeyFromRow(refreshed ?? existing);
       }
     }
     final id = draft.id ?? ctx.newId();
@@ -145,26 +144,30 @@ class DataJourneyRepository implements JourneyRepository {
       await ctx.store.applyJourney(row.cast<String, dynamic>());
       await _insertMembership(id, me, draft.hideMetricDefault);
       await _applyExtras(id, draft, onExtrasRejected);
-      final saved = await (_db.select(
-        _db.journeys,
-      )..where((t) => t.id.equals(id))).getSingle();
+      final saved = await _requireLocal(id);
       return journeyFromRow(saved);
     } on OurneyException catch (e) {
       if (e.error != OurneyErrorCode.offline || needsServer) rethrow;
     }
-    // Solo + offline: create locally, the outbox replays `create_journey`
-    // (idempotent on p_id) before any check-in of this journey.
-    final journey = await _insertLocal(id, me, draft, visibility);
-    await ctx.outbox!.enqueue(OutboxKind.createJourney, journeyKey(id), params);
-    final extras = _extrasUpdate(draft);
-    if (extras != null) {
+    // Solo + offline: create locally and enqueue in one atomic transaction so
+    // an app kill in between can never leave an unqueued ghost journey (FS-27).
+    return _db.transaction(() async {
+      final journey = await _insertLocal(id, me, draft, visibility);
       await ctx.outbox!.enqueue(
-        OutboxKind.updateJourney,
-        '${journeyKey(id)}:extras',
-        updateJourneyParams(id, extras),
+        OutboxKind.createJourney,
+        journeyKey(id),
+        params,
       );
-    }
-    return journey;
+      final extras = _extrasUpdate(draft);
+      if (extras != null) {
+        await ctx.outbox!.enqueue(
+          OutboxKind.updateJourney,
+          '${journeyKey(id)}:extras',
+          updateJourneyParams(id, extras),
+        );
+      }
+      return journey;
+    });
   }
 
   JourneyUpdate? _extrasUpdate(JourneyDraft d) {
@@ -585,9 +588,7 @@ class DataJourneyRepository implements JourneyRepository {
           );
       await _insertMembership(id, me, d.hideMetricDefault);
     });
-    final row = await (_db.select(
-      _db.journeys,
-    )..where((t) => t.id.equals(id))).getSingle();
+    final row = await _requireLocal(id);
     return journeyFromRow(row);
   }
 
