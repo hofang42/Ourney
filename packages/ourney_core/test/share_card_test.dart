@@ -105,6 +105,20 @@ void main() {
           streak(current: 1));
       expect(c.blurPhoto, isTrue);
     });
+    test('explicit blurMedia overrides hideMetricDefault (FS-12)', () {
+      final unblurred = buildShareCard(
+        journey(template: TemplateId.weightLoss, hide: true),
+        streak(current: 1),
+        blurMedia: false,
+      );
+      expect(unblurred.blurPhoto, isFalse);
+      final blurred = buildShareCard(
+        journey(template: TemplateId.englishDaily, hide: false),
+        streak(current: 1),
+        blurMedia: true,
+      );
+      expect(blurred.blurPhoto, isTrue);
+    });
     test('other journeys do not blur', () {
       expect(buildShareCard(journey(), streak(current: 1)).blurPhoto, isFalse);
     });

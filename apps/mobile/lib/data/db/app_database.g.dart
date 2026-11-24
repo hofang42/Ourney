@@ -6267,6 +6267,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ImportJobPhotosTable importJobPhotos = $ImportJobPhotosTable(
     this,
   );
+  late final Index importJobPhotosJobPos = Index(
+    'import_job_photos_job_pos',
+    'CREATE INDEX import_job_photos_job_pos ON import_job_photos (job_id, position)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6282,6 +6286,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncCursor,
     importJobs,
     importJobPhotos,
+    importJobPhotosJobPos,
   ];
 }
 

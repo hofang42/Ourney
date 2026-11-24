@@ -71,11 +71,18 @@ class DataCheckInRepository implements CheckInRepository {
         if (!prior.uploaded) {
           final queue = ctx.outbox;
           if (queue != null) {
-            await queue.enqueue(
-              OutboxKind.upsertCheckIn,
-              checkInKey(prior.id),
-              {'id': prior.id},
-            );
+            await _db.transaction(() async {
+              await queue.cancel(
+                checkInKey(prior.id),
+                kind: OutboxKind.upsertCheckIn,
+                includeDead: true,
+              );
+              await queue.enqueue(
+                OutboxKind.upsertCheckIn,
+                checkInKey(prior.id),
+                {'id': prior.id},
+              );
+            });
             unawaited(queue.flush());
           }
         }
@@ -180,7 +187,10 @@ class DataCheckInRepository implements CheckInRepository {
 
     final saved = await (_db.select(
       _db.checkIns,
-    )..where((t) => t.id.equals(id))).getSingle();
+    )..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (saved == null) {
+      throw const OurneyException(OurneyErrorCode.notFound);
+    }
     return _toModel(saved);
   }
 

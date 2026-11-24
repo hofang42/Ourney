@@ -84,8 +84,10 @@ class DataContext {
   /// Removes every cached row and file (account deletion, sign-out),
   /// including leftover check-in drafts.
   Future<void> wipeLocal() async {
-    // Stop pulls still running for the old session before they refill it.
+    // Stop pulls and outbox passes still running for the old session before
+    // they refill it.
     sync?.invalidateSession();
+    outbox?.abortCurrentPass();
     // Rows + marker + media renamed to trash in one step (see [MediaWipe]):
     // a failure anywhere keeps rows and files together, and the trash is only
     // deleted after the commit. The marker survives a late in-flight write:

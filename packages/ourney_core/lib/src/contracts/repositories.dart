@@ -231,12 +231,13 @@ abstract interface class GroupRepository {
 }
 
 abstract interface class SafetyRepository {
-  /// `report_content`: at least one of [checkInId] / [userId]. The reported
-  /// check-in is hidden from the reporter at once. Throws `invalid`,
-  /// `notFound`, `rateLimited` (20 reports / 24 h).
+  /// `report_content`: at least one of [checkInId] / [userId] / [messageId].
+  /// The reported check-in or message is hidden from the reporter at once.
+  /// Throws `invalid`, `notFound`, `rateLimited` (20 reports / 24 h).
   Future<void> report(
       {String? checkInId,
       String? userId,
+      String? messageId,
       required ReportReason reason,
       String? note});
 

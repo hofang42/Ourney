@@ -37,8 +37,12 @@ class ShareCardData {
   final bool blurPhoto;
 }
 
-ShareCardData buildShareCard(Journey journey, StreakSummary streak,
-    {String? displayName}) {
+ShareCardData buildShareCard(
+  Journey journey,
+  StreakSummary streak, {
+  String? displayName,
+  bool? blurMedia,
+}) {
   final milestone = milestoneFor(streak, journey);
   final int headline;
   final String subtitle;
@@ -59,6 +63,6 @@ ShareCardData buildShareCard(Journey journey, StreakSummary streak,
     subtitle: subtitle,
     displayName: displayName,
     milestone: milestone,
-    blurPhoto: journey.hideMetricDefault,
+    blurPhoto: blurMedia ?? journey.hideMetricDefault,
   );
 }
