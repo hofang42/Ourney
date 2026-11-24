@@ -140,7 +140,8 @@ Future<T?> showUiSheet<T>({
   Color? accent,
 }) {
   final ui = context.ui;
-  final duration = UiMotion.of(context, const Duration(milliseconds: 190));
+  final enterDuration = UiMotion.of(context, UiMotion.sheetEnter);
+  final exitDuration = UiMotion.of(context, UiMotion.sheetExit);
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -153,9 +154,10 @@ Future<T?> showUiSheet<T>({
     barrierColor: ui.scrim,
     constraints: const BoxConstraints(maxWidth: double.infinity),
     sheetAnimationStyle: AnimationStyle(
-      duration: duration,
-      reverseDuration: duration,
-      curve: Curves.easeOut,
+      duration: enterDuration,
+      reverseDuration: exitDuration,
+      curve: UiCurves.drawer,
+      reverseCurve: UiCurves.easeOutStrong,
     ),
     builder: (context) => UiSheet(accent: accent, child: builder(context)),
   );

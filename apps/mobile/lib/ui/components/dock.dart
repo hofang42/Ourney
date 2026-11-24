@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 import 'dart:math' as math;
+import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/gestures.dart';
@@ -13,9 +14,6 @@ import 'ourney_icons.dart';
 import 'pressable.dart';
 import 'skin_scope.dart';
 
-/// V2 selection pill easing (`cubic-bezier(.2,.9,.3,1.2)`, slight overshoot).
-const Curve _pillCurve = Cubic(0.2, 0.9, 0.3, 1.2);
-const Duration _pillDuration = Duration(milliseconds: 280);
 const Duration _longPress = Duration(milliseconds: 400);
 const double _pillW = 78;
 const double _pillH = 56;
@@ -227,8 +225,8 @@ class UiDock extends StatelessWidget {
           children: [
             if (activeIndex >= 0)
               AnimatedPositioned(
-                duration: UiMotion.of(context, _pillDuration),
-                curve: _pillCurve,
+                duration: UiMotion.of(context, UiMotion.dockPill),
+                curve: UiCurves.dockOvershoot,
                 left: slotX(activeIndex) + (slotW - pillW) / 2,
                 top: (c.maxHeight - _pillH) / 2 + tabDy,
                 width: pillW,
@@ -289,7 +287,30 @@ class UiDock extends StatelessWidget {
                   ),
               ],
             ),
-            Center(child: centerSlot),
+            Center(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(end: camera ? 1.0 : 0.0),
+                duration: UiMotion.of(context, UiMotion.medium),
+                curve: UiCurves.easeOutStrong,
+                child: centerSlot,
+                builder: (context, t, child) {
+                  final target = camera ? 1.0 : 0.0;
+                  if ((t - target).abs() < 0.001) return child!;
+                  final sx = camera
+                      ? lerpDouble(UiSize.snapPillW / UiSize.shutter, 1.0, t)!
+                      : lerpDouble(1.0, UiSize.shutter / UiSize.snapPillW, t)!;
+                  final sy = camera
+                      ? lerpDouble(UiSize.snapPillH / UiSize.shutter, 1.0, t)!
+                      : lerpDouble(1.0, UiSize.shutter / UiSize.snapPillH, t)!;
+                  return Transform.scale(
+                    key: const ValueKey('dock-center-morph'),
+                    scaleX: sx,
+                    scaleY: sy,
+                    child: child,
+                  );
+                },
+              ),
+            ),
           ],
         );
       },
@@ -476,6 +497,7 @@ class UiSnapPill extends StatelessWidget {
       centerChild: true,
       shadowOffset: shadowOffset,
       shadowColor: shadowColor ?? ui.hardShadowColor,
+      haptic: true,
       child: Container(
         width: UiSize.snapPillW,
         height: UiSize.snapPillH,

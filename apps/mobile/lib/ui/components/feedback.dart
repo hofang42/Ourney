@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -10,7 +11,12 @@ import 'ourney_icons.dart';
 
 /// Empty / error state: sticker icon slot, Space Grotesk h2 title, muted body
 /// and an optional pill action. Always tells the person what to do next.
-class UiEmptyState extends StatelessWidget {
+///
+/// Settles in on first mount over [UiMotion.medium] (`220ms`,
+/// [UiCurves.easeOutStrong]) with `scale(0.96 -> 1.0)` + [FadeTransition];
+/// under Reduce Motion renders at resting position immediately with zero
+/// allocated tickers.
+class UiEmptyState extends StatefulWidget {
   const UiEmptyState({
     @Deprecated('Use glyph: OurneyIcon(...)') this.icon,
     this.glyph,
@@ -36,9 +42,53 @@ class UiEmptyState extends StatelessWidget {
   final Key? actionKey;
 
   @override
+  State<UiEmptyState> createState() => _UiEmptyStateState();
+}
+
+class _UiEmptyStateState extends State<UiEmptyState>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  Animation<double>? _scale;
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = UiMotion.reduced(context);
+    if (!_started) {
+      _started = true;
+      if (!reduced) {
+        final ctrl = AnimationController(
+          vsync: this,
+          duration: UiMotion.medium,
+        );
+        _ctrl = ctrl;
+        final curved = CurvedAnimation(
+          parent: ctrl,
+          curve: UiCurves.easeOutStrong,
+        );
+        _curved = curved;
+        _scale = Tween<double>(begin: 0.96, end: 1.0).animate(curved);
+        ctrl.forward();
+      }
+    } else if (reduced && (_ctrl?.value ?? 1.0) < 1.0) {
+      _ctrl?.stop();
+      _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return Center(
+    Widget content = Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 310),
         child: Padding(
@@ -56,13 +106,13 @@ class UiEmptyState extends StatelessWidget {
                   border: ui.stickerBorder(),
                   boxShadow: ui.hardShadow(UiShadow.small),
                 ),
-                child: glyph ?? Icon(icon, size: 30, color: ui.ink),
+                child: widget.glyph ?? Icon(widget.icon, size: 30, color: ui.ink),
               ),
               const SizedBox(height: UiSpace.xl),
               Semantics(
                 header: true,
                 child: Text(
-                  title,
+                  widget.title,
                   textAlign: TextAlign.center,
                   style: UiText.heading(
                     font: 'Space Grotesk',
@@ -72,20 +122,20 @@ class UiEmptyState extends StatelessWidget {
                   ),
                 ),
               ),
-              if (body != null) ...[
+              if (widget.body != null) ...[
                 const SizedBox(height: 6),
                 Text(
-                  body!,
+                  widget.body!,
                   textAlign: TextAlign.center,
                   style: UiText.muted(color: ui.inkMuted, size: 14),
                 ),
               ],
-              if (actionLabel != null && onAction != null) ...[
+              if (widget.actionLabel != null && widget.onAction != null) ...[
                 const SizedBox(height: UiSpace.xxl),
                 UiButton.secondary(
-                  key: actionKey,
-                  label: actionLabel!,
-                  onPressed: onAction,
+                  key: widget.actionKey,
+                  label: widget.actionLabel!,
+                  onPressed: widget.onAction,
                   expand: false,
                 ),
               ],
@@ -94,6 +144,15 @@ class UiEmptyState extends StatelessWidget {
         ),
       ),
     );
+    final curved = _curved;
+    final scale = _scale;
+    if (!UiMotion.reduced(context) && curved != null && scale != null) {
+      content = FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(scale: scale, child: content),
+      );
+    }
+    return content;
   }
 }
 
@@ -129,7 +188,8 @@ class _UiSkeletonState extends State<UiSkeleton>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final still =
+        UiMotion.reduced(context) || !TickerMode.valuesOf(context).enabled;
     if (still) {
       _c.stop();
     } else if (!_c.isAnimating) {
@@ -152,36 +212,38 @@ class _UiSkeletonState extends State<UiSkeleton>
     final base = ui.surface;
     final band = Color.alphaBlend(ui.ink.withValues(alpha: 0.09), base);
     return ExcludeSemantics(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Without an explicit width the skeleton fills its parent.
-          final width =
-              widget.width ??
-              (constraints.maxWidth.isFinite ? constraints.maxWidth : null);
-          return AnimatedBuilder(
-            animation: _c,
-            builder: (context, _) {
-              final t = _c.value;
-              return Container(
-                width: width,
-                height: widget.height,
-                decoration: BoxDecoration(
-                  shape: shape,
-                  borderRadius: radius,
-                  border: Border.all(
-                    color: ui.ink.withValues(alpha: 0.45),
-                    width: UiBorder.standard,
+      child: RepaintBoundary(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Without an explicit width the skeleton fills its parent.
+            final width =
+                widget.width ??
+                (constraints.maxWidth.isFinite ? constraints.maxWidth : null);
+            return AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) {
+                final t = _c.value;
+                return Container(
+                  width: width,
+                  height: widget.height,
+                  decoration: BoxDecoration(
+                    shape: shape,
+                    borderRadius: radius,
+                    border: Border.all(
+                      color: ui.ink.withValues(alpha: 0.45),
+                      width: UiBorder.standard,
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment(-1.5 + 3 * t, 0),
+                      end: Alignment(-0.5 + 3 * t, 0),
+                      colors: [base, band, base],
+                    ),
                   ),
-                  gradient: LinearGradient(
-                    begin: Alignment(-1.5 + 3 * t, 0),
-                    end: Alignment(-0.5 + 3 * t, 0),
-                    colors: [base, band, base],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -203,16 +265,23 @@ class UiProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final target = value.clamp(0.0, 1.0).toDouble();
     return Semantics(
       label: semanticLabel,
-      value: '${(value.clamp(0, 1) * 100).round()}%',
+      value: '${(target * 100).round()}%',
       child: Container(
         height: 5,
         color: ui.divider,
         alignment: Alignment.centerLeft,
-        child: FractionallySizedBox(
-          widthFactor: value.clamp(0, 1).toDouble(),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: target),
+          duration: UiMotion.of(context, UiMotion.theme),
+          curve: UiCurves.easeOutStrong,
           child: Container(color: color ?? ui.accent),
+          builder: (context, animatedValue, child) => FractionallySizedBox(
+            widthFactor: animatedValue.clamp(0.0, 1.0),
+            child: child,
+          ),
         ),
       ),
     );
@@ -239,29 +308,37 @@ class UiProgressRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final target = value.clamp(0.0, 1.0).toDouble();
+    final centerChild = Center(
+      child: ExcludeSemantics(
+        child: Text(
+          label,
+          style: UiText.display(
+            size: 18,
+            weight: 800,
+            height: 1.3,
+            color: ui.ink,
+          ),
+        ),
+      ),
+    );
     return Semantics(
       label: caption == null ? label : '$label $caption',
       child: SizedBox(
         width: size,
         height: size,
-        child: CustomPaint(
-          painter: _RingPainter(
-            value: value.clamp(0, 1).toDouble(),
-            track: ui.divider,
-            color: color ?? ui.accent,
-          ),
-          child: Center(
-            child: ExcludeSemantics(
-              child: Text(
-                label,
-                style: UiText.display(
-                  size: 18,
-                  weight: 800,
-                  height: 1.3,
-                  color: ui.ink,
-                ),
-              ),
+        child: TweenAnimationBuilder<double>(
+          tween: Tween<double>(end: target),
+          duration: UiMotion.of(context, UiMotion.theme),
+          curve: UiCurves.easeOutStrong,
+          child: centerChild,
+          builder: (context, animatedValue, child) => CustomPaint(
+            painter: _RingPainter(
+              value: animatedValue.clamp(0.0, 1.0),
+              track: ui.divider,
+              color: color ?? ui.accent,
             ),
+            child: child,
           ),
         ),
       ),
@@ -372,13 +449,35 @@ double _toastBottom(
   return pinned > 0 ? math.max(offset, 36 + pinned) : offset;
 }
 
+const Duration _kToastExit = Duration(milliseconds: 150);
+const double _kToastSlideDy = 12.0;
+
+bool _looksLikeWarningToast(
+  String message, {
+  required bool hasAction,
+  required bool isError,
+}) {
+  if (hasAction || isError) return true;
+  final lower = message.toLowerCase();
+  return lower.contains('lỗi') ||
+      lower.contains('không thể') ||
+      lower.contains('không đăng') ||
+      lower.contains('thất bại') ||
+      lower.contains('error') ||
+      lower.contains('failed') ||
+      lower.contains('cannot') ||
+      lower.contains("can't");
+}
+
 /// V2 `.system-toast`: ink pill with paper text, 3dp brand hard shadow,
-/// 150ms in/out. [bottomOffset] is the gap above whatever the Scaffold already
-/// reserves: a floating SnackBar is lifted above `bottomNavigationBar` by
-/// the Scaffold itself, so it must stay small (adding the dock height here
-/// double-counted it and covered controls). A pinned `UiScaffold.bottom` slot
-/// (primary button) is not a `bottomNavigationBar`, so its height is added
-/// automatically (`max(bottomOffset, 36 + pinned)`, not their sum).
+/// 200ms in (`translateY(12dp -> 0)` + fade, [UiCurves.easeOutStrong]) /
+/// 150ms out (`150ms` opacity-only under Reduce Motion). [bottomOffset] is
+/// the gap above whatever the Scaffold already reserves: a floating SnackBar
+/// is lifted above `bottomNavigationBar` by the Scaffold itself, so it must
+/// stay small (adding the dock height here double-counted it and covered
+/// controls). A pinned `UiScaffold.bottom` slot (primary button) is not a
+/// `bottomNavigationBar`, so its height is added automatically
+/// (`max(bottomOffset, 36 + pinned)`, not their sum).
 void showUiToast(
   BuildContext context,
   String message, {
@@ -386,12 +485,17 @@ void showUiToast(
   String? actionLabel,
   VoidCallback? onAction,
   ScaffoldMessengerState? messenger,
+  bool isError = false,
 }) {
   final ui = context.ui;
   messenger ??= ScaffoldMessenger.maybeOf(context);
-  final d = UiMotion.of(context, const Duration(milliseconds: 150));
   if (messenger == null) return;
+  final enterDuration = UiMotion.fadeOf(context, UiMotion.normal);
+  final exitDuration = UiMotion.fadeOf(context, _kToastExit);
   final hasAction = actionLabel != null && onAction != null;
+  if (_looksLikeWarningToast(message, hasAction: hasAction, isError: isError)) {
+    unawaited(UiHaptics.warning());
+  }
   // A toast with an action stays long enough to be reached, and longer
   // still for screen-reader / switch users (they cannot race the timer).
   final duration = MediaQuery.maybeAccessibleNavigationOf(context) ?? false
@@ -416,54 +520,165 @@ void showUiToast(
         24,
         _toastBottom(context, bottomOffset, messenger: messenger),
       ),
-      content: Center(
-        child: Container(
-          key: const ValueKey('ui-toast'),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: ui.ink,
-            borderRadius: BorderRadius.circular(UiRadius.capsule),
-            boxShadow: UiShadow.hard(ui.brand, UiShadow.small),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Flexible(
-                child: Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body(
-                    size: 13,
-                    weight: FontWeight.w700,
-                    height: 1.4,
-                    color: ui.bg,
+      content: _UiToastMotion(
+        enterDuration: enterDuration,
+        child: Center(
+          child: Container(
+            key: const ValueKey('ui-toast'),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: ui.ink,
+              borderRadius: BorderRadius.circular(UiRadius.capsule),
+              boxShadow: UiShadow.hard(ui.brand, UiShadow.small),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 13,
+                      weight: FontWeight.w700,
+                      height: 1.4,
+                      color: ui.bg,
+                    ),
                   ),
                 ),
-              ),
-              // Optional undo-style action (e.g. restore an archived journey).
-              if (hasAction) ...[
-                const SizedBox(width: UiSpace.sm),
-                UiTextAction(
-                  key: const ValueKey('ui-toast-action'),
-                  label: actionLabel,
-                  size: 13,
-                  color: ui.bg,
-                  underline: true,
-                  onPressed: () {
-                    messenger?.hideCurrentSnackBar();
-                    onAction();
-                  },
-                ),
+                // Optional undo-style action (e.g. restore an archived journey).
+                if (hasAction) ...[
+                  const SizedBox(width: UiSpace.sm),
+                  UiTextAction(
+                    key: const ValueKey('ui-toast-action'),
+                    label: actionLabel,
+                    size: 13,
+                    color: ui.bg,
+                    underline: true,
+                    onPressed: () {
+                      messenger?.hideCurrentSnackBar();
+                      onAction();
+                    },
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     ),
-    snackBarAnimationStyle: AnimationStyle(duration: d, reverseDuration: d),
+    snackBarAnimationStyle: AnimationStyle(
+      duration: exitDuration,
+      reverseDuration: exitDuration,
+    ),
   );
+}
+
+class _UiToastMotion extends StatefulWidget {
+  const _UiToastMotion({required this.enterDuration, required this.child});
+
+  final Duration enterDuration;
+  final Widget child;
+
+  @override
+  State<_UiToastMotion> createState() => _UiToastMotionState();
+}
+
+class _UiToastMotionState extends State<_UiToastMotion>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _enterCtrl = AnimationController(
+    vsync: this,
+    duration: widget.enterDuration,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _enterCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _enterCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final parentAnim =
+        context.findAncestorWidgetOfExactType<SnackBar>()?.animation;
+    final reduced = UiMotion.reduced(context);
+    final curve = reduced ? Curves.linear : UiCurves.easeOutStrong;
+    final combined = _ToastCombinedAnimation(
+      enter: _enterCtrl,
+      parent: parentAnim,
+      curve: curve,
+    );
+    final faded = FadeTransition(opacity: combined, child: widget.child);
+    if (reduced) return faded;
+    return AnimatedBuilder(
+      animation: combined,
+      child: faded,
+      builder: (context, animatedChild) {
+        final dy = (1.0 - combined.value) * _kToastSlideDy;
+        return Transform.translate(
+          key: const ValueKey('ui-toast-translate'),
+          offset: Offset(0, dy),
+          child: animatedChild,
+        );
+      },
+    );
+  }
+}
+
+class _ToastCombinedAnimation extends Animation<double> {
+  _ToastCombinedAnimation({
+    required this.enter,
+    required this.parent,
+    required this.curve,
+  }) : _merged = parent == null ? enter : Listenable.merge([enter, parent]);
+
+  final Animation<double> enter;
+  final Animation<double>? parent;
+  final Curve curve;
+  final Listenable _merged;
+
+  @override
+  void addListener(VoidCallback listener) => _merged.addListener(listener);
+
+  @override
+  void removeListener(VoidCallback listener) =>
+      _merged.removeListener(listener);
+
+  @override
+  void addStatusListener(AnimationStatusListener listener) =>
+      (parent ?? enter).addStatusListener(listener);
+
+  @override
+  void removeStatusListener(AnimationStatusListener listener) =>
+      (parent ?? enter).removeStatusListener(listener);
+
+  @override
+  AnimationStatus get status => (parent ?? enter).status;
+
+  @override
+  double get value {
+    final enterRaw = enter.value.clamp(0.0, 1.0);
+    final enterCurved =
+        (enterRaw == 0.0 || enterRaw == 1.0) ? enterRaw : curve.transform(enterRaw);
+    final p = parent;
+    if (p == null) return enterCurved;
+    if (p.status == AnimationStatus.reverse ||
+        p.status == AnimationStatus.dismissed) {
+      final exitRaw = p.value.clamp(0.0, 1.0);
+      final exitCurved =
+          (exitRaw == 0.0 || exitRaw == 1.0) ? exitRaw : curve.transform(exitRaw);
+      return math.min(enterCurved, exitCurved);
+    }
+    return enterCurved;
+  }
 }
 
 /// Kit loading spinner (replaces `CircularProgressIndicator`): a 270 degree
@@ -498,7 +713,8 @@ class _UiSpinnerState extends State<UiSpinner>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final still =
+        UiMotion.reduced(context) || !TickerMode.valuesOf(context).enabled;
     if (still) {
       _c.stop();
     } else if (!_c.isAnimating) {
@@ -515,7 +731,8 @@ class _UiSpinnerState extends State<UiSpinner>
   @override
   Widget build(BuildContext context) {
     final color = widget.color ?? context.ui.ink;
-    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final still =
+        UiMotion.reduced(context) || !TickerMode.valuesOf(context).enabled;
     Widget arc = CustomPaint(
       painter: _SpinnerPainter(color: color, stroke: widget.strokeWidth),
     );

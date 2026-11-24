@@ -34,8 +34,13 @@ GoRouter createRouter({
     refreshListenable: refreshListenable,
     redirect: redirect ?? (context, state) => normalizeDeepLink(state.uri),
     routes: [
-      StatefulShellRoute.indexedStack(
+      StatefulShellRoute(
         builder: (context, state, shell) => AppShell(navigationShell: shell),
+        navigatorContainerBuilder: (context, navigationShell, children) =>
+            UiShellBranchContainer(
+              currentIndex: navigationShell.currentIndex,
+              children: children,
+            ),
         branches: [
           StatefulShellBranch(
             initialLocation: AppRoutes.journeys,

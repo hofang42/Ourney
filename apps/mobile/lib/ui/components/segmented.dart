@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
@@ -175,11 +177,14 @@ class UiSegmented<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final borderColor = ui.isDark ? ui.fieldBorder : ui.outline;
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final selectedIndex = segments.indexWhere((s) => s.value == value);
 
     Widget tab(
       UiSegment<T> s, {
       required bool stacked,
       required double hPad,
+      bool hasSlidingPill = false,
     }) {
       final selected = s.value == value;
       final label = Flexible(
@@ -199,19 +204,19 @@ class UiSegmented<T> extends StatelessWidget {
         ),
         padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? ui.fillSelected : Colors.transparent,
+          color: (!hasSlidingPill && selected)
+              ? ui.fillSelected
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
           border: selected
-              ? Border.all(color: borderColor, width: UiBorder.thin)
+              ? Border.all(
+                  color: borderColor,
+                  width: hasSlidingPill ? 0 : UiBorder.thin,
+                  style: hasSlidingPill ? BorderStyle.none : BorderStyle.solid,
+                )
               : null,
-          boxShadow: selected && !ui.isDark
-              ? const [
-                  BoxShadow(
-                    color: Color(0x0D111114),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
-                  ),
-                ]
+          boxShadow: (!hasSlidingPill && selected)
+              ? UiShadow.hard(ui.hardShadowColor, UiShadow.tiny)
               : null,
         ),
         child: Row(
@@ -225,7 +230,12 @@ class UiSegmented<T> extends StatelessWidget {
       );
       final pressable = UiPressable(
         key: s.key,
-        onPressed: () => onChanged(s.value),
+        onPressed: () {
+          if (!selected) {
+            unawaited(UiHaptics.selection());
+          }
+          onChanged(s.value);
+        },
         selected: selected,
         semanticLabel: s.label,
         excludeChildSemantics: true,
@@ -294,14 +304,55 @@ class UiSegmented<T> extends StatelessWidget {
                     for (final s in segments) tab(s, stacked: true, hPad: hPad),
                   ],
                 )
-              : IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final s in segments)
-                        tab(s, stacked: false, hPad: hPad),
-                    ],
-                  ),
+              : Stack(
+                  alignment: Alignment.centerLeft,
+                  children: [
+                    if (selectedIndex >= 0 && segments.isNotEmpty)
+                      AnimatedPositioned(
+                        key: const ValueKey('ui-segmented-pill'),
+                        duration: UiMotion.of(context, UiMotion.medium),
+                        curve: UiCurves.easeInOutStrong,
+                        left: isRtl
+                            ? (segments.length - 1 - selectedIndex) * segWidth
+                            : selectedIndex * segWidth,
+                        top: _inset,
+                        bottom: _inset,
+                        width: segWidth,
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            key: const ValueKey('ui-segmented-pill-box'),
+                            decoration: BoxDecoration(
+                              color: ui.fillSelected,
+                              borderRadius: BorderRadius.circular(
+                                UiRadius.capsule,
+                              ),
+                              border: Border.all(
+                                color: borderColor,
+                                width: UiBorder.standard,
+                              ),
+                              boxShadow: UiShadow.hard(
+                                ui.hardShadowColor,
+                                UiShadow.tiny,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (final s in segments)
+                            tab(
+                              s,
+                              stacked: false,
+                              hPad: hPad,
+                              hasSlidingPill: true,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
         );
       },

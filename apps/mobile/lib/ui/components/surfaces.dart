@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
@@ -313,35 +315,80 @@ class UiMenuAnchor extends StatefulWidget {
   State<UiMenuAnchor> createState() => _UiMenuAnchorState();
 }
 
-class _UiMenuAnchorState extends State<UiMenuAnchor> {
+class _UiMenuAnchorState extends State<UiMenuAnchor>
+    with SingleTickerProviderStateMixin {
+  static const Duration _kMenuEnter = Duration(milliseconds: 180);
+  static const Duration _kMenuExit = Duration(milliseconds: 130);
+
   final _link = LayerLink();
   final _portal = OverlayPortalController();
+
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: _kMenuEnter,
+    reverseDuration: _kMenuExit,
+    value: widget.open ? 1.0 : 0.0,
+  );
+  late final CurvedAnimation _curved = CurvedAnimation(
+    parent: _ctrl,
+    curve: UiCurves.easeOutStrong,
+    reverseCurve: UiCurves.easeOutStrong,
+  );
+  late final Animation<double> _scale = Tween<double>(
+    begin: UiMotion.popMinScale,
+    end: 1.0,
+  ).animate(_curved);
 
   @override
   void initState() {
     super.initState();
-    _sync();
+    _ensurePortalShown();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = UiMotion.reduced(context);
+    _ctrl.duration = reduced ? UiMotion.reducedFade : _kMenuEnter;
+    _ctrl.reverseDuration = reduced ? UiMotion.reducedFade : _kMenuExit;
   }
 
   @override
   void didUpdateWidget(UiMenuAnchor oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.open != widget.open) _sync();
+    if (oldWidget.open == widget.open) return;
+    _ensurePortalShown();
+    final reduced = UiMotion.reduced(context);
+    _ctrl.duration = reduced ? UiMotion.reducedFade : _kMenuEnter;
+    _ctrl.reverseDuration = reduced ? UiMotion.reducedFade : _kMenuExit;
+    if (widget.open) {
+      unawaited(UiHaptics.selection());
+      _ctrl.forward();
+    } else {
+      _ctrl.reverse();
+    }
   }
 
-  // show()/hide() rebuild the overlay, so they run after this frame instead
-  // of in the middle of the parent's build.
-  void _sync() {
+  void _ensurePortalShown() {
+    if (_portal.isShowing) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (widget.open && !_portal.isShowing) _portal.show();
-      if (!widget.open && _portal.isShowing) _portal.hide();
+      if (!_portal.isShowing) _portal.show();
     });
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    _ctrl.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final rtl = Directionality.of(context) == TextDirection.rtl;
+    final reduced = UiMotion.reduced(context);
+    final triggerAlignment = rtl ? Alignment.topLeft : Alignment.topRight;
     return PopScope(
       canPop: !widget.open,
       onPopInvokedWithResult: (didPop, _) {
@@ -349,33 +396,59 @@ class _UiMenuAnchorState extends State<UiMenuAnchor> {
       },
       child: OverlayPortal(
         controller: _portal,
-        overlayChildBuilder: (context) => Stack(
-          children: [
-            Positioned.fill(
-              child: GestureDetector(
-                key: const ValueKey('ui-menu-barrier'),
-                behavior: HitTestBehavior.opaque,
-                onTap: widget.onClose,
-              ),
-            ),
-            Positioned(
-              left: 0,
-              top: 0,
-              child: CompositedTransformFollower(
-                link: _link,
-                showWhenUnlinked: false,
-                targetAnchor: rtl
-                    ? Alignment.bottomLeft
-                    : Alignment.bottomRight,
-                followerAnchor: rtl ? Alignment.topLeft : Alignment.topRight,
-                offset: Offset(0, widget.gap),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: widget.menu,
+        overlayChildBuilder: (context) => AnimatedBuilder(
+          animation: _ctrl,
+          builder: (context, _) {
+            if (!widget.open && !_ctrl.isAnimating && _ctrl.value == 0.0) {
+              return const SizedBox.shrink();
+            }
+            Widget menuSurface = Material(
+              type: MaterialType.transparency,
+              child: widget.menu,
+            );
+            if (!reduced) {
+              menuSurface = ScaleTransition(
+                key: const ValueKey('ui-menu-scale'),
+                alignment: triggerAlignment,
+                scale: _scale,
+                child: menuSurface,
+              );
+            }
+            menuSurface = FadeTransition(
+              key: const ValueKey('ui-menu-fade'),
+              opacity: reduced ? _ctrl : _curved,
+              child: menuSurface,
+            );
+            return Stack(
+              children: [
+                if (widget.open)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      key: const ValueKey('ui-menu-barrier'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: widget.onClose,
+                    ),
+                  ),
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                    link: _link,
+                    showWhenUnlinked: false,
+                    targetAnchor: rtl
+                        ? Alignment.bottomLeft
+                        : Alignment.bottomRight,
+                    followerAnchor: triggerAlignment,
+                    offset: Offset(0, widget.gap),
+                    child: IgnorePointer(
+                      ignoring: !widget.open,
+                      child: menuSurface,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
         child: CompositedTransformTarget(link: _link, child: widget.anchor),
       ),
