@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Messenger &amp; Zalo Link Preview Mockup — Ourney</title>
+  <link rel="stylesheet" href="og-cards.css">
+  <style>
+    html, body {
+      width: 1440px;
+      height: 1120px;
+      overflow: hidden;
+      background: #F3ECE0;
+      color: #1A1A1A;
+      font-family: var(--body);
+    }
+    .sheet {
+      width: 100%;
+      height: 100%;
+      padding: 36px 44px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 2.5px solid #1A1A1A;
+    }
+    .sheet-head h1 {
+      font: 700 26px/1.2 var(--body);
+    }
+    .sheet-head span {
+      padding: 6px 14px;
+      background: #FFF3D1;
+      border: 2px solid #1A1A1A;
+      border-radius: 999px;
+      box-shadow: 3px 3px 0 #1A1A1A;
+      font: 700 13.5px/1 var(--body);
+    }
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+    .chat-window {
+      background: #FFFFFF;
+      border: 2.5px solid #1A1A1A;
+      border-radius: 22px;
+      box-shadow: 6px 6px 0 #1A1A1A;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .cw-bar {
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #1A1A1A;
+      font: 700 15px/1.2 var(--heading);
+    }
+    .cw-bar.messenger { background: #EBF3FF; }
+    .cw-bar.zalo { background: #E3F2FD; }
+    .cw-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1.8px solid #1A1A1A;
+      background: #FFFFFF;
+      font-size: 12px;
+    }
+    .cw-body {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #F8F9FB;
+      flex: 1;
+    }
+    .msg-bubble {
+      align-self: flex-end;
+      max-width: 440px;
+      padding: 10px 15px;
+      border-radius: 18px 18px 4px 18px;
+      background: #0084FF;
+      color: #FFFFFF;
+      font: 400 14.5px/1.4 var(--body);
+    }
+    .msg-bubble.zalo-b {
+      background: #E5EFFF;
+      color: #1A1A1A;
+      border: 1px solid #B7D4FF;
+    }
+    .msg- bubble-url {
+      text-decoration: underline;
+      font-weight: 600;
+    }
+    .unfurl-card {
+      align-self: flex-end;
+      width: 480px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #FFFFFF;
+      border: 1.5px solid #D0D7DE;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .unfurl-card img {
+      width: 100%;
+      aspect-ratio: 1200 / 630;
+      object-fit: cover;
+      display: block;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .uf-meta {
+      padding: 11px 14px 13px;
+    }
+    .uf-domain {
+      font: 600 11.5px/1.2 var(--heading);
+      color: #65676B;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .uf-title {
+      font: 700 15.5px/1.3 var(--heading);
+      color: #050505;
+      margin-top: 3px;
+    }
+    .uf-desc {
+      font: 400 13px/1.38 var(--body);
+      color: #65676B;
+      margin-top: 3px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    /* Bottom 4-card gallery showing all route variants */
+    .variant-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+    .v-card {
+      background: #FFFFFF;
+      border: 2.5px solid #1A1A1A;
+      border-radius: 18px;
+      box-shadow: 5px 5px 0 #1A1A1A;
+      overflow: hidden;
+    }
+    .v-card img {
+      width: 100%;
+      aspect-ratio: 1200 / 630;
+      object-fit: cover;
+      display: block;
+      border-bottom: 2px solid #1A1A1A;
+    }
+    .v-info {
+      padding: 10px 13px;
+    }
+    .v-route {
+      font: 700 12.5px/1.2 var(--heading);
+      color: #B33A0A;
+    }
+    .v-name {
+      font: 700 14.5px/1.25 var(--heading);
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <div class="sheet-head">
+      <h1>Ourney Link Unfurl Preview — Messenger, Zalo &amp; Deep-Link Variants (1200×630)</h1>
+      <span>https://ourney.tech · OG &amp; Twitter summary_large_image</span>
+    </div>
+
+    <div class="top-grid">
+      <!-- Messenger Card -->
+      <div class="chat-window">
+        <div class="cw-bar messenger">
+          <span>Facebook Messenger / iMessage / Telegram</span>
+          <span class="cw-badge">og-default.png · 1200×630</span>
+        </div>
+        <div class="cw-body">
+          <div class="msg-bubble">
+            Ê vào giữ chuỗi IELTS 30 ngày với tụi tao trên này đi: <span class="msg-bubble-url">https://ourney.tech/</span>
+          </div>
+          <div class="unfurl-card">
+            <img src="../assets/og/og-default.png" alt="og-default">
+            <div class="uf-meta">
+              <div class="uf-domain">OURNEY.TECH</div>
+              <div class="uf-title">ourney · chụp một tấm. giữ một chuỗi. đi cùng nhau.</div>
+              <div class="uf-desc">Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zalo Card -->
+      <div class="chat-window">
+        <div class="cw-bar zalo">
+          <span>Zalo Chat — Lời mời hành trình (/f/&lt;token&gt;)</span>
+          <span class="cw-badge">og-invite.png · 1200×630</span>
+        </div>
+        <div class="cw-body">
+          <div class="msg-bubble zalo-b">
+            Mình mới tạo hành trình mới trên Ourney, bấm vào link lời mời này nhé: <span class="msg-bubble-url">https://ourney.tech/f/linh-day1</span>
+          </div>
+          <div class="unfurl-card">
+            <img src="../assets/og/og-invite.png" alt="og-invite">
+            <div class="uf-meta">
+              <div class="uf-domain">OURNEY.TECH</div>
+              <div class="uf-title">Bạn được mời cùng đi một hành trình trên Ourney</div>
+              <div class="uf-desc">Mỗi ngày chụp một tấm ảnh điểm danh, thả cảm xúc và giữ liền chuỗi ngày không bỏ cuộc cùng nhau trên Ourney.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom 4 Variant Strip -->
+    <div class="variant-strip">
+      <div class="v-card">
+        <img src="../assets/og/og-default-en.png" alt="og-default-en">
+        <div class="v-info">
+          <div class="v-route">/?lang=en · og-default-en.png</div>
+          <div class="v-name">English Default Share Card</div>
+        </div>
+      </div>
+      <div class="v-card">
+        <img src="../assets/og/og-invite.png" alt="og-invite">
+        <div class="v-info">
+          <div class="v-route">/f/&lt;token&gt; · og-invite.png</div>
+          <div class="v-name">Friend Invite (“bạn được mời...”)</div>
+        </div>
+      </div>
+      <div class="v-card">
+        <img src="../assets/og/og-join.png" alt="og-join">
+        <div class="v-info">
+          <div class="v-route">/j/&lt;code&gt; · og-join.png</div>
+          <div class="v-name">Squad 8-Char Code Invite</div>
+        </div>
+      </div>
+      <div class="v-card">
+        <img src="../assets/og/og-journey.png" alt="og-journey">
+        <div class="v-info">
+          <div class="v-route">/p/&lt;token&gt; · og-journey.png</div>
+          <div class="v-name">Public Shared Journey Card</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
