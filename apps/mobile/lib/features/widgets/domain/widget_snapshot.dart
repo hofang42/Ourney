@@ -195,7 +195,7 @@ class WidgetJourneyItem {
     'utcOffsetMinutes': utcOffsetMinutes,
     'pinned': pinned,
     'dayNumber': dayNumber,
-    'totalDays': totalDays,
+    if (totalDays != null) 'totalDays': totalDays,
     'currentStreak': currentStreak,
     'bestStreak': bestStreak,
     'checkedInToday': checkedInToday,
@@ -203,8 +203,8 @@ class WidgetJourneyItem {
     'eveningCueAtUtc': eveningCueAtUtc,
     'streakAlertAtUtc': streakAlertAtUtc,
     'midnightRolloverUtc': midnightRolloverUtc,
-    'reminderAtUtc': reminderAtUtc,
-    'heroThumbFile': heroThumbFile,
+    if (reminderAtUtc != null) 'reminderAtUtc': reminderAtUtc,
+    if (heroThumbFile != null) 'heroThumbFile': heroThumbFile,
     'heroThumbBlurred': heroThumbBlurred,
     'weekStrip': [for (final w in weekStrip) w.toJson()],
   };
@@ -241,8 +241,8 @@ class WidgetSquadMemberItem {
     'isMe': isMe,
     'checkedInToday': checkedInToday,
     'streak': streak,
-    'avatarFile': avatarFile,
-    'todayThumbFile': todayThumbFile,
+    if (avatarFile != null) 'avatarFile': avatarFile,
+    if (todayThumbFile != null) 'todayThumbFile': todayThumbFile,
     'todayThumbBlurred': todayThumbBlurred,
   };
 }
@@ -287,7 +287,7 @@ class WidgetSquadItem {
     'typeIcon': typeIcon,
     'isCouple': isCouple,
     'dayNumber': dayNumber,
-    'totalDays': totalDays,
+    if (totalDays != null) 'totalDays': totalDays,
     'doneCount': doneCount,
     'memberCount': memberCount,
     'meCheckedInToday': meCheckedInToday,
@@ -427,11 +427,11 @@ class WidgetSnapshot {
     'locale': locale,
     'themeMode': themeMode,
     'privacy': privacy.toJson(),
-    'defaultJourneyId': defaultJourneyId,
+    if (defaultJourneyId != null) 'defaultJourneyId': defaultJourneyId,
     'totals': totals.toJson(),
     'journeys': [for (final j in journeys) j.toJson()],
     'squads': [for (final s in squads) s.toJson()],
-    'liveWindow': liveWindow?.toJson(),
+    if (liveWindow != null) 'liveWindow': liveWindow!.toJson(),
   };
 
   String toJsonString() => jsonEncode(toJson());
@@ -660,38 +660,56 @@ abstract final class WidgetSnapshotBuilder {
         const ReminderTime(0, 0),
       );
 
-      final reminderTime =
-          reminderSettings[j.id]?.activeTime ??
-          ReminderTime.tryParse(j.reminderTime);
+      final reminderTime = reminderSettings.containsKey(j.id)
+          ? reminderSettings[j.id]!.activeTime
+          : ReminderTime.tryParse(j.reminderTime);
       final String? reminderAtUtc;
       if (reminderTime != null) {
-        final deviceZoneForReminder =
-            (deviceTimezone != null && deviceTimezone.trim().isNotEmpty)
-            ? deviceLoc
-            : zone;
-        final baseDate =
-            (deviceTimezone != null && deviceTimezone.trim().isNotEmpty)
-            ? deviceToday
-            : today;
-        reminderAtUtc = wallClockToUtc(
+        final hasDeviceZone =
+            deviceTimezone != null && deviceTimezone.trim().isNotEmpty;
+        final deviceZoneForReminder = hasDeviceZone ? deviceLoc : zone;
+        final baseDate = hasDeviceZone ? deviceToday : today;
+        DateTime? alignedReminderUtc;
+        for (final offset in const [0, -1, 1]) {
+          final candidate = wallClockToUtc(
+            deviceZoneForReminder,
+            baseDate.addDays(offset),
+            reminderTime,
+          );
+          if (localDateIn(zone.name, candidate) == today) {
+            alignedReminderUtc = candidate;
+            break;
+          }
+        }
+        alignedReminderUtc ??= wallClockToUtc(
           deviceZoneForReminder,
           baseDate,
           reminderTime,
-        ).toIso8601String();
+        );
+        reminderAtUtc = alignedReminderUtc.toIso8601String();
       } else {
         reminderAtUtc = null;
       }
 
-      // Hero thumbnail: prefer today's check-in photo, else the latest visible
-      // check-in photo of this journey.
-      CheckIn? heroCheckIn = progress.checkInsByDate[today];
+      // Hero thumbnail: prefer today's latest visible check-in photo, else the
+      // latest visible check-in photo from an earlier day of this journey.
+      CheckIn? heroCheckIn;
+      for (final candidate in progress.checkInsOn(today).reversed) {
+        if (!hiddenCheckInIds.contains(candidate.id)) {
+          heroCheckIn = candidate;
+          break;
+        }
+      }
       if (heroCheckIn == null && progress.checkInsByDate.isNotEmpty) {
         final sortedDates = progress.checkInsByDate.keys.toList()..sort();
+        outer:
         for (final d in sortedDates.reversed) {
-          final candidate = progress.checkInsByDate[d];
-          if (candidate != null && !hiddenCheckInIds.contains(candidate.id)) {
-            heroCheckIn = candidate;
-            break;
+          if (d == today) continue;
+          for (final candidate in progress.checkInsOn(d).reversed) {
+            if (!hiddenCheckInIds.contains(candidate.id)) {
+              heroCheckIn = candidate;
+              break outer;
+            }
           }
         }
       }
@@ -789,10 +807,15 @@ abstract final class WidgetSnapshotBuilder {
             <MemberToday>[
               MemberToday(
                 userId: currentUserId ?? membership?.userId ?? j.ownerId,
-                displayName: j.coupleSelfName ?? 'Me',
+                displayName:
+                    j.coupleSelfName ??
+                    (normalizedLocale == 'en' ? 'Me' : 'Bạn'),
                 role: membership?.role ?? MemberRole.owner,
                 currentStreak: summary.current,
-                todayCheckIn: progress.checkInsByDate[today],
+                todayCheckIn:
+                    heroCheckIn != null && heroCheckIn.localDate == today
+                    ? heroCheckIn
+                    : null,
               ),
             ];
         final groupView = GroupTodayView.build(

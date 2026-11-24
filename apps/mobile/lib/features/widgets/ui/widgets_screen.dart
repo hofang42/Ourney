@@ -447,27 +447,33 @@ class _WidgetPreviewCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = WidgetsL10n.of(context);
     final j = journey;
     final skinId = j == null ? 'squad' : uiSkinIdFor(personaSkinOf(j));
     final variantIndex = (j?.color ?? 0).clamp(0, 2);
 
-    return UiSkinScope(
-      skinId: skinId,
-      variant: variantIndex,
-      child: Builder(
-        builder: (context) => switch (kind) {
-          WidgetPreviewKind.today => _TodayWidgetPreview(
-            journey: j,
-            photoMode: photoMode,
-          ),
-          WidgetPreviewKind.streak => _StreakWidgetPreview(
-            journey: j,
-          ),
-          WidgetPreviewKind.squad => _SquadWidgetPreview(
-            journey: j,
-            photoMode: photoMode,
-          ),
-        },
+    return Semantics(
+      container: true,
+      readOnly: true,
+      label: l10n.widgets_secPreview,
+      child: UiSkinScope(
+        skinId: skinId,
+        variant: variantIndex,
+        child: Builder(
+          builder: (context) => switch (kind) {
+            WidgetPreviewKind.today => _TodayWidgetPreview(
+              journey: j,
+              photoMode: photoMode,
+            ),
+            WidgetPreviewKind.streak => _StreakWidgetPreview(
+              journey: j,
+            ),
+            WidgetPreviewKind.squad => _SquadWidgetPreview(
+              journey: j,
+              photoMode: photoMode,
+            ),
+          },
+        ),
       ),
     );
   }
@@ -487,6 +493,7 @@ class _TodayWidgetPreview extends ConsumerWidget {
     final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
     final j = journey;
+    final now = ref.watch(journeysNowProvider);
     final checkIns = j == null ? null : ref.watch(myCheckInsProvider(j.id));
     final membership = j == null ? null : ref.watch(myMembershipProvider(j.id));
     final progress = (j != null && (checkIns?.hasValue ?? false))
@@ -494,7 +501,7 @@ class _TodayWidgetPreview extends ConsumerWidget {
             journey: j,
             membership: membership?.value,
             checkIns: checkIns!.value!,
-            now: ref.watch(journeysNowProvider),
+            now: now,
           )
         : null;
 
@@ -791,6 +798,7 @@ class _StreakWidgetPreview extends ConsumerWidget {
     final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
     final j = journey;
+    final now = ref.watch(journeysNowProvider);
     final checkIns = j == null ? null : ref.watch(myCheckInsProvider(j.id));
     final membership = j == null ? null : ref.watch(myMembershipProvider(j.id));
     final progress = (j != null && (checkIns?.hasValue ?? false))
@@ -798,7 +806,7 @@ class _StreakWidgetPreview extends ConsumerWidget {
             journey: j,
             membership: membership?.value,
             checkIns: checkIns!.value!,
-            now: ref.watch(journeysNowProvider),
+            now: now,
           )
         : null;
     final streak = progress?.summary.current ?? 14;
@@ -912,6 +920,18 @@ class _SquadWidgetPreview extends StatelessWidget {
     final l10n = WidgetsL10n.of(context);
     final ui = context.ui;
     final title = journey?.title ?? l10n.widgets_previewSampleTitle;
+    final photoStatusText = switch (photoMode) {
+      WidgetPhotoMode.off => l10n.widgets_previewPhotoHiddenNote,
+      WidgetPhotoMode.blurred => l10n.widgets_previewPhotoBlurredNote,
+      WidgetPhotoMode.smart => l10n.widgets_photoModeSmartNote,
+      WidgetPhotoMode.clear => l10n.widgets_previewPhotoClearNote,
+    };
+    final photoIcon = switch (photoMode) {
+      WidgetPhotoMode.off => 'eye-off',
+      WidgetPhotoMode.blurred => 'lock',
+      WidgetPhotoMode.smart => 'lock',
+      WidgetPhotoMode.clear => 'image',
+    };
 
     return UiCard(
       key: const ValueKey('widgets-preview-squad-surface'),
@@ -968,6 +988,42 @@ class _SquadWidgetPreview extends StatelessWidget {
                   colorIndex: i,
                 ),
             ],
+          ),
+          const SizedBox(height: UiSpace.md),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: UiSpace.md,
+              vertical: UiSpace.sm,
+            ),
+            decoration: BoxDecoration(
+              color: ui.fill,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: ui.outline, width: UiBorder.thin),
+            ),
+            child: Row(
+              children: [
+                OurneyIcon(
+                  name: photoIcon,
+                  size: 16,
+                  flat: true,
+                  color: ui.inkMuted,
+                ),
+                const SizedBox(width: UiSpace.sm),
+                Expanded(
+                  child: Text(
+                    photoStatusText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 12,
+                      weight: FontWeight.w600,
+                      height: 1.35,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

@@ -34,21 +34,40 @@ abstract interface class WidgetThumbPreparer {
   Future<void> clearCache();
 }
 
+/// Optional image transform callback used by [LocalWidgetThumbPreparer] to
+/// render blurred or downsampled files (injectable in unit tests).
+typedef WidgetThumbTransform =
+    Future<String?> Function({
+      required String sourcePath,
+      required String targetPath,
+      required int maxSide,
+    });
+
 /// Default on-device [WidgetThumbPreparer].
 class LocalWidgetThumbPreparer implements WidgetThumbPreparer {
   const LocalWidgetThumbPreparer(
     this._ref, {
     this.tempDirProvider,
     this.enableNativeTransforms = true,
+    this.blurRenderer,
+    this.downsampleRenderer,
   });
 
   final Ref _ref;
   final Future<Directory> Function()? tempDirProvider;
 
   /// When `false` (e.g. in pure unit tests without a running Flutter engine
-  /// image codec), skips `FlutterImageCompress` / `dart:ui` re-encoding and
-  /// passes the resolved local file path directly.
+  /// image codec), skips `FlutterImageCompress` / `dart:ui` re-encoding.
+  /// Note: privacy-blurred thumbnails (`req.blur == true`) still fail closed
+  /// unless [blurRenderer] succeeds so raw unblurred photos never cross the
+  /// widget bridge (§7.1).
   final bool enableNativeTransforms;
+
+  /// Optional override for pre-blurring (`sigma = 18`) in Dart.
+  final WidgetThumbTransform? blurRenderer;
+
+  /// Optional override for downsampling clear thumbnails in Dart.
+  final WidgetThumbTransform? downsampleRenderer;
 
   static const Duration _resolveTimeout = Duration(seconds: 2);
 
@@ -63,6 +82,19 @@ class LocalWidgetThumbPreparer implements WidgetThumbPreparer {
       return dir;
     } on Object {
       return null;
+    }
+  }
+
+  Future<void> _pruneOrphans(Directory? dir, Set<String> activeIds) async {
+    if (dir == null || !dir.existsSync()) return;
+    try {
+      for (final entity in dir.listSync(followLinks: false)) {
+        if (entity is File && !activeIds.contains(p.basename(entity.path))) {
+          await entity.delete();
+        }
+      }
+    } on Object {
+      // Best-effort cleanup.
     }
   }
 
@@ -100,35 +132,81 @@ class LocalWidgetThumbPreparer implements WidgetThumbPreparer {
   Future<List<WidgetThumbPayload>> prepare(
     List<WidgetThumbRequest> requests,
   ) async {
-    if (requests.isEmpty) return const [];
+    final activeIds = {for (final r in requests) r.id};
+    if (requests.isEmpty) {
+      await _pruneOrphans(await _thumbDir(create: false), activeIds);
+      return const [];
+    }
     final dir = await _thumbDir();
+    await _pruneOrphans(dir, activeIds);
     final out = <WidgetThumbPayload>[];
 
     for (final req in requests) {
       final sourcePath = await _resolveLocalSource(req);
       if (sourcePath == null) continue;
 
+      if (req.blur) {
+        // Privacy invariant (§7.1): blur MUST succeed on the Dart side before
+        // handing the file to native. If blur cannot run or fails, fail closed
+        // (omit this thumbnail; never pass the raw unblurred sourcePath).
+        if (dir == null || (!enableNativeTransforms && blurRenderer == null)) {
+          continue;
+        }
+        final preparedFile = File(p.join(dir.path, req.id));
+        String? blurredPath;
+        if (preparedFile.existsSync() && preparedFile.lengthSync() > 0) {
+          blurredPath = preparedFile.path;
+        } else {
+          final renderer = blurRenderer ?? _renderBlurredImage;
+          try {
+            blurredPath = await renderer(
+              sourcePath: sourcePath,
+              targetPath: preparedFile.path,
+              maxSide: req.maxSide,
+            );
+          } on Object {
+            blurredPath = null;
+          }
+        }
+        if (blurredPath == null ||
+            !File(blurredPath).existsSync() ||
+            File(blurredPath).lengthSync() <= 0) {
+          continue;
+        }
+        out.add(
+          WidgetThumbPayload(
+            id: req.id,
+            sourcePath: blurredPath,
+            maxSide: req.maxSide,
+            // Blurred once in Dart (sigma = 18); native must not re-blur.
+            blur: false,
+          ),
+        );
+        continue;
+      }
+
       var targetPath = sourcePath;
-      if (enableNativeTransforms && dir != null) {
+      if (dir != null && (enableNativeTransforms || downsampleRenderer != null)) {
         final preparedFile = File(p.join(dir.path, req.id));
         if (preparedFile.existsSync() && preparedFile.lengthSync() > 0) {
           targetPath = preparedFile.path;
-        } else if (req.blur) {
-          final blurredPath = await _renderBlurredImage(
-            sourcePath: sourcePath,
-            targetPath: preparedFile.path,
-            maxSide: req.maxSide,
-          );
-          if (blurredPath != null) {
-            targetPath = blurredPath;
-          }
         } else {
-          final compressedPath = await _downsampleIfNeeded(
-            sourcePath: sourcePath,
-            targetPath: preparedFile.path,
-            maxSide: req.maxSide,
-          );
-          targetPath = compressedPath ?? sourcePath;
+          final renderer = downsampleRenderer ?? _downsampleIfNeeded;
+          String? compressedPath;
+          try {
+            compressedPath = await renderer(
+              sourcePath: sourcePath,
+              targetPath: preparedFile.path,
+              maxSide: req.maxSide,
+            );
+          } on Object {
+            compressedPath = null;
+          }
+          if (compressedPath != null &&
+              File(compressedPath).existsSync() &&
+              File(compressedPath).lengthSync() > 0) {
+            targetPath = compressedPath;
+          }
         }
       }
 
@@ -137,7 +215,7 @@ class LocalWidgetThumbPreparer implements WidgetThumbPreparer {
           id: req.id,
           sourcePath: targetPath,
           maxSide: req.maxSide,
-          blur: req.blur,
+          blur: false,
         ),
       );
     }

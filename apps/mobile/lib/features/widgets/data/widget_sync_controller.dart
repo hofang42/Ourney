@@ -11,17 +11,24 @@ import '../../../app/locale_override.dart';
 import '../../../app/providers.dart';
 import '../../../app/redirect.dart' show AuthStatus;
 import '../../../data/data_providers.dart' show dataLayerProvider;
-import '../../groups/data/groups_providers.dart' show groupBlockedIdsProvider;
+import '../../groups/data/groups_providers.dart'
+    show
+        groupBlockedIdsProvider,
+        groupCheckInsProvider,
+        groupTodayProvider;
 import '../../journeys/data/journeys_providers.dart';
 import '../../profile/settings_providers.dart'
     show
         blurPhotosOnShareProvider,
         hideWeightOnShareProvider,
         themeModeProvider;
+import '../../reminders/data/notification_gateway.dart'
+    show reminderLocaleProvider;
 import '../../reminders/data/reminder_scheduler.dart'
     show reminderDeviceTimezoneProvider;
 import '../../reminders/data/reminder_settings.dart';
-import '../../safety/data/safety_providers.dart' show hiddenCheckInIdsProvider;
+import '../../safety/data/safety_providers.dart'
+    show blockedNamesProvider, hiddenCheckInIdsProvider;
 import '../domain/live_activity_planner.dart';
 import '../domain/widget_snapshot.dart';
 import 'widget_bridge_gateway.dart';
@@ -151,8 +158,7 @@ class WidgetSyncController {
       }
 
       final now = _ref.read(widgetsClockProvider).now().toUtc();
-      final localeOverride = _ref.read(localeOverrideProvider);
-      final locale = localeOverride?.languageCode ?? 'vi';
+      final locale = _ref.read(reminderLocaleProvider).languageCode;
       final themeMode = _ref.read(themeModeProvider);
       final photoMode = _ref.read(widgetPhotoModeProvider);
       final explicitRedact = _ref.read(redactLockScreenTitlesPrefProvider);
@@ -164,10 +170,19 @@ class WidgetSyncController {
       final blurPhotosOnShare = _ref.read(blurPhotosOnShareProvider);
       final hiddenCheckInIds = _ref.read(hiddenCheckInIdsProvider);
       final currentUserId = _ref.read(currentUserIdProvider);
-      final deviceTimezone = _ref
+      var deviceTimezone = _ref
           .read(reminderDeviceTimezoneProvider)
           .asData
           ?.value;
+      if (deviceTimezone == null) {
+        try {
+          deviceTimezone = await _ref.read(
+            reminderDeviceTimezoneProvider.future,
+          );
+        } on Object {
+          deviceTimezone = null;
+        }
+      }
 
       final pinnedIds = await _readPinnedIds();
       final blockedIds = await _readBlockedIds();
@@ -345,21 +360,31 @@ class WidgetSyncController {
       List<MemberToday>? groupMembers;
       List<CheckIn> groupCheckIns = const [];
       if (j.kind == JourneyKind.group && !localOnly) {
-        try {
-          groupMembers = await _ref
-              .read(groupRepositoryProvider)
-              .watchToday(j.id)
-              .first;
-        } on Object {
-          groupMembers = null;
+        final cachedGroupToday = _ref.read(groupTodayProvider(j.id));
+        if (cachedGroupToday.hasValue) {
+          groupMembers = cachedGroupToday.requireValue;
+        } else {
+          try {
+            groupMembers = await _ref
+                .read(groupRepositoryProvider)
+                .watchToday(j.id)
+                .first;
+          } on Object {
+            groupMembers = null;
+          }
         }
-        try {
-          groupCheckIns = await _ref
-              .read(checkInRepositoryProvider)
-              .watchForJourney(j.id)
-              .first;
-        } on Object {
-          groupCheckIns = const [];
+        final cachedGroupCheckIns = _ref.read(groupCheckInsProvider(j.id));
+        if (cachedGroupCheckIns.hasValue) {
+          groupCheckIns = cachedGroupCheckIns.requireValue;
+        } else {
+          try {
+            groupCheckIns = await _ref
+                .read(checkInRepositoryProvider)
+                .watchForJourney(j.id)
+                .first;
+          } on Object {
+            groupCheckIns = const [];
+          }
         }
       }
 
@@ -453,6 +478,16 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
   }
 
   @override
+  void didChangeLocales(List<Locale>? locales) {
+    if (mounted) {
+      ref.invalidate(reminderLocaleProvider);
+      ref
+          .read(widgetSyncControllerProvider)
+          .scheduleCoalescedMicrotaskSync();
+    }
+  }
+
+  @override
   void dispose() {
     unawaited(_syncEngineSub?.cancel());
     WidgetsBinding.instance.removeObserver(this);
@@ -464,24 +499,44 @@ class _WidgetLifecycleHookState extends ConsumerState<WidgetLifecycleHook>
     void trigger<T>(T? _, T _) => ref
         .read(widgetSyncControllerProvider)
         .scheduleCoalescedMicrotaskSync();
+    void ignoreError(Object _, StackTrace _) {}
 
     ref
-      ..listen(authStatusProvider, trigger)
-      ..listen(journeysListProvider, trigger)
-      ..listen(pinnedJourneyIdsProvider, trigger)
-      ..listen(journeysNowProvider, trigger)
-      ..listen(themeModeProvider, trigger)
-      ..listen(localeOverrideProvider, trigger)
-      ..listen(hideWeightOnShareProvider, trigger)
-      ..listen(blurPhotosOnShareProvider, trigger)
-      ..listen(hiddenCheckInIdsProvider, trigger)
-      ..listen(reminderSettingsProvider, trigger)
-      ..listen(streakAlertsEnabledProvider, trigger)
-      ..listen(widgetPhotoModeProvider, trigger)
-      ..listen(redactLockScreenTitlesPrefProvider, trigger)
-      ..listen(liveActivityEnabledProvider, trigger)
-      ..listen(defaultWidgetJourneyIdProvider, trigger)
-      ..listen(dismissedLiveWindowKeyProvider, trigger);
+      ..listen(authStatusProvider, trigger, onError: ignoreError)
+      ..listen(journeysListProvider, trigger, onError: ignoreError)
+      ..listen(pinnedJourneyIdsProvider, trigger, onError: ignoreError)
+      ..listen(journeysNowProvider, trigger, onError: ignoreError)
+      ..listen(themeModeProvider, trigger, onError: ignoreError)
+      ..listen(localeOverrideProvider, trigger, onError: ignoreError)
+      ..listen(reminderLocaleProvider, trigger, onError: ignoreError)
+      ..listen(reminderDeviceTimezoneProvider, trigger, onError: ignoreError)
+      ..listen(hideWeightOnShareProvider, trigger, onError: ignoreError)
+      ..listen(blurPhotosOnShareProvider, trigger, onError: ignoreError)
+      ..listen(hiddenCheckInIdsProvider, trigger, onError: ignoreError)
+      ..listen(groupBlockedIdsProvider, trigger, onError: ignoreError)
+      ..listen(blockedNamesProvider, trigger, onError: ignoreError)
+      ..listen(reminderSettingsProvider, trigger, onError: ignoreError)
+      ..listen(streakAlertsEnabledProvider, trigger, onError: ignoreError)
+      ..listen(widgetPhotoModeProvider, trigger, onError: ignoreError)
+      ..listen(redactLockScreenTitlesPrefProvider, trigger, onError: ignoreError)
+      ..listen(liveActivityEnabledProvider, trigger, onError: ignoreError)
+      ..listen(defaultWidgetJourneyIdProvider, trigger, onError: ignoreError)
+      ..listen(dismissedLiveWindowKeyProvider, trigger, onError: ignoreError);
+
+    final activeJourneys =
+        ref.watch(journeysListProvider).asData?.value ?? const <Journey>[];
+    final localOnly = ref.watch(appConfigProvider).localOnly;
+    for (final j in activeJourneys) {
+      if (j.status != JourneyStatus.active) continue;
+      ref
+        ..listen(myMembershipProvider(j.id), trigger, onError: ignoreError)
+        ..listen(myCheckInsProvider(j.id), trigger, onError: ignoreError);
+      if (j.kind == JourneyKind.group && !localOnly) {
+        ref
+          ..listen(groupTodayProvider(j.id), trigger, onError: ignoreError)
+          ..listen(groupCheckInsProvider(j.id), trigger, onError: ignoreError);
+      }
+    }
 
     return widget.child;
   }

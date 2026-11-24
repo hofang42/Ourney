@@ -201,12 +201,7 @@ class MethodChannelWidgetBridgeGateway implements WidgetBridgeGateway {
       );
       return WidgetCapabilities.fromMap(raw);
     } on Object {
-      return WidgetCapabilities(
-        widgets: true,
-        liveActivity: true,
-        promotedLiveUpdates: false,
-        appGroup: defaultTargetPlatform != TargetPlatform.iOS,
-      );
+      return WidgetCapabilities.unsupported;
     }
   }
 }

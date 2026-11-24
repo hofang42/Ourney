@@ -43,6 +43,14 @@ class LiveActivityPlan {
 
   /// Payload passed to `MethodChannel('ourney/widgets').invokeMethod('syncLiveActivity', ...)`
   /// (`null` to end immediately).
+  ///
+  /// Note: In addition to the core [WidgetLiveWindow] fields, `locale`,
+  /// `redactLockScreenTitles` (and `redactTitleOnLockScreen`),
+  /// `celebrateAndDismiss`, and `isCompletedCelebration`, this payload also
+  /// includes pre-localized fallback copy hints (`snapLabel`, `dismissLabel`,
+  /// `statusText`, `shortCriticalText`, `publicFallbackTitle`). Native iOS
+  /// (`WidgetL10n`) and Android (`R.string.widget_live_*`) currently resolve
+  /// copy natively from `locale` and ignore those extra string keys.
   final Map<String, Object?>? channelPayload;
 }
 
@@ -58,13 +66,16 @@ abstract final class LiveActivityWindowPlanner {
     required AuthStatus authStatus,
     required bool liveActivityEnabled,
     required bool streakAlertsEnabled,
-    required bool redactTitleOnLockScreen,
+    bool? redactLockScreenTitles,
+    bool? redactTitleOnLockScreen,
     required String locale,
     required List<WidgetJourneyItem> journeys,
     String? dismissedWindowKey,
     Set<String> dismissedWindowKeys = const {},
     WidgetLiveWindow? previousActiveWindow,
   }) {
+    final effectiveRedact =
+        redactLockScreenTitles ?? redactTitleOnLockScreen ?? false;
     if (!liveActivityEnabled ||
         authStatus == AuthStatus.signedOut ||
         journeys.isEmpty) {
@@ -106,7 +117,8 @@ abstract final class LiveActivityWindowPlanner {
         'windowStartUtc': previousActiveWindow.windowStartUtc,
         'deadlineUtc': previousActiveWindow.deadlineUtc,
         'locale': normalizedLocale,
-        'redactTitleOnLockScreen': redactTitleOnLockScreen,
+        'redactLockScreenTitles': effectiveRedact,
+        'redactTitleOnLockScreen': effectiveRedact,
         'celebrateAndDismiss': true,
         'isCompletedCelebration': true,
         'snapLabel': isEn ? 'Snap now' : 'Chụp ngay',
@@ -136,22 +148,30 @@ abstract final class LiveActivityWindowPlanner {
       final deadlineUtc = DateTime.parse(j.midnightRolloverUtc).toUtc();
       if (!nowUtc.isBefore(deadlineUtc)) continue;
 
-      final DateTime? rawStartUtc;
-      if (j.reminderAtUtc != null) {
-        final reminderUtc = DateTime.parse(j.reminderAtUtc!).toUtc();
-        rawStartUtc = reminderUtc.subtract(kReminderWindowLead);
-      } else if (streakAlertsEnabled && j.atRisk) {
-        rawStartUtc = DateTime.parse(j.eveningCueAtUtc).toUtc();
-      } else {
-        rawStartUtc = null;
-      }
-      if (rawStartUtc == null) continue;
-
       final minStartUtc = deadlineUtc.subtract(kMaxLiveWindowDuration);
-      final windowStartUtc = rawStartUtc.isBefore(minStartUtc)
-          ? minStartUtc
-          : rawStartUtc;
-      if (!windowStartUtc.isBefore(deadlineUtc)) continue;
+      DateTime? windowStartUtc;
+      if (j.reminderAtUtc != null) {
+        final reminderUtc = DateTime.tryParse(j.reminderAtUtc!)?.toUtc();
+        if (reminderUtc != null) {
+          final rawReminderStart = reminderUtc.subtract(kReminderWindowLead);
+          final candidateStart = rawReminderStart.isBefore(minStartUtc)
+              ? minStartUtc
+              : rawReminderStart;
+          if (candidateStart.isBefore(deadlineUtc)) {
+            windowStartUtc = candidateStart;
+          }
+        }
+      }
+      if (windowStartUtc == null && streakAlertsEnabled && j.atRisk) {
+        final rawEveningStart = DateTime.parse(j.eveningCueAtUtc).toUtc();
+        final candidateStart = rawEveningStart.isBefore(minStartUtc)
+            ? minStartUtc
+            : rawEveningStart;
+        if (candidateStart.isBefore(deadlineUtc)) {
+          windowStartUtc = candidateStart;
+        }
+      }
+      if (windowStartUtc == null) continue;
 
       // Eligible only when `now` is inside `[windowStartUtc, deadlineUtc)`.
       if (nowUtc.isBefore(windowStartUtc)) continue;
@@ -194,7 +214,8 @@ abstract final class LiveActivityWindowPlanner {
       final payload = <String, Object?>{
         ...window.toJson(),
         'locale': normalizedLocale,
-        'redactTitleOnLockScreen': redactTitleOnLockScreen,
+        'redactLockScreenTitles': effectiveRedact,
+        'redactTitleOnLockScreen': effectiveRedact,
         'celebrateAndDismiss': false,
         'isCompletedCelebration': false,
         'snapLabel': isEn ? 'Snap now' : 'Chụp ngay',

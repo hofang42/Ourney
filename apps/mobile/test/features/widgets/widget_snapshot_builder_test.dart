@@ -25,6 +25,7 @@ Journey _makeJourney({
   String? couplePartnerName,
   PersonaSkinId? layout,
   int? color = 0,
+  String? reminderTime,
   Map<String, Object?>? dna,
 }) => Journey(
   id: id,
@@ -46,6 +47,7 @@ Journey _makeJourney({
   couplePartnerName: couplePartnerName,
   layout: layout,
   color: color,
+  reminderTime: reminderTime,
   dna: dna,
 );
 
@@ -484,5 +486,157 @@ void main() {
       final decoded = jsonDecode(snap.toJsonString()) as Map<String, Object?>;
       expect(decoded['schemaVersion'], 1);
     });
+
+    test(
+      'omits absent optional keys (never emits :null) and omits totalDays for open-ended journeys (P1-3)',
+      () {
+        final openEndedGroup = _makeJourney(
+          id: 'j-open',
+          title: 'Open Ended Group',
+          kind: JourneyKind.group,
+          durationDays: null,
+        );
+        final snap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          photoMode: WidgetPhotoMode.off,
+          liveActivityEnabled: false,
+          journeyInputs: [
+            WidgetJourneyBuildInput(journey: openEndedGroup),
+          ],
+        );
+
+        final rawJson = snap.toJsonString();
+        expect(rawJson.contains(':null'), isFalse);
+
+        final decoded = jsonDecode(rawJson) as Map<String, Object?>;
+        expect(decoded.containsKey('liveWindow'), isFalse);
+
+        final jMap =
+            (decoded['journeys'] as List<Object?>).single as Map<String, Object?>;
+        expect(jMap.containsKey('totalDays'), isFalse);
+        expect(jMap.containsKey('reminderAtUtc'), isFalse);
+        expect(jMap.containsKey('heroThumbFile'), isFalse);
+
+        final sMap =
+            (decoded['squads'] as List<Object?>).single as Map<String, Object?>;
+        expect(sMap.containsKey('totalDays'), isFalse);
+        final mMap =
+            (sMap['members'] as List<Object?>).single as Map<String, Object?>;
+        expect(mMap.containsKey('avatarFile'), isFalse);
+        expect(mMap.containsKey('todayThumbFile'), isFalse);
+        expect(mMap['displayName'], 'Bạn');
+        expect(mMap['initial'], 'B');
+
+        final signedOutSnap = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedOut,
+          journeyInputs: const [],
+        );
+        expect(signedOutSnap.toJsonString().contains(':null'), isFalse);
+        final signedOutMap =
+            jsonDecode(signedOutSnap.toJsonString()) as Map<String, Object?>;
+        expect(signedOutMap.containsKey('defaultJourneyId'), isFalse);
+        expect(signedOutMap.containsKey('liveWindow'), isFalse);
+      },
+    );
+
+    test(
+      'respects reminder OFF even when Journey.reminderTime is non-null, and aligns cross-timezone reminderAtUtc to journey today (P1-1)',
+      () {
+        final journeyWithModelTime = _makeJourney(
+          id: 'j-rem-off',
+          title: 'Reminder Disabled In Settings',
+          reminderTime: '20:00',
+          timezone: 'Asia/Ho_Chi_Minh',
+        );
+        final crossTzJourney = _makeJourney(
+          id: 'j-cross-tz',
+          title: 'HCM Journey On NY Device',
+          timezone: 'Asia/Ho_Chi_Minh', // UTC+7
+        );
+
+        // At 2026-11-24T12:00:00Z:
+        // - In Asia/Ho_Chi_Minh (+07:00), it is 2026-11-24 19:00 (today = 2026-11-24, midnight = 2026-11-24T17:00:00Z).
+        // - In America/New_York (-05:00), it is 2026-11-24 07:00 (deviceToday = 2026-11-24).
+        // A 20:00 NY reminder on 2026-11-23 is 2026-11-24T01:00:00Z (08:00 ICT on 2026-11-24 == journey today!).
+        final snap = WidgetSnapshotBuilder.build(
+          now: DateTime.utc(2026, 11, 24, 12, 0),
+          authStatus: AuthStatus.signedIn,
+          deviceTimezone: 'America/New_York',
+          reminderSettings: {
+            'j-rem-off': const ReminderSetting(
+              enabled: false,
+              time: ReminderTime(20, 0),
+            ),
+            'j-cross-tz': const ReminderSetting(
+              enabled: true,
+              time: ReminderTime(20, 0),
+            ),
+          },
+          journeyInputs: [
+            WidgetJourneyBuildInput(journey: journeyWithModelTime),
+            WidgetJourneyBuildInput(journey: crossTzJourney),
+          ],
+        );
+
+        final offItem = snap.journeys.firstWhere((j) => j.id == 'j-rem-off');
+        expect(offItem.reminderAtUtc, isNull);
+
+        final crossItem = snap.journeys.firstWhere((j) => j.id == 'j-cross-tz');
+        expect(crossItem.reminderAtUtc, '2026-11-24T01:00:00.000Z');
+        expect(
+          DateTime.parse(crossItem.reminderAtUtc!).isBefore(
+            DateTime.parse(crossItem.midnightRolloverUtc),
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'falls back to prior visible check-in when today check-in is in hiddenCheckInIds and localizes Me/Bạn fallback (P2-3)',
+      () {
+        final groupJ = _makeJourney(
+          id: 'j-hidden-today',
+          title: 'Hidden Today CheckIn',
+          kind: JourneyKind.group,
+        );
+        final yesterdayCheckIn = _makeCheckIn(
+          id: 'c-yesterday-ok',
+          journeyId: groupJ.id,
+          localDate: const LocalDate(2026, 11, 23),
+          thumbPath: 'checkins/j1/u-me/yesterday_t.jpg',
+        );
+        final todayHiddenCheckIn = _makeCheckIn(
+          id: 'c-today-hidden',
+          journeyId: groupJ.id,
+          localDate: const LocalDate(2026, 11, 24),
+          thumbPath: 'checkins/j1/u-me/today_hidden_t.jpg',
+        );
+
+        final snapEn = WidgetSnapshotBuilder.build(
+          now: nowUtc,
+          authStatus: AuthStatus.signedIn,
+          locale: 'en',
+          photoMode: WidgetPhotoMode.clear,
+          hiddenCheckInIds: {'c-today-hidden'},
+          journeyInputs: [
+            WidgetJourneyBuildInput(
+              journey: groupJ,
+              myCheckIns: [yesterdayCheckIn, todayHiddenCheckIn],
+            ),
+          ],
+        );
+
+        final item = snapEn.journeys.single;
+        expect(item.heroThumbFile, isNotNull);
+        expect(
+          snapEn.thumbRequests.single.storagePath,
+          'checkins/j1/u-me/yesterday_t.jpg',
+        );
+        expect(snapEn.squads.single.members.single.displayName, 'Me');
+      },
+    );
   });
 }

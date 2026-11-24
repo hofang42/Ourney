@@ -132,7 +132,33 @@ void main() {
       expect(plan.action, LiveActivityAction.startOrUpdate);
       expect(plan.window, isNotNull);
       expect(plan.channelPayload!['redactTitleOnLockScreen'], isTrue);
+      expect(plan.channelPayload!['redactLockScreenTitles'], isTrue);
     });
+
+    test(
+      'falls back to eveningCueAtUtc (18:00) when reminderAtUtc is after midnightRolloverUtc and journey is atRisk (P1-1)',
+      () {
+        final item = _journeyItem(
+          atRisk: true,
+          reminderAtUtc: '2026-11-25T01:00:00.000Z', // past 17:00Z deadline
+        );
+
+        final plan = LiveActivityWindowPlanner.plan(
+          now: DateTime.utc(2026, 11, 24, 12, 0), // 19:00 ICT (after 18:00 ICT)
+          authStatus: AuthStatus.signedIn,
+          liveActivityEnabled: true,
+          streakAlertsEnabled: true,
+          redactLockScreenTitles: true,
+          locale: 'vi',
+          journeys: [item],
+        );
+        expect(plan.action, LiveActivityAction.startOrUpdate);
+        expect(plan.window, isNotNull);
+        expect(plan.window!.windowStartUtc, '2026-11-24T11:00:00.000Z');
+        expect(plan.channelPayload!['redactLockScreenTitles'], isTrue);
+        expect(plan.channelPayload!['redactTitleOnLockScreen'], isTrue);
+      },
+    );
 
     test('suppresses window when liveActivityEnabled is false, signedOut, or dismissedWindowKey matches', () {
       final item = _journeyItem(atRisk: true);
