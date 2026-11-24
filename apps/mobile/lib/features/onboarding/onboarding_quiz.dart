@@ -255,42 +255,32 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
           selected: _company == c,
           onTap: () => setState(() => _company = c),
         ),
-      _maybeAnimatedSize(
-        context,
-        AnimatedSwitcher(
-          duration: UiMotion.fadeOf(context, UiMotion.medium),
-          switchInCurve: UiCurves.easeOutStrong,
-          switchOutCurve: UiCurves.easeOutStrong,
-          child: _company == QuizCompany.couple
-              ? Container(
-                  key: const ValueKey('onboarding-couple-hint'),
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      left: BorderSide(color: UiFlowColors.couple, width: 3),
-                    ),
+      UiFadeThroughSwitcher(
+        duration: UiMotion.medium,
+        scaleBegin: 1.0,
+        animateSize: true,
+        alignment: Alignment.topCenter,
+        child: _company == QuizCompany.couple
+            ? Container(
+                key: const ValueKey('onboarding-couple-hint'),
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    left: BorderSide(color: UiFlowColors.couple, width: 3),
                   ),
-                  child: Text(
-                    l10n.onboarding_coupleStyleHint,
-                    style: UiText.muted(color: context.ui.inkMuted, size: 12),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
+                ),
+                child: Text(
+                  l10n.onboarding_coupleStyleHint,
+                  style: UiText.muted(color: context.ui.inkMuted, size: 12),
+                ),
+              )
+            : const SizedBox.shrink(
+                key: ValueKey('onboarding-couple-hint-empty'),
+              ),
       ),
     ];
-  }
-
-  Widget _maybeAnimatedSize(BuildContext context, Widget child) {
-    if (UiMotion.reduced(context)) return child;
-    return AnimatedSize(
-      duration: UiMotion.medium,
-      curve: UiCurves.easeOutStrong,
-      alignment: Alignment.topCenter,
-      child: child,
-    );
   }
 
   List<Widget> _reminderOptions(OnboardingL10n l10n) {
@@ -310,19 +300,19 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
           selected: _reminder == time,
           onTap: () => setState(() => _reminder = time),
         ),
-      _maybeAnimatedSize(
-        context,
-        AnimatedSwitcher(
-          duration: UiMotion.fadeOf(context, UiMotion.medium),
-          switchInCurve: UiCurves.easeOutStrong,
-          switchOutCurve: UiCurves.easeOutStrong,
-          child: _reminder != null
-              ? KeyedSubtree(
-                  key: const ValueKey('onboarding-result-wrap'),
-                  child: _resultCard(l10n),
-                )
-              : const SizedBox.shrink(),
-        ),
+      UiFadeThroughSwitcher(
+        duration: UiMotion.medium,
+        scaleBegin: 1.0,
+        animateSize: true,
+        alignment: Alignment.topCenter,
+        child: _reminder != null
+            ? KeyedSubtree(
+                key: const ValueKey('onboarding-result-wrap'),
+                child: _resultCard(l10n),
+              )
+            : const SizedBox.shrink(
+                key: ValueKey('onboarding-result-empty'),
+              ),
       ),
     ];
   }

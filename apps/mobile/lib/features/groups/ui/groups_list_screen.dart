@@ -164,18 +164,10 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       );
     }
 
-    final Widget today = AnimatedSwitcher(
-      duration: UiMotion.fadeOf(context, UiMotion.normal),
-      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
-      switchInCurve: UiCurves.easeOutStrong,
-      switchOutCurve: Curves.easeOut,
-      layoutBuilder: (currentChild, previousChildren) => Stack(
-        alignment: Alignment.topCenter,
-        children: <Widget>[
-          ...previousChildren,
-          ?currentChild,
-        ],
-      ),
+    final Widget today = UiFadeThroughSwitcher(
+      duration: UiMotion.normal,
+      scaleBegin: 1.0,
+      alignment: Alignment.topCenter,
       child: todayState,
     );
 

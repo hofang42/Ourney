@@ -515,17 +515,11 @@ class _MetricRow extends StatelessWidget {
               color: UiCamera.onPhoto.withValues(alpha: 0.64),
             ),
           ),
-        AnimatedSwitcher(
-          duration: UiMotion.of(context, const Duration(milliseconds: 140)),
-          switchInCurve: UiCurves.easeOutStrong,
-          switchOutCurve: Curves.easeOut,
-          layoutBuilder: (currentChild, previousChildren) => Stack(
-            alignment: AlignmentDirectional.centerStart,
-            children: <Widget>[
-              ...previousChildren,
-              ?currentChild,
-            ],
-          ),
+        UiFadeThroughSwitcher(
+          duration: const Duration(milliseconds: 140),
+          scaleBegin: 1.0,
+          instantOnReduceMotion: true,
+          alignment: AlignmentDirectional.centerStart,
           child: hidden
               ? Row(
                   key: const ValueKey('journey-day-metric-hidden'),

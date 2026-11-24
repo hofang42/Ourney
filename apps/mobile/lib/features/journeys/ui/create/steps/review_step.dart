@@ -86,43 +86,40 @@ class CreateReviewStep extends StatelessWidget {
           child: Semantics(
             container: true,
             label: l10n.journeys_ticketPreview,
-            child: _maybeAnimatedSize(
-              context,
-              AnimatedSwitcher(
-                duration: UiMotion.fadeOf(context, UiMotion.sheetEnter),
-                switchInCurve: UiCurves.stampDecel,
-                switchOutCurve: UiCurves.easeOutStrong,
-                child: DepartureTicket(
-                  key: ValueKey('ticket-$skinId'),
-                  skinId: skinId,
-                  variant: variant,
-                  title: title,
-                  goalLine: goalLine,
-                  durationLabel: hasDays
-                      ? l10n.journeys_templateDays(days)
-                      : l10n.journeys_ticketOpenEnded,
-                  datesLabel: datesLabel,
-                  milestones: milestones,
-                  leftName: couple && nameLeftController.text.trim().isNotEmpty
-                      ? nameLeftController.text.trim()
-                      : l10n.journeys_ticketYou,
-                  rightName:
-                      couple && nameRightController.text.trim().isNotEmpty
-                      ? nameRightController.text.trim()
-                      : l10n.journeys_ticketPartner,
-                  privateLabel: l10n.journeys_ticketPrivate,
-                  memoryLabel: l10n.journeys_ticketMemory,
-                  tagline: switch (skinId) {
-                    'quiet' => l10n.journeys_ticketTagQuiet,
-                    'squad' => l10n.journeys_ticketTagSquad,
-                    'memory' => l10n.journeys_ticketTagMemory,
-                    'couple' => l10n.journeys_ticketTagCouple,
-                    'flexer' => l10n.journeys_ticketTagFlexer,
-                    _ => '',
-                  },
-                  changeVariantLabel: l10n.journeys_ticketChangeColor,
-                  onChangeVariant: onChangeVariant,
-                ),
+            child: UiFadeThroughSwitcher(
+              duration: UiMotion.sheetEnter,
+              animateSize: true,
+              alignment: Alignment.topCenter,
+              child: DepartureTicket(
+                key: ValueKey('ticket-$skinId'),
+                skinId: skinId,
+                variant: variant,
+                title: title,
+                goalLine: goalLine,
+                durationLabel: hasDays
+                    ? l10n.journeys_templateDays(days)
+                    : l10n.journeys_ticketOpenEnded,
+                datesLabel: datesLabel,
+                milestones: milestones,
+                leftName: couple && nameLeftController.text.trim().isNotEmpty
+                    ? nameLeftController.text.trim()
+                    : l10n.journeys_ticketYou,
+                rightName:
+                    couple && nameRightController.text.trim().isNotEmpty
+                    ? nameRightController.text.trim()
+                    : l10n.journeys_ticketPartner,
+                privateLabel: l10n.journeys_ticketPrivate,
+                memoryLabel: l10n.journeys_ticketMemory,
+                tagline: switch (skinId) {
+                  'quiet' => l10n.journeys_ticketTagQuiet,
+                  'squad' => l10n.journeys_ticketTagSquad,
+                  'memory' => l10n.journeys_ticketTagMemory,
+                  'couple' => l10n.journeys_ticketTagCouple,
+                  'flexer' => l10n.journeys_ticketTagFlexer,
+                  _ => '',
+                },
+                changeVariantLabel: l10n.journeys_ticketChangeColor,
+                onChangeVariant: onChangeVariant,
               ),
             ),
           ),
@@ -134,16 +131,6 @@ class CreateReviewStep extends StatelessWidget {
           onPressed: onEdit,
         ),
       ],
-    );
-  }
-
-  Widget _maybeAnimatedSize(BuildContext context, Widget child) {
-    if (UiMotion.reduced(context)) return child;
-    return AnimatedSize(
-      duration: UiMotion.medium,
-      curve: UiCurves.easeOutStrong,
-      alignment: Alignment.topCenter,
-      child: child,
     );
   }
 }

@@ -214,12 +214,11 @@ class _UiSplashState extends State<UiSplash>
                     if (widget.tagline != null)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 22, 24, 0),
-                        child: AnimatedSwitcher(
-                          duration: UiMotion.of(context, UiMotion.normal),
-                          switchInCurve: UiCurves.easeOutStrong,
-                          switchOutCurve: UiCurves.easeOutStrong,
-                          layoutBuilder: (currentChild, _) =>
-                              currentChild ?? const SizedBox.shrink(),
+                        child: UiFadeThroughSwitcher(
+                          duration: UiMotion.normal,
+                          scaleBegin: 1.0,
+                          instantOnReduceMotion: true,
+                          alignment: Alignment.center,
                           child: Text(
                             widget.tagline!,
                             key: ValueKey(widget.tagline),

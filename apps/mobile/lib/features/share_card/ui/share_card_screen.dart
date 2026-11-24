@@ -348,13 +348,11 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
                           aspectRatio: aspectRatio,
                           child: child,
                         ),
-                        child: AnimatedSwitcher(
-                          duration: UiMotion.of(
-                            context,
-                            const Duration(milliseconds: 240),
-                          ),
-                          switchInCurve: UiCurves.easeOutStrong,
-                          switchOutCurve: Curves.easeOut,
+                        child: UiFadeThroughSwitcher(
+                          duration: const Duration(milliseconds: 240),
+                          scaleBegin: 0.96,
+                          instantOnReduceMotion: true,
+                          alignment: Alignment.center,
                           child: KeyedSubtree(
                             key: ValueKey('share-card-preview-${_format.name}'),
                             child: Semantics(

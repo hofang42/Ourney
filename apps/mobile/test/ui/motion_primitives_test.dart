@@ -747,6 +747,205 @@ void main() {
         expect(tester.binding.transientCallbackCount, 0);
       },
     );
+
+    testWidgets(
+      'UiDirectionalSwitcher and UiFadeThroughSwitcher never have outgoing and incoming children both > 0.05 opacity at midpoint (or any frame) and shrink height smoothly from t=0',
+      (tester) async {
+        double effectiveOpacityOf(Finder target) {
+          if (target.evaluate().isEmpty) return 0.0;
+          var alpha = 1.0;
+          for (final fade in tester.widgetList<FadeTransition>(
+            find.ancestor(of: target, matching: find.byType(FadeTransition)),
+          )) {
+            alpha *= fade.opacity.value;
+          }
+          for (final op in tester.widgetList<Opacity>(
+            find.ancestor(of: target, matching: find.byType(Opacity)),
+          )) {
+            alpha *= op.opacity;
+          }
+          return alpha;
+        }
+
+        // 1. UiDirectionalSwitcher (Shared Axis X): tall Step 1 (140dp) -> short Step 2 (60dp)
+        var dirStep = 1;
+        late StateSetter setDirHost;
+        await tester.pumpWidget(
+          _host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setDirHost = setState;
+                return UiDirectionalSwitcher(
+                  step: dirStep,
+                  direction: dirStep == 2 ? 1 : -1,
+                  duration: const Duration(milliseconds: 200),
+                  animateSize: true,
+                  child: SizedBox(
+                    key: ValueKey('dir-box-$dirStep'),
+                    width: 220,
+                    height: dirStep == 1 ? 140 : 60,
+                    child: Text('Dir Title $dirStep'),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        expect(
+          tester.getSize(find.byType(UiDirectionalSwitcher)).height,
+          140.0,
+        );
+
+        setDirHost(() => dirStep = 2);
+        await tester.pump();
+
+        // Sample across the 200ms transition: 40ms (20%), 70ms (35%), 100ms (50% midpoint), 150ms (75%)
+        for (final deltaMs in [40, 30, 30, 50]) {
+          await tester.pump(Duration(milliseconds: deltaMs));
+          final a1 = effectiveOpacityOf(find.text('Dir Title 1'));
+          final a2 = effectiveOpacityOf(find.text('Dir Title 2'));
+          expect(
+            a1 > 0.05 && a2 > 0.05,
+            isFalse,
+            reason:
+                'UiDirectionalSwitcher overlap: Title 1 ($a1) and Title 2 ($a2) both > 0.05',
+          );
+        }
+
+        // At t = 150ms (75%), AnimatedSize has already shrunk well below 140dp toward 60dp
+        // (proving _IncomingSizedStack sizes to incoming child from t=0ms).
+        final midDirHeight = tester
+            .getSize(find.byType(UiDirectionalSwitcher))
+            .height;
+        expect(midDirHeight, lessThan(140.0));
+        expect(midDirHeight, greaterThanOrEqualTo(60.0));
+
+        await tester.pumpAndSettle();
+        expect(
+          tester.getSize(find.byType(UiDirectionalSwitcher)).height,
+          60.0,
+        );
+
+        // 2. UiFadeThroughSwitcher (Fade Through): tall Card A (140dp) -> short Card B (60dp)
+        var fadeStep = 'A';
+        late StateSetter setFadeHost;
+        await tester.pumpWidget(
+          _host(
+            StatefulBuilder(
+              builder: (context, setState) {
+                setFadeHost = setState;
+                return UiFadeThroughSwitcher(
+                  step: fadeStep,
+                  duration: const Duration(milliseconds: 200),
+                  animateSize: true,
+                  child: SizedBox(
+                    key: ValueKey('fade-box-$fadeStep'),
+                    width: 220,
+                    height: fadeStep == 'A' ? 140 : 60,
+                    child: Text('Fade Title $fadeStep'),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        expect(
+          tester.getSize(find.byType(UiFadeThroughSwitcher)).height,
+          140.0,
+        );
+
+        setFadeHost(() => fadeStep = 'B');
+        await tester.pump();
+
+        // At t = 40ms (20%): outgoing A is fading out (> 0), incoming B is still 0.0.
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(effectiveOpacityOf(find.text('Fade Title A')), greaterThan(0.0));
+        expect(effectiveOpacityOf(find.text('Fade Title B')), 0.0);
+
+        // At t = 70ms (35% crossover): both are <= 0.05 (0.0).
+        await tester.pump(const Duration(milliseconds: 30));
+        expect(
+          effectiveOpacityOf(find.text('Fade Title A')),
+          lessThanOrEqualTo(0.05),
+        );
+        expect(
+          effectiveOpacityOf(find.text('Fade Title B')),
+          lessThanOrEqualTo(0.05),
+        );
+
+        // At t = 100ms (50% midpoint): outgoing A is 0.0, incoming B is fading in (> 0.2) and scaling (0.96 -> 1.0).
+        await tester.pump(const Duration(milliseconds: 30));
+        expect(effectiveOpacityOf(find.text('Fade Title A')), 0.0);
+        expect(effectiveOpacityOf(find.text('Fade Title B')), greaterThan(0.2));
+        final midScale = tester
+            .widget<ScaleTransition>(
+              find.ancestor(
+                of: find.text('Fade Title B'),
+                matching: find.byType(ScaleTransition),
+              ),
+            )
+            .scale
+            .value;
+        expect(midScale, greaterThan(0.96));
+        expect(midScale, lessThan(1.0));
+
+        // Height is actively shrinking toward 60dp mid-transition (never stuck at 140dp).
+        final midFadeHeight = tester
+            .getSize(find.byType(UiFadeThroughSwitcher))
+            .height;
+        expect(midFadeHeight, lessThan(140.0));
+        expect(midFadeHeight, greaterThan(60.0));
+
+        await tester.pumpAndSettle();
+        expect(find.text('Fade Title A'), findsNothing);
+        expect(effectiveOpacityOf(find.text('Fade Title B')), 1.0);
+        expect(
+          tester.getSize(find.byType(UiFadeThroughSwitcher)).height,
+          60.0,
+        );
+
+        // 3. UiFadeThroughSwitcher under Reduce Motion: zero ScaleTransition, non-overlapping 150ms fade
+        await tester.pumpWidget(
+          _host(
+            disableAnimations: true,
+            StatefulBuilder(
+              builder: (context, setState) {
+                setFadeHost = setState;
+                return UiFadeThroughSwitcher(
+                  step: fadeStep,
+                  child: SizedBox(
+                    key: ValueKey('rm-fade-$fadeStep'),
+                    width: 220,
+                    height: 60,
+                    child: Text('RM Fade $fadeStep'),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+
+        setFadeHost(() => fadeStep = 'A');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 75)); // 50% of 150ms
+        expect(
+          find.descendant(
+            of: find.byType(UiFadeThroughSwitcher),
+            matching: find.byType(ScaleTransition),
+          ),
+          findsNothing,
+        );
+        final rmA = effectiveOpacityOf(find.text('RM Fade A'));
+        final rmB = effectiveOpacityOf(find.text('RM Fade B'));
+        expect(rmA > 0.05 && rmB > 0.05, isFalse);
+
+        await tester.pumpAndSettle();
+        expect(find.text('RM Fade A'), findsOneWidget);
+        expect(tester.binding.transientCallbackCount, 0);
+      },
+    );
   });
 
   group('UiStaggerItem wave delays & Reduce Motion parity', () {
