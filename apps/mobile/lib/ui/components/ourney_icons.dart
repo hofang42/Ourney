@@ -689,6 +689,15 @@ class OurneyIconPainter extends CustomPainter {
   /// with the ink halo but with [haloFallback] so it stays readable.
   static bool lowContrast(Color color, Color ink) => contrast(color, ink) < 1.6;
 
+  /// Die-cut ring width (logical px) of the active full-tier icon: scales
+  /// with the icon (about 0.35x its size, 6 to 12) so a 24dp tab glyph gets a
+  /// ring thin enough to stay near its box, while the artwork itself is never
+  /// resized.
+  static double dieCutStrokeFor(double size) => (size * 0.35).clamp(6.0, 12.0);
+
+  /// Hard-shadow offset (logical px) of the active full-tier icon.
+  static const double activeShadowOffset = 2;
+
   @override
   void paint(Canvas canvas, Size size) {
     final path = ourneyIconPath(name);
@@ -725,9 +734,15 @@ class OurneyIconPainter extends CustomPainter {
     }
     if (active && full) {
       if (shadow != null) {
-        layer(path.shift(Offset(2 / scale, 2 / scale)), shadow!, 12);
+        layer(
+          path.shift(
+            Offset(activeShadowOffset / scale, activeShadowOffset / scale),
+          ),
+          shadow!,
+          dieCutStrokeFor(size.width),
+        );
       }
-      layer(path, dieCut, 12);
+      layer(path, dieCut, dieCutStrokeFor(size.width));
     }
     // The ink halo scales with the icon so it does not clump at 16-22px.
     final halo = haloFallback != null && lowContrast(color, ink)

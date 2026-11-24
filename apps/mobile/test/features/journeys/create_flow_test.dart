@@ -524,7 +524,7 @@ void main() {
       );
       expect(
         find.text(
-          'Group journeys need a server. This build runs on this device only.',
+          'Squad journeys need a server. This build runs on this device only.',
         ),
         findsOneWidget,
       );

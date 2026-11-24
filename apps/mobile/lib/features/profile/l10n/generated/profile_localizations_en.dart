@@ -16,7 +16,7 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_deleteItemJourneys => 'All journeys and photos';
 
   @override
-  String get profile_deleteItemGroups => 'Your membership in groups';
+  String get profile_deleteItemGroups => 'Your membership in squads';
 
   @override
   String get profile_editScreenTitle => 'edit profile.';
@@ -126,7 +126,7 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_guestMessage =>
-      'Your data stays on this device. Solo journeys work fully; sign-in and groups need a server.';
+      'Your data stays on this device. Solo journeys work fully; sign-in and squads need a server.';
 
   @override
   String get profile_sectionSettings => 'settings';
@@ -177,7 +177,7 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_deleteMessage =>
-      'Your profile, journeys, check-ins and every photo are deleted from the server and this device. Groups you are in pass to the earliest member. This can\'t be undone.';
+      'Your profile, journeys, check-ins and every photo are deleted from the server and this device. Squads you are in pass to the earliest member. This can\'t be undone.';
 
   @override
   String profile_deleteTypeToConfirm(String phrase) {
@@ -251,7 +251,7 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_deleteOwnerNote =>
-      'If you own a group, ownership passes to the earliest member.';
+      'If you own a squad, ownership passes to the earliest member.';
 
   @override
   String get profile_deleteKeep => 'Keep my account';
