@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ runtime permission for notifications (check-in reminders). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16 (API 36) Live Updates permission for progress-centric check-in window notifications. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- flutter_local_notifications: re-schedule reminders after reboot. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -25,7 +27,7 @@
             android:hardwareAccelerated="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
-            <!-- Custom scheme deep links: ourney://{join,j,journey,friend,f,p}/... -->
+            <!-- Custom scheme deep links: ourney://{join,j,journey,friend,f,p,capture,journeys,groups}/... -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -36,6 +38,9 @@
                 <data android:scheme="ourney" android:host="friend" />
                 <data android:scheme="ourney" android:host="f" />
                 <data android:scheme="ourney" android:host="p" />
+                <data android:scheme="ourney" android:host="capture" />
+                <data android:scheme="ourney" android:host="journeys" />
+                <data android:scheme="ourney" android:host="groups" />
             </intent-filter>
             <!-- Android App Links: https://ourney.tech/f/*, /j/*, /join/*, /p/* (FS-05). -->
             <intent-filter android:autoVerify="true">
@@ -167,6 +172,52 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+        <!-- Jetpack Glance Home-Screen Widgets (Today, Streak Sticker, Squad Today). -->
+        <receiver
+            android:name=".widgets.OurneyTodayWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_today_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ourney_today_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.OurneyStreakWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_streak_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ourney_streak_widget_info" />
+        </receiver>
+        <receiver
+            android:name=".widgets.OurneySquadWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_squad_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/ourney_squad_widget_info" />
+        </receiver>
+        <!-- Check-In Window Live Update & inexact midnight widget rollover receiver. -->
+        <receiver
+            android:name=".widgets.CheckInWindowReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
         </receiver>
         <!-- Don't delete the meta-data below.

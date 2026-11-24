@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_widget_card_light"
+    android:padding="14dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:includeFontPadding="true"
+        android:lineSpacingMultiplier="1.35"
+        android:text="@string/widget_loading"
+        android:textColor="@color/widget_ink"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</FrameLayout>

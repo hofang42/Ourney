@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_today_name">Ourney · Today</string>
+    <string name="widget_today_desc">Track today\'s check-in, active streak, and 1-tap camera launch from your Home Screen.</string>
+    <string name="widget_streak_name">Ourney · Streak Sticker</string>
+    <string name="widget_streak_desc">Bold streak counter sticker and 7-day rolling consistency chain.</string>
+    <string name="widget_squad_name">Ourney · Squad Today</string>
+    <string name="widget_squad_desc">See who checked in today across your Squad or Couple Rituals journey.</string>
+    <string name="widget_loading">Ourney</string>
+    <string name="widget_snap_cta">Snap now</string>
+    <string name="widget_snap_short">Snap</string>
+    <string name="widget_checked_in">Checked in today</string>
+    <string name="widget_checked_in_short">Done</string>
+    <string name="widget_pending_today">Not checked in yet</string>
+    <string name="widget_evening_nudge">Time to capture today\'s moment</string>
+    <string name="widget_streak_at_risk">%1$d-day streak at risk</string>
+    <string name="widget_streak_days">%1$d-day streak</string>
+    <string name="widget_best_streak">Best %1$d days</string>
+    <string name="widget_day_progress">Day %1$d/%2$d</string>
+    <string name="widget_day_only">Day %1$d</string>
+    <string name="widget_cycle_next">Next journey (%1$d/%2$d)</string>
+    <string name="widget_empty_title">Start your first journey</string>
+    <string name="widget_empty_subtitle">Tap to create a 30-day journey in Ourney</string>
+    <string name="widget_empty_cta">Open Ourney</string>
+    <string name="widget_signed_out_title">Sign in to Ourney</string>
+    <string name="widget_signed_out_subtitle">Open the app to sync your widgets</string>
+    <string name="widget_squad_progress">%1$d/%2$d checked in</string>
+    <string name="widget_squad_couple_badge">Couple · Day %1$d</string>
+    <string name="widget_squad_empty_title">No Squad journeys yet</string>
+    <string name="widget_squad_empty_subtitle">Join friends or your partner in Ourney</string>
+    <string name="widget_squad_me_done">You\'re done</string>
+    <string name="widget_squad_me_pending">Your turn</string>
+    <string name="widget_live_channel_name">Check-in window live updates</string>
+    <string name="widget_live_channel_desc">Evening check-in window countdown to protect your active streak.</string>
+    <string name="widget_live_public_title">Ourney · Check-in window</string>
+    <string name="widget_live_public_body">Open Ourney to complete today\'s check-in.</string>
+    <string name="widget_live_title_at_risk">Save %1$d-day streak · %2$s</string>
+    <string name="widget_live_title_window">Check-in window · %1$s</string>
+    <string name="widget_live_body_progress">%1$d/%2$d journeys done today</string>
+    <string name="widget_live_celebrate_title">All checked in for today</string>
+    <string name="widget_live_celebrate_body">%1$d-day streak locked in</string>
+    <string name="widget_live_dismiss">Dismiss today</string>
+    <string name="widget_live_chip_hours">%1$dh left</string>
+    <string name="widget_live_chip_mins">%1$dm left</string>
+</resources>
