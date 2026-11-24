@@ -353,10 +353,10 @@ void main() {
       await _tap(tester, _key('ui-menu-barrier'));
       expect(_key('journey-action-invite'), findsNothing);
       await _tap(tester, _key('journey-home-squad'));
-      expect(h.location, AppRoutes.groups);
+      expect(h.location, '/groups/j1');
     });
 
-    testWidgets('share with a server offers the card or the journey sheet', (
+    testWidgets('share with a server offers the card or the journey screen (DE-24)', (
       tester,
     ) async {
       final h = await _pumpDetail(tester, backend: true, userId: 'u1');
@@ -364,6 +364,11 @@ void main() {
       expect(_key('journey-share-sheet'), findsOneWidget);
       await _tap(tester, _key('journey-share-card'));
       expect(h.location, AppRoutes.share('j1'));
+
+      await h.go(tester, AppRoutes.journey('j1'));
+      await _tap(tester, _key('journey-share'));
+      await _tap(tester, _key('journey-share-friends'));
+      expect(h.location, AppRoutes.shareJourney('j1'));
     });
 
     testWidgets('privacy switches update my membership (FR-B7)', (
@@ -619,11 +624,11 @@ void main() {
           lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
         );
 
-        // 4. Profile tab: final `profile-safety` row sits above the dock.
+        // 4. Profile tab: the last section (badges) sits above the dock.
         await h.go(tester, AppRoutes.profile);
         await scrollToEnd(_key('profile-screen'));
         expect(
-          tester.getRect(_key('profile-safety')).bottom,
+          tester.getRect(_key('profile-stats')).bottom,
           lessThanOrEqualTo(tester.getRect(find.byType(AppDock)).top),
         );
       },

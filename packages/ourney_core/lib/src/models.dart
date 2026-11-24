@@ -187,16 +187,21 @@ enum ReportStatus {
 const List<String> reactionEmojis = ['🔥', '💪', '👏', '❤️', '😂'];
 
 class Profile {
-  const Profile(
-      {required this.id,
-      required this.username,
-      required this.displayName,
-      this.avatarPath});
+  const Profile({
+    required this.id,
+    required this.username,
+    required this.displayName,
+    this.avatarPath,
+    this.termsVersion = 0,
+  });
 
   final String id;
   final String username;
   final String displayName;
   final String? avatarPath;
+
+  /// Version of the terms the user accepted (`profiles.terms_version`).
+  final int termsVersion;
 }
 
 class Journey {

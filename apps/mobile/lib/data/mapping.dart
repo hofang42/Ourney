@@ -284,6 +284,7 @@ ProfilesCompanion profileFromRemote(RemoteRow r) => ProfilesCompanion(
   username: Value(r['username'] as String),
   displayName: Value(r['display_name'] as String),
   avatarPath: Value(r['avatar_path'] as String?),
+  termsVersion: Value((r['terms_version'] as num?)?.toInt() ?? 0),
   updatedAt: Value(r['updated_at'] as String?),
 );
 
@@ -292,6 +293,7 @@ Profile profileFromRow(ProfileRow r) => Profile(
   username: r.username,
   displayName: r.displayName,
   avatarPath: r.avatarPath,
+  termsVersion: r.termsVersion,
 );
 
 /// One `group_today` row → [MemberToday] ([today] = journey-local today).

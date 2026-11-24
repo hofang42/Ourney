@@ -78,12 +78,10 @@ android {
         release {
             // Uses release signing from key.properties / env when configured;
             // falls back to debug signing only for local `flutter run --release`.
+            // Note: FlutterPlugin.kt already enables R8 (proguard-android-optimize.txt +
+            // flutter_proguard_rules.pro) and auto-loads app/proguard-rules.pro when present.
             signingConfig =
                 signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro",
-            )
         }
     }
 }

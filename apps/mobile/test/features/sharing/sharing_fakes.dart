@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
@@ -395,6 +396,7 @@ Future<SharingHarness> pumpSharing(
   double textScale = 1,
   Brightness? brightness,
   Future<String>? timezone,
+  List<Override> extraOverrides = const [],
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -445,6 +447,7 @@ Future<SharingHarness> pumpSharing(
       importJobStoreProvider.overrideWithValue(
         importStore ?? InMemoryImportJobStore(),
       ),
+      ...extraOverrides,
     ],
   );
   final h = SharingHarness(container);

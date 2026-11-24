@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../personas/persona_contract.dart';
 import '../../../ui/ui.dart';
@@ -49,6 +50,8 @@ class ShareJourneyScreen extends ConsumerWidget {
     return SharingPage(
       scaffoldKey: const ValueKey('share-journey-screen'),
       title: l10n.sharing_shareThisJourney,
+      onBack: () =>
+          sharingBack(context, fallback: AppRoutes.journey(journeyId)),
       children: [
         switch (journey) {
           null => const SharingNeedsServer(),

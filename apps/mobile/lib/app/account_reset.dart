@@ -13,7 +13,7 @@ import 'overlays/reminder_banner.dart';
 import 'providers.dart';
 
 /// Shared-preferences keys that belong to the signed-in account rather than
-/// to the device. Theme, locale, haptics, app icon, the onboarding intro and
+/// to the device. Theme, locale, haptics, the onboarding intro and
 /// the OS permission flags stay; everything here is dropped on sign-out and
 /// account deletion so the next account starts clean (C-B4).
 const List<String> accountPrefsKeys = [
@@ -42,11 +42,16 @@ Future<void> resetAccountLocalState(
   bool updateOwner = false,
 }) async {
   final prefs = ref.read(sharedPreferencesProvider);
+  final nextUserId = ref.read(currentUserIdProvider);
   final keys = {
     ...accountPrefsKeys,
-    // Per-journey reminder times of the previous account's journeys.
+    // Per-journey reminder times of the previous account's journeys, and
+    // per-account EULA version records of previous accounts.
     for (final key in prefs.keys)
-      if (ReminderPrefs.journeyIdOf(key) != null) key,
+      if (ReminderPrefs.journeyIdOf(key) != null ||
+          (SafetyPrefs.userIdOfTermsKey(key) != null &&
+              SafetyPrefs.userIdOfTermsKey(key) != nextUserId))
+        key,
   };
   final removals = <Future<void>>[];
   try {

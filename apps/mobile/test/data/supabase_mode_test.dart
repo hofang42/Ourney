@@ -738,12 +738,37 @@ void main() {
         'username': 'linh',
         'display_name': 'Linh',
         'avatar_path': null,
+        'terms_version': 1,
         'updated_at': '2026-10-16T01:00:00+00:00',
         'deleted_at': null,
       },
     ];
+    expect(layer.auth.acceptedTermsVersion, isNull);
     final first = await layer.profiles.watchMe().first;
     expect(first?.username, 'linh');
+    expect(first?.termsVersion, 1);
+    expect(
+      layer.auth.acceptedTermsVersion,
+      1,
+      reason: 'H2: own terms_version read from existing profile select',
+    );
+
+    // H2 cold start: when a ProfileRow is already cached in Drift, watchMe()
+    // emits the cached termsVersion immediately even when remote is fresh
+    // (acceptedTermsVersion == null) and offline.
+    remote.termsVersion = null;
+    remote.failure = offline;
+    final cachedColdStart = await layer.profiles.watchMe().first;
+    expect(cachedColdStart?.termsVersion, 1);
+    remote.failure = null;
+
+    await layer.auth.recordTermsAccepted(1);
+    final acceptRpc = remote
+        .callsOf('rpc')
+        .where((c) => c.target == 'accept_terms')
+        .single;
+    expect(acceptRpc.args, {'p_version': 1});
+    expect(layer.auth.acceptedTermsVersion, 1);
 
     remote.tables['profiles'] = [];
     await db.delete(db.profiles).go();
@@ -751,6 +776,17 @@ void main() {
       await layer.profiles.watchMe().first,
       isNull,
       reason: 'no profile yet',
+    );
+
+    // H1: verifyOtp on a brand-new account without a profile row defers full
+    // table pull sync until upsertMe creates the profile row.
+    remote.calls.clear();
+    await layer.auth.verifyOtp('linh@example.com', '123456');
+    await Future<void>.delayed(Duration.zero);
+    expect(
+      remote.callsOf('rpc').where((c) => c.target == 'checkin_tombstones'),
+      isEmpty,
+      reason: 'H1: no pull sync before profile setup completes',
     );
 
     remote.failure = offline;

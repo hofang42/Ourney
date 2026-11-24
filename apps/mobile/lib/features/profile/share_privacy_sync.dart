@@ -224,9 +224,9 @@ Map<String, ({bool hide, bool blur})> pendingSharePrivacy(
 bool _healing = false;
 
 /// Re-applies ONLY the failed flag(s) of the journeys recorded by a failed
-/// push, and only while the matching Settings switch is still ON. A
-/// membership that no longer exists is forgotten. Never touches any other
-/// journey, so per-journey choices stay. Called at app start and resume.
+/// push using the current Settings switch values (`true` or `false`, DE-12 /
+/// M1). A membership that no longer exists is forgotten. Never touches any
+/// other journey, so per-journey choices stay. Called at app start and resume.
 Future<void> healSharePrivacy(ProviderContainer container) async {
   if (_healing) return;
   final SharedPreferencesWithCache prefs;
@@ -258,9 +258,7 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
       }
       if (current() != userId) break;
       final snapshot = entry.value;
-      final hideOn = snapshot.hide && container.read(hideWeightOnShareProvider);
-      final blurOn = snapshot.blur && container.read(blurPhotosOnShareProvider);
-      if (!hideOn && !blurOn) {
+      if (!snapshot.hide && !snapshot.blur) {
         done(entry.key, snapshot);
         continue;
       }
@@ -272,14 +270,17 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
             final fresh = _loadPending(prefs, userId);
             if (!fresh.containsKey(_allKey)) break;
             final ex = fresh['$_exclPrefix${j.id}'];
-            final hide = hideOn && isWeightMetric(j) && !(ex?.hide ?? false);
-            final blurV = blurOn && !(ex?.blur ?? false);
+            final hide =
+                snapshot.hide && isWeightMetric(j) && !(ex?.hide ?? false);
+            final blurV = snapshot.blur && !(ex?.blur ?? false);
             if (!hide && !blurV) continue;
+            final currentHide = container.read(hideWeightOnShareProvider);
+            final currentBlur = container.read(blurPhotosOnShareProvider);
             try {
               await repo.updateMyMembership(
                 j.id,
-                hideMetric: hide ? true : null,
-                blurMedia: blurV ? true : null,
+                hideMetric: hide ? currentHide : null,
+                blurMedia: blurV ? currentBlur : null,
               );
             } on OurneyException catch (e) {
               // One journey left meanwhile: the others still get theirs.
@@ -287,7 +288,7 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
             }
           }
         } else {
-          var hide = hideOn;
+          var hide = snapshot.hide;
           if (hide) {
             // The weight status may have been unknown when it failed.
             final journey = await repo.watch(entry.key).first;
@@ -303,12 +304,14 @@ Future<void> healSharePrivacy(ProviderContainer container) async {
           final fresh = _loadPending(prefs, userId)[entry.key];
           if (fresh == null) continue;
           hide = hide && fresh.hide;
-          final blurNow = blurOn && fresh.blur;
+          final blurNow = snapshot.blur && fresh.blur;
           if (hide || blurNow) {
+            final currentHide = container.read(hideWeightOnShareProvider);
+            final currentBlur = container.read(blurPhotosOnShareProvider);
             await repo.updateMyMembership(
               entry.key,
-              hideMetric: hide ? true : null,
-              blurMedia: blurNow ? true : null,
+              hideMetric: hide ? currentHide : null,
+              blurMedia: blurNow ? currentBlur : null,
             );
           }
         }
@@ -365,10 +368,9 @@ class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
   Widget build(BuildContext context) => widget.child;
 }
 
-/// Pushes a Settings share-privacy switch that was just turned ON to every
+/// Pushes a Settings share-privacy switch (turned ON or OFF) to every
 /// journey membership (archived and ended ones included) so the public link
-/// and group walls honour it too, not only the share card (C-B1). Turning a
-/// switch OFF never touches memberships: explicit per-journey choices stay.
+/// and group walls honour it too, not only the share card (C-B1, DE-12).
 /// [hideWeight] only reaches weight (kg) journeys. Pushes are serialised and
 /// re-read the switch from [container] before writing, so rapid toggles (or
 /// leaving Settings) cannot leave a stale value behind. A membership that can
@@ -379,7 +381,7 @@ Future<void> pushSharePrivacyToMemberships(
   bool? hideWeight,
   bool? blur,
 }) {
-  if (hideWeight != true && blur != true) {
+  if (hideWeight == null && blur == null) {
     return _pendingPush ?? Future<void>.value();
   }
   final JourneyRepository repo;
@@ -415,18 +417,20 @@ Future<void> pushSharePrivacyToMemberships(
         current,
         _allKey,
         e,
-        hide: hideWeight == true,
-        blur: blur == true,
+        hide: hideWeight != null,
+        blur: blur != null,
       );
       return;
     }
-    final hideNow =
-        hideWeight == true && container.read(hideWeightOnShareProvider);
-    final blurNow = blur == true && container.read(blurPhotosOnShareProvider);
+    final hideActive =
+        hideWeight != null &&
+        container.read(hideWeightOnShareProvider) == hideWeight;
+    final blurActive =
+        blur != null && container.read(blurPhotosOnShareProvider) == blur;
     var allOk = true;
     for (final j in journeys) {
-      final hide = hideNow && isWeightMetric(j) ? true : null;
-      final blurV = blurNow ? true : null;
+      final hide = hideActive && isWeightMetric(j) ? hideWeight : null;
+      final blurV = blurActive ? blur : null;
       if (hide == null && blurV == null) continue;
       try {
         await repo.updateMyMembership(j.id, hideMetric: hide, blurMedia: blurV);
@@ -457,8 +461,8 @@ Future<void> pushSharePrivacyToMemberships(
         prefs,
         userId,
         _allKey,
-        hide: hideWeight == true,
-        blur: blur == true,
+        hide: hideWeight != null,
+        blur: blur != null,
       );
     }
   }

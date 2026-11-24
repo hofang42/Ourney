@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/features/auth/auth_providers.dart';
 import 'package:ourney/features/profile/avatar_picker.dart';
 import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
@@ -45,7 +46,6 @@ class RecordingAuthRepository extends FakeAuthRepository {
   Object? requestDeleteCodeError;
   Object? signInError;
   Object? phoneError;
-  bool signUpNeedsCode = false;
 
   @override
   Future<void> requestDeleteCode() async {
@@ -70,8 +70,8 @@ class RecordingAuthRepository extends FakeAuthRepository {
   Future<bool> signUpWithPassword(String email, String password) async {
     calls.add('signUp:$email');
     if (signInError case final e?) throw e;
-    if (!signUpNeedsCode) emit('u1');
-    return signUpNeedsCode;
+    emit('u1');
+    return false;
   }
 
   @override
@@ -200,12 +200,16 @@ Future<ProviderContainer> pumpBackendApp(
   FakeProfileRepository? profiles,
   FakeAvatarPicker? picker,
   bool onboarded = true,
+  bool eulaAccepted = true,
+  bool phoneAvailable = false,
 }) => pumpOurneyApp(
   tester,
   config: testBackendConfig,
   auth: auth,
   onboarded: onboarded,
+  eulaAccepted: eulaAccepted,
   overrides: [
+    phoneAuthAvailableProvider.overrideWith((ref) async => phoneAvailable),
     profileRepositoryProvider.overrideWithValue(
       profiles ?? FakeProfileRepository(),
     ),

@@ -256,5 +256,17 @@
   "nav_journeySelected": "đang chọn",
   "@nav_journeySelected": {
     "description": "Journey wheel active item hint."
+  },
+  "notFound_title": "Không tìm thấy trang này",
+  "@notFound_title": {
+    "description": "404 / unknown deep link screen title (DE-14)."
+  },
+  "notFound_body": "Liên kết này không tồn tại hoặc đã thay đổi.",
+  "@notFound_body": {
+    "description": "404 / unknown deep link screen body (DE-14)."
+  },
+  "notFound_action": "Về màn hình chụp",
+  "@notFound_action": {
+    "description": "404 / unknown deep link primary CTA back to camera (DE-14)."
   }
 }

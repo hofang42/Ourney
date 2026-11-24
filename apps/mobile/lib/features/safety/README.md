@@ -9,7 +9,6 @@ before onboarding and sign-in.
 |---|---|---|
 | `/safety` | `SafetyPaths.hub` | Hub: terms, privacy, contact, blocked people (signed in only) |
 | `/safety/eula` | `SafetyPaths.eula` | Terms of use (zero tolerance, Guideline 1.2) |
-| `/safety/eula/accept?from=<path>` | `SafetyPaths.eulaAccept` | EULA gate; on accept goes to `from` (safe in-app paths only) or `/capture` |
 | `/safety/privacy` | `SafetyPaths.privacy` | Privacy policy |
 | `/safety/contact` | `SafetyPaths.contact` | Contact (mailto + copy) |
 | `/safety/blocked` | `SafetyPaths.blocked` | Blocked people, unblock |
@@ -50,15 +49,20 @@ Repository calls: `SafetyRepository.report(checkInId | userId, reason, note)`
 (note trimmed, empty -> null, max 500), `block`, `unblock`, `watchBlockedIds`.
 Errors map `rate_limited`, `not_found`, `invalid`, `offline` to messages.
 
-## EULA gate (wired in lib/app, Wave D)
+## Terms consent & version updates
 
-Apple 1.2 requires accepting terms before seeing user content.
-`resolveRedirect` (`lib/app/redirect.dart`, after the auth gate): when
-`auth == AuthStatus.signedIn && !eulaAccepted` and the path is not under
-`/safety`, it redirects to `/safety/eula/accept?from=<target>`;
-`routerProvider` listens to `eulaAcceptedProvider`. Local-only mode has no
-other users, so it has no gate. Account deletion
-(`DeleteAccountDialog`) calls `eulaAcceptedProvider.notifier.reset()`.
+Apple 1.2 and Google Play UGC policy require accepting terms with a
+zero-tolerance clause before creating or viewing user content:
+- `AuthScreen` (`/auth`) displays the inline zero-tolerance clickwrap line on
+  every initial sign-in form (email OTP, phone OTP, and password), linking to
+  `/safety/eula` and `/safety/privacy`.
+- On first sign-in (`acceptedTermsVersion == 0` or `null`),
+  `AuthScreen._finishSignIn()` calls `eulaAcceptedProvider.notifier.accept()`,
+  recording `kTermsVersion` locally and on the server via `accept_terms`.
+- When `kTermsVersion` bumps in a future release (`0 < acceptedTermsVersion <
+  kTermsVersion`), `AppShell` presents the dismissible `TermsUpdateSheet`
+  (`needsTermsUpdateProvider`). Account deletion (`DeleteAccountDialog`) calls
+  `eulaAcceptedProvider.notifier.reset()`.
 
 Groups: `groupSafetyHooksProvider` defaults to `safetyGroupHooks`
 (`showReportSheet` / `confirmBlock`), and the group "Today" screen filters

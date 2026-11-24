@@ -130,10 +130,11 @@ Future<ProviderContainer> pumpSignedInApp(
   List<Override> overrides = const [],
   Locale locale = const Locale('vi'),
   bool eulaAccepted = true,
+  FakeAuthRepository? auth,
 }) => pumpOurneyApp(
   tester,
   config: testBackendConfig,
-  auth: FakeAuthRepository(userId: 'u1'),
+  auth: auth ?? FakeAuthRepository(userId: 'u1'),
   locale: locale,
   eulaAccepted: eulaAccepted,
   overrides: [

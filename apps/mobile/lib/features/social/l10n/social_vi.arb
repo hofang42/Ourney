@@ -255,5 +255,9 @@
         "type": "int"
       }
     }
+  },
+  "social_startJourneyTogether": "Cùng bắt đầu hành trình",
+  "@social_startJourneyTogether": {
+    "description": "Friend sheet positive action (DE-20)."
   }
 }

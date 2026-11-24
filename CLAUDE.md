@@ -43,7 +43,7 @@ Every AI coding agent or developer working on Ourney MUST follow these rules to 
 ---
 
 ## 4. The 6 Adaptive Persona UI Styles (`PersonaSkinId`)
-Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board in `apps/mobile/assets/design_personas/`:
+Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board in `docs/assets/design_personas/`:
 
 > The camera panels (HUD, stamps, clocks, sliders) on those reference boards are superseded by the 2026-11-20 camera decision below; the timeline and share/squad panels still apply.
 
@@ -64,4 +64,4 @@ Each `TemplateId` maps 1-to-1 to a `PersonaSkinId` and a visual reference board 
 - **Never reset the app or re-initialize the camera** when switching journeys.
 - The app theme is the single kit theme (`OurneyTheme`) with the V2 shell palette. Skins (V2 spec, `docs/design-v2/orchestration/brief.md` section C.5) apply only on screens wrapped in `UiSkinScope` (journey detail, check-in, squad, sharing): `UiSkin.apply` (`lib/ui/skins.dart`) recolors bg, surface, ink, muted, accent and button for that journey's skin, variant and brightness. Screens outside a scope stay on the neutral shell, and the camera still uses the legacy `uiStyleForSkin` accent on its neutral dark theme. Legacy `uiStyleForSkin` / `lib/ui/journey_styles.dart` remain until the remaining screens migrate.
 - **Global Hub (`JourneysScreen`)**: neutral shell theme; each journey row shows its own persona accent.
-- **Create Journey (`CreateJourneyScreen`)**: Morphs live into whichever template card the user selects, displaying its preview board from `assets/design_personas/`.
+- **Create Journey (`CreateJourneyScreen`)**: Morphs live into whichever template card the user selects, displaying its sample preview from `assets/samples/`.

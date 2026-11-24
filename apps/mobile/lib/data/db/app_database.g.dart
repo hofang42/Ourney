@@ -51,6 +51,18 @@ class $ProfilesTable extends Profiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _termsVersionMeta = const VerificationMeta(
+    'termsVersion',
+  );
+  @override
+  late final GeneratedColumn<int> termsVersion = GeneratedColumn<int>(
+    'terms_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -68,6 +80,7 @@ class $ProfilesTable extends Profiles
     username,
     displayName,
     avatarPath,
+    termsVersion,
     updatedAt,
   ];
   @override
@@ -112,6 +125,15 @@ class $ProfilesTable extends Profiles
         avatarPath.isAcceptableOrUnknown(data['avatar_path']!, _avatarPathMeta),
       );
     }
+    if (data.containsKey('terms_version')) {
+      context.handle(
+        _termsVersionMeta,
+        termsVersion.isAcceptableOrUnknown(
+          data['terms_version']!,
+          _termsVersionMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -143,6 +165,10 @@ class $ProfilesTable extends Profiles
         DriftSqlType.string,
         data['${effectivePrefix}avatar_path'],
       ),
+      termsVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}terms_version'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}updated_at'],
@@ -161,6 +187,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
   final String username;
   final String displayName;
   final String? avatarPath;
+  final int termsVersion;
 
   /// Server `updated_at` (null while only local).
   final String? updatedAt;
@@ -169,6 +196,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     required this.username,
     required this.displayName,
     this.avatarPath,
+    required this.termsVersion,
     this.updatedAt,
   });
   @override
@@ -180,6 +208,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     if (!nullToAbsent || avatarPath != null) {
       map['avatar_path'] = Variable<String>(avatarPath);
     }
+    map['terms_version'] = Variable<int>(termsVersion);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<String>(updatedAt);
     }
@@ -194,6 +223,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       avatarPath: avatarPath == null && nullToAbsent
           ? const Value.absent()
           : Value(avatarPath),
+      termsVersion: Value(termsVersion),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
@@ -210,6 +240,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       username: serializer.fromJson<String>(json['username']),
       displayName: serializer.fromJson<String>(json['displayName']),
       avatarPath: serializer.fromJson<String?>(json['avatarPath']),
+      termsVersion: serializer.fromJson<int>(json['termsVersion']),
       updatedAt: serializer.fromJson<String?>(json['updatedAt']),
     );
   }
@@ -221,6 +252,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       'username': serializer.toJson<String>(username),
       'displayName': serializer.toJson<String>(displayName),
       'avatarPath': serializer.toJson<String?>(avatarPath),
+      'termsVersion': serializer.toJson<int>(termsVersion),
       'updatedAt': serializer.toJson<String?>(updatedAt),
     };
   }
@@ -230,12 +262,14 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
     String? username,
     String? displayName,
     Value<String?> avatarPath = const Value.absent(),
+    int? termsVersion,
     Value<String?> updatedAt = const Value.absent(),
   }) => ProfileRow(
     id: id ?? this.id,
     username: username ?? this.username,
     displayName: displayName ?? this.displayName,
     avatarPath: avatarPath.present ? avatarPath.value : this.avatarPath,
+    termsVersion: termsVersion ?? this.termsVersion,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
   ProfileRow copyWithCompanion(ProfilesCompanion data) {
@@ -248,6 +282,9 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
       avatarPath: data.avatarPath.present
           ? data.avatarPath.value
           : this.avatarPath,
+      termsVersion: data.termsVersion.present
+          ? data.termsVersion.value
+          : this.termsVersion,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -259,14 +296,21 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           ..write('username: $username, ')
           ..write('displayName: $displayName, ')
           ..write('avatarPath: $avatarPath, ')
+          ..write('termsVersion: $termsVersion, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, username, displayName, avatarPath, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    username,
+    displayName,
+    avatarPath,
+    termsVersion,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -275,6 +319,7 @@ class ProfileRow extends DataClass implements Insertable<ProfileRow> {
           other.username == this.username &&
           other.displayName == this.displayName &&
           other.avatarPath == this.avatarPath &&
+          other.termsVersion == this.termsVersion &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -283,6 +328,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
   final Value<String> username;
   final Value<String> displayName;
   final Value<String?> avatarPath;
+  final Value<int> termsVersion;
   final Value<String?> updatedAt;
   final Value<int> rowid;
   const ProfilesCompanion({
@@ -290,6 +336,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     this.username = const Value.absent(),
     this.displayName = const Value.absent(),
     this.avatarPath = const Value.absent(),
+    this.termsVersion = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -298,6 +345,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     required String username,
     required String displayName,
     this.avatarPath = const Value.absent(),
+    this.termsVersion = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -308,6 +356,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Expression<String>? username,
     Expression<String>? displayName,
     Expression<String>? avatarPath,
+    Expression<int>? termsVersion,
     Expression<String>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -316,6 +365,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       if (username != null) 'username': username,
       if (displayName != null) 'display_name': displayName,
       if (avatarPath != null) 'avatar_path': avatarPath,
+      if (termsVersion != null) 'terms_version': termsVersion,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -326,6 +376,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     Value<String>? username,
     Value<String>? displayName,
     Value<String?>? avatarPath,
+    Value<int>? termsVersion,
     Value<String?>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -334,6 +385,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
       username: username ?? this.username,
       displayName: displayName ?? this.displayName,
       avatarPath: avatarPath ?? this.avatarPath,
+      termsVersion: termsVersion ?? this.termsVersion,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -354,6 +406,9 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
     if (avatarPath.present) {
       map['avatar_path'] = Variable<String>(avatarPath.value);
     }
+    if (termsVersion.present) {
+      map['terms_version'] = Variable<int>(termsVersion.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<String>(updatedAt.value);
     }
@@ -370,6 +425,7 @@ class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
           ..write('username: $username, ')
           ..write('displayName: $displayName, ')
           ..write('avatarPath: $avatarPath, ')
+          ..write('termsVersion: $termsVersion, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6239,6 +6295,7 @@ typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
   required String username,
   required String displayName,
   Value<String?> avatarPath,
+  Value<int> termsVersion,
   Value<String?> updatedAt,
   Value<int> rowid,
 });
@@ -6247,6 +6304,7 @@ typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
   Value<String> username,
   Value<String> displayName,
   Value<String?> avatarPath,
+  Value<int> termsVersion,
   Value<String?> updatedAt,
   Value<int> rowid,
 });
@@ -6277,6 +6335,11 @@ class $$ProfilesTableFilterComposer
 
   ColumnFilters<String> get avatarPath => $composableBuilder(
     column: $table.avatarPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get termsVersion => $composableBuilder(
+    column: $table.termsVersion,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6315,6 +6378,11 @@ class $$ProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get termsVersion => $composableBuilder(
+    column: $table.termsVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -6343,6 +6411,11 @@ class $$ProfilesTableAnnotationComposer
 
   GeneratedColumn<String> get avatarPath => $composableBuilder(
     column: $table.avatarPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get termsVersion => $composableBuilder(
+    column: $table.termsVersion,
     builder: (column) => column,
   );
 
@@ -6385,6 +6458,7 @@ class $$ProfilesTableTableManager
                 Value<String> username = const Value.absent(),
                 Value<String> displayName = const Value.absent(),
                 Value<String?> avatarPath = const Value.absent(),
+                Value<int> termsVersion = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfilesCompanion(
@@ -6392,6 +6466,7 @@ class $$ProfilesTableTableManager
                 username: username,
                 displayName: displayName,
                 avatarPath: avatarPath,
+                termsVersion: termsVersion,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -6401,6 +6476,7 @@ class $$ProfilesTableTableManager
                 required String username,
                 required String displayName,
                 Value<String?> avatarPath = const Value.absent(),
+                Value<int> termsVersion = const Value.absent(),
                 Value<String?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ProfilesCompanion.insert(
@@ -6408,6 +6484,7 @@ class $$ProfilesTableTableManager
                 username: username,
                 displayName: displayName,
                 avatarPath: avatarPath,
+                termsVersion: termsVersion,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

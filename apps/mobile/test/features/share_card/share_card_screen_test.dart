@@ -309,30 +309,33 @@ void main() {
       );
     });
 
-    testWidgets('on error no photo is offered, a retry is, and the card still shares '
-        '(C-B2)', (tester) async {
-      final j = testJourney();
-      await pumpShare(
-        tester,
-        journey: j,
-        backend: true,
-        photos: true,
-        checkIns: streakCheckIns(j.id),
-        overrides: [
-          shareStateProvider(j.id).overrideWith(
-            (ref) => Stream<JourneyShareState>.error(StateError('offline')),
-          ),
-        ],
-      );
-      expect(_key('share-card-photo'), findsNothing);
-      expect(_key('share-card-state-error'), findsOneWidget);
-      expect(_key('share-card-state-retry'), findsOneWidget);
-      // The illustration-only card can still be shared (C-B7).
-      expect(
-        tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
-        isNotNull,
-      );
-    });
+    testWidgets(
+      'on error no photo is offered, a retry is, and the card still shares '
+      '(C-B2)',
+      (tester) async {
+        final j = testJourney();
+        await pumpShare(
+          tester,
+          journey: j,
+          backend: true,
+          photos: true,
+          checkIns: streakCheckIns(j.id),
+          overrides: [
+            shareStateProvider(j.id).overrideWith(
+              (ref) => Stream<JourneyShareState>.error(StateError('offline')),
+            ),
+          ],
+        );
+        expect(_key('share-card-photo'), findsNothing);
+        expect(_key('share-card-state-error'), findsOneWidget);
+        expect(_key('share-card-state-retry'), findsOneWidget);
+        // The illustration-only card can still be shared (C-B7).
+        expect(
+          tester.widget<ShareActionButton>(_key('share-card-share')).onPressed,
+          isNotNull,
+        );
+      },
+    );
 
     testWidgets('photos hidden from every share are never offered (C-B2)', (
       tester,
@@ -405,7 +408,7 @@ void main() {
       final shared = h.sharer.shared.single;
       expect(shared.path, '/tmp/ourney-j1-story.png');
       expect(shared.mimeType, 'image/png');
-      expect(shared.text, '💪 Tập mỗi ngày trên Ourney');
+      expect(shared.text, '💪 Tập mỗi ngày trên Ourney\nhttps://ourney.tech');
       expect(shared.origin, isNotNull);
 
       await _tap(tester, _seg('share-card-format', '4:5'));

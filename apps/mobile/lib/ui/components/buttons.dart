@@ -248,15 +248,21 @@ class UiTextAction extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final base = color ?? ui.inkSoft;
+    final resolved = alignment.resolve(Directionality.of(context));
+    final textAlign = resolved.x < 0
+        ? TextAlign.left
+        : (resolved.x > 0 ? TextAlign.right : TextAlign.center);
+    final pad = EdgeInsets.only(
+      left: resolved.x < 0 ? 0 : UiSpace.sm,
+      right: resolved.x > 0 ? 0 : UiSpace.sm,
+    );
     Widget box = Container(
       alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
+      padding: pad,
       constraints: const BoxConstraints(minHeight: UiSize.tap),
       child: Text(
         label,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
+        textAlign: textAlign,
         style: UiText.body(
           size: size,
           weight: FontWeight.w700,

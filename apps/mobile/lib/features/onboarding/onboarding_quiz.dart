@@ -14,11 +14,15 @@ class OnboardingQuizStage extends StatefulWidget {
   const OnboardingQuizStage({
     required this.onDone,
     required this.gutter,
+    this.showSignIn = false,
     super.key,
   });
 
   final ValueChanged<OnboardingQuiz?> onDone;
   final double gutter;
+
+  /// True when a backend is configured so `/auth` exists for returning users.
+  final bool showSignIn;
 
   static const questionCount = 3;
 
@@ -33,6 +37,15 @@ UiFlowGoal _flowGoal(QuizGoal goal) => switch (goal) {
   QuizGoal.trip => UiFlowGoal.trip,
   QuizGoal.couple => UiFlowGoal.couple,
   QuizGoal.habit => UiFlowGoal.habit,
+};
+
+String _goalSampleAsset(QuizGoal goal) => switch (goal) {
+  QuizGoal.weightLoss => 'assets/samples/weight_loss/02.webp',
+  QuizGoal.english => 'assets/samples/ielts_study/01.webp',
+  QuizGoal.workout => 'assets/samples/workout_30/01.webp',
+  QuizGoal.trip => 'assets/samples/travel_dalat/02.webp',
+  QuizGoal.couple => 'assets/samples/couple_rituals/02.webp',
+  QuizGoal.habit => 'assets/samples/reading_10_pages/01.webp',
 };
 
 class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
@@ -143,12 +156,28 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
             ),
             child: MediaQuery.withClampedTextScaling(
               maxScaleFactor: 1.35,
-              child: UiFlowButton(
-                key: const ValueKey('onboarding-quiz-next'),
-                label: _isLast && _answered
-                    ? l10n.onboarding_quizStart
-                    : l10n.onboarding_quizContinue,
-                onPressed: _answered ? _next : null,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UiFlowButton(
+                    key: const ValueKey('onboarding-quiz-next'),
+                    label: _isLast && _answered
+                        ? l10n.onboarding_quizStart
+                        : l10n.onboarding_quizContinue,
+                    onPressed: _answered ? _next : null,
+                  ),
+                  // Returning users skip the quiz and go straight to sign-in.
+                  if (_step == 0 && widget.showSignIn)
+                    UiTextAction(
+                      key: const ValueKey('onboarding-have-account'),
+                      label: l10n.onboarding_haveAccount,
+                      size: 14,
+                      underline: true,
+                      color: ui.ink,
+                      onPressed: () => widget.onDone(null),
+                    ),
+                ],
               ),
             ),
           ),
@@ -321,7 +350,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                     child: Container(
                       width: 62,
                       height: 72,
-                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
                         color: UiFlowColors.paper,
                         border: Border.fromBorderSide(
@@ -331,7 +360,26 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                           ),
                         ),
                       ),
-                      child: UiGoalGlyph(goal: goal, size: 28),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            _goalSampleAsset(quizGoal),
+                            key: ValueKey(
+                              'onboarding-quiz-result-photo-${quizGoal.wireName}',
+                            ),
+                            fit: BoxFit.cover,
+                            cacheWidth: 186,
+                            excludeFromSemantics: true,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(child: UiGoalGlyph(goal: goal, size: 28)),
+                          ),
+                          if (ui.isDark)
+                            const IgnorePointer(
+                              child: ColoredBox(color: Color(0x22000000)),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

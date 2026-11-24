@@ -108,6 +108,8 @@ void main() {
       }
       // No back button on question 1; Continue is disabled until a choice.
       expect(byKey('onboarding-quiz-back'), findsNothing);
+      // M1: local-only mode has no /auth, so "Have an account? Sign in" is hidden.
+      expect(byKey('onboarding-have-account'), findsNothing);
       expect(
         tester.widget<UiFlowButton>(byKey('onboarding-quiz-next')).onPressed,
         isNull,
@@ -152,6 +154,24 @@ void main() {
       await tester.tap(byKey('onboarding-reminder-21:30'));
       await tester.pumpAndSettle();
       expect(byKey('onboarding-quiz-result'), findsOneWidget);
+      expect(
+        byKey('onboarding-quiz-result-photo-english'),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: byKey('onboarding-quiz-result'),
+          matching: find.byType(Image),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: byKey('onboarding-quiz-result'),
+          matching: find.byType(UiGoalGlyph),
+        ),
+        findsNothing,
+      );
       expect(find.text('học tiếng anh.'), findsOneWidget);
       expect(find.text('Nhắc 21:30'), findsOneWidget);
       expect(find.text('Bắt đầu thôi'), findsOneWidget);
@@ -186,6 +206,50 @@ void main() {
       await tester.tap(byKey('onboarding-reminder-07:00'));
       await tester.pumpAndSettle();
       expect(find.text('hai đứa mình.'), findsOneWidget);
+      expect(byKey('onboarding-quiz-result-photo-trip'), findsOneWidget);
+    });
+
+    testWidgets('each of the 6 quiz goals renders its sample photo in result Polaroid', (
+      tester,
+    ) async {
+      const goals = [
+        'weight_loss',
+        'english',
+        'workout',
+        'trip',
+        'couple',
+        'habit',
+      ];
+      for (final g in goals) {
+        await tester.pumpWidget(const SizedBox());
+        await pumpOurneyApp(tester, onboarded: false);
+        await tester.ensureVisible(byKey('onboarding-goal-$g'));
+        await tester.tap(byKey('onboarding-goal-$g'));
+        await tester.pump();
+        await tester.tap(byKey('onboarding-quiz-next'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('onboarding-who-solo'));
+        await tester.pump();
+        await tester.tap(byKey('onboarding-quiz-next'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('onboarding-reminder-07:00'));
+        await tester.pumpAndSettle();
+        expect(byKey('onboarding-quiz-result-photo-$g'), findsOneWidget);
+        expect(
+          find.descendant(
+            of: byKey('onboarding-quiz-result'),
+            matching: find.byType(Image),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: byKey('onboarding-quiz-result'),
+            matching: find.byType(UiGoalGlyph),
+          ),
+          findsNothing,
+        );
+      }
     });
 
     testWidgets('back returns to the previous question', (tester) async {
@@ -240,6 +304,39 @@ void main() {
       expect(location(c), startsWith(AppRoutes.auth));
       expect(byKey('auth-screen'), findsOneWidget);
     });
+
+    testWidgets(
+      'have-account link shows only on Q1 with a backend and jumps to /auth '
+      '(M1)',
+      (tester) async {
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(),
+          onboarded: false,
+        );
+        expect(byKey('onboarding-have-account'), findsOneWidget);
+
+        // Hidden on question 2.
+        await tester.tap(byKey('onboarding-goal-english'));
+        await tester.pump();
+        await tester.tap(byKey('onboarding-quiz-next'));
+        await tester.pumpAndSettle();
+        expect(byKey('onboarding-have-account'), findsNothing);
+
+        // Back to question 1, then tap "Đã có tài khoản? Đăng nhập".
+        await tester.tap(byKey('onboarding-quiz-back'));
+        await tester.pumpAndSettle();
+        expect(byKey('onboarding-have-account'), findsOneWidget);
+        await tester.ensureVisible(byKey('onboarding-have-account'));
+        await tester.tap(byKey('onboarding-have-account'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(onboardingCompleteProvider), isTrue);
+        expect(c.read(onboardingQuizProvider), isNull);
+        expect(location(c), startsWith(AppRoutes.auth));
+        expect(byKey('auth-screen'), findsOneWidget);
+      },
+    );
 
     testWidgets('keeps the deep-link target in ?from=', (tester) async {
       final c = await pumpOurneyApp(tester, onboarded: false);

@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/account_reset.dart' show accountSessionResetProvider;
 import 'package:ourney/app/config.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/app/router.dart';
 import 'package:ourney/features/import/data/import_draft.dart';
 import 'package:ourney/features/import/data/import_job.dart';
@@ -802,6 +804,55 @@ void main() {
     );
     expect(_key('needs-server'), findsOneWidget);
   });
+
+  testWidgets(
+    'paused job in local-only mode drops foreign jobs, shows Resume, and completes without Signed out (DE-05)',
+    (tester) async {
+      final store = InMemoryImportJobStore();
+      await _seedJob(store, 'foreign-job', owner: 'u1');
+      await _seedJob(store, 'local-job', owner: 'local');
+      await store.setPaused('local-job', paused: true);
+      final checkIns = SubmittingCheckInRepository();
+      await pumpSharing(
+        tester,
+        location: '/import',
+        config: const AppConfig.localOnly(),
+        checkIns: checkIns,
+        importStore: store,
+      );
+      expect(await store.get('foreign-job'), isNull);
+      expect(find.text('Signed out.'), findsNothing);
+      expect(find.text('Paused.'), findsOneWidget);
+      expect(_key('import-resume'), findsOneWidget);
+
+      await _tap(tester, 'import-resume');
+      expect(find.text('Done.'), findsOneWidget);
+      expect(_key('import-open'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'signed out during a job in backend mode offers Sign in CTA (DE-05)',
+    (tester) async {
+      final store = InMemoryImportJobStore();
+      await _seedJob(store, 'job-1', owner: 'u1');
+      await store.setPaused('job-1', paused: true);
+      final h = await pumpSharing(
+        tester,
+        location: '/import',
+        importStore: store,
+        extraOverrides: [
+          authStatusProvider.overrideWith((ref) => AuthStatus.signedIn),
+          accountSessionResetProvider.overrideWith((ref) {}),
+        ],
+      );
+      expect(find.text('Paused.'), findsOneWidget);
+      await h.container.read(authRepositoryProvider).signOut();
+      await tester.pumpAndSettle();
+      expect(find.text('Signed out.'), findsOneWidget);
+      expect(_key('import-sign-in'), findsOneWidget);
+    },
+  );
 
   for (final b in Brightness.values) {
     testWidgets('320dp 1.35x $b vi no overflow on every step', (tester) async {

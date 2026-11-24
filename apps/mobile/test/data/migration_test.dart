@@ -175,6 +175,10 @@ void main() {
       'insert into check_ins (id, journey_id, user_id, local_date, captured_at, '
       "photo_path, thumb_path) values ('c1', 'j1', 'u1', '2026-01-01', 0, 'p', 't')",
     );
+    await v7.customStatement(
+      "insert into profiles (id, username, display_name) values ('u1', 'linh', 'Linh')",
+    );
+    await v7.customStatement('alter table profiles drop column terms_version');
     await v7.customStatement('drop table import_job_photos');
     await v7.customStatement('drop table import_jobs');
     await v7.customStatement('pragma user_version = 6');
@@ -191,6 +195,7 @@ void main() {
     // The upgrade kept what was there.
     expect((await db.select(db.journeys).getSingle()).id, 'j1');
     expect((await db.select(db.checkIns).getSingle()).id, 'c1');
+    expect((await db.select(db.profiles).getSingle()).termsVersion, 0);
     expect(
       tables.map((r) => r.data['name']),
       unorderedEquals(['import_jobs', 'import_job_photos']),

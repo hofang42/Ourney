@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../app/app_routes.dart';
-import '../../../app/redirect.dart' show safeFrom;
 import '../../../ui/ui.dart';
 import '../data/safety_providers.dart';
 import '../l10n/generated/safety_localizations.dart';
@@ -75,75 +73,128 @@ class LegalScreen extends StatelessWidget {
   }
 }
 
-/// `/safety/eula/accept?from=<path>`: the EULA acceptance gate (FR-F3).
-/// Accepting stores `safety.eulaAccepted` and continues to the `from`
-/// target (or the camera).
-class EulaAcceptScreen extends ConsumerStatefulWidget {
-  const EulaAcceptScreen({this.from, super.key});
+/// Shows the compact dismissible bottom sheet when an existing account signed
+/// in with an older server `terms_version` (`0 < terms_version < kTermsVersion`).
+Future<bool?> showTermsUpdateSheet(BuildContext context) => showUiSheet<bool>(
+  context: context,
+  dismissible: true,
+  builder: (_) => const TermsUpdateSheet(),
+);
 
-  /// Raw `?from=` value; only safe in-app paths are followed.
-  final Uri? from;
+/// Compact bottom sheet shown from `AppShell` when `kTermsVersion` bumps for
+/// an existing account (`0 < server terms_version < kTermsVersion`).
+class TermsUpdateSheet extends ConsumerStatefulWidget {
+  const TermsUpdateSheet({super.key});
 
   @override
-  ConsumerState<EulaAcceptScreen> createState() => _EulaAcceptScreenState();
+  ConsumerState<TermsUpdateSheet> createState() => _TermsUpdateSheetState();
 }
 
-class _EulaAcceptScreenState extends ConsumerState<EulaAcceptScreen> {
-  bool _checked = false;
+class _TermsUpdateSheetState extends ConsumerState<TermsUpdateSheet> {
+  bool _busy = false;
 
   Future<void> _accept() async {
+    if (_busy) return;
+    setState(() => _busy = true);
     await ref.read(eulaAcceptedProvider.notifier).accept();
     if (!mounted) return;
-    final from = widget.from;
-    final target = from == null ? null : safeFrom(from);
-    context.go(target ?? AppRoutes.capture);
+    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = SafetyL10n.of(context);
     final ui = context.ui;
-    return SafetyPage(
-      pageKey: const ValueKey('safety-eula-accept'),
-      title: l10n.safety_eulaAcceptTitle,
-      onBack: null,
-      bottom: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          UiSwitchRow(
-            key: const ValueKey('safety-eula-checkbox'),
-            label: l10n.safety_eulaAcceptCheckbox,
-            value: _checked,
-            divider: false,
-            onChanged: (v) => setState(() => _checked = v),
+    final bullets = [
+      l10n.safety_termsUpdateBullet1,
+      l10n.safety_termsUpdateBullet2,
+    ];
+    return Column(
+      key: const ValueKey('safety-terms-update-sheet'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            l10n.safety_termsUpdateTitle,
+            style: UiText.h2(color: ui.ink),
           ),
-          const SizedBox(height: UiSpace.sm),
-          UiButton(
-            key: const ValueKey('safety-eula-accept-button'),
-            label: l10n.safety_eulaAcceptButton,
-            onPressed: _checked ? _accept : null,
+        ),
+        const SizedBox(height: UiSpace.xs),
+        Text(
+          l10n.safety_termsUpdateIntro,
+          style: UiText.muted(color: ui.inkMuted, size: 14),
+        ),
+        const SizedBox(height: UiSpace.sm),
+        for (final b in bullets) ...[
+          Padding(
+            padding: const EdgeInsets.only(bottom: UiSpace.xs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: OurneyIcon(
+                    name: 'check',
+                    size: 18,
+                    flat: true,
+                    color: ui.ink,
+                  ),
+                ),
+                const SizedBox(width: UiSpace.sm),
+                Expanded(
+                  child: Text(
+                    b,
+                    style: UiText.body(
+                      size: 14,
+                      height: 1.35,
+                      color: ui.ink,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            l10n.safety_eulaAcceptIntro,
-            style: UiText.muted(color: ui.inkMuted),
-          ),
-          const SizedBox(height: UiSpace.xl),
-          for (final (t, b) in eulaSections(l10n))
-            LegalSection(title: t, body: b),
-          UiTextAction(
-            key: const ValueKey('safety-eula-accept-privacy'),
-            label: l10n.safety_hubPrivacy,
-            alignment: Alignment.centerLeft,
-            onPressed: () => context.push(SafetyPaths.privacy),
-          ),
-        ],
-      ),
+        Wrap(
+          spacing: UiSpace.md,
+          children: [
+            UiTextAction(
+              key: const ValueKey('safety-terms-update-eula'),
+              label: l10n.safety_hubEula,
+              size: 13,
+              underline: true,
+              color: ui.ink,
+              expand: false,
+              onPressed: () => context.push(SafetyPaths.eula),
+            ),
+            UiTextAction(
+              key: const ValueKey('safety-terms-update-privacy'),
+              label: l10n.safety_hubPrivacy,
+              size: 13,
+              underline: true,
+              color: ui.ink,
+              expand: false,
+              onPressed: () => context.push(SafetyPaths.privacy),
+            ),
+          ],
+        ),
+        const SizedBox(height: UiSpace.sm),
+        UiButton(
+          key: const ValueKey('safety-terms-update-accept'),
+          label: l10n.safety_termsUpdateAccept,
+          loading: _busy,
+          onPressed: _busy ? null : _accept,
+        ),
+        const SizedBox(height: UiSpace.xs),
+        UiButton.ghost(
+          key: const ValueKey('safety-terms-update-later'),
+          label: l10n.safety_termsUpdateLater,
+          compact: true,
+          onPressed: _busy ? null : () => Navigator.of(context).pop(false),
+        ),
+      ],
     );
   }
 }

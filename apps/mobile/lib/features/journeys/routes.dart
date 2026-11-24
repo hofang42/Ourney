@@ -27,13 +27,20 @@ import 'ui/wrapped/journey_wrapped_screen.dart';
 final List<RouteBase> journeysRoutes = [
   GoRoute(
     path: AppRoutes.journeys,
-    builder: (context, state) => const JourneysListScreen(),
+    builder: (context, state) => JourneysListScreen(
+      initialSegment: JourneysListScreen.parseSegment(
+        state.uri.queryParameters['segment'],
+      ),
+    ),
     routes: [
       GoRoute(
         path: 'new',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => TemplatePickerScreen(
           resume: state.uri.queryParameters['resume'] == '1',
+          initialWho: TemplatePickerScreen.parseWho(
+            state.uri.queryParameters['who'],
+          ),
         ),
         routes: [
           GoRoute(

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,12 +7,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/profile/profile_providers.dart';
 import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/features/safety/safety_paths.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
+import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/test_helpers.dart';
+import '../profile/fakes.dart' show FakeProfileRepository;
 import 'safety_fakes.dart';
+
+class _SlowTermsAuthRepository extends FakeAuthRepository {
+  _SlowTermsAuthRepository({super.userId});
+
+  final Completer<void> blocker = Completer<void>();
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {
+    recordedTerms.add(version);
+    await blocker.future;
+    termsVersion = version;
+  }
+}
 
 void main() {
   group('hub (FR-F3)', () {
@@ -67,9 +85,25 @@ void main() {
         find.text('2. Zero tolerance for objectionable content'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('Profile > Settings > Delete account'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await goTo(tester, c, SafetyPaths.privacy);
       expect(find.text('What we store'), findsOneWidget);
+      expect(
+        find.textContaining('Your email or phone number'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Profile > Settings > Delete account'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Profile > Settings > Contact'),
+        findsOneWidget,
+      );
       // Back from a deep link goes to the hub.
       await tester.tap(
         find.byWidgetPredicate((w) => w is OurneyIcon && w.name == 'back'),
@@ -160,52 +194,165 @@ void main() {
     });
   });
 
-  group('EULA gate', () {
-    testWidgets('accept needs the checkbox, stores the flag, continues', (
+  group('terms consent & TermsUpdateSheet (§4.4 / §4.5)', () {
+    testWidgets(
+      'accept() stores the per-account version and calls recordTermsAccepted '
+      'without blocking on a slow network call (M3)',
+      (tester) async {
+        final auth = _SlowTermsAuthRepository(userId: 'u1');
+        final c = await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+        );
+        expect(c.read(eulaAcceptedProvider), isFalse);
+
+        await c.read(eulaAcceptedProvider.notifier).accept();
+
+        expect(c.read(eulaAcceptedProvider), isTrue);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getInt(SafetyPrefs.termsVersionFor('u1')),
+          kTermsVersion,
+        );
+        expect(auth.recordedTerms, [kTermsVersion]);
+        // Rebuilding eulaAcceptedProvider while the RPC is still in flight must
+        // not spawn a second concurrent accept_terms RPC (M2).
+        c.invalidate(myProfileProvider);
+        c.read(eulaAcceptedProvider);
+        expect(auth.recordedTerms, [kTermsVersion]);
+        auth.blocker.complete();
+      },
+    );
+
+    testWidgets(
+      'H2: cold start with a cached local Profile(termsVersion: 1) and null '
+      'auth.acceptedTermsVersion shows TermsUpdateSheet when kTermsVersion '
+      'bumps to 2',
+      (tester) async {
+        // Simulate cold start: auth.acceptedTermsVersion is null (volatile RAM
+        // before any remote profile select), while Drift has the cached
+        // ProfileRow with termsVersion = 1.
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: null);
+        final profiles = FakeProfileRepository(
+          const Profile(
+            id: 'u1',
+            username: 'alice',
+            displayName: 'Alice',
+            termsVersion: 1,
+          ),
+        );
+        await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(profiles),
+            termsVersionProvider.overrideWithValue(2),
+          ],
+        );
+        expect(byKey('safety-terms-update-sheet'), findsOneWidget);
+        expect(find.text('Điều khoản vừa cập nhật'), findsOneWidget);
+      },
+    );
+
+    testWidgets('an account that already accepted is remembered locally', (
       tester,
     ) async {
-      final c = await pumpSignedInApp(tester, eulaAccepted: false);
-      expect(c.read(eulaAcceptedProvider), isFalse);
-      await goTo(
+      final c = await pumpSignedInApp(
         tester,
-        c,
-        Uri(
-          path: SafetyPaths.eulaAccept,
-          queryParameters: {AppRoutes.fromParam: SafetyPaths.contact},
-        ).toString(),
+        eulaAccepted: false,
+        auth: FakeAuthRepository(userId: 'u1', termsVersion: kTermsVersion),
       );
-      expect(byKey('safety-eula-accept'), findsOneWidget);
-
-      await tester.tap(byKey('safety-eula-accept-button'));
-      await tester.pumpAndSettle();
-      expect(c.read(eulaAcceptedProvider), isFalse, reason: 'not checked');
-
-      await tester.tap(byKey('safety-eula-checkbox'));
-      await tester.pumpAndSettle();
-      await tester.tap(byKey('safety-eula-accept-button'));
-      await tester.pumpAndSettle();
-
       expect(c.read(eulaAcceptedProvider), isTrue);
+      expect(c.read(needsTermsUpdateProvider), isFalse);
       expect(
-        c.read(sharedPreferencesProvider).getBool(SafetyPrefs.eulaAccepted),
-        isTrue,
+        c
+            .read(sharedPreferencesProvider)
+            .getInt(SafetyPrefs.termsVersionFor('u1')),
+        kTermsVersion,
       );
-      expect(locationOf(c), SafetyPaths.contact);
     });
 
-    testWidgets('unsafe from target falls back to the camera', (tester) async {
-      final c = await pumpSignedInApp(tester, eulaAccepted: false);
-      await goTo(
-        tester,
-        c,
-        '${SafetyPaths.eulaAccept}?from=${Uri.encodeComponent('https://evil.example')}',
-      );
-      await tester.tap(byKey('safety-eula-checkbox'));
-      await tester.pumpAndSettle();
-      await tester.tap(byKey('safety-eula-accept-button'));
-      await tester.pumpAndSettle();
-      expect(locationOf(c), startsWith(AppRoutes.capture));
-    });
+    testWidgets(
+      'an older accepted version or legacy boolean is asked again and never '
+      'forges server consent (H1)',
+      (tester) async {
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: 1);
+        final prefs = await testPrefs({
+          OnboardingComplete.prefsKey: true,
+          SafetyPrefs.eulaAccepted: true,
+          SafetyPrefs.termsVersionFor('u1'): 1,
+        });
+        final c = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            authRepositoryProvider.overrideWithValue(auth),
+            termsVersionProvider.overrideWithValue(2),
+          ],
+        );
+        addTearDown(c.dispose);
+
+        expect(c.read(eulaAcceptedProvider), isFalse);
+        expect(c.read(needsTermsUpdateProvider), isTrue);
+        expect(auth.recordedTerms, isEmpty);
+      },
+    );
+
+    testWidgets(
+      'AppShell shows dismissible TermsUpdateSheet when 0 < server '
+      'terms_version < kTermsVersion (§4.5)',
+      (tester) async {
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: 1);
+        final c = await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+          overrides: [termsVersionProvider.overrideWithValue(2)],
+        );
+        expect(byKey('safety-terms-update-sheet'), findsOneWidget);
+        expect(find.text('Điều khoản vừa cập nhật'), findsOneWidget);
+
+        // Dismissible via "Để sau" without blocking the app.
+        await tester.tap(byKey('safety-terms-update-later'));
+        await tester.pumpAndSettle();
+        expect(byKey('safety-terms-update-sheet'), findsNothing);
+        expect(auth.recordedTerms, isEmpty);
+        expect(locationOf(c), AppRoutes.capture);
+      },
+    );
+
+    testWidgets(
+      'TermsUpdateSheet Agree and continue records the bumped terms version '
+      '(§4.5)',
+      (tester) async {
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: 1);
+        final c = await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+          overrides: [termsVersionProvider.overrideWithValue(2)],
+        );
+        expect(byKey('safety-terms-update-sheet'), findsOneWidget);
+
+        await tester.tap(byKey('safety-terms-update-accept'));
+        await tester.pumpAndSettle();
+
+        expect(byKey('safety-terms-update-sheet'), findsNothing);
+        expect(c.read(eulaAcceptedProvider), isTrue);
+        expect(c.read(needsTermsUpdateProvider), isFalse);
+        expect(auth.recordedTerms, [2]);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getInt(SafetyPrefs.termsVersionFor('u1')),
+          2,
+        );
+      },
+    );
 
     test('provider reads and resets the stored flag', () async {
       final prefs = await testPrefs({SafetyPrefs.eulaAccepted: true});

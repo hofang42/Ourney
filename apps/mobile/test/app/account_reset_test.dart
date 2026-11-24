@@ -44,6 +44,7 @@ void main() {
         const OnboardingQuiz(goal: QuizGoal.weightLoss).toJson(),
       ),
       SafetyPrefs.eulaAccepted: true,
+      SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
       SafetyPrefs.blockedNames: jsonEncode({'u9': 'Blocked'}),
       ActiveJourneyId.prefsKey: journeyId,
       CreateProgressPrefs.key: 3,
@@ -121,14 +122,16 @@ void main() {
 
   ProviderContainer containerFor(
     SharedPreferencesWithCache prefs,
-    CurrentUserId Function() user,
-  ) {
+    CurrentUserId Function() user, {
+    FakeAuthRepository? auth,
+  }) {
     final container = ProviderContainer(
       overrides: [
         appConfigProvider.overrideWithValue(testBackendConfig),
         sharedPreferencesProvider.overrideWithValue(prefs),
         supabaseClientProvider.overrideWithValue(null),
         currentUserIdProvider.overrideWith(user),
+        if (auth != null) authRepositoryProvider.overrideWithValue(auth),
         notificationGatewayProvider.overrideWithValue(
           FakeNotificationGateway(granted: true),
         ),
@@ -153,6 +156,7 @@ void main() {
       final prefs = await testPrefs({
         accountOwnerPrefsKey: 'user-a',
         SafetyPrefs.eulaAccepted: true,
+        SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
         SharePrivacyPrefs.hideWeight: true,
       });
       final container = containerFor(prefs, _SignedOutUser.new);
@@ -160,30 +164,57 @@ void main() {
       expect(container.read(eulaAcceptedProvider), isFalse);
       expect(container.read(hideWeightOnShareProvider), isFalse);
       expect(prefs.containsKey(accountOwnerPrefsKey), isFalse);
+      expect(
+        prefs.containsKey(SafetyPrefs.termsVersionFor('user-a')),
+        isFalse,
+      );
     },
   );
 
-  test('a different user signing in directly resets (C-B4)', () async {
-    final prefs = await testPrefs({
-      SafetyPrefs.eulaAccepted: true,
-      SharePrivacyPrefs.blurPhotos: true,
-    });
-    final container = containerFor(prefs, _SignedInUser.new);
-    await pumpEventQueue();
-    expect(prefs.getString(accountOwnerPrefsKey), 'user-a');
-    // Same user: nothing is dropped.
-    expect(container.read(eulaAcceptedProvider), isTrue);
+  test(
+    'a different user signing in directly resets without leaking EULA consent '
+    '(C-B4 / H1)',
+    () async {
+      final prefs = await testPrefs({
+        SafetyPrefs.eulaAccepted: true,
+        SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
+        SharePrivacyPrefs.blurPhotos: true,
+      });
+      final auth = FakeAuthRepository(
+        userId: 'user-a',
+        termsVersion: kTermsVersion,
+      );
+      final container = containerFor(prefs, _SignedInUser.new, auth: auth);
+      await pumpEventQueue();
+      expect(prefs.getString(accountOwnerPrefsKey), 'user-a');
+      // Same user: nothing is dropped.
+      expect(container.read(eulaAcceptedProvider), isTrue);
+      expect(auth.recordedTerms, isEmpty);
 
-    (container.read(currentUserIdProvider.notifier) as _SignedInUser).switchTo(
-      'user-b',
-    );
-    // Providers are invalidated synchronously on user switch (no Timer.run gap, FS-26),
-    // while accountOwnerPrefsKey is only updated after per-account key removals flush.
-    expect(container.read(eulaAcceptedProvider), isFalse);
-    expect(container.read(blurPhotosOnShareProvider), isFalse);
-    expect(prefs.containsKey(SafetyPrefs.eulaAccepted), isFalse);
-    expect(prefs.containsKey(SharePrivacyPrefs.blurPhotos), isFalse);
-    await pumpEventQueue();
-    expect(prefs.getString(accountOwnerPrefsKey), 'user-b');
-  });
+      // Direct switch to user-b (new account, termsVersion == null).
+      auth
+        ..userId = 'user-b'
+        ..termsVersion = null;
+      (container.read(currentUserIdProvider.notifier) as _SignedInUser)
+          .switchTo('user-b');
+      // Providers are invalidated synchronously on user switch (no Timer.run gap, FS-26),
+      // while accountOwnerPrefsKey is only updated after per-account key removals flush,
+      // and user-b must not inherit user-a's consent or trigger recordTermsAccepted.
+      expect(container.read(eulaAcceptedProvider), isFalse);
+      expect(container.read(blurPhotosOnShareProvider), isFalse);
+      expect(prefs.containsKey(SafetyPrefs.eulaAccepted), isFalse);
+      expect(prefs.containsKey(SharePrivacyPrefs.blurPhotos), isFalse);
+      expect(auth.recordedTerms, isEmpty);
+
+      await pumpEventQueue();
+      expect(container.read(eulaAcceptedProvider), isFalse);
+      expect(auth.recordedTerms, isEmpty);
+      expect(
+        prefs.containsKey(SafetyPrefs.termsVersionFor('user-a')),
+        isFalse,
+      );
+      expect(container.read(blurPhotosOnShareProvider), isFalse);
+      expect(prefs.getString(accountOwnerPrefsKey), 'user-b');
+    },
+  );
 }

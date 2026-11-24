@@ -48,7 +48,6 @@
   "@safety_hubHowToReportBody": {
     "description": "Body of the how-to-report card on the hub."
   },
-
   "safety_reportCheckInTitle": "Báo cáo check-in",
   "@safety_reportCheckInTitle": {
     "description": "Title of the report sheet for a check-in."
@@ -141,7 +140,6 @@
   "@safety_needsAccount": {
     "description": "Shown in local-only mode instead of the report/block UI."
   },
-
   "safety_blockTitle": "Chặn {name}?",
   "@safety_blockTitle": {
     "description": "Block confirmation title.",
@@ -232,7 +230,6 @@
   "@safety_retry": {
     "description": "Retry button."
   },
-
   "safety_contactIntro": "Cần giúp đỡ, muốn góp ý hay báo cáo một vấn đề an toàn khẩn cấp? Viết cho chúng mình. Báo cáo nội dung được xem xét trong vòng 24 giờ.",
   "@safety_contactIntro": {
     "description": "Intro of the contact page."
@@ -261,23 +258,6 @@
   "@safety_contactNoMailApp": {
     "description": "Error when no mail app can be opened."
   },
-
-  "safety_eulaAcceptTitle": "Trước khi bắt đầu",
-  "@safety_eulaAcceptTitle": {
-    "description": "Title of the EULA acceptance screen."
-  },
-  "safety_eulaAcceptIntro": "Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Hãy đọc và đồng ý với điều khoản sử dụng để tiếp tục.",
-  "@safety_eulaAcceptIntro": {
-    "description": "Intro of the EULA acceptance screen."
-  },
-  "safety_eulaAcceptCheckbox": "Tôi đã đọc và đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.",
-  "@safety_eulaAcceptCheckbox": {
-    "description": "Checkbox label on the EULA acceptance screen."
-  },
-  "safety_eulaAcceptButton": "Đồng ý và tiếp tục",
-  "@safety_eulaAcceptButton": {
-    "description": "Accept button on the EULA acceptance screen."
-  },
   "safety_lastUpdated": "Cập nhật lần cuối: {date}",
   "@safety_lastUpdated": {
     "description": "Last updated line on legal pages.",
@@ -288,7 +268,6 @@
       }
     }
   },
-
   "safety_eula1Title": "1. Đồng ý điều khoản",
   "@safety_eula1Title": {
     "description": "EULA section heading."
@@ -325,7 +304,7 @@
   "@safety_eula5Title": {
     "description": "EULA section heading."
   },
-  "safety_eula5Body": "Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào trong Hồ sơ.",
+  "safety_eula5Body": "Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào tại Hồ sơ > Cài đặt > Xóa tài khoản.",
   "@safety_eula5Body": {
     "description": "EULA section body."
   },
@@ -337,12 +316,11 @@
   "@safety_eula6Body": {
     "description": "EULA section body."
   },
-
   "safety_privacy1Title": "Chúng mình lưu gì",
   "@safety_privacy1Title": {
     "description": "Privacy section heading."
   },
-  "safety_privacy1Body": "Email (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.",
+  "safety_privacy1Body": "Email hoặc số điện thoại (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.",
   "@safety_privacy1Body": {
     "description": "Privacy section body: data stored."
   },
@@ -374,7 +352,7 @@
   "@safety_privacy5Title": {
     "description": "Privacy section heading."
   },
-  "safety_privacy5Body": "Vào Hồ sơ > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.",
+  "safety_privacy5Body": "Vào Hồ sơ > Cài đặt > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.",
   "@safety_privacy5Body": {
     "description": "Privacy section body: deletion."
   },
@@ -382,8 +360,32 @@
   "@safety_privacy6Title": {
     "description": "Privacy section heading."
   },
-  "safety_privacy6Body": "Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.",
+  "safety_privacy6Body": "Có câu hỏi về quyền riêng tư? Mở Hồ sơ > Cài đặt > Liên hệ.",
   "@safety_privacy6Body": {
     "description": "Privacy section body: contact."
+  },
+  "safety_termsUpdateTitle": "Điều khoản vừa cập nhật",
+  "@safety_termsUpdateTitle": {
+    "description": "Title of the compact terms update bottom sheet shown when kTermsVersion bumps."
+  },
+  "safety_termsUpdateIntro": "Chúng mình vừa cập nhật Điều khoản sử dụng và Chính sách quyền riêng tư để giải thích rõ hơn cách Ourney bảo vệ bạn:",
+  "@safety_termsUpdateIntro": {
+    "description": "Intro of the terms update bottom sheet."
+  },
+  "safety_termsUpdateBullet1": "Không dung thứ nội dung phản cảm hoặc người dùng lạm dụng; báo cáo được xử lý trong 24 giờ.",
+  "@safety_termsUpdateBullet1": {
+    "description": "First bullet on the terms update bottom sheet."
+  },
+  "safety_termsUpdateBullet2": "Ảnh và dữ liệu thuộc về bạn — không quảng cáo, không bán dữ liệu, có thể xóa tài khoản bất cứ lúc nào.",
+  "@safety_termsUpdateBullet2": {
+    "description": "Second bullet on the terms update bottom sheet."
+  },
+  "safety_termsUpdateAccept": "Đồng ý và tiếp tục",
+  "@safety_termsUpdateAccept": {
+    "description": "Primary accept button on the terms update bottom sheet."
+  },
+  "safety_termsUpdateLater": "Để sau",
+  "@safety_termsUpdateLater": {
+    "description": "Dismiss button on the terms update bottom sheet."
   }
 }

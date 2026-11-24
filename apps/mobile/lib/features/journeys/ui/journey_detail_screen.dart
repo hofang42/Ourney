@@ -13,10 +13,10 @@ import '../../../app/overlays/missed_day_overlay.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
+import '../../groups/groups_paths.dart';
 import '../../groups/ui/invite_sheet.dart';
 import '../../profile/share_privacy_sync.dart';
 import '../../reminders/data/reminder_scheduler.dart';
-import '../../sharing/sharing.dart';
 import '../data/journeys_providers.dart';
 import '../data/long_timeline_state.dart';
 import '../domain/journey_progress.dart';
@@ -334,7 +334,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                   : () => context.push(JourneysPaths.wrapped(journey.id)),
               onShare: () => _share(context, journey),
               onSquad: journey.kind == JourneyKind.group
-                  ? () => context.go(AppRoutes.groups)
+                  ? () => context.go(GroupsPaths.today(journey.id))
                   : null,
             ),
             const SizedBox(height: UiSpace.lg),
@@ -503,6 +503,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     final window = skin == 'minimal' ? index.recentMinimal : index.recent;
     void openDay(TimelineDay d) =>
         context.push(JourneysPaths.day(journey.id, d.date));
+    final modeSwitch = _modeSwitch(l10n, st.mode, notifier);
     return UiScaffold.slivers(
       key: const ValueKey('journey-detail'),
       controller: _scroll,
@@ -520,31 +521,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         SliverPersistentHeader(
           pinned: true,
           delegate: _ModeBarDelegate(
-            extent: _barExtent(byMonth),
+            extent: _barExtent(context, modeSwitch, byMonth: byMonth),
             background: pal.paper,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                UiSegmented<LongTimelineMode>(
-                  value: st.mode,
-                  onChanged: (m) {
-                    _jumpToken++;
-                    notifier.setMode(m);
-                    if (m == LongTimelineMode.recent) _toTimelineTop();
-                  },
-                  segments: [
-                    UiSegment(
-                      key: const ValueKey('timeline-mode-recent'),
-                      value: LongTimelineMode.recent,
-                      label: l10n.journeys_timelineRecent,
-                    ),
-                    UiSegment(
-                      key: const ValueKey('timeline-mode-month'),
-                      value: LongTimelineMode.month,
-                      label: l10n.journeys_timelineByMonth,
-                    ),
-                  ],
-                ),
+                modeSwitch,
                 if (byMonth) ...[
                   const SizedBox(height: 4),
                   UiJumpChips(chips: _chips(context, index, st)),
@@ -593,9 +575,47 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     );
   }
 
-  /// Pinned mode bar: 8dp air, 48dp switch, and in By month a 52dp chip row.
-  static double _barExtent(bool byMonth) =>
-      8 + UiSize.tap + (byMonth ? 4 + UiJumpChips.height : 0);
+  UiSegmented<LongTimelineMode> _modeSwitch(
+    JourneysL10n l10n,
+    LongTimelineMode mode,
+    LongTimelineNotifier notifier,
+  ) => UiSegmented<LongTimelineMode>(
+    value: mode,
+    onChanged: (m) {
+      _jumpToken++;
+      notifier.setMode(m);
+      if (m == LongTimelineMode.recent) _toTimelineTop();
+    },
+    segments: [
+      UiSegment(
+        key: const ValueKey('timeline-mode-recent'),
+        value: LongTimelineMode.recent,
+        label: l10n.journeys_timelineRecent,
+      ),
+      UiSegment(
+        key: const ValueKey('timeline-mode-month'),
+        value: LongTimelineMode.month,
+        label: l10n.journeys_timelineByMonth,
+      ),
+    ],
+  );
+
+  /// Pinned mode bar: 8dp air, the mode switch (48dp or taller when scaled
+  /// labels wrap), and in By month a 52dp chip row.
+  static double _barExtent(
+    BuildContext context,
+    UiSegmented<LongTimelineMode> modeSwitch, {
+    required bool byMonth,
+  }) {
+    final screenW = MediaQuery.sizeOf(context).width;
+    final safeW = screenW - MediaQuery.paddingOf(context).horizontal;
+    final maxCol = UiSpace.maxContent(screenW);
+    final colW = safeW < maxCol ? safeW : maxCol;
+    final contentW = colW - UiSpace.gutter(screenW) * 2;
+    return 8 +
+        modeSwitch.preferredHeight(context, contentW) +
+        (byMonth ? 4 + UiJumpChips.height : 0);
+  }
 
   /// Month chips (newest first); years first when the journey spans more
   /// than 12 months, a tap on a year filters that year's months.
@@ -709,9 +729,14 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         viewport is RenderBox &&
         _scroll.hasClients) {
       final top = box.localToGlobal(Offset.zero).dy;
+      final modeSwitch = _modeSwitch(
+        JourneysL10n.of(context),
+        LongTimelineMode.month,
+        ref.read(longTimelineProvider(journeyId).notifier),
+      );
       final bar =
           (viewport as RenderBox).localToGlobal(Offset.zero).dy +
-          _barExtent(true);
+          _barExtent(context, modeSwitch, byMonth: true);
       final delta = top - bar;
       if (delta.abs() > 1) _scroll.jumpTo(clamp(_scroll.offset + delta));
     }
@@ -762,7 +787,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
     if (choice) {
       unawaited(context.push(AppRoutes.share(journey.id)));
     } else {
-      await showShareJourneySheet(context, journey);
+      unawaited(context.push(AppRoutes.shareJourney(journey.id)));
     }
   }
 

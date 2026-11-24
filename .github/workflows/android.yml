@@ -103,12 +103,14 @@ jobs:
 
       - name: Build APK (release)
         working-directory: apps/mobile
+        timeout-minutes: 25
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GRADLE_OPTS: -Dorg.gradle.workers.max=2
         run: |
-          args=(--release)
+          args=(--release --no-pub --no-android-gradle-daemon --verbose)
           if [ -n "${DART_DEFINES_FILE:-}" ] && [ -f "$DART_DEFINES_FILE" ]; then
             args+=("--dart-define-from-file=$DART_DEFINES_FILE")
           fi

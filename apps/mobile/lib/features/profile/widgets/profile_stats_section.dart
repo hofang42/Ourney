@@ -52,48 +52,48 @@ class _ProfileStatsSectionState extends ConsumerState<ProfileStatsSection> {
         // the three tiles to the tallest one; Expanded keeps equal widths.
         IntrinsicHeight(
           child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final (key, value, label) in [
-              ('snaps', stats.totalSnaps, l10n.profile_statSnaps),
-              ('longest', stats.longestStreak, l10n.profile_statLongest),
-              ('done', stats.journeysCompleted, l10n.profile_statDone),
-            ]) ...[
-              Expanded(
-                child: UiCard(
-                  key: ValueKey('profile-stat-$key'),
-                  radius: UiRadius.card,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: UiSpace.sm,
-                    vertical: UiSpace.md,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$value',
-                        maxLines: 1,
-                        style: UiText.h1(size: 26, color: ui.ink),
-                      ),
-                      const SizedBox(height: UiSpace.xs),
-                      Text(
-                        label,
-                        textAlign: TextAlign.center,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.body(
-                          size: 12,
-                          height: 1.4,
-                          color: ui.inkMuted,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (key, value, label) in [
+                ('snaps', stats.totalSnaps, l10n.profile_statSnaps),
+                ('longest', stats.longestStreak, l10n.profile_statLongest),
+                ('done', stats.journeysCompleted, l10n.profile_statDone),
+              ]) ...[
+                Expanded(
+                  child: UiCard(
+                    key: ValueKey('profile-stat-$key'),
+                    radius: UiRadius.card,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: UiSpace.sm,
+                      vertical: UiSpace.md,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$value',
+                          maxLines: 1,
+                          style: UiText.h1(size: 26, color: ui.ink),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: UiSpace.xs),
+                        Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.body(
+                            size: 12,
+                            height: 1.4,
+                            color: ui.inkMuted,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              if (key != 'done') const SizedBox(width: UiSpace.sm),
+                if (key != 'done') const SizedBox(width: UiSpace.sm),
+              ],
             ],
-          ],
           ),
         ),
         const SizedBox(height: UiSpace.xl),
