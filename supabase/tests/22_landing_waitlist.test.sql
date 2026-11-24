@@ -1,7 +1,7 @@
 -- 0022_landing_waitlist: landing beta waitlist (private tables, service-role RPCs).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(16);
+select plan(17);
 
 select has_table('private', 'waitlist', 'waitlist table exists in the private schema');
 select has_table('private', 'waitlist_attempts', 'waitlist_attempts table exists in the private schema');
@@ -63,10 +63,15 @@ select is(
   'invalid',
   'a malformed email is rejected'
 );
+-- Two statements: a subquery in the same statement as the insert would not see the new row.
 select is(
-  (public.waitlist_signup('plat@example.com', 'xx', array['ios', 'bogus', 'ios'], null, null) ->> 'status')
-    || '|' || (select lang || '|' || array_to_string(platforms, ',') from private.waitlist where email = 'plat@example.com'),
-  'created|vi|ios',
+  public.waitlist_signup('plat@example.com', 'xx', array['ios', 'bogus', 'ios'], null, null) ->> 'status',
+  'created',
+  'a signup with unknown platforms and language is accepted'
+);
+select is(
+  (select lang || '|' || array_to_string(platforms, ',') from private.waitlist where email = 'plat@example.com'),
+  'vi|ios',
   'unknown platforms and languages are dropped, duplicates collapsed'
 );
 
