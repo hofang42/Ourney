@@ -146,11 +146,11 @@ select is(
   'schema admin contains zero tables, views, or materialized views (RPC-only)'
 );
 
--- [Test 4] Schema `admin` has exactly 30 RPC functions
+-- [Test 4] Schema `admin` has all expected RPC functions (30 base in 0023 + 5 feature_requests in 0024)
 select is(
   (select count(*)::int from pg_proc where pronamespace = 'admin'::regnamespace),
-  30,
-  'schema admin exposes the 30 admin.* RPC functions'
+  35,
+  'schema admin exposes the 35 admin.* RPC functions (30 base + 5 feature_requests)'
 );
 
 -- [Test 5] Every function in schema `admin` and `private` is SECURITY DEFINER and pins search_path = ''
@@ -199,7 +199,7 @@ select is(
 do $$ begin perform tests.as_user(tests.u(3)); end $$;
 select is(
   tests.count_admin_rpcs_denying_caller(),
-  30,
+  35,
   'A5: non-admin authenticated user receives 42501 on every admin.* RPC in pg_proc'
 );
 
@@ -211,7 +211,7 @@ do $$ begin
 end $$;
 select is(
   tests.count_admin_rpcs_denying_caller(),
-  30,
+  35,
   'banned admin (auth.users.banned_until > now()) receives 42501 on every admin.* RPC'
 );
 
@@ -792,14 +792,20 @@ select is(
 -- ============================================================================
 -- 9. Overview Stats, Journey Stats, System Health & Storage Purge Reset
 -- ============================================================================
--- [Test 37] admin.overview_stats returns KPIs and feature_requests = null when 0024 table is absent
+-- [Test 37] admin.overview_stats returns KPIs and feature_requests block
 select is(
   (admin.overview_stats(14, 'Asia/Ho_Chi_Minh') #>> '{kpis,users,total_auth}')::int >= 5
-  and (admin.overview_stats(14, 'Asia/Ho_Chi_Minh') #> '{kpis,feature_requests}') = 'null'::jsonb
+  and (
+    case
+      when to_regclass('public.feature_requests') is null
+        then (admin.overview_stats(14, 'Asia/Ho_Chi_Minh') #> '{kpis,feature_requests}') = 'null'::jsonb
+      else (admin.overview_stats(14, 'Asia/Ho_Chi_Minh') #>> '{kpis,feature_requests,new_7d}')::int >= 0
+    end
+  )
   and jsonb_array_length(admin.overview_stats(14, 'Asia/Ho_Chi_Minh') -> 'activation_funnel_7d') = 6
   and jsonb_array_length(admin.overview_stats(14, 'Asia/Ho_Chi_Minh') -> 'template_mix') = 6,
   true,
-  'A1 & A7: overview_stats returns KPIs, 6-step funnel, 6-persona mix, and null feature_requests when 0024 is absent'
+  'A1 & A7: overview_stats returns KPIs, 6-step funnel, 6-persona mix, and feature_requests KPI block'
 );
 
 -- [Test 38] admin.journey_stats returns aggregate counts

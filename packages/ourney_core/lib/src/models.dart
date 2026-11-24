@@ -1,5 +1,7 @@
 // Contract (A0): plain immutable domain models mirroring docs/contracts/schema.md.
 
+import 'dart:convert' show jsonEncode, utf8;
+
 import 'contracts/social.dart' show JourneyOrigin;
 import 'extras.dart' show CheckInExtras;
 
@@ -393,18 +395,70 @@ const Set<String> journeyDnaKeys = {
   'trophy', 'place', 'habit', 'reason', 'dates',
 };
 
-/// Keeps only the storable DNA answers (drops unknown keys and empties).
+/// Keeps only the storable DNA answers (drops unknown keys and empties),
+/// mirroring server `public.journey_dna_valid(x jsonb)` (0012).
 Map<String, Object?>? sanitizeJourneyDna(Map<String, Object?> answers) {
-  final out = <String, Object?>{
-    for (final e in answers.entries)
-      if (journeyDnaKeys.contains(e.key) &&
-          e.value != null &&
-          (e.value is! String || (e.value as String).trim().isNotEmpty))
-        e.key: e.value is String
-            ? _clipDna(e.key, (e.value as String).trim())
-            : e.value,
-  };
-  return out.isEmpty ? null : out;
+  final out = <String, Object?>{};
+  for (final e in answers.entries) {
+    final key = e.key;
+    final val = e.value;
+    if (!journeyDnaKeys.contains(key) || val == null) continue;
+    if (key == 'dates') {
+      final dates = _sanitizeDnaDates(val);
+      if (dates != null) out[key] = dates;
+    } else if (_dnaTextMax.containsKey(key)) {
+      if (val is! String) continue;
+      final trimmed = val.trim();
+      if (trimmed.isEmpty) continue;
+      out[key] = _clipDna(key, trimmed);
+    } else {
+      if (val is! String) continue;
+      final trimmed = val.trim();
+      if (!_dnaChoicePattern.hasMatch(trimmed)) continue;
+      out[key] = trimmed;
+    }
+  }
+  if (out.isEmpty) return null;
+  if (_jsonbTextOctetLength(out) > 960) return null;
+  return out;
+}
+
+/// Upper bound of Postgres `octet_length(x::jsonb::text)`: Postgres formats
+/// `jsonb::text` with a space after every `:` and `,`.
+int _jsonbTextOctetLength(Map<String, Object?> map) {
+  var extraSpaces = map.length + (map.length > 1 ? map.length - 1 : 0);
+  final dates = map['dates'];
+  if (dates is Map) {
+    extraSpaces += dates.length + (dates.length > 1 ? dates.length - 1 : 0);
+  }
+  return utf8.encode(jsonEncode(map)).length + extraSpaces;
+}
+
+final RegExp _dnaChoicePattern = RegExp(r'^[a-z0-9_]{1,24}$');
+final RegExp _isoDatePattern = RegExp(r'^\d{4}-\d{2}-\d{2}$');
+
+LocalDate? _tryParseIsoDate(Object? raw) {
+  if (raw is! String || !_isoDatePattern.hasMatch(raw)) return null;
+  try {
+    final parsed = LocalDate.parse(raw);
+    return parsed.toString() == raw ? parsed : null;
+  } on Object {
+    return null;
+  }
+}
+
+Map<String, String>? _sanitizeDnaDates(Object? raw) {
+  if (raw is! Map) return null;
+  for (final k in raw.keys) {
+    if (k != 'start' && k != 'end') return null;
+  }
+  final start = _tryParseIsoDate(raw['start']);
+  if (start == null) return null;
+  final endRaw = raw['end'];
+  if (endRaw == null) return {'start': start.toString()};
+  final end = _tryParseIsoDate(endRaw);
+  if (end == null || end.isBefore(start)) return null;
+  return {'start': start.toString(), 'end': end.toString()};
 }
 
 const Map<String, int> _dnaTextMax = {

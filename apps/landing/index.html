@@ -364,6 +364,20 @@
         <path d="M14.6 4.9h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V4.9Z" fill="#FF4D6D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="M13.2 3.5h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V3.5Z" fill="#7EC8E3" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
       </symbol>
+
+      <!-- Direct Download Tray & Arrow Sticker (#7EE8A2 + #FFD84D) -->
+      <symbol id="i-download" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M10.2 3.5h3.6v6h3.2L12 14.7 7 9.5h3.2Z"/>
+          <rect x="4" y="16.5" width="16" height="4" rx="1.8"/>
+        </g>
+        <g class="s-ink">
+          <path d="M10.2 3.5h3.6v6h3.2L12 14.7 7 9.5h3.2Z"/>
+          <rect x="4" y="16.5" width="16" height="4" rx="1.8"/>
+        </g>
+        <rect x="4" y="16.5" width="16" height="4" rx="1.8" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M10.2 3.5h3.6v6h3.2L12 14.7 7 9.5h3.2Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
     </defs>
   </svg>
 
@@ -514,15 +528,16 @@
           <h1 data-i18n="hero_h1">chụp một tấm. giữ một chuỗi.</h1>
           <p class="lede" data-i18n="hero_lede">Nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì — học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay thói quen nhỏ. Đi một mình hoặc rủ cả nhóm.</p>
           <div class="hero-cta" id="hero-cta">
-            <a class="btn btn-primary" href="#beta">
-              <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
-              <span data-i18n="hero_cta_primary">nhận lời mời beta</span>
+            <a class="btn btn-primary" id="hero-android-dl" href="/Ourney.apk" download="Ourney.apk">
+              <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-download"/></svg>
+              <span data-i18n="hero_cta_android">tải ngay cho Android (APK)</span>
             </a>
-            <a class="btn btn-secondary" href="#journeys">
-              <span data-i18n="hero_cta_secondary">xem 6 giao diện</span>
-              <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
+            <a class="btn btn-secondary" id="hero-ios-beta" href="#beta-waitlist-box" data-select-plat="ios">
+              <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
+              <span data-i18n="hero_cta_ios">iOS · nhận thông tin beta</span>
             </a>
           </div>
+          <p class="hero-apk-note" data-i18n="hero_apk_note">Android tải trực tiếp file .apk (nếu Play Protect hỏi, chạm “Vẫn cài đặt”). iOS điền email bên dưới để nhận thông tin beta.</p>
           <a class="hero-scroll-cue" id="hero-scroll-cue" href="#journeys" aria-label="Cuộn xuống xem 6 giao diện" data-i18n-aria="hero_scroll_aria">
             <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9 7 7 7-7"/></svg>
           </a>
@@ -969,31 +984,49 @@
         <div class="cta-ticket card">
           <svg class="o-sticker cta-sticker" width="78" height="78" aria-hidden="true"><use href="#i-star"/></svg>
           <div class="cta-main">
-            <p class="eyebrow" data-i18n="beta_eyebrow">beta sắp mở cửa</p>
+            <p class="eyebrow" data-i18n="beta_eyebrow">tải bản beta · android &amp; ios</p>
             <h2 class="cta-h" data-i18n="beta_h2">ngày 1 của bạn bắt đầu từ hôm nay.</h2>
-            <div class="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria">
-              <button type="button" class="plat-pill" aria-pressed="true" data-plat="ios">
-                <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
-                <span translate="no">iOS</span>
-              </button>
-              <button type="button" class="plat-pill" aria-pressed="true" data-plat="android">
-                <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
-                <span translate="no">Android</span>
-              </button>
-            </div>
-            <form class="beta-form" id="beta-form" novalidate>
-              <label for="email" class="sr" data-i18n="beta_email_label">Email</label>
-              <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
-              <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-              <button class="btn btn-ticket" type="submit" data-i18n="beta_submit">nhận lời mời</button>
-            </form>
-            <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
-            <div class="beta-follow" id="beta-follow" hidden>
-              <a class="beta-tiktok-chip" id="beta-tiktok-link" href="https://www.tiktok.com/@ourney.official" target="_blank" rel="noopener noreferrer me" aria-label="Theo dõi @ourney.official trên TikTok trong lúc chờ" data-i18n-aria="beta_tiktok_follow">
-                <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-tiktok"/></svg>
-                <span data-i18n="beta_tiktok_follow">Theo dõi @ourney.official trên TikTok trong lúc chờ</span>
-                <svg class="o-svg-flat beta-tiktok-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+
+            <!-- Direct Android APK Download Block -->
+            <div class="beta-apk-box" id="beta-apk-box">
+              <div class="beta-apk-head">
+                <span class="beta-apk-tag" translate="no">ANDROID · APK</span>
+                <span class="beta-apk-status" data-i18n="beta_apk_kicker">Đã có bản cài đặt trực tiếp</span>
+              </div>
+              <a class="btn btn-apk" id="beta-android-dl" href="/Ourney.apk" download="Ourney.apk">
+                <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-download"/></svg>
+                <span data-i18n="beta_apk_btn">tải xuống ngay cho Android (Ourney.apk)</span>
               </a>
+              <p class="beta-apk-note" data-i18n="beta_apk_note">Mở file Ourney.apk vừa tải và cho phép cài từ trình duyệt. Nếu Google Play Protect cảnh báo (vì bản beta chưa lên Play Store), chọn “Chi tiết khác” → “Vẫn cài đặt”.</p>
+            </div>
+
+            <!-- iOS & Beta Release Notification Form -->
+            <div class="beta-waitlist-box" id="beta-waitlist-box">
+              <p class="beta-ios-lead" data-i18n="beta_ios_lead">Dùng iOS (iPhone) hoặc muốn nhận thông báo khi có bản cập nhật mới? Để lại email nhận thông tin beta:</p>
+              <div class="platform-group" role="group" aria-label="Chọn nền tảng điện thoại" data-i18n-aria="beta_plat_aria">
+                <button type="button" class="plat-pill" aria-pressed="true" data-plat="ios">
+                  <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
+                  <span translate="no">iOS</span>
+                </button>
+                <button type="button" class="plat-pill" aria-pressed="false" data-plat="android">
+                  <svg class="o-svg-flat" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 12.5 4 4 8-9"/></svg>
+                  <span translate="no">Android</span>
+                </button>
+              </div>
+              <form class="beta-form" id="beta-form" novalidate>
+                <label for="email" class="sr" data-i18n="beta_email_label">Email</label>
+                <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
+                <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+                <button class="btn btn-ticket" type="submit" data-i18n="beta_submit">nhận thông tin beta</button>
+              </form>
+              <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+              <div class="beta-follow" id="beta-follow" hidden>
+                <a class="beta-tiktok-chip" id="beta-tiktok-link" href="https://www.tiktok.com/@ourney.official" target="_blank" rel="noopener noreferrer me" aria-label="Theo dõi @ourney.official trên TikTok trong lúc chờ" data-i18n-aria="beta_tiktok_follow">
+                  <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-tiktok"/></svg>
+                  <span data-i18n="beta_tiktok_follow">Theo dõi @ourney.official trên TikTok trong lúc chờ</span>
+                  <svg class="o-svg-flat beta-tiktok-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+                </a>
+              </div>
             </div>
           </div>
           <div class="cta-stub" aria-hidden="true">

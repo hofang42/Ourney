@@ -39,17 +39,22 @@ jobs:
       - name: Generate localizations
         working-directory: apps/mobile
         run: |
-          if [ -f l10n.yaml ]; then flutter gen-l10n; fi
+          dart run tool/gen_l10n.dart
+          git diff --exit-code
 
       # Optional build-time config. Secrets are passed via env (never interpolated into the script).
-      # If none of the secrets is set, no file is written and no --dart-define-from-file flag is used.
+      # On release tags (v*), SUPABASE_URL and SUPABASE_ANON_KEY are mandatory (FS-34).
       # SUPPORT_EMAIL is only added when set (an empty key would be useless; the app falls back to its default).
-      - name: Write dart-define file (optional)
+      - name: Write dart-define file
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           SUPPORT_EMAIL: ${{ secrets.SUPPORT_EMAIL }}
         run: |
+          if [[ "${GITHUB_REF:-}" == refs/tags/v* ]] && { [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; }; then
+            echo "::error::Release tag builds (v*) require SUPABASE_URL and SUPABASE_ANON_KEY secrets so production IPAs never ship in localOnly mode."
+            exit 1
+          fi
           if [ -n "$SUPABASE_URL" ] || [ -n "$SUPABASE_ANON_KEY" ] || [ -n "$SUPPORT_EMAIL" ]; then
             jq -n --arg u "$SUPABASE_URL" --arg k "$SUPABASE_ANON_KEY" --arg e "$SUPPORT_EMAIL" \
               '(if $u != "" or $k != "" then {SUPABASE_URL: $u, SUPABASE_ANON_KEY: $k} else {} end)

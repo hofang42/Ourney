@@ -9,6 +9,10 @@ on:
         description: 'Dry run: only show the migrations that would be applied'
         type: boolean
         default: true
+      include_all:
+        description: 'Also apply migrations numbered below the newest remote one (merged out of order)'
+        type: boolean
+        default: false
 
 # Never cancel a deploy that is already running; queue instead.
 concurrency:
@@ -50,7 +54,9 @@ jobs:
           # Optional: comma-separated redirect allow-list; unset = leave the project's list untouched
           AUTH_URI_ALLOW_LIST: ${{ vars.AUTH_URI_ALLOW_LIST }}
           DRY_RUN: ${{ inputs.dry_run }}
+          INCLUDE_ALL: ${{ inputs.include_all }}
         run: |
           args=()
           if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
-          bash scripts/supabase/deploy-hosted.sh "${args[@]}"
+          if [ "$INCLUDE_ALL" = "true" ]; then args+=(--include-all); fi
+          bash scripts/supabase/deploy-hosted.sh ${args[@]+"${args[@]}"}
