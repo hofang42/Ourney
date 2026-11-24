@@ -143,9 +143,13 @@ alter table public.reports
   add column if not exists target_feature_request_id uuid
     references public.feature_requests (id) on delete set null;
 
+-- Per 0001_core.sql:207 ("Snapshot ids are kept without FKs so evidence survives the target's
+-- account deletion"), moderation_queue target columns do NOT use ON DELETE SET NULL FKs.
 alter table public.moderation_queue
-  add column if not exists target_feature_request_id uuid
-    references public.feature_requests (id) on delete set null;
+  add column if not exists target_feature_request_id uuid;
+
+alter table public.moderation_queue
+  drop constraint if exists moderation_queue_target_feature_request_id_fkey;
 
 create index if not exists reports_target_feature_request_idx
   on public.reports (target_feature_request_id)
@@ -215,8 +219,49 @@ begin
       if old.status <> 'new'
          or old.hidden
          or old.duplicate_of is not null
-         or old.moderated_at is not null then
+         or old.moderated_at is not null
+         or exists (
+           select 1 from public.feature_requests child
+            where child.duplicate_of = old.id
+         )
+         or exists (
+           select 1 from public.reports r
+            where r.target_feature_request_id = old.id
+              and r.deleted_at is null
+              and r.status = 'open'
+         )
+         or exists (
+           select 1 from public.moderation_queue mq
+            where mq.target_feature_request_id = old.id
+              and mq.status = 'open'
+         ) then
         raise exception 'forbidden' using errcode = '42501';
+      end if;
+
+      -- Enforce 20 / 1h edit rate limit even on direct PostgREST table UPDATEs (P2-1).
+      if coalesce(current_setting('ourney.fr_edit_rate_checked', true), '') <> 'on' then
+        perform 1
+          from public.profiles p
+         where p.id = old.author_id
+           and p.deleted_at is null
+           for no key update;
+        if not found then
+          raise exception 'forbidden' using errcode = '42501';
+        end if;
+
+        delete from private.rate_events
+         where user_id = old.author_id
+           and at < now() - interval '1 day';
+
+        if (
+          select count(*)
+            from private.rate_events
+           where user_id = old.author_id
+             and kind = 'feature_request_edit'
+             and at > now() - interval '1 hour'
+        ) >= 20 then
+          raise exception 'rate_limited' using errcode = 'P0001';
+        end if;
       end if;
     end if;
   end if;
@@ -241,16 +286,16 @@ begin
     raise exception 'invalid' using errcode = '23514';
   end if;
 
-  -- URL spam guard on title and body (insert or change).
+  -- URL spam guard on title and body (insert or change), stripping zero-width chars first.
   if tg_op = 'INSERT' or new.title is distinct from old.title then
-    if new.title ~* v_url_pattern then
+    if translate(new.title, U&'\00ad\200b\200c\200d\200e\200f\2060\feff', '') ~* v_url_pattern then
       raise exception 'links_not_allowed' using errcode = '23514';
     end if;
     perform private.assert_clean_text(new.title);
   end if;
 
   if tg_op = 'INSERT' or new.body is distinct from old.body then
-    if new.body ~* v_url_pattern then
+    if translate(new.body, U&'\00ad\200b\200c\200d\200e\200f\2060\feff', '') ~* v_url_pattern then
       raise exception 'links_not_allowed' using errcode = '23514';
     end if;
     perform private.assert_clean_text(new.body);
@@ -261,7 +306,7 @@ begin
     perform private.assert_clean_text(new.admin_reply);
   end if;
 
-  -- Merge chain guard: canonical target cannot itself be a duplicate.
+  -- Merge chain guard: canonical target cannot itself be a duplicate, and a parent with children cannot become a duplicate.
   if new.duplicate_of is not null then
     if new.duplicate_of = new.id then
       raise exception 'invalid' using errcode = '23514';
@@ -270,9 +315,20 @@ begin
       select 1 from public.feature_requests target
        where target.id = new.duplicate_of
          and target.duplicate_of is null
+    ) or exists (
+      select 1 from public.feature_requests child
+       where child.duplicate_of = new.id
+         and child.id <> new.id
     ) then
       raise exception 'invalid' using errcode = '23514';
     end if;
+  end if;
+
+  if v_is_client_write
+     and tg_op = 'UPDATE'
+     and coalesce(current_setting('ourney.fr_edit_rate_checked', true), '') <> 'on' then
+    insert into private.rate_events (user_id, kind)
+    values (old.author_id, 'feature_request_edit');
   end if;
 
   if tg_op = 'INSERT' then
@@ -315,16 +371,27 @@ set search_path = ''
 as $$
 declare
   v_target_id uuid := case when tg_op = 'INSERT' then new.request_id else old.request_id end;
+  v_cnt int := 0;
   v_prev_flag text := coalesce(current_setting('ourney.fr_internal_write', true), '');
 begin
+  -- P1-1: Acquire FOR NO KEY UPDATE on the parent feature_requests row in a separate statement
+  -- before counting feature_request_votes. Under READ COMMITTED, the subsequent SELECT count(*)
+  -- takes a fresh snapshot after the row lock is held, preventing concurrent lost-update drift.
+  -- If the parent row is gone (e.g. ON DELETE CASCADE when deleting a feature request), skip.
+  perform 1 from public.feature_requests where id = v_target_id for no key update;
+  if not found then
+    return null;
+  end if;
+
+  select count(*)::int into v_cnt
+    from public.feature_request_votes v
+   where v.request_id = v_target_id;
+
   perform set_config('ourney.fr_internal_write', 'on', true);
   update public.feature_requests fr
-     set vote_count = (
-       select count(*)::int
-         from public.feature_request_votes v
-        where v.request_id = v_target_id
-     )
-   where fr.id = v_target_id;
+     set vote_count = v_cnt
+   where fr.id = v_target_id
+     and fr.vote_count is distinct from v_cnt;
   perform set_config('ourney.fr_internal_write', v_prev_flag, true);
   return null;
 end;
@@ -459,8 +526,26 @@ as $$
     'duplicate_of', fr.duplicate_of,
     'canonical_title', case
       when fr.duplicate_of is not null then (
-        select c.title from public.feature_requests c
-         where c.id = fr.duplicate_of and not c.hidden
+        select c.title
+          from public.feature_requests c
+         where c.id = fr.duplicate_of
+           and not c.hidden
+           and (
+             (p_viewer is not null and c.author_id = p_viewer)
+             or (
+               c.status <> 'declined'
+               and (p_viewer is null or c.author_id is null or not private.blocked_between(p_viewer, c.author_id))
+               and (
+                 p_viewer is null
+                 or not exists (
+                   select 1 from public.reports r
+                    where r.target_feature_request_id = c.id
+                      and r.reporter_id = p_viewer
+                      and r.deleted_at is null
+                 )
+               )
+             )
+           )
       )
       else null
     end,
@@ -732,7 +817,22 @@ begin
      or fr.status <> 'new'
      or fr.hidden
      or fr.duplicate_of is not null
-     or fr.moderated_at is not null then
+     or fr.moderated_at is not null
+     or exists (
+       select 1 from public.feature_requests child
+        where child.duplicate_of = p_id
+     )
+     or exists (
+       select 1 from public.reports r
+        where r.target_feature_request_id = p_id
+          and r.deleted_at is null
+          and r.status = 'open'
+     )
+     or exists (
+       select 1 from public.moderation_queue mq
+        where mq.target_feature_request_id = p_id
+          and mq.status = 'open'
+     ) then
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
@@ -750,12 +850,14 @@ begin
     raise exception 'rate_limited' using errcode = 'P0001';
   end if;
 
+  perform set_config('ourney.fr_edit_rate_checked', 'on', true);
   update public.feature_requests
      set title = btrim(p_title),
          body = btrim(p_body),
          category = v_cat
    where id = p_id
   returning * into fr;
+  perform set_config('ourney.fr_edit_rate_checked', '', true);
 
   insert into private.rate_events (user_id, kind)
   values (uid, 'feature_request_edit');
@@ -777,7 +879,8 @@ begin
     raise exception 'invalid' using errcode = 'P0001';
   end if;
 
-  if not exists (select 1 from public.profiles p where p.id = uid and p.deleted_at is null) then
+  perform 1 from public.profiles p where p.id = uid and p.deleted_at is null for no key update;
+  if not found then
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
@@ -790,7 +893,22 @@ begin
      or fr.status <> 'new'
      or fr.hidden
      or fr.duplicate_of is not null
-     or fr.moderated_at is not null then
+     or fr.moderated_at is not null
+     or exists (
+       select 1 from public.feature_requests child
+        where child.duplicate_of = p_id
+     )
+     or exists (
+       select 1 from public.reports r
+        where r.target_feature_request_id = p_id
+          and r.deleted_at is null
+          and r.status = 'open'
+     )
+     or exists (
+       select 1 from public.moderation_queue mq
+        where mq.target_feature_request_id = p_id
+          and mq.status = 'open'
+     ) then
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
@@ -832,7 +950,9 @@ begin
     raise exception 'rate_limited' using errcode = 'P0001';
   end if;
 
-  select * into fr from public.feature_requests where id = p_request_id;
+  -- Lock the target feature_requests row to serialize vote toggles and prevent races
+  -- against concurrent merge / ship / decline / hide transitions (P1-1).
+  select * into fr from public.feature_requests where id = p_request_id for no key update;
   if not found
      or fr.hidden
      or (fr.author_id is not null and fr.author_id <> uid and private.is_blocked_pair(fr.author_id))
@@ -901,7 +1021,9 @@ begin
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
-  select * into fr from public.feature_requests where id = p_request_id;
+  -- Lock the target feature_requests row to serialize vote toggles and prevent races
+  -- against concurrent merge / ship / decline / hide transitions (P1-1).
+  select * into fr from public.feature_requests where id = p_request_id for no key update;
   if not found
      or fr.hidden
      or fr.status = 'declined'
@@ -1017,6 +1139,13 @@ begin
    where n.user_id = uid
      and not fr.hidden
      and fr.status = 'shipped'
+     and (
+       fr.author_id = uid
+       or (
+         (fr.author_id is null or not private.is_blocked_pair(fr.author_id))
+         and not private.has_reported_feature_request(fr.id)
+       )
+     )
    order by coalesce(fr.shipped_at, n.created_at) desc, n.created_at desc, n.request_id desc
    limit v_limit;
 end;
@@ -1140,7 +1269,14 @@ begin
        where n.user_id = uid
          and n.seen_at is null
          and not fr.hidden
-         and fr.status = 'shipped'));
+         and fr.status = 'shipped'
+         and (
+           fr.author_id = uid
+           or (
+             (fr.author_id is null or not private.is_blocked_pair(fr.author_id))
+             and not private.has_reported_feature_request(fr.id)
+           )
+         )));
 end;
 $$;
 
@@ -1208,7 +1344,24 @@ begin
   delete from private.rate_events where user_id = p_user;
   delete from public.journey_views where viewer_key = p_user::text;
 
-  -- 0024: Delete solo-voted unmerged 'new'/'declined' feature requests authored by p_user.
+  -- 0024: Pre-lock all feature_requests rows authored or voted on by p_user in deterministic
+  -- UUID order to prevent deadlocks and vote-count drift during concurrent account purges (P1-1).
+  perform 1
+    from (
+      select fr.id
+        from public.feature_requests fr
+       where fr.author_id = p_user
+          or exists (
+            select 1 from public.feature_request_votes v
+             where v.request_id = fr.id
+               and v.user_id = p_user
+          )
+       order by fr.id
+       for no key update
+    ) s;
+
+  -- Delete solo-voted unmerged 'new'/'declined' feature requests authored by p_user
+  -- that have no open reports or open moderation queue items (P2-3).
   delete from public.feature_requests fr
    where fr.author_id = p_user
      and fr.status in ('new', 'declined')
@@ -1221,6 +1374,17 @@ begin
      and not exists (
        select 1 from public.feature_requests child
         where child.duplicate_of = fr.id
+     )
+     and not exists (
+       select 1 from public.reports r
+        where r.target_feature_request_id = fr.id
+          and r.deleted_at is null
+          and r.status = 'open'
+     )
+     and not exists (
+       select 1 from public.moderation_queue mq
+        where mq.target_feature_request_id = fr.id
+          and mq.status = 'open'
      );
 
   -- Remove p_user's votes (sync trigger decrements vote_count on surviving requests)
@@ -1984,6 +2148,14 @@ begin
       into v_reported_content
       from public.feature_requests fr
      where fr.id = q.target_feature_request_id;
+    v_reported_content := coalesce(
+      v_reported_content,
+      jsonb_build_object(
+        'target_type', 'feature_request',
+        'feature_request_id', q.target_feature_request_id,
+        'deleted', true
+      )
+    );
   else
     v_reported_content := jsonb_build_object(
       'target_type', 'user',
@@ -2416,7 +2588,7 @@ as $$
 declare
   v_uid uuid;
   v_search text := nullif(ltrim(btrim(coalesce(p_search, '')), '@'), '');
-  v_folded_search text := case when v_search is not null then private.fold_vi(v_search) else null end;
+  v_folded_search text;
   v_status text := nullif(lower(btrim(coalesce(p_status, ''))), '');
   v_cat text := nullif(lower(btrim(coalesce(p_category, ''))), '');
   v_vis text := coalesce(nullif(lower(btrim(p_visibility)), ''), 'active');
@@ -2427,6 +2599,7 @@ declare
   v_items jsonb := '[]'::jsonb;
 begin
   v_uid := private.require_admin('moderator');
+  v_folded_search := case when v_search is not null then private.fold_vi(v_search) else null end;
 
   with enriched as (
     select
@@ -2699,7 +2872,9 @@ begin
     if char_length(v_reply) > 1000 then
       raise exception 'invalid' using errcode = '23514';
     end if;
-    perform private.assert_clean_text(v_reply);
+    if v_reply is distinct from v_old.admin_reply then
+      perform private.assert_clean_text(v_reply);
+    end if;
   end if;
 
   v_hidden := coalesce(p_hidden, v_old.hidden);
@@ -2725,13 +2900,15 @@ begin
          admin_reply = v_reply,
          admin_replied_at = v_replied_at,
          shipped_at = v_shipped_at,
-         hidden = v_hidden
+         hidden = v_hidden,
+         moderated_at = case when v_hidden then v_old.moderated_at else null end
    where id = p_id
   returning * into v_new;
   perform set_config('ourney.fr_internal_write', '', true);
 
   -- When status is 'shipped' and not hidden, notify every non-deleted, unbanned voter and author
-  -- (including voters/authors of duplicates merged into this request).
+  -- (including voters/authors of duplicates merged into this request), excluding non-author
+  -- voters who have a block relationship with the author or reported the request (P2-2).
   if v_status = 'shipped' and not v_hidden then
     insert into private.feature_request_notifications (user_id, request_id, is_author, created_at)
     select
@@ -2760,6 +2937,18 @@ begin
     ) r
     join public.profiles p on p.id = r.user_id and p.deleted_at is null
     where not private.is_user_banned(p.id)
+      and (
+        p.id is not distinct from v_new.author_id
+        or (
+          (v_new.author_id is null or not private.blocked_between(p.id, v_new.author_id))
+          and not exists (
+            select 1 from public.reports rep
+             where rep.target_feature_request_id = p_id
+               and rep.reporter_id = p.id
+               and rep.deleted_at is null
+          )
+        )
+      )
     group by r.user_id
     on conflict (user_id, request_id) do update
       set is_author = private.feature_request_notifications.is_author or excluded.is_author;
@@ -2809,8 +2998,13 @@ begin
     raise exception 'invalid' using errcode = 'P0001';
   end if;
 
-  -- Lock in deterministic UUID order to prevent deadlocks.
-  perform 1 from public.feature_requests where id in (p_source_id, p_target_id) order by id for update;
+  -- Lock source, target, and any existing children of source in deterministic UUID order (P1-1).
+  perform 1
+    from public.feature_requests
+   where id in (p_source_id, p_target_id)
+      or duplicate_of = p_source_id
+   order by id
+     for update;
 
   select * into v_source from public.feature_requests where id = p_source_id;
   if not found then
@@ -2822,7 +3016,10 @@ begin
     raise exception 'not_found' using errcode = 'P0001';
   end if;
 
-  if v_target.duplicate_of is not null or v_source.duplicate_of is not null then
+  if v_target.duplicate_of is not null
+     or v_source.duplicate_of is not null
+     or v_target.hidden
+     or v_target.status = 'declined' then
     raise exception 'invalid' using errcode = 'P0001';
   end if;
 

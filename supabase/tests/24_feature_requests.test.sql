@@ -2,13 +2,13 @@
 -- (spec §4.5 + binding amendments F1-F3 in fr-opus-review.md).
 --
 -- Follows repo pgTAP rules:
---   - Exact plan(42)
+--   - Exact plan(50)
 --   - No psql :'var' inside DO blocks
 --   - No data-modifying CTEs inside pgTAP assertions
 --   - Writes execute in separate statements before assertion queries
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(42);
+select plan(50);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -201,7 +201,7 @@ select is(
 );
 
 -- [Test 7] Unauthenticated caller receives 28000 on public.list_feature_requests
-do $$ begin perform tests.as_anon(); end $$;
+do $$ begin perform tests.as_postgres(); end $$;
 select throws_ok(
   $$ select public.list_feature_requests() $$,
   '28000', 'unauthenticated',
@@ -905,6 +905,228 @@ select is(
          from public.feature_requests where id = tests.fr(61)),
   true,
   'purge_account_data deletes solo-voted new requests and anonymizes surviving community-voted requests (author_id = NULL, vote_count decremented)'
+);
+
+-- ============================================================================
+-- 11. P1 & P2 Security Review Regressions (Tests 43..50)
+-- ============================================================================
+-- [Test 43] anon role is rejected at the PostgreSQL function privilege layer with 42501
+do $$ begin perform tests.as_anon(); end $$;
+select throws_ok(
+  $$ select public.list_feature_requests() $$,
+  '42501', null,
+  'anon role is denied EXECUTE on public.list_feature_requests with 42501'
+);
+
+-- [Test 44] P1-1: vote_count locking & drift prevention across multi-row vote inserts and cascade deletes
+do $$
+begin
+  perform tests.as_user(tests.u(5));
+  perform public.create_feature_request(
+    tests.fr(70),
+    'Đề xuất kiểm tra đồng bộ số phiếu',
+    'Kiểm tra khóa dòng FOR NO KEY UPDATE và đồng bộ vote_count khi thêm/xóa nhiều phiếu.',
+    'camera'
+  );
+  perform tests.as_postgres();
+  insert into public.feature_request_votes (request_id, user_id)
+  values
+    (tests.fr(70), tests.u(2)),
+    (tests.fr(70), tests.u(3)),
+    (tests.fr(70), tests.u(4));
+  if (select vote_count from public.feature_requests where id = tests.fr(70)) <> 4 then
+    raise exception 'expected vote_count = 4 after multi-row vote insert on fr(70)';
+  end if;
+  delete from public.feature_request_votes
+   where request_id = tests.fr(70)
+     and user_id in (tests.u(2), tests.u(4));
+end $$;
+
+select is(
+  (select vote_count from public.feature_requests where id = tests.fr(70)) = 2
+  and (select count(*)::int from public.feature_request_votes where request_id = tests.fr(70)) = 2
+  and position(
+    'for no key update' in lower((select prosrc from pg_proc where oid = 'private.sync_feature_request_vote_count()'::regprocedure))
+  ) > 0
+  and position(
+    'for no key update' in lower((select prosrc from pg_proc where oid = 'public.toggle_feature_request_vote(uuid, boolean)'::regprocedure))
+  ) > 0,
+  true,
+  'P1-1: sync_feature_request_vote_count and toggle_feature_request_vote lock feature_requests FOR NO KEY UPDATE and prevent vote_count drift'
+);
+
+-- [Test 45] P2-1: 20 / 1h edit rate limit cannot be bypassed via direct table UPDATE on public.feature_requests
+do $$
+declare
+  i int;
+begin
+  perform tests.as_postgres();
+  delete from private.rate_events where user_id = tests.u(5);
+  perform tests.as_user(tests.u(5));
+  for i in 1..10 loop
+    perform public.update_feature_request(
+      tests.fr(70),
+      format('Tiêu đề sửa qua RPC lần %s', i),
+      'Kiểm tra giới hạn 20 lần chỉnh sửa trong 1 giờ trên cả RPC và bảng trực tiếp.',
+      'camera'
+    );
+  end loop;
+  for i in 11..20 loop
+    update public.feature_requests
+       set title = format('Tiêu đề sửa trực tiếp lần %s', i)
+     where id = tests.fr(70);
+  end loop;
+end $$;
+
+select throws_ok(
+  $$ update public.feature_requests
+        set title = 'Tiêu đề sửa trực tiếp lần thứ 21 vượt giới hạn'
+      where id = tests.fr(70) $$,
+  'P0001', 'rate_limited',
+  'P2-1: 21st edit within 1 hour via direct table UPDATE on public.feature_requests raises P0001 rate_limited'
+);
+
+do $$
+begin
+  perform tests.as_postgres();
+  delete from private.rate_events where user_id = tests.u(5);
+end $$;
+
+-- [Test 46] P2-2: Blocked authors and user-reported requests are filtered from my_shipped_request_notifications, inbox_counts, and canonical_title
+do $$
+begin
+  -- Author u(5) creates canonical fr(71); voter u(3) upvotes fr(71) and creates duplicate fr(72).
+  -- Admin u(1) merges fr(72) -> fr(71) and ships fr(71), creating a shipped notification for u(3).
+  perform tests.as_user(tests.u(5));
+  perform public.create_feature_request(
+    tests.fr(71),
+    'Chia sẻ lộ trình nhóm cuối tuần',
+    'Cho phép xuất poster tổng kết hoạt động của cả nhóm vào cuối mỗi tuần.',
+    'sharing'
+  );
+  perform tests.as_user(tests.u(3));
+  perform public.toggle_feature_request_vote(tests.fr(71), true);
+  perform public.create_feature_request(
+    tests.fr(72),
+    'Xuất ảnh tổng kết tuần cho squad',
+    'Tạo thẻ chia sẻ tổng kết tuần cho các thành viên trong cùng một hành trình.',
+    'sharing'
+  );
+  perform tests.as_user(tests.u(1));
+  perform admin.merge_feature_request(tests.fr(72), tests.fr(71), 'duplicate weekly squad summary');
+  perform admin.update_feature_request(
+    tests.fr(71),
+    'shipped',
+    'sharing',
+    'Đã hoàn thiện tính năng xuất thẻ tổng kết tuần cho squad!',
+    false,
+    'shipped weekly squad summary'
+  );
+
+  -- Now u(3) reports fr(71) (authored by u(5)) and blocks u(2) (author of shipped fr(1), which fr(6) was merged into).
+  perform tests.as_user(tests.u(3));
+  perform public.report_feature_request(tests.fr(71), 'spam', 'hide reported shipped request from u3');
+  perform public.block_user(tests.u(2));
+end $$;
+
+select is(
+  (public.get_feature_request(tests.fr(6)) ->> 'canonical_title') is null
+  and (public.get_feature_request(tests.fr(72)) ->> 'canonical_title') is null
+  and (public.inbox_counts() ->> 'shipped_requests')::int = 0
+  and (select count(*)::int from public.my_shipped_request_notifications(20) x
+        where (x ->> 'request_id')::uuid in (tests.fr(1), tests.fr(71))) = 0,
+  true,
+  'P2-2: blocked authors and user-reported requests are hidden from canonical_title, my_shipped_request_notifications, and inbox_counts'
+);
+
+do $$
+begin
+  perform tests.as_user(tests.u(3));
+  perform public.unblock_user(tests.u(2));
+end $$;
+
+-- [Test 47] P2-3a: Author cannot delete a 'new' feature request while an open report exists on it
+do $$
+begin
+  perform tests.as_user(tests.u(3));
+  perform public.report_feature_request(tests.fr(70), 'spam', 'open report blocks author delete');
+  perform tests.as_user(tests.u(5));
+end $$;
+
+select throws_ok(
+  $$ select public.delete_feature_request(tests.fr(70)) $$,
+  '42501', 'forbidden',
+  'P2-3a: delete_feature_request rejects deleting a new request while an open report exists'
+);
+
+-- [Test 48] P2-3a: Even if a feature_requests row is hard-deleted, moderation_queue preserves target_feature_request_id and target_type = feature_request
+do $$
+begin
+  perform tests.as_postgres();
+  delete from public.feature_requests where id = tests.fr(70);
+  perform tests.as_user(tests.u(1));
+end $$;
+
+select is(
+  exists (
+    select 1
+      from jsonb_array_elements(admin.list_moderation_queue('open', 'report', 'all', 50, 0) -> 'items') x
+     where (x ->> 'target_feature_request_id')::uuid = tests.fr(70)
+       and (x ->> 'target_type') = 'feature_request'
+       and (admin.get_moderation_item((x ->> 'id')::uuid) #>> '{reported_content,target_type}') = 'feature_request'
+       and (admin.get_moderation_item((x ->> 'id')::uuid) #>> '{reported_content,deleted}')::boolean = true
+  ),
+  true,
+  'P2-3a: moderation_queue preserves target_feature_request_id without ON DELETE SET NULL and keeps target_type = feature_request'
+);
+
+-- [Test 49] P2-3b: Author cannot delete a 'new' canonical parent that has merged children (returns 42501 forbidden, never 23514 immutable_column)
+do $$
+begin
+  perform tests.as_user(tests.u(2));
+  perform public.create_feature_request(
+    tests.fr(73),
+    'Đề xuất gốc đang ở trạng thái mới',
+    'Đề xuất gốc chưa chuyển trạng thái nhưng đã được gộp bản sao vào.',
+    'journeys'
+  );
+  perform tests.as_user(tests.u(3));
+  perform public.create_feature_request(
+    tests.fr(74),
+    'Đề xuất trùng lặp với đề xuất gốc',
+    'Đề xuất trùng lặp sẽ được quản trị viên gộp vào đề xuất gốc fr(73).',
+    'journeys'
+  );
+  perform tests.as_user(tests.u(1));
+  perform admin.merge_feature_request(tests.fr(74), tests.fr(73), 'merge child into new parent');
+  perform tests.as_user(tests.u(2));
+end $$;
+
+select throws_ok(
+  $$ select public.delete_feature_request(tests.fr(73)) $$,
+  '42501', 'forbidden',
+  'P2-3b: delete_feature_request on a new canonical parent with merged children rejects with 42501 forbidden'
+);
+
+-- [Test 50] P2-3c: Unhiding a quarantined request via admin.update_feature_request(..., p_hidden => false) clears moderated_at
+do $$
+begin
+  perform tests.as_user(tests.u(1));
+  perform admin.update_feature_request(
+    tests.fr(5),
+    'new',
+    'other',
+    null,
+    false,
+    'unhide request and clear moderated_at'
+  );
+  perform tests.as_postgres();
+end $$;
+
+select is(
+  (select not hidden and moderated_at is null from public.feature_requests where id = tests.fr(5)),
+  true,
+  'P2-3c: admin.update_feature_request(p_hidden => false) clears both hidden=false and moderated_at=null'
 );
 
 select * from finish();
