@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>og-journey (/p/token)</title>
+  <link rel="stylesheet" href="og-cards.css">
+  <style>
+    .journey-fan {
+      position: relative;
+      width: 470px;
+      height: 530px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .jf-phone {
+      position: absolute;
+      width: 248px;
+      height: 478px;
+      background: #1A1A1A;
+      border: 3px solid #1A1A1A;
+      border-radius: 32px;
+      padding: 8px;
+      box-shadow: 9px 9px 0 #1A1A1A;
+      overflow: hidden;
+    }
+    .jf-phone.jf-left {
+      left: 16px;
+      top: 28px;
+      transform: rotate(-5.5deg);
+      z-index: 2;
+    }
+    .jf-phone.jf-right {
+      right: 12px;
+      top: 16px;
+      transform: rotate(4.5deg);
+      z-index: 3;
+    }
+    .jf-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 23px;
+      overflow: hidden;
+      background: #FFF8EE;
+    }
+    .jf-inner img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-link" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path class="s-ink" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.4" stroke-linecap="round"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#2AA7E0" stroke-width="2.1" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-trip" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M9 7V4.5h6V7"/><rect x="5.5" y="7" width="13" height="13" rx="2.4"/>
+          <path d="M8.5 20v1.5M15.5 20v1.5"/>
+        </g>
+        <g class="s-ink">
+          <path d="M9 7V4.5h6V7"/><rect x="5.5" y="7" width="13" height="13" rx="2.4"/>
+          <path d="M8.5 20v1.5M15.5 20v1.5"/>
+        </g>
+        <path d="M9 7V4.5h6V7" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="5.5" y="7" width="13" height="13" rx="2.4" fill="#E05A47" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M9 7v13M15 7v13" stroke="#1A1A1A" stroke-width="1.8"/>
+        <rect x="9" y="11.2" width="6" height="3.6" rx="1" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.6"/>
+        <path d="M8.5 20v1.5M15.5 20v1.5" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="i-trophy" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <g class="s-ink">
+          <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z"/>
+          <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8"/>
+        </g>
+        <path d="M7 6H4v2c0 2 1.2 3 3.5 3M17 6h3v2c0 2-1.2 3-3.5 3M12 14.5V19M8 20h8" fill="none" stroke="#1A1A1A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 4h10v5c0 3.5-2 5.5-5 5.5S7 12.5 7 9Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-flame" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path class="s-ink" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" fill="#E04F33" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="og-canvas">
+    <div class="og-frame-border"></div>
+
+    <div class="og-left" style="flex: 0 0 575px;">
+      <div class="og-brand-row">
+        <img class="og-wordmark" src="../assets/brand/wordmark.png" alt="ourney">
+        <span class="og-kicker-pill kicker-journey">
+          <svg class="o-sticker" width="18" height="18"><use href="#i-link"/></svg>
+          <span>HÀNH TRÌNH ĐƯỢC CHIA SẺ</span>
+        </span>
+      </div>
+
+      <div>
+        <h1 class="og-headline" style="font-size: 46px;">
+          xem trọn một chuỗi ngày<br>
+          <span class="hl-pill hl-sky" style="white-space: nowrap;">không bỏ cuộc.</span>
+        </h1>
+        <p class="og-sub">
+          Từng tấm ảnh mỗi ngày nối thành hành trình sống động trên Ourney — mở link để xem timeline kỷ niệm hoặc bắt đầu Ngày 1 của riêng bạn.
+        </p>
+      </div>
+
+      <div class="og-chips">
+        <span class="og-chip c-warm">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-trip"/></svg>
+          <span>Cuộn phim 35mm</span>
+        </span>
+        <span class="og-chip c-peach">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-flame"/></svg>
+          <span>Timeline ảnh mỗi ngày</span>
+        </span>
+        <span class="og-chip c-mint">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-trophy"/></svg>
+          <span>Tổng kết Wrapped</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="og-right">
+      <div class="journey-fan">
+        <div class="jf-phone jf-left">
+          <div class="jf-inner">
+            <img src="../assets/screens/share-travel.webp" alt="">
+          </div>
+        </div>
+        <div class="jf-phone jf-right">
+          <div class="jf-inner">
+            <img src="../assets/screens/wrapped-run.webp" alt="">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="og-domain-badge">
+      <span>ourney.tech</span>
+    </div>
+  </div>
+</body>
+</html>

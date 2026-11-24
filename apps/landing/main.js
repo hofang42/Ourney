@@ -8,8 +8,14 @@
   /* --- 1. Bilingual Copy Dictionary (vi default + en) --- */
   const COPY = {
     vi: {
-      title: 'ourney · chụp một tấm. giữ một chuỗi.',
+      title: 'ourney · chụp một tấm. giữ một chuỗi. — nhật ký ảnh mỗi ngày',
       meta_desc: 'Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.',
+      og_title: 'ourney · chụp một tấm. giữ một chuỗi. đi cùng nhau.',
+      og_image: 'https://ourney.tech/assets/og/og-default.png',
+      og_image_alt: 'Ourney — Nhật ký ảnh mỗi ngày: chụp một tấm, giữ một chuỗi, đi cùng nhau trên iOS và Android',
+      og_url: 'https://ourney.tech/',
+      og_locale: 'vi_VN',
+      og_locale_alt: 'en_US',
       skip: 'Bỏ qua tới nội dung chính',
       nav_brand_aria: 'Ourney, về đầu trang',
       nav_main_aria: 'Điều hướng chính',
@@ -144,8 +150,14 @@
       footer_beta: 'nhận lời mời'
     },
     en: {
-      title: 'ourney · snap one photo. keep one streak.',
+      title: 'ourney · snap one photo. keep one streak. — photo journal',
       meta_desc: 'Ourney is a daily photo journal for what you want to stick with: language study, running, weight loss, a trip, or a small habit — solo or with a close squad.',
+      og_title: 'ourney · snap one photo. keep one streak. go together.',
+      og_image: 'https://ourney.tech/assets/og/og-default-en.png',
+      og_image_alt: 'Ourney — Daily photo journal: snap one photo, keep one streak, go together on iOS and Android',
+      og_url: 'https://ourney.tech/?lang=en',
+      og_locale: 'en_US',
+      og_locale_alt: 'vi_VN',
       skip: 'Skip to main content',
       nav_brand_aria: 'Ourney, back to top',
       nav_main_aria: 'Main navigation',
@@ -912,6 +924,21 @@
     document.title = dict.title;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.content = dict.meta_desc;
+    const setAttr = (id, attr, val) => { const el = $(id); if (el && val) el.setAttribute(attr, val); };
+    setAttr('link-canonical', 'href', dict.og_url);
+    setAttr('meta-og-url', 'content', dict.og_url);
+    setAttr('meta-og-locale', 'content', dict.og_locale);
+    setAttr('meta-og-locale-alt', 'content', dict.og_locale_alt);
+    setAttr('meta-og-title', 'content', dict.og_title);
+    setAttr('meta-og-desc', 'content', dict.meta_desc);
+    setAttr('meta-og-image', 'content', dict.og_image);
+    setAttr('meta-og-image-secure', 'content', dict.og_image);
+    setAttr('meta-og-image-alt', 'content', dict.og_image_alt);
+    setAttr('meta-tw-url', 'content', dict.og_url);
+    setAttr('meta-tw-title', 'content', dict.og_title);
+    setAttr('meta-tw-desc', 'content', dict.meta_desc);
+    setAttr('meta-tw-image', 'content', dict.og_image);
+    setAttr('meta-tw-image-alt', 'content', dict.og_image_alt);
 
     document.querySelectorAll('[data-i18n]').forEach((el) => {
       const k = el.dataset.i18n;
