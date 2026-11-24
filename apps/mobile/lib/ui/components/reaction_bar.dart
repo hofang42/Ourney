@@ -9,6 +9,7 @@ import '../tokens.dart';
 import '../typography.dart';
 import 'ourney_icons.dart';
 import 'pressable.dart';
+import 'skin_scope.dart';
 
 /// The five reaction ids (match the `reactions.emoji` CHECK), in display order.
 const List<String> uiReactionIds = ['clap', 'flex', 'heart', 'laugh', 'fire'];
@@ -141,7 +142,7 @@ class _ReactionButtonState extends State<_ReactionButton> {
                   shape: BoxShape.circle,
                   color: selected ? ui.brand : ui.fill,
                   border: selected
-                      ? Border.all(color: ui.accent, width: UiBorder.thin)
+                      ? Border.all(color: ui.outline, width: UiBorder.thin)
                       : null,
                 ),
                 child: UiReactionSpark(
@@ -238,16 +239,22 @@ class UiReactionSparkState extends State<UiReactionSpark>
   static const double _kRemoveDipScale = 0.92;
   static const double _kMaxTiltRad = -8.0 * math.pi / 180.0;
 
-  static final SpringSimulation _kPopSpring = SpringSimulation(
+  static final SpringSimulation _kBouncyPopSpring = SpringSimulation(
     UiSprings.bouncy,
     _kAnticipationScale,
     1.0,
     14.5,
   );
 
+  static final SpringSimulation _kGentlePopSpring = SpringSimulation(
+    UiSprings.gentle,
+    _kAnticipationScale,
+    1.0,
+    0.0,
+  );
+
   AnimationController? _ctrl;
   bool _isAdding = true;
-  bool? _lastTriggeredSelected;
 
   AnimationController _ensureController(Duration duration) {
     var ctrl = _ctrl;
@@ -269,13 +276,15 @@ class UiReactionSparkState extends State<UiReactionSpark>
   }
 
   /// Triggers the reaction pop/burst (when [adding] is `true`) or settle
-  /// (when [adding] is `false`) and emits the paired haptic.
-  void trigger({required bool adding}) {
-    _lastTriggeredSelected = adding;
-    if (adding) {
-      unawaited(UiHaptics.pressLight());
-    } else {
-      unawaited(UiHaptics.selection());
+  /// (when [adding] is `false`) and emits the paired haptic on the user commit
+  /// frame when [haptic] is `true`.
+  void trigger({required bool adding, bool haptic = true}) {
+    if (haptic) {
+      if (adding) {
+        unawaited(UiHaptics.pressLight());
+      } else {
+        unawaited(UiHaptics.selection());
+      }
     }
     if (!mounted || UiMotion.reduced(context)) {
       _ctrl?.stop();
@@ -287,19 +296,6 @@ class UiReactionSparkState extends State<UiReactionSpark>
     });
     final ctrl = _ensureController(adding ? _kAddDuration : _kRemoveDuration);
     ctrl.forward(from: 0.0);
-  }
-
-  @override
-  void didUpdateWidget(covariant UiReactionSpark oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.selected != oldWidget.selected) {
-      if (_lastTriggeredSelected == widget.selected) {
-        _lastTriggeredSelected = null;
-      } else {
-        trigger(adding: widget.selected);
-        _lastTriggeredSelected = null;
-      }
-    }
   }
 
   @override
@@ -318,7 +314,9 @@ class UiReactionSparkState extends State<UiReactionSpark>
     super.dispose();
   }
 
-  ({double scale, double tilt}) _evaluateIconTransform() {
+  ({double scale, double tilt}) _evaluateIconTransform({
+    required bool calmSkin,
+  }) {
     final ctrl = _ctrl;
     if (ctrl == null || !ctrl.isAnimating) {
       return (scale: 1.0, tilt: 0.0);
@@ -330,22 +328,24 @@ class UiReactionSparkState extends State<UiReactionSpark>
       return (scale: scale, tilt: 0.0);
     }
     final elapsedMs = ctrl.value * 480.0;
+    final maxTilt = calmSkin ? 0.0 : _kMaxTiltRad;
     if (elapsedMs <= 70.0) {
       final t = UiCurves.easeOutStrong.transform(
         (elapsedMs / 70.0).clamp(0.0, 1.0),
       );
       return (
         scale: lerpDouble(1.0, _kAnticipationScale, t)!,
-        tilt: lerpDouble(0.0, _kMaxTiltRad, t)!,
+        tilt: lerpDouble(0.0, maxTilt, t)!,
       );
     }
     if (elapsedMs < 310.0) {
       final tau = (elapsedMs - 70.0) / 1000.0;
-      final scale = _kPopSpring.x(tau);
+      final spring = calmSkin ? _kGentlePopSpring : _kBouncyPopSpring;
+      final scale = spring.x(tau);
       final tiltProgress = UiCurves.easeOutStrong.transform(
         ((elapsedMs - 70.0) / 240.0).clamp(0.0, 1.0),
       );
-      final tilt = lerpDouble(_kMaxTiltRad, 0.0, tiltProgress)!;
+      final tilt = lerpDouble(maxTilt, 0.0, tiltProgress)!;
       return (scale: scale, tilt: tilt);
     }
     return (scale: 1.0, tilt: 0.0);
@@ -360,22 +360,29 @@ class UiReactionSparkState extends State<UiReactionSpark>
       return widget.child;
     }
     final ui = context.ui;
+    final skinId = UiSkinScope.maybeOf(context)?.skin.id;
+    final springDesc = UiSprings.forSkin(skinId ?? 'squad');
+    final calmSkin = identical(springDesc, UiSprings.gentle);
+    final suppressBurst = skinId == 'quiet';
+
     return Stack(
       alignment: Alignment.center,
       clipBehavior: Clip.none,
       children: [
-        if (_isAdding)
+        if (_isAdding && !suppressBurst)
           Positioned.fill(
-            child: IgnorePointer(
-              child: RepaintBoundary(
-                key: ValueKey('reaction-burst-${widget.id}'),
-                child: CustomPaint(
-                  key: ValueKey('reaction-burst-canvas-${widget.id}'),
-                  painter: UiReactionBurstPainter(
-                    animation: ctrl,
-                    accentColor: ui.accent,
-                    secondaryColor: ui.brand,
-                    outlineColor: ui.outline,
+            child: ExcludeSemantics(
+              child: IgnorePointer(
+                child: RepaintBoundary(
+                  key: ValueKey('reaction-burst-${widget.id}'),
+                  child: CustomPaint(
+                    key: ValueKey('reaction-burst-canvas-${widget.id}'),
+                    painter: UiReactionBurstPainter(
+                      animation: ctrl,
+                      accentColor: ui.accent,
+                      secondaryColor: ui.brand,
+                      outlineColor: ui.outline,
+                    ),
                   ),
                 ),
               ),
@@ -385,7 +392,7 @@ class UiReactionSparkState extends State<UiReactionSpark>
           animation: ctrl,
           child: widget.child,
           builder: (context, child) {
-            final (:scale, :tilt) = _evaluateIconTransform();
+            final (:scale, :tilt) = _evaluateIconTransform(calmSkin: calmSkin);
             return Transform.rotate(
               key: ValueKey('reaction-tilt-${widget.id}'),
               angle: tilt,
@@ -444,6 +451,10 @@ class UiReactionBurstPainter extends CustomPainter {
   ];
 
   final Paint _fillPaint = Paint()..style = PaintingStyle.fill;
+  final Paint _strokePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.2
+    ..strokeJoin = StrokeJoin.round;
   final Path _sparkPath = Path();
 
   /// Normalized burst progress in `[0.0, 1.0]` during `90–480ms` (`0.0` before
@@ -470,6 +481,7 @@ class UiReactionBurstPainter extends CustomPainter {
 
     final center = Offset(size.width / 2.0, size.height / 2.0);
     final scaleFactor = lerpDouble(1.0, 0.55, rawT)!;
+    _strokePaint.color = outlineColor.withValues(alpha: alpha);
 
     for (var i = 0; i < 5; i++) {
       final angle = _kAngles[i];
@@ -491,7 +503,9 @@ class UiReactionBurstPainter extends CustomPainter {
           ..lineTo(pos.dx, pos.dy + r * 1.25)
           ..lineTo(pos.dx - r * 1.25, pos.dy)
           ..close();
-        canvas.drawPath(_sparkPath, _fillPaint);
+        canvas
+          ..drawPath(_sparkPath, _fillPaint)
+          ..drawPath(_sparkPath, _strokePaint);
       } else if (i % 3 == 1) {
         // 4-point geometric vector spark.
         final inner = r * 0.48;
@@ -507,10 +521,14 @@ class UiReactionBurstPainter extends CustomPainter {
           ..lineTo(pos.dx - outer, pos.dy)
           ..lineTo(pos.dx - inner, pos.dy - inner)
           ..close();
-        canvas.drawPath(_sparkPath, _fillPaint);
+        canvas
+          ..drawPath(_sparkPath, _fillPaint)
+          ..drawPath(_sparkPath, _strokePaint);
       } else {
         // Crisp circular sticker dot.
-        canvas.drawCircle(pos, r, _fillPaint);
+        canvas
+          ..drawCircle(pos, r, _fillPaint)
+          ..drawCircle(pos, r, _strokePaint);
       }
     }
   }

@@ -49,109 +49,109 @@ Future<bool> showProfileConfirmDialog(
   }
   final reduced = UiMotion.reduced(context);
   final enterDuration = reduced ? UiMotion.reducedFade : UiMotion.normal;
-  final exitDuration = reduced ? UiMotion.reducedFade : UiMotion.reducedFade;
+  final exitDuration = UiMotion.reducedFade;
   final resolvedCancel =
       cancelLabel ?? AppLocalizations.of(context).common_cancel;
   final ui = context.ui;
+  final barrierLabel = MaterialLocalizations.of(context).modalBarrierDismissLabel;
 
-  final result = await showGeneralDialog<bool>(
-    context: context,
-    barrierDismissible: barrierDismissible,
-    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: ui.scrim,
-    transitionDuration: enterDuration,
-    pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      final dialogUi = dialogContext.ui;
-      return SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: UiSpace.xl),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 380),
-              child: Material(
-                type: MaterialType.transparency,
-                child: UiCard(
-                  key: dialogKey ?? const ValueKey('profile-confirm-dialog'),
-                  radius: UiRadius.card,
-                  padding: const EdgeInsets.all(UiSpace.xl),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          OurneyIcon(
-                            name: destructive ? 'warning' : 'info',
-                            size: 24,
-                            flat: true,
-                            color: destructive
-                                ? dialogUi.danger
-                                : dialogUi.ink,
-                          ),
-                          const SizedBox(width: UiSpace.sm),
-                          Expanded(
-                            child: Semantics(
-                              header: true,
-                              child: Text(
-                                title,
-                                style: UiText.h2(color: dialogUi.ink),
+  final result = await Navigator.of(context, rootNavigator: true).push<bool>(
+    PageRouteBuilder<bool>(
+      opaque: false,
+      barrierDismissible: barrierDismissible,
+      barrierLabel: barrierLabel,
+      barrierColor: ui.scrim,
+      transitionDuration: enterDuration,
+      reverseTransitionDuration: exitDuration,
+      pageBuilder: (dialogContext, animation, secondaryAnimation) {
+        final dialogUi = dialogContext.ui;
+        return SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: UiSpace.xl),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 380),
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: UiCard(
+                    key: dialogKey ?? const ValueKey('profile-confirm-dialog'),
+                    radius: UiRadius.card,
+                    padding: const EdgeInsets.all(UiSpace.xl),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            OurneyIcon(
+                              name: destructive ? 'warning' : 'info',
+                              size: 24,
+                              flat: true,
+                              color: destructive
+                                  ? dialogUi.danger
+                                  : dialogUi.ink,
+                            ),
+                            const SizedBox(width: UiSpace.sm),
+                            Expanded(
+                              child: Semantics(
+                                header: true,
+                                child: Text(
+                                  title,
+                                  style: UiText.h2(color: dialogUi.ink),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: UiSpace.sm),
-                      Text(
-                        message,
-                        style: UiText.muted(color: dialogUi.inkMuted, size: 14),
-                      ),
-                      const SizedBox(height: UiSpace.xl),
-                      UiButton(
-                        key:
-                            confirmKey ??
-                            const ValueKey('profile-confirm-accept'),
-                        label: confirmLabel,
-                        accent: destructive ? dialogUi.danger : null,
-                        onAccent: destructive ? dialogUi.onDanger : null,
-                        onPressed: () => Navigator.of(dialogContext).pop(true),
-                      ),
-                      const SizedBox(height: UiSpace.sm),
-                      UiButton.secondary(
-                        key:
-                            cancelKey ??
-                            const ValueKey('profile-confirm-cancel'),
-                        label: resolvedCancel,
-                        onPressed: () => Navigator.of(dialogContext).pop(false),
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: UiSpace.sm),
+                        Text(
+                          message,
+                          style: UiText.muted(color: dialogUi.inkMuted, size: 14),
+                        ),
+                        const SizedBox(height: UiSpace.xl),
+                        UiButton(
+                          key:
+                              confirmKey ??
+                              const ValueKey('profile-confirm-accept'),
+                          label: confirmLabel,
+                          accent: destructive ? dialogUi.danger : null,
+                          onAccent: destructive ? dialogUi.onDanger : null,
+                          onPressed: () => Navigator.of(dialogContext).pop(true),
+                        ),
+                        const SizedBox(height: UiSpace.sm),
+                        UiButton.secondary(
+                          key:
+                              cancelKey ??
+                              const ValueKey('profile-confirm-cancel'),
+                          label: resolvedCancel,
+                          onPressed: () => Navigator.of(dialogContext).pop(false),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      );
-    },
-    transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
-      if (UiMotion.reduced(dialogContext)) {
-        return FadeTransition(opacity: animation, child: child);
-      }
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: UiCurves.easeOutStrong,
-        reverseCurve: UiCurves.easeOutStrong,
-      );
-      return FadeTransition(
-        opacity: curved,
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
-          child: child,
-        ),
-      );
-    },
+        );
+      },
+      transitionsBuilder: (dialogContext, animation, secondaryAnimation, child) {
+        if (UiMotion.reduced(dialogContext)) {
+          return FadeTransition(opacity: animation, child: child);
+        }
+        final curved = animation.drive(
+          CurveTween(curve: UiCurves.easeOutStrong),
+        );
+        return FadeTransition(
+          opacity: curved,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.96, end: 1.0).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    ),
   );
-  // Keep exitDuration referenced for symmetry assertions.
-  assert(exitDuration <= enterDuration);
   return result ?? false;
 }
 
@@ -183,12 +183,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       },
     );
 
-    final hasResolvedHeader =
-        localOnly || (profile != null && !profile.isLoading);
-
     return NotificationListener<ScrollStartNotification>(
       onNotification: (notification) {
-        if (notification.dragDetails != null && hasResolvedHeader) {
+        if (notification.dragDetails != null) {
           _hasPlayedInitialEntrance = true;
         }
         return false;
@@ -215,8 +212,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             const SizedBox(height: UiSpace.lg),
             UiStaggerItem(
+              key: const ValueKey('profile-stagger-header'),
               index: 0,
-              enabled: !_hasPlayedInitialEntrance && hasResolvedHeader,
+              enabled: !_hasPlayedInitialEntrance,
               child: profile == null
                   ? const _GuestHeader()
                   : _ProfileHeader(profile: profile),
@@ -224,15 +222,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             if (!localOnly) ...[
               const SizedBox(height: UiSpace.sm),
               UiStaggerItem(
+                key: const ValueKey('profile-stagger-friends'),
                 index: 1,
-                enabled: !_hasPlayedInitialEntrance && hasResolvedHeader,
+                enabled: !_hasPlayedInitialEntrance,
                 child: const FriendsProfileTile(),
               ),
             ],
             const SizedBox(height: UiSpace.xl),
             UiStaggerItem(
+              key: const ValueKey('profile-stagger-stats'),
               index: localOnly ? 1 : 2,
-              enabled: !_hasPlayedInitialEntrance && hasResolvedHeader,
+              enabled: !_hasPlayedInitialEntrance,
               child: const ProfileStatsSection(),
             ),
           ],

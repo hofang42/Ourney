@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,6 +38,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   final Set<String> _busy = {};
   final Set<String> _expanded = {};
   bool _hasPlayedInitialEntrance = false;
+  final Set<String> _initialWaveIds = <String>{};
 
   /// Ids of unread items marked read when the tab opened (Figma
   /// `markActivityRead`: opening Activity clears every unread dot).
@@ -43,6 +46,8 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   bool _autoRead = false;
 
   Future<void> _act(String key, Future<void> Function() action) async {
+    _hasPlayedInitialEntrance = true;
+    _initialWaveIds.clear();
     setState(() => _busy.add(key));
     await runSocialAction(context, action);
     if (mounted) setState(() => _busy.remove(key));
@@ -92,6 +97,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
   Future<void> _onRefresh() async {
     _hasPlayedInitialEntrance = true;
+    _initialWaveIds.clear();
     _retry();
   }
 
@@ -155,6 +161,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         onNotification: (notification) {
           if (notification.dragDetails != null && cached) {
             _hasPlayedInitialEntrance = true;
+            _initialWaveIds.clear();
           }
           return false;
         },
@@ -358,6 +365,14 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       });
     }
 
+    if (!_hasPlayedInitialEntrance &&
+        (today.isNotEmpty || earlier.isNotEmpty)) {
+      _hasPlayedInitialEntrance = true;
+      for (final i in [...today, ...earlier].take(4)) {
+        _initialWaveIds.add(i.id);
+      }
+    }
+
     final children = <Widget>[];
     var cardIndex = 0;
     void group(String title) {
@@ -380,7 +395,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
           row = UiStaggerItem(
             key: ValueKey('inbox-stagger-${i.id}'),
             index: idx,
-            enabled: !_hasPlayedInitialEntrance,
+            enabled: _initialWaveIds.contains(i.id),
             child: row,
           );
         }
@@ -583,16 +598,22 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         badge: const _Badge('squad', UiTypePastel.custom),
         title: l10n.social_publicSummary(requests.length, title),
         onTap: () {
-          UiHaptics.selection();
+          unawaited(UiHaptics.selection());
           setState(() {
             _hasPlayedInitialEntrance = true;
+            _initialWaveIds.clear();
             if (!_expanded.remove(journeyId)) _expanded.add(journeyId);
           });
         },
-        trailing: OurneyIcon(
-          name: open ? 'chevron-up' : 'chevron-down',
-          color: ui.inkMuted,
-          flat: true,
+        trailing: AnimatedRotation(
+          turns: open ? 0.5 : 0.0,
+          duration: UiMotion.of(context, UiMotion.fast),
+          curve: UiCurves.easeOutStrong,
+          child: OurneyIcon(
+            name: 'chevron-down',
+            color: ui.inkMuted,
+            flat: true,
+          ),
         ),
       ),
       if (UiMotion.reduced(context))
@@ -691,6 +712,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                   selected: _filter == f,
                   onPressed: () => setState(() {
                     _hasPlayedInitialEntrance = true;
+                    _initialWaveIds.clear();
                     _filter = f;
                   }),
                 ),

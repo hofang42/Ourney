@@ -25,6 +25,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
   final _codeFocus = FocusNode();
   bool _joinOpen = false;
   bool _hasPlayedInitialEntrance = false;
+  final Set<String> _initialWaveIds = <String>{};
 
   @override
   void dispose() {
@@ -34,6 +35,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
 
   void _openJoin() {
     _hasPlayedInitialEntrance = true;
+    _initialWaveIds.clear();
     setState(() => _joinOpen = true);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _codeFocus.requestFocus();
@@ -42,6 +44,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
 
   Future<void> _onRefresh() async {
     _hasPlayedInitialEntrance = true;
+    _initialWaveIds.clear();
     ref
       ..invalidate(groupJourneysProvider)
       ..invalidate(groupInvitationsProvider);
@@ -57,6 +60,12 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       for (final g in groups)
         if (g.status != JourneyStatus.active) g,
     ];
+    if (!_hasPlayedInitialEntrance) {
+      _hasPlayedInitialEntrance = true;
+      for (final g in [...active, ...finished].take(4)) {
+        _initialWaveIds.add(g.id);
+      }
+    }
     var cardIndex = 0;
     Widget wrapCard(Journey g) {
       final idx = cardIndex++;
@@ -65,7 +74,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
       return UiStaggerItem(
         key: ValueKey('squad-stagger-${g.id}'),
         index: idx,
-        enabled: !_hasPlayedInitialEntrance,
+        enabled: _initialWaveIds.contains(g.id),
         child: card,
       );
     }
@@ -185,6 +194,7 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
         onNotification: (notification) {
           if (notification.dragDetails != null && groups.hasValue) {
             _hasPlayedInitialEntrance = true;
+            _initialWaveIds.clear();
           }
           return false;
         },

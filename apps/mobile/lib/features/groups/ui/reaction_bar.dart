@@ -86,9 +86,9 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
     final l10n = GroupsL10n.of(context);
     final myId = ref.watch(currentUserIdProvider);
     final blocked = ref.watch(groupBlockedIdsProvider).value ?? const {};
-    final reactions =
-        ref.watch(groupReactionsProvider(widget.checkInId)).value ??
-        const <Reaction>[];
+    final reactionsAsync = ref.watch(groupReactionsProvider(widget.checkInId));
+    final hydrated = reactionsAsync.hasValue;
+    final reactions = reactionsAsync.value ?? const <Reaction>[];
     final summary = ReactionSummary.of(
       reactions,
       myUserId: myId,
@@ -114,6 +114,7 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
               key: ValueKey('groups-react-${widget.checkInId}-$emoji'),
               emoji: emoji,
               count: counts[emoji]!,
+              hydrated: hydrated,
               selected: mine == emoji,
               semanticLabel: l10n.groups_reactSemantics(emoji, counts[emoji]!),
               onTap: widget.enabled && !_pendingEmojis.contains(emoji)
@@ -141,6 +142,7 @@ class _ReactionChip extends StatefulWidget {
   const _ReactionChip({
     required this.emoji,
     required this.count,
+    required this.hydrated,
     required this.selected,
     required this.semanticLabel,
     required this.onTap,
@@ -149,6 +151,7 @@ class _ReactionChip extends StatefulWidget {
 
   final String emoji;
   final int count;
+  final bool hydrated;
   final bool selected;
   final String semanticLabel;
   final VoidCallback? onTap;
@@ -161,17 +164,22 @@ class _ReactionChipState extends State<_ReactionChip> {
   final GlobalKey<UiReactionSparkState> _sparkKey =
       GlobalKey<UiReactionSparkState>();
   late int _prevCount;
+  late bool _wasHydrated;
 
   @override
   void initState() {
     super.initState();
     _prevCount = widget.count;
+    _wasHydrated = widget.hydrated;
   }
 
   @override
   void didUpdateWidget(covariant _ReactionChip oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.count != oldWidget.count) {
+    if (!_wasHydrated && widget.hydrated) {
+      _wasHydrated = true;
+      _prevCount = widget.count;
+    } else if (widget.count != oldWidget.count) {
       _prevCount = oldWidget.count;
     }
   }

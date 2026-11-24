@@ -14,6 +14,7 @@ import '../../../personas/active_journey_sync.dart';
 import '../../../personas/persona_contract.dart' show personaSkinOf;
 import '../../../ui/ui.dart';
 import '../../journeys/data/journeys_providers.dart';
+import '../../journeys/journeys_paths.dart';
 import '../../reminders/data/reminder_scheduler.dart';
 import '../../safety/data/safety_providers.dart';
 import '../data/groups_providers.dart';
@@ -699,58 +700,69 @@ class _MemberTile extends ConsumerWidget {
       );
     }
 
+    final Widget rawPhoto = GroupPhoto(
+      key: ValueKey('group-member-photo-${m.userId}'),
+      checkIn: photo,
+      dimmed: !entry.photoIsToday,
+    );
+    final Widget photoBox = SizedBox(
+      height: 158,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (entry.isMe)
+            UiHero(
+              tag: UiHeroTags.dayPhoto(photo.id),
+              borderRadiusBegin: BorderRadius.circular(UiRadius.thumb),
+              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+              child: rawPhoto,
+            )
+          else
+            rawPhoto,
+          if (entry.checkedInToday)
+            Positioned(
+              right: 7,
+              top: 7,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: ui.success,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: ui.outline,
+                    width: UiBorder.hairline,
+                  ),
+                ),
+                child: OurneyIcon(
+                  name: 'check',
+                  size: 14,
+                  flat: true,
+                  color: ui.bg,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+
     return KeyedSubtree(
       key: ValueKey('group-member-${m.userId}'),
       child: UiPolaroid(
         tilt: tilt,
-        photo: GestureDetector(
-          key: ValueKey('group-member-photo-tap-${m.userId}'),
-          behavior: HitTestBehavior.opaque,
-          onTap: () => context.push(
-            '/journey/${Uri.encodeComponent(perms.journey.id)}/day/${photo.localDate}',
-          ),
-          child: SizedBox(
-            height: 158,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                UiHero(
-                  tag: UiHeroTags.dayPhoto(photo.id),
-                  borderRadiusBegin: BorderRadius.circular(UiRadius.thumb),
-                  borderRadiusEnd: BorderRadius.circular(UiRadius.card),
-                  child: GroupPhoto(
-                    key: ValueKey('group-member-photo-${m.userId}'),
-                    checkIn: photo,
-                    dimmed: !entry.photoIsToday,
-                  ),
+        photo: entry.isMe
+            ? UiPressable(
+                key: ValueKey('group-member-photo-tap-${m.userId}'),
+                onPressed: () => context.push(
+                  JourneysPaths.day(perms.journey.id, photo.localDate),
                 ),
-                if (entry.checkedInToday)
-                  Positioned(
-                    right: 7,
-                    top: 7,
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: ui.success,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: ui.outline,
-                          width: UiBorder.hairline,
-                        ),
-                      ),
-                      child: OurneyIcon(
-                        name: 'check',
-                        size: 14,
-                        flat: true,
-                        color: ui.bg,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
+                pressScale: 1.0,
+                semanticLabel: '${m.displayName}, ${l10n.groups_openTimeline}',
+                excludeChildSemantics: true,
+                borderRadius: BorderRadius.circular(UiRadius.thumb),
+                child: photoBox,
+              )
+            : photoBox,
         footer: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Column(
