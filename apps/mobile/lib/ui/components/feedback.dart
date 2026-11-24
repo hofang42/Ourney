@@ -363,8 +363,12 @@ class UiInlineError extends StatelessWidget {
 
 /// Bottom margin of a toast: [offset] alone, or above the pinned slot (never
 /// the two added, since callers like the journey screens already lift it).
-double _toastBottom(BuildContext context, double offset) {
-  final pinned = UiScaffold.pinnedBottomHeightOf(context);
+double _toastBottom(
+  BuildContext context,
+  double offset, {
+  ScaffoldMessengerState? messenger,
+}) {
+  final pinned = UiScaffold.pinnedBottomHeightOf(context, messenger: messenger);
   return pinned > 0 ? math.max(offset, 36 + pinned) : offset;
 }
 
@@ -381,9 +385,10 @@ void showUiToast(
   double bottomOffset = 36,
   String? actionLabel,
   VoidCallback? onAction,
+  ScaffoldMessengerState? messenger,
 }) {
   final ui = context.ui;
-  final messenger = ScaffoldMessenger.maybeOf(context);
+  messenger ??= ScaffoldMessenger.maybeOf(context);
   final d = UiMotion.of(context, const Duration(milliseconds: 150));
   if (messenger == null) return;
   final hasAction = actionLabel != null && onAction != null;
@@ -409,7 +414,7 @@ void showUiToast(
         24,
         0,
         24,
-        _toastBottom(context, bottomOffset),
+        _toastBottom(context, bottomOffset, messenger: messenger),
       ),
       content: Center(
         child: Container(
@@ -447,7 +452,7 @@ void showUiToast(
                   color: ui.bg,
                   underline: true,
                   onPressed: () {
-                    messenger.hideCurrentSnackBar();
+                    messenger?.hideCurrentSnackBar();
                     onAction();
                   },
                 ),
@@ -459,4 +464,97 @@ void showUiToast(
     ),
     snackBarAnimationStyle: AnimationStyle(duration: d, reverseDuration: d),
   );
+}
+
+/// Kit loading spinner (replaces `CircularProgressIndicator`): a 270 degree
+/// arc in [color] (default `ui.ink`) that spins every 900ms. A tight parent
+/// (`SizedBox`) sets its size; otherwise it is [size]. With Reduce Motion it
+/// stays still. [semanticsLabel] is announced as a live region.
+class UiSpinner extends StatefulWidget {
+  const UiSpinner({
+    this.size = 24,
+    this.strokeWidth = 2.5,
+    this.color,
+    this.semanticsLabel,
+    super.key,
+  });
+
+  final double size;
+  final double strokeWidth;
+  final Color? color;
+  final String? semanticsLabel;
+
+  @override
+  State<UiSpinner> createState() => _UiSpinnerState();
+}
+
+class _UiSpinnerState extends State<UiSpinner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (still) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.color ?? context.ui.ink;
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    Widget arc = CustomPaint(
+      painter: _SpinnerPainter(color: color, stroke: widget.strokeWidth),
+    );
+    arc = still ? arc : RotationTransition(turns: _c, child: arc);
+    return Semantics(
+      label: widget.semanticsLabel,
+      liveRegion: widget.semanticsLabel != null,
+      child: ExcludeSemantics(
+        child: ConstrainedBox(
+          constraints: BoxConstraints.tight(Size.square(widget.size)),
+          child: RepaintBoundary(child: arc),
+        ),
+      ),
+    );
+  }
+}
+
+class _SpinnerPainter extends CustomPainter {
+  const _SpinnerPainter({required this.color, required this.stroke});
+  final Color color;
+  final double stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    canvas.drawArc(
+      rect.deflate(stroke / 2),
+      -math.pi / 2,
+      math.pi * 1.5,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke
+        ..strokeCap = StrokeCap.round
+        ..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_SpinnerPainter old) =>
+      old.color != color || old.stroke != stroke;
 }

@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/locale_override.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 
 import 'fakes.dart';
@@ -40,7 +43,8 @@ void main() {
       await tester.pump();
       expect(c.read(localeOverrideProvider), const Locale('en'));
 
-      // The selected app icon carries a check badge, not just a border (U14).
+      // The selected app icon carries a check badge, not just a border (U14),
+      // and all 8 preview tiles render >= 48x48dp targets.
       expect(
         find.descendant(
           of: byKey('settings-icon-default'),
@@ -48,6 +52,18 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(
+        find.descendant(
+          of: byKey('settings-app-icons'),
+          matching: find.byType(Image),
+        ),
+        findsNWidgets(8),
+      );
+      for (final id in AppIconController.ids) {
+        final size = tester.getSize(byKey('settings-icon-$id'));
+        expect(size.width, greaterThanOrEqualTo(48));
+        expect(size.height, greaterThanOrEqualTo(48));
+      }
 
       await tester.scrollUntilVisible(
         byKey('settings-hide-kg'),
@@ -114,5 +130,132 @@ void main() {
       expect(auth.calls, ['signOut']);
       expect(byKey('settings-screen'), findsOneWidget);
     });
+  });
+
+  group('app icon picker & channel (ourney/app_icon)', () {
+    testWidgets(
+      'persists selection, calls ourney/app_icon channel with right names, and moves check badge',
+      (tester) async {
+        final calls = <MethodCall>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(PlatformAppIconSwitcher.channel, (
+              call,
+            ) async {
+              calls.add(call);
+              return true;
+            });
+        addTearDown(
+          () => TestDefaultBinaryMessengerBinding
+              .instance
+              .defaultBinaryMessenger
+              .setMockMethodCallHandler(PlatformAppIconSwitcher.channel, null),
+        );
+
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          profiles: FakeProfileRepository(aliceProfile),
+        );
+        await goTo(tester, c, '/profile/settings');
+
+        expect(byKey('settings-app-icons'), findsOneWidget);
+        expect(byKey('settings-app-icon-note'), findsOneWidget);
+
+        // Tap 'yellow' -> AppIcon-Yellow / .IconYellow
+        await tester.ensureVisible(byKey('settings-icon-yellow'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-icon-yellow'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(appIconProvider), 'yellow');
+        expect(
+          c.read(sharedPreferencesProvider).getString(AppIconController.prefsKey),
+          'yellow',
+        );
+        expect(
+          find.descendant(
+            of: byKey('settings-icon-yellow'),
+            matching: byKey('settings-icon-check'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: byKey('settings-icon-default'),
+            matching: byKey('settings-icon-check'),
+          ),
+          findsNothing,
+        );
+        expect(calls, hasLength(1));
+        expect(calls.last.method, 'setAlternateIcon');
+        expect(calls.last.arguments, {
+          'id': 'yellow',
+          'iosIconName': 'AppIcon-Yellow',
+          'androidAlias': '.IconYellow',
+        });
+
+        // Tap 'dark' -> AppIcon-Dark / .IconDark
+        await tester.ensureVisible(byKey('settings-icon-dark'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-icon-dark'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(appIconProvider), 'dark');
+        expect(
+          c.read(sharedPreferencesProvider).getString(AppIconController.prefsKey),
+          'dark',
+        );
+        expect(calls, hasLength(2));
+        expect(calls.last.arguments, {
+          'id': 'dark',
+          'iosIconName': 'AppIcon-Dark',
+          'androidAlias': '.IconDark',
+        });
+
+        // Tap 'default' -> nil / .IconDefault
+        await tester.ensureVisible(byKey('settings-icon-default'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-icon-default'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(appIconProvider), 'default');
+        expect(
+          c.read(sharedPreferencesProvider).getString(AppIconController.prefsKey),
+          'default',
+        );
+        expect(calls, hasLength(3));
+        expect(calls.last.arguments, {
+          'id': 'default',
+          'iosIconName': null,
+          'androidAlias': '.IconDefault',
+        });
+
+        // Unknown icon id is rejected without calling the channel.
+        final ok = await c.read(appIconProvider.notifier).set('unknown-id');
+        expect(ok, isFalse);
+        expect(c.read(appIconProvider), 'default');
+        expect(calls, hasLength(3));
+      },
+    );
+
+    testWidgets(
+      'gracefully hides app icon picker on unsupported platforms (desktop)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        try {
+          final c = await pumpBackendApp(
+            tester,
+            auth: RecordingAuthRepository(userId: 'u1'),
+            profiles: FakeProfileRepository(aliceProfile),
+          );
+          await goTo(tester, c, '/profile/settings');
+          expect(tester.takeException(), isNull);
+          expect(byKey('settings-screen'), findsOneWidget);
+          expect(byKey('settings-app-icons'), findsNothing);
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
+      },
+    );
   });
 }

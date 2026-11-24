@@ -96,6 +96,7 @@ flutter:
   generate: true
 
   assets:
+    - assets/app_icons/
     - assets/samples/couple_rituals/
     - assets/samples/ielts_study/
     - assets/samples/morning_run/

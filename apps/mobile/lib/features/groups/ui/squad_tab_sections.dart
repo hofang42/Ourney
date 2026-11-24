@@ -199,6 +199,12 @@ class SquadTodayCard extends ConsumerWidget {
     ];
     final done = members.where((m) => m.checkedIn).length;
     final shown = members.take(5).toList();
+    final status = journey.status != JourneyStatus.active
+        ? l10n.groups_statusEnded
+        : l10n.groups_checkedInCount(
+            done,
+            members.isEmpty ? 0 : members.length,
+          );
     // The whole card is one pressable (sticker press, button semantics named
     // after the group, >= 48dp): not just the title text. Member chips keep
     // their own nested hit areas, which win over the card.
@@ -211,7 +217,7 @@ class SquadTodayCard extends ConsumerWidget {
         radius: UiRadius.card,
         shadowOffset: UiShadow.small,
         onPressed: () => context.push(GroupsPaths.today(journey.id)),
-        semanticLabel: l10n.groups_openTodayOf(journey.title),
+        semanticLabel: '${l10n.groups_openTodayOf(journey.title)}, $status',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -243,12 +249,7 @@ class SquadTodayCard extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              journey.status != JourneyStatus.active
-                                  ? l10n.groups_statusEnded
-                                  : l10n.groups_checkedInCount(
-                                      done,
-                                      members.isEmpty ? 0 : members.length,
-                                    ),
+                              status,
                               style: UiText.body(
                                 size: 12,
                                 height: 1.4,

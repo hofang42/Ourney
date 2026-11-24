@@ -653,7 +653,7 @@ class _DnaDateRangeState extends State<DnaDateRange> {
     final on = isStart || isEnd;
     return SizedBox(
       width: cell,
-      height: cell < 44 ? 44 : cell,
+      height: cell < UiSize.tap ? UiSize.tap : cell,
       child: Semantics(
         button: true,
         selected: on,
@@ -675,12 +675,19 @@ class _DnaDateRangeState extends State<DnaDateRange> {
                   : null,
               borderRadius: BorderRadius.circular(UiRadius.thumb),
             ),
-            child: Text(
-              '${day.day}',
-              style: UiText.body(
-                size: 14,
-                color: past ? ui.divider : ui.ink,
-              ).copyWith(fontWeight: on ? FontWeight.w700 : null),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  '${day.day}',
+                  maxLines: 1,
+                  style: UiText.body(
+                    size: 14,
+                    color: past ? ui.divider : ui.ink,
+                  ).copyWith(fontWeight: on ? FontWeight.w700 : null),
+                ),
+              ),
             ),
           ),
         ),

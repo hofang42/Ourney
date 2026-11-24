@@ -227,6 +227,10 @@ supabase functions deploy public-journey --project-ref "$SUPABASE_PROJECT_REF" -
 echo "==> Deploying function storage-purge-sweep (token-gated)"
 supabase functions deploy storage-purge-sweep --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
+# waitlist-signup: landing beta form, anonymous visitors (see docs/runbooks/landing-waitlist.md).
+echo "==> Deploying function waitlist-signup (anonymous access)"
+supabase functions deploy waitlist-signup --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
 # --- 6. Optional SMTP (H2): must come BEFORE the email templates --------------------------------------------------------------------
 if [ "$APPLY_SMTP" -eq 1 ]; then
   # shellcheck disable=SC2153  # SMTP_HOST is set: APPLY_SMTP=1 only when all four SMTP_* are non-empty

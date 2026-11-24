@@ -67,8 +67,8 @@ class _UiPressableState extends State<UiPressable> {
 
   void _claimAncestorPointer(int pointer) {
     if (!_enabled) return;
-    final ancestor =
-        _claimedAncestor ??= context.findAncestorStateOfType<_UiPressableState>();
+    final ancestor = _claimedAncestor ??= context
+        .findAncestorStateOfType<_UiPressableState>();
     if (ancestor != null && _claimedPointers.add(pointer)) {
       ancestor._childPointer(true);
     }
@@ -193,6 +193,9 @@ class _UiPressableState extends State<UiPressable> {
             behavior: _enabled
                 ? HitTestBehavior.opaque
                 : HitTestBehavior.deferToChild,
+            // The outer Semantics already carries the tap action; a second
+            // tap node would stay unlabeled and separate from it.
+            excludeFromSemantics: true,
             onTapDown: _enabled ? (_) => _setDown(true) : null,
             onTapUp: _enabled ? (_) => _setDown(false) : null,
             onTapCancel: _enabled ? () => _setDown(false) : null,

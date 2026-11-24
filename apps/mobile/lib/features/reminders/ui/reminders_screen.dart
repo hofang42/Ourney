@@ -155,7 +155,7 @@ class _RemindersScreenState extends ConsumerState<RemindersScreen> {
             Expanded(
               child: journeys.when(
                 loading: () => Center(
-                  child: CircularProgressIndicator(
+                  child: UiSpinner(
                     semanticsLabel: AppLocalizations.of(context).common_loading,
                   ),
                 ),

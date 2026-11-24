@@ -2065,6 +2065,18 @@ html.intro-seen:not(.intro-skip):not(.hero-settled) .hero-copy-stack {
   border-color: #B3261E;
   box-shadow: 3px 3px 0 #B3261E;
 }
+/* Honeypot for bots: kept out of view and out of the flex flow. */
+.beta-form input.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.beta-form button:disabled { opacity: .6; cursor: progress; }
 .btn-ticket {
   min-height: 54px;
   background: #1A1A1A;

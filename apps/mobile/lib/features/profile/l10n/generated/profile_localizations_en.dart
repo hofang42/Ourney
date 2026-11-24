@@ -355,25 +355,28 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_settings_appIconNote =>
-      'The home-screen icon switches in a later release; your choice is saved.';
+      'Changes your home-screen icon. On some Android launchers, the app may briefly close or refresh when switching.';
 
   @override
   String get profile_settings_iconDefault => 'Default';
 
   @override
-  String get profile_settings_iconQuiet => 'Weight loss';
+  String get profile_settings_iconYellow => 'Yellow';
 
   @override
-  String get profile_settings_iconSquad => 'Squad';
+  String get profile_settings_iconGreen => 'Green';
 
   @override
-  String get profile_settings_iconMemory => 'Memories';
+  String get profile_settings_iconCoral => 'Coral';
 
   @override
-  String get profile_settings_iconCouple => 'Couple';
+  String get profile_settings_iconViolet => 'Violet';
 
   @override
-  String get profile_settings_iconFlexer => 'Workout';
+  String get profile_settings_iconSky => 'Sky';
+
+  @override
+  String get profile_settings_iconDark => 'Dark';
 
   @override
   String get profile_settings_iconMinimal => 'Minimal';

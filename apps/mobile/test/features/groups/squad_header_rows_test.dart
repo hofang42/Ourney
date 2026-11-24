@@ -122,7 +122,10 @@ void main() {
       final data = node.getSemanticsData();
       expect(data.flagsCollection.isButton, isTrue);
       expect(data.label, contains('Chạy bộ cùng nhau'));
+      expect(data.label, contains('0/6 checked in'));
       expect(data.label, isNot(contains('+1')));
+      expect(data.label, isNot(contains('An 2')));
+      expect(data.label, isNot(contains('\n')));
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       final size = tester.getSize(card);
       expect(size.height, greaterThanOrEqualTo(48));

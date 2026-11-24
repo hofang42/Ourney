@@ -57,7 +57,7 @@ class ProfileEditScreen extends ConsumerWidget {
             _ => Padding(
               padding: const EdgeInsets.all(UiSpace.xxl),
               child: Center(
-                child: CircularProgressIndicator(
+                child: UiSpinner(
                   semanticsLabel: AppLocalizations.of(context).common_loading,
                 ),
               ),
