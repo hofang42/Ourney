@@ -119,6 +119,8 @@ class _ReportFeatureRequestFormState
           UiRow(
             key: ValueKey('feedback-report-reason-${r.wireName}'),
             title: _label(safetyL10n, r),
+            selected: _reason == r,
+            inMutuallyExclusiveGroup: true,
             showChevron: false,
             minHeight: 52,
             trailing: OurneyIcon(

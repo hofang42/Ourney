@@ -36,6 +36,35 @@ bool isFeedbackServerOutdated(Object error) {
       root.error == OurneyErrorCode.serverOutdated;
 }
 
+/// Shared-preferences keys of the feedback feature.
+abstract final class FeedbackPrefs {
+  static const draftPrefix = 'feedback.composeDraft.';
+  static const cachePrefix = 'feedback.cache.';
+  static const cachePopularPrefix = 'feedback.cache.popular.';
+  static const cacheMinePrefix = 'feedback.cache.mine.';
+
+  static String draftFor(String userId) => '$draftPrefix$userId';
+
+  static String cacheFor(String userId, {required bool mineOnly}) =>
+      '${mineOnly ? cacheMinePrefix : cachePopularPrefix}$userId';
+
+  /// The user id of a feedback draft or board cache preference [key], else
+  /// null.
+  static String? userIdOfKey(String key) {
+    if (key.startsWith(draftPrefix)) {
+      final uid = key.substring(draftPrefix.length);
+      return uid.isEmpty ? null : uid;
+    }
+    if (key.startsWith(cachePrefix)) {
+      final rest = key.substring(cachePrefix.length);
+      final dot = rest.indexOf('.');
+      if (dot <= 0 || dot >= rest.length - 1) return null;
+      return rest.substring(dot + 1);
+    }
+    return null;
+  }
+}
+
 /// Unsent draft preserved in `SharedPreferencesWithCache` per user.
 @immutable
 class FeedbackComposeDraft {
@@ -68,13 +97,13 @@ class FeedbackComposeDraft {
 class FeedbackDraftNotifier extends Notifier<FeedbackComposeDraft?> {
   String get _prefsKey {
     final uid = ref.read(currentUserIdProvider) ?? 'guest';
-    return 'feedback.composeDraft.$uid';
+    return FeedbackPrefs.draftFor(uid);
   }
 
   @override
   FeedbackComposeDraft? build() {
     final uid = ref.watch(currentUserIdProvider) ?? 'guest';
-    final key = 'feedback.composeDraft.$uid';
+    final key = FeedbackPrefs.draftFor(uid);
     try {
       final raw = ref.watch(sharedPreferencesProvider).getString(key);
       if (raw == null || raw.isEmpty) return null;
@@ -112,6 +141,20 @@ class FeedbackDraftNotifier extends Notifier<FeedbackComposeDraft?> {
       // Ignore if SharedPreferences is not overridden.
     }
   }
+
+  Future<void> clearAll() async {
+    state = null;
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      for (final key in prefs.keys.toList()) {
+        if (key.startsWith(FeedbackPrefs.draftPrefix)) {
+          await prefs.remove(key);
+        }
+      }
+    } on Object {
+      // Ignore if SharedPreferences is not overridden.
+    }
+  }
 }
 
 final feedbackDraftProvider =
@@ -127,8 +170,7 @@ class FeedbackCacheStore {
 
   String _key({required bool mineOnly}) {
     final uid = _ref.read(currentUserIdProvider) ?? 'guest';
-    final bucket = mineOnly ? 'mine' : 'popular';
-    return 'feedback.cache.$bucket.$uid';
+    return FeedbackPrefs.cacheFor(uid, mineOnly: mineOnly);
   }
 
   List<FeatureRequest>? read({required bool mineOnly}) {
@@ -163,6 +205,19 @@ class FeedbackCacheStore {
       // Ignore in tests without SharedPreferences.
     }
   }
+
+  Future<void> clearAll() async {
+    try {
+      final prefs = _ref.read(sharedPreferencesProvider);
+      for (final key in prefs.keys.toList()) {
+        if (key.startsWith(FeedbackPrefs.cachePrefix)) {
+          await prefs.remove(key);
+        }
+      }
+    } on Object {
+      // Ignore in tests without SharedPreferences.
+    }
+  }
 }
 
 final feedbackCacheStoreProvider = Provider<FeedbackCacheStore>(
@@ -192,6 +247,7 @@ typedef VoteOverlayEntry = ({bool votedByMe, int voteCount});
 
 class FeedbackVoteOverlayNotifier
     extends Notifier<Map<String, VoteOverlayEntry>> {
+  int _epoch = 0;
   final Set<String> _inFlight = {};
   final Map<String, bool> _desired = {};
   final Map<String, VoteOverlayEntry> _baseline = {};
@@ -199,6 +255,7 @@ class FeedbackVoteOverlayNotifier
   @override
   Map<String, VoteOverlayEntry> build() {
     ref.watch(currentUserIdProvider);
+    _epoch++;
     _inFlight.clear();
     _desired.clear();
     _baseline.clear();
@@ -225,12 +282,56 @@ class FeedbackVoteOverlayNotifier
     };
   }
 
+  /// Drops settled overlay entries for [freshItems] once fresh server data has
+  /// arrived so stale session votes never clobber newer server vote counts.
+  /// Entries with an in-flight or queued vote RPC keep their optimistic state
+  /// and refresh their rollback baseline against the server's latest count.
+  void reconcileServerItems(Iterable<FeatureRequest> freshItems) {
+    if (state.isEmpty && _baseline.isEmpty) return;
+    Map<String, VoteOverlayEntry>? nextState;
+    for (final item in freshItems) {
+      final serverEntry = (
+        votedByMe: item.votedByMe,
+        voteCount: item.voteCount,
+      );
+      if (_inFlight.contains(item.id) || _desired.containsKey(item.id)) {
+        _baseline[item.id] = serverEntry;
+        final desired = _desired[item.id];
+        if (desired != null) {
+          final delta =
+              desired == serverEntry.votedByMe ? 0 : (desired ? 1 : -1);
+          nextState ??= {...state};
+          nextState[item.id] = (
+            votedByMe: desired,
+            voteCount: math.max(0, serverEntry.voteCount + delta),
+          );
+        }
+      } else if (state.containsKey(item.id)) {
+        nextState ??= {...state};
+        nextState.remove(item.id);
+      }
+    }
+    if (nextState != null) {
+      state = nextState;
+    }
+  }
+
+  void _reconcileBoard(String requestId, VoteOverlayEntry committed) {
+    if (!ref.exists(rawFeedbackBoardProvider)) return;
+    ref.read(rawFeedbackBoardProvider.notifier).reconcileVote(
+          requestId,
+          votedByMe: committed.votedByMe,
+          voteCount: committed.voteCount,
+        );
+  }
+
   /// Toggles the caller's vote on [item] optimistically and coalesces rapid
   /// taps into the latest desired state. Returns `null` on success or the
   /// failure [OurneyErrorCode] if the server rejected the vote and state was
   /// rolled back.
   Future<OurneyErrorCode?> toggle(FeatureRequest item) async {
     if (!item.canVote) return OurneyErrorCode.ended;
+    final epoch = _epoch;
     final current = applyTo(item);
     final nextVoted = !current.votedByMe;
     final nextCount = math.max(0, current.voteCount + (nextVoted ? 1 : -1));
@@ -256,20 +357,34 @@ class FeedbackVoteOverlayNotifier
     try {
       final repo = ref.read(featureRequestRepositoryProvider);
       while (_desired.containsKey(item.id)) {
+        if (epoch != _epoch) return null;
         final targetVoted = _desired.remove(item.id)!;
         final result = await repo.toggleVote(item.id, voted: targetVoted);
-        if (!_desired.containsKey(item.id)) {
+        if (epoch != _epoch) return null;
+        final committed = (
+          votedByMe: result.votedByMe,
+          voteCount: result.voteCount,
+        );
+        _baseline[item.id] = committed;
+        _reconcileBoard(item.id, committed);
+        final nextDesired = _desired[item.id];
+        if (nextDesired == null) {
+          state = {...state, item.id: committed};
+        } else {
+          final delta =
+              nextDesired == committed.votedByMe ? 0 : (nextDesired ? 1 : -1);
           state = {
             ...state,
             item.id: (
-              votedByMe: result.votedByMe,
-              voteCount: result.voteCount,
+              votedByMe: nextDesired,
+              voteCount: math.max(0, committed.voteCount + delta),
             ),
           };
         }
       }
       return null;
     } on Object catch (e) {
+      if (epoch != _epoch) return null;
       _desired.remove(item.id);
       final base = _baseline[item.id];
       if (base != null) {
@@ -280,8 +395,10 @@ class FeedbackVoteOverlayNotifier
       }
       return feedbackErrorCode(e) ?? OurneyErrorCode.unknown;
     } finally {
-      _inFlight.remove(item.id);
-      _baseline.remove(item.id);
+      if (epoch == _epoch) {
+        _inFlight.remove(item.id);
+        _baseline.remove(item.id);
+      }
     }
   }
 }
@@ -421,6 +538,9 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
       _hasMore = fetched.length >= featureRequestPageSize;
       _isOfflineCached = false;
       _isLoadingMore = false;
+      ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems(
+            fetched,
+          );
       if (query.isCacheableDefault) {
         unawaited(cache.write(mineOnly: query.mineOnly, items: fetched));
       }
@@ -430,8 +550,7 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
       );
     } on Object catch (e) {
       if (feedbackErrorCode(e) == OurneyErrorCode.offline) {
-        final cached = cache.read(mineOnly: query.mineOnly) ??
-            cache.read(mineOnly: false);
+        final cached = _readMergedCache(cache, mineOnly: query.mineOnly);
         if (cached != null && cached.isNotEmpty) {
           final filtered = _filterCached(cached, query);
           _rawItems = filtered;
@@ -449,20 +568,78 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
     }
   }
 
+  List<FeatureRequest>? _readMergedCache(
+    FeedbackCacheStore cache, {
+    required bool mineOnly,
+  }) {
+    final primary = cache.read(mineOnly: mineOnly);
+    final secondary = cache.read(mineOnly: !mineOnly);
+    if (primary == null && secondary == null) return null;
+    final seen = <String>{};
+    final merged = <FeatureRequest>[];
+    for (final list in [primary, secondary]) {
+      if (list == null) continue;
+      for (final item in list) {
+        if (seen.add(item.id)) merged.add(item);
+      }
+    }
+    return merged;
+  }
+
   List<FeatureRequest> _filterCached(
     List<FeatureRequest> cached,
     FeedbackBoardQuery query,
   ) {
     final foldedSearch = foldVietnameseDiacritics(query.search.trim());
-    return [
+    final matches = <FeatureRequest>[
       for (final item in cached)
-        if ((!query.mineOnly || item.isMine) &&
+        if (_matchesCachedTab(item, query) &&
             (query.category == null || item.category == query.category) &&
             (foldedSearch.isEmpty ||
                 foldVietnameseDiacritics(item.title).contains(foldedSearch) ||
                 foldVietnameseDiacritics(item.body).contains(foldedSearch)))
           item,
     ];
+    if (query.mineOnly) {
+      matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else {
+      switch (query.tab) {
+        case FeatureRequestTab.popular:
+          matches.sort((a, b) {
+            final byVotes = b.voteCount.compareTo(a.voteCount);
+            return byVotes != 0 ? byVotes : b.createdAt.compareTo(a.createdAt);
+          });
+        case FeatureRequestTab.newest:
+          matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        case FeatureRequestTab.planned:
+          matches.sort((a, b) {
+            final aInProgress = a.status == FeatureRequestStatus.inProgress;
+            final bInProgress = b.status == FeatureRequestStatus.inProgress;
+            if (aInProgress != bInProgress) return bInProgress ? 1 : -1;
+            final byVotes = b.voteCount.compareTo(a.voteCount);
+            return byVotes != 0 ? byVotes : b.createdAt.compareTo(a.createdAt);
+          });
+        case FeatureRequestTab.shipped:
+          matches.sort(
+            (a, b) => (b.shippedAt ?? b.updatedAt).compareTo(
+              a.shippedAt ?? a.updatedAt,
+            ),
+          );
+      }
+    }
+    return matches;
+  }
+
+  bool _matchesCachedTab(FeatureRequest item, FeedbackBoardQuery query) {
+    if (query.mineOnly) return item.isMine;
+    if (item.duplicateOf != null || item.isDeclined) return false;
+    return switch (query.tab) {
+      FeatureRequestTab.popular || FeatureRequestTab.newest => !item.isShipped,
+      FeatureRequestTab.planned =>
+        item.status == FeatureRequestStatus.planned ||
+            item.status == FeatureRequestStatus.inProgress,
+      FeatureRequestTab.shipped => item.isShipped,
+    };
   }
 
   Future<void> loadMore() async {
@@ -483,6 +660,7 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
         limit: featureRequestPageSize,
         offset: _rawItems.length,
       );
+      ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems(next);
       final existingIds = {for (final i in _rawItems) i.id};
       _rawItems = [
         ..._rawItems,
@@ -505,11 +683,9 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
   }
 
   void prependCreated(FeatureRequest created) {
-    ref.read(feedbackVoteOverlayProvider.notifier).seed(
-          created.id,
-          votedByMe: created.votedByMe,
-          voteCount: created.voteCount,
-        );
+    ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems([
+      created,
+    ]);
     _rawItems = [
       created,
       for (final item in _rawItems)
@@ -522,9 +698,36 @@ class FeedbackBoardController extends AsyncNotifier<FeedbackBoardData> {
   }
 
   void replaceUpdated(FeatureRequest updated) {
+    ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems([
+      updated,
+    ]);
     _rawItems = [
       for (final item in _rawItems) item.id == updated.id ? updated : item,
     ];
+    final current = state.asData?.value;
+    if (current != null) {
+      state = AsyncData(current.copyWith(items: _rawItems));
+    }
+  }
+
+  void reconcileVote(
+    String requestId, {
+    required bool votedByMe,
+    required int voteCount,
+  }) {
+    var changed = false;
+    _rawItems = [
+      for (final item in _rawItems)
+        if (item.id == requestId &&
+            (item.votedByMe != votedByMe || item.voteCount != voteCount))
+          (() {
+            changed = true;
+            return item.copyWith(votedByMe: votedByMe, voteCount: voteCount);
+          })()
+        else
+          item,
+    ];
+    if (!changed) return;
     final current = state.asData?.value;
     if (current != null) {
       state = AsyncData(current.copyWith(items: _rawItems));
@@ -575,17 +778,44 @@ final rawFeatureRequestDetailProvider = FutureProvider.autoDispose
   (ref, id) async {
     final repo = ref.watch(featureRequestRepositoryProvider);
     try {
-      return await repo.getById(id);
+      final item = await repo.getById(id);
+      ref.read(feedbackVoteOverlayProvider.notifier).reconcileServerItems([
+        item,
+      ]);
+      if (ref.exists(rawFeedbackBoardProvider)) {
+        ref.read(rawFeedbackBoardProvider.notifier).reconcileVote(
+              item.id,
+              votedByMe: item.votedByMe,
+              voteCount: item.voteCount,
+            );
+      }
+      return item;
     } on Object catch (e) {
       if (feedbackErrorCode(e) == OurneyErrorCode.offline) {
+        final hidden = ref.read(hiddenFeatureRequestIdsProvider);
+        if (hidden.contains(id)) {
+          throw const OurneyException(OurneyErrorCode.notFound);
+        }
+        final blocked =
+            ref.read(blockedUserIdsProvider).asData?.value ?? const {};
         final cache = ref.read(feedbackCacheStoreProvider);
+        final boardItems = ref.exists(rawFeedbackBoardProvider)
+            ? ref.read(rawFeedbackBoardProvider).asData?.value.items
+            : null;
         for (final list in [
+          boardItems,
           cache.read(mineOnly: false),
           cache.read(mineOnly: true),
         ]) {
           if (list == null) continue;
           for (final item in list) {
-            if (item.id == id) return item;
+            if (item.id == id) {
+              if (item.authorUserId != null &&
+                  blocked.contains(item.authorUserId)) {
+                throw const OurneyException(OurneyErrorCode.notFound);
+              }
+              return item;
+            }
           }
         }
       }
@@ -598,13 +828,28 @@ final rawFeatureRequestDetailProvider = FutureProvider.autoDispose
 final featureRequestDetailProvider =
     Provider.autoDispose.family<AsyncValue<FeatureRequest>, String>((ref, id) {
   final raw = ref.watch(rawFeatureRequestDetailProvider(id));
+  final hidden = ref.watch(hiddenFeatureRequestIdsProvider);
+  final blocked = ref.watch(blockedUserIdsProvider).asData?.value ?? const {};
   final voteOverlay = ref.watch(feedbackVoteOverlayProvider);
-  return raw.whenData((item) {
-    final ov = voteOverlay[item.id];
-    return ov == null
-        ? item
-        : item.copyWith(votedByMe: ov.votedByMe, voteCount: ov.voteCount);
-  });
+  return raw.when(
+    data: (item) {
+      if (hidden.contains(item.id) ||
+          (item.authorUserId != null && blocked.contains(item.authorUserId))) {
+        return AsyncError(
+          const OurneyException(OurneyErrorCode.notFound),
+          StackTrace.empty,
+        );
+      }
+      final ov = voteOverlay[item.id];
+      return AsyncData(
+        ov == null
+            ? item
+            : item.copyWith(votedByMe: ov.votedByMe, voteCount: ov.voteCount),
+      );
+    },
+    error: AsyncError.new,
+    loading: AsyncLoading.new,
+  );
 });
 
 /// Shipped feature request notifications for the Activity Inbox (`/inbox`).

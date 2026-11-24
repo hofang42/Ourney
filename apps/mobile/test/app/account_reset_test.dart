@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/account_reset.dart';
 import 'package:ourney/app/providers.dart';
+import 'package:ourney/features/feedback/data/feedback_providers.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/onboarding/onboarding_providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
@@ -45,6 +46,14 @@ void main() {
       SafetyPrefs.eulaAccepted: true,
       SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
       SafetyPrefs.blockedNames: jsonEncode({'u9': 'Blocked'}),
+      FeedbackPrefs.draftFor('user-a'): jsonEncode(
+        const FeedbackComposeDraft(
+          title: 'Secret draft idea',
+          body: 'Private unsent notes for user-a',
+        ).toJson(),
+      ),
+      FeedbackPrefs.cacheFor('user-a', mineOnly: false): '[{"id":"req-1"}]',
+      FeedbackPrefs.cacheFor('user-a', mineOnly: true): '[{"id":"req-2"}]',
       ActiveJourneyId.prefsKey: journeyId,
       CreateProgressPrefs.key: 3,
       ReminderPrefs.journey(journeyId): '{"on":true,"time":"20:00"}',
@@ -84,7 +93,12 @@ void main() {
     expect(container.read(onboardingQuizProvider), isNotNull);
     expect(container.read(eulaAcceptedProvider), isTrue);
     expect(container.read(blockedNamesProvider), isNotEmpty);
+    expect(container.read(feedbackDraftProvider)?.title, 'Secret draft idea');
     container.read(hiddenCheckInIdsProvider.notifier).hide('c1');
+    container.read(hiddenFeatureRequestIdsProvider.notifier).hide('req-1');
+    container
+        .read(feedbackVoteOverlayProvider.notifier)
+        .seed('req-1', votedByMe: true, voteCount: 43);
 
     (container.read(currentUserIdProvider.notifier) as _SignedInUser).signOut();
     await pumpEventQueue();
@@ -93,6 +107,21 @@ void main() {
     expect(container.read(eulaAcceptedProvider), isFalse);
     expect(container.read(blockedNamesProvider), isEmpty);
     expect(container.read(hiddenCheckInIdsProvider), isEmpty);
+    expect(container.read(hiddenFeatureRequestIdsProvider), isEmpty);
+    expect(container.read(feedbackDraftProvider), isNull);
+    expect(container.read(feedbackVoteOverlayProvider), isEmpty);
+    expect(
+      prefs.containsKey(FeedbackPrefs.draftFor('user-a')),
+      isFalse,
+    );
+    expect(
+      prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: false)),
+      isFalse,
+    );
+    expect(
+      prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: true)),
+      isFalse,
+    );
     expect(container.read(activeJourneyIdProvider), isNull);
     expect(container.read(createProgressProvider), isNull);
     expect(container.read(reminderSettingsProvider), isEmpty);
@@ -140,6 +169,9 @@ void main() {
         accountOwnerPrefsKey: 'user-a',
         SafetyPrefs.eulaAccepted: true,
         SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
+        FeedbackPrefs.draftFor('user-a'): '{"title":"Expired draft","body":"x"}',
+        FeedbackPrefs.cacheFor('user-a', mineOnly: false): '[{"id":"req-1"}]',
+        FeedbackPrefs.cacheFor('user-a', mineOnly: true): '[{"id":"req-2"}]',
         SharePrivacyPrefs.hideWeight: true,
       });
       final container = containerFor(prefs, _SignedOutUser.new);
@@ -149,6 +181,18 @@ void main() {
       expect(prefs.containsKey(accountOwnerPrefsKey), isFalse);
       expect(
         prefs.containsKey(SafetyPrefs.termsVersionFor('user-a')),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(FeedbackPrefs.draftFor('user-a')),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: false)),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: true)),
         isFalse,
       );
     },
@@ -161,6 +205,9 @@ void main() {
       final prefs = await testPrefs({
         SafetyPrefs.eulaAccepted: true,
         SafetyPrefs.termsVersionFor('user-a'): kTermsVersion,
+        FeedbackPrefs.draftFor('user-a'): '{"title":"User A draft","body":"y"}',
+        FeedbackPrefs.cacheFor('user-a', mineOnly: false): '[{"id":"req-1"}]',
+        FeedbackPrefs.cacheFor('user-a', mineOnly: true): '[{"id":"req-2"}]',
         SharePrivacyPrefs.blurPhotos: true,
       });
       final auth = FakeAuthRepository(
@@ -190,6 +237,18 @@ void main() {
       expect(auth.recordedTerms, isEmpty);
       expect(
         prefs.containsKey(SafetyPrefs.termsVersionFor('user-a')),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(FeedbackPrefs.draftFor('user-a')),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: false)),
+        isFalse,
+      );
+      expect(
+        prefs.containsKey(FeedbackPrefs.cacheFor('user-a', mineOnly: true)),
         isFalse,
       );
       expect(container.read(blurPhotosOnShareProvider), isFalse);

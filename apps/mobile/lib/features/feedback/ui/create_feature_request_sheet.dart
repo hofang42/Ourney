@@ -154,7 +154,20 @@ class _CreateFeatureRequestSheetState
     final overlaid =
         ref.read(feedbackVoteOverlayProvider.notifier).applyTo(match);
     if (overlaid.canVote && !overlaid.votedByMe) {
-      unawaited(ref.read(feedbackVoteOverlayProvider.notifier).toggle(overlaid));
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      final notifier = ref.read(feedbackVoteOverlayProvider.notifier);
+      unawaited(
+        notifier.toggle(overlaid).then((err) {
+          if (err != null && messenger != null && messenger.mounted) {
+            OurneyHaptics.warning();
+            showUiToast(
+              messenger.context,
+              feedbackErrorMessage(messenger.context, OurneyException(err)),
+              messenger: messenger,
+            );
+          }
+        }),
+      );
     }
     if (!mounted) return;
     Navigator.of(context).pop(FeatureRequestDeflected(match.id));
@@ -241,7 +254,13 @@ class _CreateFeatureRequestSheetState
         if (!mounted) return;
         setState(() => _error = l10n.feedback_errorOfflineDraftSaved);
       } else {
-        setState(() => _error = feedbackErrorMessage(context, e));
+        setState(
+          () => _error = feedbackErrorMessage(
+            context,
+            e,
+            forCreate: !widget.isEdit,
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _submitting = false);

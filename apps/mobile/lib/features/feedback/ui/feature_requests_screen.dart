@@ -263,70 +263,66 @@ class _SearchField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
-    return Semantics(
-      label: l10n.feedback_searchLabel,
-      textField: true,
-      child: TextField(
-        key: const ValueKey('feedback-search-input'),
-        controller: controller,
-        onChanged: onChanged,
-        textInputAction: TextInputAction.search,
-        cursorColor: ui.ink,
-        style: UiText.body(
-          size: 15,
-          weight: FontWeight.w500,
-          height: 1.4,
-          color: ui.ink,
+    return TextField(
+      key: const ValueKey('feedback-search-input'),
+      controller: controller,
+      onChanged: onChanged,
+      textInputAction: TextInputAction.search,
+      cursorColor: ui.ink,
+      style: UiText.body(
+        size: 15,
+        weight: FontWeight.w500,
+        height: 1.4,
+        color: ui.ink,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        filled: true,
+        fillColor: ui.fill,
+        hintText: l10n.feedback_searchHint,
+        hintStyle: UiText.body(size: 15, color: ui.inkMuted),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 14, right: 10),
+          child: OurneyIcon(
+            name: 'search',
+            size: 18,
+            flat: true,
+            color: ui.inkMuted,
+          ),
         ),
-        decoration: InputDecoration(
-          isDense: true,
-          filled: true,
-          fillColor: ui.fill,
-          hintText: l10n.feedback_searchHint,
-          hintStyle: UiText.body(size: 15, color: ui.inkMuted),
-          prefixIcon: Padding(
-            padding: const EdgeInsets.only(left: 14, right: 10),
-            child: OurneyIcon(
-              name: 'search',
-              size: 18,
-              flat: true,
-              color: ui.inkMuted,
-            ),
-          ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 0),
-          suffixIcon: controller.text.isEmpty
-              ? null
-              : Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: UiIconButton(
-                    key: const ValueKey('feedback-search-clear'),
-                    glyph: OurneyIcon(
-                      name: 'close',
-                      size: 16,
-                      flat: true,
-                      color: ui.inkMuted,
-                    ),
-                    label: l10n.feedback_searchClear,
-                    onPressed: onClear,
+        prefixIconConstraints: const BoxConstraints(minWidth: 0),
+        suffixIcon: controller.text.isEmpty
+            ? null
+            : Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: UiIconButton(
+                  key: const ValueKey('feedback-search-clear'),
+                  glyph: OurneyIcon(
+                    name: 'close',
+                    size: 16,
+                    flat: true,
+                    color: ui.inkMuted,
                   ),
+                  label: l10n.feedback_searchClear,
+                  onPressed: onClear,
                 ),
-          suffixIconConstraints: const BoxConstraints(minWidth: 0),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          constraints: const BoxConstraints(minHeight: UiSize.tap),
-          border: uiFieldBorder(ui.fieldBorder, UiBorder.thin, UiRadius.capsule),
-          enabledBorder: uiFieldBorder(
-            ui.fieldBorder,
-            UiBorder.thin,
-            UiRadius.capsule,
-          ),
-          focusedBorder: uiFieldBorder(
-            ui.accent,
-            UiBorder.standard,
-            UiRadius.capsule,
-          ),
+              ),
+        suffixIconConstraints: const BoxConstraints(minWidth: 0),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        constraints: const BoxConstraints(minHeight: UiSize.tap),
+        border: uiFieldBorder(ui.fieldBorder, UiBorder.thin, UiRadius.capsule),
+        enabledBorder: uiFieldBorder(
+          ui.fieldBorder,
+          UiBorder.thin,
+          UiRadius.capsule,
+        ),
+        focusedBorder: uiFieldBorder(
+          ui.accent,
+          UiBorder.standard,
+          UiRadius.capsule,
         ),
       ),
     );
@@ -342,55 +338,59 @@ class _ChipsStrip extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final query = ref.watch(feedbackQueryProvider);
     final ui = context.ui;
-    return SizedBox(
-      height: UiSize.tap,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: UiChip(
-              key: const ValueKey('feedback-chip-mine'),
-              label: l10n.feedback_chipMine,
-              selected: query.mineOnly,
-              glyph: OurneyIcon(
-                name: 'profile',
-                size: 16,
-                flat: true,
-                color: query.mineOnly ? ui.onAccent : ui.ink,
-              ),
-              onPressed: () {
-                OurneyHaptics.selection();
-                ref.read(feedbackQueryProvider.notifier).toggleMine();
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: UiChip(
-              key: const ValueKey('feedback-filter-all'),
-              label: l10n.feedback_catAll,
-              selected: query.category == null,
-              onPressed: () {
-                OurneyHaptics.selection();
-                ref.read(feedbackQueryProvider.notifier).setCategory(null);
-              },
-            ),
-          ),
-          for (final cat in FeatureRequestCategory.values)
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: UiSize.tap),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: UiChip(
-                key: ValueKey('feedback-filter-${cat.wireName}'),
-                label: feedbackCategoryLabel(l10n, cat),
-                selected: query.category == cat,
+                key: const ValueKey('feedback-chip-mine'),
+                label: l10n.feedback_chipMine,
+                selected: query.mineOnly,
+                glyph: OurneyIcon(
+                  name: 'profile',
+                  size: 16,
+                  flat: true,
+                  color: query.mineOnly ? ui.onAccent : ui.ink,
+                ),
                 onPressed: () {
                   OurneyHaptics.selection();
-                  ref.read(feedbackQueryProvider.notifier).setCategory(cat);
+                  ref.read(feedbackQueryProvider.notifier).toggleMine();
                 },
               ),
             ),
-        ],
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: UiChip(
+                key: const ValueKey('feedback-filter-all'),
+                label: l10n.feedback_catAll,
+                selected: query.category == null,
+                onPressed: () {
+                  OurneyHaptics.selection();
+                  ref.read(feedbackQueryProvider.notifier).setCategory(null);
+                },
+              ),
+            ),
+            for (final cat in FeatureRequestCategory.values)
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: UiChip(
+                  key: ValueKey('feedback-filter-${cat.wireName}'),
+                  label: feedbackCategoryLabel(l10n, cat),
+                  selected: query.category == cat,
+                  onPressed: () {
+                    OurneyHaptics.selection();
+                    ref.read(feedbackQueryProvider.notifier).setCategory(cat);
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -451,10 +451,6 @@ class _BoardBody extends ConsumerWidget {
     FeedbackBoardData data,
   ) {
     final ui = context.ui;
-    if (data.items.isEmpty) {
-      return UiFillScroll(child: _buildEmpty(l10n, query));
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -496,50 +492,57 @@ class _BoardBody extends ConsumerWidget {
             ),
           ),
         Expanded(
-          child: ListView.separated(
-            key: const ValueKey('feedback-list'),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.only(
-              top: UiSpace.xs,
-              bottom: UiSpace.xl,
-            ),
-            itemCount: data.items.length + 1,
-            separatorBuilder: (_, _) => const SizedBox(height: UiSpace.md),
-            itemBuilder: (context, index) {
-              if (index == data.items.length) {
-                if (data.hasMore) {
-                  return Center(
-                    child: UiButton.secondary(
-                      key: const ValueKey('feedback-load-more'),
-                      label: l10n.feedback_loadMore,
-                      compact: true,
-                      expand: false,
-                      loading: data.isLoadingMore,
-                      onPressed: () => ref
-                          .read(rawFeedbackBoardProvider.notifier)
-                          .loadMore(),
-                    ),
-                  );
-                }
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: UiSpace.sm),
-                  child: Text(
-                    l10n.feedback_endOfList,
-                    key: const ValueKey('feedback-end-of-list'),
-                    textAlign: TextAlign.center,
-                    style: UiText.body(size: 12, color: ui.inkMuted),
+          child: data.items.isEmpty
+              ? UiFillScroll(child: _buildEmpty(l10n, query))
+              : ListView.separated(
+                  key: const ValueKey('feedback-list'),
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.only(
+                    top: UiSpace.xs,
+                    bottom: UiSpace.xl,
                   ),
-                );
-              }
-              final item = data.items[index];
-              return FeatureRequestCard(
-                item: item,
-                showNewStatus: query.mineOnly,
-                onTap: () => context.push(AppRoutes.featureRequest(item.id)),
-                onVote: () => onVote(item),
-              );
-            },
-          ),
+                  itemCount: data.items.length + 1,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: UiSpace.md),
+                  itemBuilder: (context, index) {
+                    if (index == data.items.length) {
+                      if (data.hasMore) {
+                        return Center(
+                          child: UiButton.secondary(
+                            key: const ValueKey('feedback-load-more'),
+                            label: l10n.feedback_loadMore,
+                            compact: true,
+                            expand: false,
+                            loading: data.isLoadingMore,
+                            onPressed: () => ref
+                                .read(rawFeedbackBoardProvider.notifier)
+                                .loadMore(),
+                          ),
+                        );
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: UiSpace.sm,
+                        ),
+                        child: Text(
+                          l10n.feedback_endOfList,
+                          key: const ValueKey('feedback-end-of-list'),
+                          textAlign: TextAlign.center,
+                          style: UiText.body(size: 12, color: ui.inkMuted),
+                        ),
+                      );
+                    }
+                    final item = data.items[index];
+                    return FeatureRequestCard(
+                      item: item,
+                      showNewStatus: query.mineOnly,
+                      onTap: () =>
+                          context.push(AppRoutes.featureRequest(item.id)),
+                      onVote: () => onVote(item),
+                    );
+                  },
+                ),
         ),
       ],
     );

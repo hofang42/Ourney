@@ -297,6 +297,10 @@ class FeedbackL10nEn extends FeedbackL10n {
       'You\'ve reached the limit of 5 ideas in 24 hours. Upvote existing ones in the meantime!';
 
   @override
+  String get feedback_errorRateLimitedAction =>
+      'You\'re doing that too fast. Please wait a moment and try again.';
+
+  @override
   String get feedback_errorOfflineDraftSaved =>
       'You\'re offline. Your draft is saved right here.';
 

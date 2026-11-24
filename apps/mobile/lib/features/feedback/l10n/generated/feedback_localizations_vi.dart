@@ -296,6 +296,10 @@ class FeedbackL10nVi extends FeedbackL10n {
       'Bạn đã gửi tối đa 5 đề xuất trong 24 giờ qua. Hãy bình chọn các ý tưởng sẵn có nhé!';
 
   @override
+  String get feedback_errorRateLimitedAction =>
+      'Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.';
+
+  @override
   String get feedback_errorOfflineDraftSaved =>
       'Không có mạng. Bản nháp của bạn vẫn được giữ nguyên.';
 

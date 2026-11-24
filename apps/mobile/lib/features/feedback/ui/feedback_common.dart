@@ -32,13 +32,19 @@ String feedbackStatusLabel(FeedbackL10n l10n, FeatureRequestStatus status) =>
     };
 
 /// User-facing error string for a feature request error.
-String feedbackErrorMessage(BuildContext context, Object error) {
+String feedbackErrorMessage(
+  BuildContext context,
+  Object error, {
+  bool forCreate = false,
+}) {
   final l10n = FeedbackL10n.of(context);
   final app = AppLocalizations.of(context);
   return switch (feedbackErrorCode(error)) {
     OurneyErrorCode.contentPolicy => l10n.feedback_errorContentPolicy,
     OurneyErrorCode.linksNotAllowed => l10n.feedback_errorLinksNotAllowed,
-    OurneyErrorCode.rateLimited => l10n.feedback_errorRateLimited,
+    OurneyErrorCode.rateLimited => forCreate
+        ? l10n.feedback_errorRateLimited
+        : l10n.feedback_errorRateLimitedAction,
     OurneyErrorCode.ended => l10n.feedback_errorVoteLocked,
     OurneyErrorCode.notFound => l10n.feedback_errorNotFound,
     OurneyErrorCode.serverOutdated => app.common_serverOutdated,

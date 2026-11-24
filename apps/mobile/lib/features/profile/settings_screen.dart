@@ -165,7 +165,7 @@ class SettingsScreen extends ConsumerWidget {
           _Card(
             child: Column(
               children: [
-                if (!localOnly)
+                if (signedIn)
                   UiRow(
                     key: const ValueKey('settings-feature-requests'),
                     leading: const OurneyIcon(name: 'sparkle', flat: true),

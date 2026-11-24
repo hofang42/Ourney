@@ -7,6 +7,7 @@ import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../app/redirect.dart';
 import '../../../ui/ui.dart';
+import '../../profile/profile_providers.dart' show profileGateStatusProvider;
 import '../data/safety_providers.dart';
 import '../l10n/generated/safety_localizations.dart';
 import '../safety_paths.dart';
@@ -96,7 +97,9 @@ class ContactScreen extends ConsumerWidget {
             ),
           ),
           if (!ref.watch(appConfigProvider).localOnly &&
-              ref.watch(authStatusProvider) == AuthStatus.signedIn) ...[
+              ref.watch(authStatusProvider) == AuthStatus.signedIn &&
+              ref.watch(profileGateStatusProvider) ==
+                  ProfileGateStatus.ready) ...[
             const SizedBox(height: UiSpace.lg),
             UiCard(
               key: const ValueKey('safety-contact-feature-card'),

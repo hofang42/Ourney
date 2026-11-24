@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ourney/app/account_reset.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/config.dart';
 import 'package:ourney/app/localization.dart';
@@ -43,6 +44,8 @@ class FakeFeatureRequestRepository implements FeatureRequestRepository {
   final List<(String, ReportReason, String?)> reportCalls = [];
   final List<List<String>?> markedSeenCalls = [];
   Completer<FeatureRequestVoteResult>? voteGate;
+  Future<FeatureRequestVoteResult> Function(String requestId, bool? voted)?
+      onToggleVote;
 
   static List<FeatureRequest> _defaultItems() => [
         FeatureRequest(
@@ -248,6 +251,9 @@ class FakeFeatureRequestRepository implements FeatureRequestRepository {
     bool? voted,
   }) async {
     voteCalls.add((requestId, voted));
+    if (onToggleVote != null) {
+      return onToggleVote!(requestId, voted);
+    }
     if (voteGate != null) {
       return voteGate!.future;
     }
@@ -358,17 +364,19 @@ Future<ProviderContainer> _pumpFeedbackRouter(
   WidgetTester tester, {
   required FakeFeatureRequestRepository repo,
   _FakeSafetyRepository? safety,
+  FakeAuthRepository? authRepo,
   String initialLocation = AppRoutes.feedback,
   AppConfig config = testBackendConfig,
   Locale locale = const Locale('vi'),
   Brightness brightness = Brightness.light,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final prefs = await testPrefs({
     OnboardingComplete.prefsKey: true,
     SafetyPrefs.eulaAccepted: true,
   });
   final safetyRepo = safety ?? _FakeSafetyRepository();
-  final auth = FakeAuthRepository(userId: 'u-me');
+  final auth = authRepo ?? FakeAuthRepository(userId: 'u-me');
 
   final router = GoRouter(
     initialLocation: initialLocation,
@@ -408,6 +416,7 @@ Future<ProviderContainer> _pumpFeedbackRouter(
     ],
   );
   addTearDown(container.dispose);
+  container.listen(accountSessionResetProvider, (_, _) {});
 
   await tester.pumpWidget(
     UncontrolledProviderScope(
@@ -418,6 +427,10 @@ Future<ProviderContainer> _pumpFeedbackRouter(
         localizationsDelegates: ourneyLocalizationsDelegates,
         supportedLocales: ourneySupportedLocales,
         routerConfig: router,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     ),
   );
@@ -542,6 +555,111 @@ void main() {
     );
 
     testWidgets(
+      'P1-2 races: coalesced partial success rolls back to committed baseline, '
+      'settled overlays do not clobber newer server counts, and sign-out drops stale in-flight votes',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository();
+        final auth = FakeAuthRepository(userId: 'u-me');
+        final rpc1 = Completer<FeatureRequestVoteResult>();
+        final rpc2 = Completer<FeatureRequestVoteResult>();
+        var callIndex = 0;
+        repo.onToggleVote = (requestId, voted) {
+          callIndex++;
+          if (callIndex == 1) return rpc1.future;
+          return rpc2.future;
+        };
+
+        final container = await _pumpFeedbackRouter(
+          tester,
+          repo: repo,
+          authRepo: auth,
+        );
+
+        // Race 1: req-2 starts at (votedByMe: false, voteCount: 18).
+        // Tap 1 (voted: true -> 19) and Tap 2 (voted: false -> 18) while Tap 1 is in flight.
+        await tester.tap(find.byKey(const ValueKey('feedback-vote-req-2')));
+        await tester.pump();
+        expect(find.text('19'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('feedback-vote-req-2')));
+        await tester.pump();
+        expect(find.text('18'), findsOneWidget);
+
+        // Iteration 1 (voted: true) succeeds on the server with (true, 19).
+        rpc1.complete(
+          const FeatureRequestVoteResult(
+            requestId: 'req-2',
+            voteCount: 19,
+            votedByMe: true,
+          ),
+        );
+        await tester.pump();
+
+        // Iteration 2 (voted: false) fails with rateLimited.
+        rpc2.completeError(
+          const OurneyException(OurneyErrorCode.rateLimited),
+        );
+        await tester.pumpAndSettle();
+
+        // Must roll back to Iteration 1's committed (true, 19), NOT pre-tap (false, 18)!
+        expect(find.text('19'), findsOneWidget);
+        expect(
+          container.read(feedbackVoteOverlayProvider)['req-2'],
+          (votedByMe: true, voteCount: 19),
+        );
+        // Shows action rate-limit copy (P3-1), not creation 5/24h copy.
+        expect(
+          find.text(
+            'Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.',
+          ),
+          findsOneWidget,
+        );
+
+        // Race 2: 10 other users upvote req-2 on the server (voteCount becomes 29).
+        final idx2 = repo.items.indexWhere((i) => i.id == 'req-2');
+        repo.items[idx2] = repo.items[idx2].copyWith(
+          votedByMe: true,
+          voteCount: 29,
+        );
+        container.invalidate(rawFeedbackBoardProvider);
+        await tester.pumpAndSettle();
+
+        // Settled overlay for req-2 is cleared on server refresh so 29 is shown!
+        expect(find.text('29'), findsOneWidget);
+        expect(
+          container.read(feedbackVoteOverlayProvider).containsKey('req-2'),
+          isFalse,
+        );
+
+        // Race 3: In-flight vote started before sign-out is dropped after sign-out.
+        final staleGate = Completer<FeatureRequestVoteResult>();
+        repo.onToggleVote = (_, _) => staleGate.future;
+        await tester.tap(find.byKey(const ValueKey('feedback-vote-req-1')));
+        await tester.pump();
+        expect(
+          container.read(feedbackVoteOverlayProvider)['req-1']?.voteCount,
+          41,
+        );
+
+        // User signs out while the RPC is still in flight.
+        await auth.signOut();
+        await tester.pumpAndSettle();
+        expect(container.read(feedbackVoteOverlayProvider), isEmpty);
+
+        // Old user's delayed RPC now resolves — must be dropped without mutating state!
+        staleGate.complete(
+          const FeatureRequestVoteResult(
+            requestId: 'req-1',
+            voteCount: 41,
+            votedByMe: false,
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(container.read(feedbackVoteOverlayProvider), isEmpty);
+      },
+    );
+
+    testWidgets(
       'local-only mode shows NeedsServerView without crashing',
       (tester) async {
         final repo = FakeFeatureRequestRepository();
@@ -567,24 +685,73 @@ void main() {
       },
     );
 
-    testWidgets('shows cached popular list with offline strip when offline', (
-      tester,
-    ) async {
-      final repo = FakeFeatureRequestRepository();
-      final container = await _pumpFeedbackRouter(tester, repo: repo);
-      expect(find.byKey(const ValueKey('feedback-card-req-1')), findsOneWidget);
+    testWidgets(
+      'shows cached list with offline strip and respects active tab when offline (P2-1)',
+      (tester) async {
+        final repo = FakeFeatureRequestRepository();
+        final container = await _pumpFeedbackRouter(tester, repo: repo);
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-2')),
+          findsOneWidget,
+        );
 
-      // Go offline and refresh.
-      repo.listError = const OurneyException(OurneyErrorCode.offline);
-      container.invalidate(rawFeedbackBoardProvider);
-      await tester.pumpAndSettle();
+        // Go offline and refresh.
+        repo.listError = const OurneyException(OurneyErrorCode.offline);
+        container.invalidate(rawFeedbackBoardProvider);
+        await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey('feedback-offline-strip')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('feedback-card-req-1')), findsOneWidget);
-    });
+        expect(
+          find.byKey(const ValueKey('feedback-offline-strip')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-1')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-2')),
+          findsOneWidget,
+        );
+
+        // Switch to Planned tab offline -> only planned req-1 is shown (new req-2 is filtered out).
+        final plannedTab = find.byKey(const ValueKey('feedback-tab-planned'));
+        await tester.ensureVisible(plannedTab);
+        await tester.pumpAndSettle();
+        await tester.tap(plannedTab);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-offline-strip')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-card-req-1')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('feedback-card-req-2')), findsNothing);
+
+        // Switch to Shipped tab offline -> unshipped req-1 & req-2 are not shown,
+        // and the offline strip remains visible above the empty state.
+        final shippedTab = find.byKey(const ValueKey('feedback-tab-shipped'));
+        await tester.ensureVisible(shippedTab);
+        await tester.pumpAndSettle();
+        await tester.tap(shippedTab);
+        await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('feedback-offline-strip')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const ValueKey('feedback-empty-shipped')),
+          findsOneWidget,
+        );
+        expect(find.byKey(const ValueKey('feedback-card-req-1')), findsNothing);
+        expect(find.byKey(const ValueKey('feedback-card-req-2')), findsNothing);
+      },
+    );
   });
 
   group('Detail screen (/feedback/:id)', () {
@@ -622,13 +789,59 @@ void main() {
           findsOneWidget,
         );
 
-        // Tap Report -> select Spam -> submit -> hides req-1 and pops to board.
+        // Tap Report -> verify mutually-exclusive radio semantics (P2-2) -> select Spam -> submit.
         await tester.tap(find.byKey(const ValueKey('feedback-menu-report')));
         await tester.pumpAndSettle();
-        await tester.tap(
-          find.byKey(const ValueKey('feedback-report-reason-spam')),
+        final spamFinder = find.byKey(
+          const ValueKey('feedback-report-reason-spam'),
         );
+        final nudityFinder = find.byKey(
+          const ValueKey('feedback-report-reason-nudity'),
+        );
+        expect(
+          tester.getSemantics(spamFinder),
+          matchesSemantics(
+            isButton: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasSelectedState: true,
+            isSelected: false,
+            isInMutuallyExclusiveGroup: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            isFocusable: true,
+          ),
+        );
+        await tester.tap(spamFinder);
         await tester.pump();
+        expect(
+          tester.getSemantics(spamFinder),
+          matchesSemantics(
+            isButton: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasSelectedState: true,
+            isSelected: true,
+            isInMutuallyExclusiveGroup: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            isFocusable: true,
+          ),
+        );
+        expect(
+          tester.getSemantics(nudityFinder),
+          matchesSemantics(
+            isButton: true,
+            isEnabled: true,
+            hasEnabledState: true,
+            hasSelectedState: true,
+            isSelected: false,
+            isInMutuallyExclusiveGroup: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            isFocusable: true,
+          ),
+        );
         final reportSubmit = find.byKey(
           const ValueKey('feedback-report-submit'),
         );
@@ -802,7 +1015,7 @@ void main() {
 
   group('Entry points & DataFeatureRequestRepository RPC contract', () {
     testWidgets(
-      'SettingsScreen, ProfileScreen, ContactScreen, and InboxScreen expose feature request entry points',
+      'SettingsScreen and ContactScreen expose feature request entry points when signed in',
       (tester) async {
         final repo = FakeFeatureRequestRepository(
           shippedNotifications: [
@@ -1115,7 +1328,7 @@ void main() {
     );
 
     testWidgets(
-      'renders cleanly at 320dp width in light and dark mode',
+      'renders cleanly at 320dp width in light and dark mode up to 2.0x text scale (P2-2)',
       (tester) async {
         tester.view.physicalSize = const Size(320, 640);
         tester.view.devicePixelRatio = 1.0;
@@ -1130,10 +1343,40 @@ void main() {
           repo: repo,
           brightness: Brightness.dark,
           locale: const Locale('en'),
+          textScaler: const TextScaler.linear(2.0),
         );
         expect(tester.takeException(), isNull);
         expect(
           find.byKey(const ValueKey('feedback-card-req-1')),
+          findsOneWidget,
+        );
+
+        // Open Create sheet at 320dp @ 2.0x text scale.
+        await tester.tap(find.byKey(const ValueKey('feedback-create-cta')));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          find.byKey(const ValueKey('feedback-compose-sheet')),
+          findsOneWidget,
+        );
+        final cancelBtn = find.byKey(
+          const ValueKey('feedback-compose-cancel'),
+        );
+        await tester.ensureVisible(cancelBtn);
+        await tester.pumpAndSettle();
+        await tester.tap(cancelBtn);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+
+        // Open Detail screen at 320dp @ 2.0x text scale.
+        final card1 = find.byKey(const ValueKey('feedback-card-req-1'));
+        await tester.ensureVisible(card1);
+        await tester.pumpAndSettle();
+        await tester.tap(card1);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(
+          find.byKey(const ValueKey('feedback-detail-screen')),
           findsOneWidget,
         );
       },

@@ -614,6 +614,12 @@ abstract class FeedbackL10n {
   /// **'Bạn đã gửi tối đa 5 đề xuất trong 24 giờ qua. Hãy bình chọn các ý tưởng sẵn có nhé!'**
   String get feedback_errorRateLimited;
 
+  /// Error when vote or edit rate limit is reached.
+  ///
+  /// In vi, this message translates to:
+  /// **'Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.'**
+  String get feedback_errorRateLimitedAction;
+
   /// Error in create sheet when offline; draft is preserved.
   ///
   /// In vi, this message translates to:

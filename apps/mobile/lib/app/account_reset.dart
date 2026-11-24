@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/feedback/data/feedback_providers.dart';
 import '../features/import/data/import_providers.dart';
 import '../features/journeys/data/create_progress.dart';
 import '../features/onboarding/onboarding_providers.dart';
@@ -38,12 +39,15 @@ Future<void> resetAccountLocalState(Ref ref) async {
   final nextUserId = ref.read(currentUserIdProvider);
   final keys = {
     ...accountPrefsKeys,
-    // Per-journey reminder times of the previous account's journeys, and
-    // per-account EULA version records of previous accounts.
+    // Per-journey reminder times of the previous account's journeys,
+    // per-account EULA version records, and per-account feedback drafts
+    // and cached boards of previous accounts.
     for (final key in prefs.keys)
       if (ReminderPrefs.journeyIdOf(key) != null ||
           (SafetyPrefs.userIdOfTermsKey(key) != null &&
-              SafetyPrefs.userIdOfTermsKey(key) != nextUserId))
+              SafetyPrefs.userIdOfTermsKey(key) != nextUserId) ||
+          (FeedbackPrefs.userIdOfKey(key) != null &&
+              FeedbackPrefs.userIdOfKey(key) != nextUserId))
         key,
   };
   try {
@@ -59,6 +63,9 @@ Future<void> resetAccountLocalState(Ref ref) async {
     ..invalidate(eulaAcceptedProvider)
     ..invalidate(blockedNamesProvider)
     ..invalidate(hiddenCheckInIdsProvider)
+    ..invalidate(hiddenFeatureRequestIdsProvider)
+    ..invalidate(feedbackDraftProvider)
+    ..invalidate(feedbackVoteOverlayProvider)
     ..invalidate(activeJourneyIdProvider)
     ..invalidate(createProgressProvider)
     ..invalidate(hideWeightOnShareProvider)

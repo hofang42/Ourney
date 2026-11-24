@@ -451,11 +451,17 @@ class _DetailBody extends StatelessWidget {
                           color: ui.ink,
                         ),
                       ),
-                      if (item.adminRepliedAt != null)
-                        Text(
-                          formatFeedbackDate(context, item.adminRepliedAt!),
-                          style: UiText.body(size: 12, color: ui.inkMuted),
+                      if (item.adminRepliedAt != null) ...[
+                        const SizedBox(width: UiSpace.xs),
+                        Flexible(
+                          child: Text(
+                            formatFeedbackDate(context, item.adminRepliedAt!),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: UiText.body(size: 12, color: ui.inkMuted),
+                          ),
                         ),
+                      ],
                     ],
                   ),
                   const SizedBox(height: UiSpace.sm),

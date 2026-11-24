@@ -375,6 +375,10 @@
   "@feedback_errorRateLimited": {
     "description": "Error when daily creation limit (5/24h) is reached."
   },
+  "feedback_errorRateLimitedAction": "Bạn đang thao tác quá nhanh. Vui lòng thử lại sau ít phút nhé.",
+  "@feedback_errorRateLimitedAction": {
+    "description": "Error when vote or edit rate limit is reached."
+  },
   "feedback_errorOfflineDraftSaved": "Không có mạng. Bản nháp của bạn vẫn được giữ nguyên.",
   "@feedback_errorOfflineDraftSaved": {
     "description": "Error in create sheet when offline; draft is preserved."
