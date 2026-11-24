@@ -526,13 +526,13 @@ do $$ begin
   perform tests.as_postgres();
 end $$;
 select is(
-  (select (p.deleted_at is not null) from public.profiles p where p.id = tests.u(3))
+  (select (p.deleted_at is null and private.is_user_banned(p.id)) from public.profiles p where p.id = tests.u(3))
   and (select (c.moderated_at is not null and c.deleted_at is not null) from public.check_ins c where c.id = tests.c(3))
   and (select (m.status = 'left' and m.removed_at is not null) from public.memberships m where m.journey_id = tests.j(1) and m.user_id = tests.u(3))
   and (select count(*)::int >= 2 from private.pending_storage_purge where path like format('checkins/%s/%s/%%', tests.j(1), tests.u(3)))
   and (select count(*)::int = 0 from public.moderation_queue where target_user_id = tests.u(3) and status = 'open'),
   true,
-  'CS-03: resolve_moderation_item(ban_user) soft-deletes profile, leaves groups, queues storage purge, and closes open queue items'
+  'CS-03 & A2: resolve_moderation_item(ban_user) bans user without setting profiles.deleted_at, leaves groups, queues storage purge, and closes open queue items'
 );
 
 -- [Test 41] Banned user can no longer create journeys
