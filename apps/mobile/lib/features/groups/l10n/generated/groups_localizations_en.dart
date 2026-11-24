@@ -10,20 +10,10 @@ class GroupsL10nEn extends GroupsL10n {
   GroupsL10nEn([String locale = 'en']) : super(locale);
 
   @override
-  String get groups_title => 'Groups';
-
-  @override
-  String get groups_emptyTitle => 'No groups yet';
-
-  @override
-  String get groups_emptyMessage =>
-      'Enter a friend\'s invite code, or start a group journey from the Journeys tab.';
+  String get groups_title => 'Squad';
 
   @override
   String get groups_joinWithCode => 'Join with code';
-
-  @override
-  String get groups_createGroup => 'New group journey';
 
   @override
   String get groups_activeSection => 'Running';
@@ -32,7 +22,7 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_finishedSection => 'Finished';
 
   @override
-  String get groups_loadError => 'Couldn\'t load your groups.';
+  String get groups_loadError => 'Couldn\'t load your squads.';
 
   @override
   String get groups_statusEnded => 'Ended';
@@ -51,7 +41,7 @@ class GroupsL10nEn extends GroupsL10n {
   }
 
   @override
-  String get groups_joinTitle => 'Join a group';
+  String get groups_joinTitle => 'Join a squad';
 
   @override
   String get groups_joinCodeLabel => 'Invite code';
@@ -64,27 +54,27 @@ class GroupsL10nEn extends GroupsL10n {
       'Invite codes have exactly 8 letters or digits.';
 
   @override
-  String get groups_joinPreviewTitle => 'You\'re invited to a group journey';
+  String get groups_joinPreviewTitle => 'You\'re invited to a squad journey';
 
   @override
   String get groups_joinRules =>
-      'Groups have up to 10 members. Your progress counts from the day you join, and you can still see the group\'s history.';
+      'Squads have up to 10 members. Your progress counts from the day you join, and you can still see the squad\'s history.';
 
   @override
-  String get groups_joinButton => 'Join group';
+  String get groups_joinButton => 'Join squad';
 
   @override
   String get groups_joinLater => 'Later';
 
   @override
   String get groups_errorNotFound =>
-      'No group uses this code. The owner may have changed it, so ask for a new one.';
+      'No squad uses this code. The owner may have changed it, so ask for a new one.';
 
   @override
-  String get groups_errorFull => 'This group is full (10 members).';
+  String get groups_errorFull => 'This squad is full (10 members).';
 
   @override
-  String get groups_errorBlocked => 'You can\'t join this group.';
+  String get groups_errorBlocked => 'You can\'t join this squad.';
 
   @override
   String get groups_errorEnded => 'This journey has ended.';
@@ -98,7 +88,7 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_errorNotAlone =>
-      'Other members are still in the group. End the journey instead of deleting it.';
+      'Other members are still in the squad. End the journey instead of deleting it.';
 
   @override
   String get groups_errorInvalid => 'This action isn\'t possible here.';
@@ -139,10 +129,10 @@ class GroupsL10nEn extends GroupsL10n {
       'This journey has ended. Photos and streaks are read-only.';
 
   @override
-  String get groups_notFoundTitle => 'Group not found';
+  String get groups_notFoundTitle => 'Squad not found';
 
   @override
-  String get groups_notMember => 'You\'re no longer a member of this group.';
+  String get groups_notMember => 'You\'re no longer a member of this squad.';
 
   @override
   String get groups_todayLoadError => 'Couldn\'t load today\'s check-ins.';
@@ -174,7 +164,7 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_rotateMessage =>
-      'The current code and link stop working. Members already in the group stay.';
+      'The current code and link stop working. Members already in the squad stay.';
 
   @override
   String get groups_rotateDone => 'New invite code ready.';
@@ -193,21 +183,21 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_actionDelete => 'Delete journey';
 
   @override
-  String get groups_deleteTitle => 'Delete this group journey?';
+  String get groups_deleteTitle => 'Delete this squad journey?';
 
   @override
   String get groups_deleteMessage =>
       'You\'re the only member. The journey and your photos are deleted for good.';
 
   @override
-  String get groups_actionLeave => 'Leave group';
+  String get groups_actionLeave => 'Leave squad';
 
   @override
-  String get groups_leaveTitle => 'Leave this group?';
+  String get groups_leaveTitle => 'Leave this squad?';
 
   @override
   String get groups_leaveMessage =>
-      'Your check-ins will be hidden from the group. If you rejoin with an invite code, they come back.';
+      'Your check-ins will be hidden from the squad. If you rejoin with an invite code, they come back.';
 
   @override
   String get groups_leaveOwnerNote =>
@@ -218,10 +208,10 @@ class GroupsL10nEn extends GroupsL10n {
       'You\'re the only member: the journey will be archived.';
 
   @override
-  String get groups_leftDone => 'You left the group.';
+  String get groups_leftDone => 'You left the squad.';
 
   @override
-  String get groups_actionRemove => 'Remove from group';
+  String get groups_actionRemove => 'Remove from squad';
 
   @override
   String groups_removeTitle(String name) {
@@ -230,7 +220,7 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_removeMessage =>
-      'Their check-ins will be hidden from the group. They can rejoin with the invite code unless you change it.';
+      'Their check-ins will be hidden from the squad. They can rejoin with the invite code unless you change it.';
 
   @override
   String groups_removedDone(String name) {
@@ -268,14 +258,11 @@ class GroupsL10nEn extends GroupsL10n {
   String get groups_qrSemantics => 'QR code of the invite link';
 
   @override
-  String get groups_noInviteCode => 'This group has no invite code yet.';
+  String get groups_noInviteCode => 'This squad has no invite code yet.';
 
   @override
   String get groups_inviteClosed =>
       'The journey has ended, so no one else can join.';
-
-  @override
-  String get groups_eyebrow => 'Your people';
 
   @override
   String groups_joinCodeBoxesSemantics(int count) {
@@ -321,13 +308,13 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_previewPrivate =>
-      'This group has no public link. Only people with the code can join.';
+      'This squad has no public link. Only people with the code can join.';
 
   @override
-  String get groups_previewAlreadyMember => 'You are already in this group.';
+  String get groups_previewAlreadyMember => 'You are already in this squad.';
 
   @override
-  String get groups_previewOpenGroup => 'Open group';
+  String get groups_previewOpenGroup => 'Open squad';
 
   @override
   String get groups_previewLoading => 'Looking up the code…';
@@ -451,7 +438,7 @@ class GroupsL10nEn extends GroupsL10n {
 
   @override
   String get groups_emptyCardBody =>
-      'Enter an invite code to join a group or start a group journey.';
+      'Enter an invite code to join a squad or start a squad journey.';
 
   @override
   String groups_wallUpdated(String time) {
