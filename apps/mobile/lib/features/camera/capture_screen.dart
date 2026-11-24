@@ -105,9 +105,11 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   /// Shutter flash (Rank #1 Phase 1a): 30ms attack -> 140ms ease-out decay
   /// (170ms total), peaking at 0.88 opacity in warm cream [UiCamera.ink].
+  static const Duration _kShutterFlashDuration = Duration(milliseconds: 170);
+
   late final AnimationController _flashCtrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 170),
+    duration: _kShutterFlashDuration,
   );
   late final Animation<double> _flashOpacity = TweenSequence<double>([
     TweenSequenceItem<double>(
@@ -128,8 +130,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   /// with `ImageFilter.blur(sigmaX: 10, sigmaY: 10)`.
   late final AnimationController _lensFlipCtrl = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 110),
-    reverseDuration: const Duration(milliseconds: 110),
+    duration: UiMotion.press,
+    reverseDuration: UiMotion.press,
   )..addStatusListener(_onLensFlipStatus);
   late final CurvedAnimation _lensFlipCurved = CurvedAnimation(
     parent: _lensFlipCtrl,
@@ -798,7 +800,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               : UiCameraToolEmphasis.none,
           accent: style?.accent,
           onAccent: style?.onAccent,
-          onPressed: () => setState(() => _grid = !_grid),
+          onPressed: () {
+            unawaited(UiHaptics.selection());
+            setState(() => _grid = !_grid);
+          },
         ),
       ),
     ];

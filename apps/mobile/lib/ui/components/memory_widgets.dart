@@ -51,7 +51,7 @@ class UiStamp extends StatefulWidget {
     this.animate = false,
     this.skinId,
     this.delay = const Duration(milliseconds: 360),
-    this.duration = const Duration(milliseconds: 320),
+    this.duration = UiMotion.page,
     this.haptics = false,
     super.key,
   });
@@ -70,10 +70,47 @@ class UiStamp extends StatefulWidget {
 
 class _UiStampState extends State<UiStamp> with SingleTickerProviderStateMixin {
   AnimationController? _ctrl;
+  Animation<double>? _opacityAnim;
+  late SpringSimulation _sim = _createSimulation();
   bool _started = false;
   bool _hapticFired = false;
 
   Duration get _totalDuration => widget.delay + widget.duration;
+
+  SpringSimulation _createSimulation() => SpringSimulation(
+    UiSprings.forSkin(widget.skinId ?? 'squad'),
+    0.0,
+    1.0,
+    0.0,
+  );
+
+  Animation<double> _buildOpacityAnimation(AnimationController ctrl) {
+    final delayMs = widget.delay.inMilliseconds.toDouble();
+    final durMs = math.max(1, widget.duration.inMilliseconds).toDouble();
+    final totalMs = math.max(1.0, delayMs + durMs);
+    final start = (delayMs / totalMs).clamp(0.0, 0.99);
+    final end = ((delayMs + math.min(80.0, durMs)) / totalMs).clamp(
+      start + 0.001,
+      1.0,
+    );
+    return ctrl.drive(
+      CurveTween(
+        curve: Interval(start, end, curve: UiCurves.easeOutStrong),
+      ),
+    );
+  }
+
+  AnimationController _ensureController() {
+    var ctrl = _ctrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController(
+      vsync: this,
+      duration: _totalDuration,
+    )..addListener(_onTick);
+    _ctrl = ctrl;
+    _opacityAnim = _buildOpacityAnimation(ctrl);
+    return ctrl;
+  }
 
   @override
   void didChangeDependencies() {
@@ -82,14 +119,37 @@ class _UiStampState extends State<UiStamp> with SingleTickerProviderStateMixin {
     if (!_started) {
       _started = true;
       if (widget.animate && !reduced) {
-        final ctrl = AnimationController(
-          vsync: this,
-          duration: _totalDuration,
-        )..addListener(_onTick);
-        _ctrl = ctrl;
-        ctrl.forward(from: 0.0);
+        _ensureController().forward(from: 0.0);
       }
     } else if (reduced && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.stop();
+      _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant UiStamp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.skinId != oldWidget.skinId) {
+      _sim = _createSimulation();
+    }
+    if (widget.delay != oldWidget.delay ||
+        widget.duration != oldWidget.duration) {
+      final ctrl = _ctrl;
+      if (ctrl != null) {
+        ctrl.duration = _totalDuration;
+        _opacityAnim = _buildOpacityAnimation(ctrl);
+      }
+    }
+    final shouldReplay =
+        widget.animate &&
+        (!oldWidget.animate || widget.text != oldWidget.text);
+    if (shouldReplay && !UiMotion.reduced(context)) {
+      _hapticFired = false;
+      final ctrl = _ensureController()..duration = _totalDuration;
+      _opacityAnim = _buildOpacityAnimation(ctrl);
+      ctrl.forward(from: 0.0);
+    } else if (!widget.animate && (_ctrl?.isAnimating ?? false)) {
       _ctrl?.stop();
       _ctrl?.value = 1.0;
     }
@@ -147,34 +207,37 @@ class _UiStampState extends State<UiStamp> with SingleTickerProviderStateMixin {
       return Transform.rotate(angle: baseAngle, child: stampBox);
     }
 
-    final spring = UiSprings.forSkin(widget.skinId ?? 'squad');
-    final sim = SpringSimulation(spring, 0.0, 1.0, 0.0);
     final delayMs = widget.delay.inMilliseconds.toDouble();
     final durMs = math.max(1, widget.duration.inMilliseconds).toDouble();
     final totalMs = delayMs + durMs;
+    final opacityAnim = _opacityAnim ?? _buildOpacityAnimation(ctrl);
 
-    return AnimatedBuilder(
-      animation: ctrl,
-      child: stampBox,
-      builder: (context, child) {
-        final elapsedMs = ctrl.value * totalMs;
-        if (elapsedMs <= delayMs || ctrl.isCompleted) {
-          return Transform.rotate(angle: baseAngle, child: child);
-        }
-        final localT = ((elapsedMs - delayMs) / durMs).clamp(0.0, 1.0);
-        final springProgress = sim.x(localT * 0.35).clamp(0.0, 1.15);
-        final scale = lerpDouble(1.22, 1.0, springProgress)!;
-        final extraAngle =
-            lerpDouble(-4 * math.pi / 180, 0.0, springProgress)!;
-        return Transform.rotate(
-          angle: baseAngle + extraAngle,
-          child: Transform.scale(
-            key: const ValueKey('ui-stamp-slam-scale'),
-            scale: scale,
-            child: child,
-          ),
-        );
-      },
+    return FadeTransition(
+      key: const ValueKey('ui-stamp-slam-fade'),
+      opacity: opacityAnim,
+      child: AnimatedBuilder(
+        animation: ctrl,
+        child: stampBox,
+        builder: (context, child) {
+          final elapsedMs = ctrl.value * totalMs;
+          if (elapsedMs <= delayMs || ctrl.isCompleted) {
+            return Transform.rotate(angle: baseAngle, child: child);
+          }
+          final localT = ((elapsedMs - delayMs) / durMs).clamp(0.0, 1.0);
+          final springProgress = _sim.x(localT * 0.35).clamp(0.0, 1.15);
+          final scale = lerpDouble(1.22, 1.0, springProgress)!;
+          final extraAngle =
+              lerpDouble(-4 * math.pi / 180, 0.0, springProgress)!;
+          return Transform.rotate(
+            angle: baseAngle + extraAngle,
+            child: Transform.scale(
+              key: const ValueKey('ui-stamp-slam-scale'),
+              scale: scale,
+              child: child,
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -233,6 +296,17 @@ class _UiStreakNumberState extends State<UiStreakNumber>
 
   Duration get _totalDuration => widget.delay + UiMotion.countRoll;
 
+  AnimationController _ensureController() {
+    var ctrl = _ctrl;
+    if (ctrl != null) return ctrl;
+    ctrl = AnimationController(
+      vsync: this,
+      duration: _totalDuration,
+    )..addListener(_onTick);
+    _ctrl = ctrl;
+    return ctrl;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -240,14 +314,31 @@ class _UiStreakNumberState extends State<UiStreakNumber>
     if (!_started) {
       _started = true;
       if (_shouldAnimate && !reduced) {
-        final ctrl = AnimationController(
-          vsync: this,
-          duration: _totalDuration,
-        )..addListener(_onTick);
-        _ctrl = ctrl;
-        ctrl.forward(from: 0.0);
+        _ensureController().forward(from: 0.0);
       }
     } else if (reduced && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.stop();
+      _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant UiStreakNumber oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.delay != oldWidget.delay) {
+      _ctrl?.duration = _totalDuration;
+    }
+    final shouldReplay =
+        _shouldAnimate &&
+        (widget.value != oldWidget.value ||
+            widget.initialValue != oldWidget.initialValue ||
+            (widget.animate && !oldWidget.animate));
+    if (shouldReplay && !UiMotion.reduced(context)) {
+      _hapticFired = false;
+      _ensureController()
+        ..duration = _totalDuration
+        ..forward(from: 0.0);
+    } else if (!_shouldAnimate && (_ctrl?.isAnimating ?? false)) {
       _ctrl?.stop();
       _ctrl?.value = 1.0;
     }
@@ -278,11 +369,17 @@ class _UiStreakNumberState extends State<UiStreakNumber>
     if (isGentle) {
       return 1.0 + 0.04 * math.sin(localT * math.pi);
     }
-    if (localT < 0.45) {
-      final p = UiCurves.easeOutStrong.transform(localT / 0.45);
-      return lerpDouble(0.84, 1.18, p)!;
+    if (localT < 0.18) {
+      final p = UiCurves.easeOutStrong.transform(localT / 0.18);
+      return lerpDouble(1.0, 0.88, p)!;
     }
-    final p = UiCurves.stampDecel.transform((localT - 0.45) / 0.55);
+    if (localT < 0.55) {
+      final p = UiCurves.easeOutStrong.transform(
+        (localT - 0.18) / (0.55 - 0.18),
+      );
+      return lerpDouble(0.88, 1.18, p)!;
+    }
+    final p = UiCurves.stampDecel.transform((localT - 0.55) / (1.0 - 0.55));
     return lerpDouble(1.18, 1.0, p)!;
   }
 

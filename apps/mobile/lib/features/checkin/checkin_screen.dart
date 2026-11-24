@@ -546,15 +546,20 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                   final reduced = UiMotion.reduced(context);
                   final previewSwitcher = AnimatedSwitcher(
                     duration: UiMotion.fadeOf(context, UiMotion.medium),
-                    switchInCurve: UiCurves.easeOutStrong,
-                    switchOutCurve: UiCurves.easeOutStrong,
+                    switchInCurve: reduced
+                        ? Curves.linear
+                        : UiCurves.easeOutStrong,
+                    switchOutCurve: reduced
+                        ? Curves.linear
+                        : UiCurves.easeOutStrong.flipped,
                     transitionBuilder: (child, animation) => FadeTransition(
                       opacity: animation,
                       child: reduced
                           ? child
                           : SizeTransition(
-                              sizeFactor: animation,
+                              axis: Axis.vertical,
                               alignment: Alignment.topCenter,
+                              sizeFactor: animation,
                               child: child,
                             ),
                     ),
@@ -576,8 +581,23 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
 
                   final thumbSwitcher = AnimatedSwitcher(
                     duration: UiMotion.fadeOf(context, UiMotion.medium),
-                    switchInCurve: UiCurves.easeOutStrong,
-                    switchOutCurve: UiCurves.easeOutStrong,
+                    switchInCurve: reduced
+                        ? Curves.linear
+                        : UiCurves.easeOutStrong,
+                    switchOutCurve: reduced
+                        ? Curves.linear
+                        : UiCurves.easeOutStrong.flipped,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: reduced
+                          ? child
+                          : SizeTransition(
+                              axis: Axis.horizontal,
+                              alignment: AlignmentDirectional.topStart,
+                              sizeFactor: animation,
+                              child: child,
+                            ),
+                    ),
                     child: typing
                         ? Padding(
                             key: const ValueKey(
@@ -602,35 +622,17 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (reduced)
-                        KeyedSubtree(
-                          key: const ValueKey('checkin-preview-size'),
-                          child: previewSwitcher,
-                        )
-                      else
-                        AnimatedSize(
-                          key: const ValueKey('checkin-preview-size'),
-                          duration: UiMotion.medium,
-                          curve: UiCurves.easeOutStrong,
-                          alignment: Alignment.topCenter,
-                          child: previewSwitcher,
-                        ),
+                      KeyedSubtree(
+                        key: const ValueKey('checkin-preview-size'),
+                        child: previewSwitcher,
+                      ),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (reduced)
-                            KeyedSubtree(
-                              key: const ValueKey('checkin-thumb-size'),
-                              child: thumbSwitcher,
-                            )
-                          else
-                            AnimatedSize(
-                              key: const ValueKey('checkin-thumb-size'),
-                              duration: UiMotion.medium,
-                              curve: UiCurves.easeOutStrong,
-                              alignment: AlignmentDirectional.topStart,
-                              child: thumbSwitcher,
-                            ),
+                          KeyedSubtree(
+                            key: const ValueKey('checkin-thumb-size'),
+                            child: thumbSwitcher,
+                          ),
                           Expanded(
                             child: _captionField(
                               l10n,
@@ -717,20 +719,30 @@ class _CountdownHint extends StatefulWidget {
 
 class _CountdownHintState extends State<_CountdownHint>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _ringCtrl = AnimationController(
-    vsync: this,
-    duration: UiMotion.medium,
-  );
-  late final CurvedAnimation _ringCurved = CurvedAnimation(
-    parent: _ringCtrl,
-    curve: UiCurves.easeOutStrong,
-  );
+  AnimationController? _ringCtrl;
+  CurvedAnimation? _ringCurved;
 
   late double _fromProgress;
   late double _toProgress;
 
   static double _progressFor(int s) =>
       (s / _CheckinScreenState._countdownFrom).clamp(0.0, 1.0);
+
+  CurvedAnimation _ensureRingAnimation() {
+    var curved = _ringCurved;
+    if (curved != null) return curved;
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: UiMotion.medium,
+    );
+    _ringCtrl = ctrl;
+    curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeOutStrong,
+    );
+    _ringCurved = curved;
+    return curved;
+  }
 
   @override
   void initState() {
@@ -748,17 +760,18 @@ class _CountdownHintState extends State<_CountdownHint>
       _toProgress = _progressFor(widget.seconds);
       if (widget.reduced || UiMotion.reduced(context)) {
         _fromProgress = _toProgress;
-        _ringCtrl.value = 1.0;
+        _ringCtrl?.value = 1.0;
       } else {
-        _ringCtrl.forward(from: 0.0);
+        _ensureRingAnimation();
+        _ringCtrl!.forward(from: 0.0);
       }
     }
   }
 
   @override
   void dispose() {
-    _ringCurved.dispose();
-    _ringCtrl.dispose();
+    _ringCurved?.dispose();
+    _ringCtrl?.dispose();
     super.dispose();
   }
 
@@ -781,7 +794,7 @@ class _CountdownHintState extends State<_CountdownHint>
                 child: CustomPaint(
                   key: const ValueKey('checkin-countdown-ring'),
                   painter: _CountdownRingPainter(
-                    animation: _ringCurved,
+                    animation: _ringCurved ?? kAlwaysCompleteAnimation,
                     fromProgress: _fromProgress,
                     toProgress: _toProgress,
                     trackColor: ui.border,

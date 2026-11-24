@@ -43,6 +43,7 @@ class CaptureSkinOverlay extends StatefulWidget {
 }
 
 class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
+  final GlobalKey _frameKey = GlobalKey();
   bool _enlarged = false;
   Timer? _shrink;
 
@@ -119,9 +120,13 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
   ) {
     final l10n = CameraL10n.of(context);
     final morphDuration = UiMotion.of(context, UiMotion.sheetEnter);
-    final targetRadius = BorderRadius.circular(
-      _enlarged ? UiRadius.card : UiRadius.thumb,
-    );
+    final textDirection = Directionality.of(context);
+    final targetRadius = (_enlarged
+            ? const BorderRadiusDirectional.horizontal(
+                start: Radius.circular(UiRadius.viewfinder),
+              )
+            : BorderRadiusDirectional.circular(UiRadius.thumb))
+        .resolve(textDirection);
     final image = Image.file(
       File(file),
       key: const ValueKey('overlay-partner-photo'),
@@ -131,6 +136,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
     );
 
     final frame = AnimatedContainer(
+      key: _frameKey,
       duration: morphDuration,
       curve: UiCurves.drawer,
       clipBehavior: Clip.antiAlias,
@@ -138,8 +144,8 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
         color: UiCamera.bg,
         borderRadius: targetRadius,
         border: Border.all(
-          color: UiCamera.outline,
-          width: _enlarged ? 0 : UiBorder.standard,
+          color: UiCamera.outline.withValues(alpha: _enlarged ? 0.0 : 1.0),
+          width: UiBorder.standard,
         ),
       ),
       child: image,
@@ -169,6 +175,7 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
               key: const ValueKey('overlay-partner-pip'),
               onPressed: _enlarge,
               pressOffset: UiShadow.tiny,
+              pressScale: 1.0,
               semanticLabel: l10n.camera_partnerPhoto,
               semanticHint: l10n.camera_partnerPhotoEnlargeHint,
               excludeChildSemantics: true,

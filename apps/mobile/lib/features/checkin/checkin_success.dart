@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data' show Float32List;
 import 'dart:ui' show lerpDouble;
 
 import 'package:confetti/confetti.dart';
@@ -66,66 +67,92 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
   )..addListener(_onTimelineTick)
    ..addStatusListener(_onTimelineStatus);
 
-  late final CurvedAnimation _reducedFadeCurved = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: Curves.linear,
-  );
-
-  late final CurvedAnimation _ctaOpacity = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(
-      220 / 1600,
-      440 / 1600,
-      curve: UiCurves.easeOutStrong,
+  late final Animation<double> _ctaOpacity = _timelineCtrl.drive(
+    CurveTween(
+      curve: const Interval(
+        220 / 1600,
+        440 / 1600,
+        curve: UiCurves.easeOutStrong,
+      ),
     ),
   );
 
-  late final CurvedAnimation _memoryDevelopCurved = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(
-      0.0,
-      1100 / 1600,
-      curve: UiCurves.easeOutStrong,
-    ),
-  );
-  late final Animation<double> _memoryOpacity = Tween<double>(
-    begin: 0.35,
-    end: 1.0,
-  ).animate(_memoryDevelopCurved);
-
-  late final CurvedAnimation _squadTrophyCurved = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(
-      0.0,
-      620 / 1600,
-      curve: UiCurves.stampDecel,
+  late final Animation<double> _milestoneBannerOpacity = _timelineCtrl.drive(
+    CurveTween(
+      curve: const Interval(
+        440 / 1600,
+        520 / 1600,
+        curve: UiCurves.easeOutStrong,
+      ),
     ),
   );
 
-  late final CurvedAnimation _minimalDotCurved = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(
-      0.0,
-      380 / 1600,
-      curve: UiCurves.easeOutStrong,
+  late final Animation<double> _memoryDevelopAnim = _timelineCtrl.drive(
+    CurveTween(
+      curve: const Interval(
+        0.0,
+        1100 / 1600,
+        curve: UiCurves.easeOutStrong,
+      ),
+    ),
+  );
+  late final Animation<double> _memoryOpacity = _timelineCtrl.drive(
+    Tween<double>(begin: 0.35, end: 1.0).chain(
+      CurveTween(
+        curve: const Interval(
+          0.0,
+          1100 / 1600,
+          curve: UiCurves.easeOutStrong,
+        ),
+      ),
     ),
   );
 
-  late final CurvedAnimation _defaultMarkCurved = CurvedAnimation(
-    parent: _timelineCtrl,
-    curve: const Interval(
-      0.0,
-      220 / 1600,
-      curve: UiCurves.easeOutStrong,
+  late final Animation<double> _squadTrophyAnim = _timelineCtrl.drive(
+    CurveTween(
+      curve: const Interval(
+        0.0,
+        620 / 1600,
+        curve: UiCurves.stampDecel,
+      ),
     ),
   );
 
-  late final ConfettiController _confettiCtrl = ConfettiController(
-    duration: const Duration(seconds: 10),
+  late final Animation<double> _minimalDotAnim = _timelineCtrl.drive(
+    CurveTween(
+      curve: const Interval(
+        0.0,
+        380 / 1600,
+        curve: UiCurves.easeOutStrong,
+      ),
+    ),
   );
+
+  late final Animation<double> _defaultMarkAnim = _timelineCtrl.drive(
+    CurveTween(
+      curve: const Interval(
+        0.0,
+        220 / 1600,
+        curve: UiCurves.easeOutStrong,
+      ),
+    ),
+  );
+
+  ConfettiController? _confettiCtrl;
+
+  ConfettiController _ensureConfettiController() =>
+      _confettiCtrl ??= ConfettiController(
+        duration: const Duration(seconds: 10),
+      );
 
   static final SpringSimulation _quietSealSim = SpringSimulation(
     UiSprings.gentle,
+    0.0,
+    1.0,
+    0.0,
+  );
+  static final SpringSimulation _bouncySealSim = SpringSimulation(
+    UiSprings.bouncy,
     0.0,
     1.0,
     0.0,
@@ -150,13 +177,12 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     if (!_started) {
       _started = true;
       if (reduced) {
-        if (widget.haptics) unawaited(UiHaptics.selection());
+        if (widget.haptics && !widget.outcome.extraPhoto) {
+          unawaited(UiHaptics.selection());
+        }
         _timelineCtrl.duration = UiMotion.reducedFade;
         _timelineCtrl.forward(from: 0.0);
       } else {
-        if (widget.haptics && widget.outcome.milestone == null) {
-          unawaited(UiHaptics.success());
-        }
         _timelineCtrl.duration = UiMotion.confetti;
         _timelineCtrl.forward(from: 0.0);
       }
@@ -170,7 +196,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
 
   void _onTimelineTick() {
     if (!mounted || UiMotion.reduced(context)) return;
-    if (widget.outcome.milestone == null) return;
+    if (widget.outcome.milestone == null || widget.outcome.extraPhoto) return;
 
     final elapsedMs = _timelineCtrl.value * UiMotion.confetti.inMilliseconds;
     if (elapsedMs >= 440 && !_milestoneFirstBeatFired) {
@@ -181,7 +207,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     }
     if (elapsedMs >= 440 && elapsedMs < 1400 && !_confettiStarted) {
       _confettiStarted = true;
-      _confettiCtrl.play();
+      _ensureConfettiController().play();
     }
     if (elapsedMs >= 550 && !_milestoneSecondBeatFired) {
       _milestoneSecondBeatFired = true;
@@ -203,7 +229,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
   void _stopConfettiIfNeeded() {
     if (_confettiStarted && !_confettiStopped) {
       _confettiStopped = true;
-      _confettiCtrl.stop(clearAllParticles: true);
+      _confettiCtrl?.stop(clearAllParticles: true);
     }
   }
 
@@ -225,13 +251,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     _autoClose?.cancel();
     _timelineCtrl.removeListener(_onTimelineTick);
     _timelineCtrl.removeStatusListener(_onTimelineStatus);
-    _confettiCtrl.dispose();
-    _reducedFadeCurved.dispose();
-    _ctaOpacity.dispose();
-    _memoryDevelopCurved.dispose();
-    _squadTrophyCurved.dispose();
-    _minimalDotCurved.dispose();
-    _defaultMarkCurved.dispose();
+    _confettiCtrl?.dispose();
     _timelineCtrl.dispose();
     super.dispose();
   }
@@ -405,7 +425,8 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
                   : outcome.streakBefore,
               skinId: skin,
               animate: !outcome.extraPhoto,
-              haptics: widget.haptics,
+              haptics:
+                  widget.haptics && milestone == null && !outcome.extraPhoto,
               unit: l10n.checkin_daysUnit(outcome.streakAfter),
               semanticLabel: common.streak_semantics(outcome.streakAfter),
             ),
@@ -443,9 +464,9 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
               child: RepaintBoundary(
                 key: const ValueKey('checkin-milestone-confetti'),
                 child: Align(
-                  alignment: Alignment.topCenter,
+                  alignment: const Alignment(0.0, -0.55),
                   child: ConfettiWidget(
-                    confettiController: _confettiCtrl,
+                    confettiController: _ensureConfettiController(),
                     blastDirectionality: BlastDirectionality.explosive,
                     numberOfParticles: isQuiet ? 8 : 18,
                     emissionFrequency: 0.08,
@@ -472,7 +493,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     if (reduced) {
       return FadeTransition(
         key: const ValueKey('checkin-success-reduced-fade'),
-        opacity: _reducedFadeCurved,
+        opacity: _timelineCtrl,
         child: result,
       );
     }
@@ -545,35 +566,29 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     }
   }
 
+  static final Float32List _developMatrixBuffer = Float32List(20)
+    ..[18] = 1.0;
+
   /// High-exposure warm sepia matrix at `t = 0.0` interpolating smoothly to
   /// the identity matrix at `t = 1.0` (`memory` Polaroid chemical develop).
-  static List<double> _chemicalDevelopMatrix(double t) {
+  /// Reuses [_developMatrixBuffer] so zero lists are allocated per frame.
+  static Float32List _chemicalDevelopMatrix(double t) {
     final inv = 1.0 - t;
-    // Sepia / warm monochrome weights blended with identity at `t`, plus a
-    // soft exposure lift `inv * 48` on RGB channels.
     final lift = inv * 48.0;
-    return <double>[
-      lerpDouble(0.39, 1.0, t)!,
-      lerpDouble(0.76, 0.0, t)!,
-      lerpDouble(0.18, 0.0, t)!,
-      0,
-      lift,
-      lerpDouble(0.35, 0.0, t)!,
-      lerpDouble(0.68, 1.0, t)!,
-      lerpDouble(0.16, 0.0, t)!,
-      0,
-      lift * 0.9,
-      lerpDouble(0.27, 0.0, t)!,
-      lerpDouble(0.53, 0.0, t)!,
-      lerpDouble(0.13, 1.0, t)!,
-      0,
-      lift * 0.7,
-      0,
-      0,
-      0,
-      1,
-      0,
-    ];
+    final m = _developMatrixBuffer;
+    m[0] = lerpDouble(0.39, 1.0, t)!;
+    m[1] = lerpDouble(0.76, 0.0, t)!;
+    m[2] = lerpDouble(0.18, 0.0, t)!;
+    m[4] = lift;
+    m[5] = lerpDouble(0.35, 0.0, t)!;
+    m[6] = lerpDouble(0.68, 1.0, t)!;
+    m[7] = lerpDouble(0.16, 0.0, t)!;
+    m[9] = lift * 0.9;
+    m[10] = lerpDouble(0.27, 0.0, t)!;
+    m[11] = lerpDouble(0.53, 0.0, t)!;
+    m[12] = lerpDouble(0.13, 1.0, t)!;
+    m[14] = lift * 0.7;
+    return m;
   }
 
   /// Per-skin hero (Figma QuietDone seal, SquadDone rising trophy + stamp,
@@ -590,6 +605,12 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
   ) {
     final ui = context.ui;
     final d = day ?? 1;
+    final outcome = widget.outcome;
+    final celebrateHeroHaptics =
+        widget.haptics && milestone == null && !outcome.extraPhoto;
+    final sealSim =
+        (skin == 'quiet' || skin == 'minimal') ? _quietSealSim : _bouncySealSim;
+
     final starRow = Row(
       key: const ValueKey('checkin-milestone-banner'),
       mainAxisAlignment: MainAxisAlignment.center,
@@ -612,28 +633,30 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
             if (reduced)
               starRow
             else
-              AnimatedBuilder(
-                animation: _timelineCtrl,
-                child: starRow,
-                builder: (context, child) {
-                  final elapsedMs =
-                      _timelineCtrl.value * UiMotion.confetti.inMilliseconds;
-                  if (elapsedMs < 440) {
-                    return Transform.scale(scale: 0.95, child: child);
-                  }
-                  final localT = ((elapsedMs - 440) / 360).clamp(0.0, 1.0);
-                  final sim = SpringSimulation(
-                    UiSprings.forSkin(skin ?? 'squad'),
-                    0.0,
-                    1.0,
-                    0.0,
-                  );
-                  final p = sim.x(localT * 0.35).clamp(0.0, 1.15);
-                  final scale = skin == 'quiet'
-                      ? lerpDouble(0.97, 1.0, p.clamp(0.0, 1.0))!
-                      : lerpDouble(0.92, 1.0, p)!;
-                  return Transform.scale(scale: scale, child: child);
-                },
+              FadeTransition(
+                key: const ValueKey('checkin-milestone-banner-fade'),
+                opacity: _milestoneBannerOpacity,
+                child: AnimatedBuilder(
+                  animation: _timelineCtrl,
+                  child: starRow,
+                  builder: (context, child) {
+                    final elapsedMs =
+                        _timelineCtrl.value * UiMotion.confetti.inMilliseconds;
+                    if (elapsedMs <= 440) {
+                      return child!;
+                    }
+                    final localT = ((elapsedMs - 440) / 360).clamp(0.0, 1.0);
+                    final p = sealSim.x(localT * 0.35).clamp(0.0, 1.15);
+                    final scale = skin == 'quiet'
+                        ? lerpDouble(0.97, 1.0, p.clamp(0.0, 1.0))!
+                        : lerpDouble(1.18, 1.0, p)!;
+                    return Transform.scale(
+                      key: const ValueKey('checkin-milestone-banner-scale'),
+                      scale: scale,
+                      child: child,
+                    );
+                  },
+                ),
               ),
             const SizedBox(height: UiSpace.sm),
           ];
@@ -751,12 +774,12 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
                 child: trophyIcon,
               )
             : FadeTransition(
-                opacity: _squadTrophyCurved,
+                opacity: _squadTrophyAnim,
                 child: AnimatedBuilder(
-                  animation: _squadTrophyCurved,
+                  animation: _squadTrophyAnim,
                   child: trophyIcon,
                   builder: (context, child) {
-                    final dy = (1.0 - _squadTrophyCurved.value) * 48.0;
+                    final dy = (1.0 - _squadTrophyAnim.value) * 48.0;
                     return Transform.translate(
                       key: const ValueKey('checkin-squad-trophy'),
                       offset: Offset(0, dy),
@@ -773,9 +796,9 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
             UiStamp(
               text,
               color: ui.accent,
-              animate: true,
+              animate: !outcome.extraPhoto,
               skinId: 'squad',
-              haptics: widget.haptics,
+              haptics: celebrateHeroHaptics,
             ),
           ],
         );
@@ -798,10 +821,10 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
             : FadeTransition(
                 opacity: _memoryOpacity,
                 child: AnimatedBuilder(
-                  animation: _memoryDevelopCurved,
+                  animation: _memoryDevelopAnim,
                   child: polaroidCard,
                   builder: (context, child) {
-                    final t = _memoryDevelopCurved.value;
+                    final t = _memoryDevelopAnim.value;
                     if (t >= 0.999) return child!;
                     return ColorFiltered(
                       key: const ValueKey('checkin-memory-develop-filter'),
@@ -839,9 +862,9 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
               ),
               child: UiStamp(
                 l10n.checkin_done_memoryStamp(d),
-                animate: true,
+                animate: !outcome.extraPhoto,
                 skinId: 'memory',
-                haptics: widget.haptics,
+                haptics: celebrateHeroHaptics,
               ),
             ),
           ],
@@ -964,6 +987,20 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
           maxLines: 1,
           style: UiText.h1(color: ui.ink, size: 44),
         );
+        final ringBox = SizedBox(
+          width: 112,
+          height: 112,
+          child: CustomPaint(
+            painter: _FlexerRingPainter(
+              animation: _timelineCtrl,
+              reduced: reduced,
+              surfaceColor: ui.surface,
+              trackColor: ui.border,
+              accentColor: ui.accent,
+            ),
+            child: Center(child: dayLabel),
+          ),
+        );
         return Column(
           children: [
             ...confettiRow,
@@ -976,13 +1013,12 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
                     )
                   : AnimatedBuilder(
                       animation: _timelineCtrl,
-                      child: dayLabel,
+                      child: ringBox,
                       builder: (context, child) {
                         final elapsedMs =
                             _timelineCtrl.value *
                             UiMotion.confetti.inMilliseconds;
                         final rawT = (elapsedMs / 680.0).clamp(0.0, 1.0);
-                        final sweepT = UiCurves.stampDecel.transform(rawT);
                         final double scale;
                         if (rawT >= 1.0) {
                           scale = 1.0;
@@ -1002,19 +1038,7 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
                         return Transform.scale(
                           key: const ValueKey('checkin-flexer-ring'),
                           scale: scale,
-                          child: SizedBox(
-                            width: 112,
-                            height: 112,
-                            child: CustomPaint(
-                              painter: _FlexerRingPainter(
-                                progress: sweepT,
-                                surfaceColor: ui.surface,
-                                trackColor: ui.border,
-                                accentColor: ui.accent,
-                              ),
-                              child: Center(child: child),
-                            ),
-                          ),
+                          child: child,
                         );
                       },
                     ),
@@ -1040,15 +1064,15 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
               )
             else
               FadeTransition(
-                opacity: _minimalDotCurved,
+                opacity: _minimalDotAnim,
                 child: AnimatedBuilder(
-                  animation: _minimalDotCurved,
+                  animation: _minimalDotAnim,
                   child: dot,
                   builder: (context, child) {
                     final scale = lerpDouble(
                       0.86,
                       1.0,
-                      _minimalDotCurved.value,
+                      _minimalDotAnim.value,
                     )!;
                     return Transform.scale(
                       key: const ValueKey('checkin-minimal-dot'),
@@ -1064,12 +1088,12 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
         const mark = UiSuccessMark();
         if (reduced) return mark;
         return FadeTransition(
-          opacity: _defaultMarkCurved,
+          opacity: _defaultMarkAnim,
           child: AnimatedBuilder(
-            animation: _defaultMarkCurved,
+            animation: _defaultMarkAnim,
             child: mark,
             builder: (context, child) {
-              final scale = lerpDouble(0.92, 1.0, _defaultMarkCurved.value)!;
+              final scale = lerpDouble(0.92, 1.0, _defaultMarkAnim.value)!;
               return Transform.scale(scale: scale, child: child);
             },
           ),
@@ -1105,7 +1129,9 @@ class _QuietDotsPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final alpha = reduced
         ? 0.24
-        : (0.12 + 0.24 * math.sin(animation.value * math.pi)).clamp(0.12, 0.36);
+        : (lerpDouble(0.12, 0.24, animation.value)! +
+                  0.12 * math.sin(animation.value * math.pi))
+              .clamp(0.12, 0.36);
     _dotPaint.color = color.withValues(alpha: alpha);
     for (final norm in _normalizedOffsets) {
       canvas.drawCircle(
@@ -1124,10 +1150,11 @@ class _QuietDotsPainter extends CustomPainter {
 /// Neon telemetry ring sweep painter for the `flexer` check-in celebration.
 class _FlexerRingPainter extends CustomPainter {
   _FlexerRingPainter({
-    required this.progress,
+    required this.animation,
     required this.surfaceColor,
     required this.trackColor,
     required this.accentColor,
+    this.reduced = false,
   }) : _fillPaint = Paint()
          ..color = surfaceColor
          ..style = PaintingStyle.fill,
@@ -1139,11 +1166,13 @@ class _FlexerRingPainter extends CustomPainter {
          ..color = accentColor
          ..style = PaintingStyle.stroke
          ..strokeCap = StrokeCap.round
-         ..strokeWidth = _kStrokeWidth;
+         ..strokeWidth = _kStrokeWidth,
+       super(repaint: reduced ? null : animation);
 
   static const double _kStrokeWidth = 6.0;
 
-  final double progress;
+  final Animation<double> animation;
+  final bool reduced;
   final Color surfaceColor;
   final Color trackColor;
   final Color accentColor;
@@ -1158,7 +1187,14 @@ class _FlexerRingPainter extends CustomPainter {
     final radius = (math.min(size.width, size.height) - _kStrokeWidth) / 2;
     canvas.drawCircle(center, radius, _fillPaint);
     canvas.drawCircle(center, radius, _trackPaint);
-    final clamped = progress.clamp(0.0, 1.0);
+    final double clamped;
+    if (reduced) {
+      clamped = 1.0;
+    } else {
+      final elapsedMs = animation.value * UiMotion.confetti.inMilliseconds;
+      final rawT = (elapsedMs / 680.0).clamp(0.0, 1.0);
+      clamped = UiCurves.stampDecel.transform(rawT).clamp(0.0, 1.0);
+    }
     if (clamped > 0.0) {
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
@@ -1172,7 +1208,8 @@ class _FlexerRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_FlexerRingPainter oldDelegate) =>
-      oldDelegate.progress != progress ||
+      oldDelegate.animation != animation ||
+      oldDelegate.reduced != reduced ||
       oldDelegate.surfaceColor != surfaceColor ||
       oldDelegate.trackColor != trackColor ||
       oldDelegate.accentColor != accentColor;
