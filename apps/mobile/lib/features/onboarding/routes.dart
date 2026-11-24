@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
+import '../../ui/ui.dart';
 import 'onboarding_screen.dart';
 
 /// Onboarding (FR-A3): at most 3 pages, no permission prompts.
@@ -17,6 +18,11 @@ import 'onboarding_screen.dart';
 final List<RouteBase> onboardingRoutes = [
   GoRoute(
     path: AppRoutes.onboarding,
-    builder: (context, state) => const OnboardingScreen(),
+    pageBuilder: (context, state) => buildUiPage<void>(
+      state: state,
+      context: context,
+      kind: UiPageTransition.fadeThrough,
+      child: const OnboardingScreen(),
+    ),
   ),
 ];
