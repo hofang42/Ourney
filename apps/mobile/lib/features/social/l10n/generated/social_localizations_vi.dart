@@ -407,5 +407,15 @@ class SocialL10nVi extends SocialL10n {
   }
 
   @override
+  String social_shippedRequestTitle(String title) {
+    return 'Tính năng bạn bình chọn đã ra mắt: $title';
+  }
+
+  @override
+  String social_shippedRequestAuthorTitle(String title) {
+    return 'Đề xuất của bạn đã ra mắt: $title';
+  }
+
+  @override
   String get social_startJourneyTogether => 'Cùng bắt đầu hành trình';
 }

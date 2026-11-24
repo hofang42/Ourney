@@ -256,6 +256,24 @@
       }
     }
   },
+  "social_shippedRequestTitle": "Tính năng bạn bình chọn đã ra mắt: {title}",
+  "@social_shippedRequestTitle": {
+    "description": "Activity inbox row when a feature request the user upvoted ships.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "social_shippedRequestAuthorTitle": "Đề xuất của bạn đã ra mắt: {title}",
+  "@social_shippedRequestAuthorTitle": {
+    "description": "Activity inbox row when a feature request authored by the user ships.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
   "social_startJourneyTogether": "Cùng bắt đầu hành trình",
   "@social_startJourneyTogether": {
     "description": "Friend sheet positive action (DE-20)."

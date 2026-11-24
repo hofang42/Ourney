@@ -365,6 +365,13 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settings_secInfo => 'about';
 
   @override
+  String get profile_settings_featureRequests => 'Feedback & feature requests';
+
+  @override
+  String get profile_settings_featureRequestsSub =>
+      'Vote on ideas or suggest something new';
+
+  @override
   String get profile_settings_eula => 'Terms of use (EULA)';
 
   @override

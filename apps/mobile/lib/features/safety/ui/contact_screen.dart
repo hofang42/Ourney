@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../app/app_routes.dart';
+import '../../../app/providers.dart';
+import '../../../app/redirect.dart';
 import '../../../ui/ui.dart';
+import '../../profile/profile_providers.dart' show profileGateStatusProvider;
 import '../data/safety_providers.dart';
 import '../l10n/generated/safety_localizations.dart';
 import '../safety_paths.dart';
@@ -91,6 +96,49 @@ class ContactScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (!ref.watch(appConfigProvider).localOnly &&
+              ref.watch(authStatusProvider) == AuthStatus.signedIn &&
+              ref.watch(profileGateStatusProvider) ==
+                  ProfileGateStatus.ready) ...[
+            const SizedBox(height: UiSpace.lg),
+            UiCard(
+              key: const ValueKey('safety-contact-feature-card'),
+              radius: UiRadius.card,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const OurneyIcon(name: 'sparkle', flat: true),
+                      const SizedBox(width: UiSpace.sm),
+                      Expanded(
+                        child: Text(
+                          l10n.safety_contactFeatureTitle,
+                          style: UiText.body(
+                            color: ui.ink,
+                            size: 16,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: UiSpace.xs),
+                  Text(
+                    l10n.safety_contactFeatureBody,
+                    style: UiText.muted(color: ui.inkMuted, size: 14),
+                  ),
+                  const SizedBox(height: UiSpace.md),
+                  UiButton.secondary(
+                    key: const ValueKey('safety-contact-feature-requests'),
+                    label: l10n.safety_contactFeatureCta,
+                    glyph: const OurneyIcon(name: 'sparkle', flat: true),
+                    onPressed: () => context.push(AppRoutes.feedback),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
