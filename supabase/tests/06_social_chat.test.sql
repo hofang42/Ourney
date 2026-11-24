@@ -133,15 +133,18 @@ select throws_ok(format('select * from public.conversation_messages(%L)', :'cv')
 -- ===== storage bucket messages =================================================
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
 select lives_ok(
-  format($f$ insert into storage.objects (bucket_id, name) values ('messages', %L)
-             on conflict (bucket_id, name) do update set updated_at = now() $f$,
+  format($f$ insert into storage.objects (bucket_id, name) values ('messages', %L) $f$,
          format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
-  'FS-01: authenticated sender inserts chat photo with ON CONFLICT DO UPDATE (x-upsert)');
-select lives_ok(
-  format($f$ insert into storage.objects (bucket_id, name) values ('messages', %L)
-             on conflict (bucket_id, name) do update set updated_at = now() $f$,
-         format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
-  'FS-01: authenticated sender retries x-upsert on existing chat photo');
+  'FS-01: authenticated sender inserts chat photo into messages bucket (messages_insert)');
+select is(
+  (with u as (
+     update storage.objects set updated_at = now()
+      where bucket_id = 'messages'
+        and name = format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
+     returning 1
+   ) select count(*)::int from u),
+  1,
+  'FS-01: authenticated sender updates existing chat photo on x-upsert retry (messages_update)');
 do $$ begin perform tests.as_postgres(); end $$;
 select is((select public from storage.buckets where id = 'messages'), false, 'bucket messages is private');
 do $$ begin perform tests.as_user(tests.u(1)); end $$;

@@ -65,8 +65,7 @@ language sql stable security definer set search_path = ''
 as $$
   select exists (
     select 1 from public.messages m
-     where m.id = public.try_uuid(substring(p_name from '/([0-9a-f-]{36})\.jpg$'))
-       and m.media_path = p_name
+     where m.media_path = p_name
        and private.can_read_message(m.id)
   )
   or (
@@ -79,8 +78,7 @@ as $$
     and not private.conversation_read_only(public.try_uuid((storage.foldername(p_name))[2]))
     and not exists (
       select 1 from public.messages m
-       where m.id = public.try_uuid(substring(p_name from '/([0-9a-f-]{36})\.jpg$'))
-          or m.media_path = p_name
+       where m.media_path = p_name
     )
     and not exists (
       select 1 from private.pending_storage_purge s

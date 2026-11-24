@@ -60,17 +60,26 @@ do $$ begin
   perform public.open_conversation(tests.j(1), tests.c(1));
 end $$;
 
--- Pre-send_message upload with ON CONFLICT DO UPDATE (x-upsert) as sender u(2)
-do $$ begin perform tests.as_user(tests.u(2)); end $$;
-select lives_ok(
-  format($f$
-    insert into storage.objects (bucket_id, name)
-    values ('messages', %L), ('messages', %L)
-    on conflict (bucket_id, name) do update set updated_at = now()
-  $f$,
-  format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
-  format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
-  'FS-01: sender pre-uploads chat photos with ON CONFLICT DO UPDATE before send_message'
+-- Pre-send_message upload + x-upsert update as sender u(2) (exercises messages_insert, messages_select, messages_update)
+do $$ begin
+  perform tests.as_user(tests.u(2));
+  insert into storage.objects (bucket_id, name)
+  values
+    ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1))),
+    ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2)));
+end $$;
+select is(
+  (with u as (
+     update storage.objects set updated_at = now()
+      where bucket_id = 'messages'
+        and name in (
+          format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
+          format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
+        )
+     returning 1
+   ) select count(*)::int from u),
+  2,
+  'FS-01: sender pre-uploads and updates (x-upsert) chat photos before send_message'
 );
 
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
@@ -191,7 +200,7 @@ do $$ begin perform tests.as_postgres(); delete from private.pending_storage_pur
 do $$ begin
   perform tests.as_user(tests.u(1));
   perform public.create_journey(tests.j(2), 'group', 'custom', 'Couple Group', '💞', null, null, false,
-                                current_date - 2, 30, 'UTC', 2, 'private', 'An', 'Binh');
+                                current_date - 20, 30, 'UTC', 2, 'private', 'An', 'Binh');
   perform tests.checkin(tests.c(20), tests.j(2), now());
   perform tests.as_user(tests.u(2));
   perform public.join_by_code(tests.code(2));
@@ -207,7 +216,7 @@ select throws_ok(
 do $$ begin
   perform tests.as_postgres();
   update public.journeys
-     set start_date = current_date - 40, duration_days = 10,
+     set duration_days = 10,
          couple_self_name = null, couple_partner_name = null, max_members = 10
    where id = tests.j(2);
   perform tests.as_user(tests.u(1));
@@ -220,7 +229,7 @@ select throws_ok(
 
 do $$ begin
   perform tests.as_postgres();
-  update public.journeys set start_date = current_date - 2, duration_days = 30 where id = tests.j(2);
+  update public.journeys set duration_days = 30 where id = tests.j(2);
   perform tests.as_user(tests.u(1));
 end $$;
 select throws_ok(
@@ -290,9 +299,10 @@ do $$ begin
   perform tests.as_postgres();
   insert into private.rate_events (user_id, kind)
   select tests.u(9), 'friend_request' from generate_series(1, 30);
+  perform tests.as_user(tests.u(9));
 end $$;
 select throws_ok(
-  $$ select tests.as_user(tests.u(9)), public.send_friend_request(tests.u(10)) $$,
+  $$ select public.send_friend_request(tests.u(10)) $$,
   'P0001', 'rate_limited',
   'FS-20: direct send_friend_request is rate-limited at 30 per hour'
 );
@@ -302,12 +312,16 @@ select throws_ok(
 --           memberships_select, group invitations, and preview_group_by_code
 -- ============================================================================
 do $$ begin
+  perform tests.as_postgres();
+  update public.conversations
+     set member_cleared_at = now() - interval '1 minute',
+         viewer_cleared_at = now() - interval '1 minute'
+   where id = tests.conv(tests.j(1), tests.u(1), tests.u(2));
   perform tests.as_user(tests.u(2));
   perform public.send_message(tests.m(10), tests.conv(tests.j(1), tests.u(1), tests.u(2)), 'photo', 'before block',
                               format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(10)));
   insert into storage.objects (bucket_id, name)
-  values ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(10)))
-  on conflict (bucket_id, name) do nothing;
+  values ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(10)));
   perform tests.as_user(tests.u(1));
   perform public.block_user(tests.u(2));
 end $$;
@@ -439,26 +453,24 @@ do $$ begin
   perform public.join_by_code(tests.code(31));
   perform tests.as_postgres();
   -- Simulate check-ins from 10 and 11 days ago on both journeys, then end both journeys
-  insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path) values
+  insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path, partner_photo_path) values
     (tests.c(301), tests.j(30), tests.u(1), current_date - 11, now() - interval '11 days',
      format('checkins/%s/%s/%s.jpg', tests.j(30), tests.u(1), tests.c(301)),
-     format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(301))),
+     format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(301)), null),
     (tests.c(302), tests.j(30), tests.u(1), current_date - 10, now() - interval '10 days' + interval '2 hours',
      format('checkins/%s/%s/%s.jpg', tests.j(30), tests.u(1), tests.c(302)),
-     format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(302))),
+     format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(302)), null),
     -- Earlier captured_at on the same day (current_date - 10) but inserted later with higher UUID
     (tests.c(303), tests.j(30), tests.u(1), current_date - 10, now() - interval '10 days' + interval '1 hour',
      format('checkins/%s/%s/%s.jpg', tests.j(30), tests.u(1), tests.c(303)),
-     format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(303))),
+     format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(303)), null),
     (tests.c(311), tests.j(31), tests.u(1), current_date - 11, now() - interval '11 days',
      format('checkins/%s/%s/%s.jpg', tests.j(31), tests.u(1), tests.c(311)),
-     format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(311))),
+     format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(311)),
+     format('checkins/%s/%s/%s_p.jpg', tests.j(31), tests.u(1), tests.c(311))),
     (tests.c(312), tests.j(31), tests.u(1), current_date - 10, now() - interval '10 days',
      format('checkins/%s/%s/%s.jpg', tests.j(31), tests.u(1), tests.c(312)),
-     format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(312)));
-  update public.check_ins
-     set partner_photo_path = format('checkins/%s/%s/%s_p.jpg', tests.j(31), tests.u(1), tests.c(311))
-   where id = tests.c(311);
+     format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(312)), null);
   update public.memberships set joined_at = now() - interval '20 days'
    where journey_id in (tests.j(30), tests.j(31));
   update public.memberships set blur_media = true
@@ -618,10 +630,15 @@ select is(
 );
 
 do $$ begin
-  -- u(2) is an active member of group j(2); u(2) consents and shares j(2) with friend u(1), then withdraws consent
+  -- u(2) is an active member of group j(2); u(2) befriends non-member u(10), consents and shares j(2) with u(10), then withdraws consent
+  perform tests.befriend(tests.u(2), tests.u(10));
   perform tests.as_user(tests.u(2));
   perform public.request_share_consent(tests.j(2));
-  perform public.share_journey(tests.j(2), array[tests.u(1)]);
+  perform public.share_journey(tests.j(2), array[tests.u(10)]);
+  if (select count(*)::int from public.journey_shares
+       where journey_id = tests.j(2) and shared_by = tests.u(2) and revoked_at is null) <> 1 then
+    raise exception 'expected active share row before withdraw_share_consent';
+  end if;
   perform public.withdraw_share_consent(tests.j(2));
   perform tests.as_postgres();
 end $$;
