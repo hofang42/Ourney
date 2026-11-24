@@ -21,7 +21,7 @@ void main() {
           },
         ),
       );
-      expect(find.text("You're invited to a group journey"), findsOneWidget);
+      expect(find.text("You're invited to a squad journey"), findsOneWidget);
       expect(find.text('ABCD1234'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('groups-join-submit')));
@@ -57,9 +57,9 @@ void main() {
     });
 
     final errors = {
-      OurneyErrorCode.notFound: 'No group uses this code.',
-      OurneyErrorCode.full: 'This group is full (10 members).',
-      OurneyErrorCode.blocked: "You can't join this group.",
+      OurneyErrorCode.notFound: 'No squad uses this code.',
+      OurneyErrorCode.full: 'This squad is full (10 members).',
+      OurneyErrorCode.blocked: "You can't join this squad.",
       OurneyErrorCode.ended: 'This journey has ended.',
       OurneyErrorCode.offline: "You're offline.",
     };

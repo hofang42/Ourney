@@ -4,15 +4,9 @@
   "@groups_title": {
     "description": "Title of the groups feature's main screen."
   },
-  "groups_emptyTitle": "Chưa có nhóm nào",
-  "groups_emptyMessage": "Nhập mã mời của bạn bè, hoặc tạo hành trình nhóm ở tab Journeys.",
   "groups_joinWithCode": "Nhập mã mời",
   "@groups_joinWithCode": {
     "description": "Button opening the manual invite-code entry (FR-D1)."
-  },
-  "groups_createGroup": "Tạo hành trình nhóm",
-  "@groups_createGroup": {
-    "description": "Opens the journey create flow."
   },
   "groups_activeSection": "Đang chạy",
   "@groups_activeSection": {
@@ -204,10 +198,6 @@
   "groups_qrSemantics": "Mã QR của link mời",
   "groups_noInviteCode": "Nhóm chưa có mã mời.",
   "groups_inviteClosed": "Hành trình đã kết thúc nên không mời thêm được.",
-  "groups_eyebrow": "Những người đồng hành",
-  "@groups_eyebrow": {
-    "description": "Eyebrow above the Squad tab title."
-  },
   "groups_joinCodeBoxesSemantics": "Mã mời, đã nhập {count} trên 8 ký tự",
   "@groups_joinCodeBoxesSemantics": {
     "description": "Screen reader label of the 8-box code input.",

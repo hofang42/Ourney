@@ -215,52 +215,116 @@ class UiBackHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final titleStyle = UiText.heading(
+      font: 'Space Grotesk',
+      size: 27,
+      weight: 700,
+      tracking: -0.02,
+      color: ui.ink,
+    );
+    final scaler = MediaQuery.textScalerOf(context);
+    final subtitleStyle = UiText.body(
+      size: 11,
+      height: 1.35,
+      color: ui.inkMuted,
+    );
+    // At 1x (or whenever there is no subtitle) the bar is the single-row 56dp
+    // layout: back button, title (+ 1x subtitle) and trailing centred in one
+    // row, with no extra height or per-build TextPainter.
+    if (subtitle == null || scaler.scale(1) <= 1.0) {
+      return _BarFrame(
+        glass: glass,
+        bordered: bordered,
+        reduceTransparency: reduceTransparency,
+        minHeight: 56,
+        child: Row(
+          children: [
+            UiBarIconButton(
+              glyph: const OurneyIcon(name: 'back', size: 21),
+              label: backLabel,
+              onPressed: onBack,
+            ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (title != null)
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        title!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: titleStyle,
+                      ),
+                    ),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: subtitleStyle,
+                    ),
+                ],
+              ),
+            ),
+            trailing ?? const SizedBox(width: UiSize.tap),
+          ],
+        ),
+      );
+    }
+    // Scaled text with a subtitle: the bar grows with its content. The back
+    // and trailing controls sit in the title Row so they stay centred on the
+    // title (not on title + subtitle), and the subtitle keeps 8dp above the
+    // hairline.
     return _BarFrame(
       glass: glass,
       bordered: bordered,
       reduceTransparency: reduceTransparency,
       minHeight: 56,
-      child: Row(
-        children: [
-          UiBarIconButton(
-            glyph: const OurneyIcon(name: 'back', size: 21),
-            label: backLabel,
-            onPressed: onBack,
-          ),
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: UiSpace.sm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
               children: [
-                if (title != null)
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      title!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: UiText.heading(
-                        font: 'Space Grotesk',
-                        size: 27,
-                        weight: 700,
-                        tracking: -0.02,
-                        color: ui.ink,
-                      ),
-                    ),
-                  ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: UiText.body(size: 11, color: ui.inkMuted),
-                  ),
+                UiBarIconButton(
+                  glyph: const OurneyIcon(name: 'back', size: 21),
+                  label: backLabel,
+                  onPressed: onBack,
+                ),
+                Expanded(
+                  child: title != null
+                      ? Semantics(
+                          header: true,
+                          child: Text(
+                            title!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: titleStyle,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                trailing ?? const SizedBox(width: UiSize.tap),
               ],
             ),
-          ),
-          trailing ?? const SizedBox(width: UiSize.tap),
-        ],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: UiSize.tap),
+              child: Text(
+                subtitle!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: subtitleStyle,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
