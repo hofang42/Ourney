@@ -85,6 +85,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   final _reason = TextEditingController();
 
   int _step = 0;
+  int _direction = 1;
 
   /// Focused card of the step-1 type deck.
   int _deckFocus = 0;
@@ -161,7 +162,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   void _select(CreateTypeOption option) {
     _apply(option);
-    setState(() => _step = 1);
+    setState(() {
+      _direction = 1;
+      _step = 1;
+    });
   }
 
   void _apply(CreateTypeOption option) {
@@ -217,6 +221,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
   bool get _isCouple => _who == CreateWho.couple;
 
   String get _skinId {
+    if (_step == 0 && _options.isNotEmpty) {
+      final focusedOption = _options[_deckFocus.clamp(0, _options.length - 1)];
+      if (focusedOption.isCouple) return 'couple';
+      return uiSkinIdFor(personaSkinForTemplate(focusedOption.templateId));
+    }
     final form = _form;
     final option = _option;
     if (form == null || option == null) return 'minimal';
@@ -277,7 +286,12 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
 
   void _next() {
     if (_step == 0) {
-      if (_option != null) setState(() => _step = 1);
+      if (_option != null) {
+        setState(() {
+          _direction = 1;
+          _step = 1;
+        });
+      }
       return;
     }
     if (_inDna) {
@@ -289,7 +303,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       setState(() => _attempted.add(_step));
       return;
     }
-    setState(() => _step = (_step + 1).clamp(0, _steps - 1));
+    setState(() {
+      _direction = 1;
+      _step = (_step + 1).clamp(0, _steps - 1);
+    });
   }
 
   void _back() {
@@ -297,9 +314,15 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     if (_step == 0) {
       _leaveFlow();
     } else if (_step == 1 && _questions.isNotEmpty && _dnaPage > 0) {
-      setState(() => _dnaPage -= 1);
+      setState(() {
+        _direction = -1;
+        _dnaPage -= 1;
+      });
     } else {
-      setState(() => _step -= 1);
+      setState(() {
+        _direction = -1;
+        _step -= 1;
+      });
     }
   }
 
@@ -348,6 +371,7 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       if (!_valid(s)) {
         setState(() {
           _attempted.add(s);
+          _direction = s < _step ? -1 : 1;
           _step = s;
         });
         return;
@@ -539,88 +563,104 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
                       onClose: _leaveFlow,
                     ),
                     const SizedBox(height: UiSpace.md),
-                    KeyedSubtree(
-                      key: ValueKey('create-step-body-$_step'),
-                      child: switch (_step) {
-                        0 => CreateTypeStep(
-                          options: _options,
-                          deckFocus: _deckFocus,
-                          onFocus: (i) => setState(() => _deckFocus = i),
-                          onChoose: (i) {
-                            _deckFocus = i;
-                            _select(_options[i]);
+                    UiDirectionalSwitcher(
+                      step: 'create-step-$_step-${_step == 1 ? _dnaPage : 0}',
+                      direction: _direction,
+                      duration: UiMotion.medium,
+                      slideOffset: 18.0,
+                      child: KeyedSubtree(
+                        key: ValueKey(
+                          'create-step-$_step-${_step == 1 ? _dnaPage : 0}',
+                        ),
+                        child: KeyedSubtree(
+                          key: ValueKey('create-step-body-$_step'),
+                          child: switch (_step) {
+                            0 => CreateTypeStep(
+                              options: _options,
+                              deckFocus: _deckFocus,
+                              onFocus: (i) => setState(() => _deckFocus = i),
+                              onChoose: (i) {
+                                _deckFocus = i;
+                                _select(_options[i]);
+                              },
+                            ),
+                            1 =>
+                              _inDna
+                                  ? CreateDnaStep(
+                                      question: _questions[_dnaPage],
+                                      dnaPage: _dnaPage,
+                                      totalQuestions: _questions.length,
+                                      dna: _dna,
+                                      hideWeight: _form!.hideMetric,
+                                      trophyController: _trophy,
+                                      placeController: _place,
+                                      nameLeftController: _nameLeft,
+                                      nameRightController: _nameRight,
+                                      habitController: _habit,
+                                      reasonController: _reason,
+                                      onSetDna: _setDna,
+                                      // The toggle is the journey's hide-number
+                                      // default (bug B-B12).
+                                      onHideWeightChanged: (v) =>
+                                          _update((f) => f.hideMetric = v),
+                                      onAdvanceDna: _advanceDna,
+                                      onApplyDates: _applyDates,
+                                      today: _todayDate(_form!),
+                                    )
+                                  : CreateDetailStep(
+                                      form: _form!,
+                                      titleController: _title,
+                                      metricNameController: _metricName,
+                                      metricUnitController: _metricUnit,
+                                      showErrors: _attempted.contains(1),
+                                      onUpdate: _update,
+                                    ),
+                            2 => CreateWhoStep(
+                              who: _who,
+                              localOnly: _localOnly,
+                              showErrors: _attempted.contains(2),
+                              nameLeftController: _nameLeft,
+                              nameRightController: _nameRight,
+                              onPick: (who) => setState(() {
+                                _who = who;
+                                _applyWho(_form!);
+                              }),
+                              onNamesChanged: () => setState(() {}),
+                            ),
+                            3 => CreateRhythmStep(
+                              form: _form!,
+                              who: _who,
+                              localOnly: _localOnly,
+                              showErrors: _attempted.contains(3),
+                              today: _today(_form!),
+                              start: _start,
+                              durationController: _duration,
+                              onUpdate: _update,
+                              onPickStart: (d) => setState(() => _start = d),
+                            ),
+                            _ => CreateReviewStep(
+                              form: _form!,
+                              who: _who,
+                              optionIsCouple: _option!.isCouple,
+                              skinId: _skinId,
+                              title: _finalTitle(_form!),
+                              variant: _variant,
+                              today: _today(_form!),
+                              start: _start,
+                              nameLeftController: _nameLeft,
+                              nameRightController: _nameRight,
+                              onChangeVariant: () {
+                                unawaited(UiHaptics.selection());
+                                setState(() => _variant = (_variant + 1) % 3);
+                              },
+                              onEdit: () => setState(() {
+                                _direction = -1;
+                                _step = 3;
+                              }),
+                            ),
                           },
                         ),
-                        1 =>
-                          _inDna
-                              ? CreateDnaStep(
-                                  question: _questions[_dnaPage],
-                                  dnaPage: _dnaPage,
-                                  totalQuestions: _questions.length,
-                                  dna: _dna,
-                                  hideWeight: _form!.hideMetric,
-                                  trophyController: _trophy,
-                                  placeController: _place,
-                                  nameLeftController: _nameLeft,
-                                  nameRightController: _nameRight,
-                                  habitController: _habit,
-                                  reasonController: _reason,
-                                  onSetDna: _setDna,
-                                  // The toggle is the journey's hide-number
-                                  // default (bug B-B12).
-                                  onHideWeightChanged: (v) =>
-                                      _update((f) => f.hideMetric = v),
-                                  onAdvanceDna: _advanceDna,
-                                  onApplyDates: _applyDates,
-                                  today: _todayDate(_form!),
-                                )
-                              : CreateDetailStep(
-                                  form: _form!,
-                                  titleController: _title,
-                                  metricNameController: _metricName,
-                                  metricUnitController: _metricUnit,
-                                  showErrors: _attempted.contains(1),
-                                  onUpdate: _update,
-                                ),
-                        2 => CreateWhoStep(
-                          who: _who,
-                          localOnly: _localOnly,
-                          showErrors: _attempted.contains(2),
-                          nameLeftController: _nameLeft,
-                          nameRightController: _nameRight,
-                          onPick: (who) => setState(() {
-                            _who = who;
-                            _applyWho(_form!);
-                          }),
-                          onNamesChanged: () => setState(() {}),
-                        ),
-                        3 => CreateRhythmStep(
-                          form: _form!,
-                          who: _who,
-                          localOnly: _localOnly,
-                          showErrors: _attempted.contains(3),
-                          today: _today(_form!),
-                          start: _start,
-                          durationController: _duration,
-                          onUpdate: _update,
-                          onPickStart: (d) => setState(() => _start = d),
-                        ),
-                        _ => CreateReviewStep(
-                          form: _form!,
-                          who: _who,
-                          optionIsCouple: _option!.isCouple,
-                          skinId: _skinId,
-                          title: _finalTitle(_form!),
-                          variant: _variant,
-                          today: _today(_form!),
-                          start: _start,
-                          nameLeftController: _nameLeft,
-                          nameRightController: _nameRight,
-                          onChangeVariant: () =>
-                              setState(() => _variant = (_variant + 1) % 3),
-                          onEdit: () => setState(() => _step = 3),
-                        ),
-                      },
+                      ),
                     ),
                   ],
                 ),
@@ -780,7 +820,10 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
       _dna.putIfAbsent('weight', () => dnaWeightDefault);
     }
     if (q.kind == DnaKind.ghost) _dna['ghostRequested'] = true;
-    setState(() => _dnaPage += 1);
+    setState(() {
+      _direction = 1;
+      _dnaPage += 1;
+    });
   }
 
   void _applyDates(DnaDates d) {
