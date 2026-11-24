@@ -88,17 +88,27 @@ end $$;
 
 ---
 
-## 4. Vercel Deployment & Cloudflare Zero Trust Access Setup
+## 4. Cloudflare Pages Deployment & Cloudflare Zero Trust Access Setup
 
-### 4.1 Vercel Project Setup (`admin.ourney.tech`)
-1. Import the repository into Vercel as a dedicated project (`ourney-admin`).
-2. Set **Root Directory** to `apps/admin`.
-3. Set **Environment Variables** (Production & Preview):
+### 4.1 Cloudflare Pages Project Setup (`admin.ourney.tech`)
+1. In **Cloudflare Dashboard → Compute (Workers & Pages) → Pages**, create a project connected to the `Ourney` repository named **`ourney-admin`**.
+2. Configure **Build settings** ([Cloudflare Pages Build configuration docs](https://developers.cloudflare.com/pages/configuration/build-configuration/)):
+   - **Production branch:** `main`
+   - **Root directory (Path):** `apps/admin`
+   - **Build command:** `npm ci && npm run build`
+   - **Build output directory:** `dist`
+   - **Build watch paths:** Include `apps/admin/**` only (so commits outside `apps/admin/` do not trigger unnecessary builds).
+3. Configure **Environment Variables** (Production & Preview):
+   - `NODE_VERSION`: `22` (Node 20+ supported)
    - `VITE_SUPABASE_URL`: `https://<project-ref>.supabase.co`
    - `VITE_SUPABASE_ANON_KEY`: your public anon/publishable key
-   - **NEVER** add `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_ACCESS_TOKEN` to Vercel.
+   - `VITE_CF_BEACON_TOKEN` *(optional)*: Cloudflare Web Analytics site token. When set at build time, `src/lib/cfBeacon.ts` injects `https://static.cloudflareinsights.com/beacon.min.js` at startup; when unset, no beacon is injected. Keep Cloudflare Pages automatic Web Analytics injection **disabled** so there is no double counting or CSP conflict.
+   - **NEVER** add `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_ACCESS_TOKEN` to Cloudflare Pages.
 4. Assign custom domain `admin.ourney.tech`.
-5. `apps/admin/vercel.json` enforces `X-Robots-Tag: noindex, nofollow, noarchive`, `Referrer-Policy: no-referrer`, and a strict `Content-Security-Policy`.
+5. **Headers & SPA routing:**
+   - [`apps/admin/public/_headers`](../../apps/admin/public/_headers) is copied by Vite into `dist/_headers` ([Cloudflare Pages Headers docs](https://developers.cloudflare.com/pages/configuration/headers/)) and enforces `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`, and a strict `Content-Security-Policy`.
+   - Because `apps/admin` has no top-level `404.html`, Cloudflare Pages automatically provides SPA fallback to `/index.html` for deep links such as `/users/123`, while [`apps/admin/public/assets/404.html`](../../apps/admin/public/assets/404.html) uses Pages' hierarchical not-found lookup so missing chunk requests under `/assets/*` still return `404 Not Found` ([Serving Pages docs](https://developers.cloudflare.com/pages/configuration/serving-pages/)).
+6. **Legacy Vercel rollback configuration:** `apps/admin/vercel.json` is legacy and kept intact only for rollback until DNS cutover from Vercel to Cloudflare Pages is complete; a subsequent cleanup task removes it.
 
 ### 4.2 Cloudflare Zero Trust Access Perimeter Gate (Recommended)
 To put a free pre-app identity gate in front of `https://admin.ourney.tech` before the bundle even loads:

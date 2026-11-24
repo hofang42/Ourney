@@ -1,0 +1,42 @@
+# Cloudflare Pages custom headers for ourney-landing (ourney.tech)
+# Docs: https://developers.cloudflare.com/pages/configuration/headers/
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com 'sha256-FD/ApBv157+wp2LTgYhg4PPXk551qeipQjyeyfMr6FE=' 'sha256-iB0Qlhy++DHBqN/mlXE/sDS5hOmBE5sXnepweiNa+rE=' 'sha256-Mc2SaFMpVMd3Q+BbLVFP45bpbQvC6IsFzpFXqLy01kM=' 'sha256-FrCD9N9TW2rxxWR8nRn/ZQlPvFW1ySgEZP6Lnq7g5GY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co https://cloudflareinsights.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+/robots.txt
+  ! Content-Type
+  ! Cache-Control
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/sitemap.xml
+  ! Content-Type
+  ! Cache-Control
+  Content-Type: application/xml; charset=utf-8
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/site.webmanifest
+  ! Content-Type
+  ! Cache-Control
+  Content-Type: application/manifest+json; charset=utf-8
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/assets/*
+  ! Cache-Control
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/assets/og/*.png
+  ! Content-Type
+  ! Cache-Control
+  Content-Type: image/png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/assets/og/*.jpg
+  ! Content-Type
+  ! Cache-Control
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
