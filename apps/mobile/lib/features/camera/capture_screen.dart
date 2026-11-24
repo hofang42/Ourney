@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
@@ -10,10 +11,10 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../app/app_dock.dart';
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
-import '../../app/theme/motion.dart';
 import '../../personas/persona_contract.dart' show personaSkinOf;
 import '../../ui/ui.dart';
 import '../checkin/captured_photo.dart';
+import '../checkin/checkin_controller.dart' show checkinJourneyProvider;
 import '../journeys/data/journeys_providers.dart';
 import 'camera_providers.dart';
 import 'camera_session.dart';
@@ -67,14 +68,14 @@ class CaptureScreen extends ConsumerStatefulWidget {
 }
 
 class _CaptureScreenState extends ConsumerState<CaptureScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, TickerProviderStateMixin {
   CameraSession? _session;
   _Phase _phase = _Phase.idle;
   CameraFailure? _failure;
   FlashSetting _flash = FlashSetting.off;
   bool _front = false;
   bool _busy = false;
-  bool _flashOverlay = false;
+  bool _switchingLens = false;
   bool _grid = false;
 
   /// Quiet persona: the day-1 ghost silhouette guide.
@@ -99,6 +100,48 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   int _generation = 0;
 
   String? _selectedJourneyId;
+  int _journeyDirection = 1;
+  String? _lastCaptureHeroKey;
+
+  /// Shutter flash (Rank #1 Phase 1a): 30ms attack -> 140ms ease-out decay
+  /// (170ms total), peaking at 0.88 opacity in warm cream [UiCamera.ink].
+  late final AnimationController _flashCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 170),
+  );
+  late final Animation<double> _flashOpacity = TweenSequence<double>([
+    TweenSequenceItem<double>(
+      tween: Tween<double>(begin: 0.0, end: 0.88).chain(
+        CurveTween(curve: UiCurves.easeOutStrong),
+      ),
+      weight: 30,
+    ),
+    TweenSequenceItem<double>(
+      tween: Tween<double>(begin: 0.88, end: 0.0).chain(
+        CurveTween(curve: UiCurves.easeOutStrong),
+      ),
+      weight: 140,
+    ),
+  ]).animate(_flashCtrl);
+
+  /// Lens flip frosted scrim (Rank #14 item 3): 220ms total (110ms in / 110ms out)
+  /// with `ImageFilter.blur(sigmaX: 10, sigmaY: 10)`.
+  late final AnimationController _lensFlipCtrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 110),
+    reverseDuration: const Duration(milliseconds: 110),
+  )..addStatusListener(_onLensFlipStatus);
+  late final CurvedAnimation _lensFlipCurved = CurvedAnimation(
+    parent: _lensFlipCtrl,
+    curve: UiCurves.easeInOutStrong,
+    reverseCurve: UiCurves.easeInOutStrong,
+  );
+
+  void _onLensFlipStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted && !_switchingLens) {
+      _lensFlipCtrl.reverse();
+    }
+  }
 
   @override
   void initState() {
@@ -180,6 +223,10 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _statusTimer?.cancel();
+    _flashCtrl.dispose();
+    _lensFlipCtrl.removeStatusListener(_onLensFlipStatus);
+    _lensFlipCurved.dispose();
+    _lensFlipCtrl.dispose();
     _generation++;
     unawaited(_session?.stop());
     super.dispose();
@@ -287,7 +334,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   void _showStatus(String message, {String? glyph, bool danger = false}) {
     if (!mounted) return;
     _statusTimer?.cancel();
-    final hold = OurneyMotion.reduced(context)
+    final hold = UiMotion.reduced(context)
         ? const Duration(milliseconds: 1500)
         : const Duration(milliseconds: 1200);
     setState(() {
@@ -323,7 +370,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     final next = FlashSetting.values[(_flash.index + 1) % 3];
     final l10n = CameraL10n.of(context);
     setState(() => _flash = next);
-    OurneyHaptics.selection();
+    unawaited(UiHaptics.selection());
     try {
       await _session?.setFlash(next);
       _showStatus(switch (next) {
@@ -341,7 +388,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
 
   void _toggleGhost() {
     final l10n = CameraL10n.of(context);
-    OurneyHaptics.selection();
+    unawaited(UiHaptics.selection());
     setState(() => _ghost = !_ghost);
     _showStatus(
       _ghost ? l10n.camera_ghostOn : l10n.camera_ghostOff,
@@ -352,12 +399,17 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   Future<void> _switchLens() async {
     final s = _session;
     if (s == null || !s.canSwitch || _busy) return;
-    OurneyHaptics.selection();
+    unawaited(UiHaptics.selection());
+    final reduced = UiMotion.reduced(context);
     final gen = ++_generation;
     setState(() {
       _busy = true;
+      _switchingLens = true;
       _phase = _Phase.starting;
     });
+    if (!reduced) {
+      _lensFlipCtrl.forward(from: 0.0);
+    }
     try {
       await s.switchLens();
       _front = s.isFront;
@@ -381,24 +433,54 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         });
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      _switchingLens = false;
+      if (mounted) {
+        if (_lensFlipCtrl.status == AnimationStatus.completed) {
+          _lensFlipCtrl.reverse();
+        }
+        setState(() => _busy = false);
+      }
     }
   }
 
-  void _selectJourney(String id) {
-    setState(() => _selectedJourneyId = id);
+  void _selectJourney(
+    String id, {
+    List<Journey>? list,
+    int? direction,
+  }) {
+    var nextDir = direction;
+    if (nextDir == null && list != null && _selectedJourneyId != null) {
+      final oldIdx = list.indexWhere((j) => j.id == _selectedJourneyId);
+      final newIdx = list.indexWhere((j) => j.id == id);
+      if (oldIdx != -1 && newIdx != -1 && oldIdx != newIdx) {
+        nextDir = newIdx > oldIdx ? 1 : -1;
+      }
+    }
+    setState(() {
+      if (nextDir != null) _journeyDirection = nextDir;
+      _selectedJourneyId = id;
+    });
     _rememberJourney(id);
     if (widget.initialJourneyId != null && id != widget.initialJourneyId) {
       GoRouter.maybeOf(context)?.go(AppRoutes.capture);
     }
   }
 
-  /// Swipe on the viewfinder: the next journey in the chip order.
-  void _nextJourney(List<Journey> list, Journey? selected) {
+  /// Swipe on the viewfinder: moves to the next/previous journey in the chip
+  /// order while keeping the camera hardware session 100% un-reset.
+  void _nextJourney(
+    List<Journey> list,
+    Journey? selected, {
+    int direction = 1,
+  }) {
     if (list.length < 2) return;
     final i = list.indexWhere((j) => j.id == selected?.id);
-    OurneyHaptics.selection();
-    _selectJourney(list[(i + 1) % list.length].id);
+    unawaited(UiHaptics.selection());
+    final step = direction >= 0 ? 1 : -1;
+    _selectJourney(
+      list[(i + step + list.length) % list.length].id,
+      direction: step,
+    );
   }
 
   /// Makes [id] the active journey, which also themes the app with its
@@ -427,19 +509,18 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   Future<void> _capture(Journey journey) async {
     final s = _session;
     if (_busy || s == null || _phase != _Phase.ready) return;
-    final reduced = OurneyMotion.reduced(context);
+    final reduced = UiMotion.reduced(context);
     setState(() {
       _busy = true;
-      _flashOverlay = !reduced;
     });
-    OurneyHaptics.medium();
+    unawaited(UiHaptics.shutterMedium());
     if (!reduced) {
-      Future<void>.delayed(const Duration(milliseconds: 160), () {
-        if (mounted) setState(() => _flashOverlay = false);
-      });
+      _flashCtrl.forward(from: 0.0);
+    } else {
+      _flashCtrl.value = 0.0;
     }
     final capturedAt = clock.now().toUtc();
-    final String path;
+    String? capturedPath;
     try {
       // Some devices drop the flash mode after a lens or lifecycle restart:
       // apply the chosen one again right before the shot.
@@ -450,7 +531,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           // Best effort; the photo is still taken.
         }
       }
-      path = await s.takePicture();
+      capturedPath = await s.takePicture();
     } on CameraStartException {
       if (mounted) {
         _showStatus(
@@ -463,14 +544,19 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     } finally {
       // Never held across the navigation below: /checkin may leave through
       // pop-then-push or `go`, and the shutter must work when we are back.
-      // The flash overlay fades out on its own timer.
-      if (mounted) setState(() => _busy = false);
+      // The flash overlay fades out on its own controller.
+      if (mounted) {
+        setState(() {
+          if (capturedPath != null) _lastCaptureHeroKey = capturedPath;
+          _busy = false;
+        });
+      }
     }
     if (!mounted) return;
     _openCheckin(
       CapturedPhoto(
         journeyId: journey.id,
-        path: path,
+        path: capturedPath,
         capturedAt: capturedAt,
         initialMetricValue: _latestMetric(journey.id),
       ),
@@ -486,7 +572,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     } on Object {
       // Picker unavailable or cancelled by the OS: nothing to do.
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          if (path != null) _lastCaptureHeroKey = path;
+          _busy = false;
+        });
+      }
     }
     if (path == null || !mounted) return;
     _openCheckin(
@@ -510,7 +601,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   }
 
   void _goTab(int index) {
-    OurneyHaptics.selection();
+    unawaited(UiHaptics.selection());
     // In the shell keep each tab's own stack (a journey opened from the
     // Journeys tab is still there); standalone, go to the tab root.
     final shell = StatefulNavigationShell.maybeOf(context);
@@ -561,6 +652,12 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
     });
     final list = journeys.value ?? const <Journey>[];
     final selected = pickInitialJourney(list, _selectedJourneyId);
+    if (selected != null) {
+      // Keep the selected journey provider warm so pushing /checkin mounts
+      // CheckinScreen with AsyncData on frame 0 (no 1-frame spinner flash and
+      // immediate shared-element UiHero flight).
+      ref.watch(checkinJourneyProvider(selected.id));
+    }
     final style = selected == null
         ? null
         : uiStyleForSkin(personaSkinOf(selected));
@@ -743,6 +840,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                 ? null
                 : l10n.camera_chipDay(selected.title, data.progress.dayNumber),
             accent: style?.accent,
+            direction: _journeyDirection,
             onOpenPicker: () => _openPicker(list, selected),
             onRetry: () => ref.invalidate(captureJourneysProvider),
             tools: _tools(context, selected, style),
@@ -798,8 +896,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
                                 pinnedIds: pinned,
                                 shotTodayIds: shot,
                                 onSelect: (id) {
-                                  OurneyHaptics.selection();
-                                  _selectJourney(id);
+                                  unawaited(UiHaptics.selection());
+                                  _selectJourney(id, list: list);
                                 },
                                 onOpenAll: () => _openPicker(list, selected),
                               ),
@@ -840,6 +938,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         key: const ValueKey('capture-preview'),
         child: session.buildPreview(),
       ),
+      _Phase.starting when _switchingLens && session != null =>
+        const ColoredBox(color: UiCamera.bg),
       _Phase.prePrompt => CameraPrePrompt(onAccept: _acceptPrePrompt),
       _Phase.failure => CameraFailurePanel(
         failure: _failure ?? CameraFailure.failed,
@@ -903,14 +1003,25 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
               ),
             ),
           IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: _flashOverlay ? 1 : 0,
-              duration: UiMotion.of(context, const Duration(milliseconds: 160)),
-              child: const ColoredBox(color: UiCamera.ink),
+            child: FadeTransition(
+              key: const ValueKey('capture-lens-flip-scrim'),
+              opacity: _lensFlipCurved,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: ColoredBox(
+                    color: UiCamera.bg.withValues(alpha: 0.72),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
       ),
+    );
+
+    final heroTag = UiHeroTags.capturePhoto(
+      _lastCaptureHeroKey ?? journey?.id ?? 'capture',
     );
 
     return Center(
@@ -919,11 +1030,32 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
         child: GestureDetector(
           behavior: HitTestBehavior.deferToChild,
           onHorizontalDragEnd: (d) {
-            if ((d.primaryVelocity ?? 0).abs() > 250) {
-              _nextJourney(list, journey);
+            final v = d.primaryVelocity ?? 0;
+            if (v.abs() > 250) {
+              _nextJourney(list, journey, direction: v < 0 ? 1 : -1);
             }
           },
-          child: viewfinder,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              UiHero(
+                tag: heroTag,
+                borderRadiusBegin: BorderRadius.circular(UiRadius.viewfinder),
+                borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+                child: viewfinder,
+              ),
+              IgnorePointer(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(UiRadius.viewfinder),
+                  child: FadeTransition(
+                    key: const ValueKey('capture-shutter-flash'),
+                    opacity: _flashOpacity,
+                    child: const ColoredBox(color: UiCamera.ink),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

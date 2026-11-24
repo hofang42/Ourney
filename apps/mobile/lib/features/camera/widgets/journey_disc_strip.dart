@@ -147,6 +147,7 @@ class _Disc extends StatelessWidget {
       semanticLabel: semanticLabel,
       excludeChildSemantics: true,
       centerChild: true,
+      pressOffset: selected ? UiShadow.tiny : 0,
       minSize: const Size(kCameraDiscSlot, 56),
       child: SizedBox(
         width: kCameraDiscSlot,
@@ -154,8 +155,23 @@ class _Disc extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
+            if (selected)
+              Transform.translate(
+                offset: const Offset(UiShadow.tiny, UiShadow.tiny),
+                child: SizedBox(
+                  width: size,
+                  height: size,
+                  child: const DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: UiCamera.shadow,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+              ),
             AnimatedContainer(
-              duration: UiMotion.of(context, UiMotion.press),
+              duration: UiMotion.of(context, UiMotion.fast),
+              curve: UiCurves.easeOutStrong,
               width: size,
               height: size,
               alignment: Alignment.center,
@@ -165,9 +181,6 @@ class _Disc extends StatelessWidget {
                   color: selected ? ring : UiCamera.dockBorder,
                   width: selected ? 3 : UiBorder.standard,
                 ),
-                boxShadow: selected
-                    ? UiShadow.hard(UiCamera.shadow, UiShadow.tiny)
-                    : null,
               ),
               child: FittedBox(child: child),
             ),

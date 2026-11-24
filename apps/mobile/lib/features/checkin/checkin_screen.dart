@@ -156,7 +156,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   void _startCountdown(Journey journey, CapturedPhoto photo) {
     if (_countdownStarted) return;
     _countdownStarted = true;
-    if (MediaQuery.disableAnimationsOf(context)) return;
+    if (UiMotion.reduced(context)) return;
     _countdown = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted || _posting) {
         t.cancel();
@@ -168,9 +168,11 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
         setState(() => _secondsLeft = 0);
         unawaited(_post(journey, photo));
       } else {
+        unawaited(UiHaptics.selection());
         setState(() => _secondsLeft -= 1);
       }
     });
+    setState(() {});
   }
 
   Future<void> _pickPartnerPhoto() async {
@@ -532,51 +534,118 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
               ],
             ),
             const SizedBox(height: UiSpace.sm),
-            // Photo + caption: the photo collapses to a thumbnail beside the
-            // caption while the keyboard is open. The caption keeps its
-            // state (and focus) through the move via its GlobalKey.
+            // Photo + caption (Rank #1 Phase 1c): smoothly morphs between the
+            // 520dp preview above the caption and the 72x96 thumbnail beside
+            // the caption via AnimatedSize + AnimatedSwitcher while keeping
+            // the caption TextField mounted in a single permanent slot so
+            // focus and GlobalKey state never teleport or duplicate.
             Align(
               alignment: Alignment.topCenter,
-              child: typing
-                  ? Row(
-                      key: const ValueKey('checkin-compose-typing'),
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _PhotoThumb(
-                          photo: photo,
-                          onTap: () =>
-                              FocusManager.instance.primaryFocus?.unfocus(),
-                        ),
-                        const SizedBox(width: UiSpace.md),
-                        Expanded(
-                          child: _captionField(
-                            l10n,
-                            vi: vi,
-                            template: template,
-                            semanticsLabel: captionSemantics,
-                            count: count,
-                          ),
-                        ),
-                      ],
-                    )
-                  : Column(
-                      key: const ValueKey('checkin-compose-idle'),
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _PhotoPreview(
-                          photo: photo,
-                          onRetake: _posting ? null : _close,
-                        ),
-                        const SizedBox(height: UiSpace.lg),
-                        _captionField(
-                          l10n,
-                          vi: vi,
-                          template: template,
-                          semanticsLabel: captionSemantics,
-                          count: count,
-                        ),
-                      ],
+              child: Builder(
+                builder: (context) {
+                  final reduced = UiMotion.reduced(context);
+                  final previewSwitcher = AnimatedSwitcher(
+                    duration: UiMotion.fadeOf(context, UiMotion.medium),
+                    switchInCurve: UiCurves.easeOutStrong,
+                    switchOutCurve: UiCurves.easeOutStrong,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: reduced
+                          ? child
+                          : SizeTransition(
+                              sizeFactor: animation,
+                              alignment: Alignment.topCenter,
+                              child: child,
+                            ),
                     ),
+                    child: typing
+                        ? const SizedBox.shrink(
+                            key: ValueKey('checkin-preview-collapsed'),
+                          )
+                        : Padding(
+                            key: const ValueKey('checkin-compose-idle'),
+                            padding: const EdgeInsets.only(
+                              bottom: UiSpace.lg,
+                            ),
+                            child: _PhotoPreview(
+                              photo: photo,
+                              onRetake: _posting ? null : _close,
+                            ),
+                          ),
+                  );
+
+                  final thumbSwitcher = AnimatedSwitcher(
+                    duration: UiMotion.fadeOf(context, UiMotion.medium),
+                    switchInCurve: UiCurves.easeOutStrong,
+                    switchOutCurve: UiCurves.easeOutStrong,
+                    child: typing
+                        ? Padding(
+                            key: const ValueKey(
+                              'checkin-compose-typing',
+                            ),
+                            padding: const EdgeInsetsDirectional.only(
+                              end: UiSpace.md,
+                            ),
+                            child: _PhotoThumb(
+                              photo: photo,
+                              onTap: () => FocusManager
+                                  .instance
+                                  .primaryFocus
+                                  ?.unfocus(),
+                            ),
+                          )
+                        : const SizedBox.shrink(
+                            key: ValueKey('checkin-thumb-collapsed'),
+                          ),
+                  );
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (reduced)
+                        KeyedSubtree(
+                          key: const ValueKey('checkin-preview-size'),
+                          child: previewSwitcher,
+                        )
+                      else
+                        AnimatedSize(
+                          key: const ValueKey('checkin-preview-size'),
+                          duration: UiMotion.medium,
+                          curve: UiCurves.easeOutStrong,
+                          alignment: Alignment.topCenter,
+                          child: previewSwitcher,
+                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (reduced)
+                            KeyedSubtree(
+                              key: const ValueKey('checkin-thumb-size'),
+                              child: thumbSwitcher,
+                            )
+                          else
+                            AnimatedSize(
+                              key: const ValueKey('checkin-thumb-size'),
+                              duration: UiMotion.medium,
+                              curve: UiCurves.easeOutStrong,
+                              alignment: AlignmentDirectional.topStart,
+                              child: thumbSwitcher,
+                            ),
+                          Expanded(
+                            child: _captionField(
+                              l10n,
+                              vi: vi,
+                              template: template,
+                              semanticsLabel: captionSemantics,
+                              count: count,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
             if (metricLabel != null) ...[
               const SizedBox(height: UiSpace.lg),
@@ -618,7 +687,7 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
               _CountdownHint(
                 seconds: _secondsLeft,
                 active: _countdown != null,
-                reduced: MediaQuery.disableAnimationsOf(context),
+                reduced: UiMotion.reduced(context),
               ),
             ],
           ],
@@ -628,8 +697,10 @@ class _CheckinScreenState extends ConsumerState<CheckinScreen>
   }
 }
 
-/// Minimal skin: the 3 s auto-post hint (static text under reduce motion).
-class _CountdownHint extends StatelessWidget {
+/// Minimal skin: the 3 s auto-post hint with a `RepaintBoundary`-isolated
+/// `CustomPaint` progress ring and rolling digit tick (static text under
+/// Reduce Motion).
+class _CountdownHint extends StatefulWidget {
   const _CountdownHint({
     required this.seconds,
     required this.active,
@@ -641,20 +712,97 @@ class _CountdownHint extends StatelessWidget {
   final bool reduced;
 
   @override
+  State<_CountdownHint> createState() => _CountdownHintState();
+}
+
+class _CountdownHintState extends State<_CountdownHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ringCtrl = AnimationController(
+    vsync: this,
+    duration: UiMotion.medium,
+  );
+  late final CurvedAnimation _ringCurved = CurvedAnimation(
+    parent: _ringCtrl,
+    curve: UiCurves.easeOutStrong,
+  );
+
+  late double _fromProgress;
+  late double _toProgress;
+
+  static double _progressFor(int s) =>
+      (s / _CheckinScreenState._countdownFrom).clamp(0.0, 1.0);
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = _progressFor(widget.seconds);
+    _fromProgress = initial;
+    _toProgress = initial;
+  }
+
+  @override
+  void didUpdateWidget(covariant _CountdownHint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.seconds != oldWidget.seconds) {
+      _fromProgress = _progressFor(oldWidget.seconds);
+      _toProgress = _progressFor(widget.seconds);
+      if (widget.reduced || UiMotion.reduced(context)) {
+        _fromProgress = _toProgress;
+        _ringCtrl.value = 1.0;
+      } else {
+        _ringCtrl.forward(from: 0.0);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _ringCurved.dispose();
+    _ringCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final l10n = CheckinL10n.of(context);
     final ui = context.ui;
-    if (!active && !reduced) return const SizedBox.shrink();
+    final reduced = widget.reduced || UiMotion.reduced(context);
+    if (!widget.active && !reduced) return const SizedBox.shrink();
     return Semantics(
       liveRegion: true,
       child: Column(
         children: [
-          if (!reduced)
-            Text(
-              '$seconds',
-              key: const ValueKey('checkin-countdown'),
-              style: UiText.h2(color: ui.ink, size: 40),
+          if (!reduced) ...[
+            RepaintBoundary(
+              key: const ValueKey('checkin-countdown-ring-boundary'),
+              child: SizedBox(
+                width: 68,
+                height: 68,
+                child: CustomPaint(
+                  key: const ValueKey('checkin-countdown-ring'),
+                  painter: _CountdownRingPainter(
+                    animation: _ringCurved,
+                    fromProgress: _fromProgress,
+                    toProgress: _toProgress,
+                    trackColor: ui.border,
+                    progressColor: ui.accent,
+                  ),
+                  child: Center(
+                    child: KeyedSubtree(
+                      key: const ValueKey('checkin-countdown'),
+                      child: UiCountRoll(
+                        value: widget.seconds,
+                        duration: UiMotion.medium,
+                        curve: UiCurves.easeOutStrong,
+                        style: UiText.h2(color: ui.ink, size: 32),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
+            const SizedBox(height: UiSpace.xs),
+          ],
           Text(
             reduced
                 ? l10n.checkin_extraCountdown(
@@ -668,6 +816,63 @@ class _CountdownHint extends StatelessWidget {
       ),
     );
   }
+}
+
+class _CountdownRingPainter extends CustomPainter {
+  _CountdownRingPainter({
+    required this.animation,
+    required this.fromProgress,
+    required this.toProgress,
+    required this.trackColor,
+    required this.progressColor,
+  }) : _trackPaint = Paint()
+         ..color = trackColor
+         ..style = PaintingStyle.stroke
+         ..strokeWidth = _kStrokeWidth,
+       _arcPaint = Paint()
+         ..color = progressColor
+         ..style = PaintingStyle.stroke
+         ..strokeCap = StrokeCap.round
+         ..strokeWidth = _kStrokeWidth,
+       super(repaint: animation);
+
+  static const double _kStrokeWidth = 4.0;
+
+  final Animation<double> animation;
+  final double fromProgress;
+  final double toProgress;
+  final Color trackColor;
+  final Color progressColor;
+
+  final Paint _trackPaint;
+  final Paint _arcPaint;
+
+  double get currentProgress =>
+      fromProgress + (toProgress - fromProgress) * animation.value;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (math.min(size.width, size.height) - _kStrokeWidth) / 2;
+    canvas.drawCircle(center, radius, _trackPaint);
+    final progress = currentProgress.clamp(0.0, 1.0);
+    if (progress > 0.0) {
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        -math.pi / 2,
+        2 * math.pi * progress,
+        false,
+        _arcPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CountdownRingPainter oldDelegate) =>
+      oldDelegate.fromProgress != fromProgress ||
+      oldDelegate.toProgress != toProgress ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.progressColor != progressColor;
 }
 
 /// `.compose-photo`: 3:4 photo with 20dp corners, up to 55% of the height
@@ -695,100 +900,105 @@ class _PhotoPreview extends StatelessWidget {
           ),
           child: AspectRatio(
             aspectRatio: 3 / 4,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(UiRadius.card),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ColoredBox(
-                    color: UiCamera.bg,
-                    child: Semantics(
-                      image: true,
-                      label: l10n.checkin_photoSemantics,
-                      child: Image.file(
-                        File(photo.path),
-                        fit: BoxFit.cover,
-                        cacheWidth: 1080,
-                        errorBuilder: (_, _, _) => const OurneyIcon(
-                          name: 'image',
-                          flat: true,
-                          color: UiCamera.onPhoto,
-                          size: 48,
+            child: UiHero(
+              tag: UiHeroTags.capturePhoto(photo.path),
+              borderRadiusBegin: BorderRadius.circular(UiRadius.viewfinder),
+              borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(UiRadius.card),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(
+                      color: UiCamera.bg,
+                      child: Semantics(
+                        image: true,
+                        label: l10n.checkin_photoSemantics,
+                        child: Image.file(
+                          File(photo.path),
+                          fit: BoxFit.cover,
+                          cacheWidth: 1080,
+                          errorBuilder: (_, _, _) => const OurneyIcon(
+                            name: 'image',
+                            flat: true,
+                            color: UiCamera.onPhoto,
+                            size: 48,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  if (photo.fromLibrary)
+                    if (photo.fromLibrary)
+                      PositionedDirectional(
+                        start: UiSpace.md,
+                        end: UiSpace.md,
+                        top: UiSpace.md,
+                        child: Align(
+                          alignment: AlignmentDirectional.topStart,
+                          child: UiTag(
+                            key: const ValueKey('checkin-from-library'),
+                            label: l10n.checkin_fromLibrary,
+                            glyph: const OurneyIcon(name: 'gallery', size: 20),
+                            background: const Color(0xB3000000),
+                            foreground: UiCamera.onPhoto,
+                            borderColor: UiCamera.outline,
+                          ),
+                        ),
+                      ),
                     PositionedDirectional(
-                      start: UiSpace.md,
-                      end: UiSpace.md,
-                      top: UiSpace.md,
+                      start: UiSpace.sm,
+                      end: UiSpace.sm,
+                      bottom: UiSpace.sm,
                       child: Align(
-                        alignment: AlignmentDirectional.topStart,
-                        child: UiTag(
-                          key: const ValueKey('checkin-from-library'),
-                          label: l10n.checkin_fromLibrary,
-                          glyph: const OurneyIcon(name: 'gallery', size: 20),
-                          background: const Color(0xB3000000),
-                          foreground: UiCamera.onPhoto,
-                          borderColor: UiCamera.outline,
-                        ),
-                      ),
-                    ),
-                  PositionedDirectional(
-                    start: UiSpace.sm,
-                    end: UiSpace.sm,
-                    bottom: UiSpace.sm,
-                    child: Align(
-                      alignment: AlignmentDirectional.bottomStart,
-                      child: UiPressable(
-                        key: const ValueKey('checkin-retake'),
-                        onPressed: onRetake,
-                        semanticLabel: l10n.checkin_retake,
-                        excludeChildSemantics: true,
-                        borderRadius: BorderRadius.circular(UiRadius.capsule),
-                        child: Container(
-                          constraints: const BoxConstraints(
-                            minHeight: UiSize.tap,
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xB3000000),
-                            borderRadius: BorderRadius.circular(
-                              UiRadius.capsule,
+                        alignment: AlignmentDirectional.bottomStart,
+                        child: UiPressable(
+                          key: const ValueKey('checkin-retake'),
+                          onPressed: onRetake,
+                          semanticLabel: l10n.checkin_retake,
+                          excludeChildSemantics: true,
+                          borderRadius: BorderRadius.circular(UiRadius.capsule),
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minHeight: UiSize.tap,
                             ),
-                            border: Border.all(color: UiCamera.dockBorder),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const OurneyIcon(
-                                name: 'refresh',
-                                flat: true,
-                                size: 18,
-                                color: UiCamera.onPhoto,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xB3000000),
+                              borderRadius: BorderRadius.circular(
+                                UiRadius.capsule,
                               ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  l10n.checkin_retake,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: UiText.body(
-                                    size: 14,
-                                    weight: FontWeight.w600,
-                                    height: 1.3,
-                                    color: UiCamera.onPhoto,
+                              border: Border.all(color: UiCamera.dockBorder),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const OurneyIcon(
+                                  name: 'refresh',
+                                  flat: true,
+                                  size: 18,
+                                  color: UiCamera.onPhoto,
+                                ),
+                                const SizedBox(width: 6),
+                                Flexible(
+                                  child: Text(
+                                    l10n.checkin_retake,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: UiText.body(
+                                      size: 14,
+                                      weight: FontWeight.w600,
+                                      height: 1.3,
+                                      color: UiCamera.onPhoto,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
