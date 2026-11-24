@@ -1803,4 +1803,97 @@ class JourneysL10nEn extends JourneysL10n {
     );
     return '$_temp0';
   }
+
+  @override
+  String get journeys_timelineRecent => 'Recent';
+
+  @override
+  String get journeys_timelineByMonth => 'By month';
+
+  @override
+  String journeys_monthSummary(int checked, int days, int photos) {
+    String _temp0 = intl.Intl.pluralLogic(
+      photos,
+      locale: localeName,
+      other: '$photos photos',
+      one: '1 photo',
+    );
+    return '$checked/$days days · $_temp0';
+  }
+
+  @override
+  String journeys_monthA11y(String month, int checked, int days, int photos) {
+    String _temp0 = intl.Intl.pluralLogic(
+      photos,
+      locale: localeName,
+      other: '$photos photos',
+      one: '1 photo',
+    );
+    return '$month, $checked of $days days checked in, $_temp0';
+  }
+
+  @override
+  String get journeys_monthExpandHint => 'Expand';
+
+  @override
+  String get journeys_monthCollapseHint => 'Collapse';
+
+  @override
+  String journeys_jumpToMonth(String month) {
+    return 'Go to $month';
+  }
+
+  @override
+  String journeys_jumpToYear(int year) {
+    return 'Show $year';
+  }
+
+  @override
+  String journeys_jumpAnnounce(String month) {
+    return 'Showing $month';
+  }
+
+  @override
+  String journeys_earlierLink(int to, int checked) {
+    return 'Earlier: days 1–$to, $checked checked in';
+  }
+
+  @override
+  String get journeys_earlierView => 'View';
+
+  @override
+  String journeys_daysToGo(int days, int finish) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0 to go · Finish on day $finish';
+  }
+
+  @override
+  String get journeys_range30 => '30D';
+
+  @override
+  String get journeys_rangeAll => 'All';
+
+  @override
+  String journeys_clearYear(int year) {
+    return 'Clear $year filter';
+  }
+
+  @override
+  String get journeys_range30Pace => 'Few values in 30 days, showing check-ins';
+
+  @override
+  String journeys_startsIn(int days, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return 'Starts in $_temp0 · $total days';
+  }
 }

@@ -382,6 +382,7 @@ Future<JourneysHarness> pumpJourneys(
   String? userId,
   Locale locale = const Locale('vi'),
   List<Override> extraOverrides = const [],
+  MediaStore? mediaStore,
 }) async {
   tester.platformDispatcher.accessibilityFeaturesTestValue =
       const FakeAccessibilityFeatures(disableAnimations: true);
@@ -400,7 +401,7 @@ Future<JourneysHarness> pumpJourneys(
     overrides: [
       journeyRepositoryProvider.overrideWithValue(repo),
       checkInRepositoryProvider.overrideWithValue(ci),
-      mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+      mediaStoreProvider.overrideWithValue(mediaStore ?? FakeMediaStore()),
       journeysClockProvider.overrideWithValue(Clock.fixed(testNow)),
       deviceTimezoneProvider.overrideWith((ref) => testTz),
       ...extraOverrides,
