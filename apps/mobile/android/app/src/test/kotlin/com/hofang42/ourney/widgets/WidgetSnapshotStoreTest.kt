@@ -268,7 +268,12 @@ class WidgetSnapshotStoreTest {
         assertNull(WidgetSnapshotStore.sanitizeFileName(".."))
         assertEquals("a91f4c82b011e3d4.jpg", WidgetSnapshotStore.sanitizeFileName("a91f4c82b011e3d4.jpg"))
 
-        val srcThumb = File(root, "source_thumb.jpg").apply { writeBytes(ByteArray(32) { 1 }) }
+        val srcThumb = File(root, "source_thumb.jpg").apply {
+            writeBytes(byteArrayOf(0x11, 0x22, 0x33, 0x44))
+        }
+        val preBlurredThumb = File(root, "pre_blurred_from_dart.jpg").apply {
+            writeBytes(byteArrayOf(0x55, 0x66, 0x77, 0x7F))
+        }
         val orphanFile = File(store.thumbsDir.apply { mkdirs() }, "orphan_old.jpg").apply {
             writeBytes(ByteArray(16) { 2 })
         }
@@ -284,7 +289,7 @@ class WidgetSnapshotStoreTest {
                 ),
                 ThumbSpec(
                     id = "77d21f0091ab34ef.jpg",
-                    sourcePath = srcThumb.absolutePath,
+                    sourcePath = preBlurredThumb.absolutePath,
                     maxSide = 160,
                     blur = true,
                 ),
@@ -293,9 +298,14 @@ class WidgetSnapshotStoreTest {
         )
         assertFalse("Orphan thumb must be swept", orphanFile.exists())
         assertNotNull(store.resolveThumbFile("thumbs/a91f4c82b011e3d4.jpg"))
-        assertNull(
-            "When blur=true and BitmapFactory cannot decode/blur, must fail closed and not copy raw unblurred file",
-            store.resolveThumbFile("thumbs/77d21f0091ab34ef.jpg"),
+        val stagedPreBlurred = store.resolveThumbFile("thumbs/77d21f0091ab34ef.jpg")
+        assertNotNull(
+            "Pre-blurred thumbnail from Dart must be staged without native re-blurring",
+            stagedPreBlurred,
+        )
+        assertTrue(
+            "Pre-blurred bytes from Dart must not be re-blurred on the native side",
+            stagedPreBlurred!!.readBytes().contentEquals(preBlurredThumb.readBytes()),
         )
 
         // Verify WidgetLiveWindow.fromMap handles both flat and nested liveWindow maps
@@ -318,6 +328,200 @@ class WidgetSnapshotStoreTest {
         assertTrue(store.clearAll())
         assertNull(store.readSnapshot(postMidnightUtc))
         assertEquals(0, store.readState().selectedTodayIndex)
+    }
+
+    @Test
+    fun `handles absent optional keys explicit nulls open-ended journeys and redaction aliases`() {
+        val openEndedSnapshotJson = """
+            {
+              "schemaVersion": 1,
+              "generatedAtUtc": "2026-11-24T11:55:00.000Z",
+              "authState": "ready",
+              "locale": "en",
+              "themeMode": "dark",
+              "privacy": {
+                "photoMode": "smart",
+                "redactTitleOnLockScreen": true
+              },
+              "totals": {
+                "activeCount": 2,
+                "completedTodayCount": 1,
+                "pendingTodayCount": 1,
+                "atRiskCount": 0,
+                "bestActiveStreak": 30
+              },
+              "journeys": [
+                {
+                  "id": "open-ended-1",
+                  "title": "Daily Reading",
+                  "kind": "solo",
+                  "skinId": "minimal",
+                  "colorVariant": 0,
+                  "typeIcon": "type-custom",
+                  "timezone": "Asia/Ho_Chi_Minh",
+                  "utcOffsetMinutes": 420,
+                  "pinned": true,
+                  "dayNumber": 30,
+                  "currentStreak": 30,
+                  "bestStreak": 30,
+                  "checkedInToday": true,
+                  "atRisk": false,
+                  "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+                  "heroThumbBlurred": false,
+                  "weekStrip": [
+                    {"date": "2026-11-24", "day": 24, "label": "TD", "state": "done"}
+                  ]
+                },
+                {
+                  "id": "explicit-nulls-2",
+                  "title": "Weight Transformation",
+                  "kind": "solo",
+                  "skinId": "quiet",
+                  "colorVariant": 0,
+                  "typeIcon": "type-weight",
+                  "timezone": "Asia/Ho_Chi_Minh",
+                  "utcOffsetMinutes": 420,
+                  "pinned": false,
+                  "dayNumber": 45,
+                  "totalDays": null,
+                  "currentStreak": 12,
+                  "bestStreak": 20,
+                  "checkedInToday": true,
+                  "atRisk": false,
+                  "eveningCueAtUtc": null,
+                  "streakAlertAtUtc": null,
+                  "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+                  "reminderAtUtc": null,
+                  "heroThumbFile": null,
+                  "heroThumbBlurred": true
+                }
+              ],
+              "squads": [
+                {
+                  "journeyId": "open-squad-1",
+                  "title": "Open Study Squad",
+                  "skinId": "squad",
+                  "colorVariant": 0,
+                  "typeIcon": "type-study",
+                  "isCouple": false,
+                  "dayNumber": 30,
+                  "doneCount": 1,
+                  "memberCount": 2,
+                  "meCheckedInToday": true,
+                  "midnightRolloverUtc": "2026-11-24T17:00:00.000Z",
+                  "members": [
+                    {
+                      "displayName": "Lan",
+                      "initial": "L",
+                      "avatarColorIndex": 1,
+                      "isMe": true,
+                      "checkedInToday": true,
+                      "streak": 30
+                    },
+                    {
+                      "displayName": "Binh",
+                      "initial": "B",
+                      "avatarColorIndex": 2,
+                      "isMe": false,
+                      "checkedInToday": false,
+                      "streak": 5,
+                      "avatarFile": null,
+                      "todayThumbFile": null
+                    }
+                  ]
+                }
+              ]
+            }
+        """.trimIndent()
+
+        val store = WidgetSnapshotStore(tempFolder.newFolder("ourney_widgets_contract"))
+        val writeRes = store.writeSnapshotAtomically(openEndedSnapshotJson)
+        assertTrue(writeRes.success)
+
+        val preMidnightUtc = Instant.parse("2026-11-24T12:00:00.000Z").toEpochMilli()
+        val snapshot = store.readSnapshot(preMidnightUtc)!!
+
+        // Absent optional top-level keys must decode to null, never literal "null"
+        assertNull(snapshot.defaultJourneyId)
+        assertNull(snapshot.liveWindow)
+        assertTrue(
+            "privacy must accept redactTitleOnLockScreen when redactLockScreenTitles is absent",
+            snapshot.privacy.redactLockScreenTitles,
+        )
+
+        val openJourney = snapshot.journeys.first { it.id == "open-ended-1" }
+        assertNull("Absent totalDays must represent an open-ended journey (not default to 30)", openJourney.totalDays)
+        assertTrue(openJourney.isOpenEnded)
+        assertNull(openJourney.eveningCueAtUtc)
+        assertNull(openJourney.streakAlertAtUtc)
+        assertNull(openJourney.reminderAtUtc)
+        assertNull(openJourney.heroThumbFile)
+
+        val nullJourney = snapshot.journeys.first { it.id == "explicit-nulls-2" }
+        assertNull("Explicit null totalDays must decode as null (not 30)", nullJourney.totalDays)
+        assertTrue(nullJourney.isOpenEnded)
+        assertNull("Explicit null reminderAtUtc must never become literal \"null\"", nullJourney.reminderAtUtc)
+        assertNull("Explicit null heroThumbFile must never become literal \"null\"", nullJourney.heroThumbFile)
+
+        val openSquad = snapshot.squads.first()
+        assertNull("Absent squad totalDays must decode as null (not 30)", openSquad.totalDays)
+        assertTrue(openSquad.isOpenEnded)
+        assertNull(openSquad.members[0].avatarFile)
+        assertNull(openSquad.members[0].todayThumbFile)
+        assertNull(openSquad.members[1].avatarFile)
+        assertNull(openSquad.members[1].todayThumbFile)
+        assertTrue("No null/absent thumb paths may be added to referencedThumbPaths", snapshot.referencedThumbPaths().isEmpty())
+
+        // Post-midnight rollover on Day 30 open-ended journey & squad must advance to Day 31 (NOT clamp to 30)
+        val postMidnightUtc = Instant.parse("2026-11-24T17:05:00.000Z").toEpochMilli()
+        val rolled = store.readSnapshot(postMidnightUtc)!!
+        val rolledOpenJourney = rolled.journeys.first { it.id == "open-ended-1" }
+        assertEquals("Open-ended journey on Day 30 must advance to Day 31 after midnight", 31, rolledOpenJourney.dayNumber)
+        assertNull(rolledOpenJourney.totalDays)
+
+        val rolledNullJourney = rolled.journeys.first { it.id == "explicit-nulls-2" }
+        assertEquals("Open-ended journey on Day 45 must advance to Day 46 after midnight", 46, rolledNullJourney.dayNumber)
+
+        val rolledOpenSquad = rolled.squads.first()
+        assertEquals("Open-ended squad on Day 30 must advance to Day 31 after midnight", 31, rolledOpenSquad.dayNumber)
+        assertNull(rolledOpenSquad.totalDays)
+
+        // State JSON with absent optional keys must decode to null, never "null"
+        val minimalState = WidgetMutableState.fromJson("""{"selectedTodayIndex": 2}""")
+        assertEquals(2, minimalState.selectedTodayIndex)
+        assertNull(minimalState.dismissedWindowKey)
+        assertNull(minimalState.dismissedWindowDate)
+
+        // Live Activity redaction key resolution: spec key `redactLockScreenTitles` + backward-compat `redactTitleOnLockScreen`
+        assertTrue(
+            CheckInLiveUpdateManager.resolveRedactLockScreenTitles(
+                mapOf("redactLockScreenTitles" to true),
+                snapshot = null,
+            ),
+        )
+        assertTrue(
+            CheckInLiveUpdateManager.resolveRedactLockScreenTitles(
+                mapOf("redactTitleOnLockScreen" to true),
+                snapshot = null,
+            ),
+        )
+        assertFalse(
+            "Spec key redactLockScreenTitles must take precedence when both keys are present",
+            CheckInLiveUpdateManager.resolveRedactLockScreenTitles(
+                mapOf(
+                    "redactLockScreenTitles" to false,
+                    "redactTitleOnLockScreen" to true,
+                ),
+                snapshot = snapshot,
+            ),
+        )
+        assertTrue(
+            "Falls back to snapshot.privacy.redactLockScreenTitles when absent from args",
+            CheckInLiveUpdateManager.resolveRedactLockScreenTitles(
+                emptyMap<String, Any?>(),
+                snapshot = snapshot,
+            ),
+        )
     }
 
     @Test

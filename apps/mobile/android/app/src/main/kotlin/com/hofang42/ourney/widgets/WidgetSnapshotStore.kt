@@ -81,7 +81,8 @@ class WidgetSnapshotStore(val rootDir: File) {
 
     /**
      * Content-addressed thumbnail synchronizer:
-     * - Copies/downsamples/blurs only missing `<id>.jpg` files (`0 CPU` on cache hit).
+     * - Copies/downsamples only missing `<id>.jpg` files (`0 CPU` on cache hit).
+     * - Does NOT blur thumbnails again on the native side (Dart pre-blurs once at `sigma = 18`).
      * - Sweeps orphan files in `thumbs/` not referenced by [referencedRelPaths] or [specs].
      */
     @Synchronized
@@ -102,8 +103,8 @@ class WidgetSnapshotStore(val rootDir: File) {
                 continue
             }
             val srcFile = File(spec.sourcePath)
-            if (!srcFile.isFile) continue
-            prepareThumbFile(srcFile, destFile, spec.maxSide, spec.blur)
+            if (!srcFile.isFile || srcFile.length() <= 0L) continue
+            prepareThumbFile(srcFile, destFile, spec.maxSide)
         }
 
         thumbsDir.listFiles()?.forEach { existing ->
@@ -187,21 +188,26 @@ class WidgetSnapshotStore(val rootDir: File) {
         }
     }
 
+    /**
+     * Downsamples or copies [sourceFile] into [destFile] capped at [maxSide].
+     *
+     * Dart's `LocalWidgetThumbPreparer` already pre-blurs sensitive thumbnails once
+     * (`sigma = 18`) and fails closed before crossing the platform channel, so the
+     * native Android consumer never blurs thumbnails a second time (`[P1-4]`).
+     */
     private fun prepareThumbFile(
         sourceFile: File,
         destFile: File,
         maxSide: Int,
-        blur: Boolean,
     ) {
+        if (!sourceFile.isFile || sourceFile.length() <= 0L) return
         try {
             val boundsOpts = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             BitmapFactory.decodeFile(sourceFile.absolutePath, boundsOpts)
             val srcW = boundsOpts.outWidth
             val srcH = boundsOpts.outHeight
             if (srcW <= 0 || srcH <= 0) {
-                if (!blur) {
-                    copyRawFileAtomically(sourceFile, destFile)
-                }
+                copyRawFileAtomically(sourceFile, destFile)
                 return
             }
 
@@ -217,9 +223,7 @@ class WidgetSnapshotStore(val rootDir: File) {
             }
             val decoded = BitmapFactory.decodeFile(sourceFile.absolutePath, decodeOpts)
             if (decoded == null) {
-                if (!blur) {
-                    copyRawFileAtomically(sourceFile, destFile)
-                }
+                copyRawFileAtomically(sourceFile, destFile)
                 return
             }
 
@@ -228,30 +232,17 @@ class WidgetSnapshotStore(val rootDir: File) {
                 decoded.recycle()
             }
 
-            val processed = if (blur) {
-                val blurred = fastStackBlur(scaled, radius = 14)
-                if (blurred !== scaled) scaled.recycle()
-                blurred
-            } else {
-                scaled
-            }
-
             val tmpFile = File(destFile.parentFile, "${destFile.name}.tmp")
             FileOutputStream(tmpFile).use { out ->
-                processed.compress(Bitmap.CompressFormat.JPEG, 82, out)
+                scaled.compress(Bitmap.CompressFormat.JPEG, 82, out)
                 out.fd.sync()
             }
-            processed.recycle()
+            scaled.recycle()
             atomicMove(tmpFile, destFile)
         } catch (_: Throwable) {
-            // Fail closed when blur == true so an unblurred sensitive photo is never written.
-            // When blur == false (or in pure-JVM unit tests where BitmapFactory is stubbed),
-            // fall back to atomic file copy.
-            if (!blur) {
-                try {
-                    copyRawFileAtomically(sourceFile, destFile)
-                } catch (_: Exception) {
-                }
+            try {
+                copyRawFileAtomically(sourceFile, destFile)
+            } catch (_: Exception) {
             }
         }
     }
@@ -265,68 +256,6 @@ class WidgetSnapshotStore(val rootDir: File) {
         val targetW = (w * ratio).toInt().coerceAtLeast(1)
         val targetH = (h * ratio).toInt().coerceAtLeast(1)
         return Bitmap.createScaledBitmap(bitmap, targetW, targetH, true)
-    }
-
-    /**
-     * Lightweight 2-pass box blur approximation on a pre-downsampled bitmap so
-     * sensitive photos (`TemplateId.weightLoss` / `blurPhotosOnShare`) are blurred
-     * on disk before Glance ever renders them.
-     */
-    private fun fastStackBlur(src: Bitmap, radius: Int): Bitmap {
-        val scale = 4
-        val smallW = (src.width / scale).coerceAtLeast(8)
-        val smallH = (src.height / scale).coerceAtLeast(8)
-        val small = Bitmap.createScaledBitmap(src, smallW, smallH, true)
-        val work = small.copy(Bitmap.Config.ARGB_8888, true) ?: return src
-        if (small !== src) small.recycle()
-
-        val w = work.width
-        val h = work.height
-        val pixels = IntArray(w * h)
-        val temp = IntArray(w * h)
-        work.getPixels(pixels, 0, w, 0, 0, w, h)
-        val r = (radius / scale).coerceIn(2, 8)
-        val window = 2 * r + 1
-
-        // Horizontal pass
-        for (y in 0 until h) {
-            val rowOffset = y * w
-            for (x in 0 until w) {
-                var sumR = 0
-                var sumG = 0
-                var sumB = 0
-                for (dx in -r..r) {
-                    val sampleX = (x + dx).coerceIn(0, w - 1)
-                    val c = pixels[rowOffset + sampleX]
-                    sumR += (c shr 16) and 0xFF
-                    sumG += (c shr 8) and 0xFF
-                    sumB += c and 0xFF
-                }
-                temp[rowOffset + x] =
-                    (0xFF shl 24) or ((sumR / window) shl 16) or ((sumG / window) shl 8) or (sumB / window)
-            }
-        }
-        // Vertical pass
-        for (x in 0 until w) {
-            for (y in 0 until h) {
-                var sumR = 0
-                var sumG = 0
-                var sumB = 0
-                for (dy in -r..r) {
-                    val sampleY = (y + dy).coerceIn(0, h - 1)
-                    val c = temp[sampleY * w + x]
-                    sumR += (c shr 16) and 0xFF
-                    sumG += (c shr 8) and 0xFF
-                    sumB += c and 0xFF
-                }
-                pixels[y * w + x] =
-                    (0xFF shl 24) or ((sumR / window) shl 16) or ((sumG / window) shl 8) or (sumB / window)
-            }
-        }
-        work.setPixels(pixels, 0, w, 0, 0, w, h)
-        val upscaled = Bitmap.createScaledBitmap(work, src.width, src.height, true)
-        if (upscaled !== work) work.recycle()
-        return upscaled
     }
 
     private fun copyRawFileAtomically(sourceFile: File, destFile: File) {

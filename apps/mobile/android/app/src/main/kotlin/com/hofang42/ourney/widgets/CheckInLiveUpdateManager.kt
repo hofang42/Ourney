@@ -68,10 +68,7 @@ object CheckInLiveUpdateManager {
         }
 
         val locale = (args["locale"] as? String) ?: snapshot?.locale ?: "vi"
-        val redactLockScreen =
-            (args["redactLockScreenTitles"] as? Boolean)
-                ?: snapshot?.privacy?.redactLockScreenTitles
-                ?: false
+        val redactLockScreen = resolveRedactLockScreenTitles(args, snapshot, window)
 
         postOrUpdate(
             context = context,
@@ -81,6 +78,32 @@ object CheckInLiveUpdateManager {
             nowEpochMs = nowMs,
         )
         return true
+    }
+
+    /**
+     * Resolves the Lock Screen title redaction flag from [args], [window], or
+     * [snapshot]:
+     * - Reads `redactLockScreenTitles` (spec §4.3/§4.4 name) first.
+     * - Also accepts `redactTitleOnLockScreen` for backward compatibility (`[P2-1]`).
+     * - Falls back to `snapshot.privacy.redactLockScreenTitles` (or `false`).
+     */
+    internal fun resolveRedactLockScreenTitles(
+        args: Map<*, *>?,
+        snapshot: WidgetSnapshot?,
+        window: WidgetLiveWindow? = null,
+    ): Boolean {
+        if (args != null) {
+            (args["redactLockScreenTitles"] as? Boolean)?.let { return it }
+            (args["redactTitleOnLockScreen"] as? Boolean)?.let { return it }
+            val privacyMap = args["privacy"] as? Map<*, *>
+            (privacyMap?.get("redactLockScreenTitles") as? Boolean)?.let { return it }
+            (privacyMap?.get("redactTitleOnLockScreen") as? Boolean)?.let { return it }
+            val nestedWindow = args["liveWindow"] as? Map<*, *>
+            (nestedWindow?.get("redactLockScreenTitles") as? Boolean)?.let { return it }
+            (nestedWindow?.get("redactTitleOnLockScreen") as? Boolean)?.let { return it }
+        }
+        window?.redactLockScreenTitles?.let { return it }
+        return snapshot?.privacy?.redactLockScreenTitles ?: false
     }
 
     fun syncFromStore(context: Context, nowEpochMs: Long = System.currentTimeMillis()) {

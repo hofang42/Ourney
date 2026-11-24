@@ -213,9 +213,10 @@ class TodayGlanceWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.size(20.dp),
                 )
                 Spacer(modifier = GlanceModifier.width(6.dp))
+                val totalDays = journey.totalDays
                 Text(
-                    text = if (journey.totalDays > 0) {
-                        l10n.getString(R.string.widget_day_progress, journey.dayNumber, journey.totalDays)
+                    text = if (totalDays != null && totalDays > 0) {
+                        l10n.getString(R.string.widget_day_progress, journey.dayNumber, totalDays)
                     } else {
                         l10n.getString(R.string.widget_day_only, journey.dayNumber)
                     },
@@ -330,9 +331,10 @@ class TodayGlanceWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.size(20.dp),
                     )
                     Spacer(modifier = GlanceModifier.width(6.dp))
+                    val totalDays = journey.totalDays
                     Text(
-                        text = if (journey.totalDays > 0) {
-                            l10n.getString(R.string.widget_day_progress, journey.dayNumber, journey.totalDays)
+                        text = if (totalDays != null && totalDays > 0) {
+                            l10n.getString(R.string.widget_day_progress, journey.dayNumber, totalDays)
                         } else {
                             l10n.getString(R.string.widget_day_only, journey.dayNumber)
                         },
@@ -464,9 +466,10 @@ class TodayGlanceWidget : GlanceAppWidget() {
                 )
                 Spacer(modifier = GlanceModifier.width(8.dp))
                 Column(modifier = GlanceModifier.defaultWeight()) {
+                    val totalDays = journey.totalDays
                     Text(
-                        text = if (journey.totalDays > 0) {
-                            l10n.getString(R.string.widget_day_progress, journey.dayNumber, journey.totalDays)
+                        text = if (totalDays != null && totalDays > 0) {
+                            l10n.getString(R.string.widget_day_progress, journey.dayNumber, totalDays)
                         } else {
                             l10n.getString(R.string.widget_day_only, journey.dayNumber)
                         },

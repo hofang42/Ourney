@@ -163,28 +163,36 @@ data class WidgetSnapshot(
 
         fun fromJson(jsonString: String): WidgetSnapshot {
             val root = JSONObject(jsonString)
-            val schemaVersion = root.optInt("schemaVersion", 1)
-            val generatedAtUtc = root.optString("generatedAtUtc", "")
-            val authState = root.optString("authState", "ready")
-            val locale = root.optString("locale", "vi").ifBlank { "vi" }
-            val themeMode = root.optString("themeMode", "system").ifBlank { "system" }
-            val privacyObj = root.optJSONObject("privacy") ?: JSONObject()
+            val schemaVersion = root.optIntCompat("schemaVersion", 1)
+            val generatedAtUtc = root.optCleanString("generatedAtUtc", "")
+            val authState = root.optCleanString("authState", "ready")
+            val locale = root.optCleanString("locale", "vi")
+            val themeMode = root.optCleanString("themeMode", "system")
+            val privacyObj = root.optObjectOrNull("privacy")
+            val redactLockScreenTitles = when {
+                privacyObj == null -> false
+                privacyObj.has("redactLockScreenTitles") && !privacyObj.isNull("redactLockScreenTitles") ->
+                    privacyObj.optBoolean("redactLockScreenTitles", false)
+                privacyObj.has("redactTitleOnLockScreen") && !privacyObj.isNull("redactTitleOnLockScreen") ->
+                    privacyObj.optBoolean("redactTitleOnLockScreen", false)
+                else -> false
+            }
             val privacy = WidgetPrivacyConfig(
-                photoMode = privacyObj.optString("photoMode", "smart").ifBlank { "smart" },
-                redactLockScreenTitles = privacyObj.optBoolean("redactLockScreenTitles", false),
-                liveActivityEnabled = privacyObj.optBoolean("liveActivityEnabled", true),
+                photoMode = privacyObj?.optCleanString("photoMode", "smart") ?: "smart",
+                redactLockScreenTitles = redactLockScreenTitles,
+                liveActivityEnabled = privacyObj?.optBooleanCompat("liveActivityEnabled", true) ?: true,
             )
-            val defaultJourneyId = root.optString("defaultJourneyId", "").takeIf { it.isNotBlank() }
+            val defaultJourneyId = root.optNullableString("defaultJourneyId")
 
-            val totalsObj = root.optJSONObject("totals") ?: JSONObject()
-            val journeysArr = root.optJSONArray("journeys") ?: JSONArray()
+            val totalsObj = root.optObjectOrNull("totals")
+            val journeysArr = root.optArrayOrNull("journeys") ?: JSONArray()
             val journeys = buildList {
                 for (i in 0 until journeysArr.length()) {
                     journeysArr.optJSONObject(i)?.let { add(WidgetJourneyItem.fromJson(it)) }
                 }
             }
 
-            val squadsArr = root.optJSONArray("squads") ?: JSONArray()
+            val squadsArr = root.optArrayOrNull("squads") ?: JSONArray()
             val squads = buildList {
                 for (i in 0 until squadsArr.length()) {
                     squadsArr.optJSONObject(i)?.let { add(WidgetSquadItem.fromJson(it)) }
@@ -192,26 +200,26 @@ data class WidgetSnapshot(
             }
 
             val totals = WidgetTotals(
-                activeCount = totalsObj.optInt("activeCount", journeys.size),
-                completedTodayCount = totalsObj.optInt(
+                activeCount = totalsObj?.optIntCompat("activeCount", journeys.size) ?: journeys.size,
+                completedTodayCount = totalsObj?.optIntCompat(
                     "completedTodayCount",
                     journeys.count { it.checkedInToday },
-                ),
-                pendingTodayCount = totalsObj.optInt(
+                ) ?: journeys.count { it.checkedInToday },
+                pendingTodayCount = totalsObj?.optIntCompat(
                     "pendingTodayCount",
                     journeys.count { !it.checkedInToday },
-                ),
-                atRiskCount = totalsObj.optInt(
+                ) ?: journeys.count { !it.checkedInToday },
+                atRiskCount = totalsObj?.optIntCompat(
                     "atRiskCount",
                     journeys.count { it.atRisk && !it.checkedInToday },
-                ),
-                bestActiveStreak = totalsObj.optInt(
+                ) ?: journeys.count { it.atRisk && !it.checkedInToday },
+                bestActiveStreak = totalsObj?.optIntCompat(
                     "bestActiveStreak",
                     journeys.maxOfOrNull { it.currentStreak } ?: 0,
-                ),
+                ) ?: (journeys.maxOfOrNull { it.currentStreak } ?: 0),
             )
 
-            val liveWindow = root.optJSONObject("liveWindow")?.let { WidgetLiveWindow.fromJson(it) }
+            val liveWindow = root.optObjectOrNull("liveWindow")?.let { WidgetLiveWindow.fromJson(it) }
 
             return WidgetSnapshot(
                 schemaVersion = schemaVersion,
@@ -255,7 +263,7 @@ data class WidgetJourneyItem(
     val utcOffsetMinutes: Int,
     val pinned: Boolean,
     val dayNumber: Int,
-    val totalDays: Int,
+    val totalDays: Int?,
     val currentStreak: Int,
     val bestStreak: Int,
     val checkedInToday: Boolean,
@@ -268,6 +276,9 @@ data class WidgetJourneyItem(
     val heroThumbBlurred: Boolean,
     val weekStrip: List<WidgetWeekDay>,
 ) {
+    val isOpenEnded: Boolean
+        get() = totalDays == null || totalDays <= 0
+
     fun isEveningCueActive(nowEpochMs: Long): Boolean {
         if (checkedInToday) return false
         val cueMs = WidgetSnapshot.parseIsoEpochMs(eveningCueAtUtc) ?: return false
@@ -306,7 +317,8 @@ data class WidgetJourneyItem(
             val newStreak = if (survivedFirstRollover) currentStreak else 0
             val newAtRisk = newStreak > 0
             val rawNewDay = dayNumber + daysPassed
-            val newDayNumber = if (totalDays > 0) minOf(rawNewDay, totalDays) else rawNewDay
+            val cap = totalDays
+            val newDayNumber = if (cap != null && cap > 0) minOf(rawNewDay, cap) else rawNewDay
             val rolledStrip = rollWeekStrip(weekStrip, daysPassed, checkedInToday)
             return copy(
                 dayNumber = newDayNumber,
@@ -430,34 +442,34 @@ data class WidgetJourneyItem(
         }
 
         fun fromJson(obj: JSONObject): WidgetJourneyItem {
-            val stripArr = obj.optJSONArray("weekStrip") ?: JSONArray()
+            val stripArr = obj.optArrayOrNull("weekStrip") ?: JSONArray()
             val strip = buildList {
                 for (i in 0 until stripArr.length()) {
                     stripArr.optJSONObject(i)?.let { add(WidgetWeekDay.fromJson(it)) }
                 }
             }
             return WidgetJourneyItem(
-                id = obj.optString("id", ""),
-                title = obj.optString("title", ""),
-                kind = obj.optString("kind", "solo"),
-                skinId = obj.optString("skinId", "minimal").ifBlank { "minimal" },
-                colorVariant = obj.optInt("colorVariant", 0),
-                typeIcon = obj.optString("typeIcon", "type-custom").ifBlank { "type-custom" },
-                timezone = obj.optString("timezone", "UTC"),
-                utcOffsetMinutes = obj.optInt("utcOffsetMinutes", 0),
-                pinned = obj.optBoolean("pinned", false),
-                dayNumber = obj.optInt("dayNumber", 1),
-                totalDays = obj.optInt("totalDays", 30),
-                currentStreak = obj.optInt("currentStreak", 0),
-                bestStreak = obj.optInt("bestStreak", 0),
-                checkedInToday = obj.optBoolean("checkedInToday", false),
-                atRisk = obj.optBoolean("atRisk", false),
-                eveningCueAtUtc = obj.optString("eveningCueAtUtc", "").takeIf { it.isNotBlank() },
-                streakAlertAtUtc = obj.optString("streakAlertAtUtc", "").takeIf { it.isNotBlank() },
-                midnightRolloverUtc = obj.optString("midnightRolloverUtc", "").takeIf { it.isNotBlank() },
-                reminderAtUtc = obj.optString("reminderAtUtc", "").takeIf { it.isNotBlank() },
-                heroThumbFile = obj.optString("heroThumbFile", "").takeIf { it.isNotBlank() },
-                heroThumbBlurred = obj.optBoolean("heroThumbBlurred", false),
+                id = obj.optCleanString("id", ""),
+                title = obj.optCleanString("title", ""),
+                kind = obj.optCleanString("kind", "solo"),
+                skinId = obj.optCleanString("skinId", "minimal"),
+                colorVariant = obj.optIntCompat("colorVariant", 0),
+                typeIcon = obj.optCleanString("typeIcon", "type-custom"),
+                timezone = obj.optCleanString("timezone", "UTC"),
+                utcOffsetMinutes = obj.optIntCompat("utcOffsetMinutes", 0),
+                pinned = obj.optBooleanCompat("pinned", false),
+                dayNumber = obj.optIntCompat("dayNumber", 1),
+                totalDays = obj.optPositiveIntOrNull("totalDays"),
+                currentStreak = obj.optIntCompat("currentStreak", 0),
+                bestStreak = obj.optIntCompat("bestStreak", 0),
+                checkedInToday = obj.optBooleanCompat("checkedInToday", false),
+                atRisk = obj.optBooleanCompat("atRisk", false),
+                eveningCueAtUtc = obj.optNullableString("eveningCueAtUtc"),
+                streakAlertAtUtc = obj.optNullableString("streakAlertAtUtc"),
+                midnightRolloverUtc = obj.optNullableString("midnightRolloverUtc"),
+                reminderAtUtc = obj.optNullableString("reminderAtUtc"),
+                heroThumbFile = obj.optNullableString("heroThumbFile"),
+                heroThumbBlurred = obj.optBooleanCompat("heroThumbBlurred", false),
                 weekStrip = strip,
             )
         }
@@ -472,10 +484,10 @@ data class WidgetWeekDay(
 ) {
     companion object {
         fun fromJson(obj: JSONObject): WidgetWeekDay = WidgetWeekDay(
-            date = obj.optString("date", ""),
-            day = obj.optInt("day", 1),
-            label = obj.optString("label", ""),
-            state = obj.optString("state", "future"),
+            date = obj.optCleanString("date", ""),
+            day = obj.optIntCompat("day", 1),
+            label = obj.optCleanString("label", ""),
+            state = obj.optCleanString("state", "future"),
         )
     }
 }
@@ -488,19 +500,23 @@ data class WidgetSquadItem(
     val typeIcon: String,
     val isCouple: Boolean,
     val dayNumber: Int,
-    val totalDays: Int,
+    val totalDays: Int?,
     val doneCount: Int,
     val memberCount: Int,
     val meCheckedInToday: Boolean,
     val midnightRolloverUtc: String?,
     val members: List<WidgetSquadMember>,
 ) {
+    val isOpenEnded: Boolean
+        get() = totalDays == null || totalDays <= 0
+
     fun evaluateAt(nowEpochMs: Long): WidgetSquadItem {
         val midnightMs = WidgetSnapshot.parseIsoEpochMs(midnightRolloverUtc)
         if (midnightMs != null && nowEpochMs >= midnightMs) {
             val daysPassed = ((nowEpochMs - midnightMs) / 86_400_000L).toInt() + 1
             val rawNewDay = dayNumber + daysPassed
-            val newDayNumber = if (totalDays > 0) minOf(rawNewDay, totalDays) else rawNewDay
+            val cap = totalDays
+            val newDayNumber = if (cap != null && cap > 0) minOf(rawNewDay, cap) else rawNewDay
             return copy(
                 dayNumber = newDayNumber,
                 doneCount = 0,
@@ -519,25 +535,25 @@ data class WidgetSquadItem(
 
     companion object {
         fun fromJson(obj: JSONObject): WidgetSquadItem {
-            val membersArr = obj.optJSONArray("members") ?: JSONArray()
+            val membersArr = obj.optArrayOrNull("members") ?: JSONArray()
             val members = buildList {
                 for (i in 0 until membersArr.length()) {
                     membersArr.optJSONObject(i)?.let { add(WidgetSquadMember.fromJson(it)) }
                 }
             }
             return WidgetSquadItem(
-                journeyId = obj.optString("journeyId", ""),
-                title = obj.optString("title", ""),
-                skinId = obj.optString("skinId", "squad").ifBlank { "squad" },
-                colorVariant = obj.optInt("colorVariant", 0),
-                typeIcon = obj.optString("typeIcon", "type-study").ifBlank { "type-study" },
-                isCouple = obj.optBoolean("isCouple", false),
-                dayNumber = obj.optInt("dayNumber", 1),
-                totalDays = obj.optInt("totalDays", 30),
-                doneCount = obj.optInt("doneCount", 0),
-                memberCount = obj.optInt("memberCount", members.size),
-                meCheckedInToday = obj.optBoolean("meCheckedInToday", false),
-                midnightRolloverUtc = obj.optString("midnightRolloverUtc", "").takeIf { it.isNotBlank() },
+                journeyId = obj.optCleanString("journeyId", ""),
+                title = obj.optCleanString("title", ""),
+                skinId = obj.optCleanString("skinId", "squad"),
+                colorVariant = obj.optIntCompat("colorVariant", 0),
+                typeIcon = obj.optCleanString("typeIcon", "type-study"),
+                isCouple = obj.optBooleanCompat("isCouple", false),
+                dayNumber = obj.optIntCompat("dayNumber", 1),
+                totalDays = obj.optPositiveIntOrNull("totalDays"),
+                doneCount = obj.optIntCompat("doneCount", 0),
+                memberCount = obj.optIntCompat("memberCount", members.size),
+                meCheckedInToday = obj.optBooleanCompat("meCheckedInToday", false),
+                midnightRolloverUtc = obj.optNullableString("midnightRolloverUtc"),
                 members = members,
             )
         }
@@ -557,18 +573,18 @@ data class WidgetSquadMember(
 ) {
     companion object {
         fun fromJson(obj: JSONObject): WidgetSquadMember {
-            val name = obj.optString("displayName", "")
+            val name = obj.optCleanString("displayName", "")
             val fallbackInitial = name.trim().firstOrNull()?.uppercaseChar()?.toString() ?: "?"
             return WidgetSquadMember(
                 displayName = name,
-                initial = obj.optString("initial", fallbackInitial).ifBlank { fallbackInitial },
-                avatarColorIndex = obj.optInt("avatarColorIndex", 0),
-                isMe = obj.optBoolean("isMe", false),
-                checkedInToday = obj.optBoolean("checkedInToday", false),
-                streak = obj.optInt("streak", 0),
-                avatarFile = obj.optString("avatarFile", "").takeIf { it.isNotBlank() },
-                todayThumbFile = obj.optString("todayThumbFile", "").takeIf { it.isNotBlank() },
-                todayThumbBlurred = obj.optBoolean("todayThumbBlurred", false),
+                initial = obj.optCleanString("initial", fallbackInitial),
+                avatarColorIndex = obj.optIntCompat("avatarColorIndex", 0),
+                isMe = obj.optBooleanCompat("isMe", false),
+                checkedInToday = obj.optBooleanCompat("checkedInToday", false),
+                streak = obj.optIntCompat("streak", 0),
+                avatarFile = obj.optNullableString("avatarFile"),
+                todayThumbFile = obj.optNullableString("todayThumbFile"),
+                todayThumbBlurred = obj.optBooleanCompat("todayThumbBlurred", false),
             )
         }
     }
@@ -589,6 +605,7 @@ data class WidgetLiveWindow(
     val windowStartUtc: String,
     val deadlineUtc: String,
     val celebrateAndDismiss: Boolean = false,
+    val redactLockScreenTitles: Boolean? = null,
 ) {
     fun isActiveAt(nowEpochMs: Long, state: WidgetMutableState): Boolean {
         if (state.dismissedWindowKey == windowKey) return false
@@ -600,24 +617,33 @@ data class WidgetLiveWindow(
 
     companion object {
         fun fromJson(obj: JSONObject): WidgetLiveWindow? {
-            val journeyId = obj.optString("journeyId", "")
-            val deadlineUtc = obj.optString("deadlineUtc", "")
-            if (journeyId.isBlank() && !obj.optBoolean("celebrateAndDismiss", false)) return null
+            val journeyId = obj.optCleanString("journeyId", "")
+            val deadlineUtc = obj.optCleanString("deadlineUtc", "")
+            val celebrate = obj.optBooleanCompat("celebrateAndDismiss", false)
+            if (journeyId.isBlank() && !celebrate) return null
+            val redactLockScreen = when {
+                obj.has("redactLockScreenTitles") && !obj.isNull("redactLockScreenTitles") ->
+                    obj.optBoolean("redactLockScreenTitles", false)
+                obj.has("redactTitleOnLockScreen") && !obj.isNull("redactTitleOnLockScreen") ->
+                    obj.optBoolean("redactTitleOnLockScreen", false)
+                else -> null
+            }
             return WidgetLiveWindow(
-                windowKey = obj.optString("windowKey", ""),
+                windowKey = obj.optCleanString("windowKey", ""),
                 journeyId = journeyId,
-                journeyTitle = obj.optString("journeyTitle", ""),
-                skinId = obj.optString("skinId", "squad").ifBlank { "squad" },
-                colorVariant = obj.optInt("colorVariant", 0),
-                typeIcon = obj.optString("typeIcon", "type-study").ifBlank { "type-study" },
-                currentStreak = obj.optInt("currentStreak", 0),
-                atRisk = obj.optBoolean("atRisk", false),
-                pendingCount = obj.optInt("pendingCount", 0),
-                completedCount = obj.optInt("completedCount", 0),
-                totalActiveCount = obj.optInt("totalActiveCount", 1),
-                windowStartUtc = obj.optString("windowStartUtc", ""),
+                journeyTitle = obj.optCleanString("journeyTitle", ""),
+                skinId = obj.optCleanString("skinId", "squad"),
+                colorVariant = obj.optIntCompat("colorVariant", 0),
+                typeIcon = obj.optCleanString("typeIcon", "type-study"),
+                currentStreak = obj.optIntCompat("currentStreak", 0),
+                atRisk = obj.optBooleanCompat("atRisk", false),
+                pendingCount = obj.optIntCompat("pendingCount", 0),
+                completedCount = obj.optIntCompat("completedCount", 0),
+                totalActiveCount = obj.optIntCompat("totalActiveCount", 1),
+                windowStartUtc = obj.optCleanString("windowStartUtc", ""),
                 deadlineUtc = deadlineUtc,
-                celebrateAndDismiss = obj.optBoolean("celebrateAndDismiss", false),
+                celebrateAndDismiss = celebrate,
+                redactLockScreenTitles = redactLockScreen,
             )
         }
 
@@ -633,7 +659,7 @@ data class WidgetLiveWindow(
             }
             val json = JSONObject()
             for ((k, v) in map) {
-                if (k is String && v != null) {
+                if (k is String && v != null && v != JSONObject.NULL) {
                     json.put(k, v)
                 }
             }
@@ -652,6 +678,8 @@ data class WidgetLiveWindow(
                 windowStartUtc = (map["windowStartUtc"] as? String).orEmpty(),
                 deadlineUtc = (map["deadlineUtc"] as? String).orEmpty(),
                 celebrateAndDismiss = (map["celebrateAndDismiss"] as? Boolean) ?: false,
+                redactLockScreenTitles = (map["redactLockScreenTitles"] as? Boolean)
+                    ?: (map["redactTitleOnLockScreen"] as? Boolean),
             )
         }
     }
@@ -695,9 +723,9 @@ data class WidgetMutableState(
         fun fromJson(jsonString: String): WidgetMutableState {
             val obj = JSONObject(jsonString)
             return WidgetMutableState(
-                selectedTodayIndex = obj.optInt("selectedTodayIndex", 0).coerceAtLeast(0),
-                dismissedWindowKey = obj.optString("dismissedWindowKey", "").takeIf { it.isNotBlank() },
-                dismissedWindowDate = obj.optString("dismissedWindowDate", "").takeIf { it.isNotBlank() },
+                selectedTodayIndex = obj.optIntCompat("selectedTodayIndex", 0).coerceAtLeast(0),
+                dismissedWindowKey = obj.optNullableString("dismissedWindowKey"),
+                dismissedWindowDate = obj.optNullableString("dismissedWindowDate"),
             )
         }
     }
@@ -718,4 +746,53 @@ data class ThumbSpec(
             return ThumbSpec(id = id, sourcePath = sourcePath, maxSide = maxSide, blur = blur)
         }
     }
+}
+
+/**
+ * Safe `org.json.JSONObject` accessors that check [JSONObject.has] and
+ * [JSONObject.isNull] BEFORE reading values.
+ *
+ * On Android (`android.jar`), calling `optString(key, "")` on a key whose value
+ * is `JSONObject.NULL` returns the 4-character literal `"null"` (AOSP 36908090),
+ * whereas Dart omits optional keys or may pass `null`. Guarding with
+ * `has(key) && !isNull(key)` prevents `"null"` string corruption across both
+ * absent keys and explicit `null` values.
+ */
+private fun JSONObject.optNullableString(key: String): String? {
+    if (!has(key) || isNull(key)) return null
+    val value = optString(key, "").trim()
+    return value.takeIf { it.isNotEmpty() && !it.equals("null", ignoreCase = true) }
+}
+
+private fun JSONObject.optCleanString(key: String, fallback: String = ""): String {
+    if (!has(key) || isNull(key)) return fallback
+    val value = optString(key, fallback)
+    if (value.isBlank() || value.equals("null", ignoreCase = true)) return fallback
+    return value
+}
+
+private fun JSONObject.optIntCompat(key: String, fallback: Int): Int {
+    if (!has(key) || isNull(key)) return fallback
+    return optInt(key, fallback)
+}
+
+private fun JSONObject.optPositiveIntOrNull(key: String): Int? {
+    if (!has(key) || isNull(key)) return null
+    val value = optInt(key, 0)
+    return value.takeIf { it > 0 }
+}
+
+private fun JSONObject.optBooleanCompat(key: String, fallback: Boolean): Boolean {
+    if (!has(key) || isNull(key)) return fallback
+    return optBoolean(key, fallback)
+}
+
+private fun JSONObject.optObjectOrNull(key: String): JSONObject? {
+    if (!has(key) || isNull(key)) return null
+    return optJSONObject(key)
+}
+
+private fun JSONObject.optArrayOrNull(key: String): JSONArray? {
+    if (!has(key) || isNull(key)) return null
+    return optJSONArray(key)
 }

@@ -161,15 +161,18 @@ class SquadGlanceWidget : GlanceAppWidget() {
                     modifier = GlanceModifier.defaultWeight(),
                 )
                 Spacer(modifier = GlanceModifier.width(6.dp))
+                val totalDays = squad.totalDays
                 Text(
                     text = if (squad.isCouple) {
                         l10n.getString(R.string.widget_squad_couple_badge, squad.dayNumber)
-                    } else {
+                    } else if (totalDays != null && totalDays > 0) {
                         l10n.getString(
                             R.string.widget_day_progress,
                             squad.dayNumber,
-                            squad.totalDays,
+                            totalDays,
                         )
+                    } else {
+                        l10n.getString(R.string.widget_day_only, squad.dayNumber)
                     },
                     style = TextStyle(
                         color = palette.inkMutedProvider,
