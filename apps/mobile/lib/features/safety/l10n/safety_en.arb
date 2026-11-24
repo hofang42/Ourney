@@ -60,6 +60,9 @@
   "safety_contactCopied": "Email address copied.",
   "safety_contactSubject": "Ourney - support",
   "safety_contactNoMailApp": "Couldn't open a mail app. Copy the address and write from the app you use.",
+  "safety_contactFeatureTitle": "Want to request a feature?",
+  "safety_contactFeatureBody": "Browse community ideas, vote on what matters to you and get notified when it ships.",
+  "safety_contactFeatureCta": "Open feature board",
 
   "safety_eulaAcceptTitle": "Before you start",
   "safety_eulaAcceptIntro": "Ourney has zero tolerance for objectionable content or abusive users. Please read and accept the terms of use to continue.",

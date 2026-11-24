@@ -207,6 +207,16 @@ class SafetyL10nEn extends SafetyL10n {
       'Couldn\'t open a mail app. Copy the address and write from the app you use.';
 
   @override
+  String get safety_contactFeatureTitle => 'Want to request a feature?';
+
+  @override
+  String get safety_contactFeatureBody =>
+      'Browse community ideas, vote on what matters to you and get notified when it ships.';
+
+  @override
+  String get safety_contactFeatureCta => 'Open feature board';
+
+  @override
   String get safety_eulaAcceptTitle => 'Before you start';
 
   @override

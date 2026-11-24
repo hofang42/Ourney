@@ -733,6 +733,18 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'{count}/{max}'**
   String social_messageCounter(int count, int max);
+
+  /// Activity inbox row when a feature request the user upvoted ships.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tính năng bạn bình chọn đã ra mắt: {title}'**
+  String social_shippedRequestTitle(String title);
+
+  /// Activity inbox row when a feature request authored by the user ships.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đề xuất của bạn đã ra mắt: {title}'**
+  String social_shippedRequestAuthorTitle(String title);
 }
 
 class _SocialL10nDelegate extends LocalizationsDelegate<SocialL10n> {

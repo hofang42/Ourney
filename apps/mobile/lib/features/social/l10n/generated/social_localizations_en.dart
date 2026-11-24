@@ -409,4 +409,14 @@ class SocialL10nEn extends SocialL10n {
   String social_messageCounter(int count, int max) {
     return '$count/$max';
   }
+
+  @override
+  String social_shippedRequestTitle(String title) {
+    return 'A feature you voted for is live: $title';
+  }
+
+  @override
+  String social_shippedRequestAuthorTitle(String title) {
+    return 'Your idea is now live: $title';
+  }
 }

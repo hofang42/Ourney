@@ -139,6 +139,17 @@ class SettingsScreen extends ConsumerWidget {
           _Card(
             child: Column(
               children: [
+                if (!localOnly)
+                  UiRow(
+                    key: const ValueKey('settings-feature-requests'),
+                    leading: const OurneyIcon(name: 'sparkle', flat: true),
+                    title: l10n.profile_settings_featureRequests,
+                    subtitle: _sub(
+                      context,
+                      l10n.profile_settings_featureRequestsSub,
+                    ),
+                    onPressed: () => context.push(AppRoutes.feedback),
+                  ),
                 UiRow(
                   key: const ValueKey('settings-eula'),
                   leading: const OurneyIcon(name: 'shield', flat: true),

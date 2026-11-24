@@ -131,6 +131,8 @@
   "profile_settings_blocked": "Blocked people",
   "profile_settings_blockedSub": "View and unblock",
   "profile_settings_secInfo": "info",
+  "profile_settings_featureRequests": "Feedback & feature requests",
+  "profile_settings_featureRequestsSub": "Vote on ideas or suggest something new",
   "profile_settings_eula": "Terms of use (EULA)",
   "profile_settings_privacyPolicy": "Privacy policy",
   "profile_settings_contact": "Contact",

@@ -319,6 +319,7 @@ InboxCounts inboxCountsFromJson(Object? json) {
     unreadMessages: _int(r['unread_messages']),
     consentRequests: _int(r['consent_requests']),
     groupInvitations: _int(r['group_invitations']),
+    shippedRequests: _int(r['shipped_requests']),
   );
 }
 

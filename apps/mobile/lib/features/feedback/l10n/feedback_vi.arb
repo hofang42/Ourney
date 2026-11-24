@@ -1,0 +1,390 @@
+{
+  "@@locale": "vi",
+  "feedback_title": "đề xuất.",
+  "@feedback_title": {
+    "description": "Title of the feature requests board screen."
+  },
+  "feedback_detailTitle": "chi tiết.",
+  "@feedback_detailTitle": {
+    "description": "Title of the feature request detail screen."
+  },
+  "feedback_newAction": "Gửi đề xuất mới",
+  "@feedback_newAction": {
+    "description": "Tooltip of the header add button."
+  },
+  "feedback_moreOptions": "Thêm tùy chọn",
+  "@feedback_moreOptions": {
+    "description": "Tooltip of the detail overflow menu button."
+  },
+  "feedback_tabPopular": "Phổ biến",
+  "@feedback_tabPopular": {
+    "description": "Board tab: most voted active ideas."
+  },
+  "feedback_tabNew": "Mới",
+  "@feedback_tabNew": {
+    "description": "Board tab: newest ideas."
+  },
+  "feedback_tabPlanned": "Đã lên kế hoạch",
+  "@feedback_tabPlanned": {
+    "description": "Board tab: planned and in-progress ideas."
+  },
+  "feedback_tabShipped": "Đã ra mắt",
+  "@feedback_tabShipped": {
+    "description": "Board tab: shipped ideas."
+  },
+  "feedback_chipMine": "Của tôi",
+  "@feedback_chipMine": {
+    "description": "Filter chip showing all requests authored by the current user."
+  },
+  "feedback_catAll": "Tất cả",
+  "@feedback_catAll": {
+    "description": "Category filter: all categories."
+  },
+  "feedback_catCamera": "Máy ảnh & Check-in",
+  "@feedback_catCamera": {
+    "description": "Category: camera and check-in."
+  },
+  "feedback_catJourneys": "Hành trình",
+  "@feedback_catJourneys": {
+    "description": "Category: journeys."
+  },
+  "feedback_catSquad": "Nhóm",
+  "@feedback_catSquad": {
+    "description": "Category: squads."
+  },
+  "feedback_catSharing": "Chia sẻ",
+  "@feedback_catSharing": {
+    "description": "Category: sharing."
+  },
+  "feedback_catDesign": "Giao diện",
+  "@feedback_catDesign": {
+    "description": "Category: design and UI."
+  },
+  "feedback_catOther": "Khác",
+  "@feedback_catOther": {
+    "description": "Category: other."
+  },
+  "feedback_statusNew": "Mới",
+  "@feedback_statusNew": {
+    "description": "Status tag: new."
+  },
+  "feedback_statusUnderReview": "Đang xem xét",
+  "@feedback_statusUnderReview": {
+    "description": "Status tag: under review."
+  },
+  "feedback_statusPlanned": "Đã lên kế hoạch",
+  "@feedback_statusPlanned": {
+    "description": "Status tag: planned."
+  },
+  "feedback_statusInProgress": "Đang làm",
+  "@feedback_statusInProgress": {
+    "description": "Status tag: in progress."
+  },
+  "feedback_statusShipped": "Đã ra mắt",
+  "@feedback_statusShipped": {
+    "description": "Status tag: shipped."
+  },
+  "feedback_statusDeclined": "Chưa phù hợp",
+  "@feedback_statusDeclined": {
+    "description": "Status tag: not planned / declined."
+  },
+  "feedback_searchLabel": "Tìm đề xuất",
+  "@feedback_searchLabel": {
+    "description": "Accessibility label for the search field."
+  },
+  "feedback_searchHint": "Tìm ý tưởng hoặc tính năng…",
+  "@feedback_searchHint": {
+    "description": "Hint text inside the search field."
+  },
+  "feedback_searchClear": "Xóa tìm kiếm",
+  "@feedback_searchClear": {
+    "description": "Clear search button tooltip."
+  },
+  "feedback_newCta": "Gửi đề xuất mới",
+  "@feedback_newCta": {
+    "description": "Primary pinned button on the board screen."
+  },
+  "feedback_officialReplyBadge": "Phản hồi Ourney",
+  "@feedback_officialReplyBadge": {
+    "description": "Tag on a card indicating an official team response."
+  },
+  "feedback_officialReplyEyebrow": "PHẢN HỒI TỪ OURNEY",
+  "@feedback_officialReplyEyebrow": {
+    "description": "Eyebrow header of the official reply card on the detail screen."
+  },
+  "feedback_voteButton": "Bình chọn · {count}",
+  "@feedback_voteButton": {
+    "description": "Detail screen primary upvote button when not yet voted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feedback_votedButton": "Đã bình chọn · {count}",
+  "@feedback_votedButton": {
+    "description": "Detail screen upvote button when already voted.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feedback_voteSemantics": "{title}, {count} lượt bình chọn, {state}",
+  "@feedback_voteSemantics": {
+    "description": "Screen reader label for the vote pill on a request card.",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "feedback_voteStateVoted": "đã bình chọn",
+  "@feedback_voteStateVoted": {
+    "description": "Vote state spoken by screen readers when voted."
+  },
+  "feedback_voteStateNotVoted": "chưa bình chọn",
+  "@feedback_voteStateNotVoted": {
+    "description": "Vote state spoken by screen readers when not voted."
+  },
+  "feedback_shippedVotes": "Đã ra mắt · {count} lượt bình chọn",
+  "@feedback_shippedVotes": {
+    "description": "Read-only bottom banner on a shipped request detail screen.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feedback_editedBadge": "Đã chỉnh sửa",
+  "@feedback_editedBadge": {
+    "description": "Shown next to the creation date when the author edited the request."
+  },
+  "feedback_authorEditHint": "Bạn có thể sửa hoặc xóa đề xuất này trước khi Ourney bắt đầu xem xét.",
+  "@feedback_authorEditHint": {
+    "description": "Helper note shown to the author while the request status is still new."
+  },
+  "feedback_editAction": "Sửa đề xuất",
+  "@feedback_editAction": {
+    "description": "Overflow menu item to edit own request."
+  },
+  "feedback_deleteAction": "Xóa đề xuất",
+  "@feedback_deleteAction": {
+    "description": "Overflow menu item to delete own request."
+  },
+  "feedback_deleteTitle": "Xóa đề xuất này?",
+  "@feedback_deleteTitle": {
+    "description": "Confirmation sheet title when deleting a request."
+  },
+  "feedback_deleteBody": "Đề xuất của bạn sẽ bị xóa vĩnh viễn khỏi bảng cộng đồng.",
+  "@feedback_deleteBody": {
+    "description": "Confirmation sheet body when deleting a request."
+  },
+  "feedback_deleteConfirm": "Xóa đề xuất",
+  "@feedback_deleteConfirm": {
+    "description": "Confirm button on the delete sheet."
+  },
+  "feedback_deletedToast": "Đã xóa đề xuất.",
+  "@feedback_deletedToast": {
+    "description": "Toast after deleting own request."
+  },
+  "feedback_createSheetTitle": "gửi đề xuất.",
+  "@feedback_createSheetTitle": {
+    "description": "Title of the create request bottom sheet."
+  },
+  "feedback_editSheetTitle": "sửa đề xuất.",
+  "@feedback_editSheetTitle": {
+    "description": "Title of the edit request bottom sheet."
+  },
+  "feedback_createSheetSub": "Đề xuất được hiển thị công khai để mọi người cùng bình chọn.",
+  "@feedback_createSheetSub": {
+    "description": "Subtitle of the create/edit sheet."
+  },
+  "feedback_fieldTitleLabel": "Tên đề xuất",
+  "@feedback_fieldTitleLabel": {
+    "description": "Label of the title input in the create/edit sheet."
+  },
+  "feedback_fieldTitleHint": "Ví dụ: Widget chuỗi ngày ngoài màn hình khóa",
+  "@feedback_fieldTitleHint": {
+    "description": "Placeholder of the title input."
+  },
+  "feedback_fieldCategoryLabel": "Danh mục",
+  "@feedback_fieldCategoryLabel": {
+    "description": "Label above the category chips."
+  },
+  "feedback_fieldBodyLabel": "Mô tả chi tiết",
+  "@feedback_fieldBodyLabel": {
+    "description": "Label of the description textarea."
+  },
+  "feedback_fieldBodyHint": "Kể ngắn gọn tính năng này giúp thói quen hằng ngày của bạn dễ hơn thế nào…",
+  "@feedback_fieldBodyHint": {
+    "description": "Placeholder of the description textarea."
+  },
+  "feedback_similarHeading": "Có thể đã có người đề xuất:",
+  "@feedback_similarHeading": {
+    "description": "Heading of the live duplicate suggestion card."
+  },
+  "feedback_similarVoteChip": "+1 ({count})",
+  "@feedback_similarVoteChip": {
+    "description": "Quick upvote chip on a duplicate suggestion row.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feedback_bugEmailLink": "Báo lỗi riêng tư kèm ảnh chụp màn hình? Liên hệ hỗ trợ",
+  "@feedback_bugEmailLink": {
+    "description": "Helper link to the support contact screen for private bug reports."
+  },
+  "feedback_submitAction": "Gửi đề xuất",
+  "@feedback_submitAction": {
+    "description": "Primary submit button in the create sheet."
+  },
+  "feedback_saveChanges": "Lưu thay đổi",
+  "@feedback_saveChanges": {
+    "description": "Primary save button in the edit sheet."
+  },
+  "feedback_createdToast": "Đã đăng đề xuất và tính 1 lượt bình chọn của bạn!",
+  "@feedback_createdToast": {
+    "description": "Toast shown after creating a feature request."
+  },
+  "feedback_updatedToast": "Đã lưu thay đổi đề xuất.",
+  "@feedback_updatedToast": {
+    "description": "Toast shown after editing a feature request."
+  },
+  "feedback_mergedBanner": "Đề xuất này đã được gộp vào một ý tưởng tương tự cùng toàn bộ lượt bình chọn.",
+  "@feedback_mergedBanner": {
+    "description": "Banner shown on a request that was merged into a canonical duplicate."
+  },
+  "feedback_mergedOpenTarget": "Xem đề xuất gốc",
+  "@feedback_mergedOpenTarget": {
+    "description": "Button on the merged duplicate banner."
+  },
+  "feedback_reportAction": "Báo cáo đề xuất",
+  "@feedback_reportAction": {
+    "description": "Overflow menu item to report a feature request."
+  },
+  "feedback_reportTitle": "Báo cáo đề xuất",
+  "@feedback_reportTitle": {
+    "description": "Heading of the report sheet for a feature request."
+  },
+  "feedback_reportedToast": "Đã gửi báo cáo. Đề xuất này đã được ẩn khỏi máy bạn.",
+  "@feedback_reportedToast": {
+    "description": "Toast shown after reporting a feature request."
+  },
+  "feedback_blockAuthorAction": "Chặn người đăng",
+  "@feedback_blockAuthorAction": {
+    "description": "Overflow menu item to block the request author."
+  },
+  "feedback_anonymousAuthor": "Thành viên Ourney",
+  "@feedback_anonymousAuthor": {
+    "description": "Fallback author name when the author account was deleted."
+  },
+  "feedback_emptyPopularTitle": "chưa có đề xuất nào.",
+  "@feedback_emptyPopularTitle": {
+    "description": "Empty state title for Popular/New tab."
+  },
+  "feedback_emptyPopularBody": "Bạn muốn Ourney có thêm tính năng gì tiếp theo? Hãy là người đầu tiên chia sẻ nhé.",
+  "@feedback_emptyPopularBody": {
+    "description": "Empty state body for Popular/New tab."
+  },
+  "feedback_emptyPopularCta": "Gửi đề xuất đầu tiên",
+  "@feedback_emptyPopularCta": {
+    "description": "Empty state action for Popular/New tab."
+  },
+  "feedback_emptyPlannedTitle": "chưa có mục nào trong kế hoạch.",
+  "@feedback_emptyPlannedTitle": {
+    "description": "Empty state title for Planned tab."
+  },
+  "feedback_emptyPlannedBody": "Những ý tưởng được bình chọn nhiều sẽ sớm được đưa vào lộ trình.",
+  "@feedback_emptyPlannedBody": {
+    "description": "Empty state body for Planned tab."
+  },
+  "feedback_emptyShippedTitle": "sắp có tính năng mới.",
+  "@feedback_emptyShippedTitle": {
+    "description": "Empty state title for Shipped tab."
+  },
+  "feedback_emptyShippedBody": "Khi một đề xuất hoàn thành, bạn sẽ thấy thông báo tại đây.",
+  "@feedback_emptyShippedBody": {
+    "description": "Empty state body for Shipped tab."
+  },
+  "feedback_emptyMineTitle": "bạn chưa gửi đề xuất nào.",
+  "@feedback_emptyMineTitle": {
+    "description": "Empty state title when My requests chip is active."
+  },
+  "feedback_emptyMineBody": "Những ý tưởng bạn gửi sẽ xuất hiện tại đây để bạn theo dõi tiến độ.",
+  "@feedback_emptyMineBody": {
+    "description": "Empty state body when My requests chip is active."
+  },
+  "feedback_emptySearchTitle": "không tìm thấy đề xuất trùng khớp.",
+  "@feedback_emptySearchTitle": {
+    "description": "Empty state title when search has no matches."
+  },
+  "feedback_emptySearchBody": "Bạn có thể gửi ý tưởng này thành một đề xuất mới cho cộng đồng.",
+  "@feedback_emptySearchBody": {
+    "description": "Empty state body when search has no matches."
+  },
+  "feedback_emptySearchCta": "Gửi đề xuất này",
+  "@feedback_emptySearchCta": {
+    "description": "Empty state CTA pre-filling the create sheet with the search query."
+  },
+  "feedback_loadMore": "Xem thêm đề xuất",
+  "@feedback_loadMore": {
+    "description": "Pagination button at the end of a page."
+  },
+  "feedback_endOfList": "Đã hiển thị tất cả đề xuất",
+  "@feedback_endOfList": {
+    "description": "Footer caption when all items have been loaded."
+  },
+  "feedback_offlineStrip": "Đang xem bản đã lưu.",
+  "@feedback_offlineStrip": {
+    "description": "Offline banner strip above cached requests."
+  },
+  "feedback_comingSoonTitle": "bảng đề xuất sắp mở.",
+  "@feedback_comingSoonTitle": {
+    "description": "Friendly state title when backend migration 0024 is not deployed yet."
+  },
+  "feedback_comingSoonBody": "Máy chủ đang được cập nhật tính năng bình chọn đề xuất. Bạn quay lại sau ít phút nhé!",
+  "@feedback_comingSoonBody": {
+    "description": "Friendly state body when backend migration 0024 is not deployed yet."
+  },
+  "feedback_errorTitleLength": "Tên đề xuất cần từ 6 đến 80 ký tự.",
+  "@feedback_errorTitleLength": {
+    "description": "Validation error when title is too short or too long."
+  },
+  "feedback_errorBodyLength": "Mô tả cần từ 10 đến 1000 ký tự.",
+  "@feedback_errorBodyLength": {
+    "description": "Validation error when body is too short or too long."
+  },
+  "feedback_errorContentPolicy": "Nội dung chứa từ ngữ không phù hợp với quy tắc cộng đồng của Ourney.",
+  "@feedback_errorContentPolicy": {
+    "description": "Validation error when profanity filter rejects the submission."
+  },
+  "feedback_errorLinksNotAllowed": "Vui lòng không chèn đường dẫn web vào đề xuất.",
+  "@feedback_errorLinksNotAllowed": {
+    "description": "Validation error when a URL is included in title or body."
+  },
+  "feedback_errorRateLimited": "Bạn đã gửi tối đa 5 đề xuất trong 24 giờ qua. Hãy bình chọn các ý tưởng sẵn có nhé!",
+  "@feedback_errorRateLimited": {
+    "description": "Error when daily creation limit (5/24h) is reached."
+  },
+  "feedback_errorOfflineDraftSaved": "Không có mạng. Bản nháp của bạn vẫn được giữ nguyên.",
+  "@feedback_errorOfflineDraftSaved": {
+    "description": "Error in create sheet when offline; draft is preserved."
+  },
+  "feedback_errorVoteLocked": "Đề xuất này đã khóa bình chọn.",
+  "@feedback_errorVoteLocked": {
+    "description": "Toast when voting on a request that was just closed or shipped."
+  },
+  "feedback_errorNotFound": "Đề xuất này không còn tồn tại hoặc đã bị ẩn.",
+  "@feedback_errorNotFound": {
+    "description": "Error on detail screen when request is not found."
+  }
+}

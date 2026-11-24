@@ -105,5 +105,7 @@
   "social_groupInviteMembers": "{count} of {max} members",
   "social_groupInviteJoin": "Join",
   "social_groupInviteSkip": "Skip",
-  "social_messageCounter": "{count}/{max}"
+  "social_messageCounter": "{count}/{max}",
+  "social_shippedRequestTitle": "A feature you voted for is live: {title}",
+  "social_shippedRequestAuthorTitle": "Your idea is now live: {title}"
 }

@@ -273,6 +273,7 @@ class _SettingsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
+    final localOnly = ref.watch(appConfigProvider).localOnly;
     final haptics = ref.watch(hapticsEnabledProvider);
     final language = ref.watch(localeOverrideProvider);
     return _GroupCard(
@@ -308,6 +309,13 @@ class _SettingsSection extends ConsumerWidget {
             }),
             onPressed: () => context.push(profileSettingsPath),
           ),
+          if (!localOnly)
+            UiRow(
+              key: const ValueKey('profile-feature-requests'),
+              leading: const OurneyIcon(name: 'sparkle', flat: true),
+              title: l10n.profile_settings_featureRequests,
+              onPressed: () => context.push(AppRoutes.feedback),
+            ),
           UiRow(
             key: const ValueKey('profile-safety'),
             leading: const OurneyIcon(name: 'shield', flat: true),

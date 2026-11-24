@@ -46,6 +46,7 @@ void main() {
     'social',
     'sharing',
     'import',
+    'feedback',
   ];
 
   test('every feature folder is registered with route prefixes', () {
@@ -114,6 +115,8 @@ void main() {
         '/share/:journeyId',
         AppRoutes.safety,
         AppRoutes.reminders,
+        AppRoutes.feedback,
+        '/feedback/:id',
       ]),
     );
   });

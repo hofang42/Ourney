@@ -68,6 +68,7 @@ final inboxCountsProvider = Provider.autoDispose<AsyncValue<InboxCounts>>((
       ].fold(c.unreadMessages, (a, b) => a - b).clamp(0, 1 << 30),
       consentRequests: c.consentRequests,
       groupInvitations: c.groupInvitations,
+      shippedRequests: c.shippedRequests,
     ),
   );
 });

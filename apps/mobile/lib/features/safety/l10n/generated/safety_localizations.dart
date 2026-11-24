@@ -440,6 +440,24 @@ abstract class SafetyL10n {
   /// **'Không mở được ứng dụng email. Hãy sao chép địa chỉ và gửi từ ứng dụng bạn dùng.'**
   String get safety_contactNoMailApp;
 
+  /// Heading of the feature requests card on the contact page.
+  ///
+  /// In vi, this message translates to:
+  /// **'Muốn đề xuất tính năng mới?'**
+  String get safety_contactFeatureTitle;
+
+  /// Body of the feature requests card on the contact page.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xem bảng ý tưởng cộng đồng, bình chọn tính năng bạn cần và nhận thông báo khi ra mắt.'**
+  String get safety_contactFeatureBody;
+
+  /// Button opening the in-app feature requests board from the contact page.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mở bảng đề xuất'**
+  String get safety_contactFeatureCta;
+
   /// Title of the EULA acceptance screen.
   ///
   /// In vi, this message translates to:

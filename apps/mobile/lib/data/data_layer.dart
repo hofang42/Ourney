@@ -15,6 +15,7 @@ import 'remote/remote_api.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/chat_repository.dart';
 import 'repositories/check_in_repository.dart';
+import 'repositories/feature_request_repository.dart';
 import 'repositories/friend_repository.dart';
 import 'repositories/group_repository.dart';
 import 'repositories/insights_repository.dart';
@@ -157,6 +158,9 @@ class DataLayer {
   );
   late final ChatRepository? chat = _social(DataChatRepository.new);
   late final InsightsRepository? insights = _social(DataInsightsRepository.new);
+  late final FeatureRequestRepository? featureRequests = _social(
+    DataFeatureRequestRepository.new,
+  );
 
   T? _social<T>(T Function(SocialContext) build) {
     final s = social;
