@@ -193,7 +193,31 @@
           </div>
 
           <h1 class="link-h1" id="j-title"><b data-i18n="j_headline">Bạn được mời vào squad</b></h1>
-          <p class="link-lede" data-i18n="j_desc">Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.</p>
+          <p class="link-lede" id="j-desc" data-i18n="j_desc">Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.</p>
+
+          <!-- Squad Preview Skeleton (while preview_group_invite is loading) -->
+          <div class="link-squad-skel" id="j-loading-skel" aria-hidden="true" hidden>
+            <div class="link-skel-bar skel-md"></div>
+            <div class="link-skel-bar skel-xs"></div>
+          </div>
+
+          <!-- Squad Preview Info (squad name + member count + inviter above the code) -->
+          <div class="link-squad-meta" id="j-squad-meta" hidden>
+            <div class="link-squad-name-row">
+              <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-squad"/></svg>
+              <strong class="link-squad-name" id="j-squad-name">—</strong>
+            </div>
+            <div class="link-squad-pills">
+              <span class="link-stat-pill pill-study" id="j-squad-members-pill">
+                <svg class="o-sticker" width="16" height="16" aria-hidden="true"><use href="#i-trophy"/></svg>
+                <b id="j-squad-members">—</b>
+              </span>
+              <span class="link-stat-pill pill-mint" id="j-squad-inviter-pill" hidden>
+                <svg class="o-sticker" width="16" height="16" aria-hidden="true"><use href="#i-check"/></svg>
+                <b id="j-squad-inviter">—</b>
+              </span>
+            </div>
+          </div>
 
           <!-- Tactile Code Ticket Box -->
           <div class="link-code-ticket" id="j-code-box">

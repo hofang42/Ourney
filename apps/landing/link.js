@@ -42,8 +42,10 @@
       f_meta_desc: 'Bạn được mời kết bạn trên Ourney — mở trong ứng dụng để kết nối, chia sẻ hành trình ảnh mỗi ngày và giữ chuỗi cùng nhau.',
       f_kicker: 'VÉ MỜI KẾT BẠN · OURNEY',
       f_headline: 'Bạn được mời kết bạn trên Ourney',
+      f_invited_suffix: ' mời bạn kết bạn trên Ourney',
       f_desc: 'Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.',
-      f_token_label: 'Mã lời mời:',
+      f_expired_h1: 'Lời mời không còn hiệu lực',
+      f_expired_desc: 'Người bạn của bạn có thể đã tạo liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết kết bạn mới nhất nhé.',
       f_invalid_h1: 'Liên kết lời mời không hợp lệ',
       f_invalid_desc: 'Đường dẫn kết bạn này bị thiếu mã hoặc không đúng định dạng. Nhờ bạn bè gửi lại liên kết mới hoặc mở trực tiếp trong ứng dụng Ourney.',
 
@@ -52,6 +54,11 @@
       j_meta_desc: 'Bạn được mời vào squad trên Ourney — mở trong ứng dụng hoặc sao chép mã mời để tham gia tường Polaroid mỗi ngày cùng nhóm bạn.',
       j_kicker: 'VÉ MỜI SQUAD · TỐI ĐA 10 BẠN',
       j_headline: 'Bạn được mời vào squad',
+      j_headline_named_prefix: 'Vào squad ',
+      j_headline_named_suffix: ' trên Ourney',
+      j_members_fmt: (count, max) =>
+        (typeof max === 'number' && max > 0 ? `${count}/${max} thành viên` : `${count} thành viên`),
+      j_inviter_fmt: (name) => `${name} mời bạn`,
       j_desc: 'Một mình dễ quên, có hội thì giữ được. Mở thẳng trong ứng dụng Ourney hoặc sao chép mã bên dưới để vào tường Polaroid của nhóm.',
       j_code_label: 'MÃ MỜI VÀO SQUAD',
       j_invalid_h1: 'Mã mời squad không hợp lệ',
@@ -113,8 +120,10 @@
       f_meta_desc: 'You’re invited to be friends on Ourney — open in the app to connect, share daily photo journeys, and keep streaks together.',
       f_kicker: 'FRIEND INVITE PASS · OURNEY',
       f_headline: 'You’re invited to be friends on Ourney',
+      f_invited_suffix: ' invited you to be friends on Ourney',
       f_desc: 'Open this invite in the Ourney app to connect right away, share daily photo journeys, and keep your streak alive together.',
-      f_token_label: 'Invite token:',
+      f_expired_h1: 'This invite link is no longer active',
+      f_expired_desc: 'Your friend may have created a new invite link. Ask them to resend their latest link.',
       f_invalid_h1: 'Invalid friend invite link',
       f_invalid_desc: 'This friend invite link is missing a token or has an invalid format. Ask your friend for a fresh link or open Ourney directly.',
 
@@ -123,6 +132,11 @@
       j_meta_desc: 'You’re invited to join a squad on Ourney — open in the app or copy the invite code to join the daily Polaroid wall.',
       j_kicker: 'SQUAD INVITE · UP TO 10 FRIENDS',
       j_headline: 'You’re invited to join a squad',
+      j_headline_named_prefix: 'Join squad ',
+      j_headline_named_suffix: ' on Ourney',
+      j_members_fmt: (count, max) =>
+        (typeof max === 'number' && max > 0 ? `${count}/${max} members` : `${count} members`),
+      j_inviter_fmt: (name) => `Invited by ${name}`,
       j_desc: 'Solo fades fast, squads stick together. Open straight in the Ourney app or copy the code below to join your squad’s Polaroid wall.',
       j_code_label: 'SQUAD INVITE CODE',
       j_invalid_h1: 'Invalid squad invite code',
@@ -209,8 +223,9 @@
   root.dataset.platform = platform;
 
   /* --- 6. Parse & Validate Route Parameters (/f/:token, /j/:code, /join/:code, /p/:token) --- */
+  const FRIEND_TOKEN_RE = /^[a-z0-9]{12}$/;
   const TOKEN_RE = /^[A-Za-z0-9_-]{1,64}$/;
-  const SQUAD_CODE_RE = /^[A-Z0-9]{3,16}$/;
+  const SQUAD_CODE_RE = /^[A-Z0-9]{8}$/;
 
   function parseRoute() {
     const path = location.pathname || '/';
@@ -238,12 +253,13 @@
     }
 
     if (kind === 'friend') {
-      const valid = TOKEN_RE.test(rawParam);
+      const cleaned = rawParam.toLowerCase();
+      const valid = FRIEND_TOKEN_RE.test(cleaned);
       return {
         kind: 'friend',
         valid,
-        value: valid ? rawParam : '',
-        deepLink: valid ? `ourney://friend/${encodeURIComponent(rawParam)}` : ''
+        value: valid ? cleaned : '',
+        deepLink: valid ? `ourney://friend/${encodeURIComponent(cleaned)}` : ''
       };
     }
 
@@ -602,29 +618,275 @@
   }
 
   /* --- 9. Render Friend Page (/f/:token) --- */
-  function initFriendPage() {
-    const validCard = $('f-valid-card');
-    const invalidCard = $('f-invalid-card');
-    const tokenVal = $('f-token-val');
-    const openBtn = $('open-app-btn');
+  let friendPageState = 'loading'; // 'loading' | 'loaded' | 'fallback' | 'expired' | 'invalid'
+  let loadedFriendData = null;
 
-    if (!route.valid) {
+  function getRpcEndpoint(rpcName) {
+    const supabaseUrl = getMetaContent('ourney-supabase-url', DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
+    const anonKey = getMetaContent('ourney-supabase-anon-key', DEFAULT_SUPABASE_ANON_KEY);
+    const isLocalhost = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+    const hasCustomMetaUrl = Boolean(document.querySelector('meta[name="ourney-supabase-url"]'));
+    const baseUrl = (isLocalhost && !hasCustomMetaUrl) ? location.origin : supabaseUrl;
+    const headers = { 'Content-Type': 'application/json' };
+    if (anonKey) {
+      headers.apikey = anonKey;
+      headers.Authorization = `Bearer ${anonKey}`;
+    }
+    return { url: `${baseUrl}/rest/v1/rpc/${rpcName}`, headers };
+  }
+
+  function renderFriendState() {
+    const validCard = $('f-valid-card');
+    const expiredCard = $('f-expired-card');
+    const invalidCard = $('f-invalid-card');
+    const loadingSkel = $('f-loading-skel');
+    const inviterBox = $('f-inviter-box');
+    const stickerCluster = $('f-sticker-cluster');
+    const avatarInitialEl = $('f-avatar-initial');
+    const handleEl = $('f-inviter-handle');
+    const titleEl = $('f-title');
+    const descEl = $('f-desc');
+    const dict = COPY[curLang];
+
+    if (friendPageState === 'invalid') {
       if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = true;
       if (invalidCard) invalidCard.hidden = false;
+      document.title = dict.f_meta_title;
       return;
     }
 
-    if (validCard) validCard.hidden = false;
-    if (invalidCard) invalidCard.hidden = true;
-    if (tokenVal) tokenVal.textContent = route.value;
-    if (openBtn) openBtn.setAttribute('href', route.deepLink);
+    if (friendPageState === 'expired') {
+      if (validCard) validCard.hidden = true;
+      if (expiredCard) expiredCard.hidden = false;
+      if (invalidCard) invalidCard.hidden = true;
+      document.title = dict.f_meta_title;
+      return;
+    }
 
+    if (validCard) {
+      validCard.hidden = false;
+      validCard.setAttribute('aria-busy', friendPageState === 'loading' ? 'true' : 'false');
+    }
+    if (expiredCard) expiredCard.hidden = true;
+    if (invalidCard) invalidCard.hidden = true;
+
+    if (friendPageState === 'loading') {
+      if (loadingSkel) loadingSkel.hidden = false;
+      if (inviterBox) inviterBox.hidden = true;
+      if (stickerCluster) stickerCluster.hidden = true;
+      if (titleEl) titleEl.hidden = true;
+      if (descEl) descEl.hidden = true;
+      document.title = dict.f_meta_title;
+      return;
+    }
+
+    if (loadingSkel) loadingSkel.hidden = true;
+    if (titleEl) titleEl.hidden = false;
+    if (descEl) {
+      descEl.hidden = false;
+      descEl.textContent = dict.f_desc;
+    }
+
+    if (friendPageState === 'loaded' && loadedFriendData) {
+      const displayName = typeof loadedFriendData.display_name === 'string'
+        ? loadedFriendData.display_name.trim()
+        : '';
+      const handle = typeof loadedFriendData.handle === 'string'
+        ? loadedFriendData.handle.trim().replace(/^@+/, '')
+        : '';
+      const rawInitial = typeof loadedFriendData.avatar_initial === 'string'
+        ? loadedFriendData.avatar_initial.trim()
+        : '';
+      const initial = (rawInitial || displayName || handle || 'O').slice(0, 1).toUpperCase();
+
+      if (inviterBox) inviterBox.hidden = false;
+      if (stickerCluster) stickerCluster.hidden = true;
+      if (avatarInitialEl) avatarInitialEl.textContent = initial;
+      if (handleEl) {
+        if (handle) {
+          handleEl.hidden = false;
+          handleEl.textContent = `@${handle}`;
+        } else {
+          handleEl.hidden = true;
+          handleEl.textContent = '';
+        }
+      }
+
+      if (titleEl && displayName) {
+        const b = document.createElement('b');
+        b.textContent = displayName;
+        const suffix = document.createTextNode(dict.f_invited_suffix);
+        titleEl.replaceChildren(b, suffix);
+        document.title = `ourney · ${displayName}${dict.f_invited_suffix}`;
+      } else if (titleEl) {
+        const b = document.createElement('b');
+        b.textContent = dict.f_headline;
+        titleEl.replaceChildren(b);
+        document.title = dict.f_meta_title;
+      }
+      return;
+    }
+
+    /* Fetch failure -> generic headline (current copy), still with Open-in-app */
+    if (inviterBox) inviterBox.hidden = true;
+    if (stickerCluster) stickerCluster.hidden = false;
+    if (titleEl) {
+      const b = document.createElement('b');
+      b.textContent = dict.f_headline;
+      titleEl.replaceChildren(b);
+    }
+    document.title = dict.f_meta_title;
+  }
+
+  async function fetchFriendPreview() {
+    friendPageState = 'loading';
+    renderFriendState();
+
+    const { url, headers } = getRpcEndpoint('preview_friend_invite');
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_token: route.value })
+      });
+      if (!res.ok) {
+        friendPageState = 'fallback';
+        renderFriendState();
+        return;
+      }
+      const data = await res.json();
+      if (!data || typeof data !== 'object' || typeof data.display_name !== 'string' || !data.display_name.trim()) {
+        friendPageState = 'expired';
+        loadedFriendData = null;
+        renderFriendState();
+        return;
+      }
+      loadedFriendData = data;
+      friendPageState = 'loaded';
+      renderFriendState();
+    } catch (e) {
+      friendPageState = 'fallback';
+      renderFriendState();
+    }
+  }
+
+  function initFriendPage() {
+    const openBtn = $('open-app-btn');
+
+    if (!route.valid) {
+      friendPageState = 'invalid';
+      renderFriendState();
+      return;
+    }
+
+    if (openBtn) openBtn.setAttribute('href', route.deepLink);
     attemptOpenAppOnce(route.deepLink);
+    fetchFriendPreview();
   }
 
   /* --- 10. Render Squad Page (/j/:code, /join/:code) --- */
   let codeCopied = false;
   let copyResetTimer = null;
+  let squadPageState = 'idle'; // 'loading' | 'loaded' | 'fallback'
+  let loadedSquadData = null;
+
+  function renderSquadState() {
+    const loadingSkel = $('j-loading-skel');
+    const squadMeta = $('j-squad-meta');
+    const squadNameEl = $('j-squad-name');
+    const squadMembersEl = $('j-squad-members');
+    const inviterPill = $('j-squad-inviter-pill');
+    const inviterEl = $('j-squad-inviter');
+    const titleEl = $('j-title');
+    const dict = COPY[curLang];
+
+    if (squadPageState === 'loading') {
+      if (loadingSkel) loadingSkel.hidden = false;
+      if (squadMeta) squadMeta.hidden = true;
+      return;
+    }
+
+    if (loadingSkel) loadingSkel.hidden = true;
+
+    if (squadPageState === 'loaded' && loadedSquadData) {
+      const rawTitle = loadedSquadData.title || loadedSquadData.group_name || '';
+      const title = typeof rawTitle === 'string' ? rawTitle.trim() : '';
+      const memberCount = typeof loadedSquadData.member_count === 'number' && Number.isFinite(loadedSquadData.member_count)
+        ? loadedSquadData.member_count
+        : 0;
+      const maxMembers = typeof loadedSquadData.max_members === 'number' && Number.isFinite(loadedSquadData.max_members)
+        ? loadedSquadData.max_members
+        : 10;
+      const rawInviter = loadedSquadData.inviter_display_name || loadedSquadData.owner_display_name || '';
+      const inviterName = typeof rawInviter === 'string' ? rawInviter.trim() : '';
+
+      if (title) {
+        if (squadMeta) squadMeta.hidden = false;
+        if (squadNameEl) squadNameEl.textContent = title;
+        if (squadMembersEl) squadMembersEl.textContent = dict.j_members_fmt(memberCount, maxMembers);
+        if (inviterPill && inviterEl) {
+          if (inviterName) {
+            inviterPill.hidden = false;
+            inviterEl.textContent = dict.j_inviter_fmt(inviterName);
+          } else {
+            inviterPill.hidden = true;
+            inviterEl.textContent = '';
+          }
+        }
+        if (titleEl) {
+          const prefix = document.createTextNode(dict.j_headline_named_prefix);
+          const b = document.createElement('b');
+          b.textContent = title;
+          const suffix = document.createTextNode(dict.j_headline_named_suffix);
+          titleEl.replaceChildren(prefix, b, suffix);
+        }
+        document.title = `ourney · ${dict.j_headline_named_prefix}${title}${dict.j_headline_named_suffix}`;
+        return;
+      }
+    }
+
+    if (squadMeta) squadMeta.hidden = true;
+    if (titleEl) {
+      const b = document.createElement('b');
+      b.textContent = dict.j_headline;
+      titleEl.replaceChildren(b);
+    }
+    document.title = dict.j_meta_title;
+  }
+
+  async function fetchSquadPreview() {
+    squadPageState = 'loading';
+    renderSquadState();
+
+    const { url, headers } = getRpcEndpoint('preview_group_invite');
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ p_code: route.value })
+      });
+      if (!res.ok) {
+        squadPageState = 'fallback';
+        renderSquadState();
+        return;
+      }
+      const data = await res.json();
+      const title = data && typeof data === 'object' ? (data.title || data.group_name) : '';
+      if (!data || typeof title !== 'string' || !title.trim()) {
+        loadedSquadData = null;
+        squadPageState = 'fallback';
+        renderSquadState();
+        return;
+      }
+      loadedSquadData = data;
+      squadPageState = 'loaded';
+      renderSquadState();
+    } catch (e) {
+      squadPageState = 'fallback';
+      renderSquadState();
+    }
+  }
 
   function initSquadPage() {
     const validCard = $('j-valid-card');
@@ -696,6 +958,7 @@
     }
 
     attemptOpenAppOnce(route.deepLink);
+    fetchSquadPreview();
   }
 
   /* --- 11. Render Public Journey Page (/p/:token) --- */
@@ -1064,9 +1327,9 @@
     });
 
     if (route.kind === 'friend') {
-      document.title = dict.f_meta_title;
+      renderFriendState();
     } else if (route.kind === 'squad') {
-      document.title = dict.j_meta_title;
+      renderSquadState();
       const copyLabel = $('copy-code-label');
       if (copyLabel) copyLabel.textContent = codeCopied ? dict.copy_done : dict.copy_code;
     } else if (route.kind === 'journey') {

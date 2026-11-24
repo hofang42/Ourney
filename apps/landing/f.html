@@ -165,7 +165,7 @@
     <div class="wrap link-wrap">
       <div class="link-layout">
         <!-- Main Invite Card -->
-        <section class="card link-card" id="f-valid-card" aria-labelledby="f-title">
+        <section class="card link-card" id="f-valid-card" aria-labelledby="f-title" aria-busy="true">
           <div class="link-ticket-head">
             <span class="link-kicker kicker-mint">
               <svg class="o-sticker" width="20" height="20" aria-hidden="true"><use href="#i-squad"/></svg>
@@ -174,25 +174,50 @@
             <span class="link-pass-tag" translate="no">DAY 01 · PASS</span>
           </div>
 
-          <div class="link-sticker-cluster" aria-hidden="true">
+          <!-- Loading Skeleton (shown while preview_friend_invite is in flight) -->
+          <div class="link-inviter-skel" id="f-loading-skel" aria-hidden="true">
+            <div class="link-skel-avatar"></div>
+            <div class="link-skel-bar skel-xs"></div>
+            <div class="link-skel-bar skel-lg"></div>
+            <div class="link-skel-bar skel-sm"></div>
+          </div>
+
+          <!-- Inviter Identity (avatar circle with initial + @handle underneath) -->
+          <div class="link-inviter-id" id="f-inviter-box" hidden>
+            <div class="link-avatar-circle" id="f-avatar" aria-hidden="true">
+              <span id="f-avatar-initial">O</span>
+            </div>
+            <span class="link-handle-pill" id="f-inviter-handle" translate="no">@ourney</span>
+          </div>
+
+          <!-- Generic Fallback Sticker Cluster (shown only on fetch failure) -->
+          <div class="link-sticker-cluster" id="f-sticker-cluster" aria-hidden="true" hidden>
             <span class="link-tile tile-study"><svg class="o-sticker" width="34" height="34"><use href="#i-squad"/></svg></span>
             <span class="link-tile tile-flame"><svg class="o-sticker" width="34" height="34"><use href="#i-flame"/></svg></span>
             <span class="link-tile tile-mint"><svg class="o-sticker" width="34" height="34"><use href="#i-camera"/></svg></span>
           </div>
 
-          <h1 class="link-h1" id="f-title"><b data-i18n="f_headline">Bạn được mời kết bạn trên Ourney</b></h1>
-          <p class="link-lede" data-i18n="f_desc">Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.</p>
-
-          <div class="link-token-chip" id="f-token-row">
-            <svg class="o-sticker" width="18" height="18" aria-hidden="true"><use href="#i-check"/></svg>
-            <span data-i18n="f_token_label">Mã lời mời:</span>
-            <code class="link-token-code" id="f-token-val" translate="no">—</code>
-          </div>
+          <h1 class="link-h1" id="f-title" hidden><b data-i18n="f_headline">Bạn được mời kết bạn trên Ourney</b></h1>
+          <p class="link-lede" id="f-desc" data-i18n="f_desc" hidden>Mở lời mời trong ứng dụng Ourney để kết bạn ngay, cùng chia sẻ hành trình ảnh mỗi ngày và giữ liền chuỗi ngày không bỏ cuộc.</p>
 
           <div class="link-actions">
             <a class="btn btn-primary link-btn-block" id="open-app-btn" href="ourney://capture">
               <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-camera"/></svg>
               <span data-i18n="open_in_app">Mở trong app</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- Expired / Rotated Token Card (shown when preview_friend_invite returns null) -->
+        <section class="card link-card link-state-card" id="f-expired-card" hidden aria-labelledby="f-expired-title">
+          <div class="link-sticker-cluster" aria-hidden="true">
+            <span class="link-tile tile-flame"><svg class="o-sticker" width="36" height="36"><use href="#i-link"/></svg></span>
+          </div>
+          <h1 class="link-h1" id="f-expired-title"><b data-i18n="f_expired_h1">Lời mời không còn hiệu lực</b></h1>
+          <p class="link-lede" data-i18n="f_expired_desc">Người bạn của bạn có thể đã tạo liên kết mời mới. Hãy nhờ bạn ấy gửi lại liên kết kết bạn mới nhất nhé.</p>
+          <div class="link-actions">
+            <a class="btn btn-primary link-btn-block" href="/" data-home-link>
+              <span data-i18n="back_home">Về trang chủ Ourney</span>
             </a>
           </div>
         </section>
