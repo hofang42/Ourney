@@ -141,13 +141,18 @@ void main() {
     });
 
     Offset translation(WidgetTester tester, Finder within) {
-      final c = tester.widget<AnimatedContainer>(
+      final c = tester.widget<Transform>(
         find
-            .descendant(of: within, matching: find.byType(AnimatedContainer))
+            .descendant(
+              of: within,
+              matching: find.byKey(
+                const ValueKey('ui-pressable-surface-translate'),
+              ),
+            )
             .first,
       );
-      final t = c.transform?.getTranslation();
-      return Offset(t?.x ?? 0, t?.y ?? 0);
+      final t = c.transform.getTranslation();
+      return Offset(t.x, t.y);
     }
 
     testWidgets('pressing the card shows its pressed state', (tester) async {
@@ -158,6 +163,7 @@ void main() {
         tester.getRect(card).topRight - const Offset(8, -30),
       );
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 55));
       expect(translation(tester, card).dx, greaterThan(0));
       await g.up();
       await tester.pumpAndSettle();
@@ -170,13 +176,20 @@ void main() {
       final card = find.byKey(const ValueKey('squad-today-open-g1'));
       final chip = find.byKey(const ValueKey('squad-member-u2'));
       final g = await tester.startGesture(tester.getCenter(chip));
+      await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
       expect(translation(tester, card), Offset.zero);
       final chipScale = tester
-          .widget<AnimatedScale>(
-            find.descendant(of: chip, matching: find.byType(AnimatedScale)),
+          .widget<Transform>(
+            find.descendant(
+              of: chip,
+              matching: find.byKey(
+                const ValueKey('ui-pressable-surface-scale'),
+              ),
+            ),
           )
-          .scale;
+          .transform
+          .storage[0];
       expect(chipScale, lessThan(1));
       await g.up();
       await tester.pumpAndSettle();
@@ -228,6 +241,7 @@ void main() {
           tester.getCenter(find.byKey(const ValueKey('disabled-child'))),
         );
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
         expect(translation(tester, parent).dx, greaterThan(0));
         await gDisabled.up();
         await tester.pumpAndSettle();
@@ -239,6 +253,7 @@ void main() {
           tester.getCenter(find.byKey(const ValueKey('enabled-child'))),
         );
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
         expect(translation(tester, parent), Offset.zero);
         setHost(() => showEnabledChild = false);
         await tester.pump();
@@ -247,6 +262,7 @@ void main() {
 
         final gParent = await tester.startGesture(tester.getCenter(parent));
         await tester.pump();
+        await tester.pump(const Duration(milliseconds: 55));
         expect(
           translation(tester, parent).dx,
           greaterThan(0),

@@ -34,10 +34,22 @@ final RegExp _publicToken = RegExp(r'^[a-z0-9]{40}$');
 /// `journeys.public_token` as issued by `set_public_link` / `create_journey`.
 bool isValidPublicToken(String token) => _publicToken.hasMatch(token);
 
-/// JSON endpoint of the read-only public view of a solo `link` journey:
+/// Canonical public web host for Ourney share links.
+const String ourneyWebHost = 'ourney.tech';
+
+/// Human-facing share link for a public journey (`https://ourney.tech/p/<token>`).
+/// Opens the `/p/:token` route in the app (via Universal/App Links) or the
+/// web page on `ourney.tech` which fetches [publicJourneyUri].
+String publicJourneyLink(String token) =>
+    'https://$ourneyWebHost/p/${Uri.encodeComponent(token)}';
+
+/// [Uri] form of [publicJourneyLink].
+Uri publicJourneyShareUri(String token) => Uri.parse(publicJourneyLink(token));
+
+/// JSON endpoint of the read-only public view of a solo `link` journey
+/// (used by the `ourney.tech/p/<token>` web page):
 /// `GET {supabaseUrl}/functions/v1/public-journey?token=<token>` (404
-/// `{"error":"not_found"}` for unknown/revoked tokens). The human-facing share
-/// link is a static page that calls this endpoint.
+/// `{"error":"not_found"}` for unknown/revoked tokens).
 Uri publicJourneyUri(Uri supabaseUrl, String token) {
   final base = supabaseUrl.path.endsWith('/')
       ? supabaseUrl.path.substring(0, supabaseUrl.path.length - 1)

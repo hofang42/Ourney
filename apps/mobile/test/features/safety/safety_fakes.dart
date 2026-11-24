@@ -16,9 +16,16 @@ import 'package:ourney_core/ourney_core.dart';
 import '../../app/test_helpers.dart';
 
 class ReportCall {
-  ReportCall(this.checkInId, this.userId, this.reason, this.note);
+  ReportCall(
+    this.checkInId,
+    this.userId,
+    this.reason,
+    this.note, [
+    this.messageId,
+  ]);
   final String? checkInId;
   final String? userId;
+  final String? messageId;
   final ReportReason reason;
   final String? note;
 }
@@ -48,11 +55,12 @@ class FakeSafetyRepository implements SafetyRepository {
   Future<void> report({
     String? checkInId,
     String? userId,
+    String? messageId,
     required ReportReason reason,
     String? note,
   }) async {
     if (reportError != null) throw reportError!;
-    reports.add(ReportCall(checkInId, userId, reason, note));
+    reports.add(ReportCall(checkInId, userId, reason, note, messageId));
   }
 
   @override

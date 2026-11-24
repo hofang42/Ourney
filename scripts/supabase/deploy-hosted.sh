@@ -2,10 +2,14 @@
 # Deploys the Ourney backend to a HOSTED Supabase project (docs/runbooks/hosted-supabase.md).
 #
 #   SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... SUPABASE_DB_PASSWORD=... \
-#     bash scripts/supabase/deploy-hosted.sh [--dry-run]
+#     bash scripts/supabase/deploy-hosted.sh [--dry-run] [--include-all]
 #
-# Steps: link -> db push (supabase/migrations) -> functions deploy -> Auth config -> optional SMTP (H2).
+# Steps: link -> db push (supabase/migrations) -> functions deploy -> optional SMTP (H2) -> Auth config -> PostgREST db_schemas.
 # --dry-run only links and runs `supabase db push --dry-run`; nothing is changed on the project.
+# --include-all passes `--include-all` to db push, so local migrations numbered BELOW the newest one
+#   already on the remote (merged out of order) are applied too. Without it db push refuses with
+#   "Found local migration files to be inserted before the last migration on remote database".
+#   Check those migrations are safe to run after the newer ones before using it.
 # Idempotent: db push applies only new migrations, functions deploy overwrites, the Auth config and
 # SMTP PATCHes set the same values again.
 #
@@ -29,13 +33,15 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [--dry-run]" >&2
+  echo "Usage: $0 [--dry-run] [--include-all]" >&2
 }
 
 DRY_RUN=0
+PUSH_ARGS=()
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=1 ;;
+    --include-all) PUSH_ARGS+=(--include-all) ;;
     -h | --help)
       usage
       exit 0
@@ -185,6 +191,23 @@ patch_auth_config() {
   fi
 }
 
+# PATCH the project's PostgREST config (db_schema) using the same secret-safe curl pattern.
+# Official Supabase Management API docs: https://supabase.com/docs/reference/api/v1-update-postgrest-config
+patch_postgrest_config() {
+  local response msg
+  if ! response="$(
+    curl --silent --show-error --fail-with-body -X PATCH \
+      --config <(printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_ACCESS_TOKEN") \
+      -H 'Content-Type: application/json' \
+      --data-binary @- \
+      "$SUPABASE_API_URL/v1/projects/$SUPABASE_PROJECT_REF/postgrest"
+  )"; then
+    msg="$(printf '%s' "$response" | jq -r '.message // empty' 2> /dev/null || true)"
+    echo "error: PostgREST config update failed${msg:+: $msg}" >&2
+    exit 1
+  fi
+}
+
 # Email templates and subjects are checked now, before any supabase call, so a bad template can
 # never abort a deploy halfway. Templates are plain files in the repo (not secrets).
 magic_file=supabase/templates/magic_link.html
@@ -217,13 +240,13 @@ supabase link --project-ref "$SUPABASE_PROJECT_REF"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "==> Dry run: migrations that would be applied"
-  supabase db push --dry-run
+  supabase db push --dry-run ${PUSH_ARGS[@]+"${PUSH_ARGS[@]}"}
   echo "Dry run finished. Nothing was changed on the project."
   exit 0
 fi
 
 echo "==> Applying migrations (db push)"
-supabase db push --yes
+supabase db push --yes ${PUSH_ARGS[@]+"${PUSH_ARGS[@]}"}
 
 # --- 5. Edge functions ------------------------------------------------------------------------
 # delete-account: needs the caller's JWT (it authenticates the user itself and deletes THAT user),
@@ -243,6 +266,10 @@ supabase functions deploy storage-purge-sweep --project-ref "$SUPABASE_PROJECT_R
 # waitlist-signup: landing beta form, anonymous visitors (see docs/runbooks/landing-waitlist.md).
 echo "==> Deploying function waitlist-signup (anonymous access)"
 supabase functions deploy waitlist-signup --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
+# admin-action: authenticated admin side-effects (verifies caller JWT + admin.me(); see docs/runbooks/admin-dashboard.md).
+echo "==> Deploying function admin-action"
+supabase functions deploy admin-action --project-ref "$SUPABASE_PROJECT_REF"
 
 # --- 6. Optional SMTP (H2): must come BEFORE the email templates --------------------------------------------------------------------
 if [ "$APPLY_SMTP" -eq 1 ]; then
@@ -291,5 +318,11 @@ if [ -z "$body" ]; then
 fi
 printf '%s' "$body" | patch_auth_config "Auth config"
 echo "Auth config applied."
+
+# --- 8. PostgREST config: expose RPC-only admin schema (always) -------------------------------
+# `supabase db push` does not push [api].schemas from supabase/config.toml to hosted PostgREST.
+echo "==> Applying PostgREST config (db_schema: public, graphql_public, admin)"
+jq -n '{db_schema: "public,graphql_public,admin"}' | patch_postgrest_config
+echo "PostgREST config applied."
 
 echo "Deploy finished."

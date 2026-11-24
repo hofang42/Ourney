@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/redirect.dart';
@@ -16,18 +18,126 @@ String? r(
 
 void main() {
   group('normalizeDeepLink', () {
-    test('maps the custom scheme to in-app paths', () {
+    test('maps custom scheme and https://ourney.tech links to in-app paths', () {
       expect(
         normalizeDeepLink(Uri.parse('ourney://join/ABC123')),
+        '/join/ABC123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://j/ABC123')),
         '/join/ABC123',
       );
       expect(
         normalizeDeepLink(Uri.parse('ourney://journey/j-42?x=1')),
         '/journey/j-42?x=1',
       );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://friend/tok123')),
+        '/f/tok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://f/tok123')),
+        '/f/tok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://p/pubtok123')),
+        '/p/pubtok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/f/tok123')),
+        '/f/tok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/j/ABCD1234')),
+        '/join/ABCD1234',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/J/ABCD1234')),
+        '/join/ABCD1234',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/JOIN/ABCD1234')),
+        '/join/ABCD1234',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/F/tok123')),
+        '/f/tok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/P/pubtok123')),
+        '/p/pubtok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/p/pubtok123')),
+        '/p/pubtok123',
+      );
       expect(normalizeDeepLink(Uri.parse('ourney://')), AppRoutes.capture);
       expect(normalizeDeepLink(Uri.parse('/capture')), isNull);
       expect(normalizeDeepLink(Uri.parse('https://x.dev/join/A')), isNull);
+    });
+
+    test(
+      'AndroidManifest.xml registers every custom-scheme host accepted by normalizeDeepLink (High-R2-1)',
+      () {
+        final manifest = File(
+          'android/app/src/main/AndroidManifest.xml',
+        ).readAsStringSync();
+        final declaredHosts = RegExp(
+          r'<data\s+android:scheme="ourney"\s+android:host="([^"]+)"\s*/>',
+        ).allMatches(manifest).map((m) => m.group(1)!).toSet();
+        const expectedHosts = {'join', 'j', 'journey', 'friend', 'f', 'p'};
+        for (final host in expectedHosts) {
+          expect(
+            normalizeDeepLink(Uri.parse('ourney://$host/test123')),
+            isNotNull,
+            reason: 'normalizeDeepLink must accept ourney://$host/<id>',
+          );
+        }
+        expect(declaredHosts, expectedHosts);
+      },
+    );
+
+    test('rejects unallowlisted custom-scheme and https hosts/paths (FS-05, DE-14)', () {
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://profile/delete-account')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://safety/eula/accept')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney:///profile/delete-account')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://friend')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/profile/delete-account')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/safety/eula/accept')),
+        isNull,
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('https://ourney.tech/f/')),
+        isNull,
+      );
+      expect(
+        r('ourney://profile/delete-account', auth: AuthStatus.signedIn),
+        AppRoutes.capture,
+      );
+      expect(
+        r('https://ourney.tech/profile/delete-account', auth: AuthStatus.signedIn),
+        AppRoutes.capture,
+      );
+      expect(
+        r('https://ourney.tech/profile/delete-account', onboarded: false),
+        AppRoutes.capture,
+      );
     });
   });
 
@@ -81,6 +191,7 @@ void main() {
 
     test('deep links are normalised before any gate', () {
       expect(r('ourney://join/X', onboarded: false), '/join/X');
+      expect(r('ourney://p/tok123', onboarded: false), '/p/tok123');
     });
 
     test('a universal link keeps only its in-app path in from= (A-B13)', () {
@@ -99,6 +210,24 @@ void main() {
       expect(
         r('$kProfileSetupPath?from=%2Fjoin%2FX', auth: out),
         '/auth?from=%2Fjoin%2FX',
+      );
+      // Group universal link /j/<code> normalises to /join/<code> (FS-05).
+      expect(
+        r('https://ourney.tech/j/ABCD1234', auth: AuthStatus.signedIn),
+        '/join/ABCD1234',
+      );
+      expect(
+        r('https://ourney.tech/j/ABCD1234', onboarded: false),
+        '/onboarding?from=%2Fjoin%2FABCD1234',
+      );
+      // Public journey universal link /p/<token> maps to /p/<token> (DE-01).
+      expect(
+        r('https://ourney.tech/p/pubtok123', auth: AuthStatus.signedIn),
+        '/p/pubtok123',
+      );
+      expect(
+        r('https://ourney.tech/p/pubtok123', onboarded: false),
+        '/onboarding?from=%2Fp%2Fpubtok123',
       );
     });
 

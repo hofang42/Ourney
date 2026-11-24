@@ -49,7 +49,18 @@ class MediaFiles {
 
   /// Removes a whole folder, e.g. `checkins/{journeyId}`.
   Future<void> deleteFolder(String storagePrefix) async {
-    final dir = Directory(p.joinAll([root.path, ...storagePrefix.split('/')]));
+    final parts = storagePrefix.split('/').where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty ||
+        storagePrefix.contains('..') ||
+        p.isAbsolute(storagePrefix)) {
+      throw const OurneyException(OurneyErrorCode.invalid, 'bad storage path');
+    }
+    final rootAbs = p.normalize(p.absolute(root.path));
+    final dir = Directory(p.joinAll([root.path, ...parts]));
+    final dirAbs = p.normalize(p.absolute(dir.path));
+    if (!p.isWithin(rootAbs, dirAbs)) {
+      throw const OurneyException(OurneyErrorCode.invalid, 'bad storage path');
+    }
     if (dir.existsSync()) await dir.delete(recursive: true);
   }
 }
@@ -124,11 +135,16 @@ abstract final class MediaWipe {
 
   static Future<void> _recover(AppDatabase db, Iterable<Directory> dirs) async {
     try {
-      await _deleteRecorded(db);
+      await _deleteRecorded(db, dirs);
       for (final dir in dirs) {
         for (final e in _siblings(dir)) {
-          // Re-read right before deciding what this folder is.
-          if ((await _recorded(db)).contains(e.path)) continue;
+          // Re-read right before deciding what this folder is. Compare by
+          // parent-relative basename so an iOS container UUID rotation after
+          // an app update still recognises recorded trash (FS-11).
+          final recordedBases = {
+            for (final r in await _recorded(db)) p.basename(r),
+          };
+          if (recordedBases.contains(p.basename(e.path))) continue;
           await _restoreInto(e, dir);
         }
       }
@@ -138,27 +154,63 @@ abstract final class MediaWipe {
     }
   }
 
-  /// Deletes every recorded path (one failure does not block the others) and
-  /// removes the ones gone from the record.
-  static Future<void> _deleteRecorded(AppDatabase db) async {
-    final recorded = await _recorded(db);
-    final gone = <String>[];
-    for (final path in recorded) {
-      try {
-        final d = Directory(path);
-        if (d.existsSync()) await d.delete(recursive: true);
-        gone.add(path);
-      } on PathNotFoundException {
-        // A file deep inside may vanish mid-delete; only drop the record
-        // once the folder itself is gone, or recovery would merge the rest.
-        if (!Directory(path).existsSync()) gone.add(path);
-      } on Object catch (e) {
-        debugPrint('media wipe: could not delete $path: $e');
+  /// Resolves a recorded trash entry (parent-relative basename or legacy full
+  /// path) to the candidate directories inside the current container's [dirs].
+  static List<Directory> _resolveRecordedDirs(
+    String entry,
+    Iterable<Directory> dirs,
+  ) {
+    final base = p.basename(entry);
+    final seen = <String>{};
+    final out = <Directory>[];
+    void add(Directory d) {
+      if (seen.add(d.path)) out.add(d);
+    }
+
+    for (final dir in dirs) {
+      final dirBase = p.basename(dir.path);
+      if (base.startsWith('$dirBase$_trash') ||
+          base.startsWith('$dirBase$_restore')) {
+        add(Directory(p.join(dir.parent.path, base)));
       }
     }
-    if (gone.isEmpty) return;
+    if (p.isAbsolute(entry)) {
+      add(Directory(entry));
+    }
+    return out;
+  }
+
+  /// Deletes every recorded path (one failure does not block the others) and
+  /// removes the ones gone from the record.
+  static Future<void> _deleteRecorded(
+    AppDatabase db,
+    Iterable<Directory> dirs,
+  ) async {
+    final recorded = await _recorded(db);
+    final goneBases = <String>{};
+    for (final entry in recorded) {
+      final base = p.basename(entry);
+      final targets = _resolveRecordedDirs(entry, dirs);
+      var allGone = true;
+      for (final d in targets) {
+        try {
+          if (d.existsSync()) await d.delete(recursive: true);
+        } on PathNotFoundException {
+          // A file deep inside may vanish mid-delete; only drop the record
+          // once the folder itself is gone, or recovery would merge the rest.
+          if (d.existsSync()) allGone = false;
+        } on Object catch (e) {
+          allGone = false;
+          debugPrint('media wipe: could not delete ${d.path}: $e');
+        }
+      }
+      if (allGone) goneBases.add(base);
+    }
+    if (goneBases.isEmpty) return;
     await db.transaction(() async {
-      final left = (await _recorded(db)).where((x) => !gone.contains(x));
+      final left = (await _recorded(
+        db,
+      )).where((x) => !goneBases.contains(p.basename(x)));
       await db.writeCursor(pendingTrashCursorKey, jsonEncode(left.toList()));
     });
   }
@@ -234,7 +286,7 @@ abstract final class MediaWipe {
         before = const [];
       }
       final older = [
-        for (final dir in dirs) ..._siblings(dir).map((d) => d.path),
+        for (final dir in dirs) ..._siblings(dir).map((d) => p.basename(d.path)),
       ];
       for (final dir in dirs) {
         if (!dir.existsSync()) continue;
@@ -244,11 +296,13 @@ abstract final class MediaWipe {
         await dir.rename(trash.path);
         moved.add((dir: dir, trash: trash));
       }
-      // Same transaction as the wipe: recorded only if it commits.
+      // Same transaction as the wipe: recorded only if it commits. Store
+      // parent-relative basenames so iOS sandbox container UUID rotations
+      // across app updates still match and delete committed trash (FS-11).
       final all = <String>{
-        ...before,
+        for (final b in before) p.basename(b),
         ...older,
-        for (final m in moved) m.trash.path,
+        for (final m in moved) p.basename(m.trash.path),
       };
       await db.writeCursor(pendingTrashCursorKey, jsonEncode(all.toList()));
     }
@@ -263,7 +317,7 @@ abstract final class MediaWipe {
     }
     // Committed: delete in the background, outside any transaction zone.
     final job = Zone.root.run(
-      () => _locked(() => _deleteRecorded(db)).catchError((Object e) {
+      () => _locked(() => _deleteRecorded(db, dirs)).catchError((Object e) {
         debugPrint('media wipe: trash left (recorded, swept later): $e');
       }),
     );
