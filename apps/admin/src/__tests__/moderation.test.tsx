@@ -2,66 +2,48 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { adminApi, DEMO_MODERATION_QUEUE } from '../lib/adminRpc'
+import { adminApi } from '../lib/adminRpc'
 import { I18nProvider } from '../lib/i18n'
 import { ModerationPage } from '../pages/ModerationPage'
+import {
+  SQL_FIXTURE_MODERATION_DETAIL,
+  SQL_FIXTURE_MODERATION_QUEUE,
+  SQL_FIXTURE_REVEAL_MEDIA,
+} from './fixtures'
 
 describe('ModerationPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.spyOn(adminApi, 'listModerationQueue').mockResolvedValue(
-      DEMO_MODERATION_QUEUE,
+      SQL_FIXTURE_MODERATION_QUEUE,
     )
-    vi.spyOn(adminApi, 'getModerationItem').mockResolvedValue({
-      queue: DEMO_MODERATION_QUEUE[0],
-      target_user: {
-        user_id: 'usr-88',
-        username: 'hung_gym99',
-        display_name: 'Hung',
-        created_at: '2026-10-15T08:00:00Z',
-        prior_actioned_reports: 1,
-        blocked_by_count: 2,
-        is_banned: false,
-      },
-      excerpt: {
-        target_type: 'checkin',
-        title: null,
-        body: 'Reported check-in caption text only',
-        extra_note: null,
-        created_at: '2026-11-23T17:10:00Z',
-      },
-      has_reported_media: true,
-      media_objects: [
-        {
-          bucket_id: 'media',
-          object_path: 'checkins/j1/usr-88/chk-901.jpg',
-          label: 'checkin_photo_path',
-        },
-      ],
-      sibling_reports: [
-        {
-          id: 'rep-1',
-          reporter_username: 'linh_ielts',
-          reason: 'harassment',
-          note: 'Harassing note',
-          created_at: '2026-11-23T17:10:00Z',
-        },
-      ],
+    vi.spyOn(adminApi, 'getModerationItem').mockImplementation(async (id) => {
+      if (id === 'mq-02') {
+        return {
+          ...SQL_FIXTURE_MODERATION_DETAIL,
+          id: 'mq-02',
+          kind: 'block',
+          reason: null,
+          target_checkin_id: null,
+          target_message_id: null,
+          target_user: null,
+          reported_content: {
+            target_type: 'user',
+            user_id: 'usr-92',
+          },
+        }
+      }
+      return SQL_FIXTURE_MODERATION_DETAIL
     })
   })
 
-  it('displays 24h SLA countdown, gated Reveal Reported Media flow, and resolution modal', async () => {
+  it('displays server summary KPIs, 24h SLA countdown, gated Reveal Reported Media flow, keyboard row navigation, and Escape modal close', async () => {
     const revealSpy = vi
       .spyOn(adminApi, 'revealReportedMedia')
-      .mockResolvedValue([
-        {
-          bucket_id: 'media',
-          object_path: 'checkins/j1/usr-88/chk-901.jpg',
-          expires_at: '2026-11-24T15:00:00Z',
-          signed_url: 'https://example.supabase.co/storage/v1/object/sign/media/test.jpg',
-        },
-      ])
-    const resolveSpy = vi.spyOn(adminApi, 'resolveModeration').mockResolvedValue()
+      .mockResolvedValue(SQL_FIXTURE_REVEAL_MEDIA)
+    const resolveSpy = vi
+      .spyOn(adminApi, 'resolveModeration')
+      .mockResolvedValue()
 
     render(
       <MemoryRouter>
@@ -76,6 +58,7 @@ describe('ModerationPage', () => {
       expect(
         screen.getByText('Reported check-in caption text only'),
       ).toBeInTheDocument()
+      expect(screen.getByText(/Median handle 30d: 1\.45h/i)).toBeInTheDocument()
     })
 
     const user = userEvent.setup()
@@ -94,6 +77,13 @@ describe('ModerationPage', () => {
       expect(img).toHaveClass('blurred')
     })
 
+    // Open modal and test Escape dismissal
+    await user.click(screen.getByRole('button', { name: /Remove Content/i }))
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    // Reopen and confirm action
     await user.click(screen.getByRole('button', { name: /Remove Content/i }))
     await user.type(
       screen.getByPlaceholderText(/Enter resolution reason/i),
@@ -106,5 +96,17 @@ describe('ModerationPage', () => {
       'remove_content',
       'Confirmed harassment violation',
     )
+
+    // Keyboard select 2nd row (user block with target_type === 'user' and null target_user)
+    const rows = screen.getAllByRole('row')
+    rows[2].focus()
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => {
+      // Quarantine button is hidden for user-only targets (0023_admin.sql:2262)
+      expect(
+        screen.queryByRole('button', { name: /Quarantine Target/i }),
+      ).toBeNull()
+    })
   })
 })

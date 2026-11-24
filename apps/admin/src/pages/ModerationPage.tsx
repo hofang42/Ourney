@@ -2,12 +2,17 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   adminApi,
+  handleRpcError,
   type ModerationItemDetail,
   type ModerationQueueRow,
-  type RevealedMediaGrant,
+  type ModerationQueueSummary,
+  type RevealedMediaObject,
 } from '../lib/adminRpc'
 import { useI18n } from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
+import { AccessibleModal, PaginationBar } from '../ui/Modal'
+
+const PAGE_LIMIT = 50
 
 export function formatSlaBadge(
   row: Pick<ModerationQueueRow, 'status' | 'hours_remaining' | 'handled_at'>,
@@ -42,15 +47,21 @@ export function ModerationPage() {
   )
   const [kindFilter, setKindFilter] = useState('all')
   const [reasonFilter, setReasonFilter] = useState('all')
+  const [offset, setOffset] = useState(0)
 
+  const [summary, setSummary] = useState<ModerationQueueSummary | null>(null)
+  const [total, setTotal] = useState(0)
   const [rows, setRows] = useState<ModerationQueueRow[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [detail, setDetail] = useState<ModerationItemDetail | null>(null)
-  const [revealedGrants, setRevealedGrants] = useState<RevealedMediaGrant[]>([])
+  const [revealedObjects, setRevealedObjects] = useState<RevealedMediaObject[]>(
+    [],
+  )
   const [unblurred, setUnblurred] = useState(false)
   const [loading, setLoading] = useState(true)
   const [revealing, setRevealing] = useState(false)
   const [bannerMsg, setBannerMsg] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const [modalAction, setModalAction] = useState<
     'dismiss' | 'quarantine' | 'remove_content' | 'ban_user' | null
@@ -58,32 +69,41 @@ export function ModerationPage() {
   const [resolutionNote, setResolutionNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const loadQueue = async () => {
+  const loadQueue = async (nextOffset = offset) => {
     setLoading(true)
+    setErrorMsg(null)
     try {
-      const list = await adminApi.listModerationQueue({
+      const res = await adminApi.listModerationQueue({
         p_status: statusFilter,
         p_kind: kindFilter,
         p_reason: reasonFilter,
+        p_limit: PAGE_LIMIT,
+        p_offset: nextOffset,
       })
-      setRows(list)
-      if (list.length > 0) {
+      setSummary(res.summary)
+      setTotal(res.total)
+      setRows(res.items)
+      if (res.items.length > 0) {
         const nextId =
-          selectedId && list.some((r) => r.id === selectedId)
+          selectedId && res.items.some((r) => r.id === selectedId)
             ? selectedId
-            : list[0].id
+            : res.items[0].id
         setSelectedId(nextId)
       } else {
         setSelectedId(null)
         setDetail(null)
       }
+    } catch (err) {
+      const msg = await handleRpcError(err, 'list_moderation_queue')
+      setErrorMsg(msg)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    void loadQueue()
+    setOffset(0)
+    void loadQueue(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, kindFilter, reasonFilter])
 
@@ -92,13 +112,15 @@ export function ModerationPage() {
       setDetail(null)
       return
     }
-    setRevealedGrants([])
+    setRevealedObjects([])
     setUnblurred(false)
     void (async () => {
       try {
         const d = await adminApi.getModerationItem(selectedId)
         setDetail(d)
-      } catch {
+      } catch (err) {
+        const msg = await handleRpcError(err, 'get_moderation_item')
+        setErrorMsg(msg)
         setDetail(null)
       }
     })()
@@ -107,12 +129,13 @@ export function ModerationPage() {
   const handleRevealMedia = async () => {
     if (!selectedId) return
     setRevealing(true)
+    setErrorMsg(null)
     try {
-      const grants = await adminApi.revealReportedMedia(
+      const res = await adminApi.revealReportedMedia(
         selectedId,
         '24h SLA moderation inspection',
       )
-      setRevealedGrants(grants)
+      setRevealedObjects(res.objects)
       setUnblurred(false)
       setBannerMsg(
         t(
@@ -120,6 +143,9 @@ export function ModerationPage() {
           'Granted 5-minute reported media access (recorded in audit log).',
         ),
       )
+    } catch (err) {
+      const msg = await handleRpcError(err, 'reveal_reported_media')
+      setErrorMsg(msg)
     } finally {
       setRevealing(false)
     }
@@ -128,10 +154,10 @@ export function ModerationPage() {
   const handleConfirmResolution = async () => {
     if (!selectedId || !modalAction) return
     setSubmitting(true)
+    setErrorMsg(null)
     try {
       const note =
-        resolutionNote.trim() ||
-        `Action ${modalAction} executed by operator`
+        resolutionNote.trim() || `Action ${modalAction} executed by operator`
       if (modalAction === 'quarantine') {
         await adminApi.quarantineModerationTarget(selectedId, note)
       } else {
@@ -145,20 +171,54 @@ export function ModerationPage() {
       )
       setModalAction(null)
       setResolutionNote('')
-      await loadQueue()
+      await loadQueue(offset)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'resolve_moderation')
+      setErrorMsg(msg)
     } finally {
       setSubmitting(false)
     }
   }
 
-  const openCount = rows.filter((r) => r.status === 'open').length
-  const overdueCount = rows.filter(
-    (r) => r.status === 'open' && r.hours_remaining < 0,
-  ).length
-  const dueSoonCount = rows.filter(
-    (r) => r.status === 'open' && r.hours_remaining >= 0 && r.hours_remaining < 4,
-  ).length
-  const quarantinedCount = rows.filter((r) => r.is_quarantined).length
+  const detailContent = detail?.reported_content
+  const detailTargetType =
+    detailContent?.target_type ??
+    (detail?.target_checkin_id
+      ? 'checkin'
+      : detail?.target_message_id
+        ? 'message'
+        : 'user')
+
+  const detailHasMedia =
+    detailContent?.target_type === 'checkin'
+      ? Boolean(
+          detailContent.has_photo ||
+            detailContent.has_partner_photo ||
+            detailContent.has_thumb,
+        )
+      : detailContent?.target_type === 'message'
+        ? Boolean(detailContent.has_media)
+        : false
+
+  const detailTextExcerpt =
+    detailContent?.target_type === 'checkin'
+      ? detailContent.caption
+      : detailContent?.target_type === 'message'
+        ? detailContent.body
+        : detail?.note ?? null
+
+  const canQuarantine = Boolean(
+    detail && (detail.target_checkin_id || detail.target_message_id),
+  )
+
+  const formatUserHandle = (
+    username: string | null | undefined,
+    fallbackId: string | null | undefined,
+  ) => {
+    if (username) return `@${username}`
+    if (fallbackId) return fallbackId.slice(0, 8)
+    return t('[Đã xóa]', '[Deleted]')
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -182,27 +242,44 @@ export function ModerationPage() {
       <div className="kpi-grid">
         <div className="kpi-card">
           <span className="kpi-label">{t('Đang mở', 'Open Reports')}</span>
-          <div className="kpi-value">{openCount}</div>
+          <div className="kpi-value">{summary?.open_reports ?? 0}</div>
+          <div className="kpi-sub">
+            <span>
+              {summary?.open_blocks ?? 0} {t('tín hiệu chặn', 'open blocks')}
+            </span>
+          </div>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">
             {t('Quá hạn (> 24h)', 'Overdue (> 24h)')}
           </span>
-          <div className="kpi-value">{overdueCount}</div>
+          <div className="kpi-value">{summary?.overdue_count ?? 0}</div>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">
             {t('Sắp đến hạn (< 4h)', 'Due < 4h')}
           </span>
-          <div className="kpi-value">{dueSoonCount}</div>
+          <div className="kpi-value">{summary?.due_soon_count ?? 0}</div>
         </div>
         <div className="kpi-card">
           <span className="kpi-label">
             {t('Đã tạm ẩn (Quarantined)', 'Auto-Quarantined')}
           </span>
-          <div className="kpi-value">{quarantinedCount}</div>
+          <div className="kpi-value">{summary?.quarantined_count ?? 0}</div>
+          <div className="kpi-sub">
+            <span>
+              {t('Thời gian xử lý trung vị 30d:', 'Median handle 30d:')}{' '}
+              {Number(summary?.median_handle_hours_30d ?? 0).toFixed(2)}h
+            </span>
+          </div>
         </div>
       </div>
+
+      {errorMsg && (
+        <div className="status-banner error" role="alert">
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {bannerMsg && (
         <div className="status-banner success" role="status">
@@ -258,72 +335,102 @@ export function ModerationPage() {
       </div>
 
       <div className="split-pane">
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>SLA 24h</th>
-                <th>{t('Lý do & Loại', 'Reason & Kind')}</th>
-                <th>{t('Đối tượng', 'Target')}</th>
-                <th>{t('Người báo cáo', 'Reporters')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && !loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: 28 }}>
-                    {t(
-                      'Không có báo cáo nào trong bộ lọc này.',
-                      'No moderation queue items match this filter.',
-                    )}
-                  </td>
+                  <th>SLA 24h</th>
+                  <th>{t('Lý do & Loại', 'Reason & Kind')}</th>
+                  <th>{t('Đối tượng', 'Target')}</th>
+                  <th>{t('Người báo cáo', 'Reporters')}</th>
                 </tr>
-              ) : (
-                rows.map((r) => {
-                  const sla = formatSlaBadge(r, t)
-                  return (
-                    <tr
-                      key={r.id}
-                      className={`clickable-row ${
-                        selectedId === r.id ? 'selected-row' : ''
-                      }`}
-                      onClick={() => setSelectedId(r.id)}
-                    >
-                      <td>
-                        <span className={`badge ${sla.tone} tabular`}>
-                          {sla.text}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700 }}>
-                          {r.kind.toUpperCase()} · {r.reason}
-                        </div>
-                        {r.is_quarantined && (
-                          <span className="badge badge-purple">
-                            Quarantined
+              </thead>
+              <tbody>
+                {rows.length === 0 && !loading ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: 28 }}>
+                      {t(
+                        'Không có báo cáo nào trong bộ lọc này.',
+                        'No moderation queue items match this filter.',
+                      )}
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((r) => {
+                    const sla = formatSlaBadge(r, t)
+                    const reasonLabel =
+                      r.reason ??
+                      (r.kind === 'block' ? 'user_block' : 'unspecified')
+                    const isSelected = selectedId === r.id
+                    return (
+                      <tr
+                        key={r.id}
+                        tabIndex={0}
+                        aria-selected={isSelected}
+                        className={`clickable-row ${
+                          isSelected ? 'selected-row' : ''
+                        }`}
+                        onClick={() => setSelectedId(r.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setSelectedId(r.id)
+                          }
+                        }}
+                      >
+                        <td>
+                          <span className={`badge ${sla.tone} tabular`}>
+                            {sla.text}
                           </span>
-                        )}
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700 }}>
-                          @{r.target_username}
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
-                          {r.target_type} · {r.target_prior_actions}{' '}
-                          {t('lần vi phạm trước', 'prior actions')} ·{' '}
-                          {t('bị chặn bởi', 'blocked by')}{' '}
-                          {r.target_blocked_by_count}
-                        </div>
-                      </td>
-                      <td className="tabular">
-                        {r.distinct_open_reporters} (@{r.actor_username})
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>
+                            {r.kind.toUpperCase()} · {reasonLabel}
+                          </div>
+                          {r.auto_quarantined && (
+                            <span className="badge badge-purple">
+                              Quarantined
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>
+                            {formatUserHandle(
+                              r.target_username,
+                              r.target_user_id,
+                            )}
+                          </div>
+                          <div
+                            style={{ fontSize: '0.78rem', color: 'var(--muted)' }}
+                          >
+                            {r.target_type} · {r.target_prior_actions}{' '}
+                            {t('lần vi phạm trước', 'prior actions')} ·{' '}
+                            {t('bị chặn bởi', 'blocked by')}{' '}
+                            {r.target_blocked_by_count}
+                          </div>
+                        </td>
+                        <td className="tabular">
+                          {r.distinct_open_reporters} (
+                          {formatUserHandle(r.actor_username, r.actor_id)})
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <PaginationBar
+            total={total}
+            limit={PAGE_LIMIT}
+            offset={offset}
+            onChangeOffset={(next) => {
+              setOffset(next)
+              void loadQueue(next)
+            }}
+          />
         </div>
 
         <div className="card">
@@ -339,16 +446,23 @@ export function ModerationPage() {
               <div className="kpi-top">
                 <div>
                   <h3>
-                    @{detail.target_user.username} ({detail.queue.target_type})
+                    {formatUserHandle(
+                      detail.target_user?.username,
+                      detail.target_user?.user_id ?? detail.target_user_id,
+                    )}{' '}
+                    ({detailTargetType})
                   </h3>
                   <p className="kpi-label">
                     {t('Số lần bị xử lý trước đó:', 'Prior actioned reports:')}{' '}
-                    {detail.target_user.prior_actioned_reports} ·{' '}
+                    {detail.target_user?.prior_actioned_reports ?? 0} ·{' '}
                     {t('Bị chặn bởi:', 'Blocked by:')}{' '}
-                    {detail.target_user.blocked_by_count}
+                    {detail.target_user?.blocked_by_count ?? 0}
                   </p>
                 </div>
-                <span className="badge badge-warn">{detail.queue.reason}</span>
+                <span className="badge badge-warn">
+                  {detail.reason ??
+                    (detail.kind === 'block' ? 'user_block' : 'unspecified')}
+                </span>
               </div>
 
               <div className="card-subtle">
@@ -358,19 +472,18 @@ export function ModerationPage() {
                     'Reported Text Excerpt (Strictly Scoped — zero surrounding chat messages)',
                   )}
                 </div>
-                {detail.excerpt.title && (
-                  <div style={{ fontWeight: 700 }}>{detail.excerpt.title}</div>
-                )}
                 <p style={{ marginTop: 4 }}>
-                  {detail.excerpt.body ||
+                  {detailTextExcerpt ||
                     t('[Không có văn bản]', '[No text caption]')}
                 </p>
               </div>
 
-              {detail.has_reported_media && (
+              {detailHasMedia && detail.status === 'open' && (
                 <div className="media-vault-box">
                   <div className="kpi-top">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                    >
                       <OIcon name="lock" size={18} />
                       <strong>
                         {t(
@@ -379,13 +492,16 @@ export function ModerationPage() {
                         )}
                       </strong>
                     </div>
-                    {revealedGrants.length > 0 && (
+                    {revealedObjects.length > 0 && (
                       <button
                         type="button"
                         className="btn"
                         onClick={() => setUnblurred((prev) => !prev)}
                       >
-                        <OIcon name={unblurred ? 'eye-off' : 'eye'} size={18} />
+                        <OIcon
+                          name={unblurred ? 'eye-off' : 'eye'}
+                          size={18}
+                        />
                         <span>
                           {unblurred
                             ? t('Làm mờ lại (Blur)', 'Blur Image')
@@ -395,7 +511,7 @@ export function ModerationPage() {
                     )}
                   </div>
 
-                  {revealedGrants.length === 0 ? (
+                  {revealedObjects.length === 0 ? (
                     <div
                       style={{
                         display: 'flex',
@@ -428,15 +544,15 @@ export function ModerationPage() {
                     </div>
                   ) : (
                     <div className="revealed-media-grid">
-                      {revealedGrants.map((g) => (
+                      {revealedObjects.map((obj) => (
                         <div
-                          key={g.object_path}
+                          key={`${obj.bucket}:${obj.path}`}
                           className="revealed-image-frame"
                         >
-                          {g.signed_url && (
+                          {obj.signed_url && (
                             <img
-                              src={g.signed_url}
-                              alt={`Reported media ${g.object_path}`}
+                              src={obj.signed_url}
+                              alt={`Reported media ${obj.path}`}
                               className={unblurred ? '' : 'blurred'}
                             />
                           )}
@@ -458,7 +574,11 @@ export function ModerationPage() {
                   {detail.sibling_reports.map((rep) => (
                     <div key={rep.id} className="card-subtle">
                       <div style={{ fontWeight: 700, fontSize: '0.84rem' }}>
-                        @{rep.reporter_username} · {rep.reason}
+                        {formatUserHandle(
+                          rep.reporter_username,
+                          rep.reporter_id,
+                        )}{' '}
+                        · {rep.reason ?? 'report'}
                       </div>
                       {rep.note && (
                         <div style={{ fontSize: '0.84rem', marginTop: 4 }}>
@@ -488,16 +608,18 @@ export function ModerationPage() {
                   <span>{t('Bác bỏ báo cáo (Dismiss)', 'Dismiss Report')}</span>
                 </button>
 
-                <button
-                  type="button"
-                  className="btn btn-warn"
-                  onClick={() => setModalAction('quarantine')}
-                >
-                  <OIcon name="eye-off" size={18} />
-                  <span>
-                    {t('Tạm ẩn điều tra (Quarantine)', 'Quarantine Target')}
-                  </span>
-                </button>
+                {canQuarantine && (
+                  <button
+                    type="button"
+                    className="btn btn-warn"
+                    onClick={() => setModalAction('quarantine')}
+                  >
+                    <OIcon name="eye-off" size={18} />
+                    <span>
+                      {t('Tạm ẩn điều tra (Quarantine)', 'Quarantine Target')}
+                    </span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -530,57 +652,58 @@ export function ModerationPage() {
       </div>
 
       {modalAction && (
-        <div className="modal-scrim" role="dialog" aria-modal="true">
-          <div className="modal-card">
-            <h3>
-              {t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}:{' '}
-              {modalAction}
-            </h3>
-            <p className="page-subtitle">
-              {t(
-                'Quyết định này sẽ được ghi bất biến vào private.admin_audit kèm theo ghi chú giải trình.',
-                'This decision is immutably recorded in private.admin_audit with your resolution note.',
+        <AccessibleModal
+          title={`${t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}: ${modalAction}`}
+          onClose={() => setModalAction(null)}
+        >
+          <h3>
+            {t('Xác nhận quyết định kiểm duyệt', 'Confirm Moderation Action')}:{' '}
+            {modalAction}
+          </h3>
+          <p className="page-subtitle">
+            {t(
+              'Quyết định này sẽ được ghi bất biến vào private.admin_audit kèm theo ghi chú giải trình.',
+              'This decision is immutably recorded in private.admin_audit with your resolution note.',
+            )}
+          </p>
+          <label className="field-group">
+            <span className="field-label">
+              {t('Ghi chú giải trình (Resolution Note)', 'Resolution Note')}
+            </span>
+            <textarea
+              className="textarea"
+              placeholder={t(
+                'Nhập lý do xử lý để lưu bằng chứng SLA 24h...',
+                'Enter resolution reason for 24h SLA audit trail...',
               )}
-            </p>
-            <label className="field-group">
-              <span className="field-label">
-                {t('Ghi chú giải trình (Resolution Note)', 'Resolution Note')}
-              </span>
-              <textarea
-                className="textarea"
-                placeholder={t(
-                  'Nhập lý do xử lý để lưu bằng chứng SLA 24h...',
-                  'Enter resolution reason for 24h SLA audit trail...',
-                )}
-                value={resolutionNote}
-                onChange={(e) => setResolutionNote(e.target.value)}
-              />
-            </label>
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 10,
-              }}
+              value={resolutionNote}
+              onChange={(e) => setResolutionNote(e.target.value)}
+            />
+          </label>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 10,
+            }}
+          >
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setModalAction(null)}
             >
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setModalAction(null)}
-              >
-                {t('Hủy', 'Cancel')}
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => void handleConfirmResolution()}
-                disabled={submitting}
-              >
-                {t('Xác nhận thực thi', 'Confirm Action')}
-              </button>
-            </div>
+              {t('Hủy', 'Cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => void handleConfirmResolution()}
+              disabled={submitting}
+            >
+              {t('Xác nhận thực thi', 'Confirm Action')}
+            </button>
           </div>
-        </div>
+        </AccessibleModal>
       )}
     </div>
   )

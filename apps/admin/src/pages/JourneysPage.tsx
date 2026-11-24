@@ -1,61 +1,93 @@
 import { useEffect, useState } from 'react'
 import {
   adminApi,
+  handleRpcError,
   type AdminJourneyRow,
   type JourneyStats,
 } from '../lib/adminRpc'
 import { useI18n } from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
+import { AccessibleModal, PaginationBar } from '../ui/Modal'
+
+const PAGE_LIMIT = 50
 
 export function JourneysPage() {
   const { t } = useI18n()
   const [stats, setStats] = useState<JourneyStats | null>(null)
+  const [total, setTotal] = useState(0)
   const [rows, setRows] = useState<AdminJourneyRow[]>([])
   const [search, setSearch] = useState('')
   const [kindFilter, setKindFilter] = useState('all')
   const [templateFilter, setTemplateFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [publicOnly, setPublicOnly] = useState(false)
+  const [offset, setOffset] = useState(0)
 
   const [revokeTarget, setRevokeTarget] = useState<AdminJourneyRow | null>(null)
   const [revokeReason, setRevokeReason] = useState('')
   const [bannerMsg, setBannerMsg] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const loadData = async () => {
-    const [st, list] = await Promise.all([
-      adminApi.journeyStats(),
-      adminApi.listJourneys({
-        p_search: search,
-        p_kind: kindFilter,
-        p_template: templateFilter,
-        p_status: statusFilter,
-        p_public_only: publicOnly,
-      }),
-    ])
-    setStats(st)
-    setRows(list)
+  const loadData = async (nextOffset = offset) => {
+    setErrorMsg(null)
+    try {
+      const [st, listRes] = await Promise.all([
+        adminApi.journeyStats(),
+        adminApi.listJourneys({
+          p_search: search,
+          p_kind: kindFilter,
+          p_template: templateFilter,
+          p_status: statusFilter,
+          p_public_only: publicOnly,
+          p_limit: PAGE_LIMIT,
+          p_offset: nextOffset,
+        }),
+      ])
+      setStats(st)
+      setTotal(listRes.total)
+      setRows(listRes.items)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'list_journeys')
+      setErrorMsg(msg)
+    }
   }
 
   useEffect(() => {
-    void loadData()
+    setOffset(0)
+    void loadData(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, kindFilter, templateFilter, statusFilter, publicOnly])
 
   const handleConfirmRevoke = async () => {
     if (!revokeTarget) return
-    await adminApi.revokeJourneyPublicLink(
-      revokeTarget.id,
-      revokeReason.trim() || 'Revoked abused public link',
-    )
-    setBannerMsg(
-      t(
-        `Đã thu hồi liên kết công khai của hành trình ${revokeTarget.id}`,
-        `Revoked public link for journey ${revokeTarget.id}`,
-      ),
-    )
-    setRevokeTarget(null)
-    setRevokeReason('')
-    await loadData()
+    const trimmed = revokeReason.trim()
+    const effectiveReason =
+      trimmed.length > 0 ? trimmed : 'Revoked abused public link'
+    if (effectiveReason.length < 3) {
+      setErrorMsg(
+        t(
+          'Lý do thu hồi phải có ít nhất 3 ký tự.',
+          'Revocation reason must be at least 3 characters.',
+        ),
+      )
+      return
+    }
+    setErrorMsg(null)
+    try {
+      await adminApi.revokeJourneyPublicLink(revokeTarget.id, effectiveReason)
+      setBannerMsg(
+        t(
+          `Đã thu hồi liên kết công khai của hành trình ${revokeTarget.id}`,
+          `Revoked public link for journey ${revokeTarget.id}`,
+        ),
+      )
+      setRevokeTarget(null)
+      setRevokeReason('')
+      await loadData(offset)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'revoke_journey_public_link')
+      setErrorMsg(msg)
+    }
   }
 
   return (
@@ -77,6 +109,12 @@ export function JourneysPage() {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="status-banner error" role="alert">
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       {bannerMsg && (
         <div className="status-banner success" role="status">
           <span>{bannerMsg}</span>
@@ -90,7 +128,7 @@ export function JourneysPage() {
               {t('Trạng thái hành trình', 'Active / Ended / Archived')}
             </span>
             <div className="kpi-value">
-              {stats.total_active} / {stats.total_ended} / {stats.total_archived}
+              {stats.active} / {stats.ended} / {stats.archived}
             </div>
           </div>
 
@@ -114,10 +152,13 @@ export function JourneysPage() {
 
           <div className="kpi-card">
             <span className="kpi-label">
-              {t('Liên kết /p/ đang mở & Lượt xem', 'Active Public Links & Views')}
+              {t(
+                'Liên kết /p/ đang mở & Lượt xem',
+                'Active Public Links & Views',
+              )}
             </span>
             <div className="kpi-value">
-              {stats.active_public_links} ({stats.total_public_views} views)
+              {stats.public_links_count} ({stats.total_public_views} views)
             </div>
           </div>
         </div>
@@ -127,6 +168,7 @@ export function JourneysPage() {
         <input
           type="search"
           className="input search-input"
+          aria-label={t('Tìm kiếm hành trình', 'Search journeys')}
           placeholder={t(
             'Tìm theo @username chủ sở hữu hoặc Journey UUID...',
             'Search owner @username or Journey UUID...',
@@ -176,6 +218,7 @@ export function JourneysPage() {
 
         <button
           type="button"
+          aria-pressed={publicOnly}
           className={`btn ${publicOnly ? 'btn-primary' : ''}`}
           onClick={() => setPublicOnly((prev) => !prev)}
         >
@@ -192,108 +235,146 @@ export function JourneysPage() {
             <tr>
               <th>ID & {t('Chủ sở hữu', 'Owner')}</th>
               <th>{t('Loại & Mẫu', 'Kind & Template')}</th>
-              <th>{t('Tiêu đề (Đã bảo vệ quyền riêng tư)', 'Title (Privacy-Redacted)')}</th>
+              <th>
+                {t(
+                  'Tiêu đề (Đã bảo vệ quyền riêng tư)',
+                  'Title (Privacy-Redacted)',
+                )}
+              </th>
               <th>{t('Thành viên & Check-ins', 'Members & Check-ins')}</th>
               <th>{t('Lượt xem công khai', 'Public Views')}</th>
               <th>{t('Thao tác', 'Actions')}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((j) => (
-              <tr key={j.id}>
-                <td>
-                  <div style={{ fontWeight: 700 }}>@{j.owner_username}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                    {j.id}
-                  </div>
-                </td>
-                <td>
-                  <span className="badge">{j.kind}</span>{' '}
-                  <span className="badge badge-sky">{j.template_id}</span>
-                </td>
-                <td>
-                  {j.public_token && j.title ? (
-                    <span style={{ fontWeight: 700 }}>{j.title}</span>
-                  ) : (
-                    <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>
-                      {t('[Hành trình riêng tư — Đã ẩn SQL]', '[Private Journey — Redacted in SQL]')}
-                    </span>
-                  )}
-                </td>
-                <td className="tabular">
-                  {j.active_members}/{j.max_members} · {j.checkin_count} snaps
-                </td>
-                <td className="tabular">{j.public_views}</td>
-                <td>
-                  {j.public_token ? (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <a
-                        href={`https://ourney.tech/p/${j.public_token}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn"
-                      >
-                        <OIcon name="external" size={16} />
-                        <span>/p/{j.public_token}</span>
-                      </a>
-                      <button
-                        type="button"
-                        className="btn btn-danger"
-                        onClick={() => setRevokeTarget(j)}
-                      >
-                        <OIcon name="ban" size={16} />
-                        <span>{t('Thu hồi link', 'Revoke Link')}</span>
-                      </button>
+            {rows.map((j) => {
+              const kindLabel = j.is_couple ? 'couple' : j.kind
+              const membersLabel =
+                j.max_members !== null && j.max_members !== undefined
+                  ? `${j.active_members}/${j.max_members}`
+                  : `${j.active_members}`
+              return (
+                <tr key={j.id}>
+                  <td>
+                    <div style={{ fontWeight: 700 }}>
+                      {j.owner_username
+                        ? `@${j.owner_username}`
+                        : j.owner_id.slice(0, 8)}
                     </div>
-                  ) : (
-                    <span className="badge">{j.visibility}</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                    <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
+                      {j.id}
+                    </div>
+                  </td>
+                  <td>
+                    <span className="badge">{kindLabel}</span>{' '}
+                    <span className="badge badge-sky">{j.template_id}</span>
+                  </td>
+                  <td>
+                    {j.public_token && j.title ? (
+                      <span style={{ fontWeight: 700 }}>{j.title}</span>
+                    ) : (
+                      <span
+                        style={{ color: 'var(--muted)', fontStyle: 'italic' }}
+                      >
+                        {t(
+                          '[Hành trình riêng tư — Đã ẩn SQL]',
+                          '[Private Journey — Redacted in SQL]',
+                        )}
+                      </span>
+                    )}
+                  </td>
+                  <td className="tabular">
+                    {membersLabel} · {j.checkin_count} snaps
+                  </td>
+                  <td className="tabular">{j.public_views}</td>
+                  <td>
+                    {j.public_token ? (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <a
+                          href={`https://ourney.tech/p/${encodeURIComponent(j.public_token)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn"
+                        >
+                          <OIcon name="external" size={16} />
+                          <span>/p/{j.public_token}</span>
+                        </a>
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          aria-label={`${t('Thu hồi link', 'Revoke Link')} ${j.id}`}
+                          onClick={() => setRevokeTarget(j)}
+                        >
+                          <OIcon name="ban" size={16} />
+                          <span>{t('Thu hồi link', 'Revoke Link')}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="badge">{j.visibility}</span>
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
+      <PaginationBar
+        total={total}
+        limit={PAGE_LIMIT}
+        offset={offset}
+        onChangeOffset={(next) => {
+          setOffset(next)
+          void loadData(next)
+        }}
+      />
+
       {revokeTarget && (
-        <div className="modal-scrim" role="dialog" aria-modal="true">
-          <div className="modal-card">
-            <h3>
-              {t('Thu hồi liên kết công khai /p/', 'Revoke Public Journey Link')}
-            </h3>
-            <label className="field-group">
-              <span className="field-label">
-                {t('Lý do thu hồi', 'Revocation Reason')}
-              </span>
-              <input
-                type="text"
-                className="input"
-                value={revokeReason}
-                onChange={(e) => setRevokeReason(e.target.value)}
-                placeholder={t(
-                  'Liên kết bị báo cáo lạm dụng...',
-                  'Public link reported for abuse...',
-                )}
-              />
-            </label>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setRevokeTarget(null)}
-              >
-                {t('Hủy', 'Cancel')}
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={() => void handleConfirmRevoke()}
-              >
-                {t('Xác nhận thu hồi', 'Confirm Revoke')}
-              </button>
-            </div>
+        <AccessibleModal
+          title={t(
+            'Thu hồi liên kết công khai /p/',
+            'Revoke Public Journey Link',
+          )}
+          onClose={() => setRevokeTarget(null)}
+        >
+          <h3>
+            {t('Thu hồi liên kết công khai /p/', 'Revoke Public Journey Link')}
+          </h3>
+          <label className="field-group">
+            <span className="field-label">
+              {t('Lý do thu hồi (tối thiểu 3 ký tự)', 'Revocation Reason (min 3 chars)')}
+            </span>
+            <input
+              type="text"
+              className="input"
+              minLength={3}
+              maxLength={500}
+              value={revokeReason}
+              onChange={(e) => setRevokeReason(e.target.value)}
+              placeholder={t(
+                'Liên kết bị báo cáo lạm dụng...',
+                'Public link reported for abuse...',
+              )}
+            />
+          </label>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setRevokeTarget(null)}
+            >
+              {t('Hủy', 'Cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={() => void handleConfirmRevoke()}
+            >
+              {t('Xác nhận thu hồi', 'Confirm Revoke')}
+            </button>
           </div>
-        </div>
+        </AccessibleModal>
       )}
     </div>
   )

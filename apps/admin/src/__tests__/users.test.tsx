@@ -1,101 +1,56 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { adminApi, type AdminIdentity } from '../lib/adminRpc'
+import { adminApi } from '../lib/adminRpc'
 import { I18nProvider } from '../lib/i18n'
 import { UsersPage } from '../pages/UsersPage'
-
-const OWNER_ADMIN: AdminIdentity = {
-  user_id: 'uid-1',
-  email: 'owner@ourney.tech',
-  role: 'owner',
-  username: 'hoang',
-  display_name: 'Hoang',
-  note: null,
-}
+import {
+  SQL_FIXTURE_MODERATOR,
+  SQL_FIXTURE_OWNER,
+  SQL_FIXTURE_USERS_LIST,
+  SQL_FIXTURE_USER_DETAIL,
+} from './fixtures'
 
 describe('UsersPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    vi.spyOn(adminApi, 'listUsers').mockResolvedValue([
-      {
-        user_id: 'usr-10',
-        username: 'linh_ielts',
-        display_name: 'Linh Nguyen',
-        email: 'linh@example.com',
-        has_phone: true,
-        has_password: true,
-        terms_version: 1,
-        status: 'active',
-        active_journeys: 2,
-        total_journeys: 3,
-        group_journeys: 2,
-        total_checkins: 48,
-        best_streak: 24,
-        feature_requests_count: 1,
-        open_reports_against: 0,
-        total_actioned_reports: 0,
-        blocked_by_count: 0,
-        last_active_at: '2026-11-24T06:20:00Z',
-        created_at: '2026-10-20T09:00:00Z',
-      },
-    ])
-    vi.spyOn(adminApi, 'getUserDetail').mockResolvedValue({
-      user_id: 'usr-10',
-      username: 'linh_ielts',
-      display_name: 'Linh Nguyen',
-      email: 'linh@example.com',
-      has_phone: true,
-      has_password: true,
-      terms_version: 1,
-      status: 'active',
-      active_journeys: 2,
-      total_journeys: 3,
-      group_journeys: 2,
-      total_checkins: 48,
-      best_streak: 24,
-      feature_requests_count: 1,
-      open_reports_against: 0,
-      total_actioned_reports: 0,
-      blocked_by_count: 0,
-      last_active_at: '2026-11-24T06:20:00Z',
-      created_at: '2026-10-20T09:00:00Z',
-      banned_until: null,
-      ban_reason: null,
-      wiped_ugc: false,
-      feature_requests: [],
-      moderation_history: [],
-    })
+    vi.spyOn(adminApi, 'listUsers').mockResolvedValue(SQL_FIXTURE_USERS_LIST)
+    vi.spyOn(adminApi, 'getUserDetail').mockResolvedValue(
+      SQL_FIXTURE_USER_DETAIL,
+    )
   })
 
-  it('opens detail drawer, supports reversible ban vs wipe-UGC toggle (A2), and owner type-to-confirm account deletion', async () => {
+  it('opens detail drawer via /users/:id route, passes detail.id to ban/delete mutations, and hides Delete Account for moderators', async () => {
     const banSpy = vi.spyOn(adminApi, 'banUser').mockResolvedValue()
     const actionSpy = vi
       .spyOn(adminApi, 'invokeAdminAction')
       .mockResolvedValue({ ok: true })
 
-    render(
-      <MemoryRouter>
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/users/usr-10']}>
         <I18nProvider initialLang="en">
-          <UsersPage admin={OWNER_ADMIN} />
+          <Routes>
+            <Route
+              path="/users/:id"
+              element={<UsersPage admin={SQL_FIXTURE_OWNER} />}
+            />
+          </Routes>
         </I18nProvider>
       </MemoryRouter>,
     )
 
     await waitFor(() => {
-      expect(screen.getByText('@linh_ielts')).toBeInTheDocument()
-    })
-
-    const user = userEvent.setup()
-    await user.click(screen.getByRole('button', { name: /Inspect/i }))
-
-    await waitFor(() => {
       expect(
         screen.getByRole('button', { name: /Ban \/ Suspend User/i }),
       ).toBeInTheDocument()
+      expect(
+        screen.getByText(/48 · Best Streak 24d/i),
+      ).toBeInTheDocument()
+      expect(screen.getByText(/#901 · users\.view_detail/i)).toBeInTheDocument()
     })
 
+    const user = userEvent.setup()
     await user.click(
       screen.getByRole('button', { name: /Ban \/ Suspend User/i }),
     )
@@ -129,5 +84,30 @@ describe('UsersPage', () => {
       reason: 'Verified user deletion request',
       ticket_ref: undefined,
     })
+
+    unmount()
+
+    // Moderator RBAC check: Delete Account on Request is hidden
+    render(
+      <MemoryRouter initialEntries={['/users/usr-10']}>
+        <I18nProvider initialLang="en">
+          <Routes>
+            <Route
+              path="/users/:id"
+              element={<UsersPage admin={SQL_FIXTURE_MODERATOR} />}
+            />
+          </Routes>
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Ban \/ Suspend User/i }),
+      ).toBeInTheDocument()
+    })
+    expect(
+      screen.queryByRole('button', { name: /Delete Account on Request/i }),
+    ).toBeNull()
   })
 })

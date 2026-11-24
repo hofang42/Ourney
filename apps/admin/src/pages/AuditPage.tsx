@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { adminApi, type AuditLogRow } from '../lib/adminRpc'
+import {
+  adminApi,
+  handleRpcError,
+  type AuditLogRow,
+} from '../lib/adminRpc'
 import { useI18n } from '../lib/i18n'
 import { OIcon } from '../ui/Icon'
 
@@ -9,19 +13,32 @@ export function AuditPage() {
   const [actionPrefix, setActionPrefix] = useState('')
   const [targetType, setTargetType] = useState('all')
   const [targetId, setTargetId] = useState('')
+  const [beforeId, setBeforeId] = useState<number | null>(null)
+  const [nextBeforeId, setNextBeforeId] = useState<number | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  const loadAudit = async () => {
-    const list = await adminApi.listAuditLog({
-      p_action_prefix: actionPrefix,
-      p_target_type: targetType,
-      p_target_id: targetId,
-    })
-    setRows(list)
+  const loadAudit = async (cursor: number | null = beforeId) => {
+    setErrorMsg(null)
+    try {
+      const res = await adminApi.listAuditLog({
+        p_action_prefix: actionPrefix,
+        p_target_type: targetType,
+        p_target_id: targetId,
+        p_before_id: cursor,
+        p_limit: 50,
+      })
+      setRows(res.items)
+      setNextBeforeId(res.next_before_id)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'list_audit_log')
+      setErrorMsg(msg)
+    }
   }
 
   useEffect(() => {
-    void loadAudit()
+    setBeforeId(null)
+    void loadAudit(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionPrefix, targetType, targetId])
 
@@ -53,10 +70,20 @@ export function AuditPage() {
         </div>
       </div>
 
+      {errorMsg && (
+        <div className="status-banner error" role="alert">
+          <span>{errorMsg}</span>
+        </div>
+      )}
+
       <div className="filter-bar">
         <input
           type="search"
           className="input search-input"
+          aria-label={t(
+            'Lọc theo tiền tố hành động kiểm toán',
+            'Filter audit log by action prefix',
+          )}
           placeholder={t(
             'Lọc theo tiền tố hành động (vd: moderation., feature_requests., users.)...',
             'Filter by action prefix (e.g. moderation., feature_requests., users.)...',
@@ -73,6 +100,8 @@ export function AuditPage() {
         >
           <option value="all">{t('Mọi đối tượng', 'All target types')}</option>
           <option value="moderation_queue">moderation_queue</option>
+          <option value="checkin">checkin</option>
+          <option value="message">message</option>
           <option value="feature_request">feature_request</option>
           <option value="user">user</option>
           <option value="journey">journey</option>
@@ -85,6 +114,7 @@ export function AuditPage() {
         <input
           type="text"
           className="input"
+          aria-label={t('Mã đối tượng đích chính xác', 'Exact target ID')}
           placeholder={t('Target ID chính xác...', 'Exact target_id...')}
           value={targetId}
           onChange={(e) => setTargetId(e.target.value)}
@@ -112,7 +142,7 @@ export function AuditPage() {
                     {r.created_at}
                   </div>
                 </td>
-                <td style={{ fontWeight: 700 }}>{r.admin_email}</td>
+                <td style={{ fontWeight: 700 }}>{r.admin_email || 'system'}</td>
                 <td>
                   <span className="badge badge-primary">{r.action}</span>
                 </td>
@@ -137,6 +167,7 @@ export function AuditPage() {
                   <button
                     type="button"
                     className="btn"
+                    aria-label={`${t('Chép JSON', 'Copy JSON')} #${r.id}`}
                     onClick={() => void handleCopyJson(r)}
                   >
                     <OIcon name="copy" size={16} />
@@ -152,6 +183,54 @@ export function AuditPage() {
           </tbody>
         </table>
       </div>
+
+      {(beforeId !== null || nextBeforeId !== null) && (
+        <div
+          className="pagination-bar"
+          role="navigation"
+          aria-label={t('Phân trang nhật ký kiểm toán', 'Audit log pagination')}
+        >
+          <span
+            className="tabular"
+            style={{ fontWeight: 700, fontSize: '0.84rem' }}
+          >
+            {beforeId !== null
+              ? t(
+                  `Đang xem các mục trước ID #${beforeId}`,
+                  `Viewing entries before ID #${beforeId}`,
+                )
+              : t('Đang xem các mục mới nhất', 'Viewing latest entries')}
+          </span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {beforeId !== null && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setBeforeId(null)
+                  void loadAudit(null)
+                }}
+              >
+                <OIcon name="back" size={16} />
+                <span>{t('Về mới nhất', 'Latest Entries')}</span>
+              </button>
+            )}
+            {nextBeforeId !== null && (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setBeforeId(nextBeforeId)
+                  void loadAudit(nextBeforeId)
+                }}
+              >
+                <span>{t('Tải mục cũ hơn', 'Load Older Entries')}</span>
+                <OIcon name="caret-right" size={16} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

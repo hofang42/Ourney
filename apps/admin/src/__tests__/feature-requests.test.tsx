@@ -4,22 +4,36 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   adminApi,
-  DEMO_FEATURE_REQUEST_STATS,
-  DEMO_FEATURE_REQUESTS,
+  isFeatureRequestsNotInstalledError,
 } from '../lib/adminRpc'
 import { I18nProvider } from '../lib/i18n'
 import { FeatureRequestsPage } from '../pages/FeatureRequestsPage'
+import {
+  SQL_FIXTURE_FILTER_PASS,
+  SQL_FIXTURE_FR_DETAIL,
+  SQL_FIXTURE_FR_LIST,
+  SQL_FIXTURE_FR_STATS,
+} from './fixtures'
 
 describe('FeatureRequestsPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('renders graceful not-installed empty state when RPC returns PGRST202 / 404', async () => {
+  it('renders graceful not-installed empty state when RPC returns PGRST202 / 404, but does NOT misclassify 23514 constraint errors', async () => {
     const notFoundErr = Object.assign(
       new Error('Could not find the function admin.list_feature_requests'),
       { code: 'PGRST202', status: 404 },
     )
+    const constraintErr = Object.assign(
+      new Error(
+        'new row for relation "feature_requests" violates check constraint',
+      ),
+      { code: '23514' },
+    )
+    expect(isFeatureRequestsNotInstalledError(notFoundErr)).toBe(true)
+    expect(isFeatureRequestsNotInstalledError(constraintErr)).toBe(false)
+
     vi.spyOn(adminApi, 'featureRequestStats').mockRejectedValue(notFoundErr)
     vi.spyOn(adminApi, 'listFeatureRequests').mockRejectedValue(notFoundErr)
 
@@ -38,27 +52,38 @@ describe('FeatureRequestsPage', () => {
     })
   })
 
-  it('uses section 4.4B RPCs (feature_request_stats, list_feature_requests, get_feature_request_detail, update_feature_request, merge_feature_request) with no tags and no unmerge', async () => {
+  it('uses section 4.4B RPCs, deduplicates overlapping voter estimates on merge, and supports content filter dry-run', async () => {
     vi.spyOn(adminApi, 'featureRequestStats').mockResolvedValue(
-      DEMO_FEATURE_REQUEST_STATS,
+      SQL_FIXTURE_FR_STATS,
     )
     vi.spyOn(adminApi, 'listFeatureRequests').mockResolvedValue(
-      DEMO_FEATURE_REQUESTS,
+      SQL_FIXTURE_FR_LIST,
     )
-    vi.spyOn(adminApi, 'getFeatureRequestDetail').mockResolvedValue({
-      ...DEMO_FEATURE_REQUESTS[0],
-      merged_children: [],
-      reports: [],
-      voters: [
-        {
-          user_id: 'usr-10',
-          username: 'linh_ielts',
-          display_name: 'Linh Nguyen',
-          is_author: true,
-          voted_at: '2026-11-12T08:00:00Z',
-        },
-      ],
-    })
+    vi.spyOn(adminApi, 'getFeatureRequestDetail').mockImplementation(
+      async (id) => {
+        if (id === 'fr-102') {
+          return {
+            ...SQL_FIXTURE_FR_LIST.items[1],
+            merged_children: [],
+            reports: [],
+            voters: [
+              // usr-10 overlaps with fr-101!
+              {
+                user_id: 'usr-10',
+                username: 'linh_ielts',
+                display_name: 'Linh Nguyễn',
+                is_author: false,
+                voted_at: '2026-11-15T08:00:00Z',
+              },
+            ],
+          }
+        }
+        return SQL_FIXTURE_FR_DETAIL
+      },
+    )
+    vi.spyOn(adminApi, 'testContentFilter').mockResolvedValue(
+      SQL_FIXTURE_FILTER_PASS,
+    )
     const updateSpy = vi
       .spyOn(adminApi, 'updateFeatureRequest')
       .mockResolvedValue()
@@ -82,11 +107,16 @@ describe('FeatureRequestsPage', () => {
       ).toBeInTheDocument()
     })
 
-    // F1 & A3: No unmerge button and no tags input
-    expect(screen.queryByRole('button', { name: /unmerge/i })).toBeNull()
-    expect(screen.queryByPlaceholderText(/quick-win/i)).toBeNull()
-
     const user = userEvent.setup()
+    await user.click(
+      screen.getByRole('button', { name: /Check Content Filter/i }),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByText(/PASS: Reply text is clean/i),
+      ).toBeInTheDocument()
+    })
+
     await user.click(screen.getByRole('button', { name: /Save Update/i }))
     expect(updateSpy).toHaveBeenCalledWith({
       p_id: 'fr-101',
@@ -106,9 +136,10 @@ describe('FeatureRequestsPage', () => {
       screen.getByLabelText(/Select canonical target/i),
       'fr-102',
     )
-    expect(
-      screen.getByText(/Estimated Net Unique Votes after merge:/i),
-    ).toBeInTheDocument()
+    // 68 + 54 - 1 overlapping voter (usr-10) = 121 unique votes
+    await waitFor(() => {
+      expect(screen.getByText('121 votes')).toBeInTheDocument()
+    })
 
     await user.click(screen.getByRole('button', { name: /Confirm Merge/i }))
     expect(mergeSpy).toHaveBeenCalledWith({

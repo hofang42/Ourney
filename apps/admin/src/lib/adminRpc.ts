@@ -9,65 +9,102 @@ export interface AdminIdentity {
   role: AdminRole
   username: string | null
   display_name: string | null
+  avatar_path?: string | null
   note: string | null
+  created_at?: string
+  updated_at?: string
+  last_sign_in_at?: string | null
+}
+
+export interface OverviewFeatureRequestTopItem {
+  id: string
+  title: string
+  category: string
+  status: string
+  vote_count: number
   created_at?: string
 }
 
 export interface OverviewStats {
-  urgent: {
+  timezone: string
+  days: number
+  generated_at: string
+  alerts: {
     open_reports: number
+    open_blocks: number
     overdue_reports: number
+    earliest_due_at: string | null
     earliest_hours_remaining: number | null
     untriaged_feature_requests: number
     failed_waitlist_emails: number
-    stuck_storage_purge: number
     pending_storage_purge: number
+    stuck_storage_purge: number
   }
   kpis: {
-    total_users: number
-    total_auth_users: number
-    new_users_today: number
-    new_users_7d: number
-    waitlist_total: number
-    waitlist_7d: number
-    waitlist_converted_pct: number
-    dau: number
-    wau: number
-    mau: number
-    stickiness_pct: number
-    checkins_today: number
-    checkins_7d: number
-    camera_live_pct: number
-    active_streaks_3d: number
-    active_streaks_7d: number
-    open_moderation_reports: number
-    open_block_signals: number
-    sla_24h_compliance_pct: number
-    feature_requests_installed: boolean
-    new_feature_requests_7d: number
-    untriaged_feature_requests: number
-    top_voted_request: {
-      id: string
-      title: string
-      vote_count: number
-      category: string
-      status: string
+    users: {
+      total_auth: number
+      live_profiles: number
+      deleted_profiles: number
+      banned_users: number
+      new_today: number
+      new_7d: number
+    }
+    waitlist: {
+      total: number
+      new_7d: number
+      converted_count: number
+      converted_pct: number
+      failed_emails: number
+    }
+    engagement: {
+      dau: number
+      wau: number
+      mau: number
+      avg_dau_7d: number
+      stickiness_pct: number
+      auth_signins_1d: number
+      auth_signins_7d: number
+    }
+    checkins: {
+      today: number
+      last_7d: number
+      camera_7d: number
+      library_7d: number
+      camera_pct_7d: number
+    }
+    streaks: {
+      streak_3d_plus: number
+      streak_7d_plus: number
+      streak_14d_plus: number
+      streak_30d_plus: number
+    }
+    moderation: {
+      open_reports: number
+      open_blocks: number
+      overdue_count: number
+      sla_compliance_pct_30d: number
+    }
+    feature_requests: {
+      new_7d: number
+      untriaged_count: number
+      open_count: number
+      shipped_count: number
+      top_voted: OverviewFeatureRequestTopItem[]
     } | null
   }
   daily_growth: Array<{
     day: string
-    new_users: number
-    waitlist_signups: number
+    new_profiles: number
+    new_waitlist: number
   }>
-  daily_habit: Array<{
+  daily_habit_pulse: Array<{
     day: string
     dau: number
     live_checkins: number
   }>
-  activation_funnel: Array<{
+  activation_funnel_7d: Array<{
     step: string
-    label_vi: string
-    label_en: string
+    label: string
     count: number
     conversion_pct: number
   }>
@@ -79,78 +116,140 @@ export interface OverviewStats {
     d14_pct: number
     d30_pct: number
   }>
-  top_feature_requests: Array<{
-    id: string
-    title: string
-    category: string
-    status: string
-    vote_count: number
-  }>
   template_mix: Array<{
-    template_id: string
+    template: string
     active_journeys: number
   }>
+}
+
+export interface ModerationQueueSummary {
+  open_reports: number
+  open_blocks: number
+  overdue_count: number
+  due_soon_count: number
+  quarantined_count: number
+  median_handle_hours_30d: number
 }
 
 export interface ModerationQueueRow {
   id: string
   kind: 'report' | 'block'
+  report_id: string | null
   status: 'open' | 'actioned' | 'dismissed'
-  reason: string
-  target_type: 'checkin' | 'message' | 'feature_request' | 'user'
-  target_id: string
-  target_user_id: string
-  target_username: string
-  target_prior_actions: number
-  target_blocked_by_count: number
-  actor_username: string
-  distinct_open_reporters: number
-  is_quarantined: boolean
-  has_reported_media: boolean
+  reason: string | null
+  note: string | null
   created_at: string
   due_at: string
+  notified_at: string | null
   handled_at: string | null
+  resolution_note: string | null
+  overdue: boolean
   hours_remaining: number
+  target_type: 'checkin' | 'message' | 'user' | 'feature_request'
+  actor_id: string | null
+  actor_username: string | null
+  actor_display_name: string | null
+  target_user_id: string | null
+  target_username: string | null
+  target_display_name: string | null
+  target_checkin_id: string | null
+  target_message_id: string | null
+  auto_quarantined: boolean
+  has_reported_media: boolean
+  distinct_open_reporters: number
+  target_prior_actions: number
+  target_blocked_by_count: number
 }
+
+export interface ModerationQueueResponse {
+  summary: ModerationQueueSummary
+  total: number
+  items: ModerationQueueRow[]
+}
+
+export type ModerationReportedContent =
+  | {
+      target_type: 'checkin'
+      checkin_id: string
+      journey_id: string
+      local_date: string
+      captured_at: string
+      caption: string | null
+      extras: Record<string, unknown>
+      moderated_at: string | null
+      deleted_at: string | null
+      has_photo: boolean
+      has_thumb: boolean
+      has_partner_photo: boolean
+    }
+  | {
+      target_type: 'message'
+      message_id: string
+      conversation_id: string
+      kind: string
+      body: string | null
+      created_at: string
+      moderated_at: string | null
+      deleted_at: string | null
+      has_media: boolean
+    }
+  | {
+      target_type: 'user'
+      user_id: string | null
+    }
 
 export interface ModerationItemDetail {
-  queue: ModerationQueueRow
+  id: string
+  kind: 'report' | 'block'
+  report_id: string | null
+  status: 'open' | 'actioned' | 'dismissed'
+  reason: string | null
+  note: string | null
+  created_at: string
+  due_at: string
+  notified_at: string | null
+  handled_at: string | null
+  resolution_note: string | null
+  overdue: boolean
+  hours_remaining: number
+  actor_id: string | null
+  target_user_id: string | null
+  target_checkin_id: string | null
+  target_message_id: string | null
   target_user: {
     user_id: string
-    username: string
-    display_name: string
+    username: string | null
+    display_name: string | null
     created_at: string
+    is_banned: boolean
     prior_actioned_reports: number
     blocked_by_count: number
-    is_banned: boolean
-  }
-  excerpt: {
-    target_type: 'checkin' | 'message' | 'feature_request' | 'user'
-    title: string | null
-    body: string | null
-    extra_note: string | null
-    created_at: string | null
-  }
-  has_reported_media: boolean
-  media_objects: Array<{
-    bucket_id: string
-    object_path: string
-    label: string
-  }>
+  } | null
   sibling_reports: Array<{
     id: string
-    reporter_username: string
-    reason: string
+    reporter_id: string | null
+    reporter_username: string | null
+    reason: string | null
     note: string | null
+    status: string
     created_at: string
+    due_at: string
   }>
+  reported_content: ModerationReportedContent
 }
 
-export interface RevealedMediaGrant {
-  bucket_id: string
-  object_path: string
-  expires_at: string
+export interface RevealedMediaObject {
+  bucket: 'media' | 'messages'
+  path: string
+  kind: 'photo' | 'thumb' | 'partner_photo' | 'message_photo'
   signed_url?: string
+}
+
+export interface RevealReportedMediaResponse {
+  queue_id: string
+  expires_at: string
+  ttl_seconds: number
+  objects: RevealedMediaObject[]
 }
 
 export interface ObjectionableWordRow {
@@ -159,15 +258,23 @@ export interface ObjectionableWordRow {
   match_mode: 'diacritic_word' | 'word' | 'substring'
   category: 'csae' | 'self_harm' | 'violence' | 'sexual' | 'slur' | 'profanity'
   enabled: boolean
-  created_at: string
+  created_at?: string
+}
+
+export interface ContentFilterMatch {
+  term: string
+  lang: 'vi' | 'en' | 'any'
+  match_mode: 'diacritic_word' | 'word' | 'substring'
+  category: 'csae' | 'self_harm' | 'violence' | 'sexual' | 'slur' | 'profanity'
 }
 
 export interface FilterDryRunResult {
-  allowed: boolean
-  matched_term: string | null
+  blocked: boolean
+  term: string | null
   lang: string | null
   match_mode: string | null
   category: string | null
+  matches: ContentFilterMatch[]
 }
 
 export type FeatureRequestStatus =
@@ -205,6 +312,12 @@ export interface FeatureRequestStats {
   }>
 }
 
+export interface FeatureRequestAuthor {
+  user_id: string | null
+  username: string | null
+  display_name: string | null
+}
+
 export interface FeatureRequestRow {
   id: string
   title: string
@@ -216,6 +329,7 @@ export interface FeatureRequestRow {
   author_id: string | null
   author_username: string | null
   author_display_name: string | null
+  author?: FeatureRequestAuthor | null
   admin_reply: string | null
   admin_replied_at: string | null
   shipped_at: string | null
@@ -226,10 +340,15 @@ export interface FeatureRequestRow {
   updated_at: string
 }
 
+export interface FeatureRequestListResponse {
+  total: number
+  items: FeatureRequestRow[]
+}
+
 export interface FeatureRequestVoterRow {
   user_id: string
-  username: string
-  display_name: string
+  username: string | null
+  display_name: string | null
   is_author?: boolean
   voted_at: string
 }
@@ -244,7 +363,7 @@ export interface FeatureRequestDetail extends FeatureRequestRow {
   }>
   reports: Array<{
     id: string
-    reporter_username: string
+    reporter_username: string | null
     reason: string
     note: string | null
     status: string
@@ -255,17 +374,19 @@ export interface FeatureRequestDetail extends FeatureRequestRow {
 
 export interface WaitlistSummary {
   total: number
+  new_7d: number
   ios_only: number
   android_only: number
   both_platforms: number
-  vi_count: number
-  en_count: number
-  sent_count: number
-  failed_count: number
-  unsent_count: number
+  lang_vi: number
+  lang_en: number
+  mail_sent: number
+  mail_failed: number
+  mail_unsent: number
   converted_count: number
-  top_sources: Array<{ source: string; count: number }>
-  daily: Array<{ day: string; vi: number; en: number }>
+  waiting_count: number
+  by_source: Array<{ source: string; count: number }>
+  daily: Array<{ day: string; total: number; vi: number; en: number }>
 }
 
 export interface WaitlistRow {
@@ -273,28 +394,37 @@ export interface WaitlistRow {
   email: string
   lang: 'vi' | 'en'
   platforms: string[]
-  source: string
+  source: string | null
   created_at: string
   confirmation_sent_at: string | null
   confirmation_error: string | null
+  mail_status: 'sent' | 'failed' | 'unsent'
   registered_in_app: boolean
 }
 
+export interface WaitlistListResponse {
+  total: number
+  items: WaitlistRow[]
+}
+
 export interface AdminUserRow {
-  user_id: string
+  id: string
   username: string | null
   display_name: string | null
   email: string | null
   has_phone: boolean
   has_password: boolean
   terms_version: number
+  is_banned: boolean
   status: 'active' | 'incomplete_onboarding' | 'banned' | 'soft_deleted'
-  active_journeys: number
-  total_journeys: number
-  group_journeys: number
+  banned_at: string | null
+  ban_reason: string | null
+  wiped_ugc: boolean | null
+  active_journeys_count: number
+  total_journeys_count: number
+  group_journeys_count: number
   total_checkins: number
   best_streak: number
-  feature_requests_count: number
   open_reports_against: number
   total_actioned_reports: number
   blocked_by_count: number
@@ -302,67 +432,139 @@ export interface AdminUserRow {
   created_at: string
 }
 
-export interface AdminUserDetail extends AdminUserRow {
-  banned_until: string | null
+export interface AdminUserListResponse {
+  total: number
+  items: AdminUserRow[]
+}
+
+export interface AdminUserModerationRecord {
+  user_id: string
+  banned_at: string | null
+  banned_by: string | null
   ban_reason: string | null
   wiped_ugc: boolean
-  feature_requests: Array<{
-    id: string
-    title: string
-    status: string
-    vote_count: number
-    created_at: string
-  }>
-  moderation_history: Array<{
-    id: string
-    action: string
-    reason: string | null
-    created_at: string
-  }>
+  unbanned_at: string | null
+  unbanned_by: string | null
+  unban_reason: string | null
+  updated_at: string
+}
+
+export interface AdminUserRecentReport {
+  queue_id: string
+  kind: 'report' | 'block'
+  reason: string | null
+  status: 'open' | 'actioned' | 'dismissed'
+  created_at: string
+  due_at: string
+  handled_at: string | null
+  resolution_note: string | null
+}
+
+export interface AdminUserAuditHistoryItem {
+  id: number
+  admin_id: string | null
+  admin_email: string | null
+  action: string
+  reason: string | null
+  meta: Record<string, unknown>
+  created_at: string
+}
+
+export interface AdminUserDetail {
+  id: string
+  email: string | null
+  has_phone: boolean
+  has_password: boolean
+  username: string | null
+  display_name: string | null
+  terms_version: number
+  is_banned: boolean
+  banned_until: string | null
+  status: 'active' | 'incomplete_onboarding' | 'banned' | 'soft_deleted'
+  created_at: string
+  last_sign_in_at: string | null
+  deleted_at: string | null
+  last_active_at: string | null
+  activity: {
+    active_journeys_count: number
+    total_journeys_count: number
+    group_journeys_count: number
+    total_checkins: number
+    best_streak: number
+    friends_count: number
+  }
+  trust: {
+    open_reports_against: number
+    total_actioned_reports: number
+    blocked_by_count: number
+    moderation_record: AdminUserModerationRecord | null
+    recent_reports_against: AdminUserRecentReport[]
+    audit_history: AdminUserAuditHistoryItem[]
+  }
 }
 
 export interface JourneyStats {
-  total_active: number
-  total_ended: number
-  total_archived: number
+  total: number
+  active: number
+  ended: number
+  archived: number
   solo_count: number
   group_count: number
   couple_count: number
   live_count: number
   imported_count: number
-  active_public_links: number
+  public_links_count: number
   total_public_views: number
+  by_template: Array<{ template_id: string; count: number }>
+  by_skin: Array<{ skin: string; count: number }>
 }
 
 export interface AdminJourneyRow {
   id: string
   owner_id: string
-  owner_username: string
-  kind: 'solo' | 'group' | 'couple'
+  owner_username: string | null
+  owner_display_name: string | null
+  kind: 'solo' | 'group'
+  is_couple: boolean
   origin: 'live' | 'imported'
   template_id: string
-  skin_id: string
+  layout: string | null
   status: 'active' | 'ended' | 'archived'
   visibility: 'private' | 'group' | 'link'
-  public_token: string | null
   title: string | null
+  emoji: string | null
+  has_public_link: boolean
+  public_token: string | null
   active_members: number
-  max_members: number
+  max_members: number | null
   checkin_count: number
   public_views: number
+  start_date: string
+  duration_days: number | null
   created_at: string
+}
+
+export interface AdminJourneyListResponse {
+  total: number
+  items: AdminJourneyRow[]
 }
 
 export interface AuditLogRow {
   id: number
-  created_at: string
   admin_id: string | null
-  admin_email: string
+  admin_email: string | null
+  admin_username: string | null
   action: string
   target_type: string
   target_id: string | null
   reason: string | null
   meta: Record<string, unknown>
+  created_at: string
+}
+
+export interface AuditLogListResponse {
+  items: AuditLogRow[]
+  next_before_id: number | null
 }
 
 export interface SystemHealth {
@@ -370,29 +572,48 @@ export interface SystemHealth {
     due_now_count: number
     backing_off_count: number
     stuck_count: number
+    total_queued: number
     sample_errors: Array<{
       bucket: string
       path_prefix: string
       attempts: number
+      next_attempt_at: string
       last_error: string
+      created_at: string
     }>
   }
-  moderation_alerts: {
+  moderation_notifications: {
     unnotified_open_count: number
-    oldest_unnotified_at: string | null
+    leased_count: number
+    overdue_open_count: number
+  }
+  admins_count: {
+    owners: number
+    moderators: number
   }
 }
 
-const supabaseUrl =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ||
-  'https://example.supabase.co'
-const supabaseAnonKey =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
-  'sb_publishable_placeholder'
+const rawSupabaseUrl = (
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? ''
+).trim()
+const rawSupabaseAnonKey = (
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? ''
+).trim()
+
+const isTestEnv = import.meta.env.MODE === 'test'
+
+export function assertSupabaseConfigured(): void {
+  if (isTestEnv) return
+  if (!rawSupabaseUrl || !rawSupabaseAnonKey) {
+    throw new Error(
+      'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment configuration',
+    )
+  }
+}
 
 export const supabase: SupabaseClient = createClient(
-  supabaseUrl,
-  supabaseAnonKey,
+  rawSupabaseUrl || 'http://127.0.0.1:54321',
+  rawSupabaseAnonKey || 'test-anon-key-only',
   {
     auth: {
       persistSession: true,
@@ -401,29 +622,26 @@ export const supabase: SupabaseClient = createClient(
   },
 )
 
-export function isDemoMode(): boolean {
-  if (typeof window === 'undefined') return false
-  try {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('demo') === '1') {
-      window.sessionStorage.setItem('ourney_admin_demo', '1')
-      return true
-    }
-    if (window.sessionStorage.getItem('ourney_admin_demo') === '1') return true
-    if (window.localStorage.getItem('ourney_admin_demo') === '1') return true
-  } catch {
-    return false
-  }
-  return false
-}
-
 export function isForbiddenError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false
   const e = err as { code?: string; status?: number; message?: string }
   return (
     e.code === '42501' ||
     e.status === 403 ||
-    Boolean(e.message && /forbidden|permission denied|not_admin|42501/i.test(e.message))
+    Boolean(
+      e.message && /forbidden|permission denied|not_admin|42501/i.test(e.message),
+    )
+  )
+}
+
+export function isUnauthenticatedError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false
+  const e = err as { code?: string; status?: number; message?: string }
+  return (
+    e.code === '28000' ||
+    e.code === 'PGRST301' ||
+    e.status === 401 ||
+    Boolean(e.message && /unauthenticated|jwt expired|invalid jwt/i.test(e.message))
   )
 }
 
@@ -437,313 +655,107 @@ export function isFeatureRequestsNotInstalledError(err: unknown): boolean {
     e.status === 404 ||
     Boolean(
       e.message &&
-        /PGRST202|404|not_installed|feature_requests|Could not find the function/i.test(
+        /PGRST202|42883|42P01|Could not find the function|relation "public\.feature_requests" does not exist/i.test(
           e.message,
         ),
     )
   )
 }
 
+type SessionRevokedListener = (reason: 'forbidden' | 'unauthenticated') => void
+const sessionRevokedListeners = new Set<SessionRevokedListener>()
+
+export function onAdminSessionRevoked(
+  listener: SessionRevokedListener,
+): () => void {
+  sessionRevokedListeners.add(listener)
+  return () => {
+    sessionRevokedListeners.delete(listener)
+  }
+}
+
+export function notifyAdminSessionRevoked(
+  reason: 'forbidden' | 'unauthenticated',
+): void {
+  for (const listener of sessionRevokedListeners) {
+    listener(reason)
+  }
+}
+
+async function verifySessionAfterError(err: unknown, fnName?: string): Promise<void> {
+  if (fnName === 'me') return
+  if (isUnauthenticatedError(err)) {
+    notifyAdminSessionRevoked('unauthenticated')
+    return
+  }
+  if (isForbiddenError(err)) {
+    try {
+      await adminApi.me()
+      // Caller is still a valid admin (e.g. moderator calling an owner-only RPC).
+      // Keep them signed in so the page displays the forbidden error banner.
+    } catch (meErr) {
+      if (isForbiddenError(meErr) || isUnauthenticatedError(meErr)) {
+        notifyAdminSessionRevoked('forbidden')
+      }
+    }
+  }
+}
+
+export async function handleRpcError(err: unknown, fnName?: string): Promise<string> {
+  await verifySessionAfterError(err, fnName)
+  if (err instanceof Error && err.message) {
+    return err.message
+  }
+  if (err && typeof err === 'object' && 'message' in err) {
+    return String((err as { message: unknown }).message)
+  }
+  return 'Unexpected RPC error'
+}
+
 async function callAdminRpc<T>(
   fnName: string,
   args?: Record<string, unknown>,
 ): Promise<T> {
+  assertSupabaseConfigured()
   const schemaClient = supabase.schema('admin')
   const { data, error } = args
     ? await schemaClient.rpc(fnName, args)
     : await schemaClient.rpc(fnName)
   if (error) {
+    await verifySessionAfterError(error, fnName)
     throw error
   }
   return data as T
 }
 
-export const DEMO_OVERVIEW: OverviewStats = {
-  urgent: {
-    open_reports: 2,
-    overdue_reports: 0,
-    earliest_hours_remaining: 3.4,
-    untriaged_feature_requests: 4,
-    failed_waitlist_emails: 1,
-    stuck_storage_purge: 0,
-    pending_storage_purge: 3,
-  },
-  kpis: {
-    total_users: 482,
-    total_auth_users: 510,
-    new_users_today: 19,
-    new_users_7d: 114,
-    waitlist_total: 1280,
-    waitlist_7d: 245,
-    waitlist_converted_pct: 34.2,
-    dau: 214,
-    wau: 368,
-    mau: 455,
-    stickiness_pct: 47.0,
-    checkins_today: 189,
-    checkins_7d: 1246,
-    camera_live_pct: 84.5,
-    active_streaks_3d: 162,
-    active_streaks_7d: 94,
-    open_moderation_reports: 2,
-    open_block_signals: 1,
-    sla_24h_compliance_pct: 100,
-    feature_requests_installed: true,
-    new_feature_requests_7d: 11,
-    untriaged_feature_requests: 4,
-    top_voted_request: {
-      id: 'fr-101',
-      title: 'Widget màn hình khóa iOS hiển thị chuỗi lửa cùng nhóm',
-      vote_count: 68,
-      category: 'streaks',
-      status: 'planned',
-    },
-  },
-  daily_growth: [
-    { day: '18/11', new_users: 14, waitlist_signups: 32 },
-    { day: '19/11', new_users: 16, waitlist_signups: 41 },
-    { day: '20/11', new_users: 15, waitlist_signups: 38 },
-    { day: '21/11', new_users: 21, waitlist_signups: 49 },
-    { day: '22/11', new_users: 18, waitlist_signups: 44 },
-    { day: '23/11', new_users: 22, waitlist_signups: 52 },
-    { day: '24/11', new_users: 19, waitlist_signups: 39 },
-  ],
-  daily_habit: [
-    { day: '18/11', dau: 172, live_checkins: 151 },
-    { day: '19/11', dau: 184, live_checkins: 164 },
-    { day: '20/11', dau: 191, live_checkins: 170 },
-    { day: '21/11', dau: 198, live_checkins: 176 },
-    { day: '22/11', dau: 205, live_checkins: 182 },
-    { day: '23/11', dau: 211, live_checkins: 188 },
-    { day: '24/11', dau: 214, live_checkins: 189 },
-  ],
-  activation_funnel: [
-    {
-      step: 'auth_signup',
-      label_vi: 'Đăng ký tài khoản',
-      label_en: 'Auth Signup',
-      count: 510,
-      conversion_pct: 100,
-    },
-    {
-      step: 'terms_accepted',
-      label_vi: 'Đồng ý điều khoản',
-      label_en: 'Terms Accepted',
-      count: 496,
-      conversion_pct: 97.3,
-    },
-    {
-      step: 'profile_created',
-      label_vi: 'Tạo hồ sơ cá nhân',
-      label_en: 'Profile Created',
-      count: 482,
-      conversion_pct: 94.5,
-    },
-    {
-      step: 'first_journey',
-      label_vi: 'Tạo hoặc vào hành trình',
-      label_en: 'First Journey',
-      count: 438,
-      conversion_pct: 85.9,
-    },
-    {
-      step: 'first_checkin',
-      label_vi: 'Chụp ảnh ngày đầu',
-      label_en: 'First Live Check-in',
-      count: 374,
-      conversion_pct: 73.3,
-    },
-    {
-      step: 'social_connected',
-      label_vi: 'Kết nối nhóm / bạn bè',
-      label_en: 'Squad / Friend Connected',
-      count: 268,
-      conversion_pct: 52.5,
-    },
-  ],
-  cohort_retention: [
-    { cohort_week: 'W43 (21/10)', cohort_size: 84, d1_pct: 78, d7_pct: 61, d14_pct: 52, d30_pct: 46 },
-    { cohort_week: 'W44 (28/10)', cohort_size: 96, d1_pct: 81, d7_pct: 64, d14_pct: 55, d30_pct: 48 },
-    { cohort_week: 'W45 (04/11)', cohort_size: 108, d1_pct: 82, d7_pct: 66, d14_pct: 58, d30_pct: 0 },
-    { cohort_week: 'W46 (11/11)', cohort_size: 110, d1_pct: 85, d7_pct: 69, d14_pct: 0, d30_pct: 0 },
-    { cohort_week: 'W47 (18/11)', cohort_size: 114, d1_pct: 86, d7_pct: 0, d14_pct: 0, d30_pct: 0 },
-  ],
-  top_feature_requests: [
-    {
-      id: 'fr-101',
-      title: 'Widget màn hình khóa iOS hiển thị chuỗi lửa cùng nhóm',
-      category: 'streaks',
-      status: 'planned',
-      vote_count: 68,
-    },
-    {
-      id: 'fr-102',
-      title: 'Xuất video timelapse 30 ngày giảm cân từ khung Ghost Align',
-      category: 'sharing',
-      status: 'in_progress',
-      vote_count: 54,
-    },
-    {
-      id: 'fr-103',
-      title: 'Chế độ nhắc chụp ảnh theo khung giờ riêng của từng thành viên',
-      category: 'squad',
-      status: 'under_review',
-      vote_count: 41,
-    },
-  ],
-  template_mix: [
-    { template_id: 'english_daily', active_journeys: 164 },
-    { template_id: 'weight_loss', active_journeys: 128 },
-    { template_id: 'workout_30', active_journeys: 112 },
-    { template_id: 'couple', active_journeys: 86 },
-    { template_id: 'travel', active_journeys: 64 },
-    { template_id: 'custom', active_journeys: 58 },
-  ],
+function normalizeFeatureRequestRow(raw: Partial<FeatureRequestRow>): FeatureRequestRow {
+  const authorObj = raw.author ?? null
+  return {
+    id: String(raw.id ?? ''),
+    title: String(raw.title ?? ''),
+    body: String(raw.body ?? ''),
+    category: (raw.category ?? 'other') as FeatureRequestCategory,
+    status: (raw.status ?? 'new') as FeatureRequestStatus,
+    vote_count: Number(raw.vote_count ?? 0),
+    open_reports_count: Number(raw.open_reports_count ?? 0),
+    author_id: raw.author_id ?? authorObj?.user_id ?? null,
+    author_username: raw.author_username ?? authorObj?.username ?? null,
+    author_display_name: raw.author_display_name ?? authorObj?.display_name ?? null,
+    author: authorObj,
+    admin_reply: raw.admin_reply ?? null,
+    admin_replied_at: raw.admin_replied_at ?? null,
+    shipped_at: raw.shipped_at ?? null,
+    duplicate_of: raw.duplicate_of ?? null,
+    merged_children_count: Number(raw.merged_children_count ?? 0),
+    hidden: Boolean(raw.hidden ?? false),
+    created_at: String(raw.created_at ?? ''),
+    updated_at: String(raw.updated_at ?? ''),
+  }
 }
-
-export const DEMO_MODERATION_QUEUE: ModerationQueueRow[] = [
-  {
-    id: 'mq-01',
-    kind: 'report',
-    status: 'open',
-    reason: 'harassment',
-    target_type: 'checkin',
-    target_id: 'chk-901',
-    target_user_id: 'usr-88',
-    target_username: 'hung_gym99',
-    target_prior_actions: 1,
-    target_blocked_by_count: 2,
-    actor_username: 'linh_ielts',
-    distinct_open_reporters: 2,
-    is_quarantined: false,
-    has_reported_media: true,
-    created_at: '2026-11-23T17:10:00Z',
-    due_at: '2026-11-24T17:10:00Z',
-    handled_at: null,
-    hours_remaining: 3.4,
-  },
-  {
-    id: 'mq-02',
-    kind: 'report',
-    status: 'open',
-    reason: 'spam',
-    target_type: 'message',
-    target_id: 'msg-404',
-    target_user_id: 'usr-92',
-    target_username: 'promo_fast',
-    target_prior_actions: 2,
-    target_blocked_by_count: 4,
-    actor_username: 'minh_run',
-    distinct_open_reporters: 3,
-    is_quarantined: true,
-    has_reported_media: false,
-    created_at: '2026-11-24T04:00:00Z',
-    due_at: '2026-11-25T04:00:00Z',
-    handled_at: null,
-    hours_remaining: 14.2,
-  },
-]
-
-export const DEMO_FEATURE_REQUEST_STATS: FeatureRequestStats = {
-  new: 4,
-  under_review: 3,
-  planned: 5,
-  in_progress: 2,
-  shipped: 7,
-  declined: 1,
-  hidden: 0,
-  merged: 2,
-  new_this_week: 11,
-  top_voted: [
-    {
-      id: 'fr-101',
-      title: 'Widget màn hình khóa iOS hiển thị chuỗi lửa cùng nhóm',
-      category: 'squad',
-      status: 'planned',
-      vote_count: 68,
-    },
-    {
-      id: 'fr-102',
-      title: 'Xuất video timelapse 30 ngày giảm cân từ khung Ghost Align',
-      category: 'sharing',
-      status: 'in_progress',
-      vote_count: 54,
-    },
-    {
-      id: 'fr-103',
-      title: 'Chế độ nhắc chụp ảnh theo khung giờ riêng của từng thành viên',
-      category: 'journeys',
-      status: 'under_review',
-      vote_count: 41,
-    },
-  ],
-}
-
-export const DEMO_FEATURE_REQUESTS: FeatureRequestRow[] = [
-  {
-    id: 'fr-101',
-    title: 'Widget màn hình khóa iOS hiển thị chuỗi lửa cùng nhóm',
-    body: 'Mong Ourney có widget ngoài màn hình khóa để cả nhóm IELTS thấy ai chưa nộp bài trong ngày.',
-    category: 'squad',
-    status: 'planned',
-    vote_count: 68,
-    open_reports_count: 0,
-    author_id: 'usr-10',
-    author_username: 'linh_ielts',
-    author_display_name: 'Linh Nguyễn',
-    admin_reply: 'Đội ngũ Ourney đang thiết kế Widget Lock Screen cho bản iOS 1.1 vào tháng tới.',
-    admin_replied_at: '2026-11-22T09:30:00Z',
-    shipped_at: null,
-    duplicate_of: null,
-    merged_children_count: 2,
-    hidden: false,
-    created_at: '2026-11-12T08:00:00Z',
-    updated_at: '2026-11-22T09:30:00Z',
-  },
-  {
-    id: 'fr-102',
-    title: 'Xuất video timelapse 30 ngày giảm cân từ khung Ghost Align',
-    body: 'Khi đủ 30 ngày trong hành trình Quiet Transformer, cho phép xuất clip MP4 ghép mượt từng ngày.',
-    category: 'sharing',
-    status: 'in_progress',
-    vote_count: 54,
-    open_reports_count: 0,
-    author_id: 'usr-12',
-    author_username: 'thao_fit',
-    author_display_name: 'Thảo Phạm',
-    admin_reply: null,
-    admin_replied_at: null,
-    shipped_at: null,
-    duplicate_of: null,
-    merged_children_count: 0,
-    hidden: false,
-    created_at: '2026-11-14T10:15:00Z',
-    updated_at: '2026-11-21T11:00:00Z',
-  },
-  {
-    id: 'fr-103',
-    title: 'Thêm widget iOS xem streak nhóm',
-    body: 'Muốn xem nhanh nhóm học tiếng Anh trên màn hình chính iPhone.',
-    category: 'squad',
-    status: 'new',
-    vote_count: 9,
-    open_reports_count: 0,
-    author_id: 'usr-15',
-    author_username: 'khoa_dev',
-    author_display_name: 'Khoa Trần',
-    admin_reply: null,
-    admin_replied_at: null,
-    shipped_at: null,
-    duplicate_of: null,
-    merged_children_count: 0,
-    hidden: false,
-    created_at: '2026-11-23T15:20:00Z',
-    updated_at: '2026-11-23T15:20:00Z',
-  },
-]
 
 export const adminApi = {
   async signInWithOtp(email: string): Promise<void> {
+    assertSupabaseConfigured()
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: { shouldCreateUser: false },
@@ -752,6 +764,7 @@ export const adminApi = {
   },
 
   async verifyOtp(email: string, token: string): Promise<void> {
+    assertSupabaseConfigured()
     const { error } = await supabase.auth.verifyOtp({
       email: email.trim().toLowerCase(),
       token: token.trim(),
@@ -765,16 +778,6 @@ export const adminApi = {
   },
 
   async me(): Promise<AdminIdentity> {
-    if (isDemoMode()) {
-      return {
-        user_id: '00000000-0000-0000-0000-000000000001',
-        email: 'owner@ourney.tech',
-        role: 'owner',
-        username: 'hoang_owner',
-        display_name: 'Hoàng (Founder)',
-        note: 'Primary Owner',
-      }
-    }
     const raw = await callAdminRpc<AdminIdentity | AdminIdentity[]>('me')
     const item = Array.isArray(raw) ? raw[0] : raw
     if (!item || !item.role) {
@@ -789,28 +792,128 @@ export const adminApi = {
     p_days = 30,
     p_tz = 'Asia/Ho_Chi_Minh',
   ): Promise<OverviewStats> {
-    if (isDemoMode()) return DEMO_OVERVIEW
     const raw = await callAdminRpc<Partial<OverviewStats>>('overview_stats', {
       p_days,
       p_tz,
     })
+    const frRaw = raw?.kpis?.feature_requests
     return {
-      urgent: {
-        ...DEMO_OVERVIEW.urgent,
-        ...(raw?.urgent ?? {}),
+      timezone: raw?.timezone ?? p_tz,
+      days: Number(raw?.days ?? p_days),
+      generated_at: raw?.generated_at ?? new Date().toISOString(),
+      alerts: {
+        open_reports: Number(raw?.alerts?.open_reports ?? 0),
+        open_blocks: Number(raw?.alerts?.open_blocks ?? 0),
+        overdue_reports: Number(raw?.alerts?.overdue_reports ?? 0),
+        earliest_due_at: raw?.alerts?.earliest_due_at ?? null,
+        earliest_hours_remaining:
+          raw?.alerts?.earliest_hours_remaining !== null &&
+          raw?.alerts?.earliest_hours_remaining !== undefined
+            ? Number(raw.alerts.earliest_hours_remaining)
+            : null,
+        untriaged_feature_requests: Number(
+          raw?.alerts?.untriaged_feature_requests ?? 0,
+        ),
+        failed_waitlist_emails: Number(
+          raw?.alerts?.failed_waitlist_emails ?? 0,
+        ),
+        pending_storage_purge: Number(raw?.alerts?.pending_storage_purge ?? 0),
+        stuck_storage_purge: Number(raw?.alerts?.stuck_storage_purge ?? 0),
       },
       kpis: {
-        ...DEMO_OVERVIEW.kpis,
-        ...(raw?.kpis ?? {}),
+        users: {
+          total_auth: Number(raw?.kpis?.users?.total_auth ?? 0),
+          live_profiles: Number(raw?.kpis?.users?.live_profiles ?? 0),
+          deleted_profiles: Number(raw?.kpis?.users?.deleted_profiles ?? 0),
+          banned_users: Number(raw?.kpis?.users?.banned_users ?? 0),
+          new_today: Number(raw?.kpis?.users?.new_today ?? 0),
+          new_7d: Number(raw?.kpis?.users?.new_7d ?? 0),
+        },
+        waitlist: {
+          total: Number(raw?.kpis?.waitlist?.total ?? 0),
+          new_7d: Number(raw?.kpis?.waitlist?.new_7d ?? 0),
+          converted_count: Number(raw?.kpis?.waitlist?.converted_count ?? 0),
+          converted_pct: Number(raw?.kpis?.waitlist?.converted_pct ?? 0),
+          failed_emails: Number(raw?.kpis?.waitlist?.failed_emails ?? 0),
+        },
+        engagement: {
+          dau: Number(raw?.kpis?.engagement?.dau ?? 0),
+          wau: Number(raw?.kpis?.engagement?.wau ?? 0),
+          mau: Number(raw?.kpis?.engagement?.mau ?? 0),
+          avg_dau_7d: Number(raw?.kpis?.engagement?.avg_dau_7d ?? 0),
+          stickiness_pct: Number(raw?.kpis?.engagement?.stickiness_pct ?? 0),
+          auth_signins_1d: Number(raw?.kpis?.engagement?.auth_signins_1d ?? 0),
+          auth_signins_7d: Number(raw?.kpis?.engagement?.auth_signins_7d ?? 0),
+        },
+        checkins: {
+          today: Number(raw?.kpis?.checkins?.today ?? 0),
+          last_7d: Number(raw?.kpis?.checkins?.last_7d ?? 0),
+          camera_7d: Number(raw?.kpis?.checkins?.camera_7d ?? 0),
+          library_7d: Number(raw?.kpis?.checkins?.library_7d ?? 0),
+          camera_pct_7d: Number(raw?.kpis?.checkins?.camera_pct_7d ?? 100),
+        },
+        streaks: {
+          streak_3d_plus: Number(raw?.kpis?.streaks?.streak_3d_plus ?? 0),
+          streak_7d_plus: Number(raw?.kpis?.streaks?.streak_7d_plus ?? 0),
+          streak_14d_plus: Number(raw?.kpis?.streaks?.streak_14d_plus ?? 0),
+          streak_30d_plus: Number(raw?.kpis?.streaks?.streak_30d_plus ?? 0),
+        },
+        moderation: {
+          open_reports: Number(raw?.kpis?.moderation?.open_reports ?? 0),
+          open_blocks: Number(raw?.kpis?.moderation?.open_blocks ?? 0),
+          overdue_count: Number(raw?.kpis?.moderation?.overdue_count ?? 0),
+          sla_compliance_pct_30d: Number(
+            raw?.kpis?.moderation?.sla_compliance_pct_30d ?? 100,
+          ),
+        },
+        feature_requests: frRaw
+          ? {
+              new_7d: Number(frRaw.new_7d ?? 0),
+              untriaged_count: Number(frRaw.untriaged_count ?? 0),
+              open_count: Number(frRaw.open_count ?? 0),
+              shipped_count: Number(frRaw.shipped_count ?? 0),
+              top_voted: Array.isArray(frRaw.top_voted) ? frRaw.top_voted : [],
+            }
+          : null,
       },
-      daily_growth: raw?.daily_growth ?? DEMO_OVERVIEW.daily_growth,
-      daily_habit: raw?.daily_habit ?? DEMO_OVERVIEW.daily_habit,
-      activation_funnel:
-        raw?.activation_funnel ?? DEMO_OVERVIEW.activation_funnel,
-      cohort_retention: raw?.cohort_retention ?? DEMO_OVERVIEW.cohort_retention,
-      top_feature_requests:
-        raw?.top_feature_requests ?? DEMO_OVERVIEW.top_feature_requests,
-      template_mix: raw?.template_mix ?? DEMO_OVERVIEW.template_mix,
+      daily_growth: Array.isArray(raw?.daily_growth)
+        ? raw.daily_growth.map((d) => ({
+            day: String(d.day ?? ''),
+            new_profiles: Number(d.new_profiles ?? 0),
+            new_waitlist: Number(d.new_waitlist ?? 0),
+          }))
+        : [],
+      daily_habit_pulse: Array.isArray(raw?.daily_habit_pulse)
+        ? raw.daily_habit_pulse.map((d) => ({
+            day: String(d.day ?? ''),
+            dau: Number(d.dau ?? 0),
+            live_checkins: Number(d.live_checkins ?? 0),
+          }))
+        : [],
+      activation_funnel_7d: Array.isArray(raw?.activation_funnel_7d)
+        ? raw.activation_funnel_7d.map((s) => ({
+            step: String(s.step ?? ''),
+            label: String(s.label ?? ''),
+            count: Number(s.count ?? 0),
+            conversion_pct: Number(s.conversion_pct ?? 0),
+          }))
+        : [],
+      cohort_retention: Array.isArray(raw?.cohort_retention)
+        ? raw.cohort_retention.map((c) => ({
+            cohort_week: String(c.cohort_week ?? ''),
+            cohort_size: Number(c.cohort_size ?? 0),
+            d1_pct: Number(c.d1_pct ?? 0),
+            d7_pct: Number(c.d7_pct ?? 0),
+            d14_pct: Number(c.d14_pct ?? 0),
+            d30_pct: Number(c.d30_pct ?? 0),
+          }))
+        : [],
+      template_mix: Array.isArray(raw?.template_mix)
+        ? raw.template_mix.map((m) => ({
+            template: String(m.template ?? ''),
+            active_journeys: Number(m.active_journeys ?? 0),
+          }))
+        : [],
     }
   },
 
@@ -820,10 +923,9 @@ export const adminApi = {
     p_reason?: string
     p_limit?: number
     p_offset?: number
-  }): Promise<ModerationQueueRow[]> {
-    if (isDemoMode()) return DEMO_MODERATION_QUEUE
+  }): Promise<ModerationQueueResponse> {
     const data = await callAdminRpc<
-      ModerationQueueRow[] | { items?: ModerationQueueRow[] }
+      ModerationQueueRow[] | Partial<ModerationQueueResponse>
     >('list_moderation_queue', {
       p_status: params.p_status ?? 'open',
       p_kind: params.p_kind ?? 'all',
@@ -831,102 +933,99 @@ export const adminApi = {
       p_limit: params.p_limit ?? 50,
       p_offset: params.p_offset ?? 0,
     })
-    return Array.isArray(data) ? data : (data?.items ?? [])
+
+    const items = Array.isArray(data) ? data : (data?.items ?? [])
+    const rawSummary = !Array.isArray(data) ? data?.summary : undefined
+    const summary: ModerationQueueSummary = {
+      open_reports:
+        rawSummary?.open_reports ??
+        items.filter((r) => r.status === 'open' && r.kind === 'report').length,
+      open_blocks:
+        rawSummary?.open_blocks ??
+        items.filter((r) => r.status === 'open' && r.kind === 'block').length,
+      overdue_count:
+        rawSummary?.overdue_count ??
+        items.filter((r) => r.status === 'open' && (r.overdue || r.hours_remaining <= 0))
+          .length,
+      due_soon_count:
+        rawSummary?.due_soon_count ??
+        items.filter(
+          (r) => r.status === 'open' && r.hours_remaining > 0 && r.hours_remaining <= 4,
+        ).length,
+      quarantined_count:
+        rawSummary?.quarantined_count ??
+        items.filter((r) => r.status === 'open' && r.auto_quarantined).length,
+      median_handle_hours_30d: Number(rawSummary?.median_handle_hours_30d ?? 0),
+    }
+
+    return {
+      summary,
+      total: !Array.isArray(data) && typeof data?.total === 'number' ? data.total : items.length,
+      items,
+    }
   },
 
   async getModerationItem(p_queue_id: string): Promise<ModerationItemDetail> {
-    if (isDemoMode()) {
-      const q =
-        DEMO_MODERATION_QUEUE.find((item) => item.id === p_queue_id) ??
-        DEMO_MODERATION_QUEUE[0]
-      return {
-        queue: q,
-        target_user: {
-          user_id: q.target_user_id,
-          username: q.target_username,
-          display_name: q.target_username,
-          created_at: '2026-10-15T08:00:00Z',
-          prior_actioned_reports: q.target_prior_actions,
-          blocked_by_count: q.target_blocked_by_count,
-          is_banned: false,
-        },
-        excerpt: {
-          target_type: q.target_type,
-          title: null,
-          body: 'Nội dung chú thích bị báo cáo vi phạm quy tắc cộng đồng trong nhóm.',
-          extra_note: null,
-          created_at: q.created_at,
-        },
-        has_reported_media: q.has_reported_media,
-        media_objects: q.has_reported_media
-          ? [
-              {
-                bucket_id: 'media',
-                object_path: 'checkins/demo-journey/usr-88/chk-901.jpg',
-                label: 'checkin_photo_path',
-              },
-            ]
-          : [],
-        sibling_reports: [
-          {
-            id: 'rep-1',
-            reporter_username: q.actor_username,
-            reason: q.reason,
-            note: 'Ngôn từ công kích cá nhân trong nhóm học tập.',
-            created_at: q.created_at,
-          },
-        ],
-      }
-    }
-    return callAdminRpc<ModerationItemDetail>('get_moderation_item', {
+    const raw = await callAdminRpc<ModerationItemDetail>('get_moderation_item', {
       p_queue_id,
     })
+    return {
+      ...raw,
+      target_user: raw.target_user ?? null,
+      sibling_reports: Array.isArray(raw.sibling_reports)
+        ? raw.sibling_reports
+        : [],
+      reported_content: raw.reported_content ?? {
+        target_type: 'user',
+        user_id: raw.target_user_id ?? null,
+      },
+    }
   },
 
   async revealReportedMedia(
     p_queue_id: string,
-    p_purpose = 'Moderation SLA verification',
-  ): Promise<RevealedMediaGrant[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          bucket_id: 'media',
-          object_path: 'checkins/demo-journey/usr-88/chk-901.jpg',
-          expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-          signed_url:
-            'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="%2325221E"/><text x="50%" y="50%" fill="%23ECE5D8" font-family="sans-serif" font-size="18" text-anchor="middle">Reported Check-in Media (5m Grant)</text></svg>',
-        },
-      ]
-    }
-    const raw = await callAdminRpc<
-      RevealedMediaGrant[] | { grants?: RevealedMediaGrant[] }
-    >('reveal_reported_media', {
-      p_queue_id,
-      p_purpose,
-    })
-    const grants = Array.isArray(raw) ? raw : (raw?.grants ?? [])
-    const withUrls: RevealedMediaGrant[] = []
-    for (const g of grants) {
-      if (g.signed_url) {
-        withUrls.push(g)
+    p_purpose = 'Moderation reported media inspection',
+  ): Promise<RevealReportedMediaResponse> {
+    const raw = await callAdminRpc<Partial<RevealReportedMediaResponse>>(
+      'reveal_reported_media',
+      {
+        p_queue_id,
+        p_purpose,
+      },
+    )
+    const allObjects = Array.isArray(raw?.objects) ? raw.objects : []
+    const hasFullPhoto = allObjects.some((o) => o.kind === 'photo')
+    const filteredObjects = hasFullPhoto
+      ? allObjects.filter((o) => o.kind !== 'thumb')
+      : allObjects
+
+    const withUrls: RevealedMediaObject[] = []
+    for (const obj of filteredObjects) {
+      if (obj.signed_url) {
+        withUrls.push(obj)
       } else {
         const { data } = await supabase.storage
-          .from(g.bucket_id)
-          .createSignedUrl(g.object_path, 120)
+          .from(obj.bucket)
+          .createSignedUrl(obj.path, 120)
         withUrls.push({
-          ...g,
+          ...obj,
           signed_url: data?.signedUrl,
         })
       }
     }
-    return withUrls
+
+    return {
+      queue_id: raw?.queue_id ?? p_queue_id,
+      expires_at: raw?.expires_at ?? new Date(Date.now() + 300_000).toISOString(),
+      ttl_seconds: Number(raw?.ttl_seconds ?? 300),
+      objects: withUrls,
+    }
   },
 
   async quarantineModerationTarget(
     p_queue_id: string,
     p_note: string,
   ): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('quarantine_moderation_target', {
       p_queue_id,
       p_note,
@@ -935,10 +1034,9 @@ export const adminApi = {
 
   async resolveModeration(
     p_queue_id: string,
-    p_action: 'dismiss' | 'remove_content' | 'ban_user',
+    p_action: 'dismiss' | 'remove_content' | 'action' | 'ban_user',
     p_note: string,
   ): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('resolve_moderation', {
       p_queue_id,
       p_action,
@@ -953,26 +1051,6 @@ export const adminApi = {
     p_category?: string
     p_enabled?: boolean | null
   }): Promise<ObjectionableWordRow[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          term: 'lừa đảo',
-          lang: 'vi',
-          match_mode: 'diacritic_word',
-          category: 'profanity',
-          enabled: true,
-          created_at: '2026-11-01T00:00:00Z',
-        },
-        {
-          term: 'scam link',
-          lang: 'en',
-          match_mode: 'substring',
-          category: 'profanity',
-          enabled: true,
-          created_at: '2026-11-01T00:00:00Z',
-        },
-      ]
-    }
     const data = await callAdminRpc<
       ObjectionableWordRow[] | { items?: ObjectionableWordRow[] }
     >('list_objectionable_words', {
@@ -989,26 +1067,19 @@ export const adminApi = {
   },
 
   async testContentFilter(p_text: string): Promise<FilterDryRunResult> {
-    if (isDemoMode()) {
-      const lower = p_text.toLowerCase()
-      if (lower.includes('lừa đảo') || lower.includes('scam')) {
-        return {
-          allowed: false,
-          matched_term: 'lừa đảo',
-          lang: 'vi',
-          match_mode: 'diacritic_word',
-          category: 'profanity',
-        }
-      }
-      return {
-        allowed: true,
-        matched_term: null,
-        lang: null,
-        match_mode: null,
-        category: null,
-      }
+    const raw = await callAdminRpc<Partial<FilterDryRunResult>>(
+      'test_content_filter',
+      { p_text },
+    )
+    const matches = Array.isArray(raw?.matches) ? raw.matches : []
+    return {
+      blocked: Boolean(raw?.blocked ?? matches.length > 0),
+      term: raw?.term ?? matches[0]?.term ?? null,
+      lang: raw?.lang ?? matches[0]?.lang ?? null,
+      match_mode: raw?.match_mode ?? matches[0]?.match_mode ?? null,
+      category: raw?.category ?? matches[0]?.category ?? null,
+      matches,
     }
-    return callAdminRpc<FilterDryRunResult>('test_content_filter', { p_text })
   },
 
   async upsertObjectionableWord(params: {
@@ -1018,7 +1089,6 @@ export const adminApi = {
     p_category: 'csae' | 'self_harm' | 'violence' | 'sexual' | 'slur' | 'profanity'
     p_enabled: boolean
   }): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('upsert_objectionable_word', params)
   },
 
@@ -1026,7 +1096,6 @@ export const adminApi = {
     p_term: string,
     p_enabled: boolean,
   ): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('set_objectionable_word_enabled', {
       p_term,
       p_enabled,
@@ -1037,7 +1106,6 @@ export const adminApi = {
     p_term: string,
     p_reason = 'Removed via Admin Console',
   ): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('delete_objectionable_word', {
       p_term,
       p_reason,
@@ -1045,14 +1113,20 @@ export const adminApi = {
   },
 
   async featureRequestStats(): Promise<FeatureRequestStats> {
-    if (isDemoMode()) return DEMO_FEATURE_REQUEST_STATS
     const raw = await callAdminRpc<Partial<FeatureRequestStats>>(
       'feature_request_stats',
     )
     return {
-      ...DEMO_FEATURE_REQUEST_STATS,
-      ...(raw ?? {}),
-      top_voted: raw?.top_voted ?? DEMO_FEATURE_REQUEST_STATS.top_voted,
+      new: Number(raw?.new ?? 0),
+      under_review: Number(raw?.under_review ?? 0),
+      planned: Number(raw?.planned ?? 0),
+      in_progress: Number(raw?.in_progress ?? 0),
+      shipped: Number(raw?.shipped ?? 0),
+      declined: Number(raw?.declined ?? 0),
+      hidden: Number(raw?.hidden ?? 0),
+      merged: Number(raw?.merged ?? 0),
+      new_this_week: Number(raw?.new_this_week ?? 0),
+      top_voted: Array.isArray(raw?.top_voted) ? raw.top_voted : [],
     }
   },
 
@@ -1064,10 +1138,9 @@ export const adminApi = {
     p_sort?: string
     p_limit?: number
     p_offset?: number
-  }): Promise<FeatureRequestRow[]> {
-    if (isDemoMode()) return DEMO_FEATURE_REQUESTS
+  }): Promise<FeatureRequestListResponse> {
     const data = await callAdminRpc<
-      FeatureRequestRow[] | { items?: FeatureRequestRow[] }
+      Array<Partial<FeatureRequestRow>> | { total?: number; items?: Array<Partial<FeatureRequestRow>> }
     >('list_feature_requests', {
       p_search: params.p_search || null,
       p_status:
@@ -1083,56 +1156,28 @@ export const adminApi = {
       p_limit: params.p_limit ?? 50,
       p_offset: params.p_offset ?? 0,
     })
-    return Array.isArray(data) ? data : (data?.items ?? [])
+    const rawItems = Array.isArray(data) ? data : (data?.items ?? [])
+    const items = rawItems.map(normalizeFeatureRequestRow)
+    const total =
+      !Array.isArray(data) && typeof data?.total === 'number'
+        ? data.total
+        : items.length
+    return { total, items }
   },
 
   async getFeatureRequestDetail(p_id: string): Promise<FeatureRequestDetail> {
-    if (isDemoMode()) {
-      const found =
-        DEMO_FEATURE_REQUESTS.find((r) => r.id === p_id) ??
-        DEMO_FEATURE_REQUESTS[0]
-      return {
-        ...found,
-        merged_children:
-          found.merged_children_count > 0
-            ? [
-                {
-                  id: 'fr-099',
-                  title: 'Widget màn hình khóa cho nhóm học',
-                  author_username: 'minh_study',
-                  vote_count: 6,
-                  created_at: '2026-11-10T08:00:00Z',
-                },
-              ]
-            : [],
-        reports: [],
-        voters: [
-          {
-            user_id: 'usr-10',
-            username: 'linh_ielts',
-            display_name: 'Linh Nguyễn',
-            is_author: true,
-            voted_at: '2026-11-12T08:00:00Z',
-          },
-          {
-            user_id: 'usr-12',
-            username: 'thao_fit',
-            display_name: 'Thảo Phạm',
-            is_author: false,
-            voted_at: '2026-11-14T11:20:00Z',
-          },
-        ],
-      }
-    }
     const raw = await callAdminRpc<Partial<FeatureRequestDetail>>(
       'get_feature_request_detail',
       { p_id },
     )
+    const base = normalizeFeatureRequestRow(raw ?? {})
     return {
-      ...(raw as FeatureRequestDetail),
-      merged_children: raw?.merged_children ?? [],
-      reports: raw?.reports ?? [],
-      voters: raw?.voters ?? [],
+      ...base,
+      merged_children: Array.isArray(raw?.merged_children)
+        ? raw.merged_children
+        : [],
+      reports: Array.isArray(raw?.reports) ? raw.reports : [],
+      voters: Array.isArray(raw?.voters) ? raw.voters : [],
     }
   },
 
@@ -1144,7 +1189,6 @@ export const adminApi = {
     p_hidden: boolean
     p_reason: string
   }): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('update_feature_request', {
       p_id: params.p_id,
       p_status: params.p_status,
@@ -1160,7 +1204,6 @@ export const adminApi = {
     p_target_id: string
     p_reason: string
   }): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('merge_feature_request', {
       p_source_id: params.p_source_id,
       p_target_id: params.p_target_id,
@@ -1169,35 +1212,29 @@ export const adminApi = {
   },
 
   async waitlistSummary(p_days = 30): Promise<WaitlistSummary> {
-    if (isDemoMode()) {
-      return {
-        total: 1280,
-        ios_only: 740,
-        android_only: 380,
-        both_platforms: 160,
-        vi_count: 1090,
-        en_count: 190,
-        sent_count: 1274,
-        failed_count: 1,
-        unsent_count: 5,
-        converted_count: 438,
-        top_sources: [
-          { source: 'landing_hero', count: 890 },
-          { source: 'tiktok_bio', count: 270 },
-          { source: 'friend_share', count: 120 },
-        ],
-        daily: [
-          { day: '18/11', vi: 27, en: 5 },
-          { day: '19/11', vi: 35, en: 6 },
-          { day: '20/11', vi: 32, en: 6 },
-          { day: '21/11', vi: 41, en: 8 },
-          { day: '22/11', vi: 38, en: 6 },
-          { day: '23/11', vi: 44, en: 8 },
-          { day: '24/11', vi: 33, en: 6 },
-        ],
-      }
+    const raw = await callAdminRpc<Partial<WaitlistSummary>>(
+      'waitlist_summary',
+      { p_days },
+    )
+    return {
+      total: Number(raw?.total ?? 0),
+      new_7d: Number(raw?.new_7d ?? 0),
+      ios_only: Number(raw?.ios_only ?? 0),
+      android_only: Number(raw?.android_only ?? 0),
+      both_platforms: Number(raw?.both_platforms ?? 0),
+      lang_vi: Number(raw?.lang_vi ?? 0),
+      lang_en: Number(raw?.lang_en ?? 0),
+      mail_sent: Number(raw?.mail_sent ?? 0),
+      mail_failed: Number(raw?.mail_failed ?? 0),
+      mail_unsent: Number(raw?.mail_unsent ?? 0),
+      converted_count: Number(raw?.converted_count ?? 0),
+      waiting_count: Number(
+        raw?.waiting_count ??
+          Math.max(0, Number(raw?.total ?? 0) - Number(raw?.converted_count ?? 0)),
+      ),
+      by_source: Array.isArray(raw?.by_source) ? raw.by_source : [],
+      daily: Array.isArray(raw?.daily) ? raw.daily : [],
     }
-    return callAdminRpc<WaitlistSummary>('waitlist_summary', { p_days })
   },
 
   async listWaitlist(params: {
@@ -1208,37 +1245,11 @@ export const adminApi = {
     p_converted?: string
     p_limit?: number
     p_offset?: number
-  }): Promise<WaitlistRow[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          id: 'wl-1',
-          email: 'minh.nguyen@example.com',
-          lang: 'vi',
-          platforms: ['ios'],
-          source: 'landing_hero',
-          created_at: '2026-11-24T05:12:00Z',
-          confirmation_sent_at: '2026-11-24T05:12:03Z',
-          confirmation_error: null,
-          registered_in_app: true,
-        },
-        {
-          id: 'wl-2',
-          email: 'retry.me@example.com',
-          lang: 'en',
-          platforms: ['ios', 'android'],
-          source: 'tiktok_bio',
-          created_at: '2026-11-24T04:10:00Z',
-          confirmation_sent_at: null,
-          confirmation_error: 'Resend 429 rate limit exceeded',
-          registered_in_app: false,
-        },
-      ]
-    }
+  }): Promise<WaitlistListResponse> {
     const data = await callAdminRpc<
-      WaitlistRow[] | { items?: WaitlistRow[] }
+      WaitlistRow[] | { total?: number; items?: WaitlistRow[] }
     >('list_waitlist', {
-      p_search: params.p_search ?? '',
+      p_search: params.p_search || null,
       p_lang: params.p_lang ?? 'all',
       p_platform: params.p_platform ?? 'all',
       p_mail_status: params.p_mail_status ?? 'all',
@@ -1246,7 +1257,12 @@ export const adminApi = {
       p_limit: params.p_limit ?? 50,
       p_offset: params.p_offset ?? 0,
     })
-    return Array.isArray(data) ? data : (data?.items ?? [])
+    const items = Array.isArray(data) ? data : (data?.items ?? [])
+    const total =
+      !Array.isArray(data) && typeof data?.total === 'number'
+        ? data.total
+        : items.length
+    return { total, items }
   },
 
   async exportWaitlist(params: {
@@ -1256,19 +1272,6 @@ export const adminApi = {
     p_mail_status?: string
     p_converted?: string
   }): Promise<WaitlistExportRow[] | string> {
-    if (isDemoMode()) {
-      return [
-        {
-          email: 'minh.nguyen@example.com',
-          lang: 'vi',
-          platforms: ['ios'],
-          source: 'landing_hero',
-          created_at: '2026-11-24T05:12:00Z',
-          confirmation_sent_at: '2026-11-24T05:12:03Z',
-          registered_in_app: true,
-        },
-      ]
-    }
     const data = await callAdminRpc<
       string | WaitlistExportRow[] | { items?: WaitlistExportRow[] }
     >('export_waitlist', {
@@ -1283,7 +1286,6 @@ export const adminApi = {
   },
 
   async deleteWaitlistEntry(p_id: string, p_reason: string): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('delete_waitlist_entry', { p_id, p_reason })
   },
 
@@ -1293,55 +1295,9 @@ export const adminApi = {
     p_sort?: string
     p_limit?: number
     p_offset?: number
-  }): Promise<AdminUserRow[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          user_id: 'usr-10',
-          username: 'linh_ielts',
-          display_name: 'Linh Nguyễn',
-          email: 'linh.ielts@example.com',
-          has_phone: true,
-          has_password: true,
-          terms_version: 1,
-          status: 'active',
-          active_journeys: 2,
-          total_journeys: 3,
-          group_journeys: 2,
-          total_checkins: 48,
-          best_streak: 24,
-          feature_requests_count: 2,
-          open_reports_against: 0,
-          total_actioned_reports: 0,
-          blocked_by_count: 0,
-          last_active_at: '2026-11-24T06:20:00Z',
-          created_at: '2026-10-20T09:00:00Z',
-        },
-        {
-          user_id: 'usr-88',
-          username: 'hung_gym99',
-          display_name: 'Hùng Trần',
-          email: 'hung.gym@example.com',
-          has_phone: false,
-          has_password: true,
-          terms_version: 1,
-          status: 'active',
-          active_journeys: 1,
-          total_journeys: 1,
-          group_journeys: 1,
-          total_checkins: 9,
-          best_streak: 4,
-          feature_requests_count: 0,
-          open_reports_against: 1,
-          total_actioned_reports: 1,
-          blocked_by_count: 2,
-          last_active_at: '2026-11-23T17:10:00Z',
-          created_at: '2026-11-10T11:00:00Z',
-        },
-      ]
-    }
+  }): Promise<AdminUserListResponse> {
     const data = await callAdminRpc<
-      AdminUserRow[] | { items?: AdminUserRow[] }
+      AdminUserRow[] | { total?: number; items?: AdminUserRow[] }
     >('list_users', {
       p_search: params.p_search || null,
       p_status: params.p_status ?? 'all',
@@ -1349,31 +1305,41 @@ export const adminApi = {
       p_limit: params.p_limit ?? 50,
       p_offset: params.p_offset ?? 0,
     })
-    return Array.isArray(data) ? data : (data?.items ?? [])
+    const items = Array.isArray(data) ? data : (data?.items ?? [])
+    const total =
+      !Array.isArray(data) && typeof data?.total === 'number'
+        ? data.total
+        : items.length
+    return { total, items }
   },
 
   async getUserDetail(p_user: string): Promise<AdminUserDetail> {
-    if (isDemoMode()) {
-      const list = await this.listUsers({})
-      const base = list.find((u) => u.user_id === p_user) ?? list[0]
-      return {
-        ...base,
-        banned_until: base.status === 'banned' ? '2126-11-24T00:00:00Z' : null,
-        ban_reason: null,
-        wiped_ugc: false,
-        feature_requests: [
-          {
-            id: 'fr-101',
-            title: 'Widget màn hình khóa iOS hiển thị chuỗi lửa cùng nhóm',
-            status: 'planned',
-            vote_count: 68,
-            created_at: '2026-11-12T08:00:00Z',
-          },
-        ],
-        moderation_history: [],
-      }
+    const raw = await callAdminRpc<AdminUserDetail>('get_user_detail', {
+      p_user,
+    })
+    return {
+      ...raw,
+      activity: {
+        active_journeys_count: Number(raw.activity?.active_journeys_count ?? 0),
+        total_journeys_count: Number(raw.activity?.total_journeys_count ?? 0),
+        group_journeys_count: Number(raw.activity?.group_journeys_count ?? 0),
+        total_checkins: Number(raw.activity?.total_checkins ?? 0),
+        best_streak: Number(raw.activity?.best_streak ?? 0),
+        friends_count: Number(raw.activity?.friends_count ?? 0),
+      },
+      trust: {
+        open_reports_against: Number(raw.trust?.open_reports_against ?? 0),
+        total_actioned_reports: Number(raw.trust?.total_actioned_reports ?? 0),
+        blocked_by_count: Number(raw.trust?.blocked_by_count ?? 0),
+        moderation_record: raw.trust?.moderation_record ?? null,
+        recent_reports_against: Array.isArray(raw.trust?.recent_reports_against)
+          ? raw.trust.recent_reports_against
+          : [],
+        audit_history: Array.isArray(raw.trust?.audit_history)
+          ? raw.trust.audit_history
+          : [],
+      },
     }
-    return callAdminRpc<AdminUserDetail>('get_user_detail', { p_user })
   },
 
   async banUser(params: {
@@ -1381,36 +1347,34 @@ export const adminApi = {
     p_reason: string
     p_wipe_ugc: boolean
   }): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('ban_user', params)
   },
 
   async unbanUser(p_user: string, p_reason: string): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('unban_user', { p_user, p_reason })
   },
 
   async revokeUserSessions(p_user: string, p_reason: string): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('revoke_user_sessions', { p_user, p_reason })
   },
 
   async journeyStats(): Promise<JourneyStats> {
-    if (isDemoMode()) {
-      return {
-        total_active: 612,
-        total_ended: 144,
-        total_archived: 39,
-        solo_count: 342,
-        group_count: 184,
-        couple_count: 86,
-        live_count: 554,
-        imported_count: 58,
-        active_public_links: 47,
-        total_public_views: 3890,
-      }
+    const raw = await callAdminRpc<Partial<JourneyStats>>('journey_stats')
+    return {
+      total: Number(raw?.total ?? 0),
+      active: Number(raw?.active ?? 0),
+      ended: Number(raw?.ended ?? 0),
+      archived: Number(raw?.archived ?? 0),
+      solo_count: Number(raw?.solo_count ?? 0),
+      group_count: Number(raw?.group_count ?? 0),
+      couple_count: Number(raw?.couple_count ?? 0),
+      live_count: Number(raw?.live_count ?? 0),
+      imported_count: Number(raw?.imported_count ?? 0),
+      public_links_count: Number(raw?.public_links_count ?? 0),
+      total_public_views: Number(raw?.total_public_views ?? 0),
+      by_template: Array.isArray(raw?.by_template) ? raw.by_template : [],
+      by_skin: Array.isArray(raw?.by_skin) ? raw.by_skin : [],
     }
-    return callAdminRpc<JourneyStats>('journey_stats')
   },
 
   async listJourneys(params: {
@@ -1421,51 +1385,11 @@ export const adminApi = {
     p_public_only?: boolean
     p_limit?: number
     p_offset?: number
-  }): Promise<AdminJourneyRow[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          id: 'jrn-01',
-          owner_id: 'usr-10',
-          owner_username: 'linh_ielts',
-          kind: 'group',
-          origin: 'live',
-          template_id: 'english_daily',
-          skin_id: 'accountabilitySquad',
-          status: 'active',
-          visibility: 'link',
-          public_token: 'pub_ielts_30d',
-          title: '30 Ngày Cày IELTS 7.5 Cùng Squad',
-          active_members: 5,
-          max_members: 5,
-          checkin_count: 112,
-          public_views: 340,
-          created_at: '2026-11-01T08:00:00Z',
-        },
-        {
-          id: 'jrn-02',
-          owner_id: 'usr-12',
-          owner_username: 'thao_fit',
-          kind: 'solo',
-          origin: 'live',
-          template_id: 'weight_loss',
-          skin_id: 'quietTransformer',
-          status: 'active',
-          visibility: 'private',
-          public_token: null,
-          title: null,
-          active_members: 1,
-          max_members: 1,
-          checkin_count: 21,
-          public_views: 0,
-          created_at: '2026-11-03T07:30:00Z',
-        },
-      ]
-    }
+  }): Promise<AdminJourneyListResponse> {
     const data = await callAdminRpc<
-      AdminJourneyRow[] | { items?: AdminJourneyRow[] }
+      AdminJourneyRow[] | { total?: number; items?: AdminJourneyRow[] }
     >('list_journeys', {
-      p_search: params.p_search ?? '',
+      p_search: params.p_search || null,
       p_kind: params.p_kind ?? 'all',
       p_template: params.p_template ?? 'all',
       p_status: params.p_status ?? 'all',
@@ -1473,14 +1397,18 @@ export const adminApi = {
       p_limit: params.p_limit ?? 50,
       p_offset: params.p_offset ?? 0,
     })
-    return Array.isArray(data) ? data : (data?.items ?? [])
+    const items = Array.isArray(data) ? data : (data?.items ?? [])
+    const total =
+      !Array.isArray(data) && typeof data?.total === 'number'
+        ? data.total
+        : items.length
+    return { total, items }
   },
 
   async revokeJourneyPublicLink(
     p_journey: string,
     p_reason: string,
   ): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('revoke_journey_public_link', {
       p_journey,
       p_reason,
@@ -1494,64 +1422,29 @@ export const adminApi = {
     p_target_id?: string
     p_before_id?: number | null
     p_limit?: number
-  }): Promise<AuditLogRow[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          id: 1042,
-          created_at: '2026-11-24T06:15:00Z',
-          admin_id: '00000000-0000-0000-0000-000000000001',
-          admin_email: 'owner@ourney.tech',
-          action: 'feature_requests.update',
-          target_type: 'feature_request',
-          target_id: 'fr-101',
-          reason: 'Updated roadmap status to planned and posted public reply',
-          meta: { status: 'planned', tags: ['ios', 'quick-win', 'v1-1'] },
-        },
-        {
-          id: 1041,
-          created_at: '2026-11-24T05:50:00Z',
-          admin_id: '00000000-0000-0000-0000-000000000001',
-          admin_email: 'owner@ourney.tech',
-          action: 'moderation.reveal_media',
-          target_type: 'moderation_queue',
-          target_id: 'mq-01',
-          reason: '24h SLA triage check',
-          meta: { ttl_seconds: 300, bucket: 'media' },
-        },
-      ]
-    }
-    const data = await callAdminRpc<AuditLogRow[] | { items?: AuditLogRow[] }>(
-      'list_audit_log',
-      {
-        p_admin: params.p_admin ?? null,
-        p_action_prefix: params.p_action_prefix || null,
-        p_target_type:
-          !params.p_target_type || params.p_target_type === 'all'
-            ? null
-            : params.p_target_type,
-        p_target_id: params.p_target_id || null,
-        p_before_id: params.p_before_id ?? null,
-        p_limit: params.p_limit ?? 50,
-      },
-    )
-    return Array.isArray(data) ? data : (data?.items ?? [])
+  }): Promise<AuditLogListResponse> {
+    const data = await callAdminRpc<
+      AuditLogRow[] | Partial<AuditLogListResponse>
+    >('list_audit_log', {
+      p_admin: params.p_admin ?? null,
+      p_action_prefix: params.p_action_prefix || null,
+      p_target_type:
+        !params.p_target_type || params.p_target_type === 'all'
+          ? null
+          : params.p_target_type,
+      p_target_id: params.p_target_id || null,
+      p_before_id: params.p_before_id ?? null,
+      p_limit: params.p_limit ?? 50,
+    })
+    const items = Array.isArray(data) ? data : (data?.items ?? [])
+    const next_before_id =
+      !Array.isArray(data) && typeof data?.next_before_id === 'number'
+        ? data.next_before_id
+        : null
+    return { items, next_before_id }
   },
 
   async listAdmins(): Promise<AdminIdentity[]> {
-    if (isDemoMode()) {
-      return [
-        {
-          user_id: '00000000-0000-0000-0000-000000000001',
-          email: 'owner@ourney.tech',
-          role: 'owner',
-          username: 'hoang_owner',
-          display_name: 'Hoàng (Founder)',
-          note: 'Initial owner bootstrap',
-          created_at: '2026-10-01T00:00:00Z',
-        },
-      ]
-    }
     const data = await callAdminRpc<
       AdminIdentity[] | { items?: AdminIdentity[] }
     >('list_admins')
@@ -1563,7 +1456,6 @@ export const adminApi = {
     p_role: AdminRole
     p_note?: string
   }): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('upsert_admin_user', {
       p_email_or_uid: params.p_email_or_uid,
       p_role: params.p_role,
@@ -1572,30 +1464,40 @@ export const adminApi = {
   },
 
   async removeAdminUser(p_user: string, p_reason: string): Promise<void> {
-    if (isDemoMode()) return
     await callAdminRpc('remove_admin_user', { p_user, p_reason })
   },
 
   async systemHealth(): Promise<SystemHealth> {
-    if (isDemoMode()) {
-      return {
-        storage_purge: {
-          due_now_count: 3,
-          backing_off_count: 0,
-          stuck_count: 0,
-          sample_errors: [],
-        },
-        moderation_alerts: {
-          unnotified_open_count: 0,
-          oldest_unnotified_at: null,
-        },
-      }
+    const raw = await callAdminRpc<Partial<SystemHealth>>('system_health')
+    return {
+      storage_purge: {
+        due_now_count: Number(raw?.storage_purge?.due_now_count ?? 0),
+        backing_off_count: Number(raw?.storage_purge?.backing_off_count ?? 0),
+        stuck_count: Number(raw?.storage_purge?.stuck_count ?? 0),
+        total_queued: Number(raw?.storage_purge?.total_queued ?? 0),
+        sample_errors: Array.isArray(raw?.storage_purge?.sample_errors)
+          ? raw.storage_purge.sample_errors
+          : [],
+      },
+      moderation_notifications: {
+        unnotified_open_count: Number(
+          raw?.moderation_notifications?.unnotified_open_count ?? 0,
+        ),
+        leased_count: Number(raw?.moderation_notifications?.leased_count ?? 0),
+        overdue_open_count: Number(
+          raw?.moderation_notifications?.overdue_open_count ?? 0,
+        ),
+      },
+      admins_count: {
+        owners: Number(raw?.admins_count?.owners ?? 0),
+        moderators: Number(raw?.admins_count?.moderators ?? 0),
+      },
     }
-    return callAdminRpc<SystemHealth>('system_health')
   },
 
-  async resetStuckStoragePurge(p_reason = 'Manual reset from Admin Settings'): Promise<void> {
-    if (isDemoMode()) return
+  async resetStuckStoragePurge(
+    p_reason = 'Manual reset from Admin Settings',
+  ): Promise<void> {
     await callAdminRpc('reset_stuck_storage_purge', { p_reason })
   },
 
@@ -1603,17 +1505,23 @@ export const adminApi = {
     payload:
       | { action: 'waitlist_resend'; waitlist_id: string }
       | { action: 'waitlist_resend_failed'; limit?: number }
-      | { action: 'delete_user'; user_id: string; reason: string; ticket_ref?: string }
+      | {
+          action: 'delete_user'
+          user_id: string
+          reason: string
+          ticket_ref?: string
+        }
       | { action: 'run_storage_sweep'; limit?: number }
       | { action: 'trigger_moderation_notify'; limit?: number },
   ): Promise<T> {
-    if (isDemoMode()) {
-      return { ok: true, action: payload.action } as unknown as T
-    }
+    assertSupabaseConfigured()
     const { data, error } = await supabase.functions.invoke('admin-action', {
       body: payload,
     })
-    if (error) throw error
+    if (error) {
+      await verifySessionAfterError(error, 'admin-action')
+      throw error
+    }
     return data as T
   },
 }

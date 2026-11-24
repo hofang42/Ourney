@@ -3,6 +3,8 @@ import { NavLink } from 'react-router-dom'
 import {
   adminApi,
   isForbiddenError,
+  onAdminSessionRevoked,
+  supabase,
   type AdminIdentity,
 } from '../lib/adminRpc'
 import { useI18n } from '../lib/i18n'
@@ -70,7 +72,10 @@ const NAV_ITEMS: NavItem[] = [
 export function AdminAuthGuard({
   children,
 }: {
-  children: (admin: AdminIdentity, refreshAdmin: () => Promise<void>) => ReactNode
+  children: (
+    admin: AdminIdentity,
+    refreshAdmin: () => Promise<void>,
+  ) => ReactNode
 }) {
   const { lang, toggleLang, theme, toggleTheme, t } = useI18n()
   const [admin, setAdmin] = useState<AdminIdentity | null>(null)
@@ -106,6 +111,37 @@ export function AdminAuthGuard({
 
   useEffect(() => {
     void verifyAdminSession()
+
+    const unsubRevoked = onAdminSessionRevoked((reason) => {
+      setAdmin(null)
+      setOtp('')
+      setStep('email')
+      void adminApi.signOut()
+      setErrorMsg(
+        reason === 'forbidden'
+          ? t(
+              'Quyền quản trị viên đã bị thu hồi hoặc tài khoản bị khóa (42501). Đã tự động đăng xuất.',
+              'Admin privileges were revoked or account was suspended (42501). Signed out automatically.',
+            )
+          : t(
+              'Phiên đăng nhập đã hết hạn. Vui lòng xác thực lại.',
+              'Your session has expired. Please sign in again.',
+            ),
+      )
+    })
+
+    const authListener = supabase?.auth?.onAuthStateChange?.((event) => {
+      if (event === 'SIGNED_OUT') {
+        setAdmin(null)
+        setOtp('')
+        setStep('email')
+      }
+    })
+
+    return () => {
+      unsubRevoked()
+      authListener?.data?.subscription?.unsubscribe()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -117,6 +153,7 @@ export function AdminAuthGuard({
     setInfoMsg(null)
     try {
       await adminApi.signInWithOtp(email)
+      setOtp('')
       setStep('otp')
       setInfoMsg(
         t(
@@ -139,9 +176,11 @@ export function AdminAuthGuard({
     setErrorMsg(null)
     try {
       await adminApi.verifyOtp(email, otp)
+      setOtp('')
       await verifyAdminSession()
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'OTP verification failed'
+      const message =
+        err instanceof Error ? err.message : 'OTP verification failed'
       setErrorMsg(message)
     } finally {
       setSubmitting(false)
@@ -159,7 +198,10 @@ export function AdminAuthGuard({
             <div>
               <div className="brand-title">Ourney Admin</div>
               <div className="brand-sub">
-                {t('Đang xác thực phiên quản trị...', 'Verifying admin session...')}
+                {t(
+                  'Đang xác thực phiên quản trị...',
+                  'Verifying admin session...',
+                )}
               </div>
             </div>
           </div>
@@ -207,7 +249,10 @@ export function AdminAuthGuard({
                 type="button"
                 className="btn btn-icon"
                 onClick={toggleTheme}
-                aria-label={t('Đổi giao diện Sáng/Tối', 'Toggle Light/Dark theme')}
+                aria-label={t(
+                  'Đổi giao diện Sáng/Tối',
+                  'Toggle Light/Dark theme',
+                )}
               >
                 <OIcon name={theme === 'dark' ? 'moon' : 'sun'} size={20} />
               </button>
@@ -254,7 +299,10 @@ export function AdminAuthGuard({
               </button>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOtp} style={{ display: 'grid', gap: 14 }}>
+            <form
+              onSubmit={handleVerifyOtp}
+              style={{ display: 'grid', gap: 14 }}
+            >
               <label className="field-group">
                 <span className="field-label">
                   {t('Mã OTP 6 chữ số', '6-Digit Verification Code')}
@@ -275,7 +323,12 @@ export function AdminAuthGuard({
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => setStep('email')}
+                  onClick={() => {
+                    setOtp('')
+                    setErrorMsg(null)
+                    setInfoMsg(null)
+                    setStep('email')
+                  }}
                 >
                   <OIcon name="back" size={18} />
                   <span>{t('Quay lại', 'Back')}</span>
@@ -317,7 +370,14 @@ export function AdminShell({
 
   return (
     <div className="admin-shell">
-      <aside className="admin-sidebar" aria-label={t('Điều hướng quản trị', 'Admin navigation')}>
+      <a href="#admin-main-content" className="skip-link">
+        {t('Chuyển tới nội dung chính', 'Skip to main content')}
+      </a>
+
+      <aside
+        className="admin-sidebar"
+        aria-label={t('Điều hướng quản trị', 'Admin navigation')}
+      >
         <div className="brand-lockup">
           <div className="brand-mark">
             <OIcon name="camera" size={24} active />
@@ -330,7 +390,10 @@ export function AdminShell({
           </div>
         </div>
 
-        <nav className="nav-list">
+        <nav
+          className="nav-list"
+          aria-label={t('Danh mục trang quản trị', 'Primary admin sections')}
+        >
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.to}
@@ -398,7 +461,10 @@ export function AdminShell({
               type="button"
               className="btn"
               onClick={toggleLang}
-              aria-label={t('Chuyển đổi ngôn ngữ VI/EN', 'Switch language VI/EN')}
+              aria-label={t(
+                'Chuyển đổi ngôn ngữ VI/EN',
+                'Switch language VI/EN',
+              )}
             >
               <span>{lang === 'vi' ? 'VI / Tiếng Việt' : 'EN / English'}</span>
             </button>
@@ -407,7 +473,10 @@ export function AdminShell({
               type="button"
               className="btn"
               onClick={toggleTheme}
-              aria-label={t('Chuyển đổi giao diện Sáng/Tối', 'Toggle Light/Dark mode')}
+              aria-label={t(
+                'Chuyển đổi giao diện Sáng/Tối',
+                'Toggle Light/Dark mode',
+              )}
             >
               <OIcon name={theme === 'dark' ? 'moon' : 'sun'} size={18} />
               <span>
@@ -419,7 +488,9 @@ export function AdminShell({
           </div>
         </header>
 
-        <main className="admin-content">{children}</main>
+        <main id="admin-main-content" className="admin-content" tabIndex={-1}>
+          {children}
+        </main>
       </div>
     </div>
   )

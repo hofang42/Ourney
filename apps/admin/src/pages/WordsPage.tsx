@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   adminApi,
+  handleRpcError,
   type FilterDryRunResult,
   type ObjectionableWordRow,
 } from '../lib/adminRpc'
@@ -14,6 +15,7 @@ export function WordsPage() {
   const [langFilter, setLangFilter] = useState('all')
   const [modeFilter, setModeFilter] = useState('all')
   const [catFilter, setCatFilter] = useState('all')
+  const [enabledFilter, setEnabledFilter] = useState<'all' | 'enabled' | 'disabled'>('all')
 
   const [sampleText, setSampleText] = useState('')
   const [dryRunResult, setDryRunResult] = useState<FilterDryRunResult | null>(
@@ -30,57 +32,99 @@ export function WordsPage() {
   >('profanity')
 
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const loadWords = async () => {
-    const list = await adminApi.listObjectionableWords({
-      p_search: search,
-      p_lang: langFilter,
-      p_mode: modeFilter,
-      p_category: catFilter,
-    })
-    setWords(list)
+    setErrorMsg(null)
+    try {
+      const list = await adminApi.listObjectionableWords({
+        p_search: search,
+        p_lang: langFilter,
+        p_mode: modeFilter,
+        p_category: catFilter,
+        p_enabled:
+          enabledFilter === 'all' ? null : enabledFilter === 'enabled',
+      })
+      setWords(list)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'list_objectionable_words')
+      setErrorMsg(msg)
+    }
   }
 
   useEffect(() => {
     void loadWords()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, langFilter, modeFilter, catFilter])
+  }, [search, langFilter, modeFilter, catFilter, enabledFilter])
 
   const handleDryRun = async (e: FormEvent) => {
     e.preventDefault()
-    const res = await adminApi.testContentFilter(sampleText)
-    setDryRunResult(res)
+    setErrorMsg(null)
+    try {
+      const res = await adminApi.testContentFilter(sampleText)
+      setDryRunResult(res)
+    } catch (err) {
+      const msg = await handleRpcError(err, 'test_content_filter')
+      setErrorMsg(msg)
+    }
   }
 
   const handleAddWord = async (e: FormEvent) => {
     e.preventDefault()
-    if (!newTerm.trim()) return
-    await adminApi.upsertObjectionableWord({
-      p_term: newTerm.trim().toLowerCase(),
-      p_lang: newLang,
-      p_match_mode: newMode,
-      p_category: newCategory,
-      p_enabled: true,
-    })
-    setStatusMsg(
-      t(
-        `Đã lưu từ khóa lọc: ${newTerm.trim().toLowerCase()}`,
-        `Saved filter word: ${newTerm.trim().toLowerCase()}`,
-      ),
-    )
-    setNewTerm('')
-    await loadWords()
+    const normalized = newTerm.trim().normalize('NFC').toLowerCase()
+    if (normalized.length < 2 || normalized.length > 64) {
+      setErrorMsg(
+        t(
+          'Từ khóa phải dài từ 2 đến 64 ký tự.',
+          'Term must be between 2 and 64 characters.',
+        ),
+      )
+      return
+    }
+    setErrorMsg(null)
+    try {
+      await adminApi.upsertObjectionableWord({
+        p_term: normalized,
+        p_lang: newLang,
+        p_match_mode: newMode,
+        p_category: newCategory,
+        p_enabled: true,
+      })
+      setStatusMsg(
+        t(
+          `Đã lưu từ khóa lọc: ${normalized}`,
+          `Saved filter word: ${normalized}`,
+        ),
+      )
+      setNewTerm('')
+      await loadWords()
+    } catch (err) {
+      const msg = await handleRpcError(err, 'upsert_objectionable_word')
+      setErrorMsg(msg)
+    }
   }
 
   const handleToggleWord = async (row: ObjectionableWordRow) => {
-    await adminApi.setObjectionableWordEnabled(row.term, !row.enabled)
-    await loadWords()
+    setErrorMsg(null)
+    try {
+      await adminApi.setObjectionableWordEnabled(row.term, !row.enabled)
+      await loadWords()
+    } catch (err) {
+      const msg = await handleRpcError(err, 'set_objectionable_word_enabled')
+      setErrorMsg(msg)
+    }
   }
 
   const handleDeleteWord = async (term: string) => {
-    await adminApi.deleteObjectionableWord(term, 'Deleted from Words page')
-    setStatusMsg(t(`Đã xóa từ khóa: ${term}`, `Deleted word: ${term}`))
-    await loadWords()
+    setErrorMsg(null)
+    try {
+      await adminApi.deleteObjectionableWord(term, 'Deleted from Words page')
+      setStatusMsg(t(`Đã xóa từ khóa: ${term}`, `Deleted word: ${term}`))
+      await loadWords()
+    } catch (err) {
+      const msg = await handleRpcError(err, 'delete_objectionable_word')
+      setErrorMsg(msg)
+    }
   }
 
   return (
@@ -101,6 +145,12 @@ export function WordsPage() {
           </p>
         </div>
       </div>
+
+      {errorMsg && (
+        <div className="status-banner error" role="alert">
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {statusMsg && (
         <div className="status-banner success" role="status">
@@ -126,6 +176,10 @@ export function WordsPage() {
             <input
               type="text"
               className="input"
+              aria-label={t(
+                'Văn bản mẫu kiểm thử bộ lọc',
+                'Sample text for content filter dry-run',
+              )}
               placeholder={t(
                 'Dán câu chú thích, tên người dùng hoặc đề xuất để thử...',
                 'Paste sample Vietnamese/English caption, feature request, or username...',
@@ -133,21 +187,30 @@ export function WordsPage() {
               value={sampleText}
               onChange={(e) => setSampleText(e.target.value)}
             />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexWrap: 'wrap',
+              }}
+            >
               <button type="submit" className="btn btn-primary">
                 <OIcon name="filter" size={18} />
-                <span>{t('Kiểm thử bộ lọc / Test Filter', 'Test Filter')}</span>
+                <span>
+                  {t('Kiểm thử bộ lọc / Test Filter', 'Test Filter')}
+                </span>
               </button>
 
               {dryRunResult && (
                 <div>
-                  {dryRunResult.allowed ? (
+                  {!dryRunResult.blocked ? (
                     <span className="badge badge-success">
                       PASS ({t('Cho phép', 'Allowed')})
                     </span>
                   ) : (
                     <span className="badge badge-danger">
-                      BLOCKED (content_policy) · {dryRunResult.matched_term} (
+                      BLOCKED (content_policy) · {dryRunResult.term} (
                       {dryRunResult.match_mode} / {dryRunResult.category})
                     </span>
                   )}
@@ -162,16 +225,13 @@ export function WordsPage() {
             {t('Thêm hoặc cập nhật từ khóa', 'Add or Update Filter Word')}
           </h3>
           <form onSubmit={handleAddWord} style={{ display: 'grid', gap: 12 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 110px',
-                gap: 10,
-              }}
-            >
+            <div className="form-grid-word-top">
               <input
                 type="text"
                 className="input"
+                minLength={2}
+                maxLength={64}
+                aria-label={t('Từ khóa chặn mới', 'New filter word term')}
                 placeholder={t('Nhập từ khóa (NFC lowercase)...', 'Term...')}
                 value={newTerm}
                 onChange={(e) => setNewTerm(e.target.value)}
@@ -191,13 +251,7 @@ export function WordsPage() {
               </select>
             </div>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr auto',
-                gap: 10,
-              }}
-            >
+            <div className="form-grid-word-bottom">
               <select
                 aria-label={t('Chế độ khớp', 'Match mode')}
                 className="select"
@@ -250,6 +304,7 @@ export function WordsPage() {
         <input
           type="search"
           className="input search-input"
+          aria-label={t('Tìm kiếm từ khóa chặn', 'Search filter terms')}
           placeholder={t('Tìm kiếm từ khóa...', 'Search term...')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -271,7 +326,9 @@ export function WordsPage() {
           value={modeFilter}
           onChange={(e) => setModeFilter(e.target.value)}
         >
-          <option value="all">{t('Mọi chế độ khớp', 'All match modes')}</option>
+          <option value="all">
+            {t('Mọi chế độ khớp', 'All match modes')}
+          </option>
           <option value="diacritic_word">diacritic_word</option>
           <option value="word">word</option>
           <option value="substring">substring</option>
@@ -289,6 +346,22 @@ export function WordsPage() {
           <option value="sexual">sexual</option>
           <option value="slur">slur</option>
           <option value="profanity">profanity</option>
+        </select>
+        <select
+          aria-label={t('Lọc trạng thái bật/tắt', 'Filter enabled status')}
+          className="select"
+          value={enabledFilter}
+          onChange={(e) =>
+            setEnabledFilter(e.target.value as 'all' | 'enabled' | 'disabled')
+          }
+        >
+          <option value="all">
+            {t('Mọi trạng thái', 'All enabled states')}
+          </option>
+          <option value="enabled">{t('Đang bật (Enabled)', 'Enabled')}</option>
+          <option value="disabled">
+            {t('Đang tắt (Disabled)', 'Disabled')}
+          </option>
         </select>
       </div>
 
@@ -320,6 +393,12 @@ export function WordsPage() {
                 <td>
                   <button
                     type="button"
+                    aria-pressed={w.enabled}
+                    aria-label={
+                      w.enabled
+                        ? `${t('Đang bật (Enabled)', 'Enabled')} ${w.term}`
+                        : `${t('Đang tắt (Disabled)', 'Disabled')} ${w.term}`
+                    }
                     className={`btn ${w.enabled ? 'btn-success' : ''}`}
                     onClick={() => void handleToggleWord(w)}
                   >
@@ -333,6 +412,7 @@ export function WordsPage() {
                 <td>
                   <button
                     type="button"
+                    aria-label={`${t('Xóa', 'Delete')} ${w.term}`}
                     className="btn btn-danger"
                     onClick={() => void handleDeleteWord(w.term)}
                   >

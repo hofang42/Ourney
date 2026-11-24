@@ -5,38 +5,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { adminApi } from '../lib/adminRpc'
 import { I18nProvider } from '../lib/i18n'
 import { WordsPage } from '../pages/WordsPage'
+import {
+  SQL_FIXTURE_FILTER_BLOCKED,
+  SQL_FIXTURE_FILTER_PASS,
+  SQL_FIXTURE_WORDS,
+} from './fixtures'
 
 describe('WordsPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    vi.spyOn(adminApi, 'listObjectionableWords').mockResolvedValue([
-      {
-        term: 'scam link',
-        lang: 'en',
-        match_mode: 'substring',
-        category: 'profanity',
-        enabled: true,
-        created_at: '2026-11-01T00:00:00Z',
-      },
-    ])
+    vi.spyOn(adminApi, 'listObjectionableWords').mockResolvedValue(
+      SQL_FIXTURE_WORDS,
+    )
   })
 
-  it('evaluates live dry-run tester (PASS vs BLOCKED) and supports add/toggle/delete word flows', async () => {
+  it('evaluates live dry-run tester using SQL { blocked, term } contract and supports add/toggle/delete word flows', async () => {
     vi.spyOn(adminApi, 'testContentFilter')
-      .mockResolvedValueOnce({
-        allowed: true,
-        matched_term: null,
-        lang: null,
-        match_mode: null,
-        category: null,
-      })
-      .mockResolvedValueOnce({
-        allowed: false,
-        matched_term: 'scam link',
-        lang: 'en',
-        match_mode: 'substring',
-        category: 'profanity',
-      })
+      .mockResolvedValueOnce(SQL_FIXTURE_FILTER_PASS)
+      .mockResolvedValueOnce(SQL_FIXTURE_FILTER_BLOCKED)
     const upsertSpy = vi
       .spyOn(adminApi, 'upsertObjectionableWord')
       .mockResolvedValue()
@@ -57,8 +43,8 @@ describe('WordsPage', () => {
     })
 
     const user = userEvent.setup()
-    const dryRunInput = screen.getByPlaceholderText(
-      /Paste sample Vietnamese\/English caption/i,
+    const dryRunInput = screen.getByLabelText(
+      /Sample text for content filter dry-run/i,
     )
     await user.type(dryRunInput, 'Hello morning habit')
     await user.click(screen.getByRole('button', { name: /Test Filter/i }))
@@ -72,7 +58,9 @@ describe('WordsPage', () => {
     await user.click(screen.getByRole('button', { name: /Test Filter/i }))
 
     await waitFor(() => {
-      expect(screen.getByText(/BLOCKED \(content_policy\)/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/BLOCKED \(content_policy\) · scam link/i),
+      ).toBeInTheDocument()
     })
 
     await user.type(screen.getByPlaceholderText('Term...'), 'badword')
@@ -85,7 +73,9 @@ describe('WordsPage', () => {
       p_enabled: true,
     })
 
-    await user.click(screen.getByRole('button', { name: /^Enabled$/i }))
+    await user.click(
+      screen.getByRole('button', { name: /Enabled scam link/i }),
+    )
     expect(toggleSpy).toHaveBeenCalledWith('scam link', false)
   })
 })

@@ -2,16 +2,33 @@ export interface WaitlistExportRow {
   email: string
   lang: string
   platforms: string[] | string
-  source: string
+  source: string | null
   created_at: string
   confirmation_sent_at: string | null
   registered_in_app: boolean
 }
 
-function escapeCsvCell(value: string | number | boolean | null | undefined): string {
+const FORMULA_PREFIX_RE = /^[\t\r ]*[=+\-@]|^[\t\r]/
+
+export function neutralizeCsvFormula(raw: string): string {
+  if (raw.length === 0) return ''
+  if (FORMULA_PREFIX_RE.test(raw)) {
+    return `'${raw}`
+  }
+  return raw
+}
+
+export function escapeCsvCell(
+  value: string | number | boolean | null | undefined,
+): string {
   if (value === null || value === undefined) return ''
-  const raw = String(value)
-  if (raw.includes('"') || raw.includes(',') || raw.includes('\n') || raw.includes('\r')) {
+  const raw = neutralizeCsvFormula(String(value))
+  if (
+    raw.includes('"') ||
+    raw.includes(',') ||
+    raw.includes('\n') ||
+    raw.includes('\r')
+  ) {
     return `"${raw.replace(/"/g, '""')}"`
   }
   return raw
@@ -36,7 +53,7 @@ export function buildWaitlistCsv(rows: WaitlistExportRow[]): string {
       escapeCsvCell(row.email),
       escapeCsvCell(row.lang),
       escapeCsvCell(platformsStr),
-      escapeCsvCell(row.source),
+      escapeCsvCell(row.source ?? ''),
       escapeCsvCell(row.created_at),
       escapeCsvCell(row.confirmation_sent_at ?? ''),
       escapeCsvCell(row.registered_in_app ? 'true' : 'false'),
@@ -44,6 +61,73 @@ export function buildWaitlistCsv(rows: WaitlistExportRow[]): string {
   })
 
   return `\uFEFF${[header, ...lines].join('\r\n')}\r\n`
+}
+
+function parseCsvRows(csvText: string): string[][] {
+  const stripped = csvText.startsWith('\uFEFF') ? csvText.slice(1) : csvText
+  const rows: string[][] = []
+  let currentRow: string[] = []
+  let currentCell = ''
+  let inQuotes = false
+
+  for (let i = 0; i < stripped.length; i++) {
+    const ch = stripped[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (stripped[i + 1] === '"') {
+          currentCell += '"'
+          i += 1
+        } else {
+          inQuotes = false
+        }
+      } else {
+        currentCell += ch
+      }
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === ',') {
+      currentRow.push(currentCell)
+      currentCell = ''
+    } else if (ch === '\r') {
+      if (stripped[i + 1] === '\n') {
+        i += 1
+      }
+      currentRow.push(currentCell)
+      rows.push(currentRow)
+      currentRow = []
+      currentCell = ''
+    } else if (ch === '\n') {
+      currentRow.push(currentCell)
+      rows.push(currentRow)
+      currentRow = []
+      currentCell = ''
+    } else {
+      currentCell += ch
+    }
+  }
+
+  if (currentCell.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentCell)
+    rows.push(currentRow)
+  }
+
+  return rows
+}
+
+export function sanitizeRawCsvString(rawCsv: string): string {
+  const parsed = parseCsvRows(rawCsv)
+  if (parsed.length === 0) return '\uFEFF'
+  const lines = parsed.map((row, rowIdx) =>
+    row
+      .map((cell) => {
+        if (rowIdx === 0) {
+          return escapeCsvCell(cell.trim())
+        }
+        return escapeCsvCell(cell)
+      })
+      .join(','),
+  )
+  return `\uFEFF${lines.join('\r\n')}\r\n`
 }
 
 export function triggerCsvDownload(csvWithBom: string, filename: string): void {

@@ -16,7 +16,7 @@ function collectSourceFiles(dir: string): string[] {
   return files
 }
 
-describe('CLAUDE.md Brand Guardrails (Zero Stock Icon Packs & Zero Emoji)', () => {
+describe('CLAUDE.md Brand & Security Guardrails', () => {
   const adminRoot = path.resolve(__dirname, '../..')
   const srcRoot = path.resolve(__dirname, '..')
 
@@ -49,14 +49,54 @@ describe('CLAUDE.md Brand Guardrails (Zero Stock Icon Packs & Zero Emoji)', () =
       if (file.endsWith('brand-guardrails.test.ts')) continue
       const content = fs.readFileSync(file, 'utf8')
       const rel = path.relative(adminRoot, file)
-      expect(
-        emojiRegex.test(content),
-        `Emoji found in ${rel}`,
-      ).toBe(false)
+      expect(emojiRegex.test(content), `Emoji found in ${rel}`).toBe(false)
       expect(
         forbiddenSymbolsRegex.test(content),
         `Forbidden Unicode symbol glyph found in ${rel}`,
       ).toBe(false)
     }
+  })
+
+  it('contains zero demo-mode auth bypasses, DEMO_* fixtures, or service_role secrets in production source files', () => {
+    const prodDirs = [
+      path.join(srcRoot, 'lib'),
+      path.join(srcRoot, 'pages'),
+      path.join(srcRoot, 'ui'),
+    ]
+    const prodFiles = [
+      path.join(srcRoot, 'App.tsx'),
+      path.join(srcRoot, 'main.tsx'),
+      ...prodDirs.flatMap((d) => collectSourceFiles(d)),
+    ]
+
+    const prohibitedPatterns = [
+      /isDemoMode/,
+      /ourney_admin_demo/,
+      /\bDEMO_/,
+      /SERVICE_ROLE/i,
+      /sb_secret_/i,
+    ]
+
+    for (const file of prodFiles) {
+      const content = fs.readFileSync(file, 'utf8')
+      const rel = path.relative(adminRoot, file)
+      for (const pattern of prohibitedPatterns) {
+        expect(
+          pattern.test(content),
+          `Prohibited production pattern ${String(pattern)} found in ${rel}`,
+        ).toBe(false)
+      }
+    }
+  })
+
+  it('enforces strict production Content-Security-Policy in vercel.json without localhost or missing object-src', () => {
+    const vercelRaw = fs.readFileSync(
+      path.join(adminRoot, 'vercel.json'),
+      'utf8',
+    )
+    expect(vercelRaw).toContain("object-src 'none'")
+    expect(vercelRaw).toContain("frame-ancestors 'none'")
+    expect(vercelRaw).not.toContain('localhost')
+    expect(vercelRaw).not.toContain('127.0.0.1')
   })
 })

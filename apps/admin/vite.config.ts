@@ -9,6 +9,17 @@ export default defineConfig({
   preview: {
     port: 4174,
   },
+  build: {
+    emptyOutDir: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          supabase: ['@supabase/supabase-js'],
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: 'jsdom',

@@ -2,69 +2,57 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { adminApi, type AdminIdentity } from '../lib/adminRpc'
-import { buildWaitlistCsv } from '../lib/csv'
+import { adminApi } from '../lib/adminRpc'
+import { buildWaitlistCsv, sanitizeRawCsvString } from '../lib/csv'
 import { I18nProvider } from '../lib/i18n'
 import { WaitlistPage } from '../pages/WaitlistPage'
+import {
+  SQL_FIXTURE_MODERATOR,
+  SQL_FIXTURE_OWNER,
+  SQL_FIXTURE_WAITLIST_LIST,
+  SQL_FIXTURE_WAITLIST_SUMMARY,
+} from './fixtures'
 
-const OWNER_ADMIN: AdminIdentity = {
-  user_id: 'uid-1',
-  email: 'owner@ourney.tech',
-  role: 'owner',
-  username: 'hoang',
-  display_name: 'Hoang',
-  note: null,
-}
-
-describe('WaitlistPage & CSV Export', () => {
+describe('WaitlistPage & CSV Formula Injection Protection', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    vi.spyOn(adminApi, 'waitlistSummary').mockResolvedValue({
-      total: 2,
-      ios_only: 1,
-      android_only: 0,
-      both_platforms: 1,
-      vi_count: 1,
-      en_count: 1,
-      sent_count: 1,
-      failed_count: 1,
-      unsent_count: 0,
-      converted_count: 1,
-      top_sources: [{ source: 'landing_hero', count: 2 }],
-      daily: [{ day: '24/11', vi: 1, en: 1 }],
-    })
-    vi.spyOn(adminApi, 'listWaitlist').mockResolvedValue([
-      {
-        id: 'wl-1',
-        email: 'minh@example.com',
-        lang: 'vi',
-        platforms: ['ios'],
-        source: 'landing_hero',
-        created_at: '2026-11-24T05:12:00Z',
-        confirmation_sent_at: '2026-11-24T05:12:03Z',
-        confirmation_error: null,
-        registered_in_app: true,
-      },
-    ])
+    vi.spyOn(adminApi, 'waitlistSummary').mockResolvedValue(
+      SQL_FIXTURE_WAITLIST_SUMMARY,
+    )
+    vi.spyOn(adminApi, 'listWaitlist').mockResolvedValue(
+      SQL_FIXTURE_WAITLIST_LIST,
+    )
   })
 
-  it('builds UTF-8 BOM CSV string with exact columns', () => {
+  it('builds UTF-8 BOM CSV string and neutralizes formula injection prefixes (=, +, -, @, tab, cr, leading spaces)', () => {
     const csv = buildWaitlistCsv([
       {
-        email: 'minh@example.com',
+        email: '=cmd|\' /C calc\'!A0@example.com',
         lang: 'vi',
         platforms: ['ios', 'android'],
-        source: 'landing_hero',
+        source: '  +HYPERLINK("http://evil")',
         created_at: '2026-11-24T05:12:00Z',
-        confirmation_sent_at: '2026-11-24T05:12:03Z',
+        confirmation_sent_at: '\t-2+3',
         registered_in_app: true,
       },
     ])
-    expect(csv.startsWith('\uFEFFemail,lang,platforms,source,created_at,confirmation_sent_at,registered_in_app')).toBe(true)
-    expect(csv).toContain('minh@example.com,vi,ios|android,landing_hero')
+    expect(
+      csv.startsWith(
+        '\uFEFFemail,lang,platforms,source,created_at,confirmation_sent_at,registered_in_app',
+      ),
+    ).toBe(true)
+    expect(csv).toContain("'=cmd|' /C calc'!A0@example.com")
+    expect(csv).toContain('\'  +HYPERLINK(""http://evil"")')
+    expect(csv).toContain("'\t-2+3")
+
+    const rawFromSql =
+      'email,lang,platforms,source,created_at,confirmation_sent_at,registered_in_app\n"=SUM(1,2)@example.com","vi","ios","@attacker","2026-11-24T05:12:00Z","","false"'
+    const sanitized = sanitizeRawCsvString(rawFromSql)
+    expect(sanitized).toContain("'=SUM(1,2)@example.com")
+    expect(sanitized).toContain("'@attacker")
   })
 
-  it('triggers Resend retry and delete confirmation on WaitlistPage', async () => {
+  it('renders SQL waitlist_summary KPIs, triggers Resend retry, and hides owner-only Export/Delete for moderators', async () => {
     const actionSpy = vi
       .spyOn(adminApi, 'invokeAdminAction')
       .mockResolvedValue({ ok: true })
@@ -72,30 +60,65 @@ describe('WaitlistPage & CSV Export', () => {
       .spyOn(adminApi, 'deleteWaitlistEntry')
       .mockResolvedValue()
 
-    render(
+    const { unmount } = render(
       <MemoryRouter>
         <I18nProvider initialLang="en">
-          <WaitlistPage admin={OWNER_ADMIN} />
+          <WaitlistPage admin={SQL_FIXTURE_OWNER} />
         </I18nProvider>
       </MemoryRouter>,
     )
 
     await waitFor(() => {
-      expect(screen.getByText('minh@example.com')).toBeInTheDocument()
+      expect(
+        screen.getByText('minh.nguyen@example.com'),
+      ).toBeInTheDocument()
+      expect(screen.getByText('VI: 1090')).toBeInTheDocument()
+      expect(screen.getByText('1274')).toBeInTheDocument()
     })
 
     const user = userEvent.setup()
-    await user.click(screen.getByRole('button', { name: /Resend/i }))
+    await user.click(
+      screen.getByRole('button', {
+        name: /Resend minh\.nguyen@example\.com/i,
+      }),
+    )
     expect(actionSpy).toHaveBeenCalledWith({
       action: 'waitlist_resend',
       waitlist_id: 'wl-1',
     })
 
-    await user.click(screen.getByRole('button', { name: /^Delete$/i }))
+    await user.click(
+      screen.getByRole('button', {
+        name: /Delete minh\.nguyen@example\.com/i,
+      }),
+    )
     await user.click(screen.getByRole('button', { name: /Confirm Delete/i }))
     expect(deleteSpy).toHaveBeenCalledWith(
       'wl-1',
       'Removed by owner on request',
     )
+
+    unmount()
+
+    // Moderator RBAC check: Export CSV and Delete row buttons are hidden
+    render(
+      <MemoryRouter>
+        <I18nProvider initialLang="en">
+          <WaitlistPage admin={SQL_FIXTURE_MODERATOR} />
+        </I18nProvider>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('minh.nguyen@example.com'),
+      ).toBeInTheDocument()
+    })
+    expect(screen.queryByRole('button', { name: /Export CSV/i })).toBeNull()
+    expect(
+      screen.queryByRole('button', {
+        name: /Delete minh\.nguyen@example\.com/i,
+      }),
+    ).toBeNull()
   })
 })
