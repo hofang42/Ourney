@@ -29,8 +29,8 @@ const double _cameraDockH = 92;
 // that happens (they used to move 3-7dp because the slots were 64 vs 82).
 // One center slot width for the tab row in both docks so the four tabs never
 // slide sideways when the camera route swaps the 56dp snap pill for the 76dp
-// hero shutter (the center widget itself is centered in the Stack).
-const double _centerSlot = UiSize.snapPillW;
+// hero shutter, and the 76dp hero shutter never overlaps Squad or Activity.
+const double _centerSlot = UiSize.shutter;
 const double _dockSideInset = 10;
 
 /// One tab of the [UiDock]. Give it a drawn [glyph] (an [OurneyIcon] name such
@@ -188,20 +188,34 @@ class UiDock extends StatelessWidget {
     final bar = LayoutBuilder(
       builder: (context, c) {
         final slotW = (c.maxWidth - centerSlotWidth) / items.length;
-        final pillW = math.min(_pillW, slotW);
-        // Label row bottom edge, measured from the pill centre; the capsule's
-        // curve narrows the usable width there (U17), so the label is
-        // scaled down to the chord instead of touching the outline.
-        final labelBottom = 19.0 - dockTabLift + dockLabelGrowth(context);
-        const r = _pillH / 2;
-        final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
-        final tabMaxW = math.min(
-          slotW,
-          math.max(UiSize.tap, pillW - 2 * inset - 3.0),
+        // On 360dp phones (slotW = 61dp) let the centered selection capsule be
+        // 66dp wide so 10.25dp Vietnamese labels stay inside its curved ends,
+        // while keeping pillW == slotW at 320dp (51dp) and >= 390dp (68.5dp+).
+        final pillW = math.min(
+          _pillW,
+          slotW < 66
+              ? math.min(66.0, slotW + (slotW - 51.0).clamp(0.0, 5.0))
+              : slotW,
         );
-        final labelFit = dockLabelFit(context, [
-          for (final e in items) e.label,
-        ], tabMaxW);
+        final labels = [for (final e in items) e.label];
+        final labelFit = dockLabelFit(
+          context,
+          labels,
+          slotW,
+          slotW: slotW,
+          pillW: pillW,
+        );
+        final effectiveScale =
+            labelFit *
+            MediaQuery.textScalerOf(
+              context,
+            ).clamp(maxScaleFactor: dockLabelMaxScale).scale(1);
+        final labelMaxW = dockLabelChordWidth(
+          slotW,
+          pillW,
+          effectiveScale: effectiveScale,
+        );
+        final tabMaxW = math.min(slotW, math.max(UiSize.tap, labelMaxW));
         double slotX(int i) => i < leftItems.length
             ? i * slotW
             : leftItems.length * slotW +
@@ -248,6 +262,7 @@ class UiDock extends StatelessWidget {
                             camera: camera,
                             onAccent: onAccent,
                             labelFit: labelFit,
+                            labelMaxWidth: labelMaxW,
                           ),
                         ),
                       ),
@@ -266,6 +281,7 @@ class UiDock extends StatelessWidget {
                             camera: camera,
                             onAccent: onAccent,
                             labelFit: labelFit,
+                            labelMaxWidth: labelMaxW,
                           ),
                         ),
                       ),

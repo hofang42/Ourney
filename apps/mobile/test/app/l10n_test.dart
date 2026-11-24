@@ -144,4 +144,28 @@ void main() {
   test('Vietnamese is the fallback locale', () {
     expect(ourneySupportedLocales.first, const Locale('vi'));
   });
+
+  test('English ARBs consistently use "squad" instead of "group"', () {
+    final groupWord = RegExp(r'\bgroups?\b', caseSensitive: false);
+    for (final (name, dir, file, _) in arbSets()) {
+      final en = readArb('$dir/${file}_en.arb');
+      for (final key in messageKeys(en)) {
+        final raw = en[key];
+        if (raw is! String) continue;
+        // Strip ICU `{placeholder}` tokens before checking user-facing copy.
+        final prose = raw.replaceAll(RegExp(r'\{[^}]+\}'), '');
+        expect(
+          groupWord.hasMatch(prose),
+          isFalse,
+          reason: '$name.$key still uses "group(s)": "$raw"',
+        );
+      }
+    }
+    expect(
+      readArb('lib/features/groups/l10n/groups_en.arb').containsKey(
+        'groups_eyebrow',
+      ),
+      isFalse,
+    );
+  });
 }

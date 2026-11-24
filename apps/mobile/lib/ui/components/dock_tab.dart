@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../tokens.dart';
@@ -50,16 +52,37 @@ const double dockLabelMaxScale = 1.35;
 /// Label font size at 1x text scale.
 const double dockLabelSize = 10.5;
 
+/// Label line height at 1x (10.5 * 1.35).
+const double dockLabelLineHeight = 10.5 * 1.35;
+
+/// Usable horizontal chord inside a 56dp-tall selection capsule of width
+/// [pillW] (within a tab slot of width [slotW]) when the label renders at
+/// [effectiveScale] x of its 1x size.
+double dockLabelChordWidth(
+  double slotW,
+  double pillW, {
+  double effectiveScale = 1.0,
+}) {
+  const r = 28.0;
+  final growth = math.max(0.0, effectiveScale - 1.0) * dockLabelLineHeight / 2;
+  final labelBottom = (19.0 - dockTabLift + growth).clamp(0.0, r - 1.0);
+  final inset = r - math.sqrt(r * r - labelBottom * labelBottom);
+  return math.min(slotW, math.max(0.0, pillW - 2 * inset - 3.0));
+}
+
 /// One shrink factor for all tab labels: the largest `f <= 1` at which the
-/// widest label still fits [maxWidth]. Labels used to scale down one by one
-/// (long ones to ~8dp, short ones left at ~14dp).
+/// widest label still fits [maxWidth] (or the capsule chord of [pillW] within
+/// [slotW] at the actual fitted label height).
 double dockLabelFit(
   BuildContext context,
   Iterable<String> labels,
-  double maxWidth,
-) {
+  double maxWidth, {
+  double? slotW,
+  double? pillW,
+}) {
   final scaler = MediaQuery.textScalerOf(context)
       .clamp(maxScaleFactor: dockLabelMaxScale);
+  final s = scaler.scale(1);
   double widestAt(double fit) {
     var widest = 0.0;
     for (final label in labels) {
@@ -72,7 +95,7 @@ double dockLabelFit(
               size: dockLabelSize * fit,
               weight: FontWeight.w700,
               height: 1.35,
-            ),
+            ).copyWith(letterSpacing: 0),
           ),
         ),
         textDirection: TextDirection.ltr,
@@ -85,26 +108,18 @@ double dockLabelFit(
     return widest;
   }
 
-  // Width is not exactly linear in the font size (tracking), so converge.
+  // Width and capsule chord height depend on the fitted font size, so converge.
   var fit = 1.0;
-  for (var i = 0; i < 5; i++) {
+  for (var i = 0; i < 6; i++) {
+    final avail = (slotW != null && pillW != null)
+        ? dockLabelChordWidth(slotW, pillW, effectiveScale: fit * s)
+        : maxWidth;
     final w = widestAt(fit);
-    if (w <= 0 || w <= maxWidth) break;
-    fit *= maxWidth / w * 0.995;
+    if (w <= 0) break;
+    if (fit >= 1.0 && w <= avail) break;
+    fit = (fit * (avail / w) * 0.998).clamp(0.1, 1.0);
   }
   return fit;
-}
-
-/// Label line height at 1x (10.5 * 1.35).
-const double dockLabelLineHeight = 10.5 * 1.35;
-
-/// How far the label row's bottom edge drops below its 1x position at the
-/// current text scale (the content is centred, so half the growth).
-double dockLabelGrowth(BuildContext context) {
-  final s = MediaQuery.textScalerOf(context)
-      .clamp(maxScaleFactor: dockLabelMaxScale)
-      .scale(1);
-  return (s - 1) * dockLabelLineHeight / 2;
 }
 
 class DockTab extends StatelessWidget {
@@ -113,12 +128,17 @@ class DockTab extends StatelessWidget {
     required this.camera,
     this.onAccent,
     this.labelFit = 1,
+    this.labelMaxWidth,
     super.key,
   });
 
   /// Shared label shrink factor (<= 1), the same for every tab of the dock so
   /// all labels render at one font size (see [dockLabelFit]).
   final double labelFit;
+
+  /// Chord width inside the selection capsule at the label row; constrains
+  /// the label without shrinking the 48dp [UiPressable] hit target.
+  final double? labelMaxWidth;
 
   final UiDockItem item;
   final bool camera;
@@ -182,23 +202,28 @@ class DockTab extends StatelessWidget {
               children: [
                 glyph,
                 const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: MediaQuery(
-                    data: MediaQuery.of(context).copyWith(
-                      textScaler: MediaQuery.textScalerOf(context)
-                          .clamp(maxScaleFactor: dockLabelMaxScale),
-                    ),
-                    child: Text(
-                      item.label,
-                      maxLines: 1,
-                      softWrap: false,
-                      textAlign: TextAlign.center,
-                      style: UiText.body(
-                        size: dockLabelSize * labelFit,
-                        weight: active ? FontWeight.w700 : FontWeight.w600,
-                        height: 1.35,
-                        color: labelColor,
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: labelMaxWidth ?? double.infinity,
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        textScaler: MediaQuery.textScalerOf(context)
+                            .clamp(maxScaleFactor: dockLabelMaxScale),
+                      ),
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: UiText.body(
+                          size: dockLabelSize * labelFit,
+                          weight: active ? FontWeight.w700 : FontWeight.w600,
+                          height: 1.35,
+                          color: labelColor,
+                        ).copyWith(letterSpacing: 0),
                       ),
                     ),
                   ),

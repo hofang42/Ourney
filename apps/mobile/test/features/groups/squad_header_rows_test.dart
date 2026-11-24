@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/ui/ui.dart' show UiTopBar;
+import 'package:ourney/ui/ui.dart' show OurneyTheme, UiPressable, UiTopBar;
 
 import 'groups_fakes.dart';
 
@@ -178,5 +178,80 @@ void main() {
       await g.up();
       await tester.pumpAndSettle();
     });
+
+    testWidgets(
+      'disabled nested pressable does not suppress parent press, and '
+      'unmounting a pressed child releases the parent lock',
+      (tester) async {
+        var showEnabledChild = true;
+        late StateSetter setHost;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: OurneyTheme.build(Brightness.light),
+            home: Scaffold(
+              body: StatefulBuilder(
+                builder: (context, setState) {
+                  setHost = setState;
+                  return UiPressable(
+                    key: const ValueKey('parent-card'),
+                    shadowOffset: 4,
+                    onPressed: () {},
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const UiPressable(
+                          key: ValueKey('disabled-child'),
+                          onPressed: null,
+                          child: SizedBox(width: 48, height: 48),
+                        ),
+                        if (showEnabledChild)
+                          UiPressable(
+                            key: const ValueKey('enabled-child'),
+                            onPressed: () {},
+                            child: const SizedBox(width: 48, height: 48),
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+
+        final parent = find.byKey(const ValueKey('parent-card'));
+        // 1. Pressing a disabled nested UiPressable lets the parent press.
+        final gDisabled = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey('disabled-child'))),
+        );
+        await tester.pump();
+        expect(translation(tester, parent).dx, greaterThan(0));
+        await gDisabled.up();
+        await tester.pumpAndSettle();
+        expect(translation(tester, parent), Offset.zero);
+
+        // 2. Pressing an enabled nested UiPressable and unmounting it mid-press
+        // must release the parent lock so the next parent press works.
+        final gEnabled = await tester.startGesture(
+          tester.getCenter(find.byKey(const ValueKey('enabled-child'))),
+        );
+        await tester.pump();
+        expect(translation(tester, parent), Offset.zero);
+        setHost(() => showEnabledChild = false);
+        await tester.pump();
+        await gEnabled.up();
+        await tester.pumpAndSettle();
+
+        final gParent = await tester.startGesture(tester.getCenter(parent));
+        await tester.pump();
+        expect(
+          translation(tester, parent).dx,
+          greaterThan(0),
+          reason: 'parent press feedback must not stay wedged after child unmount',
+        );
+        await gParent.up();
+        await tester.pumpAndSettle();
+      },
+    );
   });
 }

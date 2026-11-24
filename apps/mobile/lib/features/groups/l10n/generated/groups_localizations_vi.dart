@@ -264,9 +264,6 @@ class GroupsL10nVi extends GroupsL10n {
       'Hành trình đã kết thúc nên không mời thêm được.';
 
   @override
-  String get groups_eyebrow => 'Những người đồng hành';
-
-  @override
   String groups_joinCodeBoxesSemantics(int count) {
     return 'Mã mời, đã nhập $count trên 8 ký tự';
   }

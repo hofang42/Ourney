@@ -108,7 +108,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_groupNeedsServer =>
-      'Group journeys need a server. This build runs on this device only.';
+      'Squad journeys need a server. This build runs on this device only.';
 
   @override
   String get journeys_fieldDuration => 'Duration';
@@ -195,7 +195,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_errorNotAlone =>
-      'Other members are still in the group, so it can\'t be deleted. You can end the journey instead.';
+      'Other members are still in the squad, so it can\'t be deleted. You can end the journey instead.';
 
   @override
   String get journeys_errorForbidden => 'Only the journey owner can do this.';
@@ -441,7 +441,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_tagWeightLoss => 'See small changes add up.';
 
   @override
-  String get journeys_tagEnglish => 'Keep the group moving.';
+  String get journeys_tagEnglish => 'Keep the squad moving.';
 
   @override
   String get journeys_tagTravel => 'Save each day away.';
@@ -1415,7 +1415,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_edit_membersOnlyHint =>
-      'group journeys have no public link';
+      'squad journeys have no public link';
 
   @override
   String get journeys_edit_quietLock => 'Private';

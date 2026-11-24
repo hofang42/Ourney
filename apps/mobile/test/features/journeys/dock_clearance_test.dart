@@ -39,9 +39,13 @@ void main() {
     });
   }
 
-  for (final (w, h, s) in [(320.0, 640.0, 1.35), (360.0, 640.0, 1.0)]) {
+  for (final (w, h, s, bottomPad) in [
+    (320.0, 640.0, 1.35, 0.0),
+    (360.0, 640.0, 1.0, 0.0),
+    (320.0, 640.0, 1.35, 34.0),
+  ]) {
     testWidgets('populated hub scrolls its last card clear of the dock '
-        '(${w}dp x$s)', (tester) async {
+        '(${w}dp x$s, bottomPad=$bottomPad)', (tester) async {
       final js = [
         for (var i = 1; i <= 8; i++)
           testJourney(id: 'j$i', title: 'Hành trình số $i'),
@@ -54,7 +58,10 @@ void main() {
         ),
       );
       tester.view.physicalSize = Size(w, h);
+      tester.view.viewPadding = FakeViewPadding(bottom: bottomPad);
+      tester.view.padding = FakeViewPadding(bottom: bottomPad);
       tester.platformDispatcher.textScaleFactorTestValue = s;
+      addTearDown(tester.view.reset);
       addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
       await tester.pumpAndSettle();
 
@@ -71,11 +78,19 @@ void main() {
       final last = tester.getRect(
         find.byKey(const ValueKey('journey-card-j8')),
       );
+      final tail = tester.getRect(
+        find.byKey(const ValueKey('journeys-new-card')),
+      );
       expect(last.bottom, lessThanOrEqualTo(dockTop + 0.5));
       expect(
+        tail.bottom,
+        lessThanOrEqualTo(dockTop + 0.5),
+        reason: 'tail new-journey card must scroll clear above the dock',
+      );
+      expect(
         tester.getRect(scrollable).bottom,
-        greaterThan(last.bottom),
-        reason: 'the last card is fully scrolled into view',
+        greaterThan(tail.bottom),
+        reason: 'the tail card is fully scrolled into view',
       );
     });
   }

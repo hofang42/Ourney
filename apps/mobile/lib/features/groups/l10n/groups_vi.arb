@@ -198,10 +198,6 @@
   "groups_qrSemantics": "Mã QR của link mời",
   "groups_noInviteCode": "Nhóm chưa có mã mời.",
   "groups_inviteClosed": "Hành trình đã kết thúc nên không mời thêm được.",
-  "groups_eyebrow": "Những người đồng hành",
-  "@groups_eyebrow": {
-    "description": "Eyebrow above the Squad tab title."
-  },
   "groups_joinCodeBoxesSemantics": "Mã mời, đã nhập {count} trên 8 ký tự",
   "@groups_joinCodeBoxesSemantics": {
     "description": "Screen reader label of the 8-box code input.",

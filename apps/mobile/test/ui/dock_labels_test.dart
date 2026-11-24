@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/components/dock.dart';
+import 'package:ourney/ui/components/dock_tab.dart'
+    show dockLabelChordWidth, dockLabelMaxScale;
 import 'package:ourney/ui/theme.dart';
 import 'package:ourney/ui/typography.dart';
 
 const _labels = ['Hành trình', 'Nhóm', 'Hoạt động', 'Hồ sơ'];
+const _enLabels = ['Journeys', 'Squad', 'Activity', 'Profile'];
 
 Future<void> _loadBodyFont() async {
   final loader = FontLoader(UiFonts.body);
@@ -23,12 +26,21 @@ Future<void> _loadBodyFont() async {
   await loader.load();
 }
 
-Future<void> _pump(WidgetTester tester, double width, double scale) async {
+Future<void> _pump(
+  WidgetTester tester,
+  double width,
+  double scale, {
+  List<String> labels = _labels,
+  bool camera = false,
+  int active = 0,
+  ValueChanged<String>? onTap,
+}) async {
   UiDockItem item(String l, int i) => UiDockItem(
     glyph: ['journeys', 'squad', 'activity', 'profile'][i],
     label: l,
+    active: active == i,
     itemKey: ValueKey('t$i'),
-    onPressed: () {},
+    onPressed: () => onTap?.call('t$i'),
   );
   await tester.pumpWidget(
     MaterialApp(
@@ -42,12 +54,19 @@ Future<void> _pump(WidgetTester tester, double width, double scale) async {
           body: Align(
             alignment: Alignment.bottomCenter,
             child: UiDock(
-              left: item(_labels[0], 0),
-              extraLeft: [item(_labels[1], 1)],
-              extraRight: [item(_labels[2], 2)],
-              right: item(_labels[3], 3),
+              camera: camera,
+              left: item(labels[0], 0),
+              extraLeft: [item(labels[1], 1)],
+              extraRight: [item(labels[2], 2)],
+              right: item(labels[3], 3),
               snapLabel: 'Chụp',
-              onSnap: () {},
+              onSnap: () => onTap?.call('snap'),
+              center: camera
+                  ? UiShutter(
+                      label: 'Chụp',
+                      onPressed: () => onTap?.call('shutter'),
+                    )
+                  : null,
             ),
           ),
         ),
@@ -128,5 +147,101 @@ void main() {
         );
       }
     });
+  }
+
+  for (final (locale, labels) in [('vi', _labels), ('en', _enLabels)]) {
+    for (final w in [320.0, 360.0, 390.0]) {
+      testWidgets(
+        'camera dock 76dp shutter never overlaps any 48dp tab at ${w}dp ($locale)',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = Size(w, 700);
+          addTearDown(tester.view.reset);
+          final taps = <String>[];
+          await _pump(
+            tester,
+            w,
+            1.0,
+            labels: labels,
+            camera: true,
+            onTap: taps.add,
+          );
+          final shutterRect = tester.getRect(find.byType(UiShutter));
+          expect(shutterRect.width, 76);
+          expect(shutterRect.height, 76);
+          for (var i = 0; i < 4; i++) {
+            final tabRect = tester.getRect(find.byKey(ValueKey('t$i')));
+            expect(
+              tabRect.width,
+              greaterThanOrEqualTo(48),
+              reason: 'tab $i width at ${w}dp',
+            );
+            expect(
+              tabRect.height,
+              greaterThanOrEqualTo(48),
+              reason: 'tab $i height at ${w}dp',
+            );
+            expect(
+              shutterRect.overlaps(tabRect),
+              isFalse,
+              reason: 'shutter $shutterRect must not overlap tab $i $tabRect',
+            );
+          }
+          // Tapping the inner edge of Squad (t1) and Activity (t2) must fire
+          // the tab, never the camera shutter.
+          final squadRect = tester.getRect(find.byKey(const ValueKey('t1')));
+          final activityRect = tester.getRect(find.byKey(const ValueKey('t2')));
+          await tester.tapAt(Offset(squadRect.right - 2, squadRect.center.dy));
+          await tester.tapAt(
+            Offset(activityRect.left + 2, activityRect.center.dy),
+          );
+          expect(taps, ['t1', 't2']);
+        },
+      );
+
+      testWidgets(
+        'large text never shrinks rendered label size below 1x at ${w}dp ($locale)',
+        (tester) async {
+          tester.view.devicePixelRatio = 1;
+          tester.view.physicalSize = Size(w, 700);
+          addTearDown(tester.view.reset);
+
+          double renderedSize(double scale) {
+            final text = tester.widget<Text>(find.text(labels.first));
+            final clamped = scale.clamp(1.0, dockLabelMaxScale);
+            return text.style!.fontSize! * clamped;
+          }
+
+          await _pump(tester, w, 1.0, labels: labels);
+          final size10 = renderedSize(1.0);
+
+          for (final s in [1.35, 2.0]) {
+            await _pump(tester, w, s, labels: labels);
+            final sizeScaled = renderedSize(s);
+            expect(
+              sizeScaled,
+              greaterThanOrEqualTo(size10 - 0.01),
+              reason: '$locale at ${w}dp x$s ($sizeScaled vs 1x $size10)',
+            );
+            if (w == 320.0) {
+              final pill = tester.getRect(
+                find.byKey(const ValueKey('dock-selection-pill')),
+              );
+              final labelRect = tester.getRect(find.text(labels.first));
+              final chord = dockLabelChordWidth(
+                pill.width,
+                pill.width,
+                effectiveScale: sizeScaled / 10.5,
+              );
+              expect(
+                labelRect.width,
+                lessThanOrEqualTo(chord + 0.5),
+                reason: '320dp active label stays inside capsule chord',
+              );
+            }
+          }
+        },
+      );
+    }
   }
 }

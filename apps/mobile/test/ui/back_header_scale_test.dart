@@ -42,9 +42,7 @@ void main() {
                 onBack: () {},
                 backLabel: 'Back',
                 title: 'Bạn bè',
-                subtitle: scale == 1.0
-                    ? '2 người bạn'
-                    : '2 người bạn · chỉ bạn thấy danh sách này',
+                subtitle: '2 người bạn · chỉ bạn thấy danh sách này',
                 trailing: const Text('Thêm'),
               ),
             ),
@@ -53,9 +51,18 @@ void main() {
       );
       final bar = tester.getRect(find.byKey(const ValueKey('bar')));
       final sub = tester.getRect(find.textContaining('2 người bạn'));
+      final back = tester.getRect(find.byType(UiBarIconButton));
+      final trail = tester.getRect(find.text('Thêm'));
       if (scale == 1.0) {
-        // 1x keeps the original 56dp layout: no extra height or gap.
+        // 1x keeps the single-row 56dp layout even with a long subtitle.
         expect(bar.height, 56);
+        expect(
+          bar.bottom - sub.bottom,
+          greaterThanOrEqualTo(2.5),
+          reason: '1x subtitle must stay clear of the bottom hairline',
+        );
+        expect(back.center.dy, closeTo(bar.center.dy, 1.0));
+        expect(trail.center.dy, closeTo(bar.center.dy, 1.0));
         return;
       }
       expect(
@@ -64,9 +71,7 @@ void main() {
         reason: 'subtitle must keep 8dp above the hairline',
       );
       final title = tester.getRect(find.text('Bạn bè'));
-      final back = tester.getRect(find.byType(UiBarIconButton));
       expect(back.center.dy, closeTo(title.center.dy, 1.0));
-      final trail = tester.getRect(find.text('Thêm'));
       expect(trail.center.dy, closeTo(title.center.dy, 1.0));
       expect(sub.top, greaterThanOrEqualTo(title.bottom - 0.5));
     });
