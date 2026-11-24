@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
+import '../../ui/ui.dart';
 import 'captured_photo.dart';
 import 'checkin_screen.dart';
 
@@ -10,9 +11,14 @@ import 'checkin_screen.dart';
 final List<RouteBase> checkinRoutes = [
   GoRoute(
     path: AppRoutes.checkin,
-    builder: (context, state) {
+    pageBuilder: (context, state) {
       final extra = state.extra;
-      return CheckinScreen(photo: extra is CapturedPhoto ? extra : null);
+      return buildUiPage<void>(
+        context: context,
+        state: state,
+        kind: UiPageTransition.sharedZ,
+        child: CheckinScreen(photo: extra is CapturedPhoto ? extra : null),
+      );
     },
   ),
 ];

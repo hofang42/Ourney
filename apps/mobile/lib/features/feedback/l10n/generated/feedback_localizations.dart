@@ -365,7 +365,7 @@ abstract class FeedbackL10n {
   /// Subtitle of the create/edit sheet.
   ///
   /// In vi, this message translates to:
-  /// **'Đề xuất được hiển thị công khai để mọi người cùng bình chọn.'**
+  /// **'Đề xuất chỉ hiển thị với người dùng đã đăng nhập để cộng đồng cùng bình chọn.'**
   String get feedback_createSheetSub;
 
   /// Label of the title input in the create/edit sheet.

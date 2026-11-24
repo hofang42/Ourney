@@ -24,7 +24,7 @@ void main() {
       );
     });
 
-    test('title rejects external links', () {
+    test('title rejects external links including bare domains', () {
       expect(
         validateFeatureRequestTitle('Check https://spam.example.com now'),
         FeatureRequestTitleError.linksNotAllowed,
@@ -36,6 +36,31 @@ void main() {
       expect(
         validateFeatureRequestTitle('Open scam.xyz/free-coins'),
         FeatureRequestTitleError.linksNotAllowed,
+      );
+      expect(
+        validateFeatureRequestTitle('Visit example.com'),
+        FeatureRequestTitleError.linksNotAllowed,
+      );
+      expect(
+        validateFeatureRequestTitle('Visit example.com today'),
+        FeatureRequestTitleError.linksNotAllowed,
+      );
+      expect(
+        validateFeatureRequestTitle('Open example.com?ref=x'),
+        FeatureRequestTitleError.linksNotAllowed,
+      );
+      expect(
+        validateFeatureRequestTitle('Open example.io#section'),
+        FeatureRequestTitleError.linksNotAllowed,
+      );
+      expect(
+        validateFeatureRequestTitle('Check (example.vn), or example.app.'),
+        FeatureRequestTitleError.linksNotAllowed,
+      );
+      // Keep Vietnamese abbreviations like "v.v." and non-URL dotted words working.
+      expect(
+        validateFeatureRequestTitle('Hỗ trợ ảnh PNG, JPG, v.v. khi chia sẻ'),
+        isNull,
       );
     });
 
@@ -50,6 +75,12 @@ void main() {
         ),
         isNull,
       );
+      expect(
+        validateFeatureRequestBody(
+          'Hỗ trợ xuất lịch tháng, thống kê cân nặng, chạy bộ, v.v. cho mọi hành trình.',
+        ),
+        isNull,
+      );
       expect(validateFeatureRequestBody('a' * 1000), isNull);
       expect(
         validateFeatureRequestBody('a' * 1001),
@@ -57,6 +88,10 @@ void main() {
       );
       expect(
         validateFeatureRequestBody('Xem thêm tại http://phishing.io/login nhé'),
+        FeatureRequestBodyError.linksNotAllowed,
+      );
+      expect(
+        validateFeatureRequestBody('Xem thêm tại example.com hoặc example.com?ref=x nhé'),
         FeatureRequestBodyError.linksNotAllowed,
       );
     });

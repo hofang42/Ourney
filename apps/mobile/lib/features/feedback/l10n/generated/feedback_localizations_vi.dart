@@ -153,7 +153,7 @@ class FeedbackL10nVi extends FeedbackL10n {
 
   @override
   String get feedback_createSheetSub =>
-      'Đề xuất được hiển thị công khai để mọi người cùng bình chọn.';
+      'Đề xuất chỉ hiển thị với người dùng đã đăng nhập để cộng đồng cùng bình chọn.';
 
   @override
   String get feedback_fieldTitleLabel => 'Tên đề xuất';

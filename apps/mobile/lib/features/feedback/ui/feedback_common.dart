@@ -189,52 +189,58 @@ class VotePill extends StatelessWidget {
         ? l10n.feedback_voteStateVoted
         : l10n.feedback_voteStateNotVoted;
 
-    return UiPressable(
-      key: ValueKey('feedback-vote-${item.id}'),
-      onPressed: canVote ? onVote : null,
-      selected: voted,
-      shadowOffset: canVote ? UiShadow.tiny : 0,
-      minSize: const Size(UiSize.tap, 56),
-      borderRadius: BorderRadius.circular(14),
-      semanticLabel: l10n.feedback_voteSemantics(
-        item.title,
-        item.voteCount,
-        stateLabel,
-      ),
-      excludeChildSemantics: true,
-      child: Container(
-        constraints: const BoxConstraints(minWidth: UiSize.tap, minHeight: 54),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: !canVote && item.isShipped ? ui.success : ui.outline,
-            width: UiBorder.thin,
-          ),
+    return Semantics(
+      container: true,
+      child: UiPressable(
+        key: ValueKey('feedback-vote-${item.id}'),
+        onPressed: canVote ? onVote : null,
+        selected: voted,
+        shadowOffset: canVote ? UiShadow.tiny : 0,
+        minSize: const Size(UiSize.tap, 56),
+        borderRadius: BorderRadius.circular(14),
+        semanticLabel: l10n.feedback_voteSemantics(
+          item.title,
+          item.voteCount,
+          stateLabel,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OurneyIcon(
-              name: item.isShipped ? 'check' : 'chevron-up',
-              size: 16,
-              flat: true,
-              color: fg,
+        excludeChildSemantics: true,
+        child: Container(
+          constraints: const BoxConstraints(
+            minWidth: UiSize.tap,
+            minHeight: 54,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: !canVote && item.isShipped ? ui.success : ui.outline,
+              width: UiBorder.thin,
             ),
-            const SizedBox(height: 2),
-            Text(
-              '${item.voteCount}',
-              maxLines: 1,
-              style: UiText.display(
-                size: 14,
-                weight: 800,
-                height: 1.2,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OurneyIcon(
+                name: item.isShipped ? 'check' : 'chevron-up',
+                size: 16,
+                flat: true,
                 color: fg,
-              ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
-            ),
-          ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${item.voteCount}',
+                maxLines: 1,
+                style: UiText.display(
+                  size: 14,
+                  weight: 800,
+                  height: 1.2,
+                  color: fg,
+                ).copyWith(fontFeatures: const [FontFeature.tabularFigures()]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -267,6 +273,7 @@ class FeatureRequestCard extends StatelessWidget {
       radius: UiRadius.menu,
       shadowOffset: UiShadow.small,
       padding: const EdgeInsets.all(UiSpace.md),
+      semanticLabel: item.title,
       onPressed: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,15 +284,17 @@ class FeatureRequestCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body(
-                    size: 15,
-                    weight: FontWeight.w700,
-                    height: 1.35,
-                    color: ui.ink,
+                ExcludeSemantics(
+                  child: Text(
+                    item.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 15,
+                      weight: FontWeight.w700,
+                      height: 1.35,
+                      color: ui.ink,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
