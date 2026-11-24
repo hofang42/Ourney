@@ -1,4 +1,4 @@
-import 'dart:ui' show Locale, PlatformDispatcher;
+import 'dart:ui' show Color, Locale, PlatformDispatcher;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -70,6 +70,12 @@ abstract interface class NotificationGateway {
 /// Android channel for check-in reminders (docs/05 §5.2: "Nhắc check-in").
 const String kReminderChannelId = 'checkin_reminders';
 
+/// Android monochrome status-bar small icon (`res/drawable/ic_stat_ourney.xml`).
+const String kReminderSmallIcon = 'ic_stat_ourney';
+
+/// Ourney brand accent tint applied to the Android notification small icon badge.
+const Color kReminderAccentColor = Color(0xFFFF8A3D);
+
 /// flutter_local_notifications 22.x implementation.
 ///
 /// * iOS: initialised with every `request*Permission: false` so the prompt
@@ -98,7 +104,7 @@ class LocalNotificationGateway implements NotificationGateway {
     return _init ??= _plugin
         .initialize(
           settings: const InitializationSettings(
-            android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+            android: AndroidInitializationSettings(kReminderSmallIcon),
             iOS: DarwinInitializationSettings(
               requestAlertPermission: false,
               requestSoundPermission: false,
@@ -205,6 +211,8 @@ class LocalNotificationGateway implements NotificationGateway {
           kReminderChannelId,
           channelName,
           channelDescription: channelDescription,
+          icon: kReminderSmallIcon,
+          color: kReminderAccentColor,
           importance: Importance.high,
           priority: Priority.high,
         ),
