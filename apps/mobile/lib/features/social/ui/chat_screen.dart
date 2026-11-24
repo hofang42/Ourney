@@ -264,35 +264,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         error != null &&
         (socialErrorCode(error) == OurneyErrorCode.notFound ||
             socialErrorCode(error) == OurneyErrorCode.forbidden);
-    final Widget body;
+    final Widget bodyState;
     // Blocked or cleared while open: drop the stale thread.
     if (messagesAsync.hasValue && !gone) {
       final messages = [
         for (final m in messagesAsync.value!)
           if (!_hidden.contains(m.id) && !blockedIds.contains(m.senderId)) m,
       ];
-      body = messages.isEmpty
-          ? UiEmptyState(
-              key: const ValueKey('chat-empty'),
-              glyph: const OurneyIcon(name: 'chat', flat: true),
-              title: l10n.social_chatEmpty,
+      bodyState = messages.isEmpty
+          ? KeyedSubtree(
+              key: const ValueKey('chat-state-empty'),
+              child: UiEmptyState(
+                key: const ValueKey('chat-empty'),
+                glyph: const OurneyIcon(name: 'chat', flat: true),
+                title: l10n.social_chatEmpty,
+              ),
             )
-          : _thread(context, messages, myId, conv);
+          : KeyedSubtree(
+              key: const ValueKey('chat-state-thread'),
+              child: _thread(context, messages, myId, conv),
+            );
     } else if (error != null) {
-      body = UiEmptyState(
-        key: const ValueKey('chat-error'),
-        glyph: OurneyIcon(name: gone ? 'chat-off' : 'error', flat: true),
-        title: gone
-            ? l10n.social_conversationGone
-            : socialErrorMessage(context, error),
-        actionLabel: gone ? null : AppLocalizations.of(context).common_retry,
-        onAction: gone
-            ? null
-            : () => ref.invalidate(chatMessagesProvider(widget.conversationId)),
+      bodyState = KeyedSubtree(
+        key: const ValueKey('chat-state-error'),
+        child: UiEmptyState(
+          key: const ValueKey('chat-error'),
+          glyph: OurneyIcon(name: gone ? 'chat-off' : 'error', flat: true),
+          title: gone
+              ? l10n.social_conversationGone
+              : socialErrorMessage(context, error),
+          actionLabel: gone ? null : AppLocalizations.of(context).common_retry,
+          onAction: gone
+              ? null
+              : () => ref.invalidate(
+                  chatMessagesProvider(widget.conversationId),
+                ),
+        ),
       );
     } else {
-      body = const SocialLoading();
+      bodyState = const KeyedSubtree(
+        key: ValueKey('chat-state-loading'),
+        child: SocialLoading(),
+      );
     }
+
+    final Widget body = AnimatedSwitcher(
+      duration: UiMotion.fadeOf(context, UiMotion.normal),
+      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
+      switchInCurve: UiCurves.easeOutStrong,
+      switchOutCurve: Curves.easeOut,
+      child: bodyState,
+    );
 
     return SocialScaffold(
       key: const ValueKey('chat-screen'),
@@ -482,33 +504,75 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
         ),
-        if (_sending)
-          SizedBox(
-            width: UiSize.tap,
-            height: UiSize.tap,
-            child: Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: UiSpinner(
-                  strokeWidth: 2,
-                  color: ui.ink,
-                  semanticsLabel: AppLocalizations.of(context).common_loading,
+        AnimatedSwitcher(
+          duration: UiMotion.of(context, UiMotion.fast),
+          switchInCurve: UiCurves.easeOutStrong,
+          switchOutCurve: Curves.easeOut,
+          child: _sending
+              ? SizedBox(
+                  key: const ValueKey('chat-sending-spinner'),
+                  width: UiSize.tap,
+                  height: UiSize.tap,
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: UiSpinner(
+                        strokeWidth: 2,
+                        color: ui.ink,
+                        semanticsLabel: AppLocalizations.of(
+                          context,
+                        ).common_loading,
+                      ),
+                    ),
+                  ),
+                )
+              : UiIconButton(
+                  key: const ValueKey('chat-send'),
+                  glyph: const OurneyIcon(name: 'send', flat: true),
+                  label: l10n.social_send,
+                  background: ui.brand,
+                  color: ui.onBrand,
+                  onPressed: _sendText,
                 ),
-              ),
-            ),
-          )
-        else
-          UiIconButton(
-            key: const ValueKey('chat-send'),
-            glyph: const OurneyIcon(name: 'send', flat: true),
-            label: l10n.social_send,
-            background: ui.brand,
-            color: ui.onBrand,
-            onPressed: _sendText,
-          ),
+        ),
       ],
     );
+    final replyBanner = _replyTo != null
+        ? Padding(
+            key: const ValueKey('chat-reply-pending'),
+            padding: const EdgeInsets.only(left: UiSpace.md),
+            child: Row(
+              children: [
+                OurneyIcon(
+                  name: 'gallery',
+                  size: 18,
+                  color: ui.inkMuted,
+                  flat: true,
+                ),
+                const SizedBox(width: UiSpace.sm),
+                Expanded(
+                  child: Text(
+                    l10n.social_replyingTo,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: UiText.body(
+                      size: 13,
+                      height: 1.4,
+                      color: ui.inkMuted,
+                    ),
+                  ),
+                ),
+                UiIconButton(
+                  key: const ValueKey('chat-reply-cancel'),
+                  glyph: const OurneyIcon(name: 'close', flat: true),
+                  label: AppLocalizations.of(context).common_cancel,
+                  onPressed: () => setState(() => _replyTo = null),
+                ),
+              ],
+            ),
+          )
+        : const SizedBox.shrink();
     return Container(
       decoration: BoxDecoration(
         color: ui.surface,
@@ -521,39 +585,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (_replyTo != null)
-            Padding(
-              key: const ValueKey('chat-reply-pending'),
-              padding: const EdgeInsets.only(left: UiSpace.md),
-              child: Row(
-                children: [
-                  OurneyIcon(
-                    name: 'gallery',
-                    size: 18,
-                    color: ui.inkMuted,
-                    flat: true,
-                  ),
-                  const SizedBox(width: UiSpace.sm),
-                  Expanded(
-                    child: Text(
-                      l10n.social_replyingTo,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: UiText.body(
-                        size: 13,
-                        height: 1.4,
-                        color: ui.inkMuted,
-                      ),
-                    ),
-                  ),
-                  UiIconButton(
-                    key: const ValueKey('chat-reply-cancel'),
-                    glyph: const OurneyIcon(name: 'close', flat: true),
-                    label: AppLocalizations.of(context).common_cancel,
-                    onPressed: () => setState(() => _replyTo = null),
-                  ),
-                ],
-              ),
+          if (UiMotion.reduced(context))
+            replyBanner
+          else
+            AnimatedSize(
+              duration: UiMotion.fast,
+              curve: UiCurves.easeOutStrong,
+              alignment: Alignment.bottomCenter,
+              child: replyBanner,
             ),
           row,
         ],
