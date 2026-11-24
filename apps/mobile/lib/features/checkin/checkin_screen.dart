@@ -719,58 +719,71 @@ class _PhotoPreview extends StatelessWidget {
                     ),
                   ),
                   if (photo.fromLibrary)
-                    Positioned(
-                      left: UiSpace.md,
+                    PositionedDirectional(
+                      start: UiSpace.md,
+                      end: UiSpace.md,
                       top: UiSpace.md,
-                      child: UiTag(
-                        key: const ValueKey('checkin-from-library'),
-                        label: l10n.checkin_fromLibrary,
-                        glyph: const OurneyIcon(name: 'gallery', size: 20),
-                        background: const Color(0xB3000000),
-                        foreground: UiCamera.onPhoto,
-                        borderColor: UiCamera.outline,
+                      child: Align(
+                        alignment: AlignmentDirectional.topStart,
+                        child: UiTag(
+                          key: const ValueKey('checkin-from-library'),
+                          label: l10n.checkin_fromLibrary,
+                          glyph: const OurneyIcon(name: 'gallery', size: 20),
+                          background: const Color(0xB3000000),
+                          foreground: UiCamera.onPhoto,
+                          borderColor: UiCamera.outline,
+                        ),
                       ),
                     ),
                   PositionedDirectional(
                     start: UiSpace.sm,
+                    end: UiSpace.sm,
                     bottom: UiSpace.sm,
-                    child: UiPressable(
-                      key: const ValueKey('checkin-retake'),
-                      onPressed: onRetake,
-                      semanticLabel: l10n.checkin_retake,
-                      excludeChildSemantics: true,
-                      borderRadius: BorderRadius.circular(UiRadius.capsule),
-                      child: Container(
-                        constraints: const BoxConstraints(
-                          minHeight: UiSize.tap,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xB3000000),
-                          borderRadius: BorderRadius.circular(UiRadius.capsule),
-                          border: Border.all(color: UiCamera.dockBorder),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const OurneyIcon(
-                              name: 'refresh',
-                              flat: true,
-                              size: 18,
-                              color: UiCamera.onPhoto,
+                    child: Align(
+                      alignment: AlignmentDirectional.bottomStart,
+                      child: UiPressable(
+                        key: const ValueKey('checkin-retake'),
+                        onPressed: onRetake,
+                        semanticLabel: l10n.checkin_retake,
+                        excludeChildSemantics: true,
+                        borderRadius: BorderRadius.circular(UiRadius.capsule),
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minHeight: UiSize.tap,
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xB3000000),
+                            borderRadius: BorderRadius.circular(
+                              UiRadius.capsule,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              l10n.checkin_retake,
-                              maxLines: 1,
-                              style: UiText.body(
-                                size: 14,
-                                weight: FontWeight.w600,
-                                height: 1.3,
+                            border: Border.all(color: UiCamera.dockBorder),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const OurneyIcon(
+                                name: 'refresh',
+                                flat: true,
+                                size: 18,
                                 color: UiCamera.onPhoto,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  l10n.checkin_retake,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: UiText.body(
+                                    size: 14,
+                                    weight: FontWeight.w600,
+                                    height: 1.3,
+                                    color: UiCamera.onPhoto,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

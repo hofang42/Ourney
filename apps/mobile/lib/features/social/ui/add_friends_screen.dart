@@ -457,7 +457,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
         return PersonRow(
           key: const ValueKey('username-result'),
           person: p,
-          trailing: [_relation(context, p)],
+          actions: [_relation(context, p)],
         );
     }
   }

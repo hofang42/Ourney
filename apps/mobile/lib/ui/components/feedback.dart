@@ -363,8 +363,12 @@ class UiInlineError extends StatelessWidget {
 
 /// Bottom margin of a toast: [offset] alone, or above the pinned slot (never
 /// the two added, since callers like the journey screens already lift it).
-double _toastBottom(BuildContext context, double offset) {
-  final pinned = UiScaffold.pinnedBottomHeightOf(context);
+double _toastBottom(
+  BuildContext context,
+  double offset, {
+  ScaffoldMessengerState? messenger,
+}) {
+  final pinned = UiScaffold.pinnedBottomHeightOf(context, messenger: messenger);
   return pinned > 0 ? math.max(offset, 36 + pinned) : offset;
 }
 
@@ -410,7 +414,7 @@ void showUiToast(
         24,
         0,
         24,
-        _toastBottom(context, bottomOffset),
+        _toastBottom(context, bottomOffset, messenger: messenger),
       ),
       content: Center(
         child: Container(
@@ -489,7 +493,18 @@ class _UiSpinnerState extends State<UiSpinner>
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 900),
-  )..repeat();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (still) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
 
   @override
   void dispose() {

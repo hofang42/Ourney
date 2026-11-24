@@ -673,6 +673,7 @@ class _Bubble extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth),
         child: Semantics(
+          onLongPress: onLongPress,
           onLongPressHint: MaterialLocalizations.of(context).showMenuTooltip,
           // Long-press has an alternative for screen-reader and switch users.
           customSemanticsActions: {
@@ -682,6 +683,7 @@ class _Bubble extends StatelessWidget {
           },
           child: GestureDetector(
             key: ValueKey('message-${m.id}'),
+            excludeFromSemantics: true,
             onLongPress: onLongPress,
             child: Container(
               padding: rich

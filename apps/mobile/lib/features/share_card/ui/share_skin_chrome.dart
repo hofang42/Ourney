@@ -105,11 +105,12 @@ class ShareTopBar extends StatelessWidget {
     final ui = context.ui;
     final l10n = ShareCardL10n.of(context);
     final upper = title.toUpperCase();
+    final big = MediaQuery.textScalerOf(context).scale(16) / 16 > 1.2;
     final Widget label = switch (skinId) {
       'quiet' => _quietLabel(context, upper, l10n),
       _ => Text(
         upper,
-        maxLines: 1,
+        maxLines: big ? 2 : 1,
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
         style: switch (skinId) {

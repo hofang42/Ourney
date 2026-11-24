@@ -340,7 +340,8 @@ class _MemberWall extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget grid(List<GroupMemberEntry> entries) => LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth >= 300 ? 2 : 1;
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        final cols = c.maxWidth >= 300 && scale <= 1.35 ? 2 : 1;
         final rows = <Widget>[];
         for (var i = 0; i < entries.length; i += cols) {
           rows.add(

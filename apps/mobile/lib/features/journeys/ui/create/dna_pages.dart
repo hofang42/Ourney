@@ -628,12 +628,19 @@ class _DnaDateRangeState extends State<DnaDateRange> {
                   : null,
               borderRadius: BorderRadius.circular(UiRadius.thumb),
             ),
-            child: Text(
-              '${day.day}',
-              style: UiText.body(
-                size: 14,
-                color: past ? ui.divider : ui.ink,
-              ).copyWith(fontWeight: on ? FontWeight.w700 : null),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  '${day.day}',
+                  maxLines: 1,
+                  style: UiText.body(
+                    size: 14,
+                    color: past ? ui.divider : ui.ink,
+                  ).copyWith(fontWeight: on ? FontWeight.w700 : null),
+                ),
+              ),
             ),
           ),
         ),

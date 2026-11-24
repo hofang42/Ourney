@@ -217,13 +217,17 @@ class UiStateLabel extends StatelessWidget {
             glyph ?? Icon(icon, size: 16, color: ui.inkMuted),
             const SizedBox(width: 4),
           ],
-          Text(
-            text,
-            style: UiText.body(
-              size: 13,
-              weight: FontWeight.w700,
-              height: 1.3,
-              color: ui.inkMuted,
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.body(
+                size: 13,
+                weight: FontWeight.w700,
+                height: 1.3,
+                color: ui.inkMuted,
+              ),
             ),
           ),
         ],

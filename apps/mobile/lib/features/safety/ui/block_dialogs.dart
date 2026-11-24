@@ -16,7 +16,7 @@ void _toast(
 ) {
   if (context != null && context.mounted) {
     showUiToast(context, m);
-  } else if (messenger != null) {
+  } else if (messenger != null && messenger.mounted) {
     // The screen is gone: the messenger's own context still carries the theme.
     showUiToast(messenger.context, m, messenger: messenger);
   }
