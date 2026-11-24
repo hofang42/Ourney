@@ -2,7 +2,7 @@
 -- Users: 1 owner, 2 invitee, 3 outsider, 4 blocked-by-owner, 5 joiner.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(24);
 
 create schema tests;
 grant usage on schema tests to authenticated;
@@ -89,6 +89,22 @@ select is((public.my_group_invitations()->0->>'title'), 'Hoi IELTS', 'invitee se
 select ok(not ((public.my_group_invitations()->0)::jsonb ? 'invite_code'), 'the feed never exposes the invite code');
 select is(((public.accept_group_invitation((public.my_group_invitations()->0->>'id')::uuid)).id), tests.jid(),
   'accept joins the group via join_by_code');
+
+-- FS-21: preview_group_by_code masks avatar_path (which contains user_id UUID) for outsiders
+do $$ begin perform tests.as_postgres();
+  update public.profiles
+     set avatar_path = format('avatars/%s/aaaaaaaa-0000-4000-8000-000000000001.jpg', tests.u(1))
+   where id = tests.u(1);
+  perform tests.as_user(tests.u(3)); end $$;
+select is((public.preview_group_by_code(tests.code())->'owner'->>'avatar_path'), null,
+  'FS-21: preview_group_by_code hides member avatar_path from strangers');
+
+-- FS-09: full group raises full BEFORE resolving @handle (no handle enumeration oracle)
+do $$ begin perform tests.as_postgres();
+  update public.journeys set max_members = 2 where id = tests.jid();
+  perform tests.as_user(tests.u(1)); end $$;
+select throws_ok($$ select public.send_group_invitation(tests.jid(), null, '@no_such_handle_99') $$, 'P0001', 'full',
+  'FS-09: send_group_invitation checks capacity before resolving @handle');
 
 select * from finish();
 rollback;
