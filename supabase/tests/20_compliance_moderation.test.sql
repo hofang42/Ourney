@@ -213,12 +213,12 @@ select throws_ok(
   'CS-03: check_ins INSERT rejects dot-separated profanity in caption'
 );
 
--- [Test 15] check_ins INSERT accepts everyday Vietnamese & English phrases that previously collided under naive folding
+-- [Test 15] check_ins INSERT accepts everyday Vietnamese & English phrases that previously collided under naive folding (<= 140 chars for check_ins_caption_check)
 select lives_ok(
   $$ select tests.checkin(
        tests.c(1),
        tests.j(1),
-       'Mình tập cơ vai lớn xong rồi, còn các bạn dám đi làm tình nguyện dưới mưa dầm hay mua đầm, ăn mứt củ sen, bữa sáng giàu đạm đủ mà! Please edit media and DM me.'
+       'Tập cơ vai lớn, còn các bạn dám làm tình nguyện mưa dầm, mua đầm, ăn mứt củ, giàu đạm đủ mà! Edit media, DM me.'
      ) $$,
   'CS-03: check_ins INSERT accepts benign Vietnamese tone variants and cross-word English phrases without false positives'
 );
@@ -335,6 +335,7 @@ begin
   if v_rep is null then
     raise exception 'expected report id';
   end if;
+  perform tests.as_postgres();
 end $$;
 
 select is(
@@ -381,11 +382,12 @@ do $$ begin
   perform public.report_content(tests.c(1), tests.u(1), 'spam', 'first report on c1');
 end $$;
 
--- [Test 28] After 1 report, c(1) is hidden from reporter u(2) but still visible to u(4)
+-- [Test 28] After 1 report, c(1) is hidden from reporter u(2) but still visible to u(4) (in both check_ins and group_today)
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
 select is(
-  (select count(*)::int from public.check_ins where id = tests.c(1)),
-  1,
+  (select count(*)::int from public.check_ins where id = tests.c(1))
+  + (select count(*)::int from public.group_today(tests.j(1)) where user_id = tests.u(1) and checkin_id = tests.c(1)),
+  2,
   'CS-03: check-in with 1 non-public spam report remains visible to other members'
 );
 
@@ -395,10 +397,11 @@ do $$ begin
   perform public.report_content(tests.c(1), tests.u(1), 'harassment', 'second report on c1');
 end $$;
 
--- [Test 29] After 2 distinct open reports, c(1) is auto-quarantined (moderated_at set, deleted_at null) and hidden from u(4)
+-- [Test 29] After 2 distinct open reports, c(1) is auto-quarantined (moderated_at set, deleted_at null) and hidden from u(4) (in both check_ins and group_today)
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
 select is(
-  (select count(*)::int from public.check_ins where id = tests.c(1)),
+  (select count(*)::int from public.check_ins where id = tests.c(1))
+  + (select count(*)::int from public.group_today(tests.j(1)) where user_id = tests.u(1) and checkin_id is not null),
   0,
   'CS-03: check-in is automatically hidden for all members after 2 distinct open reports pending review'
 );
@@ -431,7 +434,7 @@ do $$ declare
   v_ids uuid[];
 begin
   perform tests.as_service_role();
-  select array_agg(id) into v_ids from public.moderation_queue where status = 'open';
+  select array_agg((item->>'id')::uuid) into v_ids from public.list_moderation_queue('open', 50) item;
   perform public.release_moderation_notifications(v_ids);
 end $$;
 select is(
@@ -445,7 +448,7 @@ do $$ declare
   v_ids uuid[];
 begin
   perform tests.as_service_role();
-  select array_agg(id) into v_ids from public.moderation_queue where status = 'open';
+  select array_agg((item->>'id')::uuid) into v_ids from public.list_moderation_queue('open', 50) item;
   perform public.confirm_moderation_notifications(v_ids);
   perform public.release_moderation_notifications(v_ids);
 end $$;
@@ -465,15 +468,16 @@ select is(
   'CS-03: list_moderation_queue reports distinct_open_reporters = 2 and 24h SLA metadata'
 );
 
--- [Test 36] Moderator dismissing false-positive reports on c(1) restores the check-in for u(4)
+-- [Test 36] Moderator dismissing false-positive reports on c(1) restores the check-in for u(4) (in both check_ins and group_today)
 do $$ begin
   perform tests.as_service_role();
   perform public.resolve_moderation_item(tests.latest_queue_id(tests.c(1), null, null), 'dismiss', 'benign running photo');
   perform tests.as_user(tests.u(4));
 end $$;
 select is(
-  (select count(*)::int from public.check_ins where id = tests.c(1)),
-  1,
+  (select count(*)::int from public.check_ins where id = tests.c(1))
+  + (select count(*)::int from public.group_today(tests.j(1)) where user_id = tests.u(1) and checkin_id = tests.c(1)),
+  2,
   'CS-03: dismissing auto-quarantined check-in report restores visibility for other members'
 );
 

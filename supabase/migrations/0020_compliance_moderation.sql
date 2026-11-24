@@ -236,7 +236,7 @@ begin
 
   -- Strip zero-width characters & soft hyphens first, then normalize NFD combining marks to NFC.
   v_lower := lower(normalize(
-    regexp_replace(p_text, '[\u00ad\u200b\u200c\u200d\u200e\u200f\u2060\ufeff]+', '', 'g'),
+    translate(p_text, U&'\00ad\200b\200c\200d\200e\200f\2060\feff', ''),
     NFC
   ));
 
@@ -778,19 +778,31 @@ begin
 
   return query
   select m.user_id, p.username, p.display_name, p.avatar_path, m.role,
-         (c.id is not null),
-         case when r.hidden then null else c.id end,
-         case when r.hidden then null else c.thumb_path end,
-         case when r.hidden then null else c.captured_at end,
+         d.any_today,
+         c.id,
+         c.thumb_path,
+         c.captured_at,
          coalesce(s.current_streak, 0)
     from public.memberships m
     join public.profiles p on p.id = m.user_id and p.deleted_at is null
-    left join public.check_ins c
-      on c.journey_id = m.journey_id and c.user_id = m.user_id
-     and c.local_date = v_today and c.deleted_at is null
+    -- L7: checked_in counts every photo of today, even ones the caller reported.
     left join lateral (
-      select c.id is not null and (private.has_reported(c.id) or c.moderated_at is not null) as hidden
-    ) r on true
+      select exists (
+        select 1 from public.check_ins c3
+         where c3.journey_id = m.journey_id and c3.user_id = m.user_id
+           and c3.local_date = v_today and c3.deleted_at is null) as any_today
+    ) d on true
+    -- A-B15 + CS-03: the latest photo of today the caller has not reported and that is not moderated.
+    left join lateral (
+      select c2.id, c2.thumb_path, c2.captured_at
+        from public.check_ins c2
+       where c2.journey_id = m.journey_id and c2.user_id = m.user_id
+         and c2.local_date = v_today and c2.deleted_at is null
+         and (c2.moderated_at is null or c2.user_id = (select auth.uid()))
+         and not private.has_reported(c2.id)
+       order by c2.captured_at desc, c2.id desc
+       limit 1
+    ) c on true
     left join lateral public.journey_streak(m.journey_id, m.user_id, v_today) s on true
    where m.journey_id = journey and m.status = 'active' and m.deleted_at is null
      and not private.is_blocked_pair(m.user_id)
