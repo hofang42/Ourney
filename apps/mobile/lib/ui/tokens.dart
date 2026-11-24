@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'contrast.dart';
+export 'motion.dart';
 
 /// Ourney design tokens. The shell palette is the V2 shell from the Figma
 /// Make prototype (`design/ourney-v2-app/src/app/app.css`, light `.system`
@@ -404,22 +405,113 @@ abstract final class UiSize {
   static const double permissionIcon = 62;
 }
 
-/// Motion.
+/// Unified duration tokens for Ourney V2.
+/// Always resolve via [UiMotion.of] (or check [UiMotion.reduced]) so
+/// `MediaQuery.disableAnimations` collapses spatial motion automatically.
 abstract final class UiMotion {
-  /// `button:active { transform: scale(.96); transition: 110ms }`.
-  static const press = Duration(milliseconds: 110);
-  static const pressScale = 0.96;
+  static const Duration instant = Duration.zero;
 
-  /// `@keyframes sheetIn` (280ms ease-out).
-  static const sheet = Duration(milliseconds: 280);
+  /// Ultra-fast micro-feedback (shutter flash attack, hold-to-reveal snap).
+  static const Duration micro = Duration(milliseconds: 90);
 
-  /// Colour transitions between journey styles (320ms).
-  static const theme = Duration(milliseconds: 320);
+  /// Soft Neo-Brutalism tactile press (`translate(offset, offset)`).
+  static const Duration press = Duration(milliseconds: 110);
 
+  /// Reduced-motion gentle opacity crossfade when state change needs bridging.
+  static const Duration reducedFade = Duration(milliseconds: 150);
+
+  /// High-frequency UI switches: tab content fade, Ghost toggle, toast exit.
+  static const Duration fast = Duration(milliseconds: 160);
+
+  /// Standard popovers, menus, dock glyph bounce, skeleton->content crossfade.
+  static const Duration normal = Duration(milliseconds: 200);
+
+  /// Step flows (Onboarding Quiz, Create Flow), AnimatedSize, Segmented pill.
+  static const Duration medium = Duration(milliseconds: 220);
+
+  /// Bottom sheet / modal entrance (`UiCurves.drawer`).
+  static const Duration sheetEnter = Duration(milliseconds: 260);
+
+  /// Bottom sheet / modal / page reverse exit (~73% of enter).
+  static const Duration sheetExit = Duration(milliseconds: 190);
+
+  /// Legacy alias kept so existing `UiMotion.sheet` callers stay clean.
+  static const Duration sheet = sheetEnter;
+
+  /// Floating dock selection capsule slide (`UiCurves.dockOvershoot`).
+  static const Duration dockPill = Duration(milliseconds: 280);
+
+  /// Skin palette morph (`MaterialApp.themeAnimationDuration` & `UiSkinScope`)
+  /// and standard `CustomTransitionPage` forward push.
+  static const Duration theme = Duration(milliseconds: 320);
+  static const Duration page = Duration(milliseconds: 320);
+
+  /// Rare-tier celebration beats (streak digit roll, rubber stamp, trophy rise).
+  static const Duration countRoll = Duration(milliseconds: 520);
+  static const Duration stamp = Duration(milliseconds: 540);
+  static const Duration celebration = Duration(milliseconds: 700);
+
+  /// Analog `memory` Polaroid chemical develop (`app.css:8440`).
+  static const Duration develop = Duration(milliseconds: 1100);
+
+  /// Milestone sticker confetti lifetime (Days 7 / 14 / 21 / 30 / Finish).
+  static const Duration confetti = Duration(milliseconds: 1600);
+
+  /// Scale factor ONLY for shadowless ghost/chromeless icon buttons.
+  /// Bordered sticker surfaces (`shadowOffset > 0`) NEVER scale down.
+  static const double pressScale = 0.96;
+
+  /// Minimum initial scale for popover/card entrances (`never scale(0)`).
+  static const double popMinScale = 0.95;
+
+  /// True when the OS / user enabled Reduce Motion / Disable Animations
+  /// (Android `MediaQuery.disableAnimations` or iOS
+  /// `PlatformDispatcher.accessibilityFeatures.reduceMotion`).
+  static bool reduced(BuildContext context) =>
+      (MediaQuery.maybeDisableAnimationsOf(context) ?? false) ||
+      (View.maybeOf(context)
+              ?.platformDispatcher
+              .accessibilityFeatures
+              .reduceMotion ??
+          WidgetsBinding
+              .instance
+              .platformDispatcher
+              .accessibilityFeatures
+              .reduceMotion);
+
+  /// Returns [Duration.zero] when Reduce Motion is enabled, otherwise [d].
   static Duration of(BuildContext context, Duration d) =>
-      (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
-      ? Duration.zero
-      : d;
+      reduced(context) ? Duration.zero : d;
+
+  /// Returns [reducedFade] (`150ms`) under Reduce Motion when an opacity-only
+  /// bridge aids comprehension, or [d] normally.
+  static Duration fadeOf(BuildContext context, Duration d) =>
+      reduced(context) ? reducedFade : d;
+}
+
+/// Authoritative cubic-bezier curves (Emil Kowalski + V2 CSS + Material 3).
+/// Never use `Curves.easeIn` on entrances or invent ad-hoc `Cubic(...)` inline.
+abstract final class UiCurves {
+  /// Strong UI entrance/exit curve (`--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`).
+  static const Curve easeOutStrong = Cubic(0.23, 1.0, 0.32, 1.0);
+
+  /// Strong on-screen morph / pill slide (`--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)`).
+  static const Curve easeInOutStrong = Cubic(0.77, 0.0, 0.175, 1.0);
+
+  /// iOS / Vaul bottom-sheet & drawer curve (`cubic-bezier(0.32, 0.72, 0, 1)`).
+  static const Curve drawer = Cubic(0.32, 0.72, 0.0, 1.0);
+
+  /// V2 dock pill & active glyph micro-overshoot (`app.css:15742`).
+  static const Curve dockOvershoot = Cubic(0.20, 0.90, 0.30, 1.20);
+
+  /// V2 trophy rise & stamp settle (`app.css:7509`, `cubic-bezier(0.2, 0.8, 0.2, 1)`).
+  static const Curve stampDecel = Cubic(0.20, 0.80, 0.20, 1.00);
+
+  /// Material 3 Emphasized Decelerate (shared-element Hero & page push).
+  static const Curve m3Decelerate = Cubic(0.05, 0.70, 0.10, 1.00);
+
+  /// Material 3 Emphasized Accelerate (exits).
+  static const Curve m3Accelerate = Cubic(0.30, 0.00, 0.80, 0.15);
 }
 
 /// V2 "sticker" outline widths (`2px solid var(--ink)`; quiet skin 1.5px).

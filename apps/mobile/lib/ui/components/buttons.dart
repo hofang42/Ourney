@@ -31,6 +31,7 @@ class UiButton extends StatelessWidget {
     this.loading = false,
     this.accent,
     this.onAccent,
+    this.haptic,
     super.key,
   });
 
@@ -42,6 +43,7 @@ class UiButton extends StatelessWidget {
     this.compact = false,
     this.expand = true,
     this.loading = false,
+    this.haptic,
     super.key,
   }) : variant = UiButtonVariant.secondary,
        accent = null,
@@ -55,6 +57,7 @@ class UiButton extends StatelessWidget {
     this.compact = false,
     this.expand = true,
     this.loading = false,
+    this.haptic,
     super.key,
   }) : variant = UiButtonVariant.ghost,
        accent = null,
@@ -75,6 +78,9 @@ class UiButton extends StatelessWidget {
   /// Journey-style override for the primary fill (`--setup-accent`).
   final Color? accent;
   final Color? onAccent;
+
+  /// Overrides default haptic behavior (`true` by default on primary buttons).
+  final bool? haptic;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +155,7 @@ class UiButton extends StatelessWidget {
       minSize: Size(UiSize.tap, height < UiSize.tap ? UiSize.tap : height),
       centerChild: compact,
       shadowOffset: shadow,
+      haptic: haptic ?? (variant == UiButtonVariant.primary),
       child: Container(
         width: expand ? double.infinity : null,
         constraints: BoxConstraints(minHeight: height),

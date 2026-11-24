@@ -3,14 +3,15 @@
 Built from `design/figma-v1/index.css` + `App.tsx`. Import `package:ourney/ui/ui.dart`.
 Screens in `lib/features/**` must use only this folder for UI (never `lib/shared/` widgets).
 
-Rules baked in: light + dark via `context.ui`, 48dp hit targets, 0.96 press scale (110ms),
+Rules baked in: light + dark via `context.ui`, 48dp hit targets, Soft Neo-Brutalism sticker press (`translate(offset, offset)` over 110ms, zero scale-down; 0.96 press scale only on shadowless ghost controls),
 Vietnamese line height 1.3-1.5 with ellipsis, gutters 16/20/24dp, max width 480/520dp.
 
 ## Foundation
 | File | Contents |
 | --- | --- |
 | `journey_style_for.dart` | `uiStyleForSkin(PersonaSkinId)` -> `UiJourneyStyle` |
-| `tokens.dart` | `OurneyUi` (ThemeExtension, `context.ui`: bg, surface, fill, ink, inkMuted, border, brand, success, warn, danger...), `UiRadius`, `UiSpace` (`gutter(width)`, `maxContent`), `UiSize`, `UiMotion`, `UiCamera` |
+| `tokens.dart` | `OurneyUi` (ThemeExtension, `context.ui`: bg, surface, fill, ink, inkMuted, border, brand, success, warn, danger...), `UiRadius`, `UiSpace` (`gutter(width)`, `maxContent`), `UiSize`, `UiMotion` (durations + `reduced`/`of`/`fadeOf`), `UiCurves` (`easeOutStrong`, `easeInOutStrong`, `drawer`, `dockOvershoot`, `stampDecel`, `m3Decelerate`, `m3Accelerate`), `UiCamera` |
+| `motion.dart` | `UiSprings` (`snappy`, `bouncy`, `gentle`, `forSkin`), `UiHaptics` (`selection`, `pressLight`, `shutterMedium`, `stampImpact`, `warning`, `milestoneSuccess`), `UiHeroTags`, `UiHero` (reduce-motion safe), `UiPageTransition` + `buildUiPage` (`CustomTransitionPage`), `UiDirectionalSwitcher`, `UiStaggerItem`, `UiCountRoll`, `UiRefreshScaffold` |
 | `typography.dart` | `UiText.h1/h2/eyebrow/muted/button/fieldLabel/wordmark/body/display`, `UiFonts` |
 | `theme.dart` | `OurneyTheme.build(brightness, [skin])` (also behind `buildAppTheme`); installs the `OurneyUi` extension |
 | `journey_styles.dart` | `uiJourneyStyles` (10 styles: accent, paper, ink, onAccent) |

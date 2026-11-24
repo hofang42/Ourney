@@ -40,6 +40,7 @@ class UiBarIconButton extends StatelessWidget {
       excludeChildSemantics: true,
       centerChild: true,
       borderRadius: BorderRadius.circular(UiRadius.capsule),
+      shadowOffset: onPressed == null ? 0 : UiShadow.tiny,
       child: Container(
         key: const ValueKey('ui-bar-icon-button'),
         width: 44,

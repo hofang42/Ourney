@@ -112,6 +112,7 @@ class _UiSkinScopeState extends State<UiSkinScope> {
     return TweenAnimationBuilder<OurneyUi>(
       tween: _UiSkinTween(end: _target),
       duration: UiMotion.of(context, UiMotion.theme),
+      curve: UiCurves.easeOutStrong,
       builder: (context, ui, child) {
         // Rebuild the palette-dependent Material parts from the scoped ui.
         final themed = OurneyTheme.fromUi(ui);
