@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "sh ../../scripts/vercel/vercel-ignore.sh",
   "cleanUrls": true,
   "redirects": [
     {
@@ -8,13 +9,55 @@
       "permanent": false
     }
   ],
+  "rewrites": [
+    {
+      "source": "/f/:token",
+      "destination": "/f.html"
+    },
+    {
+      "source": "/f/:token/",
+      "destination": "/f.html"
+    },
+    {
+      "source": "/j/:code",
+      "destination": "/j.html"
+    },
+    {
+      "source": "/j/:code/",
+      "destination": "/j.html"
+    },
+    {
+      "source": "/join/:code",
+      "destination": "/j.html"
+    },
+    {
+      "source": "/join/:code/",
+      "destination": "/j.html"
+    },
+    {
+      "source": "/join",
+      "destination": "/j.html"
+    },
+    {
+      "source": "/join/",
+      "destination": "/j.html"
+    },
+    {
+      "source": "/p/:token",
+      "destination": "/p.html"
+    },
+    {
+      "source": "/p/:token/",
+      "destination": "/p.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com 'sha256-FD/ApBv157+wp2LTgYhg4PPXk551qeipQjyeyfMr6FE=' 'sha256-iB0Qlhy++DHBqN/mlXE/sDS5hOmBE5sXnepweiNa+rE=' 'sha256-Mc2SaFMpVMd3Q+BbLVFP45bpbQvC6IsFzpFXqLy01kM=' 'sha256-FrCD9N9TW2rxxWR8nRn/ZQlPvFW1ySgEZP6Lnq7g5GY='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://*.supabase.co https://cloudflareinsights.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+          "value": "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com 'sha256-FD/ApBv157+wp2LTgYhg4PPXk551qeipQjyeyfMr6FE=' 'sha256-iB0Qlhy++DHBqN/mlXE/sDS5hOmBE5sXnepweiNa+rE=' 'sha256-Mc2SaFMpVMd3Q+BbLVFP45bpbQvC6IsFzpFXqLy01kM=' 'sha256-FrCD9N9TW2rxxWR8nRn/ZQlPvFW1ySgEZP6Lnq7g5GY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; font-src 'self'; connect-src 'self' https://*.supabase.co https://cloudflareinsights.com; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         },
         {
           "key": "X-Content-Type-Options",

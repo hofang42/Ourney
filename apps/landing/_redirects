@@ -1,0 +1,21 @@
+# Cloudflare Pages redirects and 200 rewrites for ourney-landing (ourney.tech)
+# Docs:
+#   - https://developers.cloudflare.com/pages/configuration/redirects/
+#   - https://developers.cloudflare.com/pages/configuration/serving-pages/
+# Note: Cloudflare Pages strips .html extensions and 308-redirects /*.html to /*,
+# so 200 proxy targets use the canonical extensionless paths (/f, /j, /p) which
+# serve f.html, j.html, and p.html directly with HTTP 200 while preserving the
+# visitor's URL (/f/:token, /j/:code, /join/:code, /p/:token).
+
+/Ourney.apk  https://github.com/hofang42/ourney-releases/releases/latest/download/Ourney.apk  302
+
+/f/:token     /f  200
+/f/:token/    /f  200
+/j/:code      /j  200
+/j/:code/     /j  200
+/join/:code   /j  200
+/join/:code/  /j  200
+/join         /j  200
+/join/        /j  200
+/p/:token     /p  200
+/p/:token/    /p  200

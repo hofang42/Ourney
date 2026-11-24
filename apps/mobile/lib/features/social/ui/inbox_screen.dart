@@ -44,6 +44,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   /// Ids of unread items marked read when the tab opened (Figma
   /// `markActivityRead`: opening Activity clears every unread dot).
   final Set<String> _seen = {};
+  final Set<String> _markedShippedIds = {};
   bool _autoRead = false;
 
   Future<void> _act(String key, Future<void> Function() action) async {
@@ -374,24 +375,33 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     ]..sort((a, b) => b.at!.compareTo(a.at!));
     if (!_autoRead && items.isNotEmpty) {
       _autoRead = true;
-      final unseenShippedIds = [
-        for (final n in shippedRequests)
-          if (!n.seen) n.requestId,
-      ];
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() => _seen.addAll([for (final i in items) i.id]));
-        if (unseenShippedIds.isNotEmpty) {
-          try {
-            unawaited(
-              ref
-                  .read(featureRequestRepositoryProvider)
-                  .markShippedSeen(requestIds: unseenShippedIds)
-                  .catchError((Object _) => 0),
-            );
-          } on Object {
-            // Ignore if featureRequestRepositoryProvider is not wired.
+      });
+    }
+    final unseenShippedIds = [
+      for (final n in shippedRequests)
+        if (!n.seen && !_markedShippedIds.contains(n.requestId)) n.requestId,
+    ];
+    if (unseenShippedIds.isNotEmpty) {
+      _markedShippedIds.addAll(unseenShippedIds);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          for (final id in unseenShippedIds) {
+            _seen.add('fr:$id');
           }
+        });
+        try {
+          unawaited(
+            ref
+                .read(featureRequestRepositoryProvider)
+                .markShippedSeen(requestIds: unseenShippedIds)
+                .catchError((Object _) => 0),
+          );
+        } on Object {
+          // Ignore if featureRequestRepositoryProvider is not wired.
         }
       });
     }

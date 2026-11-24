@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -60,6 +61,13 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   HubSegment? _segment;
   bool _menuOpen = false;
 
+  /// First-mount wave stagger tracking: populated once on initial cold data
+  /// arrival and cleared after the initial wave settles (or on segment switch /
+  /// pull-to-refresh) so staggers never replay after the initial entrance.
+  final Set<String> _staggeredIds = <String>{};
+  Timer? _staggerCleanupTimer;
+  bool _hasPlayedInitialEntrance = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,6 +82,34 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
             _segment != widget.initialSegment)) {
       _segment = widget.initialSegment;
     }
+  }
+
+  @override
+  void dispose() {
+    _staggerCleanupTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _handleRefresh() async {
+    _staggerCleanupTimer?.cancel();
+    _staggeredIds.clear();
+    _hasPlayedInitialEntrance = true;
+    ref.invalidate(journeysListProvider);
+    ref.invalidate(archivedJourneysProvider);
+    final online = !ref.read(appConfigProvider).localOnly;
+    if (online) {
+      ref.invalidate(sharedWithMeProvider);
+    }
+    try {
+      await Future.wait<Object?>([
+        ref.read(journeysListProvider.future),
+        ref.read(archivedJourneysProvider.future),
+        if (online) ref.read(sharedWithMeProvider.future),
+      ]);
+    } catch (_) {
+      // Refresh errors are surfaced by the hub state card.
+    }
+    await WidgetsBinding.instance.endOfFrame;
   }
 
   @override
@@ -122,6 +158,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
         !archivedAsync.hasError) {
       // Archived list not known yet: not Day Zero for an archive-only user.
       body = const Column(
+        key: ValueKey('hub-state-loading'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
       );
@@ -130,6 +167,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
         archivedValue == null &&
         archivedAsync.hasError) {
       body = Column(
+        key: const ValueKey('hub-state-error'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _HubHeader(),
@@ -148,10 +186,30 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
         !hasArchived &&
         !hasShared &&
         (_segment != HubSegment.shared || localOnly)) {
-      body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
+      body = _DayZero(
+        key: const ValueKey('hub-state-empty'),
+        onStart: () => JourneysListScreen.startCreate(context),
+      );
     } else if (buckets != null) {
+      if (!_hasPlayedInitialEntrance) {
+        _hasPlayedInitialEntrance = true;
+        if (!UiMotion.reduced(context)) {
+          _staggeredIds
+            ..add('hero')
+            ..add('today-or-done')
+            ..add('new-card')
+            ..addAll(buckets.active.map((j) => 'row-${j.id}'));
+          _staggerCleanupTimer?.cancel();
+          _staggerCleanupTimer = Timer(
+            const Duration(milliseconds: 350),
+            _staggeredIds.clear,
+          );
+        }
+      }
       body = _HubBody(
+        key: const ValueKey('hub-state-content'),
         buckets: buckets,
+        staggeredIds: _staggeredIds,
         segment:
             _segment ??
             (buckets.active.isEmpty &&
@@ -161,6 +219,8 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
                 ? HubSegment.shared
                 : HubSegment.active),
         onSegment: (s) {
+          _staggerCleanupTimer?.cancel();
+          _staggeredIds.clear();
           setState(() => _segment = s);
           if (widget.initialSegment != null && s != widget.initialSegment) {
             GoRouter.maybeOf(context)?.go(AppRoutes.journeys);
@@ -176,6 +236,7 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
           (rootError(journeys.error!) as OurneyException).error ==
               OurneyErrorCode.offline;
       body = Column(
+        key: const ValueKey('hub-state-error'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const _HubHeader(),
@@ -191,16 +252,43 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
       );
     } else {
       body = const Column(
+        key: ValueKey('hub-state-loading'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [_HubHeader(), _HubNotices(), _HubSkeleton()],
       );
     }
 
+    final crossfadeDuration = UiMotion.fadeOf(context, UiMotion.normal);
     return DayTicker(
-      child: UiScaffold(
-        key: const ValueKey('journeys-list'),
-        padBottom: UiSpace.xxl,
-        child: body,
+      child: UiRefreshScaffold(
+        onRefresh: _handleRefresh,
+        notificationPredicate: (n) =>
+            n.depth == 0 && n.metrics.axis == Axis.vertical,
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(
+            physics: AlwaysScrollableScrollPhysics(
+              parent: ScrollConfiguration.of(context).getScrollPhysics(context),
+            ),
+          ),
+          child: UiScaffold(
+            key: const ValueKey('journeys-list'),
+            padBottom: UiSpace.xxl,
+            child: AnimatedSwitcher(
+              duration: crossfadeDuration,
+              reverseDuration: crossfadeDuration,
+              switchInCurve: UiCurves.easeOutStrong,
+              switchOutCurve: Curves.easeOut,
+              layoutBuilder: (currentChild, previousChildren) => Stack(
+                alignment: Alignment.topCenter,
+                children: <Widget>[
+                  ...previousChildren,
+                  ?currentChild,
+                ],
+              ),
+              child: body,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -352,34 +440,36 @@ class _HubSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: UiSpace.lg),
-      child: Semantics(
-        label: JourneysL10n.of(context).journeys_hubLoading,
-        child: Column(
-          key: const ValueKey('journeys-loading'),
-          children: [
-            const UiSkeleton(height: 132, radius: UiRadius.card),
-            for (var i = 0; i < 3; i++) ...[
-              const SizedBox(height: UiSpace.md),
-              const Row(
-                children: [
-                  UiSkeleton(width: 64, height: 64, circle: true),
-                  SizedBox(width: UiSpace.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        UiSkeleton(height: 18),
-                        SizedBox(height: 8),
-                        UiSkeleton(width: 120, height: 12),
-                      ],
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(top: UiSpace.lg),
+        child: Semantics(
+          label: JourneysL10n.of(context).journeys_hubLoading,
+          child: Column(
+            key: const ValueKey('journeys-loading'),
+            children: [
+              const UiSkeleton(height: 132, radius: UiRadius.card),
+              for (var i = 0; i < 3; i++) ...[
+                const SizedBox(height: UiSpace.md),
+                const Row(
+                  children: [
+                    UiSkeleton(width: 64, height: 64, circle: true),
+                    SizedBox(width: UiSpace.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          UiSkeleton(height: 18),
+                          SizedBox(height: 8),
+                          UiSkeleton(width: 120, height: 12),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -389,7 +479,7 @@ class _HubSkeleton extends StatelessWidget {
 /// Figma empty Hub state: fanned Polaroid trio, "chưa có hành trình nào.", a
 /// one-line promise and the start button.
 class _DayZero extends StatelessWidget {
-  const _DayZero({required this.onStart});
+  const _DayZero({required this.onStart, super.key});
 
   final VoidCallback onStart;
 
@@ -550,14 +640,17 @@ const _milestones = {7, 14, 21, 30, 50, 100, 200, 365};
 class _HubBody extends ConsumerWidget {
   const _HubBody({
     required this.buckets,
+    required this.staggeredIds,
     required this.segment,
     required this.onSegment,
     required this.menuOpen,
     required this.onMenu,
     required this.onCloseMenu,
+    super.key,
   });
 
   final JourneyBuckets buckets;
+  final Set<String> staggeredIds;
   final HubSegment segment;
   final ValueChanged<HubSegment> onSegment;
   final bool menuOpen;
@@ -608,6 +701,9 @@ class _HubBody extends ConsumerWidget {
         ? UiStreakHeroState.group
         : UiStreakHeroState.normal;
 
+    final hasTodayOrDone = next != null || allDone;
+    final rowBaseIndex = hasTodayOrDone ? 2 : 1;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -642,25 +738,37 @@ class _HubBody extends ConsumerWidget {
         ),
         const _HubNotices(),
         const SizedBox(height: UiSpace.sm),
-        UiStreakHero(
-          key: const ValueKey('journeys-hub-hero'),
-          streak: bestStreak,
-          semanticLabel: l10n.journeys_heroSemantics(
-            bestStreak,
-            allDone
+        UiStaggerItem(
+          index: 0,
+          enabled: staggeredIds.contains('hero'),
+          child: UiStreakHero(
+            key: const ValueKey('journeys-hub-hero'),
+            streak: bestStreak,
+            semanticLabel: l10n.journeys_heroSemantics(
+              bestStreak,
+              allDone
+                  ? l10n.journeys_allDonePrompt
+                  : l10n.journeys_remainingToday(pending.length),
+            ),
+            title: allDone
                 ? l10n.journeys_allDonePrompt
                 : l10n.journeys_remainingToday(pending.length),
+            state: heroState,
           ),
-          title: allDone
-              ? l10n.journeys_allDonePrompt
-              : l10n.journeys_remainingToday(pending.length),
-          state: heroState,
         ),
         const SizedBox(height: UiSpace.lg),
         if (next != null)
-          TodayCard(progress: next)
+          UiStaggerItem(
+            index: 1,
+            enabled: staggeredIds.contains('today-or-done'),
+            child: TodayCard(progress: next),
+          )
         else if (allDone)
-          _AllDoneRow(count: buckets.active.length),
+          UiStaggerItem(
+            index: 1,
+            enabled: staggeredIds.contains('today-or-done'),
+            child: _AllDoneRow(count: buckets.active.length),
+          ),
         const SizedBox(height: UiSpace.xl),
         Row(
           key: const ValueKey('hub-section-heading'),
@@ -728,9 +836,21 @@ class _HubBody extends ConsumerWidget {
                   )
                 : Column(
                     children: [
-                      for (final j in buckets.active) JourneyRow(journey: j),
-                      _NewJourneyCard(
-                        onTap: () => JourneysListScreen.startCreate(context),
+                      for (var i = 0; i < buckets.active.length; i++)
+                        UiStaggerItem(
+                          key: ValueKey('hub-stagger-${buckets.active[i].id}'),
+                          index: rowBaseIndex + i,
+                          enabled: staggeredIds.contains(
+                            'row-${buckets.active[i].id}',
+                          ),
+                          child: JourneyRow(journey: buckets.active[i]),
+                        ),
+                      UiStaggerItem(
+                        index: rowBaseIndex + buckets.active.length,
+                        enabled: staggeredIds.contains('new-card'),
+                        child: _NewJourneyCard(
+                          onTap: () => JourneysListScreen.startCreate(context),
+                        ),
                       ),
                     ],
                   ),

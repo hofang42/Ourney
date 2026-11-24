@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { injectCloudflareBeacon } from '../lib/cfBeacon'
 
 function collectSourceFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
@@ -89,7 +90,18 @@ describe('CLAUDE.md Brand & Security Guardrails', () => {
     }
   })
 
-  it('enforces strict production Content-Security-Policy in vercel.json without localhost or missing object-src', () => {
+  it('enforces strict production Content-Security-Policy in public/_headers (and legacy vercel.json) without localhost or missing object-src', () => {
+    const headersRaw = fs.readFileSync(
+      path.join(adminRoot, 'public', '_headers'),
+      'utf8',
+    )
+    expect(headersRaw).toContain("object-src 'none'")
+    expect(headersRaw).toContain("frame-ancestors 'none'")
+    expect(headersRaw).toContain('https://static.cloudflareinsights.com')
+    expect(headersRaw).toContain('https://cloudflareinsights.com')
+    expect(headersRaw).not.toContain('localhost')
+    expect(headersRaw).not.toContain('127.0.0.1')
+
     const vercelRaw = fs.readFileSync(
       path.join(adminRoot, 'vercel.json'),
       'utf8',
@@ -98,5 +110,36 @@ describe('CLAUDE.md Brand & Security Guardrails', () => {
     expect(vercelRaw).toContain("frame-ancestors 'none'")
     expect(vercelRaw).not.toContain('localhost')
     expect(vercelRaw).not.toContain('127.0.0.1')
+  })
+
+  describe('Cloudflare Web Analytics beacon injection (VITE_CF_BEACON_TOKEN)', () => {
+    beforeEach(() => {
+      document
+        .querySelectorAll('script[data-cf-beacon]')
+        .forEach((node) => node.remove())
+    })
+
+    it('injects nothing when VITE_CF_BEACON_TOKEN is unset or blank', () => {
+      expect(injectCloudflareBeacon(undefined, document)).toBeNull()
+      expect(injectCloudflareBeacon('', document)).toBeNull()
+      expect(injectCloudflareBeacon('   ', document)).toBeNull()
+      expect(document.querySelector('script[data-cf-beacon]')).toBeNull()
+    })
+
+    it('injects the Cloudflare beacon script when VITE_CF_BEACON_TOKEN is set and avoids duplicate tags', () => {
+      const script = injectCloudflareBeacon('cf-admin-token-123', document)
+      expect(script).not.toBeNull()
+      expect(script?.src).toBe(
+        'https://static.cloudflareinsights.com/beacon.min.js',
+      )
+      expect(script?.defer).toBe(true)
+      expect(script?.getAttribute('data-cf-beacon')).toBe(
+        JSON.stringify({ token: 'cf-admin-token-123' }),
+      )
+
+      const second = injectCloudflareBeacon('cf-admin-token-123', document)
+      expect(second).toBe(script)
+      expect(document.querySelectorAll('script[data-cf-beacon]').length).toBe(1)
+    })
   })
 })

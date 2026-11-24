@@ -22,6 +22,7 @@ class CameraTopBar extends StatelessWidget {
     required this.tools,
     this.chipLabel,
     this.accent,
+    this.direction = 1,
     super.key,
   });
 
@@ -38,6 +39,9 @@ class CameraTopBar extends StatelessWidget {
 
   /// Persona accent of the chip dot.
   final Color? accent;
+
+  /// Horizontal swipe direction (`>= 0` next journey, `< 0` previous journey).
+  final int direction;
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +82,7 @@ class CameraTopBar extends StatelessWidget {
           key: const ValueKey('capture-journey-chip'),
           name: chipLabel ?? selected!.title,
           accent: accent,
+          direction: direction,
           semanticLabel:
               '${chipLabel ?? selected!.title}, ${l10n.camera_journeyPicker}',
           onPressed: onOpenPicker,
@@ -101,11 +106,13 @@ class _NameChip extends StatelessWidget {
     required this.semanticLabel,
     required this.onPressed,
     this.accent,
+    this.direction = 1,
     super.key,
   });
 
   final String name;
   final Color? accent;
+  final int direction;
   final String semanticLabel;
   final VoidCallback onPressed;
 
@@ -120,6 +127,8 @@ class _NameChip extends StatelessWidget {
       semanticLabel: semanticLabel,
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(UiRadius.capsule),
+      shadowOffset: UiShadow.tiny,
+      shadowColor: UiCamera.shadow,
       child: Container(
         constraints: const BoxConstraints(minHeight: UiSize.tap),
         padding: const EdgeInsetsDirectional.only(start: 14, end: 10),
@@ -127,7 +136,6 @@ class _NameChip extends StatelessWidget {
           color: _paper,
           borderRadius: BorderRadius.circular(UiRadius.capsule),
           border: Border.all(color: UiCamera.shadow, width: UiBorder.standard),
-          boxShadow: UiShadow.hard(UiCamera.shadow, UiShadow.tiny),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -145,7 +153,20 @@ class _NameChip extends StatelessWidget {
               const SizedBox(width: 8),
             ],
             Flexible(
-              child: _FitText(text: name, color: _ink),
+              child: ClipRect(
+                child: UiDirectionalSwitcher(
+                  step: name,
+                  direction: direction,
+                  duration: UiMotion.fast,
+                  slideOffset: 10.0,
+                  alignment: AlignmentDirectional.centerStart,
+                  child: _FitText(
+                    key: ValueKey<String>(name),
+                    text: name,
+                    color: _ink,
+                  ),
+                ),
+              ),
             ),
             const SizedBox(width: 4),
             const OurneyIcon(
@@ -161,14 +182,28 @@ class _NameChip extends StatelessWidget {
   }
 }
 
+typedef _FitCacheKey = ({
+  String text,
+  int maxWidthPx,
+  int scalePermille,
+  TextDirection direction,
+});
+
 /// 15px, shrunk down to 13px to fit; a name still too long ends in an
 /// ellipsis (two lines at large text scales). The full name is in the
 /// semantics label and the journey picker.
+///
+/// Caches resolved font sizes by `(text, maxWidth, textScale, direction)` so
+/// `TextPainter.layout()` is never called in a loop on repeated builds or
+/// animation ticks.
 class _FitText extends StatelessWidget {
-  const _FitText({required this.text, required this.color});
+  const _FitText({required this.text, required this.color, super.key});
 
   final String text;
   final Color color;
+
+  static final Map<_FitCacheKey, double> _sizeCache =
+      <_FitCacheKey, double>{};
 
   TextStyle _style(double size) => UiText.body(
     size: size,
@@ -177,27 +212,53 @@ class _FitText extends StatelessWidget {
     color: color,
   );
 
+  double _resolveSize(
+    String value,
+    double maxWidth,
+    TextScaler scaler,
+    TextDirection direction,
+  ) {
+    final widthPx = maxWidth.isFinite ? maxWidth.floor() : 10000;
+    final scalePermille = (scaler.scale(16) * 1000 / 16).round();
+    final key = (
+      text: value,
+      maxWidthPx: widthPx,
+      scalePermille: scalePermille,
+      direction: direction,
+    );
+    final cached = _sizeCache[key];
+    if (cached != null) return cached;
+
+    var size = 15.0;
+    bool fits(double s) {
+      final p = TextPainter(
+        text: TextSpan(text: value, style: _style(s)),
+        textDirection: direction,
+        textScaler: scaler,
+        maxLines: 1,
+      )..layout();
+      final ok = p.width <= maxWidth;
+      p.dispose();
+      return ok;
+    }
+
+    while (size > 13 && !fits(size)) {
+      size -= 1;
+    }
+    if (_sizeCache.length >= 64) {
+      _sizeCache.remove(_sizeCache.keys.first);
+    }
+    _sizeCache[key] = size;
+    return size;
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, box) {
-        var size = 15.0;
         final scaler = MediaQuery.textScalerOf(context);
-        bool fits(double s) {
-          final p = TextPainter(
-            text: TextSpan(text: text, style: _style(s)),
-            textDirection: Directionality.of(context),
-            textScaler: scaler,
-            maxLines: 1,
-          )..layout();
-          final ok = p.width <= box.maxWidth;
-          p.dispose();
-          return ok;
-        }
-
-        while (size > 13 && !fits(size)) {
-          size -= 1;
-        }
+        final dir = Directionality.of(context);
+        final size = _resolveSize(text, box.maxWidth, scaler, dir);
         final big = scaler.scale(16) / 16 > 1.35;
         return Text(
           text,

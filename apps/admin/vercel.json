@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "ignoreCommand": "sh ../../scripts/vercel/vercel-ignore.sh",
   "headers": [
     {
       "source": "/(.*)",

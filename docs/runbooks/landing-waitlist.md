@@ -30,7 +30,7 @@ Bảng nằm ở schema `private`, bật RLS, không có policy và không cấp
 | `WAITLIST_FROM` | có (để gửi mail) | Người gửi, domain phải được verify trên Resend, ví dụ `Ourney <hello@ourney.tech>`. |
 | `WAITLIST_REPLY_TO` | không | Địa chỉ nhận khi người dùng bấm Reply. |
 | `WAITLIST_NOTIFY_TO` | không | Mail của bạn (có thể nhiều, cách nhau dấu phẩy): nhận một thư ngắn cho mỗi lượt đăng ký mới. |
-| `WAITLIST_ALLOWED_ORIGINS` | không | Danh sách Origin được phép, cách nhau dấu phẩy. Mặc định `https://ourney.tech,https://www.ourney.tech`. Thêm domain preview của Vercel nếu cần thử ở đó. |
+| `WAITLIST_ALLOWED_ORIGINS` | không | Danh sách Origin được phép, cách nhau dấu phẩy. Mặc định `https://ourney.tech,https://www.ourney.tech`. Thêm domain preview của Cloudflare Pages (`https://<hash>.ourney-landing.pages.dev`) nếu cần thử ở đó. |
 
 > Gói miễn phí của Resend giới hạn khoảng 100 mail/ngày, 3.000 mail/tháng. Mail báo cho `WAITLIST_NOTIFY_TO` cũng tính vào hạn mức này.
 
@@ -39,7 +39,16 @@ Bảng nằm ở schema `private`, bật RLS, không có policy và không cấp
 2. **Endpoint**: trong `apps/landing/index.html`, thay `PROJECT_REF` trong thẻ `ourney-waitlist-endpoint` bằng project ref thật (`https://<ref>.supabase.co/functions/v1/waitlist-signup`). Khi còn `PROJECT_REF`, form chỉ báo "Chưa gửi được".
 3. **Database và Function**: merge PR vào `main` rồi chạy workflow **Deploy Supabase (hosted)** (`dry_run` = false). Workflow sẽ áp migration 0022 và deploy `waitlist-signup` với `--no-verify-jwt`. Cách làm tay: chạy `scripts/supabase/setup-waitlist.ps1`.
 4. **Secret**: đặt các secret ở bảng trên.
-5. **Landing**: deploy lại trên Vercel (CSP đã có `connect-src https://*.supabase.co`).
+5. **Landing (Cloudflare Pages — `ourney-landing`)**:
+   - Tạo project Cloudflare Pages tên **`ourney-landing`** kết nối với repo `Ourney` ([Build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/)):
+     - **Root directory:** `apps/landing`
+     - **Build command:** `sh scripts/build-pages.sh`
+     - **Build output directory:** `dist`
+     - **Build watch paths:** chỉ bao gồm `apps/landing/**` (tương tự `apps/admin/**` cho project `ourney-admin`) để các commit ở phần khác của monorepo không kích hoạt build thừa.
+     - **Environment variables:** không cần biến môi trường build-time (endpoint Supabase và anon/publishable key đã nằm trong thẻ `<meta>` của HTML; **tuyệt đối không** thêm `SUPABASE_SERVICE_ROLE_KEY`).
+     - **Custom domain & Analytics:** gắn domain chính `ourney.tech` (redirect `www.ourney.tech` → `ourney.tech` trên Cloudflare Dashboard). **Không** bật tính năng tự động chèn Web Analytics của Pages vì mã beacon đã có sẵn trong HTML.
+   - Khi build, `scripts/build-pages.sh` đóng gói trang tĩnh cùng [`apps/landing/_headers`](../../apps/landing/_headers) và [`apps/landing/_redirects`](../../apps/landing/_redirects) vào `dist/` (CSP đã cho phép `connect-src 'self' https://*.supabase.co https://cloudflareinsights.com`).
+   - **Lưu ý về Vercel legacy:** `apps/landing/vercel.json` và `.vercelignore` là cấu hình cũ (legacy), chỉ giữ lại tạm thời để rollback cho tới khi hoàn tất chuyển DNS sang Cloudflare Pages rồi sẽ được xoá ở task dọn dẹp tiếp theo.
 6. **Thử**:
    ```bash
    curl -i -X POST "https://<ref>.supabase.co/functions/v1/waitlist-signup" \
