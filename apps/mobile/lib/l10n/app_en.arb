@@ -54,6 +54,7 @@
   "common_save": "Save",
   "common_loading": "Loading…",
   "common_errorGeneric": "Something went wrong. Please try again.",
+  "common_serverOutdated": "Ourney is being updated. Update the app or try again later.",
   "common_offline": "You're offline. Ourney will sync when you're back online.",
   "empty_default_title": "Nothing here yet",
   "streak_days": "{count, plural, =1{{count} day} other{{count} days}}",

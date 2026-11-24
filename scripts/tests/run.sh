@@ -220,14 +220,15 @@ calls="$(cat "$LOG")"
 [ "$RC" -eq 0 ] && contains "$calls" "supabase db push --yes" &&
   contains "$calls" "supabase functions deploy delete-account --project-ref abcdefghijklmnopqrst" &&
   contains "$calls" "supabase functions deploy public-journey --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
+  contains "$calls" "supabase functions deploy storage-purge-sweep --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
   [ "$(grep -c '^curl ' "$LOG")" -eq 1 ] && contains "$calls" "-X PATCH" &&
   contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/auth"
-check "deploy without SMTP: db push + both functions + exactly one Auth config PATCH" $? "rc=$RC calls=$calls out=$OUT"
-contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://hofang42.github.io/Ourney/)" &&
+check "deploy without SMTP: db push + all three functions + exactly one Auth config PATCH" $? "rc=$RC calls=$calls out=$OUT"
+contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://ourney.tech)" &&
   contains "$OUT" "==> SMTP_* not set: leaving Auth SMTP settings untouched"
 check "deploy without SMTP: prints the Auth config and untouched-SMTP lines" $? "$OUT"
 jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
-  and .site_url == "https://hofang42.github.io/Ourney/"' "$BODY" > /dev/null
+  and .site_url == "https://ourney.tech"' "$BODY" > /dev/null
 check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY" 2> /dev/null)"
 jq -e 'has("uri_allow_list") | not' "$BODY" > /dev/null
 check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY" 2> /dev/null)"
@@ -288,6 +289,9 @@ check "delete-account keeps JWT verification" $? "$line"
 line="$(grep -F "supabase functions deploy public-journey" "$LOG")"
 contains "$line" "--no-verify-jwt"
 check "public-journey is deployed without JWT verification" $? "$line"
+line="$(grep -F "supabase functions deploy storage-purge-sweep" "$LOG")"
+contains "$line" "--no-verify-jwt"
+check "storage-purge-sweep is deployed without JWT verification" $? "$line"
 ! contains "$calls" "db-pass-for-tests" && ! contains "$calls" "sbp_test_token_0000"
 check "no secret appears in any supabase argv (link/db push/functions)" $? "$calls"
 

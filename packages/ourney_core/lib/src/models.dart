@@ -555,8 +555,13 @@ class CheckInDraft {
     this.metricValue,
     this.extras = CheckInExtras.empty,
     this.partnerPhotoFile,
+    this.id,
   });
 
+  /// Optional client-chosen check-in id (a uuid). A retry of a submit with the
+  /// same id returns the row it already created instead of adding another
+  /// (the import job gives each photo a stable id).
+  final String? id;
   final String journeyId;
   final DateTime capturedAt;
 

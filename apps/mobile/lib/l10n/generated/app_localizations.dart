@@ -242,6 +242,12 @@ abstract class AppLocalizations {
   /// **'Có lỗi xảy ra. Thử lại nhé.'**
   String get common_errorGeneric;
 
+  /// No description provided for @common_serverOutdated.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ourney đang cập nhật. Cập nhật app hoặc thử lại sau nhé.'**
+  String get common_serverOutdated;
+
   /// No description provided for @common_offline.
   ///
   /// In vi, this message translates to:

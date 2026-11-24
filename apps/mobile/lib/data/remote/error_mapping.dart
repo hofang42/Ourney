@@ -34,6 +34,10 @@ OurneyException mapRemoteError(Object error) {
             ? '$statusCode: $message'
             : '$statusCode ($code): $message',
       );
+    case FormatException() || TypeError():
+      // A server row that does not parse (schema drift): report it, with the
+      // cause, instead of letting a raw error escape.
+      return OurneyException(OurneyErrorCode.unknown, 'bad data: $error');
     case SocketException() ||
         HttpException() ||
         TimeoutException() ||

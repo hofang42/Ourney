@@ -112,7 +112,11 @@ insert into storage.objects (bucket_id, name) values
   ('media', format('checkins/%s/%s/%s_t.jpg', tests.j(), tests.u(2), tests.c(1))),
   ('media', tests.photo(tests.u(2), tests.c(99))),                     -- orphan: no row
   ('media', tests.photo(tests.u(4), tests.c(4))),
-  ('media', format('avatars/%s/%s.jpg', tests.u(1), 'aaaaaaaa-0000-4000-8000-000000000001'));
+  ('media', format('avatars/%s/%s.jpg', tests.u(1), 'aaaaaaaa-0000-4000-8000-000000000001')),
+  ('media', format('avatars/%s/%s.jpg', tests.u(1), 'aaaaaaaa-0000-4000-8000-000000000099')); -- old unlinked avatar
+update public.profiles
+   set avatar_path = format('avatars/%s/%s.jpg', tests.u(1), 'aaaaaaaa-0000-4000-8000-000000000001')
+ where id = tests.u(1);
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is((select count(*)::int from storage.objects where name like 'checkins/%/' || tests.u(2) || '/%'), 2,
   'member reads photo + thumb of a live check-in');
@@ -179,19 +183,19 @@ select throws_ok($$ select tests.checkin(tests.c(6), now() - interval '5 days') 
 select lives_ok($$ select tests.checkin(tests.c(7), now() - interval '2 days') $$,
   'offline check-in within the window is accepted');
 
--- ===== L3: id change of a reported check-in ==================================
--- (0014 removed the same-day retake upsert; an id rewrite through UPDATE must still carry reports.)
+-- ===== L3 + FS-09: check-in id and photo_path are immutable on UPDATE =======
 do $$ begin perform tests.as_user(tests.u(1)); perform public.report_content(tests.c(4), null, 'other'); end $$;
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
-select lives_ok($$
+select throws_ok($$
   update public.check_ins
      set id = tests.c(8), photo_path = tests.photo(auth.uid(), tests.c(8)),
          thumb_path = format('checkins/%s/%s/%s_t.jpg', tests.j(), auth.uid(), tests.c(8))
    where id = tests.c(4) $$,
-  'E6: id change of a reported check-in succeeds');
+  '23514', 'immutable_column',
+  'E6: author cannot rewrite check-in id or photo_path on UPDATE');
 do $$ begin perform tests.as_postgres(); end $$;
-select is((select target_checkin_id from public.reports where reporter_id = tests.u(1)), tests.c(8),
-  'report follows the retaken check-in id');
+select is((select target_checkin_id from public.reports where reporter_id = tests.u(1)), tests.c(4),
+  'report stays attached to the reported check-in id');
 select is((select confdeltype from pg_constraint where conname = 'moderation_queue_report_id_fkey'), 'n'::"char",
   'moderation_queue.report_id is on delete set null');
 

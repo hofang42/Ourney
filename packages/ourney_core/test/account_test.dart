@@ -112,4 +112,41 @@ void localStatsTests() {
     expect(stats.journeysCompleted, 1);
     expect(stats.journeysTotal, 1);
   });
+
+  test('computeLocalProfileStats counts streaks from the join date', () {
+    final start = LocalDate(2026, 1, 1);
+    final journey = Journey(
+      id: 'j1',
+      ownerId: 'o',
+      kind: JourneyKind.group,
+      templateId: TemplateId.custom,
+      title: 't',
+      emoji: 'x',
+      startDate: start,
+      timezone: 'UTC',
+      visibility: JourneyVisibility.group,
+      status: JourneyStatus.active,
+      durationDays: 30,
+    );
+    CheckIn c(int day) => CheckIn(
+          id: 'c$day',
+          journeyId: 'j1',
+          userId: 'u',
+          localDate: start.addDays(day),
+          capturedAt: DateTime.utc(2026, 1, 1 + day),
+          photoPath: 'p',
+          thumbPath: 't',
+        );
+    final stats = computeLocalProfileStats(
+      journeys: [journey],
+      // Days 0-2 predate the join (day 5) and must not count.
+      checkInsByJourney: {
+        'j1': [c(0), c(1), c(2), c(5), c(6)]
+      },
+      joinedLocalDateByJourney: {'j1': start.addDays(5)},
+      today: (_) => start.addDays(6),
+    );
+    expect(stats.longestStreak, 2);
+    expect(stats.currentStreak, 2);
+  });
 }

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 import 'package:ourney_core/ourney_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -475,7 +476,15 @@ Future<void> pushSharePrivacyToMemberships(
 
 /// Applies the ON Settings switches to one new membership (joined group,
 /// accepted invitation, imported journey). Touches only [journeyId].
-Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
+Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) =>
+    applySharePrivacyToJourney(ref.read, journeyId);
+
+/// [pushSharePrivacyToJourney] for callers that hold a `Ref` (the import job
+/// runner): pass `ref.read`.
+Future<void> applySharePrivacyToJourney(
+  T Function<T>(ProviderListenable<T> provider) read,
+  String journeyId,
+) async {
   // Read the ref synchronously: callers navigate away right after this call.
   final JourneyRepository repo;
   final SharedPreferencesWithCache prefs;
@@ -483,17 +492,17 @@ Future<void> pushSharePrivacyToJourney(WidgetRef ref, String journeyId) async {
   final bool hideOn;
   final bool blur;
   try {
-    repo = ref.read(journeyRepositoryProvider);
-    prefs = ref.read(sharedPreferencesProvider);
-    userId = ref.read(currentUserIdProvider);
-    hideOn = ref.read(hideWeightOnShareProvider);
-    blur = ref.read(blurPhotosOnShareProvider);
+    repo = read(journeyRepositoryProvider);
+    prefs = read(sharedPreferencesProvider);
+    userId = read(currentUserIdProvider);
+    hideOn = read(hideWeightOnShareProvider);
+    blur = read(blurPhotosOnShareProvider);
   } on Object {
     return;
   }
   String? current() {
     try {
-      return ref.read(currentUserIdProvider);
+      return read(currentUserIdProvider);
     } on Object {
       // Unknown user: record nothing (never fall back to the old one).
       return null;

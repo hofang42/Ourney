@@ -45,6 +45,65 @@ class UiSegmented<T> extends StatelessWidget {
   /// Visual inset of the selected pill inside the track.
   static const double _inset = 4;
 
+  /// Height this control takes at [maxWidth] (48dp for a single-line row;
+  /// grows when scaled labels wrap to two lines or stack vertically).
+  double preferredHeight(BuildContext context, double maxWidth) {
+    if (scrollable || segments.isEmpty || !maxWidth.isFinite) {
+      return UiSize.tap;
+    }
+    final ui = context.ui;
+    final stacked = _needsVerticalStack(context, ui, maxWidth);
+    final trackWidth = maxWidth - _inset * 2;
+    final segWidth = trackWidth / segments.length;
+    final hPad = stacked ? 12.0 : (segWidth < 110 ? 6.0 : 12.0);
+    final scaler = MediaQuery.textScalerOf(context);
+    final dir = Directionality.of(context);
+    final defaultStyle = DefaultTextStyle.of(context);
+    final locale = Localizations.maybeLocaleOf(context);
+
+    double tabHeight(UiSegment<T> s) {
+      final selected = s.value == value;
+      final border = selected ? UiBorder.thin * 2 : 0.0;
+      final dot = s.showDot ? 14.0 : 0.0;
+      final avail =
+          (stacked ? trackWidth : segWidth) - hPad * 2 - border - dot;
+      if (avail <= 0) return UiSize.tap;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: s.label,
+          style: _effectiveLabelStyle(context, ui, selected: selected),
+        ),
+        textScaler: scaler,
+        textDirection: dir,
+        textAlign: TextAlign.center,
+        maxLines: stacked ? null : 2,
+        ellipsis: stacked ? null : '\u2026',
+        locale: locale,
+        textHeightBehavior: defaultStyle.textHeightBehavior,
+        textWidthBasis: defaultStyle.textWidthBasis,
+      )..layout(maxWidth: avail);
+      final pill = (tp.height + 12 + border).clamp(
+        UiSize.tap - _inset * 2,
+        double.infinity,
+      );
+      return (pill + _inset * 2).clamp(UiSize.tap, double.infinity);
+    }
+
+    if (stacked) {
+      var total = 4.0;
+      for (final s in segments) {
+        total += tabHeight(s);
+      }
+      return total.clamp(UiSize.tap, double.infinity);
+    }
+    var maxH = UiSize.tap;
+    for (final s in segments) {
+      final h = tabHeight(s);
+      if (h > maxH) maxH = h;
+    }
+    return maxH;
+  }
+
   static TextStyle _labelStyle(OurneyUi ui, {required bool selected}) =>
       UiText.body(
         size: 15,
@@ -52,6 +111,20 @@ class UiSegmented<T> extends StatelessWidget {
         height: 1.3,
         color: selected ? ui.ink : ui.inkMuted,
       );
+
+  static TextStyle _effectiveLabelStyle(
+    BuildContext context,
+    OurneyUi ui, {
+    required bool selected,
+  }) {
+    var style = DefaultTextStyle.of(
+      context,
+    ).style.merge(_labelStyle(ui, selected: selected));
+    if (MediaQuery.boldTextOf(context)) {
+      style = style.merge(const TextStyle(fontWeight: FontWeight.bold));
+    }
+    return style;
+  }
 
   bool _needsVerticalStack(
     BuildContext context,
@@ -62,9 +135,11 @@ class UiSegmented<T> extends StatelessWidget {
     final trackWidth = maxWidth - _inset * 2;
     final segWidth = trackWidth / segments.length;
     final hPad = segWidth < 110 ? 6.0 : 12.0;
-    final boldStyle = _labelStyle(ui, selected: true);
+    final boldStyle = _effectiveLabelStyle(context, ui, selected: true);
     final scaler = MediaQuery.textScalerOf(context);
     final dir = Directionality.of(context);
+    final defaultStyle = DefaultTextStyle.of(context);
+    final locale = Localizations.maybeLocaleOf(context);
     for (final s in segments) {
       final avail =
           segWidth - hPad * 2 - UiBorder.thin * 2 - (s.showDot ? 14 : 0);
@@ -74,6 +149,9 @@ class UiSegmented<T> extends StatelessWidget {
         textScaler: scaler,
         textDirection: dir,
         maxLines: 2,
+        locale: locale,
+        textHeightBehavior: defaultStyle.textHeightBehavior,
+        textWidthBasis: defaultStyle.textWidthBasis,
       )..layout(maxWidth: avail);
       if (tp.didExceedMaxLines) return true;
       for (final word in s.label.trim().split(RegExp(r'\s+'))) {
@@ -83,6 +161,9 @@ class UiSegmented<T> extends StatelessWidget {
           textScaler: scaler,
           textDirection: dir,
           maxLines: 1,
+          locale: locale,
+          textHeightBehavior: defaultStyle.textHeightBehavior,
+          textWidthBasis: defaultStyle.textWidthBasis,
         )..layout();
         if (wp.width > avail) return true;
       }

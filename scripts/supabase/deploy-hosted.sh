@@ -13,7 +13,7 @@
 # hosted project must send CODE emails (supabase/templates/*.html, subjects from config.toml) and
 # use a real site_url instead of the default http://localhost:3000. Also sets the OTP length (6),
 # expiry (3600 s) and mailer_autoconfirm (same as local enable_confirmations = false).
-#   AUTH_SITE_URL (default https://hofang42.github.io/Ourney/)  always sent as site_url (https:// only)
+#   AUTH_SITE_URL (default https://ourney.tech)  always sent as site_url (https:// only)
 #   AUTH_URI_ALLOW_LIST (optional, comma-separated)  sent as uri_allow_list ONLY when set, so redirect
 #     URLs added by hand in the dashboard are never overwritten. Each entry is https://... or a custom
 #     scheme such as ourney://...
@@ -76,7 +76,7 @@ fi
 SMTP_PORT="${SMTP_PORT:-465}"
 SMTP_SENDER_NAME="${SMTP_SENDER_NAME:-Ourney}"
 SMTP_RATE_LIMIT="${SMTP_RATE_LIMIT:-30}"
-AUTH_SITE_URL="${AUTH_SITE_URL:-https://hofang42.github.io/Ourney/}"
+AUTH_SITE_URL="${AUTH_SITE_URL:-https://ourney.tech}"
 
 # The token must be a single clean word (it is also written into a curl config file below).
 # Checked before ANY supabase call so a bad secret fails early.
@@ -236,6 +236,9 @@ supabase functions deploy delete-account --project-ref "$SUPABASE_PROJECT_REF"
 
 echo "==> Deploying function public-journey (anonymous access)"
 supabase functions deploy public-journey --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+
+echo "==> Deploying function storage-purge-sweep (token-gated)"
+supabase functions deploy storage-purge-sweep --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
 # --- 6. Optional SMTP (H2): must come BEFORE the email templates --------------------------------------------------------------------
 if [ "$APPLY_SMTP" -eq 1 ]; then

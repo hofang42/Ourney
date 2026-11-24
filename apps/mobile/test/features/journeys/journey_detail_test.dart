@@ -532,7 +532,9 @@ void main() {
             testCheckIn(active.id, const LocalDate(2026, 10, 14)),
             testCheckIn(active.id, testToday),
             testCheckIn(ended.id, const LocalDate(2026, 10, 13)),
-            testCheckIn(ended.id, const LocalDate(2026, 10, 14)),
+            // 14 is missed: the timeline of an ended journey stops at its
+            // last check-in, so the chip needs a gap before it.
+            testCheckIn(ended.id, const LocalDate(2026, 10, 15)),
           ]),
         );
         tester.view.physicalSize = const Size(360, 800);
@@ -551,15 +553,12 @@ void main() {
         expect(chipRect.bottom, lessThanOrEqualTo(dockRect.top));
         expect(checkInRect.bottom, lessThanOrEqualTo(dockRect.top));
 
-        // Ended journey (`perms.canCheckIn == false`): chip remains at start
-        // right above the dock.
+        // Ended journey (`perms.canCheckIn == false`): no check-in button
+        // and no missed-day chip (nothing can be caught up any more).
         await h.go(tester, AppRoutes.journey(ended.id));
         expect(tester.takeException(), isNull);
         expect(_key('journey-checkin'), findsNothing);
-        final endedChipRect = tester.getRect(_key('missed-day-chip'));
-        expect(endedChipRect.left, closeTo(chipRect.left, 1));
-        expect(endedChipRect.bottom, lessThanOrEqualTo(dockRect.top));
-        expect(dockRect.top - endedChipRect.bottom, lessThanOrEqualTo(24));
+        expect(_key('missed-day-chip'), findsNothing);
       },
     );
 
