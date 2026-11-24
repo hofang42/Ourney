@@ -1083,6 +1083,8 @@ select is(
 -- [Test 49] P2-3b: Author cannot delete a 'new' canonical parent that has merged children (returns 42501 forbidden, never 23514 immutable_column)
 do $$
 begin
+  perform tests.as_postgres();
+  delete from private.rate_events where user_id = tests.u(2);
   perform tests.as_user(tests.u(2));
   perform public.create_feature_request(
     tests.fr(73),
