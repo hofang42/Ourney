@@ -322,7 +322,7 @@ void main() {
       await _tap(tester, _key('journeys-confirm'));
       expect(
         find.text(
-          'Other members are still in the group, so it can\'t be deleted. '
+          'Other members are still in the squad, so it can\'t be deleted. '
           'You can end the journey instead.',
         ),
         findsOneWidget,

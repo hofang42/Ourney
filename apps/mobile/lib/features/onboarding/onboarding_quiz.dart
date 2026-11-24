@@ -71,6 +71,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
       l10n.onboarding_quizQ3,
     ][_step];
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final big = MediaQuery.textScalerOf(context).scale(16) / 16 > 1.35;
     // `app-screen-in`: each question fades in and slides 10dp from the right
     // over 210ms (a 150ms plain fade with reduced motion).
     return TweenAnimationBuilder<double>(
@@ -104,21 +105,26 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      title,
-                      style: UiText.heading(
-                        font: 'SpaceGrotesk',
-                        size: 32,
-                        weight: 700,
-                        height: 1.3,
-                        tracking: -0.045,
-                        color: ui.ink,
+                  // The 32dp question is capped at 1.35x so at 2.0x text it
+                  // leaves room for the options above the pinned button.
+                  MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.35,
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        style: UiText.heading(
+                          font: 'SpaceGrotesk',
+                          size: 32,
+                          weight: 700,
+                          height: 1.3,
+                          tracking: -0.045,
+                          color: ui.ink,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: UiSpace.xxl),
+                  SizedBox(height: big ? UiSpace.lg : UiSpace.xxl),
                   ...switch (_step) {
                     0 => _goalOptions(l10n),
                     1 => _companyOptions(l10n),
@@ -131,16 +137,19 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
           Padding(
             padding: EdgeInsets.fromLTRB(
               widget.gutter,
-              UiSpace.md,
+              big ? UiSpace.sm : UiSpace.md,
               widget.gutter,
-              UiSpace.xl,
+              big ? UiSpace.md : UiSpace.xl,
             ),
-            child: UiFlowButton(
-              key: const ValueKey('onboarding-quiz-next'),
-              label: _isLast && _answered
-                  ? l10n.onboarding_quizStart
-                  : l10n.onboarding_quizContinue,
-              onPressed: _answered ? _next : null,
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.35,
+              child: UiFlowButton(
+                key: const ValueKey('onboarding-quiz-next'),
+                label: _isLast && _answered
+                    ? l10n.onboarding_quizStart
+                    : l10n.onboarding_quizContinue,
+                onPressed: _answered ? _next : null,
+              ),
             ),
           ),
         ],

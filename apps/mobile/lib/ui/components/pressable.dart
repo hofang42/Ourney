@@ -53,9 +53,64 @@ class _UiPressableState extends State<UiPressable> {
   bool _down = false;
   bool _focused = false;
 
+  /// A pressable nested inside this one is being pressed: it owns the touch,
+  /// so this one must not show its pressed state too (a member chip inside a
+  /// tappable card).
+  int _childPointers = 0;
+  final Set<int> _claimedPointers = <int>{};
+  _UiPressableState? _claimedAncestor;
+
+  void _childPointer(bool down) {
+    _childPointers = (_childPointers + (down ? 1 : -1)).clamp(0, 1 << 20);
+    if (down && _down && mounted) setState(() => _down = false);
+  }
+
+  void _claimAncestorPointer(int pointer) {
+    if (!_enabled) return;
+    final ancestor = _claimedAncestor ??= context
+        .findAncestorStateOfType<_UiPressableState>();
+    if (ancestor != null && _claimedPointers.add(pointer)) {
+      ancestor._childPointer(true);
+    }
+  }
+
+  void _releaseAncestorPointer(int pointer) {
+    if (_claimedPointers.remove(pointer)) {
+      _claimedAncestor?._childPointer(false);
+      if (_claimedPointers.isEmpty) _claimedAncestor = null;
+    }
+  }
+
+  void _releaseAllAncestorPointers() {
+    final count = _claimedPointers.length;
+    if (count == 0) return;
+    _claimedPointers.clear();
+    final ancestor = _claimedAncestor;
+    _claimedAncestor = null;
+    for (var i = 0; i < count; i++) {
+      ancestor?._childPointer(false);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant UiPressable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_enabled) {
+      _releaseAllAncestorPointers();
+      if (_down) _down = false;
+    }
+  }
+
+  @override
+  void deactivate() {
+    _releaseAllAncestorPointers();
+    super.deactivate();
+  }
+
   bool get _enabled => widget.onPressed != null;
 
   void _setDown(bool v) {
+    if (v && _childPointers > 0) return;
     if (_down != v && mounted) setState(() => _down = v);
   }
 
@@ -129,13 +184,24 @@ class _UiPressableState extends State<UiPressable> {
             },
           ),
         },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: _enabled ? (_) => _setDown(true) : null,
-          onTapUp: _enabled ? (_) => _setDown(false) : null,
-          onTapCancel: () => _setDown(false),
-          onTap: widget.onPressed,
-          child: content,
+        child: Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (e) => _claimAncestorPointer(e.pointer),
+          onPointerUp: (e) => _releaseAncestorPointer(e.pointer),
+          onPointerCancel: (e) => _releaseAncestorPointer(e.pointer),
+          child: GestureDetector(
+            behavior: _enabled
+                ? HitTestBehavior.opaque
+                : HitTestBehavior.deferToChild,
+            // The outer Semantics already carries the tap action; a second
+            // tap node would stay unlabeled and separate from it.
+            excludeFromSemantics: true,
+            onTapDown: _enabled ? (_) => _setDown(true) : null,
+            onTapUp: _enabled ? (_) => _setDown(false) : null,
+            onTapCancel: _enabled ? () => _setDown(false) : null,
+            onTap: widget.onPressed,
+            child: content,
+          ),
         ),
       ),
     );

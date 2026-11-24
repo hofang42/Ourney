@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart'
-    show RenderAbstractViewport, RenderBox;
+import 'package:flutter/rendering.dart' show RenderAbstractViewport, RenderBox;
 import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -101,9 +100,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 120),
                 child: Center(
-                  child: CircularProgressIndicator(
-                    semanticsLabel: app.common_loading,
-                  ),
+                  child: UiSpinner(semanticsLabel: app.common_loading),
                 ),
               )
             else
@@ -178,10 +175,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
           final bottomInset = MediaQuery.paddingOf(context).bottom;
           // U15: at large text the chip and the button no longer share a row
           // (the button used to break "Check-in" mid-word).
-          final stackOverlay =
-              MediaQuery.textScalerOf(context).scale(10) > 13 &&
-              showMissedChip &&
-              perms.canCheckIn;
+          final bigText = MediaQuery.textScalerOf(context).scale(10) > 13;
+          final stackOverlay = bigText && showMissedChip && perms.canCheckIn;
           final screenWidth = MediaQuery.sizeOf(context).width;
           // Fixed-term journey longer than 31 days, 31 or fewer passed: the
           // elapsed days, two upcoming ones and the finish card, never the
@@ -193,174 +188,164 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               ? index.shortWindow
               : null;
           final topChildren = <Widget>[
-                    UiMenuAnchor(
-                      open: _menuOpen && actions.isNotEmpty,
-                      onClose: () => setState(() => _menuOpen = false),
-                      anchor: _Header(
-                        journey: journey,
-                        canMore: actions.isNotEmpty,
-                        onBack: _back,
-                        onShare: () => _share(context, journey),
-                        onMore: () => setState(() => _menuOpen = !_menuOpen),
-                      ),
-                      menu: UiMenuSurface(
-                        children: [
-                          for (final a in actions)
-                            UiMenuItem(
-                              key: ValueKey('journey-action-${a.name}'),
-                              glyph: switch (a) {
-                                _Action.edit => 'pencil',
-                                _Action.wrapped => 'trophy',
-                                _Action.pin => 'star',
-                                _Action.invite => 'squad',
-                                _Action.renameCouple => 'edit',
-                                _Action.end => 'flag',
-                                _Action.archive => 'inbox',
-                                _Action.delete => 'trash',
-                              },
-                              destructive: a == _Action.delete,
-                              label: switch (a) {
-                                _Action.edit => l10n.journeys_edit_menu,
-                                _Action.wrapped => l10n.journeys_wrapped_menu,
-                                _Action.pin =>
-                                  (membership?.pinned ?? false)
-                                      ? l10n.journeys_unpin
-                                      : l10n.journeys_pin,
-                                _Action.invite => l10n.journeys_inviteAction,
-                                _Action.renameCouple =>
-                                  l10n.journeys_renameCouple,
-                                _Action.end => l10n.journeys_endJourney,
-                                _Action.archive => l10n.journeys_archive,
-                                _Action.delete => l10n.journeys_delete,
-                              },
-                              onPressed: () {
-                                setState(() => _menuOpen = false);
-                                unawaited(_run(context, journey, a));
-                              },
-                            ),
-                        ],
-                      ),
+            UiMenuAnchor(
+              open: _menuOpen && actions.isNotEmpty,
+              onClose: () => setState(() => _menuOpen = false),
+              anchor: _Header(
+                journey: journey,
+                canMore: actions.isNotEmpty,
+                onBack: _back,
+                onShare: () => _share(context, journey),
+                onMore: () => setState(() => _menuOpen = !_menuOpen),
+              ),
+              menu: UiMenuSurface(
+                children: [
+                  for (final a in actions)
+                    UiMenuItem(
+                      key: ValueKey('journey-action-${a.name}'),
+                      glyph: switch (a) {
+                        _Action.edit => 'pencil',
+                        _Action.wrapped => 'trophy',
+                        _Action.pin => 'star',
+                        _Action.invite => 'squad',
+                        _Action.renameCouple => 'edit',
+                        _Action.end => 'flag',
+                        _Action.archive => 'inbox',
+                        _Action.delete => 'trash',
+                      },
+                      destructive: a == _Action.delete,
+                      label: switch (a) {
+                        _Action.edit => l10n.journeys_edit_menu,
+                        _Action.wrapped => l10n.journeys_wrapped_menu,
+                        _Action.pin =>
+                          (membership?.pinned ?? false)
+                              ? l10n.journeys_unpin
+                              : l10n.journeys_pin,
+                        _Action.invite => l10n.journeys_inviteAction,
+                        _Action.renameCouple => l10n.journeys_renameCouple,
+                        _Action.end => l10n.journeys_endJourney,
+                        _Action.archive => l10n.journeys_archive,
+                        _Action.delete => l10n.journeys_delete,
+                      },
+                      onPressed: () {
+                        setState(() => _menuOpen = false);
+                        unawaited(_run(context, journey, a));
+                      },
                     ),
-                    Divider(height: 1, color: ui.border),
-                    const SizedBox(height: 22),
-                    if (progress != null)
-                      JourneyHomeIntro(
-                        skin: uiSkinIdFor(skinOfJourney(journey)),
-                        day: progress.dayNumber,
-                        total: journey.durationDays,
-                        streak: progress.summary.current,
-                        today: progress.today,
-                        offline:
-                            ref.watch(journeyHomeOfflineProvider).value ??
-                            false,
-                        readOnly: !perms.isActive,
-                      ),
-                    if (progress != null) const SizedBox(height: UiSpace.lg),
-                    DeadUploadsBanner(journeyId: journey.id),
-                    UiEyebrow(_dateRange(context, journey).toUpperCase()),
-                    const SizedBox(height: 4),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        journey.title,
-                        style: UiText.h1(color: ui.ink),
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    if (progress != null) ...[
-                      if (skin != 'quiet') ...[
-                        JourneyHomeSkinHeader(
-                          journey: journey,
-                          skin: skinOfJourney(journey),
-                          day: progress.dayNumber,
-                          streak: progress.summary.current,
-                          stats: index!.wrapped,
-                          now: ref.watch(journeysNowProvider),
-                          onTrophy: () => context.push(
-                            perms.isActive
-                                ? AppRoutes.share(journey.id)
-                                : JourneysPaths.wrapped(journey.id),
-                          ),
-                        ),
-                        const SizedBox(height: UiSpace.lg),
-                      ],
-                      if (skin == 'quiet' || skin == 'flexer') ...[
-                        JourneyHomeChart(
-                          skin: skin,
-                          values: index!.metricSeries,
-                          accent: pal.accent,
-                          unit: journey.metricUnit ?? '',
-                          maskable: skin == 'quiet',
-                        ),
-                        const SizedBox(height: UiSpace.lg),
-                      ],
-                    ],
-                    _SectionTab(
-                      title: l10n.journeys_timelineTitle,
-                      accent: pal.accent,
-                    ),
-                    const SizedBox(height: UiSpace.xl),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: ui.border),
+            const SizedBox(height: 22),
+            if (progress != null)
+              JourneyHomeIntro(
+                skin: uiSkinIdFor(skinOfJourney(journey)),
+                day: progress.dayNumber,
+                total: journey.durationDays,
+                streak: progress.summary.current,
+                today: progress.today,
+                offline: ref.watch(journeyHomeOfflineProvider).value ?? false,
+                readOnly: !perms.isActive,
+              ),
+            if (progress != null) const SizedBox(height: UiSpace.lg),
+            DeadUploadsBanner(journeyId: journey.id),
+            UiEyebrow(_dateRange(context, journey).toUpperCase()),
+            const SizedBox(height: 4),
+            Semantics(
+              header: true,
+              child: Text(journey.title, style: UiText.h1(color: ui.ink)),
+            ),
+            const SizedBox(height: 22),
+            if (progress != null) ...[
+              if (skin != 'quiet') ...[
+                JourneyHomeSkinHeader(
+                  journey: journey,
+                  skin: skinOfJourney(journey),
+                  day: progress.dayNumber,
+                  streak: progress.summary.current,
+                  stats: index!.wrapped,
+                  now: ref.watch(journeysNowProvider),
+                  onTrophy: () => context.push(
+                    perms.isActive
+                        ? AppRoutes.share(journey.id)
+                        : JourneysPaths.wrapped(journey.id),
+                  ),
+                ),
+                const SizedBox(height: UiSpace.lg),
+              ],
+              if (skin == 'quiet' || skin == 'flexer') ...[
+                JourneyHomeChart(
+                  skin: skin,
+                  values: index!.metricSeries,
+                  accent: pal.accent,
+                  unit: journey.metricUnit ?? '',
+                  maskable: skin == 'quiet',
+                ),
+                const SizedBox(height: UiSpace.lg),
+              ],
+            ],
+            _SectionTab(title: l10n.journeys_timelineTitle, accent: pal.accent),
+            const SizedBox(height: UiSpace.xl),
           ];
           final timelineChildren = <Widget>[
-                    if (checkIns.hasError && progress == null)
-                      UiEmptyState(
-                        key: const ValueKey('journey-detail-checkins-error'),
-                        glyph: const OurneyIcon(name: 'error', size: 30),
-                        title: app.common_errorGeneric,
-                        actionLabel: app.common_retry,
-                        onAction: () =>
-                            ref.invalidate(myCheckInsProvider(journeyId)),
-                      )
-                    else if (progress == null)
-                      Padding(
-                        padding: const EdgeInsets.all(UiSpace.xl),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                            semanticsLabel: app.common_loading,
-                          ),
-                        ),
-                      )
-                    else if (!long)
-                      JourneyTimeline(
-                        skinId: uiSkinIdFor(skinOfJourney(journey)),
-                        days: shortWindow?.days ?? progress.timeline(),
-                        summary: shortWindow == null ? null : index!.summary,
-                        window: shortWindow,
-                        pal: pal,
-                        selfName: journey.coupleSelfName,
-                        partnerName: journey.couplePartnerName,
-                        showOfflineStamps: !ref
-                            .watch(appConfigProvider)
-                            .localOnly,
-                        onTapDay: (d) =>
-                            context.push(JourneysPaths.day(journey.id, d.date)),
-                      ),
+            if (checkIns.hasError && progress == null)
+              UiEmptyState(
+                key: const ValueKey('journey-detail-checkins-error'),
+                glyph: const OurneyIcon(name: 'error', size: 30),
+                title: app.common_errorGeneric,
+                actionLabel: app.common_retry,
+                onAction: () => ref.invalidate(myCheckInsProvider(journeyId)),
+              )
+            else if (progress == null)
+              Padding(
+                padding: const EdgeInsets.all(UiSpace.xl),
+                child: Center(
+                  child: UiSpinner(semanticsLabel: app.common_loading),
+                ),
+              )
+            else if (!long)
+              JourneyTimeline(
+                skinId: uiSkinIdFor(skinOfJourney(journey)),
+                days: shortWindow?.days ?? progress.timeline(),
+                summary: shortWindow == null ? null : index!.summary,
+                window: shortWindow,
+                pal: pal,
+                selfName: journey.coupleSelfName,
+                partnerName: journey.couplePartnerName,
+                showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
+                onTapDay: (d) =>
+                    context.push(JourneysPaths.day(journey.id, d.date)),
+              ),
           ];
           final bottomChildren = <Widget>[
-                    if (progress != null) ...[
-                      const SizedBox(height: UiSpace.xl),
-                      JourneyHomeMilestones(
-                        day: progress.dayNumber,
-                        total: journey.durationDays,
-                        accent: pal.accent,
-                        onAccent: pal.onAccent,
-                      ),
-                    ],
-                    const SizedBox(height: UiSpace.xl),
-                    JourneyHomeActions(
-                      onWrapped: perms.isActive
-                          ? null
-                          : () =>
-                                context.push(JourneysPaths.wrapped(journey.id)),
-                      onShare: () => _share(context, journey),
-                      onSquad: journey.kind == JourneyKind.group
-                          ? () => context.go(GroupsPaths.today(journey.id))
-                          : null,
-                    ),
-                    const SizedBox(height: UiSpace.lg),
-                    if (membership != null && perms.isActive)
-                      _PrivacySection(journey: journey, membership: membership),
+            if (progress != null) ...[
+              const SizedBox(height: UiSpace.xl),
+              JourneyHomeMilestones(
+                day: progress.dayNumber,
+                total: journey.durationDays,
+                accent: pal.accent,
+                onAccent: pal.onAccent,
+              ),
+            ],
+            const SizedBox(height: UiSpace.xl),
+            JourneyHomeActions(
+              onWrapped: perms.isActive
+                  ? null
+                  : () => context.push(JourneysPaths.wrapped(journey.id)),
+              onShare: () => _share(context, journey),
+              onSquad: journey.kind == JourneyKind.group
+                  ? () => context.go(GroupsPaths.today(journey.id))
+                  : null,
+            ),
+            const SizedBox(height: UiSpace.lg),
+            if (membership != null && perms.isActive)
+              _PrivacySection(journey: journey, membership: membership),
           ];
+          // The overlay text is clamped to 1.35x (below), so its height
+          // is bounded and this reserve keeps it off the content.
+          final double padBottom = showBottomOverlay
+              ? (stackOverlay ? 180 : (bigText ? 130 : 96))
+              : UiSpace.xxl;
           final home = DayTicker(
             child: ActiveJourneyScope(
               journeyId: journey.id,
@@ -371,9 +356,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       skin: skin,
                       journey: journey,
                       pal: pal,
-                      padBottom: showBottomOverlay
-                          ? (stackOverlay ? 170 : 96)
-                          : UiSpace.xxl,
+                      padBottom: padBottom,
                       top: topChildren,
                       bottom: bottomChildren,
                     )
@@ -381,9 +364,7 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       key: const ValueKey('journey-detail'),
                       background: pal.paper,
                       padTop: 0,
-                      padBottom: showBottomOverlay
-                          ? (stackOverlay ? 170 : 96)
-                          : UiSpace.xxl,
+                      padBottom: padBottom,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -411,78 +392,84 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
                       ),
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: gutter),
-                        child: LayoutBuilder(
-                          builder: (context, c) {
-                            final checkInButton = perms.canCheckIn
-                                ? UiButton(
-                                    key: const ValueKey('journey-checkin'),
-                                    label: progress?.checkedInToday ?? false
-                                        ? l10n.journeys_addMore
-                                        : l10n.journeys_checkInNow,
-                                    glyph: const OurneyIcon(
-                                      name: 'camera',
-                                      size: 20,
-                                      flat: true,
-                                    ),
-                                    accent: pal.accent,
-                                    onAccent: pal.onAccent,
-                                    expand: false,
-                                    onPressed: () =>
-                                        checkInNow(context, ref, journey.id),
-                                  )
-                                : null;
-                            final chipMaxWidth = checkInButton != null
-                                ? (c.maxWidth - UiSpace.md) * 0.45
-                                : c.maxWidth;
-                            if (stackOverlay) {
-                              return Column(
-                                key: const ValueKey('journey-overlay-stacked'),
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Align(
-                                    alignment: AlignmentDirectional.centerStart,
-                                    child: MissedDayOverlay(
-                                      skinId: skin,
-                                      day: missedDay,
-                                    ),
-                                  ),
-                                  const SizedBox(height: UiSpace.sm),
-                                  checkInButton!,
-                                ],
-                              );
-                            }
-                            return ConstrainedBox(
-                              constraints: const BoxConstraints(
-                                minHeight: UiSize.button + UiShadow.tiny,
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  if (showMissedChip)
-                                    ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: chipMaxWidth,
+                        child: MediaQuery.withClampedTextScaling(
+                          maxScaleFactor: 1.35,
+                          child: LayoutBuilder(
+                            builder: (context, c) {
+                              final checkInButton = perms.canCheckIn
+                                  ? UiButton(
+                                      key: const ValueKey('journey-checkin'),
+                                      label: progress?.checkedInToday ?? false
+                                          ? l10n.journeys_addMore
+                                          : l10n.journeys_checkInNow,
+                                      glyph: const OurneyIcon(
+                                        name: 'camera',
+                                        size: 20,
+                                        flat: true,
                                       ),
+                                      accent: pal.accent,
+                                      onAccent: pal.onAccent,
+                                      expand: false,
+                                      onPressed: () =>
+                                          checkInNow(context, ref, journey.id),
+                                    )
+                                  : null;
+                              final chipMaxWidth = checkInButton != null
+                                  ? (c.maxWidth - UiSpace.md) * 0.45
+                                  : c.maxWidth;
+                              if (stackOverlay) {
+                                return Column(
+                                  key: const ValueKey(
+                                    'journey-overlay-stacked',
+                                  ),
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Align(
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
                                       child: MissedDayOverlay(
                                         skinId: skin,
                                         day: missedDay,
                                       ),
                                     ),
-                                  if (showMissedChip && checkInButton != null)
-                                    const SizedBox(width: UiSpace.md),
-                                  if (checkInButton != null)
-                                    Expanded(
-                                      child: Align(
-                                        alignment:
-                                            AlignmentDirectional.centerEnd,
-                                        child: checkInButton,
+                                    const SizedBox(height: UiSpace.sm),
+                                    checkInButton!,
+                                  ],
+                                );
+                              }
+                              return ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  minHeight: UiSize.button + UiShadow.tiny,
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    if (showMissedChip)
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth: chipMaxWidth,
+                                        ),
+                                        child: MissedDayOverlay(
+                                          skinId: skin,
+                                          day: missedDay,
+                                        ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          },
+                                    if (showMissedChip && checkInButton != null)
+                                      const SizedBox(width: UiSpace.md),
+                                    if (checkInButton != null)
+                                      Expanded(
+                                        child: Align(
+                                          alignment:
+                                              AlignmentDirectional.centerEnd,
+                                          child: checkInButton,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -592,7 +579,8 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
               partnerName: journey.couplePartnerName,
               showOfflineStamps: !ref.watch(appConfigProvider).localOnly,
               onTapDay: openDay,
-              onOpenEarlier: () => _jumpTo(context, index, window.earlierMonthId),
+              onOpenEarlier: () =>
+                  _jumpTo(context, index, window.earlierMonthId),
             ),
           ),
         SliverToBoxAdapter(
@@ -693,12 +681,12 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
       final pos = _scroll.position;
       return v.clamp(pos.minScrollExtent, pos.maxScrollExtent);
     }
+
     // The reveal offset already clears the pinned bar; the settle step
     // below is only a safety net.
     final target = clamp(viewport.getOffsetToReveal(ro, 0).offset);
-    final text = JourneysL10n.of(
-      context,
-    ).journeys_jumpAnnounce(monthPlain(context, month));
+    final text = JourneysL10n.of(context)
+        .journeys_jumpAnnounce(monthPlain(context, month));
     final view = View.of(context);
     final dir = Directionality.of(context);
     if (MediaQuery.disableAnimationsOf(context)) {

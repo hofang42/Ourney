@@ -9,8 +9,14 @@
   /* --- 1. Bilingual Copy Dictionary (vi default + en) --- */
   const COPY = {
     vi: {
-      title: 'ourney · chụp một tấm. giữ một chuỗi.',
+      title: 'ourney · chụp một tấm. giữ một chuỗi. — nhật ký ảnh mỗi ngày',
       meta_desc: 'Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.',
+      og_title: 'ourney · chụp một tấm. giữ một chuỗi. đi cùng nhau.',
+      og_image: 'https://ourney.tech/assets/og/og-default.png',
+      og_image_alt: 'Ourney — Nhật ký ảnh mỗi ngày: chụp một tấm, giữ một chuỗi, đi cùng nhau trên iOS và Android',
+      og_url: 'https://ourney.tech/',
+      og_locale: 'vi_VN',
+      og_locale_alt: 'en_US',
       skip: 'Bỏ qua tới nội dung chính',
       nav_brand_aria: 'Ourney, về đầu trang',
       nav_main_aria: 'Điều hướng chính',
@@ -29,7 +35,7 @@
       ticket_kicker: 'VÉ KHỞI HÀNH · BETA',
       ticket_title: 'iOS & Android',
       ticket_sub: 'Bấm để giữ chỗ Ngày\u00A01',
-      hero_phone_alt: 'Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay',
+      hero_phone_alt: 'Màn chính Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay',
       hcc_t0: 'IELTS 7.5 · Ngày 21/30',
       hcc_b0_pre: 'chuỗi 20 ngày',
       hcc_b0: 'chuỗi 21 ngày',
@@ -71,7 +77,7 @@
       how_s1_alt: 'Bước 1/5: Chọn kiểu hành trình, thẻ Giảm cân',
       how_s2_t: 'mở nút giữa, chụp một tấm.',
       how_s2_d: 'Nút chụp nằm ngay giữa thanh dưới. Nhấn giữ để xoay vòng chọn hành trình chưa chụp hôm nay, bấm chụp rồi bấm Đăng — xong trong 3 chạm.',
-      how_s2_alt: 'Màn camera: Mỗi ngày một tấm ảnh, Đọc 10 trang ngày 24/30',
+      how_s2_alt: 'Màn camera trực tiếp: Đọc 10 trang · Ngày 24, chuỗi 8 ngày và nút chụp giữa thanh dưới',
       how_s3_t: 'giữ liền chuỗi, khoe khi muốn.',
       how_s3_d: 'Mỗi ngày nối thêm một mắt xích vào hành trình. Bất cứ lúc nào, xuất ngay thẻ Story 9:16 hoặc 4:5 có sẵn số liệu của bạn.',
       how_s3_alt: 'Thẻ chia sẻ Story của hành trình Chạy sáng: 4,6 km, ngày 21',
@@ -140,7 +146,10 @@
       beta_stub_kicker: 'NGÀY 01',
       beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
-      form_ok: 'Đã ghi nhận trên bản xem trước! Tụi mình sẽ mở cổng đăng ký beta chính thức cho iOS & Android thật sớm.',
+      form_ok: 'Đã ghi danh! Tụi mình vừa gửi email cảm ơn, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
+      form_sending: 'Đang gửi…',
+      form_fail: 'Chưa gửi được, bạn thử lại sau ít phút nhé.',
+      form_rate: 'Bạn gửi hơi nhiều lần rồi, đợi một lúc rồi thử lại nhé.',
       footer_tagline: 'chụp một tấm. giữ một chuỗi. đi cùng nhau.',
       footer_journeys: 'hành trình',
       footer_privacy: 'riêng tư',
@@ -154,8 +163,14 @@
       nf_cta: 'về trang chủ ourney'
     },
     en: {
-      title: 'ourney · snap one photo. keep one streak.',
+      title: 'ourney · snap one photo. keep one streak. — photo journal',
       meta_desc: 'Ourney is a daily photo journal for what you want to stick with: language study, running, weight loss, a trip, or a small habit — solo or with a close squad.',
+      og_title: 'ourney · snap one photo. keep one streak. go together.',
+      og_image: 'https://ourney.tech/assets/og/og-default-en.png',
+      og_image_alt: 'Ourney — Daily photo journal: snap one photo, keep one streak, go together on iOS and Android',
+      og_url: 'https://ourney.tech/?lang=en',
+      og_locale: 'en_US',
+      og_locale_alt: 'vi_VN',
       skip: 'Skip to main content',
       nav_brand_aria: 'Ourney, back to top',
       nav_main_aria: 'Main navigation',
@@ -216,7 +231,7 @@
       how_s1_alt: 'Step 1 of 5: Choose journey type, Weight Loss card',
       how_s2_t: 'tap center shutter, snap once.',
       how_s2_d: 'The shutter lives right at the center of the dock. Long-press to spin the journey wheel, snap your moment, and tap Post — done in 3 taps.',
-      how_s2_alt: 'Camera screen: One photo a day, Read 10 Pages Day 24/30',
+      how_s2_alt: 'Live camera screen: Read 10 Pages · Day 24, 8-day streak badge, and center dock shutter',
       how_s3_t: 'keep the chain, share on your terms.',
       how_s3_d: 'Every photo links another day onto your timeline. Whenever you feel proud, export a 9:16 Story or 4:5 card with the stats you choose.',
       how_s3_alt: 'Story share card for Morning Run: 4.6 km, Day 21',
@@ -285,7 +300,10 @@
       beta_stub_kicker: 'DAY 01',
       beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
-      form_ok: 'Noted in preview mode! Official iOS & Android beta waitlist storage opens very soon.',
+      form_ok: 'You’re on the list! We just sent you a thank-you email (check spam too). You’ll get the first beta invite.',
+      form_sending: 'Sending…',
+      form_fail: 'Couldn’t send that. Please try again in a few minutes.',
+      form_rate: 'Too many tries. Please wait a bit and try again.',
       footer_tagline: 'snap one photo. keep one streak. go together.',
       footer_journeys: 'journeys',
       footer_privacy: 'privacy',
@@ -371,20 +389,20 @@
       }
     },
     {
-      skin: 'couple', screen: null, no: '05',
+      skin: 'couple', screen: 'j-couple', no: '05',
       vi: {
         label: 'Tụi mình', kind: 'cặp đôi · Couple Rituals',
         title: 'mỗi ngày hai nửa ghép lại.',
         desc: 'Mỗi ngày là một khung ảnh đôi đặt cạnh nhau: người chụp trước nằm chờ ở góc ống kính để người kia chụp nốt nửa còn lại.',
         chips: ['Khung ảnh đôi', 'Ảnh góc PiP', 'Chỉ hai người'],
-        alt: 'Trang hành trình Cặp đôi Tụi mình trong app Ourney: 18 ngày bên nhau, khung ảnh đôi của Nam và Linh'
+        alt: 'Trang hành trình Cặp đôi tụi mình. trong app Ourney: 30 ngày nấu cho nhau, chuỗi 18 ngày và khung ảnh đôi của Nam và Linh'
       },
       en: {
         label: 'Just Us Two', kind: 'couple · Couple Rituals',
         title: 'two halves of the same day.',
         desc: 'Each day pairs both partners side by side: whoever snaps first appears as a corner picture-in-picture guide while the other completes the pair.',
         chips: ['Paired diptych', 'Partner PiP', '2-person vault'],
-        alt: 'Just Us Two couple journey screen in Ourney app: 18 days together, paired daily photos from Nam and Linh'
+        alt: 'Just Us Two couple journey screen in Ourney app: 18-day streak and paired daily photos from Nam and Linh'
       }
     },
     {
@@ -673,14 +691,14 @@
     if (jCouple) jCouple.setAttribute('aria-label', JOURNEYS[4][curLang].alt);
 
     const swapScreen = () => {
-      if (!jPic || !jImg || !jSrcD || !jCouple || !phoneJ) return;
+      if (!jPic || !jImg || !jSrcD || !phoneJ) return;
       if (item.screen) {
-        jCouple.hidden = true;
+        if (jCouple) jCouple.hidden = true;
         jPic.hidden = false;
         jImg.src = `/assets/screens/${item.screen}.webp`;
         jSrcD.srcset = `/assets/screens/${item.screen}-dark.webp`;
         jImg.alt = copy.alt;
-      } else {
+      } else if (jCouple) {
         jPic.hidden = true;
         jCouple.hidden = false;
       }
@@ -992,8 +1010,15 @@
     });
   };
   if (form && email) {
-    form.addEventListener('submit', (e) => {
+    // Endpoint of the waitlist-signup Edge Function, set in <meta name="ourney-waitlist-endpoint">.
+    const endpointMeta = document.querySelector('meta[name="ourney-waitlist-endpoint"]');
+    const endpoint = endpointMeta ? endpointMeta.getAttribute('content') || '' : '';
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const honeypot = form.querySelector('input[name="website"]');
+    let sending = false;
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (sending) return;
       const ok = Boolean(email.value.trim()) && email.checkValidity();
       email.setAttribute('aria-invalid', ok ? 'false' : 'true');
       if (!ok) {
@@ -1001,8 +1026,45 @@
         email.focus();
         return;
       }
-      announce('form_ok');
-      form.reset();
+      if (!/^https:\/\//.test(endpoint) || endpoint.includes('PROJECT_REF')) {
+        announce('form_fail');
+        return;
+      }
+      const platforms = Array.from(document.querySelectorAll('.plat-pill[aria-pressed="true"]'))
+        .map((b) => b.getAttribute('data-plat'))
+        .filter((p) => p === 'ios' || p === 'android');
+      sending = true;
+      if (submitBtn) submitBtn.disabled = true;
+      form.setAttribute('aria-busy', 'true');
+      announce('form_sending');
+      let key = 'form_fail';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.value.trim(),
+            lang: curLang,
+            platforms,
+            source: 'landing',
+            website: honeypot ? honeypot.value : '',
+          }),
+        });
+        if (res.ok) key = 'form_ok';
+        else if (res.status === 429) key = 'form_rate';
+        else if (res.status === 400) key = 'form_err';
+      } catch (_) {
+        key = 'form_fail';
+      }
+      sending = false;
+      if (submitBtn) submitBtn.disabled = false;
+      form.removeAttribute('aria-busy');
+      announce(key);
+      if (key === 'form_ok') form.reset();
+      else if (key === 'form_err') {
+        email.setAttribute('aria-invalid', 'true');
+        email.focus();
+      }
     });
   }
 
@@ -1033,7 +1095,24 @@
     root.dataset.lang = curLang;
     document.title = (is404 && dict.nf_title) ? dict.nf_title : dict.title;
     const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc && !is404) metaDesc.content = dict.meta_desc;
+    if (metaDesc) metaDesc.content = (is404 && dict.nf_lede) ? dict.nf_lede : dict.meta_desc;
+    if (!is404) {
+      const setAttr = (id, attr, val) => { const el = $(id); if (el && val) el.setAttribute(attr, val); };
+      setAttr('link-canonical', 'href', dict.og_url);
+      setAttr('meta-og-url', 'content', dict.og_url);
+      setAttr('meta-og-locale', 'content', dict.og_locale);
+      setAttr('meta-og-locale-alt', 'content', dict.og_locale_alt);
+      setAttr('meta-og-title', 'content', dict.og_title);
+      setAttr('meta-og-desc', 'content', dict.meta_desc);
+      setAttr('meta-og-image', 'content', dict.og_image);
+      setAttr('meta-og-image-secure', 'content', dict.og_image);
+      setAttr('meta-og-image-alt', 'content', dict.og_image_alt);
+      setAttr('meta-tw-url', 'content', dict.og_url);
+      setAttr('meta-tw-title', 'content', dict.og_title);
+      setAttr('meta-tw-desc', 'content', dict.meta_desc);
+      setAttr('meta-tw-image', 'content', dict.og_image);
+      setAttr('meta-tw-image-alt', 'content', dict.og_image_alt);
+    }
 
     document.querySelectorAll('[data-i18n]').forEach((el) => {
       const k = el.dataset.i18n;

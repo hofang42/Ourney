@@ -53,7 +53,7 @@ class _InviteAcceptState extends ConsumerState<InviteAcceptScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      CircularProgressIndicator(color: context.ui.ink),
+                      UiSpinner(color: context.ui.ink),
                       const SizedBox(height: UiSpace.lg),
                       Text(
                         l10n.social_inviteAccepting,

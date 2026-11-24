@@ -61,7 +61,7 @@
   "streak_semantics": "Streak of {count, plural, =1{{count} day} other{{count} days}}",
   "streak_atRisk": "Streak at risk",
   "needsServer_title": "Server needed",
-  "needsServer_message": "This build runs in on-device mode. Solo journeys work as usual; groups need a server.",
+  "needsServer_message": "This build runs in on-device mode. Solo journeys work as usual; squads need a server.",
   "placeholder_comingSoon": "Coming soon",
   "reminderBanner_now": "now",
   "@reminderBanner_now": {

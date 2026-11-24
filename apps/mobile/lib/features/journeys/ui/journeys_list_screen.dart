@@ -303,33 +303,39 @@ class _HubNotices extends ConsumerWidget {
               onPressed: () => context.push(AppRoutes.journeyNewResume),
               semanticLabel:
                   '${l10n.journeys_hubResumeTitle}, ${l10n.journeys_hubResumeStep(resume)}',
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.journeys_hubResumeTitle,
-                          style: UiText.body(
-                            size: 15,
-                            weight: FontWeight.w800,
-                            height: 1.35,
-                            color: ui.ink,
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.journeys_hubResumeTitle,
+                            style: UiText.body(
+                              size: 15,
+                              weight: FontWeight.w800,
+                              height: 1.35,
+                              color: ui.ink,
+                            ),
                           ),
-                        ),
-                        Text(
-                          l10n.journeys_hubResumeStep(resume),
-                          style: UiText.muted(
-                            color: ui.inkMuted,
-                            size: 13,
-                          ).copyWith(height: 1.4),
-                        ),
-                      ],
+                          Text(
+                            l10n.journeys_hubResumeStep(resume),
+                            style: UiText.muted(
+                              color: ui.inkMuted,
+                              size: 13,
+                            ).copyWith(height: 1.4),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const OurneyIcon(name: 'chevron-right', size: 20, flat: true),
-                ],
+                    const OurneyIcon(
+                      name: 'chevron-right',
+                      size: 20,
+                      flat: true,
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -703,39 +709,41 @@ class _NewJourneyCard extends StatelessWidget {
       onPressed: onTap,
       semanticLabel:
           '${l10n.journeys_hubNewTitle}, ${l10n.journeys_hubNewHint}',
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: UiTypePastel.english,
-              shape: BoxShape.circle,
-              border: Border.all(color: ui.outline, width: 2),
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: UiTypePastel.english,
+                shape: BoxShape.circle,
+                border: Border.all(color: ui.outline, width: 2),
+              ),
+              child: const OurneyIcon(name: 'send', size: 32, active: true),
             ),
-            child: const OurneyIcon(name: 'send', size: 32, active: true),
-          ),
-          const SizedBox(width: UiSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.journeys_hubNewTitle,
-                  style: UiText.h2(color: ui.ink, size: 18),
-                ),
-                Text(
-                  l10n.journeys_hubNewHint,
-                  style: UiText.muted(
-                    color: ui.inkMuted,
-                    size: 13,
-                  ).copyWith(height: 1.4),
-                ),
-              ],
+            const SizedBox(width: UiSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.journeys_hubNewTitle,
+                    style: UiText.h2(color: ui.ink, size: 18),
+                  ),
+                  Text(
+                    l10n.journeys_hubNewHint,
+                    style: UiText.muted(
+                      color: ui.inkMuted,
+                      size: 13,
+                    ).copyWith(height: 1.4),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

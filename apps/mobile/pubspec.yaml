@@ -96,6 +96,7 @@ flutter:
   generate: true
 
   assets:
+    - assets/app_icons/
     - assets/design_personas/
 
   fonts:

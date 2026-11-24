@@ -122,7 +122,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get needsServer_message =>
-      'This build runs in on-device mode. Solo journeys work as usual; groups need a server.';
+      'This build runs in on-device mode. Solo journeys work as usual; squads need a server.';
 
   @override
   String get placeholder_comingSoon => 'Coming soon';

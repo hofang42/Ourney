@@ -118,6 +118,35 @@ void main() {
       expect(find.byKey(const ValueKey('journey-detail')), findsOneWidget);
     });
 
+    testWidgets('journey card: whole card is a labelled button >= 48dp', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      final j = testJourney();
+      final h = await pumpJourneys(
+        tester,
+        journeys: FakeJourneyRepository(
+          journeys: [j],
+          memberships: {j.id: testMembership(j)},
+        ),
+      );
+      final card = find.byKey(const ValueKey('journey-card-j1'));
+      final button = find.descendant(
+        of: card,
+        matching: find.byType(UiPressable),
+      );
+      final data = tester.getSemantics(button.first).getSemanticsData();
+      expect(data.flagsCollection.isButton, isTrue);
+      expect(data.label, contains(j.title));
+      expect(tester.getSize(card).height, greaterThanOrEqualTo(48));
+      // Tap the top-right corner, nowhere near the title text.
+      final r = tester.getRect(card);
+      await tester.tapAt(Offset(r.right - 6, r.top + 6));
+      await tester.pumpAndSettle();
+      expect(h.location, AppRoutes.journey('j1'));
+      handle.dispose();
+    });
+
     testWidgets(
       '/journeys?segment=shared opens the Hub on the Shared segment and re-selects after switching to Active (DE-18)',
       (tester) async {

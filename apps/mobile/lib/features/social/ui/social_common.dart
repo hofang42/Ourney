@@ -305,7 +305,7 @@ class SocialLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-    child: CircularProgressIndicator(
+    child: UiSpinner(
       color: context.ui.ink,
       semanticsLabel: AppLocalizations.of(context).common_loading,
     ),

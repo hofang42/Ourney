@@ -114,9 +114,7 @@ class _ShareCardScreenState extends ConsumerState<ShareCardScreen> {
               child: UiFillScroll(
                 child: journeyAsync.isLoading
                     ? Center(
-                        child: CircularProgressIndicator(
-                          semanticsLabel: app.common_loading,
-                        ),
+                        child: UiSpinner(semanticsLabel: app.common_loading),
                       )
                     : UiEmptyState(
                         glyph: const OurneyIcon(name: 'search', size: 30),

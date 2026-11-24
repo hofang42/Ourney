@@ -628,6 +628,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           accent: style?.accent,
           onAccent: style?.onAccent,
           onPressed: ready ? () => _capture(journey) : null,
+          // Dim only while the camera itself is not ready, not while a
+          // capture is in flight.
+          dimmed: _phase != _Phase.ready || journey == null,
         ),
       ),
     );
@@ -849,7 +852,7 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
           label: l10n.camera_starting,
           child: const SizedBox.square(
             dimension: 28,
-            child: CircularProgressIndicator(strokeWidth: 3),
+            child: UiSpinner(strokeWidth: 3),
           ),
         ),
       ),
