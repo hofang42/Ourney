@@ -54,7 +54,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_kindSolo => 'Solo';
 
   @override
-  String get journeys_kindGroup => 'Group';
+  String get journeys_kindGroup => 'Squad';
 
   @override
   String get journeys_loadError => 'Couldn\'t load journeys.';
@@ -104,11 +104,11 @@ class JourneysL10nEn extends JourneysL10n {
   }
 
   @override
-  String get journeys_fieldKind => 'Solo or with a group?';
+  String get journeys_fieldKind => 'Solo or with a squad?';
 
   @override
   String get journeys_groupNeedsServer =>
-      'Group journeys need a server. This build runs on this device only.';
+      'Squad journeys need a server. This build runs on this device only.';
 
   @override
   String get journeys_fieldDuration => 'Duration';
@@ -158,7 +158,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_visibilityLink => 'Anyone with the link';
 
   @override
-  String get journeys_visibilityGroup => 'Group members';
+  String get journeys_visibilityGroup => 'Squad members';
 
   @override
   String get journeys_linkNeedsServer => 'Share links need a server.';
@@ -195,7 +195,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_errorNotAlone =>
-      'Other members are still in the group, so it can\'t be deleted. You can end the journey instead.';
+      'Other members are still in the squad, so it can\'t be deleted. You can end the journey instead.';
 
   @override
   String get journeys_errorForbidden => 'Only the journey owner can do this.';
@@ -234,7 +234,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_share => 'Share';
 
   @override
-  String get journeys_openGroup => 'Open group';
+  String get journeys_openGroup => 'Open squad';
 
   @override
   String get journeys_endJourney => 'End journey';
@@ -441,7 +441,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_tagWeightLoss => 'See small changes add up.';
 
   @override
-  String get journeys_tagEnglish => 'Keep the group moving.';
+  String get journeys_tagEnglish => 'Keep the squad moving.';
 
   @override
   String get journeys_tagTravel => 'Save each day away.';
@@ -459,7 +459,7 @@ class JourneysL10nEn extends JourneysL10n {
   String get journeys_modeSoloOnly => 'Solo only';
 
   @override
-  String get journeys_modeSoloGroup => 'Solo · Group';
+  String get journeys_modeSoloGroup => 'Solo · Squad';
 
   @override
   String get journeys_modeCoupleOnly => 'Couple only';
@@ -1285,7 +1285,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_edit_layoutOwnerOnly =>
-      'The group owner picks the layout for everyone.';
+      'The squad owner picks the layout for everyone.';
 
   @override
   String get journeys_edit_color => 'Colour';
@@ -1415,7 +1415,7 @@ class JourneysL10nEn extends JourneysL10n {
 
   @override
   String get journeys_edit_membersOnlyHint =>
-      'group journeys have no public link';
+      'squad journeys have no public link';
 
   @override
   String get journeys_edit_quietLock => 'Private';

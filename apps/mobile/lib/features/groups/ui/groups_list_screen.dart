@@ -45,14 +45,16 @@ class _GroupsListScreenState extends ConsumerState<GroupsListScreen> {
     Widget frame(Widget body, {bool scroll = true}) => UiScaffold(
       key: const ValueKey('groups-list'),
       scroll: scroll,
+      padTop: 0,
       padBottom: UiSpace.xl,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Same top bar as Journeys, Activity and Profile: title only,
+          // default size, no eyebrow.
           UiTopBar(
-            eyebrow: l10n.groups_eyebrow,
+            key: const ValueKey('squad-top-bar'),
             title: l10n.groups_title,
-            titleSize: 30,
           ),
           const SizedBox(height: UiSpace.lg),
           if (scroll) body else Expanded(child: UiFillScroll(child: body)),

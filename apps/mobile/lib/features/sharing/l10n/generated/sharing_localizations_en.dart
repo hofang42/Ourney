@@ -163,7 +163,7 @@ class SharingL10nEn extends SharingL10n {
 
   @override
   String get sharing_removeMyPhotosConfirm =>
-      'Your photos won\'t show to anyone outside the group.';
+      'Your photos won\'t show to anyone outside the squad.';
 
   @override
   String get sharing_warnTitle => 'Anyone with the link can see this journey';
@@ -211,14 +211,14 @@ class SharingL10nEn extends SharingL10n {
   String get sharing_consentWithdrawn => 'Withdrawn';
 
   @override
-  String get sharing_askGroup => 'Ask the group first';
+  String get sharing_askGroup => 'Ask the squad first';
 
   @override
   String get sharing_askGroupHint =>
-      'A group journey asks everyone before it is shared outside.';
+      'A squad journey asks everyone before it is shared outside.';
 
   @override
-  String get sharing_askedSnack => 'Request sent to the group';
+  String get sharing_askedSnack => 'Request sent to the squad';
 
   @override
   String get sharing_errorNotFriend => 'You can only share with friends';

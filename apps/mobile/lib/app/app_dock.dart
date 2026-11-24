@@ -107,42 +107,39 @@ class _AppDockState extends ConsumerState<AppDock> {
           active: widget.currentIndex == index,
           onPressed: () => widget.onSelect(index),
         );
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.3,
-      child: KeyedSubtree(
-        key: _dockKey,
-        child: UiDock(
-          camera: widget.shutter != null,
-          center: widget.shutter,
-          accent: style?.accent,
-          onAccent: style?.onAccent,
-          snapLabel: l10n.nav_capture,
-          snapKey: const ValueKey('dock-snap-pill'),
-          onSnap: () => widget.onSelect(AppDock.captureIndex),
-          onShutterLongPress: _openWheel,
-          left: item(
-            'dock-journeys',
-            'journeys',
-            l10n.nav_journeys,
-            AppDock.journeysIndex,
+    return KeyedSubtree(
+      key: _dockKey,
+      child: UiDock(
+        camera: widget.shutter != null,
+        center: widget.shutter,
+        accent: style?.accent,
+        onAccent: style?.onAccent,
+        snapLabel: l10n.nav_capture,
+        snapKey: const ValueKey('dock-snap-pill'),
+        onSnap: () => widget.onSelect(AppDock.captureIndex),
+        onShutterLongPress: _openWheel,
+        left: item(
+          'dock-journeys',
+          'journeys',
+          l10n.nav_journeys,
+          AppDock.journeysIndex,
+        ),
+        extraLeft: [
+          item('dock-groups', 'squad', l10n.nav_groups, AppDock.groupsIndex),
+        ],
+        extraRight: [
+          item(
+            'dock-activity',
+            'activity',
+            l10n.nav_activity,
+            AppDock.activityIndex,
           ),
-          extraLeft: [
-            item('dock-groups', 'squad', l10n.nav_groups, AppDock.groupsIndex),
-          ],
-          extraRight: [
-            item(
-              'dock-activity',
-              'activity',
-              l10n.nav_activity,
-              AppDock.activityIndex,
-            ),
-          ],
-          right: item(
-            'dock-profile',
-            'profile',
-            l10n.nav_profileTab,
-            AppDock.profileIndex,
-          ),
+        ],
+        right: item(
+          'dock-profile',
+          'profile',
+          l10n.nav_profileTab,
+          AppDock.profileIndex,
         ),
       ),
     );
