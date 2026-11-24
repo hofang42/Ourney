@@ -39,6 +39,15 @@ begin
   perform tests.as_user(a); perform public.send_friend_request(b);
   perform tests.as_user(b); perform public.respond_friend_request(a, true);
 end $$;
+create function tests.touch_storage_objects(p_bucket text, p_names text[]) returns int language plpgsql as $$
+declare
+  n int;
+begin
+  update storage.objects set updated_at = now()
+   where bucket_id = p_bucket and name = any(p_names);
+  get diagnostics n = row_count;
+  return n;
+end $$;
 grant execute on all functions in schema tests to authenticated;
 
 insert into auth.users (id, email)
@@ -69,15 +78,13 @@ do $$ begin
     ('messages', format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2)));
 end $$;
 select is(
-  (with u as (
-     update storage.objects set updated_at = now()
-      where bucket_id = 'messages'
-        and name in (
-          format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
-          format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
-        )
-     returning 1
-   ) select count(*)::int from u),
+  tests.touch_storage_objects(
+    'messages',
+    array[
+      format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(1)),
+      format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
+    ]
+  ),
   2,
   'FS-01: sender pre-uploads and updates (x-upsert) chat photos before send_message'
 );
@@ -452,23 +459,23 @@ do $$ begin
   perform tests.as_user(tests.u(3));
   perform public.join_by_code(tests.code(31));
   perform tests.as_postgres();
-  -- Simulate check-ins from 10 and 11 days ago on both journeys, then end both journeys
+  -- Simulate check-ins from 10 and 11 days ago on both journeys (noon-anchored UTC so +1h/+2h never cross midnight), then end both journeys
   insert into public.check_ins (id, journey_id, user_id, local_date, captured_at, photo_path, thumb_path, partner_photo_path) values
-    (tests.c(301), tests.j(30), tests.u(1), current_date - 11, now() - interval '11 days',
+    (tests.c(301), tests.j(30), tests.u(1), current_date - 11, ((current_date - 11)::timestamp + interval '12 hours') at time zone 'UTC',
      format('checkins/%s/%s/%s.jpg', tests.j(30), tests.u(1), tests.c(301)),
      format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(301)), null),
-    (tests.c(302), tests.j(30), tests.u(1), current_date - 10, now() - interval '10 days' + interval '2 hours',
+    (tests.c(302), tests.j(30), tests.u(1), current_date - 10, ((current_date - 10)::timestamp + interval '14 hours') at time zone 'UTC',
      format('checkins/%s/%s/%s.jpg', tests.j(30), tests.u(1), tests.c(302)),
      format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(302)), null),
     -- Earlier captured_at on the same day (current_date - 10) but inserted later with higher UUID
-    (tests.c(303), tests.j(30), tests.u(1), current_date - 10, now() - interval '10 days' + interval '1 hour',
+    (tests.c(303), tests.j(30), tests.u(1), current_date - 10, ((current_date - 10)::timestamp + interval '13 hours') at time zone 'UTC',
      format('checkins/%s/%s/%s.jpg', tests.j(30), tests.u(1), tests.c(303)),
      format('checkins/%s/%s/%s_t.jpg', tests.j(30), tests.u(1), tests.c(303)), null),
-    (tests.c(311), tests.j(31), tests.u(1), current_date - 11, now() - interval '11 days',
+    (tests.c(311), tests.j(31), tests.u(1), current_date - 11, ((current_date - 11)::timestamp + interval '12 hours') at time zone 'UTC',
      format('checkins/%s/%s/%s.jpg', tests.j(31), tests.u(1), tests.c(311)),
      format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(311)),
      format('checkins/%s/%s/%s_p.jpg', tests.j(31), tests.u(1), tests.c(311))),
-    (tests.c(312), tests.j(31), tests.u(1), current_date - 10, now() - interval '10 days',
+    (tests.c(312), tests.j(31), tests.u(1), current_date - 10, ((current_date - 10)::timestamp + interval '12 hours') at time zone 'UTC',
      format('checkins/%s/%s/%s.jpg', tests.j(31), tests.u(1), tests.c(312)),
      format('checkins/%s/%s/%s_t.jpg', tests.j(31), tests.u(1), tests.c(312)), null);
   update public.memberships set joined_at = now() - interval '20 days'

@@ -244,7 +244,22 @@ export async function handle(req: Request): Promise<Response> {
   // FS-08: deleteUser triggers profiles_before_delete -> purge_account_data(userId) inside the
   // same DB transaction, locking journeys FOR UPDATE and queueing only the paths of journeys and
   // conversations that truly die with the account.
-  const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  let { error: deleteError } = await admin.auth.admin.deleteUser(userId);
+  if (deleteError) {
+    // Retry once after a short delay in case a simultaneous co-member deleteUser hit a transient
+    // lock/deadlock rollback during group ownership handover.
+    await new Promise((r) => setTimeout(r, 150));
+    try {
+      const check = await admin.auth.admin.getUserById(userId);
+      if (!check.error && check.data?.user) {
+        ({ error: deleteError } = await admin.auth.admin.deleteUser(userId));
+      } else if (check.error?.status === 404 || check.error?.code === "user_not_found") {
+        deleteError = null;
+      }
+    } catch {
+      // Keep original deleteError if lookup threw.
+    }
+  }
   if (deleteError) {
     console.error("deleteUser failed", deleteError.message);
     return json({ error: "delete_failed" }, 500);

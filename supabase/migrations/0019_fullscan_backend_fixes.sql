@@ -254,16 +254,15 @@ begin
    where journey_id = p_journey and inviter_id = p_user and status = 'pending';
 
   if was_owner then
-    -- Lock candidate next_owner profile FOR KEY SHARE SKIP LOCKED so concurrent RPCs holding
-    -- FOR NO KEY UPDATE on profiles never block ownership transfer, and a co-member whose account
-    -- is simultaneously mid-DELETE is skipped rather than deadlocking.
+    -- Lock candidate next_owner profile FOR KEY SHARE so concurrent RPCs holding
+    -- FOR NO KEY UPDATE on profiles never block ownership transfer.
     select m.user_id into next_owner
       from public.memberships m
       join public.profiles p on p.id = m.user_id and p.deleted_at is null
      where m.journey_id = p_journey and m.status = 'active' and m.deleted_at is null
      order by m.joined_at, m.user_id
      limit 1
-     for key share of p skip locked;
+     for key share of p;
     if next_owner is null then
       update public.journeys set status = 'archived' where id = p_journey;
     else
@@ -837,7 +836,7 @@ begin
     raise exception 'not_found' using errcode = 'P0001';
   end if;
 
-  -- FS-09: primary key, ownership, timestamp, and media paths of a check-in are immutable on UPDATE.
+  -- FS-09: primary key, ownership, timestamp, library flag, and media paths of a check-in are immutable on UPDATE.
   if tg_op = 'UPDATE' and (
        new.id <> old.id
     or new.journey_id <> old.journey_id
@@ -846,19 +845,20 @@ begin
     or new.photo_path <> old.photo_path
     or new.thumb_path <> old.thumb_path
     or new.partner_photo_path is distinct from old.partner_photo_path
+    or new.from_library is distinct from old.from_library
   ) then
     raise exception 'immutable_column' using errcode = '23514';
   end if;
 
   new.local_date := public.local_date(new.captured_at, j.timezone);
   new.metric_value := null;
-  -- FS-22: finished retold journeys (duration_days is not null) allow historical dates in
-  -- [start_date, start_date + duration_days - 1]; active continuing imported journeys
-  -- (p_continues = true, status = 'active', duration_days is null) allow initial library
+  -- FS-22: finished retold journeys (status in ('ended', 'archived') and duration_days is not null)
+  -- allow historical dates in [start_date, start_date + duration_days - 1]; active continuing imported
+  -- journeys (p_continues = true, status = 'active', duration_days is null) allow initial library
   -- photos (from_library = true) within the declared pre-creation range [start_date, import_end_date],
   -- while ongoing days (local_date > import_end_date or not from_library) enforce the 3-day window.
   v_imported := j.origin = 'imported' and new.user_id = j.owner_id and (
-    j.duration_days is not null
+    (j.status in ('ended', 'archived') and j.duration_days is not null)
     or (
       j.status = 'active'
       and new.from_library
@@ -888,7 +888,7 @@ begin
       end if;
       if (tg_op = 'INSERT' or new.captured_at is distinct from old.captured_at)
          and (new.local_date < public.local_date(now(), j.timezone) - 3
-              or new.local_date < j.start_date) then
+              or (j.origin = 'imported' and new.local_date < j.start_date)) then
         raise exception 'invalid_captured_at' using errcode = '22008';
       end if;
       if j.duration_days is not null and new.local_date > j.start_date + j.duration_days - 1 then
@@ -909,6 +909,8 @@ begin
 end;
 $$;
 
+revoke update (duration_days) on public.journeys from authenticated;
+
 create or replace function private.check_in_metrics_before_write() returns trigger
 language plpgsql set search_path = ''
 as $$
@@ -916,7 +918,8 @@ declare
   c record;
 begin
   select ci.journey_id, ci.user_id, ci.deleted_at, j.status, j.deleted_at as journey_deleted,
-         (j.origin = 'imported' and j.owner_id = ci.user_id and j.duration_days is not null) as imported
+         (j.origin = 'imported' and j.owner_id = ci.user_id
+          and j.status in ('ended', 'archived') and j.duration_days is not null) as imported
     into c
     from public.check_ins ci join public.journeys j on j.id = ci.journey_id
    where ci.id = new.checkin_id;
@@ -1794,13 +1797,13 @@ as $$
 $$;
 
 update public.journeys
+   set dna = null
+ where dna is not null and not public.journey_dna_valid(dna);
+
+update public.journeys
    set title = case when btrim(title) = '' then 'Journey' else title end,
        emoji = case when btrim(emoji) = '' then '✨' else emoji end
  where btrim(title) = '' or btrim(emoji) = '';
-
-update public.journeys
-   set dna = null
- where dna is not null and not public.journey_dna_valid(dna);
 
 update public.profiles
    set display_name = username

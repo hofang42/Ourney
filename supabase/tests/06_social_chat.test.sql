@@ -39,6 +39,15 @@ begin
   perform tests.as_user(a); perform public.send_friend_request(b);
   perform tests.as_user(b); perform public.respond_friend_request(a, true);
 end $$;
+create function tests.touch_storage_object(p_bucket text, p_name text) returns int language plpgsql as $$
+declare
+  n int;
+begin
+  update storage.objects set updated_at = now()
+   where bucket_id = p_bucket and name = p_name;
+  get diagnostics n = row_count;
+  return n;
+end $$;
 grant execute on all functions in schema tests to authenticated;
 
 insert into auth.users (id, email) select tests.u(n), format('ch%s@example.test', n) from generate_series(1, 6) n;
@@ -137,12 +146,10 @@ select lives_ok(
          format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))),
   'FS-01: authenticated sender inserts chat photo into messages bucket (messages_insert)');
 select is(
-  (with u as (
-     update storage.objects set updated_at = now()
-      where bucket_id = 'messages'
-        and name = format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
-     returning 1
-   ) select count(*)::int from u),
+  tests.touch_storage_object(
+    'messages',
+    format('messages/%s/%s/%s.jpg', tests.conv(tests.j(1), tests.u(1), tests.u(2)), tests.u(2), tests.m(2))
+  ),
   1,
   'FS-01: authenticated sender updates existing chat photo on x-upsert retry (messages_update)');
 do $$ begin perform tests.as_postgres(); end $$;
