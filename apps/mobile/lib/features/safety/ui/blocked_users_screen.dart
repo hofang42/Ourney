@@ -50,7 +50,7 @@ class _BlockedList extends ConsumerWidget {
       loading: () => Padding(
         padding: const EdgeInsets.all(UiSpace.xxl),
         child: Center(
-          child: CircularProgressIndicator(
+          child: UiSpinner(
             semanticsLabel: AppLocalizations.of(context).common_loading,
           ),
         ),

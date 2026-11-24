@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -263,33 +265,39 @@ class _HubNotices extends ConsumerWidget {
               onPressed: () => context.push(AppRoutes.journeyNewResume),
               semanticLabel:
                   '${l10n.journeys_hubResumeTitle}, ${l10n.journeys_hubResumeStep(resume)}',
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          l10n.journeys_hubResumeTitle,
-                          style: UiText.body(
-                            size: 15,
-                            weight: FontWeight.w800,
-                            height: 1.35,
-                            color: ui.ink,
+              child: ExcludeSemantics(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.journeys_hubResumeTitle,
+                            style: UiText.body(
+                              size: 15,
+                              weight: FontWeight.w800,
+                              height: 1.35,
+                              color: ui.ink,
+                            ),
                           ),
-                        ),
-                        Text(
-                          l10n.journeys_hubResumeStep(resume),
-                          style: UiText.muted(
-                            color: ui.inkMuted,
-                            size: 13,
-                          ).copyWith(height: 1.4),
-                        ),
-                      ],
+                          Text(
+                            l10n.journeys_hubResumeStep(resume),
+                            style: UiText.muted(
+                              color: ui.inkMuted,
+                              size: 13,
+                            ).copyWith(height: 1.4),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const OurneyIcon(name: 'chevron-right', size: 20, flat: true),
-                ],
+                    const OurneyIcon(
+                      name: 'chevron-right',
+                      size: 20,
+                      flat: true,
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
@@ -338,7 +346,7 @@ class _HubSkeleton extends StatelessWidget {
   }
 }
 
-/// Figma empty Hub state: camera sticker, "chưa có hành trình nào.", a
+/// Figma empty Hub state: fanned Polaroid trio, "chưa có hành trình nào.", a
 /// one-line promise and the start button.
 class _DayZero extends StatelessWidget {
   const _DayZero({required this.onStart});
@@ -357,16 +365,57 @@ class _DayZero extends StatelessWidget {
         const _HubNotices(),
         const SizedBox(height: UiSpace.xxl),
         Center(
-          child: Container(
-            width: 88,
-            height: 88,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: UiTypePastel.weightLoss,
-              shape: BoxShape.circle,
-              border: Border.all(color: ui.outline, width: 2),
+          child: ExcludeSemantics(
+            child: SizedBox(
+              key: const ValueKey('day-zero-polaroid-trio'),
+              width: 196,
+              height: 100,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Transform.translate(
+                    offset: const Offset(-46, 6),
+                    child: Transform.rotate(
+                      angle: -9 * math.pi / 180,
+                      child: _DayZeroPolaroid(
+                        photoKey: 'day-zero-photo-0',
+                        asset: 'assets/samples/morning_run/01.webp',
+                        fallbackColor: UiTypePastel.workout,
+                        fallbackIcon: 'fitness',
+                        ui: ui,
+                      ),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(46, 6),
+                    child: Transform.rotate(
+                      angle: 9 * math.pi / 180,
+                      child: _DayZeroPolaroid(
+                        photoKey: 'day-zero-photo-2',
+                        asset: 'assets/samples/couple_rituals/01.webp',
+                        fallbackColor: UiTypePastel.couple,
+                        fallbackIcon: 'heart',
+                        ui: ui,
+                      ),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(0, -2),
+                    child: Transform.rotate(
+                      angle: 2 * math.pi / 180,
+                      child: _DayZeroPolaroid(
+                        photoKey: 'day-zero-photo-1',
+                        asset: 'assets/samples/ielts_study/01.webp',
+                        fallbackColor: UiTypePastel.english,
+                        fallbackIcon: 'book',
+                        ui: ui,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: const OurneyIcon(name: 'camera', size: 40, active: true),
           ),
         ),
         const SizedBox(height: UiSpace.lg),
@@ -391,6 +440,64 @@ class _DayZero extends StatelessWidget {
           onPressed: onStart,
         ),
       ],
+    );
+  }
+}
+
+class _DayZeroPolaroid extends StatelessWidget {
+  const _DayZeroPolaroid({
+    required this.photoKey,
+    required this.asset,
+    required this.fallbackColor,
+    required this.fallbackIcon,
+    required this.ui,
+  });
+
+  final String photoKey;
+  final String asset;
+  final Color fallbackColor;
+  final String fallbackIcon;
+  final OurneyUi ui;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 84,
+      padding: const EdgeInsets.fromLTRB(5, 5, 5, 13),
+      decoration: BoxDecoration(
+        color: ui.fillSelected,
+        border: Border.all(color: ui.outline, width: 2),
+        boxShadow: ui.hardShadow(),
+      ),
+      child: ColoredBox(
+        color: fallbackColor,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              asset,
+              key: ValueKey(photoKey),
+              fit: BoxFit.cover,
+              cacheWidth: 186,
+              excludeFromSemantics: true,
+              errorBuilder: (context, error, stackTrace) => Center(
+                child: OurneyIcon(
+                  name: fallbackIcon,
+                  size: 26,
+                  active: true,
+                  inkColor: UiFlowColors.onPastel,
+                  dieCut: UiFlowColors.paper,
+                ),
+              ),
+            ),
+            if (ui.isDark)
+              const IgnorePointer(
+                child: ColoredBox(color: Color(0x22000000)),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -663,39 +770,41 @@ class _NewJourneyCard extends StatelessWidget {
       onPressed: onTap,
       semanticLabel:
           '${l10n.journeys_hubNewTitle}, ${l10n.journeys_hubNewHint}',
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: UiTypePastel.english,
-              shape: BoxShape.circle,
-              border: Border.all(color: ui.outline, width: 2),
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: UiTypePastel.english,
+                shape: BoxShape.circle,
+                border: Border.all(color: ui.outline, width: 2),
+              ),
+              child: const OurneyIcon(name: 'send', size: 32, active: true),
             ),
-            child: const OurneyIcon(name: 'send', size: 32, active: true),
-          ),
-          const SizedBox(width: UiSpace.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.journeys_hubNewTitle,
-                  style: UiText.h2(color: ui.ink, size: 18),
-                ),
-                Text(
-                  l10n.journeys_hubNewHint,
-                  style: UiText.muted(
-                    color: ui.inkMuted,
-                    size: 13,
-                  ).copyWith(height: 1.4),
-                ),
-              ],
+            const SizedBox(width: UiSpace.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.journeys_hubNewTitle,
+                    style: UiText.h2(color: ui.ink, size: 18),
+                  ),
+                  Text(
+                    l10n.journeys_hubNewHint,
+                    style: UiText.muted(
+                      color: ui.inkMuted,
+                      size: 13,
+                    ).copyWith(height: 1.4),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

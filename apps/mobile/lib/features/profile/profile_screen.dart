@@ -190,7 +190,7 @@ class _ProfileHeader extends ConsumerWidget {
         child: const SizedBox(
           key: ValueKey('profile-loading'),
           height: 120,
-          child: Center(child: CircularProgressIndicator()),
+          child: Center(child: UiSpinner()),
         ),
       ),
     };

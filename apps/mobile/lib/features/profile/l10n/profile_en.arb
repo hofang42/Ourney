@@ -94,6 +94,24 @@
   "profile_settings_themeLabel": "Theme",
   "profile_settings_langVi": "Việt",
   "profile_settings_langEn": "English",
+  "profile_settings_appIcon": "App icon",
+  "profile_settings_appIconNote": "Changes your home-screen icon. On some Android launchers, the app may briefly close or refresh when switching.",
+  "profile_settings_iconDefault": "Default",
+  "profile_settings_iconYellow": "Yellow",
+  "profile_settings_iconGreen": "Green",
+  "profile_settings_iconCoral": "Coral",
+  "profile_settings_iconViolet": "Violet",
+  "profile_settings_iconSky": "Sky",
+  "profile_settings_iconDark": "Dark",
+  "profile_settings_iconMinimal": "Minimal",
+  "profile_settings_iconSemantic": "App icon {name}",
+  "@profile_settings_iconSemantic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "profile_settings_secPrivacy": "privacy & safety",
   "profile_settings_hideKg": "Hide kg when sharing",
   "profile_settings_blurPhotos": "Blur photos when sharing",

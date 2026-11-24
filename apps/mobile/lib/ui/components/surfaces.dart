@@ -45,6 +45,7 @@ class UiCard extends StatelessWidget {
     this.borderColor,
     this.onPressed,
     this.semanticLabel,
+    this.excludeChildSemantics = false,
     this.shadowOffset = UiShadow.large,
     super.key,
   });
@@ -56,6 +57,7 @@ class UiCard extends StatelessWidget {
   final Color? borderColor;
   final VoidCallback? onPressed;
   final String? semanticLabel;
+  final bool excludeChildSemantics;
   final double shadowOffset;
 
   @override
@@ -81,6 +83,7 @@ class UiCard extends StatelessWidget {
     return UiPressable(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
+      excludeChildSemantics: excludeChildSemantics,
       borderRadius: shape,
       shadowOffset: shadowOffset,
       child: box,
@@ -121,6 +124,17 @@ class UiRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final ui = context.ui;
     final shape = BorderRadius.circular(UiRadius.menu);
+    final titleText = Text(
+      title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: UiText.body(
+        size: 15,
+        weight: FontWeight.w700,
+        height: 1.35,
+        color: ui.ink,
+      ),
+    );
     final row = Container(
       constraints: BoxConstraints(minHeight: minHeight),
       padding: EdgeInsets.symmetric(
@@ -149,17 +163,10 @@ class UiRow extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: UiText.body(
-                    size: 15,
-                    weight: FontWeight.w700,
-                    height: 1.35,
-                    color: ui.ink,
-                  ),
-                ),
+                if (onPressed != null && trailing != null)
+                  ExcludeSemantics(child: titleText)
+                else
+                  titleText,
                 if (subtitle != null) ...[const SizedBox(height: 3), subtitle!],
                 if (meta != null) ...[const SizedBox(height: 3), meta!],
               ],
@@ -181,7 +188,7 @@ class UiRow extends StatelessWidget {
     if (onPressed == null) return row;
     return UiPressable(
       onPressed: onPressed,
-      semanticLabel: title,
+      semanticLabel: trailing == null ? null : title,
       borderRadius: sticker ? shape : BorderRadius.zero,
       shadowOffset: sticker ? UiShadow.large : 0,
       minSize: const Size(UiSize.tap, 64),

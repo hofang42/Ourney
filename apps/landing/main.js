@@ -123,7 +123,7 @@
       priv_preview_title: '30 ngày cơ thể · Ngày 21',
       priv_preview_hidden: 'Đã ẩn số kg',
       priv_preview_shown: '62,0 kg (-3,2 kg)',
-      priv_local_chip: 'Chế độ chỉ trên máy: dùng trọn vẹn hành trình cá nhân khi mất mạng, không cần tạo tài khoản.',
+      priv_local_chip: 'Chế độ chỉ trên máy: dùng trọn vẹn hành trình cá nhân khi mất mạng, không cần tạo tài khoản. Web chỉ đếm lượt truy cập không cookie qua Cloudflare.',
       priv_phone_alt: 'Hành trình 30 ngày cơ thể: Nhìn lại từng chút một, biểu đồ cân nặng với con số bị ẩn, Giữ để xem',
       faq_eyebrow: 'hỏi đáp',
       faq_h2: 'vài câu chắc bạn sẽ hỏi.',
@@ -132,7 +132,7 @@
       faq_q2: 'Một nhóm tối đa bao nhiêu người? Vào muộn có thiệt không?',
       faq_a2: 'Mỗi hành trình nhóm tối đa 10 người, tham gia bằng mã mời 8 ký tự. Tiến độ của người vào sau được tính công bằng từ ngày họ tham gia, đồng thời vẫn xem lại được toàn bộ kỷ niệm trước đó của nhóm.',
       faq_q3: 'Ai có thể xem ảnh và chỉ số của tôi?',
-      faq_a3: 'Mỗi hành trình có cài đặt riêng: Chỉ mình tôi, Ai có link, hoặc Thành viên trong nhóm. Ngay cả khi chia sẻ, bạn vẫn bật tắt được việc ẩn con số theo dõi và làm mờ ảnh xem trước.',
+      faq_a3: 'Mỗi hành trình có cài đặt riêng: Chỉ mình tôi, Ai có link, hoặc Thành viên trong nhóm. Ngay cả khi chia sẻ, bạn vẫn bật tắt được việc ẩn con số theo dõi và làm mờ ảnh xem trước. Trang web này chỉ thống kê lượt truy cập không dùng cookie qua Cloudflare.',
       faq_q4: 'Một ngày chụp nhiều tấm hay nhập hành trình cũ có được không?',
       faq_a4: 'Chụp nhiều tấm trong ngày sẽ gom gọn vào ngày hôm đó (chuỗi vẫn tính 1 ngày). Bạn cũng có thể nhập ảnh từ chuyến đi đã qua theo ngày chụp — app sẽ xếp thành timeline kỷ niệm mà không làm sai lệch chuỗi ngày thực tế.',
       faq_q5: 'Khi nào Ourney mở tải trên iOS và Android?',
@@ -146,7 +146,10 @@
       beta_stub_kicker: 'NGÀY 01',
       beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
-      form_ok: 'Đã ghi nhận trên bản xem trước! Tụi mình sẽ mở cổng đăng ký beta chính thức cho iOS & Android thật sớm.',
+      form_ok: 'Đã ghi danh! Tụi mình vừa gửi email cảm ơn, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
+      form_sending: 'Đang gửi…',
+      form_fail: 'Chưa gửi được, bạn thử lại sau ít phút nhé.',
+      form_rate: 'Bạn gửi hơi nhiều lần rồi, đợi một lúc rồi thử lại nhé.',
       footer_tagline: 'chụp một tấm. giữ một chuỗi. đi cùng nhau.',
       footer_journeys: 'hành trình',
       footer_privacy: 'riêng tư',
@@ -274,7 +277,7 @@
       priv_preview_title: '30-Day Body · Day 21',
       priv_preview_hidden: 'Weight hidden',
       priv_preview_shown: '62.0 kg (-3.2 kg)',
-      priv_local_chip: 'On-device mode: run solo journeys 100% offline on your phone — no account required.',
+      priv_local_chip: 'On-device mode: run solo journeys 100% offline on your phone — no account required. This site only counts visits with cookieless Cloudflare analytics.',
       priv_phone_alt: '30-Day Body journey: weight trend curve with masked numbers and Hold to view button',
       faq_eyebrow: 'faq',
       faq_h2: 'a few things you might ask.',
@@ -283,7 +286,7 @@
       faq_q2: 'How big can a squad be, and what if someone joins late?',
       faq_a2: 'Up to 10 people per squad journey via an 8-character invite code. Late joiners track consistency fairly from the day they join while still seeing the squad’s full timeline.',
       faq_q3: 'Who can see my check-in photos and numbers?',
-      faq_a3: 'Each journey has its own privacy setting: Only me, Anyone with link, or Squad members. Even on shared journeys, you can hide exact metrics and blur external link previews.',
+      faq_a3: 'Each journey has its own privacy setting: Only me, Anyone with link, or Squad members. Even on shared journeys, you can hide exact metrics and blur external link previews. This site only uses cookieless visit analytics by Cloudflare.',
       faq_q4: 'Can I snap multiple photos a day or import a past trip?',
       faq_a4: 'Multiple photos on the same day group cleanly into that day while counting once toward your streak. You can also import past trip photos by capture date into a keepsake timeline without inflating live streaks.',
       faq_q5: 'When will Ourney launch on iOS and Android?',
@@ -297,7 +300,10 @@
       beta_stub_kicker: 'DAY 01',
       beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
-      form_ok: 'Noted in preview mode! Official iOS & Android beta waitlist storage opens very soon.',
+      form_ok: 'You’re on the list! We just sent you a thank-you email (check spam too). You’ll get the first beta invite.',
+      form_sending: 'Sending…',
+      form_fail: 'Couldn’t send that. Please try again in a few minutes.',
+      form_rate: 'Too many tries. Please wait a bit and try again.',
       footer_tagline: 'snap one photo. keep one streak. go together.',
       footer_journeys: 'journeys',
       footer_privacy: 'privacy',
@@ -1004,8 +1010,15 @@
     });
   };
   if (form && email) {
-    form.addEventListener('submit', (e) => {
+    // Endpoint of the waitlist-signup Edge Function, set in <meta name="ourney-waitlist-endpoint">.
+    const endpointMeta = document.querySelector('meta[name="ourney-waitlist-endpoint"]');
+    const endpoint = endpointMeta ? endpointMeta.getAttribute('content') || '' : '';
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const honeypot = form.querySelector('input[name="website"]');
+    let sending = false;
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (sending) return;
       const ok = Boolean(email.value.trim()) && email.checkValidity();
       email.setAttribute('aria-invalid', ok ? 'false' : 'true');
       if (!ok) {
@@ -1013,8 +1026,45 @@
         email.focus();
         return;
       }
-      announce('form_ok');
-      form.reset();
+      if (!/^https:\/\//.test(endpoint) || endpoint.includes('PROJECT_REF')) {
+        announce('form_fail');
+        return;
+      }
+      const platforms = Array.from(document.querySelectorAll('.plat-pill[aria-pressed="true"]'))
+        .map((b) => b.getAttribute('data-plat'))
+        .filter((p) => p === 'ios' || p === 'android');
+      sending = true;
+      if (submitBtn) submitBtn.disabled = true;
+      form.setAttribute('aria-busy', 'true');
+      announce('form_sending');
+      let key = 'form_fail';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.value.trim(),
+            lang: curLang,
+            platforms,
+            source: 'landing',
+            website: honeypot ? honeypot.value : '',
+          }),
+        });
+        if (res.ok) key = 'form_ok';
+        else if (res.status === 429) key = 'form_rate';
+        else if (res.status === 400) key = 'form_err';
+      } catch (_) {
+        key = 'form_fail';
+      }
+      sending = false;
+      if (submitBtn) submitBtn.disabled = false;
+      form.removeAttribute('aria-busy');
+      announce(key);
+      if (key === 'form_ok') form.reset();
+      else if (key === 'form_err') {
+        email.setAttribute('aria-invalid', 'true');
+        email.focus();
+      }
     });
   }
 

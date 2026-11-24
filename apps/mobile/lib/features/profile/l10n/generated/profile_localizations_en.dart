@@ -311,6 +311,42 @@ class ProfileL10nEn extends ProfileL10n {
   String get profile_settings_langEn => 'English';
 
   @override
+  String get profile_settings_appIcon => 'App icon';
+
+  @override
+  String get profile_settings_appIconNote =>
+      'Changes your home-screen icon. On some Android launchers, the app may briefly close or refresh when switching.';
+
+  @override
+  String get profile_settings_iconDefault => 'Default';
+
+  @override
+  String get profile_settings_iconYellow => 'Yellow';
+
+  @override
+  String get profile_settings_iconGreen => 'Green';
+
+  @override
+  String get profile_settings_iconCoral => 'Coral';
+
+  @override
+  String get profile_settings_iconViolet => 'Violet';
+
+  @override
+  String get profile_settings_iconSky => 'Sky';
+
+  @override
+  String get profile_settings_iconDark => 'Dark';
+
+  @override
+  String get profile_settings_iconMinimal => 'Minimal';
+
+  @override
+  String profile_settings_iconSemantic(String name) {
+    return 'App icon $name';
+  }
+
+  @override
   String get profile_settings_secPrivacy => 'privacy & safety';
 
   @override

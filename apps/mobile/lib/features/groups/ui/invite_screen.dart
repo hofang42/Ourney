@@ -106,9 +106,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
     }
     if (!journeyAsync.hasValue) {
       return scaffold(
-        Center(
-          child: CircularProgressIndicator(semanticsLabel: app.common_loading),
-        ),
+        Center(child: UiSpinner(semanticsLabel: app.common_loading)),
       );
     }
     final journey = journeyAsync.value;

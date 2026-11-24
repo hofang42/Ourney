@@ -644,6 +644,72 @@ abstract class ProfileL10n {
   /// **'English'**
   String get profile_settings_langEn;
 
+  /// No description provided for @profile_settings_appIcon.
+  ///
+  /// In vi, this message translates to:
+  /// **'Icon ứng dụng'**
+  String get profile_settings_appIcon;
+
+  /// No description provided for @profile_settings_appIconNote.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đổi icon trên màn hình chính. Trên một số máy Android, ứng dụng có thể tự đóng hoặc tải lại khi đổi icon.'**
+  String get profile_settings_appIconNote;
+
+  /// No description provided for @profile_settings_iconDefault.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mặc định'**
+  String get profile_settings_iconDefault;
+
+  /// No description provided for @profile_settings_iconYellow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Vàng hội'**
+  String get profile_settings_iconYellow;
+
+  /// No description provided for @profile_settings_iconGreen.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xanh ngọc'**
+  String get profile_settings_iconGreen;
+
+  /// No description provided for @profile_settings_iconCoral.
+  ///
+  /// In vi, this message translates to:
+  /// **'Hồng đôi'**
+  String get profile_settings_iconCoral;
+
+  /// No description provided for @profile_settings_iconViolet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tím tập'**
+  String get profile_settings_iconViolet;
+
+  /// No description provided for @profile_settings_iconSky.
+  ///
+  /// In vi, this message translates to:
+  /// **'Xanh trời'**
+  String get profile_settings_iconSky;
+
+  /// No description provided for @profile_settings_iconDark.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đêm tối'**
+  String get profile_settings_iconDark;
+
+  /// No description provided for @profile_settings_iconMinimal.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tối giản'**
+  String get profile_settings_iconMinimal;
+
+  /// No description provided for @profile_settings_iconSemantic.
+  ///
+  /// In vi, this message translates to:
+  /// **'Icon ứng dụng {name}'**
+  String profile_settings_iconSemantic(String name);
+
   /// No description provided for @profile_settings_secPrivacy.
   ///
   /// In vi, this message translates to:

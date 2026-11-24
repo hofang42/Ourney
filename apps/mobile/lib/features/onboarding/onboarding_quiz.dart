@@ -39,6 +39,15 @@ UiFlowGoal _flowGoal(QuizGoal goal) => switch (goal) {
   QuizGoal.habit => UiFlowGoal.habit,
 };
 
+String _goalSampleAsset(QuizGoal goal) => switch (goal) {
+  QuizGoal.weightLoss => 'assets/samples/weight_loss/02.webp',
+  QuizGoal.english => 'assets/samples/ielts_study/01.webp',
+  QuizGoal.workout => 'assets/samples/workout_30/01.webp',
+  QuizGoal.trip => 'assets/samples/travel_dalat/02.webp',
+  QuizGoal.couple => 'assets/samples/couple_rituals/02.webp',
+  QuizGoal.habit => 'assets/samples/reading_10_pages/01.webp',
+};
+
 class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
   int _step = 0;
   QuizGoal? _goal;
@@ -75,6 +84,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
       l10n.onboarding_quizQ3,
     ][_step];
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final big = MediaQuery.textScalerOf(context).scale(16) / 16 > 1.35;
     // `app-screen-in`: each question fades in and slides 10dp from the right
     // over 210ms (a 150ms plain fade with reduced motion).
     return TweenAnimationBuilder<double>(
@@ -108,21 +118,26 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      title,
-                      style: UiText.heading(
-                        font: 'SpaceGrotesk',
-                        size: 32,
-                        weight: 700,
-                        height: 1.3,
-                        tracking: -0.045,
-                        color: ui.ink,
+                  // The 32dp question is capped at 1.35x so at 2.0x text it
+                  // leaves room for the options above the pinned button.
+                  MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.35,
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        title,
+                        style: UiText.heading(
+                          font: 'SpaceGrotesk',
+                          size: 32,
+                          weight: 700,
+                          height: 1.3,
+                          tracking: -0.045,
+                          color: ui.ink,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: UiSpace.xxl),
+                  SizedBox(height: big ? UiSpace.lg : UiSpace.xxl),
                   ...switch (_step) {
                     0 => _goalOptions(l10n),
                     1 => _companyOptions(l10n),
@@ -135,32 +150,35 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
           Padding(
             padding: EdgeInsets.fromLTRB(
               widget.gutter,
-              UiSpace.md,
+              big ? UiSpace.sm : UiSpace.md,
               widget.gutter,
-              UiSpace.xl,
+              big ? UiSpace.md : UiSpace.xl,
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                UiFlowButton(
-                  key: const ValueKey('onboarding-quiz-next'),
-                  label: _isLast && _answered
-                      ? l10n.onboarding_quizStart
-                      : l10n.onboarding_quizContinue,
-                  onPressed: _answered ? _next : null,
-                ),
-                // Returning users skip the quiz and go straight to sign-in.
-                if (_step == 0 && widget.showSignIn)
-                  UiTextAction(
-                    key: const ValueKey('onboarding-have-account'),
-                    label: l10n.onboarding_haveAccount,
-                    size: 14,
-                    underline: true,
-                    color: ui.ink,
-                    onPressed: () => widget.onDone(null),
+            child: MediaQuery.withClampedTextScaling(
+              maxScaleFactor: 1.35,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  UiFlowButton(
+                    key: const ValueKey('onboarding-quiz-next'),
+                    label: _isLast && _answered
+                        ? l10n.onboarding_quizStart
+                        : l10n.onboarding_quizContinue,
+                    onPressed: _answered ? _next : null,
                   ),
-              ],
+                  // Returning users skip the quiz and go straight to sign-in.
+                  if (_step == 0 && widget.showSignIn)
+                    UiTextAction(
+                      key: const ValueKey('onboarding-have-account'),
+                      label: l10n.onboarding_haveAccount,
+                      size: 14,
+                      underline: true,
+                      color: ui.ink,
+                      onPressed: () => widget.onDone(null),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
@@ -332,7 +350,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                     child: Container(
                       width: 62,
                       height: 72,
-                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
                         color: UiFlowColors.paper,
                         border: Border.fromBorderSide(
@@ -342,7 +360,26 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                           ),
                         ),
                       ),
-                      child: UiGoalGlyph(goal: goal, size: 28),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            _goalSampleAsset(quizGoal),
+                            key: ValueKey(
+                              'onboarding-quiz-result-photo-${quizGoal.wireName}',
+                            ),
+                            fit: BoxFit.cover,
+                            cacheWidth: 186,
+                            excludeFromSemantics: true,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(child: UiGoalGlyph(goal: goal, size: 28)),
+                          ),
+                          if (ui.isDark)
+                            const IgnorePointer(
+                              child: ColoredBox(color: Color(0x22000000)),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

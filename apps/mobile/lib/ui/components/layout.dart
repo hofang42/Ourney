@@ -65,12 +65,15 @@ class UiScaffold extends StatefulWidget {
   /// Height of the pinned [bottom] slot of the [UiScaffold] on the current
   /// route (0 when there is none). `showUiToast` adds it to its offset so a
   /// toast clears the primary button instead of covering it.
-  static double pinnedBottomHeightOf(BuildContext context) {
+  static double pinnedBottomHeightOf(
+    BuildContext context, {
+    ScaffoldMessengerState? messenger,
+  }) {
     // The caller's own route first; a toast from a bottom sheet (its route
     // has no scaffold) falls back to the page below, registered under the
     // shared messenger. Limitation: with several pinned scaffolds under one
     // messenger and no route match, the most recently built one wins.
-    for (final scope in _scopesOf(context)) {
+    for (final scope in [..._scopesOf(context), ?messenger]) {
       final box = _pinnedKeys[scope]?.currentContext?.findRenderObject();
       if (box is RenderBox && box.hasSize) return box.size.height;
     }

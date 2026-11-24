@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../tokens.dart';
 import '../typography.dart';
+import 'feedback.dart' show UiSpinner;
 import 'pressable.dart';
 import 'skin_scope.dart';
 
@@ -129,7 +130,7 @@ class UiButton extends StatelessWidget {
           SizedBox(
             width: 18,
             height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+            child: UiSpinner(strokeWidth: 2, color: fg),
           )
         else if (glyph != null)
           enabled ? glyph! : Opacity(opacity: 0.4, child: glyph!)

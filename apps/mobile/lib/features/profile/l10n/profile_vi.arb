@@ -363,6 +363,24 @@
   "profile_settings_themeLabel": "Chế độ giao diện",
   "profile_settings_langVi": "Việt",
   "profile_settings_langEn": "English",
+  "profile_settings_appIcon": "Icon ứng dụng",
+  "profile_settings_appIconNote": "Đổi icon trên màn hình chính. Trên một số máy Android, ứng dụng có thể tự đóng hoặc tải lại khi đổi icon.",
+  "profile_settings_iconDefault": "Mặc định",
+  "profile_settings_iconYellow": "Vàng hội",
+  "profile_settings_iconGreen": "Xanh ngọc",
+  "profile_settings_iconCoral": "Hồng đôi",
+  "profile_settings_iconViolet": "Tím tập",
+  "profile_settings_iconSky": "Xanh trời",
+  "profile_settings_iconDark": "Đêm tối",
+  "profile_settings_iconMinimal": "Tối giản",
+  "profile_settings_iconSemantic": "Icon ứng dụng {name}",
+  "@profile_settings_iconSemantic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "profile_settings_secPrivacy": "riêng tư & an toàn",
   "profile_settings_hideKg": "Ẩn số kg khi chia sẻ",
   "profile_settings_blurPhotos": "Làm mờ ảnh khi chia sẻ",

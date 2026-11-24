@@ -128,7 +128,8 @@ class _DayViewerScreenState extends ConsumerState<DayViewerScreen> {
               padding: const EdgeInsets.only(top: 120),
               child: Center(
                 child: checkIns.isLoading
-                    ? CircularProgressIndicator(
+                    ? UiSpinner(
+                        color: UiCamera.ink,
                         semanticsLabel: app.common_loading,
                       )
                     : Text(

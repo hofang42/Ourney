@@ -69,9 +69,8 @@ void main() {
     }
   });
 
-  test('every template maps to a PersonaSkinId and design asset', () {
+  test('every template maps to a PersonaSkinId', () {
     for (final t in allTemplates) {
-      expect(t.designAssetPath, startsWith('assets/design_personas/persona_'));
       expect(personaSkinForTemplate(t.id), t.personaSkinId);
     }
     expect(
@@ -82,9 +81,5 @@ void main() {
       ),
       PersonaSkinId.coupleRituals,
     );
-    for (final skin in PersonaSkinId.values) {
-      expect(designAssetForPersona(skin),
-          startsWith('assets/design_personas/persona_'));
-    }
   });
 }

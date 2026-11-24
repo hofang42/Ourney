@@ -262,78 +262,121 @@ class _DeckCard extends StatelessWidget {
                       width: focused ? 3 : 2,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          UiTypeBadge(type: item.badge, size: 48),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: UiText.heading(
-                                font: headingFont,
-                                size: 18,
-                                weight: 700,
-                                color: ui.ink,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 16),
-                          clipBehavior: Clip.hardEdge,
-                          decoration: BoxDecoration(
-                            color: ui.ink.withValues(alpha: 0.05),
-                            border: Border.all(color: ui.outline, width: 1.5),
-                          ),
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: CreateDeckPreview(
-                                  key: ValueKey('deck-preview-${item.skinId}'),
-                                  skinId: item.skinId,
-                                ),
-                              ),
-                              if (focused)
-                                PositionedDirectional(
-                                  top: 8,
-                                  end: 8,
-                                  child: _ChosenChip(label: chosenLabel),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      CreateDeckHud(
-                        key: ValueKey('deck-hud-${item.skinId}'),
-                        skinId: item.skinId,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        item.tagline,
-                        maxLines: 2,
+                  child: LayoutBuilder(
+                    builder: (context, box) {
+                      final big =
+                          MediaQuery.textScalerOf(context).scale(16) / 16 >
+                          1.35;
+                      final title = Text(
+                        item.title,
+                        maxLines: big ? 3 : 2,
+                        softWrap: true,
                         overflow: TextOverflow.ellipsis,
-                        style: UiText.body(
-                          size: 14,
-                          weight: FontWeight.w700,
-                          height: 1.35,
+                        style: UiText.heading(
+                          font: headingFont,
+                          size: 18,
+                          weight: 700,
                           color: ui.ink,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.meta,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: UiText.eyebrow(color: ui.inkMuted),
-                      ),
-                    ],
+                      );
+                      Widget preview({double? height}) => Container(
+                        height: height,
+                        margin: const EdgeInsets.symmetric(vertical: 16),
+                        clipBehavior: Clip.hardEdge,
+                        decoration: BoxDecoration(
+                          color: ui.ink.withValues(alpha: 0.05),
+                          border: Border.all(
+                            color: ui.outline,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: CreateDeckPreview(
+                                key: ValueKey(
+                                  'deck-preview-${item.skinId}',
+                                ),
+                                skinId: item.skinId,
+                              ),
+                            ),
+                            if (focused)
+                              PositionedDirectional(
+                                top: 8,
+                                start: 8,
+                                end: 8,
+                                child: Align(
+                                  alignment: AlignmentDirectional.topEnd,
+                                  child: _ChosenChip(label: chosenLabel),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                      final footer = [
+                        CreateDeckHud(
+                          key: ValueKey('deck-hud-${item.skinId}'),
+                          skinId: item.skinId,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          item.tagline,
+                          maxLines: big ? 3 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.body(
+                            size: 14,
+                            weight: FontWeight.w700,
+                            height: 1.35,
+                            color: ui.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.meta,
+                          maxLines: big ? 2 : 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: UiText.eyebrow(color: ui.inkMuted),
+                        ),
+                      ];
+                      if (!big) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Row(
+                              children: [
+                                UiTypeBadge(type: item.badge, size: 48),
+                                const SizedBox(width: 10),
+                                Expanded(child: title),
+                              ],
+                            ),
+                            Expanded(child: preview()),
+                            ...footer,
+                          ],
+                        );
+                      }
+                      // Content scrolls inside the card when the text scale
+                      // makes it taller than the card (min preview 110dp).
+                      return SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Large text: the badge sits above the title so a
+                            // word never has to break mid-word to fit.
+                            Align(
+                              alignment: AlignmentDirectional.centerStart,
+                              child: UiTypeBadge(type: item.badge, size: 40),
+                            ),
+                            const SizedBox(height: 6),
+                            title,
+                            preview(
+                              height: math.max(110, box.maxHeight * 0.38),
+                            ),
+                            ...footer,
+                          ],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
@@ -368,11 +411,14 @@ class _ChosenChip extends StatelessWidget {
         children: [
           const OurneyIcon(name: 'check', size: 15, flat: true),
           const SizedBox(width: 4),
-          Text(
-            label,
-            maxLines: 1,
-            softWrap: false,
-            style: UiText.eyebrow(color: ui.ink),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: UiText.eyebrow(color: ui.ink),
+            ),
           ),
         ],
       ),

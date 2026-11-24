@@ -242,7 +242,7 @@ class _QrBlockState extends ConsumerState<_QrBlock> {
         child: _busy
             ? Padding(
                 padding: const EdgeInsets.all(18),
-                child: CircularProgressIndicator(strokeWidth: 2, color: ui.ink),
+                child: UiSpinner(strokeWidth: 2, color: ui.ink),
               )
             : OurneyIcon(name: 'qr', size: 54, color: ui.ink, flat: true),
       );
@@ -457,7 +457,7 @@ class _UsernameSearchState extends ConsumerState<_UsernameSearch> {
         return PersonRow(
           key: const ValueKey('username-result'),
           person: p,
-          trailing: [_relation(context, p)],
+          actions: [_relation(context, p)],
         );
     }
   }

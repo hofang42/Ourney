@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:ourney_core/ourney_core.dart' show durationMax, durationMin;
@@ -238,14 +240,36 @@ class DnaGhostPage extends StatelessWidget {
             child: Container(
               width: 180,
               height: 240,
+              clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 color: ui.fill,
                 borderRadius: BorderRadius.circular(UiRadius.card),
                 border: Border.all(color: ui.border),
               ),
-              child: CustomPaint(
-                key: const ValueKey('dna-ghost-silhouette'),
-                painter: _SilhouettePainter(ui.inkMuted),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Opacity(
+                    opacity: ui.isDark ? 0.72 : 0.85,
+                    child: Image.asset(
+                      'assets/samples/weight_loss/03.webp',
+                      key: const ValueKey('dna-ghost-photo'),
+                      fit: BoxFit.cover,
+                      cacheWidth: 540,
+                      excludeFromSemantics: true,
+                      errorBuilder: (context, error, stackTrace) =>
+                          ColoredBox(color: ui.fill),
+                    ),
+                  ),
+                  if (ui.isDark)
+                    const IgnorePointer(
+                      child: ColoredBox(color: Color(0x24000000)),
+                    ),
+                  const CustomPaint(
+                    key: ValueKey('dna-ghost-silhouette'),
+                    painter: _SilhouettePainter(),
+                  ),
+                ],
               ),
             ),
           ),
@@ -267,28 +291,51 @@ class DnaGhostPage extends StatelessWidget {
 }
 
 class _SilhouettePainter extends CustomPainter {
-  const _SilhouettePainter(this.color);
-  final Color color;
+  const _SilhouettePainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color.withValues(alpha: 0.55)
+    final haloPaint = Paint()
+      ..color = const Color(0x8C0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
+      ..strokeWidth = 4.2
+      ..strokeCap = StrokeCap.round;
+    final linePaint = Paint()
+      ..color = const Color(0xF0FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round;
     final w = size.width;
     final h = size.height;
-    canvas.drawCircle(Offset(w / 2, h * 0.28), w * 0.16, p);
-    final body = Path()
-      ..moveTo(w * 0.18, h * 0.92)
-      ..quadraticBezierTo(w * 0.18, h * 0.55, w * 0.5, h * 0.52)
-      ..quadraticBezierTo(w * 0.82, h * 0.55, w * 0.82, h * 0.92);
-    canvas.drawPath(body, p);
+    // Standing body silhouette aligned to the full-body reference photo:
+    // head oval at top, shoulder-and-torso guide down to the legs.
+    final path = Path()
+      ..addOval(
+        Rect.fromCenter(
+          center: Offset(w * 0.50, h * 0.085),
+          width: w * 0.17,
+          height: h * 0.125,
+        ),
+      )
+      ..moveTo(w * 0.37, h * 0.94)
+      ..quadraticBezierTo(w * 0.34, h * 0.56, w * 0.34, h * 0.24)
+      ..quadraticBezierTo(w * 0.34, h * 0.17, w * 0.50, h * 0.17)
+      ..quadraticBezierTo(w * 0.66, h * 0.17, w * 0.66, h * 0.24)
+      ..quadraticBezierTo(w * 0.66, h * 0.56, w * 0.63, h * 0.94);
+    for (final metric in path.computeMetrics()) {
+      var d = 0.0;
+      while (d < metric.length) {
+        final next = math.min(d + 6, metric.length);
+        final seg = metric.extractPath(d, next);
+        canvas.drawPath(seg, haloPaint);
+        canvas.drawPath(seg, linePaint);
+        d += 11;
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(_SilhouettePainter old) => old.color != color;
+  bool shouldRepaint(_SilhouettePainter old) => false;
 }
 
 /// Place search with suggestion rows (`place-question`).
@@ -606,7 +653,7 @@ class _DnaDateRangeState extends State<DnaDateRange> {
     final on = isStart || isEnd;
     return SizedBox(
       width: cell,
-      height: cell < 44 ? 44 : cell,
+      height: cell < UiSize.tap ? UiSize.tap : cell,
       child: Semantics(
         button: true,
         selected: on,
@@ -628,12 +675,19 @@ class _DnaDateRangeState extends State<DnaDateRange> {
                   : null,
               borderRadius: BorderRadius.circular(UiRadius.thumb),
             ),
-            child: Text(
-              '${day.day}',
-              style: UiText.body(
-                size: 14,
-                color: past ? ui.divider : ui.ink,
-              ).copyWith(fontWeight: on ? FontWeight.w700 : null),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Text(
+                  '${day.day}',
+                  maxLines: 1,
+                  style: UiText.body(
+                    size: 14,
+                    color: past ? ui.divider : ui.ink,
+                  ).copyWith(fontWeight: on ? FontWeight.w700 : null),
+                ),
+              ),
             ),
           ),
         ),

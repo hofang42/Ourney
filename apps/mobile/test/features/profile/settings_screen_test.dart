@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
@@ -91,9 +93,6 @@ void main() {
           // Verify English labels ("System", "English") also never truncate at 320dp.
           _expectNoTruncatedSegments(tester);
 
-          // The app-icon picker is gone (it never did anything).
-          expect(byKey('settings-icon-default'), findsNothing);
-
           // Haptics moved here from Profile.
           await tester.ensureVisible(byKey('settings-haptics'));
           await tester.pumpAndSettle();
@@ -101,6 +100,10 @@ void main() {
           await tester.tap(byKey('settings-haptics'));
           await tester.pump();
           expect(c.read(hapticsEnabledProvider), !before);
+
+          // App-icon picker renders all 8 V2 icon variants.
+          expect(byKey('settings-app-icons'), findsOneWidget);
+          expect(byKey('settings-icon-default'), findsOneWidget);
 
           await tester.scrollUntilVisible(
             byKey('settings-hide-kg'),
@@ -117,7 +120,7 @@ void main() {
   }
 
   group('settings structure', () {
-    testWidgets('named groups in order, account id, sign out and delete', (
+    testWidgets('named groups in order, account id, app icons, sign out and delete', (
       tester,
     ) async {
       final c = await pumpBackendApp(
@@ -126,6 +129,8 @@ void main() {
         profiles: FakeProfileRepository(aliceProfile),
       );
       await goTo(tester, c, '/profile/settings');
+      expect(tester.takeException(), isNull);
+      expect(byKey('settings-screen'), findsOneWidget);
       expect(byKey('settings-account-id'), findsOneWidget);
       expect(find.text('me@example.com'), findsOneWidget);
       final headings = [
@@ -143,6 +148,31 @@ void main() {
         expect(y, greaterThan(lastY), reason: h);
         lastY = y;
       }
+
+      // The selected app icon carries a check badge, not just a border (U14),
+      // and all 8 preview tiles render >= 48x48dp targets.
+      await tester.ensureVisible(byKey('settings-app-icons'));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: byKey('settings-icon-default'),
+          matching: byKey('settings-icon-check'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: byKey('settings-app-icons'),
+          matching: find.byType(Image),
+        ),
+        findsNWidgets(8),
+      );
+      for (final id in AppIconController.ids) {
+        final size = tester.getSize(byKey('settings-icon-$id'));
+        expect(size.width, greaterThanOrEqualTo(48));
+        expect(size.height, greaterThanOrEqualTo(48));
+      }
+
       expect(byKey('settings-version'), findsOneWidget);
       for (final key in ['settings-signout', 'settings-delete']) {
         await tester.ensureVisible(byKey(key));
@@ -267,10 +297,10 @@ void main() {
     });
   });
 
-  group('DE-12 & DE-15: privacy toggles sync ON and OFF; no app-icon picker', () {
+  group('DE-12: privacy toggles sync ON and OFF', () {
     testWidgets(
       'toggling Hide kg and Blur photos ON then OFF syncs both true and false '
-      'to server memberships, and no app-icon picker tiles exist',
+      'to server memberships',
       (tester) async {
         final journeys = FakeJourneyRepository(
           journeys: [
@@ -295,20 +325,6 @@ void main() {
           ],
         );
         await goTo(tester, c, '/profile/settings');
-
-        // DE-15: none of the 7 app-icon picker tiles or checkmarks exist.
-        for (final iconKey in const [
-          'settings-icon-default',
-          'settings-icon-quiet',
-          'settings-icon-squad',
-          'settings-icon-memory',
-          'settings-icon-couple',
-          'settings-icon-flexer',
-          'settings-icon-minimal',
-          'settings-icon-check',
-        ]) {
-          expect(byKey(iconKey), findsNothing, reason: iconKey);
-        }
 
         // 1. Toggle Hide kg ON -> pushes hideMetric: true to j-kg.
         await tester.scrollUntilVisible(
@@ -354,6 +370,133 @@ void main() {
           {for (final u in journeys.prefUpdates) u.id: u.blurMedia},
           {'j-kg': false, 'j-min': false},
         );
+      },
+    );
+  });
+
+  group('app icon picker & channel (ourney/app_icon)', () {
+    testWidgets(
+      'persists selection, calls ourney/app_icon channel with right names, and moves check badge',
+      (tester) async {
+        final calls = <MethodCall>[];
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(PlatformAppIconSwitcher.channel, (
+              call,
+            ) async {
+              calls.add(call);
+              return true;
+            });
+        addTearDown(
+          () => TestDefaultBinaryMessengerBinding
+              .instance
+              .defaultBinaryMessenger
+              .setMockMethodCallHandler(PlatformAppIconSwitcher.channel, null),
+        );
+
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          profiles: FakeProfileRepository(aliceProfile),
+        );
+        await goTo(tester, c, '/profile/settings');
+
+        expect(byKey('settings-app-icons'), findsOneWidget);
+        expect(byKey('settings-app-icon-note'), findsOneWidget);
+
+        // Tap 'yellow' -> AppIcon-Yellow / .IconYellow
+        await tester.ensureVisible(byKey('settings-icon-yellow'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-icon-yellow'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(appIconProvider), 'yellow');
+        expect(
+          c.read(sharedPreferencesProvider).getString(AppIconController.prefsKey),
+          'yellow',
+        );
+        expect(
+          find.descendant(
+            of: byKey('settings-icon-yellow'),
+            matching: byKey('settings-icon-check'),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(
+            of: byKey('settings-icon-default'),
+            matching: byKey('settings-icon-check'),
+          ),
+          findsNothing,
+        );
+        expect(calls, hasLength(1));
+        expect(calls.last.method, 'setAlternateIcon');
+        expect(calls.last.arguments, {
+          'id': 'yellow',
+          'iosIconName': 'AppIcon-Yellow',
+          'androidAlias': '.IconYellow',
+        });
+
+        // Tap 'dark' -> AppIcon-Dark / .IconDark
+        await tester.ensureVisible(byKey('settings-icon-dark'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-icon-dark'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(appIconProvider), 'dark');
+        expect(
+          c.read(sharedPreferencesProvider).getString(AppIconController.prefsKey),
+          'dark',
+        );
+        expect(calls, hasLength(2));
+        expect(calls.last.arguments, {
+          'id': 'dark',
+          'iosIconName': 'AppIcon-Dark',
+          'androidAlias': '.IconDark',
+        });
+
+        // Tap 'default' -> nil / .IconDefault
+        await tester.ensureVisible(byKey('settings-icon-default'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('settings-icon-default'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(appIconProvider), 'default');
+        expect(
+          c.read(sharedPreferencesProvider).getString(AppIconController.prefsKey),
+          'default',
+        );
+        expect(calls, hasLength(3));
+        expect(calls.last.arguments, {
+          'id': 'default',
+          'iosIconName': null,
+          'androidAlias': '.IconDefault',
+        });
+
+        // Unknown icon id is rejected without calling the channel.
+        final ok = await c.read(appIconProvider.notifier).set('unknown-id');
+        expect(ok, isFalse);
+        expect(c.read(appIconProvider), 'default');
+        expect(calls, hasLength(3));
+      },
+    );
+
+    testWidgets(
+      'gracefully hides app icon picker on unsupported platforms (desktop)',
+      (tester) async {
+        debugDefaultTargetPlatformOverride = TargetPlatform.linux;
+        try {
+          final c = await pumpBackendApp(
+            tester,
+            auth: RecordingAuthRepository(userId: 'u1'),
+            profiles: FakeProfileRepository(aliceProfile),
+          );
+          await goTo(tester, c, '/profile/settings');
+          expect(tester.takeException(), isNull);
+          expect(byKey('settings-screen'), findsOneWidget);
+          expect(byKey('settings-app-icons'), findsNothing);
+        } finally {
+          debugDefaultTargetPlatformOverride = null;
+        }
       },
     );
   });

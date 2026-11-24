@@ -221,7 +221,7 @@ class _QuietWallState extends ConsumerState<_QuietWall> {
                   children: [
                     Text(
                       e.member.displayName,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: UiText.body(
                         size: 15,
@@ -395,7 +395,7 @@ class _FilmFrame extends ConsumerWidget {
               Expanded(
                 child: Text(
                   caption,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: UiText.body(
                     size: 12,
@@ -669,7 +669,7 @@ class _RunnerWall extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         name,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: UiText.body(
                           size: 14,

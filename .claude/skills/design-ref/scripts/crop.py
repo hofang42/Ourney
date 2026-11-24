@@ -15,7 +15,7 @@ import os
 import sys
 import tempfile
 
-BOARD_DIR = os.path.join("apps", "mobile", "assets", "design_personas")
+BOARD_DIR = os.path.join("docs", "assets", "design_personas")
 
 # Mỗi bảng 1376x768 có 3 điện thoại xếp ngang; thứ tự màn khác nhau giữa các bảng.
 PERSONAS = {

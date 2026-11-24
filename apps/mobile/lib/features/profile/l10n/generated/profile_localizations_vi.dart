@@ -309,6 +309,42 @@ class ProfileL10nVi extends ProfileL10n {
   String get profile_settings_langEn => 'English';
 
   @override
+  String get profile_settings_appIcon => 'Icon ứng dụng';
+
+  @override
+  String get profile_settings_appIconNote =>
+      'Đổi icon trên màn hình chính. Trên một số máy Android, ứng dụng có thể tự đóng hoặc tải lại khi đổi icon.';
+
+  @override
+  String get profile_settings_iconDefault => 'Mặc định';
+
+  @override
+  String get profile_settings_iconYellow => 'Vàng hội';
+
+  @override
+  String get profile_settings_iconGreen => 'Xanh ngọc';
+
+  @override
+  String get profile_settings_iconCoral => 'Hồng đôi';
+
+  @override
+  String get profile_settings_iconViolet => 'Tím tập';
+
+  @override
+  String get profile_settings_iconSky => 'Xanh trời';
+
+  @override
+  String get profile_settings_iconDark => 'Đêm tối';
+
+  @override
+  String get profile_settings_iconMinimal => 'Tối giản';
+
+  @override
+  String profile_settings_iconSemantic(String name) {
+    return 'Icon ứng dụng $name';
+  }
+
+  @override
   String get profile_settings_secPrivacy => 'riêng tư & an toàn';
 
   @override

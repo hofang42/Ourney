@@ -358,9 +358,7 @@ class _DeleteAccountDialogState extends ConsumerState<DeleteAccountDialog> {
           Center(
             child: Semantics(
               label: l10n.profile_deleting,
-              child: const CircularProgressIndicator(
-                key: ValueKey('profile-delete-progress'),
-              ),
+              child: const UiSpinner(key: ValueKey('profile-delete-progress')),
             ),
           ),
           const SizedBox(height: UiSpace.lg),

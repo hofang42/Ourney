@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -104,6 +105,7 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const _AppIconPicker(),
           const SizedBox(height: UiSpace.lg),
           UiListHeading(title: l10n.profile_settings_secPrivacy),
           _Card(
@@ -408,6 +410,200 @@ class _LanguagePicker extends ConsumerWidget {
             label: l10n.profile_settings_langEn,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// `.app-icon-picker`: 8 Ourney V2 icon variants rendered inside a [UiCard]
+/// grid with bundled `180x180` previews, localized names (vi/en), current
+/// selection badge, 48dp touch targets, and platform channel switching.
+/// Gracefully hidden on platforms without launcher icon support.
+class _AppIconPicker extends ConsumerWidget {
+  const _AppIconPicker();
+
+  static String _labelFor(ProfileL10n l10n, String id) => switch (id) {
+    'default' => l10n.profile_settings_iconDefault,
+    'yellow' => l10n.profile_settings_iconYellow,
+    'green' => l10n.profile_settings_iconGreen,
+    'coral' => l10n.profile_settings_iconCoral,
+    'violet' => l10n.profile_settings_iconViolet,
+    'sky' => l10n.profile_settings_iconSky,
+    'dark' => l10n.profile_settings_iconDark,
+    'minimal' => l10n.profile_settings_iconMinimal,
+    _ => id,
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final supported = ref.watch(appIconSwitcherProvider).supported;
+    if (!supported) return const SizedBox.shrink();
+
+    final l10n = ProfileL10n.of(context);
+    final ui = context.ui;
+    final boldText = MediaQuery.boldTextOf(context);
+    final selected = ref.watch(appIconProvider);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: UiSpace.md),
+      child: UiCard(
+        key: const ValueKey('settings-app-icons'),
+        radius: UiRadius.card,
+        shadowOffset: UiShadow.small,
+        padding: const EdgeInsets.all(UiSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.profile_settings_appIcon,
+              style: UiText.body(
+                size: 14,
+                weight: FontWeight.w700,
+                color: ui.ink,
+              ),
+            ),
+            const SizedBox(height: UiSpace.xs),
+            Text(
+              l10n.profile_settings_appIconNote,
+              key: const ValueKey('settings-app-icon-note'),
+              style: UiText.body(size: 12, height: 1.4, color: ui.inkMuted),
+            ),
+            const SizedBox(height: UiSpace.md),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cols = constraints.maxWidth < 230 ? 2 : 4;
+                const spacing = UiSpace.sm;
+                final rawWidth =
+                    (constraints.maxWidth - spacing * (cols - 1)) / cols;
+                final itemWidth = rawWidth < UiSize.tap ? UiSize.tap : rawWidth;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: UiSpace.md,
+                  children: [
+                    for (final (index, variant)
+                        in AppIconController.variants.indexed)
+                      Builder(
+                        builder: (context) {
+                          final id = variant.id;
+                          final isSelected = id == selected;
+                          final label = _labelFor(l10n, id);
+                          return Semantics(
+                            sortKey: OrdinalSortKey(index.toDouble()),
+                            child: UiPressable(
+                              key: ValueKey('settings-icon-$id'),
+                              selected: isSelected,
+                              semanticLabel: l10n.profile_settings_iconSemantic(
+                                label,
+                              ),
+                              excludeChildSemantics: true,
+                              minSize: const Size(UiSize.tap, UiSize.tap),
+                              borderRadius: BorderRadius.circular(
+                                UiRadius.menu,
+                              ),
+                              onPressed: () {
+                                OurneyHaptics.selection();
+                                unawaited(
+                                  ref.read(appIconProvider.notifier).set(id),
+                                );
+                              },
+                              child: SizedBox(
+                                width: itemWidth,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Container(
+                                          width: 52,
+                                          height: 52,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(
+                                              14,
+                                            ),
+                                            border: Border.all(
+                                              color: isSelected
+                                                  ? ui.focus
+                                                  : ui.outline,
+                                              width: isSelected
+                                                  ? 3
+                                                  : UiBorder.standard,
+                                            ),
+                                            boxShadow: isSelected
+                                                ? ui.hardShadow(2)
+                                                : null,
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              11,
+                                            ),
+                                            child: Image.asset(
+                                              variant.previewAsset,
+                                              width: 52,
+                                              height: 52,
+                                              fit: BoxFit.cover,
+                                              cacheWidth: 180,
+                                              filterQuality:
+                                                  FilterQuality.medium,
+                                              excludeFromSemantics: true,
+                                            ),
+                                          ),
+                                        ),
+                                        if (isSelected)
+                                          PositionedDirectional(
+                                            top: -6,
+                                            end: -6,
+                                            child: Container(
+                                              key: const ValueKey(
+                                                'settings-icon-check',
+                                              ),
+                                              width: 22,
+                                              height: 22,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color: ui.ink,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: ui.surface,
+                                                  width: UiBorder.thin,
+                                                ),
+                                              ),
+                                              child: OurneyIcon(
+                                                name: 'check',
+                                                size: 12,
+                                                flat: true,
+                                                color: ui.surface,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      label,
+                                      textAlign: TextAlign.center,
+                                      style: UiText.body(
+                                        size: 11,
+                                        height: 1.3,
+                                        weight: isSelected || boldText
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                        color: isSelected ? ui.ink : ui.inkSoft,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
