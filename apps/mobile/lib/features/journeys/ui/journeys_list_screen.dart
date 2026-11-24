@@ -376,7 +376,7 @@ class _DayZero extends StatelessWidget {
                         photoKey: 'day-zero-photo-0',
                         asset: 'assets/samples/morning_run/01.webp',
                         fallbackColor: UiTypePastel.workout,
-                        fallbackIcon: 'workout',
+                        fallbackIcon: 'fitness',
                         ui: ui,
                       ),
                     ),
@@ -389,7 +389,7 @@ class _DayZero extends StatelessWidget {
                         photoKey: 'day-zero-photo-2',
                         asset: 'assets/samples/couple_rituals/01.webp',
                         fallbackColor: UiTypePastel.couple,
-                        fallbackIcon: 'couple',
+                        fallbackIcon: 'heart',
                         ui: ui,
                       ),
                     ),
@@ -401,8 +401,8 @@ class _DayZero extends StatelessWidget {
                       child: _DayZeroPolaroid(
                         photoKey: 'day-zero-photo-1',
                         asset: 'assets/samples/ielts_study/01.webp',
-                        fallbackColor: UiTypePastel.weightLoss,
-                        fallbackIcon: 'camera',
+                        fallbackColor: UiTypePastel.english,
+                        fallbackIcon: 'book',
                         ui: ui,
                       ),
                     ),
@@ -460,7 +460,7 @@ class _DayZeroPolaroid extends StatelessWidget {
       height: 84,
       padding: const EdgeInsets.fromLTRB(5, 5, 5, 13),
       decoration: BoxDecoration(
-        color: ui.surface,
+        color: ui.fillSelected,
         border: Border.all(color: ui.outline, width: 2),
         boxShadow: ui.hardShadow(),
       ),
@@ -476,7 +476,13 @@ class _DayZeroPolaroid extends StatelessWidget {
               cacheWidth: 186,
               excludeFromSemantics: true,
               errorBuilder: (context, error, stackTrace) => Center(
-                child: OurneyIcon(name: fallbackIcon, size: 26, active: true),
+                child: OurneyIcon(
+                  name: fallbackIcon,
+                  size: 26,
+                  active: true,
+                  inkColor: UiFlowColors.onPastel,
+                  dieCut: UiFlowColors.paper,
+                ),
               ),
             ),
             if (ui.isDark)

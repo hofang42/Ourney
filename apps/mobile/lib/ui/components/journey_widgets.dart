@@ -82,6 +82,8 @@ class UiTypeBadge extends StatelessWidget {
           name: spec.icon,
           size: (size * 0.6).roundToDouble(),
           active: true,
+          inkColor: _onPastel,
+          dieCut: const Color(0xFFFFFFFF),
         ),
       ),
     );

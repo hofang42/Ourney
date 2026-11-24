@@ -123,6 +123,78 @@ void main() {
         ),
         findsNothing,
       );
+
+      // F4: Quiet hero cover uses 960px decode width so vertical BoxFit.cover
+      // does not upscale at @3x.
+      final quietImg = tester.widget<Image>(_key('deck-photo-quiet'));
+      expect(quietImg.image, isA<ResizeImage>());
+      expect((quietImg.image as ResizeImage).width, 960);
+
+      // F2: On card 2 (squad), the 3rd stepping stone clears the top-right
+      // Chosen chip and its trophy badge uses a contrasting surface fill.
+      await tester.tap(_key('create-deck-next'));
+      await tester.pumpAndSettle();
+      final chipRect = tester.getRect(_key('create-deck-chosen'));
+      final stone2Rect = tester.getRect(_key('deck-photo-squad-2'));
+      expect(
+        stone2Rect.top,
+        greaterThanOrEqualTo(chipRect.bottom - 2),
+        reason: '3rd stepping stone must not be covered by Chosen chip',
+      );
+      final squadPreview = _key('deck-preview-squad');
+      final trophyIcon = find.descendant(
+        of: squadPreview,
+        matching: find.byWidgetPredicate(
+          (w) => w is OurneyIcon && w.name == 'trophy',
+        ),
+      );
+      expect(trophyIcon, findsOneWidget);
+      final trophyBadge = tester.widget<Container>(
+        find.ancestor(of: trophyIcon, matching: find.byType(Container)).first,
+      );
+      final trophyBadgeDeco = trophyBadge.decoration! as BoxDecoration;
+      final squadUi = tester.element(squadPreview).ui;
+      expect(
+        trophyBadgeDeco.color,
+        isNot(ourneyIconColor('trophy')),
+        reason: 'trophy badge background must contrast with #FF9F1C trophy fill',
+      );
+      expect(trophyBadgeDeco.color, squadUi.surface);
+
+      // F3: On card 6 (minimal), the 4 photo tiles are >= 30dp squares at
+      // 360dp and align with 4 columns so the 3 vertical dividers sit strictly
+      // in the gaps between adjacent tiles.
+      for (var i = 1; i < 5; i++) {
+        await tester.tap(_key('create-deck-next'));
+        await tester.pumpAndSettle();
+      }
+      final minimalPreviewRect = tester.getRect(_key('deck-preview-minimal'));
+      final hPad = minimalPreviewRect.width * 0.07;
+      final colWidth = (minimalPreviewRect.width - hPad * 2) / 4;
+      final tileRects = [
+        for (var i = 0; i < 4; i++)
+          tester.getRect(_key('deck-photo-minimal-$i')),
+      ];
+      for (var i = 0; i < 4; i++) {
+        expect(tileRects[i].width, greaterThanOrEqualTo(30));
+        expect(
+          tileRects[i].width,
+          closeTo(tileRects[i].height, 0.5),
+        );
+      }
+      for (var i = 1; i < 4; i++) {
+        final dividerX = minimalPreviewRect.left + hPad + colWidth * i;
+        expect(
+          dividerX,
+          greaterThan(tileRects[i - 1].right),
+          reason: 'divider $i must sit to the right of tile ${i - 1}',
+        );
+        expect(
+          dividerX,
+          lessThan(tileRects[i].left),
+          reason: 'divider $i must sit to the left of tile $i',
+        );
+      }
     });
 
     testWidgets(

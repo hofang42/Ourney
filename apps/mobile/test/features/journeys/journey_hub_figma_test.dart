@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/features/journeys/data/create_progress.dart';
 import 'package:ourney/features/journeys/ui/home/journey_home_intro.dart';
+import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'journeys_fakes.dart';
@@ -98,6 +99,29 @@ void main() {
         ),
         findsNWidgets(3),
       );
+      // F5: Every _DayZero Polaroid errorBuilder uses a valid OurneyIcon name
+      // with non-null path geometry and onPastel ink.
+      final ctx = tester.element(_key('day-zero-polaroid-trio'));
+      final expectedFallbacks = ['fitness', 'heart', 'book'];
+      final images = tester
+          .widgetList<Image>(
+            find.descendant(
+              of: _key('day-zero-polaroid-trio'),
+              matching: find.byType(Image),
+            ),
+          )
+          .toList();
+      expect(images, hasLength(3));
+      for (var i = 0; i < images.length; i++) {
+        expect(images[i].errorBuilder, isNotNull);
+        final fallback = images[i].errorBuilder!(ctx, StateError('missing'), null);
+        expect(fallback, isA<Center>());
+        final icon = (fallback as Center).child! as OurneyIcon;
+        expect(icon.name, expectedFallbacks[i]);
+        expect(ourneyIconNames, contains(icon.name));
+        expect(ourneyIconPath(icon.name), isNotNull);
+        expect(icon.inkColor, UiFlowColors.onPastel);
+      }
       expect(find.text('no journeys yet.'), findsOneWidget);
       expect(
         find.text('one photo a day keeps the whole road.'),

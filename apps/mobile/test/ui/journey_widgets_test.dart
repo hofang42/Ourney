@@ -1,6 +1,9 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/ui/components/flow_kit.dart';
 import 'package:ourney/ui/components/journey_widgets.dart';
 import 'package:ourney/ui/components/ourney_icons.dart';
 import 'package:ourney/ui/components/pressable.dart';
@@ -119,7 +122,19 @@ void main() {
   group('icons', () {
     test('new icons exist, parse non-empty inside the viewBox', () {
       expect(ourneyIconNames, containsAll(newIcons));
-      for (final name in newIcons) {
+      expect(
+        ourneyIconNames,
+        containsAll(['weight', 'study', 'trip', 'couple', 'workout', 'custom']),
+      );
+      for (final name in [
+        ...newIcons,
+        'weight',
+        'study',
+        'trip',
+        'couple',
+        'workout',
+        'custom',
+      ]) {
         final b = ourneyIconPath(name)!.getBounds();
         expect(b.isEmpty, isFalse, reason: name);
         expect(b.left, greaterThanOrEqualTo(0), reason: name);
@@ -128,6 +143,112 @@ void main() {
         expect(b.bottom, lessThanOrEqualTo(24), reason: name);
       }
     });
+
+    test(
+      'template type icons and tiny icons paint recognizable symbols with ink outlines (never blank solid squares or 1:1 invisible dots)',
+      () async {
+        Future<Set<int>> sampleIconColors({
+          required String name,
+          required double size,
+          required Color bg,
+          required Color ink,
+          bool active = true,
+        }) async {
+          const dpr = 3;
+          final px = (size * dpr).toInt();
+          final recorder = ui.PictureRecorder();
+          final canvas = Canvas(recorder)..scale(dpr.toDouble());
+          canvas.drawRect(
+            Rect.fromLTWH(0, 0, size, size),
+            Paint()..color = bg,
+          );
+          OurneyIconPainter(
+            name: name,
+            color: ourneyIconColor(name),
+            ink: ink,
+            active: active,
+            shadow: ink,
+            dieCut: const Color(0xFFFFFFFF),
+          ).paint(canvas, Size(size, size));
+          final picture = recorder.endRecording();
+          final image = await picture.toImage(px, px);
+          final bytes = (await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+          final colors = <int>{};
+          // Sample interior grid (excluding outer 20% border) to ensure the
+          // glyph is not a uniform solid rectangle fill.
+          final minXY = (px * 0.22).floor();
+          final maxXY = (px * 0.78).ceil();
+          for (var y = minXY; y < maxXY; y++) {
+            for (var x = minXY; x < maxXY; x++) {
+              final idx = (y * px + x) * 4;
+              final r = bytes.getUint8(idx);
+              final g = bytes.getUint8(idx + 1);
+              final b = bytes.getUint8(idx + 2);
+              colors.add((r << 16) | (g << 8) | b);
+            }
+          }
+          return colors;
+        }
+
+        for (final name in [
+          'type-weight',
+          'type-study',
+          'type-trip',
+          'type-couple',
+          'type-workout',
+          'type-custom',
+          'weight',
+          'study',
+          'trip',
+          'couple',
+          'workout',
+          'custom',
+        ]) {
+          final interior = await sampleIconColors(
+            name: name,
+            size: 29,
+            bg: const Color(0xFFFF7E7E),
+            ink: const Color(0xFF1A1A1A),
+          );
+          // A solid square tile would have only 1 interior color (the fill);
+          // a recognizable symbol has fill + ink outline / die-cut / background.
+          expect(
+            interior.length,
+            greaterThanOrEqualTo(3),
+            reason: '$name rendered as a blank solid tile',
+          );
+        }
+
+        // Tiny icons (< 16dp) must still paint their ink halo outline so e.g.
+        // a 12dp trophy on an orange (#FF9F1C) badge is never 1.00:1 invisible,
+        // and a 14dp book / 15dp lock keeps its interior detail.
+        for (final (name, sz, bg) in const [
+          ('trophy', 12.0, Color(0xFFFF9F1C)),
+          ('book', 14.0, Color(0xFFFFFDF9)),
+          ('flame', 14.0, Color(0xFFFFFDF9)),
+          ('lock', 15.0, Color(0xFFEFF3F0)),
+        ]) {
+          final interior = await sampleIconColors(
+            name: name,
+            size: sz,
+            bg: bg,
+            ink: const Color(0xFF1A1A1A),
+          );
+          expect(
+            interior,
+            contains(0x1A1A1A),
+            reason: 'tiny $name (${sz}dp) lost its #1A1A1A ink outline/detail',
+          );
+          expect(
+            interior.length,
+            greaterThanOrEqualTo(3),
+            reason: 'tiny $name (${sz}dp) collapsed into a single color',
+          );
+        }
+      },
+    );
   });
 
   group('UiTypeBadge', () {
@@ -168,6 +289,16 @@ void main() {
           final deco = box.decoration! as BoxDecoration;
           expect(deco.color, UiTypeBadge.pastelFor(id));
           expect((deco.border! as Border).top.width, UiBorder.standard);
+          final icon = tester.widget<OurneyIcon>(
+            find.descendant(
+              of: find.byWidgetPredicate(
+                (w) => w is UiTypeBadge && w.type == id,
+              ),
+              matching: find.byType(OurneyIcon),
+            ),
+          );
+          expect(icon.inkColor, UiFlowColors.onPastel);
+          expect(icon.dieCut, const Color(0xFFFFFFFF));
         }
         expect(UiTypeBadge.pastelFor('weight'), UiTypePastel.weightLoss);
         expect(tester.takeException(), isNull);

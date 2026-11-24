@@ -161,4 +161,4 @@ Each Journey's `TemplateId` maps 1-to-1 to a `PersonaSkinId`. When building or u
 2. **Global Hub (`JourneysScreen`) UI**:
    - Uses the neutral **Ourney Editorial Base** (`OurneyPersonaTheme.editorialNeutralBase(brightness)`), while each individual `JourneyCard` in the list renders with its own template's accent color and badge.
 3. **Create Journey (`CreateJourneyScreen`) UI**:
-   - Uses **Live Chameleon Preview**: tapping any of the 6 template cards immediately calls `ref.read(activePersonaSkinProvider.notifier).selectTemplate(template.id)` so the user sees the screen morph live into that persona's exact theme and preview board (`template.designAssetPath`).
+   - Uses **Live Chameleon Preview**: tapping any of the 6 template cards immediately calls `ref.read(activePersonaSkinProvider.notifier).selectTemplate(template.id)` so the user sees the screen morph live into that persona's exact theme and sample preview (`CreateDeckPreview` from `assets/samples/`).

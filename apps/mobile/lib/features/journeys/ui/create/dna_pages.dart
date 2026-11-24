@@ -296,25 +296,40 @@ class _SilhouettePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color.withValues(alpha: 0.72)
+    final haloPaint = Paint()
+      ..color = const Color(0x8C0F172A)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
+      ..strokeWidth = 4.2
+      ..strokeCap = StrokeCap.round;
+    final linePaint = Paint()
+      ..color = const Color(0xF0FFFFFF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round;
     final w = size.width;
     final h = size.height;
+    // Standing body silhouette aligned to the full-body reference photo:
+    // head oval at top, shoulder-and-torso guide down to the legs.
     final path = Path()
       ..addOval(
-        Rect.fromCircle(center: Offset(w / 2, h * 0.28), radius: w * 0.16),
+        Rect.fromCenter(
+          center: Offset(w * 0.50, h * 0.085),
+          width: w * 0.17,
+          height: h * 0.125,
+        ),
       )
-      ..moveTo(w * 0.18, h * 0.92)
-      ..quadraticBezierTo(w * 0.18, h * 0.55, w * 0.5, h * 0.52)
-      ..quadraticBezierTo(w * 0.82, h * 0.55, w * 0.82, h * 0.92);
+      ..moveTo(w * 0.37, h * 0.94)
+      ..quadraticBezierTo(w * 0.34, h * 0.56, w * 0.34, h * 0.24)
+      ..quadraticBezierTo(w * 0.34, h * 0.17, w * 0.50, h * 0.17)
+      ..quadraticBezierTo(w * 0.66, h * 0.17, w * 0.66, h * 0.24)
+      ..quadraticBezierTo(w * 0.66, h * 0.56, w * 0.63, h * 0.94);
     for (final metric in path.computeMetrics()) {
       var d = 0.0;
       while (d < metric.length) {
         final next = math.min(d + 6, metric.length);
-        canvas.drawPath(metric.extractPath(d, next), p);
+        final seg = metric.extractPath(d, next);
+        canvas.drawPath(seg, haloPaint);
+        canvas.drawPath(seg, linePaint);
         d += 11;
       }
     }

@@ -52,7 +52,7 @@ class _QuietPreview extends StatelessWidget {
               'assets/samples/weight_loss/cover.webp',
               key: const ValueKey('deck-photo-quiet'),
               fit: BoxFit.cover,
-              cacheWidth: 540,
+              cacheWidth: 960,
               excludeFromSemantics: true,
               errorBuilder: (context, error, stackTrace) =>
                   ColoredBox(color: ui.ink.withValues(alpha: 0.05)),
@@ -161,11 +161,11 @@ class _SquadPreview extends StatelessWidget {
       builder: (context, c) {
         final w = c.maxWidth;
         final h = c.maxHeight;
-        final nodeSize = math.min(42.0, h * 0.38);
+        final nodeSize = math.min(40.0, h * 0.35);
         final points = [
-          Offset(w * 0.20, h * 0.72),
-          Offset(w * 0.50, h * 0.48),
-          Offset(w * 0.80, h * 0.26),
+          Offset(w * 0.20, h * 0.76),
+          Offset(w * 0.48, h * 0.56),
+          Offset(w * 0.76, h * 0.38),
         ];
         return Stack(
           fit: StackFit.expand,
@@ -207,6 +207,7 @@ class _SquadPreview extends StatelessWidget {
                                               name: 'trophy',
                                               size: 20,
                                               active: true,
+                                              inkColor: UiFlowColors.onPastel,
                                             ),
                                           )
                                         : null,
@@ -224,17 +225,17 @@ class _SquadPreview extends StatelessWidget {
                           right: -4,
                           bottom: -4,
                           child: Container(
-                            width: 20,
-                            height: 20,
+                            width: 22,
+                            height: 22,
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: ui.accent,
+                              color: ui.surface,
                               shape: BoxShape.circle,
                               border: Border.all(color: ui.outline, width: 1.5),
                             ),
                             child: const OurneyIcon(
                               name: 'trophy',
-                              size: 12,
+                              size: 13,
                               active: true,
                             ),
                           ),
@@ -258,22 +259,22 @@ class _SquadPathPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final path = Path()
-      ..moveTo(size.width * 0.20, size.height * 0.72)
+      ..moveTo(size.width * 0.20, size.height * 0.76)
       ..cubicTo(
-        size.width * 0.46,
-        size.height * 0.74,
-        size.width * 0.30,
-        size.height * 0.48,
-        size.width * 0.50,
-        size.height * 0.48,
+        size.width * 0.44,
+        size.height * 0.78,
+        size.width * 0.28,
+        size.height * 0.56,
+        size.width * 0.48,
+        size.height * 0.56,
       )
       ..cubicTo(
-        size.width * 0.70,
-        size.height * 0.48,
-        size.width * 0.54,
-        size.height * 0.24,
-        size.width * 0.80,
-        size.height * 0.26,
+        size.width * 0.68,
+        size.height * 0.56,
+        size.width * 0.52,
+        size.height * 0.36,
+        size.width * 0.76,
+        size.height * 0.38,
       );
     final paint = Paint()
       ..color = ink
@@ -349,13 +350,13 @@ class _FlexerPreviewPainter extends CustomPainter {
       ..strokeWidth = 5
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(
-      Offset(size.width * 0.12, size.height * 0.36),
-      Offset(size.width * 0.88, size.height * 0.54),
+      Offset(size.width * 0.12, size.height * 0.62),
+      Offset(size.width * 0.88, size.height * 0.75),
       p1,
     );
     canvas.drawLine(
-      Offset(size.width * 0.12, size.height * 0.54),
-      Offset(size.width * 0.88, size.height * 0.72),
+      Offset(size.width * 0.12, size.height * 0.74),
+      Offset(size.width * 0.88, size.height * 0.87),
       p2,
     );
   }
@@ -562,102 +563,106 @@ class _MinimalPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        CustomPaint(
-          painter: _MinimalPreviewPainter(ink: ui.ink, accent: ui.accent),
-          child: const SizedBox.expand(),
-        ),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                for (var i = 0; i < _photos.length; i++)
-                  Flexible(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxWidth: 44,
-                          maxHeight: 44,
-                        ),
-                        child: AspectRatio(
-                          aspectRatio: 1,
-                          child: Container(
-                            clipBehavior: Clip.antiAlias,
-                            decoration: BoxDecoration(
-                              color: ui.surface,
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: ui.outline,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.asset(
-                                  _photos[i],
-                                  key: ValueKey('deck-photo-minimal-$i'),
-                                  fit: BoxFit.cover,
-                                  cacheWidth: 186,
-                                  excludeFromSemantics: true,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      ColoredBox(color: ui.surface),
-                                ),
-                                if (ui.isDark)
-                                  const IgnorePointer(
-                                    child: ColoredBox(color: Color(0x22000000)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth;
+        final h = c.maxHeight;
+        final hPad = w * 0.07;
+        final gridWidth = w - hPad * 2;
+        final colWidth = gridWidth / _photos.length;
+        final tileSize = math.min(36.0, math.min(colWidth - 6, h * 0.32));
+        final midY = h * 0.54;
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomPaint(
+              painter: _MinimalPreviewPainter(
+                ink: ui.ink,
+                accent: ui.accent,
+                columns: _photos.length,
+                hPadFraction: 0.07,
+                midYFraction: 0.54,
+              ),
+              child: const SizedBox.expand(),
             ),
-          ),
-        ),
-      ],
+            for (var i = 0; i < _photos.length; i++)
+              Positioned(
+                left: hPad + colWidth * (i + 0.5) - tileSize / 2,
+                top: midY - tileSize / 2,
+                width: tileSize,
+                height: tileSize,
+                child: Container(
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: ui.surface,
+                    borderRadius: BorderRadius.circular(7),
+                    border: Border.all(color: ui.outline, width: 1.5),
+                  ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.asset(
+                        _photos[i],
+                        key: ValueKey('deck-photo-minimal-$i'),
+                        fit: BoxFit.cover,
+                        cacheWidth: 186,
+                        excludeFromSemantics: true,
+                        errorBuilder: (context, error, stackTrace) =>
+                            ColoredBox(color: ui.surface),
+                      ),
+                      if (ui.isDark)
+                        const IgnorePointer(
+                          child: ColoredBox(color: Color(0x22000000)),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
 
 class _MinimalPreviewPainter extends CustomPainter {
-  const _MinimalPreviewPainter({required this.ink, required this.accent});
+  const _MinimalPreviewPainter({
+    required this.ink,
+    required this.accent,
+    this.columns = 4,
+    this.hPadFraction = 0.07,
+    this.midYFraction = 0.54,
+  });
 
   final Color ink;
   final Color accent;
+  final int columns;
+  final double hPadFraction;
+  final double midYFraction;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final hPad = size.width * 0.08;
-    final vPad = size.height * 0.22;
+    final hPad = size.width * hPadFraction;
+    final top = size.height * 0.25;
+    final bottom = size.height * 0.82;
     final left = hPad;
     final right = size.width - hPad;
-    final top = vPad;
-    final bottom = size.height - vPad;
     final gridWidth = right - left;
-    final colWidth = gridWidth / 7;
+    final colWidth = gridWidth / columns;
 
     final gridPaint = Paint()
-      ..color = ink
+      ..color = ink.withValues(alpha: 0.35)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
-    for (var i = 1; i <= 6; i++) {
+    for (var i = 1; i < columns; i++) {
       final x = left + colWidth * i;
       canvas.drawLine(Offset(x, top), Offset(x, bottom), gridPaint);
     }
 
-    final midY = size.height / 2;
+    final midY = size.height * midYFraction;
     final accentPaint = Paint()
       ..color = accent
-      ..strokeWidth = 3
+      ..strokeWidth = 3.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(left, midY), Offset(right, midY), accentPaint);
@@ -665,7 +670,11 @@ class _MinimalPreviewPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MinimalPreviewPainter old) =>
-      old.ink != ink || old.accent != accent;
+      old.ink != ink ||
+      old.accent != accent ||
+      old.columns != columns ||
+      old.hPadFraction != hPadFraction ||
+      old.midYFraction != midYFraction;
 }
 
 /// Mini HUD strip shown below the preview in a create-flow type deck card.

@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,6 +95,43 @@ void main() {
           find.byKey(const ValueKey('dna-ghost-silhouette')),
           findsOneWidget,
         );
+        // F1: Silhouette wireframe aligns the head oval at the top of the
+        // 180x240 standing frame (y < 40) with high-contrast light + dark strokes.
+        final silhouette = tester.widget<CustomPaint>(
+          find.byKey(const ValueKey('dna-ghost-silhouette')),
+        );
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+        silhouette.painter!.paint(canvas, const Size(180, 240));
+        final bytes = await tester.runAsync(() async {
+          final img = await recorder.endRecording().toImage(180, 240);
+          return (await img.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          ))!;
+        });
+        expect(bytes, isNotNull);
+        var headTopBandPixels = 0;
+        var hasLightDash = false;
+        var hasDarkHalo = false;
+        for (var y = 4; y < 36; y++) {
+          for (var x = 60; x < 120; x++) {
+            final idx = (y * 180 + x) * 4;
+            final a = bytes!.getUint8(idx + 3);
+            if (a > 0) {
+              headTopBandPixels++;
+              final r = bytes.getUint8(idx);
+              if (r > 200) hasLightDash = true;
+              if (r < 80) hasDarkHalo = true;
+            }
+          }
+        }
+        expect(
+          headTopBandPixels,
+          greaterThan(20),
+          reason: 'head oval must align with standing head at top of frame',
+        );
+        expect(hasLightDash, isTrue);
+        expect(hasDarkHalo, isTrue);
       }
     },
   );
