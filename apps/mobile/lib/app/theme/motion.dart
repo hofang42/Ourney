@@ -1,28 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-import 'tokens.dart';
+import '../../ui/tokens.dart';
 
-/// Motion helpers honoring the platform "reduce motion" setting
-/// (`MediaQuery.disableAnimations`). Under reduce motion every animation is
-/// replaced by a 0.2s fade and decorative loops/confetti are skipped.
+/// Legacy motion helpers forwarded to [UiMotion] and [UiCurves].
+/// Under reduce motion (`MediaQuery.disableAnimations`) every animation is
+/// replaced by a fast fade and decorative loops/confetti are skipped.
 abstract final class OurneyMotion {
-  static bool reduced(BuildContext context) =>
-      MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+  static bool reduced(BuildContext context) => UiMotion.reduced(context);
 
-  /// [normal] duration, or the 0.2s fade duration under reduce motion.
+  /// [normal] duration, or [UiMotion.reducedFade] under reduce motion.
   static Duration duration(BuildContext context, Duration normal) =>
-      reduced(context) ? OurneyDurations.reducedFade : normal;
+      UiMotion.fadeOf(context, normal);
 
   /// [normal] duration, or zero under reduce motion (for movement that must
   /// not be replaced by a fade, e.g. press-sink).
   static Duration movement(BuildContext context, Duration normal) =>
-      reduced(context) ? Duration.zero : normal;
+      UiMotion.of(context, normal);
 
   /// Whether decorative effects (confetti, looping flame) may run.
-  static bool allowsDecoration(BuildContext context) => !reduced(context);
+  static bool allowsDecoration(BuildContext context) =>
+      !UiMotion.reduced(context);
 
-  /// Spring-like page transition (0.4s) or a 0.2s fade under reduce motion.
+  /// Spring-like page transition or a fade under reduce motion.
   static Widget pageTransition(
     BuildContext context,
     Animation<double> animation,
@@ -32,33 +33,28 @@ abstract final class OurneyMotion {
     if (reduced(context)) {
       return FadeTransition(opacity: animation, child: child);
     }
-    final curved = CurvedAnimation(
-      parent: animation,
-      curve: Curves.easeOutBack,
-      reverseCurve: Curves.easeIn,
-    );
     return FadeTransition(
       opacity: animation,
       child: ScaleTransition(
-        scale: Tween<double>(begin: 0.96, end: 1).animate(curved),
+        scale: Tween<double>(
+          begin: UiMotion.popMinScale,
+          end: 1,
+        ).chain(CurveTween(curve: UiCurves.easeOutStrong)).animate(animation),
         child: child,
       ),
     );
   }
 }
 
-/// Haptics with a global off switch ("haptic tat duoc").
+/// Legacy haptics facade forwarded to [UiHaptics] (sharing the global
+/// [UiHaptics.enabled] toggle).
 abstract final class OurneyHaptics {
-  static bool enabled = true;
+  static bool get enabled => UiHaptics.enabled;
+  static set enabled(bool value) => UiHaptics.enabled = value;
 
-  static void _run(Future<void> Function() f) {
-    if (!enabled) return;
-    f().catchError((Object _) {});
-  }
-
-  static void selection() => _run(HapticFeedback.selectionClick);
-  static void light() => _run(HapticFeedback.lightImpact);
-  static void medium() => _run(HapticFeedback.mediumImpact);
-  static void success() => _run(HapticFeedback.heavyImpact);
-  static void warning() => _run(HapticFeedback.vibrate);
+  static void selection() => unawaited(UiHaptics.selection());
+  static void light() => unawaited(UiHaptics.pressLight());
+  static void medium() => unawaited(UiHaptics.shutterMedium());
+  static void success() => unawaited(UiHaptics.success());
+  static void warning() => unawaited(UiHaptics.warning());
 }

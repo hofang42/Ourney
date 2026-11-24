@@ -100,15 +100,16 @@ void main() {
         expect(t.getSize(containers.at(0)).height, 44);
         expect(t.getSize(find.byType(UiPressable).first).height, 48);
         // 3dp hard shadow on a selectable chip.
-        final shadow =
-            t
-                    .widgetList<AnimatedContainer>(
-                      find.byType(AnimatedContainer),
-                    )
-                    .first
-                    .decoration!
-                as BoxDecoration;
-        expect(shadow.boxShadow!.single.offset, const Offset(3, 3));
+        final shadowTransform = t.widget<Transform>(
+          find
+              .descendant(
+                of: find.byType(UiPressable).first,
+                matching: find.byType(Transform),
+              )
+              .first,
+        );
+        final shadowVec = shadowTransform.transform.getTranslation();
+        expect(Offset(shadowVec.x, shadowVec.y), const Offset(3, 3));
       });
 
       testWidgets('tag has the 1.5dp outline', (t) async {
@@ -136,21 +137,21 @@ void main() {
         final d = decorOf(t, box.first);
         expect(d.borderRadius, BorderRadius.circular(16));
         expect((d.border! as Border).top.width, 2);
-        final animated = find.descendant(
-          of: find.byType(UiPressable),
-          matching: find.byType(AnimatedContainer),
+        final shadowTransform = t.widget<Transform>(
+          find
+              .descendant(
+                of: find.byType(UiPressable),
+                matching: find.byType(Transform),
+              )
+              .first,
         );
-        AnimatedContainer ac() => t.widget<AnimatedContainer>(animated.first);
-        expect(
-          (ac().decoration! as BoxDecoration).boxShadow!.single.offset,
-          const Offset(4, 4),
-        );
+        final shadowVec = shadowTransform.transform.getTranslation();
+        expect(Offset(shadowVec.x, shadowVec.y), const Offset(4, 4));
         final before = t.getTopLeft(box.first);
         final g = await t.startGesture(t.getCenter(box.first));
         await t.pump();
         await t.pump(const Duration(milliseconds: 200));
         expect(t.getTopLeft(box.first) - before, const Offset(4, 4));
-        expect((ac().decoration! as BoxDecoration).boxShadow, isEmpty);
         await g.up();
         await t.pumpAndSettle();
         expect(taps, 1);
