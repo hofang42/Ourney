@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>og-invite (/f/token)</title>
+  <link rel="stylesheet" href="og-cards.css">
+  <style>
+    .invite-ticket {
+      position: relative;
+      width: 446px;
+      background: #FFFFFF;
+      border: 3px solid #1A1A1A;
+      border-radius: 26px;
+      box-shadow: 10px 10px 0 #1A1A1A;
+      padding: 22px 24px;
+      transform: rotate(1.8deg);
+    }
+    .it-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 14px;
+      border-bottom: 2.5px dashed #1A1A1A;
+    }
+    .it-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      background: #7EE8A2;
+      border: 2px solid #1A1A1A;
+      border-radius: 999px;
+      font: 700 13px/1 var(--heading);
+    }
+    .it-pass {
+      font: 700 14px/1 var(--heading);
+      color: #5A544C;
+    }
+    .it-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .it-polaroid {
+      background: #FFF8EE;
+      border: 2.2px solid #1A1A1A;
+      border-radius: 16px;
+      padding: 10px;
+      box-shadow: 4px 4px 0 #1A1A1A;
+    }
+    .it-polaroid.it-you {
+      background: #FFF3D1;
+      border-style: dashed;
+    }
+    .it-art {
+      height: 112px;
+      border: 2px solid #1A1A1A;
+      border-radius: 10px;
+      background: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .it-art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .it-art-tag {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: #FFF8EE;
+      border: 1.8px solid #1A1A1A;
+      border-radius: 999px;
+      box-shadow: 2px 2px 0 #1A1A1A;
+      font: 700 11.5px/1 var(--heading);
+      color: #1A1A1A;
+    }
+    .it-meta {
+      margin-top: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font: 700 14px/1.2 var(--heading);
+    }
+    .it-streak {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 8px;
+      background: #FFFFFF;
+      border: 1.8px solid #1A1A1A;
+      border-radius: 999px;
+      font-size: 12.5px;
+    }
+    .it-footer {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: #F6EEDF;
+      border: 2px solid #1A1A1A;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font: 700 14px/1.2 var(--heading);
+    }
+  </style>
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <defs>
+      <symbol id="i-camera" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path class="s-ink" d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z"/>
+        <path d="M4 7.5h3l1.5-2h7l1.5 2h3v11H4Z" fill="#10B981" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="3.6" fill="#FFF8EE" stroke="#1A1A1A" stroke-width="2"/>
+        <circle cx="12" cy="13" r="1.4" fill="#1A1A1A"/>
+        <circle cx="17" cy="10" r="1" fill="#FFF8EE"/>
+      </symbol>
+      <symbol id="i-flame" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path class="s-ink" d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z"/>
+        <path d="M12 21c-4.4 0-7-2.6-7-6.5 0-3 2-5.2 4.3-7.7.1 2 1.1 3 2 3.5.4-3.5 2.1-5.8 4.3-7.3.1 3.6 3.4 5.7 3.4 10 0 4.8-3 8-7 8Z" fill="#E04F33" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 18.6c-2 0-3.3-1.2-3.3-3 0-1.4.8-2.5 2-3.6.1 1 .6 1.6 1.2 1.9.2-1.7 1-2.8 2-3.6.1 1.7 1.8 2.8 1.8 5.1 0 2-1.5 3.2-3.7 3.2Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-squad" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <g class="s-ink">
+          <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/>
+          <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6ZM13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z"/>
+        </g>
+        <circle cx="17" cy="9" r="2.5" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M13.5 18.5c.3-3.2 1.8-4.7 4.3-4.5 2.1.2 3.3 1.7 3.6 4.5Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="9" cy="8" r="3" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2"/>
+        <path d="M3.5 19c.4-4 2.2-6 5.5-6s5.1 2 5.5 6Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-check" viewBox="-2 -2 28 28">
+        <circle class="s-die" cx="12" cy="12" r="9.2"/>
+        <circle class="s-ink" cx="12" cy="12" r="9.2"/>
+        <circle cx="12" cy="12" r="9.2" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2.2"/>
+        <path d="m7.8 12.3 3 3.1 5.6-6.2" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+      <symbol id="i-couple" viewBox="-2 -2 28 28">
+        <path class="s-die" d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z"/>
+        <path class="s-ink" d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z"/>
+        <path d="M12 20S4 15.5 4 9.5C4 5 9.5 4 12 8c2.5-4 8-3 8 1.5 0 6-8 10.5-8 10.5Z" fill="#FF4D6D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M7.2 9.2a2.4 2.4 0 0 1 2.4-2" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="og-canvas">
+    <div class="og-frame-border"></div>
+
+    <div class="og-left" style="flex: 0 0 580px;">
+      <div class="og-brand-row">
+        <img class="og-wordmark" src="../assets/brand/wordmark.png" alt="ourney">
+        <span class="og-kicker-pill kicker-invite">
+          <svg class="o-sticker" width="18" height="18"><use href="#i-squad"/></svg>
+          <span>LỜI MỜI BẠN ĐỒNG HÀNH</span>
+        </span>
+      </div>
+
+      <div>
+        <h1 class="og-headline" style="font-size: 46px;">
+          bạn được mời<br>
+          <span class="hl-pill hl-mint" style="white-space: nowrap;">cùng đi một hành trình.</span>
+        </h1>
+        <p class="og-sub">
+          Mỗi ngày chụp một tấm ảnh điểm danh, thả cảm xúc trực tiếp lên tường Polaroid và giữ liền chuỗi ngày không bỏ cuộc cùng nhau trên Ourney.
+        </p>
+      </div>
+
+      <div class="og-chips">
+        <span class="og-chip c-primary">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-camera"/></svg>
+          <span>Mở lời mời trên Ourney</span>
+        </span>
+        <span class="og-chip c-warm">
+          <svg class="o-sticker" width="24" height="24"><use href="#i-flame"/></svg>
+          <span>Giữ chuỗi mỗi ngày</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="og-right">
+      <div class="invite-ticket">
+        <div class="it-head">
+          <span class="it-kicker">
+            <svg class="o-sticker" width="18" height="18"><use href="#i-check"/></svg>
+            <span>VÉ MỜI KẾT BẠN</span>
+          </span>
+          <span class="it-pass">DAY 01 · PASS</span>
+        </div>
+
+        <div class="it-pair">
+          <div class="it-polaroid">
+            <div class="it-art">
+              <img src="photos/run-01.webp" alt="">
+            </div>
+            <div class="it-meta">
+              <span>Linh · 06:40</span>
+              <span class="it-streak"><svg class="o-sticker" width="14" height="14"><use href="#i-flame"/></svg>21</span>
+            </div>
+          </div>
+
+          <div class="it-polaroid it-you">
+            <div class="it-art">
+              <img src="photos/run-02.webp" alt="">
+              <span class="it-art-tag">
+                <svg class="o-sticker" width="14" height="14"><use href="#i-camera"/></svg>
+                <span>Chỗ của bạn</span>
+              </span>
+            </div>
+            <div class="it-meta">
+              <span>Bạn · Ngày 1</span>
+              <span class="it-streak"><svg class="o-sticker" width="14" height="14"><use href="#i-couple"/></svg>Mới</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="it-footer">
+          <span>Chụp một tấm · Giữ một chuỗi</span>
+          <span style="color: #B33A0A;">ourney.tech/f/invite</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="og-domain-badge">
+      <span>ourney.tech</span>
+    </div>
+  </div>
+</body>
+</html>

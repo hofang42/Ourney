@@ -45,7 +45,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_hubHowToReportBody =>
-      'Open a group journey, tap the menu button (three dots) on a member\'s card and choose \"Report\" (reports the photo shown on the card, or the person if there is none) or \"Block\". Content you report is hidden on your device right away.';
+      'Open a squad journey, tap the menu button (three dots) on a member\'s card and choose \"Report\" (reports the photo shown on the card, or the person if there is none) or \"Block\". Content you report is hidden on your device right away.';
 
   @override
   String get safety_reportCheckInTitle => 'Report check-in';
@@ -131,7 +131,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_blockBody =>
-      'You won\'t see each other\'s check-ins or reactions any more, and they can\'t join groups you\'re in. They won\'t be told. You can unblock at any time.';
+      'You won\'t see each other\'s check-ins or reactions any more, and they can\'t join squads you\'re in. They won\'t be told. You can unblock at any time.';
 
   @override
   String get safety_blockConfirm => 'Block';
@@ -151,7 +151,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_unblockBody =>
-      'You\'ll see each other\'s content again in groups you share.';
+      'You\'ll see each other\'s content again in squads you share.';
 
   @override
   String get safety_unblockConfirm => 'Unblock';
@@ -230,7 +230,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_eula3Body =>
-      'Photos, captions and numbers you post stay yours. You allow Ourney to store them and show them to the people you choose to share with (group members, people with your public link). You are responsible for what you post.';
+      'Photos, captions and numbers you post stay yours. You allow Ourney to store them and show them to the people you choose to share with (squad members, people with your public link). You are responsible for what you post.';
 
   @override
   String get safety_eula4Title => '4. Reporting, blocking and moderation';
@@ -265,7 +265,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_privacy2Body =>
-      'Private journeys are visible only to you. Group journeys are visible only to group members. A public link shows only what you turn on, and you can hide numbers or blur photos. In on-device mode your data never leaves your phone.';
+      'Private journeys are visible only to you. Squad journeys are visible only to squad members. A public link shows only what you turn on, and you can hide numbers or blur photos. In on-device mode your data never leaves your phone.';
 
   @override
   String get safety_privacy3Title => 'What we don\'t do';
@@ -286,7 +286,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_privacy5Body =>
-      'Go to Profile > Settings > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a group, ownership passes to the earliest-joined member.';
+      'Go to Profile > Settings > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a squad, ownership passes to the earliest-joined member.';
 
   @override
   String get safety_privacy6Title => 'Contact';

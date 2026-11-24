@@ -81,7 +81,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('group-action-leave')));
       await tester.pumpAndSettle();
       expect(
-        find.textContaining('Your check-ins will be hidden from the group'),
+        find.textContaining('Your check-ins will be hidden from the squad'),
         findsOneWidget,
       );
       expect(find.textContaining('ownership passes'), findsOneWidget);
@@ -137,7 +137,7 @@ void main() {
       await _confirm(tester);
       expect(h.journeys.calls, contains('delete:g1'));
       expect(
-        find.textContaining('Other members are still in the group'),
+        find.textContaining('Other members are still in the squad'),
         findsOneWidget,
       );
 
