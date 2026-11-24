@@ -53,6 +53,51 @@ void main() {
     },
   );
 
+  testWidgets(
+    'repeat notification tap for j1 after selecting j2 re-selects j1 on camera (DE-16)',
+    (tester) async {
+      final gateway = FakeNotificationGateway(granted: true);
+      final j1 = reminderJourney(id: 'j1', title: 'Alpha');
+      final j2 = reminderJourney(id: 'j2', title: 'Beta');
+      final c = await pumpOurneyApp(
+        tester,
+        overrides: [
+          notificationGatewayProvider.overrideWithValue(gateway),
+          journeysClockProvider.overrideWithValue(
+            Clock.fixed(DateTime.utc(2026, 10, 16, 5)),
+          ),
+          journeyRepositoryProvider.overrideWithValue(
+            FakeReminderJourneyRepository([j1, j2]),
+          ),
+          checkInRepositoryProvider.overrideWithValue(
+            FakeReminderCheckInRepository(),
+          ),
+          reminderDeviceTimezoneProvider.overrideWith((ref) async => hcm),
+          remindersClockProvider.overrideWithValue(Clock.fixed(reminderNow)),
+        ],
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Tap notification for j1 -> camera URI is /capture?journeyId=j1.
+      gateway.onTap!('j1');
+      await tester.pumpAndSettle();
+      expect(c.read(activeJourneyIdProvider), 'j1');
+      expect(find.textContaining('Alpha'), findsWidgets);
+
+      // 2. User switches active journey to j2 while Capture branch URI is still /capture?journeyId=j1.
+      await c.read(activeJourneyIdProvider.notifier).select('j2');
+      await tester.pumpAndSettle();
+      expect(c.read(activeJourneyIdProvider), 'j2');
+      expect(find.textContaining('Beta'), findsWidgets);
+
+      // 3. Tapping a second notification for j1 re-selects j1 on camera.
+      gateway.onTap!('j1');
+      await tester.pumpAndSettle();
+      expect(c.read(activeJourneyIdProvider), 'j1');
+      expect(find.textContaining('Alpha'), findsWidgets);
+    },
+  );
+
   testWidgets('foreground reminder timer triggers ReminderBannerHost (DE-16)', (
     tester,
   ) async {

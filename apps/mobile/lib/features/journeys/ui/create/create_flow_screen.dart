@@ -45,10 +45,25 @@ import 'steps/who_step.dart';
 /// A fresh visit (`/journeys/new`) always starts empty; only the Hub's
 /// "Continue creating" card (`?resume=1`, [resume]) restores the saved draft.
 class CreateFlowScreen extends ConsumerStatefulWidget {
-  const CreateFlowScreen({this.resume = false, super.key});
+  const CreateFlowScreen({
+    this.resume = false,
+    this.initialWho,
+    super.key,
+  });
 
   /// Reopen the saved draft (U8) instead of starting over.
   final bool resume;
+
+  /// Preselected value for step 3 ("Who is coming along?", e.g. `?who=group`
+  /// when launched from a friend's sheet, DE-20).
+  final CreateWho? initialWho;
+
+  static CreateWho? parseWho(String? raw) => switch (raw) {
+    'solo' => CreateWho.solo,
+    'group' => CreateWho.group,
+    'couple' => CreateWho.couple,
+    _ => null,
+  };
 
   @override
   ConsumerState<CreateFlowScreen> createState() => _CreateFlowScreenState();
@@ -167,7 +182,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
           .indexWhere((o) => o.keyName == option.keyName)
           .clamp(0, _options.length - 1);
       _form = form;
-      _who = option.isCouple ? CreateWho.couple : CreateWho.solo;
+      final defaultWho =
+          !_localOnly && widget.initialWho != null
+          ? widget.initialWho!
+          : CreateWho.solo;
+      _who = option.isCouple ? CreateWho.couple : defaultWho;
       _applyWho(form);
       _title.text = form.title;
       _duration.text = form.durationDays?.toString() ?? '';

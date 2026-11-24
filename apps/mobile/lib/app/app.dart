@@ -8,7 +8,7 @@ import 'package:ourney_core/ourney_core.dart' show JourneyStatus;
 import '../features/import/data/import_providers.dart'
     show importResumeProvider;
 import '../features/journeys/data/journeys_providers.dart'
-    show timeZoneWarmupProvider;
+    show journeysClockProvider, timeZoneWarmupProvider;
 import '../features/journeys/journeys_paths.dart';
 import '../features/journeys/ui/day_ticker.dart';
 import '../features/onboarding/l10n/generated/onboarding_localizations.dart';
@@ -16,6 +16,7 @@ import '../features/profile/settings_providers.dart' show themeModeProvider;
 import '../features/profile/share_privacy_sync.dart' show SharePrivacyHealHook;
 import '../features/reminders/data/reminder_scheduler.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../shared/time_zones.dart' show journeyLocalDate;
 import '../ui/ui.dart';
 import 'account_reset.dart';
 import 'locale_override.dart';
@@ -97,14 +98,23 @@ class OurneyApp extends ConsumerWidget {
   ) async {
     var active = true;
     try {
-      final journey = await ref
+      final journeys = await ref
           .read(journeyRepositoryProvider)
-          .watch(id)
+          .watchActive()
           .first
           .timeout(const Duration(seconds: 2));
-      active = journey != null && journey.status == JourneyStatus.active;
+      final now = ref.read(journeysClockProvider).now();
+      active = journeys.any(
+        (j) =>
+            j.id == id &&
+            j.status == JourneyStatus.active &&
+            !j.isPastEndOn(journeyLocalDate(j.timezone, now)),
+      );
     } on Object {
       active = true;
+    }
+    if (active) {
+      unawaited(ref.read(activeJourneyIdProvider.notifier).select(id));
     }
     router.go(active ? JourneysPaths.captureFor(id) : AppRoutes.capture);
   }

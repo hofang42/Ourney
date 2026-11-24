@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/router.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/features/social/data/social_providers.dart';
@@ -169,6 +171,30 @@ void main() {
     });
 
     testWidgets(
+      'loading, unknown journey, and stream error states render cleanly (DE-13)',
+      (tester) async {
+        final pending = StreamController<Journey?>();
+        addTearDown(pending.close);
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          extraOverrides: [
+            journeyByIdProvider('pending-id').overrideWith(
+              (ref) => pending.stream,
+            ),
+          ],
+        );
+        h.container.read(routerProvider).go(JourneysPaths.wrapped('pending-id'));
+        await tester.pump();
+        await tester.pump();
+        expect(_key('journey-wrapped-loading'), findsOneWidget);
+        pending.add(null);
+        await tester.pumpAndSettle();
+        expect(_key('journey-wrapped-not-found'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
       'unknown journey shows not-found with way back to /journeys (DE-13)',
       (tester) async {
         final h = await pumpJourneys(
@@ -216,9 +242,11 @@ void main() {
     );
 
     testWidgets(
-      'Messages and Other apps in share sheet invoke share launcher with link (DE-17)',
+      'Messages and Other apps in share sheet honor hide-brand toggle, iPad origin, and surface share errors (DE-17)',
       (tester) async {
+        expect(defaultSharePositionOrigin().isEmpty, isFalse);
         final shared = <String>[];
+        var shouldThrow = false;
         final token = 'pub${'0' * 37}';
         final base = testJourney(
           status: JourneyStatus.ended,
@@ -251,6 +279,9 @@ void main() {
           ]),
           extraOverrides: [
             socialShareLauncherProvider.overrideWithValue((text) async {
+              if (shouldThrow) {
+                throw const OurneyException(OurneyErrorCode.unknown);
+              }
               shared.add(text);
             }),
           ],
@@ -266,15 +297,31 @@ void main() {
         await tester.pumpAndSettle();
         expect(shared, hasLength(1));
         expect(shared.single, contains(j.title));
-        expect(shared.single, contains('https://ourney.tech/p/$token'));
+        expect(shared.single, contains('ourney · https://ourney.tech/p/$token'));
         expect(h.location, JourneysPaths.wrapped(j.id));
 
+        // Toggling "Hide the ourney wordmark" in the sheet hides the brand
+        // on the card AND removes the `ourney · ` wordmark from the shared text.
         await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-hide-brand'));
         await tester.pumpAndSettle();
         await tester.tap(_key('wrapped-share-other'));
         await tester.pumpAndSettle();
         expect(shared, hasLength(2));
+        expect(shared.last, isNot(contains('ourney · ')));
+        expect(shared.last, contains('https://ourney.tech/p/$token'));
+        expect(_key('wrapped-brand'), findsNothing);
         expect(h.location, JourneysPaths.wrapped(j.id));
+
+        // A failing share launcher shows a toast instead of an unhandled async error.
+        shouldThrow = true;
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-messages'));
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('Something went wrong. Please try again.'), findsOneWidget);
       },
     );
 

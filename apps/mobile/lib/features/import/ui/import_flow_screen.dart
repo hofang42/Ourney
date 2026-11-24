@@ -176,11 +176,12 @@ class _ImportFlowScreenState extends ConsumerState<ImportFlowScreen> {
     final localOnly = ref.read(appConfigProvider).localOnly;
     try {
       final store = ref.read(importJobStoreProvider);
-      final me = ref.read(currentUserIdProvider);
+      final me =
+          ref.read(currentUserIdProvider) ?? (localOnly ? 'local' : null);
       for (final job in await store.unfinished()) {
         // Another account's leftover, a finished job, or one whose photos all
         // failed before a journey existed: nothing to show.
-        final foreign = !localOnly && job.ownerId != me;
+        final foreign = job.ownerId != me;
         final dead = job.phase == ImportPhase.preparing && job.pending == 0;
         if (foreign ||
             dead ||

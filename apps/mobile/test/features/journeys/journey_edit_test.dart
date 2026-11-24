@@ -1,7 +1,9 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/router.dart';
 import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/domain/journey_layouts.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
@@ -267,13 +269,25 @@ void main() {
     });
 
     testWidgets(
-      'unknown journey shows not-found with way back to /journeys (DE-13)',
+      'unknown journey shows loading then not-found with way back to /journeys (DE-13)',
       (tester) async {
+        final pending = StreamController<Journey?>();
+        addTearDown(pending.close);
         final h = await pumpJourneys(
           tester,
           locale: const Locale('en'),
-          location: JourneysPaths.edit('missing'),
+          extraOverrides: [
+            journeyByIdProvider('missing').overrideWith(
+              (ref) => pending.stream,
+            ),
+          ],
         );
+        h.container.read(routerProvider).go(JourneysPaths.edit('missing'));
+        await tester.pump();
+        await tester.pump();
+        expect(_key('journey-edit-loading'), findsOneWidget);
+        pending.add(null);
+        await tester.pumpAndSettle();
         expect(_key('journey-edit-not-found'), findsOneWidget);
         expect(find.text('Journey not found.'), findsOneWidget);
         await tester.tap(find.text('Journeys'));

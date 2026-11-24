@@ -128,12 +128,16 @@ void main() {
   });
 
   testWidgets(
-    'friend sheet offers Start a journey together when no conversation exists (DE-20)',
+    'friend sheet offers Start a journey together preselecting group mode (DE-20)',
     (tester) async {
       final fakes = SocialFakes(
         friends: FakeFriendRepository([friend('nam', name: 'Nam Tran')]),
       );
-      await pumpSocial(tester, location: SocialPaths.friends, fakes: fakes);
+      final router = await pumpSocial(
+        tester,
+        location: SocialPaths.friends,
+        fakes: fakes,
+      );
       await tester.tap(find.byKey(const ValueKey('friend-nam')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('friend-message')), findsNothing);
@@ -144,6 +148,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('friend-start-journey')));
       await tester.pumpAndSettle();
       expect(find.text('create-journey-screen'), findsOneWidget);
+      expect(router.state.uri.toString(), '/journeys/new?who=group');
     },
   );
 

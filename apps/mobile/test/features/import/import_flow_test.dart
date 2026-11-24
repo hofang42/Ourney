@@ -806,9 +806,10 @@ void main() {
   });
 
   testWidgets(
-    'paused job in local-only mode shows Resume and completes without Signed out (DE-05)',
+    'paused job in local-only mode drops foreign jobs, shows Resume, and completes without Signed out (DE-05)',
     (tester) async {
       final store = InMemoryImportJobStore();
+      await _seedJob(store, 'foreign-job', owner: 'u1');
       await _seedJob(store, 'local-job', owner: 'local');
       await store.setPaused('local-job', paused: true);
       final checkIns = SubmittingCheckInRepository();
@@ -819,6 +820,7 @@ void main() {
         checkIns: checkIns,
         importStore: store,
       );
+      expect(await store.get('foreign-job'), isNull);
       expect(find.text('Signed out.'), findsNothing);
       expect(find.text('Paused.'), findsOneWidget);
       expect(_key('import-resume'), findsOneWidget);

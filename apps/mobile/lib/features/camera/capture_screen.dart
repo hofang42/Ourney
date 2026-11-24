@@ -130,7 +130,8 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   void didUpdateWidget(CaptureScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     final id = widget.initialJourneyId;
-    if (id != null && id != oldWidget.initialJourneyId) {
+    if (id != null &&
+        (id != oldWidget.initialJourneyId || id != _selectedJourneyId)) {
       _selectedJourneyId = id;
       _rememberJourney(id);
     }
@@ -387,6 +388,9 @@ class _CaptureScreenState extends ConsumerState<CaptureScreen>
   void _selectJourney(String id) {
     setState(() => _selectedJourneyId = id);
     _rememberJourney(id);
+    if (widget.initialJourneyId != null && id != widget.initialJourneyId) {
+      GoRouter.maybeOf(context)?.go(AppRoutes.capture);
+    }
   }
 
   /// Swipe on the viewfinder: the next journey in the chip order.

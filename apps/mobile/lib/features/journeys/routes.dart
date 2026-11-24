@@ -38,6 +38,9 @@ final List<RouteBase> journeysRoutes = [
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => TemplatePickerScreen(
           resume: state.uri.queryParameters['resume'] == '1',
+          initialWho: TemplatePickerScreen.parseWho(
+            state.uri.queryParameters['who'],
+          ),
         ),
         routes: [
           GoRoute(

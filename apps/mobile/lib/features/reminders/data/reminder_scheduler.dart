@@ -285,13 +285,23 @@ class _ReminderLifecycleHookState extends ConsumerState<ReminderLifecycleHook>
     var day = 1;
     var name = p.journeyTitle;
     try {
-      final journey = await ref
+      final activeJourneys = await ref
           .read(journeyRepositoryProvider)
-          .watch(p.journeyId)
+          .watchActive()
           .first
           .timeout(_readTimeout);
       if (!mounted) return;
-      if (journey == null || journey.status != JourneyStatus.active) {
+      final now = ref.read(remindersClockProvider).now();
+      Journey? journey;
+      for (final j in activeJourneys) {
+        if (j.id == p.journeyId) {
+          journey = j;
+          break;
+        }
+      }
+      if (journey == null ||
+          journey.status != JourneyStatus.active ||
+          journey.isPastEndOn(localDateIn(journey.timezone, now))) {
         _armNextBanner(p.fireAt);
         return;
       }

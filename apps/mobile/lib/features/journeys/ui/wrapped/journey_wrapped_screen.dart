@@ -22,18 +22,34 @@ import '../journey_errors.dart';
 import 'wrapped_visuals.dart';
 
 /// Builds the text caption shared from the Wrapped summary sheet (DE-17).
+///
+/// Honors [hideKg] (for the quiet persona's weight range) and [hideBrand]
+/// (omitting the `ourney` wordmark / generic brand URL when enabled).
 String wrappedShareText(
   JourneysL10n l10n,
   Journey journey,
   PersonaSkinId skin,
-  WrappedStats stats,
-) {
+  WrappedStats stats, {
+  bool hideKg = true,
+  bool hideBrand = false,
+}) {
   final summary = wrappedSummaryTitle(l10n, journey, skin, stats);
+  final weights = skin == PersonaSkinId.quietTransformer && !hideKg
+      ? _Summary._weights(stats)
+      : null;
   final token = activePublicToken(journey);
-  final link = token != null
-      ? 'https://ourney.tech/p/$token'
-      : 'https://ourney.tech';
-  return '${journey.emoji} ${journey.title} — $summary\n$link';
+  final String? footer;
+  if (token != null) {
+    final url = 'https://ourney.tech/p/$token';
+    footer = hideBrand ? url : 'ourney · $url';
+  } else {
+    footer = hideBrand ? null : 'ourney · https://ourney.tech';
+  }
+  return [
+    '${journey.emoji} ${journey.title} — $summary',
+    ?weights,
+    ?footer,
+  ].join('\n');
 }
 
 /// `/journey/:id/wrapped`, Figma `JourneyWrappedScreen` ("Hành trình đã về
@@ -425,9 +441,23 @@ class _Summary extends ConsumerWidget {
         hideMetric: quiet ? hideKg : null,
       ),
     );
-    void shareNow() {
+    Future<void> shareNow(bool hideWordmark) async {
       final launcher = ref.read(socialShareLauncherProvider);
-      unawaited(launcher(wrappedShareText(l10n, journey, skin, stats)));
+      final text = wrappedShareText(
+        l10n,
+        journey,
+        skin,
+        stats,
+        hideKg: hideKg,
+        hideBrand: hideWordmark,
+      );
+      try {
+        await launcher(text);
+      } on Object catch (e) {
+        if (context.mounted) {
+          showJourneySnack(context, journeyErrorMessage(context, e));
+        }
+      }
     }
 
     return SingleChildScrollView(
@@ -572,7 +602,10 @@ class _Summary extends ConsumerWidget {
     );
   }
 
-  Future<void> _shareSheet(BuildContext context, VoidCallback onShare) {
+  Future<void> _shareSheet(
+    BuildContext context,
+    Future<void> Function(bool hideBrand) onShare,
+  ) {
     final l10n = JourneysL10n.of(context);
     return showUiSheet<void>(
       context: context,
@@ -580,9 +613,9 @@ class _Summary extends ConsumerWidget {
         l10n: l10n,
         hideBrand: hideBrand,
         onHideBrand: onHideBrand,
-        onShare: () {
+        onShare: (hide) {
           Navigator.of(ctx).pop();
-          onShare();
+          unawaited(onShare(hide));
         },
       ),
     );
@@ -600,7 +633,7 @@ class _ShareSheet extends StatefulWidget {
   final JourneysL10n l10n;
   final bool hideBrand;
   final ValueChanged<bool> onHideBrand;
-  final VoidCallback onShare;
+  final ValueChanged<bool> onShare;
 
   @override
   State<_ShareSheet> createState() => _ShareSheetState();
@@ -639,13 +672,13 @@ class _ShareSheetState extends State<_ShareSheet> {
         UiButton(
           key: const ValueKey('wrapped-share-messages'),
           label: l10n.journeys_wrapped_messages,
-          onPressed: widget.onShare,
+          onPressed: () => widget.onShare(_hide),
         ),
         const SizedBox(height: UiSpace.sm),
         UiButton.secondary(
           key: const ValueKey('wrapped-share-other'),
           label: l10n.journeys_wrapped_otherApps,
-          onPressed: widget.onShare,
+          onPressed: () => widget.onShare(_hide),
         ),
       ],
     );
