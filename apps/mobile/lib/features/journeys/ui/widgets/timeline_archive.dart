@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart' show listEquals;
@@ -11,6 +12,7 @@ import '../../domain/journey_time.dart';
 import '../../domain/timeline_window.dart';
 import '../../l10n/generated/journeys_localizations.dart';
 import '../journey_photo.dart';
+import 'journey_timeline.dart' show wrapTimelineDayHero;
 import 'timeline_common.dart';
 
 /// Exact extents of the By month archive. Every row has a known height (no
@@ -109,59 +111,196 @@ List<Widget> buildArchiveSlivers({
     final summary = l10n.journeys_monthSummary(m.checked, m.days, m.photos);
     final key = headerKeys.putIfAbsent(m.id, GlobalKey.new);
     out.add(
-      SliverMainAxisGroup(
+      _ArchiveMonthGroup(
         key: ValueKey('archive-month-${m.id}'),
-        slivers: [
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: _FixedHeaderDelegate(
-              extent: headerExtent,
-              child: UiMonthHeader(
-                key: key,
-                title: title,
-                summary: summary,
-                expanded: isOpen,
-                accent: accent,
-                background: paper,
-                semanticLabel: l10n.journeys_monthA11y(
-                  plain,
-                  m.checked,
-                  m.days,
-                  m.photos,
-                ),
-                semanticHint: isOpen
-                    ? l10n.journeys_monthCollapseHint
-                    : l10n.journeys_monthExpandHint,
-                onPressed: () => onToggle(m.id),
-              ),
-            ),
-          ),
-          if (isOpen)
-            _MonthGrid(
-              month: m,
-              index: index,
-              skinId: skinId,
-              accent: accent,
-              pitch: pitch,
-              firstDay: firstDay,
-              dpr: dpr,
-              onTapDay: onTapDay,
-            )
-          else
-            SliverFixedExtentList.builder(
-              itemExtent: ArchiveGeometry.collapsedExtent,
-              itemCount: 1,
-              itemBuilder: (context, _) => _CollapsedMonth(
-                month: m,
-                accent: accent,
-                dpr: dpr,
-              ),
-            ),
-        ],
+        month: m,
+        index: index,
+        isOpen: isOpen,
+        headerKey: key,
+        headerExtent: headerExtent,
+        title: title,
+        plain: plain,
+        summary: summary,
+        skinId: skinId,
+        paper: paper,
+        accent: accent,
+        pitch: pitch,
+        firstDay: firstDay,
+        dpr: dpr,
+        onToggle: onToggle,
+        onTapDay: onTapDay,
       ),
     );
   }
   return out;
+}
+
+class _ArchiveMonthGroup extends StatefulWidget {
+  const _ArchiveMonthGroup({
+    required this.month,
+    required this.index,
+    required this.isOpen,
+    required this.headerKey,
+    required this.headerExtent,
+    required this.title,
+    required this.plain,
+    required this.summary,
+    required this.skinId,
+    required this.paper,
+    required this.accent,
+    required this.pitch,
+    required this.firstDay,
+    required this.dpr,
+    required this.onToggle,
+    required this.onTapDay,
+    super.key,
+  });
+
+  final MonthBucket month;
+  final TimelineIndex index;
+  final bool isOpen;
+  final GlobalKey headerKey;
+  final double headerExtent;
+  final String title;
+  final String plain;
+  final String summary;
+  final String skinId;
+  final Color paper;
+  final Color accent;
+  final double pitch;
+  final int firstDay;
+  final double dpr;
+  final ValueChanged<int> onToggle;
+  final ValueChanged<TimelineDay> onTapDay;
+
+  @override
+  State<_ArchiveMonthGroup> createState() => _ArchiveMonthGroupState();
+}
+
+class _ArchiveMonthGroupState extends State<_ArchiveMonthGroup> {
+  bool _animateToggle = false;
+  Timer? _toggleTimer;
+
+  @override
+  void didUpdateWidget(covariant _ArchiveMonthGroup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isOpen != widget.isOpen) {
+      _toggleTimer?.cancel();
+      if (!UiMotion.reduced(context)) {
+        _animateToggle = true;
+        _toggleTimer = Timer(const Duration(milliseconds: 180), () {
+          _animateToggle = false;
+        });
+      } else {
+        _animateToggle = false;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _toggleTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = JourneysL10n.of(context);
+    final m = widget.month;
+    final isOpen = widget.isOpen;
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverPersistentHeader(
+          pinned: true,
+          delegate: _FixedHeaderDelegate(
+            extent: widget.headerExtent,
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                UiMonthHeader(
+                  key: widget.headerKey,
+                  title: widget.title,
+                  summary: widget.summary,
+                  expanded: isOpen,
+                  accent: widget.accent,
+                  background: widget.paper,
+                  semanticLabel: l10n.journeys_monthA11y(
+                    widget.plain,
+                    m.checked,
+                    m.days,
+                    m.photos,
+                  ),
+                  semanticHint: isOpen
+                      ? l10n.journeys_monthCollapseHint
+                      : l10n.journeys_monthExpandHint,
+                  onPressed: () {
+                    unawaited(UiHaptics.selection());
+                    widget.onToggle(m.id);
+                  },
+                ),
+                PositionedDirectional(
+                  end: 0,
+                  top: 0,
+                  bottom: 1,
+                  width: UiSize.tap,
+                  child: IgnorePointer(
+                    child: ExcludeSemantics(
+                      child: ColoredBox(
+                        color: widget.paper,
+                        child: Center(
+                          child: AnimatedRotation(
+                            key: ValueKey('archive-chevron-${m.id}'),
+                            turns: isOpen ? 0.25 : 0.0,
+                            duration: UiMotion.of(
+                              context,
+                              const Duration(milliseconds: 180),
+                            ),
+                            curve: UiCurves.easeOutStrong,
+                            child: OurneyIcon(
+                              name: 'chevron-right',
+                              size: 20,
+                              flat: true,
+                              color: context.ui.ink,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (isOpen)
+          _MonthGrid(
+            month: m,
+            index: widget.index,
+            skinId: widget.skinId,
+            accent: widget.accent,
+            pitch: widget.pitch,
+            firstDay: widget.firstDay,
+            dpr: widget.dpr,
+            animateEntrance: _animateToggle,
+            onTapDay: widget.onTapDay,
+          )
+        else
+          SliverFixedExtentList.builder(
+            itemExtent: ArchiveGeometry.collapsedExtent,
+            itemCount: 1,
+            itemBuilder: (context, _) => _ArchiveToggleAnimator(
+              key: ValueKey('archive-collapsed-anim-${m.id}'),
+              animate: _animateToggle,
+              child: _CollapsedMonth(
+                month: m,
+                accent: widget.accent,
+                dpr: widget.dpr,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
 }
 
 class _FixedHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -333,6 +472,7 @@ class _MonthGrid extends StatelessWidget {
     required this.firstDay,
     required this.dpr,
     required this.onTapDay,
+    this.animateEntrance = false,
   });
 
   final MonthBucket month;
@@ -343,6 +483,7 @@ class _MonthGrid extends StatelessWidget {
   final int firstDay;
   final double dpr;
   final ValueChanged<TimelineDay> onTapDay;
+  final bool animateEntrance;
 
   @override
   Widget build(BuildContext context) {
@@ -366,7 +507,7 @@ class _MonthGrid extends StatelessWidget {
         bool inMonth(int off) => off >= 0 && off < month.days;
         bool checked(int off) => inMonth(off) && month.heat[off];
         final offs = [for (var c = 0; c < 7; c++) r * 7 + c - leading];
-        return OverflowBox(
+        final rowWidget = OverflowBox(
           minWidth: pitch * 7,
           maxWidth: pitch * 7,
           child: Stack(
@@ -400,19 +541,97 @@ class _MonthGrid extends StatelessWidget {
             ],
           ),
         );
+        if (!animateEntrance) return rowWidget;
+        return _ArchiveToggleAnimator(
+          key: ValueKey('archive-row-anim-${month.id}-$r'),
+          animate: animateEntrance,
+          child: rowWidget,
+        );
       },
     );
   }
 
   Widget _cell(LocalDate date, double tile) {
     final day = index.progress.dayAt(date);
-    return TimelineGridCell(
-      day: day,
-      size: tile,
-      hit: pitch,
-      cacheWidth: (tile * dpr).ceil(),
-      partner: skinId == 'couple' && day.partnerCheckIn != null,
-      onTap: onTapDay,
+    return wrapTimelineDayHero(
+      day,
+      TimelineGridCell(
+        day: day,
+        size: tile,
+        hit: pitch,
+        cacheWidth: (tile * dpr).ceil(),
+        partner: skinId == 'couple' && day.partnerCheckIn != null,
+        onTap: onTapDay,
+      ),
+    );
+  }
+}
+
+/// Plays a 180ms [FadeTransition] + subtle `-4dp -> 0` vertical slide
+/// ([UiCurves.easeOutStrong]) when a month is interactively toggled open or
+/// collapsed, while preserving exact sliver item extents for lazy scroll jumps.
+class _ArchiveToggleAnimator extends StatefulWidget {
+  const _ArchiveToggleAnimator({
+    required this.animate,
+    required this.child,
+    super.key,
+  });
+
+  final bool animate;
+  final Widget child;
+
+  @override
+  State<_ArchiveToggleAnimator> createState() => _ArchiveToggleAnimatorState();
+}
+
+class _ArchiveToggleAnimatorState extends State<_ArchiveToggleAnimator>
+    with SingleTickerProviderStateMixin {
+  static const Duration _kDuration = Duration(milliseconds: 180);
+
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_started) {
+      _started = true;
+      if (widget.animate && !UiMotion.reduced(context)) {
+        final ctrl = AnimationController(vsync: this, duration: _kDuration);
+        _ctrl = ctrl;
+        _curved = CurvedAnimation(parent: ctrl, curve: UiCurves.easeOutStrong);
+        ctrl.forward(from: 0.0);
+      }
+    } else if (UiMotion.reduced(context) && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final curved = _curved;
+    if (UiMotion.reduced(context) || curved == null) {
+      return widget.child;
+    }
+    final faded = FadeTransition(opacity: curved, child: widget.child);
+    return AnimatedBuilder(
+      animation: curved,
+      child: faded,
+      builder: (context, child) {
+        final dy = (1.0 - curved.value) * -4.0;
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: child,
+        );
+      },
     );
   }
 }

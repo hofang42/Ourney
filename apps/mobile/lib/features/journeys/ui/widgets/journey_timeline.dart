@@ -1,10 +1,30 @@
 import 'package:flutter/widgets.dart';
 
+import '../../../../ui/ui.dart';
 import '../../domain/journey_progress.dart';
 import '../../domain/timeline_window.dart';
 import '../journey_style.dart';
 import 'timeline_cards.dart';
 import 'timeline_variants.dart';
+
+/// Wraps a checked-in [day]'s photo cell in a [UiHero] keyed by
+/// [UiHeroTags.dayPhoto] so tapping it flies smoothly into `DayViewerScreen`
+/// (and back on pop or interactive vertical drag-to-dismiss).
+Widget wrapTimelineDayHero(
+  TimelineDay day,
+  Widget child, {
+  BorderRadius? borderRadiusBegin,
+}) {
+  final entryId = day.checkIn?.id;
+  if (day.state != DayState.checkedIn || entryId == null) return child;
+  return UiHero(
+    tag: UiHeroTags.dayPhoto(entryId),
+    borderRadiusBegin:
+        borderRadiusBegin ?? BorderRadius.circular(UiRadius.otp),
+    borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+    child: child,
+  );
+}
 
 /// The journey detail timeline in the variant of [skinId] (`quiet`, `squad`,
 /// `memory`, `couple`, `flexer`, `minimal`; V2 skin ids). Every variant keeps

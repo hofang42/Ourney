@@ -105,12 +105,13 @@ class JourneyRow extends ConsumerWidget {
     }
 
     if (active && progress != null && progress.totalDays != null) {
+      final typeId = journeyTypeId(journey);
       return Padding(
         padding: const EdgeInsets.only(bottom: UiSpace.md),
         child: UiJourneyCard(
           key: ValueKey('journey-card-${journey.id}'),
           title: journey.title,
-          type: journeyTypeId(journey),
+          type: typeId,
           day: progress.dayNumber,
           totalDays: progress.totalDays!,
           streak: progress.summary.current,
