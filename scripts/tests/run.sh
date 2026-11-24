@@ -221,35 +221,41 @@ calls="$(cat "$LOG")"
   contains "$calls" "supabase functions deploy delete-account --project-ref abcdefghijklmnopqrst" &&
   contains "$calls" "supabase functions deploy public-journey --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
   contains "$calls" "supabase functions deploy storage-purge-sweep --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
-  [ "$(grep -c '^curl ' "$LOG")" -eq 1 ] && contains "$calls" "-X PATCH" &&
-  contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/auth"
-check "deploy without SMTP: db push + all three functions + exactly one Auth config PATCH" $? "rc=$RC calls=$calls out=$OUT"
+  contains "$calls" "supabase functions deploy waitlist-signup --project-ref abcdefghijklmnopqrst --no-verify-jwt" &&
+  contains "$calls" "supabase functions deploy admin-action --project-ref abcdefghijklmnopqrst" &&
+  [ "$(grep -c '^curl ' "$LOG")" -eq 2 ] && contains "$calls" "-X PATCH" &&
+  contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/auth" &&
+  contains "$calls" "/v1/projects/abcdefghijklmnopqrst/config/postgrest"
+check "deploy without SMTP: db push + functions + Auth config PATCH + PostgREST db_schemas PATCH" $? "rc=$RC calls=$calls out=$OUT"
 contains "$OUT" "==> Applying Auth config (OTP code emails, site_url https://ourney.tech)" &&
+  contains "$OUT" "==> Applying PostgREST config (db_schemas: public, graphql_public, admin)" &&
   contains "$OUT" "==> SMTP_* not set: leaving Auth SMTP settings untouched"
-check "deploy without SMTP: prints the Auth config and untouched-SMTP lines" $? "$OUT"
+check "deploy without SMTP: prints the Auth config, PostgREST config, and untouched-SMTP lines" $? "$OUT"
 jq -e '.mailer_otp_length == 6 and .mailer_otp_exp == 3600 and .mailer_autoconfirm == true
-  and .site_url == "https://ourney.tech"' "$BODY" > /dev/null
-check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY" 2> /dev/null)"
-jq -e 'has("uri_allow_list") | not' "$BODY" > /dev/null
-check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY" 2> /dev/null)"
-jq -e 'keys | map(select(startswith("smtp_") or . == "rate_limit_email_sent")) | length == 0' "$BODY" > /dev/null
-check "Auth config body (no SMTP) has no smtp_* fields" $? "$(jq -c keys "$BODY" 2> /dev/null)"
+  and .site_url == "https://ourney.tech"' "$BODY.1" > /dev/null
+check "Auth config body: 6-digit/3600 s OTP, autoconfirm true, default site_url" $? "$(head -c 300 "$BODY.1" 2> /dev/null)"
+jq -e '.db_schemas == "public,graphql_public,admin"' "$BODY.2" > /dev/null
+check "PostgREST config body: exposes public, graphql_public, and admin schemas" $? "$(cat "$BODY.2" 2> /dev/null)"
+jq -e 'has("uri_allow_list") | not' "$BODY.1" > /dev/null
+check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY.1" 2> /dev/null)"
+jq -e 'keys | map(select(startswith("smtp_") or . == "rate_limit_email_sent")) | length == 0' "$BODY.1" > /dev/null
+check "Auth config body (no SMTP) has no smtp_* fields" $? "$(jq -c keys "$BODY.1" 2> /dev/null)"
 jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" --rawfile c "$ROOT/supabase/templates/confirmation.html" \
   '.mailer_templates_magic_link_content == $m and .mailer_templates_confirmation_content == $c
    and (.mailer_templates_magic_link_content | contains("{{ .Token }}"))
    and (.mailer_templates_confirmation_content | contains("{{ .Token }}"))
    and ((.mailer_templates_magic_link_content + .mailer_templates_confirmation_content) | contains("ConfirmationURL") | not)' \
-  "$BODY" > /dev/null
+  "$BODY.1" > /dev/null
 check "Auth config body: both templates carry {{ .Token }} and no ConfirmationURL" $? "template mismatch"
 jq -e '.mailer_subjects_magic_link == "Mã đăng nhập Ourney / Your Ourney sign-in code"
-  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"' "$BODY" > /dev/null
-check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation]' "$BODY" 2> /dev/null)"
+  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"' "$BODY.1" > /dev/null
+check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation]' "$BODY.1" 2> /dev/null)"
 AUTH_SITE_URL="https://example.org/app/" run bash "$DEPLOY"
-jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY" > /dev/null
-check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY" 2> /dev/null)"
+jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY.1" > /dev/null
+check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY.1" 2> /dev/null)"
 AUTH_URI_ALLOW_LIST="https://example.org/app/,ourney://auth-callback" run bash "$DEPLOY"
-jq -e '.uri_allow_list == "https://example.org/app/,ourney://auth-callback"' "$BODY" > /dev/null
-check "AUTH_URI_ALLOW_LIST is sent as uri_allow_list when set" $? "rc=$RC $(jq -c '.uri_allow_list' "$BODY" 2> /dev/null)"
+jq -e '.uri_allow_list == "https://example.org/app/,ourney://auth-callback"' "$BODY.1" > /dev/null
+check "AUTH_URI_ALLOW_LIST is sent as uri_allow_list when set" $? "rc=$RC $(jq -c '.uri_allow_list' "$BODY.1" 2> /dev/null)"
 for bad in "http://example.org/" "https://exa mple.org/" "https://a.org/,https://b.org/" "ftp" ""; do
   [ -n "$bad" ] || continue
   AUTH_SITE_URL="$bad" run bash "$DEPLOY" --dry-run
@@ -279,11 +285,17 @@ check "malformed subject fails before any supabase call" $? "rc=$RC $OUT log=$(c
 STUB_CURL_FAIL=1 run bash "$DEPLOY"
 [ "$RC" -ne 0 ] && contains "$OUT" "Auth config update failed: x" && ! contains "$OUT" "leak" && ! contains "$OUT" "smtp_pass"
 check "Auth config: API failure shows the message only, never the body" $? "rc=$RC $OUT"
+STUB_CURL_FAIL=2 run bash "$DEPLOY"
+[ "$RC" -ne 0 ] && contains "$OUT" "PostgREST config update failed: x" && ! contains "$OUT" "leak" && ! contains "$OUT" "smtp_pass"
+check "PostgREST config: API failure shows the message only, never the body" $? "rc=$RC $OUT"
 run bash "$DEPLOY"
 calls="$(cat "$LOG")"
 line="$(grep -F "supabase functions deploy delete-account" "$LOG")"
 [ -n "$line" ] && ! contains "$line" "--no-verify-jwt"
 check "delete-account keeps JWT verification" $? "$line"
+line="$(grep -F "supabase functions deploy admin-action" "$LOG")"
+[ -n "$line" ] && ! contains "$line" "--no-verify-jwt"
+check "admin-action keeps JWT verification" $? "$line"
 line="$(grep -F "supabase functions deploy public-journey" "$LOG")"
 contains "$line" "--no-verify-jwt"
 check "public-journey is deployed without JWT verification" $? "$line"
@@ -321,8 +333,9 @@ check "SMTP: leading zeros in SMTP_RATE_LIMIT are normalised" $? "rc=$RC $(cat "
 unset SMTP_RATE_LIMIT SMTP_PORT SMTP_SENDER_NAME
 
 jq -e '.mailer_otp_length == 6 and .mailer_autoconfirm == true and (has("smtp_host") | not)' "$BODY.2" > /dev/null &&
-  jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.1" > /dev/null
-check "SMTP: two PATCHes, SMTP first then Auth config (no smtp_*)" $? "$(ls "$BODY".* 2> /dev/null)"
+  jq -e '.smtp_host == "smtp.example.com" and (has("mailer_otp_length") | not)' "$BODY.1" > /dev/null &&
+  jq -e '.db_schemas == "public,graphql_public,admin"' "$BODY.3" > /dev/null
+check "SMTP: three PATCHes, SMTP first, Auth config second, PostgREST db_schemas third" $? "$(ls "$BODY".* 2> /dev/null)"
 auth_line="$(grep -n 'Applying Auth config' <<< "$OUT" | cut -d: -f1)"
 smtp_line="$(grep -n 'Applying custom SMTP' <<< "$OUT" | cut -d: -f1)"
 [ -n "$auth_line" ] && [ -n "$smtp_line" ] && [ "$smtp_line" -lt "$auth_line" ]

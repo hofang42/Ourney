@@ -4,7 +4,7 @@
 #   SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... SUPABASE_DB_PASSWORD=... \
 #     bash scripts/supabase/deploy-hosted.sh [--dry-run]
 #
-# Steps: link -> db push (supabase/migrations) -> functions deploy -> Auth config -> optional SMTP (H2).
+# Steps: link -> db push (supabase/migrations) -> functions deploy -> optional SMTP (H2) -> Auth config -> PostgREST db_schemas.
 # --dry-run only links and runs `supabase db push --dry-run`; nothing is changed on the project.
 # Idempotent: db push applies only new migrations, functions deploy overwrites, the Auth config and
 # SMTP PATCHes set the same values again.
@@ -177,6 +177,22 @@ patch_auth_config() {
   fi
 }
 
+# PATCH the project's PostgREST config (db_schemas) using the same secret-safe curl pattern.
+patch_postgrest_config() {
+  local response msg
+  if ! response="$(
+    curl --silent --show-error --fail-with-body -X PATCH \
+      --config <(printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_ACCESS_TOKEN") \
+      -H 'Content-Type: application/json' \
+      --data-binary @- \
+      "$SUPABASE_API_URL/v1/projects/$SUPABASE_PROJECT_REF/config/postgrest"
+  )"; then
+    msg="$(printf '%s' "$response" | jq -r '.message // empty' 2> /dev/null || true)"
+    echo "error: PostgREST config update failed${msg:+: $msg}" >&2
+    exit 1
+  fi
+}
+
 # Email templates and subjects are checked now, before any supabase call, so a bad template can
 # never abort a deploy halfway. Templates are plain files in the repo (not secrets).
 magic_file=supabase/templates/magic_link.html
@@ -231,6 +247,10 @@ supabase functions deploy storage-purge-sweep --project-ref "$SUPABASE_PROJECT_R
 echo "==> Deploying function waitlist-signup (anonymous access)"
 supabase functions deploy waitlist-signup --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
 
+# admin-action: authenticated admin side-effects (verifies caller JWT + admin.me(); see docs/runbooks/admin-dashboard.md).
+echo "==> Deploying function admin-action"
+supabase functions deploy admin-action --project-ref "$SUPABASE_PROJECT_REF"
+
 # --- 6. Optional SMTP (H2): must come BEFORE the email templates --------------------------------------------------------------------
 if [ "$APPLY_SMTP" -eq 1 ]; then
   # shellcheck disable=SC2153  # SMTP_HOST is set: APPLY_SMTP=1 only when all four SMTP_* are non-empty
@@ -277,5 +297,11 @@ if [ -z "$body" ]; then
 fi
 printf '%s' "$body" | patch_auth_config "Auth config"
 echo "Auth config applied."
+
+# --- 8. PostgREST config: expose RPC-only admin schema (always) -------------------------------
+# `supabase db push` does not push [api].schemas from supabase/config.toml to hosted PostgREST.
+echo "==> Applying PostgREST config (db_schemas: public, graphql_public, admin)"
+jq -n '{db_schemas: "public,graphql_public,admin"}' | patch_postgrest_config
+echo "PostgREST config applied."
 
 echo "Deploy finished."
