@@ -35,6 +35,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   InboxFilter _filter = InboxFilter.all;
   final Set<String> _busy = {};
   final Set<String> _expanded = {};
+  bool _hasPlayedInitialEntrance = false;
 
   /// Ids of unread items marked read when the tab opened (Figma
   /// `markActivityRead`: opening Activity clears every unread dot).
@@ -89,6 +90,11 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
       ..invalidate(rawInboxCountsProvider);
   }
 
+  Future<void> _onRefresh() async {
+    _hasPlayedInitialEntrance = true;
+    _retry();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = SocialL10n.of(context);
@@ -133,6 +139,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
   }
 
   Widget _body(BuildContext context) {
+    final app = AppLocalizations.of(context);
     final friendsAsync = ref.watch(friendshipsProvider);
     final convAsync = ref.watch(conversationsProvider);
     final cached = friendsAsync.hasValue || convAsync.hasValue;
@@ -141,7 +148,19 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
         cached &&
         err != null &&
         socialErrorCode(err) == OurneyErrorCode.offline;
-    final feed = _feed(context);
+    final feed = UiRefreshScaffold(
+      onRefresh: _onRefresh,
+      semanticsLabel: app.common_loading,
+      child: NotificationListener<ScrollStartNotification>(
+        onNotification: (notification) {
+          if (notification.dragDetails != null && cached) {
+            _hasPlayedInitialEntrance = true;
+          }
+          return false;
+        },
+        child: _feed(context),
+      ),
+    );
     if (!offline) return feed;
     return Column(
       children: [
@@ -159,31 +178,49 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final convAsync = ref.watch(conversationsProvider);
     final countsAsync = ref.watch(inboxCountsProvider);
 
+    Widget wrapState(Widget child) => AnimatedSwitcher(
+      duration: UiMotion.fadeOf(context, UiMotion.normal),
+      reverseDuration: UiMotion.fadeOf(context, UiMotion.normal),
+      switchInCurve: UiCurves.easeOutStrong,
+      switchOutCurve: Curves.easeOut,
+      child: child,
+    );
+
     final loading =
         !friendsAsync.hasValue &&
         !friendsAsync.hasError &&
         !convAsync.hasValue &&
         !convAsync.hasError;
-    if (loading) return _Skeleton(label: app.common_loading);
+    if (loading) {
+      return wrapState(
+        KeyedSubtree(
+          key: const ValueKey('inbox-state-skeleton'),
+          child: _Skeleton(label: app.common_loading),
+        ),
+      );
+    }
     if (!friendsAsync.hasValue &&
         !convAsync.hasValue &&
         (friendsAsync.hasError || convAsync.hasError)) {
       final error = friendsAsync.error ?? convAsync.error!;
       final offline = socialErrorCode(error) == OurneyErrorCode.offline;
-      return ListView(
-        padding: EdgeInsets.only(
-          top: UiSpace.lg,
-          bottom: UiSpace.xl + MediaQuery.paddingOf(context).bottom,
-        ),
-        children: [
-          UiStateCard(
-            key: const ValueKey('inbox-error'),
-            kind: offline ? UiStateCardKind.offline : UiStateCardKind.error,
-            title: socialErrorMessage(context, error),
-            actionLabel: app.common_retry,
-            onAction: _retry,
+      return wrapState(
+        ListView(
+          key: const ValueKey('inbox-state-error'),
+          padding: EdgeInsets.only(
+            top: UiSpace.lg,
+            bottom: UiSpace.xl + MediaQuery.paddingOf(context).bottom,
           ),
-        ],
+          children: [
+            UiStateCard(
+              key: const ValueKey('inbox-error'),
+              kind: offline ? UiStateCardKind.offline : UiStateCardKind.error,
+              title: socialErrorMessage(context, error),
+              actionLabel: app.common_retry,
+              onAction: _retry,
+            ),
+          ],
+        ),
       );
     }
 
@@ -322,6 +359,7 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     }
 
     final children = <Widget>[];
+    var cardIndex = 0;
     void group(String title) {
       children.add(
         Padding(
@@ -333,12 +371,20 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
 
     void rows(List<_FeedItem> list) {
       for (final i in list) {
-        children.add(
-          Padding(
-            padding: const EdgeInsets.only(bottom: UiSpace.md),
-            child: i.build(i.unread && !_seen.contains(i.id)),
-          ),
+        final idx = cardIndex++;
+        Widget row = Padding(
+          padding: const EdgeInsets.only(bottom: UiSpace.md),
+          child: i.build(i.unread && !_seen.contains(i.id)),
         );
+        if (idx < 4) {
+          row = UiStaggerItem(
+            key: ValueKey('inbox-stagger-${i.id}'),
+            index: idx,
+            enabled: !_hasPlayedInitialEntrance,
+            child: row,
+          );
+        }
+        children.add(row);
       }
     }
 
@@ -352,27 +398,33 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     }
 
     if (children.isEmpty) {
-      return Column(
-        children: [
-          _filters(context),
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.only(
-                top: UiSpace.lg,
-                bottom: UiSpace.xl + MediaQuery.paddingOf(context).bottom,
+      return wrapState(
+        Column(
+          key: const ValueKey('inbox-state-empty'),
+          children: [
+            _filters(context),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.only(
+                  top: UiSpace.lg,
+                  bottom: UiSpace.xl + MediaQuery.paddingOf(context).bottom,
+                ),
+                children: const [_ActivityEmpty()],
               ),
-              children: [const _ActivityEmpty()],
             ),
-          ),
-        ],
+          ],
+        ),
       );
     }
     children.add(const _InviteCard());
-    return Column(
-      children: [
-        _filters(context),
-        Expanded(child: SocialListBody(children: children)),
-      ],
+    return wrapState(
+      Column(
+        key: const ValueKey('inbox-state-content'),
+        children: [
+          _filters(context),
+          Expanded(child: SocialListBody(children: children)),
+        ],
+      ),
     );
   }
 
@@ -503,40 +555,54 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
     final title =
         requests.first.sourceJourneyTitle ?? l10n.social_publicJourneyFallback;
     final open = _expanded.contains(journeyId);
+    final expandedList = open
+        ? Container(
+            margin: const EdgeInsets.only(top: UiSpace.sm),
+            padding: const EdgeInsets.only(left: 14),
+            decoration: BoxDecoration(
+              border: Border(left: BorderSide(color: ui.divider, width: 2)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final r in requests) _publicRow(context, r),
+                UiButton.ghost(
+                  key: ValueKey('inbox-decline-all-$journeyId'),
+                  label: l10n.social_declineAll,
+                  onPressed: _busy.contains('all')
+                      ? null
+                      : () => _declineAll(requests),
+                ),
+              ],
+            ),
+          )
+        : const SizedBox.shrink();
     return [
       _ActivityCard(
         key: ValueKey('inbox-public-$journeyId'),
         badge: const _Badge('squad', UiTypePastel.custom),
         title: l10n.social_publicSummary(requests.length, title),
-        onTap: () => setState(() {
-          if (!_expanded.remove(journeyId)) _expanded.add(journeyId);
-        }),
+        onTap: () {
+          UiHaptics.selection();
+          setState(() {
+            _hasPlayedInitialEntrance = true;
+            if (!_expanded.remove(journeyId)) _expanded.add(journeyId);
+          });
+        },
         trailing: OurneyIcon(
           name: open ? 'chevron-up' : 'chevron-down',
           color: ui.inkMuted,
           flat: true,
         ),
       ),
-      if (open)
-        Container(
-          margin: const EdgeInsets.only(top: UiSpace.sm),
-          padding: const EdgeInsets.only(left: 14),
-          decoration: BoxDecoration(
-            border: Border(left: BorderSide(color: ui.divider, width: 2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final r in requests) _publicRow(context, r),
-              UiButton.ghost(
-                key: ValueKey('inbox-decline-all-$journeyId'),
-                label: l10n.social_declineAll,
-                onPressed: _busy.contains('all')
-                    ? null
-                    : () => _declineAll(requests),
-              ),
-            ],
-          ),
+      if (UiMotion.reduced(context))
+        expandedList
+      else
+        AnimatedSize(
+          duration: UiMotion.fast,
+          curve: UiCurves.easeOutStrong,
+          alignment: Alignment.topCenter,
+          child: expandedList,
         ),
     ];
   }
@@ -623,7 +689,10 @@ class _InboxScreenState extends ConsumerState<InboxScreen> {
                   key: ValueKey('inbox-filter-${f.name}'),
                   label: labels[f]!,
                   selected: _filter == f,
-                  onPressed: () => setState(() => _filter = f),
+                  onPressed: () => setState(() {
+                    _hasPlayedInitialEntrance = true;
+                    _filter = f;
+                  }),
                 ),
               ),
           ],

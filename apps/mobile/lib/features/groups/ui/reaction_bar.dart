@@ -1,9 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import '../../../app/providers.dart';
-import '../../../app/theme/motion.dart';
 import '../../../ui/ui.dart';
 import '../data/groups_providers.dart';
 import '../domain/group_today.dart';
@@ -14,6 +15,10 @@ import 'group_errors.dart';
 /// (tapping another emoji replaces it, tapping yours removes it). No
 /// comments in v1. [enabled] is false for the caller's own photo and once
 /// the journey has ended (counts stay visible).
+///
+/// Unified onto [UiReactionSpark] + [UiCountRoll] (`lib/ui/components/reaction_bar.dart`)
+/// with non-blocking per-emoji debounce so rapid celebratory tapping across
+/// reactions never locks the bar while a network write is in flight.
 class ReactionBar extends ConsumerStatefulWidget {
   const ReactionBar({required this.checkInId, this.enabled = true, super.key});
 
@@ -25,15 +30,30 @@ class ReactionBar extends ConsumerStatefulWidget {
 }
 
 class _ReactionBarState extends ConsumerState<ReactionBar> {
-  /// Optimistic value while a write is in flight (null = none pending;
-  /// `''` = removing).
-  String? _pending;
+  /// Whether [_optimisticMine] currently overrides the stream's `summary.mine`.
+  bool _hasOptimistic = false;
 
-  Future<void> _toggle(String emoji, String? mine) async {
+  /// Optimistic reaction while a write is in flight (`null` = unreacted).
+  String? _optimisticMine;
+
+  /// Per-emoji in-flight debounce set so tapping one reaction never blocks
+  /// tapping any other reaction pill immediately.
+  final Set<String> _pendingEmojis = <String>{};
+
+  int _writeSeq = 0;
+
+  Future<void> _toggle(String emoji, String? currentMine) async {
+    if (_pendingEmojis.contains(emoji)) return;
     final repo = ref.read(groupRepositoryProvider);
-    final removing = mine == emoji;
-    setState(() => _pending = removing ? '' : emoji);
-    OurneyHaptics.selection();
+    final removing = currentMine == emoji;
+    final seq = ++_writeSeq;
+    setState(() {
+      _pendingEmojis
+        ..clear()
+        ..add(emoji);
+      _hasOptimistic = true;
+      _optimisticMine = removing ? null : emoji;
+    });
     try {
       if (removing) {
         await repo.unreact(widget.checkInId);
@@ -41,9 +61,23 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
         await repo.react(widget.checkInId, emoji);
       }
     } on Object catch (e) {
-      if (mounted) showGroupSnack(context, groupErrorMessage(context, e));
+      if (mounted && seq == _writeSeq) {
+        setState(() {
+          _hasOptimistic = false;
+          _optimisticMine = null;
+        });
+        showGroupSnack(context, groupErrorMessage(context, e));
+      }
     } finally {
-      if (mounted) setState(() => _pending = null);
+      if (mounted && seq == _writeSeq) {
+        setState(() {
+          _pendingEmojis.clear();
+          _hasOptimistic = false;
+          _optimisticMine = null;
+        });
+      } else {
+        _pendingEmojis.remove(emoji);
+      }
     }
   }
 
@@ -62,11 +96,11 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
     );
     final counts = Map.of(summary.counts);
     var mine = summary.mine;
-    if (_pending != null) {
+    if (_hasOptimistic) {
       // Optimistic: move the caller's reaction before the stream catches up.
-      if (mine != null) counts[mine] = counts[mine]! - 1;
-      mine = _pending!.isEmpty ? null : _pending;
-      if (mine != null) counts[mine] = counts[mine]! + 1;
+      if (mine != null) counts[mine] = math.max(0, counts[mine]! - 1);
+      mine = _optimisticMine;
+      if (mine != null) counts[mine] = (counts[mine] ?? 0) + 1;
     }
 
     return Wrap(
@@ -82,7 +116,7 @@ class _ReactionBarState extends ConsumerState<ReactionBar> {
               count: counts[emoji]!,
               selected: mine == emoji,
               semanticLabel: l10n.groups_reactSemantics(emoji, counts[emoji]!),
-              onTap: widget.enabled && _pending == null
+              onTap: widget.enabled && !_pendingEmojis.contains(emoji)
                   ? () => _toggle(emoji, mine)
                   : null,
             ),
@@ -101,8 +135,9 @@ const Map<String, String> _reactionIconId = {
   '😂': 'laugh',
 };
 
-/// `.reactions button`: 48dp bordered emoji button; selected = ink border.
-class _ReactionChip extends StatelessWidget {
+/// `.reactions button`: 48dp bordered reaction button powered by
+/// [UiReactionSpark] + [UiCountRoll]; selected = `2dp` `ui.accent` border.
+class _ReactionChip extends StatefulWidget {
   const _ReactionChip({
     required this.emoji,
     required this.count,
@@ -119,12 +154,45 @@ class _ReactionChip extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<_ReactionChip> createState() => _ReactionChipState();
+}
+
+class _ReactionChipState extends State<_ReactionChip> {
+  final GlobalKey<UiReactionSparkState> _sparkKey =
+      GlobalKey<UiReactionSparkState>();
+  late int _prevCount;
+
+  @override
+  void initState() {
+    super.initState();
+    _prevCount = widget.count;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ReactionChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.count != oldWidget.count) {
+      _prevCount = oldWidget.count;
+    }
+  }
+
+  void _handlePress() {
+    final cb = widget.onTap;
+    if (cb == null) return;
+    _sparkKey.currentState?.trigger(adding: !widget.selected);
+    cb();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ui = context.ui;
+    final iconId = _reactionIconId[widget.emoji] ?? 'heart';
+    final selected = widget.selected;
+    final count = widget.count;
     return UiPressable(
-      onPressed: onTap,
+      onPressed: widget.onTap == null ? null : _handlePress,
       selected: selected,
-      semanticLabel: semanticLabel,
+      semanticLabel: widget.semanticLabel,
       excludeChildSemantics: true,
       centerChild: true,
       borderRadius: BorderRadius.circular(UiRadius.input),
@@ -135,7 +203,7 @@ class _ReactionChip extends StatelessWidget {
           color: selected ? ui.fill : ui.surface,
           borderRadius: BorderRadius.circular(UiRadius.input),
           border: Border.all(
-            color: selected ? ui.outline : ui.border,
+            color: selected ? ui.accent : ui.border,
             width: selected ? UiBorder.standard : UiBorder.hairline,
           ),
         ),
@@ -143,14 +211,20 @@ class _ReactionChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            OurneyIcon(
-              name: 'react-${_reactionIconId[emoji] ?? 'heart'}',
-              size: 20,
+            UiReactionSpark(
+              key: _sparkKey,
+              id: iconId,
+              selected: selected,
+              child: OurneyIcon(name: 'react-$iconId', size: 20),
             ),
             if (count > 0) ...[
               const SizedBox(width: 3),
-              Text(
-                '$count',
+              UiCountRoll(
+                value: count,
+                initialValue: _prevCount,
+                duration: UiMotion.normal,
+                curve: UiCurves.easeOutStrong,
+                slideDistance: 8.0,
                 style: UiText.body(
                   size: 12,
                   weight: FontWeight.w700,

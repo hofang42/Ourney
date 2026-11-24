@@ -177,6 +177,7 @@ class GroupTodayScreen extends ConsumerWidget {
         child: Builder(
           builder: (context) => _wall(
             context,
+            ref: ref,
             journey: journey,
             view: view,
             perms: perms,
@@ -190,8 +191,17 @@ class GroupTodayScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _refresh(WidgetRef ref) async {
+    ref
+      ..invalidate(journeyByIdProvider(journeyId))
+      ..invalidate(groupTodayProvider(journeyId))
+      ..invalidate(groupCheckInsProvider(journeyId))
+      ..invalidate(myMembershipProvider(journeyId));
+  }
+
   Widget _wall(
     BuildContext context, {
+    required WidgetRef ref,
     required Journey journey,
     required GroupTodayView view,
     required GroupPermissions perms,
@@ -201,61 +211,71 @@ class GroupTodayScreen extends ConsumerWidget {
     required DateTime now,
   }) {
     final l10n = GroupsL10n.of(context);
+    final app = AppLocalizations.of(context);
     final ui = context.ui;
-    return UiScaffold(
-      key: const ValueKey('group-today'),
-      background: ui.bg,
-      padTop: 0,
-      gutter: false,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
-            child: UiBackHeader(
-              onBack: () => _back(context),
-              backLabel: backLabel,
-              title: journey.title,
-              bordered: true,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+    return UiRefreshScaffold(
+      onRefresh: () => _refresh(ref),
+      semanticsLabel: app.common_loading,
+      child: UiScaffold(
+        key: const ValueKey('group-today'),
+        background: ui.bg,
+        padTop: 0,
+        gutter: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: UiSpace.sm),
+              child: UiBackHeader(
+                onBack: () => _back(context),
+                backLabel: backLabel,
+                title: journey.title,
+                bordered: true,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (perms.canInvite)
+                      UiIconButton(
+                        key: const ValueKey('group-invite'),
+                        glyph: const OurneyIcon(name: 'user-plus', size: 20),
+                        label: l10n.groups_invite,
+                        onPressed: () =>
+                            context.push(GroupsPaths.invite(journeyId)),
+                      ),
+                    _GroupMenu(perms: perms),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                UiSpace.xl,
+                UiSpace.xl,
+                UiSpace.xl,
+                UiSpace.sm,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (perms.canInvite)
-                    UiIconButton(
-                      key: const ValueKey('group-invite'),
-                      glyph: const OurneyIcon(name: 'user-plus', size: 20),
-                      label: l10n.groups_invite,
-                      onPressed: () =>
-                          context.push(GroupsPaths.invite(journeyId)),
+                  if (!perms.isActive) ...[
+                    UiBanner(
+                      key: const ValueKey('group-ended-banner'),
+                      kind: UiBannerKind.archived,
+                      message: l10n.groups_endedBanner,
                     ),
-                  _GroupMenu(perms: perms),
+                    const SizedBox(height: UiSpace.md),
+                  ],
+                  _SkinWall(
+                    skinId: skinId,
+                    view: view,
+                    perms: perms,
+                    now: now,
+                  ),
                 ],
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              UiSpace.xl,
-              UiSpace.xl,
-              UiSpace.xl,
-              UiSpace.sm,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!perms.isActive) ...[
-                  UiBanner(
-                    key: const ValueKey('group-ended-banner'),
-                    kind: UiBannerKind.archived,
-                    message: l10n.groups_endedBanner,
-                  ),
-                  const SizedBox(height: UiSpace.md),
-                ],
-                _SkinWall(skinId: skinId, view: view, perms: perms, now: now),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -683,40 +703,52 @@ class _MemberTile extends ConsumerWidget {
       key: ValueKey('group-member-${m.userId}'),
       child: UiPolaroid(
         tilt: tilt,
-        photo: SizedBox(
-          height: 158,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              GroupPhoto(
-                key: ValueKey('group-member-photo-${m.userId}'),
-                checkIn: photo,
-                dimmed: !entry.photoIsToday,
-              ),
-              if (entry.checkedInToday)
-                Positioned(
-                  right: 7,
-                  top: 7,
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: ui.success,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: ui.outline,
-                        width: UiBorder.hairline,
-                      ),
-                    ),
-                    child: OurneyIcon(
-                      name: 'check',
-                      size: 14,
-                      flat: true,
-                      color: ui.bg,
-                    ),
+        photo: GestureDetector(
+          key: ValueKey('group-member-photo-tap-${m.userId}'),
+          behavior: HitTestBehavior.opaque,
+          onTap: () => context.push(
+            '/journey/${Uri.encodeComponent(perms.journey.id)}/day/${photo.localDate}',
+          ),
+          child: SizedBox(
+            height: 158,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                UiHero(
+                  tag: UiHeroTags.dayPhoto(photo.id),
+                  borderRadiusBegin: BorderRadius.circular(UiRadius.thumb),
+                  borderRadiusEnd: BorderRadius.circular(UiRadius.card),
+                  child: GroupPhoto(
+                    key: ValueKey('group-member-photo-${m.userId}'),
+                    checkIn: photo,
+                    dimmed: !entry.photoIsToday,
                   ),
                 ),
-            ],
+                if (entry.checkedInToday)
+                  Positioned(
+                    right: 7,
+                    top: 7,
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: ui.success,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: ui.outline,
+                          width: UiBorder.hairline,
+                        ),
+                      ),
+                      child: OurneyIcon(
+                        name: 'check',
+                        size: 14,
+                        flat: true,
+                        color: ui.bg,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
         footer: Padding(
