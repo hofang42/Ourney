@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Beta waitlist endpoint (supabase/functions/waitlist-signup). Replace PROJECT_REF with the hosted project ref. -->
+  <meta name="ourney-waitlist-endpoint" content="https://PROJECT_REF.supabase.co/functions/v1/waitlist-signup">
   <title>ourney · chụp một tấm. giữ một chuỗi. — nhật ký ảnh mỗi ngày</title>
   <meta name="description" content="Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.">
   <link rel="canonical" href="https://ourney.tech/" id="link-canonical">
@@ -1101,6 +1103,7 @@
             <form class="beta-form" id="beta-form" novalidate>
               <label for="email" class="sr" data-i18n="beta_email_label">Email</label>
               <input id="email" name="email" type="email" inputmode="email" autocomplete="email" spellcheck="false" placeholder="ban@email-cua-ban.vn" data-i18n-placeholder="beta_placeholder" required aria-describedby="form-msg">
+              <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
               <button class="btn btn-ticket" type="submit" data-i18n="beta_submit">nhận lời mời</button>
             </form>
             <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
