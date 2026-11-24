@@ -566,16 +566,15 @@ class _CheckinSuccessViewState extends State<CheckinSuccessView>
     }
   }
 
-  static final Float32List _developMatrixBuffer = Float32List(20)
-    ..[18] = 1.0;
-
   /// High-exposure warm sepia matrix at `t = 0.0` interpolating smoothly to
   /// the identity matrix at `t = 1.0` (`memory` Polaroid chemical develop).
-  /// Reuses [_developMatrixBuffer] so zero lists are allocated per frame.
+  /// Allocates a fresh 20-element [Float32List] per call because
+  /// [ColorFilter.matrix] stores the list reference without copying and compares
+  /// lists in [ColorFilter.operator ==].
   static Float32List _chemicalDevelopMatrix(double t) {
     final inv = 1.0 - t;
     final lift = inv * 48.0;
-    final m = _developMatrixBuffer;
+    final m = Float32List(20)..[18] = 1.0;
     m[0] = lerpDouble(0.39, 1.0, t)!;
     m[1] = lerpDouble(0.76, 0.0, t)!;
     m[2] = lerpDouble(0.18, 0.0, t)!;

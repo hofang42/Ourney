@@ -143,6 +143,9 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
       decoration: BoxDecoration(
         color: UiCamera.bg,
         borderRadius: targetRadius,
+      ),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: targetRadius,
         border: Border.all(
           color: UiCamera.outline.withValues(alpha: _enlarged ? 0.0 : 1.0),
           width: UiBorder.standard,

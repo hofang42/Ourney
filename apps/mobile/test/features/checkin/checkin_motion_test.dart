@@ -718,27 +718,28 @@ void main() {
 
         // 1. Start (t = 0ms)
         expect(polaroidOpacity(), closeTo(0.35, 0.01));
-        expect(
-          find.byKey(const ValueKey('checkin-memory-develop-filter')),
-          findsOneWidget,
+        final filterFinder = find.byKey(
+          const ValueKey('checkin-memory-develop-filter'),
         );
+        expect(filterFinder, findsOneWidget);
+        final filterAtStart = tester
+            .widget<ColorFiltered>(filterFinder)
+            .colorFilter;
 
         // 2. Mid-develop (t = 400ms of 1100ms)
         await tester.pump(const Duration(milliseconds: 400));
         expect(polaroidOpacity(), greaterThan(0.35));
         expect(polaroidOpacity(), lessThan(1.0));
-        expect(
-          find.byKey(const ValueKey('checkin-memory-develop-filter')),
-          findsOneWidget,
-        );
+        expect(filterFinder, findsOneWidget);
+        final filterAtMid = tester
+            .widget<ColorFiltered>(filterFinder)
+            .colorFilter;
+        expect(filterAtMid, isNot(equals(filterAtStart)));
 
         // 3. Settled
         await tester.pumpAndSettle();
         expect(polaroidOpacity(), closeTo(1.0, 0.001));
-        expect(
-          find.byKey(const ValueKey('checkin-memory-develop-filter')),
-          findsNothing,
-        );
+        expect(filterFinder, findsNothing);
         expect(tester.binding.transientCallbackCount, 0);
       },
     );
@@ -1061,7 +1062,7 @@ void main() {
           void visit(Element el) {
             if (el.widget is DecoratedBox) {
               final d = (el.widget as DecoratedBox).decoration;
-              if (d is BoxDecoration && d.borderRadius != null) {
+              if (d is BoxDecoration && d.border != null) {
                 found ??= d;
               }
             }
@@ -1117,6 +1118,7 @@ void main() {
         // 3. Settled (t = 260ms): fills left half (120x320 at dx = 0) with flush inner split seam (topRight == 0) and transparent border.
         await tester.pump(const Duration(milliseconds: 160));
         expect(tester.getSize(halfFinder), const Size(120, 320));
+        expect(tester.getSize(photoFinder), const Size(120, 320));
         expect(tester.getTopLeft(halfFinder).dx - stackOrigin.dx, 0.0);
         final settledDeco = frameDecoration();
         final settledRadius = settledDeco.borderRadius! as BorderRadius;
