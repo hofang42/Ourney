@@ -116,5 +116,20 @@ void main() {
         AppRoutes.reminders,
       ]),
     );
+    // Every static const route path declared on AppRoutes must resolve to a
+    // registered route in FeatureRoutes (no orphan bare prefixes, DE-14).
+    final src = File('lib/app/app_routes.dart').readAsStringSync();
+    final constPaths = RegExp(r"static const \w+ = '(/[^']*)'")
+        .allMatches(src)
+        .map((m) => Uri.parse(m.group(1)!).path)
+        .toSet();
+    expect(constPaths, isNotEmpty);
+    for (final path in constPaths) {
+      expect(
+        all,
+        contains(path),
+        reason: 'AppRoutes declares $path, which is not registered in FeatureRoutes',
+      );
+    }
   });
 }

@@ -35,7 +35,16 @@ enum HubSegment { active, shelf, shared }
 ///
 /// Without journeys it is the **day-zero hub** (`DayZeroHub`).
 class JourneysListScreen extends ConsumerStatefulWidget {
-  const JourneysListScreen({super.key});
+  const JourneysListScreen({this.initialSegment, super.key});
+
+  final HubSegment? initialSegment;
+
+  static HubSegment? parseSegment(String? raw) => switch (raw) {
+    'active' => HubSegment.active,
+    'shelf' => HubSegment.shelf,
+    'shared' => HubSegment.shared,
+    _ => null,
+  };
 
   /// No cap on running journeys (SRS FR-B3, owner decision 2026-11-12).
   static Future<void> startCreate(BuildContext context) =>
@@ -50,6 +59,22 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   /// shelf when nothing runs).
   HubSegment? _segment;
   bool _menuOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _segment = widget.initialSegment;
+  }
+
+  @override
+  void didUpdateWidget(JourneysListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialSegment != null &&
+        (widget.initialSegment != oldWidget.initialSegment ||
+            _segment != widget.initialSegment)) {
+      _segment = widget.initialSegment;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +110,10 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     final archivedAsync = ref.watch(archivedJourneysProvider);
     final archivedValue = archivedAsync.value;
     final hasArchived = archivedValue?.isNotEmpty ?? false;
+    final localOnly = ref.watch(appConfigProvider).localOnly;
+    final hasShared =
+        !localOnly &&
+        (ref.watch(sharedWithMeProvider).value?.isNotEmpty ?? false);
 
     final Widget body;
     if (buckets != null &&
@@ -114,7 +143,11 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
           ),
         ],
       );
-    } else if (buckets != null && buckets.isEmpty && !hasArchived) {
+    } else if (buckets != null &&
+        buckets.isEmpty &&
+        !hasArchived &&
+        !hasShared &&
+        (_segment != HubSegment.shared || localOnly)) {
       body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
     } else if (buckets != null) {
       body = _HubBody(
@@ -124,8 +157,15 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
             (buckets.active.isEmpty &&
                     (buckets.finished.isNotEmpty || hasArchived)
                 ? HubSegment.shelf
+                : buckets.isEmpty && !hasArchived && hasShared
+                ? HubSegment.shared
                 : HubSegment.active),
-        onSegment: (s) => setState(() => _segment = s),
+        onSegment: (s) {
+          setState(() => _segment = s);
+          if (widget.initialSegment != null && s != widget.initialSegment) {
+            GoRouter.maybeOf(context)?.go(AppRoutes.journeys);
+          }
+        },
         menuOpen: _menuOpen,
         onMenu: () => setState(() => _menuOpen = !_menuOpen),
         onCloseMenu: () => setState(() => _menuOpen = false),

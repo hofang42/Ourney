@@ -98,6 +98,19 @@ void main() {
     expect(find.byKey(const ValueKey('unread-badge')), findsOneWidget);
   });
 
+  testWidgets('tapping New shares opens the Shared segment in Hub (DE-18)', (
+    tester,
+  ) async {
+    final router = await pumpSocial(
+      tester,
+      location: SocialPaths.inbox,
+      fakes: fullInbox(),
+    );
+    await tester.tap(find.byKey(const ValueKey('inbox-shares-open')));
+    await tester.pumpAndSettle();
+    expect(router.state.uri.toString(), '/journeys?segment=shared');
+  });
+
   testWidgets('blocking someone drops their request and thread at once '
       '(C-B3)', (tester) async {
     final fakes = fullInbox();
