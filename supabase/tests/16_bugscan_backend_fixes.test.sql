@@ -59,7 +59,11 @@ select is((public.create_journey(tests.j(8), 'group', 'custom', 'Team', '🔥', 
   10, 'A-B6: a plain group keeps max_members');
 select lives_ok($q$select public.create_journey(tests.j(9), 'group', 'custom', 'Later', '🌱', null, null, false, current_date, 30, 'UTC')$q$,
   'A-B6: setup plain group for later couple names');
-update public.journeys set couple_self_name = 'An', couple_partner_name = 'Binh' where id = tests.j(9);
+do $$ begin
+  perform tests.as_postgres();
+  update public.journeys set couple_self_name = 'An', couple_partner_name = 'Binh' where id = tests.j(9);
+  perform tests.as_user(tests.u(1));
+end $$;
 select is((select max_members from public.journeys where id = tests.j(9)), 2,
   'A-B6: adding couple names later also keeps two seats');
 
@@ -230,11 +234,13 @@ do $$ begin
   perform public.create_journey(tests.j(7), 'solo', 'custom', 'Run', '🏃', null, null, false, current_date - 3, 30, 'UTC');
   perform tests.checkin(tests.c(71), tests.j(7), now() - interval '2 minutes');
   perform tests.checkin(tests.c(72), tests.j(7), now() - interval '1 minute');
-  perform public.set_hidden_in_share(tests.c(72), true);
   perform public.end_journey(tests.j(7));
   perform public.share_journey(tests.j(7), array[tests.u(5)]);
   perform tests.as_user(tests.u(5));
   perform public.open_conversation(tests.j(7), tests.c(71));
+  perform public.send_message(tests.m(72), tests.conv(tests.j(7), tests.u(1), tests.u(5)), 'text', 'and this?', null, tests.c(72));
+  perform tests.as_user(tests.u(1));
+  perform public.set_hidden_in_share(tests.c(72), true);
 end $$;
 do $$ begin perform tests.as_user(tests.u(5)); end $$;
 select isnt(public.send_message(tests.m(71), tests.conv(tests.j(7), tests.u(1), tests.u(5)), 'text', 'nice', null, tests.c(71))

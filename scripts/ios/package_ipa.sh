@@ -18,6 +18,7 @@ if ! command -v zip >/dev/null 2>&1; then
   exit 1
 fi
 
+mkdir -p "$(dirname "$OUT")"
 OUT_DIR="$(cd "$(dirname "$OUT")" && pwd)"
 OUT_ABS="$OUT_DIR/$(basename "$OUT")"
 WORK="$(mktemp -d)"

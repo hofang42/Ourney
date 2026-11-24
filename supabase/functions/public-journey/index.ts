@@ -246,6 +246,15 @@ export async function handle(req: Request): Promise<Response> {
 
   const ownerVisible = journey.kind === "solo" || consented.has(journey.owner_id);
   const ownerHides = visibleAuthors.get(journey.owner_id)?.hide_metric ?? true;
+  // CB-29: on group journeys where the owner has not consented, derive metric metadata and
+  // top-level media_blurred from the consenting visible check-in authors rather than defaulting
+  // both to hidden/blurred.
+  const showMetric = journey.kind === "solo"
+    ? !ownerHides
+    : (!ownerHides || rows.some((c) => !(visibleAuthors.get(c.user_id)?.hide_metric ?? true)));
+  const mediaBlurred = journey.kind === "solo"
+    ? (visibleAuthors.get(journey.owner_id)?.blur_media ?? true)
+    : (rows.length > 0 && rows.every((c) => visibleAuthors.get(c.user_id)?.blur_media ?? true));
   // FS-22 (S9): only finished journeys (ended/archived) can be followed along.
   const canFollow = journey.status === "ended" || journey.status === "archived";
   const coverRow = rows.find((c) => c.id === journey.cover_checkin_id);
@@ -266,8 +275,8 @@ export async function handle(req: Request): Promise<Response> {
       layout: journey.layout,
       color: journey.color,
       cover: journey.cover,
-      metric_name: ownerHides ? null : journey.metric_name,
-      metric_unit: ownerHides ? null : journey.metric_unit,
+      metric_name: showMetric ? journey.metric_name : null,
+      metric_unit: showMetric ? journey.metric_unit : null,
       // A group owner who has not consented stays anonymous (S29/S30).
       owner_display_name: ownerVisible ? owner.data?.display_name ?? null : null,
     },
@@ -290,12 +299,12 @@ export async function handle(req: Request): Promise<Response> {
         emoji: journey.emoji,
         owner_name: ownerVisible ? owner.data?.display_name ?? null : null,
         duration_days: journey.duration_days,
-        metric_name: ownerHides ? null : journey.metric_name,
-        metric_unit: ownerHides ? null : journey.metric_unit,
+        metric_name: showMetric ? journey.metric_name : null,
+        metric_unit: showMetric ? journey.metric_unit : null,
       }
       : null,
     ...(journey.show_counts ? { like_count: likeCount ?? 0, follow_count: followCount } : {}),
-    media_blurred: visibleAuthors.get(journey.owner_id)?.blur_media ?? true,
+    media_blurred: mediaBlurred,
     cover_blurred: coverBlurred,
     signed_url_ttl_seconds: SIGNED_URL_TTL_SECONDS,
     check_ins: rows.map((c) => {

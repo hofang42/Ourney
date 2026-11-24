@@ -92,8 +92,8 @@ select is(public.open_conversation(tests.j(1)), tests.conv(tests.j(1), tests.u(1
 
 -- ===== S33 recipient resolution ================================================
 do $$ begin perform tests.as_user(tests.u(6)); end $$;
-select is(public.open_conversation(tests.j(2), tests.c(5)), tests.conv(tests.j(2), tests.u(4), tests.u(6)),
-  'S33: author not consenting -> reply goes to the earliest sharer');
+select throws_ok($$ select public.open_conversation(tests.j(2), tests.c(5)) $$, 'P0001', 'invalid',
+  'CB-23: open_conversation rejects unconsented check-in');
 do $$ begin perform tests.as_user(tests.u(5));
   perform public.respond_share_consent(tests.j(2), true);
   perform public.share_journey(tests.j(2), array[tests.u(6)]); end $$;

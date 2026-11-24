@@ -35,7 +35,11 @@ mkdir -p "$BIN"
 LOG="$TMP/calls.log"
 BODY="$TMP/curl-body.json"
 CONFIG="$TMP/curl-config.txt"
-REAL_JQ="$(command -v jq)"
+REAL_JQ="$(command -v jq || true)"
+if [ -z "$REAL_JQ" ]; then
+  echo "error: required tool not found on PATH: jq" >&2
+  exit 1
+fi
 
 # supabase stub: fails when its arguments contain STUB_SUPABASE_FAIL (e.g. "link", "db push").
 cat > "$BIN/supabase" << 'EOF'
@@ -234,16 +238,22 @@ jq -e 'has("uri_allow_list") | not' "$BODY" > /dev/null
 check "Auth config body: default has no uri_allow_list (dashboard entries are not overwritten)" $? "$(jq -c keys "$BODY" 2> /dev/null)"
 jq -e 'keys | map(select(startswith("smtp_") or . == "rate_limit_email_sent")) | length == 0' "$BODY" > /dev/null
 check "Auth config body (no SMTP) has no smtp_* fields" $? "$(jq -c keys "$BODY" 2> /dev/null)"
-jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" --rawfile c "$ROOT/supabase/templates/confirmation.html" \
-  '.mailer_templates_magic_link_content == $m and .mailer_templates_confirmation_content == $c
+jq -e --rawfile m "$ROOT/supabase/templates/magic_link.html" \
+  --rawfile c "$ROOT/supabase/templates/confirmation.html" \
+  --rawfile r "$ROOT/supabase/templates/recovery.html" \
+  '.mailer_templates_magic_link_content == $m
+   and .mailer_templates_confirmation_content == $c
+   and .mailer_templates_recovery_content == $r
    and (.mailer_templates_magic_link_content | contains("{{ .Token }}"))
    and (.mailer_templates_confirmation_content | contains("{{ .Token }}"))
-   and ((.mailer_templates_magic_link_content + .mailer_templates_confirmation_content) | contains("ConfirmationURL") | not)' \
+   and (.mailer_templates_recovery_content | contains("{{ .Token }}"))
+   and ((.mailer_templates_magic_link_content + .mailer_templates_confirmation_content + .mailer_templates_recovery_content) | contains("ConfirmationURL") | not)' \
   "$BODY" > /dev/null
-check "Auth config body: both templates carry {{ .Token }} and no ConfirmationURL" $? "template mismatch"
+check "Auth config body: all three templates carry {{ .Token }} and no ConfirmationURL" $? "template mismatch"
 jq -e '.mailer_subjects_magic_link == "Mã đăng nhập Ourney / Your Ourney sign-in code"
-  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"' "$BODY" > /dev/null
-check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation]' "$BODY" 2> /dev/null)"
+  and .mailer_subjects_confirmation == "Mã xác nhận Ourney / Your Ourney confirmation code"
+  and .mailer_subjects_recovery == "Mã đặt lại mật khẩu Ourney / Your Ourney password reset code"' "$BODY" > /dev/null
+check "Auth config body: subjects come from config.toml" $? "$(jq -c '[.mailer_subjects_magic_link,.mailer_subjects_confirmation,.mailer_subjects_recovery]' "$BODY" 2> /dev/null)"
 AUTH_SITE_URL="https://example.org/app/" run bash "$DEPLOY"
 jq -e '.site_url == "https://example.org/app/" and (has("uri_allow_list") | not)' "$BODY" > /dev/null
 check "AUTH_SITE_URL overrides site_url only" $? "rc=$RC $(jq -c '[.site_url,.uri_allow_list]' "$BODY" 2> /dev/null)"
@@ -359,7 +369,7 @@ SUPABASE_API_URL="http://evil.example.com" run bash "$DEPLOY"
 check "Auth config: plain-http remote API URL is rejected even without SMTP" $? "rc=$RC $OUT"
 
 # Email OTP templates (static) ---------------------------------------------------------------------
-for t in magic_link confirmation; do
+for t in magic_link confirmation recovery; do
   f="$ROOT/supabase/templates/$t.html"
   grep -qF '{{ .Token }}' "$f" && ! grep -qiE 'ConfirmationURL|href|\{\{ *\.(SiteURL|TokenHash|RedirectTo)' "$f"
   check "template $t.html shows {{ .Token }} and has no link" $? "$f"
@@ -456,8 +466,8 @@ run in_work bash "$PREFLIGHT" v0.1.0
 check "all checks pass and the commands are printed" $? "rc=$RC out=$OUT"
 [ -z "$(git -C "$WORK" tag)" ] && [ -z "$(git -C "$ORIGIN" tag)" ]
 check "preflight never creates a tag" $?
-contains "$(cat "$LOG")" "gh run list --branch main --workflow CI --limit 1 --json"
-check "CI status is read with gh run list" $?
+contains "$(cat "$LOG")" "gh run list --branch main --workflow CI --event push --limit 1 --json"
+check "CI status is read with gh run list (--event push)" $?
 
 run in_work bash "$PREFLIGHT" v0.2.0
 [ "$RC" -eq 1 ] && contains "$OUT" "pubspec version name is '0.1.0', expected '0.2.0'"
@@ -497,6 +507,12 @@ git -C "$WORK" commit -q --allow-empty -m "local only"
 run in_work bash "$PREFLIGHT" v0.1.0
 [ "$RC" -eq 1 ] && contains "$OUT" "differs from origin/main"
 check "fails when main is ahead of origin" $? "rc=$RC out=$OUT"
+
+git -C "$WORK" reset -q --hard origin/main
+git -C "$WORK" remote set-url origin "$TMP/missing-origin.git"
+run in_work bash "$PREFLIGHT" v0.1.0
+[ "$RC" -eq 1 ] && contains "$OUT" "could not query tags on origin" && ! contains "$OUT" "does not exist yet"
+check "fails when git ls-remote cannot query tags on origin" $? "rc=$RC out=$OUT"
 
 echo
 echo "passed: $PASS, failed: $FAILED"

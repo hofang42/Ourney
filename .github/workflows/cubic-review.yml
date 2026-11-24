@@ -26,9 +26,9 @@ jobs:
           REPO: ${{ github.repository }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          pr=$(gh pr list --repo "$REPO" --state open --search "$HEAD_SHA" \
-            --json number,isDraft,labels \
-            --jq '[.[] | select((.isDraft | not) and ([.labels[].name] | index("skip-review") | not))][0].number // empty')
+          pr=$(gh pr list --repo "$REPO" --state open \
+            --json number,headRefOid,isDraft,labels \
+            --jq '[.[] | select(.headRefOid == env.HEAD_SHA and (.isDraft | not) and ([.labels[].name] | index("skip-review") | not))][0].number // empty')
           if [ -z "$pr" ]; then
             echo "No open, non-draft PR without skip-review for $HEAD_SHA; skipping."
             exit 0

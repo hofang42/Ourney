@@ -77,7 +77,7 @@ do $$ begin perform tests.as_user(tests.u(2)); end $$;
 select lives_ok($$ select public.send_group_invitation(tests.jid(), tests.u(3)) $$, 're-inviting after a revoke works');
 
 -- couple rename
-select throws_ok($$ select public.rename_couple(tests.cid(), 'X', 'Y') $$, 'P0001', 'not_found',
+select throws_ok($$ select public.rename_couple(tests.cid(), 'X', 'Y') $$, '42501', 'forbidden',
   'non-owner cannot rename');
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is((public.rename_couple(tests.cid(), '  Lan ', 'Minh')).couple_self_name, 'Lan', 'owner renames (trimmed)');

@@ -152,7 +152,13 @@ select is((select status::text from public.journeys where id = tests.jid(133)), 
 -- ===== visibility / public link (solo only) ===================================
 do $$ begin perform tests.as_user(tests.uid(14)); end $$;
 select throws_ok($$ select tests.new_journey(142, 'group', 'link') $$, 'P0001', 'invalid', 'group journey can never be link-visible');
-select is((select visibility::text from tests.new_journey(143, 'solo', 'link')), 'link', 'solo journey can be link-visible');
+select throws_ok($$ select tests.new_journey(143, 'solo', 'link') $$, 'P0001', 'invalid', 'S9 (CB-21): active solo journey cannot be created link-visible');
+do $$ begin
+  perform tests.as_user(tests.uid(14));
+  perform tests.new_journey(143, 'solo');
+  perform public.end_journey(tests.jid(143));
+  perform public.set_public_link(tests.jid(143), true);
+end $$;
 -- v1.3 (S32): an ENDED group may hold a token while its visibility stays 'group'.
 select matches(public.set_public_link(tests.jid(141), true), '^[a-z0-9]{40}$', 'set_public_link works for an ended group (v1.3)');
 select is(public.set_public_link(tests.jid(143), false), null, 'public link can be revoked');

@@ -170,7 +170,7 @@ select is((select count(*)::int from storage.objects where name like 'checkins/%
 select results_eq($$ select id, journey_id from public.checkin_tombstones(null) $$,
   $$ values (tests.c(1), tests.j()) $$, 'checkin_tombstones lists the deletion for members');
 select is((select array_to_string(proargnames, ',') from pg_proc where proname = 'checkin_tombstones'),
-  'since,lim,id,journey_id,updated_at', 'checkin_tombstones returns only id/journey_id/updated_at');
+  'since,lim,after_id,id,journey_id,updated_at', 'checkin_tombstones returns only id/journey_id/updated_at');
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
 select is((select count(*)::int from public.check_ins where id = tests.c(1)), 1, 'author still sees own deleted row');
 do $$ begin perform tests.as_user(tests.u(3)); end $$;

@@ -83,7 +83,7 @@ else
 fi
 
 # 5. latest CI run on main
-ci_json="$(gh run list --branch main --workflow CI --limit 1 --json conclusion,headSha 2> /dev/null || true)"
+ci_json="$(gh run list --branch main --workflow CI --event push --limit 1 --json conclusion,headSha 2> /dev/null || true)"
 ci_conclusion="$(printf '%s' "$ci_json" | sed -n 's/.*"conclusion":"\([a-z_]*\)".*/\1/p')"
 ci_sha="$(printf '%s' "$ci_json" | sed -n 's/.*"headSha":"\([0-9a-f]*\)".*/\1/p')"
 if [ -z "$ci_conclusion" ]; then
@@ -99,7 +99,9 @@ fi
 # 6. tag must not exist yet
 if git rev-parse -q --verify "refs/tags/$TAG" > /dev/null; then
   fail "tag $TAG already exists locally"
-elif [ -n "$(git ls-remote --tags origin "refs/tags/$TAG" 2> /dev/null || true)" ]; then
+elif ! remote_tag="$(git ls-remote --tags origin "refs/tags/$TAG" 2> /dev/null)"; then
+  fail "could not query tags on origin"
+elif [ -n "$remote_tag" ]; then
   fail "tag $TAG already exists on origin"
 else
   ok "tag $TAG does not exist yet"

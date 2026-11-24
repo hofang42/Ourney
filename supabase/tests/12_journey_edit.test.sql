@@ -64,7 +64,7 @@ select throws_ok($$ select public.update_journey(tests.jid(1), null, null, null,
 
 -- not owner
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
-select throws_ok($$ select public.update_journey(tests.jid(2), 'Hijack') $$, 'P0001', 'not_found',
+select throws_ok($$ select public.update_journey(tests.jid(2), 'Hijack') $$, '42501', 'forbidden',
   'member (not owner) cannot update');
 
 select * from finish();

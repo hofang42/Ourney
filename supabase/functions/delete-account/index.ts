@@ -36,7 +36,9 @@ function anonClient() {
 }
 
 function authFailure(message: string | undefined, status: number | undefined): Response {
-  const rate = status === 429 || /rate|too many|seconds/i.test(message ?? "");
+  if ((status ?? 0) >= 500) return json({ error: "internal" }, 502);
+  const msg = message ?? "";
+  const rate = status === 429 || (!/timed?\s*out/i.test(msg) && /rate|too many|after \d+ seconds/i.test(msg));
   return rate ? json({ error: "rate_limited" }, 429) : json({ error: "invalid" }, 400);
 }
 
