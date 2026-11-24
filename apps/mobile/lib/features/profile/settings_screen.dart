@@ -120,12 +120,10 @@ class SettingsScreen extends ConsumerWidget {
                       await container
                           .read(hideWeightOnShareProvider.notifier)
                           .set(v);
-                      if (v) {
-                        await pushSharePrivacyToMemberships(
-                          container,
-                          hideWeight: true,
-                        );
-                      }
+                      await pushSharePrivacyToMemberships(
+                        container,
+                        hideWeight: v,
+                      );
                     }());
                   },
                 ),
@@ -141,12 +139,10 @@ class SettingsScreen extends ConsumerWidget {
                       await container
                           .read(blurPhotosOnShareProvider.notifier)
                           .set(v);
-                      if (v) {
-                        await pushSharePrivacyToMemberships(
-                          container,
-                          blur: true,
-                        );
-                      }
+                      await pushSharePrivacyToMemberships(
+                        container,
+                        blur: v,
+                      );
                     }());
                   },
                 ),

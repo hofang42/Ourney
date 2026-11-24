@@ -57,9 +57,6 @@
   "safety_contactCopied": "Email address copied.",
   "safety_contactSubject": "Ourney - support",
   "safety_contactNoMailApp": "Couldn't open a mail app. Copy the address and write from the app you use.",
-  "safety_eulaAcceptTitle": "Before you start",
-  "safety_eulaAcceptIntro": "Ourney has zero tolerance for objectionable content or abusive users. Tapping \"Agree and continue\" means you accept the Terms of use and Privacy policy.",
-  "safety_eulaAcceptButton": "Agree and continue",
   "safety_lastUpdated": "Last updated: {date}",
   "safety_eula1Title": "1. Accepting these terms",
   "safety_eula1Body": "By creating an account or using Ourney you agree to these terms. If you don't agree, please don't use the app.",
@@ -85,5 +82,10 @@
   "safety_privacy5Body": "Go to Profile > Settings > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a group, ownership passes to the earliest-joined member.",
   "safety_privacy6Title": "Contact",
   "safety_privacy6Body": "Questions about privacy? Open Profile > Settings > Contact.",
-  "safety_eulaAcceptSignOut": "Sign out"
+  "safety_termsUpdateTitle": "Updated terms",
+  "safety_termsUpdateIntro": "We updated our Terms of Use and Privacy Policy to make how Ourney protects you clearer:",
+  "safety_termsUpdateBullet1": "Zero tolerance for objectionable content or abusive users; reports are reviewed within 24 hours.",
+  "safety_termsUpdateBullet2": "Your photos and data stay yours — no ads, no data selling, and you can delete your account anytime.",
+  "safety_termsUpdateAccept": "Agree and continue",
+  "safety_termsUpdateLater": "Later"
 }

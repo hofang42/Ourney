@@ -364,10 +364,9 @@ class _SharePrivacyHealHookState extends ConsumerState<SharePrivacyHealHook>
   Widget build(BuildContext context) => widget.child;
 }
 
-/// Pushes a Settings share-privacy switch that was just turned ON to every
+/// Pushes a Settings share-privacy switch (turned ON or OFF) to every
 /// journey membership (archived and ended ones included) so the public link
-/// and group walls honour it too, not only the share card (C-B1). Turning a
-/// switch OFF never touches memberships: explicit per-journey choices stay.
+/// and group walls honour it too, not only the share card (C-B1, DE-12).
 /// [hideWeight] only reaches weight (kg) journeys. Pushes are serialised and
 /// re-read the switch from [container] before writing, so rapid toggles (or
 /// leaving Settings) cannot leave a stale value behind. A membership that can
@@ -378,7 +377,7 @@ Future<void> pushSharePrivacyToMemberships(
   bool? hideWeight,
   bool? blur,
 }) {
-  if (hideWeight != true && blur != true) {
+  if (hideWeight == null && blur == null) {
     return _pendingPush ?? Future<void>.value();
   }
   final JourneyRepository repo;
@@ -414,18 +413,20 @@ Future<void> pushSharePrivacyToMemberships(
         current,
         _allKey,
         e,
-        hide: hideWeight == true,
-        blur: blur == true,
+        hide: hideWeight != null,
+        blur: blur != null,
       );
       return;
     }
-    final hideNow =
-        hideWeight == true && container.read(hideWeightOnShareProvider);
-    final blurNow = blur == true && container.read(blurPhotosOnShareProvider);
+    final hideActive =
+        hideWeight != null &&
+        container.read(hideWeightOnShareProvider) == hideWeight;
+    final blurActive =
+        blur != null && container.read(blurPhotosOnShareProvider) == blur;
     var allOk = true;
     for (final j in journeys) {
-      final hide = hideNow && isWeightMetric(j) ? true : null;
-      final blurV = blurNow ? true : null;
+      final hide = hideActive && isWeightMetric(j) ? hideWeight : null;
+      final blurV = blurActive ? blur : null;
       if (hide == null && blurV == null) continue;
       try {
         await repo.updateMyMembership(j.id, hideMetric: hide, blurMedia: blurV);
@@ -456,8 +457,8 @@ Future<void> pushSharePrivacyToMemberships(
         prefs,
         userId,
         _allKey,
-        hide: hideWeight == true,
-        blur: blur == true,
+        hide: hideWeight != null,
+        blur: blur != null,
       );
     }
   }

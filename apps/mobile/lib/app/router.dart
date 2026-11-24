@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../features/safety/data/safety_providers.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 import 'feature_routes.dart';
@@ -64,15 +63,13 @@ GoRouter createRouter({
 
 /// The app's router. Camera-first (FR-C1): starts at `/capture`; redirects to
 /// `/onboarding` until onboarding is complete and to `/auth` when a backend
-/// is configured and nobody is signed in, and to the EULA gate when a
-/// signed-in user has not accepted the terms yet (see [resolveRedirect]).
+/// is configured and nobody is signed in (see [resolveRedirect]).
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier<int>(0);
   void bump(Object? _, Object? _) => refresh.value++;
   ref
     ..listen(onboardingCompleteProvider, bump)
-    ..listen(authStatusProvider, bump)
-    ..listen(eulaAcceptedProvider, bump);
+    ..listen(authStatusProvider, bump);
 
   final router = createRouter(
     refreshListenable: refresh,
@@ -80,7 +77,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       uri: state.uri,
       onboarded: ref.read(onboardingCompleteProvider),
       auth: ref.read(authStatusProvider),
-      eulaAccepted: ref.read(eulaAcceptedProvider),
     ),
   );
   ref.onDispose(() {

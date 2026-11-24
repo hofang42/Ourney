@@ -157,6 +157,35 @@ final eulaAcceptedProvider = NotifierProvider<EulaAccepted, bool>(
   EulaAccepted.new,
 );
 
+/// True when the signed-in account accepted an older terms version on the
+/// server (`0 < acceptedTermsVersion < termsVersionProvider`) and has not yet
+/// accepted the current version on this device (§4.5).
+///
+/// Accounts with `acceptedTermsVersion == 0` (brand-new accounts) record
+/// initial consent via the `AuthScreen` inline clickwrap and never trigger
+/// `TermsUpdateSheet`.
+final needsTermsUpdateProvider = Provider<bool>((ref) {
+  if (ref.watch(appConfigProvider).localOnly) return false;
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) return false;
+  if (ref.watch(eulaAcceptedProvider)) return false;
+  final requiredVersion = ref.watch(termsVersionProvider);
+  final AuthRepository auth;
+  try {
+    auth = ref.watch(authRepositoryProvider);
+  } on Object {
+    return false;
+  }
+  try {
+    ref.watch(profileRepositoryProvider);
+    ref.watch(myProfileProvider);
+  } on Object {
+    // ProfileRepository not wired in this test.
+  }
+  final serverVer = auth.acceptedTermsVersion ?? 0;
+  return serverVer > 0 && serverVer < requiredVersion;
+});
+
 /// Ids the user has blocked (server truth, `SafetyRepository`).
 final blockedUserIdsProvider = StreamProvider.autoDispose<Set<String>>(
   (ref) => ref.watch(safetyRepositoryProvider).watchBlockedIds(),

@@ -258,18 +258,6 @@
   "@safety_contactNoMailApp": {
     "description": "Error when no mail app can be opened."
   },
-  "safety_eulaAcceptTitle": "Trước khi bắt đầu",
-  "@safety_eulaAcceptTitle": {
-    "description": "Title of the EULA acceptance screen."
-  },
-  "safety_eulaAcceptIntro": "Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Bấm \"Đồng ý và tiếp tục\" là bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.",
-  "@safety_eulaAcceptIntro": {
-    "description": "Intro of the EULA acceptance screen."
-  },
-  "safety_eulaAcceptButton": "Đồng ý và tiếp tục",
-  "@safety_eulaAcceptButton": {
-    "description": "Accept button on the EULA acceptance screen."
-  },
   "safety_lastUpdated": "Cập nhật lần cuối: {date}",
   "@safety_lastUpdated": {
     "description": "Last updated line on legal pages.",
@@ -376,8 +364,28 @@
   "@safety_privacy6Body": {
     "description": "Privacy section body: contact."
   },
-  "safety_eulaAcceptSignOut": "Đăng xuất",
-  "@safety_eulaAcceptSignOut": {
-    "description": "Escape on the terms gate: sign out instead of agreeing."
+  "safety_termsUpdateTitle": "Điều khoản vừa cập nhật",
+  "@safety_termsUpdateTitle": {
+    "description": "Title of the compact terms update bottom sheet shown when kTermsVersion bumps."
+  },
+  "safety_termsUpdateIntro": "Chúng mình vừa cập nhật Điều khoản sử dụng và Chính sách quyền riêng tư để giải thích rõ hơn cách Ourney bảo vệ bạn:",
+  "@safety_termsUpdateIntro": {
+    "description": "Intro of the terms update bottom sheet."
+  },
+  "safety_termsUpdateBullet1": "Không dung thứ nội dung phản cảm hoặc người dùng lạm dụng; báo cáo được xử lý trong 24 giờ.",
+  "@safety_termsUpdateBullet1": {
+    "description": "First bullet on the terms update bottom sheet."
+  },
+  "safety_termsUpdateBullet2": "Ảnh và dữ liệu thuộc về bạn — không quảng cáo, không bán dữ liệu, có thể xóa tài khoản bất cứ lúc nào.",
+  "@safety_termsUpdateBullet2": {
+    "description": "Second bullet on the terms update bottom sheet."
+  },
+  "safety_termsUpdateAccept": "Đồng ý và tiếp tục",
+  "@safety_termsUpdateAccept": {
+    "description": "Primary accept button on the terms update bottom sheet."
+  },
+  "safety_termsUpdateLater": "Để sau",
+  "@safety_termsUpdateLater": {
+    "description": "Dismiss button on the terms update bottom sheet."
   }
 }

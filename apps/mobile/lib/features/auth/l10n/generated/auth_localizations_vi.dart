@@ -76,10 +76,10 @@ class AuthL10nVi extends AuthL10n {
   String get auth_errorGeneric => 'Có lỗi xảy ra. Thử lại nhé.';
 
   @override
-  String get auth_terms => 'Điều khoản';
+  String get auth_terms => 'Điều khoản sử dụng';
 
   @override
-  String get auth_privacy => 'Chính sách riêng tư';
+  String get auth_privacy => 'Chính sách quyền riêng tư';
 
   @override
   String get auth_tabEmail => 'Email';
@@ -168,10 +168,10 @@ class AuthL10nVi extends AuthL10n {
   String get auth_success => 'Xong rồi. Chào bạn.';
 
   @override
-  String get auth_legalIntro => 'Bấm \"Gửi mã\" là bạn đồng ý với';
+  String get auth_legalIntro => 'Tiếp tục đồng nghĩa bạn đồng ý với';
 
   @override
-  String get auth_legalAnd => 'và';
+  String get auth_legalAnd => '(không dung thứ nội dung phản cảm) và';
 
   @override
   String get auth_back => 'Quay lại';

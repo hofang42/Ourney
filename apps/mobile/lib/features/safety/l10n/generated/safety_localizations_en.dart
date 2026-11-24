@@ -207,16 +207,6 @@ class SafetyL10nEn extends SafetyL10n {
       'Couldn\'t open a mail app. Copy the address and write from the app you use.';
 
   @override
-  String get safety_eulaAcceptTitle => 'Before you start';
-
-  @override
-  String get safety_eulaAcceptIntro =>
-      'Ourney has zero tolerance for objectionable content or abusive users. Tapping \"Agree and continue\" means you accept the Terms of use and Privacy policy.';
-
-  @override
-  String get safety_eulaAcceptButton => 'Agree and continue';
-
-  @override
   String safety_lastUpdated(String date) {
     return 'Last updated: $date';
   }
@@ -306,5 +296,23 @@ class SafetyL10nEn extends SafetyL10n {
       'Questions about privacy? Open Profile > Settings > Contact.';
 
   @override
-  String get safety_eulaAcceptSignOut => 'Sign out';
+  String get safety_termsUpdateTitle => 'Updated terms';
+
+  @override
+  String get safety_termsUpdateIntro =>
+      'We updated our Terms of Use and Privacy Policy to make how Ourney protects you clearer:';
+
+  @override
+  String get safety_termsUpdateBullet1 =>
+      'Zero tolerance for objectionable content or abusive users; reports are reviewed within 24 hours.';
+
+  @override
+  String get safety_termsUpdateBullet2 =>
+      'Your photos and data stay yours — no ads, no data selling, and you can delete your account anytime.';
+
+  @override
+  String get safety_termsUpdateAccept => 'Agree and continue';
+
+  @override
+  String get safety_termsUpdateLater => 'Later';
 }

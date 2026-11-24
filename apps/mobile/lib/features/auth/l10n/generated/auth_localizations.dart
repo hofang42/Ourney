@@ -220,13 +220,13 @@ abstract class AuthL10n {
   /// Footer link to the terms.
   ///
   /// In vi, this message translates to:
-  /// **'Điều khoản'**
+  /// **'Điều khoản sử dụng'**
   String get auth_terms;
 
   /// Footer link to the privacy policy.
   ///
   /// In vi, this message translates to:
-  /// **'Chính sách riêng tư'**
+  /// **'Chính sách quyền riêng tư'**
   String get auth_privacy;
 
   /// Sign-in method tab.
@@ -394,13 +394,13 @@ abstract class AuthL10n {
   /// Start of the legal line under the sign-in form.
   ///
   /// In vi, this message translates to:
-  /// **'Bấm \"Gửi mã\" là bạn đồng ý với'**
+  /// **'Tiếp tục đồng nghĩa bạn đồng ý với'**
   String get auth_legalIntro;
 
   /// Between Terms and Privacy in the legal line.
   ///
   /// In vi, this message translates to:
-  /// **'và'**
+  /// **'(không dung thứ nội dung phản cảm) và'**
   String get auth_legalAnd;
 
   /// Back button semantics on the code step.

@@ -8,7 +8,8 @@ import 'package:ourney/app/providers.dart';
 import 'package:ourney/features/profile/settings_providers.dart';
 import 'package:ourney/ui/ui.dart';
 
-import '../../app/test_helpers.dart' show pumpOurneyApp;
+import '../../app/test_helpers.dart' show pumpOurneyApp, testBackendConfig;
+import '../journeys/journeys_fakes.dart' show FakeJourneyRepository, testJourney;
 import 'fakes.dart';
 
 void _expectNoTruncatedSegments(WidgetTester tester) {
@@ -264,5 +265,96 @@ void main() {
       expect(auth.calls, ['signOut']);
       expect(byKey('settings-screen'), findsOneWidget);
     });
+  });
+
+  group('DE-12 & DE-15: privacy toggles sync ON and OFF; no app-icon picker', () {
+    testWidgets(
+      'toggling Hide kg and Blur photos ON then OFF syncs both true and false '
+      'to server memberships, and no app-icon picker tiles exist',
+      (tester) async {
+        final journeys = FakeJourneyRepository(
+          journeys: [
+            testJourney(id: 'j-kg', metricName: 'Cân nặng', metricUnit: 'kg'),
+            testJourney(
+              id: 'j-min',
+              metricName: 'Thời gian',
+              metricUnit: 'phút',
+            ),
+          ],
+        );
+        final c = await pumpOurneyApp(
+          tester,
+          config: testBackendConfig,
+          auth: RecordingAuthRepository(userId: 'u1'),
+          overrides: [
+            profileRepositoryProvider.overrideWithValue(
+              FakeProfileRepository(aliceProfile),
+            ),
+            journeyRepositoryProvider.overrideWithValue(journeys),
+            mediaStoreProvider.overrideWithValue(FakeMediaStore()),
+          ],
+        );
+        await goTo(tester, c, '/profile/settings');
+
+        // DE-15: none of the 7 app-icon picker tiles or checkmarks exist.
+        for (final iconKey in const [
+          'settings-icon-default',
+          'settings-icon-quiet',
+          'settings-icon-squad',
+          'settings-icon-memory',
+          'settings-icon-couple',
+          'settings-icon-flexer',
+          'settings-icon-minimal',
+          'settings-icon-check',
+        ]) {
+          expect(byKey(iconKey), findsNothing, reason: iconKey);
+        }
+
+        // 1. Toggle Hide kg ON -> pushes hideMetric: true to j-kg.
+        await tester.scrollUntilVisible(
+          byKey('settings-hide-kg'),
+          200,
+          scrollable: find.byType(Scrollable).first,
+        );
+        await tester.tap(byKey('settings-hide-kg'));
+        await tester.pumpAndSettle();
+        expect(c.read(hideWeightOnShareProvider), isTrue);
+        expect(
+          [for (final u in journeys.prefUpdates) (u.id, u.hideMetric)],
+          [('j-kg', true)],
+        );
+
+        // 2. Toggle Hide kg OFF -> pushes hideMetric: false to j-kg (DE-12).
+        journeys.prefUpdates.clear();
+        await tester.tap(byKey('settings-hide-kg'));
+        await tester.pumpAndSettle();
+        expect(c.read(hideWeightOnShareProvider), isFalse);
+        expect(
+          [for (final u in journeys.prefUpdates) (u.id, u.hideMetric)],
+          [('j-kg', false)],
+        );
+
+        // 3. Toggle Blur photos ON -> pushes blurMedia: true to all journeys.
+        journeys.prefUpdates.clear();
+        await tester.ensureVisible(byKey('settings-blur-photos'));
+        await tester.tap(byKey('settings-blur-photos'));
+        await tester.pumpAndSettle();
+        expect(c.read(blurPhotosOnShareProvider), isTrue);
+        expect(
+          {for (final u in journeys.prefUpdates) u.id: u.blurMedia},
+          {'j-kg': true, 'j-min': true},
+        );
+
+        // 4. Toggle Blur photos OFF -> pushes blurMedia: false to all journeys.
+        journeys.prefUpdates.clear();
+        await tester.tap(byKey('settings-blur-photos'));
+        await tester.pumpAndSettle();
+        expect(c.read(blurPhotosOnShareProvider), isFalse);
+        expect(
+          {for (final u in journeys.prefUpdates) u.id: u.blurMedia},
+          {'j-kg': false, 'j-min': false},
+        );
+      },
+    );
   });
 }

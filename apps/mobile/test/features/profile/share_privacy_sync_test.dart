@@ -82,14 +82,21 @@ void main() {
     expect(repo.prefUpdates.every((u) => u.blurMedia == true), isTrue);
   });
 
-  testWidgets('switch off leaves per-journey choices alone', (tester) async {
+  testWidgets('DE-12: switch off syncs false to memberships', (tester) async {
     final (ref, repo, container) = await pump(tester);
     await pushSharePrivacyToMemberships(
       container,
       hideWeight: false,
       blur: false,
     );
-    expect(repo.prefUpdates, isEmpty);
+    expect(
+      {for (final u in repo.prefUpdates) u.id: (u.hideMetric, u.blurMedia)},
+      {
+        'kg': (false, false),
+        'min': (null, false),
+        'old': (false, false),
+      },
+    );
   });
 
   testWidgets('a switch turned off again before the push writes nothing', (

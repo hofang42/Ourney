@@ -440,24 +440,6 @@ abstract class SafetyL10n {
   /// **'Không mở được ứng dụng email. Hãy sao chép địa chỉ và gửi từ ứng dụng bạn dùng.'**
   String get safety_contactNoMailApp;
 
-  /// Title of the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Trước khi bắt đầu'**
-  String get safety_eulaAcceptTitle;
-
-  /// Intro of the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Bấm \"Đồng ý và tiếp tục\" là bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.'**
-  String get safety_eulaAcceptIntro;
-
-  /// Accept button on the EULA acceptance screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Đồng ý và tiếp tục'**
-  String get safety_eulaAcceptButton;
-
   /// Last updated line on legal pages.
   ///
   /// In vi, this message translates to:
@@ -608,11 +590,41 @@ abstract class SafetyL10n {
   /// **'Có câu hỏi về quyền riêng tư? Mở Hồ sơ > Cài đặt > Liên hệ.'**
   String get safety_privacy6Body;
 
-  /// Escape on the terms gate: sign out instead of agreeing.
+  /// Title of the compact terms update bottom sheet shown when kTermsVersion bumps.
   ///
   /// In vi, this message translates to:
-  /// **'Đăng xuất'**
-  String get safety_eulaAcceptSignOut;
+  /// **'Điều khoản vừa cập nhật'**
+  String get safety_termsUpdateTitle;
+
+  /// Intro of the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Chúng mình vừa cập nhật Điều khoản sử dụng và Chính sách quyền riêng tư để giải thích rõ hơn cách Ourney bảo vệ bạn:'**
+  String get safety_termsUpdateIntro;
+
+  /// First bullet on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Không dung thứ nội dung phản cảm hoặc người dùng lạm dụng; báo cáo được xử lý trong 24 giờ.'**
+  String get safety_termsUpdateBullet1;
+
+  /// Second bullet on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Ảnh và dữ liệu thuộc về bạn — không quảng cáo, không bán dữ liệu, có thể xóa tài khoản bất cứ lúc nào.'**
+  String get safety_termsUpdateBullet2;
+
+  /// Primary accept button on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đồng ý và tiếp tục'**
+  String get safety_termsUpdateAccept;
+
+  /// Dismiss button on the terms update bottom sheet.
+  ///
+  /// In vi, this message translates to:
+  /// **'Để sau'**
+  String get safety_termsUpdateLater;
 }
 
 class _SafetyL10nDelegate extends LocalizationsDelegate<SafetyL10n> {

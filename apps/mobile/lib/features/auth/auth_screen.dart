@@ -7,10 +7,12 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
+import '../../app/redirect.dart' show safeFrom;
 import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import '../onboarding/onboarding_providers.dart';
 import '../profile/routes.dart' show profileSetupPath;
+import '../safety/data/safety_providers.dart';
 import '../safety/safety_paths.dart';
 import 'auth_errors.dart';
 import 'auth_providers.dart';
@@ -141,6 +143,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final router = GoRouter.of(context);
     final profiles = _profiles();
     final quiz = ref.read(onboardingQuizProvider.notifier);
+    final eula = ref.read(eulaAcceptedProvider.notifier);
     final from = widget.from;
     setState(() => _busy = true);
     var step = AuthStep.sendOtp;
@@ -157,7 +160,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         case _Flow.password:
           step = AuthStep.passwordSignIn;
           await auth.signInWithPassword(_normalizedEmail, _password.text);
-          await _finishSignIn(router, profiles, quiz, from);
+          await _finishSignIn(router, auth, profiles, quiz, eula, from);
           return;
       }
     } on Object catch (e) {
@@ -209,6 +212,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final auth = ref.read(authRepositoryProvider);
     final profiles = _profiles();
     final quiz = ref.read(onboardingQuizProvider.notifier);
+    final eula = ref.read(eulaAcceptedProvider.notifier);
     final from = widget.from;
 
     setState(() => _busy = true);
@@ -234,7 +238,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       return;
     }
     if (mounted) setState(() => _success = true);
-    await _finishSignIn(router, profiles, quiz, from);
+    await _finishSignIn(router, auth, profiles, quiz, eula, from);
   }
 
   ProfileRepository? _profiles() {
@@ -247,8 +251,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   Future<void> _finishSignIn(
     GoRouter router,
+    AuthRepository auth,
     ProfileRepository? profiles,
     OnboardingQuizNotifier quiz,
+    EulaAccepted eula,
     String? from,
   ) async {
     OurneyHaptics.success();
@@ -256,11 +262,28 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     // effort, never blocks sign-in). No `ref` here: the router may already
     // have unmounted this screen after the sign-in await.
     unawaited(quiz.syncToServer());
-    if (profiles != null && await _needsProfileSetup(profiles)) {
+    final needsSetup = profiles != null && await _needsProfileSetup(profiles);
+    // §4.4: record initial terms consent when the account has no recorded
+    // version yet (0 or null). Do not auto-bump when 0 < serverVer <
+    // kTermsVersion so returning users see TermsUpdateSheet on a version bump.
+    if ((auth.acceptedTermsVersion ?? 0) <= 0) {
+      unawaited(eula.accept());
+    }
+    if (needsSetup) {
+      final safeTarget = from == null
+          ? null
+          : safeFrom(
+              Uri(
+                path: AppRoutes.auth,
+                queryParameters: {AppRoutes.fromParam: from},
+              ),
+            );
       router.go(
         Uri(
           path: profileSetupPath,
-          queryParameters: from == null ? null : {AppRoutes.fromParam: from},
+          queryParameters: safeTarget == null
+              ? null
+              : {AppRoutes.fromParam: safeTarget},
         ).toString(),
       );
     }
@@ -274,7 +297,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       );
       return profile == null;
     } on Object {
-      return false;
+      // No local profile could be confirmed: go to `/profile/setup` so its
+      // offline/error retry and sign-out state handles recovery (DE-04/DE-07).
+      return true;
     }
   }
 
@@ -325,7 +350,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     final l10n = AuthL10n.of(context);
     final ui = context.ui;
     final codeStep = _codeStep;
-    final showLegal = !codeStep && !_subForm;
+    final showLegal = !codeStep && _flow != _Flow.reset;
 
     return UiScaffold(
       key: const ValueKey('auth-screen'),

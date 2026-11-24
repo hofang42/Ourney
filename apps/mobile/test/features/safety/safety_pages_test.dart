@@ -191,41 +191,10 @@ void main() {
     });
   });
 
-  group('EULA gate', () {
-    testWidgets('one tap agrees: stores the flag, records on the account', (
-      tester,
-    ) async {
-      final auth = FakeAuthRepository(userId: 'u1');
-      final c = await pumpSignedInApp(tester, eulaAccepted: false, auth: auth);
-      expect(c.read(eulaAcceptedProvider), isFalse);
-      await goTo(
-        tester,
-        c,
-        Uri(
-          path: SafetyPaths.eulaAccept,
-          queryParameters: {AppRoutes.fromParam: SafetyPaths.contact},
-        ).toString(),
-      );
-      expect(byKey('safety-eula-accept'), findsOneWidget);
-      expect(byKey('safety-eula-checkbox'), findsNothing);
-
-      await tester.tap(byKey('safety-eula-accept-button'));
-      await tester.pumpAndSettle();
-
-      expect(c.read(eulaAcceptedProvider), isTrue);
-      expect(
-        c
-            .read(sharedPreferencesProvider)
-            .getInt(SafetyPrefs.termsVersionFor('u1')),
-        kTermsVersion,
-      );
-      expect(auth.recordedTerms, [kTermsVersion]);
-      expect(locationOf(c), SafetyPaths.contact);
-    });
-
+  group('terms consent & TermsUpdateSheet (§4.4 / §4.5)', () {
     testWidgets(
-      'accept navigates immediately without blocking on a slow network call '
-      '(M3)',
+      'accept() stores the per-account version and calls recordTermsAccepted '
+      'without blocking on a slow network call (M3)',
       (tester) async {
         final auth = _SlowTermsAuthRepository(userId: 'u1');
         final c = await pumpSignedInApp(
@@ -233,16 +202,9 @@ void main() {
           eulaAccepted: false,
           auth: auth,
         );
-        await goTo(
-          tester,
-          c,
-          Uri(
-            path: SafetyPaths.eulaAccept,
-            queryParameters: {AppRoutes.fromParam: SafetyPaths.contact},
-          ).toString(),
-        );
-        await tester.tap(byKey('safety-eula-accept-button'));
-        await tester.pumpAndSettle();
+        expect(c.read(eulaAcceptedProvider), isFalse);
+
+        await c.read(eulaAcceptedProvider.notifier).accept();
 
         expect(c.read(eulaAcceptedProvider), isTrue);
         expect(
@@ -252,21 +214,11 @@ void main() {
           kTermsVersion,
         );
         expect(auth.recordedTerms, [kTermsVersion]);
-        expect(locationOf(c), SafetyPaths.contact);
         auth.blocker.complete();
       },
     );
 
-    testWidgets('gate offers sign out', (tester) async {
-      final c = await pumpSignedInApp(tester, eulaAccepted: false);
-      await goTo(tester, c, SafetyPaths.eulaAccept);
-      await tester.ensureVisible(byKey('safety-eula-sign-out'));
-      await tester.tap(byKey('safety-eula-sign-out'));
-      await tester.pumpAndSettle();
-      expect(byKey('profile-signout-dialog'), findsOneWidget);
-    });
-
-    testWidgets('an account that already accepted is never asked', (
+    testWidgets('an account that already accepted is remembered locally', (
       tester,
     ) async {
       final c = await pumpSignedInApp(
@@ -275,14 +227,13 @@ void main() {
         auth: FakeAuthRepository(userId: 'u1', termsVersion: kTermsVersion),
       );
       expect(c.read(eulaAcceptedProvider), isTrue);
+      expect(c.read(needsTermsUpdateProvider), isFalse);
       expect(
         c
             .read(sharedPreferencesProvider)
             .getInt(SafetyPrefs.termsVersionFor('u1')),
         kTermsVersion,
       );
-      await goTo(tester, c, AppRoutes.capture);
-      expect(locationOf(c), isNot(startsWith(SafetyPaths.eulaAccept)));
     });
 
     testWidgets(
@@ -307,21 +258,62 @@ void main() {
         addTearDown(c.dispose);
 
         expect(c.read(eulaAcceptedProvider), isFalse);
+        expect(c.read(needsTermsUpdateProvider), isTrue);
         expect(auth.recordedTerms, isEmpty);
       },
     );
 
-    testWidgets('unsafe from target falls back to the camera', (tester) async {
-      final c = await pumpOurneyApp(tester);
-      await goTo(
-        tester,
-        c,
-        '${SafetyPaths.eulaAccept}?from=${Uri.encodeComponent('https://evil.example')}',
-      );
-      await tester.tap(byKey('safety-eula-accept-button'));
-      await tester.pumpAndSettle();
-      expect(locationOf(c), startsWith(AppRoutes.capture));
-    });
+    testWidgets(
+      'AppShell shows dismissible TermsUpdateSheet when 0 < server '
+      'terms_version < kTermsVersion (§4.5)',
+      (tester) async {
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: 1);
+        final c = await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+          overrides: [termsVersionProvider.overrideWithValue(2)],
+        );
+        expect(byKey('safety-terms-update-sheet'), findsOneWidget);
+        expect(find.text('Điều khoản vừa cập nhật'), findsOneWidget);
+
+        // Dismissible via "Để sau" without blocking the app.
+        await tester.tap(byKey('safety-terms-update-later'));
+        await tester.pumpAndSettle();
+        expect(byKey('safety-terms-update-sheet'), findsNothing);
+        expect(auth.recordedTerms, isEmpty);
+        expect(locationOf(c), AppRoutes.capture);
+      },
+    );
+
+    testWidgets(
+      'TermsUpdateSheet Agree and continue records the bumped terms version '
+      '(§4.5)',
+      (tester) async {
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: 1);
+        final c = await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+          overrides: [termsVersionProvider.overrideWithValue(2)],
+        );
+        expect(byKey('safety-terms-update-sheet'), findsOneWidget);
+
+        await tester.tap(byKey('safety-terms-update-accept'));
+        await tester.pumpAndSettle();
+
+        expect(byKey('safety-terms-update-sheet'), findsNothing);
+        expect(c.read(eulaAcceptedProvider), isTrue);
+        expect(c.read(needsTermsUpdateProvider), isFalse);
+        expect(auth.recordedTerms, [2]);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getInt(SafetyPrefs.termsVersionFor('u1')),
+          2,
+        );
+      },
+    );
 
     test('provider reads and resets the stored flag', () async {
       final prefs = await testPrefs({SafetyPrefs.eulaAccepted: true});

@@ -20,8 +20,8 @@
   "auth_errorRateLimited": "Too many tries. Wait a moment and try again.",
   "auth_errorOffline": "You're offline. Reconnect and try again.",
   "auth_errorGeneric": "Something went wrong. Please try again.",
-  "auth_terms": "Terms",
-  "auth_privacy": "Privacy Policy",
+  "auth_terms": "Terms of Use",
+  "auth_privacy": "Privacy Policy.",
   "auth_tabEmail": "Email",
   "auth_tabPhone": "Phone",
   "auth_phoneLabel": "Phone number",
@@ -85,11 +85,11 @@
   "@auth_success": {
     "description": ""
   },
-  "auth_legalIntro": "By tapping \"Send code\" you agree to the",
+  "auth_legalIntro": "By continuing, you agree to Ourney's",
   "@auth_legalIntro": {
     "description": ""
   },
-  "auth_legalAnd": "and",
+  "auth_legalAnd": "(zero tolerance for objectionable content) and",
   "@auth_legalAnd": {
     "description": ""
   },

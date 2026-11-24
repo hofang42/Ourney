@@ -76,10 +76,10 @@ class AuthL10nEn extends AuthL10n {
   String get auth_errorGeneric => 'Something went wrong. Please try again.';
 
   @override
-  String get auth_terms => 'Terms';
+  String get auth_terms => 'Terms of Use';
 
   @override
-  String get auth_privacy => 'Privacy Policy';
+  String get auth_privacy => 'Privacy Policy.';
 
   @override
   String get auth_tabEmail => 'Email';
@@ -169,10 +169,10 @@ class AuthL10nEn extends AuthL10n {
   String get auth_success => 'All done. Welcome.';
 
   @override
-  String get auth_legalIntro => 'By tapping \"Send code\" you agree to the';
+  String get auth_legalIntro => 'By continuing, you agree to Ourney\'s';
 
   @override
-  String get auth_legalAnd => 'and';
+  String get auth_legalAnd => '(zero tolerance for objectionable content) and';
 
   @override
   String get auth_back => 'Back';

@@ -205,16 +205,6 @@ class SafetyL10nVi extends SafetyL10n {
       'Không mở được ứng dụng email. Hãy sao chép địa chỉ và gửi từ ứng dụng bạn dùng.';
 
   @override
-  String get safety_eulaAcceptTitle => 'Trước khi bắt đầu';
-
-  @override
-  String get safety_eulaAcceptIntro =>
-      'Ourney không dung thứ nội dung phản cảm hay hành vi lạm dụng. Bấm \"Đồng ý và tiếp tục\" là bạn đồng ý với Điều khoản sử dụng và Chính sách quyền riêng tư.';
-
-  @override
-  String get safety_eulaAcceptButton => 'Đồng ý và tiếp tục';
-
-  @override
   String safety_lastUpdated(String date) {
     return 'Cập nhật lần cuối: $date';
   }
@@ -304,5 +294,23 @@ class SafetyL10nVi extends SafetyL10n {
       'Có câu hỏi về quyền riêng tư? Mở Hồ sơ > Cài đặt > Liên hệ.';
 
   @override
-  String get safety_eulaAcceptSignOut => 'Đăng xuất';
+  String get safety_termsUpdateTitle => 'Điều khoản vừa cập nhật';
+
+  @override
+  String get safety_termsUpdateIntro =>
+      'Chúng mình vừa cập nhật Điều khoản sử dụng và Chính sách quyền riêng tư để giải thích rõ hơn cách Ourney bảo vệ bạn:';
+
+  @override
+  String get safety_termsUpdateBullet1 =>
+      'Không dung thứ nội dung phản cảm hoặc người dùng lạm dụng; báo cáo được xử lý trong 24 giờ.';
+
+  @override
+  String get safety_termsUpdateBullet2 =>
+      'Ảnh và dữ liệu thuộc về bạn — không quảng cáo, không bán dữ liệu, có thể xóa tài khoản bất cứ lúc nào.';
+
+  @override
+  String get safety_termsUpdateAccept => 'Đồng ý và tiếp tục';
+
+  @override
+  String get safety_termsUpdateLater => 'Để sau';
 }

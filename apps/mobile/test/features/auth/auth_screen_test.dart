@@ -8,6 +8,7 @@ import 'package:ourney/features/auth/auth_errors.dart';
 import 'package:ourney/features/auth/auth_screen.dart';
 import 'package:ourney/features/auth/l10n/generated/auth_localizations_en.dart';
 import 'package:ourney/features/profile/routes.dart';
+import 'package:ourney/features/safety/data/safety_providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
@@ -121,26 +122,41 @@ void main() {
       expect(byKey('auth-step-email'), findsOneWidget);
     });
 
-    testWidgets('first sign-in continues to profile setup', (tester) async {
-      final auth = RecordingAuthRepository();
-      final c = await pumpBackendApp(
-        tester,
-        auth: auth,
-        profiles: FakeProfileRepository(),
-      );
-      await goTo(tester, c, '${AppRoutes.auth}?from=%2Fjourneys');
-      await enterEmail(tester, 'a@b.co');
-      await tester.enterText(byKey('auth-code'), '654321');
-      await tester.pumpAndSettle();
-      expect(
-        location(c),
-        Uri(
-          path: profileSetupPath,
-          queryParameters: {AppRoutes.fromParam: AppRoutes.journeys},
-        ).toString(),
-      );
-      expect(byKey('profile-setup-screen'), findsOneWidget);
-    });
+    testWidgets(
+      'first sign-in records accept_terms(kTermsVersion) and continues to '
+      'profile setup preserving ?from= (§4.1 / §4.4 / DE-04)',
+      (tester) async {
+        final auth = RecordingAuthRepository();
+        final profiles = FakeProfileRepository();
+        final c = await pumpBackendApp(
+          tester,
+          auth: auth,
+          profiles: profiles,
+        );
+        await goTo(tester, c, '${AppRoutes.auth}?from=%2Fjourneys');
+        await enterEmail(tester, 'a@b.co');
+        await tester.enterText(byKey('auth-code'), '654321');
+        await tester.pumpAndSettle();
+        expect(auth.recordedTerms, [kTermsVersion]);
+        expect(
+          location(c),
+          Uri(
+            path: profileSetupPath,
+            queryParameters: {AppRoutes.fromParam: AppRoutes.journeys},
+          ).toString(),
+        );
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+
+        // Saving profile setup finishes the deterministic sequence to ?from=.
+        await tester.enterText(byKey('profile-display-name'), 'Alice');
+        await tester.enterText(byKey('profile-username'), 'alice');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(byKey('profile-save'));
+        await tester.tap(byKey('profile-save'));
+        await tester.pumpAndSettle();
+        expect(location(c), AppRoutes.journeys);
+      },
+    );
 
     testWidgets(
       'first sign-in reaches profile setup even if /auth unmounts (C-B5)',
@@ -176,38 +192,85 @@ void main() {
       expect(location(c), AppRoutes.capture);
     });
 
-    testWidgets('legal links open terms and privacy, inline (U13 / L4)', (
-      tester,
-    ) async {
-      final c = await pumpBackendApp(tester, auth: RecordingAuthRepository());
-      final screen = tester.getSize(find.byType(AuthScreen)).width;
-      expect(
-        tester.getSize(byKey('auth-terms')).width,
-        lessThan(screen * 0.75),
-      );
-      // L4: left-aligned secondary action aligns flush with the form field and
-      // left-aligns wrapped lines.
-      final usePwdText = tester.widget<Text>(
-        find.descendant(of: byKey('auth-use-password'), matching: find.byType(Text)),
-      );
-      expect(usePwdText.textAlign, TextAlign.left);
-      expect(
-        tester.getTopLeft(byKey('auth-use-password')).dx,
-        tester.getTopLeft(byKey('auth-email')).dx,
-      );
-      await tester.ensureVisible(byKey('auth-terms'));
-      await tester.pumpAndSettle();
-      await tester.tap(byKey('auth-terms'));
-      await tester.pumpAndSettle();
-      expect(location(c), '/safety/eula');
-      c.read(routerProvider).pop();
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(byKey('auth-privacy'));
-      await tester.pumpAndSettle();
-      await tester.tap(byKey('auth-privacy'));
-      await tester.pumpAndSettle();
-      expect(location(c), '/safety/privacy');
-    });
+    testWidgets(
+      'legal links show zero-tolerance clickwrap on email, phone and password '
+      'flows, inline (§4.2 / U13 / L4)',
+      (tester) async {
+        final c = await pumpBackendApp(
+          tester,
+          auth: RecordingAuthRepository(),
+          phoneAvailable: true,
+        );
+        // Zero-tolerance clickwrap copy on email flow.
+        expect(
+          find.text('Tiếp tục đồng nghĩa bạn đồng ý với'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('(không dung thứ nội dung phản cảm) và'),
+          findsOneWidget,
+        );
+        expect(find.text('Điều khoản sử dụng'), findsOneWidget);
+        expect(find.text('Chính sách quyền riêng tư'), findsOneWidget);
+
+        final screen = tester.getSize(find.byType(AuthScreen)).width;
+        expect(
+          tester.getSize(byKey('auth-terms')).width,
+          lessThan(screen * 0.75),
+        );
+        // L4: left-aligned secondary action aligns flush with the form field
+        // and left-aligns wrapped lines.
+        final usePwdText = tester.widget<Text>(
+          find.descendant(
+            of: byKey('auth-use-password'),
+            matching: find.byType(Text),
+          ),
+        );
+        expect(usePwdText.textAlign, TextAlign.left);
+        expect(
+          tester.getTopLeft(byKey('auth-use-password')).dx,
+          tester.getTopLeft(byKey('auth-email')).dx,
+        );
+
+        // Phone flow also shows the inline legal links.
+        await tester.tap(byKey('auth-tab-phone'));
+        await tester.pumpAndSettle();
+        expect(byKey('auth-terms'), findsOneWidget);
+        expect(byKey('auth-privacy'), findsOneWidget);
+        await tester.tap(byKey('auth-tab-email'));
+        await tester.pumpAndSettle();
+
+        // Password flow also shows the inline legal links (§4.2).
+        await tester.ensureVisible(byKey('auth-use-password'));
+        await tester.tap(byKey('auth-use-password'));
+        await tester.pumpAndSettle();
+        expect(byKey('auth-terms'), findsOneWidget);
+        expect(byKey('auth-privacy'), findsOneWidget);
+
+        // Reset password sub-flow hides the legal links.
+        await tester.ensureVisible(byKey('auth-forgot'));
+        await tester.tap(byKey('auth-forgot'));
+        await tester.pumpAndSettle();
+        expect(byKey('auth-terms'), findsNothing);
+        await tester.tap(byKey('auth-flow-back'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('auth-flow-back'));
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(byKey('auth-terms'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('auth-terms'));
+        await tester.pumpAndSettle();
+        expect(location(c), '/safety/eula');
+        c.read(routerProvider).pop();
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(byKey('auth-privacy'));
+        await tester.pumpAndSettle();
+        await tester.tap(byKey('auth-privacy'));
+        await tester.pumpAndSettle();
+        expect(location(c), '/safety/privacy');
+      },
+    );
 
     testWidgets('no overflow at 2x text', (tester) async {
       tester.platformDispatcher.textScaleFactorTestValue = 2;

@@ -85,11 +85,11 @@
   "@auth_errorGeneric": {
     "description": "Any other sign-in error."
   },
-  "auth_terms": "Điều khoản",
+  "auth_terms": "Điều khoản sử dụng",
   "@auth_terms": {
     "description": "Footer link to the terms."
   },
-  "auth_privacy": "Chính sách riêng tư",
+  "auth_privacy": "Chính sách quyền riêng tư",
   "@auth_privacy": {
     "description": "Footer link to the privacy policy."
   },
@@ -201,11 +201,11 @@
   "@auth_success": {
     "description": "Shown after the code was accepted."
   },
-  "auth_legalIntro": "Bấm \"Gửi mã\" là bạn đồng ý với",
+  "auth_legalIntro": "Tiếp tục đồng nghĩa bạn đồng ý với",
   "@auth_legalIntro": {
     "description": "Start of the legal line under the sign-in form."
   },
-  "auth_legalAnd": "và",
+  "auth_legalAnd": "(không dung thứ nội dung phản cảm) và",
   "@auth_legalAnd": {
     "description": "Between Terms and Privacy in the legal line."
   },

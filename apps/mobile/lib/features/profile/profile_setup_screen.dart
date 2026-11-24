@@ -8,13 +8,16 @@ import 'package:ourney_core/ourney_core.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/providers.dart';
+import '../../app/redirect.dart' show safeFrom;
 import '../../app/theme/motion.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../ui/ui.dart';
 import '../onboarding/onboarding_providers.dart';
 import 'avatar_picker.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_providers.dart';
 import 'widgets/profile_face_avatar.dart';
+import 'widgets/sign_out_flow.dart';
 
 /// Profile setup after the first sign-in (FR-A2, App.tsx `ProfileSetup`), at
 /// `/profile/setup`.
@@ -205,13 +208,45 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     if (!mounted) return;
     setState(() => _saving = false);
     OurneyHaptics.success();
-    context.go(widget.from ?? AppRoutes.capture);
+    final rawFrom = widget.from;
+    final target = rawFrom == null
+        ? null
+        : safeFrom(
+            Uri(
+              path: AppRoutes.profile,
+              queryParameters: {AppRoutes.fromParam: rawFrom},
+            ),
+          );
+    context.go(target ?? AppRoutes.capture);
+  }
+
+  static bool _isOffline(Object? error) =>
+      error is OurneyException && error.error == OurneyErrorCode.offline;
+
+  void _retry() {
+    final profileState = ref.read(myProfileProvider);
+    if (profileState.hasError) {
+      ref.invalidate(myProfileProvider);
+    }
+    if (_error != null) {
+      if (_error == _FormError.avatar && _picked == null) {
+        setState(() => _error = null);
+        unawaited(_pickAvatar());
+        return;
+      }
+      unawaited(_save());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = ProfileL10n.of(context);
     final ui = context.ui;
+    final profileState = ref.watch(myProfileProvider);
+    final loadError = switch (profileState) {
+      AsyncError(:final error) => error,
+      _ => null,
+    };
     final hasAvatar = _picked != null;
     final usernameError = _usernameError(l10n);
     final usernameOk =
@@ -246,6 +281,29 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 ),
               ),
             ),
+            if (loadError != null) ...[
+              const SizedBox(height: UiSpace.md),
+              Column(
+                key: const ValueKey('profile-load-error'),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_isOffline(loadError))
+                    UiBanner(
+                      key: const ValueKey('profile-offline-banner'),
+                      message: l10n.profile_offlineError,
+                    )
+                  else
+                    UiInlineError(message: l10n.profile_loadError),
+                  const SizedBox(height: UiSpace.sm),
+                  UiButton.secondary(
+                    key: const ValueKey('profile-retry'),
+                    label: AppLocalizations.of(context).common_retry,
+                    glyph: const OurneyIcon(name: 'refresh', flat: true),
+                    onPressed: _saving ? null : _retry,
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: 26),
             // `.profile-avatar-large`; tapping it picks a photo (kept from
             // the data layer: the avatar can be a real picture).
@@ -342,16 +400,32 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                 message: l10n.profile_usernameAvailable,
                 success: true,
               ),
-            if (errorText != null)
+            if (errorText != null) ...[
               UiFlowError(
                 key: const ValueKey('profile-form-error'),
                 message: errorText,
               ),
+              if (loadError == null) ...[
+                const SizedBox(height: UiSpace.sm),
+                UiButton.secondary(
+                  key: const ValueKey('profile-retry'),
+                  label: AppLocalizations.of(context).common_retry,
+                  glyph: const OurneyIcon(name: 'refresh', flat: true),
+                  onPressed: _saving ? null : _retry,
+                ),
+              ],
+            ],
             const SizedBox(height: 14),
             UiFlowButton(
               key: const ValueKey('profile-save'),
               label: _saving ? l10n.profile_saving : l10n.profile_continue,
               onPressed: _saving || !usernameOk ? null : _save,
+            ),
+            const SizedBox(height: UiSpace.sm),
+            UiButton.ghost(
+              key: const ValueKey('profile-setup-sign-out'),
+              label: l10n.profile_signOut,
+              onPressed: _saving ? null : () => confirmSignOut(context, ref),
             ),
           ],
         ),

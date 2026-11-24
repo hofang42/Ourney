@@ -8,9 +8,9 @@ import 'ui/legal_screens.dart';
 import 'ui/report_screens.dart';
 import 'ui/safety_hub_screen.dart';
 
-/// Safety (C3): hub, EULA, privacy, contact, EULA gate, report, block,
-/// blocked list. All under `/safety` (reachable before sign-in); paths are
-/// built with [SafetyPaths]. See lib/features/safety/README.md.
+/// Safety (C3): hub, EULA, privacy, contact, report, block, blocked list.
+/// All under `/safety` (reachable before sign-in); paths are built with
+/// [SafetyPaths]. See lib/features/safety/README.md.
 ///
 /// Contract (lib/features/README.md): keep exporting
 /// `List<RouteBase> safetyRoutes`.
@@ -23,12 +23,6 @@ final List<RouteBase> safetyRoutes = [
         path: 'eula',
         builder: (context, state) =>
             const LegalScreen(document: LegalDocument.eula),
-        routes: [
-          GoRoute(
-            path: 'accept',
-            builder: (context, state) => EulaAcceptScreen(from: state.uri),
-          ),
-        ],
       ),
       GoRoute(
         path: 'privacy',

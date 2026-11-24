@@ -132,16 +132,71 @@ void main() {
       expect(location(c), AppRoutes.journeys);
     });
 
-    testWidgets('offline save keeps the form with an error', (tester) async {
-      final profiles = FakeProfileRepository()
-        ..upsertError = const OurneyException(OurneyErrorCode.offline);
-      await signedIn(tester, profiles: profiles, path: profileSetupPath);
-      await tester.enterText(byKey('profile-username'), 'bob');
-      await tester.enterText(byKey('profile-display-name'), 'Bob');
-      await tapVisible(tester, 'profile-save');
-      expect(byKey('profile-form-error'), findsOneWidget);
-      expect(byKey('profile-setup-screen'), findsOneWidget);
-    });
+    testWidgets(
+      'DE-07: offline save keeps the form with an error and retry recovers',
+      (tester) async {
+        final profiles = FakeProfileRepository()
+          ..upsertError = const OurneyException(OurneyErrorCode.offline);
+        final c = await signedIn(
+          tester,
+          profiles: profiles,
+          path: '$profileSetupPath?from=%2Fjourneys',
+        );
+        await tester.enterText(byKey('profile-username'), 'bob');
+        await tester.enterText(byKey('profile-display-name'), 'Bob');
+        await tapVisible(tester, 'profile-save');
+        expect(byKey('profile-form-error'), findsOneWidget);
+        expect(byKey('profile-retry'), findsOneWidget);
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+
+        // Reconnect and tap retry.
+        profiles.upsertError = null;
+        await tapVisible(tester, 'profile-retry');
+        expect(profiles.calls, [
+          'upsertMe:bob:Bob',
+          'upsertMe:bob:Bob',
+        ]);
+        expect(location(c), AppRoutes.journeys);
+      },
+    );
+
+    testWidgets(
+      'DE-07: profile setup offers sign out to escape when offline or on wrong '
+      'account',
+      (tester) async {
+        final auth = RecordingAuthRepository(userId: 'u1');
+        final profiles = FakeProfileRepository()
+          ..upsertError = const OurneyException(OurneyErrorCode.offline);
+        final c = await signedIn(
+          tester,
+          auth: auth,
+          profiles: profiles,
+          path: '$profileSetupPath?from=%2Fjourneys',
+        );
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+        await tapVisible(tester, 'profile-setup-sign-out');
+        expect(byKey('profile-signout-dialog'), findsOneWidget);
+
+        await tester.tap(byKey('profile-signout-confirm'));
+        await tester.pumpAndSettle();
+        expect(auth.calls, ['signOut']);
+        expect(location(c), '${AppRoutes.auth}?from=%2Fjourneys');
+      },
+    );
+    testWidgets(
+      'DE-07: profile setup shows load/offline error with retry and sign out',
+      (tester) async {
+        await signedIn(
+          tester,
+          profiles: _FailingProfileRepository(),
+          path: profileSetupPath,
+        );
+        expect(byKey('profile-setup-screen'), findsOneWidget);
+        expect(byKey('profile-load-error'), findsOneWidget);
+        expect(byKey('profile-retry'), findsOneWidget);
+        expect(byKey('profile-setup-sign-out'), findsOneWidget);
+      },
+    );
   });
 
   group('profile screen', () {
