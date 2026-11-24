@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
 import '../../app/navigator_keys.dart';
+import '../../ui/motion.dart';
 import 'groups_paths.dart';
 import 'ui/group_today_screen.dart';
 import 'ui/groups_list_screen.dart';
@@ -27,14 +28,26 @@ final List<RouteBase> groupsRoutes = [
     routes: [
       GoRoute(
         path: ':journeyId',
-        builder: (context, state) =>
-            GroupTodayScreen(journeyId: state.pathParameters['journeyId']!),
+        pageBuilder: (context, state) => buildUiPage<void>(
+          context: context,
+          state: state,
+          kind: UiPageTransition.sharedZ,
+          child: GroupTodayScreen(
+            journeyId: state.pathParameters['journeyId']!,
+          ),
+        ),
         routes: [
           GoRoute(
             path: 'invite',
             parentNavigatorKey: rootNavigatorKey,
-            builder: (context, state) =>
-                InviteScreen(journeyId: state.pathParameters['journeyId']!),
+            pageBuilder: (context, state) => buildUiPage<void>(
+              context: context,
+              state: state,
+              kind: UiPageTransition.verticalSheet,
+              child: InviteScreen(
+                journeyId: state.pathParameters['journeyId']!,
+              ),
+            ),
           ),
         ],
       ),
@@ -42,12 +55,21 @@ final List<RouteBase> groupsRoutes = [
   ),
   GoRoute(
     path: GroupsPaths.joinEntry,
-    builder: (context, state) => const JoinScreen(),
+    pageBuilder: (context, state) => buildUiPage<void>(
+      context: context,
+      state: state,
+      kind: UiPageTransition.verticalSheet,
+      child: const JoinScreen(),
+    ),
     routes: [
       GoRoute(
         path: ':code',
-        builder: (context, state) =>
-            JoinScreen(initialCode: state.pathParameters['code']),
+        pageBuilder: (context, state) => buildUiPage<void>(
+          context: context,
+          state: state,
+          kind: UiPageTransition.verticalSheet,
+          child: JoinScreen(initialCode: state.pathParameters['code']),
+        ),
       ),
     ],
   ),
