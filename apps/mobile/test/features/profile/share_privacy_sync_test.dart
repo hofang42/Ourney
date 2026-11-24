@@ -82,14 +82,21 @@ void main() {
     expect(repo.prefUpdates.every((u) => u.blurMedia == true), isTrue);
   });
 
-  testWidgets('switch off leaves per-journey choices alone', (tester) async {
+  testWidgets('DE-12: switch off syncs false to memberships', (tester) async {
     final (ref, repo, container) = await pump(tester);
     await pushSharePrivacyToMemberships(
       container,
       hideWeight: false,
       blur: false,
     );
-    expect(repo.prefUpdates, isEmpty);
+    expect(
+      {for (final u in repo.prefUpdates) u.id: (u.hideMetric, u.blurMedia)},
+      {
+        'kg': (false, false),
+        'min': (null, false),
+        'old': (false, false),
+      },
+    );
   });
 
   testWidgets('a switch turned off again before the push writes nothing', (
@@ -150,23 +157,63 @@ void main() {
     expect(pendingSharePrivacy(container), isEmpty);
   });
 
-  testWidgets('heal skips a flag whose switch is OFF again and forgets it', (
-    tester,
-  ) async {
-    final (ref, repo, container) = await pump(tester);
-    await tester.runAsync(
-      () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
-    );
-    repo.prefError = const OurneyException(OurneyErrorCode.offline);
-    await pushSharePrivacyToJourney(ref, 'min');
-    repo.prefError = null;
-    await tester.runAsync(
-      () => ref.read(blurPhotosOnShareProvider.notifier).set(false),
-    );
-    await healSharePrivacy(container);
-    expect(repo.prefUpdates, isEmpty);
-    expect(pendingSharePrivacy(container), isEmpty);
-  });
+  testWidgets(
+    'DE-12 / M1: heal pushes false when the switch is turned OFF before heal',
+    (tester) async {
+      final (ref, repo, container) = await pump(tester);
+      await tester.runAsync(
+        () => ref.read(blurPhotosOnShareProvider.notifier).set(true),
+      );
+      repo.prefError = const OurneyException(OurneyErrorCode.offline);
+      await pushSharePrivacyToJourney(ref, 'min');
+      repo.prefError = null;
+      await tester.runAsync(
+        () => ref.read(blurPhotosOnShareProvider.notifier).set(false),
+      );
+      await healSharePrivacy(container);
+      expect(
+        {for (final u in repo.prefUpdates) u.id: u.blurMedia},
+        {'min': false},
+      );
+      expect(pendingSharePrivacy(container), isEmpty);
+    },
+  );
+
+  testWidgets(
+    'DE-12 / M1: toggling Hide kg and Blur photos OFF while offline heals to '
+    'false on reconnect',
+    (tester) async {
+      final (ref, repo, container) = await pump(tester);
+      await tester.runAsync(() async {
+        await ref.read(hideWeightOnShareProvider.notifier).set(false);
+        await ref.read(blurPhotosOnShareProvider.notifier).set(false);
+      });
+      repo.prefError = const OurneyException(OurneyErrorCode.offline);
+      await pushSharePrivacyToMemberships(
+        container,
+        hideWeight: false,
+        blur: false,
+      );
+      expect(repo.prefUpdates, isEmpty);
+      expect(pendingSharePrivacy(container), {
+        'kg': (hide: true, blur: true),
+        'min': (hide: false, blur: true),
+        'old': (hide: true, blur: true),
+      });
+
+      repo.prefError = null;
+      await healSharePrivacy(container);
+      expect(
+        {for (final u in repo.prefUpdates) u.id: (u.hideMetric, u.blurMedia)},
+        {
+          'kg': (false, false),
+          'min': (null, false),
+          'old': (false, false),
+        },
+      );
+      expect(pendingSharePrivacy(container), isEmpty);
+    },
+  );
 
   testWidgets(
     'a toggle turned OFF while the push runs writes nothing (container read)',

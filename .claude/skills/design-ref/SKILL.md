@@ -1,6 +1,6 @@
 ---
 name: design-ref
-description: Đọc bảng thiết kế UI của Ourney trong apps/mobile/assets/design_personas/ (6 persona × 3 màn timeline, camera HUD, share/squad) — cắt đúng màn cần làm, phóng to để xem chi tiết, rồi đối chiếu với token và spec (trỏ tới nguồn, không chép). Dùng trước khi code hoặc review một màn timeline, camera HUD, share card hay squad wall của persona; khi task trong docs/TASKS.md §3 (F, Q, R, S, M, D, Z, J) trỏ tới một bản thiết kế; hoặc khi user gõ /design-ref.
+description: Đọc bảng thiết kế UI của Ourney trong docs/assets/design_personas/ (6 persona × 3 màn timeline, camera HUD, share/squad) — cắt đúng màn cần làm, phóng to để xem chi tiết, rồi đối chiếu với token và spec (trỏ tới nguồn, không chép). Dùng trước khi code hoặc review một màn timeline, camera HUD, share card hay squad wall của persona; khi task trong docs/TASKS.md §3 (F, Q, R, S, M, D, Z, J) trỏ tới một bản thiết kế; hoặc khi user gõ /design-ref.
 argument-hint: "[persona 1-6 | PersonaSkinId] [timeline | camera | share | all]"
 allowed-tools:
   - Bash(python3 ${CLAUDE_SKILL_DIR}/scripts/crop.py *)
@@ -28,7 +28,7 @@ Mỗi bảng là ảnh 1376×768, ba điện thoại xếp ngang. Thứ tự tr�
 ## Quy trình
 
 1. **Cắt màn cần làm:** `python3 ${CLAUDE_SKILL_DIR}/scripts/crop.py <persona> <màn> --out <thư mục>`. Có scratchpad thì `--out` vào scratchpad; không thì bỏ `--out` (ghi vào thư mục tạm). Script in đường dẫn PNG đã phóng 2×.
-2. **Xem ảnh:** mở từng PNG bằng tool Read. Cần toàn cảnh 3 màn thì Read thẳng file `.jpg` trong `apps/mobile/assets/design_personas/`. Thiếu Pillow thì script in đường dẫn bảng gốc; không có `python3` thì lấy tên file ở bảng trên. Cả hai trường hợp đều đọc cả bảng.
+2. **Xem ảnh:** mở từng PNG bằng tool Read. Cần toàn cảnh 3 màn thì Read thẳng file `.jpg` trong `docs/assets/design_personas/`. Thiếu Pillow thì script in đường dẫn bảng gốc; không có `python3` thì lấy tên file ở bảng trên. Cả hai trường hợp đều đọc cả bảng.
 3. **Đọc spec chữ của persona:** mục persona tương ứng trong `.agent/rules/adaptive-persona-ui.md` §5 (màn, chữ, palette) và `docs/06-adaptive-persona-ui-system.md` §2–3. Chỉ ghi số mục, không chép.
 4. **Viết lại màn thành checklist** trước khi code, theo thứ tự trên xuống dưới:
    - Bố cục: từng khối, căn lề, tỉ lệ (ô vuông, 9:16, lưới mấy cột).

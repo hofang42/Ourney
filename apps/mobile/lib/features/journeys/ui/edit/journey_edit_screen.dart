@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../../app/app_routes.dart';
 import '../../../../app/providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../personas/persona_contract.dart';
@@ -36,14 +37,59 @@ class JourneyEditScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = JourneysL10n.of(context);
-    final journey = ref.watch(journeyByIdProvider(journeyId)).value;
+    final app = AppLocalizations.of(context);
+    final journeyAsync = ref.watch(journeyByIdProvider(journeyId));
+    final journey = journeyAsync.value;
     if (journey == null) {
+      void back() {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go(AppRoutes.journeys);
+        }
+      }
+
       return UiScaffold(
         key: const ValueKey('journey-edit-empty'),
         padTop: 0,
-        child: UiBackHeader(
-          onBack: () => _leave(context, journeyId),
-          backLabel: l10n.journeys_back,
+        child: Column(
+          children: [
+            UiBackHeader(
+              onBack: back,
+              backLabel: l10n.journeys_back,
+            ),
+            if (journeyAsync.isLoading)
+              Padding(
+                padding: const EdgeInsets.only(top: 120),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    key: const ValueKey('journey-edit-loading'),
+                    semanticsLabel: app.common_loading,
+                  ),
+                ),
+              )
+            else
+              UiEmptyState(
+                key: ValueKey(
+                  journeyAsync.hasError
+                      ? 'journey-edit-error'
+                      : 'journey-edit-not-found',
+                ),
+                glyph: OurneyIcon(
+                  name: journeyAsync.hasError ? 'error' : 'search',
+                  size: 40,
+                ),
+                title: journeyAsync.hasError
+                    ? journeyErrorMessage(context, journeyAsync.error!)
+                    : l10n.journeys_errorNotFound,
+                actionLabel: journeyAsync.hasError
+                    ? app.common_retry
+                    : l10n.journeys_title,
+                onAction: journeyAsync.hasError
+                    ? () => ref.invalidate(journeyByIdProvider(journeyId))
+                    : () => context.go(AppRoutes.journeys),
+              ),
+          ],
         ),
       );
     }

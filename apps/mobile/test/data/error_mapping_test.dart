@@ -191,6 +191,59 @@ void main() {
         OurneyErrorCode.offline,
       );
     });
+
+    test('Auth error_code wins over the HTTP status', () {
+      AuthException ex(String code, [String status = '400']) =>
+          AuthException('x', statusCode: status, code: code);
+      expect(
+        codeOf(ex('phone_provider_disabled')),
+        OurneyErrorCode.unavailable,
+      );
+      expect(codeOf(ex('sms_provider_disabled')), OurneyErrorCode.unavailable);
+      expect(
+        codeOf(ex('email_provider_disabled')),
+        OurneyErrorCode.unavailable,
+      );
+      expect(codeOf(ex('signup_disabled', '422')), OurneyErrorCode.unavailable);
+      expect(codeOf(ex('otp_disabled', '422')), OurneyErrorCode.unavailable);
+      expect(codeOf(ex('sms_send_failed')), OurneyErrorCode.internal);
+      expect(
+        codeOf(ex('email_address_not_authorized')),
+        OurneyErrorCode.forbidden,
+      );
+      expect(codeOf(ex('captcha_failed')), OurneyErrorCode.forbidden);
+      expect(codeOf(ex('user_banned', '403')), OurneyErrorCode.forbidden);
+      expect(codeOf(ex('otp_expired', '500')), OurneyErrorCode.invalid);
+      expect(codeOf(ex('validation_failed', '500')), OurneyErrorCode.invalid);
+      expect(
+        codeOf(ex('email_address_invalid', '500')),
+        OurneyErrorCode.invalid,
+      );
+      expect(codeOf(ex('phone_invalid', '500')), OurneyErrorCode.invalid);
+      expect(codeOf(ex('same_password', '422')), OurneyErrorCode.invalid);
+      expect(codeOf(ex('weak_password', '422')), OurneyErrorCode.invalid);
+      expect(
+        mapRemoteError(ex('same_password', '422')).detail,
+        contains('same_password'),
+      );
+      expect(
+        codeOf(ex('over_sms_send_rate_limit')),
+        OurneyErrorCode.rateLimited,
+      );
+      expect(
+        codeOf(ex('over_email_send_rate_limit')),
+        OurneyErrorCode.rateLimited,
+      );
+      expect(
+        codeOf(ex('over_request_rate_limit', '400')),
+        OurneyErrorCode.rateLimited,
+      );
+      // No code: the status decides.
+      expect(
+        codeOf(const AuthException('bad', statusCode: '400')),
+        OurneyErrorCode.invalid,
+      );
+    });
   });
 
   test('network errors are offline, OurneyException passes through', () {

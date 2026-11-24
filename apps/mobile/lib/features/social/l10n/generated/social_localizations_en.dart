@@ -409,4 +409,7 @@ class SocialL10nEn extends SocialL10n {
   String social_messageCounter(int count, int max) {
     return '$count/$max';
   }
+
+  @override
+  String get social_startJourneyTogether => 'Start a journey together';
 }

@@ -126,6 +126,7 @@ class FakeRemoteApi implements RemoteApi {
   final _auth = StreamController<String?>.broadcast();
 
   void emitUser(String? id) {
+    if (id != userId) termsVersion = null;
     userId = id;
     _auth.add(id);
   }
@@ -144,6 +145,27 @@ class FakeRemoteApi implements RemoteApi {
 
   @override
   String? get currentUserId => userId;
+
+  @override
+  String? get signInIdentifier => userId == null ? null : 'me@example.com';
+
+  int? termsVersion;
+
+  @override
+  int? get acceptedTermsVersion => userId == null ? null : termsVersion;
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {
+    calls.add(RemoteCall('recordTermsAccepted', '$version'));
+    await rpc('accept_terms', {'p_version': version});
+    if (version > (termsVersion ?? 0)) termsVersion = version;
+    for (final r in tables['profiles'] ?? const <RemoteRow>[]) {
+      if (r['id'] == userId) {
+        final current = (r['terms_version'] as num?)?.toInt() ?? 0;
+        if (version > current) r['terms_version'] = version;
+      }
+    }
+  }
 
   @override
   Stream<String?> watchUserId() => _auth.stream;
@@ -216,7 +238,16 @@ class FakeRemoteApi implements RemoteApi {
           (a, b) =>
               (a['updated_at'] as String).compareTo(b['updated_at'] as String),
         );
-    return limit == null ? rows : rows.take(limit).toList();
+    final result = limit == null ? rows : rows.take(limit).toList();
+    if (table == 'profiles' && userId != null) {
+      for (final r in result) {
+        if (r['id'] == userId && r['terms_version'] is num) {
+          final v = (r['terms_version'] as num).toInt();
+          if (v > (termsVersion ?? 0)) termsVersion = v;
+        }
+      }
+    }
+    return result;
   }
 
   @override

@@ -159,6 +159,14 @@ toml_subject() {
   ' supabase/config.toml
 }
 
+# [auth.sms] template, read from supabase/config.toml (single source of truth).
+toml_sms_template() {
+  awk '
+    /^\[/ { in_sect = ($0 == "[auth.sms]"); next }
+    in_sect && /^template[[:space:]]*=/ { sub(/^template[[:space:]]*=[[:space:]]*"/, ""); sub(/"[[:space:]]*$/, ""); print; exit }
+  ' supabase/config.toml
+}
+
 # PATCH the project's Auth config; the JSON body comes from stdin. The token goes to curl through a
 # config read from a process substitution, so it is not in curl's argv either. Only the API's
 # `.message` is shown on failure, never the whole body.
@@ -214,6 +222,11 @@ for s in "$magic_subject" "$confirm_subject" "$recovery_subject"; do
     exit 1
   fi
 done
+sms_template="$(toml_sms_template)"
+if [ -z "$sms_template" ] || [[ "$sms_template" == *'"'* ]] || [[ "$sms_template" == *'#'* ]]; then
+  echo "error: bad or missing [auth.sms] template in supabase/config.toml (empty, or contains \" or #)" >&2
+  exit 1
+fi
 
 # --- 4. Link + migrations ---------------------------------------------------------------------
 echo "==> Linking project $SUPABASE_PROJECT_REF"
@@ -279,11 +292,12 @@ export AUTH_SITE_URL AUTH_URI_ALLOW_LIST
 body="$(
   jq -n \
     --arg magic_subject "$magic_subject" --arg confirm_subject "$confirm_subject" \
-    --arg recovery_subject "$recovery_subject" \
+    --arg recovery_subject "$recovery_subject" --arg sms_template "$sms_template" \
     --rawfile magic_html "$magic_file" --rawfile confirm_html "$confirm_file" \
     --rawfile recovery_html "$recovery_file" \
     '{site_url: $ENV.AUTH_SITE_URL,
       mailer_otp_length: 6, mailer_otp_exp: 3600, mailer_autoconfirm: true,
+      sms_otp_length: 6, sms_template: $sms_template,
       mailer_subjects_magic_link: $magic_subject,
       mailer_templates_magic_link_content: $magic_html,
       mailer_subjects_confirmation: $confirm_subject,

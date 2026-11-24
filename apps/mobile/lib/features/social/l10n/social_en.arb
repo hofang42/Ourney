@@ -105,5 +105,6 @@
   "social_groupInviteMembers": "{count} of {max} members",
   "social_groupInviteJoin": "Join",
   "social_groupInviteSkip": "Skip",
-  "social_messageCounter": "{count}/{max}"
+  "social_messageCounter": "{count}/{max}",
+  "social_startJourneyTogether": "Start a journey together"
 }

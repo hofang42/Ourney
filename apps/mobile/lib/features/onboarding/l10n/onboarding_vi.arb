@@ -187,5 +187,9 @@
         "type": "String"
       }
     }
+  },
+  "onboarding_haveAccount": "Đã có tài khoản? Đăng nhập",
+  "@onboarding_haveAccount": {
+    "description": "First quiz question: skip the quiz and go to sign-in."
   }
 }

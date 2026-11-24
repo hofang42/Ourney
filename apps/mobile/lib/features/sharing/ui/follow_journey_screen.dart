@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../shared/journey_style_name.dart';
 import '../../../ui/ui.dart';
@@ -29,18 +30,22 @@ class FollowJourneyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = SharingL10n.of(context);
+    void back() =>
+        sharingBack(context, fallback: AppRoutes.sharedJourney(journeyId));
     if (ref.watch(appConfigProvider).localOnly) {
       return SharingPage(
         title: l10n.sharing_followTitle,
+        onBack: back,
         children: const [SharingNeedsServer()],
       );
     }
     final async = ref.watch(followFrameProvider(journeyId));
     final frame = async.value;
-    if (frame != null) return _FollowBody(frame: frame);
+    if (frame != null) return _FollowBody(frame: frame, onBack: back);
     return SharingPage(
       scaffoldKey: const ValueKey('follow-journey'),
       title: l10n.sharing_followTitle,
+      onBack: back,
       children: [
         if (async.hasError)
           SharingErrorView(
@@ -55,9 +60,10 @@ class FollowJourneyScreen extends ConsumerWidget {
 }
 
 class _FollowBody extends StatelessWidget {
-  const _FollowBody({required this.frame});
+  const _FollowBody({required this.frame, required this.onBack});
 
   final JourneyFrame frame;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +97,7 @@ class _FollowBody extends StatelessWidget {
     return SharingPage(
       scaffoldKey: const ValueKey('follow-journey'),
       title: l10n.sharing_followTitle,
+      onBack: onBack,
       bottom: Builder(
         builder: (context) => Padding(
           padding: EdgeInsets.fromLTRB(

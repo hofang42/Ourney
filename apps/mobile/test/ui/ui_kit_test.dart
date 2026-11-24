@@ -3,6 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart' show PersonaSkinId;
 
+double _contrast(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  final hi = la > lb ? la : lb;
+  final lo = la > lb ? lb : la;
+  return (hi + 0.05) / (lo + 0.05);
+}
+
 Widget host(
   Widget child, {
   Brightness brightness = Brightness.light,
@@ -377,30 +385,84 @@ void main() {
       expect(disc.contains(text.bottomRight), isTrue);
     });
 
-    testWidgets('UiSegmented switches value', (tester) async {
-      var v = 'a';
-      await tester.pumpWidget(
-        StatefulBuilder(
-          builder: (context, setState) => host(
-            UiSegmented<String>(
-              segments: const [
-                UiSegment(value: 'a', label: 'Của tôi'),
-                UiSegment(value: 'b', label: 'Được chia sẻ', showDot: true),
-              ],
-              value: v,
-              onChanged: (n) => setState(() => v = n),
+    testWidgets(
+      'UiSegmented switches value and marks selection with a >= 3:1 outline '
+      'and bold weight (M4)',
+      (tester) async {
+        var v = 'a';
+        await tester.pumpWidget(
+          StatefulBuilder(
+            builder: (context, setState) => host(
+              UiSegmented<String>(
+                segments: const [
+                  UiSegment(
+                    key: ValueKey('seg-a'),
+                    value: 'a',
+                    label: 'Của tôi',
+                  ),
+                  UiSegment(
+                    key: ValueKey('seg-b'),
+                    value: 'b',
+                    label: 'Được chia sẻ',
+                    showDot: true,
+                  ),
+                ],
+                value: v,
+                onChanged: (n) => setState(() => v = n),
+              ),
             ),
           ),
-        ),
-      );
-      await tester.tap(find.text('Được chia sẻ'));
-      await tester.pump();
-      expect(v, 'b');
-      // Each segment is a full 48dp tap target (U5).
-      for (final p in tester.widgetList(find.byType(UiPressable))) {
-        expect(tester.getSize(find.byWidget(p)).height, UiSize.tap);
-      }
-    });
+        );
+        Text textOf(String key) => tester.widget<Text>(
+          find.descendant(
+            of: find.byKey(ValueKey(key)),
+            matching: find.byType(Text),
+          ),
+        );
+        BoxDecoration pillDecoOf(String key) =>
+            tester
+                    .widget<Container>(
+                      find
+                          .descendant(
+                            of: find.byKey(ValueKey(key)),
+                            matching: find.byType(Container),
+                          )
+                          .first,
+                    )
+                    .decoration!
+                as BoxDecoration;
+
+        // Before tap: 'a' is selected (outlined + w700), 'b' is unselected (no border + w500).
+        expect(pillDecoOf('seg-a').border, isNotNull);
+        expect(pillDecoOf('seg-b').border, isNull);
+        expect(textOf('seg-a').style?.fontWeight, FontWeight.w700);
+        expect(textOf('seg-b').style?.fontWeight, FontWeight.w500);
+        expect(
+          _contrast(
+            (pillDecoOf('seg-a').border! as Border).top.color,
+            OurneyUi.light.fill,
+          ),
+          greaterThanOrEqualTo(3.0),
+        );
+        expect(
+          _contrast(OurneyUi.dark.fieldBorder, OurneyUi.dark.fill),
+          greaterThanOrEqualTo(3.0),
+        );
+
+        await tester.tap(find.text('Được chia sẻ'));
+        await tester.pump();
+        expect(v, 'b');
+        expect(pillDecoOf('seg-a').border, isNull);
+        expect(pillDecoOf('seg-b').border, isNotNull);
+        expect(textOf('seg-a').style?.fontWeight, FontWeight.w500);
+        expect(textOf('seg-b').style?.fontWeight, FontWeight.w700);
+
+        // Each segment is a full 48dp tap target (U5).
+        for (final p in tester.widgetList(find.byType(UiPressable))) {
+          expect(tester.getSize(find.byWidget(p)).height, UiSize.tap);
+        }
+      },
+    );
 
     testWidgets('UiOtpField shows typed digits and caps at 6', (tester) async {
       final c = TextEditingController();

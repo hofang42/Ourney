@@ -15,6 +15,20 @@ enum AuthStatus {
   signedOut,
 }
 
+/// Whether the signed-in account has a row in `public.profiles` yet (DE-04 / H1).
+enum ProfileGateStatus {
+  /// Still checking `ProfileRepository.watchMe()` for the signed-in session.
+  unknown,
+
+  /// Confirmed no profile row yet (or initial profile fetch failed/timed out
+  /// with no local row): must complete `/profile/setup` before protected
+  /// routes or server RPCs run.
+  needsSetup,
+
+  /// Profile exists (or local-only / unwired in tests).
+  ready,
+}
+
 /// Maps `ourney://join/<code>` and `ourney://journey/<id>` (host = first
 /// segment) to an in-app path. Returns null for non-deep-link URIs.
 String? normalizeDeepLink(Uri uri) {
@@ -35,23 +49,22 @@ const List<String> _preOnboardingPrefixes = [
   AppRoutes.safety,
 ];
 
-/// EULA acceptance gate (FR-F3), owned by the safety feature
-/// (`SafetyPaths.eulaAccept`). Kept as a literal here: lib/app must not
-/// import feature internals from the redirect policy.
-const String kEulaAcceptPath = '${AppRoutes.safety}/eula/accept';
+/// First-sign-in profile setup path (`profileSetupPath`), owned by the profile
+/// feature. Signing out from `/profile/setup` carries `?from=` back to `/auth`
+/// instead of wrapping `/profile/setup` as the post-login target (DE-07).
+const String kProfileSetupPath = '${AppRoutes.profile}/setup';
 
 /// Pure redirect policy used by the app router (unit-tested).
 ///
 /// Order: deep-link normalisation -> onboarding gate -> auth gate (only when
-/// a backend is configured) -> EULA gate (signed in only) -> bounce away
-/// from finished gates.
+/// a backend is configured) -> bounce away from finished gates.
 /// The original location is preserved in `?from=` and restored afterwards,
 /// so a deep link opened on a fresh install still lands after onboarding.
 String? resolveRedirect({
   required Uri uri,
   required bool onboarded,
   required AuthStatus auth,
-  bool eulaAccepted = true,
+  ProfileGateStatus profileGate = ProfileGateStatus.ready,
 }) {
   final deepLink = normalizeDeepLink(uri);
   if (deepLink != null) return deepLink;
@@ -68,6 +81,9 @@ String? resolveRedirect({
   }
 
   if (auth == AuthStatus.signedOut) {
+    if (pathHasPrefix(path, kProfileSetupPath)) {
+      return _carryFrom(AppRoutes.auth, uri);
+    }
     if (under(preAuthPrefixes)) {
       // Onboarding is done; continue to sign-in, keeping the target.
       if (pathHasPrefix(path, AppRoutes.onboarding)) {
@@ -78,21 +94,33 @@ String? resolveRedirect({
     return _withFrom(AppRoutes.auth, uri);
   }
 
-  // Apple Guideline 1.2: a signed-in user accepts the terms before seeing
-  // any user content. Local-only mode has no other users: no gate.
-  if (auth == AuthStatus.signedIn && !eulaAccepted) {
-    if (pathHasPrefix(path, AppRoutes.safety)) return null;
-    final leavingGate =
-        pathHasPrefix(path, AppRoutes.onboarding) ||
-        pathHasPrefix(path, AppRoutes.auth);
-    final target = leavingGate
-        ? (safeFrom(uri) ?? AppRoutes.capture)
-        : _inAppTarget(uri);
-    if (target == AppRoutes.capture) return kEulaAcceptPath;
-    return Uri(
-      path: kEulaAcceptPath,
-      queryParameters: {AppRoutes.fromParam: target},
-    ).toString();
+  if (auth == AuthStatus.signedIn) {
+    if (profileGate == ProfileGateStatus.unknown) {
+      // Hold on `/auth` (or `/capture`, `/onboarding`, `/profile/setup`,
+      // `/safety`) while checking whether a profile row exists, and redirect
+      // cold-start deep links (such as `/f/<token>` or `/join/<code>`) to
+      // `/auth?from=...` so target screens never mount or fire server RPCs
+      // before `/profile/setup` (DE-04 / H1 / P2).
+      if (path == AppRoutes.capture ||
+          pathHasPrefix(path, AppRoutes.auth) ||
+          pathHasPrefix(path, AppRoutes.onboarding) ||
+          pathHasPrefix(path, kProfileSetupPath) ||
+          pathHasPrefix(path, AppRoutes.safety)) {
+        return null;
+      }
+      return _withFrom(AppRoutes.auth, uri);
+    }
+    if (profileGate == ProfileGateStatus.needsSetup) {
+      if (pathHasPrefix(path, kProfileSetupPath) ||
+          pathHasPrefix(path, AppRoutes.safety)) {
+        return null;
+      }
+      if (pathHasPrefix(path, AppRoutes.onboarding) ||
+          pathHasPrefix(path, AppRoutes.auth)) {
+        return _carryFrom(kProfileSetupPath, uri);
+      }
+      return _withFrom(kProfileSetupPath, uri);
+    }
   }
 
   // Gates already satisfied: leave onboarding/auth for the saved target.
@@ -112,7 +140,8 @@ String? safeFrom(Uri uri) {
   final target = Uri.tryParse(from);
   if (target == null || target.hasScheme || target.hasAuthority) return null;
   if (pathHasPrefix(target.path, AppRoutes.onboarding) ||
-      pathHasPrefix(target.path, AppRoutes.auth)) {
+      pathHasPrefix(target.path, AppRoutes.auth) ||
+      pathHasPrefix(target.path, kProfileSetupPath)) {
     return null;
   }
   return from;

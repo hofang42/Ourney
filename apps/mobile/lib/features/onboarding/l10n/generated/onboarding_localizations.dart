@@ -349,6 +349,12 @@ abstract class OnboardingL10n {
   /// In vi, this message translates to:
   /// **'Bật nhắc để mình nhắc bạn lúc {time}. Có thể trễ tuỳ máy.'**
   String onboarding_nudgeBody(String time);
+
+  /// First quiz question: skip the quiz and go to sign-in.
+  ///
+  /// In vi, this message translates to:
+  /// **'Đã có tài khoản? Đăng nhập'**
+  String get onboarding_haveAccount;
 }
 
 class _OnboardingL10nDelegate extends LocalizationsDelegate<OnboardingL10n> {

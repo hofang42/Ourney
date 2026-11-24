@@ -10,9 +10,6 @@ abstract final class SafetyPaths {
   /// Terms of use (EULA), read-only.
   static const eula = '${AppRoutes.safety}/eula';
 
-  /// EULA acceptance gate (FR-F3). Add `?from=<path>` to come back after.
-  static const eulaAccept = '${AppRoutes.safety}/eula/accept';
-
   static const privacy = '${AppRoutes.safety}/privacy';
   static const contact = '${AppRoutes.safety}/contact';
 

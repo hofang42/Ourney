@@ -37,6 +37,8 @@ class Profiles extends Table {
   TextColumn get username => text()();
   TextColumn get displayName => text()();
   TextColumn get avatarPath => text().nullable()();
+  IntColumn get termsVersion =>
+      integer().withDefault(const Constant(0))();
 
   /// Server `updated_at` (null while only local).
   TextColumn get updatedAt => text().nullable()();
@@ -317,10 +319,18 @@ class AppDatabase extends _$AppDatabase {
         );
       }
       if (from < 7) {
-        // Durable retell (import) jobs. Schema 7 is unreleased: its tables can
-        // still change in place until it ships.
+        // Durable retell (import) jobs + profiles.terms_version (0018).
+        // Schema 7 is unreleased: its tables can still change in place until
+        // it ships.
         await m.createTable(importJobs);
         await m.createTable(importJobPhotos);
+        final cols = await customSelect(
+          "SELECT 1 FROM pragma_table_info('profiles') "
+          "WHERE name = 'terms_version'",
+        ).get();
+        if (cols.isEmpty) {
+          await m.addColumn(profiles, profiles.termsVersion);
+        }
       }
     },
   );

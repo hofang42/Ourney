@@ -30,6 +30,7 @@
   <meta name="twitter:description" content="Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn." id="meta-tw-desc">
   <meta name="twitter:image" content="https://ourney.tech/assets/og/og-default.png" id="meta-tw-image">
   <meta name="twitter:image:alt" content="Ourney — Nhật ký ảnh mỗi ngày: chụp một tấm, giữ một chuỗi, đi cùng nhau trên iOS và Android" id="meta-tw-image-alt">
+  <meta property="og:see_also" content="https://www.tiktok.com/@ourney.official">
   <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -53,7 +54,10 @@
           "height": 512
         },
         "image": "https://ourney.tech/assets/og/og-default.png",
-        "description": "Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn."
+        "description": "Ourney là nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì: học ngoại ngữ, chạy bộ, giảm cân, chuyến đi hay thói quen nhỏ — đi một mình hoặc cùng nhóm bạn.",
+        "sameAs": [
+          "https://www.tiktok.com/@ourney.official"
+        ]
       },
       {
         "@type": "WebSite",
@@ -345,6 +349,20 @@
         <path class="s-ink" d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z"/>
         <path d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="M8 11 5 9l-2 3 2 5" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </symbol>
+
+      <!-- TikTok Note Sticker (#FF4D6D + #7EC8E3 + #FFF8EE) -->
+      <symbol id="i-tiktok" viewBox="-2 -2 28 28">
+        <g class="s-die">
+          <path d="M13.2 3.5h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V3.5Z"/>
+          <path d="M14.6 4.9h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V4.9Z"/>
+        </g>
+        <g class="s-ink">
+          <path d="M13.2 3.5h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V3.5Z"/>
+          <path d="M14.6 4.9h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V4.9Z"/>
+        </g>
+        <path d="M14.6 4.9h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V4.9Z" fill="#FF4D6D" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M13.2 3.5h3c.3 2.1 1.9 3.6 4.3 3.9v3c-1.7-.1-3.2-.7-4.3-1.6v6.4a5.2 5.2 0 1 1-5.2-5.2v3a2.2 2.2 0 1 0 2.2 2.2V3.5Z" fill="#7EC8E3" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
       </symbol>
     </defs>
   </svg>
@@ -970,6 +988,13 @@
               <button class="btn btn-ticket" type="submit" data-i18n="beta_submit">nhận lời mời</button>
             </form>
             <p class="form-msg" id="form-msg" role="status" aria-live="polite"></p>
+            <div class="beta-follow" id="beta-follow" hidden>
+              <a class="beta-tiktok-chip" id="beta-tiktok-link" href="https://www.tiktok.com/@ourney.official" target="_blank" rel="noopener noreferrer me" aria-label="Theo dõi @ourney.official trên TikTok trong lúc chờ" data-i18n-aria="beta_tiktok_follow">
+                <svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-tiktok"/></svg>
+                <span data-i18n="beta_tiktok_follow">Theo dõi @ourney.official trên TikTok trong lúc chờ</span>
+                <svg class="o-svg-flat beta-tiktok-ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+              </a>
+            </div>
           </div>
           <div class="cta-stub" aria-hidden="true">
             <span class="cta-stub-kicker" data-i18n="beta_stub_kicker">NGÀY 01</span>
@@ -991,6 +1016,13 @@
     <div class="wrap footer-inner">
       <img src="/assets/brand/wordmark.png" alt="ourney" width="98" height="36">
       <p class="muted" data-i18n="footer_tagline">chụp một tấm. giữ một chuỗi. đi cùng nhau.</p>
+      <div class="footer-social">
+        <a class="footer-tiktok" href="https://www.tiktok.com/@ourney.official" target="_blank" rel="noopener noreferrer me" aria-label="TikTok @ourney.official">
+          <svg class="o-sticker" width="22" height="22" aria-hidden="true"><use href="#i-tiktok"/></svg>
+          <span class="footer-tiktok-tag" translate="no">TikTok</span>
+          <span class="footer-tiktok-handle" translate="no">@ourney.official</span>
+        </a>
+      </div>
       <ul>
         <li><a href="#journeys" data-i18n="footer_journeys">hành trình</a></li>
         <li><a href="#privacy" data-i18n="footer_privacy">riêng tư</a></li>

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,7 +35,16 @@ enum HubSegment { active, shelf, shared }
 ///
 /// Without journeys it is the **day-zero hub** (`DayZeroHub`).
 class JourneysListScreen extends ConsumerStatefulWidget {
-  const JourneysListScreen({super.key});
+  const JourneysListScreen({this.initialSegment, super.key});
+
+  final HubSegment? initialSegment;
+
+  static HubSegment? parseSegment(String? raw) => switch (raw) {
+    'active' => HubSegment.active,
+    'shelf' => HubSegment.shelf,
+    'shared' => HubSegment.shared,
+    _ => null,
+  };
 
   /// No cap on running journeys (SRS FR-B3, owner decision 2026-11-12).
   static Future<void> startCreate(BuildContext context) =>
@@ -48,6 +59,22 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   /// shelf when nothing runs).
   HubSegment? _segment;
   bool _menuOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _segment = widget.initialSegment;
+  }
+
+  @override
+  void didUpdateWidget(JourneysListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialSegment != null &&
+        (widget.initialSegment != oldWidget.initialSegment ||
+            _segment != widget.initialSegment)) {
+      _segment = widget.initialSegment;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +110,10 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
     final archivedAsync = ref.watch(archivedJourneysProvider);
     final archivedValue = archivedAsync.value;
     final hasArchived = archivedValue?.isNotEmpty ?? false;
+    final localOnly = ref.watch(appConfigProvider).localOnly;
+    final hasShared =
+        !localOnly &&
+        (ref.watch(sharedWithMeProvider).value?.isNotEmpty ?? false);
 
     final Widget body;
     if (buckets != null &&
@@ -112,7 +143,11 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
           ),
         ],
       );
-    } else if (buckets != null && buckets.isEmpty && !hasArchived) {
+    } else if (buckets != null &&
+        buckets.isEmpty &&
+        !hasArchived &&
+        !hasShared &&
+        (_segment != HubSegment.shared || localOnly)) {
       body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
     } else if (buckets != null) {
       body = _HubBody(
@@ -122,8 +157,15 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
             (buckets.active.isEmpty &&
                     (buckets.finished.isNotEmpty || hasArchived)
                 ? HubSegment.shelf
+                : buckets.isEmpty && !hasArchived && hasShared
+                ? HubSegment.shared
                 : HubSegment.active),
-        onSegment: (s) => setState(() => _segment = s),
+        onSegment: (s) {
+          setState(() => _segment = s);
+          if (widget.initialSegment != null && s != widget.initialSegment) {
+            GoRouter.maybeOf(context)?.go(AppRoutes.journeys);
+          }
+        },
         menuOpen: _menuOpen,
         onMenu: () => setState(() => _menuOpen = !_menuOpen),
         onCloseMenu: () => setState(() => _menuOpen = false),
@@ -344,7 +386,7 @@ class _HubSkeleton extends StatelessWidget {
   }
 }
 
-/// Figma empty Hub state: camera sticker, "chưa có hành trình nào.", a
+/// Figma empty Hub state: fanned Polaroid trio, "chưa có hành trình nào.", a
 /// one-line promise and the start button.
 class _DayZero extends StatelessWidget {
   const _DayZero({required this.onStart});
@@ -363,16 +405,57 @@ class _DayZero extends StatelessWidget {
         const _HubNotices(),
         const SizedBox(height: UiSpace.xxl),
         Center(
-          child: Container(
-            width: 88,
-            height: 88,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: UiTypePastel.weightLoss,
-              shape: BoxShape.circle,
-              border: Border.all(color: ui.outline, width: 2),
+          child: ExcludeSemantics(
+            child: SizedBox(
+              key: const ValueKey('day-zero-polaroid-trio'),
+              width: 196,
+              height: 100,
+              child: Stack(
+                alignment: Alignment.center,
+                clipBehavior: Clip.none,
+                children: [
+                  Transform.translate(
+                    offset: const Offset(-46, 6),
+                    child: Transform.rotate(
+                      angle: -9 * math.pi / 180,
+                      child: _DayZeroPolaroid(
+                        photoKey: 'day-zero-photo-0',
+                        asset: 'assets/samples/morning_run/01.webp',
+                        fallbackColor: UiTypePastel.workout,
+                        fallbackIcon: 'fitness',
+                        ui: ui,
+                      ),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(46, 6),
+                    child: Transform.rotate(
+                      angle: 9 * math.pi / 180,
+                      child: _DayZeroPolaroid(
+                        photoKey: 'day-zero-photo-2',
+                        asset: 'assets/samples/couple_rituals/01.webp',
+                        fallbackColor: UiTypePastel.couple,
+                        fallbackIcon: 'heart',
+                        ui: ui,
+                      ),
+                    ),
+                  ),
+                  Transform.translate(
+                    offset: const Offset(0, -2),
+                    child: Transform.rotate(
+                      angle: 2 * math.pi / 180,
+                      child: _DayZeroPolaroid(
+                        photoKey: 'day-zero-photo-1',
+                        asset: 'assets/samples/ielts_study/01.webp',
+                        fallbackColor: UiTypePastel.english,
+                        fallbackIcon: 'book',
+                        ui: ui,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: const OurneyIcon(name: 'camera', size: 40, active: true),
           ),
         ),
         const SizedBox(height: UiSpace.lg),
@@ -397,6 +480,64 @@ class _DayZero extends StatelessWidget {
           onPressed: onStart,
         ),
       ],
+    );
+  }
+}
+
+class _DayZeroPolaroid extends StatelessWidget {
+  const _DayZeroPolaroid({
+    required this.photoKey,
+    required this.asset,
+    required this.fallbackColor,
+    required this.fallbackIcon,
+    required this.ui,
+  });
+
+  final String photoKey;
+  final String asset;
+  final Color fallbackColor;
+  final String fallbackIcon;
+  final OurneyUi ui;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 64,
+      height: 84,
+      padding: const EdgeInsets.fromLTRB(5, 5, 5, 13),
+      decoration: BoxDecoration(
+        color: ui.fillSelected,
+        border: Border.all(color: ui.outline, width: 2),
+        boxShadow: ui.hardShadow(),
+      ),
+      child: ColoredBox(
+        color: fallbackColor,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              asset,
+              key: ValueKey(photoKey),
+              fit: BoxFit.cover,
+              cacheWidth: 186,
+              excludeFromSemantics: true,
+              errorBuilder: (context, error, stackTrace) => Center(
+                child: OurneyIcon(
+                  name: fallbackIcon,
+                  size: 26,
+                  active: true,
+                  inkColor: UiFlowColors.onPastel,
+                  dieCut: UiFlowColors.paper,
+                ),
+              ),
+            ),
+            if (ui.isDark)
+              const IgnorePointer(
+                child: ColoredBox(color: Color(0x22000000)),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -320,7 +320,7 @@ void main() {
     expect(SafetyPaths.reportUser('u'), '/safety/report/user/u');
     expect(SafetyPaths.block('u', name: ''), '/safety/block/u');
     expect(SafetyPaths.blocked, '/safety/blocked');
-    expect(SafetyPaths.eulaAccept, '/safety/eula/accept');
+    expect(SafetyPaths.eula, '/safety/eula');
   });
 
   test('safetyFailureOf maps server codes', () {

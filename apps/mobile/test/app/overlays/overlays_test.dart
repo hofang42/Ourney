@@ -111,7 +111,9 @@ void main() {
     expect(find.text('ngày lỡ.'), findsNothing);
   });
 
-  testWidgets('unknown route redirects to the camera', (t) async {
+  testWidgets('unknown route shows not-found screen with way home (DE-14)', (
+    t,
+  ) async {
     final r = GoRouter(
       initialLocation: '/nope',
       errorBuilder: (c, s) => const NotFoundRedirect(),
@@ -122,7 +124,19 @@ void main() {
         ),
       ],
     );
-    await t.pumpWidget(MaterialApp.router(routerConfig: r));
+    await t.pumpWidget(
+      MaterialApp.router(
+        theme: OurneyTheme.build(Brightness.light),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        locale: const Locale('vi'),
+        routerConfig: r,
+      ),
+    );
+    await t.pumpAndSettle();
+    expect(find.byKey(const ValueKey('not-found-screen')), findsOneWidget);
+    expect(find.byKey(const ValueKey('not-found-home')), findsOneWidget);
+    await t.tap(find.byKey(const ValueKey('not-found-home')));
     await t.pumpAndSettle();
     expect(find.text('camera'), findsOneWidget);
   });

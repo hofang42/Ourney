@@ -439,6 +439,24 @@ abstract class AppLocalizations {
   /// In vi, this message translates to:
   /// **'đang chọn'**
   String get nav_journeySelected;
+
+  /// 404 / unknown deep link screen title (DE-14).
+  ///
+  /// In vi, this message translates to:
+  /// **'Không tìm thấy trang này'**
+  String get notFound_title;
+
+  /// 404 / unknown deep link screen body (DE-14).
+  ///
+  /// In vi, this message translates to:
+  /// **'Liên kết này không tồn tại hoặc đã thay đổi.'**
+  String get notFound_body;
+
+  /// 404 / unknown deep link primary CTA back to camera (DE-14).
+  ///
+  /// In vi, this message translates to:
+  /// **'Về màn hình chụp'**
+  String get notFound_action;
 }
 
 class _AppLocalizationsDelegate
