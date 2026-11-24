@@ -10,7 +10,7 @@ import ActivityKit
 
 /// Native iOS implementation of `MethodChannel("ourney/widgets")` (§4.4).
 /// - Writes `snapshot_v1.json` and content-addressed thumbnails into the shared App Group container
-///   (`group.com.hofang42.ourney`) with `.completeUntilFirstUserAuthentication` protection and
+///   (`group.com.hofang42.ourney`) with `.completeFileProtectionUntilFirstUserAuthentication` protection and
 ///   `isExcludedFromBackup = true`.
 /// - Degrades gracefully on Free Apple ID sideloads when the App Group container is unavailable
 ///   (Binding Note O2): never crashes, falls back to local sandbox storage, and still drives
@@ -179,7 +179,7 @@ public final class OurneyWidgetBridge {
       if fm.fileExists(atPath: destURL.path) {
         continue
       }
-      let maxSide = (spec["maxSide"] as? Int) ?? 320
+      let maxSide = (spec["maxSide"] as? Int) ?? (spec["maxSide"] as? NSNumber)?.intValue ?? 320
       let shouldBlur = (spec["blur"] as? Bool) ?? false
       if processAndWriteThumbnail(
         sourcePath: sourcePath,
@@ -210,7 +210,7 @@ public final class OurneyWidgetBridge {
       do {
         try snapshotData.write(
           to: snapshotURL,
-          options: [.atomic, .completeUntilFirstUserAuthentication]
+          options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
         )
         var mutableURL = snapshotURL
         var values = URLResourceValues()
@@ -293,7 +293,7 @@ public final class OurneyWidgetBridge {
     do {
       try jpegData.write(
         to: destinationURL,
-        options: [.atomic, .completeUntilFirstUserAuthentication]
+        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
       )
       var mutableURL = destinationURL
       var values = URLResourceValues()
@@ -422,7 +422,7 @@ public final class OurneyWidgetBridge {
       }
 
       do {
-        _ = try Activity.request(
+        _ = try Activity<OurneyCheckInAttributes>.request(
           attributes: OurneyCheckInAttributes(windowKey: windowKey),
           content: content,
           pushType: nil

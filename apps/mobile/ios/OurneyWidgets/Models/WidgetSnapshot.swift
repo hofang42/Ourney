@@ -1020,7 +1020,7 @@ public enum WidgetSnapshotStore {
     at referenceDate: Date = Date(),
     rootDirectory: URL? = nil
   ) -> WidgetSnapshot? {
-    guard let root = rootDirectory ?? sharedRootDirectory() else {
+    guard let root = rootDirectory ?? activeRootDirectory() else {
       return nil
     }
     let fileURL = root.appendingPathComponent(OurneyWidgetConstants.snapshotFileName)
@@ -1060,7 +1060,7 @@ public enum WidgetSnapshotStore {
       let data = try JSONEncoder().encode(state)
       try data.write(
         to: fileURL,
-        options: [.atomic, .completeUntilFirstUserAuthentication]
+        options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication]
       )
       return true
     } catch {
@@ -1122,7 +1122,7 @@ public enum WidgetSnapshotStore {
   public static func thumbURL(for relativePath: String?, rootDirectory: URL? = nil) -> URL? {
     guard let raw = relativePath?.trimmingCharacters(in: .whitespacesAndNewlines),
           !raw.isEmpty,
-          let root = rootDirectory ?? sharedRootDirectory()
+          let root = rootDirectory ?? activeRootDirectory()
     else {
       return nil
     }

@@ -6,7 +6,7 @@ import ActivityKit
 /// Compiled into both `Runner` and `OurneyWidgetsExtension`.
 /// Payload is strictly bounded (< 1 KB, well under ActivityKit's 4 KB limit) and
 /// omits all health/weight metrics and photo bytes by design.
-@available(iOS 16.2, *)
+@available(iOS 16.2, iOSApplicationExtension 16.2, *)
 public struct OurneyCheckInAttributes: ActivityAttributes {
   public struct ContentState: Codable, Hashable {
     public var journeyId: String
