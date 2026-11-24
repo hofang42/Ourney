@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/localization.dart';
+import 'package:ourney/app/providers.dart';
+import 'package:ourney/app/theme/app_theme.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/journeys/ui/create_journey_screen.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
@@ -249,5 +256,52 @@ void main() {
         isEmpty,
       );
     });
+
+    testWidgets(
+      'back when !canPop() falls back to /journeys or /follow/:id safely (DE-21)',
+      (tester) async {
+        final prefs = await testPrefs();
+        final router = GoRouter(
+          initialLocation: '/create',
+          routes: [
+            GoRoute(
+              path: '/create',
+              builder: (_, _) => const CreateJourneyScreen(
+                templateId: TemplateId.workout30,
+              ),
+            ),
+            GoRoute(
+              path: AppRoutes.journeys,
+              builder: (_, _) => const Scaffold(body: Text('hub-root')),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              sharedPreferencesProvider.overrideWithValue(prefs),
+              journeyRepositoryProvider.overrideWithValue(
+                FakeJourneyRepository(),
+              ),
+              deviceTimezoneProvider.overrideWith((ref) => testTz),
+            ],
+            child: MaterialApp.router(
+              theme: buildAppTheme(Brightness.light),
+              locale: const Locale('en'),
+              localizationsDelegates: ourneyLocalizationsDelegates,
+              supportedLocales: ourneySupportedLocales,
+              routerConfig: router,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(router.canPop(), isFalse);
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        expect(find.text('hub-root'), findsOneWidget);
+      },
+    );
   });
 }

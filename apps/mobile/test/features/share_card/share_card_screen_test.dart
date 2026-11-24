@@ -405,7 +405,7 @@ void main() {
       final shared = h.sharer.shared.single;
       expect(shared.path, '/tmp/ourney-j1-story.png');
       expect(shared.mimeType, 'image/png');
-      expect(shared.text, '💪 Tập mỗi ngày trên Ourney');
+      expect(shared.text, '💪 Tập mỗi ngày trên Ourney\nhttps://ourney.tech');
       expect(shared.origin, isNotNull);
 
       await _tap(tester, _seg('share-card-format', '4:5'));

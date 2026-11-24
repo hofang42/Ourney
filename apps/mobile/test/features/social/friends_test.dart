@@ -127,6 +127,26 @@ void main() {
     expect(find.byKey(const ValueKey('chat-screen')), findsOneWidget);
   });
 
+  testWidgets(
+    'friend sheet offers Start a journey together when no conversation exists (DE-20)',
+    (tester) async {
+      final fakes = SocialFakes(
+        friends: FakeFriendRepository([friend('nam', name: 'Nam Tran')]),
+      );
+      await pumpSocial(tester, location: SocialPaths.friends, fakes: fakes);
+      await tester.tap(find.byKey(const ValueKey('friend-nam')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('friend-message')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('friend-start-journey')),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('friend-start-journey')));
+      await tester.pumpAndSettle();
+      expect(find.text('create-journey-screen'), findsOneWidget);
+    },
+  );
+
   testWidgets('empty list invites to add friends', (tester) async {
     await pumpSocial(tester, location: SocialPaths.friends);
     expect(find.byKey(const ValueKey('friends-empty')), findsOneWidget);

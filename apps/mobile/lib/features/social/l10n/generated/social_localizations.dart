@@ -733,6 +733,12 @@ abstract class SocialL10n {
   /// In vi, this message translates to:
   /// **'{count}/{max}'**
   String social_messageCounter(int count, int max);
+
+  /// Friend sheet positive action (DE-20).
+  ///
+  /// In vi, this message translates to:
+  /// **'Cùng bắt đầu hành trình'**
+  String get social_startJourneyTogether;
 }
 
 class _SocialL10nDelegate extends LocalizationsDelegate<SocialL10n> {

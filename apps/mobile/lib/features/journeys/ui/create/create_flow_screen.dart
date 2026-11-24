@@ -727,7 +727,11 @@ class _CreateFlowScreenState extends ConsumerState<CreateFlowScreen> {
     } else {
       unawaited(progress.save(_step + 1, draft: _snapshot()));
     }
-    context.pop();
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go(AppRoutes.journeys);
+    }
   }
 
   // ---- Step 2: DNA questions (V2 `CreateStepTwo`) -------------------------

@@ -1,6 +1,8 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/domain/journey_layouts.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
 import 'package:ourney/features/journeys/ui/edit/time_wheel.dart';
@@ -263,6 +265,49 @@ void main() {
       expect(_key('journey-edit'), findsNothing);
       expect(h.journeys.updates, isEmpty);
     });
+
+    testWidgets(
+      'unknown journey shows not-found with way back to /journeys (DE-13)',
+      (tester) async {
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.edit('missing'),
+        );
+        expect(_key('journey-edit-not-found'), findsOneWidget);
+        expect(find.text('Journey not found.'), findsOneWidget);
+        await tester.tap(find.text('Journeys'));
+        await tester.pumpAndSettle();
+        expect(h.location, AppRoutes.journeys);
+      },
+    );
+
+    testWidgets(
+      'stream error shows error state with retry (DE-13)',
+      (tester) async {
+        var fail = true;
+        final j = testJourney(id: 'j-err');
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.edit('j-err'),
+          extraOverrides: [
+            journeyByIdProvider('j-err').overrideWith(
+              (ref) => fail
+                  ? Stream<Journey?>.error(
+                      const OurneyException(OurneyErrorCode.offline),
+                    )
+                  : Stream<Journey?>.value(j),
+            ),
+          ],
+        );
+        expect(_key('journey-edit-error'), findsOneWidget);
+        fail = false;
+        await tester.tap(find.text('Retry'));
+        await tester.pumpAndSettle();
+        expect(_key('journey-edit'), findsOneWidget);
+      },
+    );
 
     for (final dark in [false, true]) {
       testWidgets('fits 320dp at 1.35x text (${dark ? 'dark' : 'light'})', (

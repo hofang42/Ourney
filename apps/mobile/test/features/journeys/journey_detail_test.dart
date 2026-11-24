@@ -353,10 +353,10 @@ void main() {
       await _tap(tester, _key('ui-menu-barrier'));
       expect(_key('journey-action-invite'), findsNothing);
       await _tap(tester, _key('journey-home-squad'));
-      expect(h.location, AppRoutes.groups);
+      expect(h.location, '/groups/j1');
     });
 
-    testWidgets('share with a server offers the card or the journey sheet', (
+    testWidgets('share with a server offers the card or the journey screen (DE-24)', (
       tester,
     ) async {
       final h = await _pumpDetail(tester, backend: true, userId: 'u1');
@@ -364,6 +364,11 @@ void main() {
       expect(_key('journey-share-sheet'), findsOneWidget);
       await _tap(tester, _key('journey-share-card'));
       expect(h.location, AppRoutes.share('j1'));
+
+      await h.go(tester, AppRoutes.journey('j1'));
+      await _tap(tester, _key('journey-share'));
+      await _tap(tester, _key('journey-share-friends'));
+      expect(h.location, AppRoutes.shareJourney('j1'));
     });
 
     testWidgets('privacy switches update my membership (FR-B7)', (

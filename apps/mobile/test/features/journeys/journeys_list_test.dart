@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/app/providers.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../app/test_helpers.dart';
+import '../sharing/sharing_fakes.dart' show FakeSharingRepository;
 import 'journeys_fakes.dart';
 
 /// Repository whose streams fail like the A3 placeholders (not wired yet).
@@ -114,6 +117,33 @@ void main() {
       expect(h.location, AppRoutes.journey('j1'));
       expect(find.byKey(const ValueKey('journey-detail')), findsOneWidget);
     });
+
+    testWidgets(
+      '/journeys?segment=shared opens the Hub on the Shared segment (DE-18)',
+      (tester) async {
+        final j = testJourney();
+        await pumpJourneys(
+          tester,
+          config: testBackendConfig,
+          userId: 'u1',
+          locale: const Locale('en'),
+          location: '${AppRoutes.journeys}?segment=shared',
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          extraOverrides: [
+            sharingRepositoryProvider.overrideWithValue(
+              FakeSharingRepository(),
+            ),
+          ],
+        );
+        expect(
+          find.byKey(const ValueKey('shared-with-me-empty')),
+          findsOneWidget,
+        );
+      },
+    );
 
     testWidgets('no cap: 3 running journeys still open create (FR-B3)', (
       tester,

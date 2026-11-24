@@ -33,7 +33,16 @@ enum HubSegment { active, shelf, shared }
 ///
 /// Without journeys it is the **day-zero hub** (`DayZeroHub`).
 class JourneysListScreen extends ConsumerStatefulWidget {
-  const JourneysListScreen({super.key});
+  const JourneysListScreen({this.initialSegment, super.key});
+
+  final HubSegment? initialSegment;
+
+  static HubSegment? parseSegment(String? raw) => switch (raw) {
+    'active' => HubSegment.active,
+    'shelf' => HubSegment.shelf,
+    'shared' => HubSegment.shared,
+    _ => null,
+  };
 
   /// No cap on running journeys (SRS FR-B3, owner decision 2026-11-12).
   static Future<void> startCreate(BuildContext context) =>
@@ -48,6 +57,21 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
   /// shelf when nothing runs).
   HubSegment? _segment;
   bool _menuOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _segment = widget.initialSegment;
+  }
+
+  @override
+  void didUpdateWidget(JourneysListScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialSegment != oldWidget.initialSegment &&
+        widget.initialSegment != null) {
+      _segment = widget.initialSegment;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +136,11 @@ class _JourneysListState extends ConsumerState<JourneysListScreen> {
           ),
         ],
       );
-    } else if (buckets != null && buckets.isEmpty && !hasArchived) {
+    } else if (buckets != null &&
+        buckets.isEmpty &&
+        !hasArchived &&
+        (_segment != HubSegment.shared ||
+            ref.watch(appConfigProvider).localOnly)) {
       body = _DayZero(onStart: () => JourneysListScreen.startCreate(context));
     } else if (buckets != null) {
       body = _HubBody(

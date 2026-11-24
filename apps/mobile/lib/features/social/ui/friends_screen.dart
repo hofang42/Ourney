@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ourney_core/ourney_core.dart';
 
+import '../../../app/app_routes.dart';
 import '../../../app/providers.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../ui/ui.dart';
@@ -307,6 +308,15 @@ class _FriendSheet extends ConsumerWidget {
               hostContext.push(SocialPaths.chat(conversation!.id));
             },
           ),
+        UiMenuItem(
+          key: const ValueKey('friend-start-journey'),
+          glyph: 'squad',
+          label: l10n.social_startJourneyTogether,
+          onPressed: () {
+            Navigator.of(context).pop();
+            hostContext.push(AppRoutes.journeyNew);
+          },
+        ),
         UiMenuItem(
           key: const ValueKey('friend-remove'),
           glyph: 'user-minus',

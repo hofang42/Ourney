@@ -254,7 +254,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             ? Column(
                 children: [
                   UiBackHeader(
-                    onBack: () => context.pop(),
+                    onBack: _back,
                     backLabel: l10n.journeys_back,
                   ),
                   const SizedBox(height: 120),
@@ -268,6 +268,19 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
             : _buildForm(context, form, pal, skin),
       ),
     );
+  }
+
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      final sourceId = widget.frame?.sourceJourneyId;
+      context.go(
+        sourceId != null
+            ? AppRoutes.followJourney(sourceId)
+            : AppRoutes.journeys,
+      );
+    }
   }
 
   /// Live "departure ticket" preview built from the form state.
@@ -410,7 +423,7 @@ class _CreateJourneyScreenState extends ConsumerState<CreateJourneyScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         UiBackHeader(
-          onBack: () => context.pop(),
+          onBack: _back,
           backLabel: l10n.journeys_back,
         ),
         const SizedBox(height: UiSpace.sm),

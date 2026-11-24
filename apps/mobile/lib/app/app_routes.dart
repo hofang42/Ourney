@@ -75,11 +75,6 @@ abstract final class AppRoutes {
   /// `https://ourney.tech/f/<token>`.
   static String friendInvite(String token) =>
       '/f/${Uri.encodeComponent(token)}';
-  // sharing — journey sharing (SCR-28, SCR-82..84, 87, 88), full screen.
-  static const sharing = '/sharing';
-  static const shared = '/shared';
-  static const publicJourney = '/p';
-  static const follow = '/follow';
 
   /// Legacy alias of [importJourney] (redirects).
   static const retell = '/retell';
@@ -122,12 +117,7 @@ const Map<String, List<String>> featureRoutePrefixes = {
   'safety': [AppRoutes.safety],
   'reminders': [AppRoutes.reminders],
   'social': [AppRoutes.friends, AppRoutes.inbox, '/chat', '/f'],
-  'sharing': [
-    AppRoutes.sharing,
-    AppRoutes.shared,
-    AppRoutes.publicJourney,
-    AppRoutes.follow,
-  ],
+  'sharing': ['/sharing', '/shared', '/p', '/follow'],
   'import': [AppRoutes.importJourney, AppRoutes.retell],
 };
 

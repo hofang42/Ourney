@@ -116,5 +116,9 @@ void main() {
         AppRoutes.reminders,
       ]),
     );
+    // Unparameterized sharing prefixes are never registered as bare routes (DE-14).
+    for (final orphan in ['/sharing', '/shared', '/p', '/follow']) {
+      expect(all, isNot(contains(orphan)));
+    }
   });
 }

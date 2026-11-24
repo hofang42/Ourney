@@ -772,5 +772,15 @@ void _dnaGroup() {
       await _open(tester);
       expect(_key('create-import-link'), findsOneWidget);
     });
+
+    testWidgets(
+      'back at step 1 when opened via go() falls back to /journeys safely (DE-21)',
+      (tester) async {
+        final h = await _open(tester);
+        await _tap(tester, 'create-back');
+        expect(tester.takeException(), isNull);
+        expect(h.location, AppRoutes.journeys);
+      },
+    );
   });
 }

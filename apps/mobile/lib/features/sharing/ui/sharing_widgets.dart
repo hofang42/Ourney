@@ -104,8 +104,10 @@ TextStyle sharingLabel(
 /// Pops when possible, else goes to [fallback] (the journeys tab).
 void sharingBack(BuildContext context, {String fallback = '/journeys'}) {
   final router = GoRouter.maybeOf(context);
-  if (router == null || router.canPop()) {
+  if (router == null) {
     Navigator.of(context).maybePop();
+  } else if (router.canPop()) {
+    router.pop();
   } else {
     router.go(fallback);
   }

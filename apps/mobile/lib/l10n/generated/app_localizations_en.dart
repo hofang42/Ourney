@@ -219,4 +219,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nav_journeySelected => 'selected';
+
+  @override
+  String get notFound_title => 'Page not found';
+
+  @override
+  String get notFound_body => 'This link doesn\'t exist or may have changed.';
+
+  @override
+  String get notFound_action => 'Back to camera';
 }

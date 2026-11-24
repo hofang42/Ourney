@@ -1,5 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:ourney_core/ourney_core.dart' show JourneyStatus;
 
 import '../features/import/data/import_providers.dart'
     show importResumeProvider;
@@ -60,18 +64,20 @@ class OurneyApp extends ConsumerWidget {
       themeAnimationCurve: Curves.easeOutCubic,
       supportedLocales: ourneySupportedLocales,
       localizationsDelegates: ourneyLocalizationsDelegates,
-      // Reminders: reschedule on start/resume, open the journey on a
-      // notification tap (FR-G1, FR-G2).
+      // Reminders: reschedule on start/resume, open the journey camera on a
+      // notification or banner tap (FR-G1, FR-G2), falling back gracefully if
+      // the journey was deleted.
       builder: (context, child) => DayTicker(
         child: SharePrivacyHealHook(
           child: ReminderLifecycleHook(
-            onOpenJourney: (id) => router.go(AppRoutes.journey(id)),
+            onOpenJourney: (id) =>
+                unawaited(_openReminderJourney(ref, router, id)),
             child: OurneyTextScaleClamp(
               // In-app reminder banner (V2 `ReminderNotification`): shown while
               // `reminderBannerProvider` holds a value; a tap opens the camera.
               child: ReminderBannerHost(
                 onOpenJourneyCamera: (id) =>
-                    router.go(JourneysPaths.captureFor(id)),
+                    unawaited(_openReminderJourney(ref, router, id)),
                 child: _SplashGate(
                   returning: onboarded,
                   child: child ?? const SizedBox.shrink(),
@@ -82,6 +88,25 @@ class OurneyApp extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _openReminderJourney(
+    WidgetRef ref,
+    GoRouter router,
+    String id,
+  ) async {
+    var active = true;
+    try {
+      final journey = await ref
+          .read(journeyRepositoryProvider)
+          .watch(id)
+          .first
+          .timeout(const Duration(seconds: 2));
+      active = journey != null && journey.status == JourneyStatus.active;
+    } on Object {
+      active = true;
+    }
+    router.go(active ? JourneysPaths.captureFor(id) : AppRoutes.capture);
   }
 }
 

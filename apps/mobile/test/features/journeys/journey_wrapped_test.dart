@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ourney/app/app_routes.dart';
+import 'package:ourney/features/journeys/data/journeys_providers.dart';
 import 'package:ourney/features/journeys/journeys_paths.dart';
+import 'package:ourney/features/social/data/social_providers.dart';
 import 'package:ourney_core/ourney_core.dart';
 
 import 'journeys_fakes.dart';
@@ -164,6 +167,116 @@ void main() {
       await tester.pumpAndSettle();
       expect(Uri.parse(h.location).queryParameters['hideMetric'], 'false');
     });
+
+    testWidgets(
+      'unknown journey shows not-found with way back to /journeys (DE-13)',
+      (tester) async {
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped('missing'),
+        );
+        expect(_key('journey-wrapped-not-found'), findsOneWidget);
+        expect(find.text('Journey not found.'), findsOneWidget);
+        await tester.tap(find.text('Journeys'));
+        await tester.pumpAndSettle();
+        expect(h.location, AppRoutes.journeys);
+      },
+    );
+
+    testWidgets(
+      'stream error shows error state with retry (DE-13)',
+      (tester) async {
+        var fail = true;
+        final j = testJourney(
+          id: 'j-err',
+          status: JourneyStatus.ended,
+          templateId: TemplateId.custom,
+        );
+        await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped('j-err'),
+          extraOverrides: [
+            journeyByIdProvider('j-err').overrideWith(
+              (ref) => fail
+                  ? Stream<Journey?>.error(
+                      const OurneyException(OurneyErrorCode.offline),
+                    )
+                  : Stream<Journey?>.value(j),
+            ),
+          ],
+        );
+        expect(_key('journey-wrapped-error'), findsOneWidget);
+        fail = false;
+        await tester.tap(find.text('Retry'));
+        await tester.pumpAndSettle();
+        expect(_key('journey-wrapped'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'Messages and Other apps in share sheet invoke share launcher with link (DE-17)',
+      (tester) async {
+        final shared = <String>[];
+        final token = 'pub${'0' * 37}';
+        final base = testJourney(
+          status: JourneyStatus.ended,
+          templateId: TemplateId.custom,
+        );
+        final j = Journey(
+          id: base.id,
+          ownerId: base.ownerId,
+          kind: base.kind,
+          templateId: base.templateId,
+          title: base.title,
+          emoji: base.emoji,
+          startDate: base.startDate,
+          durationDays: base.durationDays,
+          timezone: base.timezone,
+          visibility: JourneyVisibility.link,
+          status: base.status,
+          publicToken: token,
+        );
+        final h = await pumpJourneys(
+          tester,
+          locale: const Locale('en'),
+          location: JourneysPaths.wrapped(j.id),
+          journeys: FakeJourneyRepository(
+            journeys: [j],
+            memberships: {j.id: testMembership(j)},
+          ),
+          checkIns: FakeCheckInRepository([
+            testCheckIn(j.id, const LocalDate(2026, 10, 10)),
+          ]),
+          extraOverrides: [
+            socialShareLauncherProvider.overrideWithValue((text) async {
+              shared.add(text);
+            }),
+          ],
+        );
+        await tester.tap(_key('wrapped-segment-2'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(_key('wrapped-share'));
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        expect(_key('wrapped-share-sheet'), findsOneWidget);
+
+        await tester.tap(_key('wrapped-share-messages'));
+        await tester.pumpAndSettle();
+        expect(shared, hasLength(1));
+        expect(shared.single, contains(j.title));
+        expect(shared.single, contains('https://ourney.tech/p/$token'));
+        expect(h.location, JourneysPaths.wrapped(j.id));
+
+        await tester.tap(_key('wrapped-share'));
+        await tester.pumpAndSettle();
+        await tester.tap(_key('wrapped-share-other'));
+        await tester.pumpAndSettle();
+        expect(shared, hasLength(2));
+        expect(h.location, JourneysPaths.wrapped(j.id));
+      },
+    );
 
     for (final skin in [
       TemplateId.weightLoss,

@@ -730,6 +730,70 @@ void main() {
       await _tap(tester, _key('journey-create'));
       expect(sharing.calls.where((c) => c.startsWith('followed')), isEmpty);
     });
+
+    testWidgets(
+      'back from setup returns to FollowJourneyScreen, and FollowJourneyScreen back falls back to /shared/:id (DE-21)',
+      (tester) async {
+        final sharing = FakeSharingRepository(
+          frame: const JourneyFrame(
+            sourceJourneyId: 'src',
+            templateId: TemplateId.travel,
+            kind: JourneyKind.solo,
+            title: 'Da Lat',
+            emoji: '✈️',
+            ownerName: 'Ha Vu',
+          ),
+          view: testView(),
+        );
+        final h = await pumpSharing(
+          tester,
+          location: '/follow/src',
+          sharing: sharing,
+        );
+        await _tap(tester, _key('follow-start'));
+        expect(_key('journeys-create'), findsOneWidget);
+
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/follow/src');
+        expect(_key('follow-journey'), findsOneWidget);
+
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/shared/src');
+      },
+    );
+
+    testWidgets(
+      'ShareJourneyScreen, StoryEditorScreen, and InsightsScreen navigate back to /journey/:id (DE-24)',
+      (tester) async {
+        final h = await pumpSharing(
+          tester,
+          location: '/sharing/j1',
+          journeys: _journeys(),
+          insights: FakeInsightsRepository(testInsights()),
+        );
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/journey/j1');
+
+        await h.go(tester, '/sharing/j1/story');
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/sharing/j1');
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/journey/j1');
+
+        await h.go(tester, '/sharing/j1/insights');
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/sharing/j1');
+        await tester.tap(find.bySemanticsLabel('Back').first);
+        await tester.pumpAndSettle();
+        expect(h.location, '/journey/j1');
+      },
+    );
   });
 
   group('Insights (SCR-88)', () {
