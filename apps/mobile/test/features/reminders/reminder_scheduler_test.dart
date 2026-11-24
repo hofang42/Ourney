@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/locale_override.dart';
@@ -7,7 +8,9 @@ import 'package:ourney/features/reminders/data/notification_gateway.dart';
 import 'package:ourney/features/reminders/data/reminder_scheduler.dart';
 import 'package:ourney/features/reminders/data/reminder_settings.dart';
 import 'package:ourney/features/reminders/domain/reminder_plan.dart';
+import 'package:ourney/shared/time_zones.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import 'reminders_fakes.dart';
 
@@ -21,6 +24,49 @@ Map<String, Object> reminderOn(String id, [String time = '20:00']) => {
 };
 
 void main() {
+  setUpAll(ensureTimeZonesLoaded);
+
+  group('LocalNotificationGateway Android icon & accent color', () {
+    test(
+      'initializes and schedules with ic_stat_ourney and #FF8A3D accent color',
+      () async {
+        final plugin = _RecordingNotificationsPlugin();
+        final gateway = LocalNotificationGateway(
+          plugin: plugin,
+          channelName: 'Nhắc check-in',
+          channelDescription: 'Nhắc chụp ảnh hành trình mỗi ngày',
+        );
+
+        await gateway.schedule(
+          NotificationRequest(
+            id: kReminderIdBase,
+            fireAt: DateTime.utc(2026, 10, 16, 13),
+            title: 'Đến giờ check-in rồi',
+            body: 'Tập mỗi ngày',
+            payload: 'j1',
+          ),
+        );
+
+        expect(plugin.initializedSettings?.android, isNotNull);
+        expect(
+          plugin.initializedSettings!.android!.defaultIcon,
+          'ic_stat_ourney',
+        );
+        expect(
+          plugin.initializedSettings!.android!.defaultIcon,
+          kReminderSmallIcon,
+        );
+
+        final androidDetails = plugin.lastScheduledDetails?.android;
+        expect(androidDetails, isNotNull);
+        expect(androidDetails!.channelId, kReminderChannelId);
+        expect(androidDetails.icon, 'ic_stat_ourney');
+        expect(androidDetails.color, const Color(0xFFFF8A3D));
+        expect(androidDetails.largeIcon, isNull);
+      },
+    );
+  });
+
   group('ReminderSetting / prefs', () {
     test('round-trips through JSON and tolerates garbage', () {
       const s = ReminderSetting(enabled: true, time: ReminderTime(7, 30));
@@ -338,6 +384,40 @@ void main() {
       expect(gateway.scheduled[kReminderIdBase]!.title, 'Time to check in');
     });
   });
+}
+
+class _RecordingNotificationsPlugin implements FlutterLocalNotificationsPlugin {
+  InitializationSettings? initializedSettings;
+  NotificationDetails? lastScheduledDetails;
+
+  @override
+  Future<bool?> initialize({
+    required InitializationSettings settings,
+    DidReceiveNotificationResponseCallback? onDidReceiveNotificationResponse,
+    DidReceiveBackgroundNotificationResponseCallback?
+    onDidReceiveBackgroundNotificationResponse,
+  }) async {
+    initializedSettings = settings;
+    return true;
+  }
+
+  @override
+  Future<void> zonedSchedule({
+    required int id,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails notificationDetails,
+    required AndroidScheduleMode androidScheduleMode,
+    String? title,
+    String? body,
+    String? payload,
+    DateTimeComponents? matchDateTimeComponents,
+  }) async {
+    lastScheduledDetails = notificationDetails;
+  }
+
+  @override
+  Object? noSuchMethod(Invocation invocation) =>
+      throw UnimplementedError('${invocation.memberName}');
 }
 
 NotificationRequest _dummy(int id) => NotificationRequest(
