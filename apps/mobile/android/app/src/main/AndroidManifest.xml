@@ -25,14 +25,17 @@
             android:hardwareAccelerated="true"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
-            <!-- Custom scheme deep links: ourney://join/..., ourney://journey/... and ourney://friend/... -->
+            <!-- Custom scheme deep links: ourney://{join,j,journey,friend,f,p}/... -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ourney" android:host="join" />
+                <data android:scheme="ourney" android:host="j" />
                 <data android:scheme="ourney" android:host="journey" />
                 <data android:scheme="ourney" android:host="friend" />
+                <data android:scheme="ourney" android:host="f" />
+                <data android:scheme="ourney" android:host="p" />
             </intent-filter>
             <!-- Android App Links: https://ourney.tech/f/*, /j/*, /join/*, /p/* (FS-05). -->
             <intent-filter android:autoVerify="true">

@@ -18,8 +18,8 @@ enum AuthStatus {
   signedOut,
 }
 
-/// Maps custom-scheme (`ourney://{friend,join,journey,p}/<id>`) and web
-/// (`https://ourney.tech/{f,j,p}/<id>`) deep links to an in-app route.
+/// Maps custom-scheme (`ourney://{friend,f,join,j,journey,p}/<id>`) and web
+/// (`https://ourney.tech/{f,j,join,p}/<id>`) deep links to an in-app route.
 /// Returns null for non-deep-link URIs or unallowlisted hosts/paths.
 String? normalizeDeepLink(Uri uri) {
   final query = uri.hasQuery ? '?${uri.query}' : '';
@@ -48,7 +48,7 @@ String? normalizeDeepLink(Uri uri) {
     if (uri.host.toLowerCase() != kDeepLinkWebHost) return null;
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segments.length != 2) return null;
-    final kind = segments[0];
+    final kind = segments[0].toLowerCase();
     final id = Uri.encodeComponent(segments[1]);
     final prefix = switch (kind) {
       'f' => '/f',

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/app_routes.dart';
 import 'package:ourney/app/redirect.dart';
@@ -22,11 +24,19 @@ void main() {
         '/join/ABC123',
       );
       expect(
+        normalizeDeepLink(Uri.parse('ourney://j/ABC123')),
+        '/join/ABC123',
+      );
+      expect(
         normalizeDeepLink(Uri.parse('ourney://journey/j-42?x=1')),
         '/journey/j-42?x=1',
       );
       expect(
         normalizeDeepLink(Uri.parse('ourney://friend/tok123')),
+        '/f/tok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('ourney://f/tok123')),
         '/f/tok123',
       );
       expect(
@@ -42,6 +52,22 @@ void main() {
         '/join/ABCD1234',
       );
       expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/J/ABCD1234')),
+        '/join/ABCD1234',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/JOIN/ABCD1234')),
+        '/join/ABCD1234',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/F/tok123')),
+        '/f/tok123',
+      );
+      expect(
+        normalizeDeepLink(Uri.parse('HTTPS://OURNEY.TECH/P/pubtok123')),
+        '/p/pubtok123',
+      );
+      expect(
         normalizeDeepLink(Uri.parse('https://ourney.tech/p/pubtok123')),
         '/p/pubtok123',
       );
@@ -49,6 +75,27 @@ void main() {
       expect(normalizeDeepLink(Uri.parse('/capture')), isNull);
       expect(normalizeDeepLink(Uri.parse('https://x.dev/join/A')), isNull);
     });
+
+    test(
+      'AndroidManifest.xml registers every custom-scheme host accepted by normalizeDeepLink (High-R2-1)',
+      () {
+        final manifest = File(
+          'android/app/src/main/AndroidManifest.xml',
+        ).readAsStringSync();
+        final declaredHosts = RegExp(
+          r'<data\s+android:scheme="ourney"\s+android:host="([^"]+)"\s*/>',
+        ).allMatches(manifest).map((m) => m.group(1)!).toSet();
+        const expectedHosts = {'join', 'j', 'journey', 'friend', 'f', 'p'};
+        for (final host in expectedHosts) {
+          expect(
+            normalizeDeepLink(Uri.parse('ourney://$host/test123')),
+            isNotNull,
+            reason: 'normalizeDeepLink must accept ourney://$host/<id>',
+          );
+        }
+        expect(declaredHosts, expectedHosts);
+      },
+    );
 
     test('rejects unallowlisted custom-scheme and https hosts/paths (FS-05, DE-14)', () {
       expect(

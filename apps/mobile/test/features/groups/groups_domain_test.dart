@@ -10,13 +10,36 @@ void main() {
     test('normalises typed and pasted codes', () {
       expect(parseInviteInput(' abcd-1234 '), 'ABCD1234');
       expect(parseInviteInput('ourney://join/xy12ab34'), 'XY12AB34');
+      expect(parseInviteInput('ourney://j/xy12ab34'), 'XY12AB34');
       expect(parseInviteInput('https://ourney.tech/j/xy12ab34'), 'XY12AB34');
       expect(parseInviteInput('https://ourney.tech/join/xy12-ab34'), 'XY12AB34');
+      expect(parseInviteInput('HTTPS://OURNEY.TECH/J/xy12ab34'), 'XY12AB34');
+      expect(parseInviteInput('ourney.tech/j/abcd1234'), 'ABCD1234');
+      expect(parseInviteInput('ourney.tech/join/abcd-1234'), 'ABCD1234');
       expect(
         parseInviteInput('Join our squad: https://ourney.tech/j/abcd1234!'),
         'ABCD1234',
       );
+      expect(
+        parseInviteInput('Join our squad: ourney.tech/j/abcd1234!'),
+        'ABCD1234',
+      );
       expect(parseInviteInput('https://evil.com/j/xy12ab34'), isEmpty);
+      expect(parseInviteInput('https://notourney.tech/j/xy12ab34'), isEmpty);
+      expect(parseInviteInput('https://evil.ourney.tech/j/xy12ab34'), isEmpty);
+      expect(parseInviteInput('evil.com/j/xy12ab34'), isEmpty);
+      expect(
+        parseInviteInput('Join us https://evil.com/j/xy12ab34'),
+        isEmpty,
+      );
+      expect(
+        parseInviteInput('Be my friend on Ourney: https://ourney.tech/f/tok123'),
+        isEmpty,
+      );
+      expect(
+        parseInviteInput('Check out https://ourney.tech/p/pubtok123'),
+        isEmpty,
+      );
       expect(isValidInviteCode('ABCD1234'), isTrue);
       expect(isValidInviteCode('ABCD123'), isFalse);
       expect(isValidInviteCode('ABCD123!'), isFalse);
