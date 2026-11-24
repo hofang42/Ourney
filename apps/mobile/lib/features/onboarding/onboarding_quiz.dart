@@ -35,6 +35,15 @@ UiFlowGoal _flowGoal(QuizGoal goal) => switch (goal) {
   QuizGoal.habit => UiFlowGoal.habit,
 };
 
+String _goalSampleAsset(QuizGoal goal) => switch (goal) {
+  QuizGoal.weightLoss => 'assets/samples/weight_loss/02.webp',
+  QuizGoal.english => 'assets/samples/ielts_study/01.webp',
+  QuizGoal.workout => 'assets/samples/workout_30/01.webp',
+  QuizGoal.trip => 'assets/samples/travel_dalat/02.webp',
+  QuizGoal.couple => 'assets/samples/couple_rituals/02.webp',
+  QuizGoal.habit => 'assets/samples/reading_10_pages/01.webp',
+};
+
 class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
   int _step = 0;
   QuizGoal? _goal;
@@ -321,7 +330,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                     child: Container(
                       width: 62,
                       height: 72,
-                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
                         color: UiFlowColors.paper,
                         border: Border.fromBorderSide(
@@ -331,7 +340,26 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                           ),
                         ),
                       ),
-                      child: UiGoalGlyph(goal: goal, size: 28),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            _goalSampleAsset(quizGoal),
+                            key: ValueKey(
+                              'onboarding-quiz-result-photo-${quizGoal.wireName}',
+                            ),
+                            fit: BoxFit.cover,
+                            cacheWidth: 186,
+                            excludeFromSemantics: true,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(child: UiGoalGlyph(goal: goal, size: 28)),
+                          ),
+                          if (ui.isDark)
+                            const IgnorePointer(
+                              child: ColoredBox(color: Color(0x22000000)),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

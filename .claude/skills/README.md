@@ -10,7 +10,7 @@ Skill là quy trình mà Claude Code nạp khi được gọi (gõ `/<tên>`, ho
 | `/lesson [lỗi]` | user hoặc Claude | Truy vì sao Claude sai, ghi hoặc nâng cấp bài học, đề xuất test chặn loại lỗi đó |
 | `/wrap-up` | chỉ user | Ghi nhật ký cuối phiên: task ID, commit SHA, mã FR, bằng chứng test, việc còn dở |
 | `/pr-check [task ID]` | chỉ user | Chạy đúng các job CI mà thay đổi đụng tới, rà checklist PR template, soạn PR body |
-| `/design-ref [persona] [màn]` | user hoặc Claude | Cắt và phóng to đúng màn trong bảng thiết kế `apps/mobile/assets/design_personas/`, chỉ ra token cần dùng và lỗi của mockup không được chép. Cần `python3` + Pillow; thiếu Pillow thì đọc cả bảng |
+| `/design-ref [persona] [màn]` | user hoặc Claude | Cắt và phóng to đúng màn trong bảng thiết kế `docs/assets/design_personas/`, chỉ ra token cần dùng và lỗi của mockup không được chép. Cần `python3` + Pillow; thiếu Pillow thì đọc cả bảng |
 | `/ui-bug-scan [màn, route, thư mục]` | user hoặc Claude | Quét lỗi UI/UX: dựng từng màn theo ma trận bề rộng × sáng/tối × cỡ chữ × ngôn ngữ (ảnh chụp + matcher vùng chạm, tương phản), rồi rà checklist tràn layout, safe area, token màu, trạng thái rỗng/lỗi/offline, rule `CLAUDE.md`. Mẫu test ở `templates/scan_test.dart`, chạy trong `apps/mobile/test/zz_uxscan/` rồi xóa. Viết từ các nguồn ghi ở mục Sources của skill |
 
 Quét bug: "quét bug" / "scan for bugs" gọi cả `find-bugs` (logic) và `ui-bug-scan` (UI/UX); `flutter-accessibility` dùng khi cần rà sâu trình đọc màn hình và tương phản.

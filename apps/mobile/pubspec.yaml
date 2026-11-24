@@ -97,7 +97,13 @@ flutter:
 
   assets:
     - assets/app_icons/
-    - assets/design_personas/
+    - assets/samples/couple_rituals/
+    - assets/samples/ielts_study/
+    - assets/samples/morning_run/
+    - assets/samples/reading_10_pages/
+    - assets/samples/travel_dalat/
+    - assets/samples/weight_loss/
+    - assets/samples/workout_30/
 
   fonts:
     # Body: Be Vietnam Pro (OFL), Vietnamese-complete.
