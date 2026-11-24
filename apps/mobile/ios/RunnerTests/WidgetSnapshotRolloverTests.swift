@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import XCTest
 @testable import Runner
 
@@ -327,21 +328,169 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     XCTAssertNil(WidgetSnapshotStore.loadSnapshot(at: afterMidnight, rootDirectory: tempRoot))
   }
 
-  func testDeepLinkQueryEscapesReservedCharactersAndBlurFileNameIsolation() throws {
+  func testDeepLinkQueryEscapesReservedCharactersAndSingleBlurStagingAndAbsentOptionalKeys() throws {
     let url = OurneyDeepLinks.capture(journeyId: "journey+1&mode=fast=true")
     XCTAssertEqual(url.absoluteString, "ourney://capture?journeyId=journey%2B1%26mode%3Dfast%3Dtrue")
 
-    XCTAssertEqual(
-      WidgetSnapshotStore.resolvedThumbFileName("a91f4c82.jpg", blurred: false),
-      "a91f4c82.jpg"
+    // (a) Verify OurneyWidgetBridge stages pre-blurred thumbnails under exact `thumbs/<id>.jpg`
+    //     without `_blur` filename mutation or native CIGaussianBlur re-blurring.
+    let tempRoot = FileManager.default.temporaryDirectory
+      .appendingPathComponent("ourney_widget_thumb_tests_\(UUID().uuidString)", isDirectory: true)
+    defer {
+      try? FileManager.default.removeItem(at: tempRoot)
+    }
+    try FileManager.default.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+
+    let sourceImageURL = tempRoot.appendingPathComponent("source_preblurred.jpg")
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 48, height: 48))
+    let img = renderer.image { ctx in
+      UIColor.systemOrange.setFill()
+      ctx.fill(CGRect(x: 0, y: 0, width: 48, height: 48))
+    }
+    let jpegBytes = try XCTUnwrap(img.jpegData(compressionQuality: 0.85))
+    try jpegBytes.write(to: sourceImageURL)
+
+    // Minimal JSON with ABSENT optional keys (`defaultJourneyId`, `totalDays`, `reminderAtUtc`,
+    // `avatarFile`, `todayThumbFile`, `liveWindow`) and a pre-blurred `heroThumbFile`.
+    let minimalJson = """
+    {
+      "schemaVersion": 1,
+      "generatedAtUtc": "2026-11-24T10:00:00.000Z",
+      "authState": "ready",
+      "locale": "vi",
+      "themeMode": "system",
+      "privacy": {
+        "photoMode": "blurred",
+        "redactLockScreenTitles": true,
+        "liveActivityEnabled": true
+      },
+      "totals": {
+        "activeCount": 1,
+        "completedTodayCount": 1,
+        "pendingTodayCount": 0,
+        "atRiskCount": 0,
+        "bestActiveStreak": 15
+      },
+      "journeys": [
+        {
+          "id": "open-ended-1",
+          "title": "Đọc sách mỗi ngày",
+          "kind": "solo",
+          "skinId": "minimal",
+          "colorVariant": 0,
+          "typeIcon": "type-custom",
+          "timezone": "Asia/Ho_Chi_Minh",
+          "utcOffsetMinutes": 420,
+          "pinned": true,
+          "dayNumber": 15,
+          "currentStreak": 15,
+          "bestStreak": 15,
+          "checkedInToday": true,
+          "atRisk": false,
+          "heroThumbFile": "thumbs/a91f4c82b011e3d4.jpg",
+          "heroThumbBlurred": true
+        }
+      ],
+      "squads": [
+        {
+          "journeyId": "open-ended-1",
+          "title": "Đọc sách mỗi ngày",
+          "skinId": "squad",
+          "colorVariant": 0,
+          "typeIcon": "type-study",
+          "isCouple": false,
+          "dayNumber": 15,
+          "doneCount": 1,
+          "memberCount": 1,
+          "meCheckedInToday": true,
+          "members": [
+            {
+              "displayName": "Minh",
+              "initial": "M",
+              "avatarColorIndex": 2,
+              "isMe": true,
+              "checkedInToday": true,
+              "streak": 15
+            }
+          ]
+        }
+      ]
+    }
+    """
+
+    let minimalData = try XCTUnwrap(minimalJson.data(using: .utf8))
+    let decodedMinimal = try JSONDecoder().decode(WidgetSnapshot.self, from: minimalData)
+
+    // (b) Verify absent optional keys decode cleanly to nil (open-ended journey totalDays == nil).
+    XCTAssertNil(decodedMinimal.defaultJourneyId)
+    XCTAssertNil(decodedMinimal.liveWindow)
+    XCTAssertEqual(decodedMinimal.journeys.count, 1)
+    XCTAssertNil(decodedMinimal.journeys[0].totalDays)
+    XCTAssertNil(decodedMinimal.journeys[0].reminderAtUtc)
+    XCTAssertEqual(decodedMinimal.journeys[0].dayNumber, 15)
+    XCTAssertEqual(decodedMinimal.squads.count, 1)
+    XCTAssertNil(decodedMinimal.squads[0].totalDays)
+    XCTAssertNil(decodedMinimal.squads[0].members[0].avatarFile)
+    XCTAssertNil(decodedMinimal.squads[0].members[0].todayThumbFile)
+    XCTAssertFalse(decodedMinimal.squads[0].members[0].todayThumbBlurred)
+
+    let bridge = OurneyWidgetBridge()
+    let didWrite = bridge.writeSnapshotAndThumbs(
+      snapshotData: minimalData,
+      thumbSpecs: [
+        [
+          "id": "a91f4c82b011e3d4.jpg",
+          "sourcePath": sourceImageURL.path,
+          "maxSide": 320,
+          "blur": true,
+        ]
+      ],
+      overrideRootDirectory: tempRoot
     )
-    XCTAssertEqual(
-      WidgetSnapshotStore.resolvedThumbFileName("a91f4c82.jpg", blurred: true),
-      "a91f4c82_blur.jpg"
+    XCTAssertTrue(didWrite)
+
+    let resolvedExactURL = WidgetSnapshotStore.thumbURL(
+      for: "thumbs/a91f4c82b011e3d4.jpg",
+      rootDirectory: tempRoot
     )
-    XCTAssertEqual(
-      WidgetSnapshotStore.resolvedThumbFileName("a91f4c82_blur.jpg", blurred: true),
-      "a91f4c82_blur.jpg"
+    XCTAssertNotNil(resolvedExactURL)
+    XCTAssertEqual(resolvedExactURL?.lastPathComponent, "a91f4c82b011e3d4.jpg")
+    XCTAssertNil(
+      WidgetSnapshotStore.thumbURL(
+        for: "thumbs/a91f4c82b011e3d4_blur.jpg",
+        rootDirectory: tempRoot
+      )
+    )
+
+    // (c) Verify canonical redactLockScreenTitles precedence over legacy redactTitleOnLockScreen.
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactTitleOnLockScreen": false,
+          "redactLockScreenTitles": true,
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "redactTitleOnLockScreen": false,
+          "liveWindow": ["redactLockScreenTitles": true],
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: [
+          "liveWindow": ["journeyId": "open-ended-1"],
+          "privacy": ["redactLockScreenTitles": true],
+        ]
+      )
+    )
+    XCTAssertTrue(
+      OurneyWidgetBridge.resolveRedactLockScreenTitles(
+        topDict: ["redactTitleOnLockScreen": true]
+      )
     )
   }
 }

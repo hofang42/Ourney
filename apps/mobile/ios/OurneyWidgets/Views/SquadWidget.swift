@@ -230,7 +230,6 @@ private struct SquadLargeView: View {
       // 2x2 Polaroid / Member Grid (`squadPolaroidWall` in CLAUDE.md §4)
       let topRow = Array(featuredMembers.prefix(2))
       let bottomRow = Array(featuredMembers.dropFirst(2).prefix(2))
-      let forceBlurPhotos = (snapshot.privacy.photoMode == "blurred")
 
       VStack(spacing: 8) {
         HStack(spacing: 8) {
@@ -238,7 +237,6 @@ private struct SquadLargeView: View {
             SquadMemberPolaroidTile(
               member: member,
               allowsPhotos: snapshot.privacy.allowsPhotosOnHomeScreen,
-              forceBlurPhotos: forceBlurPhotos,
               theme: theme
             )
           }
@@ -252,7 +250,6 @@ private struct SquadLargeView: View {
               SquadMemberPolaroidTile(
                 member: member,
                 allowsPhotos: snapshot.privacy.allowsPhotosOnHomeScreen,
-                forceBlurPhotos: forceBlurPhotos,
                 theme: theme
               )
             }
@@ -396,11 +393,9 @@ private struct CoupleDiptychRow: View {
 private struct SquadMemberPolaroidTile: View {
   let member: WidgetSquadMember
   let allowsPhotos: Bool
-  let forceBlurPhotos: Bool
   let theme: OurneyWidgetTheme
 
   var body: some View {
-    let shouldBlur = member.todayThumbBlurred || forceBlurPhotos
     VStack(alignment: .leading, spacing: 5) {
       ZStack {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -410,8 +405,7 @@ private struct SquadMemberPolaroidTile: View {
            allowsPhotos,
            let uiImage = OurneyThumbLoader.loadDownsampledImage(
              relativePath: member.todayThumbFile,
-             maxPixelSize: 160,
-             blur: shouldBlur
+             maxPixelSize: 160
            ) {
           Image(uiImage: uiImage)
             .resizable()

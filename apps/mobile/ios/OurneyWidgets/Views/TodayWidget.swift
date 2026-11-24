@@ -173,7 +173,6 @@ private struct TodaySmallView: View {
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
     let showCycleControl = pendingList.count >= 2 && !journey.checkedInToday
-    let shouldBlurHero = journey.heroThumbBlurred || snapshot.privacy.photoMode == "blurred"
     let destination = journey.checkedInToday
       ? OurneyDeepLinks.journey(id: journey.id)
       : OurneyDeepLinks.capture(journeyId: journey.id)
@@ -206,8 +205,7 @@ private struct TodaySmallView: View {
          snapshot.privacy.allowsPhotosOnHomeScreen,
          let uiImage = OurneyThumbLoader.loadDownsampledImage(
            relativePath: journey.heroThumbFile,
-           maxPixelSize: 240,
-           blur: shouldBlurHero
+           maxPixelSize: 240
          ) {
         HStack(spacing: 8) {
           Image(uiImage: uiImage)
@@ -380,14 +378,12 @@ private struct TodayMediumView: View {
       .frame(maxWidth: .infinity, alignment: .leading)
 
       // Right column: Completed Polaroid Frame or Streak Card + Snap CTA
-      let shouldBlurHero = journey.heroThumbBlurred || snapshot.privacy.photoMode == "blurred"
       VStack(spacing: 6) {
         if journey.checkedInToday,
            snapshot.privacy.allowsPhotosOnHomeScreen,
            let uiImage = OurneyThumbLoader.loadDownsampledImage(
              relativePath: journey.heroThumbFile,
-             maxPixelSize: 280,
-             blur: shouldBlurHero
+             maxPixelSize: 280
            ) {
           Link(destination: destination) {
             VStack(spacing: 3) {

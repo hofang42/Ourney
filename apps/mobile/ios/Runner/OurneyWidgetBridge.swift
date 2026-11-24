@@ -1,4 +1,3 @@
-import CoreImage
 import Flutter
 import Foundation
 import ImageIO
@@ -22,7 +21,6 @@ public final class OurneyWidgetBridge {
     label: "com.hofang42.ourney.widgets.io",
     qos: .userInitiated
   )
-  private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
   private var didLogMissingAppGroup = false
 
   public init() {}
@@ -145,19 +143,11 @@ public final class OurneyWidgetBridge {
     }
 
     let decodedSnapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: snapshotData)
-    let forceBlurAllPhotos = (decodedSnapshot?.privacy.photoMode == "blurred")
     var referencedThumbNames = Set<String>()
-    var blurredThumbNames = Set<String>()
     if let snap = decodedSnapshot {
       for j in snap.journeys {
         if let f = Self.cleanThumbFileName(j.heroThumbFile) {
-          let needsBlur = j.heroThumbBlurred || forceBlurAllPhotos
-          if needsBlur {
-            blurredThumbNames.insert(f)
-          }
-          referencedThumbNames.insert(
-            WidgetSnapshotStore.resolvedThumbFileName(f, blurred: needsBlur)
-          )
+          referencedThumbNames.insert(f)
         }
       }
       for s in snap.squads {
@@ -166,13 +156,7 @@ public final class OurneyWidgetBridge {
             referencedThumbNames.insert(a)
           }
           if let t = Self.cleanThumbFileName(m.todayThumbFile) {
-            let needsBlur = m.todayThumbBlurred || forceBlurAllPhotos
-            if needsBlur {
-              blurredThumbNames.insert(t)
-            }
-            referencedThumbNames.insert(
-              WidgetSnapshotStore.resolvedThumbFileName(t, blurred: needsBlur)
-            )
+            referencedThumbNames.insert(t)
           }
         }
       }
@@ -187,12 +171,10 @@ public final class OurneyWidgetBridge {
       else {
         continue
       }
-      let specBlur = (spec["blur"] as? Bool) ?? false
-      let shouldBlur = specBlur || forceBlurAllPhotos || blurredThumbNames.contains(fileName)
-      let resolvedFileName = WidgetSnapshotStore.resolvedThumbFileName(fileName, blurred: shouldBlur)
-      referencedThumbNames.insert(resolvedFileName)
-      let destURL = thumbsDir.appendingPathComponent(resolvedFileName, isDirectory: false)
-      // Content-addressed cache hit (isolated between blurred and unblurred names): skip re-encoding if file already exists.
+      referencedThumbNames.insert(fileName)
+      let destURL = thumbsDir.appendingPathComponent(fileName, isDirectory: false)
+      // Content-addressed cache hit (Dart pre-blurs once at sigma=18 and hashes (sourcePath, maxSide, blur) into id):
+      // skip re-encoding if file already exists.
       if fm.fileExists(atPath: destURL.path) {
         continue
       }
@@ -200,8 +182,7 @@ public final class OurneyWidgetBridge {
       if processAndWriteThumbnail(
         sourcePath: sourcePath,
         destinationURL: destURL,
-        maxSide: max(64, min(maxSide, 512)),
-        blur: shouldBlur
+        maxSide: max(64, min(maxSide, 512))
       ) {
         thumbsChanged = true
       }
@@ -260,8 +241,7 @@ public final class OurneyWidgetBridge {
   private func processAndWriteThumbnail(
     sourcePath: String,
     destinationURL: URL,
-    maxSide: Int,
-    blur: Bool
+    maxSide: Int
   ) -> Bool {
     let sourceURL = URL(fileURLWithPath: sourcePath)
     guard FileManager.default.fileExists(atPath: sourceURL.path) else {
@@ -281,28 +261,9 @@ public final class OurneyWidgetBridge {
       return false
     }
 
-    let finalUIImage: UIImage
-    if blur {
-      let ciInput = CIImage(cgImage: cgThumb)
-      let extent = ciInput.extent
-      let clamped = ciInput.clampedToExtent()
-      if let filter = CIFilter(name: "CIGaussianBlur") {
-        filter.setValue(clamped, forKey: kCIInputImageKey)
-        filter.setValue(18.0, forKey: kCIInputRadiusKey)
-        if let output = filter.outputImage?.cropped(to: extent),
-           let blurredCG = ciContext.createCGImage(output, from: extent) {
-          finalUIImage = UIImage(cgImage: blurredCG)
-        } else {
-          finalUIImage = UIImage(cgImage: cgThumb)
-        }
-      } else {
-        finalUIImage = UIImage(cgImage: cgThumb)
-      }
-    } else {
-      finalUIImage = UIImage(cgImage: cgThumb)
-    }
-
-    // Re-encoding via UIImage.jpegData strips all EXIF/GPS metadata automatically.
+    // Dart blurs sensitive thumbnails once (sigma = 18) before invoking syncSnapshot;
+    // native code never re-blurs. Re-encoding via UIImage.jpegData strips all EXIF/GPS metadata automatically.
+    let finalUIImage = UIImage(cgImage: cgThumb)
     guard let jpegData = finalUIImage.jpegData(compressionQuality: 0.72) else {
       return false
     }
@@ -382,11 +343,11 @@ public final class OurneyWidgetBridge {
       ?? (windowDict["locale"] as? String)
       ?? cachedSnapshot?.locale
       ?? "vi"
-    let redactTitle = (topDict["redactTitleOnLockScreen"] as? Bool)
-      ?? (topDict["redactLockScreenTitles"] as? Bool)
-      ?? (windowDict["redactTitleOnLockScreen"] as? Bool)
-      ?? cachedSnapshot?.privacy.redactLockScreenTitles
-      ?? false
+    let redactTitle = Self.resolveRedactLockScreenTitles(
+      topDict: topDict,
+      windowDict: windowDict,
+      cachedSnapshot: cachedSnapshot
+    )
 
     let contentState = OurneyCheckInAttributes.ContentState(
       journeyId: journeyId,
@@ -467,6 +428,25 @@ public final class OurneyWidgetBridge {
     #else
     result(false)
     #endif
+  }
+
+  /// Resolves Lock Screen title redaction flag across `syncLiveActivity` payloads,
+  /// prioritizing canonical `redactLockScreenTitles` (top-level, `liveWindow`, and `privacy` dicts)
+  /// before falling back to legacy `redactTitleOnLockScreen` and cached `snapshot_v1.json`.
+  public static func resolveRedactLockScreenTitles(
+    topDict: [String: Any],
+    windowDict: [String: Any]? = nil,
+    cachedSnapshot: WidgetSnapshot? = nil
+  ) -> Bool {
+    let resolvedWindowDict = windowDict ?? (topDict["liveWindow"] as? [String: Any]) ?? topDict
+    let privacyDict = topDict["privacy"] as? [String: Any]
+    return (topDict["redactLockScreenTitles"] as? Bool)
+      ?? (resolvedWindowDict["redactLockScreenTitles"] as? Bool)
+      ?? (privacyDict?["redactLockScreenTitles"] as? Bool)
+      ?? (topDict["redactTitleOnLockScreen"] as? Bool)
+      ?? (resolvedWindowDict["redactTitleOnLockScreen"] as? Bool)
+      ?? cachedSnapshot?.privacy.redactLockScreenTitles
+      ?? false
   }
 
   private static func parseDateArg(_ raw: Any?) -> Date? {

@@ -653,6 +653,21 @@ public struct WidgetWeekDay: Codable, Equatable {
     self.state = state
   }
 
+  enum CodingKeys: String, CodingKey {
+    case date
+    case day
+    case label
+    case state
+  }
+
+  public init(from decoder: Decoder) throws {
+    let c = try decoder.container(keyedBy: CodingKeys.self)
+    self.date = try c.decodeIfPresent(String.self, forKey: .date) ?? ""
+    self.day = try c.decodeIfPresent(Int.self, forKey: .day) ?? 1
+    self.label = try c.decodeIfPresent(String.self, forKey: .label) ?? ""
+    self.state = try c.decodeIfPresent(String.self, forKey: .state) ?? "future"
+  }
+
   public var isDone: Bool { state == "done" }
   public var isToday: Bool { state == "today" }
 }
@@ -1187,23 +1202,9 @@ public enum WidgetSnapshotStore {
     return state
   }
 
-  /// Returns a cache filename isolated between blurred and unblurred variants so a cached
-  /// unblurred thumbnail can never collide with a blurred request (§7.1).
-  public static func resolvedThumbFileName(_ rawFileName: String, blurred: Bool) -> String {
-    guard blurred else { return rawFileName }
-    let ns = rawFileName as NSString
-    let ext = ns.pathExtension
-    let base = ns.deletingPathExtension
-    if base.hasSuffix("_blur") || base.hasPrefix("blur_") {
-      return rawFileName
-    }
-    return ext.isEmpty ? "\(base)_blur" : "\(base)_blur.\(ext)"
-  }
-
   /// Resolves the on-disk URL for a relative thumbnail reference (e.g. `"thumbs/a91f4c82.jpg"`).
   public static func thumbURL(
     for relativePath: String?,
-    blurred: Bool = false,
     rootDirectory: URL? = nil
   ) -> URL? {
     guard let raw = relativePath?.trimmingCharacters(in: .whitespacesAndNewlines),
@@ -1217,13 +1218,6 @@ public enum WidgetSnapshotStore {
       return nil
     }
     let thumbsDir = root.appendingPathComponent(OurneyWidgetConstants.thumbsSubdirectory, isDirectory: true)
-    if blurred {
-      let blurredName = resolvedThumbFileName(fileName, blurred: true)
-      let blurredURL = thumbsDir.appendingPathComponent(blurredName, isDirectory: false)
-      if FileManager.default.fileExists(atPath: blurredURL.path) {
-        return blurredURL
-      }
-    }
     let url = thumbsDir.appendingPathComponent(fileName, isDirectory: false)
     return FileManager.default.fileExists(atPath: url.path) ? url : nil
   }

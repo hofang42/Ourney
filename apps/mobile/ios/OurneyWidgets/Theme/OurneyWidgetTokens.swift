@@ -594,10 +594,9 @@ public extension Image {
 public enum OurneyThumbLoader {
   public static func loadDownsampledImage(
     relativePath: String?,
-    maxPixelSize: Int = 320,
-    blur: Bool = false
+    maxPixelSize: Int = 320
   ) -> UIImage? {
-    guard let url = WidgetSnapshotStore.thumbURL(for: relativePath, blurred: blur) else {
+    guard let url = WidgetSnapshotStore.thumbURL(for: relativePath) else {
       return nil
     }
     let sourceOptions: [CFString: Any] = [
