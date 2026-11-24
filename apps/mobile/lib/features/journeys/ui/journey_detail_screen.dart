@@ -88,7 +88,15 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         ),
       );
     }
-    final journey = journeyAsync.value;
+    final journey =
+        journeyAsync.value ??
+        (journeyAsync.isLoading
+            ? ref
+                  .watch(journeysListProvider)
+                  .value
+                  ?.where((j) => j.id == journeyId)
+                  .firstOrNull
+            : null);
     if (journey == null) {
       return UiScaffold(
         key: const ValueKey('journey-detail-empty'),
@@ -709,13 +717,13 @@ class _JourneyDetailScreenState extends ConsumerState<JourneyDetailScreen> {
         .journeys_jumpAnnounce(monthPlain(context, month));
     final view = View.of(context);
     final dir = Directionality.of(context);
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (UiMotion.reduced(context)) {
       _scroll.jumpTo(target);
     } else {
       await _scroll.animateTo(
         target,
-        duration: const Duration(milliseconds: 350),
-        curve: Curves.easeOutCubic,
+        duration: UiMotion.page,
+        curve: UiCurves.easeOutStrong,
       );
     }
     if (!mounted || token != _jumpToken || !_scroll.hasClients) return;
