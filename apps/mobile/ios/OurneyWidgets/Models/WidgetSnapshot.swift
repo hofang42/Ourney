@@ -22,14 +22,27 @@ public enum OurneyDeepLinks {
   public static let groups = URL(string: "ourney://groups")!
   public static let bareCapture = URL(string: "ourney://capture")!
 
+  private static let queryValueAllowed: CharacterSet = {
+    var cs = CharacterSet.urlQueryAllowed
+    cs.remove(charactersIn: "&+=?#")
+    return cs
+  }()
+
   public static func capture(journeyId: String?) -> URL {
     guard let raw = journeyId?.trimmingCharacters(in: .whitespacesAndNewlines),
-          !raw.isEmpty,
-          let encoded = raw.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)
+          !raw.isEmpty
     else {
       return bareCapture
     }
-    return URL(string: "ourney://capture?journeyId=\(encoded)") ?? bareCapture
+    var components = URLComponents()
+    components.scheme = "ourney"
+    components.host = "capture"
+    if let encoded = raw.addingPercentEncoding(withAllowedCharacters: queryValueAllowed) {
+      components.percentEncodedQuery = "journeyId=\(encoded)"
+    } else {
+      components.queryItems = [URLQueryItem(name: "journeyId", value: raw)]
+    }
+    return components.url ?? bareCapture
   }
 
   public static func journey(id: String) -> URL {
@@ -144,7 +157,14 @@ public struct WidgetSnapshot: Codable, Equatable {
     guard !journeys.isEmpty || !squads.isEmpty else { return self }
 
     let evaluatedJourneys = journeys.map { $0.evaluated(at: referenceDate, locale: locale) }
-    let evaluatedSquads = squads.map { $0.evaluated(at: referenceDate) }
+    let evaluatedSquads = squads.map { squad in
+      let matchingJourney = journeys.first(where: { $0.id == squad.journeyId })
+      return squad.evaluated(
+        at: referenceDate,
+        timezone: matchingJourney?.timezone,
+        utcOffsetMinutes: matchingJourney?.utcOffsetMinutes ?? 420
+      )
+    }
 
     let completedCount = evaluatedJourneys.filter(\.checkedInToday).count
     let pendingCount = evaluatedJourneys.count - completedCount
@@ -508,9 +528,15 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     }
 
     // One or more midnights have passed in the journey's timezone since the snapshot was written.
-    let elapsedSeconds = referenceDate.timeIntervalSince(midnightDate)
-    let extraDays = max(0, Int(floor(elapsedSeconds / 86400.0))) + 1
-    let shiftSeconds = TimeInterval(extraDays) * 86400.0
+    let cal = WidgetDateParser.calendar(
+      timezoneId: self.timezone,
+      utcOffsetMinutes: self.utcOffsetMinutes
+    )
+    let extraDays = WidgetDateParser.extraDaysPassed(
+      from: midnightDate,
+      to: referenceDate,
+      calendar: cal
+    )
 
     var rolled = self
     let survivedFirstMidnight = (extraDays == 1) && self.checkedInToday
@@ -522,21 +548,21 @@ public struct WidgetJourneyItem: Codable, Equatable, Identifiable {
     rolled.heroThumbBlurred = false
 
     rolled.midnightRolloverUtc = WidgetDateParser.formatISO8601(
-      midnightDate.addingTimeInterval(shiftSeconds)
+      WidgetDateParser.addDays(extraDays, to: midnightDate, calendar: cal)
     )
     if let cue = WidgetDateParser.parseISO8601(self.eveningCueAtUtc) {
       rolled.eveningCueAtUtc = WidgetDateParser.formatISO8601(
-        cue.addingTimeInterval(shiftSeconds)
+        WidgetDateParser.addDays(extraDays, to: cue, calendar: cal)
       )
     }
     if let alert = WidgetDateParser.parseISO8601(self.streakAlertAtUtc) {
       rolled.streakAlertAtUtc = WidgetDateParser.formatISO8601(
-        alert.addingTimeInterval(shiftSeconds)
+        WidgetDateParser.addDays(extraDays, to: alert, calendar: cal)
       )
     }
     if let reminder = WidgetDateParser.parseISO8601(self.reminderAtUtc) {
       rolled.reminderAtUtc = WidgetDateParser.formatISO8601(
-        reminder.addingTimeInterval(shiftSeconds)
+        WidgetDateParser.addDays(extraDays, to: reminder, calendar: cal)
       )
     }
 
@@ -710,22 +736,32 @@ public struct WidgetSquadItem: Codable, Equatable, Identifiable {
     self.members = try c.decodeIfPresent([WidgetSquadMember].self, forKey: .members) ?? []
   }
 
-  public func evaluated(at referenceDate: Date) -> WidgetSquadItem {
+  public func evaluated(
+    at referenceDate: Date,
+    timezone: String? = nil,
+    utcOffsetMinutes: Int = 420
+  ) -> WidgetSquadItem {
     guard let midnightDate = WidgetDateParser.parseISO8601(midnightRolloverUtc),
           referenceDate >= midnightDate
     else {
       return self
     }
-    let elapsedSeconds = referenceDate.timeIntervalSince(midnightDate)
-    let extraDays = max(0, Int(floor(elapsedSeconds / 86400.0))) + 1
-    let shiftSeconds = TimeInterval(extraDays) * 86400.0
+    let cal = WidgetDateParser.calendar(
+      timezoneId: timezone,
+      utcOffsetMinutes: utcOffsetMinutes
+    )
+    let extraDays = WidgetDateParser.extraDaysPassed(
+      from: midnightDate,
+      to: referenceDate,
+      calendar: cal
+    )
 
     var rolled = self
     rolled.dayNumber = self.dayNumber + extraDays
     rolled.doneCount = 0
     rolled.meCheckedInToday = false
     rolled.midnightRolloverUtc = WidgetDateParser.formatISO8601(
-      midnightDate.addingTimeInterval(shiftSeconds)
+      WidgetDateParser.addDays(extraDays, to: midnightDate, calendar: cal)
     )
     rolled.members = self.members.map { member in
       var m = member
@@ -982,6 +1018,39 @@ public enum WidgetDateParser {
       return labels[(weekday - 1) % 7]
     }
   }
+
+  public static func calendar(timezoneId: String?, utcOffsetMinutes: Int = 420) -> Calendar {
+    var cal = Calendar(identifier: .gregorian)
+    if let tzId = timezoneId?.trimmingCharacters(in: .whitespacesAndNewlines),
+       !tzId.isEmpty,
+       let tz = TimeZone(identifier: tzId) {
+      cal.timeZone = tz
+    } else if let tz = TimeZone(secondsFromGMT: utcOffsetMinutes * 60) {
+      cal.timeZone = tz
+    } else {
+      cal.timeZone = TimeZone(secondsFromGMT: 0) ?? .current
+    }
+    return cal
+  }
+
+  /// DST-safe count of midnights crossed (`>= 1` when `referenceDate >= midnightDate`).
+  public static func extraDaysPassed(
+    from midnightDate: Date,
+    to referenceDate: Date,
+    calendar: Calendar
+  ) -> Int {
+    guard referenceDate >= midnightDate else { return 0 }
+    if let dayDiff = calendar.dateComponents([.day], from: midnightDate, to: referenceDate).day {
+      return max(0, dayDiff) + 1
+    }
+    return max(0, Int(floor(referenceDate.timeIntervalSince(midnightDate) / 86400.0))) + 1
+  }
+
+  /// DST-safe calendar day shift preserving local wall-clock time across DST transitions.
+  public static func addDays(_ days: Int, to date: Date, calendar: Calendar) -> Date {
+    calendar.date(byAdding: .day, value: days, to: date)
+      ?? date.addingTimeInterval(TimeInterval(days) * 86400.0)
+  }
 }
 
 /// Shared App Group container reader/writer used by both `OurneyWidgetsExtension` and `Runner`.
@@ -1118,8 +1187,25 @@ public enum WidgetSnapshotStore {
     return state
   }
 
+  /// Returns a cache filename isolated between blurred and unblurred variants so a cached
+  /// unblurred thumbnail can never collide with a blurred request (§7.1).
+  public static func resolvedThumbFileName(_ rawFileName: String, blurred: Bool) -> String {
+    guard blurred else { return rawFileName }
+    let ns = rawFileName as NSString
+    let ext = ns.pathExtension
+    let base = ns.deletingPathExtension
+    if base.hasSuffix("_blur") || base.hasPrefix("blur_") {
+      return rawFileName
+    }
+    return ext.isEmpty ? "\(base)_blur" : "\(base)_blur.\(ext)"
+  }
+
   /// Resolves the on-disk URL for a relative thumbnail reference (e.g. `"thumbs/a91f4c82.jpg"`).
-  public static func thumbURL(for relativePath: String?, rootDirectory: URL? = nil) -> URL? {
+  public static func thumbURL(
+    for relativePath: String?,
+    blurred: Bool = false,
+    rootDirectory: URL? = nil
+  ) -> URL? {
     guard let raw = relativePath?.trimmingCharacters(in: .whitespacesAndNewlines),
           !raw.isEmpty,
           let root = rootDirectory ?? activeRootDirectory()
@@ -1130,9 +1216,15 @@ public enum WidgetSnapshotStore {
     guard !fileName.isEmpty, fileName != ".", fileName != ".." else {
       return nil
     }
-    let url = root
-      .appendingPathComponent(OurneyWidgetConstants.thumbsSubdirectory, isDirectory: true)
-      .appendingPathComponent(fileName, isDirectory: false)
+    let thumbsDir = root.appendingPathComponent(OurneyWidgetConstants.thumbsSubdirectory, isDirectory: true)
+    if blurred {
+      let blurredName = resolvedThumbFileName(fileName, blurred: true)
+      let blurredURL = thumbsDir.appendingPathComponent(blurredName, isDirectory: false)
+      if FileManager.default.fileExists(atPath: blurredURL.path) {
+        return blurredURL
+      }
+    }
+    let url = thumbsDir.appendingPathComponent(fileName, isDirectory: false)
     return FileManager.default.fileExists(atPath: url.path) ? url : nil
   }
 

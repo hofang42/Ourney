@@ -326,4 +326,22 @@ final class WidgetSnapshotRolloverTests: XCTestCase {
     bridge.clearAllFiles(overrideRootDirectory: tempRoot)
     XCTAssertNil(WidgetSnapshotStore.loadSnapshot(at: afterMidnight, rootDirectory: tempRoot))
   }
+
+  func testDeepLinkQueryEscapesReservedCharactersAndBlurFileNameIsolation() throws {
+    let url = OurneyDeepLinks.capture(journeyId: "journey+1&mode=fast=true")
+    XCTAssertEqual(url.absoluteString, "ourney://capture?journeyId=journey%2B1%26mode%3Dfast%3Dtrue")
+
+    XCTAssertEqual(
+      WidgetSnapshotStore.resolvedThumbFileName("a91f4c82.jpg", blurred: false),
+      "a91f4c82.jpg"
+    )
+    XCTAssertEqual(
+      WidgetSnapshotStore.resolvedThumbFileName("a91f4c82.jpg", blurred: true),
+      "a91f4c82_blur.jpg"
+    )
+    XCTAssertEqual(
+      WidgetSnapshotStore.resolvedThumbFileName("a91f4c82_blur.jpg", blurred: true),
+      "a91f4c82_blur.jpg"
+    )
+  }
 }

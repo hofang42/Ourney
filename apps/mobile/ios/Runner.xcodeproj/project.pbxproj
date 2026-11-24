@@ -46,6 +46,8 @@
 		7D0B00392F10000100000001 /* BeVietnamPro-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00152F10000100000001 /* BeVietnamPro-SemiBold.ttf */; };
 		7D0B003A2F10000100000001 /* BeVietnamPro-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00162F10000100000001 /* BeVietnamPro-Bold.ttf */; };
 		7D0B003B2F10000100000001 /* BricolageGrotesque-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 7D0B00172F10000100000001 /* BricolageGrotesque-Variable.ttf */; };
+		7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D0B000E2F10000100000001 /* WidgetIntents.swift */; };
+		7D0B004C2F10000100000001 /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D0B001B2F10000100000001 /* AppIntents.framework */; settings = {ATTRIBUTES = (Weak, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -158,6 +160,7 @@
 			files = (
 				78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */,
 				7D0B00232F10000100000001 /* ActivityKit.framework in Frameworks */,
+				7D0B004C2F10000100000001 /* AppIntents.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -491,6 +494,7 @@
 				7D0B00202F10000100000001 /* OurneyWidgetBridge.swift in Sources */,
 				7D0B00212F10000100000001 /* OurneyCheckInAttributes.swift in Sources */,
 				7D0B00222F10000100000001 /* WidgetSnapshot.swift in Sources */,
+				7D0B004B2F10000100000001 /* WidgetIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

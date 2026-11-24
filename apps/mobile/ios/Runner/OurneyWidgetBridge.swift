@@ -145,11 +145,19 @@ public final class OurneyWidgetBridge {
     }
 
     let decodedSnapshot = try? JSONDecoder().decode(WidgetSnapshot.self, from: snapshotData)
+    let forceBlurAllPhotos = (decodedSnapshot?.privacy.photoMode == "blurred")
     var referencedThumbNames = Set<String>()
+    var blurredThumbNames = Set<String>()
     if let snap = decodedSnapshot {
       for j in snap.journeys {
         if let f = Self.cleanThumbFileName(j.heroThumbFile) {
-          referencedThumbNames.insert(f)
+          let needsBlur = j.heroThumbBlurred || forceBlurAllPhotos
+          if needsBlur {
+            blurredThumbNames.insert(f)
+          }
+          referencedThumbNames.insert(
+            WidgetSnapshotStore.resolvedThumbFileName(f, blurred: needsBlur)
+          )
         }
       }
       for s in snap.squads {
@@ -158,7 +166,13 @@ public final class OurneyWidgetBridge {
             referencedThumbNames.insert(a)
           }
           if let t = Self.cleanThumbFileName(m.todayThumbFile) {
-            referencedThumbNames.insert(t)
+            let needsBlur = m.todayThumbBlurred || forceBlurAllPhotos
+            if needsBlur {
+              blurredThumbNames.insert(t)
+            }
+            referencedThumbNames.insert(
+              WidgetSnapshotStore.resolvedThumbFileName(t, blurred: needsBlur)
+            )
           }
         }
       }
@@ -173,14 +187,16 @@ public final class OurneyWidgetBridge {
       else {
         continue
       }
-      referencedThumbNames.insert(fileName)
-      let destURL = thumbsDir.appendingPathComponent(fileName, isDirectory: false)
-      // Content-addressed cache hit: skip re-encoding if file already exists.
+      let specBlur = (spec["blur"] as? Bool) ?? false
+      let shouldBlur = specBlur || forceBlurAllPhotos || blurredThumbNames.contains(fileName)
+      let resolvedFileName = WidgetSnapshotStore.resolvedThumbFileName(fileName, blurred: shouldBlur)
+      referencedThumbNames.insert(resolvedFileName)
+      let destURL = thumbsDir.appendingPathComponent(resolvedFileName, isDirectory: false)
+      // Content-addressed cache hit (isolated between blurred and unblurred names): skip re-encoding if file already exists.
       if fm.fileExists(atPath: destURL.path) {
         continue
       }
       let maxSide = (spec["maxSide"] as? Int) ?? (spec["maxSide"] as? NSNumber)?.intValue ?? 320
-      let shouldBlur = (spec["blur"] as? Bool) ?? false
       if processAndWriteThumbnail(
         sourcePath: sourcePath,
         destinationURL: destURL,
@@ -396,16 +412,32 @@ public final class OurneyWidgetBridge {
         let dismissDate = Date().addingTimeInterval(120)
         let content = ActivityContent(state: contentState, staleDate: dismissDate)
         for activity in existingActivities {
-          await activity.end(content, dismissalPolicy: .after(dismissDate))
+          if activity.activityState == .ended || activity.activityState == .dismissed {
+            await activity.end(nil, dismissalPolicy: .immediate)
+          } else {
+            await activity.end(content, dismissalPolicy: .after(dismissDate))
+          }
         }
         DispatchQueue.main.async { result(true) }
         return
       }
 
+      // Clean up any ended, dismissed, or mismatched-windowKey activities so we never call .update()
+      // on a dead/lingering activity or keep a stale windowKey attached (§6.2).
+      var matchingActive: [Activity<OurneyCheckInAttributes>] = []
+      for activity in existingActivities {
+        let isLiveState = (activity.activityState == .active || activity.activityState == .stale)
+        if isLiveState && activity.attributes.windowKey == windowKey {
+          matchingActive.append(activity)
+        } else {
+          await activity.end(nil, dismissalPolicy: .immediate)
+        }
+      }
+
       let content = ActivityContent(state: contentState, staleDate: deadlineDate)
-      if let primary = existingActivities.first {
+      if let primary = matchingActive.first {
         await primary.update(content)
-        for extra in existingActivities.dropFirst() {
+        for extra in matchingActive.dropFirst() {
           await extra.end(nil, dismissalPolicy: .immediate)
         }
         DispatchQueue.main.async { result(true) }

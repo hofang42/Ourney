@@ -466,9 +466,10 @@ public struct OurneyWidgetTheme {
 // MARK: - Typography Helpers
 
 public enum OurneyWidgetFont {
-  /// Hero streak and display numerals (`BricolageGrotesque` variable font bundled via `Info.plist`).
+  /// Hero streak and display numerals (`Bricolage Grotesque` variable font bundled via `Info.plist`,
+  /// `nameID 16 = "Bricolage Grotesque"`).
   public static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-    Font.custom("BricolageGrotesque", size: size).weight(weight)
+    Font.custom("Bricolage Grotesque", size: size).weight(weight)
   }
 
   /// Vietnamese-complete UI body & title font (`BeVietnamPro-Bold` / `BeVietnamPro-SemiBold`).
@@ -591,8 +592,12 @@ public extension Image {
 /// Memory-safe thumbnail loader using `CGImageSourceCreateThumbnailAtIndex` to stay strictly
 /// below WidgetKit's 30 MB Jetsam ceiling (§1.2).
 public enum OurneyThumbLoader {
-  public static func loadDownsampledImage(relativePath: String?, maxPixelSize: Int = 320) -> UIImage? {
-    guard let url = WidgetSnapshotStore.thumbURL(for: relativePath) else {
+  public static func loadDownsampledImage(
+    relativePath: String?,
+    maxPixelSize: Int = 320,
+    blur: Bool = false
+  ) -> UIImage? {
+    guard let url = WidgetSnapshotStore.thumbURL(for: relativePath, blurred: blur) else {
       return nil
     }
     let sourceOptions: [CFString: Any] = [
@@ -686,15 +691,22 @@ public struct OurneyWeekStripView: View {
   public let days: [WidgetWeekDay]
   public let theme: OurneyWidgetTheme
   public let compact: Bool
+  public let locale: String
 
-  public init(days: [WidgetWeekDay], theme: OurneyWidgetTheme, compact: Bool = false) {
+  public init(
+    days: [WidgetWeekDay],
+    theme: OurneyWidgetTheme,
+    compact: Bool = false,
+    locale: String = "vi"
+  ) {
     self.days = days
     self.theme = theme
     self.compact = compact
+    self.locale = locale
   }
 
   public var body: some View {
-    let displayDays = days.isEmpty ? Self.fallbackDays : Array(days.suffix(7))
+    let displayDays = days.isEmpty ? Self.fallbackDays(locale: locale) : Array(days.suffix(7))
     HStack(spacing: compact ? 3 : 4) {
       ForEach(Array(displayDays.enumerated()), id: \.offset) { _, item in
         dayCell(item)
@@ -755,13 +767,19 @@ public struct OurneyWeekStripView: View {
     .frame(maxWidth: .infinity)
   }
 
-  private static let fallbackDays: [WidgetWeekDay] = [
-    WidgetWeekDay(date: "1", day: 18, label: "T4", state: "done"),
-    WidgetWeekDay(date: "2", day: 19, label: "T5", state: "done"),
-    WidgetWeekDay(date: "3", day: 20, label: "T6", state: "done"),
-    WidgetWeekDay(date: "4", day: 21, label: "T7", state: "done"),
-    WidgetWeekDay(date: "5", day: 22, label: "CN", state: "done"),
-    WidgetWeekDay(date: "6", day: 23, label: "T2", state: "done"),
-    WidgetWeekDay(date: "7", day: 24, label: "HN", state: "today"),
-  ]
+  private static func fallbackDays(locale: String) -> [WidgetWeekDay] {
+    let isEn = WidgetL10n.isEnglish(locale)
+    let labels = isEn
+      ? ["We", "Th", "Fr", "Sa", "Su", "Mo", "TD"]
+      : ["T4", "T5", "T6", "T7", "CN", "T2", "HN"]
+    return [
+      WidgetWeekDay(date: "1", day: 18, label: labels[0], state: "done"),
+      WidgetWeekDay(date: "2", day: 19, label: labels[1], state: "done"),
+      WidgetWeekDay(date: "3", day: 20, label: labels[2], state: "done"),
+      WidgetWeekDay(date: "4", day: 21, label: labels[3], state: "done"),
+      WidgetWeekDay(date: "5", day: 22, label: labels[4], state: "done"),
+      WidgetWeekDay(date: "6", day: 23, label: labels[5], state: "done"),
+      WidgetWeekDay(date: "7", day: 24, label: labels[6], state: "today"),
+    ]
+  }
 }

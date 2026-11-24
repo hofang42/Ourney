@@ -26,9 +26,13 @@ public struct CheckInLiveActivity: Widget {
     } dynamicIsland: { context in
       let state = context.state
       let captureURL = OurneyDeepLinks.capture(journeyId: state.journeyId)
-      let flameNumeralColor = state.atRisk
+      let isUrgent = state.atRisk && !state.isCompletedCelebration
+      let flameNumeralColor = isUrgent
         ? Color(.sRGB, red: 1.0, green: 0.302, blue: 0.427, opacity: 1.0) // #FF4D6D
         : Color(.sRGB, red: 0.949, green: 0.663, blue: 0.231, opacity: 1.0) // #F2A93B
+      let headerLabelColor = state.isCompletedCelebration
+        ? OurneyWidgetTheme.cameraDark.success
+        : flameNumeralColor
 
       return DynamicIsland {
         // MARK: Expanded Presentation
@@ -41,14 +45,16 @@ public struct CheckInLiveActivity: Widget {
             )
             VStack(alignment: .leading, spacing: 1) {
               Text(
-                WidgetL10n.liveActivityWindowLabel(
-                  atRisk: state.atRisk,
-                  skinId: state.skinId,
-                  locale: state.locale
-                )
+                state.isCompletedCelebration
+                  ? WidgetL10n.checkedInToday(locale: state.locale).uppercased()
+                  : WidgetL10n.liveActivityWindowLabel(
+                    atRisk: isUrgent,
+                    skinId: state.skinId,
+                    locale: state.locale
+                  )
               )
               .font(OurneyWidgetFont.body(9, bold: true))
-              .foregroundColor(flameNumeralColor)
+              .foregroundColor(headerLabelColor)
               .lineLimit(1)
 
               Text(state.journeyTitle)
@@ -69,7 +75,7 @@ public struct CheckInLiveActivity: Widget {
                 .foregroundColor(flameNumeralColor)
             }
 
-            LiveActivityDismissButton()
+            LiveActivityDismissButton(locale: state.locale)
           }
         }
 
@@ -219,9 +225,11 @@ private struct CheckInLockScreenBannerView: View {
   var body: some View {
     let dark = OurneyWidgetTheme.cameraDark
     let captureURL = OurneyDeepLinks.capture(journeyId: state.journeyId)
-    let flameColor = state.atRisk
+    let isUrgent = state.atRisk && !state.isCompletedCelebration
+    let flameColor = isUrgent
       ? Color(.sRGB, red: 1.0, green: 0.302, blue: 0.427, opacity: 1.0)
       : dark.flame
+    let headerLabelColor = state.isCompletedCelebration ? dark.success : flameColor
 
     VStack(alignment: .leading, spacing: 8) {
       HStack(alignment: .center, spacing: 8) {
@@ -229,14 +237,16 @@ private struct CheckInLockScreenBannerView: View {
 
         VStack(alignment: .leading, spacing: 2) {
           Text(
-            WidgetL10n.liveActivityWindowLabel(
-              atRisk: state.atRisk,
-              skinId: state.skinId,
-              locale: state.locale
-            )
+            state.isCompletedCelebration
+              ? WidgetL10n.checkedInToday(locale: state.locale).uppercased()
+              : WidgetL10n.liveActivityWindowLabel(
+                atRisk: isUrgent,
+                skinId: state.skinId,
+                locale: state.locale
+              )
           )
           .font(OurneyWidgetFont.body(9.5, bold: true))
-          .foregroundColor(flameColor)
+          .foregroundColor(headerLabelColor)
           .lineLimit(1)
 
           Text(
@@ -271,7 +281,7 @@ private struct CheckInLockScreenBannerView: View {
             .strokeBorder(dark.outline, lineWidth: 1.2)
         )
 
-        LiveActivityDismissButton()
+        LiveActivityDismissButton(locale: state.locale)
       }
 
       LiveActivitySegmentedBar(
@@ -355,6 +365,8 @@ private struct LiveActivitySegmentedBar: View {
 
 @available(iOSApplicationExtension 16.2, iOS 16.2, *)
 private struct LiveActivityDismissButton: View {
+  let locale: String
+
   var body: some View {
     #if canImport(AppIntents)
     if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
@@ -362,6 +374,8 @@ private struct LiveActivityDismissButton: View {
         dismissGlyph
       }
       .buttonStyle(.plain)
+      .accessibilityLabel(WidgetL10n.dismissLiveActivityVoiceOverLabel(locale: locale))
+      .padding(-6)
     }
     #endif
   }
@@ -382,7 +396,8 @@ private struct LiveActivityDismissButton: View {
         overrideColor: OurneyWidgetTheme.cameraDark.inkMuted
       )
     }
-    .frame(minWidth: 32, minHeight: 32)
+    .frame(minWidth: 44, minHeight: 44)
+    .contentShape(Rectangle())
   }
 }
 #endif

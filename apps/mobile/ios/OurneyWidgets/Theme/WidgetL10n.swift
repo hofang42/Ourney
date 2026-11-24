@@ -205,4 +205,21 @@ public enum WidgetL10n {
       return "\(squad.title), \(squad.doneCount) trên \(squad.memberCount) thành viên đã chụp hôm nay."
     }
   }
+
+  public static func cycleJourneyVoiceOverLabel(
+    currentIndex: Int,
+    totalPending: Int,
+    locale: String
+  ) -> String {
+    let en = isEnglish(locale)
+    if en {
+      return "Cycle next pending journey, \(currentIndex) of \(totalPending)"
+    } else {
+      return "Đổi sang hành trình chờ chụp tiếp theo, \(currentIndex) trên \(totalPending)"
+    }
+  }
+
+  public static func dismissLiveActivityVoiceOverLabel(locale: String) -> String {
+    isEnglish(locale) ? "Dismiss check-in reminder" : "Ẩn lời nhắc check-in hôm nay"
+  }
 }

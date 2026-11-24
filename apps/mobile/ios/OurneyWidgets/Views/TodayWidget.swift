@@ -172,6 +172,8 @@ private struct TodaySmallView: View {
     let phase = journey.phase(at: entryDate)
     let pendingList = snapshot.journeys.filter { !$0.checkedInToday }
     let pendingIndex = (pendingList.firstIndex(where: { $0.id == journey.id }) ?? 0) + 1
+    let showCycleControl = pendingList.count >= 2 && !journey.checkedInToday
+    let shouldBlurHero = journey.heroThumbBlurred || snapshot.privacy.photoMode == "blurred"
     let destination = journey.checkedInToday
       ? OurneyDeepLinks.journey(id: journey.id)
       : OurneyDeepLinks.capture(journeyId: journey.id)
@@ -189,10 +191,11 @@ private struct TodaySmallView: View {
 
         Spacer(minLength: 2)
 
-        if pendingList.count >= 2 && !journey.checkedInToday {
+        if showCycleControl {
           TodayCycleJourneyButton(
             currentIndex: pendingIndex,
             totalPending: pendingList.count,
+            locale: locale,
             theme: theme
           )
         }
@@ -201,7 +204,11 @@ private struct TodaySmallView: View {
       // Middle: Completed Polaroid preview or Journey title + urgency status
       if journey.checkedInToday,
          snapshot.privacy.allowsPhotosOnHomeScreen,
-         let uiImage = OurneyThumbLoader.loadDownsampledImage(relativePath: journey.heroThumbFile, maxPixelSize: 240) {
+         let uiImage = OurneyThumbLoader.loadDownsampledImage(
+           relativePath: journey.heroThumbFile,
+           maxPixelSize: 240,
+           blur: shouldBlurHero
+         ) {
         HStack(spacing: 8) {
           Image(uiImage: uiImage)
             .resizable()
@@ -286,12 +293,34 @@ private struct TodaySmallView: View {
           )
           .ourneyWidgetAccentable(!journey.checkedInToday)
         }
+        .accessibilityLabel(
+          WidgetL10n.todayVoiceOverLabel(journey: journey, phase: phase, locale: locale)
+        )
       }
     }
-    .accessibilityElement(children: .combine)
-    .accessibilityLabel(
-      WidgetL10n.todayVoiceOverLabel(journey: journey, phase: phase, locale: locale)
+    .ourneyTodaySmallAccessibility(
+      hasInteractiveCycle: showCycleControl,
+      label: WidgetL10n.todayVoiceOverLabel(journey: journey, phase: phase, locale: locale)
     )
+  }
+}
+
+private extension View {
+  @ViewBuilder
+  func ourneyTodaySmallAccessibility(hasInteractiveCycle: Bool, label: String) -> some View {
+    #if canImport(AppIntents)
+    if #available(iOSApplicationExtension 17.0, iOS 17.0, *), hasInteractiveCycle {
+      self.accessibilityElement(children: .contain)
+    } else {
+      self
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(label)
+    }
+    #else
+    self
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(label)
+    #endif
   }
 }
 
@@ -329,6 +358,7 @@ private struct TodayMediumView: View {
             TodayCycleJourneyButton(
               currentIndex: pendingIndex,
               totalPending: pendingList.count,
+              locale: locale,
               theme: theme
             )
           }
@@ -345,15 +375,20 @@ private struct TodayMediumView: View {
 
         Spacer(minLength: 2)
 
-        OurneyWeekStripView(days: journey.weekStrip, theme: theme, compact: true)
+        OurneyWeekStripView(days: journey.weekStrip, theme: theme, compact: true, locale: locale)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
 
       // Right column: Completed Polaroid Frame or Streak Card + Snap CTA
+      let shouldBlurHero = journey.heroThumbBlurred || snapshot.privacy.photoMode == "blurred"
       VStack(spacing: 6) {
         if journey.checkedInToday,
            snapshot.privacy.allowsPhotosOnHomeScreen,
-           let uiImage = OurneyThumbLoader.loadDownsampledImage(relativePath: journey.heroThumbFile, maxPixelSize: 280) {
+           let uiImage = OurneyThumbLoader.loadDownsampledImage(
+             relativePath: journey.heroThumbFile,
+             maxPixelSize: 280,
+             blur: shouldBlurHero
+           ) {
           Link(destination: destination) {
             VStack(spacing: 3) {
               Image(uiImage: uiImage)
@@ -484,6 +519,7 @@ private struct TodayLargeView: View {
           TodayCycleJourneyButton(
             currentIndex: pendingIndex,
             totalPending: pendingList.count,
+            locale: locale,
             theme: theme
           )
         }
@@ -540,7 +576,7 @@ private struct TodayLargeView: View {
           }
         }
 
-        OurneyWeekStripView(days: journey.weekStrip, theme: theme, compact: false)
+        OurneyWeekStripView(days: journey.weekStrip, theme: theme, compact: false, locale: locale)
 
         Link(destination: destination) {
           HStack(spacing: 6) {
@@ -645,29 +681,42 @@ private struct TodayLargeView: View {
 private struct TodayCycleJourneyButton: View {
   let currentIndex: Int
   let totalPending: Int
+  let locale: String
   let theme: OurneyWidgetTheme
 
   var body: some View {
     #if canImport(AppIntents)
     if #available(iOSApplicationExtension 17.0, iOS 17.0, *) {
       Button(intent: CycleTodayJourneyIntent()) {
-        pillContent
+        pillContent(showChevron: true)
+          .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+          .contentShape(Rectangle())
       }
       .buttonStyle(.plain)
+      .accessibilityLabel(
+        WidgetL10n.cycleJourneyVoiceOverLabel(
+          currentIndex: currentIndex,
+          totalPending: totalPending,
+          locale: locale
+        )
+      )
+      .padding(.vertical, -10)
     } else {
-      pillContent
+      pillContent(showChevron: false)
     }
     #else
-    pillContent
+    pillContent(showChevron: false)
     #endif
   }
 
-  private var pillContent: some View {
+  private func pillContent(showChevron: Bool) -> some View {
     HStack(spacing: 2) {
       Text("\(currentIndex)/\(totalPending)")
         .font(OurneyWidgetFont.body(9.5, bold: true))
         .foregroundColor(theme.ink)
-      OurneyIconView(name: "chevron-right", size: 11, flat: true, overrideColor: theme.ink)
+      if showChevron {
+        OurneyIconView(name: "chevron-right", size: 11, flat: true, overrideColor: theme.ink)
+      }
     }
     .padding(.horizontal, 7)
     .padding(.vertical, 3)

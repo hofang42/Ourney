@@ -33,38 +33,6 @@
         }
       }
     },
-    "Select Journey" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select Journey"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chọn hành trình"
-          }
-        }
-      }
-    },
-    "Select Squad" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select Squad"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chọn nhóm đồng hành"
-          }
-        }
-      }
-    },
     "widget.lock.gallery.desc" : {
       "localizations" : {
         "en" : {

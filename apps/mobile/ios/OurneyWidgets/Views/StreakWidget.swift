@@ -143,7 +143,7 @@ private struct StreakSmallCardView: View {
       Spacer(minLength: 0)
 
       // Bottom: 7-square compact week chain
-      OurneyWeekStripView(days: journey.weekStrip, theme: theme, compact: true)
+      OurneyWeekStripView(days: journey.weekStrip, theme: theme, compact: true, locale: locale)
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(

@@ -36,47 +36,18 @@ public struct EndCheckInWindowIntent: LiveActivityIntent {
 
   public func perform() async throws -> some IntentResult {
     #if canImport(ActivityKit)
-    let activeKey = Activity<OurneyCheckInAttributes>.activities.first?.attributes.windowKey
+    let activities = Activity<OurneyCheckInAttributes>.activities
+    let activeKey = activities.first(where: {
+      $0.activityState == .active || $0.activityState == .stale
+    })?.attributes.windowKey ?? activities.first?.attributes.windowKey
     _ = WidgetSnapshotStore.recordDismissedWindow(windowKey: activeKey)
-    for activity in Activity<OurneyCheckInAttributes>.activities {
+    for activity in activities {
       await activity.end(nil, dismissalPolicy: .immediate)
     }
     #else
     _ = WidgetSnapshotStore.recordDismissedWindow(windowKey: nil)
     #endif
     return .result()
-  }
-}
-
-/// Optional widget configuration intent for selecting a specific journey (§3.1).
-@available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct SelectJourneyIntent: WidgetConfigurationIntent {
-  public static var title: LocalizedStringResource = "Select Journey"
-  public static var description = IntentDescription("Choose which journey to highlight.")
-
-  @Parameter(title: "Journey ID")
-  public var journeyId: String?
-
-  public init() {}
-
-  public init(journeyId: String?) {
-    self.journeyId = journeyId
-  }
-}
-
-/// Optional widget configuration intent for selecting a specific Squad or Couple journey (§3.1).
-@available(iOS 17.0, iOSApplicationExtension 17.0, *)
-public struct SelectGroupIntent: WidgetConfigurationIntent {
-  public static var title: LocalizedStringResource = "Select Squad"
-  public static var description = IntentDescription("Choose which Squad or Couple journey to display.")
-
-  @Parameter(title: "Squad Journey ID")
-  public var groupId: String?
-
-  public init() {}
-
-  public init(groupId: String?) {
-    self.groupId = groupId
   }
 }
 #endif

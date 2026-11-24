@@ -46,15 +46,12 @@ public struct OurneyIconView: View {
 
         let tiny = min(canvasSize.width, canvasSize.height) < 16.0
         let strokeStyle = StrokeStyle(
-          lineWidth: tiny ? 1.5 : 2.0,
+          lineWidth: tiny ? 1.6 : 2.0,
           lineCap: .round,
           lineJoin: .round
         )
 
         if useFlat {
-          if !spec.isOpenStroke && !fillPath.isEmpty {
-            context.fill(fillPath, with: .color(fillColor))
-          }
           context.stroke(strokePath, with: .color(fillColor), style: strokeStyle)
           return
         }
