@@ -25,7 +25,6 @@ import 'overlays/reminder_banner.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart' show OurneyTextScaleClamp;
-import 'theme/tokens.dart' show OurneyDurations;
 
 class OurneyApp extends ConsumerWidget {
   const OurneyApp({super.key});
@@ -46,11 +45,9 @@ class OurneyApp extends ConsumerWidget {
     final skin = ref.watch(activePersonaSkinProvider);
     final locale = ref.watch(localeOverrideProvider);
     final onboarded = ref.watch(onboardingCompleteProvider);
-    final reduceMotion = WidgetsBinding
-        .instance
-        .platformDispatcher
-        .accessibilityFeatures
-        .disableAnimations;
+    final a11y =
+        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
+    final reduceMotion = a11y.disableAnimations || a11y.reduceMotion;
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).app_name,
       debugShowCheckedModeBanner: false,
@@ -60,9 +57,9 @@ class OurneyApp extends ConsumerWidget {
       darkTheme: OurneyTheme.build(Brightness.dark, skin),
       themeMode: ref.watch(themeModeProvider),
       themeAnimationDuration: reduceMotion
-          ? OurneyDurations.reducedFade
-          : OurneyDurations.personaTheme,
-      themeAnimationCurve: Curves.easeOutCubic,
+          ? UiMotion.reducedFade
+          : UiMotion.theme,
+      themeAnimationCurve: UiCurves.easeOutStrong,
       supportedLocales: ourneySupportedLocales,
       localizationsDelegates: ourneyLocalizationsDelegates,
       // Reminders: reschedule on start/resume, open the journey camera on a
@@ -141,20 +138,81 @@ class _SplashGateState extends State<_SplashGate>
   static const _taglineEvery = 1200;
 
   late final int _holdMs = widget.returning ? 650 : 2400;
-  late final int _fadeMs = widget.returning ? 200 : 300;
+  late final int _normalFadeMs = widget.returning ? 200 : 300;
+  int _fadeMs = 300;
+  bool _reduced = false;
+  bool _started = false;
+  int _taglineIndex = 0;
+  bool _ignoring = false;
+  bool _completed = false;
+
   late final AnimationController _c = AnimationController(
     vsync: this,
-    duration: Duration(milliseconds: _holdMs + _fadeMs),
+    duration: Duration(milliseconds: _holdMs + _normalFadeMs),
+  )..addListener(_onTick);
+
+  CurvedAnimation? _fadeCurved;
+  late Animation<double> _opacityAnim = const AlwaysStoppedAnimation<double>(
+    1.0,
   );
 
+  void _configureFade(bool reduced) {
+    final nextFadeMs = reduced
+        ? UiMotion.reducedFade.inMilliseconds
+        : _normalFadeMs;
+    if (_started && _reduced == reduced && _fadeMs == nextFadeMs) return;
+    _reduced = reduced;
+    _fadeMs = nextFadeMs;
+    final totalMs = _holdMs + _fadeMs;
+    _c.duration = Duration(milliseconds: totalMs);
+    _fadeCurved?.dispose();
+    final holdEnd = _holdMs / totalMs;
+    final curved = CurvedAnimation(
+      parent: _c,
+      curve: Interval(
+        holdEnd,
+        1.0,
+        curve: reduced ? Curves.linear : UiCurves.easeOutStrong,
+      ),
+    );
+    _fadeCurved = curved;
+    _opacityAnim = ReverseAnimation(curved);
+  }
+
+  void _onTick() {
+    if (!mounted) return;
+    final total = _holdMs + _fadeMs;
+    final elapsed = _c.value * total;
+    final t = ((elapsed - _holdMs) / _fadeMs).clamp(0.0, 1.0);
+    final nextIndex = _reduced ? 0 : (elapsed ~/ _taglineEvery);
+    final nextIgnoring = t > 0.5;
+    final nextCompleted = _c.isCompleted;
+    if (nextIndex != _taglineIndex ||
+        nextIgnoring != _ignoring ||
+        nextCompleted != _completed) {
+      setState(() {
+        _taglineIndex = nextIndex;
+        _ignoring = nextIgnoring;
+        _completed = nextCompleted;
+      });
+    }
+  }
+
   @override
-  void initState() {
-    super.initState();
-    _c.forward();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = UiMotion.reduced(context);
+    _configureFade(reduced);
+    if (!_started) {
+      _started = true;
+      _c.forward();
+    }
   }
 
   @override
   void dispose() {
+    _c.removeListener(_onTick);
+    _fadeCurved?.dispose();
     _c.dispose();
     super.dispose();
   }
@@ -167,51 +225,41 @@ class _SplashGateState extends State<_SplashGate>
 
   @override
   Widget build(BuildContext context) {
-    if (_c.isCompleted) return widget.child;
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (_completed || _c.isCompleted) return widget.child;
+    final reduce = UiMotion.reduced(context);
     final l10n = OnboardingL10n.of(context);
     final taglines = [
       l10n.onboarding_splashTagline1,
       l10n.onboarding_splashTagline2,
       l10n.onboarding_splashTagline3,
     ];
+    final index = reduce ? 0 : (_taglineIndex % taglines.length);
     return Stack(
       fit: StackFit.expand,
       children: [
         widget.child,
-        AnimatedBuilder(
-          animation: _c,
-          builder: (context, _) {
-            if (_c.isCompleted) return const SizedBox.shrink();
-            final total = _holdMs + _fadeMs;
-            final elapsed = _c.value * total;
-            final t = ((elapsed - _holdMs) / _fadeMs).clamp(0.0, 1.0);
-            final index = reduce
-                ? 0
-                : (elapsed ~/ _taglineEvery) % taglines.length;
-            return IgnorePointer(
-              ignoring: t > 0.5,
-              child: Opacity(
-                opacity: reduce ? (t < 1 ? 1 : 0) : 1 - t,
-                child: Semantics(
-                  button: !widget.returning,
-                  label: widget.returning
-                      ? l10n.onboarding_splashOpening
-                      : l10n.onboarding_splashStart,
-                  excludeSemantics: true,
-                  onTap: widget.returning ? null : _skipHold,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: widget.returning ? null : _skipHold,
-                    child: UiSplash(
-                      returning: widget.returning,
-                      tagline: widget.returning ? null : taglines[index],
-                    ),
-                  ),
+        IgnorePointer(
+          ignoring: _ignoring,
+          child: FadeTransition(
+            opacity: _opacityAnim,
+            child: Semantics(
+              button: !widget.returning,
+              label: widget.returning
+                  ? l10n.onboarding_splashOpening
+                  : l10n.onboarding_splashStart,
+              excludeSemantics: true,
+              onTap: widget.returning ? null : _skipHold,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.returning ? null : _skipHold,
+                child: UiSplash(
+                  returning: widget.returning,
+                  firstLaunch: !widget.returning,
+                  tagline: widget.returning ? null : taglines[index],
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       ],
     );

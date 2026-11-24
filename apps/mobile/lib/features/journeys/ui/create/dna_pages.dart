@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -55,8 +56,12 @@ class DnaChoiceList extends StatelessWidget {
     final selected = value == id;
     return UiPressable(
       key: ValueKey('dna-choice-${question.key}-$id'),
-      onPressed: () => onChanged(id),
+      onPressed: () {
+        unawaited(UiHaptics.selection());
+        onChanged(id);
+      },
       selected: selected,
+      pressOffset: UiShadow.tiny,
       semanticLabel: hint == null ? label : '$label, $hint',
       excludeChildSemantics: true,
       borderRadius: BorderRadius.circular(UiRadius.card),
@@ -120,8 +125,8 @@ class DnaChoiceList extends StatelessWidget {
 }
 
 /// Weight question: 40-120 kg slider, private chip, hide-on-share switch,
-/// skip link.
-class DnaWeightPicker extends StatelessWidget {
+/// skip link. Emits [UiHaptics.selection] on each integer-kg detent crossing.
+class DnaWeightPicker extends StatefulWidget {
   const DnaWeightPicker({
     required this.weight,
     required this.hide,
@@ -136,6 +141,30 @@ class DnaWeightPicker extends StatelessWidget {
   final ValueChanged<int> onWeight;
   final ValueChanged<bool> onHide;
   final VoidCallback onSkip;
+
+  @override
+  State<DnaWeightPicker> createState() => _DnaWeightPickerState();
+}
+
+class _DnaWeightPickerState extends State<DnaWeightPicker> {
+  late int _lastDetentWeight = widget.weight;
+
+  @override
+  void didUpdateWidget(covariant DnaWeightPicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.weight != oldWidget.weight) {
+      _lastDetentWeight = widget.weight;
+    }
+  }
+
+  void _handleSliderChanged(double v) {
+    final next = v.round().clamp(dnaWeightMin, dnaWeightMax);
+    if (next != _lastDetentWeight) {
+      _lastDetentWeight = next;
+      unawaited(UiHaptics.selection());
+    }
+    widget.onWeight(next);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +182,7 @@ class DnaWeightPicker extends StatelessWidget {
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  '$weight',
+                  '${widget.weight}',
                   key: const ValueKey('dna-weight-value'),
                   style: UiText.h1(
                     color: ui.ink,
@@ -173,12 +202,12 @@ class DnaWeightPicker extends StatelessWidget {
           label: l10n.journeys_dna_weight_a11y,
           child: Slider(
             key: const ValueKey('dna-weight-slider'),
-            value: weight.toDouble(),
+            value: widget.weight.toDouble(),
             min: dnaWeightMin.toDouble(),
             max: dnaWeightMax.toDouble(),
             divisions: dnaWeightMax - dnaWeightMin,
             activeColor: ui.accent,
-            onChanged: (v) => onWeight(v.round()),
+            onChanged: _handleSliderChanged,
           ),
         ),
         Row(
@@ -208,13 +237,13 @@ class DnaWeightPicker extends StatelessWidget {
         UiSwitchRow(
           key: const ValueKey('dna-hide-weight'),
           label: l10n.journeys_dna_weight_hide,
-          value: hide,
-          onChanged: onHide,
+          value: widget.hide,
+          onChanged: widget.onHide,
         ),
         UiButton.ghost(
           key: const ValueKey('dna-weight-skip'),
           label: l10n.journeys_dna_weight_skip,
-          onPressed: onSkip,
+          onPressed: widget.onSkip,
         ),
       ],
     );
@@ -380,10 +409,12 @@ class DnaPlacePicker extends StatelessWidget {
                 child: UiPressable(
                   key: ValueKey('dna-$id'),
                   onPressed: () {
+                    unawaited(UiHaptics.selection());
                     controller.text = name;
                     onChanged(name);
                   },
                   selected: selected,
+                  pressOffset: UiShadow.tiny,
                   semanticLabel: '$name, ${l10n.journeys_dna_place_country}',
                   excludeChildSemantics: true,
                   borderRadius: BorderRadius.circular(UiRadius.input),
@@ -707,24 +738,47 @@ class DnaForge extends StatefulWidget {
 
 class _DnaForgeState extends State<DnaForge>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1200),
-  );
+  AnimationController? _c;
+  CurvedAnimation? _curved;
+  Animation<double>? _scale;
+
+  Animation<double> _ensureScale() {
+    var scale = _scale;
+    if (scale != null) return scale;
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    final curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.easeInOutStrong,
+    );
+    scale = Tween<double>(begin: 0.9, end: 1.1).animate(curved);
+    _c = ctrl;
+    _curved = curved;
+    _scale = scale;
+    return scale;
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
-      _c.stop();
-    } else if (!_c.isAnimating) {
-      _c.repeat(reverse: true);
+    final shouldAnimate =
+        !UiMotion.reduced(context) && TickerMode.valuesOf(context).enabled;
+    if (!shouldAnimate) {
+      _c?.stop();
+    } else {
+      _ensureScale();
+      if (!_c!.isAnimating) {
+        _c!.repeat(reverse: true);
+      }
     }
   }
 
   @override
   void dispose() {
-    _c.dispose();
+    _curved?.dispose();
+    _c?.dispose();
     super.dispose();
   }
 
@@ -732,6 +786,19 @@ class _DnaForgeState extends State<DnaForge>
   Widget build(BuildContext context) {
     final ui = context.ui;
     final l10n = JourneysL10n.of(context);
+    final reduced = UiMotion.reduced(context);
+    final seal = Container(
+      key: const ValueKey('dna-forge-seal'),
+      width: 96,
+      height: 96,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: ui.accent,
+        shape: BoxShape.circle,
+        border: Border.all(color: ui.outline, width: 3),
+      ),
+      child: OurneyIcon(name: 'trophy', size: 44),
+    );
     return Semantics(
       liveRegion: true,
       label: l10n.journeys_dna_forge_a11y,
@@ -742,22 +809,13 @@ class _DnaForgeState extends State<DnaForge>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ScaleTransition(
-                scale: Tween<double>(
-                  begin: 0.9,
-                  end: 1.1,
-                ).animate(CurvedAnimation(parent: _c, curve: Curves.easeInOut)),
-                child: Container(
-                  width: 96,
-                  height: 96,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: ui.accent,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: ui.outline, width: 3),
-                  ),
-                  child: OurneyIcon(name: 'trophy', size: 44),
-                ),
+              RepaintBoundary(
+                child: reduced
+                    ? seal
+                    : ScaleTransition(
+                        scale: _ensureScale(),
+                        child: seal,
+                      ),
               ),
               const SizedBox(height: UiSpace.lg),
               Padding(
