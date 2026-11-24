@@ -1289,7 +1289,7 @@ security definer
 set search_path = ''
 as $$
 declare
-  r record;
+  v_journey_id uuid;
   v_prev_flag text := coalesce(current_setting('ourney.fr_internal_write', true), '');
 begin
   -- Consistent lock hierarchy (profiles -> journeys ordered by id) matching join_by_code / send_group_invitation.
@@ -1331,13 +1331,13 @@ begin
     where private.pending_storage_purge.user_id = excluded.user_id
        or exists (select 1 from auth.users u where u.id = private.pending_storage_purge.user_id);
 
-  for r in
+  for v_journey_id in
     select m.journey_id from public.memberships m
      where m.user_id = p_user and m.status = 'active' and m.deleted_at is null
        and m.journey_id not in (select public._journeys_dying_with(p_user))
      order by m.journey_id
   loop
-    perform public._leave_journey(r.journey_id, p_user);
+    perform public._leave_journey(v_journey_id, p_user);
   end loop;
   delete from public.journeys where id in (select public._journeys_dying_with(p_user));
   delete from private.join_attempts where user_id = p_user;
@@ -1376,10 +1376,10 @@ begin
         where child.duplicate_of = fr.id
      )
      and not exists (
-       select 1 from public.reports r
-        where r.target_feature_request_id = fr.id
-          and r.deleted_at is null
-          and r.status = 'open'
+       select 1 from public.reports rep
+        where rep.target_feature_request_id = fr.id
+          and rep.deleted_at is null
+          and rep.status = 'open'
      )
      and not exists (
        select 1 from public.moderation_queue mq
