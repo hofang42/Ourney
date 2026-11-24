@@ -45,6 +45,7 @@ class UiCard extends StatelessWidget {
     this.borderColor,
     this.onPressed,
     this.semanticLabel,
+    this.excludeChildSemantics = false,
     this.shadowOffset = UiShadow.large,
     super.key,
   });
@@ -56,6 +57,7 @@ class UiCard extends StatelessWidget {
   final Color? borderColor;
   final VoidCallback? onPressed;
   final String? semanticLabel;
+  final bool excludeChildSemantics;
   final double shadowOffset;
 
   @override
@@ -81,7 +83,7 @@ class UiCard extends StatelessWidget {
     return UiPressable(
       onPressed: onPressed,
       semanticLabel: semanticLabel,
-      excludeChildSemantics: semanticLabel != null,
+      excludeChildSemantics: excludeChildSemantics,
       borderRadius: shape,
       shadowOffset: shadowOffset,
       child: box,
