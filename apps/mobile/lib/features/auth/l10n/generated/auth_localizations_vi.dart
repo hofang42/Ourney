@@ -42,9 +42,6 @@ class AuthL10nVi extends AuthL10n {
   String get auth_codeLabel => 'Mã 6 số';
 
   @override
-  String get auth_codeInvalidFormat => 'Mã gồm đúng 6 chữ số.';
-
-  @override
   String get auth_verify => 'Xác nhận';
 
   @override
@@ -79,21 +76,10 @@ class AuthL10nVi extends AuthL10n {
   String get auth_errorGeneric => 'Có lỗi xảy ra. Thử lại nhé.';
 
   @override
-  String get auth_eyebrow => 'OURNEY';
-
-  @override
-  String get auth_eyebrowCheck => 'KIỂM TRA EMAIL';
-
-  @override
   String get auth_terms => 'Điều khoản';
 
   @override
   String get auth_privacy => 'Chính sách riêng tư';
-
-  @override
-  String auth_digitSemantics(int n) {
-    return 'Chữ số $n trên 6';
-  }
 
   @override
   String get auth_tabEmail => 'Email';
@@ -207,4 +193,8 @@ class AuthL10nVi extends AuthL10n {
   @override
   String get auth_errorSmsFailed =>
       'Chưa gửi được SMS. Kiểm tra số rồi thử lại sau ít phút.';
+
+  @override
+  String get auth_errorSamePassword =>
+      'Mật khẩu mới cần khác mật khẩu hiện tại.';
 }

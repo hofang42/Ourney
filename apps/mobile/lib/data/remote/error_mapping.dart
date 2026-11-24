@@ -30,7 +30,9 @@ OurneyException mapRemoteError(Object error) {
     case AuthException(:final statusCode, :final message, :final code):
       return OurneyException(
         _authCodeFor(code, statusCode),
-        '$statusCode: $message',
+        code == null || code.isEmpty
+            ? '$statusCode: $message'
+            : '$statusCode ($code): $message',
       );
     case SocketException() ||
         HttpException() ||
@@ -81,11 +83,23 @@ OurneyErrorCode _storageCode(String? status, String message, String? error) {
 /// Supabase Auth's own `error_code` wins over the HTTP status.
 OurneyErrorCode _authCodeFor(String? code, String? status) => switch (code) {
   'phone_provider_disabled' ||
-  'sms_provider_disabled' => OurneyErrorCode.unavailable,
+  'sms_provider_disabled' ||
+  'email_provider_disabled' ||
+  'signup_disabled' ||
+  'otp_disabled' => OurneyErrorCode.unavailable,
   'sms_send_failed' => OurneyErrorCode.internal,
-  'otp_expired' => OurneyErrorCode.invalid,
+  'email_address_not_authorized' ||
+  'captcha_failed' ||
+  'user_banned' => OurneyErrorCode.forbidden,
+  'otp_expired' ||
+  'validation_failed' ||
+  'email_address_invalid' ||
+  'phone_invalid' ||
+  'same_password' ||
+  'weak_password' => OurneyErrorCode.invalid,
   'over_sms_send_rate_limit' ||
-  'over_email_send_rate_limit' => OurneyErrorCode.rateLimited,
+  'over_email_send_rate_limit' ||
+  'over_request_rate_limit' => OurneyErrorCode.rateLimited,
   _ => _authCode(status),
 };
 

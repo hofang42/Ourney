@@ -252,7 +252,7 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_eula5Body =>
-      'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào trong Hồ sơ.';
+      'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào tại Hồ sơ > Cài đặt > Xóa tài khoản.';
 
   @override
   String get safety_eula6Title => '6. Miễn trừ và thay đổi';
@@ -266,7 +266,7 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_privacy1Body =>
-      'Email (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.';
+      'Email hoặc số điện thoại (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.';
 
   @override
   String get safety_privacy2Title => 'Ai thấy được';
@@ -294,14 +294,14 @@ class SafetyL10nVi extends SafetyL10n {
 
   @override
   String get safety_privacy5Body =>
-      'Vào Hồ sơ > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.';
+      'Vào Hồ sơ > Cài đặt > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.';
 
   @override
   String get safety_privacy6Title => 'Liên hệ';
 
   @override
   String get safety_privacy6Body =>
-      'Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.';
+      'Có câu hỏi về quyền riêng tư? Mở Hồ sơ > Cài đặt > Liên hệ.';
 
   @override
   String get safety_eulaAcceptSignOut => 'Đăng xuất';

@@ -521,7 +521,7 @@ abstract class SafetyL10n {
   /// EULA section body.
   ///
   /// In vi, this message translates to:
-  /// **'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào trong Hồ sơ.'**
+  /// **'Chúng mình có thể tạm khóa hoặc xóa tài khoản vi phạm các điều khoản này mà không cần báo trước. Bạn có thể xóa tài khoản bất cứ lúc nào tại Hồ sơ > Cài đặt > Xóa tài khoản.'**
   String get safety_eula5Body;
 
   /// EULA section heading.
@@ -545,7 +545,7 @@ abstract class SafetyL10n {
   /// Privacy section body: data stored.
   ///
   /// In vi, this message translates to:
-  /// **'Email (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.'**
+  /// **'Email hoặc số điện thoại (để đăng nhập); tên hiển thị, username và ảnh đại diện; hành trình bạn tạo; check-in gồm ảnh, chú thích, số liệu (ví dụ cân nặng) và thời điểm chụp; reaction; báo cáo và danh sách chặn của bạn.'**
   String get safety_privacy1Body;
 
   /// Privacy section heading.
@@ -593,7 +593,7 @@ abstract class SafetyL10n {
   /// Privacy section body: deletion.
   ///
   /// In vi, this message translates to:
-  /// **'Vào Hồ sơ > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.'**
+  /// **'Vào Hồ sơ > Cài đặt > Xóa tài khoản để xóa vĩnh viễn tài khoản, mọi check-in và ảnh của bạn trên máy chủ. Nếu bạn là chủ nhóm, quyền chủ nhóm được chuyển cho thành viên tham gia sớm nhất.'**
   String get safety_privacy5Body;
 
   /// Privacy section heading.
@@ -605,7 +605,7 @@ abstract class SafetyL10n {
   /// Privacy section body: contact.
   ///
   /// In vi, this message translates to:
-  /// **'Có câu hỏi về quyền riêng tư? Xem trang Liên hệ trong mục An toàn & hỗ trợ.'**
+  /// **'Có câu hỏi về quyền riêng tư? Mở Hồ sơ > Cài đặt > Liên hệ.'**
   String get safety_privacy6Body;
 
   /// Escape on the terms gate: sign out instead of agreeing.

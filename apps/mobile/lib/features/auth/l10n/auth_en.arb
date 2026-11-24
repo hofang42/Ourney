@@ -10,7 +10,6 @@
   "auth_sendCode": "Send code",
   "auth_sending": "Sending…",
   "auth_codeLabel": "6-digit code",
-  "auth_codeInvalidFormat": "The code is exactly 6 digits.",
   "auth_verify": "Confirm",
   "auth_verifying": "Checking…",
   "auth_resend": "Resend code",
@@ -21,11 +20,8 @@
   "auth_errorRateLimited": "Too many tries. Wait a moment and try again.",
   "auth_errorOffline": "You're offline. Reconnect and try again.",
   "auth_errorGeneric": "Something went wrong. Please try again.",
-  "auth_eyebrow": "OURNEY",
-  "auth_eyebrowCheck": "CHECK YOUR EMAIL",
   "auth_terms": "Terms",
   "auth_privacy": "Privacy Policy",
-  "auth_digitSemantics": "Digit {n} of 6",
   "auth_tabEmail": "Email",
   "auth_tabPhone": "Phone",
   "auth_phoneLabel": "Phone number",
@@ -105,5 +101,6 @@
   "auth_passwordTitle": "sign in with password.",
   "auth_otpHelperSms": "No text yet? Wait a moment, then tap Resend code.",
   "auth_errorPhoneUnavailable": "SMS sign-in isn't available right now. Please use email.",
-  "auth_errorSmsFailed": "Couldn't send the SMS. Check the number and try again in a few minutes."
+  "auth_errorSmsFailed": "Couldn't send the SMS. Check the number and try again in a few minutes.",
+  "auth_errorSamePassword": "New password must be different from your current password."
 }

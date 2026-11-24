@@ -18,12 +18,16 @@ enum AuthStep {
 /// onto them; anything else is generic).
 String authErrorMessage(AuthL10n l10n, Object error, AuthStep step) {
   final code = error is OurneyException ? error.error : OurneyErrorCode.unknown;
+  final detail = error is OurneyException ? (error.detail ?? '') : '';
   if (code == OurneyErrorCode.rateLimited) return l10n.auth_errorRateLimited;
   if (code == OurneyErrorCode.offline) return l10n.auth_errorOffline;
+  if (step == AuthStep.resetConfirm) {
+    if (detail.contains('weak_password')) return l10n.auth_passwordShort;
+    if (detail.contains('same_password')) return l10n.auth_errorSamePassword;
+  }
   final badInput =
       code == OurneyErrorCode.invalid ||
       code == OurneyErrorCode.notFound ||
-      code == OurneyErrorCode.forbidden ||
       code == OurneyErrorCode.unauthenticated;
   return switch (step) {
     AuthStep.sendOtp || AuthStep.resetSend =>

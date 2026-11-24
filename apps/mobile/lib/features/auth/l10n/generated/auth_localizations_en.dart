@@ -42,9 +42,6 @@ class AuthL10nEn extends AuthL10n {
   String get auth_codeLabel => '6-digit code';
 
   @override
-  String get auth_codeInvalidFormat => 'The code is exactly 6 digits.';
-
-  @override
   String get auth_verify => 'Confirm';
 
   @override
@@ -79,21 +76,10 @@ class AuthL10nEn extends AuthL10n {
   String get auth_errorGeneric => 'Something went wrong. Please try again.';
 
   @override
-  String get auth_eyebrow => 'OURNEY';
-
-  @override
-  String get auth_eyebrowCheck => 'CHECK YOUR EMAIL';
-
-  @override
   String get auth_terms => 'Terms';
 
   @override
   String get auth_privacy => 'Privacy Policy';
-
-  @override
-  String auth_digitSemantics(int n) {
-    return 'Digit $n of 6';
-  }
 
   @override
   String get auth_tabEmail => 'Email';
@@ -208,4 +194,8 @@ class AuthL10nEn extends AuthL10n {
   @override
   String get auth_errorSmsFailed =>
       'Couldn\'t send the SMS. Check the number and try again in a few minutes.';
+
+  @override
+  String get auth_errorSamePassword =>
+      'New password must be different from your current password.';
 }

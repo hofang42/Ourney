@@ -254,7 +254,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_eula5Body =>
-      'We may suspend or delete accounts that break these terms without notice. You can delete your account at any time from your Profile.';
+      'We may suspend or delete accounts that break these terms without notice. You can delete your account at any time in Profile > Settings > Delete account.';
 
   @override
   String get safety_eula6Title => '6. Disclaimer and changes';
@@ -268,7 +268,7 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_privacy1Body =>
-      'Your email (to sign in); display name, username and avatar; the journeys you create; check-ins with their photo, caption, numbers (for example weight) and time taken; reactions; your reports and block list.';
+      'Your email or phone number (to sign in); display name, username and avatar; the journeys you create; check-ins with their photo, caption, numbers (for example weight) and time taken; reactions; your reports and block list.';
 
   @override
   String get safety_privacy2Title => 'Who can see it';
@@ -296,14 +296,14 @@ class SafetyL10nEn extends SafetyL10n {
 
   @override
   String get safety_privacy5Body =>
-      'Go to Profile > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a group, ownership passes to the earliest-joined member.';
+      'Go to Profile > Settings > Delete account to permanently delete your account and all your check-ins and photos from our servers. If you own a group, ownership passes to the earliest-joined member.';
 
   @override
   String get safety_privacy6Title => 'Contact';
 
   @override
   String get safety_privacy6Body =>
-      'Questions about privacy? See the Contact page under Safety & support.';
+      'Questions about privacy? Open Profile > Settings > Contact.';
 
   @override
   String get safety_eulaAcceptSignOut => 'Sign out';

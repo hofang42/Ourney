@@ -61,7 +61,10 @@ Future<ProviderContainer> pumpOurneyApp(
   addTearDown(tester.platformDispatcher.clearLocalesTestValue);
   final prefs = await testPrefs({
     if (onboarded) OnboardingComplete.prefsKey: true,
-    if (eulaAccepted) SafetyPrefs.eulaAccepted: true,
+    if (eulaAccepted) ...{
+      SafetyPrefs.eulaAccepted: true,
+      SafetyPrefs.termsVersionFor(auth?.currentUserId ?? 'u1'): kTermsVersion,
+    },
   });
   final container = ProviderContainer(
     overrides: [

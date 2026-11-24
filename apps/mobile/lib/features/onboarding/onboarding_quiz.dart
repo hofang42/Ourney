@@ -14,11 +14,15 @@ class OnboardingQuizStage extends StatefulWidget {
   const OnboardingQuizStage({
     required this.onDone,
     required this.gutter,
+    this.showSignIn = false,
     super.key,
   });
 
   final ValueChanged<OnboardingQuiz?> onDone;
   final double gutter;
+
+  /// True when a backend is configured so `/auth` exists for returning users.
+  final bool showSignIn;
 
   static const questionCount = 3;
 
@@ -147,7 +151,7 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
                   onPressed: _answered ? _next : null,
                 ),
                 // Returning users skip the quiz and go straight to sign-in.
-                if (_step == 0)
+                if (_step == 0 && widget.showSignIn)
                   UiTextAction(
                     key: const ValueKey('onboarding-have-account'),
                     label: l10n.onboarding_haveAccount,

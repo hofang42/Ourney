@@ -10,6 +10,7 @@ import '../../app/locale_override.dart';
 import '../../app/providers.dart';
 import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
+import '../auth/phone_format.dart';
 import '../safety/safety_paths.dart';
 import 'l10n/generated/profile_localizations.dart';
 import 'profile_screen.dart' show profileEditPath;
@@ -46,7 +47,7 @@ class SettingsScreen extends ConsumerWidget {
             backLabel: l10n.profile_settings_back,
             title: l10n.profile_settings_title,
           ),
-          if (!localOnly) ...[
+          if (signedIn) ...[
             UiListHeading(title: l10n.profile_settings_secAccount),
             _Card(
               child: Column(
@@ -188,7 +189,7 @@ class SettingsScreen extends ConsumerWidget {
               ],
             ),
           ),
-          if (!localOnly) ...[
+          if (signedIn) ...[
             const SizedBox(height: UiSpace.xl),
             UiButton.secondary(
               key: const ValueKey('settings-signout'),
@@ -278,18 +279,28 @@ class _SignedInRow extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     if (id == null) return const SizedBox.shrink();
-    return UiRow(
-      key: const ValueKey('settings-account-id'),
-      leading: OurneyIcon(
-        name: id.contains('@') ? 'mail' : 'phone',
-        flat: true,
-      ),
-      title: l10n.profile_settings_signedInWith,
-      subtitle: Text(
-        id,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: UiText.body(size: 13, height: 1.4, color: context.ui.inkMuted),
+    final isEmail = id.contains('@');
+    final displayId = isEmail
+        ? id
+        : formatPhoneForDisplay(toE164Vietnam(id) ?? id);
+    return MergeSemantics(
+      child: UiRow(
+        key: const ValueKey('settings-account-id'),
+        leading: OurneyIcon(
+          name: isEmail ? 'mail' : 'phone',
+          flat: true,
+        ),
+        title: l10n.profile_settings_signedInWith,
+        subtitle: Text(
+          displayId,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: UiText.body(
+            size: 13,
+            height: 1.4,
+            color: context.ui.inkMuted,
+          ),
+        ),
       ),
     );
   }
@@ -315,14 +326,22 @@ class _VersionRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ProfileL10n.of(context);
     final version = ref.watch(appVersionProvider).asData?.value ?? '';
-    return UiRow(
-      key: const ValueKey('settings-version'),
-      leading: const OurneyIcon(name: 'info', flat: true),
-      title: l10n.profile_settings_version,
-      divider: false,
-      trailing: Text(
-        version,
-        style: UiText.body(size: 14, height: 1.4, color: context.ui.inkMuted),
+    return MergeSemantics(
+      child: UiRow(
+        key: const ValueKey('settings-version'),
+        leading: const OurneyIcon(name: 'info', flat: true),
+        title: l10n.profile_settings_version,
+        divider: false,
+        trailing: version.isEmpty
+            ? null
+            : Text(
+                version,
+                style: UiText.body(
+                  size: 14,
+                  height: 1.4,
+                  color: context.ui.inkMuted,
+                ),
+              ),
       ),
     );
   }
@@ -374,22 +393,26 @@ class _LanguagePicker extends ConsumerWidget {
     final override = ref.watch(localeOverrideProvider);
     final code =
         override?.languageCode ?? Localizations.localeOf(context).languageCode;
-    return UiSegmented<String>(
-      value: code == 'en' ? 'en' : 'vi',
-      onChanged: (c) =>
-          unawaited(ref.read(localeOverrideProvider.notifier).set(Locale(c))),
-      segments: [
-        UiSegment(
-          key: const ValueKey('settings-lang-vi'),
-          value: 'vi',
-          label: l10n.profile_settings_langVi,
-        ),
-        UiSegment(
-          key: const ValueKey('settings-lang-en'),
-          value: 'en',
-          label: l10n.profile_settings_langEn,
-        ),
-      ],
+    return Semantics(
+      container: true,
+      label: l10n.profile_settings_languageEyebrow,
+      child: UiSegmented<String>(
+        value: code == 'en' ? 'en' : 'vi',
+        onChanged: (c) =>
+            unawaited(ref.read(localeOverrideProvider.notifier).set(Locale(c))),
+        segments: [
+          UiSegment(
+            key: const ValueKey('settings-lang-vi'),
+            value: 'vi',
+            label: l10n.profile_settings_langVi,
+          ),
+          UiSegment(
+            key: const ValueKey('settings-lang-en'),
+            value: 'en',
+            label: l10n.profile_settings_langEn,
+          ),
+        ],
+      ),
     );
   }
 }

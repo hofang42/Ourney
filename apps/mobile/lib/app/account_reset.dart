@@ -34,11 +34,16 @@ const String accountOwnerPrefsKey = 'account.ownerUserId';
 /// reminders of the previous account. Never throws.
 Future<void> resetAccountLocalState(Ref ref) async {
   final prefs = ref.read(sharedPreferencesProvider);
+  final nextUserId = ref.read(currentUserIdProvider);
   final keys = {
     ...accountPrefsKeys,
-    // Per-journey reminder times of the previous account's journeys.
+    // Per-journey reminder times of the previous account's journeys, and
+    // per-account EULA version records of previous accounts.
     for (final key in prefs.keys)
-      if (ReminderPrefs.journeyIdOf(key) != null) key,
+      if (ReminderPrefs.journeyIdOf(key) != null ||
+          (SafetyPrefs.userIdOfTermsKey(key) != null &&
+              SafetyPrefs.userIdOfTermsKey(key) != nextUserId))
+        key,
   };
   try {
     for (final key in keys) {

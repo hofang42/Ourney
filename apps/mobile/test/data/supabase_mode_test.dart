@@ -738,12 +738,27 @@ void main() {
         'username': 'linh',
         'display_name': 'Linh',
         'avatar_path': null,
+        'terms_version': 1,
         'updated_at': '2026-10-16T01:00:00+00:00',
         'deleted_at': null,
       },
     ];
+    expect(layer.auth.acceptedTermsVersion, isNull);
     final first = await layer.profiles.watchMe().first;
     expect(first?.username, 'linh');
+    expect(
+      layer.auth.acceptedTermsVersion,
+      1,
+      reason: 'H2: own terms_version read from existing profile select',
+    );
+
+    await layer.auth.recordTermsAccepted(1);
+    final acceptRpc = remote
+        .callsOf('rpc')
+        .where((c) => c.target == 'accept_terms')
+        .single;
+    expect(acceptRpc.args, {'p_version': 1});
+    expect(layer.auth.acceptedTermsVersion, 1);
 
     remote.tables['profiles'] = [];
     await db.delete(db.profiles).go();

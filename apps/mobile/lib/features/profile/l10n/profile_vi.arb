@@ -160,14 +160,6 @@
   "@profile_guestMessage": {
     "description": "Local-only mode explanation."
   },
-  "profile_reminders": "Nhắc nhở",
-  "@profile_reminders": {
-    "description": "Link to the reminders screen."
-  },
-  "profile_remindersSubtitle": "Giờ nhắc check-in mỗi ngày",
-  "@profile_remindersSubtitle": {
-    "description": "Subtitle of the reminders link."
-  },
   "profile_signOut": "Đăng xuất",
   "@profile_signOut": {
     "description": "Sign-out button and dialog action."
@@ -176,7 +168,7 @@
   "@profile_signOutTitle": {
     "description": "Sign-out confirmation title."
   },
-  "profile_signOutMessage": "Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.",
+  "profile_signOutMessage": "Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng tài khoản này.",
   "@profile_signOutMessage": {
     "description": "Sign-out confirmation message."
   },

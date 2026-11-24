@@ -40,10 +40,6 @@
   "@auth_codeLabel": {
     "description": "OTP field label."
   },
-  "auth_codeInvalidFormat": "Mã gồm đúng 6 chữ số.",
-  "@auth_codeInvalidFormat": {
-    "description": "Validation error for the OTP field."
-  },
   "auth_verify": "Xác nhận",
   "@auth_verify": {
     "description": "Button that verifies the OTP."
@@ -89,14 +85,6 @@
   "@auth_errorGeneric": {
     "description": "Any other sign-in error."
   },
-  "auth_eyebrow": "OURNEY",
-  "@auth_eyebrow": {
-    "description": "Small label above the sign-in headline."
-  },
-  "auth_eyebrowCheck": "KIỂM TRA EMAIL",
-  "@auth_eyebrowCheck": {
-    "description": "Small label above the headline on the code step."
-  },
   "auth_terms": "Điều khoản",
   "@auth_terms": {
     "description": "Footer link to the terms."
@@ -104,15 +92,6 @@
   "auth_privacy": "Chính sách riêng tư",
   "@auth_privacy": {
     "description": "Footer link to the privacy policy."
-  },
-  "auth_digitSemantics": "Chữ số {n} trên 6",
-  "@auth_digitSemantics": {
-    "description": "Screen reader label of one OTP digit box.",
-    "placeholders": {
-      "n": {
-        "type": "int"
-      }
-    }
   },
   "auth_tabEmail": "Email",
   "@auth_tabEmail": {
@@ -253,5 +232,9 @@
   "auth_errorSmsFailed": "Chưa gửi được SMS. Kiểm tra số rồi thử lại sau ít phút.",
   "@auth_errorSmsFailed": {
     "description": "The SMS could not be sent."
+  },
+  "auth_errorSamePassword": "Mật khẩu mới cần khác mật khẩu hiện tại.",
+  "@auth_errorSamePassword": {
+    "description": "Password reset failed because the new password equals the old password."
   }
 }

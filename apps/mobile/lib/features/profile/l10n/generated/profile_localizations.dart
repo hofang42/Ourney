@@ -308,18 +308,6 @@ abstract class ProfileL10n {
   /// **'Dữ liệu của bạn chỉ nằm trên máy này. Hành trình một mình dùng đầy đủ; đăng nhập và nhóm cần máy chủ.'**
   String get profile_guestMessage;
 
-  /// Link to the reminders screen.
-  ///
-  /// In vi, this message translates to:
-  /// **'Nhắc nhở'**
-  String get profile_reminders;
-
-  /// Subtitle of the reminders link.
-  ///
-  /// In vi, this message translates to:
-  /// **'Giờ nhắc check-in mỗi ngày'**
-  String get profile_remindersSubtitle;
-
   /// Sign-out button and dialog action.
   ///
   /// In vi, this message translates to:
@@ -335,7 +323,7 @@ abstract class ProfileL10n {
   /// Sign-out confirmation message.
   ///
   /// In vi, this message translates to:
-  /// **'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.'**
+  /// **'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng tài khoản này.'**
   String get profile_signOutMessage;
 
   /// Delete account confirmation title.

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +13,19 @@ import 'package:ourney/ui/components/ourney_icons.dart';
 
 import '../../app/test_helpers.dart';
 import 'safety_fakes.dart';
+
+class _SlowTermsAuthRepository extends FakeAuthRepository {
+  _SlowTermsAuthRepository({super.userId});
+
+  final Completer<void> blocker = Completer<void>();
+
+  @override
+  Future<void> recordTermsAccepted(int version) async {
+    recordedTerms.add(version);
+    await blocker.future;
+    termsVersion = version;
+  }
+}
 
 void main() {
   group('hub (FR-F3)', () {
@@ -67,9 +82,25 @@ void main() {
         find.text('2. Zero tolerance for objectionable content'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('Profile > Settings > Delete account'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
       await goTo(tester, c, SafetyPaths.privacy);
       expect(find.text('What we store'), findsOneWidget);
+      expect(
+        find.textContaining('Your email or phone number'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Profile > Settings > Delete account'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Profile > Settings > Contact'),
+        findsOneWidget,
+      );
       // Back from a deep link goes to the hub.
       await tester.tap(
         find.byWidgetPredicate((w) => w is OurneyIcon && w.name == 'back'),
@@ -183,12 +214,48 @@ void main() {
 
       expect(c.read(eulaAcceptedProvider), isTrue);
       expect(
-        c.read(sharedPreferencesProvider).getBool(SafetyPrefs.eulaAccepted),
-        isTrue,
+        c
+            .read(sharedPreferencesProvider)
+            .getInt(SafetyPrefs.termsVersionFor('u1')),
+        kTermsVersion,
       );
       expect(auth.recordedTerms, [kTermsVersion]);
       expect(locationOf(c), SafetyPaths.contact);
     });
+
+    testWidgets(
+      'accept navigates immediately without blocking on a slow network call '
+      '(M3)',
+      (tester) async {
+        final auth = _SlowTermsAuthRepository(userId: 'u1');
+        final c = await pumpSignedInApp(
+          tester,
+          eulaAccepted: false,
+          auth: auth,
+        );
+        await goTo(
+          tester,
+          c,
+          Uri(
+            path: SafetyPaths.eulaAccept,
+            queryParameters: {AppRoutes.fromParam: SafetyPaths.contact},
+          ).toString(),
+        );
+        await tester.tap(byKey('safety-eula-accept-button'));
+        await tester.pumpAndSettle();
+
+        expect(c.read(eulaAcceptedProvider), isTrue);
+        expect(
+          c
+              .read(sharedPreferencesProvider)
+              .getInt(SafetyPrefs.termsVersionFor('u1')),
+          kTermsVersion,
+        );
+        expect(auth.recordedTerms, [kTermsVersion]);
+        expect(locationOf(c), SafetyPaths.contact);
+        auth.blocker.complete();
+      },
+    );
 
     testWidgets('gate offers sign out', (tester) async {
       final c = await pumpSignedInApp(tester, eulaAccepted: false);
@@ -208,18 +275,41 @@ void main() {
         auth: FakeAuthRepository(userId: 'u1', termsVersion: kTermsVersion),
       );
       expect(c.read(eulaAcceptedProvider), isTrue);
+      expect(
+        c
+            .read(sharedPreferencesProvider)
+            .getInt(SafetyPrefs.termsVersionFor('u1')),
+        kTermsVersion,
+      );
       await goTo(tester, c, AppRoutes.capture);
       expect(locationOf(c), isNot(startsWith(SafetyPaths.eulaAccept)));
     });
 
-    testWidgets('an older accepted version is asked again', (tester) async {
-      final c = await pumpSignedInApp(
-        tester,
-        eulaAccepted: false,
-        auth: FakeAuthRepository(userId: 'u1', termsVersion: kTermsVersion - 1),
-      );
-      expect(c.read(eulaAcceptedProvider), isFalse);
-    });
+    testWidgets(
+      'an older accepted version or legacy boolean is asked again and never '
+      'forges server consent (H1)',
+      (tester) async {
+        final auth = FakeAuthRepository(userId: 'u1', termsVersion: 1);
+        final prefs = await testPrefs({
+          OnboardingComplete.prefsKey: true,
+          SafetyPrefs.eulaAccepted: true,
+          SafetyPrefs.termsVersionFor('u1'): 1,
+        });
+        final c = ProviderContainer(
+          overrides: [
+            appConfigProvider.overrideWithValue(testBackendConfig),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            supabaseClientProvider.overrideWithValue(null),
+            authRepositoryProvider.overrideWithValue(auth),
+            termsVersionProvider.overrideWithValue(2),
+          ],
+        );
+        addTearDown(c.dispose);
+
+        expect(c.read(eulaAcceptedProvider), isFalse);
+        expect(auth.recordedTerms, isEmpty);
+      },
+    );
 
     testWidgets('unsafe from target falls back to the camera', (tester) async {
       final c = await pumpOurneyApp(tester);

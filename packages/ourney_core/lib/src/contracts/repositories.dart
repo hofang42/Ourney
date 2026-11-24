@@ -54,12 +54,12 @@ abstract interface class AuthRepository {
   /// signed out or local-only.
   String? get signInIdentifier;
 
-  /// Version of the terms the account accepted (user metadata
-  /// `terms_version`). Null when absent or local-only.
+  /// Version of the terms the account accepted (`profiles.terms_version`).
+  /// Null when absent or local-only.
   int? get acceptedTermsVersion;
 
   /// Records on the account that it accepted terms [version] (once per
-  /// account). No-op in local-only mode.
+  /// account, RPC `accept_terms`). No-op in local-only mode.
   Future<void> recordTermsAccepted(int version);
   Future<void> sendOtp(String email);
   Future<void> verifyOtp(String email, String code);

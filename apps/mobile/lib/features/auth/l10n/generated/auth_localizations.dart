@@ -157,12 +157,6 @@ abstract class AuthL10n {
   /// **'Mã 6 số'**
   String get auth_codeLabel;
 
-  /// Validation error for the OTP field.
-  ///
-  /// In vi, this message translates to:
-  /// **'Mã gồm đúng 6 chữ số.'**
-  String get auth_codeInvalidFormat;
-
   /// Button that verifies the OTP.
   ///
   /// In vi, this message translates to:
@@ -223,18 +217,6 @@ abstract class AuthL10n {
   /// **'Có lỗi xảy ra. Thử lại nhé.'**
   String get auth_errorGeneric;
 
-  /// Small label above the sign-in headline.
-  ///
-  /// In vi, this message translates to:
-  /// **'OURNEY'**
-  String get auth_eyebrow;
-
-  /// Small label above the headline on the code step.
-  ///
-  /// In vi, this message translates to:
-  /// **'KIỂM TRA EMAIL'**
-  String get auth_eyebrowCheck;
-
   /// Footer link to the terms.
   ///
   /// In vi, this message translates to:
@@ -246,12 +228,6 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Chính sách riêng tư'**
   String get auth_privacy;
-
-  /// Screen reader label of one OTP digit box.
-  ///
-  /// In vi, this message translates to:
-  /// **'Chữ số {n} trên 6'**
-  String auth_digitSemantics(int n);
 
   /// Sign-in method tab.
   ///
@@ -462,6 +438,12 @@ abstract class AuthL10n {
   /// In vi, this message translates to:
   /// **'Chưa gửi được SMS. Kiểm tra số rồi thử lại sau ít phút.'**
   String get auth_errorSmsFailed;
+
+  /// Password reset failed because the new password equals the old password.
+  ///
+  /// In vi, this message translates to:
+  /// **'Mật khẩu mới cần khác mật khẩu hiện tại.'**
+  String get auth_errorSamePassword;
 }
 
 class _AuthL10nDelegate extends LocalizationsDelegate<AuthL10n> {

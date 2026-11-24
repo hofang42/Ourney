@@ -129,12 +129,6 @@ class ProfileL10nEn extends ProfileL10n {
       'Your data stays on this device. Solo journeys work fully; sign-in and groups need a server.';
 
   @override
-  String get profile_reminders => 'Reminders';
-
-  @override
-  String get profile_remindersSubtitle => 'Daily check-in reminder time';
-
-  @override
   String get profile_signOut => 'Sign out';
 
   @override
@@ -142,7 +136,7 @@ class ProfileL10nEn extends ProfileL10n {
 
   @override
   String get profile_signOutMessage =>
-      'Photos and data saved on this phone are removed when you sign out, including check-ins that have not been sent yet. Everything already synced comes back when you sign in again with your email.';
+      'Photos and data saved on this phone are removed when you sign out, including check-ins that have not been sent yet. Everything already synced comes back when you sign in again with this account.';
 
   @override
   String get profile_deleteTitle => 'Delete your account forever?';

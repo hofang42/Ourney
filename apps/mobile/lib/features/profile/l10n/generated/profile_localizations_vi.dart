@@ -127,12 +127,6 @@ class ProfileL10nVi extends ProfileL10n {
       'Dữ liệu của bạn chỉ nằm trên máy này. Hành trình một mình dùng đầy đủ; đăng nhập và nhóm cần máy chủ.';
 
   @override
-  String get profile_reminders => 'Nhắc nhở';
-
-  @override
-  String get profile_remindersSubtitle => 'Giờ nhắc check-in mỗi ngày';
-
-  @override
   String get profile_signOut => 'Đăng xuất';
 
   @override
@@ -140,7 +134,7 @@ class ProfileL10nVi extends ProfileL10n {
 
   @override
   String get profile_signOutMessage =>
-      'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng email.';
+      'Khi đăng xuất, ảnh và dữ liệu lưu trên máy này sẽ bị xóa, kể cả các check-in chưa gửi lên. Những gì đã đồng bộ sẽ trở lại khi bạn đăng nhập lại bằng tài khoản này.';
 
   @override
   String get profile_deleteTitle => 'Xóa tài khoản vĩnh viễn?';

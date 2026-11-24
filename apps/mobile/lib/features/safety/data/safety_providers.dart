@@ -6,6 +6,7 @@ import 'package:ourney_core/ourney_core.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../app/providers.dart';
+import '../../profile/profile_providers.dart' show myProfileProvider;
 
 /// Support address shown on the contact page. Comes from
 /// `--dart-define=SUPPORT_EMAIL` (see `AppConfig`) and defaults to the
@@ -21,13 +22,31 @@ final DateTime kLegalLastUpdated = DateTime(2026, 10, 16);
 
 /// Version of the terms and privacy text the user has to accept. Bump it only
 /// when the text changes materially: accounts that accepted an older version
-/// are then asked again (`terms_version` in the account's user metadata).
+/// are then asked again (`profiles.terms_version`).
 const int kTermsVersion = 1;
+
+/// Required terms version ([kTermsVersion]; overridable in tests to exercise
+/// version bumps).
+final termsVersionProvider = Provider<int>((ref) => kTermsVersion);
 
 /// Shared-preferences keys of the safety feature.
 abstract final class SafetyPrefs {
-  /// `true` once the user accepted the EULA on this device (FR-F3).
+  /// `true` once the user accepted the EULA in local-only / signed-out mode
+  /// (FR-F3). Signed-in accounts use [termsVersionFor].
   static const eulaAccepted = 'safety.eulaAccepted';
+
+  /// Prefix of the per-account accepted terms version (`int`).
+  static const termsVersionPrefix = 'safety.termsVersion.';
+
+  /// Shared-preferences key storing the accepted [kTermsVersion] (`int`)
+  /// for [userId].
+  static String termsVersionFor(String userId) => '$termsVersionPrefix$userId';
+
+  /// The user id of a [termsVersionFor] preference [key], else null.
+  static String? userIdOfTermsKey(String key) =>
+      key.startsWith(termsVersionPrefix)
+      ? key.substring(termsVersionPrefix.length)
+      : null;
 
   /// JSON `{userId: displayName}` of people blocked from this device, so
   /// the blocked list can show names (the contract only streams ids).
@@ -37,36 +56,58 @@ abstract final class SafetyPrefs {
 /// Whether the EULA was accepted (FR-F3, Apple Guideline 1.2). Gate any
 /// user-generated content on it; see lib/features/safety/README.md.
 ///
-/// Accepted when this device remembers it OR the signed-in account carries
-/// `terms_version >= kTermsVersion` in its user metadata, so an existing
-/// account is never asked again after signing in on a new device.
+/// Accepted when this device remembers the current account's consent for
+/// [kTermsVersion] OR the signed-in account carries
+/// `terms_version >= kTermsVersion` on the server (`profiles.terms_version`),
+/// so an existing account is never asked again after signing in on a new
+/// device, while account switches and [kTermsVersion] bumps re-ask.
 class EulaAccepted extends Notifier<bool> {
   @override
   bool build() {
     final prefs = ref.watch(sharedPreferencesProvider);
-    final local = prefs.getBool(SafetyPrefs.eulaAccepted) ?? false;
+    final requiredVersion = ref.watch(termsVersionProvider);
     // Recomputes when the session arrives or the account changes.
-    if (ref.watch(currentUserIdProvider) == null) return local;
+    final userId = ref.watch(currentUserIdProvider);
+    if (userId == null) {
+      return prefs.getBool(SafetyPrefs.eulaAccepted) ?? false;
+    }
+    final key = SafetyPrefs.termsVersionFor(userId);
+    final localVer = prefs.getInt(key) ?? 0;
+    final localOk = localVer >= requiredVersion;
     final AuthRepository auth;
     try {
       auth = ref.watch(authRepositoryProvider);
     } on Object {
-      return local; // Not wired.
+      return localOk; // Not wired.
     }
-    final serverOk = (auth.acceptedTermsVersion ?? 0) >= kTermsVersion;
-    if (local && !serverOk) {
-      // Accepted here but the account record failed earlier: retry quietly.
-      unawaited(_record(auth));
-    } else if (serverOk && !local) {
-      // Cheap local cache of the server record.
-      unawaited(prefs.setBool(SafetyPrefs.eulaAccepted, true));
+    try {
+      // Triggers the existing `profiles` select and rebuilds when it arrives.
+      ref.watch(profileRepositoryProvider);
+      ref.watch(myProfileProvider);
+    } on Object {
+      // ProfileRepository not wired in this test.
     }
-    return local || serverOk;
+    final serverVer = auth.acceptedTermsVersion ?? 0;
+    final serverOk = serverVer >= requiredVersion;
+    if (localOk && !serverOk) {
+      // Accepted by this user for this version on this device, but the
+      // account record failed earlier: retry quietly.
+      unawaited(_record(auth, userId, localVer));
+    } else if (serverOk && localVer < serverVer) {
+      // Cheap local cache of the server record for this user.
+      unawaited(prefs.setInt(key, serverVer));
+    }
+    return localOk || serverOk;
   }
 
-  Future<void> _record(AuthRepository auth) async {
+  Future<void> _record(
+    AuthRepository auth,
+    String expectedUserId,
+    int version,
+  ) async {
     try {
-      await auth.recordTermsAccepted(kTermsVersion);
+      if (auth.currentUserId != expectedUserId) return;
+      await auth.recordTermsAccepted(version);
     } on Object {
       // Offline: the next launch tries again; the gate stays satisfied.
     }
@@ -76,21 +117,39 @@ class EulaAccepted extends Notifier<bool> {
   /// failure keeps the local flag and the next launch asks the server again).
   Future<void> accept() async {
     final prefs = ref.read(sharedPreferencesProvider);
+    final requiredVersion = ref.read(termsVersionProvider);
+    final userId = ref.read(currentUserIdProvider);
     AuthRepository? auth;
     try {
       auth = ref.read(authRepositoryProvider);
     } on Object {
       auth = null; // Not wired.
     }
+    final uid = userId ?? auth?.currentUserId;
     state = true;
     await prefs.setBool(SafetyPrefs.eulaAccepted, true);
-    if (auth != null && auth.currentUserId != null) await _record(auth);
+    if (uid != null) {
+      await prefs.setInt(SafetyPrefs.termsVersionFor(uid), requiredVersion);
+    }
+    if (auth != null && uid != null && auth.currentUserId == uid) {
+      unawaited(_record(auth, uid, requiredVersion));
+    }
   }
 
   /// Account deletion / QA: ask again.
   Future<void> reset() async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    final userId = ref.read(currentUserIdProvider);
     state = false;
-    await ref.read(sharedPreferencesProvider).remove(SafetyPrefs.eulaAccepted);
+    await prefs.remove(SafetyPrefs.eulaAccepted);
+    if (userId != null) {
+      await prefs.remove(SafetyPrefs.termsVersionFor(userId));
+    }
+    for (final key in prefs.keys.toList()) {
+      if (SafetyPrefs.userIdOfTermsKey(key) != null) {
+        await prefs.remove(key);
+      }
+    }
   }
 }
 

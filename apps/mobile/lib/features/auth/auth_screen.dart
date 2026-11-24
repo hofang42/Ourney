@@ -172,6 +172,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           // SMS is off on the server: hide Phone and go back to email.
           _phoneDisabled = true;
           _flow = _Flow.emailCode;
+          _submitted = false;
         }
       });
       return;
@@ -180,6 +181,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     setState(() {
       _busy = false;
       _codeStep = true;
+      _submitted = false;
       if (resend) _code.clear();
     });
     _startCooldown();
@@ -425,7 +427,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     key: const ValueKey('auth-offline'),
                     message: l10n.auth_offlineBanner,
                     retryLabel: l10n.auth_retry,
-                    onRetry: () => setState(() => _offline = false),
+                    onRetry: () {
+                      ref.invalidate(phoneAuthAvailableProvider);
+                      setState(() => _offline = false);
+                    },
                   ),
                 ],
                 SizedBox(height: codeStep ? 14 : 18),
@@ -608,7 +613,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         color: context.ui.ink,
       ),
       label: _showPassword ? l10n.auth_hidePassword : l10n.auth_showPassword,
-      onPressed: () => setState(() => _showPassword = !_showPassword),
+      onPressed: _busy
+          ? null
+          : () => setState(() => _showPassword = !_showPassword),
     ),
   );
 
@@ -738,6 +745,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                       key: const ValueKey('auth-resend'),
                       size: 13,
                       color: ui.inkMuted,
+                      expand: false,
                       label: l10n.auth_resendIn(_cooldown),
                       onPressed: null,
                     ),

@@ -92,7 +92,11 @@ class EulaAcceptScreen extends ConsumerStatefulWidget {
 }
 
 class _EulaAcceptScreenState extends ConsumerState<EulaAcceptScreen> {
+  bool _busy = false;
+
   Future<void> _accept() async {
+    if (_busy) return;
+    setState(() => _busy = true);
     await ref.read(eulaAcceptedProvider.notifier).accept();
     if (!mounted) return;
     final from = widget.from;
@@ -115,13 +119,14 @@ class _EulaAcceptScreenState extends ConsumerState<EulaAcceptScreen> {
           UiButton(
             key: const ValueKey('safety-eula-accept-button'),
             label: l10n.safety_eulaAcceptButton,
-            onPressed: _accept,
+            loading: _busy,
+            onPressed: _busy ? null : _accept,
           ),
           const SizedBox(height: UiSpace.sm),
           UiButton.ghost(
             key: const ValueKey('safety-eula-sign-out'),
             label: l10n.safety_eulaAcceptSignOut,
-            onPressed: () => confirmSignOut(context, ref),
+            onPressed: _busy ? null : () => confirmSignOut(context, ref),
           ),
         ],
       ),

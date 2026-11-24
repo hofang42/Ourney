@@ -58,33 +58,3 @@ final hideWeightOnShareProvider = NotifierProvider<PrefSwitch, bool>(
 final blurPhotosOnShareProvider = NotifierProvider<PrefSwitch, bool>(
   () => PrefSwitch(SharePrivacyPrefs.blurPhotos),
 );
-
-/// Selected app icon id (Figma `appIcon`). No platform plugin switches the
-/// launcher icon yet (docs/figma-parity.md D); the choice is only stored.
-final appIconProvider = NotifierProvider<AppIconController, String>(
-  AppIconController.new,
-);
-
-class AppIconController extends Notifier<String> {
-  static const prefsKey = 'app.appIcon';
-  static const ids = [
-    'default',
-    'quiet',
-    'squad',
-    'memory',
-    'couple',
-    'flexer',
-    'minimal',
-  ];
-
-  @override
-  String build() {
-    final v = ref.watch(sharedPreferencesProvider).getString(prefsKey);
-    return ids.contains(v) ? v! : 'default';
-  }
-
-  Future<void> set(String id) async {
-    state = id;
-    await ref.read(sharedPreferencesProvider).setString(prefsKey, id);
-  }
-}

@@ -26,7 +26,9 @@ abstract interface class RemoteApi {
   /// Email, else phone, of the signed-in account (null when signed out).
   String? get signInIdentifier;
 
-  /// `terms_version` from the user metadata (null when absent).
+  /// `terms_version` of the signed-in account's profile (null when unknown
+  /// or signed out). Populated when the own `profiles` row is selected or
+  /// [recordTermsAccepted] succeeds.
   int? get acceptedTermsVersion;
   Future<void> recordTermsAccepted(int version);
   Future<void> sendOtp(String email);

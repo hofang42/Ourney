@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ourney/app/router.dart';
+import 'package:ourney/data/remote/error_mapping.dart';
 import 'package:ourney/features/auth/auth_errors.dart';
 import 'package:ourney/features/auth/auth_screen.dart';
 import 'package:ourney/features/auth/l10n/generated/auth_localizations_en.dart';
 import 'package:ourney/features/profile/routes.dart';
 import 'package:ourney/ui/ui.dart';
 import 'package:ourney_core/ourney_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show AuthException;
 
 import '../profile/fakes.dart';
 
@@ -67,8 +70,12 @@ void main() {
         }
       }
 
-      // Resend is blocked for the 60 s cooldown, with a countdown label.
+      // Resend is blocked for the 60 s cooldown, with a countdown label that
+      // hugs its text beside the ring rather than stretching (L2).
       expect(resend().onPressed, isNull);
+      expect(resend().expand, isFalse);
+      final screenW = tester.getSize(find.byType(AuthScreen)).width;
+      expect(tester.getSize(byKey('auth-resend')).width, lessThan(screenW * 0.75));
       expect(find.textContaining('59'), findsNothing);
       await wait(1);
       expect(find.textContaining('59'), findsOneWidget);
@@ -169,7 +176,7 @@ void main() {
       expect(location(c), AppRoutes.capture);
     });
 
-    testWidgets('legal links open terms and privacy, inline (U13)', (
+    testWidgets('legal links open terms and privacy, inline (U13 / L4)', (
       tester,
     ) async {
       final c = await pumpBackendApp(tester, auth: RecordingAuthRepository());
@@ -177,6 +184,16 @@ void main() {
       expect(
         tester.getSize(byKey('auth-terms')).width,
         lessThan(screen * 0.75),
+      );
+      // L4: left-aligned secondary action aligns flush with the form field and
+      // left-aligns wrapped lines.
+      final usePwdText = tester.widget<Text>(
+        find.descendant(of: byKey('auth-use-password'), matching: find.byType(Text)),
+      );
+      expect(usePwdText.textAlign, TextAlign.left);
+      expect(
+        tester.getTopLeft(byKey('auth-use-password')).dx,
+        tester.getTopLeft(byKey('auth-email')).dx,
       );
       await tester.ensureVisible(byKey('auth-terms'));
       await tester.pumpAndSettle();
@@ -237,6 +254,105 @@ void main() {
         authErrorMessage(l10n, StateError('x'), AuthStep.sendOtp),
         l10n.auth_errorSendFailed,
       );
+    });
+
+    test('maps every GoTrue error code to the right user message (M6)', () {
+      String fromGoTrue(String code, AuthStep step, [String status = '400']) =>
+          authErrorMessage(
+            l10n,
+            mapRemoteError(
+              AuthException('x', statusCode: status, code: code),
+            ),
+            step,
+          );
+
+      // Server/policy rejections on send must never blame email/phone format.
+      for (final code in [
+        'signup_disabled',
+        'email_provider_disabled',
+        'otp_disabled',
+        'email_address_not_authorized',
+        'captcha_failed',
+        'user_banned',
+      ]) {
+        expect(
+          fromGoTrue(code, AuthStep.sendOtp),
+          l10n.auth_errorSendFailed,
+          reason: 'sendOtp:$code',
+        );
+        expect(
+          fromGoTrue(code, AuthStep.resetSend),
+          l10n.auth_errorSendFailed,
+          reason: 'resetSend:$code',
+        );
+      }
+      expect(
+        fromGoTrue('phone_provider_disabled', AuthStep.sendPhone),
+        l10n.auth_errorPhoneUnavailable,
+      );
+      expect(
+        fromGoTrue('sms_provider_disabled', AuthStep.sendPhone),
+        l10n.auth_errorPhoneUnavailable,
+      );
+      expect(
+        fromGoTrue('captcha_failed', AuthStep.sendPhone),
+        l10n.auth_errorSendFailed,
+      );
+      expect(
+        fromGoTrue('sms_send_failed', AuthStep.sendPhone, '500'),
+        l10n.auth_errorSmsFailed,
+      );
+
+      // Actual validation codes still report format errors.
+      expect(
+        fromGoTrue('email_address_invalid', AuthStep.sendOtp),
+        l10n.auth_emailInvalid,
+      );
+      expect(
+        fromGoTrue('validation_failed', AuthStep.sendOtp),
+        l10n.auth_emailInvalid,
+      );
+      expect(
+        fromGoTrue('phone_invalid', AuthStep.sendPhone),
+        l10n.auth_phoneInvalid,
+      );
+
+      // user_banned (403) must not tell the user their code or password was wrong.
+      expect(
+        fromGoTrue('user_banned', AuthStep.verifyOtp, '403'),
+        l10n.auth_errorGeneric,
+      );
+      expect(
+        fromGoTrue('user_banned', AuthStep.passwordSignIn, '403'),
+        l10n.auth_errorGeneric,
+      );
+
+      // Password reset step 2: weak_password and same_password report password
+      // errors, never wrong-code.
+      expect(
+        fromGoTrue('weak_password', AuthStep.resetConfirm, '422'),
+        l10n.auth_passwordShort,
+      );
+      expect(
+        fromGoTrue('same_password', AuthStep.resetConfirm, '422'),
+        l10n.auth_errorSamePassword,
+      );
+      expect(
+        fromGoTrue('otp_expired', AuthStep.resetConfirm, '403'),
+        l10n.auth_errorWrongCode,
+      );
+
+      // Rate limit codes.
+      for (final code in [
+        'over_request_rate_limit',
+        'over_email_send_rate_limit',
+        'over_sms_send_rate_limit',
+      ]) {
+        expect(
+          fromGoTrue(code, AuthStep.sendOtp, '429'),
+          l10n.auth_errorRateLimited,
+        );
+      }
     });
 
     test('resend cooldown is a minute', () {

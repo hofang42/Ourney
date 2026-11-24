@@ -18,6 +18,8 @@ class SupabaseRemoteApi implements RemoteApi {
 
   final SupabaseClient _client;
   final HttpClient _http;
+  String? _termsUserId;
+  int? _acceptedTermsVersion;
 
   StorageFileApi _bucket(String path) =>
       _client.storage.from(storageBucketFor(path));
@@ -40,21 +42,39 @@ class SupabaseRemoteApi implements RemoteApi {
 
   @override
   int? get acceptedTermsVersion {
-    final v = _client.auth.currentUser?.userMetadata?['terms_version'];
-    return v is num ? v.toInt() : null;
+    final uid = currentUserId;
+    if (uid == null || uid != _termsUserId) return null;
+    return _acceptedTermsVersion;
+  }
+
+  void _rememberTermsFromProfiles(List<RemoteRow> rows) {
+    final uid = currentUserId;
+    if (uid == null) return;
+    for (final r in rows) {
+      if (r['id'] == uid && r['terms_version'] is num) {
+        final v = (r['terms_version'] as num).toInt();
+        if (_termsUserId != uid || v > (_acceptedTermsVersion ?? 0)) {
+          _termsUserId = uid;
+          _acceptedTermsVersion = v;
+        }
+      }
+    }
   }
 
   @override
-  Future<void> recordTermsAccepted(int version) => guardRemote(
-    () => _client.auth.updateUser(
-      UserAttributes(
-        data: {
-          'terms_version': version,
-          'terms_accepted_at': DateTime.now().toUtc().toIso8601String(),
-        },
-      ),
-    ),
-  );
+  Future<void> recordTermsAccepted(int version) => guardRemote(() async {
+    final res = await _client
+        .rpc<Object?>('accept_terms', params: {'p_version': version})
+        .timeout(const Duration(seconds: 10));
+    final uid = currentUserId;
+    if (uid != null) {
+      final recorded = res is num ? res.toInt() : version;
+      if (_termsUserId != uid || recorded > (_acceptedTermsVersion ?? 0)) {
+        _termsUserId = uid;
+        _acceptedTermsVersion = recorded;
+      }
+    }
+  });
 
   @override
   Future<void> sendOtp(String email) => guardRemote(
@@ -122,16 +142,23 @@ class SupabaseRemoteApi implements RemoteApi {
   @override
   Future<void> resetPassword(String email, String code, String newPassword) =>
       guardRemote(() async {
-        await _client.auth.verifyOTP(
-          email: email.trim(),
-          token: code.trim(),
-          type: OtpType.recovery,
-        );
+        final trimmedEmail = email.trim();
+        final currentEmail = _client.auth.currentUser?.email;
+        if (currentEmail == null ||
+            currentEmail.toLowerCase() != trimmedEmail.toLowerCase()) {
+          await _client.auth.verifyOTP(
+            email: trimmedEmail,
+            token: code.trim(),
+            type: OtpType.recovery,
+          );
+        }
         await _client.auth.updateUser(UserAttributes(password: newPassword));
       });
 
   @override
   Future<void> signOut({bool global = false}) async {
+    _termsUserId = null;
+    _acceptedTermsVersion = null;
     if (global) {
       try {
         await _client.auth.signOut(scope: SignOutScope.global);
@@ -169,6 +196,7 @@ class SupabaseRemoteApi implements RemoteApi {
     final List<RemoteRow> rows = limit == null
         ? await ordered
         : await ordered.limit(limit);
+    if (table == 'profiles') _rememberTermsFromProfiles(rows);
     return rows;
   });
 
@@ -203,6 +231,7 @@ class SupabaseRemoteApi implements RemoteApi {
         .update(values)
         .match(match)
         .select();
+    if (table == 'profiles') _rememberTermsFromProfiles(rows);
     return rows;
   });
 
