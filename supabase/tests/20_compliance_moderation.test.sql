@@ -1,9 +1,9 @@
 -- 0020_compliance_moderation: pgTAP verification of Batch 4 compliance & moderation fixes
 -- (CS-02 report_content target_message_id, CS-03 objectionable-content filter & 24h moderation queue,
---  CS-05 account_has_password re-auth support).
+--  CS-05 account_has_password & check_delete_reauth_rate_limit re-auth support).
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(38);
+select plan(45);
 
 create schema tests;
 grant usage on schema tests to anon, authenticated, service_role;
@@ -87,18 +87,29 @@ select ok(
 
 -- [Test 3]
 select ok(
-  not has_function_privilege('authenticated', 'public.list_moderation_queue(text, int)', 'execute')
+  not has_function_privilege('authenticated', 'private.contains_objectionable_text(text)', 'execute')
+  and not has_function_privilege('authenticated', 'private.assert_clean_text(text)', 'execute')
+  and not has_function_privilege('authenticated', 'private.assert_service_role()', 'execute')
+  and not has_function_privilege('authenticated', 'public.list_moderation_queue(text, int)', 'execute')
   and not has_function_privilege('authenticated', 'public.claim_moderation_notifications(int)', 'execute')
+  and not has_function_privilege('authenticated', 'public.confirm_moderation_notifications(uuid[])', 'execute')
+  and not has_function_privilege('authenticated', 'public.release_moderation_notifications(uuid[])', 'execute')
   and not has_function_privilege('authenticated', 'public.resolve_moderation_item(uuid, text, text)', 'execute')
   and not has_function_privilege('authenticated', 'private.moderate_queue_item(uuid, text, text)', 'execute')
   and not has_function_privilege('authenticated', 'public.upsert_objectionable_word(text, text, text, text, boolean)', 'execute')
+  and not has_function_privilege('authenticated', 'public.set_objectionable_word_enabled(text, boolean)', 'execute')
   and not has_function_privilege('authenticated', 'public.account_has_password(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'public.check_delete_reauth_rate_limit(uuid, boolean)', 'execute')
   and has_function_privilege('service_role', 'public.list_moderation_queue(text, int)', 'execute')
   and has_function_privilege('service_role', 'public.claim_moderation_notifications(int)', 'execute')
+  and has_function_privilege('service_role', 'public.confirm_moderation_notifications(uuid[])', 'execute')
+  and has_function_privilege('service_role', 'public.release_moderation_notifications(uuid[])', 'execute')
   and has_function_privilege('service_role', 'public.resolve_moderation_item(uuid, text, text)', 'execute')
   and has_function_privilege('service_role', 'public.upsert_objectionable_word(text, text, text, text, boolean)', 'execute')
-  and has_function_privilege('service_role', 'public.account_has_password(uuid)', 'execute'),
-  'CS-03 & CS-05: moderation management and account_has_password RPCs are restricted to service_role'
+  and has_function_privilege('service_role', 'public.set_objectionable_word_enabled(text, boolean)', 'execute')
+  and has_function_privilege('service_role', 'public.account_has_password(uuid)', 'execute')
+  and has_function_privilege('service_role', 'public.check_delete_reauth_rate_limit(uuid, boolean)', 'execute'),
+  'CS-03 & CS-05: moderation management, filter internals, and account re-auth RPCs are restricted to service_role'
 );
 
 -- ============================================================================
@@ -106,7 +117,7 @@ select ok(
 -- ============================================================================
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 
--- [Test 4] Benign Vietnamese words that share base letters with slurs (lon, cac, buoi, du) must pass
+-- [Test 4] Benign Vietnamese sentences that share base letters with slurs (còn các, cãi lộn, vai lớn, mưa dầm, bạn dám, làm tình nguyện, mứt củ, đủ mà, đầu buổi, giàu đạm, edit media, 10 dm) must pass
 select lives_ok(
   $$ update public.profiles set display_name = 'Các bạn lớn đi du lịch buổi sáng' where id = tests.u(1) $$,
   'CS-03: benign Vietnamese diacritics (lớn, các, buổi, du lịch) are never false-flagged'
@@ -133,12 +144,12 @@ select throws_ok(
   'CS-03: profiles.display_name rejects leet-obfuscated English slur with content_policy'
 );
 
--- [Test 8] create_journey rejects objectionable title
+-- [Test 8] create_journey rejects objectionable title (Đụ má)
 select throws_ok(
-  $$ select public.create_journey(tests.j(90), 'solo', 'custom', 'Hành trình vãi lồn', '🔥',
+  $$ select public.create_journey(tests.j(90), 'solo', 'custom', 'Đụ má hành trình', '🔥',
                                   null, null, false, current_date, 30, 'UTC') $$,
   '23514', 'content_policy',
-  'CS-03: create_journey rejects objectionable journey title'
+  'CS-03: create_journey rejects Đụ má in journey title'
 );
 
 -- [Test 9] create_journey rejects objectionable couple names
@@ -161,7 +172,7 @@ select throws_ok(
 do $$ begin
   perform tests.as_user(tests.u(1));
   perform public.create_journey(tests.j(1), 'group', 'custom', 'Du lịch Đà Lạt', '🏔️',
-                                'Quãng đường', 'km', false, current_date - 3, 30, 'UTC');
+                                'Quãng đường', '10 dm', false, current_date - 3, 30, 'UTC');
   perform public.create_journey(tests.j(2), 'solo', 'custom', 'Morning Run', '🏃',
                                 null, null, false, current_date - 3, 30, 'UTC');
   perform tests.as_user(tests.u(2));
@@ -202,20 +213,38 @@ select throws_ok(
   'CS-03: check_ins INSERT rejects dot-separated profanity in caption'
 );
 
--- [Test 15] check_ins INSERT accepts clean Vietnamese caption and UPDATE rejects objectionable edit
+-- [Test 15] check_ins INSERT accepts everyday Vietnamese & English phrases that previously collided under naive folding
 select lives_ok(
-  $$ select tests.checkin(tests.c(1), tests.j(1), 'Buổi sáng chạy bộ cùng các bạn lớn rất vui!') $$,
-  'CS-03: check_ins INSERT accepts clean Vietnamese caption'
+  $$ select tests.checkin(
+       tests.c(1),
+       tests.j(1),
+       'Mình tập cơ vai lớn xong rồi, còn các bạn dám đi làm tình nguyện dưới mưa dầm hay mua đầm, ăn mứt củ sen, bữa sáng giàu đạm đủ mà! Please edit media and DM me.'
+     ) $$,
+  'CS-03: check_ins INSERT accepts benign Vietnamese tone variants and cross-word English phrases without false positives'
 );
 
--- [Test 16]
+-- [Test 16] check_ins UPDATE rejects NFD-decomposed Vietnamese slurs
+select throws_ok(
+  $$ update public.check_ins set caption = normalize('Hành trình vãi lồn', NFD) where id = tests.c(1) $$,
+  '23514', 'content_policy',
+  'CS-03: check_ins UPDATE rejects NFD-decomposed Vietnamese slurs'
+);
+
+-- [Test 17] check_ins UPDATE rejects zero-width character obfuscation (f\u200buck)
+select throws_ok(
+  $$ update public.check_ins set caption = U&'what the f\200Buck' where id = tests.c(1) $$,
+  '23514', 'content_policy',
+  'CS-03: check_ins UPDATE rejects zero-width obfuscated profanity'
+);
+
+-- [Test 18] check_ins UPDATE rejects self-harm solicitation in caption
 select throws_ok(
   $$ update public.check_ins set caption = 'kill yourself now' where id = tests.c(1) $$,
   '23514', 'content_policy',
   'CS-03: check_ins UPDATE rejects self-harm solicitation in caption'
 );
 
--- [Test 17] check_in_extras rejects objectionable dish/place text
+-- [Test 19] check_in_extras rejects objectionable dish/place text
 select throws_ok(
   $$ insert into public.check_in_extras (checkin_id, journey_id, user_id, extras)
      values (tests.c(1), tests.j(1), auth.uid(), '{"dish":"món cái lồn"}'::jsonb) $$,
@@ -234,7 +263,7 @@ do $$ begin
   perform public.open_conversation(tests.j(2), tests.c(2));
 end $$;
 
--- [Test 18] send_message rejects objectionable chat text
+-- [Test 20] send_message rejects objectionable chat text
 select throws_ok(
   $$ select public.send_message(tests.m(90), tests.conv(tests.j(2), tests.u(1), tests.u(2)),
                                 'text', 'chat sex không em', null) $$,
@@ -242,14 +271,14 @@ select throws_ok(
   'CS-03: send_message rejects sexual solicitation in chat body'
 );
 
--- [Test 19] send_message accepts clean chat text
+-- [Test 21] send_message accepts clean chat text
 select lives_ok(
   $$ select public.send_message(tests.m(1), tests.conv(tests.j(2), tests.u(1), tests.u(2)),
                                 'text', 'Chúc mừng bạn đã hoàn thành hành trình!', null) $$,
   'CS-03: send_message accepts clean Vietnamese chat message'
 );
 
--- [Test 20] Dynamic word list update without deploy via public.upsert_objectionable_word
+-- [Test 22] Dynamic word list update without deploy via public.upsert_objectionable_word
 do $$ begin
   perform tests.as_service_role();
   perform public.upsert_objectionable_word('customblockedterm', 'en', 'word', 'profanity', true);
@@ -261,15 +290,15 @@ select throws_ok(
   'CS-03: newly upserted word in private.objectionable_words takes effect immediately without deploy'
 );
 
--- [Test 21] Disabling the custom word immediately allows it again
+-- [Test 23] Disabling the custom word via set_objectionable_word_enabled preserves metadata and allows it again
 do $$ begin
   perform tests.as_service_role();
-  perform public.upsert_objectionable_word('customblockedterm', 'en', 'word', 'profanity', false);
+  perform public.set_objectionable_word_enabled('customblockedterm', false);
   perform tests.as_user(tests.u(1));
 end $$;
 select lives_ok(
   $$ update public.check_ins set caption = 'Testing customblockedterm filter' where id = tests.c(1) $$,
-  'CS-03: disabling a word in private.objectionable_words allows it immediately'
+  'CS-03: set_objectionable_word_enabled disables a word immediately without clobbering metadata'
 );
 
 -- ============================================================================
@@ -290,14 +319,14 @@ do $$ begin
   perform tests.as_user(tests.u(1));
 end $$;
 
--- [Test 22] Mismatched p_user and p_message sender is rejected
+-- [Test 24] Mismatched p_user and p_message sender is rejected
 select throws_ok(
   $$ select public.report_content(null, tests.u(3), 'spam', 'wrong sender', tests.m(2)) $$,
   'P0001', 'invalid',
   'CS-02: report_content rejects p_message when p_user does not match the message sender'
 );
 
--- [Test 23] Passing both p_user (sender) and p_message (mobile ChatScreen pattern) stores target_message_id
+-- [Test 25] Passing both p_user (sender) and p_message (mobile ChatScreen pattern) stores target_message_id
 do $$ declare
   v_rep uuid;
 begin
@@ -323,7 +352,7 @@ select is(
   'CS-02 & CS-03: report_content stores target_message_id and 24h due_at in both reports and moderation_queue'
 );
 
--- [Test 24] Reported message and its storage object are hidden from the reporter at once
+-- [Test 26] Reported message and its storage object are hidden from the reporter at once
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select is(
   (select count(*)::int from public.messages where id = tests.m(2))
@@ -334,7 +363,7 @@ select is(
   'CS-02: reported message row and storage object are immediately hidden from the reporter'
 );
 
--- [Test 25] Sender still sees own message before moderator action
+-- [Test 27] Sender still sees own message before moderator action
 do $$ begin perform tests.as_user(tests.u(2)); end $$;
 select is(
   (select count(*)::int from public.messages where id = tests.m(2)),
@@ -344,7 +373,7 @@ select is(
 
 -- ============================================================================
 -- 4. CS-03: 24-hour moderation queue, auto-hide after N >= 2 distinct reports,
---           notification claiming, and moderator resolution (dismiss / remove / ban)
+--           two-phase notification claiming, and moderator resolution (dismiss / remove / ban)
 -- ============================================================================
 -- u(2) reports u(1)'s check-in c(1) in group journey j(1) (1st distinct report)
 do $$ begin
@@ -352,7 +381,7 @@ do $$ begin
   perform public.report_content(tests.c(1), tests.u(1), 'spam', 'first report on c1');
 end $$;
 
--- [Test 26] After 1 report, c(1) is hidden from reporter u(2) but still visible to u(4)
+-- [Test 28] After 1 report, c(1) is hidden from reporter u(2) but still visible to u(4)
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
 select is(
   (select count(*)::int from public.check_ins where id = tests.c(1)),
@@ -366,7 +395,7 @@ do $$ begin
   perform public.report_content(tests.c(1), tests.u(1), 'harassment', 'second report on c1');
 end $$;
 
--- [Test 27] After 2 distinct open reports, c(1) is auto-quarantined and hidden even from u(4)
+-- [Test 29] After 2 distinct open reports, c(1) is auto-quarantined (moderated_at set, deleted_at null) and hidden from u(4)
 do $$ begin perform tests.as_user(tests.u(4)); end $$;
 select is(
   (select count(*)::int from public.check_ins where id = tests.c(1)),
@@ -374,7 +403,7 @@ select is(
   'CS-03: check-in is automatically hidden for all members after 2 distinct open reports pending review'
 );
 
--- [Test 28] Author u(1) cannot un-delete or edit an auto-quarantined check-in
+-- [Test 30] Author u(1) cannot edit an auto-quarantined check-in while pending moderation
 do $$ begin perform tests.as_user(tests.u(1)); end $$;
 select throws_ok(
   $$ update public.check_ins set caption = 'try to edit quarantined' where id = tests.c(1) $$,
@@ -382,7 +411,7 @@ select throws_ok(
   'CS-03: author cannot modify an auto-quarantined check-in while pending moderation'
 );
 
--- [Test 29] claim_moderation_notifications claims unnotified open items once
+-- [Test 31] claim_moderation_notifications leases unnotified open items once
 do $$ begin perform tests.as_service_role(); end $$;
 select is(
   (select count(*)::int from public.claim_moderation_notifications(50)),
@@ -390,14 +419,43 @@ select is(
   'CS-03: claim_moderation_notifications claims all 3 unnotified open queue items'
 );
 
--- [Test 30] Second claim call returns 0 items (idempotent notification hook)
+-- [Test 32] Second claim call returns 0 items while lease is active
 select is(
   (select count(*)::int from public.claim_moderation_notifications(50)),
   0,
-  'CS-03: claim_moderation_notifications returns 0 on immediate repeat call (no duplicate emails)'
+  'CS-03: claim_moderation_notifications returns 0 on immediate repeat call while lease is active'
 );
 
--- [Test 31] list_moderation_queue shows open items with distinct_open_reporters = 2 on c(1)
+-- [Test 33] release_moderation_notifications releases the lease on webhook failure so items can be re-claimed, and confirm_moderation_notifications permanently stamps notified_at
+do $$ declare
+  v_ids uuid[];
+begin
+  perform tests.as_service_role();
+  select array_agg(id) into v_ids from public.moderation_queue where status = 'open';
+  perform public.release_moderation_notifications(v_ids);
+end $$;
+select is(
+  (select count(*)::int from public.claim_moderation_notifications(50)),
+  3,
+  'CS-03: release_moderation_notifications allows unnotified items to be re-claimed after a webhook failure'
+);
+
+-- [Test 34] confirm_moderation_notifications stamps notified_at permanently
+do $$ declare
+  v_ids uuid[];
+begin
+  perform tests.as_service_role();
+  select array_agg(id) into v_ids from public.moderation_queue where status = 'open';
+  perform public.confirm_moderation_notifications(v_ids);
+  perform public.release_moderation_notifications(v_ids);
+end $$;
+select is(
+  (select count(*)::int from public.claim_moderation_notifications(50)),
+  0,
+  'CS-03: confirm_moderation_notifications permanently marks items notified so they are not re-claimed'
+);
+
+-- [Test 35] list_moderation_queue shows open items with distinct_open_reporters = 2 on c(1)
 select is(
   (select (item->>'distinct_open_reporters')::int
      from public.list_moderation_queue('open', 50) item
@@ -407,7 +465,7 @@ select is(
   'CS-03: list_moderation_queue reports distinct_open_reporters = 2 and 24h SLA metadata'
 );
 
--- [Test 32] Moderator dismissing false-positive reports on c(1) restores the check-in for u(4)
+-- [Test 36] Moderator dismissing false-positive reports on c(1) restores the check-in for u(4)
 do $$ begin
   perform tests.as_service_role();
   perform public.resolve_moderation_item(tests.latest_queue_id(tests.c(1), null, null), 'dismiss', 'benign running photo');
@@ -419,7 +477,7 @@ select is(
   'CS-03: dismissing auto-quarantined check-in report restores visibility for other members'
 );
 
--- [Test 33] Public-link check-in reported for nudity is immediately auto-quarantined on 1st report
+-- [Test 37] Public-link check-in reported for nudity is immediately auto-quarantined on 1st report (moderated_at set, deleted_at untouched)
 do $$ begin
   perform tests.as_user(tests.u(1));
   perform public.set_public_link(tests.j(2), true);
@@ -428,12 +486,12 @@ do $$ begin
   perform tests.as_postgres();
 end $$;
 select is(
-  (select (moderated_at is not null and deleted_at is not null) from public.check_ins where id = tests.c(2)),
+  (select (moderated_at is not null and deleted_at is null) from public.check_ins where id = tests.c(2)),
   true,
-  'CS-03: nudity report on a public-link journey check-in auto-quarantines immediately'
+  'CS-03: nudity report on a public-link journey check-in auto-quarantines immediately without corrupting deleted_at'
 );
 
--- [Test 34] Moderator remove_content permanently actions the message report
+-- [Test 38] Moderator remove_content permanently actions the message report and rejects any subsequent dismiss attempt
 do $$ begin
   perform tests.as_service_role();
   perform public.resolve_moderation_item(tests.latest_queue_id(null, tests.m(2), null), 'remove_content', 'confirmed harassment');
@@ -445,7 +503,15 @@ select is(
   'CS-03: resolve_moderation_item(remove_content) hides the moderated message even from its sender'
 );
 
--- [Test 35] Moderator ban_user suspends the offending profile, moderates all their content, and revokes public links
+-- [Test 39] Attempting to dismiss an already-actioned queue item is rejected
+do $$ begin perform tests.as_service_role(); end $$;
+select throws_ok(
+  $$ select public.resolve_moderation_item(tests.latest_queue_id(null, tests.m(2), null), 'dismiss', 'try to un-moderate') $$,
+  'P0001', 'invalid',
+  'CS-03: resolve_moderation_item rejects dismiss on an already-actioned moderation item'
+);
+
+-- [Test 40] Moderator ban_user suspends the offending profile, moderates all their content, leaves group journeys, and queues storage purge
 do $$ begin
   perform tests.as_user(tests.u(3));
   perform tests.checkin(tests.c(3), tests.j(1), 'spam check-in by u3');
@@ -458,12 +524,14 @@ end $$;
 select is(
   (select (p.deleted_at is not null) from public.profiles p where p.id = tests.u(3))
   and (select (c.moderated_at is not null and c.deleted_at is not null) from public.check_ins c where c.id = tests.c(3))
+  and (select (m.status = 'left' and m.removed_at is not null) from public.memberships m where m.journey_id = tests.j(1) and m.user_id = tests.u(3))
+  and (select count(*)::int >= 2 from private.pending_storage_purge where path like format('checkins/%s/%s/%%', tests.j(1), tests.u(3)))
   and (select count(*)::int = 0 from public.moderation_queue where target_user_id = tests.u(3) and status = 'open'),
   true,
-  'CS-03: resolve_moderation_item(ban_user) soft-deletes profile, moderates content, and closes open queue items'
+  'CS-03: resolve_moderation_item(ban_user) soft-deletes profile, leaves groups, queues storage purge, and closes open queue items'
 );
 
--- [Test 36] Banned user can no longer create journeys or post messages
+-- [Test 41] Banned user can no longer create journeys
 do $$ begin perform tests.as_user(tests.u(3)); end $$;
 select throws_ok(
   $$ select public.create_journey(tests.j(99), 'solo', 'custom', 'Banned', '🚫',
@@ -472,23 +540,45 @@ select throws_ok(
   'CS-03: banned user (profiles.deleted_at set) is blocked from creating new journeys'
 );
 
+-- [Test 42] Banned user can no longer post check-ins to existing journeys
+select throws_ok(
+  $$ select tests.checkin(tests.c(99), tests.j(1), 'banned checkin attempt') $$,
+  '42501', 'forbidden',
+  'CS-03: banned user is blocked from posting new check-ins'
+);
+
+-- [Test 43] Banned user can no longer send chat messages
+do $$ begin
+  perform tests.as_postgres();
+  insert into public.conversations (id, journey_id, member_id, viewer_id)
+  values ('e2000000-0000-4000-8000-000000000001'::uuid, tests.j(2), tests.u(1), tests.u(3))
+  on conflict do nothing;
+  perform tests.as_user(tests.u(3));
+end $$;
+select throws_ok(
+  $$ select public.send_message(tests.m(99), 'e2000000-0000-4000-8000-000000000001'::uuid, 'text', 'banned chat', null) $$,
+  '42501', 'forbidden',
+  'CS-03: banned user is blocked from sending chat messages'
+);
+
 -- ============================================================================
--- 5. CS-05: account_has_password for OTP accounts vs password / App Review demo account
+-- 5. CS-05: account_has_password & check_delete_reauth_rate_limit
 -- ============================================================================
 do $$ begin perform tests.as_service_role(); end $$;
 
--- [Test 37] OTP-only accounts (null or empty encrypted_password) return false
+-- [Test 44] OTP-only accounts (null or empty encrypted_password) return false
 select is(
   public.account_has_password(tests.u(1)) or public.account_has_password(tests.u(2)),
   false,
   'CS-05: account_has_password returns false for OTP-only accounts without a password'
 );
 
--- [Test 38] Password-enabled / App Review demo account returns true
+-- [Test 45] Password-enabled / App Review demo account returns true and per-user re-auth rate limiter enforces 10-attempt cap
 select is(
-  public.account_has_password(tests.u(5)),
+  public.account_has_password(tests.u(5))
+  and public.check_delete_reauth_rate_limit(tests.u(5), true),
   true,
-  'CS-05: account_has_password returns true for password-enabled / App Review demo accounts'
+  'CS-05: account_has_password returns true for password-enabled accounts and check_delete_reauth_rate_limit tracks attempts'
 );
 
 select * from finish();

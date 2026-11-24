@@ -1,12 +1,13 @@
 // notify-moderation (CS-03, Apple Guideline 1.2 / Google Play UGC 24-hour moderation SLA):
-// Claims newly queued open items from public.moderation_queue (via public.claim_moderation_notifications)
-// and emails/alerts the owner (default support@ourney.tech) via a configurable HTTP endpoint
-// (MODERATION_WEBHOOK_URL, e.g. Resend `https://api.resend.com/emails` or a webhook URL) with
-// optional Bearer token MODERATION_WEBHOOK_API_KEY.
+// Leases newly queued open items from public.moderation_queue (via public.claim_moderation_notifications),
+// emails/alerts the owner (default support@ourney.tech) via a configurable HTTP endpoint
+// (MODERATION_WEBHOOK_URL, e.g. Resend `https://api.resend.com/emails` or a generic webhook URL)
+// with optional Bearer token MODERATION_WEBHOOK_API_KEY, and confirms `notified_at = now()`
+// (via public.confirm_moderation_notifications) only after webhook delivery succeeds.
 //
-// Safe when not configured: if MODERATION_WEBHOOK_URL is unset, the claimed items are structured-logged
-// and a 200 summary is returned (`configured: false`), so local dev and unconfigured environments
-// never fail.
+// Safe when not configured or when the webhook fails: claimed items are structured-logged and
+// their lease is released (via public.release_moderation_notifications) so they remain unnotified
+// and will be delivered on the next run once configured/reachable.
 //
 // Auth: accepts `x-moderation-token` matching MODERATION_WEBHOOK_TOKEN, `x-sweep-token` matching
 // SWEEP_TOKEN, or `Authorization: Bearer <service_role_key>`.
@@ -118,7 +119,7 @@ export async function handle(req: Request): Promise<Response> {
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   if (!(await isAuthorized(req))) return json({ error: "unauthenticated" }, 401);
 
-  let payload: { limit?: number; record?: ModerationQueueItem } = {};
+  let payload: { limit?: number } = {};
   try {
     payload = await req.json();
   } catch {
@@ -132,13 +133,12 @@ export async function handle(req: Request): Promise<Response> {
   const admin = adminClient();
   const { data, error } = await admin.rpc("claim_moderation_notifications", { p_limit: limit });
   if (error) {
+    console.error(JSON.stringify({ event: "moderation_claim_failed", error: error.message }));
     return json({ error: "internal" }, 500);
   }
 
   const items = ((data ?? []) as ModerationQueueItem[]).slice();
-  if (items.length === 0 && payload.record && typeof payload.record.id === "string") {
-    items.push(payload.record);
-  }
+  const itemIds = items.map((i) => i.id);
 
   const recipient = (Deno.env.get("MODERATION_NOTIFY_EMAIL") ?? "support@ourney.tech").trim() || "support@ourney.tech";
   const sender = (Deno.env.get("MODERATION_FROM_EMAIL") ?? "moderation@ourney.tech").trim() ||
@@ -159,6 +159,18 @@ export async function handle(req: Request): Promise<Response> {
   const digest = formatModerationDigest(items);
 
   if (!webhookUrl) {
+    console.info(JSON.stringify({
+      event: "moderation_queue_alert",
+      configured: false,
+      count: items.length,
+      recipient,
+      subject: digest.subject,
+      item_ids: itemIds,
+    }));
+    const release = await admin.rpc("release_moderation_notifications", { p_ids: itemIds });
+    if (release.error) {
+      console.error(JSON.stringify({ event: "moderation_release_failed", error: release.error.message }));
+    }
     return json({
       claimed: items.length,
       notified: 0,
@@ -166,7 +178,7 @@ export async function handle(req: Request): Promise<Response> {
       configured: false,
       recipient,
       subject: digest.subject,
-      item_ids: items.map((i) => i.id),
+      item_ids: itemIds,
     });
   }
 
@@ -177,19 +189,40 @@ export async function handle(req: Request): Promise<Response> {
     headers["Authorization"] = `Bearer ${webhookKey}`;
   }
 
+  const isResendApi = /api\.resend\.com\b/i.test(webhookUrl);
+  const webhookBody = isResendApi
+    ? {
+      from: sender,
+      to: [recipient],
+      subject: digest.subject,
+      text: digest.text,
+    }
+    : {
+      from: sender,
+      to: [recipient],
+      subject: digest.subject,
+      text: digest.text,
+      items,
+    };
+
   try {
     const resp = await fetch(webhookUrl, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        from: sender,
-        to: [recipient],
-        subject: digest.subject,
-        text: digest.text,
-        items,
-      }),
+      body: JSON.stringify(webhookBody),
     });
     if (!resp.ok) {
+      console.error(JSON.stringify({
+        event: "moderation_webhook_failed",
+        status: resp.status,
+        count: items.length,
+        recipient,
+        item_ids: itemIds,
+      }));
+      const release = await admin.rpc("release_moderation_notifications", { p_ids: itemIds });
+      if (release.error) {
+        console.error(JSON.stringify({ event: "moderation_release_failed", error: release.error.message }));
+      }
       return json({
         claimed: items.length,
         notified: 0,
@@ -200,7 +233,18 @@ export async function handle(req: Request): Promise<Response> {
         webhook_status: resp.status,
       }, 502);
     }
-  } catch {
+  } catch (e) {
+    console.error(JSON.stringify({
+      event: "moderation_webhook_unreachable",
+      error: e instanceof Error ? e.message : String(e),
+      count: items.length,
+      recipient,
+      item_ids: itemIds,
+    }));
+    const release = await admin.rpc("release_moderation_notifications", { p_ids: itemIds });
+    if (release.error) {
+      console.error(JSON.stringify({ event: "moderation_release_failed", error: release.error.message }));
+    }
     return json({
       claimed: items.length,
       notified: 0,
@@ -211,6 +255,19 @@ export async function handle(req: Request): Promise<Response> {
     }, 502);
   }
 
+  const confirm = await admin.rpc("confirm_moderation_notifications", { p_ids: itemIds });
+  if (confirm.error) {
+    console.error(JSON.stringify({ event: "moderation_confirm_failed", error: confirm.error.message }));
+  }
+  console.info(JSON.stringify({
+    event: "moderation_queue_notified",
+    configured: true,
+    count: items.length,
+    recipient,
+    subject: digest.subject,
+    item_ids: itemIds,
+  }));
+
   return json({
     claimed: items.length,
     notified: items.length,
@@ -218,7 +275,7 @@ export async function handle(req: Request): Promise<Response> {
     configured: true,
     recipient,
     subject: digest.subject,
-    item_ids: items.map((i) => i.id),
+    item_ids: itemIds,
   });
 }
 
@@ -226,7 +283,11 @@ if (import.meta.main) {
   Deno.serve(async (req: Request): Promise<Response> => {
     try {
       return await handle(req);
-    } catch {
+    } catch (e) {
+      console.error(JSON.stringify({
+        event: "moderation_unhandled_error",
+        error: e instanceof Error ? e.message : String(e),
+      }));
       return json({ error: "internal" }, 500);
     }
   });

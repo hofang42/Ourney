@@ -12,7 +12,7 @@
 #   ban     <queue-id> [note]                    Remove content, soft-delete/suspend user & revoke links
 #   add-word <term> [vi|en|any] [word|substring|diacritic_word] [category]
 #                                                Upsert an objectionable term without a deploy
-#   disable-word <term>                          Disable an objectionable term without a deploy
+#   disable-word <term>                          Disable an existing objectionable term without a deploy
 #   notify                                       Trigger the notify-moderation Edge Function
 #
 # Secrets are passed to curl via a process-substituted config file, never on the command line.
@@ -147,8 +147,8 @@ case "$cmd" in
       exit 2
     fi
     jq -n --arg t "$term" \
-      '{p_term: $t, p_lang: "any", p_match_mode: "word", p_category: "profanity", p_enabled: false}' |
-      call_rpc "upsert_objectionable_word"
+      '{p_term: $t, p_enabled: false}' |
+      call_rpc "set_objectionable_word_enabled"
     echo "Disabled objectionable word: $term"
     ;;
 
