@@ -161,6 +161,7 @@
       <!-- Sticker Checkmark Disc (#7EE8A2) -->
       <symbol id="i-check" viewBox="-2 -2 28 28">
         <circle class="s-die" cx="12" cy="12" r="9.2"/>
+        <circle class="s-ink" cx="12" cy="12" r="9.2"/>
         <circle cx="12" cy="12" r="9.2" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2.2"/>
         <path d="m7.8 12.3 3 3.1 5.6-6.2" fill="none" stroke="#1A1A1A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
@@ -168,6 +169,10 @@
       <!-- Padlock with Open Shackle & Keyhole (#2AA7E0) -->
       <symbol id="i-lock" viewBox="-2 -2 28 28">
         <g class="s-die">
+          <rect x="6" y="10" width="12" height="10" rx="2.2"/>
+          <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
+        </g>
+        <g class="s-ink">
           <rect x="6" y="10" width="12" height="10" rx="2.2"/>
           <path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10" fill="none"/>
         </g>
@@ -180,13 +185,18 @@
       <!-- Chain Link with Open Loops (#2AA7E0) -->
       <symbol id="i-link" viewBox="-2 -2 28 28">
         <path class="s-die" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
-        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.4" stroke-linecap="round"/>
+        <path class="s-ink" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none"/>
+        <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#1A1A1A" stroke-width="4.2" stroke-linecap="round"/>
         <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3A4 4 0 0 0 11 18.7l1-1" fill="none" stroke="#2AA7E0" stroke-width="2.1" stroke-linecap="round"/>
       </symbol>
 
       <!-- Eye-Off with Pupil & Slash (#7EC8E3) -->
       <symbol id="i-eye-off" viewBox="-2 -2 28 28">
         <g class="s-die">
+          <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"/>
+          <path d="M4 4l16 16"/>
+        </g>
+        <g class="s-ink">
           <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z"/>
           <path d="M4 4l16 16"/>
         </g>
@@ -200,6 +210,7 @@
       <!-- Blur Droplet (#CF9FFF) -->
       <symbol id="i-drop" viewBox="-2 -2 28 28">
         <path class="s-die" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
+        <path class="s-ink" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z"/>
         <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="M9.2 14.2a3.2 3.2 0 0 0 2.8 2.8" fill="none" stroke="#FFF8EE" stroke-width="1.8" stroke-linecap="round"/>
       </symbol>
@@ -207,6 +218,7 @@
       <!-- Local-First Shield (#7EE8A2) -->
       <symbol id="i-shield" viewBox="-2 -2 28 28">
         <path class="s-die" d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z"/>
+        <path class="s-ink" d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z"/>
         <path d="m12 3 8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6Z" fill="#7EE8A2" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="m8.8 12.2 2.2 2.2 4.4-4.6" fill="none" stroke="#1A1A1A" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
@@ -214,6 +226,7 @@
       <!-- Sparkle (#FF9F1C) -->
       <symbol id="i-sparkle" viewBox="-2 -2 28 28">
         <path class="s-die" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
+        <path class="s-ink" d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8ZM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z"/>
         <path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/>
         <path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8Z" fill="#FFD84D" stroke="#1A1A1A" stroke-width="1.5" stroke-linejoin="round"/>
       </symbol>
@@ -227,7 +240,14 @@
 
       <!-- Squad Reaction: Clap (#FF9F1C) -->
       <symbol id="i-react-clap" viewBox="-2 -2 28 28">
-        <path class="s-die" d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+        <g class="s-die">
+          <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+          <path d="m4 10-2-2M7 6 6 3M11 5l1-3"/>
+        </g>
+        <g class="s-ink">
+          <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z"/>
+          <path d="m4 10-2-2M7 6 6 3M11 5l1-3"/>
+        </g>
         <path d="m5 13 5-6 2 2 2-4 2 2 2-2 2 2-5 11c-2 4-8 3-10 0l-2-3Z" fill="#FF9F1C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="m4 10-2-2M7 6 6 3M11 5l1-3" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round"/>
       </symbol>
@@ -235,6 +255,7 @@
       <!-- Squad Reaction: Flex (#CF9FFF) -->
       <symbol id="i-react-flex" viewBox="-2 -2 28 28">
         <path class="s-die" d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z"/>
+        <path class="s-ink" d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z"/>
         <path d="M5 17c2-1 2-4 3-6l3 1 1-5 3-1 2 3c4 1 5 4 3 7-2 4-6 5-10 4Z" fill="#CF9FFF" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
         <path d="M8 11 5 9l-2 3 2 5" fill="none" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
@@ -342,7 +363,7 @@
               </svg>
               <div class="ht-txt">
                 <strong translate="no" data-i18n="ticket_title">iOS &amp; Android</strong>
-                <small data-i18n="ticket_sub">Bấm để giữ chỗ Ngày 1</small>
+                <small data-i18n="ticket_sub">Bấm để giữ chỗ Ngày&nbsp;1</small>
               </div>
             </div>
           </a>
@@ -440,11 +461,11 @@
                 </button>
                 <button class="j-tab tab-c-memory" type="button" role="tab" id="tab-memory" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="2">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-trip"/></svg></span>
-                  <span class="j-tab-lbl" data-i18n="j_tab_2">Đà Lạt 7 ngày</span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_2">Đà Lạt 7&nbsp;ngày</span>
                 </button>
                 <button class="j-tab tab-c-quiet" type="button" role="tab" id="tab-quiet" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="3">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-scales"/></svg></span>
-                  <span class="j-tab-lbl" data-i18n="j_tab_3">30 ngày cơ thể</span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_3">30&nbsp;ngày cơ thể</span>
                 </button>
                 <button class="j-tab tab-c-couple" type="button" role="tab" id="tab-couple" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="4">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-couple"/></svg></span>
@@ -452,7 +473,7 @@
                 </button>
                 <button class="j-tab tab-c-minimal" type="button" role="tab" id="tab-minimal" aria-controls="j-panel" aria-selected="false" tabindex="-1" data-idx="5">
                   <span class="j-tab-badge"><svg class="o-sticker" width="24" height="24" aria-hidden="true"><use href="#i-custom"/></svg></span>
-                  <span class="j-tab-lbl" data-i18n="j_tab_5">Đọc 10 trang</span>
+                  <span class="j-tab-lbl" data-i18n="j_tab_5">Đọc 10&nbsp;trang</span>
                 </button>
               </div>
 

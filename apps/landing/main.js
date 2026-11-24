@@ -27,14 +27,14 @@
       hero_ticket_aria: 'Vé khởi hành Beta cho iOS và Android',
       ticket_kicker: 'VÉ KHỞI HÀNH · BETA',
       ticket_title: 'iOS & Android',
-      ticket_sub: 'Bấm để giữ chỗ Ngày 1',
+      ticket_sub: 'Bấm để giữ chỗ Ngày\u00A01',
       hero_phone_alt: 'Màn hành trình của app Ourney: thẻ chuỗi 21 ngày, hành trình IELTS 7.5 ngày 21/30 và nút Chụp hôm nay',
       hcc_t0: 'IELTS 7.5 · Ngày 21/30',
       hcc_b0_pre: 'chuỗi 20 ngày',
       hcc_b0: 'chuỗi 21 ngày',
       hcc_t1: 'Chạy sáng · 5,4 km',
       hcc_b1: '20/30 buổi',
-      hcc_t2: 'Đà Lạt 7 ngày · Khung 14/24',
+      hcc_t2: 'Đà Lạt 7\u00A0ngày · Khung 14/24',
       hcc_b2: 'cả nhóm đã chụp',
       hero_h1: 'chụp một tấm. giữ một chuỗi.',
       hero_lede: 'Nhật ký ảnh mỗi ngày cho điều bạn muốn kiên trì — học tiếng Anh, chạy bộ, giảm cân, một chuyến đi hay thói quen nhỏ. Đi một mình hoặc rủ cả nhóm.',
@@ -50,10 +50,10 @@
       j_tablist_aria: 'Chọn giao diện hành trình',
       j_tab_0: 'IELTS 7.5',
       j_tab_1: 'Chạy sáng',
-      j_tab_2: 'Đà Lạt 7 ngày',
-      j_tab_3: '30 ngày cơ thể',
+      j_tab_2: 'Đà Lạt 7\u00A0ngày',
+      j_tab_3: '30\u00A0ngày cơ thể',
       j_tab_4: 'Tụi mình',
-      j_tab_5: 'Đọc 10 trang',
+      j_tab_5: 'Đọc 10\u00A0trang',
       cs_pill: 'CẶP ĐÔI · RIÊNG TƯ',
       cs_sub: 'mỗi ngày hai nửa ghép lại.',
       cs_title: 'tụi mình.',
@@ -163,14 +163,14 @@
       hero_ticket_aria: 'Beta Departure Pass for iOS and Android',
       ticket_kicker: 'DEPARTURE PASS · BETA',
       ticket_title: 'iOS & Android',
-      ticket_sub: 'Tap to claim your Day 1',
+      ticket_sub: 'Tap to claim your Day\u00A01',
       hero_phone_alt: 'Ourney app Hub screen: 21-day streak card, IELTS 7.5 Day 21/30 card, and Snap Today CTA',
       hcc_t0: 'IELTS 7.5 · Day 21/30',
       hcc_b0_pre: '20-day streak',
       hcc_b0: '21-day streak',
       hcc_t1: 'Morning Run · 5.4 km',
       hcc_b1: '20/30 sessions',
-      hcc_t2: 'Da Lat 7 Days · Frame 14/24',
+      hcc_t2: 'Da Lat 7\u00A0Days · Frame 14/24',
       hcc_b2: 'all 5 checked in',
       hero_h1: 'snap one photo. keep one streak.',
       hero_lede: 'A daily photo journal for what you want to stick with — studying, running, body goals, a trip, or a tiny habit. Go solo or bring your squad.',
@@ -186,10 +186,10 @@
       j_tablist_aria: 'Choose journey skin',
       j_tab_0: 'IELTS 7.5',
       j_tab_1: 'Morning Run',
-      j_tab_2: 'Da Lat 7 Days',
+      j_tab_2: 'Da Lat 7\u00A0Days',
       j_tab_3: '30-Day Body',
       j_tab_4: 'Just Us Two',
-      j_tab_5: 'Read 10 Pages',
+      j_tab_5: 'Read 10\u00A0Pages',
       cs_pill: 'COUPLE · PRIVATE VAULT',
       cs_sub: 'two halves of the same day.',
       cs_title: 'just us two.',
@@ -320,14 +320,14 @@
     {
       skin: 'memory', screen: 'j-travel', no: '03',
       vi: {
-        label: 'Đà Lạt 7 ngày', kind: 'chuyến đi · Memory Collectors',
+        label: 'Đà Lạt 7\u00A0ngày', kind: 'chuyến đi · Memory Collectors',
         title: 'hôm nay cả bọn lạc ở đâu.',
         desc: 'Cuộn phim 24 khung trên nền giấy hạt ấm. Ảnh mỗi ngày dán băng keo dọc sợi chỉ khâu, hết chuyến tự đóng gói thành poster 35mm.',
         chips: ['Chỉ khâu & băng keo', 'Cuộn 24 tấm', 'Poster 35mm'],
         alt: 'Trang hành trình Đà Lạt 7 ngày trong app Ourney'
       },
       en: {
-        label: 'Da Lat 7 Days', kind: 'trip · Memory Collectors',
+        label: 'Da Lat 7\u00A0Days', kind: 'trip · Memory Collectors',
         title: 'where did we get lost today.',
         desc: 'A 24-frame roll on warm grain paper. Daily Polaroids tape along a stitched thread and pack into a 35mm contact-sheet poster at the end.',
         chips: ['Stitched scrapbook', '24-frame roll', '35mm poster'],
@@ -337,7 +337,7 @@
     {
       skin: 'quiet', screen: 'j-weight', no: '04',
       vi: {
-        label: '30 ngày cơ thể', kind: 'giảm cân · Quiet Transformer',
+        label: '30\u00A0ngày cơ thể', kind: 'giảm cân · Quiet Transformer',
         title: 'nhìn lại từng chút một.',
         desc: 'Êm ái và riêng tư mặc định. Đường xu hướng vẫn nối đều qua từng mốc ngày, nhưng con số cân nặng luôn ẩn sau thao tác giữ ngón tay.',
         chips: ['Riêng tư mặc định', 'Khung căn dáng', 'Giữ để xem kg'],
@@ -371,14 +371,14 @@
     {
       skin: 'minimal', screen: 'j-minimal', no: '06',
       vi: {
-        label: 'Đọc 10 trang', kind: 'tự đặt · Minimalist Habit',
+        label: 'Đọc 10\u00A0trang', kind: 'tự đặt · Minimalist Habit',
         title: 'một ô mỗi ngày.',
         desc: 'Lưới lịch 7 cột tinh gọn, không chi tiết thừa: không ô nhập chữ rườm rà, một chạm chụp là nối liền sợi dây cam không đứt quãng.',
         chips: ['Lưới 7 cột', 'Chụp 3 giây', 'Mốc 7 · 15 · 30'],
         alt: 'Trang hành trình Đọc 10 trang trong app Ourney'
       },
       en: {
-        label: 'Read 10 Pages', kind: 'custom habit · Minimalist Habit',
+        label: 'Read 10\u00A0Pages', kind: 'custom habit · Minimalist Habit',
         title: 'one square a day.',
         desc: 'A clean, distraction-free 7-column calendar grid: zero text friction, one shutter tap links today’s square onto an unbroken orange chain.',
         chips: ['7-col chain', '3-sec check-in', 'Day 7 · 15 · 30'],
@@ -772,7 +772,9 @@
   const holdMasked = $('hold-masked');
   const holdRevealed = $('hold-revealed');
   let holdTimer = null;
+  let suppressTimer = null;
   let suppressClick = false;
+  let pointerDownAt = 0;
 
   const setHoldReveal = (show) => {
     if (!holdBtn || !holdMasked || !holdRevealed) return;
@@ -784,12 +786,32 @@
   if (holdBtn) {
     holdBtn.addEventListener('pointerdown', () => {
       clearTimeout(holdTimer);
-      suppressClick = true;
+      clearTimeout(suppressTimer);
+      suppressClick = false;
+      pointerDownAt = performance.now();
       setHoldReveal(true);
     });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => {
+    holdBtn.addEventListener('pointerup', () => {
+      clearTimeout(holdTimer);
+      clearTimeout(suppressTimer);
+      const heldMs = pointerDownAt > 0 ? performance.now() - pointerDownAt : 0;
+      pointerDownAt = 0;
+      if (heldMs >= 180) {
+        suppressClick = true;
+        suppressTimer = setTimeout(() => { suppressClick = false; }, 120);
+        setHoldReveal(false);
+      } else {
+        suppressClick = false;
+        setHoldReveal(true);
+        holdTimer = setTimeout(() => setHoldReveal(false), 2500);
+      }
+    });
+    ['pointerleave', 'pointercancel'].forEach((ev) => {
       holdBtn.addEventListener(ev, () => {
         clearTimeout(holdTimer);
+        clearTimeout(suppressTimer);
+        pointerDownAt = 0;
+        suppressClick = false;
         setHoldReveal(false);
       });
     });
@@ -797,7 +819,8 @@
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         clearTimeout(holdTimer);
-        suppressClick = true;
+        clearTimeout(suppressTimer);
+        suppressClick = false;
         setHoldReveal(true);
       }
     });
@@ -805,16 +828,22 @@
       if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         clearTimeout(holdTimer);
+        clearTimeout(suppressTimer);
+        suppressClick = false;
         setHoldReveal(false);
       }
     });
     holdBtn.addEventListener('blur', () => {
       clearTimeout(holdTimer);
+      clearTimeout(suppressTimer);
+      pointerDownAt = 0;
+      suppressClick = false;
       setHoldReveal(false);
     });
-    /* Virtual assistive-tech click (where no pointerdown/keydown occurred) reveals for 2.5s */
+    /* Quick tap (<180ms) or virtual assistive-tech click reveals for 2.5s */
     holdBtn.addEventListener('click', () => {
       if (suppressClick) {
+        clearTimeout(suppressTimer);
         suppressClick = false;
         return;
       }

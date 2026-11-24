@@ -3,25 +3,45 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <base href="/">
   <title>ourney · 404 — lạc đường một nhịp.</title>
-  <meta name="theme-color" content="#FFF8EE" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#1B1916" media="(prefers-color-scheme: dark)">
-  <link rel="icon" type="image/svg+xml" href="assets/brand/favicon.svg">
-  <link rel="preload" href="assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="theme-color" content="#FFF8EE" id="meta-theme-light" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1916" id="meta-theme-dark" media="(prefers-color-scheme: dark)">
+  <link rel="icon" type="image/svg+xml" href="/assets/brand/favicon.svg">
+  <link rel="preload" href="/assets/fonts/SpaceGrotesk-Variable.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    (function () {
+      var d = document.documentElement;
+      try {
+        if (sessionStorage.getItem('ourney-intro-seen') === '1') d.classList.add('intro-seen');
+        var t = localStorage.getItem('ourney-theme');
+        if (t === 'light' || t === 'dark') {
+          d.dataset.theme = t;
+          var m = t === 'dark' ? 'all' : 'not all';
+          var mo = new MutationObserver(function () {
+            var s = d.querySelectorAll('source.src-dark');
+            for (var i = 0; i < s.length; i++) if (s[i].media !== m) s[i].media = m;
+          });
+          mo.observe(d, { childList: true, subtree: true });
+          addEventListener('DOMContentLoaded', function () { mo.disconnect(); }, { once: true });
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
   <main class="notfound-stage">
     <div class="wrap notfound-wrap">
       <div class="card notfound-card">
-        <a class="brand" href="./" translate="no" aria-label="Ourney, về trang chủ">
-          <img src="assets/brand/wordmark.png" alt="ourney" width="122" height="45">
+        <a class="brand" href="/" translate="no" aria-label="Ourney, về trang chủ">
+          <img src="/assets/brand/wordmark.png" alt="ourney" width="122" height="45">
         </a>
         <p class="eyebrow">404 · không tìm thấy trang</p>
         <h1>lạc đường một nhịp.</h1>
-        <p class="lede">Trang bạn mở không tồn tại hoặc đã đổi địa chỉ. Quay về trang chủ để tiếp tục hành trình Ngày 1 cùng Ourney.</p>
+        <p class="lede">Trang bạn mở không tồn tại hoặc đã đổi địa chỉ. Quay về trang chủ để tiếp tục hành trình Ngày&nbsp;1 cùng Ourney.</p>
         <div class="hero-cta">
-          <a class="btn btn-primary" href="./">
+          <a class="btn btn-primary" href="/">
             <span>về trang chủ ourney</span>
           </a>
         </div>
