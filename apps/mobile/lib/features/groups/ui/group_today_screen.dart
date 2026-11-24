@@ -144,9 +144,7 @@ class GroupTodayScreen extends ConsumerWidget {
               },
       );
     } else if (journey == null || !todayAsync.hasValue) {
-      state = Center(
-        child: CircularProgressIndicator(semanticsLabel: app.common_loading),
-      );
+      state = Center(child: UiSpinner(semanticsLabel: app.common_loading));
     }
     if (state != null) return frame(title: journey?.title, body: state);
 
@@ -342,7 +340,8 @@ class _MemberWall extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget grid(List<GroupMemberEntry> entries) => LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth >= 300 ? 2 : 1;
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        final cols = c.maxWidth >= 300 && scale <= 1.35 ? 2 : 1;
         final rows = <Widget>[];
         for (var i = 0; i < entries.length; i += cols) {
           rows.add(
@@ -581,7 +580,7 @@ class _MemberTile extends ConsumerWidget {
         Expanded(
           child: Text(
             m.displayName,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: UiText.body(
               size: 14,

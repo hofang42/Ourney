@@ -146,7 +146,10 @@
       beta_stub_kicker: 'NGÀY 01',
       beta_stub_title: 'VÉ BETA',
       form_err: 'Email chưa đúng định dạng — bạn kiểm tra lại giúp nhé.',
-      form_ok: 'Đã ghi nhận trên bản xem trước! Tụi mình sẽ mở cổng đăng ký beta chính thức cho iOS & Android thật sớm.',
+      form_ok: 'Đã ghi danh! Tụi mình vừa gửi email cảm ơn, nhớ xem cả mục Quảng cáo/Spam nhé. Bản beta mở là bạn nhận lời mời đầu tiên.',
+      form_sending: 'Đang gửi…',
+      form_fail: 'Chưa gửi được, bạn thử lại sau ít phút nhé.',
+      form_rate: 'Bạn gửi hơi nhiều lần rồi, đợi một lúc rồi thử lại nhé.',
       footer_tagline: 'chụp một tấm. giữ một chuỗi. đi cùng nhau.',
       footer_journeys: 'hành trình',
       footer_privacy: 'riêng tư',
@@ -297,7 +300,10 @@
       beta_stub_kicker: 'DAY 01',
       beta_stub_title: 'BETA PASS',
       form_err: 'That email doesn’t look right — please check and try again.',
-      form_ok: 'Noted in preview mode! Official iOS & Android beta waitlist storage opens very soon.',
+      form_ok: 'You’re on the list! We just sent you a thank-you email (check spam too). You’ll get the first beta invite.',
+      form_sending: 'Sending…',
+      form_fail: 'Couldn’t send that. Please try again in a few minutes.',
+      form_rate: 'Too many tries. Please wait a bit and try again.',
       footer_tagline: 'snap one photo. keep one streak. go together.',
       footer_journeys: 'journeys',
       footer_privacy: 'privacy',
@@ -1004,8 +1010,15 @@
     });
   };
   if (form && email) {
-    form.addEventListener('submit', (e) => {
+    // Endpoint of the waitlist-signup Edge Function, set in <meta name="ourney-waitlist-endpoint">.
+    const endpointMeta = document.querySelector('meta[name="ourney-waitlist-endpoint"]');
+    const endpoint = endpointMeta ? endpointMeta.getAttribute('content') || '' : '';
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const honeypot = form.querySelector('input[name="website"]');
+    let sending = false;
+    form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (sending) return;
       const ok = Boolean(email.value.trim()) && email.checkValidity();
       email.setAttribute('aria-invalid', ok ? 'false' : 'true');
       if (!ok) {
@@ -1013,8 +1026,45 @@
         email.focus();
         return;
       }
-      announce('form_ok');
-      form.reset();
+      if (!/^https:\/\//.test(endpoint) || endpoint.includes('PROJECT_REF')) {
+        announce('form_fail');
+        return;
+      }
+      const platforms = Array.from(document.querySelectorAll('.plat-pill[aria-pressed="true"]'))
+        .map((b) => b.getAttribute('data-plat'))
+        .filter((p) => p === 'ios' || p === 'android');
+      sending = true;
+      if (submitBtn) submitBtn.disabled = true;
+      form.setAttribute('aria-busy', 'true');
+      announce('form_sending');
+      let key = 'form_fail';
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.value.trim(),
+            lang: curLang,
+            platforms,
+            source: 'landing',
+            website: honeypot ? honeypot.value : '',
+          }),
+        });
+        if (res.ok) key = 'form_ok';
+        else if (res.status === 429) key = 'form_rate';
+        else if (res.status === 400) key = 'form_err';
+      } catch (_) {
+        key = 'form_fail';
+      }
+      sending = false;
+      if (submitBtn) submitBtn.disabled = false;
+      form.removeAttribute('aria-busy');
+      announce(key);
+      if (key === 'form_ok') form.reset();
+      else if (key === 'form_err') {
+        email.setAttribute('aria-invalid', 'true');
+        email.focus();
+      }
     });
   }
 

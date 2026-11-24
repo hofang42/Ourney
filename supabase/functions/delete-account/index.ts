@@ -1,4 +1,4 @@
-// delete-account (FR-A4, NFR-4): permanently deletes the caller's account.
+// delete-account (FR-A4, NFR-4, CS-05): permanently deletes the caller's account.
 //   1. authenticate the caller from their own JWT (Authorization: Bearer <access token>)
 //   2. detach storage.objects.owner, then delete the auth user (auth.admin.deleteUser).
 //      Inside the BEFORE DELETE ON public.profiles trigger, public.purge_account_data locks the
@@ -9,12 +9,20 @@
 //      remove the objects via the Storage API. Whatever fails stays queued for storage-purge-sweep.
 // The service key comes only from the function environment.
 //
-// v2: deletion is gated by a one-time code (3-step flow: confirm -> OTP -> final). The request body
-// selects the step:
-//   {"action":"send"}                  -> sends a fresh Supabase Auth OTP to the account's own email
-//                                         (or phone when it has no email). Nothing is deleted.
-//   {"action":"delete","code":"123456"} -> verifies that code server-side (the caller's identity is
-//                                         re-checked against the verified user), then deletes.
+// v2 + CS-05: deletion is gated by re-authentication (3-step flow: confirm -> OTP or password -> final).
+//   {"action":"send"}                      -> sends a fresh Supabase Auth OTP to the account's own
+//                                             email (or phone when it has no email) and reports
+//                                             `has_password` (from public.account_has_password).
+//                                             If the account has a password and initial OTP delivery
+//                                             is unavailable/rate-limited (and the caller did not
+//                                             explicitly request an OTP resend), returns 200 with
+//                                             `channel: "password"` so the client can still advance
+//                                             and confirm with password.
+//   {"action":"delete","code":"123456"}    -> verifies the 6-digit OTP server-side (or password if
+//   {"action":"delete","password":"..."}      `password` is provided, or if `code` is a password on
+//                                             a password-enabled account), enforces a per-user
+//                                             brute-force rate limit, confirms the verified user id
+//                                             matches the JWT caller, then deletes.
 // The destination is always read from the caller's own auth record, never from the request.
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.117.2";
 import { adminClient, chunk, json } from "../_shared/admin.ts";
@@ -45,6 +53,44 @@ export function normalizeE164Phone(raw: string | undefined | null): string {
   const trimmed = (raw ?? "").trim();
   if (!trimmed) return "";
   return trimmed.startsWith("+") ? trimmed : `+${trimmed}`;
+}
+
+/** True for pre-seeded App Review demo accounts that authenticate with password. */
+export function isReviewDemoEmail(email: string): boolean {
+  const lower = email.trim().toLowerCase();
+  return lower === "review@ourney.tech" || lower === "review-delete@ourney.tech";
+}
+
+/** Checks whether the account has a password set in auth.users (migration 0020). */
+async function accountHasPassword(admin: SupabaseClient, userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await admin.rpc("account_has_password", { p_user: userId });
+    if (error) return false;
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Enforces a per-user brute-force rate limit (< 10 failed re-auth attempts per 15 minutes). */
+async function checkReauthRateLimit(
+  admin: SupabaseClient,
+  userId: string,
+  recordFailure: boolean,
+): Promise<boolean> {
+  try {
+    const { data, error } = await admin.rpc("check_delete_reauth_rate_limit", {
+      p_user: userId,
+      p_record_failure: recordFailure,
+    });
+    if (error) {
+      console.error("check_delete_reauth_rate_limit failed", error.message);
+      return true;
+    }
+    return data !== false;
+  } catch {
+    return true;
+  }
 }
 
 /** Lists every object the RPC reports for the user. */
@@ -193,7 +239,14 @@ export async function handle(req: Request): Promise<Response> {
     return json({ error: "unauthenticated" }, 401);
   }
 
-  let body: { action?: string; code?: string } = {};
+  let body: {
+    action?: string;
+    code?: string;
+    token?: string;
+    password?: string;
+    method?: string;
+    resend?: boolean;
+  } = {};
   try {
     body = await req.json();
   } catch {
@@ -204,31 +257,97 @@ export async function handle(req: Request): Promise<Response> {
   const phone = normalizeE164Phone(userData.user?.phone);
   if (!email && !phone) return json({ error: "invalid" }, 400);
 
+  const hasPassword = await accountHasPassword(admin, userId);
+
   if (body.action === "send") {
+    if (body.method === "password" && hasPassword) {
+      return json({ sent: false, channel: "password", has_password: true });
+    }
     const anon = anonClient();
     const { error } = email
       ? await anon.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
       : await anon.auth.signInWithOtp({ phone, options: { shouldCreateUser: false } });
     if (error) {
-      console.error("delete otp send failed", error.message);
+      console.warn("delete otp send failed", error.message);
+      // CS-05: if a password-enabled account cannot send an initial OTP due to SMTP/rate limits,
+      // still let the client proceed to step 2 for password re-auth (unless the user explicitly
+      // asked for an OTP or clicked "Resend code").
+      if (hasPassword && !body.resend && body.method !== "otp") {
+        return json({ sent: false, channel: "password", has_password: true });
+      }
       return authFailure(error.message, error.status);
     }
-    return json({ sent: true, channel: email ? "email" : "sms" });
+    return json({ sent: true, channel: email ? "email" : "sms", has_password: hasPassword });
   }
 
-  const code = typeof body.code === "string" ? body.code.trim() : "";
-  if (body.action !== "delete" || !/^\d{6}$/.test(code)) return json({ error: "invalid" }, 400);
+  if (body.action !== "delete") return json({ error: "invalid" }, 400);
+
+  const rawPassword = typeof body.password === "string" ? body.password : "";
+  const rawCode = typeof body.code === "string"
+    ? body.code.trim()
+    : (typeof body.token === "string" ? body.token.trim() : "");
+  const isSixDigitOtp = /^\d{6}$/.test(rawCode);
+  const forcePasswordMethod = body.method === "password" && hasPassword;
+  // CS-05: accept explicit `password`, OR `code` when `method === "password"`, OR a non-6-digit
+  // `code` on a password-enabled account (in case the client passes password via `code`).
+  const candidatePassword = rawPassword.length > 0
+    ? rawPassword
+    : ((forcePasswordMethod || (!isSixDigitOtp && hasPassword && body.method !== "otp")) &&
+        typeof body.code === "string" && body.code.length > 0
+      ? body.code
+      : "");
+
+  if (!isSixDigitOtp && candidatePassword.length === 0) {
+    return json({ error: "invalid" }, 400);
+  }
+
+  if (!(await checkReauthRateLimit(admin, userId, false))) {
+    return json({ error: "rate_limited" }, 429);
+  }
+
   {
     const anon = anonClient();
-    const { data, error } = email
-      ? await anon.auth.verifyOtp({ email, token: code, type: "email" })
-      : await anon.auth.verifyOtp({ phone, token: code, type: "sms" });
-    if (error || data?.user?.id !== userId) {
-      console.warn("delete code check failed", error ? `${error.status ?? "?"} ${error.message}` : "user mismatch");
-      return authFailure(error?.message, error?.status);
+    let verifiedUserId: string | undefined;
+    let verifyError: { message?: string; status?: number } | null = null;
+
+    if (candidatePassword.length > 0) {
+      const { data, error } = email
+        ? await anon.auth.signInWithPassword({ email, password: candidatePassword })
+        : await anon.auth.signInWithPassword({ phone, password: candidatePassword });
+      verifiedUserId = data?.user?.id;
+      verifyError = error;
+    } else {
+      const { data, error } = email
+        ? await anon.auth.verifyOtp({ email, token: rawCode, type: "email" })
+        : await anon.auth.verifyOtp({ phone, token: rawCode, type: "sms" });
+      verifiedUserId = data?.user?.id;
+      verifyError = error;
+
+      // If a password-enabled user has a 6-digit numeric password and passed it via `code`
+      // without `method: "password"`, fall back to password verification when verifyOtp fails.
+      if ((verifyError || verifiedUserId !== userId) && hasPassword && body.method !== "otp") {
+        const pwAttempt = email
+          ? await anon.auth.signInWithPassword({ email, password: rawCode })
+          : await anon.auth.signInWithPassword({ phone, password: rawCode });
+        if (!pwAttempt.error && pwAttempt.data?.user?.id === userId) {
+          verifiedUserId = pwAttempt.data.user.id;
+          verifyError = null;
+        }
+      }
     }
-    // FS-02: revoke only the temporary local session minted by verifyOtp on `anon` (never
-    // `scope: "global"`, which would revoke the caller's mobile session before deleteUser succeeds).
+
+    if (verifyError || verifiedUserId !== userId) {
+      console.warn(
+        "delete re-auth failed",
+        verifyError ? `${verifyError.status ?? "?"} ${verifyError.message}` : "user mismatch",
+      );
+      const allowed = await checkReauthRateLimit(admin, userId, true);
+      if (!allowed) return json({ error: "rate_limited" }, 429);
+      return authFailure(verifyError?.message, verifyError?.status);
+    }
+    // FS-02: revoke only the temporary local session minted by verifyOtp / signInWithPassword on
+    // `anon` (never `scope: "global"`, which would revoke the caller's mobile session before
+    // deleteUser succeeds).
     try {
       await anon.auth.signOut({ scope: "local" });
     } catch {
