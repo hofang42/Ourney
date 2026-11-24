@@ -19,7 +19,11 @@ enum _Seam { none, top, bottom, left, right }
 /// [datesLabel], [milestones] and the couple names [leftName]/[rightName].
 /// The fixed copy ([privateLabel], [tagline], ...) defaults to the V2
 /// Vietnamese strings and can be overridden with the caller's l10n.
-class DepartureTicket extends StatelessWidget {
+///
+/// Plays a `260ms` ([UiMotion.sheetEnter], [UiCurves.stampDecel]) stamp-in
+/// settle on mount (`scale 0.95 -> 1.0` + [FadeTransition]). Under Reduce
+/// Motion, renders immediately at resting scale and opacity with zero tickers.
+class DepartureTicket extends StatefulWidget {
   const DepartureTicket({
     required this.skinId,
     required this.title,
@@ -65,6 +69,7 @@ class DepartureTicket extends StatelessWidget {
   final String changeVariantLabel;
 
   static const double _angle = -0.8 * math.pi / 180;
+  static const Duration stampSettleDuration = UiMotion.sheetEnter;
 
   static const _taglines = {
     'quiet': 'Chỉ mình mình thấy. Từng chút một.',
@@ -81,10 +86,69 @@ class DepartureTicket extends StatelessWidget {
       ourneyIconPath(wanted) != null ? wanted : fallback;
 
   @override
+  State<DepartureTicket> createState() => _DepartureTicketState();
+}
+
+class _DepartureTicketState extends State<DepartureTicket>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _ctrl;
+  CurvedAnimation? _curved;
+  Animation<double>? _scale;
+  bool _started = false;
+
+  void _ensureAnimation() {
+    if (_ctrl != null) return;
+    final ctrl = AnimationController(
+      vsync: this,
+      duration: DepartureTicket.stampSettleDuration,
+    );
+    _ctrl = ctrl;
+    final curved = CurvedAnimation(
+      parent: ctrl,
+      curve: UiCurves.stampDecel,
+    );
+    _curved = curved;
+    _scale = Tween<double>(begin: UiMotion.popMinScale, end: 1.0).animate(
+      curved,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduced = UiMotion.reduced(context);
+    if (!_started) {
+      _started = true;
+      if (!reduced) {
+        _ensureAnimation();
+        _ctrl!.forward();
+      }
+    } else if (reduced && (_ctrl?.isAnimating ?? false)) {
+      _ctrl?.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant DepartureTicket oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.skinId != oldWidget.skinId && !UiMotion.reduced(context)) {
+      _ensureAnimation();
+      _ctrl!.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved?.dispose();
+    _ctrl?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return UiSkinScope(
-      skinId: skinId,
-      variant: variant,
+      skinId: widget.skinId,
+      variant: widget.variant,
       child: Builder(builder: _build),
     );
   }
@@ -92,6 +156,7 @@ class DepartureTicket extends StatelessWidget {
   Widget _build(BuildContext context) {
     final scope = UiSkinScope.of(context);
     final ui = context.ui;
+    final reduced = UiMotion.reduced(context);
     final s = _Style(
       ui: ui,
       accent: scope.variant.accent,
@@ -99,8 +164,9 @@ class DepartureTicket extends StatelessWidget {
       border: scope.skin.borderWidth,
       isDark: ui.isDark,
     );
-    final line = tagline ?? _taglines[skinId] ?? '';
-    final Widget ticket = switch (skinId) {
+    final line =
+        widget.tagline ?? DepartureTicket._taglines[widget.skinId] ?? '';
+    final Widget ticket = switch (widget.skinId) {
       'quiet' => _quiet(s, line),
       'squad' => _squad(s, line),
       'memory' => _memory(s, line),
@@ -108,6 +174,22 @@ class DepartureTicket extends StatelessWidget {
       'flexer' => _flexer(s, line),
       _ => _minimal(s),
     };
+    Widget rotatedTicket = Padding(
+      padding: const EdgeInsets.only(right: 5, bottom: 5),
+      child: Transform.rotate(
+        angle: DepartureTicket._angle,
+        child: ticket,
+      ),
+    );
+    if (!reduced && _curved != null && _scale != null) {
+      rotatedTicket = FadeTransition(
+        opacity: _curved!,
+        child: ScaleTransition(
+          scale: _scale!,
+          child: rotatedTicket,
+        ),
+      );
+    }
     return Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 342),
@@ -115,15 +197,12 @@ class DepartureTicket extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(right: 5, bottom: 5),
-              child: Transform.rotate(angle: _angle, child: ticket),
-            ),
-            if (onChangeVariant != null)
+            rotatedTicket,
+            if (widget.onChangeVariant != null)
               Align(
                 child: UiTextAction(
-                  label: changeVariantLabel,
-                  onPressed: onChangeVariant,
+                  label: widget.changeVariantLabel,
+                  onPressed: widget.onChangeVariant,
                 ),
               ),
           ],
@@ -144,7 +223,7 @@ class DepartureTicket extends StatelessWidget {
         border: Border.all(color: s.accent, width: 3),
       ),
       child: OurneyIcon(
-        name: _icon('lock', 'profile'),
+        name: DepartureTicket._icon('lock', 'profile'),
         size: 28,
         flat: true,
         color: s.accent,
@@ -170,20 +249,21 @@ class DepartureTicket extends StatelessWidget {
               children: [
                 lock,
                 const SizedBox(height: 12),
-                _eyebrow(s, privateLabel),
+                _eyebrow(s, widget.privateLabel),
                 const SizedBox(height: 8),
                 Text(
-                  title,
+                  widget.title,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: s.h(25),
                 ),
                 const SizedBox(height: 4),
-                Text(durationLabel, style: s.body(14, w: FontWeight.w700)),
-                if (datesLabel != null) Text(datesLabel!, style: s.body(13)),
+                Text(widget.durationLabel, style: s.body(14, w: FontWeight.w700)),
+                if (widget.datesLabel != null)
+                  Text(widget.datesLabel!, style: s.body(13)),
                 const SizedBox(height: 8),
-                Text(goalLine, style: s.body(14)),
-                if (milestones.isNotEmpty) ...[
+                Text(widget.goalLine, style: s.body(14)),
+                if (widget.milestones.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 10),
@@ -193,7 +273,7 @@ class DepartureTicket extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      milestones.join(' · '),
+                      widget.milestones.join(' · '),
                       style: s.body(12, w: FontWeight.w800),
                     ),
                   ),
@@ -222,7 +302,7 @@ class DepartureTicket extends StatelessWidget {
             color: s.accent,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Text(
-              durationLabel.toUpperCase(),
+              widget.durationLabel.toUpperCase(),
               style: s.body(12, w: FontWeight.w900, c: s.onAccent, t: 0.1),
             ),
           ),
@@ -233,7 +313,7 @@ class DepartureTicket extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  title,
+                  widget.title,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: s.h(25),
@@ -253,21 +333,21 @@ class DepartureTicket extends StatelessWidget {
                         ),
                       ),
                     OurneyIcon(
-                      name: _icon('trophy', 'squad'),
+                      name: DepartureTicket._icon('trophy', 'squad'),
                       size: 26,
                       active: true,
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
-                Text(goalLine, style: s.body(16, w: FontWeight.w800)),
-                if (datesLabel != null) ...[
+                Text(widget.goalLine, style: s.body(16, w: FontWeight.w800)),
+                if (widget.datesLabel != null) ...[
                   const SizedBox(height: 4),
-                  Text(datesLabel!, style: s.body(13)),
+                  Text(widget.datesLabel!, style: s.body(13)),
                 ],
-                if (milestones.isNotEmpty) ...[
+                if (widget.milestones.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(milestones.join(' · '), style: s.body(12)),
+                  Text(widget.milestones.join(' · '), style: s.body(12)),
                 ],
                 const SizedBox(height: 16),
                 Text(line, style: s.body(13, h: 1.45)),
@@ -292,24 +372,24 @@ class DepartureTicket extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            _eyebrow(s, memoryLabel, f: UiFonts.mono),
+            _eyebrow(s, widget.memoryLabel, f: UiFonts.mono),
             const SizedBox(height: 10),
             Text(
-              title,
+              widget.title,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: s.h(24),
             ),
             const SizedBox(height: 8),
-            if (datesLabel != null)
-              Text(datesLabel!, style: s.body(14, f: UiFonts.mono)),
+            if (widget.datesLabel != null)
+              Text(widget.datesLabel!, style: s.body(14, f: UiFonts.mono)),
             Text(
-              durationLabel.toUpperCase(),
+              widget.durationLabel.toUpperCase(),
               style: s.body(12, w: FontWeight.w700, f: UiFonts.mono),
             ),
-            if (milestones.isNotEmpty) ...[
+            if (widget.milestones.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(milestones.join(' · '), style: s.body(12)),
+              Text(widget.milestones.join(' · '), style: s.body(12)),
             ],
           ],
         ),
@@ -320,7 +400,7 @@ class DepartureTicket extends StatelessWidget {
         children: [
           // The film-roll line is rendered exactly once (V2 showed it twice).
           Text(
-            goalLine,
+            widget.goalLine,
             style: s.body(14, w: FontWeight.w800, f: UiFonts.mono),
           ),
           const SizedBox(height: 6),
@@ -375,14 +455,14 @@ class DepartureTicket extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  half(leftName, left: true),
+                  half(widget.leftName, left: true),
                   const SizedBox(width: 8),
-                  half(rightName, left: false),
+                  half(widget.rightName, left: false),
                 ],
               ),
             ),
             OurneyIcon(
-              name: _icon('heart', 'react-heart'),
+              name: DepartureTicket._icon('heart', 'react-heart'),
               size: 30,
               active: true,
               color: s.accent,
@@ -394,7 +474,7 @@ class DepartureTicket extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          title,
+          widget.title,
           textAlign: TextAlign.center,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
@@ -402,14 +482,14 @@ class DepartureTicket extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          durationLabel,
+          widget.durationLabel,
           textAlign: TextAlign.center,
           style: s.body(14, w: FontWeight.w700),
         ),
-        if (datesLabel != null)
-          Text(datesLabel!, textAlign: TextAlign.center, style: s.body(13)),
+        if (widget.datesLabel != null)
+          Text(widget.datesLabel!, textAlign: TextAlign.center, style: s.body(13)),
         const SizedBox(height: 6),
-        Text(goalLine, textAlign: TextAlign.center, style: s.body(14)),
+        Text(widget.goalLine, textAlign: TextAlign.center, style: s.body(14)),
         if (line.isNotEmpty)
           Text(line, textAlign: TextAlign.center, style: s.body(13, h: 1.45)),
       ],
@@ -417,7 +497,8 @@ class DepartureTicket extends StatelessWidget {
   }
 
   Widget _flexer(_Style s, String line) {
-    final digits = RegExp(r'^\d+').firstMatch(durationLabel.trim())?.group(0);
+    final digits =
+        RegExp(r'^\d+').firstMatch(widget.durationLabel.trim())?.group(0);
     Widget pin(Alignment a) => Align(
       alignment: a,
       child: Container(
@@ -484,23 +565,27 @@ class DepartureTicket extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  durationLabel,
+                  widget.durationLabel,
                   textAlign: TextAlign.center,
                   style: s.body(14, w: FontWeight.w800, t: 0.06),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  title,
+                  widget.title,
                   textAlign: TextAlign.center,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: s.h(24),
                 ),
                 const SizedBox(height: 6),
-                Text(goalLine, textAlign: TextAlign.center, style: s.body(14)),
-                if (datesLabel != null)
+                Text(
+                  widget.goalLine,
+                  textAlign: TextAlign.center,
+                  style: s.body(14),
+                ),
+                if (widget.datesLabel != null)
                   Text(
-                    datesLabel!,
+                    widget.datesLabel!,
                     textAlign: TextAlign.center,
                     style: s.body(13),
                   ),
@@ -534,23 +619,23 @@ class DepartureTicket extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              title,
+              widget.title,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
               style: s.h(25),
             ),
             const SizedBox(height: 10),
-            Text(goalLine, style: s.body(14, f: UiFonts.mono)),
+            Text(widget.goalLine, style: s.body(14, f: UiFonts.mono)),
             const SizedBox(height: 14),
             Text(
-              durationLabel.toUpperCase(),
+              widget.durationLabel.toUpperCase(),
               style: s.body(12, w: FontWeight.w900, t: 0.1, f: UiFonts.mono),
             ),
-            if (datesLabel != null)
-              Text(datesLabel!, style: s.body(12, f: UiFonts.mono)),
-            if (milestones.isNotEmpty) ...[
+            if (widget.datesLabel != null)
+              Text(widget.datesLabel!, style: s.body(12, f: UiFonts.mono)),
+            if (widget.milestones.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(milestones.join(' · '), style: s.body(12)),
+              Text(widget.milestones.join(' · '), style: s.body(12)),
             ],
           ],
         ),

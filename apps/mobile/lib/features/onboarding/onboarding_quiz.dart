@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:ourney_core/ourney_core.dart';
 
-import '../../app/theme/motion.dart';
 import '../../ui/ui.dart';
 import 'l10n/generated/onboarding_localizations.dart';
 
@@ -50,6 +50,7 @@ String _goalSampleAsset(QuizGoal goal) => switch (goal) {
 
 class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
   int _step = 0;
+  int _direction = 1;
   QuizGoal? _goal;
   QuizCompany? _company;
   String? _reminder;
@@ -69,9 +70,21 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
         OnboardingQuiz(goal: _goal, company: _company, reminder: _reminder),
       );
     } else {
-      OurneyHaptics.selection();
-      setState(() => _step++);
+      unawaited(UiHaptics.selection());
+      setState(() {
+        _direction = 1;
+        _step++;
+      });
     }
+  }
+
+  void _back() {
+    if (_step <= 0) return;
+    unawaited(UiHaptics.selection());
+    setState(() {
+      _direction = -1;
+      _step--;
+    });
   }
 
   @override
@@ -83,32 +96,23 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
       l10n.onboarding_quizQ2,
       l10n.onboarding_quizQ3,
     ][_step];
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final big = MediaQuery.textScalerOf(context).scale(16) / 16 > 1.35;
-    // `app-screen-in`: each question fades in and slides 10dp from the right
-    // over 210ms (a 150ms plain fade with reduced motion).
-    return TweenAnimationBuilder<double>(
-      key: ValueKey('onboarding-quiz-$_step'),
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: reduce ? 150 : 210),
-      curve: reduce ? Curves.linear : Curves.easeOut,
-      builder: (context, t, child) => Opacity(
-        opacity: t,
-        child: Transform.translate(
-          offset: Offset(reduce ? 0 : (1 - t) * 10, 0),
-          child: child,
+    return Column(
+      children: [
+        _TopBar(
+          step: _step,
+          gutter: widget.gutter,
+          onBack: _back,
+          onSkip: () => widget.onDone(null),
         ),
-      ),
-      child: Column(
-        children: [
-          _TopBar(
-            step: _step,
-            gutter: widget.gutter,
-            onBack: () => setState(() => _step--),
-            onSkip: () => widget.onDone(null),
-          ),
-          Expanded(
+        Expanded(
+          child: UiDirectionalSwitcher(
+            step: 'onboarding-quiz-$_step',
+            direction: _direction,
+            duration: UiMotion.medium,
+            slideOffset: 16.0,
             child: SingleChildScrollView(
+              key: ValueKey('onboarding-quiz-$_step'),
               padding: EdgeInsets.fromLTRB(
                 widget.gutter,
                 UiSpace.md,
@@ -147,42 +151,42 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
               ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.fromLTRB(
-              widget.gutter,
-              big ? UiSpace.sm : UiSpace.md,
-              widget.gutter,
-              big ? UiSpace.md : UiSpace.xl,
-            ),
-            child: MediaQuery.withClampedTextScaling(
-              maxScaleFactor: 1.35,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  UiFlowButton(
-                    key: const ValueKey('onboarding-quiz-next'),
-                    label: _isLast && _answered
-                        ? l10n.onboarding_quizStart
-                        : l10n.onboarding_quizContinue,
-                    onPressed: _answered ? _next : null,
+        ),
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            widget.gutter,
+            big ? UiSpace.sm : UiSpace.md,
+            widget.gutter,
+            big ? UiSpace.md : UiSpace.xl,
+          ),
+          child: MediaQuery.withClampedTextScaling(
+            maxScaleFactor: 1.35,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                UiFlowButton(
+                  key: const ValueKey('onboarding-quiz-next'),
+                  label: _isLast && _answered
+                      ? l10n.onboarding_quizStart
+                      : l10n.onboarding_quizContinue,
+                  onPressed: _answered ? _next : null,
+                ),
+                // Returning users skip the quiz and go straight to sign-in.
+                if (_step == 0 && widget.showSignIn)
+                  UiTextAction(
+                    key: const ValueKey('onboarding-have-account'),
+                    label: l10n.onboarding_haveAccount,
+                    size: 14,
+                    underline: true,
+                    color: ui.ink,
+                    onPressed: () => widget.onDone(null),
                   ),
-                  // Returning users skip the quiz and go straight to sign-in.
-                  if (_step == 0 && widget.showSignIn)
-                    UiTextAction(
-                      key: const ValueKey('onboarding-have-account'),
-                      label: l10n.onboarding_haveAccount,
-                      size: 14,
-                      underline: true,
-                      color: ui.ink,
-                      onPressed: () => widget.onDone(null),
-                    ),
-                ],
-              ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -251,21 +255,42 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
           selected: _company == c,
           onTap: () => setState(() => _company = c),
         ),
-      if (_company == QuizCompany.couple)
-        Container(
-          margin: const EdgeInsets.only(top: 2),
-          padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
-          decoration: const BoxDecoration(
-            border: Border(
-              left: BorderSide(color: UiFlowColors.couple, width: 3),
-            ),
-          ),
-          child: Text(
-            l10n.onboarding_coupleStyleHint,
-            style: UiText.muted(color: context.ui.inkMuted, size: 12),
-          ),
+      _maybeAnimatedSize(
+        context,
+        AnimatedSwitcher(
+          duration: UiMotion.fadeOf(context, UiMotion.medium),
+          switchInCurve: UiCurves.easeOutStrong,
+          switchOutCurve: UiCurves.easeOutStrong,
+          child: _company == QuizCompany.couple
+              ? Container(
+                  key: const ValueKey('onboarding-couple-hint'),
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      left: BorderSide(color: UiFlowColors.couple, width: 3),
+                    ),
+                  ),
+                  child: Text(
+                    l10n.onboarding_coupleStyleHint,
+                    style: UiText.muted(color: context.ui.inkMuted, size: 12),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
+      ),
     ];
+  }
+
+  Widget _maybeAnimatedSize(BuildContext context, Widget child) {
+    if (UiMotion.reduced(context)) return child;
+    return AnimatedSize(
+      duration: UiMotion.medium,
+      curve: UiCurves.easeOutStrong,
+      alignment: Alignment.topCenter,
+      child: child,
+    );
   }
 
   List<Widget> _reminderOptions(OnboardingL10n l10n) {
@@ -285,7 +310,20 @@ class _OnboardingQuizStageState extends State<OnboardingQuizStage> {
           selected: _reminder == time,
           onTap: () => setState(() => _reminder = time),
         ),
-      if (_reminder != null) _resultCard(l10n),
+      _maybeAnimatedSize(
+        context,
+        AnimatedSwitcher(
+          duration: UiMotion.fadeOf(context, UiMotion.medium),
+          switchInCurve: UiCurves.easeOutStrong,
+          switchOutCurve: UiCurves.easeOutStrong,
+          child: _reminder != null
+              ? KeyedSubtree(
+                  key: const ValueKey('onboarding-result-wrap'),
+                  child: _resultCard(l10n),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ),
     ];
   }
 
