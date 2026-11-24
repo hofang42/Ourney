@@ -43,6 +43,7 @@ class CaptureSkinOverlay extends StatefulWidget {
 }
 
 class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
+  final GlobalKey _frameKey = GlobalKey();
   bool _enlarged = false;
   Timer? _shrink;
 
@@ -54,22 +55,34 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
 
   void _enlarge() {
     _shrink?.cancel();
+    unawaited(UiHaptics.selection());
     setState(() => _enlarged = true);
     _shrink = Timer(const Duration(seconds: 3), () {
       if (mounted) setState(() => _enlarged = false);
     });
   }
 
+  void _collapse() {
+    _shrink?.cancel();
+    unawaited(UiHaptics.selection());
+    setState(() => _enlarged = false);
+  }
+
   @override
   Widget build(BuildContext context) {
     switch (widget.skin) {
       case PersonaSkinId.quietTransformer:
-        if (!widget.showGhost) return const SizedBox.shrink();
-        return const IgnorePointer(
-          child: CustomPaint(
-            key: ValueKey('overlay-ghost'),
-            size: Size.infinite,
-            painter: _GhostPainter(),
+        return IgnorePointer(
+          child: AnimatedOpacity(
+            key: const ValueKey('overlay-ghost-fade'),
+            opacity: widget.showGhost ? 1.0 : 0.0,
+            duration: UiMotion.fadeOf(context, UiMotion.fast),
+            curve: UiCurves.easeOutStrong,
+            child: CustomPaint(
+              key: widget.showGhost ? const ValueKey('overlay-ghost') : null,
+              size: Size.infinite,
+              painter: const _GhostPainter(),
+            ),
           ),
         );
       case PersonaSkinId.coupleRituals:
@@ -85,11 +98,35 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
   Widget _partner(BuildContext context) {
     final file = widget.partnerPhotoFile;
     if (file == null) return const SizedBox.shrink();
-    return Stack(fit: StackFit.expand, children: [_pip(context, file)]);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxW =
+            constraints.maxWidth.isFinite ? constraints.maxWidth : 240.0;
+        final maxH =
+            constraints.maxHeight.isFinite ? constraints.maxHeight : 320.0;
+        return Stack(
+          fit: StackFit.expand,
+          children: [_pip(context, file, maxW, maxH)],
+        );
+      },
+    );
   }
 
-  Widget _pip(BuildContext context, String file) {
+  Widget _pip(
+    BuildContext context,
+    String file,
+    double maxW,
+    double maxH,
+  ) {
     final l10n = CameraL10n.of(context);
+    final morphDuration = UiMotion.of(context, UiMotion.sheetEnter);
+    final textDirection = Directionality.of(context);
+    final targetRadius = (_enlarged
+            ? const BorderRadiusDirectional.horizontal(
+                start: Radius.circular(UiRadius.viewfinder),
+              )
+            : BorderRadiusDirectional.circular(UiRadius.thumb))
+        .resolve(textDirection);
     final image = Image.file(
       File(file),
       key: const ValueKey('overlay-partner-photo'),
@@ -97,51 +134,58 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
       excludeFromSemantics: true,
       errorBuilder: (_, _, _) => const SizedBox.expand(),
     );
-    if (_enlarged) {
-      // Half frame: the partner's photo fills the left half of the preview.
-      return Align(
-        alignment: AlignmentDirectional.centerStart,
-        child: FractionallySizedBox(
-          widthFactor: 0.5,
-          heightFactor: 1,
-          child: GestureDetector(
-            key: const ValueKey('overlay-partner-half'),
-            behavior: HitTestBehavior.opaque,
-            onTap: () => setState(() => _enlarged = false),
-            child: Semantics(
-              button: true,
-              label: l10n.camera_partnerPhoto,
-              hint: l10n.camera_partnerPhotoShrinkHint,
-              excludeSemantics: true,
-              child: ColoredBox(color: UiCamera.bg, child: image),
-            ),
-          ),
-        ),
-      );
-    }
-    return PositionedDirectional(
-      start: 14,
-      top: CaptureSkinOverlay.pipTop,
-      width: CaptureSkinOverlay.pipWidth,
-      height: CaptureSkinOverlay.pipHeight,
-      child: UiPressable(
-        key: const ValueKey('overlay-partner-pip'),
-        onPressed: _enlarge,
-        semanticLabel: l10n.camera_partnerPhoto,
-        semanticHint: l10n.camera_partnerPhotoEnlargeHint,
-        excludeChildSemantics: true,
-        borderRadius: BorderRadius.circular(UiRadius.thumb),
-        minSize: const Size(UiSize.tap, UiSize.tap),
-        child: Container(
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: UiCamera.bg,
-            borderRadius: BorderRadius.circular(UiRadius.thumb),
-            border: Border.all(color: UiCamera.outline, width: 2),
-          ),
-          child: image,
+
+    final frame = AnimatedContainer(
+      key: _frameKey,
+      duration: morphDuration,
+      curve: UiCurves.drawer,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: UiCamera.bg,
+        borderRadius: targetRadius,
+      ),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: targetRadius,
+        border: Border.all(
+          color: UiCamera.outline.withValues(alpha: _enlarged ? 0.0 : 1.0),
+          width: UiBorder.standard,
         ),
       ),
+      child: image,
+    );
+
+    return AnimatedPositionedDirectional(
+      duration: morphDuration,
+      curve: UiCurves.drawer,
+      start: _enlarged ? 0.0 : 14.0,
+      top: _enlarged ? 0.0 : CaptureSkinOverlay.pipTop,
+      width: _enlarged ? maxW * 0.5 : CaptureSkinOverlay.pipWidth,
+      height: _enlarged ? maxH : CaptureSkinOverlay.pipHeight,
+      child: _enlarged
+          ? GestureDetector(
+              key: const ValueKey('overlay-partner-half'),
+              behavior: HitTestBehavior.opaque,
+              onTap: _collapse,
+              child: Semantics(
+                button: true,
+                label: l10n.camera_partnerPhoto,
+                hint: l10n.camera_partnerPhotoShrinkHint,
+                excludeSemantics: true,
+                child: frame,
+              ),
+            )
+          : UiPressable(
+              key: const ValueKey('overlay-partner-pip'),
+              onPressed: _enlarge,
+              pressOffset: UiShadow.tiny,
+              pressScale: 1.0,
+              semanticLabel: l10n.camera_partnerPhoto,
+              semanticHint: l10n.camera_partnerPhotoEnlargeHint,
+              excludeChildSemantics: true,
+              borderRadius: BorderRadius.circular(UiRadius.thumb),
+              minSize: const Size(UiSize.tap, UiSize.tap),
+              child: frame,
+            ),
     );
   }
 }
@@ -150,19 +194,20 @@ class _CaptureSkinOverlayState extends State<CaptureSkinOverlay> {
 class _GhostPainter extends CustomPainter {
   const _GhostPainter();
 
+  static final Paint _paint = Paint()
+    ..color = UiCamera.ink.withValues(alpha: 0.55)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.5;
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = UiCamera.ink.withValues(alpha: 0.55)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
     final cx = size.width / 2;
     final head = Rect.fromCenter(
       center: Offset(cx, size.height * 0.30),
       width: size.width * 0.26,
       height: size.height * 0.2,
     );
-    canvas.drawOval(head, paint);
+    canvas.drawOval(head, _paint);
     final shoulders = Path()
       ..moveTo(size.width * 0.14, size.height * 0.78)
       ..cubicTo(
@@ -181,7 +226,7 @@ class _GhostPainter extends CustomPainter {
         size.width * 0.86,
         size.height * 0.78,
       );
-    canvas.drawPath(shoulders, paint);
+    canvas.drawPath(shoulders, _paint);
   }
 
   @override

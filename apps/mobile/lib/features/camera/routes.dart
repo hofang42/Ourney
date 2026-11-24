@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../app/app_routes.dart';
+import '../../ui/ui.dart';
 import 'capture_screen.dart';
 
 /// Camera feature (B3). Capture tab (center); `/capture` is the app's
@@ -11,8 +12,14 @@ import 'capture_screen.dart';
 final List<RouteBase> cameraRoutes = [
   GoRoute(
     path: AppRoutes.capture,
-    builder: (context, state) => CaptureScreen(
-      initialJourneyId: state.uri.queryParameters[CaptureScreen.journeyIdParam],
+    pageBuilder: (context, state) => buildUiPage<void>(
+      context: context,
+      state: state,
+      kind: UiPageTransition.fadeThrough,
+      child: CaptureScreen(
+        initialJourneyId:
+            state.uri.queryParameters[CaptureScreen.journeyIdParam],
+      ),
     ),
   ),
 ];
