@@ -32,9 +32,9 @@ enum ProfileGateStatus {
   ready,
 }
 
-/// Maps custom-scheme (`ourney://{friend,f,join,j,journey,p}/<id>`) and web
-/// (`https://ourney.tech/{f,j,join,p}/<id>`) deep links to an in-app route.
-/// Returns null for non-deep-link URIs or unallowlisted hosts/paths.
+/// Maps custom-scheme (`ourney://{friend,f,join,j,journey,p,capture,journeys,groups}/...`)
+/// and web (`https://ourney.tech/{f,j,join,p}/<id>`) deep links to an in-app
+/// route. Returns null for non-deep-link URIs or unallowlisted hosts/paths.
 String? normalizeDeepLink(Uri uri) {
   final query = uri.hasQuery ? '?${uri.query}' : '';
   if (uri.scheme == kDeepLinkScheme) {
@@ -45,6 +45,35 @@ String? normalizeDeepLink(Uri uri) {
       return null;
     }
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    if (host == 'capture') {
+      if (segments.isEmpty) {
+        final qId = uri.queryParameters['journeyId'];
+        if (qId != null && qId.isNotEmpty) {
+          return '${AppRoutes.capture}?journeyId=${Uri.encodeQueryComponent(qId)}';
+        }
+        return uri.hasQuery ? '${AppRoutes.capture}$query' : AppRoutes.capture;
+      }
+      if (segments.length == 1) {
+        final id = Uri.encodeQueryComponent(segments.single);
+        return '${AppRoutes.capture}?journeyId=$id';
+      }
+      return null;
+    }
+    if (host == 'journeys') {
+      if (segments.isEmpty) return '${AppRoutes.journeys}$query';
+      if (segments.length == 1 && segments.single.toLowerCase() == 'new') {
+        return '${AppRoutes.journeyNew}$query';
+      }
+      return null;
+    }
+    if (host == 'groups') {
+      if (segments.isEmpty) return '${AppRoutes.groups}$query';
+      if (segments.length == 1) {
+        final id = Uri.encodeComponent(segments.single);
+        return '${AppRoutes.groups}/$id$query';
+      }
+      return null;
+    }
     if (segments.length != 1) return null;
     final id = Uri.encodeComponent(segments.single);
     final prefix = switch (host) {

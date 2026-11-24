@@ -36,6 +36,7 @@ abstract final class AppRoutes {
   static const profile = '/profile';
   static const safety = '/safety';
   static const reminders = '/reminders';
+  static const widgets = '/widgets';
 
   /// Share card for a journey (C2).
   ///
@@ -123,6 +124,7 @@ const Map<String, List<String>> featureRoutePrefixes = {
   'share_card': ['/share'],
   'safety': [AppRoutes.safety],
   'reminders': [AppRoutes.reminders],
+  'widgets': [AppRoutes.widgets],
   'social': [AppRoutes.friends, AppRoutes.inbox, '/chat', '/f'],
   'sharing': ['/sharing', '/shared', '/p', '/follow'],
   'import': [AppRoutes.importJourney, AppRoutes.retell],

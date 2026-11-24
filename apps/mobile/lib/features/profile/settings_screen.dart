@@ -68,13 +68,24 @@ class SettingsScreen extends ConsumerWidget {
           ],
           UiListHeading(title: l10n.profile_settings_secReminders),
           _Card(
-            child: UiRow(
-              key: const ValueKey('settings-reminders'),
-              leading: const OurneyIcon(name: 'bell', flat: true),
-              title: l10n.profile_settings_remindersRow,
-              subtitle: _sub(context, l10n.profile_settings_remindersSub),
-              divider: false,
-              onPressed: () => context.push(AppRoutes.reminders),
+            child: Column(
+              children: [
+                UiRow(
+                  key: const ValueKey('settings-reminders'),
+                  leading: const OurneyIcon(name: 'bell', flat: true),
+                  title: l10n.profile_settings_remindersRow,
+                  subtitle: _sub(context, l10n.profile_settings_remindersSub),
+                  onPressed: () => context.push(AppRoutes.reminders),
+                ),
+                UiRow(
+                  key: const ValueKey('settings-widgets'),
+                  leading: const OurneyIcon(name: 'grid', flat: true),
+                  title: l10n.profile_settings_widgetsRow,
+                  subtitle: _sub(context, l10n.profile_settings_widgetsSub),
+                  divider: false,
+                  onPressed: () => context.push(AppRoutes.widgets),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: UiSpace.lg),

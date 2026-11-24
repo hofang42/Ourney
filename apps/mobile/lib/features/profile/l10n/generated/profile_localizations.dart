@@ -608,6 +608,18 @@ abstract class ProfileL10n {
   /// **'Giờ nhắc từng hành trình và báo trước khi chuỗi đứt'**
   String get profile_settings_remindersSub;
 
+  /// No description provided for @profile_settings_widgetsRow.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiện ích & Live Activity'**
+  String get profile_settings_widgetsRow;
+
+  /// No description provided for @profile_settings_widgetsSub.
+  ///
+  /// In vi, this message translates to:
+  /// **'Tiện ích màn hình chính, màn hình khóa và đếm ngược cuối ngày'**
+  String get profile_settings_widgetsSub;
+
   /// No description provided for @profile_settings_themeLight.
   ///
   /// In vi, this message translates to:

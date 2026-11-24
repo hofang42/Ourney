@@ -1,0 +1,205 @@
+{
+  "@@locale": "vi",
+  "widgets_title": "tiện ích.",
+  "@widgets_title": {
+    "description": "Title of the Widgets & Live Activities screen."
+  },
+  "widgets_back": "Quay lại",
+  "@widgets_back": {
+    "description": "Back button tooltip on the Widgets screen."
+  },
+  "widgets_intro": "Đặt chuỗi ngày, mục tiêu hôm nay và tiến độ nhóm ngay trên Màn hình chính hoặc Màn hình khóa. Số cân nặng (kg) và mục tiêu riêng tư không bao giờ xuất hiện trên tiện ích.",
+  "@widgets_intro": {
+    "description": "Introductory paragraph at the top of the Widgets screen."
+  },
+  "widgets_secPreview": "xem trước tiện ích",
+  "@widgets_secPreview": {
+    "description": "Section heading for the interactive widget preview gallery."
+  },
+  "widgets_tabToday": "Hôm nay",
+  "@widgets_tabToday": {
+    "description": "Preview tab for the Today Check-In widget."
+  },
+  "widgets_tabStreak": "Chuỗi",
+  "@widgets_tabStreak": {
+    "description": "Preview tab for the Streak Sticker widget."
+  },
+  "widgets_tabSquad": "Đồng đội",
+  "@widgets_tabSquad": {
+    "description": "Preview tab for the Squad Today widget."
+  },
+  "widgets_previewSampleTitle": "Tự học IELTS 30 ngày",
+  "@widgets_previewSampleTitle": {
+    "description": "Fallback sample journey title shown in preview when the user has no active journeys."
+  },
+  "widgets_previewDayOf": "Ngày {day}/{total}",
+  "@widgets_previewDayOf": {
+    "description": "Day N of M badge in widget preview.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "widgets_previewDayOpen": "Ngày {day}",
+  "@widgets_previewDayOpen": {
+    "description": "Day N badge for open-ended journeys in widget preview.",
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "widgets_previewStreakDays": "{count} ngày liên tiếp",
+  "@widgets_previewStreakDays": {
+    "description": "Streak count subtitle in widget preview.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "widgets_previewSnapCta": "Chụp ngay",
+  "@widgets_previewSnapCta": {
+    "description": "Primary CTA button label inside the widget preview."
+  },
+  "widgets_previewDoneBadge": "Đã chụp hôm nay",
+  "@widgets_previewDoneBadge": {
+    "description": "Badge shown in widget preview when today's check-in is complete."
+  },
+  "widgets_previewAtRiskBadge": "Sắp đứt chuỗi · trước 24:00",
+  "@widgets_previewAtRiskBadge": {
+    "description": "Urgent badge shown in widget preview when streak is at risk."
+  },
+  "widgets_previewPendingBadge": "Chưa chụp hôm nay",
+  "@widgets_previewPendingBadge": {
+    "description": "Status badge in widget preview when today is still pending."
+  },
+  "widgets_previewSquadCount": "{done}/{total} đã check-in hôm nay",
+  "@widgets_previewSquadCount": {
+    "description": "Squad progress line in Squad widget preview.",
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "widgets_previewPhotoHiddenNote": "Đã ẩn ảnh trên tiện ích",
+  "@widgets_previewPhotoHiddenNote": {
+    "description": "Placeholder text when photoMode is off."
+  },
+  "widgets_previewPhotoBlurredNote": "Ảnh được làm mờ tự động",
+  "@widgets_previewPhotoBlurredNote": {
+    "description": "Badge text when photoMode blurs thumbnails."
+  },
+  "widgets_previewPhotoClearNote": "Ảnh hiển thị rõ trên Màn hình chính",
+  "@widgets_previewPhotoClearNote": {
+    "description": "Badge text when photoMode shows clear thumbnails."
+  },
+  "widgets_secPrivacy": "riêng tư & hiển thị",
+  "@widgets_secPrivacy": {
+    "description": "Section heading for widget privacy controls."
+  },
+  "widgets_photoModeEyebrow": "ẢNH TRÊN TIỆN ÍCH MÀN HÌNH CHÍNH",
+  "@widgets_photoModeEyebrow": {
+    "description": "Eyebrow label above the 4-way photo privacy selector."
+  },
+  "widgets_photoModeSmart": "Thông minh",
+  "@widgets_photoModeSmart": {
+    "description": "Smart photo mode segment."
+  },
+  "widgets_photoModeBlurred": "Làm mờ",
+  "@widgets_photoModeBlurred": {
+    "description": "Blurred photo mode segment."
+  },
+  "widgets_photoModeOff": "Ẩn ảnh",
+  "@widgets_photoModeOff": {
+    "description": "No-photo mode segment."
+  },
+  "widgets_photoModeClear": "Rõ nét",
+  "@widgets_photoModeClear": {
+    "description": "Clear photo mode segment."
+  },
+  "widgets_photoModeSmartNote": "Tự động làm mờ ảnh hành trình giảm cân và chỉ hiện ảnh đại diện trong tiện ích nhóm. Số kg không bao giờ xuất hiện.",
+  "@widgets_photoModeSmartNote": {
+    "description": "Explanation of Smart photo mode."
+  },
+  "widgets_photoModeBlurredNote": "Mọi ảnh check-in trên tiện ích Màn hình chính đều được làm mờ trước khi lưu. Số kg không bao giờ xuất hiện.",
+  "@widgets_photoModeBlurredNote": {
+    "description": "Explanation of Blurred photo mode."
+  },
+  "widgets_photoModeOffNote": "Không hiển thị bất kỳ ảnh nào trên tiện ích; chỉ hiện biểu tượng sticker, chuỗi ngày và chữ cái đại diện.",
+  "@widgets_photoModeOffNote": {
+    "description": "Explanation of Off photo mode."
+  },
+  "widgets_photoModeClearNote": "Hiển thị ảnh check-in rõ nét trên Màn hình chính khi đã mở khóa máy. Màn hình khóa vẫn không bao giờ hiện ảnh hay số kg.",
+  "@widgets_photoModeClearNote": {
+    "description": "Explanation of Clear photo mode."
+  },
+  "widgets_redactTitlesLabel": "Ẩn tên hành trình trên Màn hình khóa",
+  "@widgets_redactTitlesLabel": {
+    "description": "Switch label for redacting journey titles on the Lock Screen."
+  },
+  "widgets_redactTitlesSub": "Khi máy đang khóa, tiện ích khóa và Live Activity chỉ hiện \"Ourney\" thay vì tên hành trình cụ thể.",
+  "@widgets_redactTitlesSub": {
+    "description": "Switch subtitle for redacting journey titles on the Lock Screen."
+  },
+  "widgets_secLiveActivity": "đếm ngược cuối ngày",
+  "@widgets_secLiveActivity": {
+    "description": "Section heading for Check-In Window Live Activity / Live Update."
+  },
+  "widgets_liveActivityLabel": "Live Activity & đếm ngược khung giờ chụp",
+  "@widgets_liveActivityLabel": {
+    "description": "Switch label for enabling Live Activities / Live Updates."
+  },
+  "widgets_liveActivitySub": "Hiện đồng hồ đếm ngược trên Dynamic Island / Màn hình khóa từ 30 phút trước giờ nhắc (hoặc từ 18:00 khi chuỗi sắp đứt) và tự tắt ngay khi bạn chụp xong.",
+  "@widgets_liveActivitySub": {
+    "description": "Switch subtitle for Live Activities / Live Updates."
+  },
+  "widgets_secDefaultJourney": "hành trình ưu tiên trên tiện ích",
+  "@widgets_secDefaultJourney": {
+    "description": "Section heading for selecting the default journey shown on widgets."
+  },
+  "widgets_defaultJourneyAuto": "Tự động (ưu tiên hành trình chưa chụp hôm nay)",
+  "@widgets_defaultJourneyAuto": {
+    "description": "Default option that automatically prioritizes pinned/at-risk unchecked journeys."
+  },
+  "widgets_defaultJourneyAutoSub": "Tự chuyển sang hành trình tiếp theo ngay khi bạn hoàn tất một tấm ảnh",
+  "@widgets_defaultJourneyAutoSub": {
+    "description": "Subtitle for automatic journey selection."
+  },
+  "widgets_secSetup": "cách thêm ra màn hình chính",
+  "@widgets_secSetup": {
+    "description": "Section heading for the 3-step OS widget setup guide."
+  },
+  "widgets_setupStep1Title": "1. Chạm và giữ Màn hình chính hoặc Màn hình khóa",
+  "@widgets_setupStep1Title": {
+    "description": "Step 1 title of the widget setup instructions."
+  },
+  "widgets_setupStep1Body": "Chạm giữ vùng trống đến khi các biểu tượng rung nhẹ, sau đó chọn Sửa hoặc Tiện ích (Widgets).",
+  "@widgets_setupStep1Body": {
+    "description": "Step 1 body of the widget setup instructions."
+  },
+  "widgets_setupStep2Title": "2. Tìm Ourney trong thư viện tiện ích",
+  "@widgets_setupStep2Title": {
+    "description": "Step 2 title of the widget setup instructions."
+  },
+  "widgets_setupStep2Body": "Chọn mẫu Hôm nay (2×2, 4×2, 4×4), Chuỗi sticker (2×2) hoặc Đồng đội (4×2, 4×4).",
+  "@widgets_setupStep2Body": {
+    "description": "Step 2 body of the widget setup instructions."
+  },
+  "widgets_setupStep3Title": "3. Chạm \"Chụp ngay\" để mở thẳng máy ảnh",
+  "@widgets_setupStep3Title": {
+    "description": "Step 3 title of the widget setup instructions."
+  },
+  "widgets_setupStep3Body": "Mỗi tiện ích mở thẳng khung ngắm của đúng hành trình đó trong chưa đầy 1 giây.",
+  "@widgets_setupStep3Body": {
+    "description": "Step 3 body of the widget setup instructions."
+  }
+}
